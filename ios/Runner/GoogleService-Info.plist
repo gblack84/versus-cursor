@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>636984750551-qdoebo17prehltqnv2onocn5qa5sb3vl.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.636984750551-qdoebo17prehltqnv2onocn5qa5sb3vl</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDrd5gBIGfNL_-VTyphXuN3kCZjXIJrnmw</string>
+	<key>GCM_SENDER_ID</key>
+	<string>636984750551</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.mycompany.versusspace</string>
+	<key>PROJECT_ID</key>
+	<string>versus-space-1lwwiw</string>
+	<key>STORAGE_BUCKET</key>
+	<string>versus-space-1lwwiw.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:636984750551:ios:24659660947276f3691b92</string>
+</dict>
+</plist>

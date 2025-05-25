@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "636984750551",
+    "project_id": "versus-space-1lwwiw",
+    "storage_bucket": "versus-space-1lwwiw.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:636984750551:android:debe7d54b80e2a33691b92",
+        "android_client_info": {
+          "package_name": "com.mycompany.versusspace"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "636984750551-ssj0h6bqhphqehfqnpnp7mupkb4dc291.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAXpZ9QWksthlNVTZFB61ubBmCSDChmrsM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "636984750551-ssj0h6bqhphqehfqnpnp7mupkb4dc291.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "636984750551-qdoebo17prehltqnv2onocn5qa5sb3vl.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mycompany.versusspace"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

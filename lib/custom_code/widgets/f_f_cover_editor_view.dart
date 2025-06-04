@@ -11,29 +11,13 @@ import 'package:flutter/material.dart';
 // DO NOT REMOVE OR MODIFY THE CODE ABOVE!
 
 /* 외부 import */
-import 'dart:convert'; // ✅ jsonDecode
-import 'package:http/http.dart' as http; // ✅ http
+
 import 'package:video_editor/video_editor.dart';
 
 /* ─ 팔레트 ─ */
 const kBg = Colors.black;
 const kAccent = Color(0xFFFFD600);
 const kTextDim = Colors.white54;
-
-/* ─ postencode : 로컬 구현 버전 ─ */
-Future<String?> postencode(String pathMp4, Map<String, dynamic> p) async {
-  final req = http.MultipartRequest(
-    'POST',
-    Uri.parse('https://encoder-636984750551.asia-northeast3.run.app/encode'),
-  )
-    ..files.add(await http.MultipartFile.fromPath('file', pathMp4))
-    ..fields.addAll(p.map((k, v) => MapEntry(k, v.toString())));
-
-  final res = await req.send();
-  final body = jsonDecode(await res.stream.bytesToString());
-  return res.statusCode == 200 ? body['url'] as String : null;
-}
-// ───────────────────────────────
 
 class FFCoverEditorView extends StatefulWidget {
   const FFCoverEditorView({
@@ -160,24 +144,34 @@ class _FFCoverEditorViewState extends State<FFCoverEditorView> {
 
   /* ─ Cloud Run 업로드 ─ */
   Future<void> _exportMp4() async {
-    // 1) 선택된 커버 프레임 ms
+    // ① 잘라낸 구간 길이(ms)
     final startMs = widget.params['start_ms'] as int;
-    final cover = widget.controller.selectedCoverVal; // CoverData?
-    final coverMs = cover?.position.inMilliseconds ?? startMs;
+    final endMs = widget.params['end_ms'] as int;
+    final durationMs = endMs - startMs;
 
-    // 2) 파라미터 합치기
+    // ② 선택된 커버 썸네일 비율 (0 ~ 1)
+    final Object? sel = widget.controller.selectedCoverVal; // double?  또는 null
+    final double ratio = sel is num ? (sel as num).toDouble() : 0.0;
+
+    // ③ 비율 → 밀리초
+    final coverMs = startMs + (durationMs * ratio).round();
+
+    // ④ 파라미터 합치고 Cloud Run 호출
     final params = {
       ...widget.params,
       'cover_frame_ms': coverMs,
     };
 
-    // 3) 업로드
     _snack('Encoding… 잠시만 기다려 주세요');
-    final url = await postencode(widget.videoPath, params); // ← Map 전달
+    final url = await postencode(
+      widget.videoPath, // String
+      jsonEncode(params), // String  ← 반드시 JSON 문자열로!
+    );
     if (url == null) {
       _snack('업로드/인코딩 실패 😢');
       return;
     }
+
     _snack('완료!');
     if (mounted) Navigator.pop(context, url);
   }

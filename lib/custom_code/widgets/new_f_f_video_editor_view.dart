@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 // DO NOT REMOVE OR MODIFY THE CODE ABOVE!
 
 /* ── 직접 import ── */
+import 'dart:io';
+import 'dart:convert';
 import 'package:video_editor/video_editor.dart';
 import 'crop_page.dart';
 

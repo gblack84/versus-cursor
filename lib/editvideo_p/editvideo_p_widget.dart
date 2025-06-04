@@ -2,7 +2,7 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import '/flutter_flow/upload_data.dart';
 import '/custom_code/actions/index.dart' as actions;
-import '/custom_code/widgets/index.dart' as custom_widgets;
+import '/index.dart';
 import 'package:ff_theme/flutter_flow/flutter_flow_theme.dart';
 import 'package:flutter/material.dart';
 import 'editvideo_p_model.dart';
@@ -83,24 +83,6 @@ class _EditvideoPWidgetState extends State<EditvideoPWidget> {
                   child: Column(
                     mainAxisSize: MainAxisSize.max,
                     children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Color(0xFF00FBA7),
-                        ),
-                        child: Visibility(
-                          visible:
-                              _model.tempPath != null && _model.tempPath != '',
-                          child: Container(
-                            width: double.infinity,
-                            height: 500.0,
-                            child: custom_widgets.FFVideoEditorView(
-                              width: double.infinity,
-                              height: 500.0,
-                              videoPath: _model.tempPath!,
-                            ),
-                          ),
-                        ),
-                      ),
                       Padding(
                         padding: EdgeInsets.all(12.0),
                         child: Container(
@@ -114,8 +96,97 @@ class _EditvideoPWidgetState extends State<EditvideoPWidget> {
                               Padding(
                                 padding: EdgeInsets.all(12.0),
                                 child: FFButtonWidget(
-                                  onPressed: () {
-                                    print('Button pressed ...');
+                                  onPressed: () async {
+                                    final selectedMedia =
+                                        await selectMediaWithSourceBottomSheet(
+                                      context: context,
+                                      allowPhoto: false,
+                                      allowVideo: true,
+                                    );
+                                    if (selectedMedia != null &&
+                                        selectedMedia.every((m) =>
+                                            validateFileFormat(
+                                                m.storagePath, context))) {
+                                      safeSetState(() => _model
+                                          .isDataUploading_pickedFile = true);
+                                      var selectedUploadedFiles =
+                                          <FFUploadedFile>[];
+
+                                      try {
+                                        selectedUploadedFiles = selectedMedia
+                                            .map((m) => FFUploadedFile(
+                                                  name: m.storagePath
+                                                      .split('/')
+                                                      .last,
+                                                  bytes: m.bytes,
+                                                  height: m.dimensions?.height,
+                                                  width: m.dimensions?.width,
+                                                  blurHash: m.blurHash,
+                                                ))
+                                            .toList();
+                                      } finally {
+                                        _model.isDataUploading_pickedFile =
+                                            false;
+                                      }
+                                      if (selectedUploadedFiles.length ==
+                                          selectedMedia.length) {
+                                        safeSetState(() {
+                                          _model.uploadedLocalFile_pickedFile =
+                                              selectedUploadedFiles.first;
+                                        });
+                                      } else {
+                                        safeSetState(() {});
+                                        return;
+                                      }
+                                    }
+
+                                    _model.tempPathOutput =
+                                        await actions.bytesToTempPath(
+                                      _model.uploadedLocalFile_pickedFile,
+                                    );
+                                    if (_model.tempPathOutput != null &&
+                                        _model.tempPathOutput != '') {
+                                      _model.tempPath = _model.tempPathOutput;
+                                      safeSetState(() {});
+
+                                      context.pushNamed(
+                                        EditvideoppWidget.routeName,
+                                        queryParameters: {
+                                          'videoPath': serializeParam(
+                                            _model.tempPathOutput,
+                                            ParamType.String,
+                                          ),
+                                        }.withoutNulls,
+                                        extra: <String, dynamic>{
+                                          kTransitionInfoKey: TransitionInfo(
+                                            hasTransition: true,
+                                            transitionType:
+                                                PageTransitionType.bottomToTop,
+                                          ),
+                                        },
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Failed to process video',
+                                            style: TextStyle(
+                                              color:
+                                                  FlutterFlowTheme.of(context)
+                                                      .primaryText,
+                                            ),
+                                          ),
+                                          duration:
+                                              Duration(milliseconds: 4000),
+                                          backgroundColor:
+                                              FlutterFlowTheme.of(context)
+                                                  .secondary,
+                                        ),
+                                      );
+                                    }
+
+                                    safeSetState(() {});
                                   },
                                   text: FFLocalizations.of(context).getText(
                                     '6vxfvxd1' /* upload */,
@@ -147,57 +218,8 @@ class _EditvideoPWidgetState extends State<EditvideoPWidget> {
                               Padding(
                                 padding: EdgeInsets.all(12.0),
                                 child: FFButtonWidget(
-                                  onPressed: () async {
-                                    final selectedMedia =
-                                        await selectMediaWithSourceBottomSheet(
-                                      context: context,
-                                      allowPhoto: false,
-                                      allowVideo: true,
-                                    );
-                                    if (selectedMedia != null &&
-                                        selectedMedia.every((m) =>
-                                            validateFileFormat(
-                                                m.storagePath, context))) {
-                                      safeSetState(
-                                          () => _model.isDataUploading = true);
-                                      var selectedUploadedFiles =
-                                          <FFUploadedFile>[];
-
-                                      try {
-                                        selectedUploadedFiles = selectedMedia
-                                            .map((m) => FFUploadedFile(
-                                                  name: m.storagePath
-                                                      .split('/')
-                                                      .last,
-                                                  bytes: m.bytes,
-                                                  height: m.dimensions?.height,
-                                                  width: m.dimensions?.width,
-                                                  blurHash: m.blurHash,
-                                                ))
-                                            .toList();
-                                      } finally {
-                                        _model.isDataUploading = false;
-                                      }
-                                      if (selectedUploadedFiles.length ==
-                                          selectedMedia.length) {
-                                        safeSetState(() {
-                                          _model.uploadedLocalFile =
-                                              selectedUploadedFiles.first;
-                                        });
-                                      } else {
-                                        safeSetState(() {});
-                                        return;
-                                      }
-                                    }
-
-                                    _model.tempPathOutput =
-                                        await actions.bytesToTempPath(
-                                      _model.uploadedLocalFile,
-                                    );
-                                    _model.tempPath = _model.tempPathOutput;
-                                    safeSetState(() {});
-
-                                    safeSetState(() {});
+                                  onPressed: () {
+                                    print('Button pressed ...');
                                   },
                                   text: FFLocalizations.of(context).getText(
                                     'v6lswlmj' /* cancle */,

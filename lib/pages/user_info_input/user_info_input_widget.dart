@@ -652,10 +652,14 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                           _model.checkboxValue =
                                                               newValue!);
                                                     },
-                                                    side: BorderSide(
-                                                      width: 2,
-                                                      color: Color(0xFFFF0000),
-                                                    ),
+                                                    side: (Color(0xFFFF0000) !=
+                                                            null)
+                                                        ? BorderSide(
+                                                            width: 2,
+                                                            color: Color(
+                                                                0xFFFF0000),
+                                                          )
+                                                        : null,
                                                     activeColor:
                                                         Color(0xFFFFC8C8),
                                                     checkColor:

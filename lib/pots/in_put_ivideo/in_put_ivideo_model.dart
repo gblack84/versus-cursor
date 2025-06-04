@@ -13,10 +13,10 @@ class InPutIvideoModel extends FlutterFlowModel<InPutIvideoWidget> {
 
   ///  State fields for stateful widgets in this component.
 
-  bool isDataUploading = false;
-  FFUploadedFile uploadedLocalFile =
+  bool isDataUploading_uploadVideoG = false;
+  FFUploadedFile uploadedLocalFile_uploadVideoG =
       FFUploadedFile(bytes: Uint8List.fromList([]));
-  String uploadedFileUrl = '';
+  String uploadedFileUrl_uploadVideoG = '';
 
   // State field(s) for TextField widget.
   FocusNode? textFieldFocusNode1;

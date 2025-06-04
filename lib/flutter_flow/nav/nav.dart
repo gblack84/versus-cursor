@@ -10,6 +10,8 @@ import 'package:ff_theme/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 
 import '/index.dart';
+import 'package:image_cropper_library_llrw5e/index.dart'
+    as $image_cropper_library_llrw5e;
 
 export 'package:go_router/go_router.dart';
 export 'serialization_util.dart';
@@ -71,126 +73,152 @@ class AppStateNotifier extends ChangeNotifier {
   }
 }
 
-GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
-      initialLocation: '/',
-      debugLogDiagnostics: true,
-      refreshListenable: appStateNotifier,
-      navigatorKey: appNavigatorKey,
-      errorBuilder: (context, state) => appStateNotifier.loggedIn
-          ? TestpageSelectWidget()
-          : StartPageWidget(),
-      routes: [
-        FFRoute(
-          name: '_initialize',
-          path: '/',
-          builder: (context, _) => appStateNotifier.loggedIn
-              ? TestpageSelectWidget()
-              : StartPageWidget(),
-        ),
-        FFRoute(
-          name: LoginPageWidget.routeName,
-          path: LoginPageWidget.routePath,
-          builder: (context, params) => LoginPageWidget(),
-        ),
-        FFRoute(
-          name: CreateAccountWidget.routeName,
-          path: CreateAccountWidget.routePath,
-          builder: (context, params) => CreateAccountWidget(),
-        ),
-        FFRoute(
-          name: ForgotPasswordWidget.routeName,
-          path: ForgotPasswordWidget.routePath,
-          builder: (context, params) => ForgotPasswordWidget(),
-        ),
-        FFRoute(
-          name: UserInfoInputWidget.routeName,
-          path: UserInfoInputWidget.routePath,
-          requireAuth: true,
-          builder: (context, params) => UserInfoInputWidget(),
-        ),
-        FFRoute(
-          name: TestpageSelectWidget.routeName,
-          path: TestpageSelectWidget.routePath,
-          builder: (context, params) => TestpageSelectWidget(),
-        ),
-        FFRoute(
-          name: ExpertiseSelectWidget.routeName,
-          path: ExpertiseSelectWidget.routePath,
-          builder: (context, params) => ExpertiseSelectWidget(),
-        ),
-        FFRoute(
-          name: TestalgoriaWidget.routeName,
-          path: TestalgoriaWidget.routePath,
-          builder: (context, params) => TestalgoriaWidget(),
-        ),
-        FFRoute(
-          name: HobbiesSelectWidget.routeName,
-          path: HobbiesSelectWidget.routePath,
-          builder: (context, params) => HobbiesSelectWidget(),
-        ),
-        FFRoute(
-          name: AgrredSelectWidget.routeName,
-          path: AgrredSelectWidget.routePath,
-          builder: (context, params) => AgrredSelectWidget(),
-        ),
-        FFRoute(
-          name: StartPageWidget.routeName,
-          path: StartPageWidget.routePath,
-          builder: (context, params) => StartPageWidget(),
-        ),
-        FFRoute(
-          name: TestdividerWidget.routeName,
-          path: TestdividerWidget.routePath,
-          builder: (context, params) => TestdividerWidget(),
-        ),
-        FFRoute(
-          name: PhoneCreatAccountWidget.routeName,
-          path: PhoneCreatAccountWidget.routePath,
-          builder: (context, params) => PhoneCreatAccountWidget(
-            phoneNumberParam: params.getParam(
-              'phoneNumberParam',
-              ParamType.String,
-            ),
+GoRouter createRouter(AppStateNotifier appStateNotifier) {
+  $image_cropper_library_llrw5e.initializeRoutes(
+    homePageWidgetName: 'image_cropper_library_llrw5e.HomePage',
+  );
+
+  return GoRouter(
+    initialLocation: '/',
+    debugLogDiagnostics: true,
+    refreshListenable: appStateNotifier,
+    navigatorKey: appNavigatorKey,
+    errorBuilder: (context, state) =>
+        appStateNotifier.loggedIn ? TestpageSelectWidget() : StartPageWidget(),
+    routes: [
+      FFRoute(
+        name: '_initialize',
+        path: '/',
+        builder: (context, _) => appStateNotifier.loggedIn
+            ? TestpageSelectWidget()
+            : StartPageWidget(),
+      ),
+      FFRoute(
+        name: LoginPageWidget.routeName,
+        path: LoginPageWidget.routePath,
+        builder: (context, params) => LoginPageWidget(),
+      ),
+      FFRoute(
+        name: CreateAccountWidget.routeName,
+        path: CreateAccountWidget.routePath,
+        builder: (context, params) => CreateAccountWidget(),
+      ),
+      FFRoute(
+        name: ForgotPasswordWidget.routeName,
+        path: ForgotPasswordWidget.routePath,
+        builder: (context, params) => ForgotPasswordWidget(),
+      ),
+      FFRoute(
+        name: UserInfoInputWidget.routeName,
+        path: UserInfoInputWidget.routePath,
+        requireAuth: true,
+        builder: (context, params) => UserInfoInputWidget(),
+      ),
+      FFRoute(
+        name: TestpageSelectWidget.routeName,
+        path: TestpageSelectWidget.routePath,
+        builder: (context, params) => TestpageSelectWidget(),
+      ),
+      FFRoute(
+        name: ExpertiseSelectWidget.routeName,
+        path: ExpertiseSelectWidget.routePath,
+        builder: (context, params) => ExpertiseSelectWidget(),
+      ),
+      FFRoute(
+        name: TestalgoriaWidget.routeName,
+        path: TestalgoriaWidget.routePath,
+        builder: (context, params) => TestalgoriaWidget(),
+      ),
+      FFRoute(
+        name: HobbiesSelectWidget.routeName,
+        path: HobbiesSelectWidget.routePath,
+        builder: (context, params) => HobbiesSelectWidget(),
+      ),
+      FFRoute(
+        name: AgrredSelectWidget.routeName,
+        path: AgrredSelectWidget.routePath,
+        builder: (context, params) => AgrredSelectWidget(),
+      ),
+      FFRoute(
+        name: StartPageWidget.routeName,
+        path: StartPageWidget.routePath,
+        builder: (context, params) => StartPageWidget(),
+      ),
+      FFRoute(
+        name: TestdividerWidget.routeName,
+        path: TestdividerWidget.routePath,
+        builder: (context, params) => TestdividerWidget(),
+      ),
+      FFRoute(
+        name: PhoneCreatAccountWidget.routeName,
+        path: PhoneCreatAccountWidget.routePath,
+        builder: (context, params) => PhoneCreatAccountWidget(
+          phoneNumberParam: params.getParam(
+            'phoneNumberParam',
+            ParamType.String,
           ),
         ),
-        FFRoute(
-          name: PhonelogeinpincodeWidget.routeName,
-          path: PhonelogeinpincodeWidget.routePath,
-          builder: (context, params) => PhonelogeinpincodeWidget(
-            phoneNumberParam: params.getParam(
-              'phoneNumberParam',
-              ParamType.String,
-            ),
+      ),
+      FFRoute(
+        name: PhonelogeinpincodeWidget.routeName,
+        path: PhonelogeinpincodeWidget.routePath,
+        builder: (context, params) => PhonelogeinpincodeWidget(
+          phoneNumberParam: params.getParam(
+            'phoneNumberParam',
+            ParamType.String,
           ),
         ),
-        FFRoute(
-          name: BlankpppWidget.routeName,
-          path: BlankpppWidget.routePath,
-          builder: (context, params) => BlankpppWidget(),
+      ),
+      FFRoute(
+        name: BlankpppWidget.routeName,
+        path: BlankpppWidget.routePath,
+        builder: (context, params) => BlankpppWidget(),
+      ),
+      FFRoute(
+        name: HomeAndPostsWidget.routeName,
+        path: HomeAndPostsWidget.routePath,
+        builder: (context, params) => HomeAndPostsWidget(),
+      ),
+      FFRoute(
+        name: HomeAndPostsCopyWidget.routeName,
+        path: HomeAndPostsCopyWidget.routePath,
+        builder: (context, params) => HomeAndPostsCopyWidget(),
+      ),
+      FFRoute(
+        name: EditvideoPWidget.routeName,
+        path: EditvideoPWidget.routePath,
+        builder: (context, params) => EditvideoPWidget(),
+      ),
+      FFRoute(
+        name: EditvideoppWidget.routeName,
+        path: EditvideoppWidget.routePath,
+        builder: (context, params) => EditvideoppWidget(
+          videoPath: params.getParam(
+            'videoPath',
+            ParamType.String,
+          ),
         ),
-        FFRoute(
-          name: HomeAndPostsWidget.routeName,
-          path: HomeAndPostsWidget.routePath,
-          builder: (context, params) => HomeAndPostsWidget(),
-        ),
-        FFRoute(
-          name: HomeAndPostsCopyWidget.routeName,
-          path: HomeAndPostsCopyWidget.routePath,
-          builder: (context, params) => HomeAndPostsCopyWidget(),
-        ),
-        FFRoute(
-          name: EditvideoPWidget.routeName,
-          path: EditvideoPWidget.routePath,
-          builder: (context, params) => EditvideoPWidget(),
-        ),
-        FFRoute(
-          name: EditvideoppWidget.routeName,
-          path: EditvideoppWidget.routePath,
-          builder: (context, params) => EditvideoppWidget(),
-        )
-      ].map((r) => r.toRoute(appStateNotifier)).toList(),
-      observers: [routeObserver],
-    );
+      ),
+      FFRoute(
+        name: EdittextppWidget.routeName,
+        path: EdittextppWidget.routePath,
+        builder: (context, params) => EdittextppWidget(),
+      ),
+      FFRoute(
+        name: EditcoverppWidget.routeName,
+        path: EditcoverppWidget.routePath,
+        builder: (context, params) => EditcoverppWidget(),
+      ),
+      FFRoute(
+        name: $image_cropper_library_llrw5e.HomePageWidget.routeName,
+        path: $image_cropper_library_llrw5e.HomePageWidget.routePath,
+        builder: (context, params) =>
+            $image_cropper_library_llrw5e.HomePageWidget(),
+      )
+    ].map((r) => r.toRoute(appStateNotifier)).toList(),
+    observers: [routeObserver],
+  );
+}
 
 extension NavParamExtensions on Map<String, String?> {
   Map<String, String> get withoutNulls => Map.fromEntries(

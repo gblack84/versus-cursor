@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 class InPutImageModel extends FlutterFlowModel<InPutImageWidget> {
   ///  State fields for stateful widgets in this component.
 
-  bool isDataUploading1 = false;
-  List<FFUploadedFile> uploadedLocalFiles1 = [];
-  List<String> uploadedFileUrls1 = [];
+  bool isDataUploading_uploadImageG = false;
+  List<FFUploadedFile> uploadedLocalFiles_uploadImageG = [];
+  List<String> uploadedFileUrls_uploadImageG = [];
 
-  bool isDataUploading2 = false;
-  FFUploadedFile uploadedLocalFile2 =
+  bool isDataUploading_uploadImageC = false;
+  FFUploadedFile uploadedLocalFile_uploadImageC =
       FFUploadedFile(bytes: Uint8List.fromList([]));
-  String uploadedFileUrl2 = '';
+  String uploadedFileUrl_uploadImageC = '';
 
   @override
   void initState(BuildContext context) {}

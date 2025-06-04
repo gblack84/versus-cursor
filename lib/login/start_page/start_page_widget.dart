@@ -283,7 +283,6 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                         ),
                                         icon: FaIcon(
                                           FontAwesomeIcons.apple,
-                                          color: Color(0xFF14181B),
                                           size: 20.0,
                                         ),
                                         options: FFButtonOptions(
@@ -295,6 +294,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                           iconPadding:
                                               EdgeInsetsDirectional.fromSTEB(
                                                   0.0, 0.0, 0.0, 0.0),
+                                          iconColor: Color(0xFF14181B),
                                           color: Colors.white,
                                           textStyle: FlutterFlowTheme.of(
                                                   context)
@@ -426,7 +426,6 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                   ),
                                   icon: FaIcon(
                                     FontAwesomeIcons.facebookSquare,
-                                    color: Colors.white,
                                     size: 20.0,
                                   ),
                                   options: FFButtonOptions(
@@ -436,6 +435,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                         0.0, 0.0, 0.0, 0.0),
                                     iconPadding: EdgeInsetsDirectional.fromSTEB(
                                         0.0, 0.0, 0.0, 0.0),
+                                    iconColor: Colors.white,
                                     color: Color(0xFF005CFF),
                                     textStyle: FlutterFlowTheme.of(context)
                                         .bodyMedium
@@ -492,7 +492,6 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                 ),
                                 icon: FaIcon(
                                   FontAwesomeIcons.instagram,
-                                  color: Colors.white,
                                   size: 20.0,
                                 ),
                                 options: FFButtonOptions(
@@ -502,6 +501,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                       0.0, 0.0, 0.0, 0.0),
                                   iconPadding: EdgeInsetsDirectional.fromSTEB(
                                       0.0, 0.0, 0.0, 0.0),
+                                  iconColor: Colors.white,
                                   color: Color(0xFFFF8455),
                                   textStyle: FlutterFlowTheme.of(context)
                                       .bodyMedium

@@ -2,33 +2,28 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/custom_code/widgets/index.dart' as custom_widgets;
 import 'package:ff_theme/flutter_flow/flutter_flow_theme.dart';
 import 'package:flutter/material.dart';
-import 'editvideopp_model.dart';
-export 'editvideopp_model.dart';
+import 'editcoverpp_model.dart';
+export 'editcoverpp_model.dart';
 
-class EditvideoppWidget extends StatefulWidget {
-  const EditvideoppWidget({
-    super.key,
-    required this.videoPath,
-  });
+class EditcoverppWidget extends StatefulWidget {
+  const EditcoverppWidget({super.key});
 
-  final String? videoPath;
-
-  static String routeName = 'editvideopp';
-  static String routePath = '/editvideopp';
+  static String routeName = 'editcoverpp';
+  static String routePath = '/editcoverpp';
 
   @override
-  State<EditvideoppWidget> createState() => _EditvideoppWidgetState();
+  State<EditcoverppWidget> createState() => _EditcoverppWidgetState();
 }
 
-class _EditvideoppWidgetState extends State<EditvideoppWidget> {
-  late EditvideoppModel _model;
+class _EditcoverppWidgetState extends State<EditcoverppWidget> {
+  late EditcoverppModel _model;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
-    _model = createModel(context, () => EditvideoppModel());
+    _model = createModel(context, () => EditcoverppModel());
 
     WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
   }
@@ -61,10 +56,9 @@ class _EditvideoppWidgetState extends State<EditvideoppWidget> {
             child: Container(
               width: double.infinity,
               height: double.infinity,
-              child: custom_widgets.NewFFVideoEditorView(
+              child: custom_widgets.FFCoverEditorView(
                 width: double.infinity,
                 height: double.infinity,
-                videoPath: widget.videoPath!,
               ),
             ),
           ),

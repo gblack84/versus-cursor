@@ -561,7 +561,6 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                       ),
                                       icon: Icon(
                                         Icons.alternate_email,
-                                        color: Colors.white,
                                         size: 16.0,
                                       ),
                                       options: FFButtonOptions(
@@ -573,6 +572,7 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                         iconPadding:
                                             EdgeInsetsDirectional.fromSTEB(
                                                 0.0, 0.0, 0.0, 0.0),
+                                        iconColor: Colors.white,
                                         color: Colors.black,
                                         textStyle: FlutterFlowTheme.of(context)
                                             .titleSmall
@@ -622,7 +622,6 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                   ),
                                   icon: Icon(
                                     Icons.phone_iphone,
-                                    color: Colors.white,
                                     size: 16.0,
                                   ),
                                   options: FFButtonOptions(
@@ -633,6 +632,7 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                     iconAlignment: IconAlignment.end,
                                     iconPadding: EdgeInsetsDirectional.fromSTEB(
                                         0.0, 0.0, 0.0, 0.0),
+                                    iconColor: Colors.white,
                                     color: Colors.black,
                                     textStyle: FlutterFlowTheme.of(context)
                                         .titleSmall

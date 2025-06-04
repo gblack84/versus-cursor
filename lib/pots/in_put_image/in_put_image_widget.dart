@@ -79,9 +79,9 @@ class _InPutImageWidgetState extends State<InPutImageWidget> {
                       child: FFButtonWidget(
                         onPressed: () async {
                           safeSetState(() {
-                            _model.isDataUploading1 = false;
-                            _model.uploadedLocalFiles1 = [];
-                            _model.uploadedFileUrls1 = [];
+                            _model.isDataUploading_uploadImageG = false;
+                            _model.uploadedLocalFiles_uploadImageG = [];
+                            _model.uploadedFileUrls_uploadImageG = [];
                           });
 
                           final selectedMedia = await selectMedia(
@@ -94,7 +94,8 @@ class _InPutImageWidgetState extends State<InPutImageWidget> {
                           if (selectedMedia != null &&
                               selectedMedia.every((m) =>
                                   validateFileFormat(m.storagePath, context))) {
-                            safeSetState(() => _model.isDataUploading1 = true);
+                            safeSetState(() =>
+                                _model.isDataUploading_uploadImageG = true);
                             var selectedUploadedFiles = <FFUploadedFile>[];
 
                             var downloadUrls = <String>[];
@@ -119,15 +120,16 @@ class _InPutImageWidgetState extends State<InPutImageWidget> {
                                   .map((u) => u!)
                                   .toList();
                             } finally {
-                              _model.isDataUploading1 = false;
+                              _model.isDataUploading_uploadImageG = false;
                             }
                             if (selectedUploadedFiles.length ==
                                     selectedMedia.length &&
                                 downloadUrls.length == selectedMedia.length) {
                               safeSetState(() {
-                                _model.uploadedLocalFiles1 =
+                                _model.uploadedLocalFiles_uploadImageG =
                                     selectedUploadedFiles;
-                                _model.uploadedFileUrls1 = downloadUrls;
+                                _model.uploadedFileUrls_uploadImageG =
+                                    downloadUrls;
                               });
                             } else {
                               safeSetState(() {});
@@ -136,12 +138,12 @@ class _InPutImageWidgetState extends State<InPutImageWidget> {
                           }
 
                           if (FFAppState().upLoadImageEditing == 0) {
-                            FFAppState().addToUpLoadImageA(
-                                _model.uploadedFileUrls1.firstOrNull!);
+                            FFAppState().addToUpLoadImageA(_model
+                                .uploadedFileUrls_uploadImageG.firstOrNull!);
                             safeSetState(() {});
                           } else {
-                            FFAppState().addToUpLoadImageB(
-                                _model.uploadedFileUrls1.firstOrNull!);
+                            FFAppState().addToUpLoadImageB(_model
+                                .uploadedFileUrls_uploadImageG.firstOrNull!);
                             safeSetState(() {});
                           }
                         },
@@ -175,10 +177,10 @@ class _InPutImageWidgetState extends State<InPutImageWidget> {
                       child: FFButtonWidget(
                         onPressed: () async {
                           safeSetState(() {
-                            _model.isDataUploading2 = false;
-                            _model.uploadedLocalFile2 =
+                            _model.isDataUploading_uploadImageC = false;
+                            _model.uploadedLocalFile_uploadImageC =
                                 FFUploadedFile(bytes: Uint8List.fromList([]));
-                            _model.uploadedFileUrl2 = '';
+                            _model.uploadedFileUrl_uploadImageC = '';
                           });
 
                           final selectedMedia = await selectMedia(
@@ -190,7 +192,8 @@ class _InPutImageWidgetState extends State<InPutImageWidget> {
                           if (selectedMedia != null &&
                               selectedMedia.every((m) =>
                                   validateFileFormat(m.storagePath, context))) {
-                            safeSetState(() => _model.isDataUploading2 = true);
+                            safeSetState(() =>
+                                _model.isDataUploading_uploadImageC = true);
                             var selectedUploadedFiles = <FFUploadedFile>[];
 
                             var downloadUrls = <String>[];
@@ -215,15 +218,16 @@ class _InPutImageWidgetState extends State<InPutImageWidget> {
                                   .map((u) => u!)
                                   .toList();
                             } finally {
-                              _model.isDataUploading2 = false;
+                              _model.isDataUploading_uploadImageC = false;
                             }
                             if (selectedUploadedFiles.length ==
                                     selectedMedia.length &&
                                 downloadUrls.length == selectedMedia.length) {
                               safeSetState(() {
-                                _model.uploadedLocalFile2 =
+                                _model.uploadedLocalFile_uploadImageC =
                                     selectedUploadedFiles.first;
-                                _model.uploadedFileUrl2 = downloadUrls.first;
+                                _model.uploadedFileUrl_uploadImageC =
+                                    downloadUrls.first;
                               });
                             } else {
                               safeSetState(() {});
@@ -232,12 +236,12 @@ class _InPutImageWidgetState extends State<InPutImageWidget> {
                           }
 
                           if (FFAppState().upLoadImageEditing == 0) {
-                            FFAppState().addToUpLoadImageA(
-                                _model.uploadedFileUrls1.firstOrNull!);
+                            FFAppState().addToUpLoadImageA(_model
+                                .uploadedFileUrls_uploadImageG.firstOrNull!);
                             safeSetState(() {});
                           } else {
-                            FFAppState().addToUpLoadImageB(
-                                _model.uploadedFileUrls1.firstOrNull!);
+                            FFAppState().addToUpLoadImageB(_model
+                                .uploadedFileUrls_uploadImageG.firstOrNull!);
                             safeSetState(() {});
                           }
                         },

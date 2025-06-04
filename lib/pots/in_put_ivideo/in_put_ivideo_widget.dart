@@ -92,10 +92,11 @@ class _InPutIvideoWidgetState extends State<InPutIvideoWidget> {
                               child: FFButtonWidget(
                                 onPressed: () async {
                                   safeSetState(() {
-                                    _model.isDataUploading = false;
-                                    _model.uploadedLocalFile = FFUploadedFile(
-                                        bytes: Uint8List.fromList([]));
-                                    _model.uploadedFileUrl = '';
+                                    _model.isDataUploading_uploadVideoG = false;
+                                    _model.uploadedLocalFile_uploadVideoG =
+                                        FFUploadedFile(
+                                            bytes: Uint8List.fromList([]));
+                                    _model.uploadedFileUrl_uploadVideoG = '';
                                   });
 
                                   _model.mediamode = 'gallery';
@@ -110,8 +111,8 @@ class _InPutIvideoWidgetState extends State<InPutIvideoWidget> {
                                       selectedMedia.every((m) =>
                                           validateFileFormat(
                                               m.storagePath, context))) {
-                                    safeSetState(
-                                        () => _model.isDataUploading = true);
+                                    safeSetState(() => _model
+                                        .isDataUploading_uploadVideoG = true);
                                     var selectedUploadedFiles =
                                         <FFUploadedFile>[];
 
@@ -139,16 +140,17 @@ class _InPutIvideoWidgetState extends State<InPutIvideoWidget> {
                                           .map((u) => u!)
                                           .toList();
                                     } finally {
-                                      _model.isDataUploading = false;
+                                      _model.isDataUploading_uploadVideoG =
+                                          false;
                                     }
                                     if (selectedUploadedFiles.length ==
                                             selectedMedia.length &&
                                         downloadUrls.length ==
                                             selectedMedia.length) {
                                       safeSetState(() {
-                                        _model.uploadedLocalFile =
+                                        _model.uploadedLocalFile_uploadVideoG =
                                             selectedUploadedFiles.first;
-                                        _model.uploadedFileUrl =
+                                        _model.uploadedFileUrl_uploadVideoG =
                                             downloadUrls.first;
                                       });
                                     } else {
@@ -159,11 +161,11 @@ class _InPutIvideoWidgetState extends State<InPutIvideoWidget> {
 
                                   if (FFAppState().UpLoadVideoEdit == 0) {
                                     FFAppState().UpLoadvideoA =
-                                        _model.uploadedFileUrl;
+                                        _model.uploadedFileUrl_uploadVideoG;
                                     safeSetState(() {});
                                   } else {
                                     FFAppState().UpLoadvideoB =
-                                        _model.uploadedFileUrl;
+                                        _model.uploadedFileUrl_uploadVideoG;
                                     safeSetState(() {});
                                   }
                                 },

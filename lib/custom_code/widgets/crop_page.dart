@@ -10,11 +10,16 @@ import 'package:flutter/material.dart';
 // Begin custom widget code
 // DO NOT REMOVE OR MODIFY THE CODE ABOVE!
 
-import '/custom_code/widgets/index.dart';
-import '/custom_code/actions/index.dart';
-import '/flutter_flow/custom_functions.dart';
-
 import 'package:video_editor/video_editor.dart';
+
+/* ───── 팔레트 상수 ───── */
+const kBg = Colors.black; // 배경
+const kAccent = Color(0xFFFFD600); // 포인트 노랑
+const kBorder = kAccent; // 버튼 테두리
+const kTextDim = Colors.white54; // 흐린 텍스트
+/* ────────────────────── */
+
+// Displays controls for cropping a selected video segment.
 
 class CropPage extends StatefulWidget {
   /// ⬇️ ➊ width / height 추가 (nullable)

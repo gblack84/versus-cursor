@@ -10,10 +10,10 @@ class CharacterDetailPageModel
 
   ///  State fields for stateful widgets in this component.
 
-  bool isDataUploading = false;
-  FFUploadedFile uploadedLocalFile =
+  bool isDataUploading_userUploadProfileImage = false;
+  FFUploadedFile uploadedLocalFile_userUploadProfileImage =
       FFUploadedFile(bytes: Uint8List.fromList([]));
-  String uploadedFileUrl = '';
+  String uploadedFileUrl_userUploadProfileImage = '';
 
   @override
   void initState(BuildContext context) {}

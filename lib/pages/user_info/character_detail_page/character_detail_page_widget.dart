@@ -234,7 +234,8 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                   if (selectedMedia != null &&
                       selectedMedia.every(
                           (m) => validateFileFormat(m.storagePath, context))) {
-                    safeSetState(() => _model.isDataUploading = true);
+                    safeSetState(() =>
+                        _model.isDataUploading_userUploadProfileImage = true);
                     var selectedUploadedFiles = <FFUploadedFile>[];
 
                     var downloadUrls = <String>[];
@@ -258,13 +259,15 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                           .map((u) => u!)
                           .toList();
                     } finally {
-                      _model.isDataUploading = false;
+                      _model.isDataUploading_userUploadProfileImage = false;
                     }
                     if (selectedUploadedFiles.length == selectedMedia.length &&
                         downloadUrls.length == selectedMedia.length) {
                       safeSetState(() {
-                        _model.uploadedLocalFile = selectedUploadedFiles.first;
-                        _model.uploadedFileUrl = downloadUrls.first;
+                        _model.uploadedLocalFile_userUploadProfileImage =
+                            selectedUploadedFiles.first;
+                        _model.uploadedFileUrl_userUploadProfileImage =
+                            downloadUrls.first;
                       });
                     } else {
                       safeSetState(() {});
@@ -273,7 +276,7 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                   }
 
                   await currentUserReference!.update(createUsersRecordData(
-                    photoUrl: _model.uploadedFileUrl,
+                    photoUrl: _model.uploadedFileUrl_userUploadProfileImage,
                   ));
                   Navigator.pop(context);
                 },

@@ -12,9 +12,9 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
-Future<String> bytesToTempPath(FFUploadedFile file) async {
+Future<String?> bytesToTempPath(FFUploadedFile file) async {
   if (file.bytes == null) {
-    throw Exception('Video bytes are null');
+    return null;
   }
 
   // 임시 디렉터리 결정

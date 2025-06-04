@@ -12,6 +12,8 @@ import 'package:flutter/material.dart';
 
 /* 외부 import */
 
+import '/custom_code/actions/postencode.dart' as ca;
+import 'dart:convert';
 import 'package:video_editor/video_editor.dart';
 
 /* ─ 팔레트 ─ */
@@ -144,36 +146,50 @@ class _FFCoverEditorViewState extends State<FFCoverEditorView> {
 
   /* ─ Cloud Run 업로드 ─ */
   Future<void> _exportMp4() async {
-    // ① 잘라낸 구간 길이(ms)
+    // ① 영상 길이(ms)
     final startMs = widget.params['start_ms'] as int;
     final endMs = widget.params['end_ms'] as int;
     final durationMs = endMs - startMs;
 
-    // ② 선택된 커버 썸네일 비율 (0 ~ 1)
-    final Object? sel = widget.controller.selectedCoverVal; // double?  또는 null
-    final double ratio = sel is num ? (sel as num).toDouble() : 0.0;
+    // ② 선택된 커버 비율(0-1)
+    final Object? sel = widget.controller.selectedCoverVal;
+    final double ratio = sel is num ? sel.toDouble() : 0.0;
 
-    // ③ 비율 → 밀리초
+    // ③ 커버 프레임(ms)
     final coverMs = startMs + (durationMs * ratio).round();
 
-    // ④ 파라미터 합치고 Cloud Run 호출
+    // ④ 최종 파라미터(JSON)
     final params = {
       ...widget.params,
       'cover_frame_ms': coverMs,
     };
 
     _snack('Encoding… 잠시만 기다려 주세요');
-    final url = await postencode(
-      widget.videoPath, // String
-      jsonEncode(params), // String  ← 반드시 JSON 문자열로!
+
+    /* ─ Cloud Run 요청 ─ */
+    final url = await ca.postencode(
+      widget.videoPath,
+      jsonEncode(params), // 반드시 JSON 문자열!
     );
+
+    /* ─ 결과 처리 ─ */
+
+    // ■ 실패
     if (url == null) {
       _snack('업로드/인코딩 실패 😢');
       return;
     }
 
+    // ■ 성공
+    final result = {
+      'url': url, // 최종 MP4
+      'thumbUrl': params['cover_url'], // ← Cloud Run 응답에 넣어두기로 합의했다면
+      'params': jsonEncode(params), // 편집 파라미터
+      'duration': durationMs, // (선택) 길이
+    };
+
     _snack('완료!');
-    if (mounted) Navigator.pop(context, url);
+    if (mounted) Navigator.pop(context, result);
   }
 
   void _snack(String m) =>

@@ -10,29 +10,31 @@ import 'package:flutter/material.dart';
 // Begin custom widget code
 // DO NOT REMOVE OR MODIFY THE CODE ABOVE!
 
-/* ── 외부 ── */
 import 'package:video_editor/video_editor.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-/* 팔레트 */
+/* ── 팔레트 ── */
 const kBg = Colors.black;
 const kAccent = Color(0xFFFFD600);
 const kTextDim = Colors.white54;
 
+/// ──────────────────────────────────────────── │ FFTextOverlayView
 class FFTextOverlayView extends StatefulWidget {
   const FFTextOverlayView({
     super.key,
     required this.controller,
-    required this.videoPath, // ➊ mp4 경로 추가
-    required this.baseParams, // ➋ NewFFVideoEditorView 에서 받은 Map
+    required this.videoPath,
+    required this.baseParams,
+    required this.videoDocRef,
     this.width,
     this.height,
   });
 
   final VideoEditorController controller;
-  final String videoPath; // ➊
-  final Map<String, dynamic> baseParams; // ➋
-  final double? width;
-  final double? height;
+  final String videoPath;
+  final Map<String, dynamic> baseParams;
+  final DocumentReference videoDocRef; // 최종 타입 수정
+  final double? width, height;
 
   @override
   State<FFTextOverlayView> createState() => _FFTextOverlayViewState();
@@ -48,16 +50,15 @@ class _FFTextOverlayViewState extends State<FFTextOverlayView> {
     super.dispose();
   }
 
+  /* ────────── UI ────────── */
   @override
   Widget build(BuildContext context) {
     final w = widget.width ?? MediaQuery.of(context).size.width;
     final h = widget.height ?? MediaQuery.of(context).size.height;
 
-    return Container(
-      color: kBg,
-      width: w,
-      height: h,
-      child: Column(
+    return Scaffold(
+      backgroundColor: kBg,
+      body: Column(
         children: [
           _topBar(context, w, h),
           Expanded(child: _preview()),
@@ -67,7 +68,6 @@ class _FFTextOverlayViewState extends State<FFTextOverlayView> {
     );
   }
 
-  /* ───── 상단바 ───── */
   Widget _topBar(BuildContext ctx, double w, double h) => SafeArea(
         child: Row(
           children: [
@@ -81,12 +81,11 @@ class _FFTextOverlayViewState extends State<FFTextOverlayView> {
                 foregroundColor: kAccent,
                 side: const BorderSide(color: kAccent),
               ),
+              child: const Text('NEXT', style: TextStyle(fontSize: 14)),
               onPressed: () {
-                /* 1) overlay 좌표(비율) 계산 */
                 final overlayX = _pos.dx / w;
                 final overlayY = _pos.dy / h;
 
-                /* 2) 파라미터 합치기 */
                 final params = {
                   ...widget.baseParams,
                   'overlay_text': _textCtl.text,
@@ -94,28 +93,26 @@ class _FFTextOverlayViewState extends State<FFTextOverlayView> {
                   'overlay_y': overlayY,
                 };
 
-                /* 3) 다음(커버) 페이지로 */
                 Navigator.push(
                   ctx,
                   MaterialPageRoute(
                     builder: (_) => FFCoverEditorView(
                       controller: widget.controller,
-                      videoPath: widget.videoPath, // 그대로 전달
+                      videoPath: widget.videoPath,
                       params: params,
+                      videoDocRef: widget.videoDocRef,
                       width: widget.width,
                       height: widget.height,
                     ),
                   ),
                 );
               },
-              child: const Text('NEXT', style: TextStyle(fontSize: 14)),
             ),
             const SizedBox(width: 8),
           ],
         ),
       );
 
-  /* ───── 미리보기 ───── */
   Widget _preview() => Stack(
         children: [
           Center(child: CropGridViewer.preview(controller: widget.controller)),
@@ -123,7 +120,7 @@ class _FFTextOverlayViewState extends State<FFTextOverlayView> {
             left: _pos.dx,
             top: _pos.dy,
             child: GestureDetector(
-              onPanUpdate: (d) => setState(() => _pos += d.delta),
+              onPanUpdate: (details) => setState(() => _pos += details.delta),
               child: Text(
                 _textCtl.text,
                 style: const TextStyle(
@@ -137,7 +134,6 @@ class _FFTextOverlayViewState extends State<FFTextOverlayView> {
         ],
       );
 
-  /* ───── 입력창 ───── */
   Widget _inputField() => Padding(
         padding: const EdgeInsets.all(12),
         child: TextField(

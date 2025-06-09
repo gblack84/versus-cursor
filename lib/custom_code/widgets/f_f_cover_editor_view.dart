@@ -10,23 +10,33 @@ import 'package:flutter/material.dart';
 // Begin custom widget code
 // DO NOT REMOVE OR MODIFY THE CODE ABOVE!
 
-/* 외부 import */
-
-import '/custom_code/actions/postencode.dart' as ca;
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:video_editor/video_editor.dart';
+import '/custom_code/actions/postencode.dart' as ca;
 
-/* ─ 팔레트 ─ */
+/* ─── palette ─── */
 const kBg = Colors.black;
 const kAccent = Color(0xFFFFD600);
 const kTextDim = Colors.white54;
+
+/* ─── small helper ─── */
+int _toInt(dynamic v) {
+  if (v == null) return 0;
+  if (v is int) return v;
+  if (v is num) return v.toInt();
+  return int.tryParse(v.toString()) ?? 0;
+}
+
+/*────────────────────────────────────────────*/
 
 class FFCoverEditorView extends StatefulWidget {
   const FFCoverEditorView({
     super.key,
     required this.controller,
     required this.videoPath,
-    required this.params, // trim / crop / rotate / overlay
+    required this.params,
+    required this.videoDocRef,
     this.width,
     this.height,
   });
@@ -34,28 +44,26 @@ class FFCoverEditorView extends StatefulWidget {
   final VideoEditorController controller;
   final String videoPath;
   final Map<String, dynamic> params;
+  final DocumentReference videoDocRef; // 최종 타입 수정
   final double? width, height;
 
   @override
   State<FFCoverEditorView> createState() => _FFCoverEditorViewState();
 }
 
+/*────────────────────────────────────────────*/
+
 class _FFCoverEditorViewState extends State<FFCoverEditorView> {
-  final _textCtl = TextEditingController();
-  Offset _pos = Offset.zero;
+  bool _isExporting = false;
 
   @override
   void dispose() {
-    _textCtl.dispose();
     super.dispose();
   }
 
-  /* UI */
+  /*───────────────────  UI  ───────────────────*/
   @override
   Widget build(BuildContext context) {
-    final w = widget.width ?? MediaQuery.of(context).size.width;
-    final h = widget.height ?? MediaQuery.of(context).size.height;
-
     return Scaffold(
       backgroundColor: kBg,
       body: SafeArea(
@@ -70,63 +78,47 @@ class _FFCoverEditorViewState extends State<FFCoverEditorView> {
     );
   }
 
-  /* ─ 상단 바 ─ */
+  /*── top bar ─*/
   Widget _topBar() => Row(
         children: [
           IconButton(
             icon: const Icon(Icons.close, color: kAccent),
-            onPressed: () => Navigator.pop(context),
+            onPressed: _isExporting ? null : () => Navigator.pop(context),
           ),
           const Spacer(),
           TextButton(
             style: TextButton.styleFrom(
               foregroundColor: kAccent,
               side: const BorderSide(color: kAccent),
+              disabledForegroundColor: kTextDim.withOpacity(0.5),
             ),
-            onPressed: _exportMp4,
-            child: const Text('EXPORT', style: TextStyle(fontSize: 14)),
+            onPressed: _isExporting ? null : _exportMp4,
+            child: _isExporting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(kAccent),
+                    ),
+                  )
+                : const Text('EXPORT', style: TextStyle(fontSize: 14)),
           ),
           const SizedBox(width: 12),
         ],
       );
 
-  /* ─ 미리보기 ─ */
+  /*── preview ─*/
   Widget _preview() => Stack(
+        alignment: Alignment.center,
         children: [
-          Center(child: CoverViewer(controller: widget.controller)),
-          Positioned(
-            left: _pos.dx,
-            top: _pos.dy,
-            child: GestureDetector(
-              onPanUpdate: (d) => setState(() => _pos += d.delta),
-              child: Text(
-                _textCtl.text,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  shadows: [Shadow(blurRadius: 3, color: Colors.black)],
-                ),
-              ),
-            ),
-          ),
+          CoverViewer(controller: widget.controller),
         ],
       );
 
-  /* ─ 썸네일 + 텍스트 입력 ─ */
+  /*── thumbnail bar ─*/
   Widget _selectionBar() => Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: TextField(
-              controller: _textCtl,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                hintText: 'Enter text',
-                hintStyle: TextStyle(color: kTextDim),
-              ),
-              onChanged: (_) => setState(() {}),
-            ),
-          ),
           SizedBox(
             height: 100,
             child: CoverSelection(
@@ -144,54 +136,72 @@ class _FFCoverEditorViewState extends State<FFCoverEditorView> {
         ],
       );
 
-  /* ─ Cloud Run 업로드 ─ */
+  /*─────────────────  핵심 로직 (수정됨) ─────────────────*/
   Future<void> _exportMp4() async {
-    // ① 영상 길이(ms)
-    final startMs = widget.params['start_ms'] as int;
-    final endMs = widget.params['end_ms'] as int;
-    final durationMs = endMs - startMs;
+    if (_isExporting) return;
+    setState(() => _isExporting = true);
 
-    // ② 선택된 커버 비율(0-1)
-    final Object? sel = widget.controller.selectedCoverVal;
-    final double ratio = sel is num ? sel.toDouble() : 0.0;
+    try {
+      final int startMs = _toInt(widget.params['start_ms']);
+      final int endMs = _toInt(widget.params['end_ms']);
+      final int durationMs = endMs - startMs;
 
-    // ③ 커버 프레임(ms)
-    final coverMs = startMs + (durationMs * ratio).round();
+      final double ratio =
+          (widget.controller.selectedCoverVal as num?)?.toDouble() ?? 0.0;
+      final int coverMs = startMs + (durationMs * ratio).round();
 
-    // ④ 최종 파라미터(JSON)
-    final params = {
-      ...widget.params,
-      'cover_frame_ms': coverMs,
-    };
+      final params = {...widget.params, 'cover_frame_ms': coverMs};
 
-    _snack('Encoding… 잠시만 기다려 주세요');
+      _snack('Encoding… 잠시만 기다려 주세요');
 
-    /* ─ Cloud Run 요청 ─ */
-    final url = await ca.postencode(
-      widget.videoPath,
-      jsonEncode(params), // 반드시 JSON 문자열!
-    );
+      final String? responseJson =
+          await ca.postencode(widget.videoPath, jsonEncode(params));
 
-    /* ─ 결과 처리 ─ */
+      if (responseJson == null) {
+        _snack('업로드/인코딩 실패 😢');
+        if (mounted) setState(() => _isExporting = false);
+        return;
+      }
 
-    // ■ 실패
-    if (url == null) {
-      _snack('업로드/인코딩 실패 😢');
-      return;
+      final Map<String, dynamic> res =
+          jsonDecode(responseJson) as Map<String, dynamic>;
+
+      final String? url = res['url'] as String?;
+      final String? thumbUrl = res['cover_url'] as String?;
+
+      if (url == null || thumbUrl == null) {
+        _snack('업로드/인코딩 실패: URL을 받지 못했습니다. 😢');
+        if (mounted) setState(() => _isExporting = false);
+        return;
+      }
+
+      /* 5) Firestore update (타입 캐스팅 추가) */
+      await (widget.videoDocRef as DocumentReference<Map<String, dynamic>>)
+          .update({
+        'url': url,
+        'thumbUrl': thumbUrl,
+        'params': jsonEncode(params),
+        'duration': durationMs,
+        'status': 'done',
+      });
+
+      _snack('완료!');
+      int popCount = 0;
+      if (mounted) {
+        Navigator.of(context).popUntil((_) => popCount++ >= 3);
+      }
+    } catch (e) {
+      _snack('오류 발생: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
+      }
     }
-
-    // ■ 성공
-    final result = {
-      'url': url, // 최종 MP4
-      'thumbUrl': params['cover_url'], // ← Cloud Run 응답에 넣어두기로 합의했다면
-      'params': jsonEncode(params), // 편집 파라미터
-      'duration': durationMs, // (선택) 길이
-    };
-
-    _snack('완료!');
-    if (mounted) Navigator.pop(context, result);
   }
 
-  void _snack(String m) =>
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
+  /*── snack helper ─*/
+  void _snack(String m) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
+  }
 }

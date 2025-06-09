@@ -197,17 +197,13 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) {
             'videoPath',
             ParamType.String,
           ),
+          videoDocRef: params.getParam(
+            'videoDocRef',
+            ParamType.DocumentReference,
+            isList: false,
+            collectionNamePath: ['posts', 'video'],
+          ),
         ),
-      ),
-      FFRoute(
-        name: EdittextppWidget.routeName,
-        path: EdittextppWidget.routePath,
-        builder: (context, params) => EdittextppWidget(),
-      ),
-      FFRoute(
-        name: EditcoverppWidget.routeName,
-        path: EditcoverppWidget.routePath,
-        builder: (context, params) => EditcoverppWidget(),
       ),
       FFRoute(
         name: $image_cropper_library_llrw5e.HomePageWidget.routeName,

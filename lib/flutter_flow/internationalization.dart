@@ -2042,34 +2042,6 @@ final kTranslationsMap = <Map<String, Map<String, String>>>[
       'zh_Hans': '',
     },
   },
-  // edittextpp
-  {
-    '3fjanic0': {
-      'en': 'Home',
-      'es': '',
-      'fr': '',
-      'hi': '',
-      'id': '',
-      'it': '',
-      'ja': '',
-      'ko': '',
-      'zh_Hans': '',
-    },
-  },
-  // editcoverpp
-  {
-    'mi9fnta8': {
-      'en': 'Home',
-      'es': '',
-      'fr': '',
-      'hi': '',
-      'id': '',
-      'it': '',
-      'ja': '',
-      'ko': '',
-      'zh_Hans': '',
-    },
-  },
   // TagsLabels
   {
     'hq8fohiq': {

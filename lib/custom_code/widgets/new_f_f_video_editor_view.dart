@@ -10,11 +10,10 @@ import 'package:flutter/material.dart';
 // Begin custom widget code
 // DO NOT REMOVE OR MODIFY THE CODE ABOVE!
 
-/* ── 직접 import ── */
 import 'dart:io';
 import 'dart:convert';
 import 'package:video_editor/video_editor.dart';
-import 'crop_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 /* ── 팔레트 ── */
 const kBg = Colors.black;
@@ -27,11 +26,13 @@ class NewFFVideoEditorView extends StatefulWidget {
   const NewFFVideoEditorView({
     Key? key,
     required this.videoPath,
+    required this.videoDocRef,
     this.width,
     this.height,
   }) : super(key: key);
 
   final String videoPath;
+  final DocumentReference videoDocRef;
   final double? width;
   final double? height;
 
@@ -40,7 +41,6 @@ class NewFFVideoEditorView extends StatefulWidget {
 }
 
 class _NewFFVideoEditorViewState extends State<NewFFVideoEditorView> {
-  /* ── VideoEditorController ── */
   late final VideoEditorController _ctl = VideoEditorController.file(
     File(widget.videoPath),
     maxDuration: const Duration(seconds: 60),
@@ -49,7 +49,6 @@ class _NewFFVideoEditorViewState extends State<NewFFVideoEditorView> {
   late double _fixedP;
   bool _wasTrimming = false;
 
-  /* ── init ── */
   @override
   void initState() {
     super.initState();
@@ -71,12 +70,22 @@ class _NewFFVideoEditorViewState extends State<NewFFVideoEditorView> {
     if (mounted) setState(() {});
   }
 
+  // 최종 수정된 리스너 함수
   void _listener() {
+    // 사용자가 트리밍을 멈추는 순간에만 로직 실행
     if (_wasTrimming && !_ctl.isTrimming) {
+      // 무한 루프를 방지하기 위해 리스너를 잠시 제거
+      _ctl.removeListener(_listener);
+
+      // 중앙값을 기준으로 고정된 길이로 트림을 다시 계산하고 적용
       final center = (_ctl.minTrim + _ctl.maxTrim) / 2;
-      final newMin = (center - _fixedP / 2).clamp(0.0, 1 - _fixedP);
+      final newMin = (center - _fixedP / 2).clamp(0.0, 1.0 - _fixedP);
       _ctl.updateTrim(newMin, newMin + _fixedP);
+
+      // 작업이 끝난 후, 다음 사용자 입력을 위해 리스너를 다시 추가
+      _ctl.addListener(_listener);
     }
+    // 현재 트리밍 상태를 다음 이벤트를 위해 저장
     _wasTrimming = _ctl.isTrimming;
   }
 
@@ -87,7 +96,6 @@ class _NewFFVideoEditorViewState extends State<NewFFVideoEditorView> {
     super.dispose();
   }
 
-  /* ── UI ── */
   @override
   Widget build(BuildContext context) {
     if (!_ctl.initialized) {
@@ -110,7 +118,7 @@ class _NewFFVideoEditorViewState extends State<NewFFVideoEditorView> {
             children: [
               _topBar(),
               Expanded(child: _previewArea()),
-              _nextBtn(context), // ↙︎ 변경
+              _nextBtn(context),
             ],
           ),
         ),
@@ -118,7 +126,6 @@ class _NewFFVideoEditorViewState extends State<NewFFVideoEditorView> {
     );
   }
 
-  /* ── Top Bar ── */
   Widget _topBar() => Row(
         children: [
           _icon(Icons.close, () => Navigator.pop(context)),
@@ -143,7 +150,6 @@ class _NewFFVideoEditorViewState extends State<NewFFVideoEditorView> {
         ],
       );
 
-  /* ── Preview + Trim ── */
   Widget _previewArea() {
     const sliderH = 60.0;
     String fmt(Duration d) => '${d.inMinutes}m${d.inSeconds.remainder(60)}s';
@@ -193,7 +199,6 @@ class _NewFFVideoEditorViewState extends State<NewFFVideoEditorView> {
     );
   }
 
-  /* ── NEXT 버튼 (변경 핵심) ── */
   Widget _nextBtn(BuildContext context) => SafeArea(
         minimum: const EdgeInsets.all(16),
         child: SizedBox(
@@ -205,26 +210,23 @@ class _NewFFVideoEditorViewState extends State<NewFFVideoEditorView> {
               side: const BorderSide(color: kBorder, width: 2),
             ),
             onPressed: () {
-              /* 1) 현재 영상 편집 파라미터를 Map에 저장 */
               final editParams = {
                 'start_ms': _ctl.startTrim.inMilliseconds,
                 'end_ms': _ctl.endTrim.inMilliseconds,
-                'rotate': _ctl.rotation, // 0/90/180/270
+                'rotate': _ctl.rotation,
                 'crop': '${_ctl.minCrop.dx},'
                     '${_ctl.minCrop.dy},'
                     '${_ctl.maxCrop.dx},'
                     '${_ctl.maxCrop.dy}',
               };
-
-              /* 2) 텍스트 오버레이 페이지로 이동 */
-              final trimParams = editParams; // 이미 계산한 Map
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => FFTextOverlayView(
                     controller: _ctl,
-                    videoPath: widget.videoPath, // 추가
-                    baseParams: trimParams, // 추가
+                    videoPath: widget.videoPath,
+                    videoDocRef: widget.videoDocRef,
+                    baseParams: editParams,
                     width: widget.width,
                     height: widget.height,
                   ),
@@ -236,7 +238,6 @@ class _NewFFVideoEditorViewState extends State<NewFFVideoEditorView> {
         ),
       );
 
-  /* ── helpers ── */
   Widget _icon(IconData i, VoidCallback f) =>
       Expanded(child: IconButton(icon: Icon(i, color: kAccent), onPressed: f));
   Widget _divider() => const VerticalDivider(

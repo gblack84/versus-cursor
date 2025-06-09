@@ -9,9 +9,11 @@ class EditvideoppWidget extends StatefulWidget {
   const EditvideoppWidget({
     super.key,
     required this.videoPath,
+    required this.videoDocRef,
   });
 
   final String? videoPath;
+  final DocumentReference? videoDocRef;
 
   static String routeName = 'editvideopp';
   static String routePath = '/editvideopp';
@@ -65,6 +67,7 @@ class _EditvideoppWidgetState extends State<EditvideoppWidget> {
                 width: double.infinity,
                 height: double.infinity,
                 videoPath: widget.videoPath!,
+                videoDocRef: widget.videoDocRef!,
               ),
             ),
           ),

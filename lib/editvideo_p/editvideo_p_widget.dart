@@ -1,3 +1,5 @@
+import '/auth/firebase_auth/auth_util.dart';
+import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import '/flutter_flow/upload_data.dart';
@@ -149,12 +151,71 @@ class _EditvideoPWidgetState extends State<EditvideoPWidget> {
                                       _model.tempPath = _model.tempPathOutput;
                                       safeSetState(() {});
 
+                                      var postsRecordReference =
+                                          PostsRecord.collection.doc();
+                                      await postsRecordReference.set({
+                                        ...createPostsRecordData(
+                                          userid: currentUserUid,
+                                        ),
+                                        ...mapToFirestore(
+                                          {
+                                            'createdAt':
+                                                FieldValue.serverTimestamp(),
+                                          },
+                                        ),
+                                      });
+                                      _model.postDocRef =
+                                          PostsRecord.getDocumentFromData({
+                                        ...createPostsRecordData(
+                                          userid: currentUserUid,
+                                        ),
+                                        ...mapToFirestore(
+                                          {
+                                            'createdAt': DateTime.now(),
+                                          },
+                                        ),
+                                      }, postsRecordReference);
+
+                                      var videoRecordReference =
+                                          VideoRecord.createDoc(
+                                              _model.postDocRef!.reference);
+                                      await videoRecordReference.set({
+                                        ...createVideoRecordData(
+                                          status: '\"processing\"',
+                                          sourcepath: _model.tempPath,
+                                          owneruid: currentUserUid,
+                                        ),
+                                        ...mapToFirestore(
+                                          {
+                                            'createdat':
+                                                FieldValue.serverTimestamp(),
+                                          },
+                                        ),
+                                      });
+                                      _model.videoDocRef =
+                                          VideoRecord.getDocumentFromData({
+                                        ...createVideoRecordData(
+                                          status: '\"processing\"',
+                                          sourcepath: _model.tempPath,
+                                          owneruid: currentUserUid,
+                                        ),
+                                        ...mapToFirestore(
+                                          {
+                                            'createdat': DateTime.now(),
+                                          },
+                                        ),
+                                      }, videoRecordReference);
+
                                       context.pushNamed(
                                         EditvideoppWidget.routeName,
                                         queryParameters: {
                                           'videoPath': serializeParam(
-                                            _model.tempPathOutput,
+                                            _model.tempPath,
                                             ParamType.String,
+                                          ),
+                                          'videoDocRef': serializeParam(
+                                            _model.videoDocRef?.reference,
+                                            ParamType.DocumentReference,
                                           ),
                                         }.withoutNulls,
                                         extra: <String, dynamic>{

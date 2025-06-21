@@ -9,48 +9,41 @@ import 'package:flutter/material.dart';
 // Begin custom action code
 // DO NOT REMOVE OR MODIFY THE CODE ABOVE!
 
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+// postencode Custom Action (수정된 최종본)
 
-/// pathMp4  : 로컬 MP4 파일 경로
-/// paramsJsonEncodins : JSON 문자열( {start_ms, end_ms, rotate, crop …} )
-///
-/// 성공하면 Cloud Run 이 돌려준 결과 JSON 문자열(String)을,
-/// 실패(400/500) 또는 예외가 나면 null 을 반환합니다.
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 Future<String?> postencode(
-  String pathMp4,
+  String gcsPath, // 이제 GCS 경로를 받습니다.
   String paramsJsonEncodins,
 ) async {
+  // API 주소는 우리의 Cloud Run 서비스 URL입니다.
+  final url = 'https://encoder-636984750551.asia-northeast3.run.app/encode';
+
   try {
-    // 1) JSON → Map
-    final Map<String, dynamic> params =
-        jsonDecode(paramsJsonEncodins) as Map<String, dynamic>;
+    // 1. 기존 파라미터(자르기, 회전 등)를 Map으로 변환
+    final Map<String, dynamic> params = jsonDecode(paramsJsonEncodins);
 
-    // 2) multipart/form-data POST /encode
-    final req = http.MultipartRequest(
-      'POST',
-      Uri.parse(
-        'https://encoder-636984750551.asia-northeast3.run.app/encode',
-      ),
-    )
-      ..files.add(
-        await http.MultipartFile.fromPath('file', pathMp4),
-      )
-      ..fields.addAll(
-        params.map((k, v) => MapEntry(k, v.toString())),
-      );
+    // 2. 서버에 보낼 최종 JSON 본문을 만듭니다.
+    // 기존 파라미터에 gcsPath를 추가합니다.
+    final body = {
+      ...params, // 기존 파라미터를 모두 포함
+      'gcsPath': gcsPath, // gcsPath 필드 추가
+    };
 
-    // 3) 전송 & 결과 해석
-    final res = await req.send();
-    final bodyString = await res.stream.bytesToString();
+    // 3. 서버에 JSON 형식으로 POST 요청을 보냅니다.
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body), // 완성된 JSON 본문을 전송
+    );
 
-    // 4) HTTP 200 → JSON 문자열 반환, 그 외 → null
-    if (res.statusCode == 200) {
-      // 서버 응답 전체를 JSON 문자열로 반환
-      return bodyString;
+    if (response.statusCode == 200) {
+      return response.body;
     } else {
-      // 실패 시 null 반환
-      print('postencode failed with status ${res.statusCode}: $bodyString');
+      print(
+          'postencode failed with status ${response.statusCode}: ${response.body}');
       return null;
     }
   } catch (e) {

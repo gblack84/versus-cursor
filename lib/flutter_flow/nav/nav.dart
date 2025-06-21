@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 
 import '/auth/base_auth_user_provider.dart';
 
-import 'package:ff_theme/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 
 import '/index.dart';
@@ -202,6 +201,10 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) {
             ParamType.DocumentReference,
             isList: false,
             collectionNamePath: ['posts', 'video'],
+          ),
+          postid: params.getParam(
+            'postid',
+            ParamType.String,
           ),
         ),
       ),
@@ -400,8 +403,8 @@ class FFRoute {
                   child: SizedBox(
                     width: 50.0,
                     height: 50.0,
-                    child: SpinKitWave(
-                      color: FlutterFlowTheme.of(context).primary,
+                    child: SpinKitRing(
+                      color: Color(0xFFE7E6E6),
                       size: 50.0,
                     ),
                   ),

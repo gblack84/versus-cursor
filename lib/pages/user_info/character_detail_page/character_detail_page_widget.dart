@@ -100,9 +100,8 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                                   child: SizedBox(
                                     width: 50.0,
                                     height: 50.0,
-                                    child: SpinKitWave(
-                                      color:
-                                          FlutterFlowTheme.of(context).primary,
+                                    child: SpinKitRing(
+                                      color: Color(0xFFE7E6E6),
                                       size: 50.0,
                                     ),
                                   ),

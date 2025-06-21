@@ -1,7 +1,7 @@
 import '/flutter_flow/flutter_flow_util.dart';
 import '/custom_code/widgets/index.dart' as custom_widgets;
-import 'package:ff_theme/flutter_flow/flutter_flow_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'editvideopp_model.dart';
 export 'editvideopp_model.dart';
 
@@ -10,10 +10,12 @@ class EditvideoppWidget extends StatefulWidget {
     super.key,
     required this.videoPath,
     required this.videoDocRef,
+    required this.postid,
   });
 
   final String? videoPath;
   final DocumentReference? videoDocRef;
+  final String? postid;
 
   static String routeName = 'editvideopp';
   static String routePath = '/editvideopp';
@@ -44,6 +46,8 @@ class _EditvideoppWidgetState extends State<EditvideoppWidget> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<FFAppState>();
+
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -51,24 +55,19 @@ class _EditvideoppWidgetState extends State<EditvideoppWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
-        body: SafeArea(
-          top: true,
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: BoxDecoration(),
           child: Container(
             width: double.infinity,
             height: double.infinity,
-            decoration: BoxDecoration(
-              color: FlutterFlowTheme.of(context).secondaryBackground,
-            ),
-            child: Container(
+            child: custom_widgets.NewFFVideoEditorView(
               width: double.infinity,
               height: double.infinity,
-              child: custom_widgets.NewFFVideoEditorView(
-                width: double.infinity,
-                height: double.infinity,
-                videoPath: widget.videoPath!,
-                videoDocRef: widget.videoDocRef!,
-              ),
+              videoPath: widget.videoPath!,
+              videoDocRef: widget.videoDocRef!,
+              postId: FFAppState().currentPostId,
             ),
           ),
         ),

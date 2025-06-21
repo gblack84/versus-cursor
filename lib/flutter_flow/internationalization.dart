@@ -2586,6 +2586,31 @@ final kTranslationsMap = <Map<String, Map<String, String>>>[
       'zh_Hans': '',
     },
   },
+  // uploadChoiceBottomSheet
+  {
+    'i36a91le': {
+      'en': 'Gallery',
+      'es': '',
+      'fr': '',
+      'hi': '',
+      'id': '',
+      'it': '',
+      'ja': '',
+      'ko': '',
+      'zh_Hans': '',
+    },
+    '16rkqdde': {
+      'en': 'Camera',
+      'es': '',
+      'fr': '',
+      'hi': '',
+      'id': '',
+      'it': '',
+      'ja': '',
+      'ko': '',
+      'zh_Hans': '',
+    },
+  },
   // Miscellaneous
   {
     '29m1hzk8': {

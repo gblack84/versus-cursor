@@ -10,7 +10,7 @@ class PhoneCreatAccountModel extends FlutterFlowModel<PhoneCreatAccountWidget> {
   // State field(s) for CodeCuntry widget.
   FocusNode? codeCuntryFocusNode;
   TextEditingController? codeCuntryTextController;
-  final codeCuntryMask = MaskTextInputFormatter(mask: '+###');
+  late MaskTextInputFormatter codeCuntryMask;
   String? Function(BuildContext, String?)? codeCuntryTextControllerValidator;
   // State field(s) for PhoneNumber widget.
   FocusNode? phoneNumberFocusNode;

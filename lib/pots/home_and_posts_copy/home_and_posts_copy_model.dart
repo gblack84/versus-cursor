@@ -21,6 +21,10 @@ class HomeAndPostsCopyModel extends FlutterFlowModel<HomeAndPostsCopyWidget> {
           pageViewController2!.page != null
       ? pageViewController2!.page!.round()
       : 0;
+  bool isDataUploading_uploadDataTix = false;
+  FFUploadedFile uploadedLocalFile_uploadDataTix =
+      FFUploadedFile(bytes: Uint8List.fromList([]));
+  String uploadedFileUrl_uploadDataTix = '';
 
   @override
   void initState(BuildContext context) {}

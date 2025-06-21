@@ -185,4 +185,16 @@ class FFAppState extends ChangeNotifier {
   set TempPath(String value) {
     _TempPath = value;
   }
+
+  String _currentPostId = '';
+  String get currentPostId => _currentPostId;
+  set currentPostId(String value) {
+    _currentPostId = value;
+  }
+
+  String _previewUrlA = '';
+  String get previewUrlA => _previewUrlA;
+  set previewUrlA(String value) {
+    _previewUrlA = value;
+  }
 }

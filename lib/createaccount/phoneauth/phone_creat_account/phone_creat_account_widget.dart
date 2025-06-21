@@ -6,6 +6,7 @@ import '/index.dart';
 import 'package:ff_theme/flutter_flow/flutter_flow_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'phone_creat_account_model.dart';
 export 'phone_creat_account_model.dart';
 
@@ -38,6 +39,7 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
     _model.codeCuntryTextController ??= TextEditingController();
     _model.codeCuntryFocusNode ??= FocusNode();
 
+    _model.codeCuntryMask = MaskTextInputFormatter(mask: '+###');
     _model.phoneNumberTextController ??= TextEditingController();
     _model.phoneNumberFocusNode ??= FocusNode();
 

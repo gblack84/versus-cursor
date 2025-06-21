@@ -1,12 +1,18 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
+import '/components/upload_choice_bottom_sheet_widget.dart';
+import '/components/videoplay_widget.dart';
+import '/flutter_flow/flutter_flow_media_display.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/flutter_flow_video_player.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import '/flutter_flow/upload_data.dart';
 import '/custom_code/actions/index.dart' as actions;
 import '/index.dart';
 import 'package:ff_theme/flutter_flow/flutter_flow_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:webviewx_plus/webviewx_plus.dart';
 import 'editvideo_p_model.dart';
 export 'editvideo_p_model.dart';
 
@@ -42,6 +48,8 @@ class _EditvideoPWidgetState extends State<EditvideoPWidget> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<FFAppState>();
+
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -217,6 +225,10 @@ class _EditvideoPWidgetState extends State<EditvideoPWidget> {
                                             _model.videoDocRef?.reference,
                                             ParamType.DocumentReference,
                                           ),
+                                          'postid': serializeParam(
+                                            '',
+                                            ParamType.String,
+                                          ),
                                         }.withoutNulls,
                                         extra: <String, dynamic>{
                                           kTransitionInfoKey: TransitionInfo(
@@ -279,8 +291,30 @@ class _EditvideoPWidgetState extends State<EditvideoPWidget> {
                               Padding(
                                 padding: EdgeInsets.all(12.0),
                                 child: FFButtonWidget(
-                                  onPressed: () {
-                                    print('Button pressed ...');
+                                  onPressed: () async {
+                                    await showModalBottomSheet(
+                                      isScrollControlled: true,
+                                      backgroundColor: Colors.transparent,
+                                      enableDrag: false,
+                                      context: context,
+                                      builder: (context) {
+                                        return WebViewAware(
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              FocusScope.of(context).unfocus();
+                                              FocusManager.instance.primaryFocus
+                                                  ?.unfocus();
+                                            },
+                                            child: Padding(
+                                              padding: MediaQuery.viewInsetsOf(
+                                                  context),
+                                              child:
+                                                  UploadChoiceBottomSheetWidget(),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ).then((value) => safeSetState(() {}));
                                   },
                                   text: FFLocalizations.of(context).getText(
                                     'v6lswlmj' /* cancle */,
@@ -311,6 +345,83 @@ class _EditvideoPWidgetState extends State<EditvideoPWidget> {
                               ),
                             ],
                           ),
+                        ),
+                      ),
+                      Container(
+                        width: double.infinity,
+                        height: 300.0,
+                        decoration: BoxDecoration(
+                          color:
+                              FlutterFlowTheme.of(context).secondaryBackground,
+                        ),
+                        child: Stack(
+                          alignment: AlignmentDirectional(0.0, 0.0),
+                          children: [
+                            if (FFAppState().previewUrlA != '')
+                              FlutterFlowMediaDisplay(
+                                path: '${_model.videoDocRef?.thumburl}',
+                                imageBuilder: (path) => ClipRRect(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                  child: Image.network(
+                                    path,
+                                    width: double.infinity,
+                                    height: 300.0,
+                                    fit: BoxFit.fill,
+                                  ),
+                                ),
+                                videoPlayerBuilder: (path) =>
+                                    FlutterFlowVideoPlayer(
+                                  path: path,
+                                  width: 300.0,
+                                  autoPlay: false,
+                                  looping: true,
+                                  showControls: true,
+                                  allowFullScreen: true,
+                                  allowPlaybackSpeedMenu: false,
+                                ),
+                              ),
+                            Align(
+                              alignment: AlignmentDirectional(0.0, 0.0),
+                              child: InkWell(
+                                splashColor: Colors.transparent,
+                                focusColor: Colors.transparent,
+                                hoverColor: Colors.transparent,
+                                highlightColor: Colors.transparent,
+                                onTap: () async {
+                                  FFAppState().UpLoadvideoA =
+                                      _model.videoDocRef!.url;
+                                  safeSetState(() {});
+                                  await showModalBottomSheet(
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    enableDrag: false,
+                                    context: context,
+                                    builder: (context) {
+                                      return WebViewAware(
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            FocusScope.of(context).unfocus();
+                                            FocusManager.instance.primaryFocus
+                                                ?.unfocus();
+                                          },
+                                          child: Padding(
+                                            padding: MediaQuery.viewInsetsOf(
+                                                context),
+                                            child: VideoplayWidget(),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ).then((value) => safeSetState(() {}));
+                                },
+                                child: Icon(
+                                  Icons.play_circle,
+                                  color: Color(0xA1FFFFFF),
+                                  size: 55.0,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],

@@ -1,9 +1,11 @@
+import '/backend/firebase_storage/storage.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_media_display.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_video_player.dart';
 import '/flutter_flow/flutter_flow_web_view.dart';
 import '/flutter_flow/flutter_flow_youtube_player.dart';
+import '/flutter_flow/upload_data.dart';
 import '/pots/in_put_image/in_put_image_widget.dart';
 import '/pots/in_put_ivideo/in_put_ivideo_widget.dart';
 import '/pots/in_put_text/in_put_text_widget.dart';
@@ -1133,28 +1135,115 @@ class _HomeAndPostsCopyWidgetState extends State<HomeAndPostsCopyWidget> {
                                           Align(
                                             alignment:
                                                 AlignmentDirectional(0.0, 0.2),
-                                            child: FlutterFlowMediaDisplay(
-                                              path:
-                                                  '${FFAppState().UpLoadvideoA}',
-                                              imageBuilder: (path) => ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(8.0),
-                                                child: Image.network(
-                                                  path,
-                                                  width: double.infinity,
-                                                  height: 500.0,
-                                                  fit: BoxFit.cover,
+                                            child: InkWell(
+                                              splashColor: Colors.transparent,
+                                              focusColor: Colors.transparent,
+                                              hoverColor: Colors.transparent,
+                                              highlightColor:
+                                                  Colors.transparent,
+                                              onTap: () async {
+                                                final selectedMedia =
+                                                    await selectMediaWithSourceBottomSheet(
+                                                  context: context,
+                                                  allowPhoto: false,
+                                                  allowVideo: true,
+                                                );
+                                                if (selectedMedia != null &&
+                                                    selectedMedia.every((m) =>
+                                                        validateFileFormat(
+                                                            m.storagePath,
+                                                            context))) {
+                                                  safeSetState(() => _model
+                                                          .isDataUploading_uploadDataTix =
+                                                      true);
+                                                  var selectedUploadedFiles =
+                                                      <FFUploadedFile>[];
+
+                                                  var downloadUrls = <String>[];
+                                                  try {
+                                                    selectedUploadedFiles =
+                                                        selectedMedia
+                                                            .map((m) =>
+                                                                FFUploadedFile(
+                                                                  name: m
+                                                                      .storagePath
+                                                                      .split(
+                                                                          '/')
+                                                                      .last,
+                                                                  bytes:
+                                                                      m.bytes,
+                                                                  height: m
+                                                                      .dimensions
+                                                                      ?.height,
+                                                                  width: m
+                                                                      .dimensions
+                                                                      ?.width,
+                                                                  blurHash: m
+                                                                      .blurHash,
+                                                                ))
+                                                            .toList();
+
+                                                    downloadUrls = (await Future
+                                                            .wait(
+                                                      selectedMedia.map(
+                                                        (m) async =>
+                                                            await uploadData(
+                                                                m.storagePath,
+                                                                m.bytes),
+                                                      ),
+                                                    ))
+                                                        .where((u) => u != null)
+                                                        .map((u) => u!)
+                                                        .toList();
+                                                  } finally {
+                                                    _model.isDataUploading_uploadDataTix =
+                                                        false;
+                                                  }
+                                                  if (selectedUploadedFiles
+                                                              .length ==
+                                                          selectedMedia
+                                                              .length &&
+                                                      downloadUrls.length ==
+                                                          selectedMedia
+                                                              .length) {
+                                                    safeSetState(() {
+                                                      _model.uploadedLocalFile_uploadDataTix =
+                                                          selectedUploadedFiles
+                                                              .first;
+                                                      _model.uploadedFileUrl_uploadDataTix =
+                                                          downloadUrls.first;
+                                                    });
+                                                  } else {
+                                                    safeSetState(() {});
+                                                    return;
+                                                  }
+                                                }
+                                              },
+                                              child: FlutterFlowMediaDisplay(
+                                                path:
+                                                    '${FFAppState().UpLoadvideoA}',
+                                                imageBuilder: (path) =>
+                                                    ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          8.0),
+                                                  child: Image.network(
+                                                    path,
+                                                    width: double.infinity,
+                                                    height: 500.0,
+                                                    fit: BoxFit.cover,
+                                                  ),
                                                 ),
-                                              ),
-                                              videoPlayerBuilder: (path) =>
-                                                  FlutterFlowVideoPlayer(
-                                                path: path,
-                                                width: double.infinity,
-                                                autoPlay: false,
-                                                looping: true,
-                                                showControls: true,
-                                                allowFullScreen: true,
-                                                allowPlaybackSpeedMenu: false,
+                                                videoPlayerBuilder: (path) =>
+                                                    FlutterFlowVideoPlayer(
+                                                  path: path,
+                                                  width: double.infinity,
+                                                  autoPlay: false,
+                                                  looping: true,
+                                                  showControls: true,
+                                                  allowFullScreen: true,
+                                                  allowPlaybackSpeedMenu: false,
+                                                ),
                                               ),
                                             ),
                                           ),

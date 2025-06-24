@@ -10,22 +10,18 @@ import 'package:flutter/material.dart';
 // Begin custom widget code
 // DO NOT REMOVE OR MODIFY THE CODE ABOVE!
 
-// --- Custom Imports for this Widget ---
 import 'dart:io';
-import 'dart:convert'; // For base64Encode
-import 'dart:typed_data'; // For image bytes (Uint8List)
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:video_editor/video_editor.dart';
 
 const kBg = Colors.black;
 const kAccent = Color(0xFFFFD600);
 
 class NewFFVideoEditorView extends StatefulWidget {
-  const NewFFVideoEditorView({
-    Key? key,
-    required this.videoPath,
-    this.width,
-    this.height,
-  }) : super(key: key);
+  const NewFFVideoEditorView(
+      {Key? key, required this.videoPath, this.width, this.height})
+      : super(key: key);
 
   final String videoPath;
   final double? width;
@@ -64,30 +60,31 @@ class _NewFFVideoEditorViewState extends State<NewFFVideoEditorView> {
     });
   }
 
-  // [핵심 로직 V3] 커버 이미지를 Base64 문자열로 App State에 저장하고 다음 페이지로 이동합니다.
   Future<void> _saveCoverAndNavigate() async {
     _setLoading(true, '다음 단계 준비 중...');
     try {
-      // .thumbData를 사용하여 Uint8List를 직접 가져옵니다.
-      final Uint8List? imageBytes =
-          await _controller.selectedCoverVal.thumbData;
+      // [핵심 수정] CoverData 라는 타입을 직접 명시하는 대신, var로 타입 추론을 맡깁니다.
+      final coverData = _controller.selectedCoverVal;
+
+      if (coverData == null) {
+        throw Exception('커버가 선택되지 않았습니다.');
+      }
+
+      // coverData의 구체적인 타입 이름은 몰라도, .thumbData 속성은 존재하므로 호출 가능합니다.
+      final Uint8List? imageBytes = await coverData.thumbData;
 
       if (imageBytes == null) {
         throw Exception('커버 이미지를 생성할 수 없습니다.');
       }
 
-      // [핵심] 이미지 바이트(Uint8List)를 Base64 문자열로 인코딩합니다.
       final String base64Image = base64Encode(imageBytes);
 
-      // App State 변수('selectedCoverImageBytes')를 업데이트합니다.
       FFAppState().update(() {
-        // 이제 String 타입의 변수에 Base64 문자열을 저장합니다.
         FFAppState().selectedCoverImageBytes = base64Image;
       });
 
       if (!mounted) return;
 
-      // 다음 페이지(ImageEditorPage)로 모든 편집 데이터를 파라미터로 전달하며 이동합니다.
       context.pushNamed(
         'ImageEditorPage',
         queryParameters: {
@@ -101,8 +98,7 @@ class _NewFFVideoEditorViewState extends State<NewFFVideoEditorView> {
           'cropData': serializeParam(
               '${_controller.minCrop.dx},${_controller.minCrop.dy},${_controller.maxCrop.dx},${_controller.maxCrop.dy}',
               ParamType.String),
-          'coverTimestamp': serializeParam(
-              _controller.selectedCoverVal?.timeMs ?? 0, ParamType.int),
+          'coverTimestamp': serializeParam(coverData.timeMs, ParamType.int),
         }.withoutNulls,
       );
     } catch (e) {
@@ -158,7 +154,6 @@ class _NewFFVideoEditorViewState extends State<NewFFVideoEditorView> {
     );
   }
 
-  // 트림/크롭 페이지 UI
   Widget _buildTrimPage() {
     return SafeArea(
       child: Column(
@@ -192,7 +187,6 @@ class _NewFFVideoEditorViewState extends State<NewFFVideoEditorView> {
     );
   }
 
-  // 커버 선택 페이지 UI
   Widget _buildCoverSelectionPage() {
     return SafeArea(
       child: Column(

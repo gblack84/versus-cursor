@@ -59,28 +59,24 @@ class _ImageEditorPageWidgetState extends State<ImageEditorPageWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
-        body: SafeArea(
-          top: true,
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: BoxDecoration(
+            color: FlutterFlowTheme.of(context).secondaryBackground,
+          ),
           child: Container(
             width: double.infinity,
             height: double.infinity,
-            decoration: BoxDecoration(
-              color: FlutterFlowTheme.of(context).secondaryBackground,
-            ),
-            child: Container(
+            child: custom_widgets.AdvancedImageEditor(
               width: double.infinity,
               height: double.infinity,
-              child: custom_widgets.AdvancedImageEditor(
-                width: double.infinity,
-                height: double.infinity,
-                originalVideoPath: widget.originalVideoPath!,
-                trimStart: widget.trimStart!,
-                trimEnd: widget.trimEnd!,
-                rotation: widget.rotation!,
-                cropData: widget.cropData!,
-                coverTimestamp: widget.coverTimestamp!,
-              ),
+              originalVideoPath: widget.originalVideoPath!,
+              trimStart: widget.trimStart!,
+              trimEnd: widget.trimEnd!,
+              rotation: widget.rotation!,
+              cropData: widget.cropData!,
+              coverTimestamp: widget.coverTimestamp!,
             ),
           ),
         ),

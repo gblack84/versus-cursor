@@ -10,40 +10,24 @@ import 'package:flutter/material.dart';
 // Begin custom widget code
 // DO NOT REMOVE OR MODIFY THE CODE ABOVE!
 
-// NewFFVideoEditorView 위젯 (최종 수정본)
-
+// --- Custom Imports for this Widget ---
 import 'dart:io';
-import 'dart:convert';
+import 'dart:convert'; // For base64Encode
+import 'dart:typed_data'; // For image bytes (Uint8List)
 import 'package:video_editor/video_editor.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:path/path.dart' as path; // path 패키지 import 추가
-
-// 우리가 만든 커스텀 액션들을 import 합니다.
-import '/custom_code/actions/get_signed_url.dart' as action_get_signed_url;
-import '/custom_code/actions/upload_to_gcs.dart' as action_upload_to_gcs;
-import '/custom_code/actions/postencode.dart' as action_post_encode;
-import '/custom_code/actions/generate_cover_image.dart'
-    as action_generate_cover;
 
 const kBg = Colors.black;
 const kAccent = Color(0xFFFFD600);
 
-/// ======================================================================= │
-/// 1단계: 영상 편집 및 인코딩 시작 위젯
-/// =======================================================================
 class NewFFVideoEditorView extends StatefulWidget {
   const NewFFVideoEditorView({
     Key? key,
     required this.videoPath,
-    required this.videoDocRef,
-    required this.postId,
     this.width,
     this.height,
   }) : super(key: key);
 
   final String videoPath;
-  final DocumentReference videoDocRef;
-  final String postId;
   final double? width;
   final double? height;
 
@@ -52,87 +36,82 @@ class NewFFVideoEditorView extends StatefulWidget {
 }
 
 class _NewFFVideoEditorViewState extends State<NewFFVideoEditorView> {
-  late final VideoEditorController _controller = VideoEditorController.file(
-    File(widget.videoPath),
-    maxDuration: const Duration(seconds: 60),
-  );
-  bool _isProcessing = false;
-  String _processingStatus = '';
+  late final VideoEditorController _controller;
+  final _pageController = PageController();
+  bool _isLoading = false;
+  String _loadingText = '';
 
   @override
   void initState() {
     super.initState();
-    _controller.initialize(aspectRatio: 9 / 16).then((_) => setState(() {}));
+    _controller = VideoEditorController.file(
+      File(widget.videoPath),
+      maxDuration: const Duration(seconds: 60),
+    )..initialize().then((_) => setState(() {}));
   }
 
   @override
   void dispose() {
+    _pageController.dispose();
     _controller.dispose();
     super.dispose();
   }
 
-  // [수정됨] 새로운 GCS 직접 업로드 로직
-  Future<void> _startUploadFlow() async {
+  void _setLoading(bool isLoading, [String text = '']) {
     setState(() {
-      _isProcessing = true;
-      _processingStatus = '업로드 티켓 요청 중...';
+      _isLoading = isLoading;
+      _loadingText = text;
     });
+  }
 
+  // [핵심 로직 V3] 커버 이미지를 Base64 문자열로 App State에 저장하고 다음 페이지로 이동합니다.
+  Future<void> _saveCoverAndNavigate() async {
+    _setLoading(true, '다음 단계 준비 중...');
     try {
-      // 1. 업로드 티켓(Signed URL) 요청
-      final fileName = path.basename(widget.videoPath);
-      final dynamic signedUrlResult =
-          await action_get_signed_url.getSignedUrl(fileName, 'video/mp4');
+      // .thumbData를 사용하여 Uint8List를 직접 가져옵니다.
+      final Uint8List? imageBytes =
+          await _controller.selectedCoverVal.thumbData;
 
-      if (signedUrlResult == null) throw Exception('Signed URL 받기 실패');
+      if (imageBytes == null) {
+        throw Exception('커버 이미지를 생성할 수 없습니다.');
+      }
 
-      final String signedUrl = signedUrlResult['signedUrl'];
-      final String gcsPath = signedUrlResult['gcsPath'];
+      // [핵심] 이미지 바이트(Uint8List)를 Base64 문자열로 인코딩합니다.
+      final String base64Image = base64Encode(imageBytes);
 
-      // 2. GCS로 직접 파일 업로드
-      setState(() => _processingStatus = '파일 업로드 중...');
-      final bool uploadSuccess = await action_upload_to_gcs.uploadToGCS(
-          signedUrl, widget.videoPath, 'video/mp4');
-
-      if (!uploadSuccess) throw Exception('GCS에 파일 업로드 실패');
-
-      // 3. 백엔드에 인코딩 작업 지시
-      setState(() => _processingStatus = '서버에 처리 요청 중...');
-      final params = {
-        'postId': widget.postId,
-        'docId': widget.videoDocRef.id,
-        'start_ms': _controller.startTrim.inMilliseconds,
-        'end_ms': _controller.endTrim.inMilliseconds,
-        'rotate': _controller.rotation,
-        'crop':
-            '${_controller.minCrop.dx},${_controller.minCrop.dy},${_controller.maxCrop.dx},${_controller.maxCrop.dy}',
-      };
-
-      // 수정된 postencode 액션 호출
-      await action_post_encode.postencode(gcsPath, jsonEncode(params));
+      // App State 변수('selectedCoverImageBytes')를 업데이트합니다.
+      FFAppState().update(() {
+        // 이제 String 타입의 변수에 Base64 문자열을 저장합니다.
+        FFAppState().selectedCoverImageBytes = base64Image;
+      });
 
       if (!mounted) return;
 
-      // 4. 모든 것이 성공하면 커버 편집 화면으로 이동
-      // [중요] 이제 gcsPath를 전달합니다.
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => CoverAndTextView(
-            controller: _controller,
-            gcsPath: gcsPath, // videoPath 대신 gcsPath 전달
-            videoDocRef: widget.videoDocRef,
-          ),
-        ),
+      // 다음 페이지(ImageEditorPage)로 모든 편집 데이터를 파라미터로 전달하며 이동합니다.
+      context.pushNamed(
+        'ImageEditorPage',
+        queryParameters: {
+          'originalVideoPath':
+              serializeParam(widget.videoPath, ParamType.String),
+          'trimStart': serializeParam(
+              _controller.startTrim.inMilliseconds, ParamType.int),
+          'trimEnd':
+              serializeParam(_controller.endTrim.inMilliseconds, ParamType.int),
+          'rotation': serializeParam(_controller.rotation, ParamType.int),
+          'cropData': serializeParam(
+              '${_controller.minCrop.dx},${_controller.minCrop.dy},${_controller.maxCrop.dx},${_controller.maxCrop.dy}',
+              ParamType.String),
+          'coverTimestamp': serializeParam(
+              _controller.selectedCoverVal?.timeMs ?? 0, ParamType.int),
+        }.withoutNulls,
       );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('오류: $e')));
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('오류: $e')),
+      );
     } finally {
       if (mounted) {
-        setState(() => _isProcessing = false);
+        _setLoading(false);
       }
     }
   }
@@ -140,109 +119,114 @@ class _NewFFVideoEditorViewState extends State<NewFFVideoEditorView> {
   @override
   Widget build(BuildContext context) {
     if (!_controller.initialized) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        backgroundColor: kBg,
+        body: Center(child: CircularProgressIndicator(color: kAccent)),
+      );
     }
     return Scaffold(
       backgroundColor: kBg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(child: CropGridViewer.preview(controller: _controller)),
-            TrimSlider(controller: _controller, height: 60),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton(
-                onPressed: _isProcessing ? null : _startUploadFlow,
-                child: _isProcessing
-                    ? Row(mainAxisSize: MainAxisSize.min, children: [
-                        CircularProgressIndicator(strokeWidth: 2),
-                        SizedBox(width: 8),
-                        Text(_processingStatus)
-                      ])
-                    : const Text('Next >'),
+      body: Stack(
+        children: [
+          PageView(
+            controller: _pageController,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              _buildTrimPage(),
+              _buildCoverSelectionPage(),
+            ],
+          ),
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.7),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(color: kAccent),
+                    const SizedBox(height: 16),
+                    Text(
+                      _loadingText,
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
-}
 
-// =======================================================================
-// │ 2단계: 커버 & 텍스트 편집 및 최종 저장 위젯
-// =======================================================================
-class CoverAndTextView extends StatefulWidget {
-  const CoverAndTextView({
-    super.key,
-    required this.controller,
-    required this.gcsPath, // videoPath -> gcsPath로 변경
-    required this.videoDocRef,
-  });
-
-  final VideoEditorController controller;
-  final String gcsPath; // videoPath -> gcsPath로 변경
-  final DocumentReference videoDocRef;
-
-  @override
-  State<CoverAndTextView> createState() => _CoverAndTextViewState();
-}
-
-class _CoverAndTextViewState extends State<CoverAndTextView> {
-  final _textCtl = TextEditingController();
-  bool _isSaving = false;
-
-  Future<void> _generateAndSaveCover() async {
-    setState(() => _isSaving = true);
-    try {
-      final coverTimeMs = widget.controller.selectedCoverVal?.timeMs;
-      if (coverTimeMs == null) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('커버 프레임을 선택해주세요.')));
-        setState(() => _isSaving = false);
-        return;
-      }
-
-      // 1. 수정된 /generate-cover API 호출
-      final String? thumbUrl = await action_generate_cover.generateCoverImage(
-        widget.gcsPath, // videoPath 대신 gcsPath 사용
-        widget.videoDocRef.id,
-        coverTimeMs.toInt(),
-        _textCtl.text,
-      );
-
-      if (thumbUrl == null) throw Exception('Cover generation failed.');
-
-      // 2. Firestore에 최종 정보 업데이트
-      await widget.videoDocRef.update({
-        'thumbUrl': thumbUrl,
-        'status': 'done',
-        'duration': widget.controller.trimmedDuration.inMilliseconds,
-      });
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('업로드 완료!')));
-
-      int popCount = 0;
-      Navigator.of(context).popUntil((_) => popCount++ >= 2);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('오류: $e')));
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
+  // 트림/크롭 페이지 UI
+  Widget _buildTrimPage() {
+    return SafeArea(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                TextButton(
+                  onPressed: () => _pageController.nextPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                  ),
+                  child: const Text('Next', style: TextStyle(color: kAccent)),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: CropGridViewer.preview(controller: _controller),
+          ),
+          TrimSlider(controller: _controller, height: 60),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
   }
 
-  @override
-  void dispose() {
-    _textCtl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // ... build 메서드는 기존과 동일하므로 생략 ...
+  // 커버 선택 페이지 UI
+  Widget _buildCoverSelectionPage() {
+    return SafeArea(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: kAccent),
+                  onPressed: () => _pageController.previousPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                  ),
+                ),
+                TextButton(
+                  onPressed: _saveCoverAndNavigate,
+                  child: const Text('Next', style: TextStyle(color: kAccent)),
+                ),
+              ],
+            ),
+          ),
+          Expanded(child: CoverViewer(controller: _controller)),
+          SizedBox(
+            height: 100,
+            child: CoverSelection(
+              controller: _controller,
+              quantity: 8,
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
   }
 }

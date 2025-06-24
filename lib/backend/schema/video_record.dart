@@ -25,47 +25,47 @@ class VideoRecord extends FirestoreRecord {
   int get duration => _duration ?? 0;
   bool hasDuration() => _duration != null;
 
-  // "status" field.
-  String? _status;
-  String get status => _status ?? '';
-  bool hasStatus() => _status != null;
-
-  // "sourcepath" field.
-  String? _sourcepath;
-  String get sourcepath => _sourcepath ?? '';
-  bool hasSourcepath() => _sourcepath != null;
-
-  // "thumburl" field.
-  String? _thumburl;
-  String get thumburl => _thumburl ?? '';
-  bool hasThumburl() => _thumburl != null;
-
-  // "createdat" field.
-  DateTime? _createdat;
-  DateTime? get createdat => _createdat;
-  bool hasCreatedat() => _createdat != null;
-
   // "params" field.
   String? _params;
   String get params => _params ?? '';
   bool hasParams() => _params != null;
 
-  // "owneruid" field.
-  String? _owneruid;
-  String get owneruid => _owneruid ?? '';
-  bool hasOwneruid() => _owneruid != null;
+  // "sourceVideoUrl" field.
+  String? _sourceVideoUrl;
+  String get sourceVideoUrl => _sourceVideoUrl ?? '';
+  bool hasSourceVideoUrl() => _sourceVideoUrl != null;
+
+  // "thumbUrl" field.
+  String? _thumbUrl;
+  String get thumbUrl => _thumbUrl ?? '';
+  bool hasThumbUrl() => _thumbUrl != null;
+
+  // "ownerUid" field.
+  String? _ownerUid;
+  String get ownerUid => _ownerUid ?? '';
+  bool hasOwnerUid() => _ownerUid != null;
+
+  // "status" field.
+  String? _status;
+  String get status => _status ?? '';
+  bool hasStatus() => _status != null;
+
+  // "createdAt" field.
+  DateTime? _createdAt;
+  DateTime? get createdAt => _createdAt;
+  bool hasCreatedAt() => _createdAt != null;
 
   DocumentReference get parentReference => reference.parent.parent!;
 
   void _initializeFields() {
     _url = snapshotData['url'] as String?;
     _duration = castToType<int>(snapshotData['duration']);
-    _status = snapshotData['status'] as String?;
-    _sourcepath = snapshotData['sourcepath'] as String?;
-    _thumburl = snapshotData['thumburl'] as String?;
-    _createdat = snapshotData['createdat'] as DateTime?;
     _params = snapshotData['params'] as String?;
-    _owneruid = snapshotData['owneruid'] as String?;
+    _sourceVideoUrl = snapshotData['sourceVideoUrl'] as String?;
+    _thumbUrl = snapshotData['thumbUrl'] as String?;
+    _ownerUid = snapshotData['ownerUid'] as String?;
+    _status = snapshotData['status'] as String?;
+    _createdAt = snapshotData['createdAt'] as DateTime?;
   }
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
@@ -109,23 +109,23 @@ class VideoRecord extends FirestoreRecord {
 Map<String, dynamic> createVideoRecordData({
   String? url,
   int? duration,
-  String? status,
-  String? sourcepath,
-  String? thumburl,
-  DateTime? createdat,
   String? params,
-  String? owneruid,
+  String? sourceVideoUrl,
+  String? thumbUrl,
+  String? ownerUid,
+  String? status,
+  DateTime? createdAt,
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
       'url': url,
       'duration': duration,
-      'status': status,
-      'sourcepath': sourcepath,
-      'thumburl': thumburl,
-      'createdat': createdat,
       'params': params,
-      'owneruid': owneruid,
+      'sourceVideoUrl': sourceVideoUrl,
+      'thumbUrl': thumbUrl,
+      'ownerUid': ownerUid,
+      'status': status,
+      'createdAt': createdAt,
     }.withoutNulls,
   );
 
@@ -139,24 +139,24 @@ class VideoRecordDocumentEquality implements Equality<VideoRecord> {
   bool equals(VideoRecord? e1, VideoRecord? e2) {
     return e1?.url == e2?.url &&
         e1?.duration == e2?.duration &&
-        e1?.status == e2?.status &&
-        e1?.sourcepath == e2?.sourcepath &&
-        e1?.thumburl == e2?.thumburl &&
-        e1?.createdat == e2?.createdat &&
         e1?.params == e2?.params &&
-        e1?.owneruid == e2?.owneruid;
+        e1?.sourceVideoUrl == e2?.sourceVideoUrl &&
+        e1?.thumbUrl == e2?.thumbUrl &&
+        e1?.ownerUid == e2?.ownerUid &&
+        e1?.status == e2?.status &&
+        e1?.createdAt == e2?.createdAt;
   }
 
   @override
   int hash(VideoRecord? e) => const ListEquality().hash([
         e?.url,
         e?.duration,
-        e?.status,
-        e?.sourcepath,
-        e?.thumburl,
-        e?.createdat,
         e?.params,
-        e?.owneruid
+        e?.sourceVideoUrl,
+        e?.thumbUrl,
+        e?.ownerUid,
+        e?.status,
+        e?.createdAt
       ]);
 
   @override

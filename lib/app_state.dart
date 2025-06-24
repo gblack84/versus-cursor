@@ -197,4 +197,10 @@ class FFAppState extends ChangeNotifier {
   set previewUrlA(String value) {
     _previewUrlA = value;
   }
+
+  String _selectedCoverImageBytes = '';
+  String get selectedCoverImageBytes => _selectedCoverImageBytes;
+  set selectedCoverImageBytes(String value) {
+    _selectedCoverImageBytes = value;
+  }
 }

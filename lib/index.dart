@@ -27,3 +27,5 @@ export '/pots/home_and_posts_copy/home_and_posts_copy_widget.dart'
     show HomeAndPostsCopyWidget;
 export '/editvideo_p/editvideo_p_widget.dart' show EditvideoPWidget;
 export '/editvideopp/editvideopp_widget.dart' show EditvideoppWidget;
+export '/image_editor_page/image_editor_page_widget.dart'
+    show ImageEditorPageWidget;

@@ -196,15 +196,35 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) {
             'videoPath',
             ParamType.String,
           ),
-          videoDocRef: params.getParam(
-            'videoDocRef',
-            ParamType.DocumentReference,
-            isList: false,
-            collectionNamePath: ['posts', 'video'],
-          ),
-          postid: params.getParam(
-            'postid',
+        ),
+      ),
+      FFRoute(
+        name: ImageEditorPageWidget.routeName,
+        path: ImageEditorPageWidget.routePath,
+        builder: (context, params) => ImageEditorPageWidget(
+          originalVideoPath: params.getParam(
+            'originalVideoPath',
             ParamType.String,
+          ),
+          trimStart: params.getParam(
+            'trimStart',
+            ParamType.int,
+          ),
+          trimEnd: params.getParam(
+            'trimEnd',
+            ParamType.int,
+          ),
+          rotation: params.getParam(
+            'rotation',
+            ParamType.int,
+          ),
+          cropData: params.getParam(
+            'cropData',
+            ParamType.String,
+          ),
+          coverTimestamp: params.getParam(
+            'coverTimestamp',
+            ParamType.int,
           ),
         ),
       ),

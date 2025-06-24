@@ -1,5 +1,3 @@
-import '/auth/firebase_auth/auth_util.dart';
-import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import '/custom_code/actions/index.dart' as actions;
@@ -65,96 +63,16 @@ class _UploadChoiceBottomSheetWidgetState
               _model.pickedVideoPath = await actions.getVideoPath(
                 'gallery',
               );
-              if (_model.pickedVideoPath != null &&
-                  _model.pickedVideoPath != '') {
-                var postsRecordReference = PostsRecord.collection.doc();
-                await postsRecordReference.set({
-                  ...createPostsRecordData(
-                    userid: currentUserUid,
-                  ),
-                  ...mapToFirestore(
-                    {
-                      'createdAt': FieldValue.serverTimestamp(),
-                    },
-                  ),
-                });
-                _model.postDocRef = PostsRecord.getDocumentFromData({
-                  ...createPostsRecordData(
-                    userid: currentUserUid,
-                  ),
-                  ...mapToFirestore(
-                    {
-                      'createdAt': DateTime.now(),
-                    },
-                  ),
-                }, postsRecordReference);
-                FFAppState().currentPostId = _model.postDocRef!.reference.id;
-                safeSetState(() {});
 
-                var videoRecordReference =
-                    VideoRecord.createDoc(_model.postDocRef!.reference);
-                await videoRecordReference.set({
-                  ...createVideoRecordData(
-                    status: '\"processing\"',
-                    sourcepath: _model.pickedVideoPath,
-                    owneruid: currentUserUid,
+              context.pushNamed(
+                EditvideoppWidget.routeName,
+                queryParameters: {
+                  'videoPath': serializeParam(
+                    _model.pickedVideoPath,
+                    ParamType.String,
                   ),
-                  ...mapToFirestore(
-                    {
-                      'createdat': FieldValue.serverTimestamp(),
-                    },
-                  ),
-                });
-                _model.videoDocRef = VideoRecord.getDocumentFromData({
-                  ...createVideoRecordData(
-                    status: '\"processing\"',
-                    sourcepath: _model.pickedVideoPath,
-                    owneruid: currentUserUid,
-                  ),
-                  ...mapToFirestore(
-                    {
-                      'createdat': DateTime.now(),
-                    },
-                  ),
-                }, videoRecordReference);
-
-                context.pushNamed(
-                  EditvideoppWidget.routeName,
-                  queryParameters: {
-                    'videoPath': serializeParam(
-                      _model.pickedVideoPath,
-                      ParamType.String,
-                    ),
-                    'videoDocRef': serializeParam(
-                      _model.videoDocRef?.reference,
-                      ParamType.DocumentReference,
-                    ),
-                    'postid': serializeParam(
-                      '',
-                      ParamType.String,
-                    ),
-                  }.withoutNulls,
-                  extra: <String, dynamic>{
-                    kTransitionInfoKey: TransitionInfo(
-                      hasTransition: true,
-                      transitionType: PageTransitionType.bottomToTop,
-                    ),
-                  },
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Failed to process video',
-                      style: TextStyle(
-                        color: FlutterFlowTheme.of(context).primaryText,
-                      ),
-                    ),
-                    duration: Duration(milliseconds: 4000),
-                    backgroundColor: FlutterFlowTheme.of(context).secondary,
-                  ),
-                );
-              }
+                }.withoutNulls,
+              );
 
               safeSetState(() {});
             },

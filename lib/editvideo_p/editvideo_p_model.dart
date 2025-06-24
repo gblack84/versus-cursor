@@ -1,6 +1,4 @@
-import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import '/index.dart';
 import 'editvideo_p_widget.dart' show EditvideoPWidget;
 import 'package:flutter/material.dart';
 
@@ -10,19 +8,6 @@ class EditvideoPModel extends FlutterFlowModel<EditvideoPWidget> {
   FFUploadedFile? rawBytes;
 
   String? tempPath = '';
-
-  ///  State fields for stateful widgets in this page.
-
-  bool isDataUploading_pickedFile = false;
-  FFUploadedFile uploadedLocalFile_pickedFile =
-      FFUploadedFile(bytes: Uint8List.fromList([]));
-
-  // Stores action output result for [Custom Action - bytesToTempPath] action in Button widget.
-  String? tempPathOutput;
-  // Stores action output result for [Backend Call - Create Document] action in Button widget.
-  PostsRecord? postDocRef;
-  // Stores action output result for [Backend Call - Create Document] action in Button widget.
-  VideoRecord? videoDocRef;
 
   @override
   void initState(BuildContext context) {}

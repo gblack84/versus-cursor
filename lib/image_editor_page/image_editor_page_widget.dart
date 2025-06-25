@@ -71,12 +71,7 @@ class _ImageEditorPageWidgetState extends State<ImageEditorPageWidget> {
             child: custom_widgets.AdvancedImageEditor(
               width: double.infinity,
               height: double.infinity,
-              originalVideoPath: widget.originalVideoPath!,
-              trimStart: widget.trimStart!,
-              trimEnd: widget.trimEnd!,
-              rotation: widget.rotation!,
-              cropData: widget.cropData!,
-              coverTimestamp: widget.coverTimestamp!,
+              originalVideoPath: widget.originalVideoPath,
             ),
           ),
         ),

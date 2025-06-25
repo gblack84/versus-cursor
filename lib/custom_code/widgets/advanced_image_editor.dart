@@ -10,106 +10,147 @@ import 'package:flutter/material.dart';
 // Begin custom widget code
 // DO NOT REMOVE OR MODIFY THE CODE ABOVE!
 
-// --- Custom Imports for this Widget ---
-import 'dart:convert';
+import 'index.dart'; // Imports other custom widgets
+import 'package.flutter/material.dart';
+
 import 'dart:typed_data';
 import 'package:pro_image_editor/pro_image_editor.dart';
-import '/custom_code/actions/finalize_and_save.dart' as action_blocks;
+import '/app_state.dart'; // Added to use FFAppState
 
-// [수정] custom_action을 인식하지 못하는 경우를 대비해 명시적으로 import
+// --- Theme colors (Unified with video editor) ---
+const kAccentColor = Color(0xFFFFD600);
+const kBackgroundColor = Colors.black;
 
 class AdvancedImageEditor extends StatefulWidget {
   const AdvancedImageEditor({
     Key? key,
     this.width,
     this.height,
-    required this.originalVideoPath,
-    required this.trimStart,
-    required this.trimEnd,
-    required this.rotation,
-    required this.cropData,
-    required this.coverTimestamp,
+    // [Added] Parameters to receive from the video editor page
+    this.originalVideoPath,
+    this.startMs,
+    this.endMs,
   }) : super(key: key);
 
   final double? width;
   final double? height;
-  final String originalVideoPath;
-  final int trimStart;
-  final int trimEnd;
-  final int rotation;
-  final String cropData;
-  final int coverTimestamp;
+  final String? originalVideoPath;
+  final int? startMs;
+  final int? endMs;
 
   @override
-  State<AdvancedImageEditor> createState() => _AdvancedImageEditorState();
+  _AdvancedImageEditorState createState() => _AdvancedImageEditorState();
 }
 
 class _AdvancedImageEditorState extends State<AdvancedImageEditor> {
+  // Variable to store the image data to be edited
   Uint8List? _imageBytes;
-  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    final String? base64Image = FFAppState().selectedCoverImageBytes;
-    if (base64Image != null && base64Image.isNotEmpty) {
-      try {
-        _imageBytes = base64Decode(base64Image);
-        setState(() {
-          _isLoading = false;
-        });
-      } catch (e) {
-        print("Base64 디코딩 실패: $e");
-        _handleError();
-      }
-    } else {
-      _handleError();
-    }
+    // Get the cover image data from AppState
+    _imageBytes = FFAppState().interimCoverBytes?.bytes;
   }
 
-  void _handleError() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('편집할 이미지를 불러오지 못했습니다.')),
-        );
-      }
-    });
+  // Final upload and server request function to be implemented in Phase 4
+  void _finalizeAndUpload(Uint8List editedImageBytes) {
+    // TODO: Implement checklist step 11 logic
+    // 1. Show loading indicator
+    // 2. Upload edited cover image (editedImageBytes) to Firebase Storage
+    // 3. Upload original video (widget.originalVideoPath) to GCS
+    // 4. Send the URLs of both files and time values (widget.startMs, widget.endMs) to the server API
+    // 5. Navigate to another page after the task is completed
+
+    print('Final "Done" button clicked!');
+    print(' - Original Video Path: ${widget.originalVideoPath}');
+    print(' - Start Time (ms): ${widget.startMs}');
+    print(' - End Time (ms): ${widget.endMs}');
+    print(' - Edited Cover Image Size: ${editedImageBytes.length} bytes');
+
+    // Temporary logic to go back to the previous pages
+    Navigator.of(context).pop();
+    Navigator.of(context).pop(); // Close the video editor as well
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading || _imageBytes == null) {
-      return const Center(child: CircularProgressIndicator());
+    // Show a loading indicator if image data is not available
+    if (_imageBytes == null) {
+      return const Scaffold(
+        backgroundColor: kBackgroundColor,
+        body: Center(child: CircularProgressIndicator(color: kAccentColor)),
+      );
     }
 
     return ProImageEditor.memory(
       _imageBytes!,
       callbacks: ProImageEditorCallbacks(
-        onImageEditingComplete: (Uint8List finalBytes) async {
-          final String base64FinalImage = base64Encode(finalBytes);
-          await action_blocks.finalizeAndSave(
-            context,
-            widget.originalVideoPath,
-            widget.trimStart,
-            widget.trimEnd,
-            widget.rotation,
-            widget.cropData,
-            widget.coverTimestamp,
-            base64FinalImage,
-          );
+        onImageEditingComplete: (bytes) async {
+          // Call the final upload function when the 'Done' button is pressed
+          _finalizeAndUpload(bytes);
         },
         onCloseEditor: () {
-          Navigator.pop(context);
+          Navigator.of(context).pop();
         },
       ),
-      // [수정] configs 부분을 수정하여 버전에 맞게 변경
+      // [Modified] Configurations for UI style unification and feature management
       configs: ProImageEditorConfigs(
-        designMode: ImageEditorDesignModeE.material, // 'whatsapp' -> material
-        i18n: I18n(
-          done: '완료',
-          cancel: '취소',
+        designMode: ImageEditorDesignModeE.material,
+
+        // --- Unify UI Theme ---
+        imageEditorTheme: const ImageEditorTheme(
+          mainEditor: MainEditorTheme(
+            backgroundColor: kBackgroundColor,
+            appBarBackgroundColor: kBackgroundColor,
+            bottomBarBackgroundColor: kBackgroundColor,
+          ),
+        ),
+
+        // --- [수정] 아이콘 크기만 살짝 키움 ---
+        icons: const ImageEditorIcons(
+          painting: Icon(Icons.brush, size: 30),
+          text: Icon(Icons.title, size: 30),
+          crop: Icon(Icons.crop, size: 30),
+          filter: Icon(Icons.filter, size: 30),
+          blur: Icon(Icons.blur_on, size: 30),
+          emoji: Icon(Icons.sentiment_satisfied_alt, size: 30),
+          sticker: Icon(Icons.sticky_note_2, size: 30),
+          back: Icon(Icons.arrow_back_ios,
+              color: Colors.white, size: 28), // 상단바 아이콘은 그대로
+          done: Text(
+            // 'Done' 텍스트 버튼으로 통일
+            'Done',
+            style: TextStyle(
+              color: kAccentColor,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+
+        // All features are enabled as requested.
+        paintEditorConfigs: const PaintEditorConfigs(),
+        textEditorConfigs: const TextEditorConfigs(),
+        cropRotateEditorConfigs: const CropRotateEditorConfigs(),
+        filterEditorConfigs: const FilterEditorConfigs(),
+        blurEditorConfigs: const BlurEditorConfigs(),
+        emojiEditorConfigs: const EmojiEditorConfigs(),
+        stickerEditorConfigs: const StickerEditorConfigs(),
+
+        // UI text is set to English
+        i18n: const I18n(
+          mainEditor: I18nMainEditor(
+            bottomNavigationBarText: [
+              'Crop',
+              'Paint',
+              'Text',
+              'Filter',
+              'Sticker',
+              'Emoji',
+              'Blur'
+            ],
+          ),
         ),
       ),
     );

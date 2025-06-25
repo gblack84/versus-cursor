@@ -38,6 +38,64 @@ class SearchAlgoliaCall {
   }
 }
 
+class GetUploadUrlCall {
+  static Future<ApiCallResponse> call() async {
+    final ffApiRequestBody = '''
+{
+  "fileName": "<fileName>",
+  "contentType": "<contentType>"
+}''';
+    return ApiManager.instance.makeApiCall(
+      callName: 'getUploadUrl',
+      apiUrl:
+          'https://encoder-636984750551.asia-northeast3.run.app/generate-upload-url',
+      callType: ApiCallType.POST,
+      headers: {},
+      params: {},
+      body: ffApiRequestBody,
+      bodyType: BodyType.JSON,
+      returnBody: true,
+      encodeBodyUtf8: false,
+      decodeUtf8: false,
+      cache: false,
+      isStreamingApi: false,
+      alwaysAllowBody: false,
+    );
+  }
+}
+
+class RequestEncodingCall {
+  static Future<ApiCallResponse> call() async {
+    final ffApiRequestBody = '''
+{
+  "gcsPath": "<gcsPath>",
+  "thumbUrl": "<thumbUrl>",
+  "postId": "<postId>",
+  "docId": "<docId>",
+  "ownerUid": "<ownerUid>",
+  "start_ms": <startMs>,
+  "end_ms": <endMs>,
+  "rotate": 0,
+  "crop": null
+}''';
+    return ApiManager.instance.makeApiCall(
+      callName: 'requestEncoding',
+      apiUrl: 'https://encoder-636984750551.asia-northeast3.run.app/encode',
+      callType: ApiCallType.POST,
+      headers: {},
+      params: {},
+      body: ffApiRequestBody,
+      bodyType: BodyType.JSON,
+      returnBody: true,
+      encodeBodyUtf8: false,
+      decodeUtf8: false,
+      cache: false,
+      isStreamingApi: false,
+      alwaysAllowBody: false,
+    );
+  }
+}
+
 String _toEncodable(dynamic item) {
   if (item is DocumentReference) {
     return item.path;
@@ -67,4 +125,15 @@ String _serializeJson(dynamic jsonVar, [bool isList = false]) {
     }
     return isList ? '[]' : '{}';
   }
+}
+
+String? escapeStringForJson(String? input) {
+  if (input == null) {
+    return null;
+  }
+  return input
+      .replaceAll('\\', '\\\\')
+      .replaceAll('"', '\\"')
+      .replaceAll('\n', '\\n')
+      .replaceAll('\t', '\\t');
 }

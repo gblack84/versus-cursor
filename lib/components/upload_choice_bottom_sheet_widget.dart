@@ -1,8 +1,9 @@
+import '/backend/backend.dart';
+import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import '/custom_code/actions/index.dart' as actions;
 import '/index.dart';
-import 'package:ff_theme/flutter_flow/flutter_flow_theme.dart';
 import 'package:flutter/material.dart';
 import 'upload_choice_bottom_sheet_model.dart';
 export 'upload_choice_bottom_sheet_model.dart';
@@ -60,6 +61,10 @@ class _UploadChoiceBottomSheetWidgetState
         children: [
           FFButtonWidget(
             onPressed: () async {
+              var postsRecordReference = PostsRecord.collection.doc();
+              await postsRecordReference.set(createPostsRecordData());
+              _model.newPost = PostsRecord.getDocumentFromData(
+                  createPostsRecordData(), postsRecordReference);
               _model.pickedVideoPath = await actions.getVideoPath(
                 'gallery',
               );
@@ -69,6 +74,10 @@ class _UploadChoiceBottomSheetWidgetState
                 queryParameters: {
                   'videoPath': serializeParam(
                     _model.pickedVideoPath,
+                    ParamType.String,
+                  ),
+                  'postId': serializeParam(
+                    _model.newPost?.userid,
                     ParamType.String,
                   ),
                 }.withoutNulls,

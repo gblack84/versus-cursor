@@ -1,7 +1,6 @@
 import '/flutter_flow/flutter_flow_util.dart';
 import '/custom_code/widgets/index.dart' as custom_widgets;
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'editvideopp_model.dart';
 export 'editvideopp_model.dart';
 
@@ -9,9 +8,11 @@ class EditvideoppWidget extends StatefulWidget {
   const EditvideoppWidget({
     super.key,
     required this.videoPath,
+    required this.postId,
   });
 
   final String? videoPath;
+  final String? postId;
 
   static String routeName = 'editvideopp';
   static String routePath = '/editvideopp';
@@ -42,8 +43,6 @@ class _EditvideoppWidgetState extends State<EditvideoppWidget> {
 
   @override
   Widget build(BuildContext context) {
-    context.watch<FFAppState>();
-
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -58,10 +57,11 @@ class _EditvideoppWidgetState extends State<EditvideoppWidget> {
           child: Container(
             width: double.infinity,
             height: double.infinity,
-            child: custom_widgets.NewFFVideoEditorView(
+            child: custom_widgets.NewVideoTrimmerPage(
               width: double.infinity,
               height: double.infinity,
               videoPath: widget.videoPath!,
+              postId: widget.postId!,
             ),
           ),
         ),

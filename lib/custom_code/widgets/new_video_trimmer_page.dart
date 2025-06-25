@@ -1,7 +1,7 @@
 // Automatic FlutterFlow imports
 import '/backend/backend.dart';
 import '/actions/actions.dart' as action_blocks;
-import 'package:ff_theme/flutter_flow/flutter_flow_theme.dart';
+import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import 'index.dart'; // Imports other custom widgets
 import '/custom_code/actions/index.dart'; // Imports custom actions
@@ -10,16 +10,14 @@ import 'package:flutter/material.dart';
 // Begin custom widget code
 // DO NOT REMOVE OR MODIFY THE CODE ABOVE!
 
-import 'index.dart'; // Imports other custom widgets
-import 'package.flutter/material.dart';
-
 import 'dart:io';
-import 'dart:typed_data'; // Uint8List를 사용하기 위해 추가
-import 'package.video_thumbnail/video_thumbnail.dart'; // 커버 생성을 위해 추가
-import 'package:video_trimmer/video_trimmer.dart';
-import '/app_state.dart'; // FFAppState를 사용하기 위해 추가
+import 'dart:convert';
+import 'dart:typed_data';
+// 수정 1: video_thumbnail -> get_video_thumbnail
+import 'package:get_video_thumbnail/get_video_thumbnail.dart';
+import 'package:flutter_video_trimmer/flutter_video_trimmer.dart';
+import '/app_state.dart';
 
-// --- 우리가 사용할 테마 색상 ---
 const kAccentColor = Color(0xFFFFD600);
 const kBackgroundColor = Colors.black;
 
@@ -29,11 +27,13 @@ class NewVideoTrimmerPage extends StatefulWidget {
     this.width,
     this.height,
     required this.videoPath,
+    required this.postId,
   }) : super(key: key);
 
   final double? width;
   final double? height;
   final String videoPath;
+  final String postId;
 
   @override
   _NewVideoTrimmerPageState createState() => _NewVideoTrimmerPageState();
@@ -52,14 +52,13 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
 
   int _currentPageIndex = 0;
 
-  // 썸네일 생성이 완료되었는지 추적하는 변수
   late Future<List<Uint8List>> _thumbnailsFuture;
 
   @override
   void initState() {
     super.initState();
     _loadVideo();
-    _thumbnailsFuture = _generateThumbnails(); // initState에서 썸네일 생성을 시작
+    _thumbnailsFuture = _generateThumbnails();
   }
 
   @override
@@ -73,10 +72,8 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
     _trimmer.loadVideo(videoFile: File(widget.videoPath));
   }
 
-  // [수정] 상단 '다음' 버튼 클릭 시 실행될 함수 (네비게이션 기능 추가)
   void _onNextButtonPressed() {
     if (_currentPageIndex == 0) {
-      // '영상 자르기' 페이지에서는 비디오 재생을 멈추고 다음 페이지로 이동
       if (_isPlaying) {
         _trimmer.videoPlaybackControl(
           startValue: _startValue,
@@ -90,21 +87,20 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
       );
     } else if (_currentPageIndex == 1) {
       if (_selectedCoverBytes != null) {
-        // --- 10단계 구현 ---
-        // FlutterFlow의 AppState를 사용하여 이미지 데이터를 다음 페이지로 전달
+        // AppState에 Base64로 인코딩하여 저장
         FFAppState().update(() {
-          FFAppState().interimCoverBytes =
-              FFUploadedFile(bytes: _selectedCoverBytes);
+          FFAppState().selectedCoverImageBytes =
+              base64Encode(_selectedCoverBytes!);
         });
 
-        // ImageEditorPage로 네비게이션하면서 필요한 모든 정보를 파라미터로 전달
         context.pushNamed(
-          'ImageEditorPage', // 실제 이미지 편집기 페이지의 이름으로 변경해야 합니다.
+          'ImageEditorPage',
           queryParameters: {
             'originalVideoPath':
                 serializeParam(widget.videoPath, ParamType.String),
             'startMs': serializeParam(_startValue.toInt(), ParamType.int),
             'endMs': serializeParam(_endValue.toInt(), ParamType.int),
+            'postId': serializeParam(widget.postId, ParamType.String),
           }.withoutNulls,
         );
       } else {
@@ -122,7 +118,6 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
       body: SafeArea(
         child: Column(
           children: <Widget>[
-            // 상단 네비게이션 바 (이전과 동일)
             Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -170,8 +165,6 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
                 ],
               ),
             ),
-
-            // PageView 영역 (이전과 동일)
             Expanded(
               child: PageView(
                 controller: _pageController,
@@ -191,7 +184,6 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
     );
   }
 
-  // 트림 페이지 UI (이전과 동일)
   Widget _buildTrimPage() {
     return Column(
       children: [
@@ -212,9 +204,10 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
             onChangeEnd: (value) => setState(() => _endValue = value),
             onChangePlaybackState: (value) =>
                 setState(() => _isPlaying = value),
-            circlePaintColor: kAccentColor,
-            borderPaintColor: kAccentColor,
-            scrubberPaintColor: Colors.amber,
+            // 수정 2: 파라미터 이름 변경
+            circleColor: kAccentColor,
+            borderColor: kAccentColor,
+            scrubberColor: Colors.amber,
           ),
         ),
         Padding(
@@ -236,7 +229,6 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
     );
   }
 
-  // 커버 선택 페이지 UI (이전과 동일)
   Widget _buildCoverSelectionPage() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -264,7 +256,6 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done &&
                   snapshot.hasData) {
-                // [수정] 썸네일이 비어있는 경우 처리
                 if (snapshot.data!.isEmpty) {
                   return const Center(
                       child: Text(
@@ -314,18 +305,14 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
     );
   }
 
-  // 썸네일 생성 헬퍼 함수 (이전과 동일)
   Future<List<Uint8List>> _generateThumbnails() async {
-    // 페이지가 빌드된 후에 _endValue가 확정되므로, 약간의 지연을 줍니다.
     await Future.delayed(const Duration(milliseconds: 500));
     final List<Uint8List> thumbnails = [];
 
-    // 비디오의 실제 길이를 가져옵니다.
     final double videoDurationMs = _trimmer
             .videoPlayerController?.value.duration.inMilliseconds
             .toDouble() ??
         0;
-    // 트림 종료 시간을 비디오 전체 길이로 초기화합니다.
     if (_endValue == 0.0) {
       _endValue = videoDurationMs;
     }
@@ -337,6 +324,7 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
 
     for (int i = 0; i < 8; i++) {
       final int timeMs = (_startValue + (step * i)).toInt();
+      // 수정 1의 결과로 VideoThumbnail 클래스를 정상적으로 사용
       final Uint8List? thumbnail = await VideoThumbnail.thumbnailData(
         video: widget.videoPath,
         imageFormat: ImageFormat.JPEG,
@@ -347,7 +335,6 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
         thumbnails.add(thumbnail);
       }
     }
-    // 첫 썸네일을 기본 선택값으로 설정
     if (mounted && _selectedCoverBytes == null && thumbnails.isNotEmpty) {
       setState(() {
         _selectedCoverBytes = thumbnails.first;

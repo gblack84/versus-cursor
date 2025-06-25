@@ -1,6 +1,6 @@
 import '/flutter_flow/flutter_flow_language_selector.dart';
+import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import 'package:ff_theme/flutter_flow/flutter_flow_theme.dart';
 import 'package:flutter/material.dart';
 import 'language_selector_model.dart';
 export 'language_selector_model.dart';

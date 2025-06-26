@@ -10,19 +10,11 @@ import 'package:flutter/material.dart';
 // Begin custom widget code
 // DO NOT REMOVE OR MODIFY THE CODE ABOVE!
 
-import 'package:ff_theme/flutter_flow/flutter_flow_theme.dart';
-import '/custom_code/widgets/index.dart';
-import '/custom_code/actions/index.dart';
-import '/flutter_flow/custom_functions.dart';
-
+// 필수 패키지를 import 합니다.
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:pro_image_editor/pro_image_editor.dart';
 import '/app_state.dart';
-import 'package:emoji_picker_flutter/emoji_picker_flutter.dart'; // 이모지 피커를 위해 추가
-
-const kAccentColor = Color(0xFFFFD600);
-const kBackgroundColor = Colors.black;
 
 class AdvancedImageEditor extends StatefulWidget {
   const AdvancedImageEditor({
@@ -54,77 +46,47 @@ class _AdvancedImageEditorState extends State<AdvancedImageEditor> {
   @override
   void initState() {
     super.initState();
+    // FFAppState에서 Base64로 인코딩된 이미지 문자열을 가져와 디코딩합니다.
     if (FFAppState().selectedCoverImageBytes.isNotEmpty) {
-      _imageBytes = base64Decode(FFAppState().selectedCoverImageBytes);
+      try {
+        _imageBytes = base64Decode(FFAppState().selectedCoverImageBytes);
+      } catch (e) {
+        print('Error decoding base64 image: $e');
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_imageBytes == null) {
+      // 이미지 데이터가 없을 경우 에러 메시지를 표시합니다.
       return const Scaffold(
-        backgroundColor: kBackgroundColor,
-        body: Center(child: CircularProgressIndicator(color: kAccentColor)),
+        body: Center(child: Text('이미지를 불러올 수 없습니다.')),
       );
     }
 
+    // [최종 수정] 모든 커스텀 설정을 제거하고, 패키지가 제공하는 가장 기본적인 형태로 사용합니다.
+    // 오직 필수 기능인 '이미지 로딩'과 '편집 완료 후 데이터 반환'에만 집중합니다.
     return ProImageEditor.memory(
       _imageBytes!,
       callbacks: ProImageEditorCallbacks(
-        onImageEditingComplete: (bytes) async {
-          final editedFile = FFUploadedFile(bytes: bytes);
+        // 편집 완료 시 실행될 콜백 함수
+        onImageEditingComplete: (Uint8List bytes) async {
+          // 편집된 이미지 데이터를 FlutterFlow에서 사용할 수 있는 FFUploadedFile 형태로 변환합니다.
+          final editedFile = FFUploadedFile(
+            bytes: bytes,
+            name: 'edited_image.jpg', // 파일 이름은 자유롭게 지정 가능
+          );
+          // 위젯 파라미터로 받은 onComplete 액션을 실행하여, 편집된 파일을 다음 로직으로 전달합니다.
           await widget.onComplete?.call(editedFile);
+          // 작업 완료 후, 현재 에디터 화면을 닫습니다.
+          if (mounted) Navigator.pop(context);
         },
+        // 닫기 버튼을 눌렀을 때 실행될 콜백 함수
         onCloseEditor: () {
-          Navigator.of(context).pop();
+          // 현재 에디터 화면을 닫습니다.
+          if (mounted) Navigator.of(context).pop();
         },
-      ),
-      configs: ProImageEditorConfigs(
-        designMode: ImageEditorDesignModeE.material,
-        imageEditorTheme: const ImageEditorTheme(
-          mainEditor: MainEditorTheme(
-            backgroundColor: kBackgroundColor,
-            appBarBackgroundColor: kBackgroundColor,
-            bottomBarBackgroundColor: kBackgroundColor,
-          ),
-          iconTheme: IconThemeData(color: Colors.white),
-        ),
-        // 스티커 에디터 설정을 '이모지'를 사용하도록 수정
-        stickerEditorConfigs: StickerEditorConfigs(
-          enabled: true,
-          buildStickers: (setLayer) {
-            return (scrollController) => EmojiPicker(
-                  onEmojiSelected: (category, emoji) {
-                    setLayer(
-                      EmojiLayerData(
-                        emoji: emoji.emoji,
-                        offset: const Offset(0, 0),
-                      ),
-                    );
-                  },
-                  config: const Config(
-                    columns: 8,
-                    emojiSizeMax: 32 * 1.2,
-                    bgColor: kBackgroundColor,
-                    indicatorColor: kAccentColor,
-                  ),
-                );
-          },
-        ),
-        i18n: const I18n(
-          mainEditor: I18nMainEditor(
-            // 하단 메뉴에 'Sticker'를 포함하여 모든 기능 표시
-            bottomNavigationBarText: [
-              'Crop',
-              'Paint',
-              'Text',
-              'Filter',
-              'Sticker', // 스티커 메뉴 활성화
-              'Emoji',
-              'Blur'
-            ],
-          ),
-        ),
       ),
     );
   }

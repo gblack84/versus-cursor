@@ -8,6 +8,100 @@ export 'api_manager.dart' show ApiCallResponse;
 
 const _kPrivateApiFunctionName = 'ffPrivateApiCall';
 
+/// Start Encoder Group Code
+
+class EncoderGroup {
+  static String getBaseUrl() =>
+      'https://encoder-636984750551.asia-northeast3.run.app';
+  static Map<String, String> headers = {};
+  static GetUploadUrlCall getUploadUrlCall = GetUploadUrlCall();
+  static RequestEncodingCall requestEncodingCall = RequestEncodingCall();
+}
+
+class GetUploadUrlCall {
+  Future<ApiCallResponse> call({
+    String? fileName = '',
+    String? contentType = '',
+  }) async {
+    final baseUrl = EncoderGroup.getBaseUrl();
+
+    final ffApiRequestBody = '''
+{
+  "fileName": "${escapeStringForJson(fileName)}",
+  "contentType": "${escapeStringForJson(contentType)}"
+}
+''';
+    return ApiManager.instance.makeApiCall(
+      callName: 'getUploadUrl',
+      apiUrl: '${baseUrl}/generate-upload-url',
+      callType: ApiCallType.POST,
+      headers: {},
+      params: {},
+      body: ffApiRequestBody,
+      bodyType: BodyType.JSON,
+      returnBody: true,
+      encodeBodyUtf8: false,
+      decodeUtf8: false,
+      cache: false,
+      isStreamingApi: false,
+      alwaysAllowBody: false,
+    );
+  }
+
+  String? signedUrl(dynamic response) => castToType<String>(getJsonField(
+        response,
+        r'''$.signedUrl''',
+      ));
+  String? gcsPath(dynamic response) => castToType<String>(getJsonField(
+        response,
+        r'''$.gcsPath''',
+      ));
+}
+
+class RequestEncodingCall {
+  Future<ApiCallResponse> call({
+    String? gcsPath = '',
+    String? thumbUrl = '',
+    String? postId = '',
+    String? docId = '',
+    String? ownerUid = '',
+    int? startMs,
+    int? endMs,
+  }) async {
+    final baseUrl = EncoderGroup.getBaseUrl();
+
+    final ffApiRequestBody = '''
+{
+    "gcsPath": "${escapeStringForJson(gcsPath)}",
+    "thumbUrl": "${escapeStringForJson(thumbUrl)}",
+    "postId": "${escapeStringForJson(postId)}",
+    "docId": "${escapeStringForJson(docId)}",
+    "ownerUid": "${escapeStringForJson(ownerUid)}",
+    "start_ms": 0,
+    "end_ms": 0,
+    "rotate": 0,
+    "crop": null
+}''';
+    return ApiManager.instance.makeApiCall(
+      callName: 'requestEncoding',
+      apiUrl: '${baseUrl}/encode',
+      callType: ApiCallType.POST,
+      headers: {},
+      params: {},
+      body: ffApiRequestBody,
+      bodyType: BodyType.JSON,
+      returnBody: true,
+      encodeBodyUtf8: false,
+      decodeUtf8: false,
+      cache: false,
+      isStreamingApi: false,
+      alwaysAllowBody: false,
+    );
+  }
+}
+
+/// End Encoder Group Code
+
 class SearchAlgoliaCall {
   static Future<ApiCallResponse> call() async {
     final ffApiRequestBody = '''
@@ -24,64 +118,6 @@ class SearchAlgoliaCall {
         'X-Algolia-Application-Id': '0GAS0MPT9Z',
         'Content-Type': 'application/json',
       },
-      params: {},
-      body: ffApiRequestBody,
-      bodyType: BodyType.JSON,
-      returnBody: true,
-      encodeBodyUtf8: false,
-      decodeUtf8: false,
-      cache: false,
-      isStreamingApi: false,
-      alwaysAllowBody: false,
-    );
-  }
-}
-
-class GetUploadUrlCall {
-  static Future<ApiCallResponse> call() async {
-    final ffApiRequestBody = '''
-{
-  "fileName": "<fileName>",
-  "contentType": "<contentType>"
-}''';
-    return ApiManager.instance.makeApiCall(
-      callName: 'getUploadUrl',
-      apiUrl:
-          'https://encoder-636984750551.asia-northeast3.run.app/generate-upload-url',
-      callType: ApiCallType.POST,
-      headers: {},
-      params: {},
-      body: ffApiRequestBody,
-      bodyType: BodyType.JSON,
-      returnBody: true,
-      encodeBodyUtf8: false,
-      decodeUtf8: false,
-      cache: false,
-      isStreamingApi: false,
-      alwaysAllowBody: false,
-    );
-  }
-}
-
-class RequestEncodingCall {
-  static Future<ApiCallResponse> call() async {
-    final ffApiRequestBody = '''
-{
-  "gcsPath": "<gcsPath>",
-  "thumbUrl": "<thumbUrl>",
-  "postId": "<postId>",
-  "docId": "<docId>",
-  "ownerUid": "<ownerUid>",
-  "start_ms": <startMs>,
-  "end_ms": <endMs>,
-  "rotate": 0,
-  "crop": null
-}''';
-    return ApiManager.instance.makeApiCall(
-      callName: 'requestEncoding',
-      apiUrl: 'https://encoder-636984750551.asia-northeast3.run.app/encode',
-      callType: ApiCallType.POST,
-      headers: {},
       params: {},
       body: ffApiRequestBody,
       bodyType: BodyType.JSON,

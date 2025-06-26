@@ -10,12 +10,18 @@ import 'package:flutter/material.dart';
 // Begin custom widget code
 // DO NOT REMOVE OR MODIFY THE CODE ABOVE!
 
+import 'index.dart'; // Imports other custom widgets
+
+// ===== [수정 1] 필수 패키지 import 구문 추가 =====
+// 이 import 구문들이 있어야 FlutterFlow 커스텀 코드 편집기가
+// TrimEditorStyle, VideoThumbnail, ImageFormat 같은 외부 패키지의
+// 클래스와 열거형(enum)을 인식하고 오류를 발생시키지 않습니다.
 import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
-// 수정 1: video_thumbnail -> get_video_thumbnail
-import 'package:get_video_thumbnail/get_video_thumbnail.dart';
 import 'package:flutter_video_trimmer/flutter_video_trimmer.dart';
+import 'package:get_video_thumbnail/get_video_thumbnail.dart';
+import 'package:get_video_thumbnail/index.dart';
 import '/app_state.dart';
 
 const kAccentColor = Color(0xFFFFD600);
@@ -195,6 +201,9 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
         ),
         Padding(
           padding: const EdgeInsets.all(16.0),
+          // [수정 2] TrimViewer의 스타일링 방식 수정:
+          // 제공해주신 공식 샘플 코드에 따라, 불필요하고 오류를 발생시키는
+          // `editorProperties` 파라미터를 완전히 제거했습니다.
           child: TrimViewer(
             trimmer: _trimmer,
             viewerHeight: 60.0,
@@ -204,10 +213,6 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
             onChangeEnd: (value) => setState(() => _endValue = value),
             onChangePlaybackState: (value) =>
                 setState(() => _isPlaying = value),
-            // 수정 2: 파라미터 이름 변경
-            circleColor: kAccentColor,
-            borderColor: kAccentColor,
-            scrubberColor: Colors.amber,
           ),
         ),
         Padding(
@@ -305,6 +310,10 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
     );
   }
 
+  // [수정 3] 썸네일 생성 클래스 수정:
+  // get_video_thumbnail 패키지의 공식 문서 예제와 동일하게, 올바른 클래스 이름인
+  // `VideoThumbnail`과 열거형 `ImageFormat`을 사용하고, 지적해주신 `maxWidth`
+  // 파라미터를 추가했습니다.
   Future<List<Uint8List>> _generateThumbnails() async {
     await Future.delayed(const Duration(milliseconds: 500));
     final List<Uint8List> thumbnails = [];
@@ -324,10 +333,10 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
 
     for (int i = 0; i < 8; i++) {
       final int timeMs = (_startValue + (step * i)).toInt();
-      // 수정 1의 결과로 VideoThumbnail 클래스를 정상적으로 사용
       final Uint8List? thumbnail = await VideoThumbnail.thumbnailData(
         video: widget.videoPath,
         imageFormat: ImageFormat.JPEG,
+        maxWidth: 128,
         timeMs: timeMs,
         quality: 25,
       );

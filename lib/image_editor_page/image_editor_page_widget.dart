@@ -9,19 +9,15 @@ class ImageEditorPageWidget extends StatefulWidget {
   const ImageEditorPageWidget({
     super.key,
     this.originalVideoPath,
-    required this.trimStart,
-    required this.trimEnd,
-    required this.rotation,
-    required this.cropData,
-    required this.coverTimestamp,
+    required this.startMs,
+    required this.endMs,
+    required this.postId,
   });
 
   final String? originalVideoPath;
-  final int? trimStart;
-  final int? trimEnd;
-  final int? rotation;
-  final String? cropData;
-  final int? coverTimestamp;
+  final int? startMs;
+  final int? endMs;
+  final String? postId;
 
   static String routeName = 'ImageEditorPage';
   static String routePath = '/imageEditorPage';
@@ -72,6 +68,9 @@ class _ImageEditorPageWidgetState extends State<ImageEditorPageWidget> {
               width: double.infinity,
               height: double.infinity,
               originalVideoPath: widget.originalVideoPath,
+              startMs: widget.startMs,
+              endMs: widget.endMs,
+              postId: widget.postId,
             ),
           ),
         ),

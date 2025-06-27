@@ -204,25 +204,17 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
               'originalVideoPath',
               ParamType.String,
             ),
-            trimStart: params.getParam(
-              'trimStart',
+            startMs: params.getParam(
+              'startMs',
               ParamType.int,
             ),
-            trimEnd: params.getParam(
-              'trimEnd',
+            endMs: params.getParam(
+              'endMs',
               ParamType.int,
             ),
-            rotation: params.getParam(
-              'rotation',
-              ParamType.int,
-            ),
-            cropData: params.getParam(
-              'cropData',
+            postId: params.getParam(
+              'postId',
               ParamType.String,
-            ),
-            coverTimestamp: params.getParam(
-              'coverTimestamp',
-              ParamType.int,
             ),
           ),
         )

@@ -77,7 +77,7 @@ class _UploadChoiceBottomSheetWidgetState
                     ParamType.String,
                   ),
                   'postId': serializeParam(
-                    _model.newPost?.userid,
+                    _model.newPost?.reference.id,
                     ParamType.String,
                   ),
                 }.withoutNulls,

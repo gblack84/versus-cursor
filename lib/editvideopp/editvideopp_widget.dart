@@ -5,14 +5,7 @@ import 'editvideopp_model.dart';
 export 'editvideopp_model.dart';
 
 class EditvideoppWidget extends StatefulWidget {
-  const EditvideoppWidget({
-    super.key,
-    required this.videoPath,
-    required this.postId,
-  });
-
-  final String? videoPath;
-  final String? postId;
+  const EditvideoppWidget({super.key});
 
   static String routeName = 'editvideopp';
   static String routePath = '/editvideopp';
@@ -60,8 +53,6 @@ class _EditvideoppWidgetState extends State<EditvideoppWidget> {
             child: custom_widgets.NewVideoTrimmerPage(
               width: double.infinity,
               height: double.infinity,
-              videoPath: widget.videoPath!,
-              postId: widget.postId!,
             ),
           ),
         ),

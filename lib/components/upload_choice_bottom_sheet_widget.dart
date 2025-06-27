@@ -68,20 +68,11 @@ class _UploadChoiceBottomSheetWidgetState
               _model.pickedVideoPath = await actions.getVideoPath(
                 'gallery',
               );
+              FFAppState().uploadPostId = _model.newPost!.reference.id;
+              FFAppState().uploadVideoPath = _model.pickedVideoPath!;
+              safeSetState(() {});
 
-              context.pushNamed(
-                EditvideoppWidget.routeName,
-                queryParameters: {
-                  'videoPath': serializeParam(
-                    _model.pickedVideoPath,
-                    ParamType.String,
-                  ),
-                  'postId': serializeParam(
-                    _model.newPost?.reference.id,
-                    ParamType.String,
-                  ),
-                }.withoutNulls,
-              );
+              context.pushNamed(EditvideoppWidget.routeName);
 
               safeSetState(() {});
             },

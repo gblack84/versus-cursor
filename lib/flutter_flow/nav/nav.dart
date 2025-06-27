@@ -185,38 +185,12 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
         FFRoute(
           name: EditvideoppWidget.routeName,
           path: EditvideoppWidget.routePath,
-          builder: (context, params) => EditvideoppWidget(
-            videoPath: params.getParam(
-              'videoPath',
-              ParamType.String,
-            ),
-            postId: params.getParam(
-              'postId',
-              ParamType.String,
-            ),
-          ),
+          builder: (context, params) => EditvideoppWidget(),
         ),
         FFRoute(
           name: ImageEditorPageWidget.routeName,
           path: ImageEditorPageWidget.routePath,
-          builder: (context, params) => ImageEditorPageWidget(
-            originalVideoPath: params.getParam(
-              'originalVideoPath',
-              ParamType.String,
-            ),
-            startMs: params.getParam(
-              'startMs',
-              ParamType.int,
-            ),
-            endMs: params.getParam(
-              'endMs',
-              ParamType.int,
-            ),
-            postId: params.getParam(
-              'postId',
-              ParamType.String,
-            ),
-          ),
+          builder: (context, params) => ImageEditorPageWidget(),
         )
       ].map((r) => r.toRoute(appStateNotifier)).toList(),
       observers: [routeObserver],

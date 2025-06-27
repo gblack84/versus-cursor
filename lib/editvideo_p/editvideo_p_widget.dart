@@ -199,9 +199,9 @@ class _EditvideoPWidgetState extends State<EditvideoPWidget> {
                         child: Stack(
                           alignment: AlignmentDirectional(0.0, 0.0),
                           children: [
-                            if (FFAppState().previewUrlA != '')
+                            if (FFAppState().uploadVideoPath != '')
                               FlutterFlowMediaDisplay(
-                                path: '${FFAppState().previewUrlA}',
+                                path: '${FFAppState().uploadCoverBytes}',
                                 imageBuilder: (path) => ClipRRect(
                                   borderRadius: BorderRadius.circular(8.0),
                                   child: Image.network(

@@ -168,39 +168,33 @@ class FFAppState extends ChangeNotifier {
     _UpLoadLinkB = value;
   }
 
-  String _editedVideoPath = '';
-  String get editedVideoPath => _editedVideoPath;
-  set editedVideoPath(String value) {
-    _editedVideoPath = value;
+  String _uploadVideoPath = '';
+  String get uploadVideoPath => _uploadVideoPath;
+  set uploadVideoPath(String value) {
+    _uploadVideoPath = value;
   }
 
-  String _editedCoverPath = '';
-  String get editedCoverPath => _editedCoverPath;
-  set editedCoverPath(String value) {
-    _editedCoverPath = value;
+  String _uploadPostId = '';
+  String get uploadPostId => _uploadPostId;
+  set uploadPostId(String value) {
+    _uploadPostId = value;
   }
 
-  String _TempPath = '';
-  String get TempPath => _TempPath;
-  set TempPath(String value) {
-    _TempPath = value;
+  double _uploadStartMs = 0.0;
+  double get uploadStartMs => _uploadStartMs;
+  set uploadStartMs(double value) {
+    _uploadStartMs = value;
   }
 
-  String _currentPostId = '';
-  String get currentPostId => _currentPostId;
-  set currentPostId(String value) {
-    _currentPostId = value;
+  double _uploadEndMs = 0.0;
+  double get uploadEndMs => _uploadEndMs;
+  set uploadEndMs(double value) {
+    _uploadEndMs = value;
   }
 
-  String _previewUrlA = '';
-  String get previewUrlA => _previewUrlA;
-  set previewUrlA(String value) {
-    _previewUrlA = value;
-  }
-
-  String _selectedCoverImageBytes = '';
-  String get selectedCoverImageBytes => _selectedCoverImageBytes;
-  set selectedCoverImageBytes(String value) {
-    _selectedCoverImageBytes = value;
+  String _uploadCoverBytes = '';
+  String get uploadCoverBytes => _uploadCoverBytes;
+  set uploadCoverBytes(String value) {
+    _uploadCoverBytes = value;
   }
 }

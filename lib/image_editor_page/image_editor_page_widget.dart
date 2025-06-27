@@ -6,18 +6,7 @@ import 'image_editor_page_model.dart';
 export 'image_editor_page_model.dart';
 
 class ImageEditorPageWidget extends StatefulWidget {
-  const ImageEditorPageWidget({
-    super.key,
-    this.originalVideoPath,
-    required this.startMs,
-    required this.endMs,
-    required this.postId,
-  });
-
-  final String? originalVideoPath;
-  final int? startMs;
-  final int? endMs;
-  final String? postId;
+  const ImageEditorPageWidget({super.key});
 
   static String routeName = 'ImageEditorPage';
   static String routePath = '/imageEditorPage';
@@ -67,10 +56,6 @@ class _ImageEditorPageWidgetState extends State<ImageEditorPageWidget> {
             child: custom_widgets.AdvancedImageEditor(
               width: double.infinity,
               height: double.infinity,
-              originalVideoPath: widget.originalVideoPath,
-              startMs: widget.startMs,
-              endMs: widget.endMs,
-              postId: widget.postId,
             ),
           ),
         ),

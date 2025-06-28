@@ -68,11 +68,27 @@ class _UploadChoiceBottomSheetWidgetState
               _model.pickedVideoPath = await actions.getVideoPath(
                 'gallery',
               );
-              FFAppState().uploadPostId = _model.newPost!.reference.id;
-              FFAppState().uploadVideoPath = _model.pickedVideoPath!;
-              safeSetState(() {});
+              if (_model.pickedVideoPath != null &&
+                  _model.pickedVideoPath != '') {
+                FFAppState().uploadPostId = _model.newPost!.reference.id;
+                FFAppState().uploadVideoPath = _model.pickedVideoPath!;
+                safeSetState(() {});
 
-              context.pushNamed(EditvideoppWidget.routeName);
+                context.pushNamed(EditvideoppWidget.routeName);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      '\"비디오 선택이 취소되었습니다\" ',
+                      style: TextStyle(
+                        color: FlutterFlowTheme.of(context).primaryText,
+                      ),
+                    ),
+                    duration: Duration(milliseconds: 4000),
+                    backgroundColor: FlutterFlowTheme.of(context).secondary,
+                  ),
+                );
+              }
 
               safeSetState(() {});
             },

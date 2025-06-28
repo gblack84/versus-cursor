@@ -552,6 +552,10 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                               );
                                             },
                                           );
+
+                                          context.pushNamedAuth(
+                                              UserInfoInputWidget.routeName,
+                                              context.mounted);
                                         }
 
                                         safeSetState(() {});

@@ -29,3 +29,5 @@ export '/editvideo_p/editvideo_p_widget.dart' show EditvideoPWidget;
 export '/editvideopp/editvideopp_widget.dart' show EditvideoppWidget;
 export '/image_editor_page/image_editor_page_widget.dart'
     show ImageEditorPageWidget;
+export '/in_put_post_image/in_put_post_image_widget.dart'
+    show InPutPostImageWidget;

@@ -4,6 +4,7 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import '/index.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'phonemaximum_model.dart';
 export 'phonemaximum_model.dart';
 
@@ -90,13 +91,18 @@ class _PhonemaximumWidgetState extends State<PhonemaximumWidget> {
                       ),
                       textAlign: TextAlign.center,
                       style: FlutterFlowTheme.of(context).bodyMedium.override(
-                            fontFamily:
-                                FlutterFlowTheme.of(context).bodyMediumFamily,
+                            font: GoogleFonts.plusJakartaSans(
+                              fontWeight: FontWeight.w800,
+                              fontStyle: FlutterFlowTheme.of(context)
+                                  .bodyMedium
+                                  .fontStyle,
+                            ),
                             fontSize: 20.0,
                             letterSpacing: 0.0,
                             fontWeight: FontWeight.w800,
-                            useGoogleFonts: !FlutterFlowTheme.of(context)
-                                .bodyMediumIsCustom,
+                            fontStyle: FlutterFlowTheme.of(context)
+                                .bodyMedium
+                                .fontStyle,
                           ),
                     ),
                   ),
@@ -130,12 +136,19 @@ class _PhonemaximumWidgetState extends State<PhonemaximumWidget> {
                       EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                   color: FlutterFlowTheme.of(context).primaryText,
                   textStyle: FlutterFlowTheme.of(context).titleSmall.override(
-                        fontFamily:
-                            FlutterFlowTheme.of(context).titleSmallFamily,
+                        font: GoogleFonts.plusJakartaSans(
+                          fontWeight: FlutterFlowTheme.of(context)
+                              .titleSmall
+                              .fontWeight,
+                          fontStyle:
+                              FlutterFlowTheme.of(context).titleSmall.fontStyle,
+                        ),
                         color: Colors.white,
                         letterSpacing: 0.0,
-                        useGoogleFonts:
-                            !FlutterFlowTheme.of(context).titleSmallIsCustom,
+                        fontWeight:
+                            FlutterFlowTheme.of(context).titleSmall.fontWeight,
+                        fontStyle:
+                            FlutterFlowTheme.of(context).titleSmall.fontStyle,
                       ),
                   elevation: 0.0,
                   borderSide: BorderSide(

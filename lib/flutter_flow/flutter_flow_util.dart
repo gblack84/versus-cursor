@@ -38,18 +38,8 @@ T valueOrDefault<T>(T? value, T defaultValue) =>
 void _setTimeagoLocales() {
   timeago.setLocaleMessages('en', timeago.EnMessages());
   timeago.setLocaleMessages('en_short', timeago.EnShortMessages());
-  timeago.setLocaleMessages('ko', timeago.KoMessages());
-  timeago.setLocaleMessages('zh_Hans', timeago.ZhCnMessages());
-  timeago.setLocaleMessages('ja', timeago.JaMessages());
-  timeago.setLocaleMessages('es', timeago.EsMessages());
-  timeago.setLocaleMessages('es_short', timeago.EsShortMessages());
-  timeago.setLocaleMessages('fr', timeago.FrMessages());
-  timeago.setLocaleMessages('fr_short', timeago.FrShortMessages());
-  timeago.setLocaleMessages('hi', timeago.HiMessages());
-  timeago.setLocaleMessages('hi_short', timeago.HiShortMessages());
-  timeago.setLocaleMessages('id', timeago.IdMessages());
-  timeago.setLocaleMessages('it', timeago.ItMessages());
-  timeago.setLocaleMessages('it_short', timeago.ItShortMessages());
+  timeago.setLocaleMessages('de', timeago.DeMessages());
+  timeago.setLocaleMessages('de_short', timeago.DeShortMessages());
 }
 
 String dateTimeFormat(String format, DateTime? dateTime, {String? locale}) {

@@ -9,15 +9,7 @@ const kThemeModeKey = '__theme_mode__';
 
 SharedPreferences? _prefs;
 
-enum DeviceSize {
-  mobile,
-  tablet,
-  desktop,
-}
-
 abstract class FlutterFlowTheme {
-  static DeviceSize deviceSize = DeviceSize.mobile;
-
   static Future initialize() async =>
       _prefs = await SharedPreferences.getInstance();
 
@@ -35,7 +27,6 @@ abstract class FlutterFlowTheme {
       : _prefs?.setBool(kThemeModeKey, mode == ThemeMode.dark);
 
   static FlutterFlowTheme of(BuildContext context) {
-    deviceSize = getDeviceSize(context);
     return Theme.of(context).brightness == Brightness.dark
         ? DarkModeTheme()
         : LightModeTheme();
@@ -140,22 +131,7 @@ abstract class FlutterFlowTheme {
   bool get bodySmallIsCustom => typography.bodySmallIsCustom;
   TextStyle get bodySmall => typography.bodySmall;
 
-  Typography get typography => {
-        DeviceSize.mobile: MobileTypography(this),
-        DeviceSize.tablet: TabletTypography(this),
-        DeviceSize.desktop: DesktopTypography(this),
-      }[deviceSize]!;
-}
-
-DeviceSize getDeviceSize(BuildContext context) {
-  final width = MediaQuery.sizeOf(context).width;
-  if (width < 479) {
-    return DeviceSize.mobile;
-  } else if (width < 991) {
-    return DeviceSize.tablet;
-  } else {
-    return DeviceSize.desktop;
-  }
+  Typography get typography => ThemeTypography(this);
 }
 
 class LightModeTheme extends FlutterFlowTheme {
@@ -166,14 +142,14 @@ class LightModeTheme extends FlutterFlowTheme {
   @Deprecated('Use tertiary instead')
   Color get tertiaryColor => tertiary;
 
-  late Color primary = const Color(0xFF4B39EF);
-  late Color secondary = const Color(0xFF39D2C0);
-  late Color tertiary = const Color(0xFFEE8B60);
+  late Color primary = const Color(0xFFD95B5B);
+  late Color secondary = const Color(0xFF588157);
+  late Color tertiary = const Color(0xFFFAF9F6);
   late Color alternate = const Color(0xFFE0E3E7);
-  late Color primaryText = const Color(0xFF14181B);
-  late Color secondaryText = const Color(0xFF57636C);
-  late Color primaryBackground = const Color(0xFFF1F4F8);
-  late Color secondaryBackground = const Color(0xFFFFFFFF);
+  late Color primaryText = const Color(0xFF4A444B);
+  late Color secondaryText = const Color(0xFF8A817C);
+  late Color primaryBackground = const Color(0xFFFAF9F6);
+  late Color secondaryBackground = const Color(0xFFF5F2E8);
   late Color accent1 = const Color(0x4C4B39EF);
   late Color accent2 = const Color(0x4D39D2C0);
   late Color accent3 = const Color(0x4DEE8B60);
@@ -232,232 +208,8 @@ abstract class Typography {
   TextStyle get bodySmall;
 }
 
-class MobileTypography extends Typography {
-  MobileTypography(this.theme);
-
-  final FlutterFlowTheme theme;
-
-  String get displayLargeFamily => 'Plus Jakarta Sans';
-  bool get displayLargeIsCustom => false;
-  TextStyle get displayLarge => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.w600,
-        fontSize: 64.0,
-      );
-  String get displayMediumFamily => 'Plus Jakarta Sans';
-  bool get displayMediumIsCustom => false;
-  TextStyle get displayMedium => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.w600,
-        fontSize: 44.0,
-      );
-  String get displaySmallFamily => 'Plus Jakarta Sans';
-  bool get displaySmallIsCustom => false;
-  TextStyle get displaySmall => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.w600,
-        fontSize: 36.0,
-      );
-  String get headlineLargeFamily => 'Plus Jakarta Sans';
-  bool get headlineLargeIsCustom => false;
-  TextStyle get headlineLarge => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.w600,
-        fontSize: 32.0,
-      );
-  String get headlineMediumFamily => 'Plus Jakarta Sans';
-  bool get headlineMediumIsCustom => false;
-  TextStyle get headlineMedium => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.w600,
-        fontSize: 28.0,
-      );
-  String get headlineSmallFamily => 'Plus Jakarta Sans';
-  bool get headlineSmallIsCustom => false;
-  TextStyle get headlineSmall => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.w600,
-        fontSize: 24.0,
-      );
-  String get titleLargeFamily => 'Plus Jakarta Sans';
-  bool get titleLargeIsCustom => false;
-  TextStyle get titleLarge => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.w600,
-        fontSize: 20.0,
-      );
-  String get titleMediumFamily => 'Plus Jakarta Sans';
-  bool get titleMediumIsCustom => false;
-  TextStyle get titleMedium => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.w600,
-        fontSize: 18.0,
-      );
-  String get titleSmallFamily => 'Plus Jakarta Sans';
-  bool get titleSmallIsCustom => false;
-  TextStyle get titleSmall => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.w600,
-        fontSize: 16.0,
-      );
-  String get labelLargeFamily => 'Plus Jakarta Sans';
-  bool get labelLargeIsCustom => false;
-  TextStyle get labelLarge => GoogleFonts.plusJakartaSans(
-        color: theme.secondaryText,
-        fontWeight: FontWeight.normal,
-        fontSize: 16.0,
-      );
-  String get labelMediumFamily => 'Plus Jakarta Sans';
-  bool get labelMediumIsCustom => false;
-  TextStyle get labelMedium => GoogleFonts.plusJakartaSans(
-        color: theme.secondaryText,
-        fontWeight: FontWeight.normal,
-        fontSize: 14.0,
-      );
-  String get labelSmallFamily => 'Plus Jakarta Sans';
-  bool get labelSmallIsCustom => false;
-  TextStyle get labelSmall => GoogleFonts.plusJakartaSans(
-        color: theme.secondaryText,
-        fontWeight: FontWeight.normal,
-        fontSize: 12.0,
-      );
-  String get bodyLargeFamily => 'Plus Jakarta Sans';
-  bool get bodyLargeIsCustom => false;
-  TextStyle get bodyLarge => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.normal,
-        fontSize: 16.0,
-      );
-  String get bodyMediumFamily => 'Plus Jakarta Sans';
-  bool get bodyMediumIsCustom => false;
-  TextStyle get bodyMedium => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.normal,
-        fontSize: 14.0,
-      );
-  String get bodySmallFamily => 'Plus Jakarta Sans';
-  bool get bodySmallIsCustom => false;
-  TextStyle get bodySmall => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.normal,
-        fontSize: 12.0,
-      );
-}
-
-class TabletTypography extends Typography {
-  TabletTypography(this.theme);
-
-  final FlutterFlowTheme theme;
-
-  String get displayLargeFamily => 'Plus Jakarta Sans';
-  bool get displayLargeIsCustom => false;
-  TextStyle get displayLarge => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.w600,
-        fontSize: 64.0,
-      );
-  String get displayMediumFamily => 'Plus Jakarta Sans';
-  bool get displayMediumIsCustom => false;
-  TextStyle get displayMedium => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.w600,
-        fontSize: 44.0,
-      );
-  String get displaySmallFamily => 'Plus Jakarta Sans';
-  bool get displaySmallIsCustom => false;
-  TextStyle get displaySmall => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.w600,
-        fontSize: 36.0,
-      );
-  String get headlineLargeFamily => 'Plus Jakarta Sans';
-  bool get headlineLargeIsCustom => false;
-  TextStyle get headlineLarge => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.w600,
-        fontSize: 32.0,
-      );
-  String get headlineMediumFamily => 'Plus Jakarta Sans';
-  bool get headlineMediumIsCustom => false;
-  TextStyle get headlineMedium => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.w600,
-        fontSize: 28.0,
-      );
-  String get headlineSmallFamily => 'Plus Jakarta Sans';
-  bool get headlineSmallIsCustom => false;
-  TextStyle get headlineSmall => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.w600,
-        fontSize: 24.0,
-      );
-  String get titleLargeFamily => 'Plus Jakarta Sans';
-  bool get titleLargeIsCustom => false;
-  TextStyle get titleLarge => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.w600,
-        fontSize: 20.0,
-      );
-  String get titleMediumFamily => 'Plus Jakarta Sans';
-  bool get titleMediumIsCustom => false;
-  TextStyle get titleMedium => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.w600,
-        fontSize: 18.0,
-      );
-  String get titleSmallFamily => 'Plus Jakarta Sans';
-  bool get titleSmallIsCustom => false;
-  TextStyle get titleSmall => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.w600,
-        fontSize: 16.0,
-      );
-  String get labelLargeFamily => 'Plus Jakarta Sans';
-  bool get labelLargeIsCustom => false;
-  TextStyle get labelLarge => GoogleFonts.plusJakartaSans(
-        color: theme.secondaryText,
-        fontWeight: FontWeight.normal,
-        fontSize: 16.0,
-      );
-  String get labelMediumFamily => 'Plus Jakarta Sans';
-  bool get labelMediumIsCustom => false;
-  TextStyle get labelMedium => GoogleFonts.plusJakartaSans(
-        color: theme.secondaryText,
-        fontWeight: FontWeight.normal,
-        fontSize: 14.0,
-      );
-  String get labelSmallFamily => 'Plus Jakarta Sans';
-  bool get labelSmallIsCustom => false;
-  TextStyle get labelSmall => GoogleFonts.plusJakartaSans(
-        color: theme.secondaryText,
-        fontWeight: FontWeight.normal,
-        fontSize: 12.0,
-      );
-  String get bodyLargeFamily => 'Plus Jakarta Sans';
-  bool get bodyLargeIsCustom => false;
-  TextStyle get bodyLarge => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.normal,
-        fontSize: 16.0,
-      );
-  String get bodyMediumFamily => 'Plus Jakarta Sans';
-  bool get bodyMediumIsCustom => false;
-  TextStyle get bodyMedium => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.normal,
-        fontSize: 14.0,
-      );
-  String get bodySmallFamily => 'Plus Jakarta Sans';
-  bool get bodySmallIsCustom => false;
-  TextStyle get bodySmall => GoogleFonts.plusJakartaSans(
-        color: theme.primaryText,
-        fontWeight: FontWeight.normal,
-        fontSize: 12.0,
-      );
-}
-
-class DesktopTypography extends Typography {
-  DesktopTypography(this.theme);
+class ThemeTypography extends Typography {
+  ThemeTypography(this.theme);
 
   final FlutterFlowTheme theme;
 

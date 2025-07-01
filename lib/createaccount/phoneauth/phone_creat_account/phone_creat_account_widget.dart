@@ -6,6 +6,7 @@ import '/flutter_flow/flutter_flow_widgets.dart';
 import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'phone_creat_account_model.dart';
 export 'phone_creat_account_model.dart';
@@ -87,13 +88,20 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                   'qgyftxro' /* Back */,
                 ),
                 style: FlutterFlowTheme.of(context).displaySmall.override(
-                      fontFamily:
-                          FlutterFlowTheme.of(context).displaySmallFamily,
+                      font: GoogleFonts.plusJakartaSans(
+                        fontWeight: FlutterFlowTheme.of(context)
+                            .displaySmall
+                            .fontWeight,
+                        fontStyle:
+                            FlutterFlowTheme.of(context).displaySmall.fontStyle,
+                      ),
                       color: Colors.black,
                       fontSize: 16.0,
                       letterSpacing: 0.0,
-                      useGoogleFonts:
-                          !FlutterFlowTheme.of(context).displaySmallIsCustom,
+                      fontWeight:
+                          FlutterFlowTheme.of(context).displaySmall.fontWeight,
+                      fontStyle:
+                          FlutterFlowTheme.of(context).displaySmall.fontStyle,
                     ),
               ),
             ),
@@ -133,12 +141,22 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                     'gwbbszpy' /* Phone Login */,
                   ),
                   style: FlutterFlowTheme.of(context).headlineMedium.override(
-                        fontFamily:
-                            FlutterFlowTheme.of(context).headlineMediumFamily,
+                        font: GoogleFonts.plusJakartaSans(
+                          fontWeight: FlutterFlowTheme.of(context)
+                              .headlineMedium
+                              .fontWeight,
+                          fontStyle: FlutterFlowTheme.of(context)
+                              .headlineMedium
+                              .fontStyle,
+                        ),
                         color: Colors.black,
                         letterSpacing: 0.0,
-                        useGoogleFonts: !FlutterFlowTheme.of(context)
-                            .headlineMediumIsCustom,
+                        fontWeight: FlutterFlowTheme.of(context)
+                            .headlineMedium
+                            .fontWeight,
+                        fontStyle: FlutterFlowTheme.of(context)
+                            .headlineMedium
+                            .fontStyle,
                       ),
                 ),
               ),
@@ -149,11 +167,19 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                     'xv3gqx8x' /* Please enter your phone number... */,
                   ),
                   style: FlutterFlowTheme.of(context).labelMedium.override(
-                        fontFamily:
-                            FlutterFlowTheme.of(context).labelMediumFamily,
+                        font: GoogleFonts.plusJakartaSans(
+                          fontWeight: FlutterFlowTheme.of(context)
+                              .labelMedium
+                              .fontWeight,
+                          fontStyle: FlutterFlowTheme.of(context)
+                              .labelMedium
+                              .fontStyle,
+                        ),
                         letterSpacing: 0.0,
-                        useGoogleFonts:
-                            !FlutterFlowTheme.of(context).labelMediumIsCustom,
+                        fontWeight:
+                            FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                        fontStyle:
+                            FlutterFlowTheme.of(context).labelMedium.fontStyle,
                       ),
                 ),
               ),
@@ -187,22 +213,40 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                               labelStyle: FlutterFlowTheme.of(context)
                                   .labelMedium
                                   .override(
-                                    fontFamily: FlutterFlowTheme.of(context)
-                                        .labelMediumFamily,
+                                    font: GoogleFonts.plusJakartaSans(
+                                      fontWeight: FlutterFlowTheme.of(context)
+                                          .labelMedium
+                                          .fontWeight,
+                                      fontStyle: FlutterFlowTheme.of(context)
+                                          .labelMedium
+                                          .fontStyle,
+                                    ),
                                     letterSpacing: 0.0,
-                                    useGoogleFonts:
-                                        !FlutterFlowTheme.of(context)
-                                            .labelMediumIsCustom,
+                                    fontWeight: FlutterFlowTheme.of(context)
+                                        .labelMedium
+                                        .fontWeight,
+                                    fontStyle: FlutterFlowTheme.of(context)
+                                        .labelMedium
+                                        .fontStyle,
                                   ),
                               hintStyle: FlutterFlowTheme.of(context)
                                   .labelMedium
                                   .override(
-                                    fontFamily: FlutterFlowTheme.of(context)
-                                        .labelMediumFamily,
+                                    font: GoogleFonts.plusJakartaSans(
+                                      fontWeight: FlutterFlowTheme.of(context)
+                                          .labelMedium
+                                          .fontWeight,
+                                      fontStyle: FlutterFlowTheme.of(context)
+                                          .labelMedium
+                                          .fontStyle,
+                                    ),
                                     letterSpacing: 0.0,
-                                    useGoogleFonts:
-                                        !FlutterFlowTheme.of(context)
-                                            .labelMediumIsCustom,
+                                    fontWeight: FlutterFlowTheme.of(context)
+                                        .labelMedium
+                                        .fontWeight,
+                                    fontStyle: FlutterFlowTheme.of(context)
+                                        .labelMedium
+                                        .fontStyle,
                                   ),
                               enabledBorder: OutlineInputBorder(
                                 borderSide: BorderSide(
@@ -240,12 +284,22 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                             style: FlutterFlowTheme.of(context)
                                 .bodyMedium
                                 .override(
-                                  fontFamily: FlutterFlowTheme.of(context)
-                                      .bodyMediumFamily,
+                                  font: GoogleFonts.plusJakartaSans(
+                                    fontWeight: FlutterFlowTheme.of(context)
+                                        .bodyMedium
+                                        .fontWeight,
+                                    fontStyle: FlutterFlowTheme.of(context)
+                                        .bodyMedium
+                                        .fontStyle,
+                                  ),
                                   color: Colors.black,
                                   letterSpacing: 0.0,
-                                  useGoogleFonts: !FlutterFlowTheme.of(context)
-                                      .bodyMediumIsCustom,
+                                  fontWeight: FlutterFlowTheme.of(context)
+                                      .bodyMedium
+                                      .fontWeight,
+                                  fontStyle: FlutterFlowTheme.of(context)
+                                      .bodyMedium
+                                      .fontStyle,
                                 ),
                             maxLines: null,
                             maxLength: 4,
@@ -272,12 +326,21 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                               labelStyle: FlutterFlowTheme.of(context)
                                   .labelMedium
                                   .override(
-                                    fontFamily: FlutterFlowTheme.of(context)
-                                        .labelMediumFamily,
+                                    font: GoogleFonts.plusJakartaSans(
+                                      fontWeight: FlutterFlowTheme.of(context)
+                                          .labelMedium
+                                          .fontWeight,
+                                      fontStyle: FlutterFlowTheme.of(context)
+                                          .labelMedium
+                                          .fontStyle,
+                                    ),
                                     letterSpacing: 0.0,
-                                    useGoogleFonts:
-                                        !FlutterFlowTheme.of(context)
-                                            .labelMediumIsCustom,
+                                    fontWeight: FlutterFlowTheme.of(context)
+                                        .labelMedium
+                                        .fontWeight,
+                                    fontStyle: FlutterFlowTheme.of(context)
+                                        .labelMedium
+                                        .fontStyle,
                                   ),
                               hintText: FFLocalizations.of(context).getText(
                                 'npd3p5vi' /* Enter your Phone Number... */,
@@ -285,12 +348,21 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                               hintStyle: FlutterFlowTheme.of(context)
                                   .labelMedium
                                   .override(
-                                    fontFamily: FlutterFlowTheme.of(context)
-                                        .labelMediumFamily,
+                                    font: GoogleFonts.plusJakartaSans(
+                                      fontWeight: FlutterFlowTheme.of(context)
+                                          .labelMedium
+                                          .fontWeight,
+                                      fontStyle: FlutterFlowTheme.of(context)
+                                          .labelMedium
+                                          .fontStyle,
+                                    ),
                                     letterSpacing: 0.0,
-                                    useGoogleFonts:
-                                        !FlutterFlowTheme.of(context)
-                                            .labelMediumIsCustom,
+                                    fontWeight: FlutterFlowTheme.of(context)
+                                        .labelMedium
+                                        .fontWeight,
+                                    fontStyle: FlutterFlowTheme.of(context)
+                                        .labelMedium
+                                        .fontStyle,
                                   ),
                               enabledBorder: OutlineInputBorder(
                                 borderSide: BorderSide(
@@ -328,12 +400,22 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                             style: FlutterFlowTheme.of(context)
                                 .bodyMedium
                                 .override(
-                                  fontFamily: FlutterFlowTheme.of(context)
-                                      .bodyMediumFamily,
+                                  font: GoogleFonts.plusJakartaSans(
+                                    fontWeight: FlutterFlowTheme.of(context)
+                                        .bodyMedium
+                                        .fontWeight,
+                                    fontStyle: FlutterFlowTheme.of(context)
+                                        .bodyMedium
+                                        .fontStyle,
+                                  ),
                                   color: Colors.black,
                                   letterSpacing: 0.0,
-                                  useGoogleFonts: !FlutterFlowTheme.of(context)
-                                      .bodyMediumIsCustom,
+                                  fontWeight: FlutterFlowTheme.of(context)
+                                      .bodyMedium
+                                      .fontWeight,
+                                  fontStyle: FlutterFlowTheme.of(context)
+                                      .bodyMedium
+                                      .fontStyle,
                                 ),
                             maxLines: null,
                             maxLength: 12,
@@ -410,16 +492,25 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                       iconPadding:
                           EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                       color: Colors.black,
-                      textStyle: FlutterFlowTheme.of(context)
-                          .titleSmall
-                          .override(
-                            fontFamily:
-                                FlutterFlowTheme.of(context).titleSmallFamily,
-                            color: Colors.white,
-                            letterSpacing: 0.0,
-                            useGoogleFonts: !FlutterFlowTheme.of(context)
-                                .titleSmallIsCustom,
-                          ),
+                      textStyle:
+                          FlutterFlowTheme.of(context).titleSmall.override(
+                                font: GoogleFonts.plusJakartaSans(
+                                  fontWeight: FlutterFlowTheme.of(context)
+                                      .titleSmall
+                                      .fontWeight,
+                                  fontStyle: FlutterFlowTheme.of(context)
+                                      .titleSmall
+                                      .fontStyle,
+                                ),
+                                color: Colors.white,
+                                letterSpacing: 0.0,
+                                fontWeight: FlutterFlowTheme.of(context)
+                                    .titleSmall
+                                    .fontWeight,
+                                fontStyle: FlutterFlowTheme.of(context)
+                                    .titleSmall
+                                    .fontStyle,
+                              ),
                       elevation: 10.0,
                       borderSide: BorderSide(
                         color: Colors.transparent,

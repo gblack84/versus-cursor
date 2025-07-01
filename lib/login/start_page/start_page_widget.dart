@@ -117,7 +117,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: Colors.white,
+        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
         body: Container(
           decoration: BoxDecoration(
             color: Color(0xFFECECEC),

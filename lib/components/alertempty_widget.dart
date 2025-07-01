@@ -7,6 +7,7 @@ import '/pots/in_put_text/in_put_text_widget.dart';
 import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:webviewx_plus/webviewx_plus.dart';
 import 'alertempty_model.dart';
 export 'alertempty_model.dart';
@@ -92,14 +93,18 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
                     ),
                     textAlign: TextAlign.center,
                     style: FlutterFlowTheme.of(context).bodyMedium.override(
-                          fontFamily:
-                              FlutterFlowTheme.of(context).bodyMediumFamily,
+                          font: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w800,
+                            fontStyle: FlutterFlowTheme.of(context)
+                                .bodyMedium
+                                .fontStyle,
+                          ),
                           color: Color(0xFFE04343),
                           fontSize: 20.0,
                           letterSpacing: 0.0,
                           fontWeight: FontWeight.w800,
-                          useGoogleFonts:
-                              !FlutterFlowTheme.of(context).bodyMediumIsCustom,
+                          fontStyle:
+                              FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                         ),
                   ),
                 ),
@@ -122,13 +127,17 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
                     ),
                     textAlign: TextAlign.center,
                     style: FlutterFlowTheme.of(context).bodyMedium.override(
-                          fontFamily:
-                              FlutterFlowTheme.of(context).bodyMediumFamily,
+                          font: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w800,
+                            fontStyle: FlutterFlowTheme.of(context)
+                                .bodyMedium
+                                .fontStyle,
+                          ),
                           fontSize: 14.0,
                           letterSpacing: 0.0,
                           fontWeight: FontWeight.w800,
-                          useGoogleFonts:
-                              !FlutterFlowTheme.of(context).bodyMediumIsCustom,
+                          fontStyle:
+                              FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                         ),
                   ),
                 ),
@@ -201,16 +210,25 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
                       iconPadding:
                           EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                       color: FlutterFlowTheme.of(context).primaryText,
-                      textStyle: FlutterFlowTheme.of(context)
-                          .titleSmall
-                          .override(
-                            fontFamily:
-                                FlutterFlowTheme.of(context).titleSmallFamily,
-                            color: Colors.white,
-                            letterSpacing: 0.0,
-                            useGoogleFonts: !FlutterFlowTheme.of(context)
-                                .titleSmallIsCustom,
-                          ),
+                      textStyle:
+                          FlutterFlowTheme.of(context).titleSmall.override(
+                                font: GoogleFonts.plusJakartaSans(
+                                  fontWeight: FlutterFlowTheme.of(context)
+                                      .titleSmall
+                                      .fontWeight,
+                                  fontStyle: FlutterFlowTheme.of(context)
+                                      .titleSmall
+                                      .fontStyle,
+                                ),
+                                color: Colors.white,
+                                letterSpacing: 0.0,
+                                fontWeight: FlutterFlowTheme.of(context)
+                                    .titleSmall
+                                    .fontWeight,
+                                fontStyle: FlutterFlowTheme.of(context)
+                                    .titleSmall
+                                    .fontStyle,
+                              ),
                       elevation: 10.0,
                       borderSide: BorderSide(
                         color: FlutterFlowTheme.of(context).info,

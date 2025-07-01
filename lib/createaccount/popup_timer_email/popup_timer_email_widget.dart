@@ -9,6 +9,7 @@ import '/index.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'popup_timer_email_model.dart';
 export 'popup_timer_email_model.dart';
 
@@ -101,13 +102,16 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                   ),
                   textAlign: TextAlign.center,
                   style: FlutterFlowTheme.of(context).bodyMedium.override(
-                        fontFamily:
-                            FlutterFlowTheme.of(context).bodyMediumFamily,
+                        font: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w800,
+                          fontStyle:
+                              FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                        ),
                         fontSize: 20.0,
                         letterSpacing: 0.0,
                         fontWeight: FontWeight.w800,
-                        useGoogleFonts:
-                            !FlutterFlowTheme.of(context).bodyMediumIsCustom,
+                        fontStyle:
+                            FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                       ),
                 ),
               ),
@@ -151,16 +155,25 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                       iconPadding:
                           EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                       color: Colors.white,
-                      textStyle: FlutterFlowTheme.of(context)
-                          .titleSmall
-                          .override(
-                            fontFamily:
-                                FlutterFlowTheme.of(context).titleSmallFamily,
-                            color: Color(0xFF14181B),
-                            letterSpacing: 0.0,
-                            useGoogleFonts: !FlutterFlowTheme.of(context)
-                                .titleSmallIsCustom,
-                          ),
+                      textStyle:
+                          FlutterFlowTheme.of(context).titleSmall.override(
+                                font: GoogleFonts.plusJakartaSans(
+                                  fontWeight: FlutterFlowTheme.of(context)
+                                      .titleSmall
+                                      .fontWeight,
+                                  fontStyle: FlutterFlowTheme.of(context)
+                                      .titleSmall
+                                      .fontStyle,
+                                ),
+                                color: Color(0xFF14181B),
+                                letterSpacing: 0.0,
+                                fontWeight: FlutterFlowTheme.of(context)
+                                    .titleSmall
+                                    .fontWeight,
+                                fontStyle: FlutterFlowTheme.of(context)
+                                    .titleSmall
+                                    .fontStyle,
+                              ),
                       elevation: 10.0,
                       borderSide: BorderSide(
                         color: Color(0xFF14181B),
@@ -192,11 +205,21 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                           ,
                         ),
                         style: FlutterFlowTheme.of(context).bodyMedium.override(
-                              fontFamily:
-                                  FlutterFlowTheme.of(context).bodyMediumFamily,
+                              font: GoogleFonts.plusJakartaSans(
+                                fontWeight: FlutterFlowTheme.of(context)
+                                    .bodyMedium
+                                    .fontWeight,
+                                fontStyle: FlutterFlowTheme.of(context)
+                                    .bodyMedium
+                                    .fontStyle,
+                              ),
                               letterSpacing: 0.0,
-                              useGoogleFonts: !FlutterFlowTheme.of(context)
-                                  .bodyMediumIsCustom,
+                              fontWeight: FlutterFlowTheme.of(context)
+                                  .bodyMedium
+                                  .fontWeight,
+                              fontStyle: FlutterFlowTheme.of(context)
+                                  .bodyMedium
+                                  .fontStyle,
                             ),
                       ),
                       TextSpan(
@@ -205,22 +228,31 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                           'Versus@space.com',
                         ),
                         style: FlutterFlowTheme.of(context).bodyMedium.override(
-                              fontFamily:
-                                  FlutterFlowTheme.of(context).bodyMediumFamily,
+                              font: GoogleFonts.plusJakartaSans(
+                                fontWeight: FontWeight.bold,
+                                fontStyle: FlutterFlowTheme.of(context)
+                                    .bodyMedium
+                                    .fontStyle,
+                              ),
                               letterSpacing: 0.0,
                               fontWeight: FontWeight.bold,
-                              useGoogleFonts: !FlutterFlowTheme.of(context)
-                                  .bodyMediumIsCustom,
+                              fontStyle: FlutterFlowTheme.of(context)
+                                  .bodyMedium
+                                  .fontStyle,
                             ),
                       )
                     ],
                     style: FlutterFlowTheme.of(context).bodyMedium.override(
-                          fontFamily:
-                              FlutterFlowTheme.of(context).bodyMediumFamily,
+                          font: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w600,
+                            fontStyle: FlutterFlowTheme.of(context)
+                                .bodyMedium
+                                .fontStyle,
+                          ),
                           letterSpacing: 0.0,
                           fontWeight: FontWeight.w600,
-                          useGoogleFonts:
-                              !FlutterFlowTheme.of(context).bodyMediumIsCustom,
+                          fontStyle:
+                              FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                         ),
                   ),
                   textAlign: TextAlign.center,
@@ -258,16 +290,25 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                         iconPadding:
                             EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                         color: Colors.black,
-                        textStyle: FlutterFlowTheme.of(context)
-                            .titleSmall
-                            .override(
-                              fontFamily:
-                                  FlutterFlowTheme.of(context).titleSmallFamily,
-                              color: Colors.white,
-                              letterSpacing: 0.0,
-                              useGoogleFonts: !FlutterFlowTheme.of(context)
-                                  .titleSmallIsCustom,
-                            ),
+                        textStyle:
+                            FlutterFlowTheme.of(context).titleSmall.override(
+                                  font: GoogleFonts.plusJakartaSans(
+                                    fontWeight: FlutterFlowTheme.of(context)
+                                        .titleSmall
+                                        .fontWeight,
+                                    fontStyle: FlutterFlowTheme.of(context)
+                                        .titleSmall
+                                        .fontStyle,
+                                  ),
+                                  color: Colors.white,
+                                  letterSpacing: 0.0,
+                                  fontWeight: FlutterFlowTheme.of(context)
+                                      .titleSmall
+                                      .fontWeight,
+                                  fontStyle: FlutterFlowTheme.of(context)
+                                      .titleSmall
+                                      .fontStyle,
+                                ),
                         elevation: 10.0,
                         borderRadius: BorderRadius.circular(8.0),
                         disabledColor: Color(0xFF57636C),
@@ -300,14 +341,26 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                                       style: FlutterFlowTheme.of(context)
                                           .headlineSmall
                                           .override(
-                                            fontFamily:
-                                                FlutterFlowTheme.of(context)
-                                                    .headlineSmallFamily,
+                                            font: GoogleFonts.plusJakartaSans(
+                                              fontWeight:
+                                                  FlutterFlowTheme.of(context)
+                                                      .headlineSmall
+                                                      .fontWeight,
+                                              fontStyle:
+                                                  FlutterFlowTheme.of(context)
+                                                      .headlineSmall
+                                                      .fontStyle,
+                                            ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
-                                            useGoogleFonts:
-                                                !FlutterFlowTheme.of(context)
-                                                    .headlineSmallIsCustom,
+                                            fontWeight:
+                                                FlutterFlowTheme.of(context)
+                                                    .headlineSmall
+                                                    .fontWeight,
+                                            fontStyle:
+                                                FlutterFlowTheme.of(context)
+                                                    .headlineSmall
+                                                    .fontStyle,
                                           ),
                                       textAlign: TextAlign.center,
                                     ),
@@ -340,16 +393,25 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                         iconPadding:
                             EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                         color: Colors.black,
-                        textStyle: FlutterFlowTheme.of(context)
-                            .titleSmall
-                            .override(
-                              fontFamily:
-                                  FlutterFlowTheme.of(context).titleSmallFamily,
-                              color: Colors.white,
-                              letterSpacing: 0.0,
-                              useGoogleFonts: !FlutterFlowTheme.of(context)
-                                  .titleSmallIsCustom,
-                            ),
+                        textStyle:
+                            FlutterFlowTheme.of(context).titleSmall.override(
+                                  font: GoogleFonts.plusJakartaSans(
+                                    fontWeight: FlutterFlowTheme.of(context)
+                                        .titleSmall
+                                        .fontWeight,
+                                    fontStyle: FlutterFlowTheme.of(context)
+                                        .titleSmall
+                                        .fontStyle,
+                                  ),
+                                  color: Colors.white,
+                                  letterSpacing: 0.0,
+                                  fontWeight: FlutterFlowTheme.of(context)
+                                      .titleSmall
+                                      .fontWeight,
+                                  fontStyle: FlutterFlowTheme.of(context)
+                                      .titleSmall
+                                      .fontStyle,
+                                ),
                         elevation: 10.0,
                         borderRadius: BorderRadius.circular(8.0),
                         disabledColor: Color(0xFF57636C),
@@ -384,12 +446,20 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                 },
                 textAlign: TextAlign.start,
                 style: FlutterFlowTheme.of(context).headlineSmall.override(
-                      fontFamily:
-                          FlutterFlowTheme.of(context).headlineSmallFamily,
+                      font: GoogleFonts.plusJakartaSans(
+                        fontWeight: FlutterFlowTheme.of(context)
+                            .headlineSmall
+                            .fontWeight,
+                        fontStyle: FlutterFlowTheme.of(context)
+                            .headlineSmall
+                            .fontStyle,
+                      ),
                       color: Color(0xFFFF4E00),
                       letterSpacing: 0.0,
-                      useGoogleFonts:
-                          !FlutterFlowTheme.of(context).headlineSmallIsCustom,
+                      fontWeight:
+                          FlutterFlowTheme.of(context).headlineSmall.fontWeight,
+                      fontStyle:
+                          FlutterFlowTheme.of(context).headlineSmall.fontStyle,
                     ),
               ),
             ),

@@ -2,6 +2,7 @@ import '/flutter_flow/flutter_flow_language_selector.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'language_selector_model.dart';
 export 'language_selector_model.dart';
 
@@ -46,9 +47,13 @@ class _LanguageSelectorWidgetState extends State<LanguageSelectorWidget> {
       dropdownIconColor: FlutterFlowTheme.of(context).secondaryText,
       borderRadius: 8.0,
       textStyle: FlutterFlowTheme.of(context).bodyMedium.override(
-            fontFamily: FlutterFlowTheme.of(context).bodyMediumFamily,
+            font: GoogleFonts.plusJakartaSans(
+              fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+            ),
             letterSpacing: 0.0,
-            useGoogleFonts: !FlutterFlowTheme.of(context).bodyMediumIsCustom,
+            fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
           ),
       hideFlags: true,
       flagSize: 24.0,

@@ -8,6 +8,7 @@ import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'phoneloginpincode_model.dart';
 export 'phoneloginpincode_model.dart';
 
@@ -109,13 +110,16 @@ class _PhoneloginpincodeWidgetState extends State<PhoneloginpincodeWidget> {
                   ),
                   textAlign: TextAlign.center,
                   style: FlutterFlowTheme.of(context).bodyMedium.override(
-                        fontFamily:
-                            FlutterFlowTheme.of(context).bodyMediumFamily,
+                        font: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w800,
+                          fontStyle:
+                              FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                        ),
                         fontSize: 20.0,
                         letterSpacing: 0.0,
                         fontWeight: FontWeight.w800,
-                        useGoogleFonts:
-                            !FlutterFlowTheme.of(context).bodyMediumIsCustom,
+                        fontStyle:
+                            FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                       ),
                 ),
               ),
@@ -146,11 +150,21 @@ class _PhoneloginpincodeWidgetState extends State<PhoneloginpincodeWidget> {
                           ,
                         ),
                         style: FlutterFlowTheme.of(context).bodyMedium.override(
-                              fontFamily:
-                                  FlutterFlowTheme.of(context).bodyMediumFamily,
+                              font: GoogleFonts.plusJakartaSans(
+                                fontWeight: FlutterFlowTheme.of(context)
+                                    .bodyMedium
+                                    .fontWeight,
+                                fontStyle: FlutterFlowTheme.of(context)
+                                    .bodyMedium
+                                    .fontStyle,
+                              ),
                               letterSpacing: 0.0,
-                              useGoogleFonts: !FlutterFlowTheme.of(context)
-                                  .bodyMediumIsCustom,
+                              fontWeight: FlutterFlowTheme.of(context)
+                                  .bodyMedium
+                                  .fontWeight,
+                              fontStyle: FlutterFlowTheme.of(context)
+                                  .bodyMedium
+                                  .fontStyle,
                             ),
                       ),
                       TextSpan(
@@ -159,22 +173,31 @@ class _PhoneloginpincodeWidgetState extends State<PhoneloginpincodeWidget> {
                           'Versus@space.com',
                         ),
                         style: FlutterFlowTheme.of(context).bodyMedium.override(
-                              fontFamily:
-                                  FlutterFlowTheme.of(context).bodyMediumFamily,
+                              font: GoogleFonts.plusJakartaSans(
+                                fontWeight: FontWeight.bold,
+                                fontStyle: FlutterFlowTheme.of(context)
+                                    .bodyMedium
+                                    .fontStyle,
+                              ),
                               letterSpacing: 0.0,
                               fontWeight: FontWeight.bold,
-                              useGoogleFonts: !FlutterFlowTheme.of(context)
-                                  .bodyMediumIsCustom,
+                              fontStyle: FlutterFlowTheme.of(context)
+                                  .bodyMedium
+                                  .fontStyle,
                             ),
                       )
                     ],
                     style: FlutterFlowTheme.of(context).bodyMedium.override(
-                          fontFamily:
-                              FlutterFlowTheme.of(context).bodyMediumFamily,
+                          font: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w600,
+                            fontStyle: FlutterFlowTheme.of(context)
+                                .bodyMedium
+                                .fontStyle,
+                          ),
                           letterSpacing: 0.0,
                           fontWeight: FontWeight.w600,
-                          useGoogleFonts:
-                              !FlutterFlowTheme.of(context).bodyMediumIsCustom,
+                          fontStyle:
+                              FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                         ),
                   ),
                   textAlign: TextAlign.center,
@@ -193,11 +216,21 @@ class _PhoneloginpincodeWidgetState extends State<PhoneloginpincodeWidget> {
                         'w7b2rjfw' /* Hello World */,
                       ),
                       style: FlutterFlowTheme.of(context).bodyMedium.override(
-                            fontFamily:
-                                FlutterFlowTheme.of(context).bodyMediumFamily,
+                            font: GoogleFonts.plusJakartaSans(
+                              fontWeight: FlutterFlowTheme.of(context)
+                                  .bodyMedium
+                                  .fontWeight,
+                              fontStyle: FlutterFlowTheme.of(context)
+                                  .bodyMedium
+                                  .fontStyle,
+                            ),
                             letterSpacing: 0.0,
-                            useGoogleFonts: !FlutterFlowTheme.of(context)
-                                .bodyMediumIsCustom,
+                            fontWeight: FlutterFlowTheme.of(context)
+                                .bodyMedium
+                                .fontWeight,
+                            fontStyle: FlutterFlowTheme.of(context)
+                                .bodyMedium
+                                .fontStyle,
                           ),
                     ),
                   ),
@@ -206,11 +239,19 @@ class _PhoneloginpincodeWidgetState extends State<PhoneloginpincodeWidget> {
                     appContext: context,
                     length: 6,
                     textStyle: FlutterFlowTheme.of(context).bodyLarge.override(
-                          fontFamily:
-                              FlutterFlowTheme.of(context).bodyLargeFamily,
+                          font: GoogleFonts.plusJakartaSans(
+                            fontWeight: FlutterFlowTheme.of(context)
+                                .bodyLarge
+                                .fontWeight,
+                            fontStyle: FlutterFlowTheme.of(context)
+                                .bodyLarge
+                                .fontStyle,
+                          ),
                           letterSpacing: 0.0,
-                          useGoogleFonts:
-                              !FlutterFlowTheme.of(context).bodyLargeIsCustom,
+                          fontWeight:
+                              FlutterFlowTheme.of(context).bodyLarge.fontWeight,
+                          fontStyle:
+                              FlutterFlowTheme.of(context).bodyLarge.fontStyle,
                         ),
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     enableActiveFill: false,
@@ -278,12 +319,20 @@ class _PhoneloginpincodeWidgetState extends State<PhoneloginpincodeWidget> {
                 },
                 textAlign: TextAlign.start,
                 style: FlutterFlowTheme.of(context).headlineSmall.override(
-                      fontFamily:
-                          FlutterFlowTheme.of(context).headlineSmallFamily,
+                      font: GoogleFonts.plusJakartaSans(
+                        fontWeight: FlutterFlowTheme.of(context)
+                            .headlineSmall
+                            .fontWeight,
+                        fontStyle: FlutterFlowTheme.of(context)
+                            .headlineSmall
+                            .fontStyle,
+                      ),
                       color: Color(0xFFFF4E00),
                       letterSpacing: 0.0,
-                      useGoogleFonts:
-                          !FlutterFlowTheme.of(context).headlineSmallIsCustom,
+                      fontWeight:
+                          FlutterFlowTheme.of(context).headlineSmall.fontWeight,
+                      fontStyle:
+                          FlutterFlowTheme.of(context).headlineSmall.fontStyle,
                     ),
               ),
             ),

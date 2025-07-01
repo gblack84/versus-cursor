@@ -4,6 +4,7 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/pots/in_put_text/in_put_text_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:webviewx_plus/webviewx_plus.dart';
 import 'home_and_posts_model.dart';
 export 'home_and_posts_model.dart';
@@ -56,12 +57,19 @@ class _HomeAndPostsWidgetState extends State<HomeAndPostsWidget> {
               'x39v6lyp' /* Page Title */,
             ),
             style: FlutterFlowTheme.of(context).headlineMedium.override(
-                  fontFamily: FlutterFlowTheme.of(context).headlineMediumFamily,
+                  font: GoogleFonts.plusJakartaSans(
+                    fontWeight:
+                        FlutterFlowTheme.of(context).headlineMedium.fontWeight,
+                    fontStyle:
+                        FlutterFlowTheme.of(context).headlineMedium.fontStyle,
+                  ),
                   color: Colors.white,
                   fontSize: 22.0,
                   letterSpacing: 0.0,
-                  useGoogleFonts:
-                      !FlutterFlowTheme.of(context).headlineMediumIsCustom,
+                  fontWeight:
+                      FlutterFlowTheme.of(context).headlineMedium.fontWeight,
+                  fontStyle:
+                      FlutterFlowTheme.of(context).headlineMedium.fontStyle,
                 ),
           ),
           actions: [],

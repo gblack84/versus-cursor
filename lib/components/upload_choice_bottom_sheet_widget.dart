@@ -5,6 +5,7 @@ import '/flutter_flow/flutter_flow_widgets.dart';
 import '/custom_code/actions/index.dart' as actions;
 import '/index.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'upload_choice_bottom_sheet_model.dart';
 export 'upload_choice_bottom_sheet_model.dart';
 
@@ -101,11 +102,18 @@ class _UploadChoiceBottomSheetWidgetState
               iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
               color: Color(0x25000000),
               textStyle: FlutterFlowTheme.of(context).titleSmall.override(
-                    fontFamily: FlutterFlowTheme.of(context).titleSmallFamily,
+                    font: GoogleFonts.plusJakartaSans(
+                      fontWeight:
+                          FlutterFlowTheme.of(context).titleSmall.fontWeight,
+                      fontStyle:
+                          FlutterFlowTheme.of(context).titleSmall.fontStyle,
+                    ),
                     color: Colors.white,
                     letterSpacing: 0.0,
-                    useGoogleFonts:
-                        !FlutterFlowTheme.of(context).titleSmallIsCustom,
+                    fontWeight:
+                        FlutterFlowTheme.of(context).titleSmall.fontWeight,
+                    fontStyle:
+                        FlutterFlowTheme.of(context).titleSmall.fontStyle,
                   ),
               elevation: 0.0,
               borderSide: BorderSide(
@@ -127,11 +135,18 @@ class _UploadChoiceBottomSheetWidgetState
               iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
               color: Color(0x25000000),
               textStyle: FlutterFlowTheme.of(context).titleSmall.override(
-                    fontFamily: FlutterFlowTheme.of(context).titleSmallFamily,
+                    font: GoogleFonts.plusJakartaSans(
+                      fontWeight:
+                          FlutterFlowTheme.of(context).titleSmall.fontWeight,
+                      fontStyle:
+                          FlutterFlowTheme.of(context).titleSmall.fontStyle,
+                    ),
                     color: Colors.white,
                     letterSpacing: 0.0,
-                    useGoogleFonts:
-                        !FlutterFlowTheme.of(context).titleSmallIsCustom,
+                    fontWeight:
+                        FlutterFlowTheme.of(context).titleSmall.fontWeight,
+                    fontStyle:
+                        FlutterFlowTheme.of(context).titleSmall.fontStyle,
                   ),
               elevation: 0.0,
               borderSide: BorderSide(

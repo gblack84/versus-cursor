@@ -197,4 +197,10 @@ class FFAppState extends ChangeNotifier {
   set uploadCoverBytes(String value) {
     _uploadCoverBytes = value;
   }
+
+  double _uploadVideoAspectRatio = 1.77;
+  double get uploadVideoAspectRatio => _uploadVideoAspectRatio;
+  set uploadVideoAspectRatio(double value) {
+    _uploadVideoAspectRatio = value;
+  }
 }

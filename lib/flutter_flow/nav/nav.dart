@@ -191,6 +191,11 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           name: ImageEditorPageWidget.routeName,
           path: ImageEditorPageWidget.routePath,
           builder: (context, params) => ImageEditorPageWidget(),
+        ),
+        FFRoute(
+          name: InPutPostImageWidget.routeName,
+          path: InPutPostImageWidget.routePath,
+          builder: (context, params) => InPutPostImageWidget(),
         )
       ].map((r) => r.toRoute(appStateNotifier)).toList(),
       observers: [routeObserver],

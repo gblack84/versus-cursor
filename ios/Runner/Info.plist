@@ -19,14 +19,7 @@
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>
-		<string>ko</string>
-		<string>zh_Hans</string>
-		<string>ja</string>
-		<string>es</string>
-		<string>fr</string>
-		<string>hi</string>
-		<string>id</string>
-		<string>it</string>
+		<string>de</string>
 	</array>
 
 	<key>CFBundleShortVersionString</key>

@@ -1,17 +1,17 @@
 // Automatic FlutterFlow imports
 import '/backend/backend.dart';
 import '/actions/actions.dart' as action_blocks;
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_theme.dart';
+import '/core/app_utils.dart';
 import 'index.dart'; // Imports other custom widgets
 import '/custom_code/actions/index.dart'; // Imports custom actions
-import '/flutter_flow/custom_functions.dart'; // Imports custom functions
+import '/core/custom_functions.dart'; // Imports custom functions
 import 'package:flutter/material.dart';
 // Begin custom widget code
 // DO NOT REMOVE OR MODIFY THE CODE ABOVE!
 
 import 'index.dart';
-import '/flutter_flow/custom_functions.dart';
+import '/core/custom_functions.dart';
 
 import 'dart:async'; // 비동기 스트림을 위해 추가
 import 'dart:convert';
@@ -44,9 +44,9 @@ class _AdvancedImageEditorState extends State<AdvancedImageEditor> {
   @override
   void initState() {
     super.initState();
-    if (FFAppState().uploadCoverBytes.isNotEmpty) {
+    if (AppState().uploadCoverBytes.isNotEmpty) {
       try {
-        _imageBytes = base64Decode(FFAppState().uploadCoverBytes);
+        _imageBytes = base64Decode(AppState().uploadCoverBytes);
       } catch (e) {
         print('Error decoding base64 image: $e');
       }
@@ -63,10 +63,10 @@ class _AdvancedImageEditorState extends State<AdvancedImageEditor> {
   // [핵심 로직] 모든 업로드 및 인코딩 과정을 처리하는 내부 함수
   Future<void> _processAndUpload(Uint8List editedCoverBytes) async {
     // --- App State에서 모든 필요 데이터 가져오기 ---
-    final originalVideoPath = FFAppState().uploadVideoPath;
-    final postId = FFAppState().uploadPostId;
-    final startMs = FFAppState().uploadStartMs.toInt();
-    final endMs = FFAppState().uploadEndMs.toInt();
+    final originalVideoPath = AppState().uploadVideoPath;
+    final postId = AppState().uploadPostId;
+    final startMs = AppState().uploadStartMs.toInt();
+    final endMs = AppState().uploadEndMs.toInt();
 
     if (originalVideoPath.isEmpty || postId.isEmpty) {
       ScaffoldMessenger.of(context)

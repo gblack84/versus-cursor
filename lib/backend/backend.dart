@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../auth/firebase_auth/auth_util.dart';
 
-import '../flutter_flow/flutter_flow_util.dart';
+import '../core/app_utils.dart';
 import 'schema/util/firestore_util.dart';
 
 import 'schema/users_record.dart';
@@ -1612,9 +1612,10 @@ Future<int> queryCollectionCount(
     query = query.limit(limit);
   }
 
-  return query.count().get().catchError((err) {
+  return query.count().get().then((value) => value.count!).catchError((err) {
     print('Error querying $collection: $err');
-  }).then((value) => value.count!);
+    return 0;
+  });
 }
 
 Stream<List<T>> queryCollection<T>(
@@ -1691,15 +1692,15 @@ extension QueryExtension on Query {
           : where(field, arrayContainsAny: list);
 }
 
-class FFFirestorePage<T> {
+class AppFirestorePage<T> {
   final List<T> data;
   final Stream<List<T>>? dataStream;
   final QueryDocumentSnapshot? nextPageMarker;
 
-  FFFirestorePage(this.data, this.dataStream, this.nextPageMarker);
+  AppFirestorePage(this.data, this.dataStream, this.nextPageMarker);
 }
 
-Future<FFFirestorePage<T>> queryCollectionPage<T>(
+Future<AppFirestorePage<T>> queryCollectionPage<T>(
   Query collection,
   RecordBuilder<T> recordBuilder, {
   Query Function(Query)? queryBuilder,
@@ -1733,7 +1734,7 @@ Future<FFFirestorePage<T>> queryCollectionPage<T>(
   final data = getDocs(docSnapshot);
   final dataStream = docSnapshotStream?.map(getDocs);
   final nextPageToken = docSnapshot.docs.isEmpty ? null : docSnapshot.docs.last;
-  return FFFirestorePage(data, dataStream, nextPageToken);
+  return AppFirestorePage(data, dataStream, nextPageToken);
 }
 
 // Creates a Firestore document representing the logged in user if it doesn't yet exist
@@ -1754,7 +1755,7 @@ Future maybeCreateUser(User user) async {
     photoUrl: user.photoURL,
     uid: user.uid,
     phoneNumber: user.phoneNumber,
-    createdTime: getCurrentTimestamp,
+    createdTime: getCurrentTimestamp(),
   );
 
   await userRecord.set(userData);

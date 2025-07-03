@@ -1,10 +1,10 @@
 import '/etc/vsmark/vsmark_widget.dart';
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_utils.dart';
 import '/index.dart';
 import 'start_page_widget.dart' show StartPageWidget;
 import 'package:flutter/material.dart';
 
-class StartPageModel extends FlutterFlowModel<StartPageWidget> {
+class StartPageModel extends AppModel<StartPageWidget> {
   ///  State fields for stateful widgets in this page.
 
   // Model for vsmark component.

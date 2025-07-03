@@ -36,7 +36,7 @@ dependencies:
   cloud_firestore: 5.5.0
   cloud_firestore_platform_interface: 6.5.0
   cloud_firestore_web: 4.3.4
-  collection: 1.19.0
+  collection: ^1.18.0
   csslib: 0.17.3
   easy_debounce: 2.0.1
   emoji_flag_converter: 1.1.0
@@ -72,6 +72,7 @@ dependencies:
   html: 0.15.4
   http: 1.2.2
   image_picker: 1.1.2
+  dart_openai: ^5.1.0
   image_picker_android: 0.8.12+13
   image_picker_for_web: 3.0.5
   image_picker_ios: 0.8.12
@@ -177,6 +178,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/fonts/
+    - assets/data/
     - assets/images/
     - assets/videos/
     - assets/audios/

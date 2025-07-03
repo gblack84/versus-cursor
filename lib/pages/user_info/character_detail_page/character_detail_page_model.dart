@@ -1,9 +1,9 @@
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_utils.dart';
 import 'character_detail_page_widget.dart' show CharacterDetailPageWidget;
 import 'package:flutter/material.dart';
 
 class CharacterDetailPageModel
-    extends FlutterFlowModel<CharacterDetailPageWidget> {
+    extends AppModel<CharacterDetailPageWidget> {
   ///  Local state fields for this component.
 
   String selectedCharacterUrl = '\" \"';
@@ -11,8 +11,8 @@ class CharacterDetailPageModel
   ///  State fields for stateful widgets in this component.
 
   bool isDataUploading_userUploadProfileImage = false;
-  FFUploadedFile uploadedLocalFile_userUploadProfileImage =
-      FFUploadedFile(bytes: Uint8List.fromList([]));
+  AppUploadedFile uploadedLocalFile_userUploadProfileImage =
+      AppUploadedFile(bytes: Uint8List.fromList([]));
   String uploadedFileUrl_userUploadProfileImage = '';
 
   @override

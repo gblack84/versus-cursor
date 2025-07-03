@@ -1,9 +1,9 @@
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_utils.dart';
 import '/index.dart';
 import 'forgot_password_widget.dart' show ForgotPasswordWidget;
 import 'package:flutter/material.dart';
 
-class ForgotPasswordModel extends FlutterFlowModel<ForgotPasswordWidget> {
+class ForgotPasswordModel extends AppModel<ForgotPasswordWidget> {
   ///  State fields for stateful widgets in this page.
 
   // State field(s) for emailAddress widget.

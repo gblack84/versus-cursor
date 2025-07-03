@@ -8,9 +8,8 @@ import 'auth/firebase_auth/firebase_user_provider.dart';
 import 'auth/firebase_auth/auth_util.dart';
 
 import 'backend/firebase/firebase_config.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
-import 'flutter_flow/flutter_flow_util.dart';
-import 'flutter_flow/internationalization.dart';
+import 'core/app_theme.dart';
+import 'core/app_utils.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,9 +18,9 @@ void main() async {
 
   await initFirebase();
 
-  await FlutterFlowTheme.initialize();
+  await AppTheme.initialize();
 
-  final appState = FFAppState(); // Initialize FFAppState
+  final appState = AppState(); // Initialize AppState
   await appState.initializePersistedState();
 
   runApp(ChangeNotifierProvider(
@@ -50,7 +49,7 @@ class MyAppScrollBehavior extends MaterialScrollBehavior {
 class _MyAppState extends State<MyApp> {
   Locale? _locale;
 
-  ThemeMode _themeMode = FlutterFlowTheme.themeMode;
+  ThemeMode _themeMode = AppTheme.themeMode;
 
   late AppStateNotifier _appStateNotifier;
   late GoRouter _router;
@@ -96,12 +95,12 @@ class _MyAppState extends State<MyApp> {
   }
 
   void setLocale(String language) {
-    safeSetState(() => _locale = createLocale(language));
+    setState(() => _locale = createLocale(language));
   }
 
-  void setThemeMode(ThemeMode mode) => safeSetState(() {
+  void setThemeMode(ThemeMode mode) => setState(() {
         _themeMode = mode;
-        FlutterFlowTheme.saveThemeMode(mode);
+        AppTheme.saveThemeMode(mode);
       });
 
   @override
@@ -111,7 +110,7 @@ class _MyAppState extends State<MyApp> {
       title: 'versus-space',
       scrollBehavior: MyAppScrollBehavior(),
       localizationsDelegates: [
-        FFLocalizationsDelegate(),
+        AppLocalizationsDelegate(),
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,

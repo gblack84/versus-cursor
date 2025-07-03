@@ -1,9 +1,9 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
-import '/flutter_flow/flutter_flow_animations.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
+import '/core/app_animations.dart';
+import '/core/app_theme.dart';
+import '/core/app_utils.dart';
+import '/core/app_widgets.dart';
 import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -69,7 +69,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
       ),
     });
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
@@ -144,16 +144,16 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                     obscureText: false,
                                     decoration: InputDecoration(
                                       labelText:
-                                          FFLocalizations.of(context).getText(
+                                          AppLocalizations.of(context).getText(
                                         'b6l0k8k2' /* Email */,
                                       ),
-                                      labelStyle: FlutterFlowTheme.of(context)
+                                      labelStyle: AppTheme.of(context)
                                           .labelMedium
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight: FontWeight.w500,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .labelMedium
                                                       .fontStyle,
                                             ),
@@ -162,7 +162,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                             letterSpacing: 0.0,
                                             fontWeight: FontWeight.w500,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .labelMedium
                                                     .fontStyle,
                                           ),
@@ -202,13 +202,13 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                       fillColor: Colors.white,
                                       contentPadding: EdgeInsets.all(24.0),
                                     ),
-                                    style: FlutterFlowTheme.of(context)
+                                    style: AppTheme.of(context)
                                         .bodyMedium
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.w500,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontStyle,
                                           ),
@@ -217,7 +217,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.w500,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
                                         ),
@@ -243,16 +243,16 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                         !_model.passwordLoginVisibility,
                                     decoration: InputDecoration(
                                       labelText:
-                                          FFLocalizations.of(context).getText(
+                                          AppLocalizations.of(context).getText(
                                         '6l9ekgal' /* Password */,
                                       ),
-                                      labelStyle: FlutterFlowTheme.of(context)
+                                      labelStyle: AppTheme.of(context)
                                           .labelMedium
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight: FontWeight.w500,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .labelMedium
                                                       .fontStyle,
                                             ),
@@ -261,7 +261,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                             letterSpacing: 0.0,
                                             fontWeight: FontWeight.w500,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .labelMedium
                                                     .fontStyle,
                                           ),
@@ -301,7 +301,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                       fillColor: Colors.white,
                                       contentPadding: EdgeInsets.all(24.0),
                                       suffixIcon: InkWell(
-                                        onTap: () => safeSetState(
+                                        onTap: () => setState(
                                           () => _model.passwordLoginVisibility =
                                               !_model.passwordLoginVisibility,
                                         ),
@@ -316,13 +316,13 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                         ),
                                       ),
                                     ),
-                                    style: FlutterFlowTheme.of(context)
+                                    style: AppTheme.of(context)
                                         .bodyMedium
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.w500,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontStyle,
                                           ),
@@ -331,7 +331,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.w500,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
                                         ),
@@ -346,7 +346,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                 child: Padding(
                                   padding: EdgeInsetsDirectional.fromSTEB(
                                       0.0, 20.0, 0.0, 16.0),
-                                  child: FFButtonWidget(
+                                  child: AppButtonWidget(
                                     onPressed: () async {
                                       GoRouter.of(context).prepareAuthEvent();
 
@@ -384,10 +384,10 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                         },
                                       );
                                     },
-                                    text: FFLocalizations.of(context).getText(
+                                    text: AppLocalizations.of(context).getText(
                                       '4wwn8ov8' /* Log in */,
                                     ),
-                                    options: FFButtonOptions(
+                                    options: AppButtonOptions(
                                       width: 230.0,
                                       height: 52.0,
                                       padding: EdgeInsetsDirectional.fromSTEB(
@@ -396,13 +396,13 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
                                       color: Colors.black,
-                                      textStyle: FlutterFlowTheme.of(context)
+                                      textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight: FontWeight.w500,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontStyle,
                                             ),
@@ -411,7 +411,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                             letterSpacing: 0.0,
                                             fontWeight: FontWeight.w500,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontStyle,
                                           ),
@@ -430,7 +430,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                 child: Padding(
                                   padding: EdgeInsetsDirectional.fromSTEB(
                                       0.0, 0.0, 0.0, 16.0),
-                                  child: FFButtonWidget(
+                                  child: AppButtonWidget(
                                     onPressed: () async {
                                       context.pushNamed(
                                         PhoneCreatAccountWidget.routeName,
@@ -451,10 +451,10 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                         },
                                       );
                                     },
-                                    text: FFLocalizations.of(context).getText(
+                                    text: AppLocalizations.of(context).getText(
                                       'uk1cwrhu' /* Phone Log in */,
                                     ),
-                                    options: FFButtonOptions(
+                                    options: AppButtonOptions(
                                       width: 230.0,
                                       height: 52.0,
                                       padding: EdgeInsetsDirectional.fromSTEB(
@@ -463,13 +463,13 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
                                       color: Colors.black,
-                                      textStyle: FlutterFlowTheme.of(context)
+                                      textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight: FontWeight.w500,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontStyle,
                                             ),
@@ -478,7 +478,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                             letterSpacing: 0.0,
                                             fontWeight: FontWeight.w500,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontStyle,
                                           ),
@@ -497,7 +497,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                 child: Padding(
                                   padding: EdgeInsetsDirectional.fromSTEB(
                                       0.0, 16.0, 0.0, 16.0),
-                                  child: FFButtonWidget(
+                                  child: AppButtonWidget(
                                     onPressed: () async {
                                       context.pushNamed(
                                         ForgotPasswordWidget.routeName,
@@ -512,10 +512,10 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                         },
                                       );
                                     },
-                                    text: FFLocalizations.of(context).getText(
+                                    text: AppLocalizations.of(context).getText(
                                       'ymtbo8l4' /* Forgot Password */,
                                     ),
-                                    options: FFButtonOptions(
+                                    options: AppButtonOptions(
                                       width: 230.0,
                                       height: 44.0,
                                       padding: EdgeInsetsDirectional.fromSTEB(
@@ -524,13 +524,13 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
                                       color: Colors.white,
-                                      textStyle: FlutterFlowTheme.of(context)
+                                      textStyle: AppTheme.of(context)
                                           .bodyMedium
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight: FontWeight.w500,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .bodyMedium
                                                       .fontStyle,
                                             ),
@@ -539,7 +539,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                             letterSpacing: 0.0,
                                             fontWeight: FontWeight.w500,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontStyle,
                                           ),
@@ -572,16 +572,16 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                               context.pushNamed(TestpageSelectWidget.routeName);
                             },
                             child: Text(
-                              FFLocalizations.of(context).getText(
+                              AppLocalizations.of(context).getText(
                                 'e1wsx5w1' /* Or sign up with, goto test */,
                               ),
                               textAlign: TextAlign.center,
-                              style: FlutterFlowTheme.of(context)
+                              style: AppTheme.of(context)
                                   .labelMedium
                                   .override(
                                     font: GoogleFonts.plusJakartaSans(
                                       fontWeight: FontWeight.w500,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .labelMedium
                                           .fontStyle,
                                     ),
@@ -589,7 +589,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                     fontSize: 14.0,
                                     letterSpacing: 0.0,
                                     fontWeight: FontWeight.w500,
-                                    fontStyle: FlutterFlowTheme.of(context)
+                                    fontStyle: AppTheme.of(context)
                                         .labelMedium
                                         .fontStyle,
                                   ),

@@ -21,9 +21,9 @@ export '/createaccount/phoneauth/phone_creat_account/phone_creat_account_widget.
 export '/createaccount/phoneauth/phonelogeinpincode/phonelogeinpincode_widget.dart'
     show PhonelogeinpincodeWidget;
 export '/etc/blankppp/blankppp_widget.dart' show BlankpppWidget;
-export '/pots/home_and_posts/home_and_posts_widget.dart'
+export '/posts/home_and_posts/home_and_posts_widget.dart'
     show HomeAndPostsWidget;
-export '/pots/home_and_posts_copy/home_and_posts_copy_widget.dart'
+export '/posts/home_and_posts_copy/home_and_posts_copy_widget.dart'
     show HomeAndPostsCopyWidget;
 export '/editvideo_p/editvideo_p_widget.dart' show EditvideoPWidget;
 export '/editvideopp/editvideopp_widget.dart' show EditvideoppWidget;

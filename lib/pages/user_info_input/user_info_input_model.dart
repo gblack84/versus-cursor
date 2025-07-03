@@ -1,12 +1,12 @@
 import '/backend/backend.dart';
-import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/form_field_controller.dart';
+import '/core/app_utils.dart';
+import '/core/form_field_controller.dart';
 import '/pages/user_info/language_selector/language_selector_widget.dart';
 import '/index.dart';
 import 'user_info_input_widget.dart' show UserInfoInputWidget;
 import 'package:flutter/material.dart';
 
-class UserInfoInputModel extends FlutterFlowModel<UserInfoInputWidget> {
+class UserInfoInputModel extends AppModel<UserInfoInputWidget> {
   ///  Local state fields for this page.
 
   String? selectedLanguage;
@@ -25,7 +25,7 @@ class UserInfoInputModel extends FlutterFlowModel<UserInfoInputWidget> {
   String? _displayNameTextControllerValidator(
       BuildContext context, String? val) {
     if (val == null || val.isEmpty) {
-      return FFLocalizations.of(context).getText(
+      return AppLocalizations.of(context).getText(
         'u59p36mu' /* Please enter the your display ... */,
       );
     }

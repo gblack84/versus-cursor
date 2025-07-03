@@ -1,9 +1,9 @@
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_utils.dart';
 import '/index.dart';
 import 'create_account_widget.dart' show CreateAccountWidget;
 import 'package:flutter/material.dart';
 
-class CreateAccountModel extends FlutterFlowModel<CreateAccountWidget> {
+class CreateAccountModel extends AppModel<CreateAccountWidget> {
   ///  State fields for stateful widgets in this page.
 
   final formKey = GlobalKey<FormState>();
@@ -14,13 +14,13 @@ class CreateAccountModel extends FlutterFlowModel<CreateAccountWidget> {
   String? _emailAddressTextControllerValidator(
       BuildContext context, String? val) {
     if (val == null || val.isEmpty) {
-      return FFLocalizations.of(context).getText(
+      return AppLocalizations.of(context).getText(
         'sfx28arj' /* Email is required */,
       );
     }
 
     if (!RegExp(kTextValidatorEmailRegex).hasMatch(val)) {
-      return FFLocalizations.of(context).getText(
+      return AppLocalizations.of(context).getText(
         'fg4iipv6' /* Please enter a valid email add... */,
       );
     }
@@ -34,7 +34,7 @@ class CreateAccountModel extends FlutterFlowModel<CreateAccountWidget> {
   String? Function(BuildContext, String?)? passwordTextControllerValidator;
   String? _passwordTextControllerValidator(BuildContext context, String? val) {
     if (val == null || val.isEmpty) {
-      return FFLocalizations.of(context).getText(
+      return AppLocalizations.of(context).getText(
         'c10h5qqp' /* Password is required */,
       );
     }
@@ -42,7 +42,7 @@ class CreateAccountModel extends FlutterFlowModel<CreateAccountWidget> {
     if (!RegExp(
             '^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@\$!%*#?&])[A-Za-z\\d@\$!%*#?&]{8,15}\$')
         .hasMatch(val)) {
-      return FFLocalizations.of(context).getText(
+      return AppLocalizations.of(context).getText(
         'nlyzshnr' /* Please enter at least 8 charac... */,
       );
     }
@@ -58,7 +58,7 @@ class CreateAccountModel extends FlutterFlowModel<CreateAccountWidget> {
   String? _passwordConfirmTextControllerValidator(
       BuildContext context, String? val) {
     if (val == null || val.isEmpty) {
-      return FFLocalizations.of(context).getText(
+      return AppLocalizations.of(context).getText(
         'dv9ttawj' /* Confirm Password is required */,
       );
     }

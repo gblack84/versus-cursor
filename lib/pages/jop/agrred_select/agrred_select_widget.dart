@@ -1,9 +1,9 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
-import '/flutter_flow/flutter_flow_icon_button.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
+import '/core/app_icon_button.dart';
+import '/core/app_theme.dart';
+import '/core/app_utils.dart';
+import '/core/app_widgets.dart';
 import '/index.dart';
 import 'package:easy_debounce/easy_debounce.dart';
 import 'package:flutter/material.dart';
@@ -35,8 +35,8 @@ class _AgrredSelectWidgetState extends State<AgrredSelectWidget> {
 
     _model.hobbiesTextController ??= TextEditingController();
     _model.hobbiesFocusNode ??= FocusNode();
-    _model.hobbiesFocusNode!.addListener(() => safeSetState(() {}));
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    _model.hobbiesFocusNode!.addListener(() => setState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
@@ -76,23 +76,23 @@ class _AgrredSelectWidgetState extends State<AgrredSelectWidget> {
           title: Align(
             alignment: AlignmentDirectional(-1.0, 1.0),
             child: Text(
-              FFLocalizations.of(context).getText(
+              AppLocalizations.of(context).getText(
                 '1kaqp8o7' /* versus space */,
               ),
               textAlign: TextAlign.end,
-              style: FlutterFlowTheme.of(context).headlineSmall.override(
+              style: AppTheme.of(context).headlineSmall.override(
                     font: GoogleFonts.plusJakartaSans(
                       fontWeight:
-                          FlutterFlowTheme.of(context).headlineSmall.fontWeight,
+                          AppTheme.of(context).headlineSmall.fontWeight,
                       fontStyle:
-                          FlutterFlowTheme.of(context).headlineSmall.fontStyle,
+                          AppTheme.of(context).headlineSmall.fontStyle,
                     ),
                     color: Color(0xFF14181B),
                     letterSpacing: 0.0,
                     fontWeight:
-                        FlutterFlowTheme.of(context).headlineSmall.fontWeight,
+                        AppTheme.of(context).headlineSmall.fontWeight,
                     fontStyle:
-                        FlutterFlowTheme.of(context).headlineSmall.fontStyle,
+                        AppTheme.of(context).headlineSmall.fontStyle,
                   ),
             ),
           ),
@@ -136,13 +136,13 @@ class _AgrredSelectWidgetState extends State<AgrredSelectWidget> {
                                   children: [
                                     TextSpan(
                                       text: currentUserDisplayName,
-                                      style: FlutterFlowTheme.of(context)
+                                      style: AppTheme.of(context)
                                           .bodyMedium
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight: FontWeight.w800,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .bodyMedium
                                                       .fontStyle,
                                             ),
@@ -150,35 +150,35 @@ class _AgrredSelectWidgetState extends State<AgrredSelectWidget> {
                                             letterSpacing: 0.0,
                                             fontWeight: FontWeight.w800,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontStyle,
                                           ),
                                     ),
                                     TextSpan(
-                                      text: FFLocalizations.of(context).getText(
+                                      text: AppLocalizations.of(context).getText(
                                         '17zx9oh1' /*  Next, share your hobbies and ... */,
                                       ),
-                                      style: FlutterFlowTheme.of(context)
+                                      style: AppTheme.of(context)
                                           .bodyMedium
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight: FontWeight.w600,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .bodyMedium
                                                       .fontStyle,
                                             ),
                                             letterSpacing: 0.0,
                                             fontWeight: FontWeight.w600,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontStyle,
                                           ),
                                     ),
                                     TextSpan(
-                                      text: FFLocalizations.of(context).getText(
+                                      text: AppLocalizations.of(context).getText(
                                         'xxz7ej5s' /* 
 We’ll tailor recommendations ... */
                                         ,
@@ -189,20 +189,20 @@ We’ll tailor recommendations ... */
                                       ),
                                     )
                                   ],
-                                  style: FlutterFlowTheme.of(context)
+                                  style: AppTheme.of(context)
                                       .bodyMedium
                                       .override(
                                         font: GoogleFonts.plusJakartaSans(
                                           fontWeight: FontWeight.bold,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
                                         ),
                                         fontSize: 16.0,
                                         letterSpacing: 0.0,
                                         fontWeight: FontWeight.bold,
-                                        fontStyle: FlutterFlowTheme.of(context)
+                                        fontStyle: AppTheme.of(context)
                                             .bodyMedium
                                             .fontStyle,
                                       ),
@@ -221,27 +221,27 @@ We’ll tailor recommendations ... */
                             child: Padding(
                               padding: EdgeInsets.all(10.0),
                               child: Text(
-                                FFLocalizations.of(context).getText(
+                                AppLocalizations.of(context).getText(
                                   'u7v4k6jw' /* What are your hobbies or inter... */,
                                 ),
                                 textAlign: TextAlign.center,
-                                style: FlutterFlowTheme.of(context)
+                                style: AppTheme.of(context)
                                     .headlineMedium
                                     .override(
                                       font: GoogleFonts.plusJakartaSans(
-                                        fontWeight: FlutterFlowTheme.of(context)
+                                        fontWeight: AppTheme.of(context)
                                             .headlineMedium
                                             .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
+                                        fontStyle: AppTheme.of(context)
                                             .headlineMedium
                                             .fontStyle,
                                       ),
                                       color: Color(0xFF14181B),
                                       letterSpacing: 0.0,
-                                      fontWeight: FlutterFlowTheme.of(context)
+                                      fontWeight: AppTheme.of(context)
                                           .headlineMedium
                                           .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .headlineMedium
                                           .fontStyle,
                                     ),
@@ -275,74 +275,74 @@ We’ll tailor recommendations ... */
                                 () async {
                                   _model.hobbiesTag =
                                       _model.hobbiesTextController.text;
-                                  safeSetState(() {});
+                                  setState(() {});
                                 },
                               ),
                               autofocus: true,
                               textCapitalization: TextCapitalization.words,
                               obscureText: false,
                               decoration: InputDecoration(
-                                labelText: FFLocalizations.of(context).getText(
+                                labelText: AppLocalizations.of(context).getText(
                                   '278cy82i' /* hobby or interest… */,
                                 ),
-                                labelStyle: FlutterFlowTheme.of(context)
+                                labelStyle: AppTheme.of(context)
                                     .headlineMedium
                                     .override(
                                       font: GoogleFonts.plusJakartaSans(
-                                        fontWeight: FlutterFlowTheme.of(context)
+                                        fontWeight: AppTheme.of(context)
                                             .headlineMedium
                                             .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
+                                        fontStyle: AppTheme.of(context)
                                             .headlineMedium
                                             .fontStyle,
                                       ),
-                                      color: FlutterFlowTheme.of(context)
+                                      color: AppTheme.of(context)
                                           .secondaryText,
                                       letterSpacing: 0.0,
-                                      fontWeight: FlutterFlowTheme.of(context)
+                                      fontWeight: AppTheme.of(context)
                                           .headlineMedium
                                           .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .headlineMedium
                                           .fontStyle,
                                     ),
-                                hintStyle: FlutterFlowTheme.of(context)
+                                hintStyle: AppTheme.of(context)
                                     .labelMedium
                                     .override(
                                       font: GoogleFonts.plusJakartaSans(
-                                        fontWeight: FlutterFlowTheme.of(context)
+                                        fontWeight: AppTheme.of(context)
                                             .labelMedium
                                             .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
+                                        fontStyle: AppTheme.of(context)
                                             .labelMedium
                                             .fontStyle,
                                       ),
                                       letterSpacing: 0.0,
-                                      fontWeight: FlutterFlowTheme.of(context)
+                                      fontWeight: AppTheme.of(context)
                                           .labelMedium
                                           .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .labelMedium
                                           .fontStyle,
                                     ),
-                                errorStyle: FlutterFlowTheme.of(context)
+                                errorStyle: AppTheme.of(context)
                                     .bodyMedium
                                     .override(
                                       font: GoogleFonts.plusJakartaSans(
-                                        fontWeight: FlutterFlowTheme.of(context)
+                                        fontWeight: AppTheme.of(context)
                                             .bodyMedium
                                             .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
+                                        fontStyle: AppTheme.of(context)
                                             .bodyMedium
                                             .fontStyle,
                                       ),
-                                      color: FlutterFlowTheme.of(context).error,
+                                      color: AppTheme.of(context).error,
                                       fontSize: 12.0,
                                       letterSpacing: 0.0,
-                                      fontWeight: FlutterFlowTheme.of(context)
+                                      fontWeight: AppTheme.of(context)
                                           .bodyMedium
                                           .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .bodyMedium
                                           .fontStyle,
                                     ),
@@ -355,21 +355,21 @@ We’ll tailor recommendations ... */
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderSide: BorderSide(
-                                    color: FlutterFlowTheme.of(context).primary,
+                                    color: AppTheme.of(context).primary,
                                     width: 2.0,
                                   ),
                                   borderRadius: BorderRadius.circular(10.0),
                                 ),
                                 errorBorder: OutlineInputBorder(
                                   borderSide: BorderSide(
-                                    color: FlutterFlowTheme.of(context).error,
+                                    color: AppTheme.of(context).error,
                                     width: 2.0,
                                   ),
                                   borderRadius: BorderRadius.circular(10.0),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
                                   borderSide: BorderSide(
-                                    color: FlutterFlowTheme.of(context).error,
+                                    color: AppTheme.of(context).error,
                                     width: 2.0,
                                   ),
                                   borderRadius: BorderRadius.circular(10.0),
@@ -377,28 +377,28 @@ We’ll tailor recommendations ... */
                                 filled: true,
                                 fillColor:
                                     (_model.hobbiesFocusNode?.hasFocus ?? false)
-                                        ? FlutterFlowTheme.of(context).accent1
-                                        : FlutterFlowTheme.of(context)
+                                        ? AppTheme.of(context).accent1
+                                        : AppTheme.of(context)
                                             .secondaryBackground,
                                 contentPadding: EdgeInsetsDirectional.fromSTEB(
                                     16.0, 20.0, 16.0, 20.0),
                               ),
-                              style: FlutterFlowTheme.of(context)
+                              style: AppTheme.of(context)
                                   .headlineMedium
                                   .override(
                                     font: GoogleFonts.plusJakartaSans(
-                                      fontWeight: FlutterFlowTheme.of(context)
+                                      fontWeight: AppTheme.of(context)
                                           .headlineMedium
                                           .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .headlineMedium
                                           .fontStyle,
                                     ),
                                     letterSpacing: 0.0,
-                                    fontWeight: FlutterFlowTheme.of(context)
+                                    fontWeight: AppTheme.of(context)
                                         .headlineMedium
                                         .fontWeight,
-                                    fontStyle: FlutterFlowTheme.of(context)
+                                    fontStyle: AppTheme.of(context)
                                         .headlineMedium
                                         .fontStyle,
                                   ),
@@ -408,7 +408,7 @@ We’ll tailor recommendations ... */
                                       required isFocused,
                                       maxLength}) =>
                                   null,
-                              cursorColor: FlutterFlowTheme.of(context).primary,
+                              cursorColor: AppTheme.of(context).primary,
                               validator: _model.hobbiesTextControllerValidator
                                   .asValidator(context),
                               inputFormatters: [
@@ -426,21 +426,21 @@ We’ll tailor recommendations ... */
                             Align(
                               alignment: AlignmentDirectional(1.0, 0.0),
                               child: Text(
-                                FFLocalizations.of(context).getText(
+                                AppLocalizations.of(context).getText(
                                   'zpkdrkrf' /* You can add up to 8 items. */,
                                 ),
                                 textAlign: TextAlign.center,
-                                style: FlutterFlowTheme.of(context)
+                                style: AppTheme.of(context)
                                     .bodyMedium
                                     .override(
                                       font: GoogleFonts.plusJakartaSans(
-                                        fontWeight: FlutterFlowTheme.of(context)
+                                        fontWeight: AppTheme.of(context)
                                             .bodyMedium
                                             .fontWeight,
                                         fontStyle: FontStyle.italic,
                                       ),
                                       letterSpacing: 0.0,
-                                      fontWeight: FlutterFlowTheme.of(context)
+                                      fontWeight: AppTheme.of(context)
                                           .bodyMedium
                                           .fontWeight,
                                       fontStyle: FontStyle.italic,
@@ -451,7 +451,7 @@ We’ll tailor recommendations ... */
                             Padding(
                               padding: EdgeInsetsDirectional.fromSTEB(
                                   0.0, 10.0, 0.0, 0.0),
-                              child: FFButtonWidget(
+                              child: AppButtonWidget(
                                 onPressed: (_model.hobbiesTag != ''
                                         ? false
                                         : true)
@@ -495,42 +495,42 @@ We’ll tailor recommendations ... */
                                               },
                                             ),
                                           });
-                                          safeSetState(() {
+                                          setState(() {
                                             _model.hobbiesTextController
                                                 ?.clear();
                                           });
                                         }
                                       },
-                                text: FFLocalizations.of(context).getText(
+                                text: AppLocalizations.of(context).getText(
                                   'ij0f81vj' /* Add */,
                                 ),
-                                options: FFButtonOptions(
+                                options: AppButtonOptions(
                                   height: 40.0,
                                   padding: EdgeInsetsDirectional.fromSTEB(
                                       16.0, 0.0, 16.0, 0.0),
                                   iconPadding: EdgeInsetsDirectional.fromSTEB(
                                       0.0, 0.0, 0.0, 0.0),
                                   color:
-                                      FlutterFlowTheme.of(context).primaryText,
-                                  textStyle: FlutterFlowTheme.of(context)
+                                      AppTheme.of(context).primaryText,
+                                  textStyle: AppTheme.of(context)
                                       .titleSmall
                                       .override(
                                         font: GoogleFonts.plusJakartaSans(
                                           fontWeight:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .titleSmall
                                                   .fontWeight,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .titleSmall
                                                   .fontStyle,
                                         ),
                                         color: Colors.white,
                                         letterSpacing: 0.0,
-                                        fontWeight: FlutterFlowTheme.of(context)
+                                        fontWeight: AppTheme.of(context)
                                             .titleSmall
                                             .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
+                                        fontStyle: AppTheme.of(context)
                                             .titleSmall
                                             .fontStyle,
                                       ),
@@ -556,22 +556,22 @@ We’ll tailor recommendations ... */
                           child: Align(
                             alignment: AlignmentDirectional(0.0, -1.0),
                             child: Text(
-                              FFLocalizations.of(context).getText(
+                              AppLocalizations.of(context).getText(
                                 'okzh5b2z' /* List. */,
                               ),
                               textAlign: TextAlign.center,
-                              style: FlutterFlowTheme.of(context)
+                              style: AppTheme.of(context)
                                   .bodyMedium
                                   .override(
                                     font: GoogleFonts.plusJakartaSans(
                                       fontWeight: FontWeight.w800,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .bodyMedium
                                           .fontStyle,
                                     ),
                                     letterSpacing: 0.0,
                                     fontWeight: FontWeight.w800,
-                                    fontStyle: FlutterFlowTheme.of(context)
+                                    fontStyle: AppTheme.of(context)
                                         .bodyMedium
                                         .fontStyle,
                                   ),
@@ -587,7 +587,7 @@ We’ll tailor recommendations ... */
                         child: AuthUserStreamWidget(
                           builder: (context) => Container(
                             decoration: BoxDecoration(
-                              color: FlutterFlowTheme.of(context).secondary,
+                              color: AppTheme.of(context).secondary,
                             ),
                             child: Align(
                               alignment: AlignmentDirectional(0.0, 0.0),
@@ -621,13 +621,13 @@ We’ll tailor recommendations ... */
                                         child: Container(
                                           height: 32.0,
                                           decoration: BoxDecoration(
-                                            color: FlutterFlowTheme.of(context)
+                                            color: AppTheme.of(context)
                                                 .accent3,
                                             borderRadius:
                                                 BorderRadius.circular(8.0),
                                             border: Border.all(
                                               color:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .tertiary,
                                             ),
                                           ),
@@ -643,43 +643,43 @@ We’ll tailor recommendations ... */
                                                 child: Text(
                                                   authenticatedUserItem,
                                                   textAlign: TextAlign.center,
-                                                  style: FlutterFlowTheme.of(
+                                                  style: AppTheme.of(
                                                           context)
                                                       .bodyMedium
                                                       .override(
                                                         font: GoogleFonts
                                                             .plusJakartaSans(
                                                           fontWeight:
-                                                              FlutterFlowTheme.of(
+                                                              AppTheme.of(
                                                                       context)
                                                                   .bodyMedium
                                                                   .fontWeight,
                                                           fontStyle:
-                                                              FlutterFlowTheme.of(
+                                                              AppTheme.of(
                                                                       context)
                                                                   .bodyMedium
                                                                   .fontStyle,
                                                         ),
                                                         letterSpacing: 0.0,
                                                         fontWeight:
-                                                            FlutterFlowTheme.of(
+                                                            AppTheme.of(
                                                                     context)
                                                                 .bodyMedium
                                                                 .fontWeight,
                                                         fontStyle:
-                                                            FlutterFlowTheme.of(
+                                                            AppTheme.of(
                                                                     context)
                                                                 .bodyMedium
                                                                 .fontStyle,
                                                       ),
                                                 ),
                                               ),
-                                              FlutterFlowIconButton(
+                                              AppIconButton(
                                                 borderRadius: 8.0,
                                                 buttonSize: 30.0,
                                                 icon: Icon(
                                                   Icons.cancel_outlined,
-                                                  color: FlutterFlowTheme.of(
+                                                  color: AppTheme.of(
                                                           context)
                                                       .info,
                                                   size: 15.0,
@@ -730,50 +730,50 @@ We’ll tailor recommendations ... */
                             text: TextSpan(
                               children: [
                                 TextSpan(
-                                  text: FFLocalizations.of(context).getText(
+                                  text: AppLocalizations.of(context).getText(
                                     'medehueg' /* Tip. */,
                                   ),
-                                  style: FlutterFlowTheme.of(context)
+                                  style: AppTheme.of(context)
                                       .bodyMedium
                                       .override(
                                         font: GoogleFonts.plusJakartaSans(
                                           fontWeight: FontWeight.w600,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
                                         ),
                                         fontSize: 17.0,
                                         letterSpacing: 0.0,
                                         fontWeight: FontWeight.w600,
-                                        fontStyle: FlutterFlowTheme.of(context)
+                                        fontStyle: AppTheme.of(context)
                                             .bodyMedium
                                             .fontStyle,
                                       ),
                                 ),
                                 TextSpan(
-                                  text: FFLocalizations.of(context).getText(
+                                  text: AppLocalizations.of(context).getText(
                                     '1ppulwvg' /*  Add your favorite hobbies or ... */,
                                   ),
-                                  style: FlutterFlowTheme.of(context)
+                                  style: AppTheme.of(context)
                                       .bodyMedium
                                       .override(
                                         font: GoogleFonts.plusJakartaSans(
                                           fontWeight: FontWeight.w500,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
                                         ),
                                         letterSpacing: 0.0,
                                         fontWeight: FontWeight.w500,
-                                        fontStyle: FlutterFlowTheme.of(context)
+                                        fontStyle: AppTheme.of(context)
                                             .bodyMedium
                                             .fontStyle,
                                       ),
                                 ),
                                 TextSpan(
-                                  text: FFLocalizations.of(context).getText(
+                                  text: AppLocalizations.of(context).getText(
                                     'bsanq3ez' /* 
 
 “Which instrument is more be... */
@@ -785,7 +785,7 @@ We’ll tailor recommendations ... */
                                   ),
                                 ),
                                 TextSpan(
-                                  text: FFLocalizations.of(context).getText(
+                                  text: AppLocalizations.of(context).getText(
                                     'k1wz4a90' /* 
 “For a short getaway, would y... */
                                     ,
@@ -796,22 +796,22 @@ We’ll tailor recommendations ... */
                                   ),
                                 )
                               ],
-                              style: FlutterFlowTheme.of(context)
+                              style: AppTheme.of(context)
                                   .bodyMedium
                                   .override(
                                     font: GoogleFonts.plusJakartaSans(
-                                      fontWeight: FlutterFlowTheme.of(context)
+                                      fontWeight: AppTheme.of(context)
                                           .bodyMedium
                                           .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .bodyMedium
                                           .fontStyle,
                                     ),
                                     letterSpacing: 0.0,
-                                    fontWeight: FlutterFlowTheme.of(context)
+                                    fontWeight: AppTheme.of(context)
                                         .bodyMedium
                                         .fontWeight,
-                                    fontStyle: FlutterFlowTheme.of(context)
+                                    fontStyle: AppTheme.of(context)
                                         .bodyMedium
                                         .fontStyle,
                                   ),
@@ -824,37 +824,37 @@ We’ll tailor recommendations ... */
                     Padding(
                       padding: EdgeInsetsDirectional.fromSTEB(
                           16.0, 20.0, 16.0, 20.0),
-                      child: FFButtonWidget(
+                      child: AppButtonWidget(
                         onPressed: () {
                           print('Next pressed ...');
                         },
-                        text: FFLocalizations.of(context).getText(
+                        text: AppLocalizations.of(context).getText(
                           'i8rpxq4t' /* Next */,
                         ),
-                        options: FFButtonOptions(
+                        options: AppButtonOptions(
                           width: 300.0,
                           height: 48.0,
                           padding: EdgeInsetsDirectional.fromSTEB(
                               16.0, 0.0, 16.0, 20.0),
                           iconPadding: EdgeInsetsDirectional.fromSTEB(
                               0.0, 0.0, 0.0, 0.0),
-                          color: FlutterFlowTheme.of(context).primaryText,
+                          color: AppTheme.of(context).primaryText,
                           textStyle:
-                              FlutterFlowTheme.of(context).titleSmall.override(
+                              AppTheme.of(context).titleSmall.override(
                                     font: GoogleFonts.plusJakartaSans(
-                                      fontWeight: FlutterFlowTheme.of(context)
+                                      fontWeight: AppTheme.of(context)
                                           .titleSmall
                                           .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .titleSmall
                                           .fontStyle,
                                     ),
                                     color: Colors.white,
                                     letterSpacing: 0.0,
-                                    fontWeight: FlutterFlowTheme.of(context)
+                                    fontWeight: AppTheme.of(context)
                                         .titleSmall
                                         .fontWeight,
-                                    fontStyle: FlutterFlowTheme.of(context)
+                                    fontStyle: AppTheme.of(context)
                                         .titleSmall
                                         .fontStyle,
                                   ),

@@ -7,7 +7,7 @@ import '/backend/schema/util/firestore_util.dart';
 import '/backend/schema/util/schema_util.dart';
 
 import 'index.dart';
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_utils.dart';
 
 class JopsCategoryRecord extends FirestoreRecord {
   JopsCategoryRecord._(
@@ -85,7 +85,7 @@ class JopsCategoryRecord extends FirestoreRecord {
     double? searchRadiusMeters,
     bool useCache = false,
   }) =>
-      FFAlgoliaManager.instance
+      AppAlgoliaManager.instance
           .algoliaQuery(
             index: 'jops_category',
             term: term,

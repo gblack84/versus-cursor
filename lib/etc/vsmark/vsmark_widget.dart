@@ -1,5 +1,5 @@
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_theme.dart';
+import '/core/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'vsmark_model.dart';
 export 'vsmark_model.dart';
@@ -25,7 +25,7 @@ class _VsmarkWidgetState extends State<VsmarkWidget> {
     super.initState();
     _model = createModel(context, () => VsmarkModel());
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
@@ -70,11 +70,11 @@ class _VsmarkWidgetState extends State<VsmarkWidget> {
                         padding:
                             EdgeInsetsDirectional.fromSTEB(1.0, 0.0, 0.0, 0.0),
                         child: Text(
-                          FFLocalizations.of(context).getText(
+                          AppLocalizations.of(context).getText(
                             'abejuxne' /* Versus */,
                           ),
                           style:
-                              FlutterFlowTheme.of(context).bodyMedium.override(
+                              AppTheme.of(context).bodyMedium.override(
                                     fontFamily: 'SourGummy',
                                     color: Color(0xFF14181B),
                                     fontSize: 45.0,

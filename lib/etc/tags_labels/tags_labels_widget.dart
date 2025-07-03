@@ -1,6 +1,6 @@
-import '/flutter_flow/flutter_flow_animations.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_animations.dart';
+import '/core/app_theme.dart';
+import '/core/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -47,7 +47,7 @@ class _TagsLabelsWidgetState extends State<TagsLabelsWidget>
       ),
     });
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
@@ -69,10 +69,10 @@ class _TagsLabelsWidgetState extends State<TagsLabelsWidget>
             child: Container(
               height: 32.0,
               decoration: BoxDecoration(
-                color: FlutterFlowTheme.of(context).accent1,
+                color: AppTheme.of(context).accent1,
                 borderRadius: BorderRadius.circular(8.0),
                 border: Border.all(
-                  color: FlutterFlowTheme.of(context).primary,
+                  color: AppTheme.of(context).primary,
                 ),
               ),
               child: Align(
@@ -80,24 +80,24 @@ class _TagsLabelsWidgetState extends State<TagsLabelsWidget>
                 child: Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(8.0, 0.0, 8.0, 0.0),
                   child: Text(
-                    FFLocalizations.of(context).getText(
+                    AppLocalizations.of(context).getText(
                       'hq8fohiq' /* #website */,
                     ),
-                    style: FlutterFlowTheme.of(context).bodyMedium.override(
+                    style: AppTheme.of(context).bodyMedium.override(
                           font: GoogleFonts.plusJakartaSans(
-                            fontWeight: FlutterFlowTheme.of(context)
+                            fontWeight: AppTheme.of(context)
                                 .bodyMedium
                                 .fontWeight,
-                            fontStyle: FlutterFlowTheme.of(context)
+                            fontStyle: AppTheme.of(context)
                                 .bodyMedium
                                 .fontStyle,
                           ),
                           letterSpacing: 0.0,
-                          fontWeight: FlutterFlowTheme.of(context)
+                          fontWeight: AppTheme.of(context)
                               .bodyMedium
                               .fontWeight,
                           fontStyle:
-                              FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                              AppTheme.of(context).bodyMedium.fontStyle,
                         ),
                   ),
                 ),
@@ -109,10 +109,10 @@ class _TagsLabelsWidgetState extends State<TagsLabelsWidget>
             child: Container(
               height: 32.0,
               decoration: BoxDecoration(
-                color: FlutterFlowTheme.of(context).accent2,
+                color: AppTheme.of(context).accent2,
                 borderRadius: BorderRadius.circular(8.0),
                 border: Border.all(
-                  color: FlutterFlowTheme.of(context).secondary,
+                  color: AppTheme.of(context).secondary,
                 ),
               ),
               child: Align(
@@ -120,24 +120,24 @@ class _TagsLabelsWidgetState extends State<TagsLabelsWidget>
                 child: Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(8.0, 0.0, 8.0, 0.0),
                   child: Text(
-                    FFLocalizations.of(context).getText(
+                    AppLocalizations.of(context).getText(
                       'zpugyk8p' /* #ux */,
                     ),
-                    style: FlutterFlowTheme.of(context).bodyMedium.override(
+                    style: AppTheme.of(context).bodyMedium.override(
                           font: GoogleFonts.plusJakartaSans(
-                            fontWeight: FlutterFlowTheme.of(context)
+                            fontWeight: AppTheme.of(context)
                                 .bodyMedium
                                 .fontWeight,
-                            fontStyle: FlutterFlowTheme.of(context)
+                            fontStyle: AppTheme.of(context)
                                 .bodyMedium
                                 .fontStyle,
                           ),
                           letterSpacing: 0.0,
-                          fontWeight: FlutterFlowTheme.of(context)
+                          fontWeight: AppTheme.of(context)
                               .bodyMedium
                               .fontWeight,
                           fontStyle:
-                              FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                              AppTheme.of(context).bodyMedium.fontStyle,
                         ),
                   ),
                 ),
@@ -149,10 +149,10 @@ class _TagsLabelsWidgetState extends State<TagsLabelsWidget>
             child: Container(
               height: 32.0,
               decoration: BoxDecoration(
-                color: FlutterFlowTheme.of(context).accent3,
+                color: AppTheme.of(context).accent3,
                 borderRadius: BorderRadius.circular(8.0),
                 border: Border.all(
-                  color: FlutterFlowTheme.of(context).tertiary,
+                  color: AppTheme.of(context).tertiary,
                 ),
               ),
               child: Align(
@@ -160,31 +160,31 @@ class _TagsLabelsWidgetState extends State<TagsLabelsWidget>
                 child: Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(8.0, 0.0, 8.0, 0.0),
                   child: Text(
-                    FFLocalizations.of(context).getText(
+                    AppLocalizations.of(context).getText(
                       '3rcbycua' /* #flutterflow */,
                     ),
-                    style: FlutterFlowTheme.of(context).bodyMedium.override(
+                    style: AppTheme.of(context).bodyMedium.override(
                           font: GoogleFonts.plusJakartaSans(
-                            fontWeight: FlutterFlowTheme.of(context)
+                            fontWeight: AppTheme.of(context)
                                 .bodyMedium
                                 .fontWeight,
-                            fontStyle: FlutterFlowTheme.of(context)
+                            fontStyle: AppTheme.of(context)
                                 .bodyMedium
                                 .fontStyle,
                           ),
                           letterSpacing: 0.0,
-                          fontWeight: FlutterFlowTheme.of(context)
+                          fontWeight: AppTheme.of(context)
                               .bodyMedium
                               .fontWeight,
                           fontStyle:
-                              FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                              AppTheme.of(context).bodyMedium.fontStyle,
                         ),
                   ),
                 ),
               ),
             ),
           ),
-        ]
+        ].cast<Widget>()
             .divide(SizedBox(width: 8.0))
             .addToStart(SizedBox(width: 16.0))
             .addToEnd(SizedBox(width: 16.0)),

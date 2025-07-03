@@ -1,10 +1,10 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
-import '/flutter_flow/flutter_flow_icon_button.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_timer.dart';
-import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
+import '/core/app_icon_button.dart';
+import '/core/app_theme.dart';
+import '/core/app_timer.dart';
+import '/core/app_utils.dart';
+import '/core/app_widgets.dart';
 import '/index.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
@@ -45,13 +45,13 @@ class _PhonelogeinpincodeWidgetState extends State<PhonelogeinpincodeWidget> {
       _model.timerController.onStartTimer();
       await Future.delayed(const Duration(milliseconds: 30000));
       _model.canResendCode = true;
-      safeSetState(() {});
+      setState(() {});
     });
 
     _model.pinCodeFocusNode ??= FocusNode();
 
     authManager.handlePhoneAuthStateChanges(context);
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
@@ -65,11 +65,11 @@ class _PhonelogeinpincodeWidgetState extends State<PhonelogeinpincodeWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: scaffoldKey,
-      backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+      backgroundColor: AppTheme.of(context).primaryBackground,
       appBar: AppBar(
         backgroundColor: Colors.white,
         automaticallyImplyLeading: false,
-        leading: FlutterFlowIconButton(
+        leading: AppIconButton(
           borderColor: Colors.transparent,
           borderRadius: 30.0,
           borderWidth: 1.0,
@@ -104,24 +104,24 @@ class _PhonelogeinpincodeWidgetState extends State<PhonelogeinpincodeWidget> {
             Padding(
               padding: EdgeInsetsDirectional.fromSTEB(4.0, 0.0, 0.0, 0.0),
               child: Text(
-                FFLocalizations.of(context).getText(
+                AppLocalizations.of(context).getText(
                   'bjt41bts' /* Back */,
                 ),
-                style: FlutterFlowTheme.of(context).displaySmall.override(
+                style: AppTheme.of(context).displaySmall.override(
                       font: GoogleFonts.plusJakartaSans(
-                        fontWeight: FlutterFlowTheme.of(context)
+                        fontWeight: AppTheme.of(context)
                             .displaySmall
                             .fontWeight,
                         fontStyle:
-                            FlutterFlowTheme.of(context).displaySmall.fontStyle,
+                            AppTheme.of(context).displaySmall.fontStyle,
                       ),
                       color: Colors.black,
                       fontSize: 16.0,
                       letterSpacing: 0.0,
                       fontWeight:
-                          FlutterFlowTheme.of(context).displaySmall.fontWeight,
+                          AppTheme.of(context).displaySmall.fontWeight,
                       fontStyle:
-                          FlutterFlowTheme.of(context).displaySmall.fontStyle,
+                          AppTheme.of(context).displaySmall.fontStyle,
                     ),
               ),
             ),
@@ -157,24 +157,24 @@ class _PhonelogeinpincodeWidgetState extends State<PhonelogeinpincodeWidget> {
               Padding(
                 padding: EdgeInsetsDirectional.fromSTEB(16.0, 20.0, 0.0, 0.0),
                 child: Text(
-                  FFLocalizations.of(context).getText(
+                  AppLocalizations.of(context).getText(
                     'daf828ek' /* Phone Login */,
                   ),
-                  style: FlutterFlowTheme.of(context).headlineMedium.override(
+                  style: AppTheme.of(context).headlineMedium.override(
                         font: GoogleFonts.plusJakartaSans(
-                          fontWeight: FlutterFlowTheme.of(context)
+                          fontWeight: AppTheme.of(context)
                               .headlineMedium
                               .fontWeight,
-                          fontStyle: FlutterFlowTheme.of(context)
+                          fontStyle: AppTheme.of(context)
                               .headlineMedium
                               .fontStyle,
                         ),
                         color: Colors.black,
                         letterSpacing: 0.0,
-                        fontWeight: FlutterFlowTheme.of(context)
+                        fontWeight: AppTheme.of(context)
                             .headlineMedium
                             .fontWeight,
-                        fontStyle: FlutterFlowTheme.of(context)
+                        fontStyle: AppTheme.of(context)
                             .headlineMedium
                             .fontStyle,
                       ),
@@ -183,23 +183,23 @@ class _PhonelogeinpincodeWidgetState extends State<PhonelogeinpincodeWidget> {
               Padding(
                 padding: EdgeInsetsDirectional.fromSTEB(16.0, 4.0, 16.0, 4.0),
                 child: Text(
-                  FFLocalizations.of(context).getText(
+                  AppLocalizations.of(context).getText(
                     'ddk0vrr5' /* Please enter your phone number... */,
                   ),
-                  style: FlutterFlowTheme.of(context).labelMedium.override(
+                  style: AppTheme.of(context).labelMedium.override(
                         font: GoogleFonts.plusJakartaSans(
-                          fontWeight: FlutterFlowTheme.of(context)
+                          fontWeight: AppTheme.of(context)
                               .labelMedium
                               .fontWeight,
-                          fontStyle: FlutterFlowTheme.of(context)
+                          fontStyle: AppTheme.of(context)
                               .labelMedium
                               .fontStyle,
                         ),
                         letterSpacing: 0.0,
                         fontWeight:
-                            FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                            AppTheme.of(context).labelMedium.fontWeight,
                         fontStyle:
-                            FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                            AppTheme.of(context).labelMedium.fontStyle,
                       ),
                 ),
               ),
@@ -233,13 +233,13 @@ class _PhonelogeinpincodeWidgetState extends State<PhonelogeinpincodeWidget> {
                                       '${widget.phoneNumberParam}',
                                       '+12345678900',
                                     ),
-                                    style: FlutterFlowTheme.of(context)
+                                    style: AppTheme.of(context)
                                         .bodyMedium
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.w600,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontStyle,
                                           ),
@@ -247,52 +247,52 @@ class _PhonelogeinpincodeWidgetState extends State<PhonelogeinpincodeWidget> {
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.w600,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
                                         ),
                                   ),
                                   TextSpan(
-                                    text: FFLocalizations.of(context).getText(
+                                    text: AppLocalizations.of(context).getText(
                                       '6lsg39md' /* 
 Enter the 6-digit code sent t... */
                                       ,
                                     ),
-                                    style: FlutterFlowTheme.of(context)
+                                    style: AppTheme.of(context)
                                         .bodyMedium
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.bold,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontStyle,
                                           ),
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.bold,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
                                         ),
                                   )
                                 ],
-                                style: FlutterFlowTheme.of(context)
+                                style: AppTheme.of(context)
                                     .bodyMedium
                                     .override(
                                       font: GoogleFonts.plusJakartaSans(
-                                        fontWeight: FlutterFlowTheme.of(context)
+                                        fontWeight: AppTheme.of(context)
                                             .bodyMedium
                                             .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
+                                        fontStyle: AppTheme.of(context)
                                             .bodyMedium
                                             .fontStyle,
                                       ),
                                       letterSpacing: 0.0,
-                                      fontWeight: FlutterFlowTheme.of(context)
+                                      fontWeight: AppTheme.of(context)
                                           .bodyMedium
                                           .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .bodyMedium
                                           .fontStyle,
                                     ),
@@ -309,22 +309,22 @@ Enter the 6-digit code sent t... */
                               autoDisposeControllers: false,
                               appContext: context,
                               length: 6,
-                              textStyle: FlutterFlowTheme.of(context)
+                              textStyle: AppTheme.of(context)
                                   .bodyLarge
                                   .override(
                                     font: GoogleFonts.plusJakartaSans(
-                                      fontWeight: FlutterFlowTheme.of(context)
+                                      fontWeight: AppTheme.of(context)
                                           .bodyLarge
                                           .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .bodyLarge
                                           .fontStyle,
                                     ),
                                     letterSpacing: 0.0,
-                                    fontWeight: FlutterFlowTheme.of(context)
+                                    fontWeight: AppTheme.of(context)
                                         .bodyLarge
                                         .fontWeight,
-                                    fontStyle: FlutterFlowTheme.of(context)
+                                    fontStyle: AppTheme.of(context)
                                         .bodyLarge
                                         .fontStyle,
                                   ),
@@ -335,7 +335,7 @@ Enter the 6-digit code sent t... */
                               enablePinAutofill: false,
                               errorTextSpace: 16.0,
                               showCursor: true,
-                              cursorColor: FlutterFlowTheme.of(context).primary,
+                              cursorColor: AppTheme.of(context).primary,
                               obscureText: false,
                               hintCharacter: '●',
                               keyboardType: TextInputType.number,
@@ -351,11 +351,11 @@ Enter the 6-digit code sent t... */
                                 ),
                                 shape: PinCodeFieldShape.box,
                                 activeColor:
-                                    FlutterFlowTheme.of(context).primaryText,
+                                    AppTheme.of(context).primaryText,
                                 inactiveColor:
-                                    FlutterFlowTheme.of(context).alternate,
+                                    AppTheme.of(context).alternate,
                                 selectedColor:
-                                    FlutterFlowTheme.of(context).primary,
+                                    AppTheme.of(context).primary,
                               ),
                               controller: _model.pinCodeController,
                               onChanged: (_) {},
@@ -383,10 +383,10 @@ Enter the 6-digit code sent t... */
 
                                 if (loggedIn) {
                                   _model.isVerified = true;
-                                  safeSetState(() {});
+                                  setState(() {});
                                 } else {
                                   _model.isVerified = false;
-                                  safeSetState(() {});
+                                  setState(() {});
                                 }
                               },
                               autovalidateMode:
@@ -400,7 +400,7 @@ Enter the 6-digit code sent t... */
                           padding: EdgeInsets.all(10.0),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: FlutterFlowTheme.of(context)
+                              color: AppTheme.of(context)
                                   .secondaryBackground,
                               shape: BoxShape.rectangle,
                             ),
@@ -409,17 +409,17 @@ Enter the 6-digit code sent t... */
                               children: [
                                 if (_model.isVerified == true)
                                   Text(
-                                    FFLocalizations.of(context).getText(
+                                    AppLocalizations.of(context).getText(
                                       'ep61t57h' /* Authentication succeeded!! */,
                                     ),
                                     textAlign: TextAlign.center,
-                                    style: FlutterFlowTheme.of(context)
+                                    style: AppTheme.of(context)
                                         .bodyMedium
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.w800,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontStyle,
                                           ),
@@ -428,24 +428,24 @@ Enter the 6-digit code sent t... */
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.w800,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
                                         ),
                                   ),
                                 if (_model.isVerified == false)
                                   Text(
-                                    FFLocalizations.of(context).getText(
+                                    AppLocalizations.of(context).getText(
                                       '85h4oe02' /* Authentication failed. Please ... */,
                                     ),
                                     textAlign: TextAlign.center,
-                                    style: FlutterFlowTheme.of(context)
+                                    style: AppTheme.of(context)
                                         .bodyMedium
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.w800,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontStyle,
                                           ),
@@ -454,7 +454,7 @@ Enter the 6-digit code sent t... */
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.w800,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
                                         ),
@@ -466,13 +466,13 @@ Enter the 6-digit code sent t... */
                         Container(
                           width: double.infinity,
                           decoration: BoxDecoration(
-                            color: FlutterFlowTheme.of(context)
+                            color: AppTheme.of(context)
                                 .secondaryBackground,
                           ),
                           child: Column(
                             mainAxisSize: MainAxisSize.max,
                             children: [
-                              FlutterFlowTimer(
+                              AppTimer(
                                 initialTime: _model.timerInitialTimeMs,
                                 getDisplayTime: (value) =>
                                     StopWatchTimer.getDisplayTime(
@@ -486,38 +486,38 @@ Enter the 6-digit code sent t... */
                                 onChanged: (value, displayTime, shouldUpdate) {
                                   _model.timerMilliseconds = value;
                                   _model.timerValue = displayTime;
-                                  if (shouldUpdate) safeSetState(() {});
+                                  if (shouldUpdate) setState(() {});
                                 },
                                 textAlign: TextAlign.start,
-                                style: FlutterFlowTheme.of(context)
+                                style: AppTheme.of(context)
                                     .headlineSmall
                                     .override(
                                       font: GoogleFonts.plusJakartaSans(
-                                        fontWeight: FlutterFlowTheme.of(context)
+                                        fontWeight: AppTheme.of(context)
                                             .headlineSmall
                                             .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
+                                        fontStyle: AppTheme.of(context)
                                             .headlineSmall
                                             .fontStyle,
                                       ),
                                       letterSpacing: 0.0,
-                                      fontWeight: FlutterFlowTheme.of(context)
+                                      fontWeight: AppTheme.of(context)
                                           .headlineSmall
                                           .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .headlineSmall
                                           .fontStyle,
                                     ),
                               ),
                               Padding(
                                 padding: EdgeInsets.all(8.0),
-                                child: FFButtonWidget(
+                                child: AppButtonWidget(
                                   onPressed: (_model.timerMilliseconds > 90000)
                                       ? null
                                       : () async {
                                           if (_model.canResendCount < 3) {
                                             _model.canResendCount = 1;
-                                            safeSetState(() {});
+                                            setState(() {});
                                             _model.timerController.timer
                                                 .setPresetTime(
                                                     mSec: 60000, add: false);
@@ -567,7 +567,7 @@ Enter the 6-digit code sent t... */
                                                 content: Text(
                                                   'pMessage resent. After 3 attempts, you will be returned to the login screen.',
                                                   style: TextStyle(
-                                                    color: FlutterFlowTheme.of(
+                                                    color: AppTheme.of(
                                                             context)
                                                         .primaryText,
                                                   ),
@@ -591,37 +591,37 @@ Enter the 6-digit code sent t... */
                                             );
                                           }
                                         },
-                                  text: FFLocalizations.of(context).getText(
+                                  text: AppLocalizations.of(context).getText(
                                     '7ezietmr' /* Re Code */,
                                   ),
-                                  options: FFButtonOptions(
+                                  options: AppButtonOptions(
                                     height: 40.0,
                                     padding: EdgeInsetsDirectional.fromSTEB(
                                         16.0, 0.0, 16.0, 0.0),
                                     iconPadding: EdgeInsetsDirectional.fromSTEB(
                                         0.0, 0.0, 0.0, 0.0),
                                     color: Colors.black,
-                                    textStyle: FlutterFlowTheme.of(context)
+                                    textStyle: AppTheme.of(context)
                                         .titleSmall
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontStyle,
                                           ),
                                           color: Colors.white,
                                           letterSpacing: 0.0,
                                           fontWeight:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .titleSmall
                                                   .fontWeight,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .titleSmall
                                                   .fontStyle,
                                         ),
@@ -638,30 +638,30 @@ Enter the 6-digit code sent t... */
                                 child: Padding(
                                   padding: EdgeInsets.all(6.0),
                                   child: Text(
-                                    FFLocalizations.of(context).getText(
+                                    AppLocalizations.of(context).getText(
                                       'pyfnfxye' /* Tip. If you haven’t received i... */,
                                     ),
                                     textAlign: TextAlign.center,
-                                    style: FlutterFlowTheme.of(context)
+                                    style: AppTheme.of(context)
                                         .bodyMedium
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontStyle,
                                           ),
                                           letterSpacing: 0.0,
                                           fontWeight:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontWeight,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
                                         ),
@@ -680,7 +680,7 @@ Enter the 6-digit code sent t... */
                 alignment: AlignmentDirectional(0.0, 0.0),
                 child: Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(0.0, 24.0, 0.0, 0.0),
-                  child: FFButtonWidget(
+                  child: AppButtonWidget(
                     onPressed: (_model.isVerified != true)
                         ? null
                         : () async {
@@ -701,10 +701,10 @@ Enter the 6-digit code sent t... */
                               },
                             );
                           },
-                    text: FFLocalizations.of(context).getText(
+                    text: AppLocalizations.of(context).getText(
                       'xjt78grf' /* Next */,
                     ),
-                    options: FFButtonOptions(
+                    options: AppButtonOptions(
                       width: 270.0,
                       height: 50.0,
                       padding:
@@ -713,21 +713,21 @@ Enter the 6-digit code sent t... */
                           EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                       color: Colors.black,
                       textStyle:
-                          FlutterFlowTheme.of(context).titleSmall.override(
+                          AppTheme.of(context).titleSmall.override(
                                 font: GoogleFonts.plusJakartaSans(
-                                  fontWeight: FlutterFlowTheme.of(context)
+                                  fontWeight: AppTheme.of(context)
                                       .titleSmall
                                       .fontWeight,
-                                  fontStyle: FlutterFlowTheme.of(context)
+                                  fontStyle: AppTheme.of(context)
                                       .titleSmall
                                       .fontStyle,
                                 ),
                                 color: Colors.white,
                                 letterSpacing: 0.0,
-                                fontWeight: FlutterFlowTheme.of(context)
+                                fontWeight: AppTheme.of(context)
                                     .titleSmall
                                     .fontWeight,
-                                fontStyle: FlutterFlowTheme.of(context)
+                                fontStyle: AppTheme.of(context)
                                     .titleSmall
                                     .fontStyle,
                               ),

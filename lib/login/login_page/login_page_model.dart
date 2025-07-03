@@ -1,9 +1,9 @@
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_utils.dart';
 import '/index.dart';
 import 'login_page_widget.dart' show LoginPageWidget;
 import 'package:flutter/material.dart';
 
-class LoginPageModel extends FlutterFlowModel<LoginPageWidget> {
+class LoginPageModel extends AppModel<LoginPageWidget> {
   ///  State fields for stateful widgets in this page.
 
   final formKey = GlobalKey<FormState>();
@@ -15,7 +15,7 @@ class LoginPageModel extends FlutterFlowModel<LoginPageWidget> {
   String? _emailAddressLoginTextControllerValidator(
       BuildContext context, String? val) {
     if (val == null || val.isEmpty) {
-      return FFLocalizations.of(context).getText(
+      return AppLocalizations.of(context).getText(
         'zodqb7tr' /* Please enter a valid email add... */,
       );
     }
@@ -34,7 +34,7 @@ class LoginPageModel extends FlutterFlowModel<LoginPageWidget> {
   String? _passwordLoginTextControllerValidator(
       BuildContext context, String? val) {
     if (val == null || val.isEmpty) {
-      return FFLocalizations.of(context).getText(
+      return AppLocalizations.of(context).getText(
         'a3s2kg05' /* Password must be at least 6 ch... */,
       );
     }

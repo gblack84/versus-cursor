@@ -11,7 +11,7 @@ import 'package:equatable/equatable.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:mime_type/mime_type.dart';
 
-import '/flutter_flow/uploaded_file.dart';
+import '/core/uploaded_file.dart';
 
 import 'get_streamed_response.dart';
 
@@ -348,9 +348,9 @@ class ApiManager {
     );
 
     bool isFile(dynamic e) =>
-        e is FFUploadedFile ||
-        e is List<FFUploadedFile> ||
-        (e is List && e.firstOrNull is FFUploadedFile);
+        e is AppUploadedFile ||
+        e is List<AppUploadedFile> ||
+        (e is List && e.firstOrNull is AppUploadedFile);
 
     final nonFileParams = toStringMap(
         Map.fromEntries(params.entries.where((e) => !isFile(e.value))));
@@ -359,8 +359,8 @@ class ApiManager {
     params.entries.where((e) => isFile(e.value)).forEach((e) {
       final param = e.value;
       final uploadedFiles = param is List
-          ? param as List<FFUploadedFile>
-          : [param as FFUploadedFile];
+          ? param as List<AppUploadedFile>
+          : [param as AppUploadedFile];
       for (var uploadedFile in uploadedFiles) {
         files.add(
           http.MultipartFile.fromBytes(

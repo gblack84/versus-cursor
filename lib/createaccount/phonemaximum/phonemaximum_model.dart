@@ -1,9 +1,9 @@
 import '/etc/vsmark/vsmark_widget.dart';
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_utils.dart';
 import 'phonemaximum_widget.dart' show PhonemaximumWidget;
 import 'package:flutter/material.dart';
 
-class PhonemaximumModel extends FlutterFlowModel<PhonemaximumWidget> {
+class PhonemaximumModel extends AppModel<PhonemaximumWidget> {
   ///  State fields for stateful widgets in this component.
 
   // Model for vsmark component.

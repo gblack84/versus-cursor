@@ -1,9 +1,9 @@
 import '/components/upload_choice_bottom_sheet_widget.dart';
-import '/flutter_flow/flutter_flow_media_display.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_video_player.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
+import '/core/app_media_display.dart';
+import '/core/app_theme.dart';
+import '/core/app_utils.dart';
+import '/core/app_video_player.dart';
+import '/core/app_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -31,7 +31,7 @@ class _EditvideoPWidgetState extends State<EditvideoPWidget> {
     super.initState();
     _model = createModel(context, () => EditvideoPModel());
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
@@ -43,7 +43,7 @@ class _EditvideoPWidgetState extends State<EditvideoPWidget> {
 
   @override
   Widget build(BuildContext context) {
-    context.watch<FFAppState>();
+    context.watch<AppState>();
 
     return GestureDetector(
       onTap: () {
@@ -52,28 +52,28 @@ class _EditvideoPWidgetState extends State<EditvideoPWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+        backgroundColor: AppTheme.of(context).primaryBackground,
         appBar: AppBar(
-          backgroundColor: FlutterFlowTheme.of(context).primary,
+          backgroundColor: AppTheme.of(context).primary,
           automaticallyImplyLeading: false,
           title: Text(
-            FFLocalizations.of(context).getText(
+            AppLocalizations.of(context).getText(
               'imk8y17a' /* Page Title */,
             ),
-            style: FlutterFlowTheme.of(context).headlineMedium.override(
+            style: AppTheme.of(context).headlineMedium.override(
                   font: GoogleFonts.plusJakartaSans(
                     fontWeight:
-                        FlutterFlowTheme.of(context).headlineMedium.fontWeight,
+                        AppTheme.of(context).headlineMedium.fontWeight,
                     fontStyle:
-                        FlutterFlowTheme.of(context).headlineMedium.fontStyle,
+                        AppTheme.of(context).headlineMedium.fontStyle,
                   ),
                   color: Colors.white,
                   fontSize: 22.0,
                   letterSpacing: 0.0,
                   fontWeight:
-                      FlutterFlowTheme.of(context).headlineMedium.fontWeight,
+                      AppTheme.of(context).headlineMedium.fontWeight,
                   fontStyle:
-                      FlutterFlowTheme.of(context).headlineMedium.fontStyle,
+                      AppTheme.of(context).headlineMedium.fontStyle,
                 ),
           ),
           actions: [],
@@ -90,7 +90,7 @@ class _EditvideoPWidgetState extends State<EditvideoPWidget> {
                   width: double.infinity,
                   height: double.infinity,
                   decoration: BoxDecoration(
-                    color: FlutterFlowTheme.of(context).secondaryBackground,
+                    color: AppTheme.of(context).secondaryBackground,
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.max,
@@ -99,7 +99,7 @@ class _EditvideoPWidgetState extends State<EditvideoPWidget> {
                         padding: EdgeInsets.all(12.0),
                         child: Container(
                           decoration: BoxDecoration(
-                            color: FlutterFlowTheme.of(context)
+                            color: AppTheme.of(context)
                                 .secondaryBackground,
                           ),
                           child: Column(
@@ -107,7 +107,7 @@ class _EditvideoPWidgetState extends State<EditvideoPWidget> {
                             children: [
                               Padding(
                                 padding: EdgeInsets.all(12.0),
-                                child: FFButtonWidget(
+                                child: AppButtonWidget(
                                   onPressed: () async {
                                     await showModalBottomSheet(
                                       isScrollControlled: true,
@@ -131,39 +131,39 @@ class _EditvideoPWidgetState extends State<EditvideoPWidget> {
                                           ),
                                         );
                                       },
-                                    ).then((value) => safeSetState(() {}));
+                                    ).then((value) => setState(() {}));
                                   },
-                                  text: FFLocalizations.of(context).getText(
+                                  text: AppLocalizations.of(context).getText(
                                     '6vxfvxd1' /* upload */,
                                   ),
-                                  options: FFButtonOptions(
+                                  options: AppButtonOptions(
                                     height: 40.0,
                                     padding: EdgeInsetsDirectional.fromSTEB(
                                         16.0, 0.0, 16.0, 0.0),
                                     iconPadding: EdgeInsetsDirectional.fromSTEB(
                                         0.0, 0.0, 0.0, 0.0),
-                                    color: FlutterFlowTheme.of(context).primary,
-                                    textStyle: FlutterFlowTheme.of(context)
+                                    color: AppTheme.of(context).primary,
+                                    textStyle: AppTheme.of(context)
                                         .titleSmall
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontStyle,
                                           ),
                                           color: Colors.white,
                                           letterSpacing: 0.0,
                                           fontWeight:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .titleSmall
                                                   .fontWeight,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .titleSmall
                                                   .fontStyle,
                                         ),
@@ -174,41 +174,41 @@ class _EditvideoPWidgetState extends State<EditvideoPWidget> {
                               ),
                               Padding(
                                 padding: EdgeInsets.all(12.0),
-                                child: FFButtonWidget(
+                                child: AppButtonWidget(
                                   onPressed: () {
                                     print('Button pressed ...');
                                   },
-                                  text: FFLocalizations.of(context).getText(
+                                  text: AppLocalizations.of(context).getText(
                                     'v6lswlmj' /* cancle */,
                                   ),
-                                  options: FFButtonOptions(
+                                  options: AppButtonOptions(
                                     height: 40.0,
                                     padding: EdgeInsetsDirectional.fromSTEB(
                                         16.0, 0.0, 16.0, 0.0),
                                     iconPadding: EdgeInsetsDirectional.fromSTEB(
                                         0.0, 0.0, 0.0, 0.0),
-                                    color: FlutterFlowTheme.of(context).primary,
-                                    textStyle: FlutterFlowTheme.of(context)
+                                    color: AppTheme.of(context).primary,
+                                    textStyle: AppTheme.of(context)
                                         .titleSmall
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontStyle,
                                           ),
                                           color: Colors.white,
                                           letterSpacing: 0.0,
                                           fontWeight:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .titleSmall
                                                   .fontWeight,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .titleSmall
                                                   .fontStyle,
                                         ),
@@ -226,14 +226,14 @@ class _EditvideoPWidgetState extends State<EditvideoPWidget> {
                         height: 300.0,
                         decoration: BoxDecoration(
                           color:
-                              FlutterFlowTheme.of(context).secondaryBackground,
+                              AppTheme.of(context).secondaryBackground,
                         ),
                         child: Stack(
                           alignment: AlignmentDirectional(0.0, 0.0),
                           children: [
-                            if (FFAppState().uploadVideoPath != '')
-                              FlutterFlowMediaDisplay(
-                                path: '${FFAppState().uploadCoverBytes}',
+                            if (AppState().uploadVideoPath != '')
+                              AppMediaDisplay(
+                                path: '${AppState().uploadCoverBytes}',
                                 imageBuilder: (path) => ClipRRect(
                                   borderRadius: BorderRadius.circular(8.0),
                                   child: Image.network(
@@ -244,7 +244,7 @@ class _EditvideoPWidgetState extends State<EditvideoPWidget> {
                                   ),
                                 ),
                                 videoPlayerBuilder: (path) =>
-                                    FlutterFlowVideoPlayer(
+                                    AppVideoPlayer(
                                   path: path,
                                   width: 300.0,
                                   autoPlay: false,

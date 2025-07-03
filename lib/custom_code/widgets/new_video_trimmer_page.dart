@@ -1,11 +1,11 @@
 // Automatic FlutterFlow imports
 import '/backend/backend.dart';
 import '/actions/actions.dart' as action_blocks;
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_theme.dart';
+import '/core/app_utils.dart';
 import 'index.dart'; // Imports other custom widgets
 import '/custom_code/actions/index.dart'; // Imports custom actions
-import '/flutter_flow/custom_functions.dart'; // Imports custom functions
+import '/core/custom_functions.dart'; // Imports custom functions
 import 'package:flutter/material.dart';
 // Begin custom widget code
 // DO NOT REMOVE OR MODIFY THE CODE ABOVE!
@@ -130,7 +130,7 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
   }
 
   Future<void> _loadVideo() async {
-    final videoPath = FFAppState().uploadVideoPath;
+    final videoPath = AppState().uploadVideoPath;
     if (videoPath.isEmpty || !await File(videoPath).exists()) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -160,7 +160,7 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
   Future<List<Uint8List>> _generateThumbnails(double startTime, double endTime,
       {bool isForDisplay = false}) async {
     final List<Uint8List> thumbnails = [];
-    final videoPath = FFAppState().uploadVideoPath;
+    final videoPath = AppState().uploadVideoPath;
     if (videoPath.isEmpty) return [];
     final double duration = endTime - startTime;
     final int thumbnailCount = isForDisplay ? 15 : 8;
@@ -195,7 +195,7 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
     final timeMs = (startTime + (interval * index)).toInt();
     try {
       final Uint8List? highQualityThumb = await VideoThumbnail.thumbnailData(
-        video: FFAppState().uploadVideoPath,
+        video: AppState().uploadVideoPath,
         imageFormat: ImageFormat.JPEG,
         maxWidth: 1080,
         quality: 100,
@@ -212,8 +212,8 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
   // 이 함수가 이전에 누락되었습니다.
   Future<void> _onCoverSelected() async {
     if (_selectedCoverBytes != null) {
-      FFAppState().update(() {
-        FFAppState().uploadCoverBytes = base64Encode(_selectedCoverBytes!);
+      AppState().update(() {
+        AppState().uploadCoverBytes = base64Encode(_selectedCoverBytes!);
       });
       context.pushNamed('ImageEditorPage');
     } else {
@@ -228,11 +228,11 @@ class _NewVideoTrimmerPageState extends State<NewVideoTrimmerPage> {
       if (_videoPlayerController?.value.isPlaying == true) {
         _togglePlayPause();
       }
-      FFAppState().update(() {
-        FFAppState().uploadStartMs = _startValue;
-        FFAppState().uploadEndMs = _endValue;
+      AppState().update(() {
+        AppState().uploadStartMs = _startValue;
+        AppState().uploadEndMs = _endValue;
         if (_videoPlayerController != null) {
-          FFAppState().uploadVideoAspectRatio =
+          AppState().uploadVideoAspectRatio =
               _videoPlayerController!.value.aspectRatio;
         }
       });

@@ -1,11 +1,11 @@
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_utils.dart';
 import 'editviedo_widget.dart' show EditviedoWidget;
 import 'package:flutter/material.dart';
 
-class EditviedoModel extends FlutterFlowModel<EditviedoWidget> {
+class EditviedoModel extends AppModel<EditviedoWidget> {
   ///  Local state fields for this component.
 
-  FFUploadedFile? uploadedVideo;
+  AppUploadedFile? uploadedVideo;
 
   double startSec = 0.0;
 

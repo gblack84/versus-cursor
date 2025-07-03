@@ -1,10 +1,10 @@
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_utils.dart';
 import '/index.dart';
 import 'phone_creat_account_widget.dart' show PhoneCreatAccountWidget;
 import 'package:flutter/material.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
-class PhoneCreatAccountModel extends FlutterFlowModel<PhoneCreatAccountWidget> {
+class PhoneCreatAccountModel extends AppModel<PhoneCreatAccountWidget> {
   ///  State fields for stateful widgets in this page.
 
   // State field(s) for CodeCuntry widget.

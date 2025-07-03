@@ -1,4 +1,4 @@
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_utils.dart';
 import '/custom_code/widgets/index.dart' as custom_widgets;
 import 'package:flutter/material.dart';
 import 'editvideopp_model.dart';
@@ -24,7 +24,7 @@ class _EditvideoppWidgetState extends State<EditvideoppWidget> {
     super.initState();
     _model = createModel(context, () => EditvideoppModel());
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override

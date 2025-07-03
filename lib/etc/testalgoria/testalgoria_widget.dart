@@ -1,7 +1,7 @@
 import '/backend/backend.dart';
-import '/flutter_flow/flutter_flow_icon_button.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_icon_button.dart';
+import '/core/app_theme.dart';
+import '/core/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -31,7 +31,7 @@ class _TestalgoriaWidgetState extends State<TestalgoriaWidget> {
     _model.textController ??= TextEditingController();
     _model.textFieldFocusNode ??= FocusNode();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
@@ -50,28 +50,28 @@ class _TestalgoriaWidgetState extends State<TestalgoriaWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+        backgroundColor: AppTheme.of(context).primaryBackground,
         appBar: AppBar(
-          backgroundColor: FlutterFlowTheme.of(context).primary,
+          backgroundColor: AppTheme.of(context).primary,
           automaticallyImplyLeading: false,
           title: Text(
-            FFLocalizations.of(context).getText(
+            AppLocalizations.of(context).getText(
               'fafdx2pw' /* Page Title */,
             ),
-            style: FlutterFlowTheme.of(context).headlineMedium.override(
+            style: AppTheme.of(context).headlineMedium.override(
                   font: GoogleFonts.plusJakartaSans(
                     fontWeight:
-                        FlutterFlowTheme.of(context).headlineMedium.fontWeight,
+                        AppTheme.of(context).headlineMedium.fontWeight,
                     fontStyle:
-                        FlutterFlowTheme.of(context).headlineMedium.fontStyle,
+                        AppTheme.of(context).headlineMedium.fontStyle,
                   ),
                   color: Colors.white,
                   fontSize: 22.0,
                   letterSpacing: 0.0,
                   fontWeight:
-                      FlutterFlowTheme.of(context).headlineMedium.fontWeight,
+                      AppTheme.of(context).headlineMedium.fontWeight,
                   fontStyle:
-                      FlutterFlowTheme.of(context).headlineMedium.fontStyle,
+                      AppTheme.of(context).headlineMedium.fontStyle,
                 ),
           ),
           actions: [],
@@ -113,7 +113,7 @@ class _TestalgoriaWidgetState extends State<TestalgoriaWidget> {
                           width: 100.0,
                           height: 100.0,
                           decoration: BoxDecoration(
-                            color: FlutterFlowTheme.of(context)
+                            color: AppTheme.of(context)
                                 .secondaryBackground,
                           ),
                           child: Row(
@@ -121,66 +121,66 @@ class _TestalgoriaWidgetState extends State<TestalgoriaWidget> {
                             children: [
                               Text(
                                 searchlistItem.jopName,
-                                style: FlutterFlowTheme.of(context)
+                                style: AppTheme.of(context)
                                     .bodyMedium
                                     .override(
                                       font: GoogleFonts.plusJakartaSans(
-                                        fontWeight: FlutterFlowTheme.of(context)
+                                        fontWeight: AppTheme.of(context)
                                             .bodyMedium
                                             .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
+                                        fontStyle: AppTheme.of(context)
                                             .bodyMedium
                                             .fontStyle,
                                       ),
                                       letterSpacing: 0.0,
-                                      fontWeight: FlutterFlowTheme.of(context)
+                                      fontWeight: AppTheme.of(context)
                                           .bodyMedium
                                           .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .bodyMedium
                                           .fontStyle,
                                     ),
                               ),
                               Text(
                                 searchlistItem.categoryRefB,
-                                style: FlutterFlowTheme.of(context)
+                                style: AppTheme.of(context)
                                     .bodyMedium
                                     .override(
                                       font: GoogleFonts.plusJakartaSans(
-                                        fontWeight: FlutterFlowTheme.of(context)
+                                        fontWeight: AppTheme.of(context)
                                             .bodyMedium
                                             .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
+                                        fontStyle: AppTheme.of(context)
                                             .bodyMedium
                                             .fontStyle,
                                       ),
                                       letterSpacing: 0.0,
-                                      fontWeight: FlutterFlowTheme.of(context)
+                                      fontWeight: AppTheme.of(context)
                                           .bodyMedium
                                           .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .bodyMedium
                                           .fontStyle,
                                     ),
                               ),
                               Text(
                                 searchlistItem.categoryRefA,
-                                style: FlutterFlowTheme.of(context)
+                                style: AppTheme.of(context)
                                     .bodyMedium
                                     .override(
                                       font: GoogleFonts.plusJakartaSans(
-                                        fontWeight: FlutterFlowTheme.of(context)
+                                        fontWeight: AppTheme.of(context)
                                             .bodyMedium
                                             .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
+                                        fontStyle: AppTheme.of(context)
                                             .bodyMedium
                                             .fontStyle,
                                       ),
                                       letterSpacing: 0.0,
-                                      fontWeight: FlutterFlowTheme.of(context)
+                                      fontWeight: AppTheme.of(context)
                                           .bodyMedium
                                           .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .bodyMedium
                                           .fontStyle,
                                     ),
@@ -204,41 +204,41 @@ class _TestalgoriaWidgetState extends State<TestalgoriaWidget> {
                       decoration: InputDecoration(
                         isDense: true,
                         labelStyle:
-                            FlutterFlowTheme.of(context).labelMedium.override(
+                            AppTheme.of(context).labelMedium.override(
                                   font: GoogleFonts.plusJakartaSans(
-                                    fontWeight: FlutterFlowTheme.of(context)
+                                    fontWeight: AppTheme.of(context)
                                         .labelMedium
                                         .fontWeight,
-                                    fontStyle: FlutterFlowTheme.of(context)
+                                    fontStyle: AppTheme.of(context)
                                         .labelMedium
                                         .fontStyle,
                                   ),
                                   letterSpacing: 0.0,
-                                  fontWeight: FlutterFlowTheme.of(context)
+                                  fontWeight: AppTheme.of(context)
                                       .labelMedium
                                       .fontWeight,
-                                  fontStyle: FlutterFlowTheme.of(context)
+                                  fontStyle: AppTheme.of(context)
                                       .labelMedium
                                       .fontStyle,
                                 ),
-                        hintText: FFLocalizations.of(context).getText(
+                        hintText: AppLocalizations.of(context).getText(
                           '4ofzrgyp' /* TextField */,
                         ),
                         hintStyle:
-                            FlutterFlowTheme.of(context).labelMedium.override(
+                            AppTheme.of(context).labelMedium.override(
                                   font: GoogleFonts.plusJakartaSans(
-                                    fontWeight: FlutterFlowTheme.of(context)
+                                    fontWeight: AppTheme.of(context)
                                         .labelMedium
                                         .fontWeight,
-                                    fontStyle: FlutterFlowTheme.of(context)
+                                    fontStyle: AppTheme.of(context)
                                         .labelMedium
                                         .fontStyle,
                                   ),
                                   letterSpacing: 0.0,
-                                  fontWeight: FlutterFlowTheme.of(context)
+                                  fontWeight: AppTheme.of(context)
                                       .labelMedium
                                       .fontWeight,
-                                  fontStyle: FlutterFlowTheme.of(context)
+                                  fontStyle: AppTheme.of(context)
                                       .labelMedium
                                       .fontStyle,
                                 ),
@@ -258,62 +258,62 @@ class _TestalgoriaWidgetState extends State<TestalgoriaWidget> {
                         ),
                         errorBorder: OutlineInputBorder(
                           borderSide: BorderSide(
-                            color: FlutterFlowTheme.of(context).error,
+                            color: AppTheme.of(context).error,
                             width: 1.0,
                           ),
                           borderRadius: BorderRadius.circular(8.0),
                         ),
                         focusedErrorBorder: OutlineInputBorder(
                           borderSide: BorderSide(
-                            color: FlutterFlowTheme.of(context).error,
+                            color: AppTheme.of(context).error,
                             width: 1.0,
                           ),
                           borderRadius: BorderRadius.circular(8.0),
                         ),
                         filled: true,
                         fillColor:
-                            FlutterFlowTheme.of(context).secondaryBackground,
+                            AppTheme.of(context).secondaryBackground,
                       ),
-                      style: FlutterFlowTheme.of(context).bodyMedium.override(
+                      style: AppTheme.of(context).bodyMedium.override(
                             font: GoogleFonts.plusJakartaSans(
-                              fontWeight: FlutterFlowTheme.of(context)
+                              fontWeight: AppTheme.of(context)
                                   .bodyMedium
                                   .fontWeight,
-                              fontStyle: FlutterFlowTheme.of(context)
+                              fontStyle: AppTheme.of(context)
                                   .bodyMedium
                                   .fontStyle,
                             ),
                             letterSpacing: 0.0,
-                            fontWeight: FlutterFlowTheme.of(context)
+                            fontWeight: AppTheme.of(context)
                                 .bodyMedium
                                 .fontWeight,
-                            fontStyle: FlutterFlowTheme.of(context)
+                            fontStyle: AppTheme.of(context)
                                 .bodyMedium
                                 .fontStyle,
                           ),
-                      cursorColor: FlutterFlowTheme.of(context).primaryText,
+                      cursorColor: AppTheme.of(context).primaryText,
                       validator:
                           _model.textControllerValidator.asValidator(context),
                     ),
                   ),
                 ),
-                FlutterFlowIconButton(
+                AppIconButton(
                   borderRadius: 8.0,
                   buttonSize: 40.0,
-                  fillColor: FlutterFlowTheme.of(context).primary,
+                  fillColor: AppTheme.of(context).primary,
                   icon: Icon(
                     Icons.arrow_back,
-                    color: FlutterFlowTheme.of(context).info,
+                    color: AppTheme.of(context).info,
                     size: 24.0,
                   ),
                   onPressed: () async {
-                    safeSetState(() => _model.algoliaSearchResults = null);
+                    setState(() => _model.algoliaSearchResults = null);
                     await JopsCategoryRecord.search(
                       term: _model.textController.text,
                     )
                         .then((r) => _model.algoliaSearchResults = r)
                         .onError((_, __) => _model.algoliaSearchResults = [])
-                        .whenComplete(() => safeSetState(() {}));
+                        .whenComplete(() => setState(() {}));
                   },
                 ),
               ],

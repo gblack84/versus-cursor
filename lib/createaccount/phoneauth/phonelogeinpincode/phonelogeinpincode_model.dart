@@ -1,12 +1,12 @@
-import '/flutter_flow/flutter_flow_timer.dart';
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_timer.dart';
+import '/core/app_utils.dart';
 import '/index.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'phonelogeinpincode_widget.dart' show PhonelogeinpincodeWidget;
 import 'package:flutter/material.dart';
 
 class PhonelogeinpincodeModel
-    extends FlutterFlowModel<PhonelogeinpincodeWidget> {
+    extends AppModel<PhonelogeinpincodeWidget> {
   ///  Local state fields for this page.
 
   bool? isVerified;
@@ -29,8 +29,8 @@ class PhonelogeinpincodeModel
     hours: false,
     milliSecond: false,
   );
-  FlutterFlowTimerController timerController =
-      FlutterFlowTimerController(StopWatchTimer(mode: StopWatchMode.countDown));
+  AppTimerController timerController =
+      AppTimerController(StopWatchTimer(mode: StopWatchMode.countDown));
 
   @override
   void initState(BuildContext context) {

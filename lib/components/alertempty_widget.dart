@@ -1,9 +1,9 @@
 import '/etc/vsmark/vsmark_widget.dart';
-import '/flutter_flow/flutter_flow_icon_button.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import '/pots/in_put_text/in_put_text_widget.dart';
+import '/core/app_icon_button.dart';
+import '/core/app_theme.dart';
+import '/core/app_utils.dart';
+import '/core/app_widgets.dart';
+import '/posts/in_put_text/in_put_text_widget.dart';
 import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -33,7 +33,7 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
     super.initState();
     _model = createModel(context, () => AlertemptyModel());
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
@@ -47,7 +47,7 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: FlutterFlowTheme.of(context).secondaryBackground,
+        color: AppTheme.of(context).secondaryBackground,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30.0),
           bottomRight: Radius.circular(30.0),
@@ -67,11 +67,11 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
                 width: 200.46,
                 height: 56.5,
                 decoration: BoxDecoration(
-                  color: FlutterFlowTheme.of(context).secondaryBackground,
+                  color: AppTheme.of(context).secondaryBackground,
                 ),
                 child: wrapWithModel(
                   model: _model.vsmarkModel,
-                  updateCallback: () => safeSetState(() {}),
+                  updateCallback: () => setState(() {}),
                   child: VsmarkWidget(),
                 ),
               ),
@@ -81,21 +81,21 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
             padding: EdgeInsets.all(8.0),
             child: Container(
               decoration: BoxDecoration(
-                color: FlutterFlowTheme.of(context).secondaryBackground,
+                color: AppTheme.of(context).secondaryBackground,
               ),
               child: Align(
                 alignment: AlignmentDirectional(0.0, 0.0),
                 child: Padding(
                   padding: EdgeInsets.all(5.0),
                   child: Text(
-                    FFLocalizations.of(context).getText(
+                    AppLocalizations.of(context).getText(
                       '707q86sk' /* No Text Entered */,
                     ),
                     textAlign: TextAlign.center,
-                    style: FlutterFlowTheme.of(context).bodyMedium.override(
+                    style: AppTheme.of(context).bodyMedium.override(
                           font: GoogleFonts.plusJakartaSans(
                             fontWeight: FontWeight.w800,
-                            fontStyle: FlutterFlowTheme.of(context)
+                            fontStyle: AppTheme.of(context)
                                 .bodyMedium
                                 .fontStyle,
                           ),
@@ -104,7 +104,7 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
                           letterSpacing: 0.0,
                           fontWeight: FontWeight.w800,
                           fontStyle:
-                              FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                              AppTheme.of(context).bodyMedium.fontStyle,
                         ),
                   ),
                 ),
@@ -115,21 +115,21 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
             padding: EdgeInsets.all(8.0),
             child: Container(
               decoration: BoxDecoration(
-                color: FlutterFlowTheme.of(context).secondaryBackground,
+                color: AppTheme.of(context).secondaryBackground,
               ),
               child: Align(
                 alignment: AlignmentDirectional(0.0, 0.0),
                 child: Padding(
                   padding: EdgeInsets.all(5.0),
                   child: Text(
-                    FFLocalizations.of(context).getText(
+                    AppLocalizations.of(context).getText(
                       'sz1sjey3' /* The text field is empty. If yo... */,
                     ),
                     textAlign: TextAlign.center,
-                    style: FlutterFlowTheme.of(context).bodyMedium.override(
+                    style: AppTheme.of(context).bodyMedium.override(
                           font: GoogleFonts.plusJakartaSans(
                             fontWeight: FontWeight.w800,
-                            fontStyle: FlutterFlowTheme.of(context)
+                            fontStyle: AppTheme.of(context)
                                 .bodyMedium
                                 .fontStyle,
                           ),
@@ -137,7 +137,7 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
                           letterSpacing: 0.0,
                           fontWeight: FontWeight.w800,
                           fontStyle:
-                              FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                              AppTheme.of(context).bodyMedium.fontStyle,
                         ),
                   ),
                 ),
@@ -153,19 +153,19 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
               children: [
                 Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(0.0, 20.0, 20.0, 0.0),
-                  child: FlutterFlowIconButton(
+                  child: AppIconButton(
                     borderRadius: 8.0,
                     buttonSize: 40.0,
-                    fillColor: FlutterFlowTheme.of(context).primary,
+                    fillColor: AppTheme.of(context).primary,
                     icon: FaIcon(
-                      FontAwesomeIcons.redoAlt,
-                      color: FlutterFlowTheme.of(context).info,
+                      FontAwesomeIcons.rotateRight,
+                      color: AppTheme.of(context).info,
                       size: 24.0,
                     ),
                     onPressed: () async {
                       Navigator.pop(context);
-                      FFAppState().upLoadTextEditing = 0;
-                      safeSetState(() {});
+                      AppState().upLoadTextEditing = 0;
+                      setState(() {});
                       await showModalBottomSheet(
                         isScrollControlled: true,
                         backgroundColor: Colors.transparent,
@@ -179,13 +179,13 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
                             ),
                           );
                         },
-                      ).then((value) => safeSetState(() {}));
+                      ).then((value) => setState(() {}));
                     },
                   ),
                 ),
                 Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(0.0, 20.0, 20.0, 0.0),
-                  child: FFButtonWidget(
+                  child: AppButtonWidget(
                     onPressed: () async {
                       Navigator.pop(context);
 
@@ -199,39 +199,39 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
                         },
                       );
                     },
-                    text: FFLocalizations.of(context).getText(
+                    text: AppLocalizations.of(context).getText(
                       'xhyu1hyf' /* Ok */,
                     ),
-                    options: FFButtonOptions(
+                    options: AppButtonOptions(
                       width: 80.0,
                       height: 40.0,
                       padding:
                           EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
                       iconPadding:
                           EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
-                      color: FlutterFlowTheme.of(context).primaryText,
+                      color: AppTheme.of(context).primaryText,
                       textStyle:
-                          FlutterFlowTheme.of(context).titleSmall.override(
+                          AppTheme.of(context).titleSmall.override(
                                 font: GoogleFonts.plusJakartaSans(
-                                  fontWeight: FlutterFlowTheme.of(context)
+                                  fontWeight: AppTheme.of(context)
                                       .titleSmall
                                       .fontWeight,
-                                  fontStyle: FlutterFlowTheme.of(context)
+                                  fontStyle: AppTheme.of(context)
                                       .titleSmall
                                       .fontStyle,
                                 ),
                                 color: Colors.white,
                                 letterSpacing: 0.0,
-                                fontWeight: FlutterFlowTheme.of(context)
+                                fontWeight: AppTheme.of(context)
                                     .titleSmall
                                     .fontWeight,
-                                fontStyle: FlutterFlowTheme.of(context)
+                                fontStyle: AppTheme.of(context)
                                     .titleSmall
                                     .fontStyle,
                               ),
                       elevation: 10.0,
                       borderSide: BorderSide(
-                        color: FlutterFlowTheme.of(context).info,
+                        color: AppTheme.of(context).info,
                       ),
                       borderRadius: BorderRadius.circular(8.0),
                     ),

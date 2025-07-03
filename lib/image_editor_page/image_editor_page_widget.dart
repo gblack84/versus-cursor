@@ -1,5 +1,5 @@
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_theme.dart';
+import '/core/app_utils.dart';
 import '/custom_code/widgets/index.dart' as custom_widgets;
 import 'package:flutter/material.dart';
 import 'image_editor_page_model.dart';
@@ -25,7 +25,7 @@ class _ImageEditorPageWidgetState extends State<ImageEditorPageWidget> {
     super.initState();
     _model = createModel(context, () => ImageEditorPageModel());
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
@@ -48,7 +48,7 @@ class _ImageEditorPageWidgetState extends State<ImageEditorPageWidget> {
           width: double.infinity,
           height: double.infinity,
           decoration: BoxDecoration(
-            color: FlutterFlowTheme.of(context).secondaryBackground,
+            color: AppTheme.of(context).secondaryBackground,
           ),
           child: Container(
             width: double.infinity,

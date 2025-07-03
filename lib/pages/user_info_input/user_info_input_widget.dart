@@ -1,10 +1,10 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
-import '/flutter_flow/flutter_flow_choice_chips.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import '/flutter_flow/form_field_controller.dart';
+import '/core/app_choice_chips.dart';
+import '/core/app_theme.dart';
+import '/core/app_utils.dart';
+import '/core/app_widgets.dart';
+import '/core/form_field_controller.dart';
 import '/pages/user_info/character_detail_page/character_detail_page_widget.dart';
 import '/pages/user_info/language_selector/language_selector_widget.dart';
 import '/index.dart';
@@ -42,13 +42,13 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
       _model.userDocument =
           await UsersRecord.getDocumentOnce(currentUserReference!);
 
-      safeSetState(() {});
+      setState(() {});
     });
 
     _model.displayNameTextController ??= TextEditingController();
     _model.displayNameFocusNode ??= FocusNode();
-    _model.displayNameFocusNode!.addListener(() => safeSetState(() {}));
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    _model.displayNameFocusNode!.addListener(() => setState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
@@ -74,11 +74,11 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
           title: Align(
             alignment: AlignmentDirectional(-1.0, 0.0),
             child: Text(
-              FFLocalizations.of(context).getText(
+              AppLocalizations.of(context).getText(
                 'jemkmkgu' /* Versus space */,
               ),
               textAlign: TextAlign.end,
-              style: FlutterFlowTheme.of(context).headlineSmall.override(
+              style: AppTheme.of(context).headlineSmall.override(
                     fontFamily: 'SourGummy',
                     color: Colors.black,
                     letterSpacing: 0.0,
@@ -136,7 +136,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                         width: 155.0,
                                         height: 155.0,
                                         decoration: BoxDecoration(
-                                          color: FlutterFlowTheme.of(context)
+                                          color: AppTheme.of(context)
                                               .secondaryBackground,
                                           shape: BoxShape.circle,
                                         ),
@@ -189,7 +189,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                         );
                                                       },
                                                     ).then((value) =>
-                                                        safeSetState(() {}));
+                                                        setState(() {}));
                                                   },
                                                   child: Container(
                                                     width: 200.0,
@@ -236,26 +236,26 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                       alignment: AlignmentDirectional(0.0, 0.0),
                                       child: Text(
                                         currentUserEmail,
-                                        style: FlutterFlowTheme.of(context)
+                                        style: AppTheme.of(context)
                                             .titleMedium
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
                                                 fontWeight:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .titleMedium
                                                         .fontWeight,
                                                 fontStyle:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .titleMedium
                                                         .fontStyle,
                                               ),
                                               letterSpacing: 0.0,
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleMedium
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleMedium
                                                       .fontStyle,
                                               decoration:
@@ -269,29 +269,29 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                       child: AuthUserStreamWidget(
                                         builder: (context) => Text(
                                           currentPhoneNumber,
-                                          style: FlutterFlowTheme.of(context)
+                                          style: AppTheme.of(context)
                                               .titleMedium
                                               .override(
                                                 font:
                                                     GoogleFonts.plusJakartaSans(
                                                   fontWeight:
-                                                      FlutterFlowTheme.of(
+                                                      AppTheme.of(
                                                               context)
                                                           .titleMedium
                                                           .fontWeight,
                                                   fontStyle:
-                                                      FlutterFlowTheme.of(
+                                                      AppTheme.of(
                                                               context)
                                                           .titleMedium
                                                           .fontStyle,
                                                 ),
                                                 letterSpacing: 0.0,
                                                 fontWeight:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .titleMedium
                                                         .fontWeight,
                                                 fontStyle:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .titleMedium
                                                         .fontStyle,
                                                 decoration:
@@ -307,29 +307,29 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                         dateTimeFormat(
                                           "yMMMd",
                                           currentUserDocument!.createdTime!,
-                                          locale: FFLocalizations.of(context)
+                                          locale: AppLocalizations.of(context)
                                               .languageCode,
                                         ),
-                                        style: FlutterFlowTheme.of(context)
+                                        style: AppTheme.of(context)
                                             .titleSmall
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
                                                 fontWeight:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .titleSmall
                                                         .fontWeight,
                                                 fontStyle:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .titleSmall
                                                         .fontStyle,
                                               ),
                                               letterSpacing: 0.0,
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontStyle,
                                               decoration:
@@ -348,23 +348,23 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                       padding: EdgeInsetsDirectional.fromSTEB(
                                           0.0, 0.0, 0.0, 10.0),
                                       child: Text(
-                                        FFLocalizations.of(context).getText(
+                                        AppLocalizations.of(context).getText(
                                           'plunfug5' /* Information */,
                                         ),
-                                        style: FlutterFlowTheme.of(context)
+                                        style: AppTheme.of(context)
                                             .bodyLarge
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
                                                 fontWeight: FontWeight.w600,
                                                 fontStyle:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .bodyLarge
                                                         .fontStyle,
                                               ),
                                               letterSpacing: 0.0,
                                               fontWeight: FontWeight.w600,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .bodyLarge
                                                       .fontStyle,
                                             ),
@@ -372,29 +372,29 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                     ),
                                   ),
                                   Text(
-                                    FFLocalizations.of(context).getText(
+                                    AppLocalizations.of(context).getText(
                                       '9bvrno9z' /* Display Name */,
                                     ),
-                                    style: FlutterFlowTheme.of(context)
+                                    style: AppTheme.of(context)
                                         .bodyMedium
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontStyle,
                                           ),
                                           letterSpacing: 0.0,
                                           fontWeight:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontWeight,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
                                         ),
@@ -411,82 +411,82 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                       obscureText: false,
                                       decoration: InputDecoration(
                                         labelText:
-                                            FFLocalizations.of(context).getText(
+                                            AppLocalizations.of(context).getText(
                                           'm58rgdkp' /* Display name* */,
                                         ),
-                                        labelStyle: FlutterFlowTheme.of(context)
+                                        labelStyle: AppTheme.of(context)
                                             .headlineMedium
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
                                                 fontWeight:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .headlineMedium
                                                         .fontWeight,
                                                 fontStyle:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .headlineMedium
                                                         .fontStyle,
                                               ),
                                               color:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .secondaryText,
                                               letterSpacing: 0.0,
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .headlineMedium
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .headlineMedium
                                                       .fontStyle,
                                             ),
-                                        hintStyle: FlutterFlowTheme.of(context)
+                                        hintStyle: AppTheme.of(context)
                                             .labelMedium
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
                                                 fontWeight:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .labelMedium
                                                         .fontWeight,
                                                 fontStyle:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .labelMedium
                                                         .fontStyle,
                                               ),
                                               letterSpacing: 0.0,
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .labelMedium
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .labelMedium
                                                       .fontStyle,
                                             ),
-                                        errorStyle: FlutterFlowTheme.of(context)
+                                        errorStyle: AppTheme.of(context)
                                             .bodyMedium
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
                                                 fontWeight:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .bodyMedium
                                                         .fontWeight,
                                                 fontStyle:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .bodyMedium
                                                         .fontStyle,
                                               ),
                                               color:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .error,
                                               fontSize: 12.0,
                                               letterSpacing: 0.0,
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .bodyMedium
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .bodyMedium
                                                       .fontStyle,
                                             ),
@@ -500,7 +500,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                         ),
                                         focusedBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
-                                            color: FlutterFlowTheme.of(context)
+                                            color: AppTheme.of(context)
                                                 .primary,
                                             width: 2.0,
                                           ),
@@ -509,7 +509,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                         ),
                                         errorBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
-                                            color: FlutterFlowTheme.of(context)
+                                            color: AppTheme.of(context)
                                                 .error,
                                             width: 2.0,
                                           ),
@@ -518,7 +518,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                         ),
                                         focusedErrorBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
-                                            color: FlutterFlowTheme.of(context)
+                                            color: AppTheme.of(context)
                                                 .error,
                                             width: 2.0,
                                           ),
@@ -529,40 +529,40 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                         fillColor: (_model.displayNameFocusNode
                                                     ?.hasFocus ??
                                                 false)
-                                            ? FlutterFlowTheme.of(context)
+                                            ? AppTheme.of(context)
                                                 .accent1
-                                            : FlutterFlowTheme.of(context)
+                                            : AppTheme.of(context)
                                                 .secondaryBackground,
                                         contentPadding:
                                             EdgeInsetsDirectional.fromSTEB(
                                                 16.0, 20.0, 16.0, 20.0),
                                       ),
-                                      style: FlutterFlowTheme.of(context)
+                                      style: AppTheme.of(context)
                                           .headlineMedium
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .headlineMedium
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .headlineMedium
                                                       .fontStyle,
                                             ),
                                             letterSpacing: 0.0,
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .headlineMedium
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .headlineMedium
                                                     .fontStyle,
                                           ),
                                       maxLength: 20,
                                       cursorColor:
-                                          FlutterFlowTheme.of(context).primary,
+                                          AppTheme.of(context).primary,
                                       validator: _model
                                           .displayNameTextControllerValidator
                                           .asValidator(context),
@@ -581,29 +581,29 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                     ),
                                   ),
                                   Text(
-                                    FFLocalizations.of(context).getText(
+                                    AppLocalizations.of(context).getText(
                                       'pqx67cpq' /* Language */,
                                     ),
-                                    style: FlutterFlowTheme.of(context)
+                                    style: AppTheme.of(context)
                                         .bodyMedium
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontStyle,
                                           ),
                                           letterSpacing: 0.0,
                                           fontWeight:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontWeight,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
                                         ),
@@ -615,7 +615,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                     ),
                                     child: wrapWithModel(
                                       model: _model.languageSelectorModel,
-                                      updateCallback: () => safeSetState(() {}),
+                                      updateCallback: () => setState(() {}),
                                       child: LanguageSelectorWidget(),
                                     ),
                                   ),
@@ -623,122 +623,122 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                     decoration: BoxDecoration(),
                                   ),
                                   Text(
-                                    FFLocalizations.of(context).getText(
+                                    AppLocalizations.of(context).getText(
                                       'e2mae9l3' /* Gender */,
                                     ),
-                                    style: FlutterFlowTheme.of(context)
+                                    style: AppTheme.of(context)
                                         .bodyMedium
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontStyle,
                                           ),
                                           letterSpacing: 0.0,
                                           fontWeight:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontWeight,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
                                         ),
                                   ),
-                                  FlutterFlowChoiceChips(
+                                  AppChoiceChips(
                                     options: [
                                       ChipData(
-                                          FFLocalizations.of(context).getText(
+                                          AppLocalizations.of(context).getText(
                                         'fy3unoj5' /* Female */,
                                       )),
                                       ChipData(
-                                          FFLocalizations.of(context).getText(
+                                          AppLocalizations.of(context).getText(
                                         'sjv4inta' /* Male */,
                                       )),
                                       ChipData(
-                                          FFLocalizations.of(context).getText(
+                                          AppLocalizations.of(context).getText(
                                         'tmsnqk92' /* Other */,
                                       ))
                                     ],
-                                    onChanged: (val) => safeSetState(() =>
+                                    onChanged: (val) => setState(() =>
                                         _model.choiceChipsValue =
                                             val?.firstOrNull),
                                     selectedChipStyle: ChipStyle(
                                       backgroundColor:
-                                          FlutterFlowTheme.of(context).accent2,
-                                      textStyle: FlutterFlowTheme.of(context)
+                                          AppTheme.of(context).accent2,
+                                      textStyle: AppTheme.of(context)
                                           .bodyMedium
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .bodyMedium
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .bodyMedium
                                                       .fontStyle,
                                             ),
-                                            color: FlutterFlowTheme.of(context)
+                                            color: AppTheme.of(context)
                                                 .primaryText,
                                             letterSpacing: 0.0,
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontStyle,
                                           ),
-                                      iconColor: FlutterFlowTheme.of(context)
+                                      iconColor: AppTheme.of(context)
                                           .primaryText,
                                       iconSize: 18.0,
                                       elevation: 0.0,
-                                      borderColor: FlutterFlowTheme.of(context)
+                                      borderColor: AppTheme.of(context)
                                           .secondary,
                                       borderWidth: 2.0,
                                       borderRadius: BorderRadius.circular(8.0),
                                     ),
                                     unselectedChipStyle: ChipStyle(
                                       backgroundColor:
-                                          FlutterFlowTheme.of(context)
+                                          AppTheme.of(context)
                                               .primaryBackground,
-                                      textStyle: FlutterFlowTheme.of(context)
+                                      textStyle: AppTheme.of(context)
                                           .bodyMedium
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .bodyMedium
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .bodyMedium
                                                       .fontStyle,
                                             ),
-                                            color: FlutterFlowTheme.of(context)
+                                            color: AppTheme.of(context)
                                                 .secondaryText,
                                             letterSpacing: 0.0,
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontStyle,
                                           ),
-                                      iconColor: FlutterFlowTheme.of(context)
+                                      iconColor: AppTheme.of(context)
                                           .secondaryText,
                                       iconSize: 18.0,
                                       elevation: 0.0,
-                                      borderColor: FlutterFlowTheme.of(context)
+                                      borderColor: AppTheme.of(context)
                                           .alternate,
                                       borderWidth: 2.0,
                                       borderRadius: BorderRadius.circular(8.0),
@@ -802,18 +802,14 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                             _model.agreed13old,
                                                     onChanged:
                                                         (newValue) async {
-                                                      safeSetState(() =>
+                                                      setState(() =>
                                                           _model.checkboxValue =
                                                               newValue!);
                                                     },
-                                                    side: (Color(0xFFFF0000) !=
-                                                            null)
-                                                        ? BorderSide(
-                                                            width: 2,
-                                                            color: Color(
-                                                                0xFFFF0000),
-                                                          )
-                                                        : null,
+                                                    side: BorderSide(
+                                                      width: 2,
+                                                      color: Color(0xFFFF0000),
+                                                    ),
                                                     activeColor:
                                                         Color(0xFFFFC8C8),
                                                     checkColor:
@@ -828,23 +824,23 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                 text: TextSpan(
                                                   children: [
                                                     TextSpan(
-                                                      text: FFLocalizations.of(
+                                                      text: AppLocalizations.of(
                                                               context)
                                                           .getText(
                                                         'cn54l9bj' /* I confirm that I am at least  */,
                                                       ),
                                                       style:
-                                                          FlutterFlowTheme.of(
+                                                          AppTheme.of(
                                                                   context)
                                                               .bodyMedium
                                                               .override(
                                                                 font: GoogleFonts
                                                                     .plusJakartaSans(
-                                                                  fontWeight: FlutterFlowTheme.of(
+                                                                  fontWeight: AppTheme.of(
                                                                           context)
                                                                       .bodyMedium
                                                                       .fontWeight,
-                                                                  fontStyle: FlutterFlowTheme.of(
+                                                                  fontStyle: AppTheme.of(
                                                                           context)
                                                                       .bodyMedium
                                                                       .fontStyle,
@@ -852,23 +848,23 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                                 fontSize: 18.0,
                                                                 letterSpacing:
                                                                     0.0,
-                                                                fontWeight: FlutterFlowTheme.of(
+                                                                fontWeight: AppTheme.of(
                                                                         context)
                                                                     .bodyMedium
                                                                     .fontWeight,
-                                                                fontStyle: FlutterFlowTheme.of(
+                                                                fontStyle: AppTheme.of(
                                                                         context)
                                                                     .bodyMedium
                                                                     .fontStyle,
                                                               ),
                                                     ),
                                                     TextSpan(
-                                                      text: FFLocalizations.of(
+                                                      text: AppLocalizations.of(
                                                               context)
                                                           .getText(
                                                         'e8bfoncc' /*  13 */,
                                                       ),
-                                                      style: FlutterFlowTheme
+                                                      style: AppTheme
                                                               .of(context)
                                                           .bodyMedium
                                                           .override(
@@ -878,7 +874,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                                   FontWeight
                                                                       .bold,
                                                               fontStyle:
-                                                                  FlutterFlowTheme.of(
+                                                                  AppTheme.of(
                                                                           context)
                                                                       .bodyMedium
                                                                       .fontStyle,
@@ -890,7 +886,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                             fontWeight:
                                                                 FontWeight.bold,
                                                             fontStyle:
-                                                                FlutterFlowTheme.of(
+                                                                AppTheme.of(
                                                                         context)
                                                                     .bodyMedium
                                                                     .fontStyle,
@@ -900,23 +896,23 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                           ),
                                                     ),
                                                     TextSpan(
-                                                      text: FFLocalizations.of(
+                                                      text: AppLocalizations.of(
                                                               context)
                                                           .getText(
                                                         'eqbsqvs2' /*   years old. */,
                                                       ),
                                                       style:
-                                                          FlutterFlowTheme.of(
+                                                          AppTheme.of(
                                                                   context)
                                                               .bodyMedium
                                                               .override(
                                                                 font: GoogleFonts
                                                                     .plusJakartaSans(
-                                                                  fontWeight: FlutterFlowTheme.of(
+                                                                  fontWeight: AppTheme.of(
                                                                           context)
                                                                       .bodyMedium
                                                                       .fontWeight,
-                                                                  fontStyle: FlutterFlowTheme.of(
+                                                                  fontStyle: AppTheme.of(
                                                                           context)
                                                                       .bodyMedium
                                                                       .fontStyle,
@@ -924,42 +920,42 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                                 fontSize: 18.0,
                                                                 letterSpacing:
                                                                     0.0,
-                                                                fontWeight: FlutterFlowTheme.of(
+                                                                fontWeight: AppTheme.of(
                                                                         context)
                                                                     .bodyMedium
                                                                     .fontWeight,
-                                                                fontStyle: FlutterFlowTheme.of(
+                                                                fontStyle: AppTheme.of(
                                                                         context)
                                                                     .bodyMedium
                                                                     .fontStyle,
                                                               ),
                                                     )
                                                   ],
-                                                  style: FlutterFlowTheme.of(
+                                                  style: AppTheme.of(
                                                           context)
                                                       .bodyMedium
                                                       .override(
                                                         font: GoogleFonts
                                                             .plusJakartaSans(
                                                           fontWeight:
-                                                              FlutterFlowTheme.of(
+                                                              AppTheme.of(
                                                                       context)
                                                                   .bodyMedium
                                                                   .fontWeight,
                                                           fontStyle:
-                                                              FlutterFlowTheme.of(
+                                                              AppTheme.of(
                                                                       context)
                                                                   .bodyMedium
                                                                   .fontStyle,
                                                         ),
                                                         letterSpacing: 0.0,
                                                         fontWeight:
-                                                            FlutterFlowTheme.of(
+                                                            AppTheme.of(
                                                                     context)
                                                                 .bodyMedium
                                                                 .fontWeight,
                                                         fontStyle:
-                                                            FlutterFlowTheme.of(
+                                                            AppTheme.of(
                                                                     context)
                                                                 .bodyMedium
                                                                 .fontStyle,
@@ -970,33 +966,33 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                           ),
                                         ),
                                         Text(
-                                          FFLocalizations.of(context).getText(
+                                          AppLocalizations.of(context).getText(
                                             '4165t2cs' /* If you are under 13, providing... */,
                                           ),
                                           textAlign: TextAlign.center,
-                                          style: FlutterFlowTheme.of(context)
+                                          style: AppTheme.of(context)
                                               .bodyMedium
                                               .override(
                                                 font:
                                                     GoogleFonts.plusJakartaSans(
                                                   fontWeight:
-                                                      FlutterFlowTheme.of(
+                                                      AppTheme.of(
                                                               context)
                                                           .bodyMedium
                                                           .fontWeight,
                                                   fontStyle:
-                                                      FlutterFlowTheme.of(
+                                                      AppTheme.of(
                                                               context)
                                                           .bodyMedium
                                                           .fontStyle,
                                                 ),
                                                 letterSpacing: 0.0,
                                                 fontWeight:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .bodyMedium
                                                         .fontWeight,
                                                 fontStyle:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .bodyMedium
                                                         .fontStyle,
                                               ),
@@ -1007,7 +1003,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                   Padding(
                                     padding: EdgeInsetsDirectional.fromSTEB(
                                         16.0, 12.0, 16.0, 0.0),
-                                    child: FFButtonWidget(
+                                    child: AppButtonWidget(
                                       onPressed: !_model.agreed13old
                                           ? null
                                           : () async {
@@ -1025,25 +1021,25 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                     .text,
                                                 gender: _model.choiceChipsValue,
                                                 language:
-                                                    FFLocalizations.of(context)
+                                                    AppLocalizations.of(context)
                                                         .languageCode,
                                               ));
-                                              FFAppState().selectedLang =
-                                                  FFLocalizations.of(context)
+                                              AppState().selectedLang =
+                                                  AppLocalizations.of(context)
                                                       .languageCode;
-                                              FFAppState().DisplayName = _model
+                                              AppState().DisplayName = _model
                                                   .displayNameTextController
                                                   .text;
-                                              safeSetState(() {});
+                                              setState(() {});
 
                                               context.pushNamed(
                                                   ExpertiseSelectWidget
                                                       .routeName);
                                             },
-                                      text: FFLocalizations.of(context).getText(
+                                      text: AppLocalizations.of(context).getText(
                                         'k84ryt65' /* Continue */,
                                       ),
-                                      options: FFButtonOptions(
+                                      options: AppButtonOptions(
                                         width: double.infinity,
                                         height: 48.0,
                                         padding: EdgeInsetsDirectional.fromSTEB(
@@ -1052,27 +1048,27 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                             EdgeInsetsDirectional.fromSTEB(
                                                 0.0, 0.0, 0.0, 0.0),
                                         color: Colors.black,
-                                        textStyle: FlutterFlowTheme.of(context)
+                                        textStyle: AppTheme.of(context)
                                             .titleSmall
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
                                                 fontWeight:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .titleSmall
                                                         .fontWeight,
                                                 fontStyle:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .titleSmall
                                                         .fontStyle,
                                               ),
                                               color: Colors.white,
                                               letterSpacing: 0.0,
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontStyle,
                                             ),

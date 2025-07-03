@@ -1,7 +1,7 @@
 import '/backend/backend.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
+import '/core/app_theme.dart';
+import '/core/app_utils.dart';
+import '/core/app_widgets.dart';
 import '/custom_code/actions/index.dart' as actions;
 import '/index.dart';
 import 'package:flutter/material.dart';
@@ -32,7 +32,7 @@ class _UploadChoiceBottomSheetWidgetState
     super.initState();
     _model = createModel(context, () => UploadChoiceBottomSheetModel());
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
@@ -60,7 +60,7 @@ class _UploadChoiceBottomSheetWidgetState
         mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          FFButtonWidget(
+          AppButtonWidget(
             onPressed: () async {
               var postsRecordReference = PostsRecord.collection.doc();
               await postsRecordReference.set(createPostsRecordData());
@@ -71,9 +71,9 @@ class _UploadChoiceBottomSheetWidgetState
               );
               if (_model.pickedVideoPath != null &&
                   _model.pickedVideoPath != '') {
-                FFAppState().uploadPostId = _model.newPost!.reference.id;
-                FFAppState().uploadVideoPath = _model.pickedVideoPath!;
-                safeSetState(() {});
+                AppState().uploadPostId = _model.newPost!.reference.id;
+                AppState().uploadVideoPath = _model.pickedVideoPath!;
+                setState(() {});
 
                 context.pushNamed(EditvideoppWidget.routeName);
               } else {
@@ -82,38 +82,38 @@ class _UploadChoiceBottomSheetWidgetState
                     content: Text(
                       '\"비디오 선택이 취소되었습니다\" ',
                       style: TextStyle(
-                        color: FlutterFlowTheme.of(context).primaryText,
+                        color: AppTheme.of(context).primaryText,
                       ),
                     ),
                     duration: Duration(milliseconds: 4000),
-                    backgroundColor: FlutterFlowTheme.of(context).secondary,
+                    backgroundColor: AppTheme.of(context).secondary,
                   ),
                 );
               }
 
-              safeSetState(() {});
+              setState(() {});
             },
-            text: FFLocalizations.of(context).getText(
+            text: AppLocalizations.of(context).getText(
               'i36a91le' /* Gallery */,
             ),
-            options: FFButtonOptions(
+            options: AppButtonOptions(
               height: 40.0,
               padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
               iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
               color: Color(0x25000000),
-              textStyle: FlutterFlowTheme.of(context).titleSmall.override(
+              textStyle: AppTheme.of(context).titleSmall.override(
                     font: GoogleFonts.plusJakartaSans(
                       fontWeight:
-                          FlutterFlowTheme.of(context).titleSmall.fontWeight,
+                          AppTheme.of(context).titleSmall.fontWeight,
                       fontStyle:
-                          FlutterFlowTheme.of(context).titleSmall.fontStyle,
+                          AppTheme.of(context).titleSmall.fontStyle,
                     ),
                     color: Colors.white,
                     letterSpacing: 0.0,
                     fontWeight:
-                        FlutterFlowTheme.of(context).titleSmall.fontWeight,
+                        AppTheme.of(context).titleSmall.fontWeight,
                     fontStyle:
-                        FlutterFlowTheme.of(context).titleSmall.fontStyle,
+                        AppTheme.of(context).titleSmall.fontStyle,
                   ),
               elevation: 0.0,
               borderSide: BorderSide(
@@ -122,31 +122,31 @@ class _UploadChoiceBottomSheetWidgetState
               borderRadius: BorderRadius.circular(8.0),
             ),
           ),
-          FFButtonWidget(
+          AppButtonWidget(
             onPressed: () {
               print('Button pressed ...');
             },
-            text: FFLocalizations.of(context).getText(
+            text: AppLocalizations.of(context).getText(
               '16rkqdde' /* Camera */,
             ),
-            options: FFButtonOptions(
+            options: AppButtonOptions(
               height: 40.0,
               padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
               iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
               color: Color(0x25000000),
-              textStyle: FlutterFlowTheme.of(context).titleSmall.override(
+              textStyle: AppTheme.of(context).titleSmall.override(
                     font: GoogleFonts.plusJakartaSans(
                       fontWeight:
-                          FlutterFlowTheme.of(context).titleSmall.fontWeight,
+                          AppTheme.of(context).titleSmall.fontWeight,
                       fontStyle:
-                          FlutterFlowTheme.of(context).titleSmall.fontStyle,
+                          AppTheme.of(context).titleSmall.fontStyle,
                     ),
                     color: Colors.white,
                     letterSpacing: 0.0,
                     fontWeight:
-                        FlutterFlowTheme.of(context).titleSmall.fontWeight,
+                        AppTheme.of(context).titleSmall.fontWeight,
                     fontStyle:
-                        FlutterFlowTheme.of(context).titleSmall.fontStyle,
+                        AppTheme.of(context).titleSmall.fontStyle,
                   ),
               elevation: 0.0,
               borderSide: BorderSide(

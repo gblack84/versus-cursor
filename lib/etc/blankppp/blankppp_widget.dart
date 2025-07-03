@@ -1,9 +1,9 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
-import '/flutter_flow/flutter_flow_animations.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
+import '/core/app_animations.dart';
+import '/core/app_theme.dart';
+import '/core/app_utils.dart';
+import '/core/app_widgets.dart';
 import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -69,7 +69,7 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
       ),
     });
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
@@ -88,28 +88,28 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+        backgroundColor: AppTheme.of(context).primaryBackground,
         appBar: AppBar(
-          backgroundColor: FlutterFlowTheme.of(context).primary,
+          backgroundColor: AppTheme.of(context).primary,
           automaticallyImplyLeading: false,
           title: Text(
-            FFLocalizations.of(context).getText(
+            AppLocalizations.of(context).getText(
               '0y0b5bpx' /* Page Title */,
             ),
-            style: FlutterFlowTheme.of(context).headlineMedium.override(
+            style: AppTheme.of(context).headlineMedium.override(
                   font: GoogleFonts.plusJakartaSans(
                     fontWeight:
-                        FlutterFlowTheme.of(context).headlineMedium.fontWeight,
+                        AppTheme.of(context).headlineMedium.fontWeight,
                     fontStyle:
-                        FlutterFlowTheme.of(context).headlineMedium.fontStyle,
+                        AppTheme.of(context).headlineMedium.fontStyle,
                   ),
                   color: Colors.white,
                   fontSize: 22.0,
                   letterSpacing: 0.0,
                   fontWeight:
-                      FlutterFlowTheme.of(context).headlineMedium.fontWeight,
+                      AppTheme.of(context).headlineMedium.fontWeight,
                   fontStyle:
-                      FlutterFlowTheme.of(context).headlineMedium.fontStyle,
+                      AppTheme.of(context).headlineMedium.fontStyle,
                 ),
           ),
           actions: [],
@@ -163,15 +163,15 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                               autofillHints: [AutofillHints.email],
                               obscureText: false,
                               decoration: InputDecoration(
-                                labelText: FFLocalizations.of(context).getText(
+                                labelText: AppLocalizations.of(context).getText(
                                   'erkqyrow' /* Email */,
                                 ),
-                                labelStyle: FlutterFlowTheme.of(context)
+                                labelStyle: AppTheme.of(context)
                                     .labelMedium
                                     .override(
                                       font: GoogleFonts.plusJakartaSans(
                                         fontWeight: FontWeight.w500,
-                                        fontStyle: FlutterFlowTheme.of(context)
+                                        fontStyle: AppTheme.of(context)
                                             .labelMedium
                                             .fontStyle,
                                       ),
@@ -179,7 +179,7 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                                       fontSize: 14.0,
                                       letterSpacing: 0.0,
                                       fontWeight: FontWeight.w500,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .labelMedium
                                           .fontStyle,
                                     ),
@@ -215,12 +215,12 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                                 fillColor: Colors.white,
                                 contentPadding: EdgeInsets.all(24.0),
                               ),
-                              style: FlutterFlowTheme.of(context)
+                              style: AppTheme.of(context)
                                   .bodyMedium
                                   .override(
                                     font: GoogleFonts.plusJakartaSans(
                                       fontWeight: FontWeight.w500,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .bodyMedium
                                           .fontStyle,
                                     ),
@@ -228,7 +228,7 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                                     fontSize: 14.0,
                                     letterSpacing: 0.0,
                                     fontWeight: FontWeight.w500,
-                                    fontStyle: FlutterFlowTheme.of(context)
+                                    fontStyle: AppTheme.of(context)
                                         .bodyMedium
                                         .fontStyle,
                                   ),
@@ -251,15 +251,15 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                               autofillHints: [AutofillHints.password],
                               obscureText: !_model.passwordLoginVisibility,
                               decoration: InputDecoration(
-                                labelText: FFLocalizations.of(context).getText(
+                                labelText: AppLocalizations.of(context).getText(
                                   'tcloodtg' /* Password */,
                                 ),
-                                labelStyle: FlutterFlowTheme.of(context)
+                                labelStyle: AppTheme.of(context)
                                     .labelMedium
                                     .override(
                                       font: GoogleFonts.plusJakartaSans(
                                         fontWeight: FontWeight.w500,
-                                        fontStyle: FlutterFlowTheme.of(context)
+                                        fontStyle: AppTheme.of(context)
                                             .labelMedium
                                             .fontStyle,
                                       ),
@@ -267,7 +267,7 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                                       fontSize: 14.0,
                                       letterSpacing: 0.0,
                                       fontWeight: FontWeight.w500,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .labelMedium
                                           .fontStyle,
                                     ),
@@ -303,7 +303,7 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                                 fillColor: Colors.white,
                                 contentPadding: EdgeInsets.all(24.0),
                                 suffixIcon: InkWell(
-                                  onTap: () => safeSetState(
+                                  onTap: () => setState(
                                     () => _model.passwordLoginVisibility =
                                         !_model.passwordLoginVisibility,
                                   ),
@@ -317,12 +317,12 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                                   ),
                                 ),
                               ),
-                              style: FlutterFlowTheme.of(context)
+                              style: AppTheme.of(context)
                                   .bodyMedium
                                   .override(
                                     font: GoogleFonts.plusJakartaSans(
                                       fontWeight: FontWeight.w500,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .bodyMedium
                                           .fontStyle,
                                     ),
@@ -330,7 +330,7 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                                     fontSize: 14.0,
                                     letterSpacing: 0.0,
                                     fontWeight: FontWeight.w500,
-                                    fontStyle: FlutterFlowTheme.of(context)
+                                    fontStyle: AppTheme.of(context)
                                         .bodyMedium
                                         .fontStyle,
                                   ),
@@ -345,7 +345,7 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                           child: Padding(
                             padding: EdgeInsetsDirectional.fromSTEB(
                                 0.0, 0.0, 0.0, 16.0),
-                            child: FFButtonWidget(
+                            child: AppButtonWidget(
                               onPressed: () async {
                                 GoRouter.of(context).prepareAuthEvent();
 
@@ -371,10 +371,10 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                                     TestpageSelectWidget.routeName,
                                     context.mounted);
                               },
-                              text: FFLocalizations.of(context).getText(
+                              text: AppLocalizations.of(context).getText(
                                 '0qwo5ebl' /* log in */,
                               ),
-                              options: FFButtonOptions(
+                              options: AppButtonOptions(
                                 width: 230.0,
                                 height: 52.0,
                                 padding: EdgeInsetsDirectional.fromSTEB(
@@ -382,12 +382,12 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                                 iconPadding: EdgeInsetsDirectional.fromSTEB(
                                     0.0, 0.0, 0.0, 0.0),
                                 color: Colors.black,
-                                textStyle: FlutterFlowTheme.of(context)
+                                textStyle: AppTheme.of(context)
                                     .titleSmall
                                     .override(
                                       font: GoogleFonts.plusJakartaSans(
                                         fontWeight: FontWeight.w500,
-                                        fontStyle: FlutterFlowTheme.of(context)
+                                        fontStyle: AppTheme.of(context)
                                             .titleSmall
                                             .fontStyle,
                                       ),
@@ -395,7 +395,7 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                                       fontSize: 16.0,
                                       letterSpacing: 0.0,
                                       fontWeight: FontWeight.w500,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .titleSmall
                                           .fontStyle,
                                     ),
@@ -414,7 +414,7 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                           child: Padding(
                             padding: EdgeInsetsDirectional.fromSTEB(
                                 0.0, 0.0, 0.0, 16.0),
-                            child: FFButtonWidget(
+                            child: AppButtonWidget(
                               onPressed: () async {
                                 context.pushNamed(
                                   ForgotPasswordWidget.routeName,
@@ -426,10 +426,10 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                                   },
                                 );
                               },
-                              text: FFLocalizations.of(context).getText(
+                              text: AppLocalizations.of(context).getText(
                                 'mgoq8vt1' /* Forgot Password */,
                               ),
-                              options: FFButtonOptions(
+                              options: AppButtonOptions(
                                 width: 230.0,
                                 height: 44.0,
                                 padding: EdgeInsetsDirectional.fromSTEB(
@@ -437,12 +437,12 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                                 iconPadding: EdgeInsetsDirectional.fromSTEB(
                                     0.0, 0.0, 0.0, 0.0),
                                 color: Colors.white,
-                                textStyle: FlutterFlowTheme.of(context)
+                                textStyle: AppTheme.of(context)
                                     .bodyMedium
                                     .override(
                                       font: GoogleFonts.plusJakartaSans(
                                         fontWeight: FontWeight.w500,
-                                        fontStyle: FlutterFlowTheme.of(context)
+                                        fontStyle: AppTheme.of(context)
                                             .bodyMedium
                                             .fontStyle,
                                       ),
@@ -450,7 +450,7 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                                       fontSize: 14.0,
                                       letterSpacing: 0.0,
                                       fontWeight: FontWeight.w500,
-                                      fontStyle: FlutterFlowTheme.of(context)
+                                      fontStyle: AppTheme.of(context)
                                           .bodyMedium
                                           .fontStyle,
                                     ),
@@ -483,15 +483,15 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                         context.pushNamed(TestpageSelectWidget.routeName);
                       },
                       child: Text(
-                        FFLocalizations.of(context).getText(
+                        AppLocalizations.of(context).getText(
                           's44z3wif' /* Or sign up with, goto test */,
                         ),
                         textAlign: TextAlign.center,
                         style:
-                            FlutterFlowTheme.of(context).labelMedium.override(
+                            AppTheme.of(context).labelMedium.override(
                                   font: GoogleFonts.plusJakartaSans(
                                     fontWeight: FontWeight.w500,
-                                    fontStyle: FlutterFlowTheme.of(context)
+                                    fontStyle: AppTheme.of(context)
                                         .labelMedium
                                         .fontStyle,
                                   ),
@@ -499,7 +499,7 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                                   fontSize: 14.0,
                                   letterSpacing: 0.0,
                                   fontWeight: FontWeight.w500,
-                                  fontStyle: FlutterFlowTheme.of(context)
+                                  fontStyle: AppTheme.of(context)
                                       .labelMedium
                                       .fontStyle,
                                 ),

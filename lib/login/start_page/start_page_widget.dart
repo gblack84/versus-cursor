@@ -1,10 +1,10 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/etc/vsmark/vsmark_widget.dart';
-import '/flutter_flow/flutter_flow_animations.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
+import '/core/app_animations.dart';
+import '/core/app_theme.dart';
+import '/core/app_utils.dart';
+import '/core/app_widgets.dart';
 import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -98,7 +98,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
       this,
     );
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
@@ -117,7 +117,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+        backgroundColor: AppTheme.of(context).primaryBackground,
         body: Container(
           decoration: BoxDecoration(
             color: Color(0xFFECECEC),
@@ -146,7 +146,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
                               Align(
                                 alignment: AlignmentDirectional(0.0, 0.0),
                                 child: Text(
-                                  FFLocalizations.of(context).getText(
+                                  AppLocalizations.of(context).getText(
                                     'ur72jrvo' /* Life is a 'c' between 'b' and ... */,
                                   ),
                                   textAlign: TextAlign.center,
@@ -180,7 +180,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
                             EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 20.0, 0.0),
                         child: wrapWithModel(
                           model: _model.vsmarkModel,
-                          updateCallback: () => safeSetState(() {}),
+                          updateCallback: () => setState(() {}),
                           child: VsmarkWidget(),
                         ),
                       ),
@@ -202,7 +202,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
                               Padding(
                                 padding: EdgeInsetsDirectional.fromSTEB(
                                     0.0, 0.0, 0.0, 12.0),
-                                child: FFButtonWidget(
+                                child: AppButtonWidget(
                                   onPressed: () async {
                                     context.pushNamed(
                                       CreateAccountWidget.routeName,
@@ -216,10 +216,10 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                       },
                                     );
                                   },
-                                  text: FFLocalizations.of(context).getText(
+                                  text: AppLocalizations.of(context).getText(
                                     'tkccfqfy' /* Go To Create Account */,
                                   ),
-                                  options: FFButtonOptions(
+                                  options: AppButtonOptions(
                                     width: 230.0,
                                     height: 44.0,
                                     padding: EdgeInsetsDirectional.fromSTEB(
@@ -227,13 +227,13 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                     iconPadding: EdgeInsetsDirectional.fromSTEB(
                                         0.0, 0.0, 0.0, 0.0),
                                     color: Colors.black,
-                                    textStyle: FlutterFlowTheme.of(context)
+                                    textStyle: AppTheme.of(context)
                                         .bodyMedium
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.bold,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontStyle,
                                           ),
@@ -242,7 +242,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.bold,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
                                         ),
@@ -263,7 +263,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                   : Padding(
                                       padding: EdgeInsetsDirectional.fromSTEB(
                                           0.0, 0.0, 0.0, 8.0),
-                                      child: FFButtonWidget(
+                                      child: AppButtonWidget(
                                         onPressed: () async {
                                           GoRouter.of(context)
                                               .prepareAuthEvent();
@@ -278,14 +278,14 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                               context.mounted);
                                         },
                                         text:
-                                            FFLocalizations.of(context).getText(
+                                            AppLocalizations.of(context).getText(
                                           '3gnrvqoi' /* Continue with Apple */,
                                         ),
                                         icon: FaIcon(
                                           FontAwesomeIcons.apple,
                                           size: 20.0,
                                         ),
-                                        options: FFButtonOptions(
+                                        options: AppButtonOptions(
                                           width: 230.0,
                                           height: 44.0,
                                           padding:
@@ -296,7 +296,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                                   0.0, 0.0, 0.0, 0.0),
                                           iconColor: Color(0xFF14181B),
                                           color: Colors.white,
-                                          textStyle: FlutterFlowTheme.of(
+                                          textStyle: AppTheme.of(
                                                   context)
                                               .bodyMedium
                                               .override(
@@ -304,7 +304,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                                     GoogleFonts.plusJakartaSans(
                                                   fontWeight: FontWeight.bold,
                                                   fontStyle:
-                                                      FlutterFlowTheme.of(
+                                                      AppTheme.of(
                                                               context)
                                                           .bodyMedium
                                                           .fontStyle,
@@ -314,7 +314,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                                 letterSpacing: 0.0,
                                                 fontWeight: FontWeight.bold,
                                                 fontStyle:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .bodyMedium
                                                         .fontStyle,
                                               ),
@@ -331,7 +331,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
                               Padding(
                                 padding: EdgeInsetsDirectional.fromSTEB(
                                     0.0, 0.0, 0.0, 8.0),
-                                child: FFButtonWidget(
+                                child: AppButtonWidget(
                                   onPressed: () async {
                                     GoRouter.of(context).prepareAuthEvent();
                                     final user = await authManager
@@ -353,14 +353,14 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                         TestpageSelectWidget.routeName,
                                         context.mounted);
                                   },
-                                  text: FFLocalizations.of(context).getText(
+                                  text: AppLocalizations.of(context).getText(
                                     's24g5s5d' /* Continue with Google */,
                                   ),
                                   icon: FaIcon(
                                     FontAwesomeIcons.google,
                                     size: 20.0,
                                   ),
-                                  options: FFButtonOptions(
+                                  options: AppButtonOptions(
                                     width: 230.0,
                                     height: 44.0,
                                     padding: EdgeInsetsDirectional.fromSTEB(
@@ -368,13 +368,13 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                     iconPadding: EdgeInsetsDirectional.fromSTEB(
                                         0.0, 0.0, 0.0, 0.0),
                                     color: Colors.white,
-                                    textStyle: FlutterFlowTheme.of(context)
+                                    textStyle: AppTheme.of(context)
                                         .bodyMedium
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.bold,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontStyle,
                                           ),
@@ -383,7 +383,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.bold,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
                                         ),
@@ -399,7 +399,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
                               Padding(
                                 padding: EdgeInsetsDirectional.fromSTEB(
                                     0.0, 0.0, 0.0, 8.0),
-                                child: FFButtonWidget(
+                                child: AppButtonWidget(
                                   onPressed: () async {
                                     GoRouter.of(context).prepareAuthEvent();
                                     final user = await authManager
@@ -421,14 +421,14 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                         TestpageSelectWidget.routeName,
                                         context.mounted);
                                   },
-                                  text: FFLocalizations.of(context).getText(
+                                  text: AppLocalizations.of(context).getText(
                                     'ntv3cl1f' /* Continue with Facebook */,
                                   ),
                                   icon: FaIcon(
-                                    FontAwesomeIcons.facebookSquare,
+                                    FontAwesomeIcons.squareFacebook,
                                     size: 20.0,
                                   ),
-                                  options: FFButtonOptions(
+                                  options: AppButtonOptions(
                                     width: 230.0,
                                     height: 44.0,
                                     padding: EdgeInsetsDirectional.fromSTEB(
@@ -437,13 +437,13 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                         0.0, 0.0, 0.0, 0.0),
                                     iconColor: Colors.white,
                                     color: Color(0xFF005CFF),
-                                    textStyle: FlutterFlowTheme.of(context)
+                                    textStyle: AppTheme.of(context)
                                         .bodyMedium
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.bold,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontStyle,
                                           ),
@@ -452,7 +452,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.bold,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
                                         ),
@@ -465,7 +465,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                   ),
                                 ),
                               ),
-                              FFButtonWidget(
+                              AppButtonWidget(
                                 onPressed: () async {
                                   GoRouter.of(context).prepareAuthEvent();
                                   final user = await authManager
@@ -487,14 +487,14 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                       TestpageSelectWidget.routeName,
                                       context.mounted);
                                 },
-                                text: FFLocalizations.of(context).getText(
+                                text: AppLocalizations.of(context).getText(
                                   '4ssf49xr' /* Continue with Instagram */,
                                 ),
                                 icon: FaIcon(
                                   FontAwesomeIcons.instagram,
                                   size: 20.0,
                                 ),
-                                options: FFButtonOptions(
+                                options: AppButtonOptions(
                                   width: 230.0,
                                   height: 44.0,
                                   padding: EdgeInsetsDirectional.fromSTEB(
@@ -503,13 +503,13 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                       0.0, 0.0, 0.0, 0.0),
                                   iconColor: Colors.white,
                                   color: Color(0xFFFF8455),
-                                  textStyle: FlutterFlowTheme.of(context)
+                                  textStyle: AppTheme.of(context)
                                       .bodyMedium
                                       .override(
                                         font: GoogleFonts.plusJakartaSans(
                                           fontWeight: FontWeight.bold,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
                                         ),
@@ -517,7 +517,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                         fontSize: 14.0,
                                         letterSpacing: 0.0,
                                         fontWeight: FontWeight.bold,
-                                        fontStyle: FlutterFlowTheme.of(context)
+                                        fontStyle: AppTheme.of(context)
                                             .bodyMedium
                                             .fontStyle,
                                       ),
@@ -532,7 +532,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
                               Padding(
                                 padding: EdgeInsetsDirectional.fromSTEB(
                                     0.0, 12.0, 0.0, 16.0),
-                                child: FFButtonWidget(
+                                child: AppButtonWidget(
                                   onPressed: () async {
                                     context.pushNamed(
                                       LoginPageWidget.routeName,
@@ -546,10 +546,10 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                       },
                                     );
                                   },
-                                  text: FFLocalizations.of(context).getText(
+                                  text: AppLocalizations.of(context).getText(
                                     'b71h3bzp' /* Go To Sign in */,
                                   ),
-                                  options: FFButtonOptions(
+                                  options: AppButtonOptions(
                                     width: 230.0,
                                     height: 44.0,
                                     padding: EdgeInsetsDirectional.fromSTEB(
@@ -557,13 +557,13 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                     iconPadding: EdgeInsetsDirectional.fromSTEB(
                                         0.0, 0.0, 0.0, 0.0),
                                     color: Colors.white,
-                                    textStyle: FlutterFlowTheme.of(context)
+                                    textStyle: AppTheme.of(context)
                                         .bodyMedium
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.bold,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .bodyMedium
                                                     .fontStyle,
                                           ),
@@ -572,7 +572,7 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.bold,
                                           fontStyle:
-                                              FlutterFlowTheme.of(context)
+                                              AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
                                         ),

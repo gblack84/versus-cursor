@@ -1,8 +1,8 @@
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_utils.dart';
 import 'videoplay_widget.dart' show VideoplayWidget;
 import 'package:flutter/material.dart';
 
-class VideoplayModel extends FlutterFlowModel<VideoplayWidget> {
+class VideoplayModel extends AppModel<VideoplayWidget> {
   @override
   void initState(BuildContext context) {}
 

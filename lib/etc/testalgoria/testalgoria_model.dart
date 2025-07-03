@@ -1,9 +1,9 @@
 import '/backend/backend.dart';
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_utils.dart';
 import 'testalgoria_widget.dart' show TestalgoriaWidget;
 import 'package:flutter/material.dart';
 
-class TestalgoriaModel extends FlutterFlowModel<TestalgoriaWidget> {
+class TestalgoriaModel extends AppModel<TestalgoriaWidget> {
   ///  State fields for stateful widgets in this page.
 
   // State field(s) for TextField widget.

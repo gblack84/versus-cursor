@@ -1,6 +1,6 @@
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_video_player.dart';
+import '/core/app_theme.dart';
+import '/core/app_utils.dart';
+import '/core/app_video_player.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'videoplay_model.dart';
@@ -32,7 +32,7 @@ class _VideoplayWidgetState extends State<VideoplayWidget> {
     super.initState();
     _model = createModel(context, () => VideoplayModel());
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
@@ -44,14 +44,14 @@ class _VideoplayWidgetState extends State<VideoplayWidget> {
 
   @override
   Widget build(BuildContext context) {
-    context.watch<FFAppState>();
+    context.watch<AppState>();
 
     return Container(
       decoration: BoxDecoration(
-        color: FlutterFlowTheme.of(context).secondaryBackground,
+        color: AppTheme.of(context).secondaryBackground,
       ),
-      child: FlutterFlowVideoPlayer(
-        path: '${FFAppState().UpLoadvideoA}',
+      child: AppVideoPlayer(
+        path: '${AppState().UpLoadvideoA}',
         videoType: VideoType.network,
         autoPlay: false,
         looping: true,

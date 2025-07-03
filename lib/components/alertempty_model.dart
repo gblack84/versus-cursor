@@ -1,9 +1,9 @@
 import '/etc/vsmark/vsmark_widget.dart';
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_utils.dart';
 import 'alertempty_widget.dart' show AlertemptyWidget;
 import 'package:flutter/material.dart';
 
-class AlertemptyModel extends FlutterFlowModel<AlertemptyWidget> {
+class AlertemptyModel extends AppModel<AlertemptyWidget> {
   ///  State fields for stateful widgets in this component.
 
   // Model for vsmark component.

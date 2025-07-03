@@ -1,9 +1,9 @@
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_utils.dart';
 import '/index.dart';
 import 'expertise_select_widget.dart' show ExpertiseSelectWidget;
 import 'package:flutter/material.dart';
 
-class ExpertiseSelectModel extends FlutterFlowModel<ExpertiseSelectWidget> {
+class ExpertiseSelectModel extends AppModel<ExpertiseSelectWidget> {
   ///  Local state fields for this page.
 
   String expertiseTag = '';

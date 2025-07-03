@@ -1,9 +1,9 @@
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_utils.dart';
 import '/index.dart';
 import 'blankppp_widget.dart' show BlankpppWidget;
 import 'package:flutter/material.dart';
 
-class BlankpppModel extends FlutterFlowModel<BlankpppWidget> {
+class BlankpppModel extends AppModel<BlankpppWidget> {
   ///  State fields for stateful widgets in this page.
 
   // State field(s) for emailAddress_login widget.

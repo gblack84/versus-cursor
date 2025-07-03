@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-class FFAppState extends ChangeNotifier {
-  static FFAppState _instance = FFAppState._internal();
+class AppState extends ChangeNotifier {
+  static AppState _instance = AppState._internal();
 
-  factory FFAppState() {
+  factory AppState() {
     return _instance;
   }
 
-  FFAppState._internal();
+  AppState._internal();
 
   static void reset() {
-    _instance = FFAppState._internal();
+    _instance = AppState._internal();
   }
 
   Future initializePersistedState() async {}
@@ -26,146 +26,238 @@ class FFAppState extends ChangeNotifier {
     _selectedLang = value;
   }
 
-  String _DisplayName = '';
-  String get DisplayName => _DisplayName;
+  String _displayName = '';
+  String get displayName => _displayName;
+  set displayName(String value) {
+    _displayName = value;
+  }
+  
+  // Alias for FlutterFlow compatibility
+  String get DisplayName => _displayName;
   set DisplayName(String value) {
-    _DisplayName = value;
+    _displayName = value;
   }
 
-  String _upLoadTextA = '';
-  String get upLoadTextA => _upLoadTextA;
+  String _uploadTextA = '';
+  String get uploadTextA => _uploadTextA;
+  set uploadTextA(String value) {
+    _uploadTextA = value;
+  }
+  
+  // Alias for FlutterFlow compatibility
+  String get upLoadTextA => _uploadTextA;
   set upLoadTextA(String value) {
-    _upLoadTextA = value;
+    _uploadTextA = value;
   }
 
-  String _upLoadTextB = '';
-  String get upLoadTextB => _upLoadTextB;
+  String _uploadTextB = '';
+  String get uploadTextB => _uploadTextB;
+  set uploadTextB(String value) {
+    _uploadTextB = value;
+  }
+  
+  // Alias for FlutterFlow compatibility
+  String get upLoadTextB => _uploadTextB;
   set upLoadTextB(String value) {
-    _upLoadTextB = value;
+    _uploadTextB = value;
   }
 
-  List<String> _UpLoadImageA = [];
-  List<String> get UpLoadImageA => _UpLoadImageA;
+  List<String> _uploadImageA = [];
+  List<String> get uploadImageA => _uploadImageA;
+  set uploadImageA(List<String> value) {
+    _uploadImageA = value;
+  }
+  
+  // Alias for FlutterFlow compatibility
+  List<String> get UpLoadImageA => _uploadImageA;
   set UpLoadImageA(List<String> value) {
-    _UpLoadImageA = value;
+    _uploadImageA = value;
   }
 
+  void addToUploadImageA(String value) {
+    uploadImageA.add(value);
+  }
+  
+  // Alias for FlutterFlow compatibility
   void addToUpLoadImageA(String value) {
-    UpLoadImageA.add(value);
+    uploadImageA.add(value);
   }
 
+  void removeFromUploadImageA(String value) {
+    uploadImageA.remove(value);
+  }
+  
+  // Alias for FlutterFlow compatibility
   void removeFromUpLoadImageA(String value) {
-    UpLoadImageA.remove(value);
+    uploadImageA.remove(value);
   }
 
-  void removeAtIndexFromUpLoadImageA(int index) {
-    UpLoadImageA.removeAt(index);
+  void removeAtIndexFromUploadImageA(int index) {
+    uploadImageA.removeAt(index);
   }
 
-  void updateUpLoadImageAAtIndex(
+  void updateUploadImageAAtIndex(
     int index,
     String Function(String) updateFn,
   ) {
-    UpLoadImageA[index] = updateFn(_UpLoadImageA[index]);
+    uploadImageA[index] = updateFn(_uploadImageA[index]);
   }
 
-  void insertAtIndexInUpLoadImageA(int index, String value) {
-    UpLoadImageA.insert(index, value);
+  void insertAtIndexInUploadImageA(int index, String value) {
+    uploadImageA.insert(index, value);
   }
 
-  List<String> _UpLoadImageB = [];
-  List<String> get UpLoadImageB => _UpLoadImageB;
+  List<String> _uploadImageB = [];
+  List<String> get uploadImageB => _uploadImageB;
+  set uploadImageB(List<String> value) {
+    _uploadImageB = value;
+  }
+  
+  // Alias for FlutterFlow compatibility
+  List<String> get UpLoadImageB => _uploadImageB;
   set UpLoadImageB(List<String> value) {
-    _UpLoadImageB = value;
+    _uploadImageB = value;
   }
 
+  void addToUploadImageB(String value) {
+    uploadImageB.add(value);
+  }
+  
+  // Alias for FlutterFlow compatibility
   void addToUpLoadImageB(String value) {
-    UpLoadImageB.add(value);
+    uploadImageB.add(value);
   }
 
+  void removeFromUploadImageB(String value) {
+    uploadImageB.remove(value);
+  }
+  
+  // Alias for FlutterFlow compatibility
   void removeFromUpLoadImageB(String value) {
-    UpLoadImageB.remove(value);
+    uploadImageB.remove(value);
   }
 
-  void removeAtIndexFromUpLoadImageB(int index) {
-    UpLoadImageB.removeAt(index);
+  void removeAtIndexFromUploadImageB(int index) {
+    uploadImageB.removeAt(index);
   }
 
-  void updateUpLoadImageBAtIndex(
+  void updateUploadImageBAtIndex(
     int index,
     String Function(String) updateFn,
   ) {
-    UpLoadImageB[index] = updateFn(_UpLoadImageB[index]);
+    uploadImageB[index] = updateFn(_uploadImageB[index]);
   }
 
-  void insertAtIndexInUpLoadImageB(int index, String value) {
-    UpLoadImageB.insert(index, value);
+  void insertAtIndexInUploadImageB(int index, String value) {
+    uploadImageB.insert(index, value);
   }
 
-  int _upLoadImageEditing = 0;
-  int get upLoadImageEditing => _upLoadImageEditing;
+  int _uploadImageEditing = 0;
+  int get uploadImageEditing => _uploadImageEditing;
+  set uploadImageEditing(int value) {
+    _uploadImageEditing = value;
+  }
+  
+  // Alias for FlutterFlow compatibility
+  int get upLoadImageEditing => _uploadImageEditing;
   set upLoadImageEditing(int value) {
-    _upLoadImageEditing = value;
+    _uploadImageEditing = value;
   }
 
-  int _upLoadTextEditing = 0;
-  int get upLoadTextEditing => _upLoadTextEditing;
+  int _uploadTextEditing = 0;
+  int get uploadTextEditing => _uploadTextEditing;
+  set uploadTextEditing(int value) {
+    _uploadTextEditing = value;
+  }
+  
+  // Alias for FlutterFlow compatibility
+  int get upLoadTextEditing => _uploadTextEditing;
   set upLoadTextEditing(int value) {
-    _upLoadTextEditing = value;
+    _uploadTextEditing = value;
   }
 
-  String _PreviewText = '';
-  String get PreviewText => _PreviewText;
+  String _previewText = '';
+  String get previewText => _previewText;
+  set previewText(String value) {
+    _previewText = value;
+  }
+  
+  // Alias for FlutterFlow compatibility
+  String get PreviewText => _previewText;
   set PreviewText(String value) {
-    _PreviewText = value;
+    _previewText = value;
   }
 
-  String _UpLoadvideoA = '';
-  String get UpLoadvideoA => _UpLoadvideoA;
+  String _uploadVideoA = '';
+  String get uploadVideoA => _uploadVideoA;
+  set uploadVideoA(String value) {
+    _uploadVideoA = value;
+  }
+  
+  // Alias for FlutterFlow compatibility
+  String get UpLoadvideoA => _uploadVideoA;
   set UpLoadvideoA(String value) {
-    _UpLoadvideoA = value;
+    _uploadVideoA = value;
   }
 
-  String _UpLoadvideoB = '';
-  String get UpLoadvideoB => _UpLoadvideoB;
+  String _uploadVideoB = '';
+  String get uploadVideoB => _uploadVideoB;
+  set uploadVideoB(String value) {
+    _uploadVideoB = value;
+  }
+  
+  // Alias for FlutterFlow compatibility
+  String get UpLoadvideoB => _uploadVideoB;
   set UpLoadvideoB(String value) {
-    _UpLoadvideoB = value;
+    _uploadVideoB = value;
   }
 
-  int _UpLoadVideoEdit = 0;
-  int get UpLoadVideoEdit => _UpLoadVideoEdit;
+  int _uploadVideoEdit = 0;
+  int get uploadVideoEdit => _uploadVideoEdit;
+  set uploadVideoEdit(int value) {
+    _uploadVideoEdit = value;
+  }
+  
+  // Alias for FlutterFlow compatibility
+  int get UpLoadVideoEdit => _uploadVideoEdit;
   set UpLoadVideoEdit(int value) {
-    _UpLoadVideoEdit = value;
+    _uploadVideoEdit = value;
   }
 
-  bool _sellectedvideoset = false;
-  bool get sellectedvideoset => _sellectedvideoset;
+  bool _selectedVideoSet = false;
+  bool get selectedVideoSet => _selectedVideoSet;
+  set selectedVideoSet(bool value) {
+    _selectedVideoSet = value;
+  }
+  
+  // Alias for FlutterFlow compatibility
+  bool get sellectedvideoset => _selectedVideoSet;
   set sellectedvideoset(bool value) {
-    _sellectedvideoset = value;
+    _selectedVideoSet = value;
   }
 
-  String _UpLoadYoutubeA = '';
-  String get UpLoadYoutubeA => _UpLoadYoutubeA;
-  set UpLoadYoutubeA(String value) {
-    _UpLoadYoutubeA = value;
+  String _uploadYoutubeA = '';
+  String get uploadYoutubeA => _uploadYoutubeA;
+  set uploadYoutubeA(String value) {
+    _uploadYoutubeA = value;
   }
 
-  String _UpLoadYoutubeB = '';
-  String get UpLoadYoutubeB => _UpLoadYoutubeB;
-  set UpLoadYoutubeB(String value) {
-    _UpLoadYoutubeB = value;
+  String _uploadYoutubeB = '';
+  String get uploadYoutubeB => _uploadYoutubeB;
+  set uploadYoutubeB(String value) {
+    _uploadYoutubeB = value;
   }
 
-  String _UpLoadLinkA = '';
-  String get UpLoadLinkA => _UpLoadLinkA;
-  set UpLoadLinkA(String value) {
-    _UpLoadLinkA = value;
+  String _uploadLinkA = '';
+  String get uploadLinkA => _uploadLinkA;
+  set uploadLinkA(String value) {
+    _uploadLinkA = value;
   }
 
-  String _UpLoadLinkB = '';
-  String get UpLoadLinkB => _UpLoadLinkB;
-  set UpLoadLinkB(String value) {
-    _UpLoadLinkB = value;
+  String _uploadLinkB = '';
+  String get uploadLinkB => _uploadLinkB;
+  set uploadLinkB(String value) {
+    _uploadLinkB = value;
   }
 
   String _uploadVideoPath = '';
@@ -202,5 +294,23 @@ class FFAppState extends ChangeNotifier {
   double get uploadVideoAspectRatio => _uploadVideoAspectRatio;
   set uploadVideoAspectRatio(double value) {
     _uploadVideoAspectRatio = value;
+  }
+
+  String _questionTitle = '';
+  String get questionTitle => _questionTitle;
+  set questionTitle(String value) {
+    _questionTitle = value;
+  }
+
+  String _questionDescription = '';
+  String get questionDescription => _questionDescription;
+  set questionDescription(String value) {
+    _questionDescription = value;
+  }
+
+  bool _isVerticalLayout = true;
+  bool get isVerticalLayout => _isVerticalLayout;
+  set isVerticalLayout(bool value) {
+    _isVerticalLayout = value;
   }
 }

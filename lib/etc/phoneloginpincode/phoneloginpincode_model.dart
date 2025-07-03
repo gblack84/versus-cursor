@@ -1,11 +1,11 @@
 import '/etc/vsmark/vsmark_widget.dart';
-import '/flutter_flow/flutter_flow_timer.dart';
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_timer.dart';
+import '/core/app_utils.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'phoneloginpincode_widget.dart' show PhoneloginpincodeWidget;
 import 'package:flutter/material.dart';
 
-class PhoneloginpincodeModel extends FlutterFlowModel<PhoneloginpincodeWidget> {
+class PhoneloginpincodeModel extends AppModel<PhoneloginpincodeWidget> {
   ///  Local state fields for this component.
 
   int resendCount = 0;
@@ -26,8 +26,8 @@ class PhoneloginpincodeModel extends FlutterFlowModel<PhoneloginpincodeWidget> {
     hours: false,
     milliSecond: false,
   );
-  FlutterFlowTimerController timerController =
-      FlutterFlowTimerController(StopWatchTimer(mode: StopWatchMode.countDown));
+  AppTimerController timerController =
+      AppTimerController(StopWatchTimer(mode: StopWatchMode.countDown));
 
   @override
   void initState(BuildContext context) {

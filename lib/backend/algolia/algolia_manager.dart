@@ -24,8 +24,8 @@ class AlgoliaQueryParams extends Equatable {
       [index, term, latLng, maxResults, searchRadiusMeters];
 }
 
-class FFAlgoliaManager {
-  FFAlgoliaManager._()
+class AppAlgoliaManager {
+  AppAlgoliaManager._()
       : algolia = Algolia.init(
           applicationId: kAlgoliaApplicationId,
           apiKey: kAlgoliaApiKey,
@@ -33,8 +33,8 @@ class FFAlgoliaManager {
         );
   final Algolia algolia;
 
-  static FFAlgoliaManager? _instance;
-  static FFAlgoliaManager get instance => _instance ??= FFAlgoliaManager._();
+  static AppAlgoliaManager? _instance;
+  static AppAlgoliaManager get instance => _instance ??= AppAlgoliaManager._();
 
   // Cache that will ensure identical queries are not repeatedly made.
   static Map<AlgoliaQueryParams, List<AlgoliaObjectSnapshot>> _algoliaCache =
@@ -76,12 +76,12 @@ class FFAlgoliaManager {
     }
 
     AlgoliaQuerySnapshot? snapshot;
-    snapshot = await query
-        .getObjects()
-        .then((value) => snapshot = value)
-        .catchError((error, stackTrace) {
+    try {
+      snapshot = await query.getObjects();
+    } catch (error, stackTrace) {
       print('Algolia error: $error\nStack trace: $stackTrace');
-    });
+      snapshot = null;
+    }
     return _algoliaCache[params] = snapshot?.hits ?? [];
   }
 }

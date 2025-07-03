@@ -1,10 +1,10 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/backend/firebase_storage/storage.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import '/flutter_flow/upload_data.dart';
+import '/core/app_theme.dart';
+import '/core/app_utils.dart';
+import '/core/app_widgets.dart';
+import '/core/upload_data.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -34,7 +34,7 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
     super.initState();
     _model = createModel(context, () => CharacterDetailPageModel());
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
@@ -153,7 +153,7 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                                         _model.selectedCharacterUrl =
                                             gridViewCharactersRecord
                                                 .charactersImageUrl;
-                                        safeSetState(() {});
+                                        setState(() {});
                                       },
                                       child: Container(
                                         width: 200.0,
@@ -185,34 +185,34 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                 ),
               ),
             ),
-            FFButtonWidget(
+            AppButtonWidget(
               onPressed: () async {
                 await currentUserReference!.update(createUsersRecordData(
                   photoUrl: '${_model.selectedCharacterUrl}',
                 ));
                 Navigator.pop(context);
               },
-              text: FFLocalizations.of(context).getText(
+              text: AppLocalizations.of(context).getText(
                 '5dgi9ixf' /* Apply */,
               ),
-              options: FFButtonOptions(
+              options: AppButtonOptions(
                 height: 40.0,
                 padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
                 iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                 color: Colors.black,
-                textStyle: FlutterFlowTheme.of(context).titleSmall.override(
+                textStyle: AppTheme.of(context).titleSmall.override(
                       font: GoogleFonts.plusJakartaSans(
                         fontWeight:
-                            FlutterFlowTheme.of(context).titleSmall.fontWeight,
+                            AppTheme.of(context).titleSmall.fontWeight,
                         fontStyle:
-                            FlutterFlowTheme.of(context).titleSmall.fontStyle,
+                            AppTheme.of(context).titleSmall.fontStyle,
                       ),
                       color: Colors.white,
                       letterSpacing: 0.0,
                       fontWeight:
-                          FlutterFlowTheme.of(context).titleSmall.fontWeight,
+                          AppTheme.of(context).titleSmall.fontWeight,
                       fontStyle:
-                          FlutterFlowTheme.of(context).titleSmall.fontStyle,
+                          AppTheme.of(context).titleSmall.fontStyle,
                     ),
                 elevation: 10.0,
                 borderRadius: BorderRadius.circular(8.0),
@@ -220,7 +220,7 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
             ),
             Padding(
               padding: EdgeInsetsDirectional.fromSTEB(0.0, 20.0, 0.0, 0.0),
-              child: FFButtonWidget(
+              child: AppButtonWidget(
                 onPressed: () async {
                   final selectedMedia = await selectMediaWithSourceBottomSheet(
                     context: context,
@@ -233,14 +233,14 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                   if (selectedMedia != null &&
                       selectedMedia.every(
                           (m) => validateFileFormat(m.storagePath, context))) {
-                    safeSetState(() =>
+                    setState(() =>
                         _model.isDataUploading_userUploadProfileImage = true);
-                    var selectedUploadedFiles = <FFUploadedFile>[];
+                    var selectedUploadedFiles = <AppUploadedFile>[];
 
                     var downloadUrls = <String>[];
                     try {
                       selectedUploadedFiles = selectedMedia
-                          .map((m) => FFUploadedFile(
+                          .map((m) => AppUploadedFile(
                                 name: m.storagePath.split('/').last,
                                 bytes: m.bytes,
                                 height: m.dimensions?.height,
@@ -262,14 +262,14 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                     }
                     if (selectedUploadedFiles.length == selectedMedia.length &&
                         downloadUrls.length == selectedMedia.length) {
-                      safeSetState(() {
+                      setState(() {
                         _model.uploadedLocalFile_userUploadProfileImage =
                             selectedUploadedFiles.first;
                         _model.uploadedFileUrl_userUploadProfileImage =
                             downloadUrls.first;
                       });
                     } else {
-                      safeSetState(() {});
+                      setState(() {});
                       return;
                     }
                   }
@@ -279,29 +279,29 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                   ));
                   Navigator.pop(context);
                 },
-                text: FFLocalizations.of(context).getText(
+                text: AppLocalizations.of(context).getText(
                   'jtczffcg' /* Gallery / Camera */,
                 ),
-                options: FFButtonOptions(
+                options: AppButtonOptions(
                   height: 40.0,
                   padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
                   iconPadding:
                       EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                   color: Colors.black,
-                  textStyle: FlutterFlowTheme.of(context).titleSmall.override(
+                  textStyle: AppTheme.of(context).titleSmall.override(
                         font: GoogleFonts.plusJakartaSans(
-                          fontWeight: FlutterFlowTheme.of(context)
+                          fontWeight: AppTheme.of(context)
                               .titleSmall
                               .fontWeight,
                           fontStyle:
-                              FlutterFlowTheme.of(context).titleSmall.fontStyle,
+                              AppTheme.of(context).titleSmall.fontStyle,
                         ),
                         color: Colors.white,
                         letterSpacing: 0.0,
                         fontWeight:
-                            FlutterFlowTheme.of(context).titleSmall.fontWeight,
+                            AppTheme.of(context).titleSmall.fontWeight,
                         fontStyle:
-                            FlutterFlowTheme.of(context).titleSmall.fontStyle,
+                            AppTheme.of(context).titleSmall.fontStyle,
                       ),
                   elevation: 10.0,
                   borderRadius: BorderRadius.circular(8.0),

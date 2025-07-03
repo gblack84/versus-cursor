@@ -1,8 +1,9 @@
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_utils.dart';
+import '/services/perspective_api_service.dart';
 import 'in_put_post_image_widget.dart' show InPutPostImageWidget;
 import 'package:flutter/material.dart';
 
-class InPutPostImageModel extends FlutterFlowModel<InPutPostImageWidget> {
+class InPutPostImageModel extends AppModel<InPutPostImageWidget> {
   ///  Local state fields for this page.
 
   bool absellected = false;
@@ -11,7 +12,22 @@ class InPutPostImageModel extends FlutterFlowModel<InPutPostImageWidget> {
 
   bool isRatioHorizontal = false;
 
+  bool showNextButton = false;
+
+  // 금지어 감지 상태
+  bool hasBlockedWordInTitle = false;
+  bool hasBlockedWordInATitle = false;
+  bool hasBlockedWordInBTitle = false;
+
+  // Perspective API 검증 관련
+  bool isValidating = false;
+  Map<String, PerspectiveResult> validationResults = {};
+  bool hasValidationViolations = false;
+
   ///  State fields for stateful widgets in this page.
+
+  // Scroll controller for detecting scroll end
+  ScrollController? scrollController;
 
   // State field(s) for TextField widget.
   FocusNode? textFieldFocusNode1;
@@ -35,6 +51,8 @@ class InPutPostImageModel extends FlutterFlowModel<InPutPostImageWidget> {
 
   @override
   void dispose() {
+    scrollController?.dispose();
+
     textFieldFocusNode1?.dispose();
     textController1?.dispose();
 

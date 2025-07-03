@@ -1,5 +1,5 @@
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_theme.dart';
+import '/core/app_utils.dart';
 import 'package:styled_divider/styled_divider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -26,7 +26,7 @@ class _TestdividerWidgetState extends State<TestdividerWidget> {
     super.initState();
     _model = createModel(context, () => TestdividerModel());
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
@@ -45,28 +45,28 @@ class _TestdividerWidgetState extends State<TestdividerWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+        backgroundColor: AppTheme.of(context).primaryBackground,
         appBar: AppBar(
-          backgroundColor: FlutterFlowTheme.of(context).primary,
+          backgroundColor: AppTheme.of(context).primary,
           automaticallyImplyLeading: false,
           title: Text(
-            FFLocalizations.of(context).getText(
+            AppLocalizations.of(context).getText(
               '820vo5vt' /* Page Title */,
             ),
-            style: FlutterFlowTheme.of(context).headlineMedium.override(
+            style: AppTheme.of(context).headlineMedium.override(
                   font: GoogleFonts.plusJakartaSans(
                     fontWeight:
-                        FlutterFlowTheme.of(context).headlineMedium.fontWeight,
+                        AppTheme.of(context).headlineMedium.fontWeight,
                     fontStyle:
-                        FlutterFlowTheme.of(context).headlineMedium.fontStyle,
+                        AppTheme.of(context).headlineMedium.fontStyle,
                   ),
                   color: Colors.white,
                   fontSize: 22.0,
                   letterSpacing: 0.0,
                   fontWeight:
-                      FlutterFlowTheme.of(context).headlineMedium.fontWeight,
+                      AppTheme.of(context).headlineMedium.fontWeight,
                   fontStyle:
-                      FlutterFlowTheme.of(context).headlineMedium.fontStyle,
+                      AppTheme.of(context).headlineMedium.fontStyle,
                 ),
           ),
           actions: [],
@@ -82,7 +82,7 @@ class _TestdividerWidgetState extends State<TestdividerWidget> {
                 width: double.infinity,
                 height: 100.0,
                 decoration: BoxDecoration(
-                  color: FlutterFlowTheme.of(context).secondaryBackground,
+                  color: AppTheme.of(context).secondaryBackground,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.max,
@@ -92,14 +92,14 @@ class _TestdividerWidgetState extends State<TestdividerWidget> {
                       width: 100.0,
                       height: 100.0,
                       decoration: BoxDecoration(
-                        color: FlutterFlowTheme.of(context).secondaryBackground,
+                        color: AppTheme.of(context).secondaryBackground,
                       ),
                     ),
                     SizedBox(
                       height: 100.0,
                       child: StyledVerticalDivider(
                         thickness: 2.0,
-                        color: FlutterFlowTheme.of(context).primaryText,
+                        color: AppTheme.of(context).primaryText,
                         lineStyle: DividerLineStyle.dashdotted,
                       ),
                     ),
@@ -112,7 +112,7 @@ class _TestdividerWidgetState extends State<TestdividerWidget> {
                   width: double.infinity,
                   height: 10.75,
                   decoration: BoxDecoration(
-                    color: FlutterFlowTheme.of(context).secondaryBackground,
+                    color: AppTheme.of(context).secondaryBackground,
                     borderRadius: BorderRadius.only(
                       bottomLeft: Radius.circular(0.0),
                       bottomRight: Radius.circular(0.0),
@@ -128,7 +128,7 @@ class _TestdividerWidgetState extends State<TestdividerWidget> {
                         thickness: 2.0,
                         indent: 8.0,
                         endIndent: 8.0,
-                        color: FlutterFlowTheme.of(context).primaryText,
+                        color: AppTheme.of(context).primaryText,
                         lineStyle: DividerLineStyle.dashdotted,
                       ),
                     ],
@@ -139,10 +139,10 @@ class _TestdividerWidgetState extends State<TestdividerWidget> {
                 width: 100.0,
                 height: 100.0,
                 decoration: BoxDecoration(
-                  color: FlutterFlowTheme.of(context).secondaryBackground,
+                  color: AppTheme.of(context).secondaryBackground,
                   borderRadius: BorderRadius.circular(14.0),
                   border: Border.all(
-                    color: FlutterFlowTheme.of(context).primaryText,
+                    color: AppTheme.of(context).primaryText,
                   ),
                 ),
               ),

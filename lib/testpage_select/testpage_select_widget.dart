@@ -1,6 +1,6 @@
-import '/flutter_flow/flutter_flow_theme.dart';
-import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
+import '/core/app_theme.dart';
+import '/core/app_utils.dart';
+import '/core/app_widgets.dart';
 import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -27,7 +27,7 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
     super.initState();
     _model = createModel(context, () => TestpageSelectModel());
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
@@ -67,23 +67,23 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
           title: Align(
             alignment: AlignmentDirectional(-1.0, 1.0),
             child: Text(
-              FFLocalizations.of(context).getText(
+              AppLocalizations.of(context).getText(
                 'rbd8xke9' /* versus space */,
               ),
               textAlign: TextAlign.end,
-              style: FlutterFlowTheme.of(context).headlineSmall.override(
+              style: AppTheme.of(context).headlineSmall.override(
                     font: GoogleFonts.plusJakartaSans(
                       fontWeight:
-                          FlutterFlowTheme.of(context).headlineSmall.fontWeight,
+                          AppTheme.of(context).headlineSmall.fontWeight,
                       fontStyle:
-                          FlutterFlowTheme.of(context).headlineSmall.fontStyle,
+                          AppTheme.of(context).headlineSmall.fontStyle,
                     ),
                     color: Colors.black,
                     letterSpacing: 0.0,
                     fontWeight:
-                        FlutterFlowTheme.of(context).headlineSmall.fontWeight,
+                        AppTheme.of(context).headlineSmall.fontWeight,
                     fontStyle:
-                        FlutterFlowTheme.of(context).headlineSmall.fontStyle,
+                        AppTheme.of(context).headlineSmall.fontStyle,
                   ),
             ),
           ),
@@ -121,26 +121,26 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                         padding:
                             EdgeInsetsDirectional.fromSTEB(0.0, 20.0, 0.0, 0.0),
                         child: Text(
-                          FFLocalizations.of(context).getText(
+                          AppLocalizations.of(context).getText(
                             'r6d1yxm7' /* Hello World */,
                           ),
-                          style: FlutterFlowTheme.of(context)
+                          style: AppTheme.of(context)
                               .headlineMedium
                               .override(
                                 font: GoogleFonts.plusJakartaSans(
-                                  fontWeight: FlutterFlowTheme.of(context)
+                                  fontWeight: AppTheme.of(context)
                                       .headlineMedium
                                       .fontWeight,
-                                  fontStyle: FlutterFlowTheme.of(context)
+                                  fontStyle: AppTheme.of(context)
                                       .headlineMedium
                                       .fontStyle,
                                 ),
                                 color: Colors.black,
                                 letterSpacing: 0.0,
-                                fontWeight: FlutterFlowTheme.of(context)
+                                fontWeight: AppTheme.of(context)
                                     .headlineMedium
                                     .fontWeight,
-                                fontStyle: FlutterFlowTheme.of(context)
+                                fontStyle: AppTheme.of(context)
                                     .headlineMedium
                                     .fontStyle,
                               ),
@@ -169,14 +169,14 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                   verticalDirection: VerticalDirection.down,
                                   clipBehavior: Clip.none,
                                   children: [
-                                    FFButtonWidget(
+                                    AppButtonWidget(
                                       onPressed: () {
                                         print('Button pressed ...');
                                       },
-                                      text: FFLocalizations.of(context).getText(
+                                      text: AppLocalizations.of(context).getText(
                                         'x79ae4w2' /* Button */,
                                       ),
-                                      options: FFButtonOptions(
+                                      options: AppButtonOptions(
                                         height: 30.0,
                                         padding: EdgeInsetsDirectional.fromSTEB(
                                             5.0, 0.0, 5.0, 0.0),
@@ -184,26 +184,26 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                             EdgeInsetsDirectional.fromSTEB(
                                                 0.0, 0.0, 0.0, 0.0),
                                         color: Color(0xFFB4B4B4),
-                                        textStyle: FlutterFlowTheme.of(context)
+                                        textStyle: AppTheme.of(context)
                                             .titleSmall
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
                                                 fontWeight:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .titleSmall
                                                         .fontWeight,
                                                 fontStyle:
-                                                    FlutterFlowTheme.of(context)
+                                                    AppTheme.of(context)
                                                         .titleSmall
                                                         .fontStyle,
                                               ),
                                               letterSpacing: 0.0,
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontStyle,
                                             ),
@@ -214,7 +214,7 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                     ),
                                   ],
                                 ),
-                              ].divide(SizedBox(width: 4.0)),
+                              ].cast<Widget>().divide(SizedBox(width: 4.0)),
                             ),
                           ),
                         ),
@@ -239,15 +239,15 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                 verticalDirection: VerticalDirection.down,
                                 clipBehavior: Clip.none,
                                 children: [
-                                  FFButtonWidget(
+                                  AppButtonWidget(
                                     onPressed: () async {
                                       context
                                           .pushNamed(LoginPageWidget.routeName);
                                     },
-                                    text: FFLocalizations.of(context).getText(
+                                    text: AppLocalizations.of(context).getText(
                                       'y5m4a7vm' /* login */,
                                     ),
-                                    options: FFButtonOptions(
+                                    options: AppButtonOptions(
                                       height: 30.0,
                                       padding: EdgeInsetsDirectional.fromSTEB(
                                           5.0, 0.0, 5.0, 0.0),
@@ -255,28 +255,28 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
                                       color:
-                                          FlutterFlowTheme.of(context).primary,
-                                      textStyle: FlutterFlowTheme.of(context)
+                                          AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontStyle,
                                           ),
@@ -284,15 +284,15 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       borderRadius: BorderRadius.circular(8.0),
                                     ),
                                   ),
-                                  FFButtonWidget(
+                                  AppButtonWidget(
                                     onPressed: () async {
                                       context.pushNamed(
                                           CreateAccountWidget.routeName);
                                     },
-                                    text: FFLocalizations.of(context).getText(
+                                    text: AppLocalizations.of(context).getText(
                                       'df9krpqf' /* creat_ac */,
                                     ),
-                                    options: FFButtonOptions(
+                                    options: AppButtonOptions(
                                       height: 30.0,
                                       padding: EdgeInsetsDirectional.fromSTEB(
                                           5.0, 0.0, 5.0, 0.0),
@@ -300,28 +300,28 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
                                       color:
-                                          FlutterFlowTheme.of(context).primary,
-                                      textStyle: FlutterFlowTheme.of(context)
+                                          AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontStyle,
                                           ),
@@ -329,15 +329,15 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       borderRadius: BorderRadius.circular(8.0),
                                     ),
                                   ),
-                                  FFButtonWidget(
+                                  AppButtonWidget(
                                     onPressed: () async {
                                       context.pushNamed(
                                           ForgotPasswordWidget.routeName);
                                     },
-                                    text: FFLocalizations.of(context).getText(
+                                    text: AppLocalizations.of(context).getText(
                                       'unrhe499' /* forgot_ps */,
                                     ),
-                                    options: FFButtonOptions(
+                                    options: AppButtonOptions(
                                       height: 30.0,
                                       padding: EdgeInsetsDirectional.fromSTEB(
                                           5.0, 0.0, 5.0, 0.0),
@@ -345,28 +345,28 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
                                       color:
-                                          FlutterFlowTheme.of(context).primary,
-                                      textStyle: FlutterFlowTheme.of(context)
+                                          AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontStyle,
                                           ),
@@ -374,17 +374,17 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       borderRadius: BorderRadius.circular(8.0),
                                     ),
                                   ),
-                                  FFButtonWidget(
+                                  AppButtonWidget(
                                     onPressed: () async {
                                       context.pushNamed(
                                           UserInfoInputWidget.routeName);
                                     },
-                                    text: FFLocalizations.of(context).getText(
+                                    text: AppLocalizations.of(context).getText(
                                       'd4vvfi1v' /* user_info
  */
                                       ,
                                     ),
-                                    options: FFButtonOptions(
+                                    options: AppButtonOptions(
                                       height: 30.0,
                                       padding: EdgeInsetsDirectional.fromSTEB(
                                           5.0, 0.0, 5.0, 0.0),
@@ -392,28 +392,28 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
                                       color:
-                                          FlutterFlowTheme.of(context).primary,
-                                      textStyle: FlutterFlowTheme.of(context)
+                                          AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontStyle,
                                           ),
@@ -421,17 +421,17 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       borderRadius: BorderRadius.circular(8.0),
                                     ),
                                   ),
-                                  FFButtonWidget(
+                                  AppButtonWidget(
                                     onPressed: () async {
                                       context.pushNamed(
                                           ExpertiseSelectWidget.routeName);
                                     },
-                                    text: FFLocalizations.of(context).getText(
+                                    text: AppLocalizations.of(context).getText(
                                       'e17ogwad' /* jopselect
  */
                                       ,
                                     ),
-                                    options: FFButtonOptions(
+                                    options: AppButtonOptions(
                                       height: 30.0,
                                       padding: EdgeInsetsDirectional.fromSTEB(
                                           5.0, 0.0, 5.0, 0.0),
@@ -439,28 +439,28 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
                                       color:
-                                          FlutterFlowTheme.of(context).primary,
-                                      textStyle: FlutterFlowTheme.of(context)
+                                          AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontStyle,
                                           ),
@@ -470,7 +470,7 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                   ),
                                 ],
                               ),
-                            ].divide(SizedBox(width: 4.0)),
+                            ].cast<Widget>().divide(SizedBox(width: 4.0)),
                           ),
                         ),
                       ),
@@ -494,17 +494,17 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                 verticalDirection: VerticalDirection.down,
                                 clipBehavior: Clip.none,
                                 children: [
-                                  FFButtonWidget(
+                                  AppButtonWidget(
                                     onPressed: () async {
                                       context.pushNamed(
                                           TestalgoriaWidget.routeName);
                                     },
-                                    text: FFLocalizations.of(context).getText(
+                                    text: AppLocalizations.of(context).getText(
                                       '4ffxgxck' /* testalgolia
  */
                                       ,
                                     ),
-                                    options: FFButtonOptions(
+                                    options: AppButtonOptions(
                                       height: 30.0,
                                       padding: EdgeInsetsDirectional.fromSTEB(
                                           5.0, 0.0, 5.0, 0.0),
@@ -512,28 +512,28 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
                                       color:
-                                          FlutterFlowTheme.of(context).primary,
-                                      textStyle: FlutterFlowTheme.of(context)
+                                          AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontStyle,
                                           ),
@@ -541,15 +541,15 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       borderRadius: BorderRadius.circular(8.0),
                                     ),
                                   ),
-                                  FFButtonWidget(
+                                  AppButtonWidget(
                                     onPressed: () async {
                                       context
                                           .pushNamed(StartPageWidget.routeName);
                                     },
-                                    text: FFLocalizations.of(context).getText(
+                                    text: AppLocalizations.of(context).getText(
                                       '87ap5nug' /* start */,
                                     ),
-                                    options: FFButtonOptions(
+                                    options: AppButtonOptions(
                                       height: 30.0,
                                       padding: EdgeInsetsDirectional.fromSTEB(
                                           5.0, 0.0, 5.0, 0.0),
@@ -557,28 +557,28 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
                                       color:
-                                          FlutterFlowTheme.of(context).primary,
-                                      textStyle: FlutterFlowTheme.of(context)
+                                          AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontStyle,
                                           ),
@@ -588,7 +588,7 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                   ),
                                 ],
                               ),
-                            ].divide(SizedBox(width: 4.0)),
+                            ].cast<Widget>().divide(SizedBox(width: 4.0)),
                           ),
                         ),
                       ),
@@ -612,14 +612,14 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                 verticalDirection: VerticalDirection.down,
                                 clipBehavior: Clip.none,
                                 children: [
-                                  FFButtonWidget(
+                                  AppButtonWidget(
                                     onPressed: () {
                                       print('phonelogin pressed ...');
                                     },
-                                    text: FFLocalizations.of(context).getText(
+                                    text: AppLocalizations.of(context).getText(
                                       'oadbd0gy' /* phonelogin */,
                                     ),
-                                    options: FFButtonOptions(
+                                    options: AppButtonOptions(
                                       height: 30.0,
                                       padding: EdgeInsetsDirectional.fromSTEB(
                                           5.0, 0.0, 5.0, 0.0),
@@ -627,28 +627,28 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
                                       color:
-                                          FlutterFlowTheme.of(context).primary,
-                                      textStyle: FlutterFlowTheme.of(context)
+                                          AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontStyle,
                                           ),
@@ -656,15 +656,15 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       borderRadius: BorderRadius.circular(8.0),
                                     ),
                                   ),
-                                  FFButtonWidget(
+                                  AppButtonWidget(
                                     onPressed: () async {
                                       context.pushNamed(
                                           HomeAndPostsCopyWidget.routeName);
                                     },
-                                    text: FFLocalizations.of(context).getText(
+                                    text: AppLocalizations.of(context).getText(
                                       '5fjkgyoa' /* homeAPosts */,
                                     ),
-                                    options: FFButtonOptions(
+                                    options: AppButtonOptions(
                                       height: 30.0,
                                       padding: EdgeInsetsDirectional.fromSTEB(
                                           5.0, 0.0, 5.0, 0.0),
@@ -672,28 +672,28 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
                                       color:
-                                          FlutterFlowTheme.of(context).primary,
-                                      textStyle: FlutterFlowTheme.of(context)
+                                          AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontStyle,
                                           ),
@@ -701,15 +701,15 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       borderRadius: BorderRadius.circular(8.0),
                                     ),
                                   ),
-                                  FFButtonWidget(
+                                  AppButtonWidget(
                                     onPressed: () async {
                                       context.pushNamed(
                                           EditvideoPWidget.routeName);
                                     },
-                                    text: FFLocalizations.of(context).getText(
+                                    text: AppLocalizations.of(context).getText(
                                       'pckw648z' /* editvideo */,
                                     ),
-                                    options: FFButtonOptions(
+                                    options: AppButtonOptions(
                                       height: 30.0,
                                       padding: EdgeInsetsDirectional.fromSTEB(
                                           5.0, 0.0, 5.0, 0.0),
@@ -717,28 +717,28 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
                                       color:
-                                          FlutterFlowTheme.of(context).primary,
-                                      textStyle: FlutterFlowTheme.of(context)
+                                          AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontStyle,
                                           ),
@@ -746,15 +746,15 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       borderRadius: BorderRadius.circular(8.0),
                                     ),
                                   ),
-                                  FFButtonWidget(
+                                  AppButtonWidget(
                                     onPressed: () async {
                                       context.pushNamed(
                                           InPutPostImageWidget.routeName);
                                     },
-                                    text: FFLocalizations.of(context).getText(
+                                    text: AppLocalizations.of(context).getText(
                                       'un1ogy5i' /* image */,
                                     ),
-                                    options: FFButtonOptions(
+                                    options: AppButtonOptions(
                                       height: 30.0,
                                       padding: EdgeInsetsDirectional.fromSTEB(
                                           5.0, 0.0, 5.0, 0.0),
@@ -762,28 +762,28 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
                                       color:
-                                          FlutterFlowTheme.of(context).primary,
-                                      textStyle: FlutterFlowTheme.of(context)
+                                          AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontStyle,
                                           ),
@@ -791,14 +791,14 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       borderRadius: BorderRadius.circular(8.0),
                                     ),
                                   ),
-                                  FFButtonWidget(
+                                  AppButtonWidget(
                                     onPressed: () {
                                       print('Button pressed ...');
                                     },
-                                    text: FFLocalizations.of(context).getText(
+                                    text: AppLocalizations.of(context).getText(
                                       'ln1qokjg' /* Button */,
                                     ),
-                                    options: FFButtonOptions(
+                                    options: AppButtonOptions(
                                       height: 30.0,
                                       padding: EdgeInsetsDirectional.fromSTEB(
                                           5.0, 0.0, 5.0, 0.0),
@@ -806,28 +806,28 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
                                       color:
-                                          FlutterFlowTheme.of(context).primary,
-                                      textStyle: FlutterFlowTheme.of(context)
+                                          AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontWeight,
                                               fontStyle:
-                                                  FlutterFlowTheme.of(context)
+                                                  AppTheme.of(context)
                                                       .titleSmall
                                                       .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
                                             fontWeight:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontWeight,
                                             fontStyle:
-                                                FlutterFlowTheme.of(context)
+                                                AppTheme.of(context)
                                                     .titleSmall
                                                     .fontStyle,
                                           ),
@@ -837,7 +837,7 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                   ),
                                 ],
                               ),
-                            ].divide(SizedBox(width: 4.0)),
+                            ].cast<Widget>().divide(SizedBox(width: 4.0)),
                           ),
                         ),
                       ),

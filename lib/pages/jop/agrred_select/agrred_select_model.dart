@@ -1,9 +1,9 @@
-import '/flutter_flow/flutter_flow_util.dart';
+import '/core/app_utils.dart';
 import '/index.dart';
 import 'agrred_select_widget.dart' show AgrredSelectWidget;
 import 'package:flutter/material.dart';
 
-class AgrredSelectModel extends FlutterFlowModel<AgrredSelectWidget> {
+class AgrredSelectModel extends AppModel<AgrredSelectWidget> {
   ///  Local state fields for this page.
 
   String hobbiesTag = '';

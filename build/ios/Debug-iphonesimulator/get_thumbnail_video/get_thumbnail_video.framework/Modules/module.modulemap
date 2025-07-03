@@ -1,0 +1,6 @@
+framework module get_thumbnail_video {
+  umbrella header "get_thumbnail_video-umbrella.h"
+
+  export *
+  module * { export * }
+}

@@ -31,7 +31,7 @@ class AppState extends ChangeNotifier {
   set displayName(String value) {
     _displayName = value;
   }
-  
+
   // Alias for FlutterFlow compatibility
   String get DisplayName => _displayName;
   set DisplayName(String value) {
@@ -43,7 +43,7 @@ class AppState extends ChangeNotifier {
   set uploadTextA(String value) {
     _uploadTextA = value;
   }
-  
+
   // Alias for FlutterFlow compatibility
   String get upLoadTextA => _uploadTextA;
   set upLoadTextA(String value) {
@@ -55,7 +55,7 @@ class AppState extends ChangeNotifier {
   set uploadTextB(String value) {
     _uploadTextB = value;
   }
-  
+
   // Alias for FlutterFlow compatibility
   String get upLoadTextB => _uploadTextB;
   set upLoadTextB(String value) {
@@ -67,7 +67,7 @@ class AppState extends ChangeNotifier {
   set uploadImageA(List<String> value) {
     _uploadImageA = value;
   }
-  
+
   // Alias for FlutterFlow compatibility
   List<String> get UpLoadImageA => _uploadImageA;
   set UpLoadImageA(List<String> value) {
@@ -77,7 +77,7 @@ class AppState extends ChangeNotifier {
   void addToUploadImageA(String value) {
     uploadImageA.add(value);
   }
-  
+
   // Alias for FlutterFlow compatibility
   void addToUpLoadImageA(String value) {
     uploadImageA.add(value);
@@ -86,7 +86,7 @@ class AppState extends ChangeNotifier {
   void removeFromUploadImageA(String value) {
     uploadImageA.remove(value);
   }
-  
+
   // Alias for FlutterFlow compatibility
   void removeFromUpLoadImageA(String value) {
     uploadImageA.remove(value);
@@ -112,7 +112,7 @@ class AppState extends ChangeNotifier {
   set uploadImageB(List<String> value) {
     _uploadImageB = value;
   }
-  
+
   // Alias for FlutterFlow compatibility
   List<String> get UpLoadImageB => _uploadImageB;
   set UpLoadImageB(List<String> value) {
@@ -122,7 +122,7 @@ class AppState extends ChangeNotifier {
   void addToUploadImageB(String value) {
     uploadImageB.add(value);
   }
-  
+
   // Alias for FlutterFlow compatibility
   void addToUpLoadImageB(String value) {
     uploadImageB.add(value);
@@ -131,7 +131,7 @@ class AppState extends ChangeNotifier {
   void removeFromUploadImageB(String value) {
     uploadImageB.remove(value);
   }
-  
+
   // Alias for FlutterFlow compatibility
   void removeFromUpLoadImageB(String value) {
     uploadImageB.remove(value);
@@ -157,7 +157,7 @@ class AppState extends ChangeNotifier {
   set uploadImageEditing(int value) {
     _uploadImageEditing = value;
   }
-  
+
   // Alias for FlutterFlow compatibility
   int get upLoadImageEditing => _uploadImageEditing;
   set upLoadImageEditing(int value) {
@@ -169,7 +169,7 @@ class AppState extends ChangeNotifier {
   set uploadTextEditing(int value) {
     _uploadTextEditing = value;
   }
-  
+
   // Alias for FlutterFlow compatibility
   int get upLoadTextEditing => _uploadTextEditing;
   set upLoadTextEditing(int value) {
@@ -181,7 +181,7 @@ class AppState extends ChangeNotifier {
   set previewText(String value) {
     _previewText = value;
   }
-  
+
   // Alias for FlutterFlow compatibility
   String get PreviewText => _previewText;
   set PreviewText(String value) {
@@ -193,7 +193,7 @@ class AppState extends ChangeNotifier {
   set uploadVideoA(String value) {
     _uploadVideoA = value;
   }
-  
+
   // Alias for FlutterFlow compatibility
   String get UpLoadvideoA => _uploadVideoA;
   set UpLoadvideoA(String value) {
@@ -205,7 +205,7 @@ class AppState extends ChangeNotifier {
   set uploadVideoB(String value) {
     _uploadVideoB = value;
   }
-  
+
   // Alias for FlutterFlow compatibility
   String get UpLoadvideoB => _uploadVideoB;
   set UpLoadvideoB(String value) {
@@ -217,7 +217,7 @@ class AppState extends ChangeNotifier {
   set uploadVideoEdit(int value) {
     _uploadVideoEdit = value;
   }
-  
+
   // Alias for FlutterFlow compatibility
   int get UpLoadVideoEdit => _uploadVideoEdit;
   set UpLoadVideoEdit(int value) {
@@ -229,7 +229,7 @@ class AppState extends ChangeNotifier {
   set selectedVideoSet(bool value) {
     _selectedVideoSet = value;
   }
-  
+
   // Alias for FlutterFlow compatibility
   bool get sellectedvideoset => _selectedVideoSet;
   set sellectedvideoset(bool value) {

@@ -345,3 +345,45 @@ This project represents a sophisticated social media application with a unique "
   - 모든 기능 유지
   - 순수 Flutter 프로젝트로 전환 완료
 - **커밋**: 4a6a285 (GitHub에 푸시 완료)
+
+### 2025-07-03: 콘텐츠 생성 UI 개선 및 유효성 검사 강화
+- **작업 내용**:
+  - 투명 텍스트 버그 수정 (highlighted_text_field.dart)
+  - 화면 하단 여백 크기 조정 (200px → 100px)
+  - 바텀시트 배경 투명도 개선
+  - ContentFilter 타입 캐스팅 에러 수정
+  - 필수 필드 유효성 검사 추가
+  - 다음 버튼 표시 조건 개선 (스크롤 + 필수 필드 채워짐)
+  - 에러 메시지 UI 통합 (필드 아래 인라인 표시)
+  - 빨간색 포커스 보더 제거
+  - 텍스트 지우면 에러 메시지 자동 초기화
+- **결과**:
+  - 더 직관적인 사용자 경험
+  - 필수 필드 비어있음 방지
+  - 통일된 에러 메시지 표시
+  - 깨끗한 UI/UX
+
+### 현재 진행 상황
+- **InPutPostImageWidget** 페이지에서 콘텐츠 생성 플로우 개선 중
+- 필수 필드: Question Title, A title, B title
+- 선택 필드: Description
+- 검증: 로컬 금지어 필터 + Perspective API 독성 콘텐츠 검사
+
+### 다음 작업 계획
+1. **A/B 컨테이너 박스 클릭 기능 추가**
+   - 현재: 다음 버튼 → 검증 → Gallery/Camera 선택
+   - 변경: A/B 박스 클릭 → 바로 이미지 업로드
+   - Container를 InkWell/GestureDetector로 감싸기
+   - 클릭 시 AppState에 선택한 박스(A/B) 저장
+   - 시각적 피드백 추가 (호버 효과, 커서 변경)
+
+2. **이미지 업로드 플로우 구현**
+   - Gallery/Camera 선택 바텀시트
+   - 이미지 선택 및 편집
+   - Firebase Storage 업로드
+   - 업로드 진행 표시
+
+3. **비디오 업로드 기능**
+   - 비디오 선택 및 트리밍
+   - 썸네일 생성
+   - 업로드 처리

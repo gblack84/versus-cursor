@@ -48,7 +48,7 @@ class _UploadChoiceBottomSheetWidgetState
       width: double.infinity,
       height: 300.0,
       decoration: BoxDecoration(
-        color: Color(0x25000000),
+        color: AppTheme.of(context).secondaryBackground,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(0.0),
           bottomRight: Radius.circular(0.0),

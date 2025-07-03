@@ -193,19 +193,13 @@ class ValidatedTextField extends StatelessWidget {
       maxLength: maxLength,
       style: style,
       decoration: decoration?.copyWith(
-        errorText: validationResult?.isToxic == true
-            ? '부적절한 내용이 감지됨'
-            : null,
-        errorStyle: const TextStyle(color: Colors.red, fontSize: 12),
+        errorText: null, // 에러 텍스트는 필드 외부에서 처리
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         isDense: true,
         counterText: '',
       ) ?? InputDecoration(
         hintText: hintText,
-        errorText: validationResult?.isToxic == true
-            ? '부적절한 내용이 감지됨'
-            : null,
-        errorStyle: const TextStyle(color: Colors.red, fontSize: 12),
+        errorText: null, // 에러 텍스트는 필드 외부에서 처리
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         isDense: true,
         counterText: '',
@@ -243,7 +237,7 @@ class ValidatedTextField extends StatelessWidget {
               minLines: minLines,
               textInputAction: textInputAction,
               maxLength: maxLength,
-              style: style?.copyWith(color: Colors.transparent),
+              style: style,
               decoration: decoration?.copyWith(
                 counterText: '',
               ),

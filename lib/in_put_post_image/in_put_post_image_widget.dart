@@ -71,6 +71,22 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
     }
   }
 
+  /// 필수 필드가 모두 채워졌는지 확인
+  bool _areRequiredFieldsFilled() {
+    return (_model.textController1?.text.trim().isNotEmpty ?? false) && // Question Title
+           (_model.textController3?.text.trim().isNotEmpty ?? false) && // A title
+           (_model.textController4?.text.trim().isNotEmpty ?? false);   // B title
+  }
+
+  /// 필수 필드 체크 및 버튼 표시 업데이트
+  void _checkRequiredFieldsAndUpdateButton() {
+    if (_areRequiredFieldsFilled() && !_model.showNextButton) {
+      setState(() {
+        _model.showNextButton = true;
+      });
+    }
+  }
+
   /// 모든 텍스트 필드 검증
   Future<void> _validateAllTexts() async {
     try {
@@ -78,6 +94,24 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
       setState(() {
         _model.isValidating = true;
       });
+
+      // 필수 필드 체크
+      bool hasEmptyField = false;
+      
+      setState(() {
+        _model.isQuestionTitleEmpty = _model.textController1?.text.trim().isEmpty ?? true;
+        _model.isATitleEmpty = _model.textController3?.text.trim().isEmpty ?? true;
+        _model.isBTitleEmpty = _model.textController4?.text.trim().isEmpty ?? true;
+        
+        hasEmptyField = _model.isQuestionTitleEmpty || _model.isATitleEmpty || _model.isBTitleEmpty;
+      });
+      
+      if (hasEmptyField) {
+        setState(() {
+          _model.isValidating = false;
+        });
+        return;
+      }
 
       // 모든 텍스트 필드 내용 수집
       final textsToValidate = <String, String>{};
@@ -119,6 +153,12 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
       setState(() {
         _model.validationResults = results;
         _model.hasValidationViolations = hasViolations;
+        // 검증 통과 시 비어있음 에러 상태 초기화
+        if (!hasViolations) {
+          _model.isQuestionTitleEmpty = false;
+          _model.isATitleEmpty = false;
+          _model.isBTitleEmpty = false;
+        }
       });
 
       if (hasViolations) {
@@ -137,7 +177,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
         // 미디어 선택 바텀시트 표시
         await showModalBottomSheet(
           isScrollControlled: true,
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.black.withOpacity(0.5),
           enableDrag: false,
           context: context,
           builder: (context) {
@@ -322,7 +362,17 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                 focusNode: _model.textFieldFocusNode1,
                                 onChanged: (value) {
                                   // 실시간 글자 수 업데이트
-                                  setState(() {});
+                                  setState(() {
+                                    // 텍스트가 비어있으면 에러 초기화
+                                    if (value.trim().isEmpty) {
+                                      _model.isQuestionTitleEmpty = false;
+                                      _model.validationResults.remove('questionTitle');
+                                      _model.hasBlockedWordInTitle = false;
+                                    }
+                                  });
+                                  
+                                  // 필수 필드 체크
+                                  _checkRequiredFieldsAndUpdateButton();
                                   
                                   // 디바운스된 필터링
                                   EasyDebounce.debounce(
@@ -336,7 +386,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                   );
                                 },
                                 validationResult: _model.validationResults['questionTitle'],
-                                showValidationResults: _model.hasValidationViolations,
+                                showValidationResults: false, // 에러는 필드 외부에서 표시
                                 decoration: InputDecoration(
                                   isDense: false,
                                   labelText:
@@ -400,21 +450,21 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                   ),
                                   focusedBorder: UnderlineInputBorder(
                                     borderSide: BorderSide(
-                                      color: Color(0xFFFE0606),
+                                      color: Colors.black,
                                       width: 3.0,
                                     ),
                                     borderRadius: BorderRadius.circular(12.0),
                                   ),
                                   errorBorder: UnderlineInputBorder(
                                     borderSide: BorderSide(
-                                      color: AppTheme.of(context).error,
+                                      color: Colors.black,
                                       width: 3.0,
                                     ),
                                     borderRadius: BorderRadius.circular(12.0),
                                   ),
                                   focusedErrorBorder: UnderlineInputBorder(
                                     borderSide: BorderSide(
-                                      color: AppTheme.of(context).error,
+                                      color: Colors.black,
                                       width: 3.0,
                                     ),
                                     borderRadius: BorderRadius.circular(12.0),
@@ -468,30 +518,30 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                 maxLength: 60,
                               ),
                             ),
-                            // Question Title 경고 표시
-                            if (_model.hasBlockedWordInTitle)
-                              Padding(
-                                padding: EdgeInsetsDirectional.fromSTEB(10.0, 2.0, 10.0, 0.0),
-                                child: Row(
-                                  children: [
+                            // Question Title 글자 수 및 경고 표시
+                            Padding(
+                              padding: EdgeInsetsDirectional.fromSTEB(10.0, 4.5, 10.0, 0.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  // 왼쪽: 경고 메시지
+                                  if (_model.hasBlockedWordInTitle || _model.isQuestionTitleEmpty || _model.validationResults['questionTitle']?.isToxic == true)
                                     Text(
-                                      '⚠️ 부적절한 언어가 포함됨',
+                                      _model.isQuestionTitleEmpty 
+                                        ? '필수 항목입니다'
+                                        : _model.validationResults['questionTitle']?.isToxic == true
+                                          ? '독성 콘텐츠가 감지되었습니다'
+                                          : '⚠️ 부적절한 언어가 포함됨',
                                       style: AppTheme.of(context).bodySmall.override(
                                         font: GoogleFonts.plusJakartaSans(),
                                         color: AppTheme.of(context).error,
                                         fontSize: 12.0,
                                         fontWeight: FontWeight.w500,
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            // Question Title 글자 수 표시
-                            Padding(
-                              padding: EdgeInsetsDirectional.fromSTEB(10.0, 4.5, 10.0, 0.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
+                                    )
+                                  else
+                                    const SizedBox.shrink(),
+                                  // 오른쪽: 글자 수
                                   Text(
                                     '${_model.textController1?.text.length ?? 0}/60',
                                     style: AppTheme.of(context).bodySmall.override(
@@ -1075,10 +1125,15 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                 focusNode: _model.textFieldFocusNode2,
                                 onChanged: (value) {
                                   // 실시간 글자 수 업데이트
-                                  setState(() {});
+                                  setState(() {
+                                    // 텍스트가 비어있으면 에러 초기화
+                                    if (value.trim().isEmpty) {
+                                      _model.validationResults.remove('description');
+                                    }
+                                  });
                                 },
                                 validationResult: _model.validationResults['description'],
-                                showValidationResults: _model.hasValidationViolations,
+                                showValidationResults: false, // 에러는 필드 외부에서 표시
                                 minLines: 1,
                                 maxLines: 5,
                                 textInputAction: TextInputAction.done,
@@ -1146,21 +1201,21 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                   ),
                                   focusedBorder: UnderlineInputBorder(
                                     borderSide: BorderSide(
-                                      color: Color(0xFFFE0606),
+                                      color: Colors.black,
                                       width: 2.0,
                                     ),
                                     borderRadius: BorderRadius.circular(12.0),
                                   ),
                                   errorBorder: UnderlineInputBorder(
                                     borderSide: BorderSide(
-                                      color: AppTheme.of(context).error,
+                                      color: Colors.black,
                                       width: 2.0,
                                     ),
                                     borderRadius: BorderRadius.circular(12.0),
                                   ),
                                   focusedErrorBorder: UnderlineInputBorder(
                                     borderSide: BorderSide(
-                                      color: AppTheme.of(context).error,
+                                      color: Colors.black,
                                       width: 2.0,
                                     ),
                                     borderRadius: BorderRadius.circular(12.0),
@@ -1238,7 +1293,17 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                     focusNode: _model.textFieldFocusNode3,
                                     onChanged: (value) {
                                       // 실시간 글자 수 업데이트
-                                      setState(() {});
+                                      setState(() {
+                                        // 텍스트가 비어있으면 에러 초기화
+                                        if (value.trim().isEmpty) {
+                                          _model.isATitleEmpty = false;
+                                          _model.validationResults.remove('aTitle');
+                                          _model.hasBlockedWordInATitle = false;
+                                        }
+                                      });
+                                      
+                                      // 필수 필드 체크
+                                      _checkRequiredFieldsAndUpdateButton();
                                       
                                       // 디바운스된 필터링
                                       EasyDebounce.debounce(
@@ -1252,7 +1317,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                       );
                                     },
                                     validationResult: _model.validationResults['aTitle'],
-                                    showValidationResults: _model.hasValidationViolations,
+                                    showValidationResults: false, // 에러는 필드 외부에서 표시
                                     minLines: 1,
                                 maxLines: 5,
                                 textInputAction: TextInputAction.done,
@@ -1396,30 +1461,30 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                 ),
                               ),
                             ),
-                            // A title 경고 표시
-                            if (_model.hasBlockedWordInATitle)
-                              Padding(
-                                padding: EdgeInsetsDirectional.fromSTEB(20.0, 1.0, 20.0, 0.0),
-                                child: Row(
-                                  children: [
+                            // A title 글자 수 및 경고 표시
+                            Padding(
+                              padding: EdgeInsetsDirectional.fromSTEB(20.0, 4.5, 20.0, 0.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  // 왼쪽: 경고 메시지
+                                  if (_model.hasBlockedWordInATitle || _model.isATitleEmpty || _model.validationResults['aTitle']?.isToxic == true)
                                     Text(
-                                      '⚠️ 부적절한 언어가 포함됨',
+                                      _model.isATitleEmpty 
+                                        ? '필수 항목입니다'
+                                        : _model.validationResults['aTitle']?.isToxic == true
+                                          ? '독성 콘텐츠가 감지되었습니다'
+                                          : '⚠️ 부적절한 언어가 포함됨',
                                       style: AppTheme.of(context).bodySmall.override(
                                         font: GoogleFonts.plusJakartaSans(),
                                         color: AppTheme.of(context).error,
                                         fontSize: 12.0,
                                         fontWeight: FontWeight.w500,
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            // A title 글자 수 표시
-                            Padding(
-                              padding: EdgeInsetsDirectional.fromSTEB(20.0, 4.5, 20.0, 0.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
+                                    )
+                                  else
+                                    const SizedBox.shrink(),
+                                  // 오른쪽: 글자 수
                                   Text(
                                     '${_model.textController3?.text.length ?? 0}/20',
                                     style: AppTheme.of(context).bodySmall.override(
@@ -1443,7 +1508,17 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                     focusNode: _model.textFieldFocusNode4,
                                     onChanged: (value) {
                                       // 실시간 글자 수 업데이트
-                                      setState(() {});
+                                      setState(() {
+                                        // 텍스트가 비어있으면 에러 초기화
+                                        if (value.trim().isEmpty) {
+                                          _model.isBTitleEmpty = false;
+                                          _model.validationResults.remove('bTitle');
+                                          _model.hasBlockedWordInBTitle = false;
+                                        }
+                                      });
+                                      
+                                      // 필수 필드 체크
+                                      _checkRequiredFieldsAndUpdateButton();
                                       
                                       // 디바운스된 필터링
                                       EasyDebounce.debounce(
@@ -1457,7 +1532,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                       );
                                     },
                                     validationResult: _model.validationResults['bTitle'],
-                                    showValidationResults: _model.hasValidationViolations,
+                                    showValidationResults: false, // 에러는 필드 외부에서 표시
                                     minLines: 1,
                                 maxLines: 5,
                                 textInputAction: TextInputAction.done,
@@ -1601,30 +1676,30 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                 ),
                               ),
                             ),
-                            // B title 경고 표시
-                            if (_model.hasBlockedWordInBTitle)
-                              Padding(
-                                padding: EdgeInsetsDirectional.fromSTEB(20.0, 1.0, 20.0, 0.0),
-                                child: Row(
-                                  children: [
+                            // B title 글자 수 및 경고 표시
+                            Padding(
+                              padding: EdgeInsetsDirectional.fromSTEB(20.0, 4.5, 20.0, 0.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  // 왼쪽: 경고 메시지
+                                  if (_model.hasBlockedWordInBTitle || _model.isBTitleEmpty || _model.validationResults['bTitle']?.isToxic == true)
                                     Text(
-                                      '⚠️ 부적절한 언어가 포함됨',
+                                      _model.isBTitleEmpty 
+                                        ? '필수 항목입니다'
+                                        : _model.validationResults['bTitle']?.isToxic == true
+                                          ? '독성 콘텐츠가 감지되었습니다'
+                                          : '⚠️ 부적절한 언어가 포함눨',
                                       style: AppTheme.of(context).bodySmall.override(
                                         font: GoogleFonts.plusJakartaSans(),
                                         color: AppTheme.of(context).error,
                                         fontSize: 12.0,
                                         fontWeight: FontWeight.w500,
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            // B title 글자 수 표시
-                            Padding(
-                              padding: EdgeInsetsDirectional.fromSTEB(20.0, 4.5, 20.0, 0.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
+                                    )
+                                  else
+                                    const SizedBox.shrink(),
+                                  // 오른쪽: 글자 수
                                   Text(
                                     '${_model.textController4?.text.length ?? 0}/20',
                                     style: AppTheme.of(context).bodySmall.override(
@@ -1637,7 +1712,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                               ),
                             ),
                             // 스크롤 감지를 위한 최소 여백
-                            SizedBox(height: 200.0),
+                            SizedBox(height: 100.0),
                           ],
                         ),
               ),

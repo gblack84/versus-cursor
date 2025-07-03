@@ -29,7 +29,7 @@ class ContentFilter {
     
     try {
       final String jsonString = await rootBundle.loadString('assets/data/blocked_words.json');
-      _filterData = json.decode(jsonString);
+      _filterData = Map<String, dynamic>.from(json.decode(jsonString));
       _isInitialized = true;
       print('콘텐츠 필터 초기화 완료: ${_getTotalWordsCount()}개 단어 로드됨');
     } catch (e) {
@@ -44,7 +44,7 @@ class ContentFilter {
     if (_filterData?['categories'] == null) return 0;
     
     int count = 0;
-    final categories = _filterData!['categories'] as Map<String, dynamic>;
+    final categories = Map<String, dynamic>.from(_filterData!['categories'] as Map);
     for (final category in categories.values) {
       if (category['words'] is List) {
         count += (category['words'] as List).length;
@@ -60,11 +60,11 @@ class ContentFilter {
     }
 
     final String normalizedInput = _normalizeText(text);
-    final categories = _filterData!['categories'] as Map<String, dynamic>;
+    final categories = Map<String, dynamic>.from(_filterData!['categories'] as Map);
     
     for (final categoryEntry in categories.entries) {
       final categoryName = categoryEntry.key;
-      final categoryData = categoryEntry.value as Map<String, dynamic>;
+      final categoryData = Map<String, dynamic>.from(categoryEntry.value as Map);
       final words = categoryData['words'] as List<dynamic>;
       final severity = categoryData['severity'] as String;
       

@@ -23,6 +23,11 @@ class InPutPostImageModel extends AppModel<InPutPostImageWidget> {
   bool isValidating = false;
   Map<String, PerspectiveResult> validationResults = {};
   bool hasValidationViolations = false;
+  
+  // 필수 필드 비어있음 에러 상태
+  bool isQuestionTitleEmpty = false;
+  bool isATitleEmpty = false;
+  bool isBTitleEmpty = false;
 
   ///  State fields for stateful widgets in this page.
 

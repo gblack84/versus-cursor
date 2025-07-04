@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'in_put_post_image_model.dart';
 export 'in_put_post_image_model.dart';
 
@@ -266,6 +267,100 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
+    );
+  }
+
+  /// 미디어 타입 선택 다이얼로그
+  void _showMediaTypeSelection(BuildContext context, String box) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: AppTheme.of(context).secondaryBackground,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20.0),
+              topRight: Radius.circular(20.0),
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: FaIcon(
+                      FontAwesomeIcons.image,
+                      color: AppTheme.of(context).primaryText,
+                    ),
+                    title: Text(
+                      '이미지 선택',
+                      style: AppTheme.of(context).bodyLarge,
+                    ),
+                    onTap: () async {
+                      setState(() {
+                        if (box == 'A') {
+                          _model.isVideoSelectedA = false;
+                        } else {
+                          _model.isVideoSelectedB = false;
+                        }
+                      });
+                      Navigator.pop(context);
+                      
+                      // wechat_assets_picker 열기
+                      final List<AssetEntity>? result = await AssetPicker.pickAssets(
+                        context,
+                        pickerConfig: AssetPickerConfig(
+                          maxAssets: 1,
+                          specialPickerType: SpecialPickerType.wechatMoment,
+                          themeColor: AppTheme.of(context).primary,
+                          textDelegate: const KoreanAssetPickerTextDelegate(),
+                          gridCount: 4,  // pageSize(80)가 4의 배수이므로
+                        ),
+                      );
+                      
+                      if (result != null && result.isNotEmpty) {
+                        final file = await result.first.file;
+                        if (file != null) {
+                          // 일단 선택된 이미지 경로 확인
+                          print('선택된 이미지: ${file.path}');
+                          _showSnackBar('이미지 선택됨: ${result.first.title ?? "제목 없음"}');
+                          
+                          // TODO: ProImageEditor로 이동
+                        }
+                      }
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(
+                      Icons.videocam,
+                      color: AppTheme.of(context).primaryText,
+                    ),
+                    title: Text(
+                      '비디오 선택',
+                      style: AppTheme.of(context).bodyLarge,
+                    ),
+                    onTap: () {
+                      setState(() {
+                        if (box == 'A') {
+                          _model.isVideoSelectedA = true;
+                        } else {
+                          _model.isVideoSelectedB = true;
+                        }
+                      });
+                      Navigator.pop(context);
+                      // TODO: 비디오 선택 기능 구현
+                      _showSnackBar('비디오 선택 기능을 구현해야 합니다.');
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -615,40 +710,56 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                       Padding(
                                         padding: EdgeInsetsDirectional.fromSTEB(
                                             0.0, 0.0, 2.5, 0.0),
-                                        child: Container(
-                                          width: _model.absellected == true
-                                              ? 380.0
-                                              : 190.0,
-                                          height: _model.absellected == true
-                                              ? 600.0
-                                              : 310.0,
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.of(context)
-                                                .primary,
-                                            borderRadius: BorderRadius.only(
-                                              bottomLeft: Radius.circular(20.0),
-                                              bottomRight:
-                                                  Radius.circular(20.0),
-                                              topLeft: Radius.circular(20.0),
-                                              topRight: Radius.circular(20.0),
-                                            ),
-                                          ),
-                                          child: Stack(
-                                            children: [
-                                              Align(
-                                                alignment: AlignmentDirectional(
-                                                    0.0, 0.0),
-                                                child: FaIcon(
-                                                  FontAwesomeIcons.image,
-                                                  color: AppTheme.of(
-                                                          context)
-                                                      .primaryText,
-                                                  size:
-                                                      _model.absellected == true
-                                                          ? 300.0
-                                                          : 140.0,
-                                                ),
+                                        child: InkWell(
+                                          onTap: () {
+                                            // A 박스 클릭 시 미디어 타입 선택
+                                            _showMediaTypeSelection(context, 'A');
+                                          },
+                                          child: Container(
+                                            width: _model.absellected == true
+                                                ? 380.0
+                                                : 190.0,
+                                            height: _model.absellected == true
+                                                ? 600.0
+                                                : 310.0,
+                                            decoration: BoxDecoration(
+                                              color: AppTheme.of(context)
+                                                  .primary,
+                                              borderRadius: BorderRadius.only(
+                                                bottomLeft: Radius.circular(20.0),
+                                                bottomRight:
+                                                    Radius.circular(20.0),
+                                                topLeft: Radius.circular(20.0),
+                                                topRight: Radius.circular(20.0),
                                               ),
+                                            ),
+                                            child: Stack(
+                                              children: [
+                                                Align(
+                                                  alignment: AlignmentDirectional(
+                                                      0.0, 0.0),
+                                                  child: _model.isVideoSelectedA
+                                                      ? Icon(
+                                                          Icons.videocam,
+                                                          color: AppTheme.of(
+                                                                  context)
+                                                              .primaryText,
+                                                          size:
+                                                              _model.absellected == true
+                                                                  ? 300.0
+                                                                  : 140.0,
+                                                        )
+                                                      : FaIcon(
+                                                          FontAwesomeIcons.image,
+                                                          color: AppTheme.of(
+                                                                  context)
+                                                              .primaryText,
+                                                          size:
+                                                              _model.absellected == true
+                                                                  ? 300.0
+                                                                  : 140.0,
+                                                        ),
+                                                ),
                                               Align(
                                                 alignment: AlignmentDirectional(
                                                     -1.0, -1.0),
@@ -733,41 +844,55 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                           ),
                                         ),
                                       ),
+                                    ),
                                       if (!_model.absellected)
                                         Padding(
                                           padding:
                                               EdgeInsetsDirectional.fromSTEB(
                                                   2.5, 0.0, 0.0, 0.0),
-                                          child: Container(
-                                            width: 190.0,
-                                            height: 310.0,
-                                            decoration: BoxDecoration(
-                                              color:
-                                                  AppTheme.of(context)
-                                                      .secondary,
-                                              borderRadius: BorderRadius.only(
-                                                bottomLeft:
-                                                    Radius.circular(20.0),
-                                                bottomRight:
-                                                    Radius.circular(20.0),
-                                                topLeft: Radius.circular(20.0),
-                                                topRight: Radius.circular(20.0),
-                                              ),
-                                            ),
-                                            child: Stack(
-                                              children: [
-                                                Align(
-                                                  alignment:
-                                                      AlignmentDirectional(
-                                                          0.0, 0.0),
-                                                  child: FaIcon(
-                                                    FontAwesomeIcons.image,
-                                                    color: AppTheme.of(
-                                                            context)
-                                                        .primaryText,
-                                                    size: 140.0,
-                                                  ),
+                                          child: InkWell(
+                                            onTap: () {
+                                              // B 박스 클릭 시 미디어 타입 선택
+                                              _showMediaTypeSelection(context, 'B');
+                                            },
+                                            child: Container(
+                                              width: 190.0,
+                                              height: 310.0,
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    AppTheme.of(context)
+                                                        .secondary,
+                                                borderRadius: BorderRadius.only(
+                                                  bottomLeft:
+                                                      Radius.circular(20.0),
+                                                  bottomRight:
+                                                      Radius.circular(20.0),
+                                                  topLeft: Radius.circular(20.0),
+                                                  topRight: Radius.circular(20.0),
                                                 ),
+                                              ),
+                                              child: Stack(
+                                                children: [
+                                                  Align(
+                                                    alignment:
+                                                        AlignmentDirectional(
+                                                            0.0, 0.0),
+                                                    child: _model.isVideoSelectedB
+                                                        ? Icon(
+                                                            Icons.videocam,
+                                                            color: AppTheme.of(
+                                                                    context)
+                                                                .primaryText,
+                                                            size: 140.0,
+                                                          )
+                                                        : FaIcon(
+                                                            FontAwesomeIcons.image,
+                                                            color: AppTheme.of(
+                                                                    context)
+                                                                .primaryText,
+                                                            size: 140.0,
+                                                          ),
+                                                  ),
                                                 Align(
                                                   alignment:
                                                       AlignmentDirectional(
@@ -848,6 +973,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                             ),
                                           ),
                                         ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -868,38 +994,54 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                       Padding(
                                         padding: EdgeInsetsDirectional.fromSTEB(
                                             2.5, 0.0, 2.5, 2.5),
-                                        child: Container(
-                                          width: double.infinity,
-                                          height: _model.absellected == true
-                                              ? 350.0
-                                              : 200.0,
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.of(context)
-                                                .primary,
-                                            borderRadius: BorderRadius.only(
-                                              bottomLeft: Radius.circular(20.0),
-                                              bottomRight:
-                                                  Radius.circular(20.0),
-                                              topLeft: Radius.circular(20.0),
-                                              topRight: Radius.circular(20.0),
-                                            ),
-                                          ),
-                                          child: Stack(
-                                            children: [
-                                              Align(
-                                                alignment: AlignmentDirectional(
-                                                    0.0, 1.0),
-                                                child: FaIcon(
-                                                  FontAwesomeIcons.image,
-                                                  color: AppTheme.of(
-                                                          context)
-                                                      .primaryText,
-                                                  size:
-                                                      _model.absellected == true
-                                                          ? 300.0
-                                                          : 180.0,
-                                                ),
+                                        child: InkWell(
+                                          onTap: () {
+                                            // A 박스 클릭 시 미디어 타입 선택
+                                            _showMediaTypeSelection(context, 'A');
+                                          },
+                                          child: Container(
+                                            width: double.infinity,
+                                            height: _model.absellected == true
+                                                ? 350.0
+                                                : 200.0,
+                                            decoration: BoxDecoration(
+                                              color: AppTheme.of(context)
+                                                  .primary,
+                                              borderRadius: BorderRadius.only(
+                                                bottomLeft: Radius.circular(20.0),
+                                                bottomRight:
+                                                    Radius.circular(20.0),
+                                                topLeft: Radius.circular(20.0),
+                                                topRight: Radius.circular(20.0),
                                               ),
+                                            ),
+                                            child: Stack(
+                                              children: [
+                                                Align(
+                                                  alignment: AlignmentDirectional(
+                                                      0.0, 1.0),
+                                                  child: _model.isVideoSelectedA
+                                                      ? Icon(
+                                                          Icons.videocam,
+                                                          color: AppTheme.of(
+                                                                  context)
+                                                              .primaryText,
+                                                          size:
+                                                              _model.absellected == true
+                                                                  ? 300.0
+                                                                  : 180.0,
+                                                        )
+                                                      : FaIcon(
+                                                          FontAwesomeIcons.image,
+                                                          color: AppTheme.of(
+                                                                  context)
+                                                              .primaryText,
+                                                          size:
+                                                              _model.absellected == true
+                                                                  ? 300.0
+                                                                  : 180.0,
+                                                        ),
+                                                ),
                                               Align(
                                                 alignment: AlignmentDirectional(
                                                     -1.0, -1.0),
@@ -984,41 +1126,55 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                           ),
                                         ),
                                       ),
+                                    ),
                                       if (!_model.absellected)
                                         Padding(
                                           padding:
                                               EdgeInsetsDirectional.fromSTEB(
                                                   2.5, 2.5, 2.5, 0.0),
-                                          child: Container(
-                                            width: double.infinity,
-                                            height: 200.0,
-                                            decoration: BoxDecoration(
-                                              color:
-                                                  AppTheme.of(context)
-                                                      .secondary,
-                                              borderRadius: BorderRadius.only(
-                                                bottomLeft:
-                                                    Radius.circular(20.0),
-                                                bottomRight:
-                                                    Radius.circular(20.0),
-                                                topLeft: Radius.circular(20.0),
-                                                topRight: Radius.circular(20.0),
-                                              ),
-                                            ),
-                                            child: Stack(
-                                              children: [
-                                                Align(
-                                                  alignment:
-                                                      AlignmentDirectional(
-                                                          0.0, 1.0),
-                                                  child: FaIcon(
-                                                    FontAwesomeIcons.image,
-                                                    color: AppTheme.of(
-                                                            context)
-                                                        .primaryText,
-                                                    size: 180.0,
-                                                  ),
+                                          child: InkWell(
+                                            onTap: () {
+                                              // B 박스 클릭 시 미디어 타입 선택
+                                              _showMediaTypeSelection(context, 'B');
+                                            },
+                                            child: Container(
+                                              width: double.infinity,
+                                              height: 200.0,
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    AppTheme.of(context)
+                                                        .secondary,
+                                                borderRadius: BorderRadius.only(
+                                                  bottomLeft:
+                                                      Radius.circular(20.0),
+                                                  bottomRight:
+                                                      Radius.circular(20.0),
+                                                  topLeft: Radius.circular(20.0),
+                                                  topRight: Radius.circular(20.0),
                                                 ),
+                                              ),
+                                              child: Stack(
+                                                children: [
+                                                  Align(
+                                                    alignment:
+                                                        AlignmentDirectional(
+                                                            0.0, 1.0),
+                                                    child: _model.isVideoSelectedB
+                                                        ? Icon(
+                                                            Icons.videocam,
+                                                            color: AppTheme.of(
+                                                                    context)
+                                                                .primaryText,
+                                                            size: 180.0,
+                                                          )
+                                                        : FaIcon(
+                                                            FontAwesomeIcons.image,
+                                                            color: AppTheme.of(
+                                                                    context)
+                                                                .primaryText,
+                                                            size: 180.0,
+                                                          ),
+                                                  ),
                                                 Align(
                                                   alignment:
                                                       AlignmentDirectional(
@@ -1099,6 +1255,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                             ),
                                           ),
                                         ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -1750,4 +1907,61 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
       ),
     );
   }
+}
+
+// 한국어 텍스트 델리게이트
+class KoreanAssetPickerTextDelegate extends AssetPickerTextDelegate {
+  const KoreanAssetPickerTextDelegate();
+  
+  @override
+  String get confirm => '확인';
+  
+  @override
+  String get cancel => '취소';
+  
+  @override
+  String get edit => '편집';
+  
+  @override
+  String get gifIndicator => 'GIF';
+  
+  @override
+  String get loadFailed => '로드 실패';
+  
+  @override
+  String get original => '원본';
+  
+  @override
+  String get preview => '미리보기';
+  
+  @override
+  String get select => '선택';
+  
+  @override
+  String get emptyList => '사진이 없습니다';
+  
+  @override
+  String get unSupportedAssetType => '지원하지 않는 형식';
+  
+  @override
+  String get unableToAccessAll => '모든 사진에 접근할 수 없습니다';
+  
+  @override
+  String get viewingLimitedAssetsTip => '앱에서 접근 가능한 사진만 표시됩니다.';
+  
+  @override
+  String get changeAccessibleLimitedAssets => '접근 가능한 사진 업데이트';
+  
+  @override
+  String get accessAllTip => '앱이 일부 사진에만 접근 가능합니다.\n'
+      '설정에서 모든 사진 접근을 허용해주세요.';
+  
+  @override
+  String get goToSystemSettings => '시스템 설정';
+  
+  @override
+  String get accessLimitedAssets => '제한된 접근으로 계속';
+  
+  @override
+  String get accessiblePathName => '접근 가능한 사진';
 }

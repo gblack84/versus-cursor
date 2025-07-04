@@ -13,6 +13,10 @@ class InPutPostImageModel extends AppModel<InPutPostImageWidget> {
   bool isRatioHorizontal = false;
 
   bool showNextButton = false;
+  
+  // 비디오 선택 상태
+  bool isVideoSelectedA = false;
+  bool isVideoSelectedB = false;
 
   // 금지어 감지 상태
   bool hasBlockedWordInTitle = false;

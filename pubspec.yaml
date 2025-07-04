@@ -100,6 +100,7 @@ dependencies:
   pro_image_editor: ^10.2.2
   pro_video_editor: ^0.1.8
   provider: ^6.1.5
+  wechat_assets_picker: ^9.5.1
   rxdart: ^0.28.0
   shared_preferences: ^2.5.3
   shared_preferences_android: ^2.3.2

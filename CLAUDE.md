@@ -407,27 +407,42 @@ This project represents a sophisticated social media application with a unique "
   - 통일된 에러 메시지 표시
   - 깨끗한 UI/UX
 
+### 2025-07-04: A/B 박스 미디어 선택 기능 및 wechat_assets_picker 통합
+- **작업 내용**:
+  - A/B 박스에 비디오 아이콘 추가 및 미디어 타입 선택 바텀시트 구현
+  - InkWell로 전체 박스를 클릭 가능하도록 변경
+  - 아이콘을 조건부 렌더링 (이미지/비디오)
+  - wechat_assets_picker 패키지 통합 (v9.5.1)
+  - 한국어 텍스트 델리게이트 구현 (KoreanAssetPickerTextDelegate)
+  - Flutter 3.32.5에서 모든 패키지 호환성 확인
+- **구현 세부사항**:
+  - _showMediaTypeSelection() 메서드로 미디어 타입 선택
+  - isVideoSelectedA/B 상태 변수로 아이콘 전환
+  - AssetPickerConfig 설정 (gridCount: 4, wechatMoment 스타일)
+- **결과**:
+  - 위챗 스타일 이미지 피커 성공적으로 작동
+  - 이미지 선택 및 경로 획득 완료
+  - 시뮬레이터에서는 카메라 버튼 미표시 (실기기에서는 표시 예상)
+
 ### 현재 진행 상황
-- **InPutPostImageWidget** 페이지에서 콘텐츠 생성 플로우 개선 중
-- 필수 필드: Question Title, A title, B title
-- 선택 필드: Description
-- 검증: 로컬 금지어 필터 + Perspective API 독성 콘텐츠 검사
+- **InPutPostImageWidget** 페이지에서 미디어 선택 기능 구현 완료
+- wechat_assets_picker로 갤러리 접근 가능
+- 선택된 이미지 경로 확인 가능
+- TODO: ProImageEditor 페이지 연결
 
 ### 다음 작업 계획
-1. **A/B 컨테이너 박스 클릭 기능 추가**
-   - 현재: 다음 버튼 → 검증 → Gallery/Camera 선택
-   - 변경: A/B 박스 클릭 → 바로 이미지 업로드
-   - Container를 InkWell/GestureDetector로 감싸기
-   - 클릭 시 AppState에 선택한 박스(A/B) 저장
-   - 시각적 피드백 추가 (호버 효과, 커서 변경)
+1. **ProImageEditor 페이지 생성**
+   - /lib/pages/pro_image_editor/ 디렉토리 구조
+   - 이미지 편집 기능 구현 (크롭, 필터, 텍스트 등)
+   - Firebase Storage 업로드 통합
 
-2. **이미지 업로드 플로우 구현**
-   - Gallery/Camera 선택 바텀시트
-   - 이미지 선택 및 편집
-   - Firebase Storage 업로드
-   - 업로드 진행 표시
+2. **이미지 업로드 플로우 완성**
+   - 편집된 이미지 Firebase Storage 업로드
+   - AppState의 uploadImageA/B 배열 업데이트
+   - A/B 박스에 선택된 이미지 프리뷰 표시
 
-3. **비디오 업로드 기능**
-   - 비디오 선택 및 트리밍
+3. **비디오 선택 및 편집**
+   - 비디오 선택 기능 구현
+   - pro_video_editor 통합
    - 썸네일 생성
    - 업로드 처리

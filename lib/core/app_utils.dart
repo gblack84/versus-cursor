@@ -451,7 +451,7 @@ extension StringCapitalizationExt on String {
 // Extension for Color alpha
 extension ColorExtension on Color {
   Color applyAlpha(double factor) {
-    return withAlpha((alpha * factor).round().clamp(0, 255));
+    return withAlpha((a * 255.0 * factor).round().clamp(0, 255));
   }
 }
 

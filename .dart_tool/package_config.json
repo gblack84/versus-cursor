@@ -3,21 +3,15 @@
   "packages": [
     {
       "name": "_flutterfire_internals",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/_flutterfire_internals-1.3.46",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/_flutterfire_internals-1.3.58",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "algolia",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/algolia-1.1.1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/algolia-1.1.2",
       "packageUri": "lib/",
       "languageVersion": "2.12"
-    },
-    {
-      "name": "archive",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/archive-4.0.7",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
     },
     {
       "name": "args",
@@ -27,9 +21,9 @@
     },
     {
       "name": "async",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/async-2.11.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/async-2.13.0",
       "packageUri": "lib/",
-      "languageVersion": "2.18"
+      "languageVersion": "3.4"
     },
     {
       "name": "auto_size_text",
@@ -39,9 +33,9 @@
     },
     {
       "name": "boolean_selector",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/boolean_selector-2.1.1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/boolean_selector-2.1.2",
       "packageUri": "lib/",
-      "languageVersion": "2.17"
+      "languageVersion": "3.1"
     },
     {
       "name": "cached_network_image",
@@ -63,45 +57,45 @@
     },
     {
       "name": "characters",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/characters-1.3.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/characters-1.4.0",
       "packageUri": "lib/",
-      "languageVersion": "2.12"
+      "languageVersion": "3.4"
     },
     {
       "name": "chewie",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/chewie-1.8.5",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/chewie-1.12.1",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.7"
     },
     {
       "name": "clock",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/clock-1.1.1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/clock-1.1.2",
       "packageUri": "lib/",
-      "languageVersion": "2.12"
+      "languageVersion": "3.4"
     },
     {
       "name": "cloud_firestore",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/cloud_firestore-5.5.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/cloud_firestore-5.6.11",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "cloud_firestore_platform_interface",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/cloud_firestore_platform_interface-6.5.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/cloud_firestore_platform_interface-6.6.11",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "cloud_firestore_web",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/cloud_firestore_web-4.3.4",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/cloud_firestore_web-4.4.11",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "collection",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/collection-1.18.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/collection-1.19.1",
       "packageUri": "lib/",
-      "languageVersion": "2.18"
+      "languageVersion": "3.4"
     },
     {
       "name": "cross_file",
@@ -117,9 +111,9 @@
     },
     {
       "name": "csslib",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/csslib-0.17.3",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/csslib-1.0.2",
       "packageUri": "lib/",
-      "languageVersion": "2.19"
+      "languageVersion": "3.1"
     },
     {
       "name": "cupertino_icons",
@@ -140,18 +134,6 @@
       "languageVersion": "2.17"
     },
     {
-      "name": "device_info_plus",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/device_info_plus-11.3.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
-      "name": "device_info_plus_platform_interface",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/device_info_plus_platform_interface-7.0.2",
-      "packageUri": "lib/",
-      "languageVersion": "2.18"
-    },
-    {
       "name": "dotted_decoration",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/dotted_decoration-2.0.0",
       "packageUri": "lib/",
@@ -159,7 +141,7 @@
     },
     {
       "name": "easy_debounce",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/easy_debounce-2.0.1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/easy_debounce-2.0.3",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
@@ -170,22 +152,16 @@
       "languageVersion": "2.12"
     },
     {
-      "name": "emoji_picker_flutter",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/emoji_picker_flutter-3.1.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
       "name": "equatable",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/equatable-2.0.5",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/equatable-2.0.7",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
       "name": "fake_async",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/fake_async-1.3.1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/fake_async-1.3.3",
       "packageUri": "lib/",
-      "languageVersion": "2.12"
+      "languageVersion": "3.3"
     },
     {
       "name": "fetch_api",
@@ -213,7 +189,7 @@
     },
     {
       "name": "file_picker",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/file_picker-8.1.2",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/file_picker-10.2.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
@@ -243,73 +219,73 @@
     },
     {
       "name": "firebase_auth",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_auth-5.3.3",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_auth-5.6.2",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "firebase_auth_platform_interface",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_auth_platform_interface-7.4.9",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_auth_platform_interface-7.7.2",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "firebase_auth_web",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_auth_web-5.13.4",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_auth_web-5.15.2",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "firebase_core",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_core-3.8.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_core-3.15.1",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "firebase_core_platform_interface",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_core_platform_interface-5.3.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_core_platform_interface-6.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "firebase_core_web",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_core_web-2.18.1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_core_web-2.24.1",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "firebase_performance",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_performance-0.10.0+10",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_performance-0.10.1+9",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "firebase_performance_platform_interface",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_performance_platform_interface-0.1.4+46",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_performance_platform_interface-0.1.5+9",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "firebase_performance_web",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_performance_web-0.1.7+4",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_performance_web-0.1.7+15",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "firebase_storage",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_storage-12.3.2",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_storage-12.4.9",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "firebase_storage_platform_interface",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_storage_platform_interface-5.1.33",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_storage_platform_interface-5.2.9",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "firebase_storage_web",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_storage_web-3.10.5",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_storage_web-3.10.16",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
@@ -323,11 +299,11 @@
       "name": "flutter",
       "rootUri": "file:///Users/g_black/flutter/packages/flutter",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.7"
     },
     {
       "name": "flutter_animate",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/flutter_animate-4.5.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/flutter_animate-4.5.2",
       "packageUri": "lib/",
       "languageVersion": "2.17"
     },
@@ -339,15 +315,15 @@
     },
     {
       "name": "flutter_lints",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/flutter_lints-4.0.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/flutter_lints-6.0.0",
       "packageUri": "lib/",
-      "languageVersion": "3.1"
+      "languageVersion": "3.8"
     },
     {
       "name": "flutter_localizations",
       "rootUri": "file:///Users/g_black/flutter/packages/flutter_localizations",
       "packageUri": "lib/",
-      "languageVersion": "3.2"
+      "languageVersion": "3.7"
     },
     {
       "name": "flutter_native_video_trimmer",
@@ -357,9 +333,9 @@
     },
     {
       "name": "flutter_plugin_android_lifecycle",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.20",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.28",
       "packageUri": "lib/",
-      "languageVersion": "3.4"
+      "languageVersion": "3.6"
     },
     {
       "name": "flutter_shaders",
@@ -369,7 +345,7 @@
     },
     {
       "name": "flutter_spinkit",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/flutter_spinkit-5.2.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/flutter_spinkit-5.2.1",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
@@ -377,17 +353,17 @@
       "name": "flutter_test",
       "rootUri": "file:///Users/g_black/flutter/packages/flutter_test",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.7"
     },
     {
       "name": "flutter_web_plugins",
       "rootUri": "file:///Users/g_black/flutter/packages/flutter_web_plugins",
       "packageUri": "lib/",
-      "languageVersion": "3.2"
+      "languageVersion": "3.7"
     },
     {
       "name": "font_awesome_flutter",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/font_awesome_flutter-10.7.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/font_awesome_flutter-10.8.0",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
@@ -405,13 +381,13 @@
     },
     {
       "name": "go_router",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/go_router-12.1.3",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/go_router-16.0.0",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.6"
     },
     {
       "name": "google_fonts",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/google_fonts-6.1.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/google_fonts-6.2.1",
       "packageUri": "lib/",
       "languageVersion": "2.14"
     },
@@ -423,39 +399,39 @@
     },
     {
       "name": "google_sign_in",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/google_sign_in-6.2.1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/google_sign_in-6.3.0",
       "packageUri": "lib/",
-      "languageVersion": "3.2"
+      "languageVersion": "3.6"
     },
     {
       "name": "google_sign_in_android",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/google_sign_in_android-6.1.30",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/google_sign_in_android-6.2.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
+      "name": "google_sign_in_ios",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/google_sign_in_ios-5.9.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
-      "name": "google_sign_in_ios",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/google_sign_in_ios-5.7.7",
-      "packageUri": "lib/",
-      "languageVersion": "3.3"
-    },
-    {
       "name": "google_sign_in_platform_interface",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/google_sign_in_platform_interface-2.4.5",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/google_sign_in_platform_interface-2.5.0",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.4"
     },
     {
       "name": "google_sign_in_web",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/google_sign_in_web-0.12.4+2",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/google_sign_in_web-0.12.4+4",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.4"
     },
     {
       "name": "html",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/html-0.15.4",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/html-0.15.6",
       "packageUri": "lib/",
-      "languageVersion": "2.19"
+      "languageVersion": "3.2"
     },
     {
       "name": "http",
@@ -470,12 +446,6 @@
       "languageVersion": "2.12"
     },
     {
-      "name": "image",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/image-4.5.4",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
       "name": "image_picker",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/image_picker-1.1.2",
       "packageUri": "lib/",
@@ -483,39 +453,39 @@
     },
     {
       "name": "image_picker_android",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/image_picker_android-0.8.12+13",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/image_picker_android-0.8.12+23",
       "packageUri": "lib/",
-      "languageVersion": "3.5"
+      "languageVersion": "3.6"
     },
     {
       "name": "image_picker_for_web",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/image_picker_for_web-3.0.5",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/image_picker_for_web-3.0.6",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.4"
     },
     {
       "name": "image_picker_ios",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.12",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.12+2",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.4"
     },
     {
       "name": "image_picker_linux",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.1+1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.1+2",
       "packageUri": "lib/",
-      "languageVersion": "2.19"
+      "languageVersion": "3.4"
     },
     {
       "name": "image_picker_macos",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.1+1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.1+2",
       "packageUri": "lib/",
-      "languageVersion": "2.19"
+      "languageVersion": "3.4"
     },
     {
       "name": "image_picker_platform_interface",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/image_picker_platform_interface-2.10.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/image_picker_platform_interface-2.10.1",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.4"
     },
     {
       "name": "image_picker_windows",
@@ -525,9 +495,9 @@
     },
     {
       "name": "intl",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/intl-0.19.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/intl-0.20.2",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.3"
     },
     {
       "name": "iregexp",
@@ -537,19 +507,19 @@
     },
     {
       "name": "json_path",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/json_path-0.7.2",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/json_path-0.7.6",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
     {
       "name": "leak_tracker",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/leak_tracker-10.0.5",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/leak_tracker-10.0.9",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "leak_tracker_flutter_testing",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/leak_tracker_flutter_testing-3.0.5",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/leak_tracker_flutter_testing-3.0.9",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
@@ -561,9 +531,9 @@
     },
     {
       "name": "lints",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/lints-4.0.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/lints-6.0.0",
       "packageUri": "lib/",
-      "languageVersion": "3.1"
+      "languageVersion": "3.8"
     },
     {
       "name": "logging",
@@ -579,9 +549,9 @@
     },
     {
       "name": "matcher",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/matcher-0.12.16+1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/matcher-0.12.17",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.4"
     },
     {
       "name": "material_color_utilities",
@@ -597,19 +567,19 @@
     },
     {
       "name": "meta",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/meta-1.15.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/meta-1.16.0",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
       "name": "mime",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/mime-1.0.6",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/mime-2.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "mime_type",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/mime_type-1.0.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/mime_type-1.0.1",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
@@ -639,33 +609,33 @@
     },
     {
       "name": "page_transition",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/page_transition-2.1.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/page_transition-2.2.1",
       "packageUri": "lib/",
-      "languageVersion": "2.17"
+      "languageVersion": "3.5"
     },
     {
       "name": "path",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/path-1.9.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
-      "name": "path_provider",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/path_provider-2.1.4",
-      "packageUri": "lib/",
-      "languageVersion": "3.2"
-    },
-    {
-      "name": "path_provider_android",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/path_provider_android-2.2.10",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/path-1.9.1",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
-      "name": "path_provider_foundation",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.0",
+      "name": "path_provider",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/path_provider-2.1.5",
       "packageUri": "lib/",
-      "languageVersion": "3.2"
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "path_provider_android",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/path_provider_android-2.2.17",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
+      "name": "path_provider_foundation",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
     },
     {
       "name": "path_provider_linux",
@@ -734,20 +704,20 @@
       "languageVersion": "3.3"
     },
     {
-      "name": "posix",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/posix-6.0.3",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
       "name": "pro_image_editor",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/pro_image_editor-5.4.2",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/pro_image_editor-10.2.2",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
+      "name": "pro_video_editor",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/pro_video_editor-0.1.8",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
       "name": "provider",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/provider-6.1.2",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/provider-6.1.5",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
@@ -759,21 +729,21 @@
     },
     {
       "name": "rxdart",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/rxdart-0.27.7",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/rxdart-0.28.0",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
       "name": "shared_preferences",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/shared_preferences-2.3.2",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/shared_preferences-2.5.3",
       "packageUri": "lib/",
-      "languageVersion": "3.4"
+      "languageVersion": "3.5"
     },
     {
       "name": "shared_preferences_android",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/shared_preferences_android-2.3.2",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/shared_preferences_android-2.4.10",
       "packageUri": "lib/",
-      "languageVersion": "3.4"
+      "languageVersion": "3.6"
     },
     {
       "name": "shared_preferences_foundation",
@@ -807,19 +777,19 @@
     },
     {
       "name": "sign_in_with_apple",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/sign_in_with_apple-6.1.2",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/sign_in_with_apple-7.0.1",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
     {
       "name": "sign_in_with_apple_platform_interface",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/sign_in_with_apple_platform_interface-1.1.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/sign_in_with_apple_platform_interface-2.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
     {
       "name": "sign_in_with_apple_web",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/sign_in_with_apple_web-2.1.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/sign_in_with_apple_web-3.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
@@ -827,19 +797,19 @@
       "name": "sky_engine",
       "rootUri": "file:///Users/g_black/flutter/bin/cache/pkg/sky_engine",
       "packageUri": "lib/",
-      "languageVersion": "3.2"
+      "languageVersion": "3.7"
     },
     {
       "name": "smooth_page_indicator",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/smooth_page_indicator-1.1.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/smooth_page_indicator-1.2.1",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
       "name": "source_span",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/source_span-1.10.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/source_span-1.10.1",
       "packageUri": "lib/",
-      "languageVersion": "2.18"
+      "languageVersion": "3.1"
     },
     {
       "name": "sprintf",
@@ -849,49 +819,67 @@
     },
     {
       "name": "sqflite",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/sqflite-2.3.3+1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/sqflite-2.4.2",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.7"
+    },
+    {
+      "name": "sqflite_android",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/sqflite_android-2.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
     },
     {
       "name": "sqflite_common",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/sqflite_common-2.5.4+3",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/sqflite_common-2.5.5",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
+      "name": "sqflite_darwin",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
+      "name": "sqflite_platform_interface",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/sqflite_platform_interface-2.4.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "stack_trace",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/stack_trace-1.11.1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/stack_trace-1.12.1",
       "packageUri": "lib/",
-      "languageVersion": "2.18"
+      "languageVersion": "3.4"
     },
     {
       "name": "stop_watch_timer",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/stop_watch_timer-3.0.2",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/stop_watch_timer-3.2.2",
       "packageUri": "lib/",
       "languageVersion": "2.17"
     },
     {
       "name": "stream_channel",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/stream_channel-2.1.2",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/stream_channel-2.1.4",
       "packageUri": "lib/",
-      "languageVersion": "2.19"
+      "languageVersion": "3.3"
     },
     {
       "name": "stream_transform",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/stream_transform-2.1.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/stream_transform-2.1.1",
       "packageUri": "lib/",
-      "languageVersion": "2.14"
+      "languageVersion": "3.1"
     },
     {
       "name": "string_scanner",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/string_scanner-1.2.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/string_scanner-1.4.1",
       "packageUri": "lib/",
-      "languageVersion": "2.18"
+      "languageVersion": "3.1"
     },
     {
       "name": "styled_divider",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/styled_divider-1.0.4",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/styled_divider-1.0.5",
       "packageUri": "lib/",
       "languageVersion": "2.17"
     },
@@ -903,19 +891,19 @@
     },
     {
       "name": "term_glyph",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/term_glyph-1.2.1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/term_glyph-1.2.2",
       "packageUri": "lib/",
-      "languageVersion": "2.12"
+      "languageVersion": "3.1"
     },
     {
       "name": "test_api",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/test_api-0.7.2",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/test_api-0.7.4",
       "packageUri": "lib/",
-      "languageVersion": "3.2"
+      "languageVersion": "3.5"
     },
     {
       "name": "timeago",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/timeago-3.6.1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/timeago-3.7.1",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
@@ -939,31 +927,31 @@
     },
     {
       "name": "url_launcher",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/url_launcher-6.3.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/url_launcher-6.3.1",
       "packageUri": "lib/",
-      "languageVersion": "3.2"
+      "languageVersion": "3.3"
     },
     {
       "name": "url_launcher_android",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/url_launcher_android-6.3.10",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/url_launcher_android-6.3.16",
       "packageUri": "lib/",
-      "languageVersion": "3.5"
+      "languageVersion": "3.6"
     },
     {
       "name": "url_launcher_ios",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/url_launcher_ios-6.3.1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/url_launcher_ios-6.3.3",
       "packageUri": "lib/",
-      "languageVersion": "3.2"
+      "languageVersion": "3.4"
     },
     {
       "name": "url_launcher_linux",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/url_launcher_linux-3.2.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/url_launcher_linux-3.2.1",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
     {
       "name": "url_launcher_macos",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.2",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
@@ -975,15 +963,15 @@
     },
     {
       "name": "url_launcher_web",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/url_launcher_web-2.3.3",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/url_launcher_web-2.4.1",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.6"
     },
     {
       "name": "url_launcher_windows",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.2",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.4",
       "packageUri": "lib/",
-      "languageVersion": "3.2"
+      "languageVersion": "3.4"
     },
     {
       "name": "uuid",
@@ -998,62 +986,50 @@
       "languageVersion": "2.14"
     },
     {
-      "name": "vibration",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/vibration-2.1.0",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
-    },
-    {
-      "name": "vibration_platform_interface",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/vibration_platform_interface-0.0.3",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
-    },
-    {
       "name": "video_player",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/video_player-2.9.2",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/video_player-2.10.0",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.6"
     },
     {
       "name": "video_player_android",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/video_player_android-2.7.13",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/video_player_android-2.8.7",
       "packageUri": "lib/",
-      "languageVersion": "3.5"
+      "languageVersion": "3.7"
     },
     {
       "name": "video_player_avfoundation",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/video_player_avfoundation-2.6.2",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/video_player_avfoundation-2.7.2",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.6"
     },
     {
       "name": "video_player_platform_interface",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/video_player_platform_interface-6.2.3",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/video_player_platform_interface-6.4.0",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.6"
     },
     {
       "name": "video_player_web",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/video_player_web-2.3.2",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/video_player_web-2.3.5",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.4"
     },
     {
       "name": "vm_service",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/vm_service-14.2.5",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/vm_service-15.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
     {
       "name": "wakelock_plus",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/wakelock_plus-1.2.8",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/wakelock_plus-1.3.2",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.4"
     },
     {
       "name": "wakelock_plus_platform_interface",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/wakelock_plus_platform_interface-1.2.1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/wakelock_plus_platform_interface-1.2.3",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
@@ -1065,43 +1041,37 @@
     },
     {
       "name": "webview_flutter",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/webview_flutter-4.9.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/webview_flutter-4.13.0",
       "packageUri": "lib/",
-      "languageVersion": "3.5"
+      "languageVersion": "3.6"
     },
     {
       "name": "webview_flutter_android",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/webview_flutter_android-3.16.7",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/webview_flutter_android-4.7.0",
       "packageUri": "lib/",
-      "languageVersion": "3.4"
+      "languageVersion": "3.6"
     },
     {
       "name": "webview_flutter_platform_interface",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/webview_flutter_platform_interface-2.10.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/webview_flutter_platform_interface-2.13.1",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.6"
     },
     {
       "name": "webview_flutter_wkwebview",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/webview_flutter_wkwebview-3.15.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/webview_flutter_wkwebview-3.22.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "webviewx_plus",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/webviewx_plus-0.5.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/webviewx_plus-0.5.1",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
     {
       "name": "win32",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/win32-5.5.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
-      "name": "win32_registry",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/win32_registry-1.1.5",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
@@ -1136,10 +1106,9 @@
       "languageVersion": "3.0"
     }
   ],
-  "generated": "2025-07-04T01:54:08.886238Z",
   "generator": "pub",
-  "generatorVersion": "3.5.4",
+  "generatorVersion": "3.8.1",
   "flutterRoot": "file:///Users/g_black/flutter",
-  "flutterVersion": "3.24.4",
+  "flutterVersion": "3.32.5",
   "pubCache": "file:///Users/g_black/.pub-cache"
 }

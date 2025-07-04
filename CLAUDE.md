@@ -157,6 +157,50 @@ algolia: ^1.1.1
 - **Web API Key**: Configured for web deployment
 - **Platform Support**: iOS, Android, Web with proper configuration files
 
+### 플랫폼별 배포 설정 권장사항
+
+#### iOS 설정 추천:
+```yaml
+최소 지원: iOS 13.0
+타겟: iOS 17.0
+```
+
+**이유:**
+- iOS 13.0은 2025년 4월부터 필수
+- 대부분의 중요 기능 사용 가능 (다크모드, SF Symbols 등)
+- 약 98% 이상의 활성 기기 지원
+- iPhone 6s 이상 모든 기기 지원
+
+#### Android 설정 추천:
+```yaml
+minSdkVersion: 24 (Android 7.0)
+targetSdkVersion: 34 (Android 14)
+```
+
+**이유:**
+- API 24는 약 95% 기기 커버
+- 대부분의 현대적 기능 사용 가능
+- 2017년 이후 기기는 거의 모두 지원
+- 너무 오래된 기기 제외로 성능 최적화 가능
+
+#### 이미지/비디오 편집 앱 특성상:
+1. **메모리 관리 중요**
+   - 최소 2GB RAM 기기 타겟
+   - 이미지 리사이징, 압축 필수
+
+2. **성능 최적화**
+   - 저사양 기기에서 테스트 필수
+   - 프로그레시브 로딩 구현
+
+3. **기능 제한**
+   - 구형 기기: 기본 편집만
+   - 신형 기기: 고급 필터, 효과
+
+이 설정으로:
+- **시장 점유율 95% 이상 커버**
+- **개발/유지보수 효율적**
+- **적절한 성능 보장**
+
 ### Custom Code
 
 **Custom Actions:**

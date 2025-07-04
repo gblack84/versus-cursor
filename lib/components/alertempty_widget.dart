@@ -3,8 +3,8 @@ import '/core/app_icon_button.dart';
 import '/core/app_theme.dart';
 import '/core/app_utils.dart';
 import '/core/app_widgets.dart';
-import '/posts/in_put_text/in_put_text_widget.dart';
-import '/index.dart';
+// import '/posts/in_put_text/in_put_text_widget.dart'; // 삭제된 파일
+// import '/index.dart'; // 사용하지 않는 import 제거
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -175,7 +175,12 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
                           return WebViewAware(
                             child: Padding(
                               padding: MediaQuery.viewInsetsOf(context),
-                              child: InPutTextWidget(),
+                              // InPutTextWidget 임시 비활성화
+                              child: Container(
+                                child: Center(
+                                  child: Text('텍스트 입력 기능이 삭제되었습니다.'),
+                                ),
+                              ),
                             ),
                           );
                         },
@@ -189,14 +194,9 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
                     onPressed: () async {
                       Navigator.pop(context);
 
-                      context.pushNamed(
-                        HomeAndPostsCopyWidget.routeName,
-                        extra: <String, dynamic>{
-                          kTransitionInfoKey: TransitionInfo(
-                            hasTransition: true,
-                            transitionType: PageTransitionType.bottomToTop,
-                          ),
-                        },
+                      // HomeAndPostsCopyWidget 임시 비활성화
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('페이지가 삭제되었습니다.')),
                       );
                     },
                     text: AppLocalizations.of(context).getText(

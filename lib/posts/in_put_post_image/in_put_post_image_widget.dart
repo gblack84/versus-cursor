@@ -1,4 +1,4 @@
-import '/components/upload_choice_bottom_sheet_widget.dart';
+// upload_choice_bottom_sheet_widget.dart 임시 제거 - 새로운 업로드 위젯 구현 필요
 import '/core/app_theme.dart';
 import '/core/app_toggle_icon.dart';
 import '/core/app_utils.dart';
@@ -174,22 +174,8 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
           appState.isVerticalLayout = _model.isRatioVertical;
         });
         
-        // 미디어 선택 바텀시트 표시
-        await showModalBottomSheet(
-          isScrollControlled: true,
-          backgroundColor: Colors.black.withOpacity(0.5),
-          enableDrag: false,
-          context: context,
-          builder: (context) {
-            return GestureDetector(
-              onTap: () => FocusScope.of(context).unfocus(),
-              child: Padding(
-                padding: MediaQuery.viewInsetsOf(context),
-                child: UploadChoiceBottomSheetWidget(),
-              ),
-            );
-          },
-        ).then((value) => setState(() {}));
+        // 미디어 선택 기능 임시 비활성화
+        _showSnackBar('미디어 업로드 기능을 새로 구현해야 합니다.');
       }
 
     } catch (e) {

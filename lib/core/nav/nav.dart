@@ -168,31 +168,6 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, params) => BlankpppWidget(),
         ),
         AppRoute(
-          name: HomeAndPostsWidget.routeName,
-          path: HomeAndPostsWidget.routePath,
-          builder: (context, params) => HomeAndPostsWidget(),
-        ),
-        AppRoute(
-          name: HomeAndPostsCopyWidget.routeName,
-          path: HomeAndPostsCopyWidget.routePath,
-          builder: (context, params) => HomeAndPostsCopyWidget(),
-        ),
-        AppRoute(
-          name: EditvideoPWidget.routeName,
-          path: EditvideoPWidget.routePath,
-          builder: (context, params) => EditvideoPWidget(),
-        ),
-        AppRoute(
-          name: EditvideoppWidget.routeName,
-          path: EditvideoppWidget.routePath,
-          builder: (context, params) => EditvideoppWidget(),
-        ),
-        AppRoute(
-          name: ImageEditorPageWidget.routeName,
-          path: ImageEditorPageWidget.routePath,
-          builder: (context, params) => ImageEditorPageWidget(),
-        ),
-        AppRoute(
           name: InPutPostImageWidget.routeName,
           path: InPutPostImageWidget.routePath,
           builder: (context, params) => InPutPostImageWidget(),

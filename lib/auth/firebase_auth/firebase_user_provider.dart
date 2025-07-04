@@ -58,14 +58,21 @@ class VersusSpaceFirebaseUser extends BaseAuthUser {
       VersusSpaceFirebaseUser(user);
 }
 
-Stream<BaseAuthUser> versusSpaceFirebaseUserStream() => FirebaseAuth.instance
+Stream<BaseAuthUser> versusSpaceFirebaseUserStream() {
+  return FirebaseAuth.instance
         .authStateChanges()
-        .debounce((user) => user == null && !loggedIn
-            ? TimerStream(true, const Duration(seconds: 1))
-            : Stream.value(user))
+        .debounce((user) {
+          final shouldDebounce = user == null && !loggedIn;
+          return shouldDebounce
+              ? TimerStream(true, const Duration(seconds: 1))
+              : Stream.value(user);
+        })
         .map<BaseAuthUser>(
       (user) {
         currentUser = VersusSpaceFirebaseUser(user);
         return currentUser!;
       },
-    );
+    ).handleError((error) {
+      return VersusSpaceFirebaseUser(null);
+    });
+}

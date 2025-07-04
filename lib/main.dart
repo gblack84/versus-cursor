@@ -76,21 +76,15 @@ class _MyAppState extends State<MyApp> {
 
     _appStateNotifier = AppStateNotifier.instance;
     _router = createRouter(_appStateNotifier);
+    
     userStream = versusSpaceFirebaseUserStream()
-      ..listen((user) {
-        _appStateNotifier.update(user);
-      });
+      ..listen((user) => _appStateNotifier.update(user));
     jwtTokenStream.listen((_) {});
-    Future.delayed(
-      Duration(milliseconds: 1000),
-      () => _appStateNotifier.stopShowingSplashImage(),
-    );
   }
 
   @override
   void dispose() {
     authUserSub.cancel();
-
     super.dispose();
   }
 

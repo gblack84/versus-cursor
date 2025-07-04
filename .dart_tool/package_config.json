@@ -459,9 +459,9 @@
     },
     {
       "name": "http",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/http-1.2.2",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/http-1.4.0",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.4"
     },
     {
       "name": "http_parser",
@@ -1136,7 +1136,7 @@
       "languageVersion": "3.0"
     }
   ],
-  "generated": "2025-07-03T07:16:55.050250Z",
+  "generated": "2025-07-04T01:54:08.886238Z",
   "generator": "pub",
   "generatorVersion": "3.5.4",
   "flutterRoot": "file:///Users/g_black/flutter",

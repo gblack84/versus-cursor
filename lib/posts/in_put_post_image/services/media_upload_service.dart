@@ -9,7 +9,8 @@ class MediaUploadService {
   static const int jpegQuality = 85;
 
   /// 이미지를 3가지 크기로 업로드 (original, display, thumbnail)
-  static Future<Map<String, String>> uploadImageWithVariants({
+  /// 반환값: URLs와 aspect ratio 정보를 포함한 Map
+  static Future<Map<String, dynamic>> uploadImageWithVariants({
     required Uint8List imageBytes,
     required String box,
     String? customPath,
@@ -28,6 +29,9 @@ class MediaUploadService {
       if (originalImage == null) {
         throw Exception('이미지를 디코딩할 수 없습니다.');
       }
+
+      // 이미지 비율 계산
+      final aspectRatio = originalImage.width / originalImage.height;
 
       // 업로드 태스크들을 병렬로 실행
       final futures = <String, Future<String>>{};
@@ -95,9 +99,14 @@ class MediaUploadService {
       ]);
 
       return {
-        'original': results[0],
-        'display': results[1],
-        'thumbnail': results[2],
+        'urls': {
+          'original': results[0],
+          'display': results[1],
+          'thumbnail': results[2],
+        },
+        'aspectRatio': aspectRatio,
+        'width': originalImage.width,
+        'height': originalImage.height,
       };
     } catch (e) {
       print('이미지 업로드 중 오류 발생: $e');
@@ -160,13 +169,13 @@ class MediaUploadService {
     required String box,
     String? customPath,
   }) async {
-    final urls = await uploadImageWithVariants(
+    final result = await uploadImageWithVariants(
       imageBytes: imageBytes,
       box: box,
       customPath: customPath,
     );
     
-    // display URL을 기본으로 반환
-    return urls['display']!;
+    // display URL을 기본으로 반환 (기존 호환성 유지)
+    return result['urls']['display'];
   }
 }

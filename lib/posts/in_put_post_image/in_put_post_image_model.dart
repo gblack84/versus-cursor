@@ -10,8 +10,8 @@ class InPutPostImageModel extends AppModel<InPutPostImageWidget> {
   bool absellected = false;
 
   // 기존 토글 상태 (점진적 마이그레이션을 위해 유지)
-  bool isRatioVertical = true;
-  bool isRatioHorizontal = false;
+  bool isRatioVertical = false;  // 기본값을 가로 배치로 변경
+  bool isRatioHorizontal = true;
 
   // 스마트 레이아웃 시스템 - 토글 대신 자동 결정
   LayoutType currentLayout = LayoutType.horizontal;

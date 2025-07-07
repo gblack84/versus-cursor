@@ -353,4 +353,75 @@ class AppState extends ChangeNotifier {
   set isVerticalLayout(bool value) {
     _isVerticalLayout = value;
   }
+
+  // 이미지 비율 저장 (스마트 레이아웃 시스템용)
+  List<double> _uploadImageAspectRatioA = [];
+  List<double> get uploadImageAspectRatioA => _uploadImageAspectRatioA;
+  set uploadImageAspectRatioA(List<double> value) {
+    _uploadImageAspectRatioA = value;
+  }
+
+  void addToUploadImageAspectRatioA(double value) {
+    _uploadImageAspectRatioA.add(value);
+    notifyListeners();
+  }
+
+  void removeAtIndexFromUploadImageAspectRatioA(int index) {
+    if (index >= 0 && index < _uploadImageAspectRatioA.length) {
+      _uploadImageAspectRatioA.removeAt(index);
+      notifyListeners();
+    }
+  }
+
+  void reorderUploadImageAspectRatioA(int oldIndex, int newIndex) {
+    if (oldIndex >= 0 && oldIndex < _uploadImageAspectRatioA.length && 
+        newIndex >= 0 && newIndex < _uploadImageAspectRatioA.length) {
+      final item = _uploadImageAspectRatioA.removeAt(oldIndex);
+      _uploadImageAspectRatioA.insert(newIndex, item);
+      notifyListeners();
+    }
+  }
+
+  void moveToFrontUploadImageAspectRatioA(int index) {
+    if (index > 0 && index < _uploadImageAspectRatioA.length) {
+      final item = _uploadImageAspectRatioA.removeAt(index);
+      _uploadImageAspectRatioA.insert(0, item);
+      notifyListeners();
+    }
+  }
+
+  List<double> _uploadImageAspectRatioB = [];
+  List<double> get uploadImageAspectRatioB => _uploadImageAspectRatioB;
+  set uploadImageAspectRatioB(List<double> value) {
+    _uploadImageAspectRatioB = value;
+  }
+
+  void addToUploadImageAspectRatioB(double value) {
+    _uploadImageAspectRatioB.add(value);
+    notifyListeners();
+  }
+
+  void removeAtIndexFromUploadImageAspectRatioB(int index) {
+    if (index >= 0 && index < _uploadImageAspectRatioB.length) {
+      _uploadImageAspectRatioB.removeAt(index);
+      notifyListeners();
+    }
+  }
+
+  void reorderUploadImageAspectRatioB(int oldIndex, int newIndex) {
+    if (oldIndex >= 0 && oldIndex < _uploadImageAspectRatioB.length && 
+        newIndex >= 0 && newIndex < _uploadImageAspectRatioB.length) {
+      final item = _uploadImageAspectRatioB.removeAt(oldIndex);
+      _uploadImageAspectRatioB.insert(newIndex, item);
+      notifyListeners();
+    }
+  }
+
+  void moveToFrontUploadImageAspectRatioB(int index) {
+    if (index > 0 && index < _uploadImageAspectRatioB.length) {
+      final item = _uploadImageAspectRatioB.removeAt(index);
+      _uploadImageAspectRatioB.insert(0, item);
+      notifyListeners();
+    }
+  }
 }

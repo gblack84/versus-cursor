@@ -1,6 +1,5 @@
 // upload_choice_bottom_sheet_widget.dart 임시 제거 - 새로운 업로드 위젯 구현 필요
 import '/core/app_theme.dart';
-import '/core/app_toggle_icon.dart';
 import '/core/app_utils.dart';
 import '/utils/content_filter.dart';
 import '/widgets/highlighted_text_field.dart';
@@ -13,6 +12,7 @@ import '/backend/backend.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import 'in_put_post_image_model.dart';
 export 'in_put_post_image_model.dart';
+import 'helpers/aspect_ratio_analyzer.dart';
 import 'components/media_selection_box_multi.dart';
 import 'components/character_count_display.dart';
 import 'components/next_button.dart';
@@ -47,6 +47,15 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
     _model.scrollController ??= ScrollController();
     _model.scrollController!.addListener(_scrollListener);
+    
+    // 초기 레이아웃 설정 - 비율 정보가 있을 때만
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final appState = Provider.of<AppState>(context, listen: false);
+      if (appState.uploadImageAspectRatioA.isNotEmpty || 
+          appState.uploadImageAspectRatioB.isNotEmpty) {
+        _updateLayoutBasedOnImages();
+      }
+    });
 
     _model.textController1 ??= TextEditingController();
     _model.textFieldFocusNode1 ??= FocusNode();
@@ -92,6 +101,53 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         });
       }
     }
+  }
+
+  /// 이미지 비율에 따라 레이아웃 자동 결정
+  void _updateLayoutBasedOnImages() {
+    final appState = Provider.of<AppState>(context, listen: false);
+    
+    print('=== 스마트 레이아웃 업데이트 시작 ===');
+    print('A 이미지 개수: ${appState.uploadImageA.length}');
+    print('B 이미지 개수: ${appState.uploadImageB.length}');
+    print('A 비율 정보 개수: ${appState.uploadImageAspectRatioA.length}');
+    print('B 비율 정보 개수: ${appState.uploadImageAspectRatioB.length}');
+    
+    // A박스와 B박스의 첫 번째 이미지 비율 가져오기
+    double? ratioA;
+    double? ratioB;
+    
+    if (appState.uploadImageAspectRatioA.isNotEmpty) {
+      ratioA = appState.uploadImageAspectRatioA.first;
+      print('A 이미지 비율: $ratioA');
+    }
+    
+    if (appState.uploadImageAspectRatioB.isNotEmpty) {
+      ratioB = appState.uploadImageAspectRatioB.first;
+      print('B 이미지 비율: $ratioB');
+    }
+    
+    // 스마트 레이아웃 결정
+    final optimalLayout = AspectRatioAnalyzer.getOptimalLayout(ratioA, ratioB);
+    print('결정된 레이아웃: ${AspectRatioAnalyzer.getLayoutDescription(optimalLayout)}');
+    
+    // 레이아웃 업데이트
+    setState(() {
+      _model.currentLayout = optimalLayout;
+      
+      // 기존 토글 상태도 함께 업데이트 (호환성)
+      if (optimalLayout == LayoutType.vertical) {
+        _model.isRatioVertical = true;
+        _model.isRatioHorizontal = false;
+        print('세로 배치로 변경');
+      } else {
+        _model.isRatioVertical = false;
+        _model.isRatioHorizontal = true;
+        print('가로 배치로 변경');
+      }
+    });
+    
+    print('=== 스마트 레이아웃 업데이트 완료 ===');
   }
 
   /// 필수 필드가 모두 채워졌는지 확인
@@ -211,6 +267,8 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           // setState 호출하여 UI 업데이트
           if (mounted) {
             setState(() {});
+            // 스마트 레이아웃 업데이트
+            _updateLayoutBasedOnImages();
           }
         },
         onMultiComplete: (imageUrls) {
@@ -231,6 +289,8 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           // setState 호출하여 UI 업데이트
           if (mounted) {
             setState(() {});
+            // 스마트 레이아웃 업데이트
+            _updateLayoutBasedOnImages();
           }
           
           // 성공 메시지
@@ -600,65 +660,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                               hasBlockedWord: _model.hasBlockedWordInTitle,
                               validationResult: _model.validationResults['questionTitle'],
                             ),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: AppTheme.of(context)
-                                    .secondaryBackground,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.max,
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  ToggleIcon(
-                                    onPressed: () async {
-                                      setState(() =>
-                                          _model.isRatioVertical =
-                                              !_model.isRatioVertical);
-                                      _model.isRatioVertical = true;
-                                      _model.isRatioHorizontal = false;
-                                      setState(() {});
-                                    },
-                                    value: _model.isRatioVertical,
-                                    onIcon: Icon(
-                                      Icons.panorama_vertical_select,
-                                      color:
-                                          AppTheme.of(context).primary,
-                                      size: 35.0,
-                                    ),
-                                    offIcon: Icon(
-                                      Icons.panorama_vertical,
-                                      color: AppTheme.of(context)
-                                          .secondaryText,
-                                      size: 35.0,
-                                    ),
-                                  ),
-                                  ToggleIcon(
-                                    onPressed: () async {
-                                      setState(() =>
-                                          _model.isRatioHorizontal =
-                                              !_model.isRatioHorizontal);
-                                      _model.isRatioHorizontal = true;
-                                      _model.isRatioVertical = false;
-                                      setState(() {});
-                                    },
-                                    value: _model.isRatioHorizontal,
-                                    onIcon: Icon(
-                                      Icons.panorama_horizontal_select,
-                                      color:
-                                          AppTheme.of(context).primary,
-                                      size: 35.0,
-                                    ),
-                                    offIcon: Icon(
-                                      Icons.panorama_horizontal,
-                                      color: AppTheme.of(context)
-                                          .secondaryText,
-                                      size: 35.0,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            // 토글 버튼 제거 - 스마트 레이아웃 시스템이 자동으로 결정
                             if (_model.isRatioVertical)
                               Padding(
                                 padding: EdgeInsetsDirectional.fromSTEB(
@@ -703,8 +705,14 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                                               // X 아이콘 클릭 시 현재 표시된 이미지 삭제
                                               if (appState.uploadImageA.isNotEmpty && index < appState.uploadImageA.length) {
                                                 appState.removeAtIndexFromUploadImageA(index);
+                                                // 비율 정보도 같이 제거
+                                                if (index < appState.uploadImageAspectRatioA.length) {
+                                                  appState.removeAtIndexFromUploadImageAspectRatioA(index);
+                                                }
                                               }
                                               setState(() {});
+                                              // 스마트 레이아웃 업데이트
+                                              _updateLayoutBasedOnImages();
                                             },
                                             onPlusIconTap: () {
                                               // +B 아이콘 클릭 시 B박스 표시
@@ -802,8 +810,14 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                                                 // AppState에서 현재 표시된 이미지 제거
                                                 if (appState.uploadImageB.isNotEmpty && index < appState.uploadImageB.length) {
                                                   appState.removeAtIndexFromUploadImageB(index);
+                                                  // 비율 정보도 같이 제거
+                                                  if (index < appState.uploadImageAspectRatioB.length) {
+                                                    appState.removeAtIndexFromUploadImageAspectRatioB(index);
+                                                  }
                                                 }
                                                 setState(() {});
+                                                // 스마트 레이아웃 업데이트  
+                                                _updateLayoutBasedOnImages();
                                               },
                                               onEditTap: () async {
                                                 // 현재 이미지를 편집
@@ -907,8 +921,14 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                                               // X 아이콘 클릭 시 현재 표시된 이미지 삭제
                                               if (appState.uploadImageA.isNotEmpty && index < appState.uploadImageA.length) {
                                                 appState.removeAtIndexFromUploadImageA(index);
+                                                // 비율 정보도 같이 제거
+                                                if (index < appState.uploadImageAspectRatioA.length) {
+                                                  appState.removeAtIndexFromUploadImageAspectRatioA(index);
+                                                }
                                               }
                                               setState(() {});
+                                              // 스마트 레이아웃 업데이트
+                                              _updateLayoutBasedOnImages();
                                             },
                                             onPlusIconTap: () {
                                               // + 아이콘 클릭 시 B박스 표시
@@ -1006,8 +1026,14 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                                                 // AppState에서 현재 표시된 이미지 제거
                                                 if (appState.uploadImageB.isNotEmpty && index < appState.uploadImageB.length) {
                                                   appState.removeAtIndexFromUploadImageB(index);
+                                                  // 비율 정보도 같이 제거
+                                                  if (index < appState.uploadImageAspectRatioB.length) {
+                                                    appState.removeAtIndexFromUploadImageAspectRatioB(index);
+                                                  }
                                                 }
                                                 setState(() {});
+                                                // 스마트 레이아웃 업데이트  
+                                                _updateLayoutBasedOnImages();
                                               },
                                               onEditTap: () async {
                                                 // 현재 이미지를 편집

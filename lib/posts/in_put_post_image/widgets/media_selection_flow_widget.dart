@@ -6,6 +6,7 @@ import 'package:wechat_camera_picker/wechat_camera_picker.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 import 'package:provider/provider.dart';
 import '/core/app_theme.dart';
+import '/app_state.dart';
 import '../delegates/korean_asset_picker_delegate.dart';
 import '../delegates/korean_camera_picker_delegate.dart';
 import '../services/image_download_service.dart';
@@ -197,7 +198,8 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   }
 
   /// Firebase Storage에 이미지 업로드 (리사이징 포함)
-  Future<String> _uploadToFirebase(Uint8List bytes) async {
+  /// 반환값: {url: String, aspectRatio: double}
+  Future<Map<String, dynamic>> _uploadToFirebase(Uint8List bytes) async {
     try {
       setState(() {
         _isUploading = true;
@@ -205,7 +207,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       });
 
       // MediaUploadService를 사용하여 리사이징 및 업로드
-      final urls = await MediaUploadService.uploadImageWithVariants(
+      final result = await MediaUploadService.uploadImageWithVariants(
         imageBytes: bytes,
         box: widget.box,
       );
@@ -216,8 +218,11 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         });
       }
 
-      // display URL을 기본으로 반환 (UI 표시용)
-      return urls['display']!;
+      // URL과 비율 정보 반환
+      return {
+        'url': result['urls']['display'],
+        'aspectRatio': result['aspectRatio'],
+      };
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -363,16 +368,23 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                 print('onImageEditingComplete 호출됨');
                 try {
                   // Firebase Storage에 업로드
-                  final url = await _uploadToFirebase(bytes);
-                  print('Firebase 업로드 완료: $url');
+                  final result = await _uploadToFirebase(bytes);
+                  final url = result['url'] as String;
+                  final aspectRatio = result['aspectRatio'] as double;
+                  print('Firebase 업로드 완료: $url, 비율: $aspectRatio');
+                  
+                  // AppState 접근
+                  final appState = Provider.of<AppState>(context, listen: false);
                   
                   // 멀티 이미지 처리
                   if (_allSelectedFiles.isNotEmpty) {
                     // 선택된 이미지를 맨 앞으로 재배열하기 위한 리스트
                     final reorderedUrls = <String>[];
+                    final reorderedRatios = <double>[];
                     
                     // 1. 편집된 이미지(대표 이미지)를 맨 앞에 추가
                     reorderedUrls.add(url);
+                    reorderedRatios.add(aspectRatio);
                     print('대표 이미지 추가 (원래 인덱스: $_currentEditIndex)');
                     
                     // 2. 나머지 이미지들을 원래 순서대로 업로드 및 추가
@@ -380,10 +392,18 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                       if (i != _currentEditIndex) {
                         final file = _allSelectedFiles[i];
                         final fileBytes = await file.readAsBytes();
-                        final additionalUrl = await _uploadToFirebase(fileBytes);
-                        reorderedUrls.add(additionalUrl);
+                        final additionalResult = await _uploadToFirebase(fileBytes);
+                        reorderedUrls.add(additionalResult['url'] as String);
+                        reorderedRatios.add(additionalResult['aspectRatio'] as double);
                         print('추가 이미지 업로드 (인덱스: $i)');
                       }
+                    }
+                    
+                    // AppState에 비율 정보 저장
+                    if (widget.box == 'A') {
+                      appState.uploadImageAspectRatioA = reorderedRatios;
+                    } else {
+                      appState.uploadImageAspectRatioB = reorderedRatios;
                     }
                     
                     // 모든 URL을 AppState에 추가
@@ -398,6 +418,13 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                     }
                   } else {
                     // 단일 이미지 처리
+                    // AppState에 비율 정보 저장
+                    if (widget.box == 'A') {
+                      appState.addToUploadImageAspectRatioA(aspectRatio);
+                    } else {
+                      appState.addToUploadImageAspectRatioB(aspectRatio);
+                    }
+                    
                     print('onComplete 콜백 호출 직전');
                     widget.onComplete(url);
                     print('onComplete 콜백 호출 완료');

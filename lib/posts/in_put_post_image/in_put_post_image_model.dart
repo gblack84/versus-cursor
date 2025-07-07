@@ -2,15 +2,19 @@ import '/core/app_utils.dart';
 import '/services/perspective_api_service.dart';
 import 'in_put_post_image_widget.dart' show InPutPostImageWidget;
 import 'package:flutter/material.dart';
+import 'helpers/aspect_ratio_analyzer.dart';
 
 class InPutPostImageModel extends AppModel<InPutPostImageWidget> {
   ///  Local state fields for this page.
 
   bool absellected = false;
 
+  // 기존 토글 상태 (점진적 마이그레이션을 위해 유지)
   bool isRatioVertical = true;
-
   bool isRatioHorizontal = false;
+
+  // 스마트 레이아웃 시스템 - 토글 대신 자동 결정
+  LayoutType currentLayout = LayoutType.horizontal;
 
   bool showNextButton = false;
   

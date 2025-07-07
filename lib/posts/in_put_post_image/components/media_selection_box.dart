@@ -18,6 +18,8 @@ class MediaSelectionBox extends StatelessWidget {
   final Animation<double>? shakeAnimation; // 흔들림 애니메이션
   final VoidCallback? onEditTap; // 편집 버튼 탭 콜백
   final VoidCallback? onAddImageTap; // 이미지 추가 버튼 탭 콜백
+  final double? dynamicHeight; // 동적 높이 (null이면 기본값 사용)
+  final double? dynamicWidth; // 동적 너비 (null이면 기본값 사용)
 
   const MediaSelectionBox({
     Key? key,
@@ -34,13 +36,16 @@ class MediaSelectionBox extends StatelessWidget {
     this.shakeAnimation,
     this.onEditTap,
     this.onAddImageTap,
+    this.dynamicHeight,
+    this.dynamicWidth,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final double boxHeight = isSelected 
+    // 동적 높이가 제공되면 사용, 없으면 기본값 사용
+    final double boxHeight = dynamicHeight ?? (isSelected 
         ? (isHorizontal ? 350.0 : 250.0)
-        : (isHorizontal ? 200.0 : 150.0);
+        : (isHorizontal ? 200.0 : 150.0));
     
     final double iconSize = isSelected
         ? (isHorizontal ? 300.0 : 250.0)  // 세로 레이아웃에서 선택된 경우 적절한 크기
@@ -55,7 +60,7 @@ class MediaSelectionBox extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          width: isHorizontal ? double.infinity : null,
+          width: dynamicWidth ?? (isHorizontal ? double.infinity : null),
           height: boxHeight,
           decoration: BoxDecoration(
             color: boxColor,

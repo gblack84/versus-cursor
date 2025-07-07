@@ -210,6 +210,16 @@ class UsersRecord extends FirestoreRecord {
   String get language => _language ?? '';
   bool hasLanguage() => _language != null;
 
+  // "stats" field.
+  Map<String, dynamic>? _stats;
+  Map<String, dynamic> get stats => _stats ?? const {};
+  bool hasStats() => _stats != null;
+
+  // "subscription" field.
+  Map<String, dynamic>? _subscription;
+  Map<String, dynamic> get subscription => _subscription ?? const {};
+  bool hasSubscription() => _subscription != null;
+
   void _initializeFields() {
     _uid = snapshotData['uid'] as String?;
     _email = snapshotData['email'] as String?;
@@ -255,6 +265,8 @@ class UsersRecord extends FirestoreRecord {
     _gender = snapshotData['gender'] as String?;
     _dateOfBirth = snapshotData['date_of_birth'] as DateTime?;
     _language = snapshotData['Language'] as String?;
+    _stats = snapshotData['stats'] as Map<String, dynamic>?;
+    _subscription = snapshotData['subscription'] as Map<String, dynamic>?;
   }
 
   static CollectionReference get collection =>
@@ -322,6 +334,8 @@ Map<String, dynamic> createUsersRecordData({
   String? gender,
   DateTime? dateOfBirth,
   String? language,
+  Map<String, dynamic>? stats,
+  Map<String, dynamic>? subscription,
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
@@ -356,6 +370,8 @@ Map<String, dynamic> createUsersRecordData({
       'gender': gender,
       'date_of_birth': dateOfBirth,
       'Language': language,
+      'stats': stats,
+      'subscription': subscription,
     }.withoutNulls,
   );
 
@@ -407,7 +423,9 @@ class UsersRecordDocumentEquality implements Equality<UsersRecord> {
         e1?.title == e2?.title &&
         e1?.gender == e2?.gender &&
         e1?.dateOfBirth == e2?.dateOfBirth &&
-        e1?.language == e2?.language;
+        e1?.language == e2?.language &&
+        e1?.stats == e2?.stats &&
+        e1?.subscription == e2?.subscription;
   }
 
   @override
@@ -449,7 +467,9 @@ class UsersRecordDocumentEquality implements Equality<UsersRecord> {
         e?.title,
         e?.gender,
         e?.dateOfBirth,
-        e?.language
+        e?.language,
+        e?.stats,
+        e?.subscription
       ]);
 
   @override

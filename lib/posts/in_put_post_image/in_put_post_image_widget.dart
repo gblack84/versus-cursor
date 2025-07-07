@@ -9,9 +9,11 @@ import 'package:easy_debounce/easy_debounce.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '/backend/backend.dart';
+import '/auth/firebase_auth/auth_util.dart';
 import 'in_put_post_image_model.dart';
 export 'in_put_post_image_model.dart';
-import 'components/media_selection_box.dart';
+import 'components/media_selection_box_multi.dart';
 import 'components/character_count_display.dart';
 import 'components/next_button.dart';
 import 'components/simple_validated_field.dart';
@@ -157,8 +159,8 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           appState.isVerticalLayout = _model.isRatioVertical;
         });
         
-        // 미디어 선택 기능 임시 비활성화
-        _showSnackBar('미디어 업로드 기능을 새로 구현해야 합니다.');
+        // Firestore에 저장
+        await _saveToFirestore();
       }
 
     } catch (e) {
@@ -210,12 +212,149 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           if (mounted) {
             setState(() {});
           }
+        },
+        onMultiComplete: (imageUrls) {
+          print('멀티 이미지 업로드 완료: ${imageUrls.length}개');
+          // 멀티 이미지 업로드 완료 시 AppState 업데이트
+          if (box == 'A') {
+            for (final url in imageUrls) {
+              appState.addToUploadImageA(url);
+            }
+            print('A박스에 ${imageUrls.length}개 이미지 추가됨');
+          } else {
+            for (final url in imageUrls) {
+              appState.addToUploadImageB(url);
+            }
+            print('B박스에 ${imageUrls.length}개 이미지 추가됨');
+          }
+          
+          // setState 호출하여 UI 업데이트
+          if (mounted) {
+            setState(() {});
+          }
           
           // 성공 메시지
           _showSnackBar('이미지가 성공적으로 저장되었습니다.');
         },
       ),
     );
+  }
+
+  Future<void> _saveToFirestore() async {
+    try {
+      final user = currentUser;
+      if (user == null) {
+        _showSnackBar('로그인이 필요합니다.');
+        return;
+      }
+
+      setState(() {
+        _model.isValidating = true;
+      });
+
+      final appState = context.read<AppState>();
+      
+      // 사용자 정보 가져오기
+      final userDoc = await UsersRecord.getDocumentOnce(
+        FirebaseFirestore.instance.collection('users').doc(user.uid)
+      );
+
+      // Posts 문서 생성
+      final postsRecordData = createPostsRecordData(
+        userid: user.uid,
+        uid: user.uid,
+        email: user.email,
+        displayName: userDoc.displayName,
+        photoUrl: userDoc.photoUrl,
+        content: appState.questionDescription,
+        questionTitle: appState.questionTitle,
+        createdAt: DateTime.now(),
+        createdTime: DateTime.now(),
+        category: '', // 카테고리 선택 기능 추가 시 업데이트
+        isAnonymous: false,
+        visibility: 1, // 1: public
+        commentcount: 0,
+        likecount: 0,
+        participantcount: 0,
+        creatorInfo: {
+          'uid': user.uid,
+          'displayName': userDoc.displayName,
+          'photoUrl': userDoc.photoUrl,
+        },
+        optionA: {
+          'title': appState.uploadTextA,
+          'mediaUrls': appState.uploadImageA,
+          'mediaType': 'image',
+        },
+        optionB: {
+          'title': appState.uploadTextB,
+          'mediaUrls': appState.uploadImageB,
+          'mediaType': 'image',
+        },
+        stats: {
+          'voteCountA': 0,
+          'voteCountB': 0,
+          'totalVotes': 0,
+        },
+        moderation: {
+          'status': 'approved',
+          'aiScore': 0,
+        },
+      );
+
+      // Firestore에 저장
+      final postRef = await PostsRecord.collection.add(postsRecordData);
+
+      // PollDetails 서브컬렉션 생성
+      final pollDetailsData = createPollDetailsRecordData(
+        option1: appState.uploadTextA,
+        option2: appState.uploadTextB,
+        option1MediaUrl: appState.uploadImageA.isNotEmpty ? appState.uploadImageA.first : null,
+        option2MediaUrl: appState.uploadImageB.isNotEmpty ? appState.uploadImageB.first : null,
+        option1MediaType: 'image',
+        option2MediaType: 'image',
+        resultTime: 7, // 7일 후 결과 공개
+      );
+
+      await PollDetailsRecord.createDoc(postRef).set(pollDetailsData);
+
+      // AppState 초기화
+      appState.update(() {
+        appState.uploadTextA = '';
+        appState.uploadTextB = '';
+        appState.uploadImageA = [];
+        appState.uploadImageB = [];
+        appState.questionTitle = '';
+        appState.questionDescription = '';
+      });
+
+      setState(() {
+        _model.isValidating = false;
+      });
+
+      // 성공 메시지 표시
+      _showSnackBar('게시물이 성공적으로 저장되었습니다!');
+      
+      // 텍스트 필드 초기화
+      _model.textController1?.clear();
+      _model.textController2?.clear();
+      _model.textController3?.clear();
+      _model.textController4?.clear();
+      
+      // 스크롤을 맨 위로
+      _model.scrollController?.animateTo(
+        0,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+
+    } catch (e) {
+      print('Firestore 저장 오류: $e');
+      _showSnackBar('저장 중 오류가 발생했습니다: ${e.toString()}');
+      setState(() {
+        _model.isValidating = false;
+      });
+    }
   }
 
   @override
@@ -538,11 +677,11 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                                         width: _model.absellected == true ? 380.0 : 190.0,
                                         height: _model.absellected == true ? 600.0 : 310.0,
                                         child: Consumer<AppState>(
-                                          builder: (context, appState, child) => MediaSelectionBox(
+                                          builder: (context, appState, child) => MediaSelectionBoxMulti(
                                             label: 'A',
                                             isSelected: _model.absellected,
                                             isVideoSelected: _model.isVideoSelectedA,
-                                            imageUrl: appState.uploadImageA.isNotEmpty ? appState.uploadImageA.last : null,
+                                            imageUrls: appState.uploadImageA,
                                             showPlusIcon: _model.absellected,
                                             onTap: () async {
                                               // 이미지가 없으면 갤러리 픽커, 있으면 이미지 뷰어
@@ -560,10 +699,10 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                                                 );
                                               }
                                             },
-                                            onCancel: () {
-                                              // X 아이콘 클릭 시 이미지 삭제
-                                              if (appState.uploadImageA.isNotEmpty) {
-                                                appState.removeFromUploadImageA(appState.uploadImageA.last);
+                                            onCancel: (index) {
+                                              // X 아이콘 클릭 시 현재 표시된 이미지 삭제
+                                              if (appState.uploadImageA.isNotEmpty && index < appState.uploadImageA.length) {
+                                                appState.removeAtIndexFromUploadImageA(index);
                                               }
                                               setState(() {});
                                             },
@@ -611,11 +750,11 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                                           width: 190.0,
                                           height: 310.0,
                                           child: Consumer<AppState>(
-                                            builder: (context, appState, child) => MediaSelectionBox(
+                                            builder: (context, appState, child) => MediaSelectionBoxMulti(
                                               label: 'B',
                                               isSelected: false, // B박스는 선택 불가
                                               isVideoSelected: _model.isVideoSelectedB,
-                                              imageUrl: appState.uploadImageB.isNotEmpty ? appState.uploadImageB.last : null,
+                                              imageUrls: appState.uploadImageB,
                                               shakeAnimation: _model.shakeAnimation,
                                               onTap: () async {
                                                 // A박스에 이미지가 없으면 경고
@@ -657,12 +796,12 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                                                   }
                                                 }
                                               },
-                                              onCancel: () {
+                                              onCancel: (index) {
                                                 // X 아이콘 클릭 시 B박스 숨김
                                                 _model.absellected = true;
-                                                // AppState에서 이미지 제거
-                                                if (appState.uploadImageB.isNotEmpty) {
-                                                  appState.removeFromUploadImageB(appState.uploadImageB.last);
+                                                // AppState에서 현재 표시된 이미지 제거
+                                                if (appState.uploadImageB.isNotEmpty && index < appState.uploadImageB.length) {
+                                                  appState.removeAtIndexFromUploadImageB(index);
                                                 }
                                                 setState(() {});
                                               },
@@ -742,11 +881,11 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                                         padding: EdgeInsetsDirectional.fromSTEB(
                                             2.5, 0.0, 2.5, 2.5),
                                         child: Consumer<AppState>(
-                                          builder: (context, appState, child) => MediaSelectionBox(
+                                          builder: (context, appState, child) => MediaSelectionBoxMulti(
                                             label: 'A',
                                             isSelected: _model.absellected,
                                             isVideoSelected: _model.isVideoSelectedA,
-                                            imageUrl: appState.uploadImageA.isNotEmpty ? appState.uploadImageA.last : null,
+                                            imageUrls: appState.uploadImageA,
                                             showPlusIcon: _model.absellected,
                                             onTap: () async {
                                               // 이미지가 없으면 갤러리 픽커, 있으면 이미지 뷰어
@@ -764,10 +903,10 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                                                 );
                                               }
                                             },
-                                            onCancel: () {
-                                              // X 아이콘 클릭 시 이미지 삭제
-                                              if (appState.uploadImageA.isNotEmpty) {
-                                                appState.removeFromUploadImageA(appState.uploadImageA.last);
+                                            onCancel: (index) {
+                                              // X 아이콘 클릭 시 현재 표시된 이미지 삭제
+                                              if (appState.uploadImageA.isNotEmpty && index < appState.uploadImageA.length) {
+                                                appState.removeAtIndexFromUploadImageA(index);
                                               }
                                               setState(() {});
                                             },
@@ -815,11 +954,11 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                                           padding: EdgeInsetsDirectional.fromSTEB(
                                               2.5, 2.5, 2.5, 0.0),
                                           child: Consumer<AppState>(
-                                            builder: (context, appState, child) => MediaSelectionBox(
+                                            builder: (context, appState, child) => MediaSelectionBoxMulti(
                                               label: 'B',
                                               isSelected: false, // B박스는 선택 불가
                                               isVideoSelected: _model.isVideoSelectedB,
-                                              imageUrl: appState.uploadImageB.isNotEmpty ? appState.uploadImageB.last : null,
+                                              imageUrls: appState.uploadImageB,
                                               shakeAnimation: _model.shakeAnimation,
                                               onTap: () async {
                                                 // A박스에 이미지가 없으면 경고
@@ -861,12 +1000,12 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                                                   }
                                                 }
                                               },
-                                              onCancel: () {
+                                              onCancel: (index) {
                                                 // X 아이콘 클릭 시 B박스 숨김
                                                 _model.absellected = true;
-                                                // AppState에서 이미지 제거
-                                                if (appState.uploadImageB.isNotEmpty) {
-                                                  appState.removeFromUploadImageB(appState.uploadImageB.last);
+                                                // AppState에서 현재 표시된 이미지 제거
+                                                if (appState.uploadImageB.isNotEmpty && index < appState.uploadImageB.length) {
+                                                  appState.removeAtIndexFromUploadImageB(index);
                                                 }
                                                 setState(() {});
                                               },

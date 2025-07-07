@@ -176,6 +176,36 @@ class PostsRecord extends FirestoreRecord {
   String get phoneNumber => _phoneNumber ?? '';
   bool hasPhoneNumber() => _phoneNumber != null;
 
+  // "questionTitle" field.
+  String? _questionTitle;
+  String get questionTitle => _questionTitle ?? '';
+  bool hasQuestionTitle() => _questionTitle != null;
+
+  // "creatorInfo" field.
+  Map<String, dynamic>? _creatorInfo;
+  Map<String, dynamic> get creatorInfo => _creatorInfo ?? const {};
+  bool hasCreatorInfo() => _creatorInfo != null;
+
+  // "optionA" field.
+  Map<String, dynamic>? _optionA;
+  Map<String, dynamic> get optionA => _optionA ?? const {};
+  bool hasOptionA() => _optionA != null;
+
+  // "optionB" field.
+  Map<String, dynamic>? _optionB;
+  Map<String, dynamic> get optionB => _optionB ?? const {};
+  bool hasOptionB() => _optionB != null;
+
+  // "stats" field.
+  Map<String, dynamic>? _stats;
+  Map<String, dynamic> get stats => _stats ?? const {};
+  bool hasStats() => _stats != null;
+
+  // "moderation" field.
+  Map<String, dynamic>? _moderation;
+  Map<String, dynamic> get moderation => _moderation ?? const {};
+  bool hasModeration() => _moderation != null;
+
   void _initializeFields() {
     _userid = snapshotData['userid'] as String?;
     _content = snapshotData['content'] as String?;
@@ -209,6 +239,12 @@ class PostsRecord extends FirestoreRecord {
     _uid = snapshotData['uid'] as String?;
     _createdTime = snapshotData['created_time'] as DateTime?;
     _phoneNumber = snapshotData['phone_number'] as String?;
+    _questionTitle = snapshotData['questionTitle'] as String?;
+    _creatorInfo = snapshotData['creatorInfo'] as Map<String, dynamic>?;
+    _optionA = snapshotData['optionA'] as Map<String, dynamic>?;
+    _optionB = snapshotData['optionB'] as Map<String, dynamic>?;
+    _stats = snapshotData['stats'] as Map<String, dynamic>?;
+    _moderation = snapshotData['moderation'] as Map<String, dynamic>?;
   }
 
   static CollectionReference get collection =>
@@ -274,6 +310,12 @@ Map<String, dynamic> createPostsRecordData({
   String? uid,
   DateTime? createdTime,
   String? phoneNumber,
+  String? questionTitle,
+  Map<String, dynamic>? creatorInfo,
+  Map<String, dynamic>? optionA,
+  Map<String, dynamic>? optionB,
+  Map<String, dynamic>? stats,
+  Map<String, dynamic>? moderation,
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
@@ -306,6 +348,12 @@ Map<String, dynamic> createPostsRecordData({
       'uid': uid,
       'created_time': createdTime,
       'phone_number': phoneNumber,
+      'questionTitle': questionTitle,
+      'creatorInfo': creatorInfo,
+      'optionA': optionA,
+      'optionB': optionB,
+      'stats': stats,
+      'moderation': moderation,
     }.withoutNulls,
   );
 
@@ -349,7 +397,13 @@ class PostsRecordDocumentEquality implements Equality<PostsRecord> {
         e1?.photoUrl == e2?.photoUrl &&
         e1?.uid == e2?.uid &&
         e1?.createdTime == e2?.createdTime &&
-        e1?.phoneNumber == e2?.phoneNumber;
+        e1?.phoneNumber == e2?.phoneNumber &&
+        e1?.questionTitle == e2?.questionTitle &&
+        e1?.creatorInfo == e2?.creatorInfo &&
+        e1?.optionA == e2?.optionA &&
+        e1?.optionB == e2?.optionB &&
+        e1?.stats == e2?.stats &&
+        e1?.moderation == e2?.moderation;
   }
 
   @override
@@ -385,7 +439,13 @@ class PostsRecordDocumentEquality implements Equality<PostsRecord> {
         e?.photoUrl,
         e?.uid,
         e?.createdTime,
-        e?.phoneNumber
+        e?.phoneNumber,
+        e?.questionTitle,
+        e?.creatorInfo,
+        e?.optionA,
+        e?.optionB,
+        e?.stats,
+        e?.moderation
       ]);
 
   @override

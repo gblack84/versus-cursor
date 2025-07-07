@@ -13,6 +13,7 @@ import 'schema/images_record.dart';
 import 'schema/votecounts_record.dart';
 import 'schema/video_record.dart';
 import 'schema/vote_expansion_requests_record.dart';
+import 'schema/votes_record.dart';
 import 'schema/comments_record.dart';
 import 'schema/likes_record.dart';
 import 'schema/dislikes_record.dart';

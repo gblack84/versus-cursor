@@ -10,6 +10,10 @@ algolia
 2.12
 file:///Users/g_black/.pub-cache/hosted/pub.dev/algolia-1.1.2/
 file:///Users/g_black/.pub-cache/hosted/pub.dev/algolia-1.1.2/lib/
+archive
+3.0
+file:///Users/g_black/.pub-cache/hosted/pub.dev/archive-4.0.7/
+file:///Users/g_black/.pub-cache/hosted/pub.dev/archive-4.0.7/lib/
 args
 3.3
 file:///Users/g_black/.pub-cache/hosted/pub.dev/args-2.7.0/
@@ -314,6 +318,10 @@ http_parser
 2.12
 file:///Users/g_black/.pub-cache/hosted/pub.dev/http_parser-4.0.2/
 file:///Users/g_black/.pub-cache/hosted/pub.dev/http_parser-4.0.2/lib/
+image
+3.0
+file:///Users/g_black/.pub-cache/hosted/pub.dev/image-4.5.4/
+file:///Users/g_black/.pub-cache/hosted/pub.dev/image-4.5.4/lib/
 image_picker
 3.3
 file:///Users/g_black/.pub-cache/hosted/pub.dev/image_picker-1.1.2/
@@ -498,6 +506,10 @@ pointer_interceptor_web
 3.3
 file:///Users/g_black/.pub-cache/hosted/pub.dev/pointer_interceptor_web-0.10.2+1/
 file:///Users/g_black/.pub-cache/hosted/pub.dev/pointer_interceptor_web-0.10.2+1/lib/
+posix
+3.0
+file:///Users/g_black/.pub-cache/hosted/pub.dev/posix-6.0.3/
+file:///Users/g_black/.pub-cache/hosted/pub.dev/posix-6.0.3/lib/
 pro_image_editor
 3.2
 file:///Users/g_black/.pub-cache/hosted/pub.dev/pro_image_editor-10.2.2/

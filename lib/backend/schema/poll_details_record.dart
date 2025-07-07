@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 
 import '/backend/schema/util/firestore_util.dart';
+import '/backend/schema/util/schema_util.dart';
 
 import 'index.dart';
 import '/core/app_utils.dart';
@@ -45,6 +46,26 @@ class PollDetailsRecord extends FirestoreRecord {
   String get targetAudience => _targetAudience ?? '';
   bool hasTargetAudience() => _targetAudience != null;
 
+  // "option_1_media_urls" field.
+  List<String>? _option1MediaUrls;
+  List<String> get option1MediaUrls => _option1MediaUrls ?? const [];
+  bool hasOption1MediaUrls() => _option1MediaUrls != null;
+
+  // "option_2_media_urls" field.
+  List<String>? _option2MediaUrls;
+  List<String> get option2MediaUrls => _option2MediaUrls ?? const [];
+  bool hasOption2MediaUrls() => _option2MediaUrls != null;
+
+  // "option_1_media_type" field.
+  String? _option1MediaType;
+  String get option1MediaType => _option1MediaType ?? '';
+  bool hasOption1MediaType() => _option1MediaType != null;
+
+  // "option_2_media_type" field.
+  String? _option2MediaType;
+  String get option2MediaType => _option2MediaType ?? '';
+  bool hasOption2MediaType() => _option2MediaType != null;
+
   DocumentReference get parentReference => reference.parent.parent!;
 
   void _initializeFields() {
@@ -54,6 +75,10 @@ class PollDetailsRecord extends FirestoreRecord {
     _option2MediaUrl = snapshotData['option_2_media_url'] as String?;
     _resultTime = castToType<int>(snapshotData['result_time']);
     _targetAudience = snapshotData['target_audience'] as String?;
+    _option1MediaUrls = getDataList(snapshotData['option_1_media_urls']);
+    _option2MediaUrls = getDataList(snapshotData['option_2_media_urls']);
+    _option1MediaType = snapshotData['option_1_media_type'] as String?;
+    _option2MediaType = snapshotData['option_2_media_type'] as String?;
   }
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
@@ -102,6 +127,8 @@ Map<String, dynamic> createPollDetailsRecordData({
   String? option2MediaUrl,
   int? resultTime,
   String? targetAudience,
+  String? option1MediaType,
+  String? option2MediaType,
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
@@ -111,6 +138,8 @@ Map<String, dynamic> createPollDetailsRecordData({
       'option_2_media_url': option2MediaUrl,
       'result_time': resultTime,
       'target_audience': targetAudience,
+      'option_1_media_type': option1MediaType,
+      'option_2_media_type': option2MediaType,
     }.withoutNulls,
   );
 
@@ -122,12 +151,17 @@ class PollDetailsRecordDocumentEquality implements Equality<PollDetailsRecord> {
 
   @override
   bool equals(PollDetailsRecord? e1, PollDetailsRecord? e2) {
+    const listEquality = ListEquality();
     return e1?.option1 == e2?.option1 &&
         e1?.option2 == e2?.option2 &&
         e1?.option1MediaUrl == e2?.option1MediaUrl &&
         e1?.option2MediaUrl == e2?.option2MediaUrl &&
         e1?.resultTime == e2?.resultTime &&
-        e1?.targetAudience == e2?.targetAudience;
+        e1?.targetAudience == e2?.targetAudience &&
+        listEquality.equals(e1?.option1MediaUrls, e2?.option1MediaUrls) &&
+        listEquality.equals(e1?.option2MediaUrls, e2?.option2MediaUrls) &&
+        e1?.option1MediaType == e2?.option1MediaType &&
+        e1?.option2MediaType == e2?.option2MediaType;
   }
 
   @override
@@ -137,7 +171,11 @@ class PollDetailsRecordDocumentEquality implements Equality<PollDetailsRecord> {
         e?.option1MediaUrl,
         e?.option2MediaUrl,
         e?.resultTime,
-        e?.targetAudience
+        e?.targetAudience,
+        e?.option1MediaUrls,
+        e?.option2MediaUrls,
+        e?.option1MediaType,
+        e?.option2MediaType
       ]);
 
   @override

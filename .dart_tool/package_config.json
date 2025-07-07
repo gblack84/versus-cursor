@@ -14,6 +14,12 @@
       "languageVersion": "2.12"
     },
     {
+      "name": "archive",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/archive-4.0.7",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "args",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/args-2.7.0",
       "packageUri": "lib/",
@@ -494,6 +500,12 @@
       "languageVersion": "2.12"
     },
     {
+      "name": "image",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/image-4.5.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "image_picker",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/image_picker-1.1.2",
       "packageUri": "lib/",
@@ -768,6 +780,12 @@
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/pointer_interceptor_web-0.10.2+1",
       "packageUri": "lib/",
       "languageVersion": "3.3"
+    },
+    {
+      "name": "posix",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/posix-6.0.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
     },
     {
       "name": "pro_image_editor",

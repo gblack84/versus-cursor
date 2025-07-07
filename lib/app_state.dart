@@ -93,7 +93,27 @@ class AppState extends ChangeNotifier {
   }
 
   void removeAtIndexFromUploadImageA(int index) {
-    uploadImageA.removeAt(index);
+    if (index >= 0 && index < uploadImageA.length) {
+      uploadImageA.removeAt(index);
+      notifyListeners();
+    }
+  }
+
+  void reorderUploadImageA(int oldIndex, int newIndex) {
+    if (oldIndex >= 0 && oldIndex < uploadImageA.length && 
+        newIndex >= 0 && newIndex < uploadImageA.length) {
+      final item = uploadImageA.removeAt(oldIndex);
+      uploadImageA.insert(newIndex, item);
+      notifyListeners();
+    }
+  }
+
+  void moveToFrontUploadImageA(int index) {
+    if (index > 0 && index < uploadImageA.length) {
+      final item = uploadImageA.removeAt(index);
+      uploadImageA.insert(0, item);
+      notifyListeners();
+    }
   }
 
   void updateUploadImageAAtIndex(
@@ -138,7 +158,27 @@ class AppState extends ChangeNotifier {
   }
 
   void removeAtIndexFromUploadImageB(int index) {
-    uploadImageB.removeAt(index);
+    if (index >= 0 && index < uploadImageB.length) {
+      uploadImageB.removeAt(index);
+      notifyListeners();
+    }
+  }
+
+  void reorderUploadImageB(int oldIndex, int newIndex) {
+    if (oldIndex >= 0 && oldIndex < uploadImageB.length && 
+        newIndex >= 0 && newIndex < uploadImageB.length) {
+      final item = uploadImageB.removeAt(oldIndex);
+      uploadImageB.insert(newIndex, item);
+      notifyListeners();
+    }
+  }
+
+  void moveToFrontUploadImageB(int index) {
+    if (index > 0 && index < uploadImageB.length) {
+      final item = uploadImageB.removeAt(index);
+      uploadImageB.insert(0, item);
+      notifyListeners();
+    }
   }
 
   void updateUploadImageBAtIndex(

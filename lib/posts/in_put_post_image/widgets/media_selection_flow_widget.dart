@@ -4,13 +4,13 @@ import 'package:flutter/services.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:wechat_camera_picker/wechat_camera_picker.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '/core/app_theme.dart';
 import '../delegates/korean_asset_picker_delegate.dart';
 import '../delegates/korean_camera_picker_delegate.dart';
 import '../services/image_download_service.dart';
+import '../services/media_upload_service.dart';
+import '/pages/thumbnail_selection/thumbnail_selection_page.dart';
 
 /// 미디어 선택부터 편집까지 하나의 플로우로 처리하는 위젯
 class MediaSelectionFlowWidget extends StatefulWidget {
@@ -18,12 +18,14 @@ class MediaSelectionFlowWidget extends StatefulWidget {
     super.key,
     required this.box,
     required this.onComplete,
+    this.onMultiComplete,
     this.initialImageUrl,
     this.startWithEditor = false,
   });
 
   final String box; // 'A' or 'B'
-  final Function(String imageUrl) onComplete; // 완료 콜백
+  final Function(String imageUrl) onComplete; // 단일 이미지 완료 콜백
+  final Function(List<String> imageUrls)? onMultiComplete; // 멀티 이미지 완료 콜백
   final String? initialImageUrl; // 편집할 기존 이미지 URL
   final bool startWithEditor; // 에디터로 바로 시작할지 여부
 
@@ -34,6 +36,10 @@ class MediaSelectionFlowWidget extends StatefulWidget {
 class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   // 선택된 파일
   File? _selectedFile;
+  
+  // 멀티 이미지 선택 시 사용
+  List<File> _allSelectedFiles = [];
+  int _currentEditIndex = 0;
   
   // 업로드 상태
   bool _isUploading = false;
@@ -67,7 +73,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       final List<AssetEntity>? result = await AssetPicker.pickAssets(
         context,
         pickerConfig: AssetPickerConfig(
-          maxAssets: 1,
+          maxAssets: 4,  // 최대 4장으로 변경
           requestType: RequestType.image,
           themeColor: AppTheme.of(context).primary,
           textDelegate: const CustomKoreanAssetPickerTextDelegate(),
@@ -80,11 +86,25 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       );
 
       if (result != null && result.isNotEmpty) {
-        final file = await result.first.file;
-        if (file != null) {
-          setState(() {
-            _selectedFile = file;
-          });
+        // 1장만 선택한 경우 바로 편집
+        if (result.length == 1) {
+          final file = await result.first.file;
+          if (file != null) {
+            setState(() {
+              _selectedFile = file;
+            });
+          }
+        } else {
+          // 여러 장 선택한 경우 썸네일 선택 페이지로 이동
+          final files = await Future.wait(
+            result.map((asset) async => await asset.file)
+          );
+          
+          final validFiles = files.whereType<File>().toList();
+          if (validFiles.isNotEmpty && mounted) {
+            // 썸네일 선택 페이지로 이동
+            _navigateToThumbnailSelection(validFiles);
+          }
         }
       } else {
         // 취소한 경우 모달 닫기
@@ -100,6 +120,43 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
             backgroundColor: AppTheme.of(context).error,
           ),
         );
+        Navigator.pop(context);
+      }
+    }
+  }
+
+  /// 썸네일 선택 페이지로 이동
+  Future<void> _navigateToThumbnailSelection(List<File> files) async {
+    setState(() {
+      _allSelectedFiles = files;
+    });
+    
+    // ThumbnailSelectionPage로 이동
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ThumbnailSelectionPage(
+          imagePaths: files,
+          box: widget.box,
+        ),
+      ),
+    );
+    
+    if (result != null && mounted) {
+      // 뒤로가기 액션인 경우 피커로 돌아가기
+      if (result['action'] == 'back_to_picker') {
+        _openPicker();
+      } else if (result['selectedIndex'] != null) {
+        // 정상적으로 이미지를 선택한 경우
+        final selectedIndex = result['selectedIndex'] as int;
+        setState(() {
+          _selectedFile = files[selectedIndex];
+          _currentEditIndex = selectedIndex;
+        });
+      }
+    } else {
+      // 취소한 경우 모달 닫기
+      if (mounted) {
         Navigator.pop(context);
       }
     }
@@ -139,7 +196,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
     }
   }
 
-  /// Firebase Storage에 이미지 업로드
+  /// Firebase Storage에 이미지 업로드 (리사이징 포함)
   Future<String> _uploadToFirebase(Uint8List bytes) async {
     try {
       setState(() {
@@ -147,41 +204,11 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         _uploadProgress = 0.0;
       });
 
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        throw Exception('사용자가 로그인되어 있지 않습니다.');
-      }
-
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = '${timestamp}_${widget.box}.jpg';
-      final path = 'users/${user.uid}/posts/images/$fileName';
-
-      final ref = FirebaseStorage.instance.ref(path);
-      
-      final uploadTask = ref.putData(
-        bytes,
-        SettableMetadata(
-          contentType: 'image/jpeg',
-          customMetadata: {
-            'box': widget.box,
-            'uploadedAt': DateTime.now().toIso8601String(),
-          },
-        ),
+      // MediaUploadService를 사용하여 리사이징 및 업로드
+      final urls = await MediaUploadService.uploadImageWithVariants(
+        imageBytes: bytes,
+        box: widget.box,
       );
-
-      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
-        if (snapshot.totalBytes > 0) {
-          final progress = snapshot.bytesTransferred / snapshot.totalBytes;
-          if (progress.isFinite && mounted) {
-            setState(() {
-              _uploadProgress = progress.clamp(0.0, 1.0);
-            });
-          }
-        }
-      });
-
-      await uploadTask;
-      final downloadUrl = await ref.getDownloadURL();
       
       if (mounted) {
         setState(() {
@@ -189,7 +216,8 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         });
       }
 
-      return downloadUrl;
+      // display URL을 기본으로 반환 (UI 표시용)
+      return urls['display']!;
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -338,10 +366,42 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                   final url = await _uploadToFirebase(bytes);
                   print('Firebase 업로드 완료: $url');
                   
-                  // 성공 콜백 호출
-                  print('onComplete 콜백 호출 직전');
-                  widget.onComplete(url);
-                  print('onComplete 콜백 호출 완료');
+                  // 멀티 이미지 처리
+                  if (_allSelectedFiles.isNotEmpty) {
+                    // 선택된 이미지를 맨 앞으로 재배열하기 위한 리스트
+                    final reorderedUrls = <String>[];
+                    
+                    // 1. 편집된 이미지(대표 이미지)를 맨 앞에 추가
+                    reorderedUrls.add(url);
+                    print('대표 이미지 추가 (원래 인덱스: $_currentEditIndex)');
+                    
+                    // 2. 나머지 이미지들을 원래 순서대로 업로드 및 추가
+                    for (int i = 0; i < _allSelectedFiles.length; i++) {
+                      if (i != _currentEditIndex) {
+                        final file = _allSelectedFiles[i];
+                        final fileBytes = await file.readAsBytes();
+                        final additionalUrl = await _uploadToFirebase(fileBytes);
+                        reorderedUrls.add(additionalUrl);
+                        print('추가 이미지 업로드 (인덱스: $i)');
+                      }
+                    }
+                    
+                    // 모든 URL을 AppState에 추가
+                    print('총 ${reorderedUrls.length}개 이미지 업로드 완료');
+                    print('순서: 대표 이미지가 맨 앞, 나머지는 원래 순서대로');
+                    
+                    // 멀티 이미지 콜백이 있으면 사용, 없으면 첫 번째 URL만 전달
+                    if (widget.onMultiComplete != null) {
+                      widget.onMultiComplete!(reorderedUrls);
+                    } else {
+                      widget.onComplete(reorderedUrls.first);
+                    }
+                  } else {
+                    // 단일 이미지 처리
+                    print('onComplete 콜백 호출 직전');
+                    widget.onComplete(url);
+                    print('onComplete 콜백 호출 완료');
+                  }
                   
                   // 모달 닫기
                   if (mounted) {
@@ -392,11 +452,20 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                 size: 24,
               ),
               onPressed: () {
-                // 피커로 돌아가기
-                setState(() {
-                  _selectedFile = null;
-                });
-                _openPicker();
+                // 멀티 이미지가 있으면 썸네일 선택 페이지로, 없으면 피커로
+                if (_allSelectedFiles.isNotEmpty) {
+                  // 썸네일 선택 페이지로 돌아가기
+                  setState(() {
+                    _selectedFile = null;
+                  });
+                  _navigateToThumbnailSelection(_allSelectedFiles);
+                } else {
+                  // 피커로 돌아가기
+                  setState(() {
+                    _selectedFile = null;
+                  });
+                  _openPicker();
+                }
               },
             ),
           ),

@@ -56,6 +56,36 @@
       "languageVersion": "3.0"
     },
     {
+      "name": "camera",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/camera-0.10.6",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "camera_android",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/camera_android-0.10.10+3",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
+      "name": "camera_avfoundation",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/camera_avfoundation-0.9.20+1",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
+      "name": "camera_platform_interface",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/camera_platform_interface-2.10.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "camera_web",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/camera_web-0.3.5",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
       "name": "characters",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/characters-1.4.0",
       "packageUri": "lib/",
@@ -770,6 +800,18 @@
       "languageVersion": "2.12"
     },
     {
+      "name": "sensors_plus",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/sensors_plus-6.1.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "sensors_plus_platform_interface",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/sensors_plus_platform_interface-2.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.18"
+    },
+    {
       "name": "shared_preferences",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/shared_preferences-2.5.3",
       "packageUri": "lib/",
@@ -1116,6 +1158,12 @@
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/wechat_assets_picker-9.5.1",
       "packageUri": "lib/",
       "languageVersion": "3.4"
+    },
+    {
+      "name": "wechat_camera_picker",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/wechat_camera_picker-4.3.7",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
     },
     {
       "name": "wechat_picker_library",

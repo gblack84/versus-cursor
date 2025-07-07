@@ -6,6 +6,7 @@ import '/core/app_utils.dart';
 import '/core/app_widgets.dart';
 import '/index.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'login_page_model.dart';
@@ -492,6 +493,182 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                   ),
                                 ),
                               ),
+                              // 테스트 계정 로그인 버튼 (디버그 모드에서만 표시)
+                              if (!kReleaseMode)
+                                Align(
+                                  alignment: AlignmentDirectional(0.0, 0.0),
+                                  child: Padding(
+                                    padding: EdgeInsetsDirectional.fromSTEB(
+                                        0.0, 0.0, 0.0, 16.0),
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          '테스트 계정',
+                                          style: AppTheme.of(context)
+                                              .bodyMedium
+                                              .override(
+                                                font: GoogleFonts.plusJakartaSans(),
+                                                color: AppTheme.of(context).secondaryText,
+                                                letterSpacing: 0.0,
+                                              ),
+                                        ),
+                                        SizedBox(height: 8.0),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            // 관리자 계정
+                                            AppButtonWidget(
+                                              onPressed: () async {
+                                                GoRouter.of(context).prepareAuthEvent();
+                                                
+                                                // 먼저 로그인 시도
+                                                var user = await authManager.signInWithEmail(
+                                                  context,
+                                                  'admin@versus.test',
+                                                  'test1234!',
+                                                );
+                                                
+                                                // 계정이 없으면 생성
+                                                if (user == null) {
+                                                  user = await authManager.createAccountWithEmail(
+                                                    context,
+                                                    'admin@versus.test',
+                                                    'test1234!',
+                                                  );
+                                                  
+                                                  if (user == null) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text('관리자 계정 생성 실패'),
+                                                      ),
+                                                    );
+                                                    return;
+                                                  }
+                                                  
+                                                  // 사용자 문서 생성
+                                                  final usersCreateData = {
+                                                    'email': 'admin@versus.test',
+                                                    'display_name': '관리자',
+                                                    'created_time': FieldValue.serverTimestamp(),
+                                                    'role': 'admin',
+                                                    'uid': user.uid,
+                                                  };
+                                                  await UsersRecord.collection.doc(user.uid).set(usersCreateData);
+                                                }
+                                                
+                                                await currentUserReference!.update({
+                                                  ...mapToFirestore({
+                                                    'last_active_time': FieldValue.serverTimestamp(),
+                                                    'role': 'admin',
+                                                  }),
+                                                });
+                                                
+                                                context.pushNamedAuth(
+                                                  TestpageSelectWidget.routeName,
+                                                  context.mounted,
+                                                );
+                                              },
+                                              text: '관리자',
+                                              options: AppButtonOptions(
+                                                width: 100.0,
+                                                height: 40.0,
+                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
+                                                iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
+                                                color: AppTheme.of(context).primary,
+                                                textStyle: AppTheme.of(context).titleSmall.override(
+                                                  font: GoogleFonts.plusJakartaSans(),
+                                                  color: Colors.white,
+                                                  fontSize: 14.0,
+                                                  letterSpacing: 0.0,
+                                                ),
+                                                elevation: 3.0,
+                                                borderSide: BorderSide(
+                                                  color: Colors.transparent,
+                                                  width: 1.0,
+                                                ),
+                                                borderRadius: BorderRadius.circular(8.0),
+                                              ),
+                                            ),
+                                            SizedBox(width: 12.0),
+                                            // 테스터 계정
+                                            AppButtonWidget(
+                                              onPressed: () async {
+                                                GoRouter.of(context).prepareAuthEvent();
+                                                
+                                                // 먼저 로그인 시도
+                                                var user = await authManager.signInWithEmail(
+                                                  context,
+                                                  'tester@versus.test',
+                                                  'test1234!',
+                                                );
+                                                
+                                                // 계정이 없으면 생성
+                                                if (user == null) {
+                                                  user = await authManager.createAccountWithEmail(
+                                                    context,
+                                                    'tester@versus.test',
+                                                    'test1234!',
+                                                  );
+                                                  
+                                                  if (user == null) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text('테스터 계정 생성 실패'),
+                                                      ),
+                                                    );
+                                                    return;
+                                                  }
+                                                  
+                                                  // 사용자 문서 생성
+                                                  final usersCreateData = {
+                                                    'email': 'tester@versus.test',
+                                                    'display_name': '테스터',
+                                                    'created_time': FieldValue.serverTimestamp(),
+                                                    'role': 'tester',
+                                                    'uid': user.uid,
+                                                  };
+                                                  await UsersRecord.collection.doc(user.uid).set(usersCreateData);
+                                                }
+                                                
+                                                await currentUserReference!.update({
+                                                  ...mapToFirestore({
+                                                    'last_active_time': FieldValue.serverTimestamp(),
+                                                    'role': 'tester',
+                                                  }),
+                                                });
+                                                
+                                                context.pushNamedAuth(
+                                                  TestpageSelectWidget.routeName,
+                                                  context.mounted,
+                                                );
+                                              },
+                                              text: '테스터',
+                                              options: AppButtonOptions(
+                                                width: 100.0,
+                                                height: 40.0,
+                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
+                                                iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
+                                                color: AppTheme.of(context).secondary,
+                                                textStyle: AppTheme.of(context).titleSmall.override(
+                                                  font: GoogleFonts.plusJakartaSans(),
+                                                  color: Colors.white,
+                                                  fontSize: 14.0,
+                                                  letterSpacing: 0.0,
+                                                ),
+                                                elevation: 3.0,
+                                                borderSide: BorderSide(
+                                                  color: Colors.transparent,
+                                                  width: 1.0,
+                                                ),
+                                                borderRadius: BorderRadius.circular(8.0),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               Align(
                                 alignment: AlignmentDirectional(0.0, 0.0),
                                 child: Padding(

@@ -77,10 +77,14 @@ class MediaSelectionBox extends StatelessWidget {
                         color: AppTheme.of(context).primary,
                       ),
                     ),
-                    errorWidget: (context, url, error) => Icon(
-                      Icons.error,
-                      color: AppTheme.of(context).error,
-                    ),
+                    errorWidget: (context, url, error) {
+                      print('이미지 로드 에러: $error');
+                      print('문제 URL: $url');
+                      return Icon(
+                        Icons.error,
+                        color: AppTheme.of(context).error,
+                      );
+                    },
                   ),
                 )
               else

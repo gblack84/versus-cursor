@@ -23,3 +23,7 @@ export '/createaccount/phoneauth/phonelogeinpincode/phonelogeinpincode_widget.da
 export '/etc/blankppp/blankppp_widget.dart' show BlankpppWidget;
 export '/posts/in_put_post_image/in_put_post_image_widget.dart'
     show InPutPostImageWidget;
+export '/pages/pro_image_editor/pro_image_editor_page.dart'
+    show ProImageEditorPage;
+export '/pages/image_viewer/image_viewer_page.dart'
+    show ImageViewerPage;

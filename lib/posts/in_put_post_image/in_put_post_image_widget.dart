@@ -3,16 +3,21 @@ import '/core/app_theme.dart';
 import '/core/app_toggle_icon.dart';
 import '/core/app_utils.dart';
 import '/utils/content_filter.dart';
-import '/services/perspective_api_service.dart';
 import '/widgets/highlighted_text_field.dart';
+import '/pages/image_viewer/image_viewer_page.dart';
 import 'package:easy_debounce/easy_debounce.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'in_put_post_image_model.dart';
 export 'in_put_post_image_model.dart';
+import 'components/media_selection_box.dart';
+import 'components/character_count_display.dart';
+import 'components/next_button.dart';
+import 'components/simple_validated_field.dart';
+import 'components/simple_character_count.dart';
+import 'services/validation_service.dart';
+import 'widgets/media_selection_flow_widget.dart';
 
 class InPutPostImageWidget extends StatefulWidget {
   const InPutPostImageWidget({super.key});
@@ -24,7 +29,8 @@ class InPutPostImageWidget extends StatefulWidget {
   State<InPutPostImageWidget> createState() => _InPutPostImageWidgetState();
 }
 
-class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
+class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
+    with SingleTickerProviderStateMixin {
   late InPutPostImageModel _model;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
@@ -51,6 +57,20 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
 
     _model.textController4 ??= TextEditingController();
     _model.textFieldFocusNode4 ??= FocusNode();
+    
+    // 흔들림 애니메이션 초기화
+    _model.shakeController = AnimationController(
+      duration: Duration(milliseconds: 100),
+      vsync: this,
+    );
+    
+    _model.shakeAnimation = Tween<double>(
+      begin: 0,
+      end: 10,
+    ).animate(CurvedAnimation(
+      parent: _model.shakeController!,
+      curve: Curves.elasticIn,
+    ));
 
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
@@ -96,75 +116,37 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
         _model.isValidating = true;
       });
 
-      // 필수 필드 체크
-      bool hasEmptyField = false;
-      
+      // ValidationService를 사용하여 검증
+      final result = await ValidationService.validateAllTexts(
+        questionTitle: _model.textController1?.text,
+        description: _model.textController2?.text,
+        aTitle: _model.textController3?.text,
+        bTitle: _model.textController4?.text,
+      );
+
       setState(() {
-        _model.isQuestionTitleEmpty = _model.textController1?.text.trim().isEmpty ?? true;
-        _model.isATitleEmpty = _model.textController3?.text.trim().isEmpty ?? true;
-        _model.isBTitleEmpty = _model.textController4?.text.trim().isEmpty ?? true;
+        // 빈 필드 상태 업데이트
+        _model.isQuestionTitleEmpty = result.emptyResult.isQuestionTitleEmpty;
+        _model.isATitleEmpty = result.emptyResult.isATitleEmpty;
+        _model.isBTitleEmpty = result.emptyResult.isBTitleEmpty;
+
+        // 검증 결과 업데이트
+        _model.validationResults = result.validationResults;
+        _model.hasValidationViolations = !result.isValid && result.violations.isNotEmpty;
         
-        hasEmptyField = _model.isQuestionTitleEmpty || _model.isATitleEmpty || _model.isBTitleEmpty;
-      });
-      
-      if (hasEmptyField) {
-        setState(() {
-          _model.isValidating = false;
-        });
-        return;
-      }
-
-      // 모든 텍스트 필드 내용 수집
-      final textsToValidate = <String, String>{};
-      
-      if (_model.textController1?.text.isNotEmpty == true) {
-        textsToValidate['questionTitle'] = _model.textController1!.text;
-      }
-      if (_model.textController2?.text.isNotEmpty == true) {
-        textsToValidate['description'] = _model.textController2!.text;
-      }
-      if (_model.textController3?.text.isNotEmpty == true) {
-        textsToValidate['aTitle'] = _model.textController3!.text;
-      }
-      if (_model.textController4?.text.isNotEmpty == true) {
-        textsToValidate['bTitle'] = _model.textController4!.text;
-      }
-
-      if (textsToValidate.isEmpty) {
-        _showSnackBar('입력된 텍스트가 없습니다.');
-        return;
-      }
-
-      // Perspective API로 검증
-      final results = await PerspectiveApiService.analyzeMultipleTexts(textsToValidate);
-      
-      // 검증 결과 처리
-      bool hasViolations = false;
-      List<String> violations = [];
-
-      results.forEach((fieldName, result) {
-        if (result.isToxic) {
-          hasViolations = true;
-          String fieldDisplayName = _getFieldDisplayName(fieldName);
-          String categoryName = _getTopCategoryName(result);
-          violations.add('$fieldDisplayName: $categoryName');
-        }
-      });
-
-      setState(() {
-        _model.validationResults = results;
-        _model.hasValidationViolations = hasViolations;
         // 검증 통과 시 비어있음 에러 상태 초기화
-        if (!hasViolations) {
+        if (result.isValid) {
           _model.isQuestionTitleEmpty = false;
           _model.isATitleEmpty = false;
           _model.isBTitleEmpty = false;
         }
       });
 
-      if (hasViolations) {
-        _showViolationDialog(violations);
-      } else {
+      if (result.errorMessage != null) {
+        _showSnackBar(result.errorMessage!);
+      } else if (!result.isValid && result.violations.isNotEmpty) {
+        ValidationService.showViolationDialog(context, result.violations);
+      } else if (result.isValid) {
         // 검증 완료 - AppState에 텍스트 저장
         context.read<AppState>().update(() {
           final appState = context.read<AppState>();
@@ -189,79 +171,6 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
     }
   }
 
-  /// 필드명을 사용자 친화적 이름으로 변환
-  String _getFieldDisplayName(String fieldName) {
-    switch (fieldName) {
-      case 'questionTitle':
-        return 'Question Title';
-      case 'description':
-        return 'Description';
-      case 'aTitle':
-        return 'A title';
-      case 'bTitle':
-        return 'B title';
-      default:
-        return fieldName;
-    }
-  }
-
-  /// 가장 높은 점수의 카테고리명 반환
-  String _getTopCategoryName(PerspectiveResult result) {
-    String topCategory = '';
-    double maxScore = 0.0;
-    
-    result.allScores.forEach((category, score) {
-      if (score > maxScore) {
-        maxScore = score;
-        topCategory = category;
-      }
-    });
-    
-    switch (topCategory) {
-      case 'PROFANITY':
-        return '욕설 감지';
-      case 'THREAT':
-        return '위협적 표현';
-      case 'INSULT':
-        return '모욕적 표현';
-      case 'TOXICITY':
-        return '독성 콘텐츠';
-      default:
-        return '부적절한 내용';
-    }
-  }
-
-  /// 위반 사항 다이얼로그 표시
-  void _showViolationDialog(List<String> violations) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('부적절한 내용 감지'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('다음 항목에서 부적절한 내용이 감지되었습니다:'),
-              SizedBox(height: 10),
-              ...violations.map((violation) => Padding(
-                padding: EdgeInsets.symmetric(vertical: 2),
-                child: Text('• $violation', style: TextStyle(color: Colors.red)),
-              )),
-              SizedBox(height: 10),
-              Text('내용을 수정한 후 다시 시도해주세요.'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('확인'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   /// 스낵바 표시
   void _showSnackBar(String message) {
@@ -271,96 +180,41 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
   }
 
   /// 미디어 타입 선택 다이얼로그
-  void _showMediaTypeSelection(BuildContext context, String box) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
-        return Container(
-          decoration: BoxDecoration(
-            color: AppTheme.of(context).secondaryBackground,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20.0),
-              topRight: Radius.circular(20.0),
-            ),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    leading: FaIcon(
-                      FontAwesomeIcons.image,
-                      color: AppTheme.of(context).primaryText,
-                    ),
-                    title: Text(
-                      '이미지 선택',
-                      style: AppTheme.of(context).bodyLarge,
-                    ),
-                    onTap: () async {
-                      setState(() {
-                        if (box == 'A') {
-                          _model.isVideoSelectedA = false;
-                        } else {
-                          _model.isVideoSelectedB = false;
-                        }
-                      });
-                      Navigator.pop(context);
-                      
-                      // wechat_assets_picker 열기
-                      final List<AssetEntity>? result = await AssetPicker.pickAssets(
-                        context,
-                        pickerConfig: AssetPickerConfig(
-                          maxAssets: 1,
-                          specialPickerType: SpecialPickerType.wechatMoment,
-                          themeColor: AppTheme.of(context).primary,
-                          textDelegate: const KoreanAssetPickerTextDelegate(),
-                          gridCount: 4,  // pageSize(80)가 4의 배수이므로
-                        ),
-                      );
-                      
-                      if (result != null && result.isNotEmpty) {
-                        final file = await result.first.file;
-                        if (file != null) {
-                          // 일단 선택된 이미지 경로 확인
-                          print('선택된 이미지: ${file.path}');
-                          _showSnackBar('이미지 선택됨: ${result.first.title ?? "제목 없음"}');
-                          
-                          // TODO: ProImageEditor로 이동
-                        }
-                      }
-                    },
-                  ),
-                  ListTile(
-                    leading: Icon(
-                      Icons.videocam,
-                      color: AppTheme.of(context).primaryText,
-                    ),
-                    title: Text(
-                      '비디오 선택',
-                      style: AppTheme.of(context).bodyLarge,
-                    ),
-                    onTap: () {
-                      setState(() {
-                        if (box == 'A') {
-                          _model.isVideoSelectedA = true;
-                        } else {
-                          _model.isVideoSelectedB = true;
-                        }
-                      });
-                      Navigator.pop(context);
-                      // TODO: 비디오 선택 기능 구현
-                      _showSnackBar('비디오 선택 기능을 구현해야 합니다.');
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+  Future<void> _openAssetsPicker(BuildContext parentContext, String box) async {
+    // 부모 context에서 AppState 미리 가져오기
+    final appState = Provider.of<AppState>(parentContext, listen: false);
+    
+    // 통합 플로우 모달로 열기
+    await showModalBottomSheet(
+      context: parentContext,
+      isScrollControlled: true,
+      useSafeArea: true,  // SafeArea 적용
+      backgroundColor: Colors.black,  // 검은색 배경
+      barrierColor: Colors.black87,  // 배리어도 검은색
+      builder: (modalContext) => MediaSelectionFlowWidget(
+        box: box,
+        onComplete: (imageUrl) {
+          print('onComplete 콜백 받음: $imageUrl');
+          // 업로드 완료 시 AppState 업데이트 (미리 가져온 appState 사용)
+          if (box == 'A') {
+            appState.addToUploadImageA(imageUrl);
+            print('A박스에 이미지 추가됨: $imageUrl');
+            print('uploadImageA 리스트: ${appState.uploadImageA}');
+          } else {
+            appState.addToUploadImageB(imageUrl);
+            print('B박스에 이미지 추가됨: $imageUrl');
+            print('uploadImageB 리스트: ${appState.uploadImageB}');
+          }
+          
+          // setState 호출하여 UI 업데이트
+          if (mounted) {
+            setState(() {});
+          }
+          
+          // 성공 메시지
+          _showSnackBar('이미지가 성공적으로 저장되었습니다.');
+        },
+      ),
     );
   }
 
@@ -600,39 +454,12 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                               ),
                             ),
                             // Question Title 글자 수 및 경고 표시
-                            Padding(
-                              padding: EdgeInsetsDirectional.fromSTEB(10.0, 4.5, 10.0, 0.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  // 왼쪽: 경고 메시지
-                                  if (_model.hasBlockedWordInTitle || _model.isQuestionTitleEmpty || _model.validationResults['questionTitle']?.isToxic == true)
-                                    Text(
-                                      _model.isQuestionTitleEmpty 
-                                        ? '필수 항목입니다'
-                                        : _model.validationResults['questionTitle']?.isToxic == true
-                                          ? '독성 콘텐츠가 감지되었습니다'
-                                          : '⚠️ 부적절한 언어가 포함됨',
-                                      style: AppTheme.of(context).bodySmall.override(
-                                        font: GoogleFonts.plusJakartaSans(),
-                                        color: AppTheme.of(context).error,
-                                        fontSize: 12.0,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    )
-                                  else
-                                    const SizedBox.shrink(),
-                                  // 오른쪽: 글자 수
-                                  Text(
-                                    '${_model.textController1?.text.length ?? 0}/60',
-                                    style: AppTheme.of(context).bodySmall.override(
-                                      font: GoogleFonts.plusJakartaSans(),
-                                      color: AppTheme.of(context).secondaryText,
-                                      fontSize: 12.0,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            CharacterCountDisplay(
+                              controller: _model.textController1,
+                              maxLength: 60,
+                              isEmpty: _model.isQuestionTitleEmpty,
+                              hasBlockedWord: _model.hasBlockedWordInTitle,
+                              validationResult: _model.validationResults['questionTitle'],
                             ),
                             Container(
                               decoration: BoxDecoration(
@@ -707,273 +534,193 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                     mainAxisSize: MainAxisSize.max,
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Padding(
-                                        padding: EdgeInsetsDirectional.fromSTEB(
-                                            0.0, 0.0, 2.5, 0.0),
-                                        child: InkWell(
-                                          onTap: () {
-                                            // A 박스 클릭 시 미디어 타입 선택
-                                            _showMediaTypeSelection(context, 'A');
-                                          },
-                                          child: Container(
-                                            width: _model.absellected == true
-                                                ? 380.0
-                                                : 190.0,
-                                            height: _model.absellected == true
-                                                ? 600.0
-                                                : 310.0,
-                                            decoration: BoxDecoration(
-                                              color: AppTheme.of(context)
-                                                  .primary,
-                                              borderRadius: BorderRadius.only(
-                                                bottomLeft: Radius.circular(20.0),
-                                                bottomRight:
-                                                    Radius.circular(20.0),
-                                                topLeft: Radius.circular(20.0),
-                                                topRight: Radius.circular(20.0),
-                                              ),
-                                            ),
-                                            child: Stack(
-                                              children: [
-                                                Align(
-                                                  alignment: AlignmentDirectional(
-                                                      0.0, 0.0),
-                                                  child: _model.isVideoSelectedA
-                                                      ? Icon(
-                                                          Icons.videocam,
-                                                          color: AppTheme.of(
-                                                                  context)
-                                                              .primaryText,
-                                                          size:
-                                                              _model.absellected == true
-                                                                  ? 300.0
-                                                                  : 140.0,
-                                                        )
-                                                      : FaIcon(
-                                                          FontAwesomeIcons.image,
-                                                          color: AppTheme.of(
-                                                                  context)
-                                                              .primaryText,
-                                                          size:
-                                                              _model.absellected == true
-                                                                  ? 300.0
-                                                                  : 140.0,
-                                                        ),
-                                                ),
-                                              Align(
-                                                alignment: AlignmentDirectional(
-                                                    -1.0, -1.0),
-                                                child: Padding(
-                                                  padding: EdgeInsets.all(10.0),
-                                                  child: Text(
-                                                    AppLocalizations.of(context)
-                                                        .getText(
-                                                      'fw81zr5s' /* A */,
-                                                    ),
-                                                    style: AppTheme.of(
-                                                            context)
-                                                        .bodyMedium
-                                                        .override(
-                                                          font: GoogleFonts
-                                                              .plusJakartaSans(
-                                                            fontWeight:
-                                                                AppTheme.of(
-                                                                        context)
-                                                                    .bodyMedium
-                                                                    .fontWeight,
-                                                            fontStyle:
-                                                                AppTheme.of(
-                                                                        context)
-                                                                    .bodyMedium
-                                                                    .fontStyle,
-                                                          ),
-                                                          fontSize: 50.0,
-                                                          letterSpacing: 0.0,
-                                                          fontWeight:
-                                                              AppTheme.of(
-                                                                      context)
-                                                                  .bodyMedium
-                                                                  .fontWeight,
-                                                          fontStyle:
-                                                              AppTheme.of(
-                                                                      context)
-                                                                  .bodyMedium
-                                                                  .fontStyle,
-                                                        ),
-                                                  ),
-                                                ),
-                                              ),
-                                              if (_model.absellected)
-                                                Align(
-                                                  alignment:
-                                                      AlignmentDirectional(
-                                                          1.0, -1.0),
-                                                  child: Padding(
-                                                    padding:
-                                                        EdgeInsets.all(10.0),
-                                                    child: InkWell(
-                                                      splashColor:
-                                                          Colors.transparent,
-                                                      focusColor:
-                                                          Colors.transparent,
-                                                      hoverColor:
-                                                          Colors.transparent,
-                                                      highlightColor:
-                                                          Colors.transparent,
-                                                      onTap: () async {
-                                                        _model.absellected =
-                                                            false;
-                                                        setState(() {});
-                                                      },
-                                                      child: Icon(
-                                                        Icons.add,
-                                                        color:
-                                                            AppTheme.of(
-                                                                    context)
-                                                                .primaryText,
-                                                        size:
-                                                            _model.absellected ==
-                                                                    true
-                                                                ? 40.0
-                                                                : 24.0,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                      if (!_model.absellected)
-                                        Padding(
-                                          padding:
-                                              EdgeInsetsDirectional.fromSTEB(
-                                                  2.5, 0.0, 0.0, 0.0),
-                                          child: InkWell(
-                                            onTap: () {
-                                              // B 박스 클릭 시 미디어 타입 선택
-                                              _showMediaTypeSelection(context, 'B');
+                                      SizedBox(
+                                        width: _model.absellected == true ? 380.0 : 190.0,
+                                        height: _model.absellected == true ? 600.0 : 310.0,
+                                        child: Consumer<AppState>(
+                                          builder: (context, appState, child) => MediaSelectionBox(
+                                            label: 'A',
+                                            isSelected: _model.absellected,
+                                            isVideoSelected: _model.isVideoSelectedA,
+                                            imageUrl: appState.uploadImageA.isNotEmpty ? appState.uploadImageA.last : null,
+                                            showPlusIcon: _model.absellected,
+                                            onTap: () async {
+                                              // 이미지가 없으면 갤러리 픽커, 있으면 이미지 뷰어
+                                              if (appState.uploadImageA.isEmpty) {
+                                                await _openAssetsPicker(context, 'A');
+                                              } else {
+                                                // 이미지 뷰어 페이지로 이동
+                                                context.pushNamed(
+                                                  ImageViewerPage.routeName,
+                                                  queryParameters: {
+                                                    'imageUrls': appState.uploadImageA.join(','),
+                                                    'initialIndex': '0',
+                                                    'box': 'A',
+                                                  },
+                                                );
+                                              }
                                             },
-                                            child: Container(
-                                              width: 190.0,
-                                              height: 310.0,
-                                              decoration: BoxDecoration(
-                                                color:
-                                                    AppTheme.of(context)
-                                                        .secondary,
-                                                borderRadius: BorderRadius.only(
-                                                  bottomLeft:
-                                                      Radius.circular(20.0),
-                                                  bottomRight:
-                                                      Radius.circular(20.0),
-                                                  topLeft: Radius.circular(20.0),
-                                                  topRight: Radius.circular(20.0),
-                                                ),
-                                              ),
-                                              child: Stack(
-                                                children: [
-                                                  Align(
-                                                    alignment:
-                                                        AlignmentDirectional(
-                                                            0.0, 0.0),
-                                                    child: _model.isVideoSelectedB
-                                                        ? Icon(
-                                                            Icons.videocam,
-                                                            color: AppTheme.of(
-                                                                    context)
-                                                                .primaryText,
-                                                            size: 140.0,
-                                                          )
-                                                        : FaIcon(
-                                                            FontAwesomeIcons.image,
-                                                            color: AppTheme.of(
-                                                                    context)
-                                                                .primaryText,
-                                                            size: 140.0,
-                                                          ),
+                                            onCancel: () {
+                                              // X 아이콘 클릭 시 이미지 삭제
+                                              if (appState.uploadImageA.isNotEmpty) {
+                                                appState.removeFromUploadImageA(appState.uploadImageA.last);
+                                              }
+                                              setState(() {});
+                                            },
+                                            onPlusIconTap: () {
+                                              // +B 아이콘 클릭 시 B박스 표시
+                                              _model.absellected = false;
+                                              setState(() {});
+                                            },
+                                            onEditTap: () async {
+                                              // 현재 이미지를 편집
+                                              if (appState.uploadImageA.isNotEmpty) {
+                                                await showModalBottomSheet(
+                                                  context: context,
+                                                  isScrollControlled: true,
+                                                  useSafeArea: true,  // SafeArea 적용
+                                                  backgroundColor: Colors.transparent,
+                                                  builder: (context) => MediaSelectionFlowWidget(
+                                                    box: 'A',
+                                                    initialImageUrl: appState.uploadImageA.last,
+                                                    startWithEditor: true,
+                                                    onComplete: (newImageUrl) {
+                                                      // 기존 이미지를 새 이미지로 교체
+                                                      final oldUrl = appState.uploadImageA.last;
+                                                      appState.removeFromUploadImageA(oldUrl);
+                                                      appState.addToUploadImageA(newImageUrl);
+                                                      
+                                                      // 성공 메시지
+                                                      _showSnackBar('이미지가 수정되었습니다.');
+                                                    },
                                                   ),
-                                                Align(
-                                                  alignment:
-                                                      AlignmentDirectional(
-                                                          -1.0, -1.0),
-                                                  child: Padding(
-                                                    padding:
-                                                        EdgeInsets.all(10.0),
-                                                    child: Text(
-                                                      AppLocalizations.of(
-                                                              context)
-                                                          .getText(
-                                                        'ncslnwz1' /* B */,
-                                                      ),
-                                                      style:
-                                                          AppTheme.of(
-                                                                  context)
-                                                              .bodyMedium
-                                                              .override(
-                                                                font: GoogleFonts
-                                                                    .plusJakartaSans(
-                                                                  fontWeight: AppTheme.of(
-                                                                          context)
-                                                                      .bodyMedium
-                                                                      .fontWeight,
-                                                                  fontStyle: AppTheme.of(
-                                                                          context)
-                                                                      .bodyMedium
-                                                                      .fontStyle,
-                                                                ),
-                                                                fontSize: 50.0,
-                                                                letterSpacing:
-                                                                    0.0,
-                                                                fontWeight: AppTheme.of(
-                                                                        context)
-                                                                    .bodyMedium
-                                                                    .fontWeight,
-                                                                fontStyle: AppTheme.of(
-                                                                        context)
-                                                                    .bodyMedium
-                                                                    .fontStyle,
-                                                              ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                Align(
-                                                  alignment:
-                                                      AlignmentDirectional(
-                                                          1.0, -1.0),
-                                                  child: Padding(
-                                                    padding:
-                                                        EdgeInsets.all(10.0),
-                                                    child: InkWell(
-                                                      splashColor:
-                                                          Colors.transparent,
-                                                      focusColor:
-                                                          Colors.transparent,
-                                                      hoverColor:
-                                                          Colors.transparent,
-                                                      highlightColor:
-                                                          Colors.transparent,
-                                                      onTap: () async {
-                                                        _model.absellected =
-                                                            true;
-                                                        setState(() {});
-                                                      },
-                                                      child: Icon(
-                                                        Icons.cancel_outlined,
-                                                        color:
-                                                            AppTheme.of(
-                                                                    context)
-                                                                .primaryText,
-                                                        size: 24.0,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+                                                );
+                                              }
+                                            },
+                                            onAddImageTap: () async {
+                                              // +이미지 아이콘 클릭 시 갤러리로
+                                              await _openAssetsPicker(context, 'A');
+                                            },
+                                            isHorizontal: false,
+                                            boxColor: AppTheme.of(context).primary,
                                           ),
                                         ),
                                       ),
+                                      if (!_model.absellected)
+                                        SizedBox(
+                                          width: 190.0,
+                                          height: 310.0,
+                                          child: Consumer<AppState>(
+                                            builder: (context, appState, child) => MediaSelectionBox(
+                                              label: 'B',
+                                              isSelected: false, // B박스는 선택 불가
+                                              isVideoSelected: _model.isVideoSelectedB,
+                                              imageUrl: appState.uploadImageB.isNotEmpty ? appState.uploadImageB.last : null,
+                                              shakeAnimation: _model.shakeAnimation,
+                                              onTap: () async {
+                                                // A박스에 이미지가 없으면 경고
+                                                if (appState.uploadImageA.isEmpty) {
+                                                  // 흔들림 애니메이션 실행 (3번)
+                                                  _model.shakeController?.forward().then((_) {
+                                                    _model.shakeController?.reverse().then((_) {
+                                                      _model.shakeController?.forward().then((_) {
+                                                        _model.shakeController?.reverse();
+                                                      });
+                                                    });
+                                                  });
+                                                  setState(() {
+                                                    _model.showBBoxWarning = true;
+                                                  });
+                                                  // 3초 후 경고 메시지 숨김
+                                                  Future.delayed(Duration(seconds: 3), () {
+                                                    if (mounted) {
+                                                      setState(() {
+                                                        _model.showBBoxWarning = false;
+                                                      });
+                                                    }
+                                                  });
+                                                } else {
+                                                  // A박스에 이미지가 있으면 B박스 처리
+                                                  if (appState.uploadImageB.isEmpty) {
+                                                    // B박스에 이미지가 없으면 갤러리 열기
+                                                    await _openAssetsPicker(context, 'B');
+                                                  } else {
+                                                    // B박스에 이미지가 있으면 뷰어 열기
+                                                    context.pushNamed(
+                                                      ImageViewerPage.routeName,
+                                                      queryParameters: {
+                                                        'imageUrls': appState.uploadImageB.join(','),
+                                                        'initialIndex': '0',
+                                                        'box': 'B',
+                                                      },
+                                                    );
+                                                  }
+                                                }
+                                              },
+                                              onCancel: () {
+                                                // X 아이콘 클릭 시 B박스 숨김
+                                                _model.absellected = true;
+                                                // AppState에서 이미지 제거
+                                                if (appState.uploadImageB.isNotEmpty) {
+                                                  appState.removeFromUploadImageB(appState.uploadImageB.last);
+                                                }
+                                                setState(() {});
+                                              },
+                                              onEditTap: () async {
+                                                // 현재 이미지를 편집
+                                                if (appState.uploadImageB.isNotEmpty) {
+                                                  await showModalBottomSheet(
+                                                    context: context,
+                                                    isScrollControlled: true,
+                                                    useSafeArea: true,  // SafeArea 적용
+                                                    backgroundColor: Colors.transparent,
+                                                    builder: (context) => MediaSelectionFlowWidget(
+                                                      box: 'B',
+                                                      initialImageUrl: appState.uploadImageB.last,
+                                                      startWithEditor: true,
+                                                      onComplete: (newImageUrl) {
+                                                        // 기존 이미지를 새 이미지로 교체
+                                                        final oldUrl = appState.uploadImageB.last;
+                                                        appState.removeFromUploadImageB(oldUrl);
+                                                        appState.addToUploadImageB(newImageUrl);
+                                                        
+                                                        // 성공 메시지
+                                                        _showSnackBar('이미지가 수정되었습니다.');
+                                                      },
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                              onAddImageTap: () async {
+                                                // +이미지 아이콘 클릭 시 갤러리로
+                                                if (appState.uploadImageA.isEmpty) {
+                                                  // A박스에 이미지가 없으면 경고
+                                                  _model.shakeController?.forward().then((_) {
+                                                    _model.shakeController?.reverse().then((_) {
+                                                      _model.shakeController?.forward().then((_) {
+                                                        _model.shakeController?.reverse();
+                                                      });
+                                                    });
+                                                  });
+                                                  setState(() {
+                                                    _model.showBBoxWarning = true;
+                                                  });
+                                                  Future.delayed(Duration(seconds: 3), () {
+                                                    if (mounted) {
+                                                      setState(() {
+                                                        _model.showBBoxWarning = false;
+                                                      });
+                                                    }
+                                                  });
+                                                } else {
+                                                  await _openAssetsPicker(context, 'B');
+                                                }
+                                              },
+                                              isHorizontal: false,
+                                              boxColor: AppTheme.of(context).secondary,
+                                            ),
+                                          ),
+                                        ),
                                     ],
                                   ),
                                 ),
@@ -994,435 +741,238 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                       Padding(
                                         padding: EdgeInsetsDirectional.fromSTEB(
                                             2.5, 0.0, 2.5, 2.5),
-                                        child: InkWell(
-                                          onTap: () {
-                                            // A 박스 클릭 시 미디어 타입 선택
-                                            _showMediaTypeSelection(context, 'A');
-                                          },
-                                          child: Container(
-                                            width: double.infinity,
-                                            height: _model.absellected == true
-                                                ? 350.0
-                                                : 200.0,
-                                            decoration: BoxDecoration(
-                                              color: AppTheme.of(context)
-                                                  .primary,
-                                              borderRadius: BorderRadius.only(
-                                                bottomLeft: Radius.circular(20.0),
-                                                bottomRight:
-                                                    Radius.circular(20.0),
-                                                topLeft: Radius.circular(20.0),
-                                                topRight: Radius.circular(20.0),
-                                              ),
-                                            ),
-                                            child: Stack(
-                                              children: [
-                                                Align(
-                                                  alignment: AlignmentDirectional(
-                                                      0.0, 1.0),
-                                                  child: _model.isVideoSelectedA
-                                                      ? Icon(
-                                                          Icons.videocam,
-                                                          color: AppTheme.of(
-                                                                  context)
-                                                              .primaryText,
-                                                          size:
-                                                              _model.absellected == true
-                                                                  ? 300.0
-                                                                  : 180.0,
-                                                        )
-                                                      : FaIcon(
-                                                          FontAwesomeIcons.image,
-                                                          color: AppTheme.of(
-                                                                  context)
-                                                              .primaryText,
-                                                          size:
-                                                              _model.absellected == true
-                                                                  ? 300.0
-                                                                  : 180.0,
-                                                        ),
-                                                ),
-                                              Align(
-                                                alignment: AlignmentDirectional(
-                                                    -1.0, -1.0),
-                                                child: Padding(
-                                                  padding: EdgeInsets.all(8.0),
-                                                  child: Text(
-                                                    AppLocalizations.of(context)
-                                                        .getText(
-                                                      'ma3u1a6g' /* A */,
-                                                    ),
-                                                    style: AppTheme.of(
-                                                            context)
-                                                        .bodyMedium
-                                                        .override(
-                                                          font: GoogleFonts
-                                                              .plusJakartaSans(
-                                                            fontWeight:
-                                                                AppTheme.of(
-                                                                        context)
-                                                                    .bodyMedium
-                                                                    .fontWeight,
-                                                            fontStyle:
-                                                                AppTheme.of(
-                                                                        context)
-                                                                    .bodyMedium
-                                                                    .fontStyle,
-                                                          ),
-                                                          fontSize: 50.0,
-                                                          letterSpacing: 0.0,
-                                                          fontWeight:
-                                                              AppTheme.of(
-                                                                      context)
-                                                                  .bodyMedium
-                                                                  .fontWeight,
-                                                          fontStyle:
-                                                              AppTheme.of(
-                                                                      context)
-                                                                  .bodyMedium
-                                                                  .fontStyle,
-                                                        ),
+                                        child: Consumer<AppState>(
+                                          builder: (context, appState, child) => MediaSelectionBox(
+                                            label: 'A',
+                                            isSelected: _model.absellected,
+                                            isVideoSelected: _model.isVideoSelectedA,
+                                            imageUrl: appState.uploadImageA.isNotEmpty ? appState.uploadImageA.last : null,
+                                            showPlusIcon: _model.absellected,
+                                            onTap: () async {
+                                              // 이미지가 없으면 갤러리 픽커, 있으면 이미지 뷰어
+                                              if (appState.uploadImageA.isEmpty) {
+                                                await _openAssetsPicker(context, 'A');
+                                              } else {
+                                                // 이미지 뷰어 페이지로 이동
+                                                context.pushNamed(
+                                                  ImageViewerPage.routeName,
+                                                  queryParameters: {
+                                                    'imageUrls': appState.uploadImageA.join(','),
+                                                    'initialIndex': '0',
+                                                    'box': 'A',
+                                                  },
+                                                );
+                                              }
+                                            },
+                                            onCancel: () {
+                                              // X 아이콘 클릭 시 이미지 삭제
+                                              if (appState.uploadImageA.isNotEmpty) {
+                                                appState.removeFromUploadImageA(appState.uploadImageA.last);
+                                              }
+                                              setState(() {});
+                                            },
+                                            onPlusIconTap: () {
+                                              // + 아이콘 클릭 시 B박스 표시
+                                              _model.absellected = false;
+                                              setState(() {});
+                                            },
+                                            onEditTap: () async {
+                                              // 현재 이미지를 편집
+                                              if (appState.uploadImageA.isNotEmpty) {
+                                                await showModalBottomSheet(
+                                                  context: context,
+                                                  isScrollControlled: true,
+                                                  useSafeArea: true,  // SafeArea 적용
+                                                  backgroundColor: Colors.transparent,
+                                                  builder: (context) => MediaSelectionFlowWidget(
+                                                    box: 'A',
+                                                    initialImageUrl: appState.uploadImageA.last,
+                                                    startWithEditor: true,
+                                                    onComplete: (newImageUrl) {
+                                                      // 기존 이미지를 새 이미지로 교체
+                                                      final oldUrl = appState.uploadImageA.last;
+                                                      appState.removeFromUploadImageA(oldUrl);
+                                                      appState.addToUploadImageA(newImageUrl);
+                                                      
+                                                      // 성공 메시지
+                                                      _showSnackBar('이미지가 수정되었습니다.');
+                                                    },
                                                   ),
-                                                ),
-                                              ),
-                                              if (_model.absellected)
-                                                Align(
-                                                  alignment:
-                                                      AlignmentDirectional(
-                                                          1.0, -1.0),
-                                                  child: Padding(
-                                                    padding:
-                                                        EdgeInsets.all(14.0),
-                                                    child: InkWell(
-                                                      splashColor:
-                                                          Colors.transparent,
-                                                      focusColor:
-                                                          Colors.transparent,
-                                                      hoverColor:
-                                                          Colors.transparent,
-                                                      highlightColor:
-                                                          Colors.transparent,
-                                                      onTap: () async {
-                                                        _model.absellected =
-                                                            false;
-                                                        setState(() {});
-                                                      },
-                                                      child: Icon(
-                                                        Icons.add,
-                                                        color:
-                                                            AppTheme.of(
-                                                                    context)
-                                                                .primaryText,
-                                                        size:
-                                                            _model.absellected ==
-                                                                    true
-                                                                ? 40.0
-                                                                : 24.0,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
+                                                );
+                                              }
+                                            },
+                                            onAddImageTap: () async {
+                                              // +이미지 아이콘 클릭 시 갤러리로
+                                              await _openAssetsPicker(context, 'A');
+                                            },
+                                            isHorizontal: true,
+                                            boxColor: AppTheme.of(context).primary,
                                           ),
                                         ),
                                       ),
-                                    ),
                                       if (!_model.absellected)
                                         Padding(
-                                          padding:
-                                              EdgeInsetsDirectional.fromSTEB(
-                                                  2.5, 2.5, 2.5, 0.0),
-                                          child: InkWell(
-                                            onTap: () {
-                                              // B 박스 클릭 시 미디어 타입 선택
-                                              _showMediaTypeSelection(context, 'B');
-                                            },
-                                            child: Container(
-                                              width: double.infinity,
-                                              height: 200.0,
-                                              decoration: BoxDecoration(
-                                                color:
-                                                    AppTheme.of(context)
-                                                        .secondary,
-                                                borderRadius: BorderRadius.only(
-                                                  bottomLeft:
-                                                      Radius.circular(20.0),
-                                                  bottomRight:
-                                                      Radius.circular(20.0),
-                                                  topLeft: Radius.circular(20.0),
-                                                  topRight: Radius.circular(20.0),
-                                                ),
-                                              ),
-                                              child: Stack(
-                                                children: [
-                                                  Align(
-                                                    alignment:
-                                                        AlignmentDirectional(
-                                                            0.0, 1.0),
-                                                    child: _model.isVideoSelectedB
-                                                        ? Icon(
-                                                            Icons.videocam,
-                                                            color: AppTheme.of(
-                                                                    context)
-                                                                .primaryText,
-                                                            size: 180.0,
-                                                          )
-                                                        : FaIcon(
-                                                            FontAwesomeIcons.image,
-                                                            color: AppTheme.of(
-                                                                    context)
-                                                                .primaryText,
-                                                            size: 180.0,
-                                                          ),
-                                                  ),
-                                                Align(
-                                                  alignment:
-                                                      AlignmentDirectional(
-                                                          -1.0, -1.0),
-                                                  child: Padding(
-                                                    padding:
-                                                        EdgeInsets.all(8.0),
-                                                    child: Text(
-                                                      AppLocalizations.of(
-                                                              context)
-                                                          .getText(
-                                                        '6nrudz4v' /* B */,
-                                                      ),
-                                                      style:
-                                                          AppTheme.of(
-                                                                  context)
-                                                              .bodyMedium
-                                                              .override(
-                                                                font: GoogleFonts
-                                                                    .plusJakartaSans(
-                                                                  fontWeight: AppTheme.of(
-                                                                          context)
-                                                                      .bodyMedium
-                                                                      .fontWeight,
-                                                                  fontStyle: AppTheme.of(
-                                                                          context)
-                                                                      .bodyMedium
-                                                                      .fontStyle,
-                                                                ),
-                                                                fontSize: 50.0,
-                                                                letterSpacing:
-                                                                    0.0,
-                                                                fontWeight: AppTheme.of(
-                                                                        context)
-                                                                    .bodyMedium
-                                                                    .fontWeight,
-                                                                fontStyle: AppTheme.of(
-                                                                        context)
-                                                                    .bodyMedium
-                                                                    .fontStyle,
-                                                              ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                Align(
-                                                  alignment:
-                                                      AlignmentDirectional(
-                                                          1.0, -1.0),
-                                                  child: Padding(
-                                                    padding:
-                                                        EdgeInsets.all(14.0),
-                                                    child: InkWell(
-                                                      splashColor:
-                                                          Colors.transparent,
-                                                      focusColor:
-                                                          Colors.transparent,
-                                                      hoverColor:
-                                                          Colors.transparent,
-                                                      highlightColor:
-                                                          Colors.transparent,
-                                                      onTap: () async {
-                                                        _model.absellected =
-                                                            true;
-                                                        setState(() {});
+                                          padding: EdgeInsetsDirectional.fromSTEB(
+                                              2.5, 2.5, 2.5, 0.0),
+                                          child: Consumer<AppState>(
+                                            builder: (context, appState, child) => MediaSelectionBox(
+                                              label: 'B',
+                                              isSelected: false, // B박스는 선택 불가
+                                              isVideoSelected: _model.isVideoSelectedB,
+                                              imageUrl: appState.uploadImageB.isNotEmpty ? appState.uploadImageB.last : null,
+                                              shakeAnimation: _model.shakeAnimation,
+                                              onTap: () async {
+                                                // A박스에 이미지가 없으면 경고
+                                                if (appState.uploadImageA.isEmpty) {
+                                                  // 흔들림 애니메이션 실행 (3번)
+                                                  _model.shakeController?.forward().then((_) {
+                                                    _model.shakeController?.reverse().then((_) {
+                                                      _model.shakeController?.forward().then((_) {
+                                                        _model.shakeController?.reverse();
+                                                      });
+                                                    });
+                                                  });
+                                                  setState(() {
+                                                    _model.showBBoxWarning = true;
+                                                  });
+                                                  // 3초 후 경고 메시지 숨김
+                                                  Future.delayed(Duration(seconds: 3), () {
+                                                    if (mounted) {
+                                                      setState(() {
+                                                        _model.showBBoxWarning = false;
+                                                      });
+                                                    }
+                                                  });
+                                                } else {
+                                                  // A박스에 이미지가 있으면 B박스 처리
+                                                  if (appState.uploadImageB.isEmpty) {
+                                                    // B박스에 이미지가 없으면 갤러리 열기
+                                                    await _openAssetsPicker(context, 'B');
+                                                  } else {
+                                                    // B박스에 이미지가 있으면 뷰어 열기
+                                                    context.pushNamed(
+                                                      ImageViewerPage.routeName,
+                                                      queryParameters: {
+                                                        'imageUrls': appState.uploadImageB.join(','),
+                                                        'initialIndex': '0',
+                                                        'box': 'B',
                                                       },
-                                                      child: Icon(
-                                                        Icons.cancel_outlined,
-                                                        color:
-                                                            AppTheme.of(
-                                                                    context)
-                                                                .primaryText,
-                                                        size: 24.0,
-                                                      ),
+                                                    );
+                                                  }
+                                                }
+                                              },
+                                              onCancel: () {
+                                                // X 아이콘 클릭 시 B박스 숨김
+                                                _model.absellected = true;
+                                                // AppState에서 이미지 제거
+                                                if (appState.uploadImageB.isNotEmpty) {
+                                                  appState.removeFromUploadImageB(appState.uploadImageB.last);
+                                                }
+                                                setState(() {});
+                                              },
+                                              onEditTap: () async {
+                                                // 현재 이미지를 편집
+                                                if (appState.uploadImageB.isNotEmpty) {
+                                                  await showModalBottomSheet(
+                                                    context: context,
+                                                    isScrollControlled: true,
+                                                    useSafeArea: true,  // SafeArea 적용
+                                                    backgroundColor: Colors.transparent,
+                                                    builder: (context) => MediaSelectionFlowWidget(
+                                                      box: 'B',
+                                                      initialImageUrl: appState.uploadImageB.last,
+                                                      startWithEditor: true,
+                                                      onComplete: (newImageUrl) {
+                                                        // 기존 이미지를 새 이미지로 교체
+                                                        final oldUrl = appState.uploadImageB.last;
+                                                        appState.removeFromUploadImageB(oldUrl);
+                                                        appState.addToUploadImageB(newImageUrl);
+                                                        
+                                                        // 성공 메시지
+                                                        _showSnackBar('이미지가 수정되었습니다.');
+                                                      },
                                                     ),
-                                                  ),
-                                                ),
-                                              ],
+                                                  );
+                                                }
+                                              },
+                                              onAddImageTap: () async {
+                                                // +이미지 아이콘 클릭 시 갤러리로
+                                                if (appState.uploadImageA.isEmpty) {
+                                                  // A박스에 이미지가 없으면 경고
+                                                  _model.shakeController?.forward().then((_) {
+                                                    _model.shakeController?.reverse().then((_) {
+                                                      _model.shakeController?.forward().then((_) {
+                                                        _model.shakeController?.reverse();
+                                                      });
+                                                    });
+                                                  });
+                                                  setState(() {
+                                                    _model.showBBoxWarning = true;
+                                                  });
+                                                  Future.delayed(Duration(seconds: 3), () {
+                                                    if (mounted) {
+                                                      setState(() {
+                                                        _model.showBBoxWarning = false;
+                                                      });
+                                                    }
+                                                  });
+                                                } else {
+                                                  await _openAssetsPicker(context, 'B');
+                                                }
+                                              },
+                                              isHorizontal: true,
+                                              boxColor: AppTheme.of(context).secondary,
                                             ),
                                           ),
                                         ),
-                                      ),
                                     ],
+                                  ),
+                                ),
+                              ),
+                            // 경고 메시지 (B박스 탭 시)
+                            if (_model.showBBoxWarning)
+                              Padding(
+                                padding: EdgeInsetsDirectional.fromSTEB(20.0, 8.0, 20.0, 0.0),
+                                child: Text(
+                                  'A 먼저 이미지를 추가해주세요',
+                                  style: AppTheme.of(context).bodySmall.override(
+                                    font: GoogleFonts.plusJakartaSans(),
+                                    color: AppTheme.of(context).error,
+                                    fontSize: 12.0,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
                             Padding(
                               padding: EdgeInsetsDirectional.fromSTEB(
                                   10.0, 3.0, 10.0, 0.0),
-                              child: ValidatedTextField(
+                              child: SimpleValidatedField(
                                 controller: _model.textController2,
                                 focusNode: _model.textFieldFocusNode2,
-                                onChanged: (value) {
-                                  // 실시간 글자 수 업데이트
-                                  setState(() {
-                                    // 텍스트가 비어있으면 에러 초기화
-                                    if (value.trim().isEmpty) {
-                                      _model.validationResults.remove('description');
-                                    }
-                                  });
-                                },
-                                validationResult: _model.validationResults['description'],
-                                showValidationResults: false, // 에러는 필드 외부에서 표시
-                                minLines: 1,
-                                maxLines: 5,
-                                textInputAction: TextInputAction.done,
+                                labelKey: '94dz6d39',
+                                hintKey: 'gipyr3sq',
+                                fieldName: 'description',
                                 maxLength: 200,
-                                decoration: InputDecoration(
-                                  isDense: true,
-                                  labelText:
-                                      AppLocalizations.of(context).getText(
-                                    '94dz6d39' /* Description */,
-                                  ),
-                                  labelStyle: AppTheme.of(context)
-                                      .bodyMedium
-                                      .override(
-                                        font: GoogleFonts.plusJakartaSans(
-                                          fontWeight:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontWeight,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
-                                        ),
-                                        fontSize: 30.0,
-                                        letterSpacing: 0.0,
-                                        fontWeight: AppTheme.of(context)
-                                            .bodyMedium
-                                            .fontWeight,
-                                        fontStyle: AppTheme.of(context)
-                                            .bodyMedium
-                                            .fontStyle,
-                                      ),
-                                  alignLabelWithHint: false,
-                                  hintText: AppLocalizations.of(context).getText(
-                                    'gipyr3sq' /* Enter Description */,
-                                  ),
-                                  hintStyle: AppTheme.of(context)
-                                      .labelMedium
-                                      .override(
-                                        font: GoogleFonts.plusJakartaSans(
-                                          fontWeight:
-                                              AppTheme.of(context)
-                                                  .labelMedium
-                                                  .fontWeight,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .labelMedium
-                                                  .fontStyle,
-                                        ),
-                                        fontSize: 14.0,
-                                        letterSpacing: 0.0,
-                                        fontWeight: AppTheme.of(context)
-                                            .labelMedium
-                                            .fontWeight,
-                                        fontStyle: AppTheme.of(context)
-                                            .labelMedium
-                                            .fontStyle,
-                                      ),
-                                  enabledBorder: UnderlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: Colors.black,
-                                      width: 2.0,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  focusedBorder: UnderlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: Colors.black,
-                                      width: 2.0,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  errorBorder: UnderlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: Colors.black,
-                                      width: 2.0,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  focusedErrorBorder: UnderlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: Colors.black,
-                                      width: 2.0,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  filled: true,
-                                  fillColor: AppTheme.of(context)
-                                      .secondaryBackground,
-                                  suffixIcon: _model
-                                          .textController2!.text.isNotEmpty
-                                      ? InkWell(
-                                          onTap: () async {
-                                            _model.textController2?.clear();
-                                            // 검증 결과도 초기화
-                                            _model.validationResults.remove('description');
-                                            _model.hasValidationViolations = _model.validationResults.values.any((r) => r.isToxic);
-                                            setState(() {});
-                                          },
-                                          child: Icon(
-                                            Icons.clear,
-                                            color: AppTheme.of(context)
-                                                .primaryText,
-                                            size: 22,
-                                          ),
-                                        )
-                                      : null,
-                                ),
-                                style: AppTheme.of(context)
-                                    .bodyMedium
-                                    .override(
-                                      font: GoogleFonts.plusJakartaSans(
-                                        fontWeight: AppTheme.of(context)
-                                            .bodyMedium
-                                            .fontWeight,
-                                        fontStyle: AppTheme.of(context)
-                                            .bodyMedium
-                                            .fontStyle,
-                                      ),
-                                      fontSize: 16.0,
-                                      letterSpacing: 0.0,
-                                      fontWeight: AppTheme.of(context)
-                                          .bodyMedium
-                                          .fontWeight,
-                                      fontStyle: AppTheme.of(context)
-                                          .bodyMedium
-                                          .fontStyle,
-                                    ),
+                                maxLines: 5,
+                                minLines: 1,
+                                fontSize: 30.0,
+                                borderWidth: 2.0,
+                                isDense: false,
+                                validationResult: _model.validationResults['description'],
+                                onFieldChanged: (value, fieldName, isBlocked) {
+                                  // ContentFilter is handled in SimpleValidatedField
+                                },
+                                onFieldCleared: () {
+                                  _model.validationResults.remove('description');
+                                  _model.hasValidationViolations = _model.validationResults.values.any((r) => r.isToxic);
+                                  setState(() {});
+                                },
                               ),
                             ),
                             // Description 글자 수 표시
-                            Padding(
-                              padding: EdgeInsetsDirectional.fromSTEB(10.0, 4.5, 10.0, 0.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    '${_model.textController2?.text.length ?? 0}/200',
-                                    style: AppTheme.of(context).bodySmall.override(
-                                      font: GoogleFonts.plusJakartaSans(),
-                                      color: AppTheme.of(context).secondaryText,
-                                      fontSize: 12.0,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            SimpleCharacterCount(
+                              controller: _model.textController2,
+                              maxLength: 200,
                             ),
                             Align(
                               alignment: AlignmentDirectional(-1.0, 0.0),
@@ -1431,213 +981,41 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                     20.0, 2.0, 20.0, 0.0),
                                 child: Container(
                                   width: 400.0,
-                                  child: ValidatedTextField(
+                                  child: SimpleValidatedField(
                                     controller: _model.textController3,
                                     focusNode: _model.textFieldFocusNode3,
-                                    onChanged: (value) {
-                                      // 실시간 글자 수 업데이트
-                                      setState(() {
-                                        // 텍스트가 비어있으면 에러 초기화
-                                        if (value.trim().isEmpty) {
-                                          _model.isATitleEmpty = false;
-                                          _model.validationResults.remove('aTitle');
-                                          _model.hasBlockedWordInATitle = false;
-                                        }
-                                      });
-                                      
-                                      // 필수 필드 체크
-                                      _checkRequiredFieldsAndUpdateButton();
-                                      
-                                      // 디바운스된 필터링
-                                      EasyDebounce.debounce(
-                                        '_model.textController3',
-                                        Duration(milliseconds: 500),
-                                        () {
-                                          final result = ContentFilter.filterText(value);
-                                          _model.hasBlockedWordInATitle = result.isBlocked;
-                                          setState(() {});
-                                        },
-                                      );
-                                    },
-                                    validationResult: _model.validationResults['aTitle'],
-                                    showValidationResults: false, // 에러는 필드 외부에서 표시
+                                    labelKey: 'jvx92fb4',
+                                    hintKey: 'tkzl6wqo',
+                                    fieldName: 'aTitle',
+                                    maxLength: 20,
+                                    maxLines: 5,
                                     minLines: 1,
-                                maxLines: 5,
-                                textInputAction: TextInputAction.done,
-                                maxLength: 20,
-                                    decoration: InputDecoration(
-                                      isDense: true,
-                                      labelText:
-                                          AppLocalizations.of(context).getText(
-                                        'jvx92fb4' /* A title */,
-                                      ),
-                                      labelStyle: AppTheme.of(context)
-                                          .titleSmall
-                                          .override(
-                                            font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
-                                            ),
-                                            letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontStyle,
-                                          ),
-                                      alignLabelWithHint: false,
-                                      hintText:
-                                          AppLocalizations.of(context).getText(
-                                        'tkzl6wqo' /* Tell me about A... */,
-                                      ),
-                                      hintStyle: AppTheme.of(context)
-                                          .labelMedium
-                                          .override(
-                                            font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .labelMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .labelMedium
-                                                      .fontStyle,
-                                            ),
-                                            letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .labelMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .labelMedium
-                                                    .fontStyle,
-                                          ),
-                                      enabledBorder: UnderlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Colors.black,
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(8.0),
-                                      ),
-                                      focusedBorder: UnderlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Colors.black,
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(8.0),
-                                      ),
-                                      errorBorder: UnderlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: AppTheme.of(context)
-                                              .error,
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(8.0),
-                                      ),
-                                      focusedErrorBorder: UnderlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: AppTheme.of(context)
-                                              .error,
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(8.0),
-                                      ),
-                                      filled: true,
-                                      fillColor: AppTheme.of(context)
-                                          .secondaryBackground,
-                                      suffixIcon: _model
-                                              .textController3!.text.isNotEmpty
-                                          ? InkWell(
-                                              onTap: () async {
-                                                _model.textController3?.clear();
-                                                // 검증 결과도 초기화
-                                                _model.validationResults.remove('aTitle');
-                                                _model.hasValidationViolations = _model.validationResults.values.any((r) => r.isToxic);
-                                                _model.hasBlockedWordInATitle = false;
-                                                setState(() {});
-                                              },
-                                              child: Icon(
-                                                Icons.clear,
-                                                size: 22,
-                                              ),
-                                            )
-                                          : null,
-                                    ),
-                                    style: AppTheme.of(context)
-                                        .bodyMedium
-                                        .override(
-                                          font: GoogleFonts.plusJakartaSans(
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                          letterSpacing: 0.0,
-                                          fontWeight:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontWeight,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
-                                        ),
+                                    fontSize: 14.0,
+                                    borderWidth: 2.0,
+                                    validationResult: _model.validationResults['aTitle'],
+                                    onFieldChanged: (value, fieldName, isBlocked) {
+                                      _model.hasBlockedWordInATitle = isBlocked;
+                                      setState(() {});
+                                    },
+                                    onFieldCleared: () {
+                                      _model.isATitleEmpty = false;
+                                      _model.validationResults.remove('aTitle');
+                                      _model.hasValidationViolations = _model.validationResults.values.any((r) => r.isToxic);
+                                      _model.hasBlockedWordInATitle = false;
+                                      setState(() {});
+                                    },
+                                    onRequiredFieldsCheck: _checkRequiredFieldsAndUpdateButton,
                                   ),
                                 ),
                               ),
                             ),
                             // A title 글자 수 및 경고 표시
-                            Padding(
-                              padding: EdgeInsetsDirectional.fromSTEB(20.0, 4.5, 20.0, 0.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  // 왼쪽: 경고 메시지
-                                  if (_model.hasBlockedWordInATitle || _model.isATitleEmpty || _model.validationResults['aTitle']?.isToxic == true)
-                                    Text(
-                                      _model.isATitleEmpty 
-                                        ? '필수 항목입니다'
-                                        : _model.validationResults['aTitle']?.isToxic == true
-                                          ? '독성 콘텐츠가 감지되었습니다'
-                                          : '⚠️ 부적절한 언어가 포함됨',
-                                      style: AppTheme.of(context).bodySmall.override(
-                                        font: GoogleFonts.plusJakartaSans(),
-                                        color: AppTheme.of(context).error,
-                                        fontSize: 12.0,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    )
-                                  else
-                                    const SizedBox.shrink(),
-                                  // 오른쪽: 글자 수
-                                  Text(
-                                    '${_model.textController3?.text.length ?? 0}/20',
-                                    style: AppTheme.of(context).bodySmall.override(
-                                      font: GoogleFonts.plusJakartaSans(),
-                                      color: AppTheme.of(context).secondaryText,
-                                      fontSize: 12.0,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            CharacterCountDisplay(
+                              controller: _model.textController3,
+                              maxLength: 20,
+                              isEmpty: _model.isATitleEmpty,
+                              hasBlockedWord: _model.hasBlockedWordInATitle,
+                              validationResult: _model.validationResults['aTitle'],
                             ),
                             Align(
                               alignment: AlignmentDirectional(-1.0, 0.0),
@@ -1646,213 +1024,42 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                                     20.0, 2.0, 20.0, 0.0),
                                 child: Container(
                                   width: 400.0,
-                                  child: ValidatedTextField(
+                                  child: SimpleValidatedField(
                                     controller: _model.textController4,
                                     focusNode: _model.textFieldFocusNode4,
-                                    onChanged: (value) {
-                                      // 실시간 글자 수 업데이트
-                                      setState(() {
-                                        // 텍스트가 비어있으면 에러 초기화
-                                        if (value.trim().isEmpty) {
-                                          _model.isBTitleEmpty = false;
-                                          _model.validationResults.remove('bTitle');
-                                          _model.hasBlockedWordInBTitle = false;
-                                        }
-                                      });
-                                      
-                                      // 필수 필드 체크
-                                      _checkRequiredFieldsAndUpdateButton();
-                                      
-                                      // 디바운스된 필터링
-                                      EasyDebounce.debounce(
-                                        '_model.textController4',
-                                        Duration(milliseconds: 500),
-                                        () {
-                                          final result = ContentFilter.filterText(value);
-                                          _model.hasBlockedWordInBTitle = result.isBlocked;
-                                          setState(() {});
-                                        },
-                                      );
-                                    },
-                                    validationResult: _model.validationResults['bTitle'],
-                                    showValidationResults: false, // 에러는 필드 외부에서 표시
+                                    labelKey: 't8flxbe7',
+                                    hintKey: 'gwsufdly',
+                                    fieldName: 'bTitle',
+                                    maxLength: 20,
+                                    maxLines: 5,
                                     minLines: 1,
-                                maxLines: 5,
-                                textInputAction: TextInputAction.done,
-                                maxLength: 20,
-                                    decoration: InputDecoration(
-                                      isDense: true,
-                                      labelText:
-                                          AppLocalizations.of(context).getText(
-                                        't8flxbe7' /* B title */,
-                                      ),
-                                      labelStyle: AppTheme.of(context)
-                                          .titleSmall
-                                          .override(
-                                            font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
-                                            ),
-                                            letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontStyle,
-                                          ),
-                                      alignLabelWithHint: false,
-                                      hintText:
-                                          AppLocalizations.of(context).getText(
-                                        'gwsufdly' /* Tell me about B... */,
-                                      ),
-                                      hintStyle: AppTheme.of(context)
-                                          .labelMedium
-                                          .override(
-                                            font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .labelMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .labelMedium
-                                                      .fontStyle,
-                                            ),
-                                            letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .labelMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .labelMedium
-                                                    .fontStyle,
-                                          ),
-                                      enabledBorder: UnderlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Colors.black,
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(8.0),
-                                      ),
-                                      focusedBorder: UnderlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Colors.black,
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(8.0),
-                                      ),
-                                      errorBorder: UnderlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: AppTheme.of(context)
-                                              .error,
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(8.0),
-                                      ),
-                                      focusedErrorBorder: UnderlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: AppTheme.of(context)
-                                              .error,
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(8.0),
-                                      ),
-                                      filled: true,
-                                      fillColor: AppTheme.of(context)
-                                          .secondaryBackground,
-                                      suffixIcon: _model
-                                              .textController4!.text.isNotEmpty
-                                          ? InkWell(
-                                              onTap: () async {
-                                                _model.textController4?.clear();
-                                                // 검증 결과도 초기화
-                                                _model.validationResults.remove('bTitle');
-                                                _model.hasValidationViolations = _model.validationResults.values.any((r) => r.isToxic);
-                                                _model.hasBlockedWordInBTitle = false;
-                                                setState(() {});
-                                              },
-                                              child: Icon(
-                                                Icons.clear,
-                                                size: 22,
-                                              ),
-                                            )
-                                          : null,
-                                    ),
-                                    style: AppTheme.of(context)
-                                        .bodyMedium
-                                        .override(
-                                          font: GoogleFonts.plusJakartaSans(
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                          letterSpacing: 0.0,
-                                          fontWeight:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontWeight,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
-                                        ),
+                                    fontSize: 14.0,
+                                    borderWidth: 2.0,
+                                    validationResult: _model.validationResults['bTitle'],
+                                    onFieldChanged: (value, fieldName, isBlocked) {
+                                      _model.hasBlockedWordInBTitle = isBlocked;
+                                      setState(() {});
+                                    },
+                                    onFieldCleared: () {
+                                      _model.isBTitleEmpty = false;
+                                      _model.validationResults.remove('bTitle');
+                                      _model.hasValidationViolations = _model.validationResults.values.any((r) => r.isToxic);
+                                      _model.hasBlockedWordInBTitle = false;
+                                      setState(() {});
+                                    },
+                                    onRequiredFieldsCheck: _checkRequiredFieldsAndUpdateButton,
                                   ),
                                 ),
                               ),
                             ),
                             // B title 글자 수 및 경고 표시
-                            Padding(
-                              padding: EdgeInsetsDirectional.fromSTEB(20.0, 4.5, 20.0, 0.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  // 왼쪽: 경고 메시지
-                                  if (_model.hasBlockedWordInBTitle || _model.isBTitleEmpty || _model.validationResults['bTitle']?.isToxic == true)
-                                    Text(
-                                      _model.isBTitleEmpty 
-                                        ? '필수 항목입니다'
-                                        : _model.validationResults['bTitle']?.isToxic == true
-                                          ? '독성 콘텐츠가 감지되었습니다'
-                                          : '⚠️ 부적절한 언어가 포함눨',
-                                      style: AppTheme.of(context).bodySmall.override(
-                                        font: GoogleFonts.plusJakartaSans(),
-                                        color: AppTheme.of(context).error,
-                                        fontSize: 12.0,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    )
-                                  else
-                                    const SizedBox.shrink(),
-                                  // 오른쪽: 글자 수
-                                  Text(
-                                    '${_model.textController4?.text.length ?? 0}/20',
-                                    style: AppTheme.of(context).bodySmall.override(
-                                      font: GoogleFonts.plusJakartaSans(),
-                                      color: AppTheme.of(context).secondaryText,
-                                      fontSize: 12.0,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            CharacterCountDisplay(
+                              controller: _model.textController4,
+                              maxLength: 20,
+                              isEmpty: _model.isBTitleEmpty,
+                              hasBlockedWord: _model.hasBlockedWordInBTitle,
+                              validationResult: _model.validationResults['bTitle'],
+                              blockedMessage: '⚠️ 부적절한 언어가 포함됨',
                             ),
                             // 스크롤 감지를 위한 최소 여백
                             SizedBox(height: 100.0),
@@ -1860,46 +1067,12 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
                         ),
               ),
               // Next button overlay
-              Positioned(
-                bottom: 30.0,
-                right: 20.0,
-                child: AnimatedOpacity(
-                  opacity: _model.showNextButton ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 300),
-                  child: FloatingActionButton.extended(
-                    onPressed: _model.showNextButton && !_model.isValidating
-                        ? () async {
-                            await _validateAllTexts();
-                          }
-                        : null,
-                    backgroundColor: _model.isValidating 
-                        ? Colors.grey 
-                        : AppTheme.of(context).primary,
-                    icon: _model.isValidating
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Icon(
-                            Icons.arrow_forward,
-                            color: Colors.white,
-                          ),
-                    label: Text(
-                      _model.isValidating ? '검증 중...' : '다음',
-                      style: AppTheme.of(context).bodyMedium.override(
-                            font: GoogleFonts.plusJakartaSans(),
-                            color: Colors.white,
-                            fontSize: 16.0,
-                            letterSpacing: 0.0,
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                  ),
-                ),
+              NextButton(
+                showButton: _model.showNextButton,
+                isValidating: _model.isValidating,
+                onPressed: () async {
+                  await _validateAllTexts();
+                },
               ),
             ],
           ),
@@ -1909,59 +1082,3 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget> {
   }
 }
 
-// 한국어 텍스트 델리게이트
-class KoreanAssetPickerTextDelegate extends AssetPickerTextDelegate {
-  const KoreanAssetPickerTextDelegate();
-  
-  @override
-  String get confirm => '확인';
-  
-  @override
-  String get cancel => '취소';
-  
-  @override
-  String get edit => '편집';
-  
-  @override
-  String get gifIndicator => 'GIF';
-  
-  @override
-  String get loadFailed => '로드 실패';
-  
-  @override
-  String get original => '원본';
-  
-  @override
-  String get preview => '미리보기';
-  
-  @override
-  String get select => '선택';
-  
-  @override
-  String get emptyList => '사진이 없습니다';
-  
-  @override
-  String get unSupportedAssetType => '지원하지 않는 형식';
-  
-  @override
-  String get unableToAccessAll => '모든 사진에 접근할 수 없습니다';
-  
-  @override
-  String get viewingLimitedAssetsTip => '앱에서 접근 가능한 사진만 표시됩니다.';
-  
-  @override
-  String get changeAccessibleLimitedAssets => '접근 가능한 사진 업데이트';
-  
-  @override
-  String get accessAllTip => '앱이 일부 사진에만 접근 가능합니다.\n'
-      '설정에서 모든 사진 접근을 허용해주세요.';
-  
-  @override
-  String get goToSystemSettings => '시스템 설정';
-  
-  @override
-  String get accessLimitedAssets => '제한된 접근으로 계속';
-  
-  @override
-  String get accessiblePathName => '접근 가능한 사진';
-}

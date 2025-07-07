@@ -32,6 +32,13 @@ class InPutPostImageModel extends AppModel<InPutPostImageWidget> {
   bool isQuestionTitleEmpty = false;
   bool isATitleEmpty = false;
   bool isBTitleEmpty = false;
+  
+  // B박스 경고 메시지 표시 상태
+  bool showBBoxWarning = false;
+  
+  // 흔들림 애니메이션 컨트롤러
+  AnimationController? shakeController;
+  Animation<double>? shakeAnimation;
 
   ///  State fields for stateful widgets in this page.
 
@@ -61,6 +68,7 @@ class InPutPostImageModel extends AppModel<InPutPostImageWidget> {
   @override
   void dispose() {
     scrollController?.dispose();
+    shakeController?.dispose();
 
     textFieldFocusNode1?.dispose();
     textController1?.dispose();

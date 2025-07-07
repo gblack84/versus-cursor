@@ -170,6 +170,38 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           name: InPutPostImageWidget.routeName,
           path: InPutPostImageWidget.routePath,
           builder: (context, params) => InPutPostImageWidget(),
+        ),
+        AppRoute(
+          name: ProImageEditorPage.routeName,
+          path: ProImageEditorPage.routePath,
+          builder: (context, params) => ProImageEditorPage(
+            imagePath: params.getParam(
+              'imagePath',
+              ParamType.String,
+            ),
+            box: params.getParam(
+              'box',
+              ParamType.String,
+            ),
+          ),
+        ),
+        AppRoute(
+          name: ImageViewerPage.routeName,
+          path: ImageViewerPage.routePath,
+          builder: (context, params) => ImageViewerPage(
+            imageUrls: (params.getParam<String>(
+              'imageUrls',
+              ParamType.String,
+            ) ?? '').split(','),
+            initialIndex: params.getParam(
+              'initialIndex',
+              ParamType.int,
+            ) ?? 0,
+            box: params.getParam(
+              'box',
+              ParamType.String,
+            ),
+          ),
         )
       ].map((r) => r.toRoute(appStateNotifier)).toList(),
       observers: [routeObserver],

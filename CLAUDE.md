@@ -424,25 +424,65 @@ This project represents a sophisticated social media application with a unique "
   - 이미지 선택 및 경로 획득 완료
   - 시뮬레이터에서는 카메라 버튼 미표시 (실기기에서는 표시 예상)
 
+### 2025-07-05~06: MediaSelectionBox 액션 아이콘 구현
+- **작업 내용**:
+  - 이미지가 있을 때 3개의 액션 아이콘 추가 (편집, 이미지 추가, B박스 표시)
+  - A박스에 이미지 삭제용 X 아이콘 추가
+  - B박스는 항상 X 아이콘 표시 (숨기기용)
+  - 아이콘 크기 및 배치 최적화 (29px로 통일)
+  - 가로/세로 레이아웃에 따른 아이콘 배치 조정
+- **UI 구성**:
+  - 우측 상단: X 아이콘 (검은 원형 배경)
+  - 우측 하단: 액션 아이콘들 (검은 반투명 원형 배경)
+  - 가로 레이아웃: 3개 아이콘 가로 배치 [+B] [+이미지] [편집]
+  - 세로 레이아웃: 3개 아이콘 세로 배치
+- **아이콘 변경**: 
+  - +B 아이콘을 Icons.add_box_outlined → Icons.add로 변경 (플러스만 표시)
+- **커밋**: 115a8dc (feature/flutter-upgrade 브랜치)
+
+### 2025-07-07: 이미지 편집 기능 및 ProImageEditor 통합
+- **작업 내용**:
+  - ProImageEditor 페이지 구현 완료
+  - Firebase Storage URL에서 이미지 다운로드 → 편집 → 재업로드 플로우 구현
+  - 이미지 뷰어 페이지 구현 (전체화면 보기, 줌/스와이프 지원)
+  - MediaUploadService 클래스로 업로드 로직 중앙화
+  - 로딩 상태 관리 및 에러 처리 개선
+- **아키텍처 개선**:
+  - InPutPostImageWidget 리팩토링 (컴포넌트 분리)
+  - constants, delegates, helpers, services, widgets 디렉토리 구조화
+  - MediaSelectionBox 컴포넌트 독립 분리
+  - AspectRatioHelper 유틸리티 클래스 추가
+- **UI/UX 업데이트**:
+  - 이미지 편집 아이콘 동작 구현
+  - 업로드 중 로딩 인디케이터 표시
+  - 편집 완료 후 자동 이미지 업데이트
+  - 스낵바로 성공/실패 피드백 제공
+- **결과**:
+  - 이미지 편집 워크플로우 완성
+  - Firebase Storage 통합 안정화
+  - 사용자 경험 개선
+
 ### 현재 진행 상황
-- **InPutPostImageWidget** 페이지에서 미디어 선택 기능 구현 완료
+- **InPutPostImageWidget** 페이지에서 미디어 선택 및 편집 기능 구현 완료
+- MediaSelectionBox 컴포넌트 분리 및 액션 아이콘 구현 완료
 - wechat_assets_picker로 갤러리 접근 가능
-- 선택된 이미지 경로 확인 가능
-- TODO: ProImageEditor 페이지 연결
+- Firebase Storage에 이미지 업로드 및 표시 기능 작동
+- ProImageEditor 통합으로 이미지 편집 기능 완성
+- 이미지 뷰어 페이지 구현 완료 (전체화면 보기, 줌/스와이프 지원)
 
 ### 다음 작업 계획
-1. **ProImageEditor 페이지 생성**
-   - /lib/pages/pro_image_editor/ 디렉토리 구조
-   - 이미지 편집 기능 구현 (크롭, 필터, 텍스트 등)
-   - Firebase Storage 업로드 통합
-
-2. **이미지 업로드 플로우 완성**
-   - 편집된 이미지 Firebase Storage 업로드
-   - AppState의 uploadImageA/B 배열 업데이트
-   - A/B 박스에 선택된 이미지 프리뷰 표시
-
-3. **비디오 선택 및 편집**
+1. **비디오 선택 및 편집**
    - 비디오 선택 기능 구현
    - pro_video_editor 통합
    - 썸네일 생성
    - 업로드 처리
+
+2. **UI/UX 개선**
+   - 애니메이션 추가
+   - 드래그 앤 드롭 지원
+   - 이미지 순서 변경 기능
+
+3. **성능 최적화**
+   - 이미지 압축 옵션 추가
+   - 캐싱 전략 구현
+   - 메모리 사용량 최적화

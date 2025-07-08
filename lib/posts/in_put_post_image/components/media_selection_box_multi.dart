@@ -18,6 +18,8 @@ class MediaSelectionBoxMulti extends StatefulWidget {
   final Animation<double>? shakeAnimation; // 흔들림 애니메이션
   final VoidCallback? onEditTap; // 편집 버튼 탭 콜백
   final VoidCallback? onAddImageTap; // 이미지 추가 버튼 탭 콜백
+  final double? dynamicHeight; // 동적 높이 (null이면 기본값 사용)
+  final double? dynamicWidth; // 동적 너비 (null이면 기본값 사용)
 
   const MediaSelectionBoxMulti({
     Key? key,
@@ -34,6 +36,8 @@ class MediaSelectionBoxMulti extends StatefulWidget {
     this.shakeAnimation,
     this.onEditTap,
     this.onAddImageTap,
+    this.dynamicHeight,
+    this.dynamicWidth,
   }) : super(key: key);
   
   @override
@@ -56,26 +60,78 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
     super.dispose();
   }
   
+  int _calculateMemCacheWidth() {
+    // 디바이스 픽셀 밀도 가져오기
+    final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+    
+    // 동적 너비가 제공되면 사용, 아니면 화면 너비 기준으로 계산
+    double baseWidth;
+    if (widget.dynamicWidth != null && widget.dynamicWidth!.isFinite) {
+      baseWidth = widget.dynamicWidth!;
+    } else {
+      baseWidth = widget.isHorizontal ? MediaQuery.of(context).size.width / 2 : MediaQuery.of(context).size.width;
+    }
+    
+    // 실제 표시될 픽셀 크기 계산
+    // Firebase Storage의 display 이미지는 최대 800px이므로 그에 맞춰 최적화
+    final targetWidth = (baseWidth * pixelRatio).round();
+    
+    // display 이미지 크기(800px)를 넘지 않도록 제한
+    // 최소 200px 보장으로 저해상도 기기에서도 품질 유지
+    return targetWidth.clamp(200, 800);
+  }
+  
+  Widget _buildRemoteImage(int index) {
+    if (index >= widget.imageUrls.length) {
+      return Icon(
+        Icons.error,
+        color: AppTheme.of(context).error,
+      );
+    }
+    
+    return CachedNetworkImage(
+      imageUrl: widget.imageUrls[index],
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      memCacheWidth: _calculateMemCacheWidth(),
+      placeholder: (context, url) => Center(
+        child: CircularProgressIndicator(
+          color: AppTheme.of(context).primary,
+        ),
+      ),
+      errorWidget: (context, url, error) {
+        print('이미지 로드 에러: $error');
+        print('문제 URL: $url');
+        return Icon(
+          Icons.error,
+          color: AppTheme.of(context).error,
+        );
+      },
+    );
+  }
+  
   @override
   Widget build(BuildContext context) {
-    final double boxHeight = widget.isSelected 
+    // 동적 높이가 제공되면 사용, 아니면 기본값 사용
+    final double boxHeight = widget.dynamicHeight ?? (widget.isSelected 
         ? (widget.isHorizontal ? 350.0 : 250.0)
-        : (widget.isHorizontal ? 200.0 : 150.0);
+        : (widget.isHorizontal ? 350.0 : 200.0));
+    
+    if (widget.dynamicHeight != null) {
+      print('${widget.label}박스: dynamicHeight=${widget.dynamicHeight}, isHorizontal=${widget.isHorizontal}');
+    }
     
     final double iconSize = widget.isSelected
         ? (widget.isHorizontal ? 300.0 : 250.0)
-        : (widget.isHorizontal ? 180.0 : 100.0);
+        : (widget.isHorizontal ? 180.0 : 150.0);
 
     Widget content = Padding(
-      padding: EdgeInsetsDirectional.fromSTEB(
-          widget.label == 'A' ? 5.0 : 2.5,
-          widget.label == 'A' ? 2.5 : 0.0,
-          widget.label == 'B' ? 5.0 : 2.5,
-          2.5),
+      padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
       child: InkWell(
         onTap: widget.onTap,
         child: Container(
-          width: widget.isHorizontal ? double.infinity : null,
+          width: widget.dynamicWidth ?? (widget.isHorizontal ? double.infinity : null),
           height: boxHeight,
           decoration: BoxDecoration(
             color: widget.boxColor,
@@ -99,28 +155,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                           });
                         },
                         itemBuilder: (context, index) {
-                          return CachedNetworkImage(
-                            imageUrl: widget.imageUrls[index],
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                            memCacheWidth: widget.isHorizontal 
-                              ? (widget.isSelected ? 380 : 190) 
-                              : (widget.isSelected ? 350 : 250),
-                            placeholder: (context, url) => Center(
-                              child: CircularProgressIndicator(
-                                color: AppTheme.of(context).primary,
-                              ),
-                            ),
-                            errorWidget: (context, url, error) {
-                              print('이미지 로드 에러: $error');
-                              print('문제 URL: $url');
-                              return Icon(
-                                Icons.error,
-                                color: AppTheme.of(context).error,
-                              );
-                            },
-                          );
+                          return _buildRemoteImage(index);
                         },
                       ),
                       // 페이지 인디케이터 (이미지가 2개 이상일 때만 표시)
@@ -245,7 +280,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                     ),
                   ),
                 ),
-              // B박스의 X 아이콘 - 항상 표시
+              // B박스의 X 아이콘 - 이미지 유무에 따라 다른 스타일
               if (widget.label == 'B' && widget.onCancel != null)
                 Align(
                   alignment: AlignmentDirectional(1.0, -1.0),
@@ -257,18 +292,26 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                       hoverColor: Colors.transparent,
                       highlightColor: Colors.transparent,
                       onTap: () => widget.onCancel?.call(_currentIndex),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.6),
-                          shape: BoxShape.circle,
-                        ),
-                        padding: EdgeInsets.all(4.0),
-                        child: Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 24.0,
-                        ),
-                      ),
+                      child: widget.imageUrls.isNotEmpty
+                        // 이미지가 있을 때 - A박스와 동일한 스타일
+                        ? Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.6),
+                              shape: BoxShape.circle,
+                            ),
+                            padding: EdgeInsets.all(4.0),
+                            child: Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 24.0,
+                            ),
+                          )
+                        // 이미지가 없을 때 - 큰 X 아이콘
+                        : Icon(
+                            Icons.cancel,
+                            color: Colors.black.withValues(alpha: 0.6),
+                            size: 40.0,
+                          ),
                     ),
                   ),
                 ),
@@ -278,13 +321,13 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                   right: 12.0,
                   bottom: 12.0,
                   child: widget.isHorizontal 
-                    ? Row(
+                    ? Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           // +B 아이콘 (A박스에만, B박스가 숨겨진 상태일 때)
                           if (widget.label == 'A' && widget.showPlusIcon && widget.onPlusIconTap != null)
                             Container(
-                              margin: EdgeInsets.only(right: 8.0),
+                              margin: EdgeInsets.only(bottom: 8.0),
                               decoration: BoxDecoration(
                                 color: Colors.black.withValues(alpha: 0.6),
                                 shape: BoxShape.circle,
@@ -303,7 +346,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                             ),
                           // +이미지 아이콘
                           Container(
-                            margin: EdgeInsets.only(right: 8.0),
+                            margin: EdgeInsets.only(bottom: 8.0),
                             decoration: BoxDecoration(
                               color: Colors.black.withValues(alpha: 0.6),
                               shape: BoxShape.circle,
@@ -340,13 +383,13 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                           ),
                         ],
                       )
-                : Column(
+                : Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // +B 아이콘 (A박스에만, B박스가 숨겨진 상태일 때)
                       if (widget.label == 'A' && widget.showPlusIcon && widget.onPlusIconTap != null)
                         Container(
-                          margin: EdgeInsets.only(bottom: 8.0),
+                          margin: EdgeInsets.only(right: 8.0),
                           decoration: BoxDecoration(
                             color: Colors.black.withValues(alpha: 0.6),
                             shape: BoxShape.circle,
@@ -365,7 +408,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                         ),
                       // +이미지 아이콘
                       Container(
-                        margin: EdgeInsets.only(bottom: widget.isHorizontal ? 0.0 : 8.0, right: widget.isHorizontal ? 8.0 : 0.0),
+                        margin: EdgeInsets.only(right: 8.0),
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.6),
                           shape: BoxShape.circle,

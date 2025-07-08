@@ -5,6 +5,7 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:wechat_camera_picker/wechat_camera_picker.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '/core/app_theme.dart';
 import '/app_state.dart';
 import '../delegates/korean_asset_picker_delegate.dart';
@@ -197,42 +198,6 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
     }
   }
 
-  /// Firebase Storage에 이미지 업로드 (리사이징 포함)
-  /// 반환값: {url: String, aspectRatio: double}
-  Future<Map<String, dynamic>> _uploadToFirebase(Uint8List bytes) async {
-    try {
-      setState(() {
-        _isUploading = true;
-        _uploadProgress = 0.0;
-      });
-
-      // MediaUploadService를 사용하여 리사이징 및 업로드
-      final result = await MediaUploadService.uploadImageWithVariants(
-        imageBytes: bytes,
-        box: widget.box,
-      );
-      
-      if (mounted) {
-        setState(() {
-          _isUploading = false;
-        });
-      }
-
-      // URL과 비율 정보 반환
-      return {
-        'url': result['urls']['display'],
-        'aspectRatio': result['aspectRatio'],
-      };
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isUploading = false;
-        });
-      }
-      rethrow;
-    }
-  }
-
   /// 카메라 버튼 빌드
   Widget _buildCameraButton(BuildContext context) {
     return GestureDetector(
@@ -289,6 +254,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -367,78 +333,187 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
               onImageEditingComplete: (Uint8List bytes) async {
                 print('onImageEditingComplete 호출됨');
                 try {
-                  // Firebase Storage에 업로드
-                  final result = await _uploadToFirebase(bytes);
-                  final url = result['url'] as String;
-                  final aspectRatio = result['aspectRatio'] as double;
-                  print('Firebase 업로드 완료: $url, 비율: $aspectRatio');
+                  // 업로드 진행 상태 표시
+                  setState(() {
+                    _isUploading = true;
+                    _uploadProgress = 0.2;
+                  });
                   
                   // AppState 접근
                   final appState = Provider.of<AppState>(context, listen: false);
                   
                   // 멀티 이미지 처리
                   if (_allSelectedFiles.isNotEmpty) {
-                    // 선택된 이미지를 맨 앞으로 재배열하기 위한 리스트
                     final reorderedUrls = <String>[];
                     final reorderedRatios = <double>[];
                     
-                    // 1. 편집된 이미지(대표 이미지)를 맨 앞에 추가
-                    reorderedUrls.add(url);
-                    reorderedRatios.add(aspectRatio);
-                    print('대표 이미지 추가 (원래 인덱스: $_currentEditIndex)');
+                    // 1. 편집된 이미지 업로드 (대표 이미지)
+                    setState(() {
+                      _uploadProgress = 0.2;
+                    });
                     
-                    // 2. 나머지 이미지들을 원래 순서대로 업로드 및 추가
+                    final editedResult = await MediaUploadService.uploadImageWithVariants(
+                      imageBytes: bytes,
+                      box: widget.box,
+                    );
+                    final firstDisplayUrl = editedResult['urls']['display'];
+                    reorderedUrls.add(firstDisplayUrl);
+                    reorderedRatios.add(editedResult['aspectRatio']);
+                    print('대표 이미지 업로드 완료');
+                    
+                    // 첫 번째 이미지 즉시 프리캐싱 (최우선)
+                    final firstImagePrecache = precacheImage(
+                      CachedNetworkImageProvider(firstDisplayUrl), 
+                      context
+                    ).catchError((e) {
+                      print('첫 이미지 프리캐싱 실패 (무시됨): $e');
+                    });
+                    
+                    setState(() {
+                      _uploadProgress = 0.4;
+                    });
+                    
+                    // 2. 나머지 이미지들 병렬 업로드
+                    final uploadFutures = <Future<Map<String, dynamic>>>[];
+                    final fileBytesFutures = <Future<Uint8List>>[];
+                    
+                    // 파일 읽기를 먼저 병렬로 처리
                     for (int i = 0; i < _allSelectedFiles.length; i++) {
                       if (i != _currentEditIndex) {
-                        final file = _allSelectedFiles[i];
-                        final fileBytes = await file.readAsBytes();
-                        final additionalResult = await _uploadToFirebase(fileBytes);
-                        reorderedUrls.add(additionalResult['url'] as String);
-                        reorderedRatios.add(additionalResult['aspectRatio'] as double);
-                        print('추가 이미지 업로드 (인덱스: $i)');
+                        fileBytesFutures.add(_allSelectedFiles[i].readAsBytes());
                       }
                     }
                     
-                    // AppState에 비율 정보 저장
-                    if (widget.box == 'A') {
-                      appState.uploadImageAspectRatioA = reorderedRatios;
-                    } else {
-                      appState.uploadImageAspectRatioB = reorderedRatios;
+                    final allFileBytes = await Future.wait(fileBytesFutures);
+                    
+                    // 업로드 작업을 병렬로 시작
+                    for (final fileBytes in allFileBytes) {
+                      uploadFutures.add(
+                        MediaUploadService.uploadImageWithVariants(
+                          imageBytes: fileBytes,
+                          box: widget.box,
+                        )
+                      );
                     }
                     
-                    // 모든 URL을 AppState에 추가
-                    print('총 ${reorderedUrls.length}개 이미지 업로드 완료');
-                    print('순서: 대표 이미지가 맨 앞, 나머지는 원래 순서대로');
+                    setState(() {
+                      _uploadProgress = 0.6;
+                    });
                     
-                    // 멀티 이미지 콜백이 있으면 사용, 없으면 첫 번째 URL만 전달
+                    // 모든 업로드 완료 대기
+                    final results = await Future.wait(uploadFutures);
+                    
+                    // 결과 처리 및 프리캐싱
+                    final precacheFutures = <Future<void>>[];
+                    for (final result in results) {
+                      final displayUrl = result['urls']['display'];
+                      reorderedUrls.add(displayUrl);
+                      reorderedRatios.add(result['aspectRatio']);
+                      
+                      // 백그라운드 프리캐싱
+                      precacheFutures.add(
+                        precacheImage(
+                          CachedNetworkImageProvider(displayUrl), 
+                          context
+                        ).catchError((e) {
+                          print('프리캐싱 실패 (무시됨): $e');
+                        })
+                      );
+                    }
+                    
+                    print('모든 이미지 업로드 완료: ${reorderedUrls.length}개');
+                    
+                    // 첫 이미지 프리캐싱 완료 대기
+                    await firstImagePrecache;
+                    
+                    // 나머지 이미지들은 백그라운드에서 계속 프리캐싱
+                    Future.wait(precacheFutures).then((_) {
+                      print('모든 이미지 프리캐싱 완료');
+                    });
+                    
+                    setState(() {
+                      _uploadProgress = 0.9;
+                    });
+                    
+                    // 3. AppState에 저장
+                    appState.update(() {
+                      if (widget.box == 'A') {
+                        appState.uploadImageA = reorderedUrls;
+                        appState.uploadImageAspectRatioA = reorderedRatios;
+                      } else {
+                        appState.uploadImageB = reorderedUrls;
+                        appState.uploadImageAspectRatioB = reorderedRatios;
+                      }
+                    });
+                    
+                    // 4. 콜백 호출
                     if (widget.onMultiComplete != null) {
                       widget.onMultiComplete!(reorderedUrls);
-                    } else {
-                      widget.onComplete(reorderedUrls.first);
-                    }
-                  } else {
-                    // 단일 이미지 처리
-                    // AppState에 비율 정보 저장
-                    if (widget.box == 'A') {
-                      appState.addToUploadImageAspectRatioA(aspectRatio);
-                    } else {
-                      appState.addToUploadImageAspectRatioB(aspectRatio);
                     }
                     
-                    print('onComplete 콜백 호출 직전');
-                    widget.onComplete(url);
-                    print('onComplete 콜백 호출 완료');
-                  }
-                  
-                  // 모달 닫기
-                  if (mounted) {
-                    Navigator.pop(context);
-                    print('모달 닫기 완료');
+                    setState(() {
+                      _uploadProgress = 1.0;
+                    });
+                    
+                    // 모달 닫기
+                    if (mounted) {
+                      Navigator.pop(context);
+                      print('멀티 이미지 업로드 완료 및 모달 닫기');
+                    }
+                    
+                  } else {
+                    // 단일 이미지 처리
+                    setState(() {
+                      _uploadProgress = 0.5;
+                    });
+                    
+                    final result = await MediaUploadService.uploadImageWithVariants(
+                      imageBytes: bytes,
+                      box: widget.box,
+                    );
+                    
+                    setState(() {
+                      _uploadProgress = 0.9;
+                    });
+                    
+                    final displayUrl = result['urls']['display'];
+                    
+                    // AppState에 저장
+                    appState.update(() {
+                      if (widget.box == 'A') {
+                        appState.addToUploadImageA(displayUrl);
+                        appState.addToUploadImageAspectRatioA(result['aspectRatio']);
+                      } else {
+                        appState.addToUploadImageB(displayUrl);
+                        appState.addToUploadImageAspectRatioB(result['aspectRatio']);
+                      }
+                    });
+                    
+                    // 프리캐싱 시작
+                    precacheImage(CachedNetworkImageProvider(displayUrl), context).catchError((e) {
+                      print('프리캐싱 실패 (무시됨): $e');
+                    });
+                    
+                    // 콜백 호출
+                    widget.onComplete(displayUrl);
+                    
+                    setState(() {
+                      _uploadProgress = 1.0;
+                    });
+                    
+                    // 모달 닫기
+                    if (mounted) {
+                      Navigator.pop(context);
+                      print('단일 이미지 업로드 완료 및 모달 닫기');
+                    }
                   }
                 } catch (e) {
                   // 에러 처리
                   print('이미지 업로드 에러: $e');
                   if (mounted) {
+                    setState(() {
+                      _isUploading = false;
+                    });
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('이미지 업로드 실패: $e'),

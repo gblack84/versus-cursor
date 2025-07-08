@@ -6,6 +6,7 @@ import '/widgets/highlighted_text_field.dart';
 import '/pages/image_viewer/image_viewer_page.dart';
 import 'package:easy_debounce/easy_debounce.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '/backend/backend.dart';
@@ -13,6 +14,7 @@ import '/auth/firebase_auth/auth_util.dart';
 import 'in_put_post_image_model.dart';
 export 'in_put_post_image_model.dart';
 import 'helpers/aspect_ratio_analyzer.dart';
+import 'helpers/dynamic_box_calculator.dart';
 import 'components/media_selection_box_multi.dart';
 import 'components/character_count_display.dart';
 import 'components/next_button.dart';
@@ -36,6 +38,34 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   late InPutPostImageModel _model;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
+  
+  // Consumer 최적화를 위한 이전 이미지 수 추적
+  int _lastImageCount = 0;
+
+  // 상수 정의
+  static const Duration _shakeAnimationDuration = Duration(milliseconds: 100);
+  static const Duration _debounceDelay = Duration(milliseconds: 500);
+  static const Duration _warningDisplayDuration = Duration(seconds: 3);
+  static const Duration _scrollAnimationDuration = Duration(milliseconds: 300);
+  
+  static const double _defaultPadding = 10.0;
+  static const double _smallPadding = 2.5;
+  static const double _mediumPadding = 20.0;
+  static const double _largeFontSize = 30.0;
+  static const double _normalFontSize = 14.0;
+  static const double _smallFontSize = 12.0;
+  static const double _borderWidth = 3.0;
+  static const double _scrollThreshold = 100.0;
+  static const double _bottomMargin = 100.0;
+  static const double _iconSize = 22.0;
+  static const double _containerPadding = 8.0;
+  static const double _borderRadius = 12.0;
+  static const double _appBarFontSize = 22.0;
+  static const double _appBarElevation = 2.0;
+  static const double _verticalSpacing = 15.0;
+  static const double _verticalSpacing4 = 4.0;
+  static const double _debugFontSizeSmall = 11.0;
+  static const double _inputFontSize = 30.0;
 
   @override
   void initState() {
@@ -51,27 +81,20 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     // 초기 레이아웃 설정 - 비율 정보가 있을 때만
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final appState = Provider.of<AppState>(context, listen: false);
+      // 초기 이미지 수 설정
+      _lastImageCount = appState.uploadImageA.length + appState.uploadImageB.length;
+      
       if (appState.uploadImageAspectRatioA.isNotEmpty || 
           appState.uploadImageAspectRatioB.isNotEmpty) {
         _updateLayoutBasedOnImages();
       }
     });
 
-    _model.textController1 ??= TextEditingController();
-    _model.textFieldFocusNode1 ??= FocusNode();
-
-    _model.textController2 ??= TextEditingController();
-    _model.textFieldFocusNode2 ??= FocusNode();
-
-    _model.textController3 ??= TextEditingController();
-    _model.textFieldFocusNode3 ??= FocusNode();
-
-    _model.textController4 ??= TextEditingController();
-    _model.textFieldFocusNode4 ??= FocusNode();
+    _initializeControllers();
     
     // 흔들림 애니메이션 초기화
     _model.shakeController = AnimationController(
-      duration: Duration(milliseconds: 100),
+      duration: _shakeAnimationDuration,
       vsync: this,
     );
     
@@ -83,23 +106,32 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       curve: Curves.elasticIn,
     ));
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
+    // 초기 빌드 후 실행될 작업이 있으면 여기에 추가
+  }
+
+  /// 텍스트 컨트롤러 초기화
+  void _initializeControllers() {
+    _model.textController1 ??= TextEditingController();
+    _model.textFieldFocusNode1 ??= FocusNode();
+    
+    _model.textController2 ??= TextEditingController();
+    _model.textFieldFocusNode2 ??= FocusNode();
+    
+    _model.textController3 ??= TextEditingController();
+    _model.textFieldFocusNode3 ??= FocusNode();
+    
+    _model.textController4 ??= TextEditingController();
+    _model.textFieldFocusNode4 ??= FocusNode();
   }
 
   void _scrollListener() {
-    if (_model.scrollController!.position.pixels >=
-        _model.scrollController!.position.maxScrollExtent - 100) {
-      if (!_model.showNextButton) {
-        setState(() {
-          _model.showNextButton = true;
-        });
-      }
-    } else {
-      if (_model.showNextButton) {
-        setState(() {
-          _model.showNextButton = false;
-        });
-      }
+    final isNearBottom = _model.scrollController!.position.pixels >=
+        _model.scrollController!.position.maxScrollExtent - _scrollThreshold;
+    
+    if (isNearBottom != _model.showNextButton) {
+      setState(() {
+        _model.showNextButton = isNearBottom;
+      });
     }
   }
 
@@ -107,11 +139,28 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   void _updateLayoutBasedOnImages() {
     final appState = Provider.of<AppState>(context, listen: false);
     
-    print('=== 스마트 레이아웃 업데이트 시작 ===');
-    print('A 이미지 개수: ${appState.uploadImageA.length}');
-    print('B 이미지 개수: ${appState.uploadImageB.length}');
-    print('A 비율 정보 개수: ${appState.uploadImageAspectRatioA.length}');
-    print('B 비율 정보 개수: ${appState.uploadImageAspectRatioB.length}');
+    if (!kReleaseMode) {
+      if (!kReleaseMode) {
+        print('=== 스마트 레이아웃 업데이트 시작 ===');
+        print('A 이미지 개수: ${appState.uploadImageA.length}');
+        print('B 이미지 개수: ${appState.uploadImageB.length}');
+        print('A 비율 정보 개수: ${appState.uploadImageAspectRatioA.length}');
+        print('B 비율 정보 개수: ${appState.uploadImageAspectRatioB.length}');
+      }
+    }
+    
+    // 이미지가 하나도 없으면 기본 레이아웃(horizontal)으로 초기화
+    if (appState.uploadImageA.isEmpty && appState.uploadImageB.isEmpty) {
+      if (!kReleaseMode) print('이미지가 없어 기본 레이아웃(horizontal)으로 초기화');
+      if (_model.currentLayout != LayoutType.horizontal) {
+        setState(() {
+          _model.currentLayout = LayoutType.horizontal;
+          _model.isRatioVertical = true;  // 가로 배치(좌/우)
+          _model.isRatioHorizontal = false;
+        });
+      }
+      return;
+    }
     
     // A박스와 B박스의 첫 번째 이미지 비율 가져오기
     double? ratioA;
@@ -119,35 +168,43 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     
     if (appState.uploadImageAspectRatioA.isNotEmpty) {
       ratioA = appState.uploadImageAspectRatioA.first;
-      print('A 이미지 비율: $ratioA');
+      if (!kReleaseMode) print('A 이미지 비율: $ratioA');
     }
     
     if (appState.uploadImageAspectRatioB.isNotEmpty) {
       ratioB = appState.uploadImageAspectRatioB.first;
-      print('B 이미지 비율: $ratioB');
+      if (!kReleaseMode) print('B 이미지 비율: $ratioB');
     }
     
     // 스마트 레이아웃 결정
     final optimalLayout = AspectRatioAnalyzer.getOptimalLayout(ratioA, ratioB);
-    print('결정된 레이아웃: ${AspectRatioAnalyzer.getLayoutDescription(optimalLayout)}');
+    if (!kReleaseMode) print('결정된 레이아웃: ${AspectRatioAnalyzer.getLayoutDescription(optimalLayout)}');
     
-    // 레이아웃 업데이트
-    setState(() {
-      _model.currentLayout = optimalLayout;
-      
-      // 기존 토글 상태도 함께 업데이트 (호환성)
-      if (optimalLayout == LayoutType.vertical) {
-        _model.isRatioVertical = true;
-        _model.isRatioHorizontal = false;
-        print('세로 배치로 변경');
-      } else {
-        _model.isRatioVertical = false;
-        _model.isRatioHorizontal = true;
-        print('가로 배치로 변경');
-      }
-    });
+    // 레이아웃이 변경된 경우에만 업데이트
+    if (_model.currentLayout != optimalLayout) {
+      setState(() {
+        _model.currentLayout = optimalLayout;
+        
+        // 기존 토글 상태도 함께 업데이트 (호환성)
+        // 주의: isRatioVertical이 true면 UI에서 가로 배치(좌/우)를 표시
+        // isRatioHorizontal이 true면 UI에서 세로 배치(위/아래)를 표시
+        if (optimalLayout == LayoutType.vertical) {
+          // 세로 배치 = 이미지가 위/아래로 배치
+          _model.isRatioVertical = false;
+          _model.isRatioHorizontal = true;
+          if (!kReleaseMode) print('세로 배치(위/아래)로 변경');
+        } else {
+          // 가로 배치 = 이미지가 좌/우로 배치
+          _model.isRatioVertical = true;
+          _model.isRatioHorizontal = false;
+          if (!kReleaseMode) print('가로 배치(좌/우)로 변경');
+        }
+      });
+    } else {
+      if (!kReleaseMode) print('레이아웃 변경 없음');
+    }
     
-    print('=== 스마트 레이아웃 업데이트 완료 ===');
+    if (!kReleaseMode) print('=== 스마트 레이아웃 업데이트 완료 ===');
   }
 
   /// 필수 필드가 모두 채워졌는지 확인
@@ -220,7 +277,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       }
 
     } catch (e) {
-      print('텍스트 검증 오류: $e');
+      if (!kReleaseMode) print('텍스트 검증 오류: $e');
       _showSnackBar('텍스트 검증 중 오류가 발생했습니다.');
     } finally {
       setState(() {
@@ -239,9 +296,6 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
   /// 미디어 타입 선택 다이얼로그
   Future<void> _openAssetsPicker(BuildContext parentContext, String box) async {
-    // 부모 context에서 AppState 미리 가져오기
-    final appState = Provider.of<AppState>(parentContext, listen: false);
-    
     // 통합 플로우 모달로 열기
     await showModalBottomSheet(
       context: parentContext,
@@ -252,49 +306,20 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       builder: (modalContext) => MediaSelectionFlowWidget(
         box: box,
         onComplete: (imageUrl) {
-          print('onComplete 콜백 받음: $imageUrl');
-          // 업로드 완료 시 AppState 업데이트 (미리 가져온 appState 사용)
-          if (box == 'A') {
-            appState.addToUploadImageA(imageUrl);
-            print('A박스에 이미지 추가됨: $imageUrl');
-            print('uploadImageA 리스트: ${appState.uploadImageA}');
-          } else {
-            appState.addToUploadImageB(imageUrl);
-            print('B박스에 이미지 추가됨: $imageUrl');
-            print('uploadImageB 리스트: ${appState.uploadImageB}');
-          }
+          // 백그라운드 업로드 완료 시 호출되지만, 이미 로컬 이미지로 처리했으므로 추가 작업 불필요
+          if (!kReleaseMode) print('백그라운드 업로드 완료: $imageUrl');
           
-          // setState 호출하여 UI 업데이트
-          if (mounted) {
-            setState(() {});
-            // 스마트 레이아웃 업데이트
-            _updateLayoutBasedOnImages();
-          }
+          // 스마트 레이아웃 업데이트 (단일 이미지도 처리)
+          _updateLayoutBasedOnImages();
         },
         onMultiComplete: (imageUrls) {
-          print('멀티 이미지 업로드 완료: ${imageUrls.length}개');
-          // 멀티 이미지 업로드 완료 시 AppState 업데이트
-          if (box == 'A') {
-            for (final url in imageUrls) {
-              appState.addToUploadImageA(url);
-            }
-            print('A박스에 ${imageUrls.length}개 이미지 추가됨');
-          } else {
-            for (final url in imageUrls) {
-              appState.addToUploadImageB(url);
-            }
-            print('B박스에 ${imageUrls.length}개 이미지 추가됨');
-          }
+          // 백그라운드 업로드 완료 시 호출되지만, 이미 로컬 이미지로 처리했으므로 추가 작업 불필요
+          if (!kReleaseMode) print('백그라운드 업로드 완료: ${imageUrls.length}개');
           
-          // setState 호출하여 UI 업데이트
-          if (mounted) {
-            setState(() {});
-            // 스마트 레이아웃 업데이트
-            _updateLayoutBasedOnImages();
-          }
+          // 스마트 레이아웃 업데이트
+          _updateLayoutBasedOnImages();
           
-          // 성공 메시지
-          _showSnackBar('이미지가 성공적으로 저장되었습니다.');
+          // 성공 메시지는 로컬 저장 시점에 이미 표시됨
         },
       ),
     );
@@ -409,7 +434,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       );
 
     } catch (e) {
-      print('Firestore 저장 오류: $e');
+      if (!kReleaseMode) print('Firestore 저장 오류: $e');
       _showSnackBar('저장 중 오류가 발생했습니다: ${e.toString()}');
       setState(() {
         _model.isValidating = false;
@@ -417,11 +442,243 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     }
   }
 
+  /// 흔들림 애니메이션 실행
+  void _triggerShakeAnimation() {
+    _model.shakeController?.forward().then((_) {
+      _model.shakeController?.reverse().then((_) {
+        _model.shakeController?.forward().then((_) {
+          _model.shakeController?.reverse();
+        });
+      });
+    });
+  }
+
+  /// B박스 경고 표시
+  void _showBBoxWarning() {
+    _triggerShakeAnimation();
+    setState(() {
+      _model.showBBoxWarning = true;
+    });
+    Future.delayed(_warningDisplayDuration, () {
+      if (mounted) {
+        setState(() {
+          _model.showBBoxWarning = false;
+        });
+      }
+    });
+  }
+
+  /// 공통 TextStyle 생성 헬퍼 메서드
+  TextStyle _getTextStyle({
+    required TextStyle baseStyle,
+    double? fontSize,
+    FontWeight? fontWeight,
+    Color? color,
+    double? letterSpacing,
+  }) {
+    return baseStyle.override(
+      font: GoogleFonts.plusJakartaSans(
+        fontWeight: fontWeight ?? baseStyle.fontWeight,
+        fontStyle: baseStyle.fontStyle,
+      ),
+      fontSize: fontSize,
+      letterSpacing: letterSpacing ?? 0.0,
+      fontWeight: fontWeight ?? baseStyle.fontWeight,
+      fontStyle: baseStyle.fontStyle,
+      color: color,
+    );
+  }
+
+  /// 공통 InputDecoration 생성 헬퍼 메서드
+  InputDecoration _getInputDecoration({
+    required BuildContext context,
+    required String hintText,
+    required double fontSize,
+    String? labelText,
+    Widget? suffixIcon,
+    double borderWidth = 3.0,
+    bool isDense = false,
+  }) {
+    return InputDecoration(
+      isDense: isDense,
+      labelText: labelText,
+      labelStyle: _getTextStyle(
+        baseStyle: AppTheme.of(context).bodyMedium,
+        fontSize: fontSize,
+      ),
+      alignLabelWithHint: false,
+      hintText: hintText,
+      hintStyle: _getTextStyle(
+        baseStyle: AppTheme.of(context).labelMedium,
+        fontSize: fontSize,
+      ),
+      enabledBorder: UnderlineInputBorder(
+        borderSide: BorderSide(
+          color: Colors.black,
+          width: borderWidth,
+        ),
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      focusedBorder: UnderlineInputBorder(
+        borderSide: BorderSide(
+          color: Colors.black,
+          width: borderWidth,
+        ),
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      errorBorder: UnderlineInputBorder(
+        borderSide: BorderSide(
+          color: Colors.black,
+          width: borderWidth,
+        ),
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      focusedErrorBorder: UnderlineInputBorder(
+        borderSide: BorderSide(
+          color: Colors.black,
+          width: borderWidth,
+        ),
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      filled: true,
+      fillColor: AppTheme.of(context).secondaryBackground,
+      suffixIcon: suffixIcon,
+    );
+  }
+
   @override
   void dispose() {
     _model.dispose();
 
     super.dispose();
+  }
+
+  /// MediaSelectionBoxMulti 위젯을 생성하는 헬퍼 메서드
+  Widget _buildMediaSelectionBox({
+    required String box,
+    required double width,
+    required double height,
+    required bool isSelected,
+    required bool isVideoSelected,
+    required List<String> imageUrls,
+    required bool showPlusIcon,
+    required bool isHorizontal,
+    required Color boxColor,
+    Animation<double>? shakeAnimation,
+  }) {
+    final appState = Provider.of<AppState>(context, listen: false);
+    
+    return MediaSelectionBoxMulti(
+      label: box,
+      isSelected: isSelected,
+      isVideoSelected: isVideoSelected,
+      imageUrls: imageUrls,
+      showPlusIcon: showPlusIcon,
+      dynamicHeight: height,
+      dynamicWidth: width,
+      shakeAnimation: shakeAnimation,
+      onTap: () async {
+        if (box == 'B' && appState.uploadImageA.isEmpty) {
+          // A박스에 이미지가 없으면 경고
+          _showBBoxWarning();
+        } else {
+          // 이미지가 없으면 갤러리 픽커, 있으면 이미지 뷰어
+          final images = box == 'A' ? appState.uploadImageA : appState.uploadImageB;
+          if (images.isEmpty) {
+            await _openAssetsPicker(context, box);
+          } else {
+            // 이미지 뷰어 페이지로 이동
+            context.pushNamed(
+              ImageViewerPage.routeName,
+              queryParameters: {
+                'imageUrls': images.join(','),
+                'initialIndex': '0',
+                'box': box,
+              },
+            );
+          }
+        }
+      },
+      onCancel: (index) {
+        if (box == 'A') {
+          // X 아이콘 클릭 시 현재 표시된 이미지 삭제
+          if (appState.uploadImageA.isNotEmpty && index < appState.uploadImageA.length) {
+            appState.removeAtIndexFromUploadImageA(index);
+            // 비율 정보도 같이 제거
+            if (index < appState.uploadImageAspectRatioA.length) {
+              appState.removeAtIndexFromUploadImageAspectRatioA(index);
+            }
+          }
+        } else {
+          // B박스 처리
+          if (appState.uploadImageB.isNotEmpty && index < appState.uploadImageB.length) {
+            // 이미지가 있으면 삭제
+            appState.removeAtIndexFromUploadImageB(index);
+            // 비율 정보도 같이 제거
+            if (index < appState.uploadImageAspectRatioB.length) {
+              appState.removeAtIndexFromUploadImageAspectRatioB(index);
+            }
+          } else if (!_model.absellected) {
+            // 이미지가 없고 B박스가 보이는 상태면 숨기기
+            setState(() {
+              _model.absellected = true;
+            });
+          }
+        }
+        // 스마트 레이아웃 업데이트 (setState는 내부에서 처리)
+        _updateLayoutBasedOnImages();
+      },
+      onPlusIconTap: () {
+        // +B 아이콘 클릭 시 B박스 표시
+        if (_model.absellected) {
+          setState(() {
+            _model.absellected = false;
+          });
+        }
+      },
+      onEditTap: () async {
+        // 현재 이미지를 편집
+        final images = box == 'A' ? appState.uploadImageA : appState.uploadImageB;
+        if (images.isNotEmpty) {
+          await showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            useSafeArea: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => MediaSelectionFlowWidget(
+              box: box,
+              initialImageUrl: images.last,
+              startWithEditor: true,
+              onComplete: (newImageUrl) {
+                // 기존 이미지를 새 이미지로 교체
+                final oldUrl = images.last;
+                if (box == 'A') {
+                  appState.removeFromUploadImageA(oldUrl);
+                  appState.addToUploadImageA(newImageUrl);
+                } else {
+                  appState.removeFromUploadImageB(oldUrl);
+                  appState.addToUploadImageB(newImageUrl);
+                }
+                
+                // 성공 메시지
+                _showSnackBar('이미지가 수정되었습니다.');
+              },
+            ),
+          );
+        }
+      },
+      onAddImageTap: () async {
+        // +이미지 아이콘 클릭 시 갤러리로
+        if (box == 'B' && appState.uploadImageA.isEmpty) {
+          // A박스에 이미지가 없으면 경고
+          _showBBoxWarning();
+        } else {
+          await _openAssetsPicker(context, box);
+        }
+      },
+      isHorizontal: isHorizontal,
+      boxColor: boxColor,
+    );
   }
 
   @override
@@ -445,26 +702,15 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
               AppLocalizations.of(context).getText(
                 'w04dob8j' /* Page Title */,
               ),
-              style: AppTheme.of(context).headlineMedium.override(
-                    font: GoogleFonts.plusJakartaSans(
-                      fontWeight: AppTheme.of(context)
-                          .headlineMedium
-                          .fontWeight,
-                      fontStyle:
-                          AppTheme.of(context).headlineMedium.fontStyle,
-                    ),
-                    color: Colors.white,
-                    fontSize: 22.0,
-                    letterSpacing: 0.0,
-                    fontWeight:
-                        AppTheme.of(context).headlineMedium.fontWeight,
-                    fontStyle:
-                        AppTheme.of(context).headlineMedium.fontStyle,
-                  ),
+              style: _getTextStyle(
+                baseStyle: AppTheme.of(context).headlineMedium,
+                color: Colors.white,
+                fontSize: _appBarFontSize,
+              ),
             ),
             actions: [],
             centerTitle: false,
-            elevation: 2.0,
+            elevation: _appBarElevation,
           ),
         ),
         body: Container(
@@ -475,35 +721,51 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           ),
           child: Stack(
             children: [
+              // AppState의 이미지 리스트 변경 감지
+              Consumer<AppState>(
+                builder: (context, appState, _) {
+                  // 현재 전체 이미지 수 계산
+                  final currentImageCount = appState.uploadImageA.length + appState.uploadImageB.length;
+                  
+                  // 이미지 수가 실제로 변경되었을 때만 레이아웃 업데이트
+                  if (_lastImageCount != currentImageCount) {
+                    _lastImageCount = currentImageCount;
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        _updateLayoutBasedOnImages();
+                      }
+                    });
+                  }
+                  
+                  return SizedBox.shrink(); // 보이지 않는 위젯
+                },
+              ),
               SingleChildScrollView(
                 controller: _model.scrollController,
                 primary: false,
                 child: Column(
                           mainAxisSize: MainAxisSize.max,
                           children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                color: AppTheme.of(context)
-                                    .secondaryBackground,
-                                shape: BoxShape.rectangle,
-                              ),
-                            ),
                             Padding(
                               padding: EdgeInsetsDirectional.fromSTEB(
-                                  10.0, 15.0, 10.0, 0.0),
+                                  _defaultPadding, _verticalSpacing, _defaultPadding, 0.0),
                               child: ValidatedTextField(
                                 controller: _model.textController1,
                                 focusNode: _model.textFieldFocusNode1,
                                 onChanged: (value) {
                                   // 실시간 글자 수 업데이트
-                                  setState(() {
-                                    // 텍스트가 비어있으면 에러 초기화
-                                    if (value.trim().isEmpty) {
-                                      _model.isQuestionTitleEmpty = false;
-                                      _model.validationResults.remove('questionTitle');
-                                      _model.hasBlockedWordInTitle = false;
+                                  // 텍스트가 비어있으면 에러 초기화
+                                  if (value.trim().isEmpty) {
+                                    if (_model.isQuestionTitleEmpty || 
+                                        _model.validationResults.containsKey('questionTitle') || 
+                                        _model.hasBlockedWordInTitle) {
+                                      setState(() {
+                                        _model.isQuestionTitleEmpty = false;
+                                        _model.validationResults.remove('questionTitle');
+                                        _model.hasBlockedWordInTitle = false;
+                                      });
                                     }
-                                  });
+                                  }
                                   
                                   // 필수 필드 체크
                                   _checkRequiredFieldsAndUpdateButton();
@@ -514,100 +776,26 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                                     Duration(milliseconds: 500),
                                     () {
                                       final result = ContentFilter.filterText(value);
-                                      _model.hasBlockedWordInTitle = result.isBlocked;
-                                      setState(() {});
+                                      if (_model.hasBlockedWordInTitle != result.isBlocked) {
+                                        setState(() {
+                                          _model.hasBlockedWordInTitle = result.isBlocked;
+                                        });
+                                      }
                                     },
                                   );
                                 },
                                 validationResult: _model.validationResults['questionTitle'],
                                 showValidationResults: false, // 에러는 필드 외부에서 표시
-                                decoration: InputDecoration(
-                                  isDense: false,
-                                  labelText:
-                                      AppLocalizations.of(context).getText(
-                                    '5kzcbgop' /* Question Title */,
-                                  ),
-                                  labelStyle: AppTheme.of(context)
-                                      .bodyMedium
-                                      .override(
-                                        font: GoogleFonts.plusJakartaSans(
-                                          fontWeight:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontWeight,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
-                                        ),
-                                        fontSize: 30.0,
-                                        letterSpacing: 0.0,
-                                        fontWeight: AppTheme.of(context)
-                                            .bodyMedium
-                                            .fontWeight,
-                                        fontStyle: AppTheme.of(context)
-                                            .bodyMedium
-                                            .fontStyle,
-                                      ),
-                                  alignLabelWithHint: false,
+                                decoration: _getInputDecoration(
+                                  context: context,
                                   hintText: AppLocalizations.of(context).getText(
                                     'jr6l0zdb' /* Enter question title */,
                                   ),
-                                  hintStyle: AppTheme.of(context)
-                                      .labelMedium
-                                      .override(
-                                        font: GoogleFonts.plusJakartaSans(
-                                          fontWeight:
-                                              AppTheme.of(context)
-                                                  .labelMedium
-                                                  .fontWeight,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .labelMedium
-                                                  .fontStyle,
-                                        ),
-                                        fontSize: 30.0,
-                                        letterSpacing: 0.0,
-                                        fontWeight: AppTheme.of(context)
-                                            .labelMedium
-                                            .fontWeight,
-                                        fontStyle: AppTheme.of(context)
-                                            .labelMedium
-                                            .fontStyle,
-                                      ),
-                                  enabledBorder: UnderlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: Colors.black,
-                                      width: 3.0,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12.0),
+                                  labelText: AppLocalizations.of(context).getText(
+                                    '5kzcbgop' /* Question Title */,
                                   ),
-                                  focusedBorder: UnderlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: Colors.black,
-                                      width: 3.0,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  errorBorder: UnderlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: Colors.black,
-                                      width: 3.0,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  focusedErrorBorder: UnderlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: Colors.black,
-                                      width: 3.0,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  filled: true,
-                                  fillColor: AppTheme.of(context)
-                                      .secondaryBackground,
-                                  suffixIcon: _model
-                                          .textController1!.text.isNotEmpty
+                                  fontSize: _largeFontSize,
+                                  suffixIcon: _model.textController1!.text.isNotEmpty
                                       ? InkWell(
                                           onTap: () async {
                                             _model.textController1?.clear();
@@ -615,37 +803,21 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                                             _model.validationResults.remove('questionTitle');
                                             _model.hasValidationViolations = false;
                                             _model.hasBlockedWordInTitle = false;
-                                            setState(() {});
+                                            // setState는 텍스트 변경 시 이미 처리됨
                                           },
                                           child: Icon(
                                             Icons.clear,
                                             color: AppTheme.of(context)
                                                 .primaryText,
-                                            size: 22,
+                                            size: _iconSize,
                                           ),
                                         )
                                       : null,
                                 ),
-                                style: AppTheme.of(context)
-                                    .bodyMedium
-                                    .override(
-                                      font: GoogleFonts.plusJakartaSans(
-                                        fontWeight: AppTheme.of(context)
-                                            .bodyMedium
-                                            .fontWeight,
-                                        fontStyle: AppTheme.of(context)
-                                            .bodyMedium
-                                            .fontStyle,
-                                      ),
-                                      fontSize: 30.0,
-                                      letterSpacing: 0.0,
-                                      fontWeight: AppTheme.of(context)
-                                          .bodyMedium
-                                          .fontWeight,
-                                      fontStyle: AppTheme.of(context)
-                                          .bodyMedium
-                                          .fontStyle,
-                                    ),
+                                style: _getTextStyle(
+                                  baseStyle: AppTheme.of(context).bodyMedium,
+                                  fontSize: _inputFontSize,
+                                ),
                                 minLines: 1,
                                 maxLines: 5,
                                 textInputAction: TextInputAction.done,
@@ -660,454 +832,258 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                               hasBlockedWord: _model.hasBlockedWordInTitle,
                               validationResult: _model.validationResults['questionTitle'],
                             ),
-                            // 토글 버튼 제거 - 스마트 레이아웃 시스템이 자동으로 결정
-                            if (_model.isRatioVertical)
-                              Padding(
-                                padding: EdgeInsetsDirectional.fromSTEB(
-                                    0.0, 10.0, 0.0, 0.0),
-                                child: Container(
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.of(context)
-                                        .secondaryBackground,
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.max,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SizedBox(
-                                        width: _model.absellected == true ? 380.0 : 190.0,
-                                        height: _model.absellected == true ? 600.0 : 310.0,
-                                        child: Consumer<AppState>(
-                                          builder: (context, appState, child) => MediaSelectionBoxMulti(
-                                            label: 'A',
-                                            isSelected: _model.absellected,
-                                            isVideoSelected: _model.isVideoSelectedA,
-                                            imageUrls: appState.uploadImageA,
-                                            showPlusIcon: _model.absellected,
-                                            onTap: () async {
-                                              // 이미지가 없으면 갤러리 픽커, 있으면 이미지 뷰어
-                                              if (appState.uploadImageA.isEmpty) {
-                                                await _openAssetsPicker(context, 'A');
-                                              } else {
-                                                // 이미지 뷰어 페이지로 이동
-                                                context.pushNamed(
-                                                  ImageViewerPage.routeName,
-                                                  queryParameters: {
-                                                    'imageUrls': appState.uploadImageA.join(','),
-                                                    'initialIndex': '0',
-                                                    'box': 'A',
-                                                  },
-                                                );
-                                              }
-                                            },
-                                            onCancel: (index) {
-                                              // X 아이콘 클릭 시 현재 표시된 이미지 삭제
-                                              if (appState.uploadImageA.isNotEmpty && index < appState.uploadImageA.length) {
-                                                appState.removeAtIndexFromUploadImageA(index);
-                                                // 비율 정보도 같이 제거
-                                                if (index < appState.uploadImageAspectRatioA.length) {
-                                                  appState.removeAtIndexFromUploadImageAspectRatioA(index);
-                                                }
-                                              }
-                                              setState(() {});
-                                              // 스마트 레이아웃 업데이트
-                                              _updateLayoutBasedOnImages();
-                                            },
-                                            onPlusIconTap: () {
-                                              // +B 아이콘 클릭 시 B박스 표시
-                                              _model.absellected = false;
-                                              setState(() {});
-                                            },
-                                            onEditTap: () async {
-                                              // 현재 이미지를 편집
-                                              if (appState.uploadImageA.isNotEmpty) {
-                                                await showModalBottomSheet(
-                                                  context: context,
-                                                  isScrollControlled: true,
-                                                  useSafeArea: true,  // SafeArea 적용
-                                                  backgroundColor: Colors.transparent,
-                                                  builder: (context) => MediaSelectionFlowWidget(
-                                                    box: 'A',
-                                                    initialImageUrl: appState.uploadImageA.last,
-                                                    startWithEditor: true,
-                                                    onComplete: (newImageUrl) {
-                                                      // 기존 이미지를 새 이미지로 교체
-                                                      final oldUrl = appState.uploadImageA.last;
-                                                      appState.removeFromUploadImageA(oldUrl);
-                                                      appState.addToUploadImageA(newImageUrl);
-                                                      
-                                                      // 성공 메시지
-                                                      _showSnackBar('이미지가 수정되었습니다.');
-                                                    },
-                                                  ),
-                                                );
-                                              }
-                                            },
-                                            onAddImageTap: () async {
-                                              // +이미지 아이콘 클릭 시 갤러리로
-                                              await _openAssetsPicker(context, 'A');
-                                            },
-                                            isHorizontal: false,
-                                            boxColor: AppTheme.of(context).primary,
+                            // 디버그용 레이아웃 정보 표시 (개발 중에만 사용)
+                            if (const bool.fromEnvironment('dart.vm.product') == false)
+                              Container(
+                                padding: EdgeInsets.all(_containerPadding),
+                                margin: EdgeInsets.symmetric(horizontal: _mediumPadding, vertical: _verticalSpacing4),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade200,
+                                  borderRadius: BorderRadius.circular(_containerPadding),
+                                ),
+                                child: Consumer<AppState>(
+                                  builder: (context, appState, _) {
+                                    final aRatio = appState.uploadImageAspectRatioA.isNotEmpty 
+                                        ? appState.uploadImageAspectRatioA.first.toStringAsFixed(2)
+                                        : 'N/A';
+                                    final bRatio = appState.uploadImageAspectRatioB.isNotEmpty 
+                                        ? appState.uploadImageAspectRatioB.first.toStringAsFixed(2)
+                                        : 'N/A';
+                                    final layoutDesc = AspectRatioAnalyzer.getLayoutDescription(_model.currentLayout);
+                                    
+                                    return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '🔍 스마트 레이아웃 디버그',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12.0,
                                           ),
                                         ),
-                                      ),
-                                      if (!_model.absellected)
-                                        SizedBox(
-                                          width: 190.0,
-                                          height: 310.0,
-                                          child: Consumer<AppState>(
-                                            builder: (context, appState, child) => MediaSelectionBoxMulti(
-                                              label: 'B',
-                                              isSelected: false, // B박스는 선택 불가
-                                              isVideoSelected: _model.isVideoSelectedB,
-                                              imageUrls: appState.uploadImageB,
-                                              shakeAnimation: _model.shakeAnimation,
-                                              onTap: () async {
-                                                // A박스에 이미지가 없으면 경고
-                                                if (appState.uploadImageA.isEmpty) {
-                                                  // 흔들림 애니메이션 실행 (3번)
-                                                  _model.shakeController?.forward().then((_) {
-                                                    _model.shakeController?.reverse().then((_) {
-                                                      _model.shakeController?.forward().then((_) {
-                                                        _model.shakeController?.reverse();
-                                                      });
-                                                    });
-                                                  });
-                                                  setState(() {
-                                                    _model.showBBoxWarning = true;
-                                                  });
-                                                  // 3초 후 경고 메시지 숨김
-                                                  Future.delayed(Duration(seconds: 3), () {
-                                                    if (mounted) {
-                                                      setState(() {
-                                                        _model.showBBoxWarning = false;
-                                                      });
-                                                    }
-                                                  });
-                                                } else {
-                                                  // A박스에 이미지가 있으면 B박스 처리
-                                                  if (appState.uploadImageB.isEmpty) {
-                                                    // B박스에 이미지가 없으면 갤러리 열기
-                                                    await _openAssetsPicker(context, 'B');
-                                                  } else {
-                                                    // B박스에 이미지가 있으면 뷰어 열기
-                                                    context.pushNamed(
-                                                      ImageViewerPage.routeName,
-                                                      queryParameters: {
-                                                        'imageUrls': appState.uploadImageB.join(','),
-                                                        'initialIndex': '0',
-                                                        'box': 'B',
-                                                      },
-                                                    );
-                                                  }
-                                                }
-                                              },
-                                              onCancel: (index) {
-                                                // X 아이콘 클릭 시 B박스 숨김
-                                                _model.absellected = true;
-                                                // AppState에서 현재 표시된 이미지 제거
-                                                if (appState.uploadImageB.isNotEmpty && index < appState.uploadImageB.length) {
-                                                  appState.removeAtIndexFromUploadImageB(index);
-                                                  // 비율 정보도 같이 제거
-                                                  if (index < appState.uploadImageAspectRatioB.length) {
-                                                    appState.removeAtIndexFromUploadImageAspectRatioB(index);
-                                                  }
-                                                }
-                                                setState(() {});
-                                                // 스마트 레이아웃 업데이트  
-                                                _updateLayoutBasedOnImages();
-                                              },
-                                              onEditTap: () async {
-                                                // 현재 이미지를 편집
-                                                if (appState.uploadImageB.isNotEmpty) {
-                                                  await showModalBottomSheet(
-                                                    context: context,
-                                                    isScrollControlled: true,
-                                                    useSafeArea: true,  // SafeArea 적용
-                                                    backgroundColor: Colors.transparent,
-                                                    builder: (context) => MediaSelectionFlowWidget(
-                                                      box: 'B',
-                                                      initialImageUrl: appState.uploadImageB.last,
-                                                      startWithEditor: true,
-                                                      onComplete: (newImageUrl) {
-                                                        // 기존 이미지를 새 이미지로 교체
-                                                        final oldUrl = appState.uploadImageB.last;
-                                                        appState.removeFromUploadImageB(oldUrl);
-                                                        appState.addToUploadImageB(newImageUrl);
-                                                        
-                                                        // 성공 메시지
-                                                        _showSnackBar('이미지가 수정되었습니다.');
-                                                      },
-                                                    ),
-                                                  );
-                                                }
-                                              },
-                                              onAddImageTap: () async {
-                                                // +이미지 아이콘 클릭 시 갤러리로
-                                                if (appState.uploadImageA.isEmpty) {
-                                                  // A박스에 이미지가 없으면 경고
-                                                  _model.shakeController?.forward().then((_) {
-                                                    _model.shakeController?.reverse().then((_) {
-                                                      _model.shakeController?.forward().then((_) {
-                                                        _model.shakeController?.reverse();
-                                                      });
-                                                    });
-                                                  });
-                                                  setState(() {
-                                                    _model.showBBoxWarning = true;
-                                                  });
-                                                  Future.delayed(Duration(seconds: 3), () {
-                                                    if (mounted) {
-                                                      setState(() {
-                                                        _model.showBBoxWarning = false;
-                                                      });
-                                                    }
-                                                  });
-                                                } else {
-                                                  await _openAssetsPicker(context, 'B');
-                                                }
-                                              },
-                                              isHorizontal: false,
-                                              boxColor: AppTheme.of(context).secondary,
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
+                                        SizedBox(height: _verticalSpacing4),
+                                        Text('A 비율: $aRatio | B 비율: $bRatio', style: TextStyle(fontSize: _debugFontSizeSmall)),
+                                        Text('현재 레이아웃: $layoutDesc', style: TextStyle(fontSize: _debugFontSizeSmall)),
+                                        Text('isRatioVertical: ${_model.isRatioVertical}', style: TextStyle(fontSize: _debugFontSizeSmall)),
+                                      ],
+                                    );
+                                  },
                                 ),
                               ),
-                            if (_model.isRatioHorizontal)
-                              Padding(
-                                padding: EdgeInsetsDirectional.fromSTEB(
-                                    0.0, 10.0, 0.0, 0.0),
-                                child: Container(
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.of(context)
-                                        .secondaryBackground,
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.max,
-                                    children: [
-                                      Padding(
-                                        padding: EdgeInsetsDirectional.fromSTEB(
-                                            2.5, 0.0, 2.5, 2.5),
-                                        child: Consumer<AppState>(
-                                          builder: (context, appState, child) => MediaSelectionBoxMulti(
-                                            label: 'A',
-                                            isSelected: _model.absellected,
-                                            isVideoSelected: _model.isVideoSelectedA,
-                                            imageUrls: appState.uploadImageA,
-                                            showPlusIcon: _model.absellected,
-                                            onTap: () async {
-                                              // 이미지가 없으면 갤러리 픽커, 있으면 이미지 뷰어
-                                              if (appState.uploadImageA.isEmpty) {
-                                                await _openAssetsPicker(context, 'A');
-                                              } else {
-                                                // 이미지 뷰어 페이지로 이동
-                                                context.pushNamed(
-                                                  ImageViewerPage.routeName,
-                                                  queryParameters: {
-                                                    'imageUrls': appState.uploadImageA.join(','),
-                                                    'initialIndex': '0',
-                                                    'box': 'A',
-                                                  },
-                                                );
-                                              }
-                                            },
-                                            onCancel: (index) {
-                                              // X 아이콘 클릭 시 현재 표시된 이미지 삭제
-                                              if (appState.uploadImageA.isNotEmpty && index < appState.uploadImageA.length) {
-                                                appState.removeAtIndexFromUploadImageA(index);
-                                                // 비율 정보도 같이 제거
-                                                if (index < appState.uploadImageAspectRatioA.length) {
-                                                  appState.removeAtIndexFromUploadImageAspectRatioA(index);
-                                                }
-                                              }
-                                              setState(() {});
-                                              // 스마트 레이아웃 업데이트
-                                              _updateLayoutBasedOnImages();
-                                            },
-                                            onPlusIconTap: () {
-                                              // + 아이콘 클릭 시 B박스 표시
-                                              _model.absellected = false;
-                                              setState(() {});
-                                            },
-                                            onEditTap: () async {
-                                              // 현재 이미지를 편집
-                                              if (appState.uploadImageA.isNotEmpty) {
-                                                await showModalBottomSheet(
-                                                  context: context,
-                                                  isScrollControlled: true,
-                                                  useSafeArea: true,  // SafeArea 적용
-                                                  backgroundColor: Colors.transparent,
-                                                  builder: (context) => MediaSelectionFlowWidget(
-                                                    box: 'A',
-                                                    initialImageUrl: appState.uploadImageA.last,
-                                                    startWithEditor: true,
-                                                    onComplete: (newImageUrl) {
-                                                      // 기존 이미지를 새 이미지로 교체
-                                                      final oldUrl = appState.uploadImageA.last;
-                                                      appState.removeFromUploadImageA(oldUrl);
-                                                      appState.addToUploadImageA(newImageUrl);
-                                                      
-                                                      // 성공 메시지
-                                                      _showSnackBar('이미지가 수정되었습니다.');
-                                                    },
-                                                  ),
-                                                );
-                                              }
-                                            },
-                                            onAddImageTap: () async {
-                                              // +이미지 아이콘 클릭 시 갤러리로
-                                              await _openAssetsPicker(context, 'A');
-                                            },
-                                            isHorizontal: true,
-                                            boxColor: AppTheme.of(context).primary,
-                                          ),
-                                        ),
-                                      ),
-                                      if (!_model.absellected)
-                                        Padding(
-                                          padding: EdgeInsetsDirectional.fromSTEB(
-                                              2.5, 2.5, 2.5, 0.0),
-                                          child: Consumer<AppState>(
-                                            builder: (context, appState, child) => MediaSelectionBoxMulti(
-                                              label: 'B',
-                                              isSelected: false, // B박스는 선택 불가
-                                              isVideoSelected: _model.isVideoSelectedB,
-                                              imageUrls: appState.uploadImageB,
-                                              shakeAnimation: _model.shakeAnimation,
-                                              onTap: () async {
-                                                // A박스에 이미지가 없으면 경고
-                                                if (appState.uploadImageA.isEmpty) {
-                                                  // 흔들림 애니메이션 실행 (3번)
-                                                  _model.shakeController?.forward().then((_) {
-                                                    _model.shakeController?.reverse().then((_) {
-                                                      _model.shakeController?.forward().then((_) {
-                                                        _model.shakeController?.reverse();
-                                                      });
-                                                    });
-                                                  });
-                                                  setState(() {
-                                                    _model.showBBoxWarning = true;
-                                                  });
-                                                  // 3초 후 경고 메시지 숨김
-                                                  Future.delayed(Duration(seconds: 3), () {
-                                                    if (mounted) {
-                                                      setState(() {
-                                                        _model.showBBoxWarning = false;
-                                                      });
-                                                    }
-                                                  });
-                                                } else {
-                                                  // A박스에 이미지가 있으면 B박스 처리
-                                                  if (appState.uploadImageB.isEmpty) {
-                                                    // B박스에 이미지가 없으면 갤러리 열기
-                                                    await _openAssetsPicker(context, 'B');
-                                                  } else {
-                                                    // B박스에 이미지가 있으면 뷰어 열기
-                                                    context.pushNamed(
-                                                      ImageViewerPage.routeName,
-                                                      queryParameters: {
-                                                        'imageUrls': appState.uploadImageB.join(','),
-                                                        'initialIndex': '0',
-                                                        'box': 'B',
-                                                      },
-                                                    );
-                                                  }
-                                                }
-                                              },
-                                              onCancel: (index) {
-                                                // X 아이콘 클릭 시 B박스 숨김
-                                                _model.absellected = true;
-                                                // AppState에서 현재 표시된 이미지 제거
-                                                if (appState.uploadImageB.isNotEmpty && index < appState.uploadImageB.length) {
-                                                  appState.removeAtIndexFromUploadImageB(index);
-                                                  // 비율 정보도 같이 제거
-                                                  if (index < appState.uploadImageAspectRatioB.length) {
-                                                    appState.removeAtIndexFromUploadImageAspectRatioB(index);
-                                                  }
-                                                }
-                                                setState(() {});
-                                                // 스마트 레이아웃 업데이트  
-                                                _updateLayoutBasedOnImages();
-                                              },
-                                              onEditTap: () async {
-                                                // 현재 이미지를 편집
-                                                if (appState.uploadImageB.isNotEmpty) {
-                                                  await showModalBottomSheet(
-                                                    context: context,
-                                                    isScrollControlled: true,
-                                                    useSafeArea: true,  // SafeArea 적용
-                                                    backgroundColor: Colors.transparent,
-                                                    builder: (context) => MediaSelectionFlowWidget(
-                                                      box: 'B',
-                                                      initialImageUrl: appState.uploadImageB.last,
-                                                      startWithEditor: true,
-                                                      onComplete: (newImageUrl) {
-                                                        // 기존 이미지를 새 이미지로 교체
-                                                        final oldUrl = appState.uploadImageB.last;
-                                                        appState.removeFromUploadImageB(oldUrl);
-                                                        appState.addToUploadImageB(newImageUrl);
-                                                        
-                                                        // 성공 메시지
-                                                        _showSnackBar('이미지가 수정되었습니다.');
-                                                      },
+                            // 통합된 미디어 선택 박스 - 스마트 레이아웃 시스템이 자동으로 결정
+                            Padding(
+                              padding: EdgeInsetsDirectional.fromSTEB(0.0, _defaultPadding, 0.0, 0.0),
+                              child: Container(
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.of(context).secondaryBackground,
+                                ),
+                                child: Consumer<AppState>(
+                                  builder: (context, appState, child) {
+                                    // 이미지 비율 가져오기 (첫 번째 이미지 기준)
+                                    // 이미지가 실제로 있을 때만 비율 사용
+                                    final aspectRatioA = appState.uploadImageA.isNotEmpty && appState.uploadImageAspectRatioA.isNotEmpty 
+                                        ? appState.uploadImageAspectRatioA.first 
+                                        : null;
+                                    final aspectRatioB = appState.uploadImageB.isNotEmpty && appState.uploadImageAspectRatioB.isNotEmpty 
+                                        ? appState.uploadImageAspectRatioB.first 
+                                        : null;
+                                    
+                                    // 크기 계산 - B박스가 숨겨진 경우와 표시된 경우 구분
+                                    final Size boxSizeA;
+                                    final Size boxSizeB;
+                                    
+                                    if (_model.absellected) {
+                                      // B박스가 숨겨진 경우 - A박스만 전체 너비 사용
+                                      boxSizeA = DynamicBoxCalculator.getBoxSize(
+                                        context: context,
+                                        layoutType: _model.currentLayout,
+                                        box: 'A',
+                                        aspectRatio: aspectRatioA,
+                                        hasOtherBox: false,
+                                      );
+                                      boxSizeB = boxSizeA; // 사용 안됨
+                                    } else {
+                                      // 둘 다 표시된 경우 - 통합 크기 사용
+                                      // 이미지가 전혀 없으면 기본 크기 사용
+                                      if (appState.uploadImageA.isEmpty && appState.uploadImageB.isEmpty) {
+                                        final unifiedSize = DynamicBoxCalculator.getUnifiedSize(
+                                          context: context,
+                                          layoutType: _model.currentLayout,
+                                          aspectRatioA: null,
+                                          aspectRatioB: null,
+                                        );
+                                        boxSizeA = unifiedSize;
+                                        boxSizeB = unifiedSize;
+                                        print('대기 상태 박스 크기: ${unifiedSize.height}px, 레이아웃: ${_model.currentLayout}');
+                                      } else {
+                                        final unifiedSize = DynamicBoxCalculator.getUnifiedSize(
+                                          context: context,
+                                          layoutType: _model.currentLayout,
+                                          aspectRatioA: aspectRatioA,
+                                          aspectRatioB: aspectRatioB,
+                                        );
+                                        boxSizeA = unifiedSize;
+                                        boxSizeB = unifiedSize;
+                                        print('이미지 있는 상태 박스 크기: ${unifiedSize.height}px');
+                                      }
+                                    }
+                                    
+                                    // 레이아웃에 따라 다른 위젯 반환
+                                    if (_model.isRatioVertical) {
+                                      // 가로 배치 (좌/우)
+                                      return _model.absellected
+                                        ? Padding(
+                                            padding: EdgeInsetsDirectional.fromSTEB(_smallPadding * 2, 0.0, _smallPadding * 2, 0.0),
+                                            child: Center(
+                                              child: SizedBox(
+                                                width: boxSizeA.width,
+                                                height: boxSizeA.height,
+                                                child: _buildMediaSelectionBox(
+                                                  box: 'A',
+                                                  width: boxSizeA.width,
+                                                  height: boxSizeA.height,
+                                                  isSelected: _model.absellected,
+                                                  isVideoSelected: _model.isVideoSelectedA,
+                                                  imageUrls: appState.uploadImageA,
+                                                  showPlusIcon: _model.absellected,
+                                                  isHorizontal: true,
+                                                  boxColor: AppTheme.of(context).primary,
+                                                  shakeAnimation: null,
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                        : Padding(
+                                            padding: EdgeInsetsDirectional.fromSTEB(_smallPadding * 2, 0.0, _smallPadding * 2, 0.0),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.max,
+                                              children: [
+                                                Expanded(
+                                                  child: SizedBox(
+                                                    height: boxSizeA.height,
+                                                    child: _buildMediaSelectionBox(
+                                                      box: 'A',
+                                                      width: boxSizeA.width,
+                                                      height: boxSizeA.height,
+                                                      isSelected: false,
+                                                      isVideoSelected: _model.isVideoSelectedA,
+                                                      imageUrls: appState.uploadImageA,
+                                                      showPlusIcon: _model.absellected,
+                                                      isHorizontal: true,
+                                                      boxColor: AppTheme.of(context).primary,
+                                                      shakeAnimation: null,
                                                     ),
-                                                  );
-                                                }
-                                              },
-                                              onAddImageTap: () async {
-                                                // +이미지 아이콘 클릭 시 갤러리로
-                                                if (appState.uploadImageA.isEmpty) {
-                                                  // A박스에 이미지가 없으면 경고
-                                                  _model.shakeController?.forward().then((_) {
-                                                    _model.shakeController?.reverse().then((_) {
-                                                      _model.shakeController?.forward().then((_) {
-                                                        _model.shakeController?.reverse();
-                                                      });
-                                                    });
-                                                  });
-                                                  setState(() {
-                                                    _model.showBBoxWarning = true;
-                                                  });
-                                                  Future.delayed(Duration(seconds: 3), () {
-                                                    if (mounted) {
-                                                      setState(() {
-                                                        _model.showBBoxWarning = false;
-                                                      });
-                                                    }
-                                                  });
-                                                } else {
-                                                  await _openAssetsPicker(context, 'B');
-                                                }
-                                              },
-                                              isHorizontal: true,
-                                              boxColor: AppTheme.of(context).secondary,
+                                                  ),
+                                                ),
+                                                SizedBox(width: _smallPadding * 2), // 5px 간격
+                                                Expanded(
+                                                  child: SizedBox(
+                                                    height: boxSizeB.height,
+                                                    child: _buildMediaSelectionBox(
+                                                      box: 'B',
+                                                      width: boxSizeB.width,
+                                                      height: boxSizeB.height,
+                                                      isSelected: false,
+                                                      isVideoSelected: _model.isVideoSelectedB,
+                                                      imageUrls: appState.uploadImageB,
+                                                      showPlusIcon: false,
+                                                      isHorizontal: true,
+                                                      boxColor: AppTheme.of(context).secondary,
+                                                      shakeAnimation: _model.shakeAnimation,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                    } else if (_model.isRatioHorizontal) {
+                                      // 세로 배치 (위/아래)
+                                      return Column(
+                                        mainAxisSize: MainAxisSize.max,
+                                        children: [
+                                          Padding(
+                                            padding: EdgeInsetsDirectional.fromSTEB(_smallPadding, 0.0, _smallPadding, _smallPadding),
+                                            child: SizedBox(
+                                              width: boxSizeA.width,
+                                              height: boxSizeA.height,
+                                              child: _buildMediaSelectionBox(
+                                                box: 'A',
+                                                width: boxSizeA.width,
+                                                height: boxSizeA.height,
+                                                isSelected: _model.absellected,
+                                                isVideoSelected: _model.isVideoSelectedA,
+                                                imageUrls: appState.uploadImageA,
+                                                showPlusIcon: _model.absellected,
+                                                isHorizontal: false,
+                                                boxColor: AppTheme.of(context).primary,
+                                                shakeAnimation: null,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                    ],
-                                  ),
+                                          if (!_model.absellected)
+                                            Padding(
+                                              padding: EdgeInsetsDirectional.fromSTEB(_smallPadding, _smallPadding, _smallPadding, 0.0),
+                                              child: SizedBox(
+                                                width: boxSizeB.width,
+                                                height: boxSizeB.height,
+                                                child: _buildMediaSelectionBox(
+                                                  box: 'B',
+                                                  width: boxSizeB.width,
+                                                  height: boxSizeB.height,
+                                                  isSelected: false,
+                                                  isVideoSelected: _model.isVideoSelectedB,
+                                                  imageUrls: appState.uploadImageB,
+                                                  showPlusIcon: false,
+                                                  isHorizontal: false,
+                                                  boxColor: AppTheme.of(context).secondary,
+                                                  shakeAnimation: _model.shakeAnimation,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      );
+                                    } else {
+                                      return Container(); // 안전장치
+                                    }
+                                  },
                                 ),
                               ),
+                            ),
                             // 경고 메시지 (B박스 탭 시)
                             if (_model.showBBoxWarning)
                               Padding(
                                 padding: EdgeInsetsDirectional.fromSTEB(20.0, 8.0, 20.0, 0.0),
                                 child: Text(
                                   'A 먼저 이미지를 추가해주세요',
-                                  style: AppTheme.of(context).bodySmall.override(
-                                    font: GoogleFonts.plusJakartaSans(),
+                                  style: _getTextStyle(
+                                    baseStyle: AppTheme.of(context).bodySmall,
                                     color: AppTheme.of(context).error,
                                     fontSize: 12.0,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
+                            // 경고 메시지 (A박스 비어있고 B박스에 이미지 있을 때)
+                            Consumer<AppState>(
+                              builder: (context, appState, _) {
+                                if (appState.uploadImageA.isEmpty && appState.uploadImageB.isNotEmpty) {
+                                  return Padding(
+                                    padding: EdgeInsetsDirectional.fromSTEB(20.0, 8.0, 20.0, 0.0),
+                                    child: Text(
+                                      'A에 이미지를 삽입해주세요',
+                                      style: _getTextStyle(
+                                        baseStyle: AppTheme.of(context).bodySmall,
+                                        color: AppTheme.of(context).error,
+                                        fontSize: 12.0,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  );
+                                }
+                                return SizedBox.shrink();
+                              },
+                            ),
                             Padding(
                               padding: EdgeInsetsDirectional.fromSTEB(
                                   10.0, 3.0, 10.0, 0.0),

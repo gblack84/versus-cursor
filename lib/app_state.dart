@@ -424,4 +424,103 @@ class AppState extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // 로컬 이미지 파일 경로 저장 (빠른 미리보기용)
+  List<String> _localImagePathsA = [];
+  List<String> get localImagePathsA => _localImagePathsA;
+  set localImagePathsA(List<String> value) {
+    _localImagePathsA = value;
+    notifyListeners();
+  }
+
+  void addToLocalImagePathsA(String value) {
+    _localImagePathsA.add(value);
+    notifyListeners();
+  }
+
+  void removeAtIndexFromLocalImagePathsA(int index) {
+    if (index >= 0 && index < _localImagePathsA.length) {
+      _localImagePathsA.removeAt(index);
+      notifyListeners();
+    }
+  }
+
+  void clearLocalImagePathsA() {
+    _localImagePathsA.clear();
+    notifyListeners();
+  }
+
+  List<String> _localImagePathsB = [];
+  List<String> get localImagePathsB => _localImagePathsB;
+  set localImagePathsB(List<String> value) {
+    _localImagePathsB = value;
+    notifyListeners();
+  }
+
+  void addToLocalImagePathsB(String value) {
+    _localImagePathsB.add(value);
+    notifyListeners();
+  }
+
+  void removeAtIndexFromLocalImagePathsB(int index) {
+    if (index >= 0 && index < _localImagePathsB.length) {
+      _localImagePathsB.removeAt(index);
+      notifyListeners();
+    }
+  }
+
+  void clearLocalImagePathsB() {
+    _localImagePathsB.clear();
+    notifyListeners();
+  }
+
+  // 로컬 경로와 원격 URL 매핑을 위한 헬퍼
+  void reorderLocalImagePathsA(int oldIndex, int newIndex) {
+    if (oldIndex >= 0 && oldIndex < _localImagePathsA.length && 
+        newIndex >= 0 && newIndex < _localImagePathsA.length) {
+      final item = _localImagePathsA.removeAt(oldIndex);
+      _localImagePathsA.insert(newIndex, item);
+      notifyListeners();
+    }
+  }
+
+  void moveToFrontLocalImagePathsA(int index) {
+    if (index > 0 && index < _localImagePathsA.length) {
+      final item = _localImagePathsA.removeAt(index);
+      _localImagePathsA.insert(0, item);
+      notifyListeners();
+    }
+  }
+
+  void reorderLocalImagePathsB(int oldIndex, int newIndex) {
+    if (oldIndex >= 0 && oldIndex < _localImagePathsB.length && 
+        newIndex >= 0 && newIndex < _localImagePathsB.length) {
+      final item = _localImagePathsB.removeAt(oldIndex);
+      _localImagePathsB.insert(newIndex, item);
+      notifyListeners();
+    }
+  }
+
+  void moveToFrontLocalImagePathsB(int index) {
+    if (index > 0 && index < _localImagePathsB.length) {
+      final item = _localImagePathsB.removeAt(index);
+      _localImagePathsB.insert(0, item);
+      notifyListeners();
+    }
+  }
+
+  // 업로드 상태 관리
+  bool _isUploadingA = false;
+  bool get isUploadingA => _isUploadingA;
+  set isUploadingA(bool value) {
+    _isUploadingA = value;
+    notifyListeners();
+  }
+
+  bool _isUploadingB = false;
+  bool get isUploadingB => _isUploadingB;
+  set isUploadingB(bool value) {
+    _isUploadingB = value;
+    notifyListeners();
+  }
 }

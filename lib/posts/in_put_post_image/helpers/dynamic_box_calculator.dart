@@ -4,20 +4,22 @@ import 'aspect_ratio_analyzer.dart';
 /// 이미지 비율에 따른 동적 박스 크기 계산 클래스
 class DynamicBoxCalculator {
   // 박스 크기 제한값
-  static const double maxHeightHorizontal = 400; // 가로 배치 시 최대 높이
-  static const double minHeightHorizontal = 200; // 가로 배치 시 최소 높이
-  static const double maxHeightVertical = 300;   // 세로 배치 시 최대 높이
-  static const double minHeightVertical = 150;   // 세로 배치 시 최소 높이
+  static const double maxHeightHorizontal = 500; // 가로 배치 시 최대 높이
+  static const double minHeightHorizontal = 150; // 가로 배치 시 최소 높이
+  static const double maxHeightVertical = 400;   // 세로 배치 시 최대 높이
+  static const double minHeightVertical = 120;   // 세로 배치 시 최소 높이
   static const double padding = 5;                // 박스 간 패딩
   
   // 기본 박스 높이 (이미지가 없을 때)
-  static const double defaultHeightHorizontal = 250;
+  static const double defaultHeightHorizontal = 350;  // A/B 둘 다 있을 때
   static const double defaultHeightVertical = 200;
+  static const double defaultHeightSingle = 400;      // A 하나만 있을 때
   
   /// 가로 배치일 때 박스 크기 계산
   static Size getHorizontalBoxSize(BuildContext context, double? aspectRatio) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final boxWidth = (screenWidth - padding * 3) / 2; // 양쪽 패딩 + 중간 패딩
+    // Expanded 위젯이 자동으로 공간을 분배하므로 정확한 너비 계산 불필요
+    final boxWidth = (screenWidth - padding * 2 - padding) / 2; // 양쪽 5px + 중간 5px
     
     if (aspectRatio == null) {
       return Size(boxWidth, defaultHeightHorizontal);
@@ -59,7 +61,7 @@ class DynamicBoxCalculator {
       final boxWidth = screenWidth - padding * 2;
       
       if (aspectRatio == null) {
-        return Size(boxWidth, defaultHeightHorizontal);
+        return Size(boxWidth, defaultHeightSingle);
       }
       
       // 이미지 비율에 맞춰 높이 계산
@@ -152,5 +154,35 @@ class DynamicBoxCalculator {
     final heightB = getBoxHeight(width: width, layoutType: layoutType, aspectRatio: aspectRatioB);
     
     return (heightA + heightB) / 2;
+  }
+  
+  /// A/B 박스 통합 크기 계산 (둘 다 같은 크기로)
+  static Size getUnifiedSize({
+    required BuildContext context,
+    required LayoutType layoutType,
+    double? aspectRatioA,
+    double? aspectRatioB,
+  }) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    // 레이아웃에 따른 너비 설정
+    double boxWidth;
+    if (layoutType == LayoutType.horizontal) {
+      // 가로 배치: 화면의 절반씩
+      boxWidth = (screenWidth - padding * 3) / 2;
+    } else {
+      // 세로 배치: 전체 너비
+      boxWidth = screenWidth - padding * 2;
+    }
+    
+    // 통합 높이 계산 (평균값 사용)
+    double height = getOptimalHeight(
+      layoutType: layoutType,
+      width: boxWidth,
+      aspectRatioA: aspectRatioA,
+      aspectRatioB: aspectRatioB,
+    );
+    
+    return Size(boxWidth, height);
   }
 }

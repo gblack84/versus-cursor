@@ -92,7 +92,19 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
             ),
             colorScheme: ColorScheme.dark(
               primary: AppTheme.of(context).primary,
+              secondary: AppTheme.of(context).primary, // 확인 버튼 색상
               surface: Colors.black,
+            ),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.of(context).primary,
+                foregroundColor: Colors.white,
+              ),
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.of(context).primary,
+              ),
             ),
           ),
         ),

@@ -77,13 +77,24 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         pickerConfig: AssetPickerConfig(
           maxAssets: 4,  // 최대 4장으로 변경
           requestType: RequestType.image,
-          themeColor: AppTheme.of(context).primary,
           textDelegate: const CustomKoreanAssetPickerTextDelegate(),
           gridCount: 4,
           specialItemPosition: SpecialItemPosition.prepend,
           specialItemBuilder: (BuildContext context, AssetPathEntity? path, int length) {
             return _buildCameraButton(context);
           },
+          pickerTheme: ThemeData.dark().copyWith(
+            scaffoldBackgroundColor: Colors.black,
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+              elevation: 0,
+            ),
+            colorScheme: ColorScheme.dark(
+              primary: AppTheme.of(context).primary,
+              surface: Colors.black,
+            ),
+          ),
         ),
       );
 
@@ -533,42 +544,64 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                   foregroundColor: Colors.white,
                 ),
               ),
+              blurEditor: const BlurEditorConfigs(
+                enabled: false,  // Blur 메뉴 비활성화
+              ),
+              paintEditor: const PaintEditorConfigs(
+                enableModeRect: false,     // Rectangle 비활성화
+                enableModePolygon: false,  // Polygon 비활성화
+                enableModePixelate: false, // Pixelate 비활성화
+                enableModeLine: false,     // Line 비활성화
+              ),
             ),
         ),
         
         // 커스텀 뒤로가기 버튼 (X 버튼 위에 오버레이)
         Positioned(
-          top: 8,
+          top: 12,
           left: 8,
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: const BoxDecoration(
-              color: Colors.black,
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.arrow_back,
-                color: Colors.white,
-                size: 24,
+          child: InkWell(
+            onTap: () {
+              // 멀티 이미지가 있으면 썸네일 선택 페이지로, 없으면 피커로
+              if (_allSelectedFiles.isNotEmpty) {
+                // 썸네일 선택 페이지로 돌아가기
+                setState(() {
+                  _selectedFile = null;
+                });
+                _navigateToThumbnailSelection(_allSelectedFiles);
+              } else {
+                // 피커로 돌아가기
+                setState(() {
+                  _selectedFile = null;
+                });
+                _openPicker();
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(20),
               ),
-              onPressed: () {
-                // 멀티 이미지가 있으면 썸네일 선택 페이지로, 없으면 피커로
-                if (_allSelectedFiles.isNotEmpty) {
-                  // 썸네일 선택 페이지로 돌아가기
-                  setState(() {
-                    _selectedFile = null;
-                  });
-                  _navigateToThumbnailSelection(_allSelectedFiles);
-                } else {
-                  // 피커로 돌아가기
-                  setState(() {
-                    _selectedFile = null;
-                  });
-                  _openPicker();
-                }
-              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.chevron_left,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 2),
+                  Text(
+                    _allSelectedFiles.isNotEmpty ? '썸네일' : '갤러리',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

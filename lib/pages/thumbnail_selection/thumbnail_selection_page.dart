@@ -74,24 +74,39 @@ class _ThumbnailSelectionPageState extends State<ThumbnailSelectionPage> {
                     ),
                   ),
                   
-                  // 뒤로가기 버튼 (ProImageEditor 스타일)
+                  // 뒤로가기 버튼 (텍스트 스타일)
                   Positioned(
                     top: 8,
                     left: 8,
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.white,
-                          size: 24,
+                    child: InkWell(
+                      onTap: () => Navigator.pop(context, {'action': 'back_to_picker'}),
+                      child: Container(
+                        height: 44,
+                        padding: const EdgeInsets.only(left: 10, right: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(22),
                         ),
-                        onPressed: () => Navigator.pop(context, {'action': 'back_to_picker'}),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(
+                              Icons.chevron_left,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              '갤러리',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

@@ -647,6 +647,10 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                   backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
                 ),
+                colorScheme: ColorScheme.dark(
+                  primary: AppTheme.of(context).primary,
+                  secondary: AppTheme.of(context).primary,
+                ),
               ),
               blurEditor: const BlurEditorConfigs(
                 enabled: false,  // Blur 메뉴 비활성화
@@ -656,6 +660,32 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                 enableModePolygon: false,  // Polygon 비활성화
                 enableModePixelate: false, // Pixelate 비활성화
                 enableModeLine: false,     // Line 비활성화
+              ),
+              customWidgets: ImageEditorCustomWidgets(
+                loadingDialog: (message, configs) => Container(
+                  color: Colors.black54,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppTheme.of(context).primary,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          '업로드 중...',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
         ),

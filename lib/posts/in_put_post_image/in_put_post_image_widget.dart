@@ -588,6 +588,8 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       dynamicHeight: height,
       dynamicWidth: width,
       shakeAnimation: shakeAnimation,
+      isHorizontal: isHorizontal,
+      boxColor: boxColor,
       onTap: () async {
         if (box == 'B' && appState.uploadImageA.isEmpty) {
           // A박스에 이미지가 없으면 경고
@@ -735,8 +737,6 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           await _openAssetsPicker(context, box);
         }
       },
-      isHorizontal: isHorizontal,
-      boxColor: boxColor,
       onCurrentIndexChanged: (index) {
         // 현재 인덱스 업데이트
         setState(() {

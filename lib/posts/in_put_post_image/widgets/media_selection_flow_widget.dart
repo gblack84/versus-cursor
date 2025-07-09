@@ -26,6 +26,7 @@ class MediaSelectionFlowWidget extends StatefulWidget {
     this.existingImageUrls,
     this.existingAspectRatios,
     this.existingAssetIds,
+    this.replaceIndex,
   });
 
   final String box; // 'A' or 'B'
@@ -36,6 +37,7 @@ class MediaSelectionFlowWidget extends StatefulWidget {
   final List<String>? existingImageUrls; // 기존 이미지 URL들 (재사용용)
   final List<double>? existingAspectRatios; // 기존 이미지 비율들
   final List<String>? existingAssetIds; // 기존 AssetEntity ID들
+  final int? replaceIndex; // 교체할 이미지 인덱스 (2,3,4번 이미지용)
 
   @override
   State<MediaSelectionFlowWidget> createState() => _MediaSelectionFlowWidgetState();
@@ -100,7 +102,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         context,
         pickerConfig: AssetPickerConfig(
           selectedAssets: selectedAssets, // 이전 선택 표시
-          maxAssets: 4,  // 최대 4장으로 변경
+          maxAssets: widget.replaceIndex != null ? 1 : 4,  // 교체 모드에서는 1장만
           requestType: RequestType.image,
           textDelegate: const CustomKoreanAssetPickerTextDelegate(),
           gridCount: 4,
@@ -136,6 +138,16 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       );
 
       if (result != null && result.isNotEmpty) {
+        // replaceIndex가 있으면 바로 업로드 (편집 단계 없음)
+        if (widget.replaceIndex != null) {
+          final file = await result.first.file;
+          if (file != null) {
+            // 바로 업로드 시작
+            await _uploadImageDirectly(file, result.first);
+          }
+          return;
+        }
+        
         // 1장만 선택한 경우 바로 편집
         if (result.length == 1) {
           final file = await result.first.file;
@@ -706,6 +718,98 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         ),
       ],
     );
+  }
+  
+  /// 직접 업로드 (교체 모드용)
+  Future<void> _uploadImageDirectly(File file, AssetEntity asset) async {
+    try {
+      setState(() {
+        _isUploading = true;
+        _uploadProgress = 0.2;
+      });
+      
+      // 파일 읽기
+      final bytes = await file.readAsBytes();
+      
+      setState(() {
+        _uploadProgress = 0.5;
+      });
+      
+      // 업로드
+      final result = await MediaUploadService.uploadImageWithVariants(
+        imageBytes: bytes,
+        box: widget.box,
+      );
+      
+      setState(() {
+        _uploadProgress = 0.8;
+      });
+      
+      final displayUrl = result['urls']['display'];
+      final aspectRatio = result['aspectRatio'];
+      
+      // AppState 업데이트
+      final appState = Provider.of<AppState>(context, listen: false);
+      appState.update(() {
+        if (widget.box == 'A') {
+          // 특정 인덱스 교체
+          if (widget.replaceIndex! < appState.uploadImageA.length) {
+            appState.uploadImageA[widget.replaceIndex!] = displayUrl;
+            appState.uploadImageAspectRatioA[widget.replaceIndex!] = aspectRatio;
+            appState.assetEntityIdsA[widget.replaceIndex!] = asset.id;
+          } else {
+            // 새로 추가
+            appState.addToUploadImageA(displayUrl);
+            appState.addToUploadImageAspectRatioA(aspectRatio);
+            appState.addToAssetEntityIdsA(asset.id);
+          }
+        } else {
+          // B 박스
+          if (widget.replaceIndex! < appState.uploadImageB.length) {
+            appState.uploadImageB[widget.replaceIndex!] = displayUrl;
+            appState.uploadImageAspectRatioB[widget.replaceIndex!] = aspectRatio;
+            appState.assetEntityIdsB[widget.replaceIndex!] = asset.id;
+          } else {
+            // 새로 추가
+            appState.addToUploadImageB(displayUrl);
+            appState.addToUploadImageAspectRatioB(aspectRatio);
+            appState.addToAssetEntityIdsB(asset.id);
+          }
+        }
+      });
+      
+      // 프리캐싱 시작
+      precacheImage(CachedNetworkImageProvider(displayUrl), context).catchError((e) {
+        print('프리캐싱 실패 (무시됨): $e');
+      });
+      
+      setState(() {
+        _uploadProgress = 1.0;
+      });
+      
+      // 콜백 호출
+      widget.onComplete(displayUrl);
+      
+      // 모달 닫기
+      if (mounted) {
+        Navigator.pop(context);
+        print('교체 모드 업로드 완료 및 모달 닫기');
+      }
+    } catch (e) {
+      print('직접 업로드 에러: $e');
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('이미지 업로드 실패: $e'),
+            backgroundColor: AppTheme.of(context).error,
+          ),
+        );
+        Navigator.pop(context);
+      }
+    }
   }
 }
 

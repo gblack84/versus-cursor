@@ -295,7 +295,9 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   }
 
   /// 미디어 타입 선택 다이얼로그
-  Future<void> _openAssetsPicker(BuildContext parentContext, String box) async {
+  Future<void> _openAssetsPicker(BuildContext parentContext, String box, {int? replaceIndex}) async {
+    final appState = context.read<AppState>();
+    
     // 통합 플로우 모달로 열기
     await showModalBottomSheet(
       context: parentContext,
@@ -305,9 +307,10 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       barrierColor: Colors.black87,  // 배리어도 검은색
       builder: (modalContext) => MediaSelectionFlowWidget(
         box: box,
+        replaceIndex: replaceIndex,  // 교체 인덱스 전달
         existingAssetIds: box == 'A' 
-          ? context.read<AppState>().assetEntityIdsA
-          : context.read<AppState>().assetEntityIdsB,
+          ? appState.assetEntityIdsA
+          : appState.assetEntityIdsB,
         onComplete: (imageUrl) {
           // 백그라운드 업로드 완료 시 호출되지만, 이미 로컬 이미지로 처리했으므로 추가 작업 불필요
           if (!kReleaseMode) print('백그라운드 업로드 완료: $imageUrl');
@@ -718,12 +721,24 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         }
       },
       onAddImageTap: () async {
-        // +이미지 아이콘 클릭 시 갤러리로
+        // +이미지 아이콘 클릭 시
         if (box == 'B' && appState.uploadImageA.isEmpty) {
           // A박스에 이미지가 없으면 경고
           _showBBoxWarning();
         } else {
-          await _openAssetsPicker(context, box);
+          final images = box == 'A' ? appState.uploadImageA : appState.uploadImageB;
+          final currentIndex = box == 'A' ? _model.currentImageIndexA : _model.currentImageIndexB;
+          
+          if (images.isEmpty) {
+            // 첫 번째 이미지 추가는 전체 플로우 (썸네일 선택 포함)
+            await _openAssetsPicker(context, box);
+          } else if (currentIndex == 0) {
+            // 첫 번째 이미지(썸네일)를 보고 있을 때는 전체 플로우
+            await _openAssetsPicker(context, box);
+          } else {
+            // 2,3,4번째 이미지를 보고 있을 때는 현재 위치 교체
+            await _openAssetsPicker(context, box, replaceIndex: currentIndex);
+          }
         }
       },
       isHorizontal: isHorizontal,

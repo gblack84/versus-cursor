@@ -590,6 +590,27 @@ This project represents a sophisticated social media application with a unique "
 - ProImageEditor 커스터마이징 완료
 - 일관된 UI/UX 디자인 시스템 구축
 
+### 2025-07-09: 이미지 편집 플로우 개선 및 피커 선택 상태 표시
+- **편집 플로우 개선**:
+  - 편집 버튼 클릭 시 바로 이미지 에디터로 이동
+  - 멀티 이미지: 현재 보고 있는 이미지를 편집
+  - 단일 이미지: 바로 편집
+  - 에디터에서 뒤로가기 시 질문 작성 페이지로 복귀
+- **이미지 교체 로직 수정**:
+  - 썸네일 선택 후 편집 시 원본 위치에 교체
+  - 이미지 개수 유지 (추가가 아닌 교체)
+  - 편집된 이미지는 썸네일(맨 앞) 위치 유지
+- **현재 이미지 인덱스 추적**:
+  - PageView의 onPageChanged로 현재 인덱스 추적
+  - InPutPostImageModel에 currentImageIndexA/B 추가
+  - 정확한 이미지 편집 가능
+- **AssetEntity ID를 활용한 선택 상태 표시**:
+  - AppState에 assetEntityIdsA/B 리스트 추가
+  - 이미지 선택 시 AssetEntity ID 저장
+  - 피커 열 때 selectedAssets로 이전 선택 표시
+  - 작성 페이지 내에서 선택 상태 유지
+- **커밋**: 2ead482
+
 ### 향후 개선 가능 사항
 1. **애니메이션 추가**: 레이아웃 전환 시 부드러운 애니메이션
 2. **사용자 설정**: 자동 레이아웃을 끄고 수동으로 선택하는 옵션
@@ -599,6 +620,7 @@ This project represents a sophisticated social media application with a unique "
 6. **이미지 피커 고급 커스터마이징**: 
    - 커스텀 AssetPickerBuilderDelegate로 버튼 스타일 완전 제어
    - 최근 항목(Recents) 기능 개선
+   - 이미지 교체 모드 추가
 7. **ProImageEditor 추가 설정**:
    - 커스텀 필터 추가
    - 텍스트 에디터 폰트 옵션 확장

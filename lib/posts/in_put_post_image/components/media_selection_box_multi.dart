@@ -54,6 +54,31 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
   void initState() {
     super.initState();
     _pageController = PageController();
+    
+    // 첫 번째와 두 번째 이미지 프리로드
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.imageUrls.isNotEmpty) {
+        // 첫 번째 이미지
+        precacheImage(
+          CachedNetworkImageProvider(
+            widget.imageUrls[0],
+            cacheKey: widget.imageUrls[0],
+          ),
+          context,
+        );
+        
+        // 두 번째 이미지가 있으면 프리로드
+        if (widget.imageUrls.length > 1) {
+          precacheImage(
+            CachedNetworkImageProvider(
+              widget.imageUrls[1],
+              cacheKey: widget.imageUrls[1],
+            ),
+            context,
+          );
+        }
+      }
+    });
   }
   
   @override
@@ -97,11 +122,17 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
       width: double.infinity,
       height: double.infinity,
       memCacheWidth: _calculateMemCacheWidth(),
-      placeholder: (context, url) => Center(
-        child: CircularProgressIndicator(
-          color: AppTheme.of(context).primary,
+      placeholder: (context, url) => Container(
+        color: AppTheme.of(context).secondaryBackground,
+        child: Center(
+          child: CircularProgressIndicator(
+            color: AppTheme.of(context).primary,
+            strokeWidth: 2.0,
+          ),
         ),
       ),
+      fadeInDuration: const Duration(milliseconds: 150),
+      fadeOutDuration: const Duration(milliseconds: 150),
       errorWidget: (context, url, error) {
         print('이미지 로드 에러: $error');
         print('문제 URL: $url');
@@ -148,19 +179,46 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                   child: Stack(
                     children: [
                       // PageView로 여러 이미지 표시
-                      PageView.builder(
-                        controller: _pageController,
-                        itemCount: widget.imageUrls.length,
-                        onPageChanged: (index) {
-                          setState(() {
-                            _currentIndex = index;
-                          });
-                          // 현재 인덱스 변경을 부모에게 알림
-                          widget.onCurrentIndexChanged?.call(index);
-                        },
-                        itemBuilder: (context, index) {
-                          return _buildRemoteImage(index);
-                        },
+                      Container(
+                        color: AppTheme.of(context).secondaryBackground,
+                        child: PageView.builder(
+                          controller: _pageController,
+                          itemCount: widget.imageUrls.length,
+                          pageSnapping: true,
+                          physics: const PageScrollPhysics(),
+                          allowImplicitScrolling: true, // 인접 페이지 프리로딩
+                          onPageChanged: (index) {
+                            setState(() {
+                              _currentIndex = index;
+                            });
+                            // 현재 인덱스 변경을 부모에게 알림
+                            widget.onCurrentIndexChanged?.call(index);
+                            
+                            // 다음 이미지 프리로드
+                            if (index < widget.imageUrls.length - 1) {
+                              precacheImage(
+                                CachedNetworkImageProvider(
+                                  widget.imageUrls[index + 1],
+                                  cacheKey: widget.imageUrls[index + 1],
+                                ),
+                                context,
+                              );
+                            }
+                            // 이전 이미지도 프리로드 (뒤로 스와이프 대비)
+                            if (index > 0) {
+                              precacheImage(
+                                CachedNetworkImageProvider(
+                                  widget.imageUrls[index - 1],
+                                  cacheKey: widget.imageUrls[index - 1],
+                                ),
+                                context,
+                              );
+                            }
+                          },
+                          itemBuilder: (context, index) {
+                            return _buildRemoteImage(index);
+                          },
+                        ),
                       ),
                       // 페이지 인디케이터 (이미지가 2개 이상일 때만 표시)
                       if (widget.imageUrls.length > 1)

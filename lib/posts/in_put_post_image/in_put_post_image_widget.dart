@@ -605,7 +605,9 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
               ImageViewerPage.routeName,
               queryParameters: {
                 'imageUrls': images.join(','),
-                'initialIndex': '0',
+                'initialIndex': box == 'A' 
+                  ? _model.currentImageIndexA.toString() 
+                  : _model.currentImageIndexB.toString(),
                 'box': box,
               },
             );

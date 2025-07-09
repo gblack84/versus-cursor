@@ -136,10 +136,9 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       );
 
       if (result != null && result.isNotEmpty) {
-        // 기존 이미지가 있고 첫 번째 이미지가 아닌 경우 - diff 처리
+        // 기존 이미지가 있는 경우 - diff 처리
         if (widget.existingImageUrls != null && 
-            widget.existingImageUrls!.isNotEmpty && 
-            widget.existingImageUrls!.length > 1) {
+            widget.existingImageUrls!.isNotEmpty) {
           await _processSelectionResult(result);
           return;
         }
@@ -217,6 +216,8 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         setState(() {
           _selectedFile = files[selectedIndex];
           _currentEditIndex = selectedIndex;
+          // 모든 파일을 저장 (썸네일 선택 시에도 전체 파일 유지)
+          _allSelectedFiles = files;
         });
       }
     } else {
@@ -441,7 +442,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                     
                     // 2. 나머지 이미지들 처리 (편집된 이미지 제외)
                     // 기존 URL이 있으면 재사용, 없으면 새로 업로드
-                    if (widget.existingImageUrls != null && widget.existingAspectRatios != null) {
+                    if (widget.existingImageUrls != null && widget.existingAspectRatios != null && widget.existingImageUrls!.isNotEmpty) {
                       // 기존 URL 재사용 모드
                       for (int i = 0; i < widget.existingImageUrls!.length; i++) {
                         if (i != _currentEditIndex) {

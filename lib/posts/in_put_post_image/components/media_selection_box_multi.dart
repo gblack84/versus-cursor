@@ -53,7 +53,8 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
+    _currentIndex = 0; // 명시적으로 0으로 초기화
+    _pageController = PageController(initialPage: 0);
     
     // 첫 번째와 두 번째 이미지 프리로드
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -85,6 +86,28 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+  
+  @override
+  void didUpdateWidget(MediaSelectionBoxMulti oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // 이미지 개수가 변경되었을 때
+    if (widget.imageUrls.length != oldWidget.imageUrls.length) {
+      print('${widget.label}박스 이미지 개수 변경: ${oldWidget.imageUrls.length} → ${widget.imageUrls.length}');
+      
+      // 현재 인덱스가 범위를 벗어나면 조정
+      if (_currentIndex >= widget.imageUrls.length && widget.imageUrls.isNotEmpty) {
+        _currentIndex = widget.imageUrls.length - 1;
+        print('${widget.label}박스 인덱스 조정: $_currentIndex');
+        // PageController가 attach 상태인지 확인
+        if (_pageController.hasClients) {
+          _pageController.jumpToPage(_currentIndex);
+        }
+      } else if (widget.imageUrls.isEmpty) {
+        _currentIndex = 0;
+      }
+    }
   }
   
   int _calculateMemCacheWidth() {
@@ -155,9 +178,13 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
       print('${widget.label}박스: dynamicHeight=${widget.dynamicHeight}, isHorizontal=${widget.isHorizontal}');
     }
     
-    final double iconSize = widget.isSelected
-        ? (widget.isHorizontal ? 300.0 : 250.0)
-        : (widget.isHorizontal ? 180.0 : 150.0);
+    // 박스 높이에 비례한 동적 아이콘 크기 계산
+    // 가로형일 때는 45%, 세로형일 때는 40%
+    final double iconRatio = widget.isHorizontal ? 0.45 : 0.40;
+    final double calculatedIconSize = boxHeight * iconRatio;
+    
+    // 최소 80px, 최대 300px로 제한
+    final double iconSize = calculatedIconSize.clamp(80.0, 300.0);
 
     Widget content = Padding(
       padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
@@ -188,6 +215,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                           physics: const PageScrollPhysics(),
                           allowImplicitScrolling: true, // 인접 페이지 프리로딩
                           onPageChanged: (index) {
+                            print('${widget.label}박스 PageView 페이지 변경: $index');
                             setState(() {
                               _currentIndex = index;
                             });
@@ -306,7 +334,11 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                       focusColor: Colors.transparent,
                       hoverColor: Colors.transparent,
                       highlightColor: Colors.transparent,
-                      onTap: () => widget.onCancel?.call(_currentIndex),
+                      onTap: () {
+                        final safeIndex = widget.imageUrls.isEmpty ? 0 : _currentIndex.clamp(0, widget.imageUrls.length - 1);
+                        print('${widget.label}박스 이미지 삭제 시도 - 현재 인덱스: $_currentIndex, 안전한 인덱스: $safeIndex, 전체 이미지 수: ${widget.imageUrls.length}');
+                        widget.onCancel?.call(safeIndex);
+                      },
                       child: Container(
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.6),
@@ -353,7 +385,11 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                       focusColor: Colors.transparent,
                       hoverColor: Colors.transparent,
                       highlightColor: Colors.transparent,
-                      onTap: () => widget.onCancel?.call(_currentIndex),
+                      onTap: () {
+                        final safeIndex = widget.imageUrls.isEmpty ? 0 : _currentIndex.clamp(0, widget.imageUrls.length - 1);
+                        print('${widget.label}박스 이미지 삭제 시도 - 현재 인덱스: $_currentIndex, 안전한 인덱스: $safeIndex, 전체 이미지 수: ${widget.imageUrls.length}');
+                        widget.onCancel?.call(safeIndex);
+                      },
                       child: widget.imageUrls.isNotEmpty
                         // 이미지가 있을 때 - A박스와 동일한 스타일
                         ? Container(

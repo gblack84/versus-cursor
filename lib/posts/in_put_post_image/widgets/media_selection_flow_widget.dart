@@ -26,6 +26,8 @@ class MediaSelectionFlowWidget extends StatefulWidget {
     this.existingImageUrls,
     this.existingAspectRatios,
     this.existingAssetIds,
+    this.isAddMode = false,
+    this.currentIndex,
   });
 
   final String box; // 'A' or 'B'
@@ -36,6 +38,8 @@ class MediaSelectionFlowWidget extends StatefulWidget {
   final List<String>? existingImageUrls; // 기존 이미지 URL들 (재사용용)
   final List<double>? existingAspectRatios; // 기존 이미지 비율들
   final List<String>? existingAssetIds; // 기존 AssetEntity ID들
+  final bool isAddMode; // 추가 모드인지 여부
+  final int? currentIndex; // 현재 보고 있는 이미지 인덱스
 
   @override
   State<MediaSelectionFlowWidget> createState() => _MediaSelectionFlowWidgetState();
@@ -379,9 +383,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
     return Container(
       color: Colors.black,
       child: const Center(
-        child: CircularProgressIndicator(
-          color: Colors.white,
-        ),
+        child: SizedBox.shrink(), // 중복 로딩 인디케이터 제거
       ),
     );
   }
@@ -423,10 +425,28 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                     final editedDisplayUrl = editedResult['urls']['display'];
                     final editedAspectRatio = editedResult['aspectRatio'];
                     
-                    // 편집된 이미지를 맨 앞에 배치 (썸네일로 선택되었으므로)
-                    reorderedUrls.add(editedDisplayUrl);
-                    reorderedRatios.add(editedAspectRatio);
-                    print('편집된 이미지 업로드 완료 (썸네일)');
+                    // 추가 모드인지 확인
+                    if (widget.isAddMode && widget.currentIndex != null) {
+                      // 추가 모드일 때는 새 이미지를 추가
+                      print('추가 모드: 현재 인덱스 ${widget.currentIndex}에서 이미지 추가');
+                      
+                      // 1. 먼저 기존 이미지들을 그대로 복사
+                      if (widget.existingImageUrls != null && widget.existingAspectRatios != null) {
+                        reorderedUrls.addAll(widget.existingImageUrls!);
+                        reorderedRatios.addAll(widget.existingAspectRatios!);
+                      }
+                      
+                      // 2. 새 이미지를 추가
+                      reorderedUrls.add(editedDisplayUrl);
+                      reorderedRatios.add(editedAspectRatio);
+                      
+                      print('새 이미지 추가 완료. 총 ${reorderedUrls.length}개 이미지');
+                    } else {
+                      // 기존 모드: 편집된 이미지를 맨 앞에 배치 (썸네일로 선택되었으므로)
+                      reorderedUrls.add(editedDisplayUrl);
+                      reorderedRatios.add(editedAspectRatio);
+                      print('편집된 이미지 업로드 완료 (썸네일)');
+                    }
                     
                     // 첫 번째 이미지 즉시 프리캐싱
                     final firstImagePrecache = precacheImage(
@@ -441,8 +461,8 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                     });
                     
                     // 2. 나머지 이미지들 처리 (편집된 이미지 제외)
-                    // 기존 URL이 있으면 재사용, 없으면 새로 업로드
-                    if (widget.existingImageUrls != null && widget.existingAspectRatios != null && widget.existingImageUrls!.isNotEmpty) {
+                    // 추가 모드가 아닐 때만 나머지 이미지 처리
+                    if (!widget.isAddMode && widget.existingImageUrls != null && widget.existingAspectRatios != null && widget.existingImageUrls!.isNotEmpty) {
                       // 기존 URL 재사용 모드
                       for (int i = 0; i < widget.existingImageUrls!.length; i++) {
                         if (i != _currentEditIndex) {
@@ -526,8 +546,17 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                     
                     // 3. AssetEntity ID 순서 맞추기
                     final reorderedAssetIds = <String>[];
-                    if (_selectedAssets.isNotEmpty) {
-                      // 편집된 이미지의 AssetEntity ID를 맨 앞에
+                    if (widget.isAddMode) {
+                      // 추가 모드: 기존 ID들 + 새 ID
+                      if (widget.existingAssetIds != null) {
+                        reorderedAssetIds.addAll(widget.existingAssetIds!);
+                      }
+                      // 새로 선택된 AssetEntity의 ID 추가
+                      if (_selectedAssets.isNotEmpty && _currentEditIndex < _selectedAssets.length) {
+                        reorderedAssetIds.add(_selectedAssets[_currentEditIndex].id);
+                      }
+                    } else if (_selectedAssets.isNotEmpty) {
+                      // 편집 모드: 편집된 이미지의 AssetEntity ID를 맨 앞에
                       if (_currentEditIndex < _selectedAssets.length) {
                         reorderedAssetIds.add(_selectedAssets[_currentEditIndex].id);
                       }
@@ -584,23 +613,28 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                     
                     final displayUrl = result['urls']['display'];
                     
-                    // AppState에 저장
-                    appState.update(() {
-                      if (widget.box == 'A') {
-                        appState.addToUploadImageA(displayUrl);
-                        appState.addToUploadImageAspectRatioA(result['aspectRatio']);
-                        // 단일 이미지 선택 시 AssetEntity ID 저장
-                        if (_selectedAssets.isNotEmpty) {
-                          appState.addToAssetEntityIdsA(_selectedAssets.first.id);
+                    // 편집 모드인지 확인 (startWithEditor가 true이고 initialImageUrl이 있는 경우)
+                    final isEditMode = widget.startWithEditor && widget.initialImageUrl != null;
+                    
+                    if (!isEditMode) {
+                      // 편집 모드가 아닐 때만 AppState에 추가
+                      appState.update(() {
+                        if (widget.box == 'A') {
+                          appState.addToUploadImageA(displayUrl);
+                          appState.addToUploadImageAspectRatioA(result['aspectRatio']);
+                          // 단일 이미지 선택 시 AssetEntity ID 저장
+                          if (_selectedAssets.isNotEmpty) {
+                            appState.addToAssetEntityIdsA(_selectedAssets.first.id);
+                          }
+                        } else {
+                          appState.addToUploadImageB(displayUrl);
+                          appState.addToUploadImageAspectRatioB(result['aspectRatio']);
+                          if (_selectedAssets.isNotEmpty) {
+                            appState.addToAssetEntityIdsB(_selectedAssets.first.id);
+                          }
                         }
-                      } else {
-                        appState.addToUploadImageB(displayUrl);
-                        appState.addToUploadImageAspectRatioB(result['aspectRatio']);
-                        if (_selectedAssets.isNotEmpty) {
-                          appState.addToAssetEntityIdsB(_selectedAssets.first.id);
-                        }
-                      }
-                    });
+                      });
+                    }
                     
                     // 프리캐싱 시작
                     precacheImage(CachedNetworkImageProvider(displayUrl), context).catchError((e) {

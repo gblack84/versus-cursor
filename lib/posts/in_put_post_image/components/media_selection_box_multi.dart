@@ -20,6 +20,7 @@ class MediaSelectionBoxMulti extends StatefulWidget {
   final VoidCallback? onAddImageTap; // 이미지 추가 버튼 탭 콜백
   final double? dynamicHeight; // 동적 높이 (null이면 기본값 사용)
   final double? dynamicWidth; // 동적 너비 (null이면 기본값 사용)
+  final Function(int index)? onCurrentIndexChanged; // 현재 인덱스 변경 콜백
 
   const MediaSelectionBoxMulti({
     Key? key,
@@ -38,6 +39,7 @@ class MediaSelectionBoxMulti extends StatefulWidget {
     this.onAddImageTap,
     this.dynamicHeight,
     this.dynamicWidth,
+    this.onCurrentIndexChanged,
   }) : super(key: key);
   
   @override
@@ -153,6 +155,8 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                           setState(() {
                             _currentIndex = index;
                           });
+                          // 현재 인덱스 변경을 부모에게 알림
+                          widget.onCurrentIndexChanged?.call(index);
                         },
                         itemBuilder: (context, index) {
                           return _buildRemoteImage(index);

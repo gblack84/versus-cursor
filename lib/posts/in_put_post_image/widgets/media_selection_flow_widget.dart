@@ -23,6 +23,9 @@ class MediaSelectionFlowWidget extends StatefulWidget {
     this.onMultiComplete,
     this.initialImageUrl,
     this.startWithEditor = false,
+    this.existingImageUrls,
+    this.existingAspectRatios,
+    this.existingAssetIds,
   });
 
   final String box; // 'A' or 'B'
@@ -30,6 +33,9 @@ class MediaSelectionFlowWidget extends StatefulWidget {
   final Function(List<String> imageUrls)? onMultiComplete; // 멀티 이미지 완료 콜백
   final String? initialImageUrl; // 편집할 기존 이미지 URL
   final bool startWithEditor; // 에디터로 바로 시작할지 여부
+  final List<String>? existingImageUrls; // 기존 이미지 URL들 (재사용용)
+  final List<double>? existingAspectRatios; // 기존 이미지 비율들
+  final List<String>? existingAssetIds; // 기존 AssetEntity ID들
 
   @override
   State<MediaSelectionFlowWidget> createState() => _MediaSelectionFlowWidgetState();
@@ -41,6 +47,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   
   // 멀티 이미지 선택 시 사용
   List<File> _allSelectedFiles = [];
+  List<AssetEntity> _selectedAssets = []; // AssetEntity 저장
   int _currentEditIndex = 0;
   
   // 업로드 상태
@@ -72,9 +79,27 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   /// AssetPicker 열기
   Future<void> _openPicker() async {
     try {
+      // 기존에 선택된 AssetEntity 복원
+      List<AssetEntity> selectedAssets = [];
+      
+      if (widget.existingAssetIds != null && widget.existingAssetIds!.isNotEmpty) {
+        for (String id in widget.existingAssetIds!) {
+          try {
+            final asset = await AssetEntity.fromId(id);
+            if (asset != null) {
+              selectedAssets.add(asset);
+            }
+          } catch (e) {
+            print('AssetEntity 복원 실패 (ID: $id): $e');
+          }
+        }
+        print('복원된 AssetEntity 개수: ${selectedAssets.length}');
+      }
+      
       final List<AssetEntity>? result = await AssetPicker.pickAssets(
         context,
         pickerConfig: AssetPickerConfig(
+          selectedAssets: selectedAssets, // 이전 선택 표시
           maxAssets: 4,  // 최대 4장으로 변경
           requestType: RequestType.image,
           textDelegate: const CustomKoreanAssetPickerTextDelegate(),
@@ -117,6 +142,8 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
           if (file != null) {
             setState(() {
               _selectedFile = file;
+              // 단일 선택 시에도 AssetEntity 저장
+              _selectedAssets = result;
             });
           }
         } else {
@@ -127,6 +154,10 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
           
           final validFiles = files.whereType<File>().toList();
           if (validFiles.isNotEmpty && mounted) {
+            // AssetEntity 리스트 저장
+            setState(() {
+              _selectedAssets = result;
+            });
             // 썸네일 선택 페이지로 이동
             _navigateToThumbnailSelection(validFiles);
           }
@@ -370,7 +401,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                     final reorderedUrls = <String>[];
                     final reorderedRatios = <double>[];
                     
-                    // 1. 편집된 이미지 업로드 (대표 이미지)
+                    // 1. 편집된 이미지 업로드
                     setState(() {
                       _uploadProgress = 0.2;
                     });
@@ -379,14 +410,17 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                       imageBytes: bytes,
                       box: widget.box,
                     );
-                    final firstDisplayUrl = editedResult['urls']['display'];
-                    reorderedUrls.add(firstDisplayUrl);
-                    reorderedRatios.add(editedResult['aspectRatio']);
-                    print('대표 이미지 업로드 완료');
+                    final editedDisplayUrl = editedResult['urls']['display'];
+                    final editedAspectRatio = editedResult['aspectRatio'];
                     
-                    // 첫 번째 이미지 즉시 프리캐싱 (최우선)
+                    // 편집된 이미지를 맨 앞에 배치 (썸네일로 선택되었으므로)
+                    reorderedUrls.add(editedDisplayUrl);
+                    reorderedRatios.add(editedAspectRatio);
+                    print('편집된 이미지 업로드 완료 (썸네일)');
+                    
+                    // 첫 번째 이미지 즉시 프리캐싱
                     final firstImagePrecache = precacheImage(
-                      CachedNetworkImageProvider(firstDisplayUrl), 
+                      CachedNetworkImageProvider(editedDisplayUrl), 
                       context
                     ).catchError((e) {
                       print('첫 이미지 프리캐싱 실패 (무시됨): $e');
@@ -396,76 +430,115 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                       _uploadProgress = 0.4;
                     });
                     
-                    // 2. 나머지 이미지들 병렬 업로드
-                    final uploadFutures = <Future<Map<String, dynamic>>>[];
-                    final fileBytesFutures = <Future<Uint8List>>[];
-                    
-                    // 파일 읽기를 먼저 병렬로 처리
-                    for (int i = 0; i < _allSelectedFiles.length; i++) {
-                      if (i != _currentEditIndex) {
-                        fileBytesFutures.add(_allSelectedFiles[i].readAsBytes());
+                    // 2. 나머지 이미지들 처리 (편집된 이미지 제외)
+                    // 기존 URL이 있으면 재사용, 없으면 새로 업로드
+                    if (widget.existingImageUrls != null && widget.existingAspectRatios != null) {
+                      // 기존 URL 재사용 모드
+                      for (int i = 0; i < widget.existingImageUrls!.length; i++) {
+                        if (i != _currentEditIndex) {
+                          reorderedUrls.add(widget.existingImageUrls![i]);
+                          if (i < widget.existingAspectRatios!.length) {
+                            reorderedRatios.add(widget.existingAspectRatios![i]);
+                          }
+                        }
+                      }
+                      
+                      setState(() {
+                        _uploadProgress = 0.8;
+                      });
+                      
+                      print('기존 이미지 URL 재사용 완료');
+                    } else {
+                      // 새로 업로드 모드 (최초 선택 시)
+                      final uploadFutures = <Future<Map<String, dynamic>>>[];
+                      final fileBytesFutures = <Future<Uint8List>>[];
+                      
+                      // 파일 읽기를 먼저 병렬로 처리 (편집된 이미지 제외)
+                      for (int i = 0; i < _allSelectedFiles.length; i++) {
+                        if (i != _currentEditIndex) {
+                          fileBytesFutures.add(_allSelectedFiles[i].readAsBytes());
+                        }
+                      }
+                      
+                      if (fileBytesFutures.isNotEmpty) {
+                        final allFileBytes = await Future.wait(fileBytesFutures);
+                        
+                        // 업로드 작업을 병렬로 시작
+                        for (final fileBytes in allFileBytes) {
+                          uploadFutures.add(
+                            MediaUploadService.uploadImageWithVariants(
+                              imageBytes: fileBytes,
+                              box: widget.box,
+                            )
+                          );
+                        }
+                        
+                        setState(() {
+                          _uploadProgress = 0.6;
+                        });
+                        
+                        // 모든 업로드 완료 대기
+                        final results = await Future.wait(uploadFutures);
+                        
+                        // 결과 처리 및 프리캐싱
+                        final precacheFutures = <Future<void>>[];
+                        for (final result in results) {
+                          final displayUrl = result['urls']['display'];
+                          reorderedUrls.add(displayUrl);
+                          reorderedRatios.add(result['aspectRatio']);
+                          
+                          // 백그라운드 프리캐싱
+                          precacheFutures.add(
+                            precacheImage(
+                              CachedNetworkImageProvider(displayUrl), 
+                              context
+                            ).catchError((e) {
+                              print('프리캐싱 실패 (무시됨): $e');
+                            })
+                          );
+                        }
+                        
+                        // 나머지 이미지들은 백그라운드에서 계속 프리캐싱
+                        Future.wait(precacheFutures).then((_) {
+                          print('모든 이미지 프리캐싱 완료');
+                        });
                       }
                     }
                     
-                    final allFileBytes = await Future.wait(fileBytesFutures);
-                    
-                    // 업로드 작업을 병렬로 시작
-                    for (final fileBytes in allFileBytes) {
-                      uploadFutures.add(
-                        MediaUploadService.uploadImageWithVariants(
-                          imageBytes: fileBytes,
-                          box: widget.box,
-                        )
-                      );
-                    }
-                    
-                    setState(() {
-                      _uploadProgress = 0.6;
-                    });
-                    
-                    // 모든 업로드 완료 대기
-                    final results = await Future.wait(uploadFutures);
-                    
-                    // 결과 처리 및 프리캐싱
-                    final precacheFutures = <Future<void>>[];
-                    for (final result in results) {
-                      final displayUrl = result['urls']['display'];
-                      reorderedUrls.add(displayUrl);
-                      reorderedRatios.add(result['aspectRatio']);
-                      
-                      // 백그라운드 프리캐싱
-                      precacheFutures.add(
-                        precacheImage(
-                          CachedNetworkImageProvider(displayUrl), 
-                          context
-                        ).catchError((e) {
-                          print('프리캐싱 실패 (무시됨): $e');
-                        })
-                      );
-                    }
-                    
-                    print('모든 이미지 업로드 완료: ${reorderedUrls.length}개');
+                    print('전체 이미지 처리 완료: ${reorderedUrls.length}개 (원본 ${_allSelectedFiles.length}개에서)');
                     
                     // 첫 이미지 프리캐싱 완료 대기
                     await firstImagePrecache;
-                    
-                    // 나머지 이미지들은 백그라운드에서 계속 프리캐싱
-                    Future.wait(precacheFutures).then((_) {
-                      print('모든 이미지 프리캐싱 완료');
-                    });
                     
                     setState(() {
                       _uploadProgress = 0.9;
                     });
                     
-                    // 3. AppState에 저장
+                    // 3. AssetEntity ID 순서 맞추기
+                    final reorderedAssetIds = <String>[];
+                    if (_selectedAssets.isNotEmpty) {
+                      // 편집된 이미지의 AssetEntity ID를 맨 앞에
+                      if (_currentEditIndex < _selectedAssets.length) {
+                        reorderedAssetIds.add(_selectedAssets[_currentEditIndex].id);
+                      }
+                      // 나머지 AssetEntity ID들
+                      for (int i = 0; i < _selectedAssets.length; i++) {
+                        if (i != _currentEditIndex) {
+                          reorderedAssetIds.add(_selectedAssets[i].id);
+                        }
+                      }
+                    }
+                    
+                    // 4. AppState에 저장
                     appState.update(() {
                       if (widget.box == 'A') {
                         appState.uploadImageA = reorderedUrls;
                         appState.uploadImageAspectRatioA = reorderedRatios;
+                        appState.assetEntityIdsA = reorderedAssetIds;
                       } else {
                         appState.uploadImageB = reorderedUrls;
                         appState.uploadImageAspectRatioB = reorderedRatios;
+                        appState.assetEntityIdsB = reorderedAssetIds;
                       }
                     });
                     
@@ -506,9 +579,16 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                       if (widget.box == 'A') {
                         appState.addToUploadImageA(displayUrl);
                         appState.addToUploadImageAspectRatioA(result['aspectRatio']);
+                        // 단일 이미지 선택 시 AssetEntity ID 저장
+                        if (_selectedAssets.isNotEmpty) {
+                          appState.addToAssetEntityIdsA(_selectedAssets.first.id);
+                        }
                       } else {
                         appState.addToUploadImageB(displayUrl);
                         appState.addToUploadImageAspectRatioB(result['aspectRatio']);
+                        if (_selectedAssets.isNotEmpty) {
+                          appState.addToAssetEntityIdsB(_selectedAssets.first.id);
+                        }
                       }
                     });
                     
@@ -574,19 +654,24 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
           left: 8,
           child: InkWell(
             onTap: () {
-              // 멀티 이미지가 있으면 썸네일 선택 페이지로, 없으면 피커로
-              if (_allSelectedFiles.isNotEmpty) {
-                // 썸네일 선택 페이지로 돌아가기
-                setState(() {
-                  _selectedFile = null;
-                });
-                _navigateToThumbnailSelection(_allSelectedFiles);
+              // startWithEditor로 시작한 경우 바로 모달 닫기 (질문 작성 페이지로)
+              if (widget.startWithEditor) {
+                Navigator.pop(context);
               } else {
-                // 피커로 돌아가기
-                setState(() {
-                  _selectedFile = null;
-                });
-                _openPicker();
+                // 갤러리 선택 플로우인 경우 기존 로직
+                if (_allSelectedFiles.isNotEmpty) {
+                  // 썸네일 선택 페이지로 돌아가기
+                  setState(() {
+                    _selectedFile = null;
+                  });
+                  _navigateToThumbnailSelection(_allSelectedFiles);
+                } else {
+                  // 피커로 돌아가기
+                  setState(() {
+                    _selectedFile = null;
+                  });
+                  _openPicker();
+                }
               }
             },
             child: Container(
@@ -605,7 +690,9 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                   ),
                   const SizedBox(width: 2),
                   Text(
-                    _allSelectedFiles.isNotEmpty ? '썸네일' : '갤러리',
+                    widget.startWithEditor 
+                      ? '취소' 
+                      : (_allSelectedFiles.isNotEmpty ? '썸네일' : '갤러리'),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,

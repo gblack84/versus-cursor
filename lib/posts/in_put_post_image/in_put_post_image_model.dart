@@ -45,6 +45,10 @@ class InPutPostImageModel extends AppModel<InPutPostImageWidget> {
   // 흔들림 애니메이션 컨트롤러
   AnimationController? shakeController;
   Animation<double>? shakeAnimation;
+  
+  // Current image index for each box
+  int currentImageIndexA = 0;
+  int currentImageIndexB = 0;
 
   ///  State fields for stateful widgets in this page.
 

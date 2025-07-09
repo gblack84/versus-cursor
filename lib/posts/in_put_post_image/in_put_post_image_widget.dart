@@ -305,6 +305,9 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       barrierColor: Colors.black87,  // 배리어도 검은색
       builder: (modalContext) => MediaSelectionFlowWidget(
         box: box,
+        existingAssetIds: box == 'A' 
+          ? context.read<AppState>().assetEntityIdsA
+          : context.read<AppState>().assetEntityIdsB,
         onComplete: (imageUrl) {
           // 백그라운드 업로드 완료 시 호출되지만, 이미 로컬 이미지로 처리했으므로 추가 작업 불필요
           if (!kReleaseMode) print('백그라운드 업로드 완료: $imageUrl');
@@ -608,6 +611,10 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
             if (index < appState.uploadImageAspectRatioA.length) {
               appState.removeAtIndexFromUploadImageAspectRatioA(index);
             }
+            // AssetEntity ID도 제거
+            if (index < appState.assetEntityIdsA.length) {
+              appState.removeAtIndexFromAssetEntityIdsA(index);
+            }
           }
         } else {
           // B박스 처리
@@ -617,6 +624,10 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
             // 비율 정보도 같이 제거
             if (index < appState.uploadImageAspectRatioB.length) {
               appState.removeAtIndexFromUploadImageAspectRatioB(index);
+            }
+            // AssetEntity ID도 제거
+            if (index < appState.assetEntityIdsB.length) {
+              appState.removeAtIndexFromAssetEntityIdsB(index);
             }
           } else if (!_model.absellected) {
             // 이미지가 없고 B박스가 보이는 상태면 숨기기
@@ -640,31 +651,70 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         // 현재 이미지를 편집
         final images = box == 'A' ? appState.uploadImageA : appState.uploadImageB;
         if (images.isNotEmpty) {
-          await showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            useSafeArea: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => MediaSelectionFlowWidget(
-              box: box,
-              initialImageUrl: images.last,
-              startWithEditor: true,
-              onComplete: (newImageUrl) {
-                // 기존 이미지를 새 이미지로 교체
-                final oldUrl = images.last;
-                if (box == 'A') {
-                  appState.removeFromUploadImageA(oldUrl);
-                  appState.addToUploadImageA(newImageUrl);
-                } else {
-                  appState.removeFromUploadImageB(oldUrl);
-                  appState.addToUploadImageB(newImageUrl);
-                }
-                
-                // 성공 메시지
-                _showSnackBar('이미지가 수정되었습니다.');
-              },
-            ),
-          );
+          // 단일 이미지인 경우 바로 편집
+          if (images.length == 1) {
+            await showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              useSafeArea: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) => MediaSelectionFlowWidget(
+                box: box,
+                initialImageUrl: images[0],
+                startWithEditor: true,
+                onComplete: (newImageUrl) {
+                  // 단일 이미지 교체
+                  appState.update(() {
+                    if (box == 'A') {
+                      appState.uploadImageA[0] = newImageUrl;
+                      // 새 이미지의 aspect ratio도 업데이트 필요
+                    } else {
+                      appState.uploadImageB[0] = newImageUrl;
+                    }
+                  });
+                  
+                  // 성공 메시지
+                  _showSnackBar('이미지가 수정되었습니다.');
+                },
+              ),
+            );
+          } else {
+            // 멀티 이미지인 경우 현재 보고 있는 이미지를 바로 편집
+            final currentIndex = box == 'A' 
+              ? _model.currentImageIndexA 
+              : _model.currentImageIndexB;
+            
+            await showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              useSafeArea: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) => MediaSelectionFlowWidget(
+                box: box,
+                initialImageUrl: images[currentIndex],
+                startWithEditor: true, // 바로 편집기로
+                existingImageUrls: images,
+                existingAspectRatios: box == 'A' 
+                  ? appState.uploadImageAspectRatioA 
+                  : appState.uploadImageAspectRatioB,
+                onComplete: (newImageUrl) {
+                  // 해당 위치의 이미지만 교체
+                  appState.update(() {
+                    if (box == 'A') {
+                      appState.uploadImageA[currentIndex] = newImageUrl;
+                      // TODO: aspect ratio도 업데이트 필요
+                    } else {
+                      appState.uploadImageB[currentIndex] = newImageUrl;
+                    }
+                  });
+                  
+                  // 성공 메시지
+                  _showSnackBar('이미지가 수정되었습니다.');
+                  _updateLayoutBasedOnImages();
+                },
+              ),
+            );
+          }
         }
       },
       onAddImageTap: () async {
@@ -678,6 +728,16 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       },
       isHorizontal: isHorizontal,
       boxColor: boxColor,
+      onCurrentIndexChanged: (index) {
+        // 현재 인덱스 업데이트
+        setState(() {
+          if (box == 'A') {
+            _model.currentImageIndexA = index;
+          } else {
+            _model.currentImageIndexB = index;
+          }
+        });
+      },
     );
   }
 

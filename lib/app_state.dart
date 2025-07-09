@@ -474,6 +474,55 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // AssetEntity ID 저장 (피커에서 선택 상태 표시용)
+  List<String> _assetEntityIdsA = [];
+  List<String> get assetEntityIdsA => _assetEntityIdsA;
+  set assetEntityIdsA(List<String> value) {
+    _assetEntityIdsA = value;
+    notifyListeners();
+  }
+
+  void addToAssetEntityIdsA(String value) {
+    _assetEntityIdsA.add(value);
+    notifyListeners();
+  }
+
+  void removeAtIndexFromAssetEntityIdsA(int index) {
+    if (index >= 0 && index < _assetEntityIdsA.length) {
+      _assetEntityIdsA.removeAt(index);
+      notifyListeners();
+    }
+  }
+
+  void clearAssetEntityIdsA() {
+    _assetEntityIdsA.clear();
+    notifyListeners();
+  }
+
+  List<String> _assetEntityIdsB = [];
+  List<String> get assetEntityIdsB => _assetEntityIdsB;
+  set assetEntityIdsB(List<String> value) {
+    _assetEntityIdsB = value;
+    notifyListeners();
+  }
+
+  void addToAssetEntityIdsB(String value) {
+    _assetEntityIdsB.add(value);
+    notifyListeners();
+  }
+
+  void removeAtIndexFromAssetEntityIdsB(int index) {
+    if (index >= 0 && index < _assetEntityIdsB.length) {
+      _assetEntityIdsB.removeAt(index);
+      notifyListeners();
+    }
+  }
+
+  void clearAssetEntityIdsB() {
+    _assetEntityIdsB.clear();
+    notifyListeners();
+  }
+
   // 로컬 경로와 원격 URL 매핑을 위한 헬퍼
   void reorderLocalImagePathsA(int oldIndex, int newIndex) {
     if (oldIndex >= 0 && oldIndex < _localImagePathsA.length && 

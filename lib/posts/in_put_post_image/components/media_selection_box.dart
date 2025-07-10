@@ -20,6 +20,7 @@ class MediaSelectionBox extends StatelessWidget {
   final VoidCallback? onAddImageTap; // 이미지 추가 버튼 탭 콜백
   final double? dynamicHeight; // 동적 높이 (null이면 기본값 사용)
   final double? dynamicWidth; // 동적 너비 (null이면 기본값 사용)
+  final String? moderationStatus; // 이미지 검열 상태
 
   const MediaSelectionBox({
     Key? key,
@@ -38,6 +39,7 @@ class MediaSelectionBox extends StatelessWidget {
     this.onAddImageTap,
     this.dynamicHeight,
     this.dynamicWidth,
+    this.moderationStatus,
   }) : super(key: key);
 
   @override
@@ -157,7 +159,7 @@ class MediaSelectionBox extends StatelessWidget {
                       onTap: onCancel,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
+                          color: Colors.black.withValues(alpha: 0.6),
                           shape: BoxShape.circle,
                         ),
                         padding: EdgeInsets.all(4.0),
@@ -204,7 +206,7 @@ class MediaSelectionBox extends StatelessWidget {
                       onTap: onCancel,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
+                          color: Colors.black.withValues(alpha: 0.6),
                           shape: BoxShape.circle,
                         ),
                         padding: EdgeInsets.all(4.0),
@@ -231,7 +233,7 @@ class MediaSelectionBox extends StatelessWidget {
                             Container(
                               margin: EdgeInsets.only(right: 8.0),
                               decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.6),
+                                color: Colors.black.withValues(alpha: 0.6),
                                 shape: BoxShape.circle,
                               ),
                               child: IconButton(
@@ -250,7 +252,7 @@ class MediaSelectionBox extends StatelessWidget {
                           Container(
                             margin: EdgeInsets.only(right: 8.0),
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.6),
+                              color: Colors.black.withValues(alpha: 0.6),
                               shape: BoxShape.circle,
                             ),
                             child: IconButton(
@@ -268,7 +270,7 @@ class MediaSelectionBox extends StatelessWidget {
                           // 편집 아이콘
                           Container(
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.6),
+                              color: Colors.black.withValues(alpha: 0.6),
                               shape: BoxShape.circle,
                             ),
                             child: IconButton(
@@ -293,7 +295,7 @@ class MediaSelectionBox extends StatelessWidget {
                         Container(
                           margin: EdgeInsets.only(bottom: 8.0),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.6),
+                            color: Colors.black.withValues(alpha: 0.6),
                             shape: BoxShape.circle,
                           ),
                           child: IconButton(
@@ -312,7 +314,7 @@ class MediaSelectionBox extends StatelessWidget {
                       Container(
                         margin: EdgeInsets.only(bottom: isHorizontal ? 0.0 : 8.0, right: isHorizontal ? 8.0 : 0.0),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
+                          color: Colors.black.withValues(alpha: 0.6),
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
@@ -330,7 +332,7 @@ class MediaSelectionBox extends StatelessWidget {
                       // 편집 아이콘
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
+                          color: Colors.black.withValues(alpha: 0.6),
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
@@ -348,6 +350,126 @@ class MediaSelectionBox extends StatelessWidget {
                     ],
                   ),
                 ),
+            
+              // 검열 상태 표시 및 오버레이
+              if (imageUrl != null && imageUrl!.isNotEmpty && moderationStatus != null)
+                ...[
+                  // 거부된 이미지 오버레이
+                  if (moderationStatus == 'rejected')
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.7),
+                          borderRadius: BorderRadius.circular(20.0),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.block,
+                              color: Colors.white,
+                              size: 48.0,
+                            ),
+                            SizedBox(height: 8.0),
+                            Text(
+                              '부적절한 콘텐츠',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14.0,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 16.0),
+                            ElevatedButton(
+                              onPressed: onTap,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20.0),
+                                ),
+                                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                              ),
+                              child: Text(
+                                '다시 선택',
+                                style: TextStyle(
+                                  fontSize: 14.0,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  // 검열 중 오버레이
+                  if (moderationStatus == 'pending' || moderationStatus == 'moderating')
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(20.0),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 3.0,
+                            ),
+                            SizedBox(height: 16.0),
+                            Text(
+                              '안전성 검사 중...',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14.0,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  // 상태 표시 배지
+                  Positioned(
+                    left: 12.0,
+                    bottom: 12.0,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                      decoration: BoxDecoration(
+                        color: _getModerationStatusColor(moderationStatus!).withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(20.0),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (moderationStatus == 'pending' || moderationStatus == 'moderating')
+                            SizedBox(
+                              width: 12.0,
+                              height: 12.0,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.0,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            ),
+                          if (moderationStatus == 'approved')
+                            Icon(Icons.check_circle, color: Colors.white, size: 16.0),
+                          if (moderationStatus == 'rejected')
+                            Icon(Icons.error, color: Colors.white, size: 16.0),
+                          SizedBox(width: 6.0),
+                          Text(
+                            _getModerationStatusText(moderationStatus!),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12.0,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
             ],
           ),
         ),
@@ -369,5 +491,37 @@ class MediaSelectionBox extends StatelessWidget {
     }
     
     return content;
+  }
+  
+  Color _getModerationStatusColor(String status) {
+    switch (status) {
+      case 'pending':
+      case 'moderating':
+        return Colors.orange;
+      case 'approved':
+        return Colors.green;
+      case 'rejected':
+        return Colors.red;
+      case 'error':
+        return Colors.grey;
+      default:
+        return Colors.grey;
+    }
+  }
+  
+  String _getModerationStatusText(String status) {
+    switch (status) {
+      case 'pending':
+      case 'moderating':
+        return '검사 중...';
+      case 'approved':
+        return '승인됨';
+      case 'rejected':
+        return '거부됨';
+      case 'error':
+        return '오류';
+      default:
+        return status;
+    }
   }
 }

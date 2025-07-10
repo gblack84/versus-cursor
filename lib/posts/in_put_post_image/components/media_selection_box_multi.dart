@@ -21,6 +21,7 @@ class MediaSelectionBoxMulti extends StatefulWidget {
   final double? dynamicHeight; // 동적 높이 (null이면 기본값 사용)
   final double? dynamicWidth; // 동적 너비 (null이면 기본값 사용)
   final Function(int index)? onCurrentIndexChanged; // 현재 인덱스 변경 콜백
+  final Map<String, String>? moderationStatusMap; // 각 이미지의 검열 상태
 
   const MediaSelectionBoxMulti({
     Key? key,
@@ -40,6 +41,7 @@ class MediaSelectionBoxMulti extends StatefulWidget {
     this.dynamicHeight,
     this.dynamicWidth,
     this.onCurrentIndexChanged,
+    this.moderationStatusMap,
   }) : super(key: key);
   
   @override
@@ -139,20 +141,26 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
       );
     }
     
+    // 현재 이미지의 moderation 상태 확인
+    final imageUrl = widget.imageUrls[index];
+    final moderationStatus = widget.moderationStatusMap?[imageUrl];
+    final isModeratingOrPending = moderationStatus == 'pending' || moderationStatus == 'moderating';
+    
+    // 디버깅 로그
+    if (index == 0) {
+      print('[MediaSelectionBox] index: $index, moderationStatus: $moderationStatus, isModeratingOrPending: $isModeratingOrPending');
+    }
+    
     return CachedNetworkImage(
-      imageUrl: widget.imageUrls[index],
+      imageUrl: imageUrl,
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
       memCacheWidth: _calculateMemCacheWidth(),
       placeholder: (context, url) => Container(
         color: AppTheme.of(context).secondaryBackground,
-        child: Center(
-          child: CircularProgressIndicator(
-            color: AppTheme.of(context).primary,
-            strokeWidth: 2.0,
-          ),
-        ),
+        // 모든 경우에 빈 컨테이너 반환 (오버레이에서 로딩 처리)
+        child: const SizedBox.shrink(),
       ),
       fadeInDuration: const Duration(milliseconds: 150),
       fadeOutDuration: const Duration(milliseconds: 150),
@@ -248,6 +256,87 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                           },
                         ),
                       ),
+                      // 검열 상태 오버레이
+                      if (widget.moderationStatusMap != null && 
+                          widget.imageUrls.isNotEmpty && 
+                          _currentIndex < widget.imageUrls.length)
+                        ...[
+                          if (widget.moderationStatusMap![widget.imageUrls[_currentIndex]] == 'rejected')
+                            Positioned.fill(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.7),
+                                  borderRadius: BorderRadius.circular(20.0),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.block,
+                                      color: Colors.white,
+                                      size: 48.0,
+                                    ),
+                                    SizedBox(height: 8.0),
+                                    Text(
+                                      '부적절한 콘텐츠',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14.0,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(height: 16.0),
+                                    ElevatedButton(
+                                      onPressed: widget.onTap,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: Colors.black,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(20.0),
+                                        ),
+                                        padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                                      ),
+                                      child: Text(
+                                        '다시 선택',
+                                        style: TextStyle(
+                                          fontSize: 14.0,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          if (widget.moderationStatusMap![widget.imageUrls[_currentIndex]] == 'pending' ||
+                              widget.moderationStatusMap![widget.imageUrls[_currentIndex]] == 'moderating')
+                            Positioned.fill(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(20.0),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 3.0,
+                                    ),
+                                    SizedBox(height: 16.0),
+                                    Text(
+                                      '안전성 검사 중...',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14.0,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
                       // 페이지 인디케이터 (이미지가 2개 이상일 때만 표시)
                       if (widget.imageUrls.length > 1)
                         Positioned(

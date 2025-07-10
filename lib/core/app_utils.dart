@@ -442,7 +442,6 @@ extension StringCapitalizationExt on String {
       case TextCapitalization.characters:
         return toUpperCase();
       case TextCapitalization.none:
-      default:
         return this;
     }
   }

@@ -572,4 +572,69 @@ class AppState extends ChangeNotifier {
     _isUploadingB = value;
     notifyListeners();
   }
+
+  // 이미지 검열 상태 관리
+  Map<String, String> _imageModerationStatusA = {};
+  Map<String, String> get imageModerationStatusA => _imageModerationStatusA;
+  set imageModerationStatusA(Map<String, String> value) {
+    _imageModerationStatusA = value;
+    notifyListeners();
+  }
+
+  Map<String, String> _imageModerationStatusB = {};
+  Map<String, String> get imageModerationStatusB => _imageModerationStatusB;
+  set imageModerationStatusB(Map<String, String> value) {
+    _imageModerationStatusB = value;
+    notifyListeners();
+  }
+
+  // 개별 이미지 검열 상태 업데이트
+  void updateImageModerationStatus(String imageUrl, String status, {bool isBoxA = true}) {
+    if (isBoxA) {
+      _imageModerationStatusA[imageUrl] = status;
+    } else {
+      _imageModerationStatusB[imageUrl] = status;
+    }
+    notifyListeners();
+  }
+  
+  // 특정 이미지의 검열 상태 제거
+  void removeImageModerationStatus(String imageUrl, {bool isBoxA = true}) {
+    if (isBoxA) {
+      _imageModerationStatusA.remove(imageUrl);
+    } else {
+      _imageModerationStatusB.remove(imageUrl);
+    }
+    notifyListeners();
+  }
+
+  // 검열 중인 이미지가 있는지 확인
+  bool get hasModeratingImages {
+    final allStatuses = [..._imageModerationStatusA.values, ..._imageModerationStatusB.values];
+    return allStatuses.any((status) => status == 'pending' || status == 'moderating');
+  }
+
+  // 거부된 이미지가 있는지 확인
+  bool get hasRejectedImages {
+    final allStatuses = [..._imageModerationStatusA.values, ..._imageModerationStatusB.values];
+    return allStatuses.any((status) => status == 'rejected');
+  }
+
+  // 모든 이미지가 승인되었는지 확인
+  bool get allImagesApproved {
+    final allImages = [...uploadImageA, ...uploadImageB];
+    if (allImages.isEmpty) return true;
+    
+    final allStatuses = [..._imageModerationStatusA.values, ..._imageModerationStatusB.values];
+    return allStatuses.isNotEmpty && 
+           allStatuses.every((status) => status == 'approved');
+  }
+
+  // 검열 상태 초기화
+  void clearModerationStatus() {
+    _imageModerationStatusA.clear();
+    _imageModerationStatusB.clear();
+    notifyListeners();
+  }
+
 }

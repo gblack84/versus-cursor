@@ -13,7 +13,6 @@ import 'schema/images_record.dart';
 import 'schema/votecounts_record.dart';
 import 'schema/video_record.dart';
 import 'schema/vote_expansion_requests_record.dart';
-import 'schema/votes_record.dart';
 import 'schema/comments_record.dart';
 import 'schema/likes_record.dart';
 import 'schema/dislikes_record.dart';
@@ -45,6 +44,7 @@ import 'schema/chat_interest_jops_record.dart';
 import 'schema/chat_history_record.dart';
 import 'schema/characters_record.dart';
 import 'schema/encodings_record.dart';
+import 'schema/image_moderation_record.dart';
 
 export 'dart:async' show StreamSubscription;
 export 'package:cloud_firestore/cloud_firestore.dart' hide Order;
@@ -92,6 +92,7 @@ export 'schema/chat_interest_jops_record.dart';
 export 'schema/chat_history_record.dart';
 export 'schema/characters_record.dart';
 export 'schema/encodings_record.dart';
+export 'schema/image_moderation_record.dart';
 
 /// Functions to query UsersRecords (as a Stream and as a Future).
 Future<int> queryUsersRecordCount({

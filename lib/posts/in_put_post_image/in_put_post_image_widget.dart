@@ -9,10 +9,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 import '/backend/backend.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import 'in_put_post_image_model.dart';
 export 'in_put_post_image_model.dart';
+import '/services/cloud_image_moderation_service.dart';
 import 'helpers/aspect_ratio_analyzer.dart';
 import 'helpers/dynamic_box_calculator.dart';
 import 'helpers/media_box_callbacks.dart';
@@ -44,6 +46,12 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   
   // Consumer 최적화를 위한 이전 이미지 수 추적
   int _lastImageCount = 0;
+  
+  // 커스텀 스낵바 상태
+  bool _showRejectionMessage = false;
+  bool _canDismissMessage = false;
+  String _rejectionMessage = '';
+  Timer? _dismissTimer;
 
   // 상수 정의
   static const Duration _shakeAnimationDuration = Duration(milliseconds: 200);
@@ -65,6 +73,11 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
     // 콘텐츠 필터 초기화
     ContentFilter.initialize();
+    
+    // 검열 상태 초기화
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AppState>(context, listen: false).clearModerationStatus();
+    });
 
     _model.scrollController ??= ScrollController();
     _model.scrollController!.addListener(_scrollListener);
@@ -365,8 +378,107 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
   /// 스낵바 표시
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+    // 기존 타이머가 있으면 취소
+    _dismissTimer?.cancel();
+    
+    setState(() {
+      _showRejectionMessage = true;
+      _canDismissMessage = false;
+      _rejectionMessage = message;
+    });
+    
+    // 3초 후에 터치로 닫을 수 있도록 설정
+    _dismissTimer = Timer(Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _canDismissMessage = true;
+        });
+      }
+    });
+    
+    // 10초 후에 자동으로 사라지도록 설정
+    Timer(Duration(seconds: 10), () {
+      if (mounted && _showRejectionMessage) {
+        setState(() {
+          _showRejectionMessage = false;
+        });
+      }
+    });
+  }
+  
+  /// 이미지 검열 상태 모니터링 시작
+  void _startImageModeration(String imageUrl, String box) {
+    // URL에서 파일 경로 추출
+    final filePath = CloudImageModerationService.extractFilePathFromDownloadUrl(imageUrl);
+    if (filePath == null) {
+      print('[InPutPostImage] 파일 경로 추출 실패: $imageUrl');
+      return;
+    }
+    
+    print('[InPutPostImage] 검열 모니터링 시작: $filePath');
+    
+    CloudImageModerationService.watchModerationStatus(filePath).listen(
+      (moderation) {
+        if (moderation != null && mounted) {
+          print('[InPutPostImage] 검열 상태 변경: ${moderation.moderationStatus}');
+          final appState = Provider.of<AppState>(context, listen: false);
+          
+          // 상태 업데이트
+          appState.updateImageModerationStatus(
+            imageUrl,
+            moderation.moderationStatus,
+            isBoxA: box == 'A',
+          );
+          
+          // 거부된 경우 처리
+          if (moderation.moderationStatus == 'rejected') {
+            print('[InPutPostImage] 이미지 거부됨: $imageUrl');
+            
+            // AppState에서 해당 이미지 제거
+            if (box == 'A') {
+              final imageIndex = appState.uploadImageA.indexOf(imageUrl);
+              if (imageIndex >= 0) {
+                appState.removeFromUploadImageA(imageUrl);
+                if (imageIndex < appState.uploadImageAspectRatioA.length) {
+                  appState.removeAtIndexFromUploadImageAspectRatioA(imageIndex);
+                }
+                if (imageIndex < appState.assetEntityIdsA.length) {
+                  appState.removeAtIndexFromAssetEntityIdsA(imageIndex);
+                }
+                // 검열 상태도 제거
+                appState.removeImageModerationStatus(imageUrl, isBoxA: true);
+                print('[InPutPostImage] A박스에서 이미지 제거 완료');
+              }
+            } else {
+              final imageIndex = appState.uploadImageB.indexOf(imageUrl);
+              if (imageIndex >= 0) {
+                appState.removeFromUploadImageB(imageUrl);
+                if (imageIndex < appState.uploadImageAspectRatioB.length) {
+                  appState.removeAtIndexFromUploadImageAspectRatioB(imageIndex);
+                }
+                if (imageIndex < appState.assetEntityIdsB.length) {
+                  appState.removeAtIndexFromAssetEntityIdsB(imageIndex);
+                }
+                // 검열 상태도 제거
+                appState.removeImageModerationStatus(imageUrl, isBoxA: false);
+                print('[InPutPostImage] B박스에서 이미지 제거 완료');
+              }
+            }
+            
+            // 사용자에게 알림
+            final reason = CloudImageModerationService.getRejectionReason(moderation);
+            _showSnackBar('$reason\n다른 이미지를 선택해주세요.');
+            
+            // UI 강제 업데이트
+            setState(() {
+              // 이미지가 제거되었으므로 UI를 다시 그림
+            });
+          }
+        }
+      },
+      onError: (error) {
+        print('[InPutPostImage] 검열 모니터링 오류: $error');
+      },
     );
   }
 
@@ -400,6 +512,9 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           
           // 스마트 레이아웃 업데이트 (단일 이미지도 처리)
           _updateLayoutBasedOnImages();
+          
+          // 검열 상태 모니터링 시작
+          _startImageModeration(imageUrl, box);
         },
         onMultiComplete: (imageUrls) {
           // 백그라운드 업로드 완료 시 호출되지만, 이미 로컬 이미지로 처리했으므로 추가 작업 불형요
@@ -407,6 +522,11 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           
           // 스마트 레이아웃 업데이트
           _updateLayoutBasedOnImages();
+          
+          // 각 이미지에 대해 검열 상태 모니터링 시작
+          for (final imageUrl in imageUrls) {
+            _startImageModeration(imageUrl, box);
+          }
           
           // 성공 메시지는 로컬 저장 시점에 이미 표시됨
         },
@@ -773,7 +893,8 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   @override
   void dispose() {
     _model.dispose();
-
+    _dismissTimer?.cancel();
+    
     super.dispose();
   }
 
@@ -899,6 +1020,8 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       updateLayout: _updateLayoutBasedOnImages,
     );
     
+    final appState = Provider.of<AppState>(context, listen: false);
+    
     return MediaSelectionBoxMulti(
       label: box,
       isSelected: isSelected,
@@ -910,6 +1033,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       shakeAnimation: shakeAnimation,
       isHorizontal: isHorizontal,
       boxColor: boxColor,
+      moderationStatusMap: box == 'A' ? appState.imageModerationStatusA : appState.imageModerationStatusB,
       onTap: () => _handleBoxTap(box),
       onCancel: (index) => setState(() => callbacks.deleteImage(box, index)),
       onPlusIconTap: () => setState(() => callbacks.toggleBoxVisibility()),
@@ -921,7 +1045,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
   @override
   Widget build(BuildContext context) {
-    context.watch<AppState>();
+    final appState = context.watch<AppState>();
 
     return GestureDetector(
       onTap: () {
@@ -1081,6 +1205,63 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                           ],
                         ),
               ),
+              // 커스텀 스낵바
+              if (_showRejectionMessage)
+                GestureDetector(
+                  onTap: () {
+                    if (_canDismissMessage) {
+                      setState(() {
+                        _showRejectionMessage = false;
+                      });
+                      _dismissTimer?.cancel();
+                    }
+                  },
+                  child: Container(
+                    color: Colors.transparent, // 전체 화면 터치 영역
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Container(
+                        margin: EdgeInsets.only(
+                          bottom: 100,
+                          left: 20,
+                          right: 20,
+                        ),
+                        child: Material(
+                          elevation: 6,
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.black.withValues(alpha: 0.5),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                SizedBox(width: 12),
+                                Flexible(
+                                  child: Text(
+                                    _rejectionMessage,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               // Next button overlay
               NextButton(
                 showButton: _model.showNextButton,

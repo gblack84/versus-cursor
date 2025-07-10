@@ -86,6 +86,11 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       // 기존에 선택된 AssetEntity 복원
       List<AssetEntity> selectedAssets = [];
       
+      print('[AssetPicker] Opening picker...');
+      print('[AssetPicker] Box: ${widget.box}');
+      print('[AssetPicker] isAddMode: ${widget.isAddMode}');
+      print('[AssetPicker] existingAssetIds: ${widget.existingAssetIds?.length ?? 0}');
+      
       if (widget.existingAssetIds != null && widget.existingAssetIds!.isNotEmpty) {
         for (String id in widget.existingAssetIds!) {
           try {
@@ -97,21 +102,30 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
             print('AssetEntity 복원 실패 (ID: $id): $e');
           }
         }
-        print('복원된 AssetEntity 개수: ${selectedAssets.length}');
+        print('[AssetPicker] 복원된 AssetEntity 개수: ${selectedAssets.length}');
       }
       
-      final List<AssetEntity>? result = await AssetPicker.pickAssets(
+      print('[AssetPicker] Config:');
+      print('  - Max assets: 4');
+      print('  - Special item position: NONE (using floating camera button)');
+      print('  - Selected assets count: ${selectedAssets.length}');
+      print('  - Grid count: 4');
+      print('  - Sort by modified date: true');
+      print('  - Should revert grid: false (최신 사진 맨 위)');
+      
+      // 커스텀 델리게이트를 사용하여 플로팅 카메라 버튼 추가
+      final List<AssetEntity>? result = await AssetPicker.pickAssetsWithDelegate(
         context,
-        pickerConfig: AssetPickerConfig(
-          selectedAssets: selectedAssets, // 이전 선택 표시
-          maxAssets: 4,  // 최대 4장
-          requestType: RequestType.image,
-          textDelegate: const CustomKoreanAssetPickerTextDelegate(),
+        delegate: CustomAssetPickerBuilderDelegate(
+          provider: DefaultAssetPickerProvider(
+            selectedAssets: selectedAssets,
+            maxAssets: 4,
+            requestType: RequestType.image,
+            sortPathsByModifiedDate: true, // 최신 사진을 맨 위에 표시
+          ),
+          initialPermission: PermissionState.authorized,
           gridCount: 4,
-          specialItemPosition: SpecialItemPosition.prepend,
-          specialItemBuilder: (BuildContext context, AssetPathEntity? path, int length) {
-            return _buildCameraButton(context);
-          },
+          shouldRevertGrid: false, // 최신 사진이 맨 위에 오도록 설정
           pickerTheme: ThemeData.dark().copyWith(
             scaffoldBackgroundColor: Colors.black,
             appBarTheme: const AppBarTheme(
@@ -121,7 +135,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
             ),
             colorScheme: ColorScheme.dark(
               primary: AppTheme.of(context).primary,
-              secondary: AppTheme.of(context).primary, // 확인 버튼 색상
+              secondary: AppTheme.of(context).primary,
               surface: Colors.black,
             ),
             elevatedButtonTheme: ElevatedButtonThemeData(
@@ -136,13 +150,51 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
               ),
             ),
           ),
+          textDelegate: const CustomKoreanAssetPickerTextDelegate(),
+          onCameraPressed: () async {
+            print('[AssetPicker] Floating camera button pressed');
+            
+            // 정렬 순서 디버깅
+            try {
+              final paths = await PhotoManager.getAssetPathList(type: RequestType.image);
+              if (paths.isNotEmpty) {
+                final firstPath = paths.first;
+                final assets = await firstPath.getAssetListPaged(page: 0, size: 5);
+                print('[AssetPicker] 첫 5개 사진 생성 날짜:');
+                for (int i = 0; i < assets.length; i++) {
+                  final asset = assets[i];
+                  final createDate = asset.createDateTime;
+                  print('  ${i + 1}. ${createDate.toString()} - ${asset.title ?? "No title"}');
+                }
+              }
+            } catch (e) {
+              print('[AssetPicker] 정렬 디버깅 실패: $e');
+            }
+            
+            // 카메라 열기
+            final AssetEntity? cameraResult = await _openCameraForPicker(context);
+            if (cameraResult != null) {
+              // 촬영한 사진을 선택 목록에 추가
+              setState(() {
+                _selectedAssets.add(cameraResult);
+              });
+              // 피커의 선택 상태도 업데이트
+              if (context.mounted) {
+                final provider = context.read<DefaultAssetPickerProvider>();
+                provider.selectAsset(cameraResult);
+              }
+            }
+          },
         ),
       );
 
+      print('[AssetPicker] Picker result: ${result?.length ?? 0} items selected');
+      
       if (result != null && result.isNotEmpty) {
         // 기존 이미지가 있는 경우 - diff 처리
         if (widget.existingImageUrls != null && 
             widget.existingImageUrls!.isNotEmpty) {
+          print('[AssetPicker] Processing with existing images (diff mode)');
           await _processSelectionResult(result);
           return;
         }
@@ -150,6 +202,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         // 기존 이미지가 없거나 첫 번째 이미지인 경우 - 기존 플로우 유지
         // 1장만 선택한 경우 바로 편집
         if (result.length == 1) {
+          print('[AssetPicker] Single image selected, opening editor');
           final file = await result.first.file;
           if (file != null) {
             setState(() {
@@ -159,6 +212,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
             });
           }
         } else {
+          print('[AssetPicker] Multiple images selected (${result.length}), opening thumbnail selection');
           // 여러 장 선택한 경우 썸네일 선택 페이지로 이동
           final files = await Future.wait(
             result.map((asset) async => await asset.file)
@@ -175,6 +229,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
           }
         }
       } else {
+        print('[AssetPicker] Picker cancelled');
         // 취소한 경우 모달 닫기
         if (mounted) {
           Navigator.pop(context);
@@ -232,6 +287,30 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
     }
   }
 
+  /// 피커 내에서 카메라 열기
+  Future<AssetEntity?> _openCameraForPicker(BuildContext context) async {
+    try {
+      final AssetEntity? entity = await CameraPicker.pickFromCamera(
+        context,
+        pickerConfig: CameraPickerConfig(
+          enableRecording: false, // 사진만
+          textDelegate: const CustomKoreanCameraPickerTextDelegate(),
+        ),
+      );
+      
+      if (entity != null) {
+        print('[AssetPicker] Photo taken from camera in picker');
+        return entity;
+      } else {
+        print('[AssetPicker] Camera cancelled in picker');
+        return null;
+      }
+    } catch (e) {
+      print('[AssetPicker] Camera error: $e');
+      return null;
+    }
+  }
+
   /// 기존 이미지 다운로드 후 편집
   Future<void> _downloadAndEditExistingImage() async {
     try {
@@ -264,63 +343,6 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         Navigator.pop(context);
       }
     }
-  }
-
-  /// 카메라 버튼 빌드
-  Widget _buildCameraButton(BuildContext context) {
-    return GestureDetector(
-      onTap: () async {
-        final AssetEntity? entity = await CameraPicker.pickFromCamera(
-          context,
-          pickerConfig: CameraPickerConfig(
-            enableRecording: false, // 사진만
-            textDelegate: const CustomKoreanCameraPickerTextDelegate(),
-          ),
-        );
-        
-        if (entity != null) {
-          final file = await entity.file;
-          if (file != null && mounted) {
-            setState(() {
-              _selectedFile = file;
-            });
-          }
-        }
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppTheme.of(context).primary,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.camera_alt,
-                size: 35,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              '카메라',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
 
@@ -418,12 +440,85 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                       _uploadProgress = 0.2;
                     });
                     
-                    final editedResult = await MediaUploadService.uploadImageWithVariants(
-                      imageBytes: bytes,
-                      box: widget.box,
-                    );
+                    Map<String, dynamic> editedResult;
+                    String? editedImageUrl;
+                    try {
+                      editedResult = await MediaUploadService.uploadImageWithVariants(
+                        imageBytes: bytes,
+                        box: widget.box,
+                        onModerationStatusUpdate: (status) {
+                          print('[MediaSelection] 편집 이미지 검열 상태 업데이트: $status');
+                          if (editedImageUrl != null && mounted) {
+                            final appState = Provider.of<AppState>(context, listen: false);
+                            appState.updateImageModerationStatus(
+                              editedImageUrl!,
+                              status,
+                              isBoxA: widget.box == 'A',
+                            );
+                          }
+                        },
+                        onRejected: (reason) {
+                          print('[MediaSelection] 편집 이미지 거부됨: $reason');
+                          if (editedImageUrl != null && mounted) {
+                            final appState = Provider.of<AppState>(context, listen: false);
+                            
+                            // 거부된 이미지 제거
+                            if (widget.box == 'A') {
+                              final imageIndex = appState.uploadImageA.indexOf(editedImageUrl!);
+                              if (imageIndex >= 0) {
+                                appState.removeFromUploadImageA(editedImageUrl!);
+                                if (imageIndex < appState.uploadImageAspectRatioA.length) {
+                                  appState.removeAtIndexFromUploadImageAspectRatioA(imageIndex);
+                                }
+                                if (imageIndex < appState.assetEntityIdsA.length) {
+                                  appState.removeAtIndexFromAssetEntityIdsA(imageIndex);
+                                }
+                              }
+                            } else {
+                              final imageIndex = appState.uploadImageB.indexOf(editedImageUrl!);
+                              if (imageIndex >= 0) {
+                                appState.removeFromUploadImageB(editedImageUrl!);
+                                if (imageIndex < appState.uploadImageAspectRatioB.length) {
+                                  appState.removeAtIndexFromUploadImageAspectRatioB(imageIndex);
+                                }
+                                if (imageIndex < appState.assetEntityIdsB.length) {
+                                  appState.removeAtIndexFromAssetEntityIdsB(imageIndex);
+                                }
+                              }
+                            }
+                            
+                            // 스낵바는 InPutPostImageWidget에서 표시됨
+                          }
+                        },
+                      );
+                    } catch (e) {
+                      // 검열 실패 또는 업로드 실패
+                      if (mounted) {
+                        setState(() {
+                          _isUploading = false;
+                        });
+                        
+                        String errorMessage = '이미지 업로드 실패';
+                        if (e.toString().contains('커뮤니티 가이드라인')) {
+                          errorMessage = e.toString();
+                        } else if (e.toString().contains('부적절한')) {
+                          errorMessage = e.toString();
+                        }
+                        
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(errorMessage),
+                            backgroundColor: AppTheme.of(context).error,
+                            duration: const Duration(seconds: 5),
+                          ),
+                        );
+                        Navigator.pop(context);
+                      }
+                      return;
+                    }
                     final editedDisplayUrl = editedResult['urls']['display'];
                     final editedAspectRatio = editedResult['aspectRatio'];
+                    editedImageUrl = editedDisplayUrl;
                     
                     // 추가 모드인지 확인
                     if (widget.isAddMode && widget.currentIndex != null) {
@@ -499,7 +594,20 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                             MediaUploadService.uploadImageWithVariants(
                               imageBytes: fileBytes,
                               box: widget.box,
-                            )
+                              onModerationStatusUpdate: (status) {
+                                // 검열 상태 업데이트는 나중에 URL이 확정된 후 처리
+                              },
+                              onRejected: (reason) {
+                                // 거부 처리도 나중에 URL이 확정된 후 처리
+                              },
+                            ).catchError((e) {
+                              // 개별 이미지 업로드 실패 시 로그만 남기고 계속
+                              print('[MediaSelection] 이미지 업로드 실패 (건너뜀): $e');
+                              return <String, dynamic>{
+                                'urls': {'display': '', 'original': '', 'thumbnail': ''},
+                                'aspectRatio': 1.0,
+                              };
+                            })
                           );
                         }
                         
@@ -514,18 +622,21 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                         final precacheFutures = <Future<void>>[];
                         for (final result in results) {
                           final displayUrl = result['urls']['display'];
-                          reorderedUrls.add(displayUrl);
-                          reorderedRatios.add(result['aspectRatio']);
-                          
-                          // 백그라운드 프리캐싱
-                          precacheFutures.add(
-                            precacheImage(
-                              CachedNetworkImageProvider(displayUrl), 
-                              context
-                            ).catchError((e) {
-                              print('프리캐싱 실패 (무시됨): $e');
-                            })
-                          );
+                          // 빈 URL은 건너뜀 (업로드 실패한 경우)
+                          if (displayUrl != null && displayUrl.isNotEmpty) {
+                            reorderedUrls.add(displayUrl);
+                            reorderedRatios.add(result['aspectRatio']);
+                            
+                            // 백그라운드 프리캐싱
+                            precacheFutures.add(
+                              precacheImage(
+                                CachedNetworkImageProvider(displayUrl), 
+                                context
+                              ).catchError((e) {
+                                print('프리캐싱 실패 (무시됨): $e');
+                              })
+                            );
+                          }
                         }
                         
                         // 나머지 이미지들은 백그라운드에서 계속 프리캐싱
@@ -602,16 +713,107 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                       _uploadProgress = 0.5;
                     });
                     
-                    final result = await MediaUploadService.uploadImageWithVariants(
-                      imageBytes: bytes,
-                      box: widget.box,
-                    );
+                    // 나중에 콜백에서 사용할 변수들
+                    String? uploadedImageUrl;
+                    double? uploadedAspectRatio;
+                    
+                    try {
+                      final appState = Provider.of<AppState>(context, listen: false);
+                      
+                      print('[MediaSelection] 업로드 시작');
+                      
+                      final result = await MediaUploadService.uploadImageWithVariants(
+                        imageBytes: bytes,
+                        box: widget.box,
+                        onModerationStatusUpdate: (status) {
+                          print('[MediaSelection] 검열 상태 업데이트: $status');
+                          if (mounted) {
+                            final appState = Provider.of<AppState>(context, listen: false);
+                            // 먼저 업로드된 URL을 찾아서 상태 업데이트
+                            final currentImages = widget.box == 'A' ? appState.uploadImageA : appState.uploadImageB;
+                            if (currentImages.isNotEmpty) {
+                              final lastImage = currentImages.last;
+                              appState.updateImageModerationStatus(
+                                lastImage,
+                                status,
+                                isBoxA: widget.box == 'A',
+                              );
+                            }
+                          }
+                        },
+                        onRejected: (reason) {
+                          print('[MediaSelection] 이미지 거부됨: $reason');
+                          if (mounted) {
+                            final appState = Provider.of<AppState>(context, listen: false);
+                            
+                            // 거부된 이미지 제거
+                            if (widget.box == 'A') {
+                              if (appState.uploadImageA.isNotEmpty) {
+                                final lastImage = appState.uploadImageA.last;
+                                final imageIndex = appState.uploadImageA.length - 1;
+                                appState.removeFromUploadImageA(lastImage);
+                                if (imageIndex < appState.uploadImageAspectRatioA.length) {
+                                  appState.removeAtIndexFromUploadImageAspectRatioA(imageIndex);
+                                }
+                                if (imageIndex < appState.assetEntityIdsA.length) {
+                                  appState.removeAtIndexFromAssetEntityIdsA(imageIndex);
+                                }
+                              }
+                            } else {
+                              if (appState.uploadImageB.isNotEmpty) {
+                                final lastImage = appState.uploadImageB.last;
+                                final imageIndex = appState.uploadImageB.length - 1;
+                                appState.removeFromUploadImageB(lastImage);
+                                if (imageIndex < appState.uploadImageAspectRatioB.length) {
+                                  appState.removeAtIndexFromUploadImageAspectRatioB(imageIndex);
+                                }
+                                if (imageIndex < appState.assetEntityIdsB.length) {
+                                  appState.removeAtIndexFromAssetEntityIdsB(imageIndex);
+                                }
+                              }
+                            }
+                            
+                            // 스낵바는 InPutPostImageWidget에서 표시됨
+                          }
+                        },
+                      );
+                      print('[MediaSelection] 업로드 완료');
+                      
+                      final displayUrl = result['urls']['display'] as String;
+                      uploadedImageUrl = displayUrl;
+                      uploadedAspectRatio = result['aspectRatio'] as double;
+                      
+                      // 초기 검열 상태를 pending으로 설정
+                      appState.updateImageModerationStatus(
+                        uploadedImageUrl,
+                        'pending',
+                        isBoxA: widget.box == 'A',
+                      );
+                      
+                      // 검열 모니터링은 부모 위젯(InPutPostImageWidget)에서 처리
+                    } catch (e) {
+                      // 업로드 실패
+                      if (mounted) {
+                        setState(() {
+                          _isUploading = false;
+                        });
+                        
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('이미지 업로드에 실패했습니다.'),
+                            backgroundColor: AppTheme.of(context).error,
+                          ),
+                        );
+                        Navigator.pop(context);
+                      }
+                      return;
+                    }
                     
                     setState(() {
                       _uploadProgress = 0.9;
                     });
                     
-                    final displayUrl = result['urls']['display'];
+                    final displayUrl = uploadedImageUrl;
                     
                     // 편집 모드인지 확인 (startWithEditor가 true이고 initialImageUrl이 있는 경우)
                     final isEditMode = widget.startWithEditor && widget.initialImageUrl != null;
@@ -621,14 +823,14 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                       appState.update(() {
                         if (widget.box == 'A') {
                           appState.addToUploadImageA(displayUrl);
-                          appState.addToUploadImageAspectRatioA(result['aspectRatio']);
+                          appState.addToUploadImageAspectRatioA(uploadedAspectRatio!);
                           // 단일 이미지 선택 시 AssetEntity ID 저장
                           if (_selectedAssets.isNotEmpty) {
                             appState.addToAssetEntityIdsA(_selectedAssets.first.id);
                           }
                         } else {
                           appState.addToUploadImageB(displayUrl);
-                          appState.addToUploadImageAspectRatioB(result['aspectRatio']);
+                          appState.addToUploadImageAspectRatioB(uploadedAspectRatio!);
                           if (_selectedAssets.isNotEmpty) {
                             appState.addToAssetEntityIdsB(_selectedAssets.first.id);
                           }
@@ -823,13 +1025,83 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
               _uploadProgress = 0.3 + (0.6 * (i + 1) / newAssets.length);
             });
             
-            final result = await MediaUploadService.uploadImageWithVariants(
-              imageBytes: bytes,
-              box: widget.box,
-            );
+            Map<String, dynamic> result;
+            String? newImageUrl;
+            try {
+              result = await MediaUploadService.uploadImageWithVariants(
+                imageBytes: bytes,
+                box: widget.box,
+                onModerationStatusUpdate: (status) {
+                  print('[MediaSelection] 추가 이미지 검열 상태 업데이트: $status');
+                  if (newImageUrl != null && mounted) {
+                    final appState = Provider.of<AppState>(context, listen: false);
+                    appState.updateImageModerationStatus(
+                      newImageUrl!,
+                      status,
+                      isBoxA: widget.box == 'A',
+                    );
+                  }
+                },
+                onRejected: (reason) {
+                  print('[MediaSelection] 추가 이미지 거부됨: $reason');
+                  if (newImageUrl != null && mounted) {
+                    final appState = Provider.of<AppState>(context, listen: false);
+                    
+                    // 거부된 이미지 제거
+                    if (widget.box == 'A') {
+                      final imageIndex = appState.uploadImageA.indexOf(newImageUrl!);
+                      if (imageIndex >= 0) {
+                        appState.removeFromUploadImageA(newImageUrl!);
+                        if (imageIndex < appState.uploadImageAspectRatioA.length) {
+                          appState.removeAtIndexFromUploadImageAspectRatioA(imageIndex);
+                        }
+                        if (imageIndex < appState.assetEntityIdsA.length) {
+                          appState.removeAtIndexFromAssetEntityIdsA(imageIndex);
+                        }
+                      }
+                    } else {
+                      final imageIndex = appState.uploadImageB.indexOf(newImageUrl!);
+                      if (imageIndex >= 0) {
+                        appState.removeFromUploadImageB(newImageUrl!);
+                        if (imageIndex < appState.uploadImageAspectRatioB.length) {
+                          appState.removeAtIndexFromUploadImageAspectRatioB(imageIndex);
+                        }
+                        if (imageIndex < appState.assetEntityIdsB.length) {
+                          appState.removeAtIndexFromAssetEntityIdsB(imageIndex);
+                        }
+                      }
+                    }
+                    
+                    // 스낵바 표시
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(reason),
+                        backgroundColor: AppTheme.of(context).error,
+                      ),
+                    );
+                  }
+                },
+              );
+            } catch (e) {
+              // 업로드 실패 시
+              if (mounted) {
+                setState(() {
+                  _isUploading = false;
+                });
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('이미지 업로드 실패: $e'),
+                    backgroundColor: AppTheme.of(context).error,
+                  ),
+                );
+              }
+              return; // 이 이미지 건너뛰고 계속
+            }
             
             final displayUrl = result['urls']['display'];
             final aspectRatio = result['aspectRatio'];
+            newImageUrl = displayUrl;
             
             // AppState에 추가
             appState.update(() {
@@ -936,7 +1208,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   }
 }
 
-/// 커스텀 피커 델리게이트 - 확인 버튼 동작 커스터마이징
+/// 플로팅 카메라 버튼이 있는 커스텀 피커 델리게이트
 class CustomAssetPickerBuilderDelegate extends DefaultAssetPickerBuilderDelegate {
   CustomAssetPickerBuilderDelegate({
     required super.provider,
@@ -953,44 +1225,35 @@ class CustomAssetPickerBuilderDelegate extends DefaultAssetPickerBuilderDelegate
     super.themeColor,
     super.locale,
     super.keepScrollOffset,
-    required this.onCompleted,
+    required this.onCameraPressed,
   });
   
-  final Function(List<AssetEntity>) onCompleted;
+  final Future<void> Function() onCameraPressed;
   
   @override
-  Widget confirmButton(BuildContext context) {
-    return Consumer<DefaultAssetPickerProvider>(
-      builder: (BuildContext context, DefaultAssetPickerProvider p, Widget? child) {
-        final shouldAllowConfirm = p.selectedAssets.isNotEmpty;
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        // 기본 피커 UI
+        super.build(context),
         
-        return MaterialButton(
-          onPressed: shouldAllowConfirm
-              ? () {
-                  // 선택 완료 콜백 호출
-                  onCompleted(p.selectedAssets);
-                }
-              : null,
-          minWidth: 0,
-          height: 40,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          color: shouldAllowConfirm ? themeColor : Colors.grey,
-          disabledColor: Colors.grey,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              '${textDelegate.confirm} ${p.selectedAssets.isNotEmpty ? '(${p.selectedAssets.length})' : ''}',
-              style: TextStyle(
-                color: shouldAllowConfirm ? Colors.white : Colors.white70,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+        // 플로팅 카메라 버튼
+        Positioned(
+          bottom: 100, // 하단 바 위
+          right: 16,
+          child: FloatingActionButton(
+            heroTag: 'camera_fab',
+            backgroundColor: Theme.of(context).primaryColor,
+            onPressed: onCameraPressed,
+            child: const Icon(
+              Icons.camera_alt,
+              color: Colors.white,
+              size: 28,
             ),
           ),
-        );
-      },
+        ),
+      ],
     );
   }
+  
 }

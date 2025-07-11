@@ -14,7 +14,6 @@ import '/backend/backend.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import 'in_put_post_image_model.dart';
 export 'in_put_post_image_model.dart';
-import '/services/cloud_image_moderation_service.dart';
 import 'helpers/aspect_ratio_analyzer.dart';
 import 'helpers/dynamic_box_calculator.dart';
 import 'helpers/media_box_callbacks.dart';
@@ -73,11 +72,6 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
     // 콘텐츠 필터 초기화
     ContentFilter.initialize();
-    
-    // 검열 상태 초기화
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AppState>(context, listen: false).clearModerationStatus();
-    });
 
     _model.scrollController ??= ScrollController();
     _model.scrollController!.addListener(_scrollListener);
@@ -406,130 +400,43 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     });
   }
   
-  /// 이미지 검열 상태 모니터링 시작
-  void _startImageModeration(String imageUrl, String box) {
-    // URL에서 파일 경로 추출
-    final filePath = CloudImageModerationService.extractFilePathFromDownloadUrl(imageUrl);
-    if (filePath == null) {
-      print('[InPutPostImage] 파일 경로 추출 실패: $imageUrl');
-      return;
-    }
-    
-    print('[InPutPostImage] 검열 모니터링 시작: $filePath');
-    
-    CloudImageModerationService.watchModerationStatus(filePath).listen(
-      (moderation) {
-        if (moderation != null && mounted) {
-          print('[InPutPostImage] 검열 상태 변경: ${moderation.moderationStatus}');
-          final appState = Provider.of<AppState>(context, listen: false);
-          
-          // 상태 업데이트
-          appState.updateImageModerationStatus(
-            imageUrl,
-            moderation.moderationStatus,
-            isBoxA: box == 'A',
-          );
-          
-          // 거부된 경우 처리
-          if (moderation.moderationStatus == 'rejected') {
-            print('[InPutPostImage] 이미지 거부됨: $imageUrl');
-            
-            // AppState에서 해당 이미지 제거
-            if (box == 'A') {
-              final imageIndex = appState.uploadImageA.indexOf(imageUrl);
-              if (imageIndex >= 0) {
-                appState.removeFromUploadImageA(imageUrl);
-                if (imageIndex < appState.uploadImageAspectRatioA.length) {
-                  appState.removeAtIndexFromUploadImageAspectRatioA(imageIndex);
-                }
-                if (imageIndex < appState.assetEntityIdsA.length) {
-                  appState.removeAtIndexFromAssetEntityIdsA(imageIndex);
-                }
-                // 검열 상태도 제거
-                appState.removeImageModerationStatus(imageUrl, isBoxA: true);
-                print('[InPutPostImage] A박스에서 이미지 제거 완료');
-              }
-            } else {
-              final imageIndex = appState.uploadImageB.indexOf(imageUrl);
-              if (imageIndex >= 0) {
-                appState.removeFromUploadImageB(imageUrl);
-                if (imageIndex < appState.uploadImageAspectRatioB.length) {
-                  appState.removeAtIndexFromUploadImageAspectRatioB(imageIndex);
-                }
-                if (imageIndex < appState.assetEntityIdsB.length) {
-                  appState.removeAtIndexFromAssetEntityIdsB(imageIndex);
-                }
-                // 검열 상태도 제거
-                appState.removeImageModerationStatus(imageUrl, isBoxA: false);
-                print('[InPutPostImage] B박스에서 이미지 제거 완료');
-              }
-            }
-            
-            // 사용자에게 알림
-            final reason = CloudImageModerationService.getRejectionReason(moderation);
-            _showSnackBar('$reason\n다른 이미지를 선택해주세요.');
-            
-            // UI 강제 업데이트
-            setState(() {
-              // 이미지가 제거되었으므로 UI를 다시 그림
-            });
-          }
-        }
-      },
-      onError: (error) {
-        print('[InPutPostImage] 검열 모니터링 오류: $error');
-      },
-    );
-  }
 
   /// 미디어 타입 선택 다이얼로그
   Future<void> _openAssetsPicker(BuildContext parentContext, String box, {bool isAddMode = false, int? currentIndex}) async {
     final appState = context.read<AppState>();
     
-    // 통합 플로우 모달로 열기
-    await showModalBottomSheet(
-      context: parentContext,
-      isScrollControlled: true,
-      useSafeArea: true,  // SafeArea 적용
-      backgroundColor: Colors.black,  // 검은색 배경
-      barrierColor: Colors.black87,  // 배리어도 검은색
-      builder: (modalContext) => MediaSelectionFlowWidget(
-        box: box,
-        isAddMode: isAddMode,
-        currentIndex: currentIndex,
-        existingAssetIds: box == 'A' 
-          ? appState.assetEntityIdsA
-          : appState.assetEntityIdsB,
-        existingImageUrls: box == 'A'
-          ? appState.uploadImageA
-          : appState.uploadImageB,
-        existingAspectRatios: box == 'A'
-          ? appState.uploadImageAspectRatioA
-          : appState.uploadImageAspectRatioB,
-        onComplete: (imageUrl) {
-          // 백그라운드 업로드 완료 시 호출되지만, 이미 로컬 이미지로 처리했으므로 추가 작업 불필요
-          if (!kReleaseMode) print('백그라운드 업로드 완료: $imageUrl');
-          
-          // 스마트 레이아웃 업데이트 (단일 이미지도 처리)
-          _updateLayoutBasedOnImages();
-          
-          // 검열 상태 모니터링 시작
-          _startImageModeration(imageUrl, box);
-        },
-        onMultiComplete: (imageUrls) {
-          // 백그라운드 업로드 완료 시 호출되지만, 이미 로컬 이미지로 처리했으므로 추가 작업 불형요
-          if (!kReleaseMode) print('백그라운드 업로드 완료: ${imageUrls.length}개');
-          
-          // 스마트 레이아웃 업데이트
-          _updateLayoutBasedOnImages();
-          
-          // 각 이미지에 대해 검열 상태 모니터링 시작
-          for (final imageUrl in imageUrls) {
-            _startImageModeration(imageUrl, box);
-          }
-          
-          // 성공 메시지는 로컬 저장 시점에 이미 표시됨
-        },
+    // Navigator.push로 즉시 전환
+    await Navigator.push(
+      parentContext,
+      NoAnimationPageRoute(
+        builder: (context) => MediaSelectionFlowWidget(
+          box: box,
+          isAddMode: isAddMode,
+          currentIndex: currentIndex,
+          existingAssetIds: box == 'A' 
+            ? appState.assetEntityIdsA
+            : appState.assetEntityIdsB,
+          existingImageUrls: box == 'A'
+            ? appState.uploadImageA
+            : appState.uploadImageB,
+          existingAspectRatios: box == 'A'
+            ? appState.uploadImageAspectRatioA
+            : appState.uploadImageAspectRatioB,
+          onComplete: (imageUrl) {
+            // 검열 통과 후 호출됨
+            if (!kReleaseMode) print('검열 통과 및 업로드 완료: $imageUrl');
+            
+            // 스마트 레이아웃 업데이트 (단일 이미지도 처리)
+            _updateLayoutBasedOnImages();
+          },
+          onMultiComplete: (imageUrls) {
+            // 검열 통과 후 호출됨
+            if (!kReleaseMode) print('검열 통과 및 업로드 완료: ${imageUrls.length}개');
+            
+            // 스마트 레이아웃 업데이트
+            _updateLayoutBasedOnImages();
+          },
+        ),
       ),
     );
   }
@@ -773,30 +680,29 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       ? 0 
       : (box == 'A' ? _model.currentImageIndexA : _model.currentImageIndexB);
     
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => MediaSelectionFlowWidget(
-        box: box,
-        initialImageUrl: images[currentIndex],
-        startWithEditor: true,
-        existingImageUrls: images.length > 1 ? images : null,
-        existingAspectRatios: images.length > 1 
-          ? (box == 'A' ? appState.uploadImageAspectRatioA : appState.uploadImageAspectRatioB)
-          : null,
-        onComplete: (newImageUrl) {
-          appState.update(() {
-            if (box == 'A') {
-              appState.uploadImageA[currentIndex] = newImageUrl;
-            } else {
-              appState.uploadImageB[currentIndex] = newImageUrl;
-            }
-          });
-          _showSnackBar('이미지가 수정되었습니다.');
-          if (images.length > 1) _updateLayoutBasedOnImages();
-        },
+    await Navigator.push(
+      context,
+      NoAnimationPageRoute(
+        builder: (context) => MediaSelectionFlowWidget(
+          box: box,
+          initialImageUrl: images[currentIndex],
+          startWithEditor: true,
+          existingImageUrls: images.length > 1 ? images : null,
+          existingAspectRatios: images.length > 1 
+            ? (box == 'A' ? appState.uploadImageAspectRatioA : appState.uploadImageAspectRatioB)
+            : null,
+          onComplete: (newImageUrl) {
+            appState.update(() {
+              if (box == 'A') {
+                appState.uploadImageA[currentIndex] = newImageUrl;
+              } else {
+                appState.uploadImageB[currentIndex] = newImageUrl;
+              }
+            });
+            _showSnackBar('이미지가 수정되었습니다.');
+            if (images.length > 1) _updateLayoutBasedOnImages();
+          },
+        ),
       ),
     );
   }
@@ -1020,8 +926,6 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       updateLayout: _updateLayoutBasedOnImages,
     );
     
-    final appState = Provider.of<AppState>(context, listen: false);
-    
     return MediaSelectionBoxMulti(
       label: box,
       isSelected: isSelected,
@@ -1033,7 +937,6 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       shakeAnimation: shakeAnimation,
       isHorizontal: isHorizontal,
       boxColor: boxColor,
-      moderationStatusMap: box == 'A' ? appState.imageModerationStatusA : appState.imageModerationStatusB,
       onTap: () => _handleBoxTap(box),
       onCancel: (index) => setState(() => callbacks.deleteImage(box, index)),
       onPlusIconTap: () => setState(() => callbacks.toggleBoxVisibility()),
@@ -1045,7 +948,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
   @override
   Widget build(BuildContext context) {
-    final appState = context.watch<AppState>();
+    context.watch<AppState>();
 
     return GestureDetector(
       onTap: () {
@@ -1275,6 +1178,46 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         ),
       ),
     );
+  }
+}
+
+/// 애니메이션 없는 페이지 전환
+class NoAnimationPageRoute<T> extends PageRoute<T> {
+  NoAnimationPageRoute({
+    required this.builder,
+    RouteSettings? settings,
+  }) : super(settings: settings);
+
+  final WidgetBuilder builder;
+
+  @override
+  Duration get transitionDuration => Duration.zero;
+
+  @override
+  Duration get reverseTransitionDuration => Duration.zero;
+
+  @override
+  bool get maintainState => true;
+
+  @override
+  Color? get barrierColor => null;
+
+  @override
+  String? get barrierLabel => null;
+
+  @override
+  bool get barrierDismissible => false;
+
+  @override
+  Widget buildPage(BuildContext context, Animation<double> animation,
+      Animation<double> secondaryAnimation) {
+    return builder(context);
+  }
+
+  @override
+  Widget buildTransitions(BuildContext context, Animation<double> animation,
+      Animation<double> secondaryAnimation, Widget child) {
+    return child;
   }
 }
 

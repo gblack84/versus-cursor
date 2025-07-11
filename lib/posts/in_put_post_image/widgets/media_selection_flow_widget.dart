@@ -13,6 +13,8 @@ import '../delegates/korean_camera_picker_delegate.dart';
 import '../services/image_download_service.dart';
 import '../services/media_upload_service.dart';
 import '/pages/thumbnail_selection/thumbnail_selection_page.dart';
+import '../services/selection_result_processor.dart';
+import 'custom_asset_picker_delegate.dart';
 
 /// 미디어 선택부터 편집까지 하나의 플로우로 처리하는 위젯
 class MediaSelectionFlowWidget extends StatefulWidget {
@@ -961,299 +963,28 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   
   /// 선택 결과 처리 (diff 계산)
   Future<void> _processSelectionResult(List<AssetEntity> selectedAssets) async {
-    try {
-      setState(() {
-        _isUploading = true;
-        _uploadProgress = 0.1;
-      });
-      
-      // 기존 AssetEntity ID 목록
-      final existingIds = widget.existingAssetIds ?? [];
-      final selectedIds = selectedAssets.map((e) => e.id).toList();
-      
-      // 삭제된 항목 찾기
-      final removedIds = existingIds.where((id) => !selectedIds.contains(id)).toList();
-      
-      // 새로 추가된 항목 찾기
-      final newAssets = selectedAssets.where((asset) => !existingIds.contains(asset.id)).toList();
-      
-      print('기존: ${existingIds.length}개, 선택: ${selectedIds.length}개');
-      print('삭제: ${removedIds.length}개, 추가: ${newAssets.length}개');
-      
-      // AppState 업데이트
-      final appState = Provider.of<AppState>(context, listen: false);
-      
-      // 삭제 처리
-      if (removedIds.isNotEmpty) {
-        appState.update(() {
-          if (widget.box == 'A') {
-            // 삭제할 인덱스 찾기 (역순으로 삭제)
-            for (final removedId in removedIds.reversed) {
-              final index = appState.assetEntityIdsA.indexOf(removedId);
-              if (index != -1) {
-                appState.uploadImageA.removeAt(index);
-                appState.uploadImageAspectRatioA.removeAt(index);
-                appState.assetEntityIdsA.removeAt(index);
-              }
-            }
-          } else {
-            for (final removedId in removedIds.reversed) {
-              final index = appState.assetEntityIdsB.indexOf(removedId);
-              if (index != -1) {
-                appState.uploadImageB.removeAt(index);
-                appState.uploadImageAspectRatioB.removeAt(index);
-                appState.assetEntityIdsB.removeAt(index);
-              }
-            }
-          }
-        });
-      }
-      
-      setState(() {
-        _uploadProgress = 0.3;
-      });
-      
-      // 새 이미지 업로드
-      if (newAssets.isNotEmpty) {
-        for (int i = 0; i < newAssets.length; i++) {
-          final asset = newAssets[i];
-          final file = await asset.file;
-          if (file != null) {
-            final bytes = await file.readAsBytes();
-            
-            setState(() {
-              _uploadProgress = 0.3 + (0.6 * (i + 1) / newAssets.length);
-            });
-            
-            Map<String, dynamic> result;
-            String? newImageUrl;
-            try {
-              result = await MediaUploadService.uploadImageWithVariants(
-                imageBytes: bytes,
-                box: widget.box,
-                onModerationStatusUpdate: (status) {
-                  print('[MediaSelection] 추가 이미지 검열 상태 업데이트: $status');
-                  if (newImageUrl != null && mounted) {
-                    final appState = Provider.of<AppState>(context, listen: false);
-                    appState.updateImageModerationStatus(
-                      newImageUrl!,
-                      status,
-                      isBoxA: widget.box == 'A',
-                    );
-                  }
-                },
-                onRejected: (reason) {
-                  print('[MediaSelection] 추가 이미지 거부됨: $reason');
-                  if (newImageUrl != null && mounted) {
-                    final appState = Provider.of<AppState>(context, listen: false);
-                    
-                    // 거부된 이미지 제거
-                    if (widget.box == 'A') {
-                      final imageIndex = appState.uploadImageA.indexOf(newImageUrl!);
-                      if (imageIndex >= 0) {
-                        appState.removeFromUploadImageA(newImageUrl!);
-                        if (imageIndex < appState.uploadImageAspectRatioA.length) {
-                          appState.removeAtIndexFromUploadImageAspectRatioA(imageIndex);
-                        }
-                        if (imageIndex < appState.assetEntityIdsA.length) {
-                          appState.removeAtIndexFromAssetEntityIdsA(imageIndex);
-                        }
-                      }
-                    } else {
-                      final imageIndex = appState.uploadImageB.indexOf(newImageUrl!);
-                      if (imageIndex >= 0) {
-                        appState.removeFromUploadImageB(newImageUrl!);
-                        if (imageIndex < appState.uploadImageAspectRatioB.length) {
-                          appState.removeAtIndexFromUploadImageAspectRatioB(imageIndex);
-                        }
-                        if (imageIndex < appState.assetEntityIdsB.length) {
-                          appState.removeAtIndexFromAssetEntityIdsB(imageIndex);
-                        }
-                      }
-                    }
-                    
-                    // 스낵바 표시
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(reason),
-                        backgroundColor: AppTheme.of(context).error,
-                      ),
-                    );
-                  }
-                },
-              );
-            } catch (e) {
-              // 업로드 실패 시
-              if (mounted) {
-                setState(() {
-                  _isUploading = false;
-                });
-                
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('이미지 업로드 실패: $e'),
-                    backgroundColor: AppTheme.of(context).error,
-                  ),
-                );
-              }
-              return; // 이 이미지 건너뛰고 계속
-            }
-            
-            final displayUrl = result['urls']['display'];
-            final aspectRatio = result['aspectRatio'];
-            newImageUrl = displayUrl;
-            
-            // AppState에 추가
-            appState.update(() {
-              if (widget.box == 'A') {
-                appState.addToUploadImageA(displayUrl);
-                appState.addToUploadImageAspectRatioA(aspectRatio);
-                appState.addToAssetEntityIdsA(asset.id);
-              } else {
-                appState.addToUploadImageB(displayUrl);
-                appState.addToUploadImageAspectRatioB(aspectRatio);
-                appState.addToAssetEntityIdsB(asset.id);
-              }
-            });
-            
-            // 프리캐싱
-            precacheImage(CachedNetworkImageProvider(displayUrl), context).catchError((e) {
-              print('프리캐싱 실패 (무시됨): $e');
-            });
-          }
-        }
-      }
-      
-      // 순서 재정렬 (선택된 순서대로)
-      if (selectedIds.length == appState.assetEntityIdsA.length || 
-          selectedIds.length == appState.assetEntityIdsB.length) {
-        // 순서만 변경된 경우
-        await _reorderImages(selectedIds);
-      }
-      
-      setState(() {
-        _uploadProgress = 1.0;
-      });
-      
-      // 콜백 호출
-      if (widget.onMultiComplete != null) {
-        final urls = widget.box == 'A' ? appState.uploadImageA : appState.uploadImageB;
-        widget.onMultiComplete!(urls);
-      }
-      
-      // 모달 닫기
-      if (mounted) {
-        Navigator.pop(context);
-        print('선택 완료 및 모달 닫기');
-      }
-    } catch (e) {
-      print('선택 결과 처리 에러: $e');
-      if (mounted) {
-        setState(() {
-          _isUploading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('이미지 처리 실패: $e'),
-            backgroundColor: AppTheme.of(context).error,
-          ),
-        );
-        Navigator.pop(context);
-      }
-    }
-  }
-  
-  /// 이미지 순서 재정렬
-  Future<void> _reorderImages(List<String> newOrder) async {
-    final appState = Provider.of<AppState>(context, listen: false);
+    setState(() {
+      _isUploading = true;
+    });
     
-    appState.update(() {
-      if (widget.box == 'A') {
-        final oldUrls = List<String>.from(appState.uploadImageA);
-        final oldRatios = List<double>.from(appState.uploadImageAspectRatioA);
-        final oldIds = List<String>.from(appState.assetEntityIdsA);
-        
-        // 새 순서대로 재배치
-        appState.uploadImageA.clear();
-        appState.uploadImageAspectRatioA.clear();
-        appState.assetEntityIdsA.clear();
-        
-        for (final newId in newOrder) {
-          final oldIndex = oldIds.indexOf(newId);
-          if (oldIndex != -1) {
-            appState.uploadImageA.add(oldUrls[oldIndex]);
-            appState.uploadImageAspectRatioA.add(oldRatios[oldIndex]);
-            appState.assetEntityIdsA.add(newId);
-          }
-        }
-      } else {
-        final oldUrls = List<String>.from(appState.uploadImageB);
-        final oldRatios = List<double>.from(appState.uploadImageAspectRatioB);
-        final oldIds = List<String>.from(appState.assetEntityIdsB);
-        
-        appState.uploadImageB.clear();
-        appState.uploadImageAspectRatioB.clear();
-        appState.assetEntityIdsB.clear();
-        
-        for (final newId in newOrder) {
-          final oldIndex = oldIds.indexOf(newId);
-          if (oldIndex != -1) {
-            appState.uploadImageB.add(oldUrls[oldIndex]);
-            appState.uploadImageAspectRatioB.add(oldRatios[oldIndex]);
-            appState.assetEntityIdsB.add(newId);
-          }
-        }
-      }
+    final appState = Provider.of<AppState>(context, listen: false);
+    final processor = SelectionResultProcessor(
+      context: context,
+      appState: appState,
+      box: widget.box,
+      existingAssetIds: widget.existingAssetIds,
+      onProgressUpdate: (progress) {
+        setState(() {
+          _uploadProgress = progress;
+        });
+      },
+      onMultiComplete: widget.onMultiComplete,
+    );
+    
+    await processor.processSelectionResult(selectedAssets);
+    
+    setState(() {
+      _isUploading = false;
     });
   }
-}
-
-/// 플로팅 카메라 버튼이 있는 커스텀 피커 델리게이트
-class CustomAssetPickerBuilderDelegate extends DefaultAssetPickerBuilderDelegate {
-  CustomAssetPickerBuilderDelegate({
-    required super.provider,
-    required super.initialPermission,
-    super.gridCount,
-    super.pickerTheme,
-    super.specialItemPosition,
-    super.specialItemBuilder,
-    super.loadingIndicatorBuilder,
-    super.shouldRevertGrid,
-    super.limitedPermissionOverlayPredicate,
-    super.pathNameBuilder,
-    super.textDelegate,
-    super.themeColor,
-    super.locale,
-    super.keepScrollOffset,
-    required this.onCameraPressed,
-  });
-  
-  final Future<void> Function() onCameraPressed;
-  
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // 기본 피커 UI
-        super.build(context),
-        
-        // 플로팅 카메라 버튼
-        Positioned(
-          bottom: 100, // 하단 바 위
-          right: 16,
-          child: FloatingActionButton(
-            heroTag: 'camera_fab',
-            backgroundColor: Theme.of(context).primaryColor,
-            onPressed: onCameraPressed,
-            child: const Icon(
-              Icons.camera_alt,
-              color: Colors.white,
-              size: 28,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-  
 }

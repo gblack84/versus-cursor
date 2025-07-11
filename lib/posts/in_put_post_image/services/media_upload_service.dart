@@ -3,7 +3,6 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image/image.dart' as img;
 import '/services/cloud_image_moderation_service.dart';
-import '/backend/backend.dart';
 
 class MediaUploadService {
   static const int displayMaxWidth = 800;

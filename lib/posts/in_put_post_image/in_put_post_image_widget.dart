@@ -9,8 +9,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:bot_toast/bot_toast.dart';
 import 'dart:async';
 import '/backend/backend.dart';
+import 'utils/no_animation_page_route.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import 'in_put_post_image_model.dart';
 export 'in_put_post_image_model.dart';
@@ -46,11 +48,6 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   // Consumer 최적화를 위한 이전 이미지 수 추적
   int _lastImageCount = 0;
   
-  // 커스텀 스낵바 상태
-  bool _showRejectionMessage = false;
-  bool _canDismissMessage = false;
-  String _rejectionMessage = '';
-  Timer? _dismissTimer;
 
   // 상수 정의
   static const Duration _shakeAnimationDuration = Duration(milliseconds: 200);
@@ -132,6 +129,9 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
   /// 이미지 비율에 따라 레이아웃 자동 결정
   void _updateLayoutBasedOnImages() {
+    // mounted 체크 추가
+    if (!mounted) return;
+    
     final appState = Provider.of<AppState>(context, listen: false);
     
     if (!kReleaseMode) {
@@ -146,11 +146,14 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     if (appState.uploadImageA.isEmpty && appState.uploadImageB.isEmpty) {
       if (!kReleaseMode) print('이미지가 없어 기본 레이아웃(horizontal)으로 초기화');
       if (_model.currentLayout != LayoutType.horizontal) {
-        setState(() {
-          _model.currentLayout = LayoutType.horizontal;
-          _model.isRatioVertical = true;  // 가로 배치(좌/우)
-          _model.isRatioHorizontal = false;
-        });
+        // mounted 체크 추가
+        if (mounted) {
+          setState(() {
+            _model.currentLayout = LayoutType.horizontal;
+            _model.isRatioVertical = true;  // 가로 배치(좌/우)
+            _model.isRatioHorizontal = false;
+          });
+        }
       }
       return;
     }
@@ -175,24 +178,27 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     
     // 레이아웃이 변경된 경우에만 업데이트
     if (_model.currentLayout != optimalLayout) {
-      setState(() {
-        _model.currentLayout = optimalLayout;
-        
-        // 기존 토글 상태도 함께 업데이트 (호환성)
-        // 주의: isRatioVertical이 true면 UI에서 가로 배치(좌/우)를 표시
-        // isRatioHorizontal이 true면 UI에서 세로 배치(위/아래)를 표시
-        if (optimalLayout == LayoutType.vertical) {
-          // 세로 배치 = 이미지가 위/아래로 배치
-          _model.isRatioVertical = false;
-          _model.isRatioHorizontal = true;
-          if (!kReleaseMode) print('세로 배치(위/아래)로 변경');
-        } else {
-          // 가로 배치 = 이미지가 좌/우로 배치
-          _model.isRatioVertical = true;
-          _model.isRatioHorizontal = false;
-          if (!kReleaseMode) print('가로 배치(좌/우)로 변경');
-        }
-      });
+      // mounted 체크 추가 - dispose된 후 setState 호출 방지
+      if (mounted) {
+        setState(() {
+          _model.currentLayout = optimalLayout;
+          
+          // 기존 토글 상태도 함께 업데이트 (호환성)
+          // 주의: isRatioVertical이 true면 UI에서 가로 배치(좌/우)를 표시
+          // isRatioHorizontal이 true면 UI에서 세로 배치(위/아래)를 표시
+          if (optimalLayout == LayoutType.vertical) {
+            // 세로 배치 = 이미지가 위/아래로 배치
+            _model.isRatioVertical = false;
+            _model.isRatioHorizontal = true;
+            if (!kReleaseMode) print('세로 배치(위/아래)로 변경');
+          } else {
+            // 가로 배치 = 이미지가 좌/우로 배치
+            _model.isRatioVertical = true;
+            _model.isRatioHorizontal = false;
+            if (!kReleaseMode) print('가로 배치(좌/우)로 변경');
+          }
+        });
+      }
     } else {
       if (!kReleaseMode) print('레이아웃 변경 없음');
     }
@@ -370,34 +376,28 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   }
 
 
-  /// 스낵바 표시
+  /// Bot Toast로 메시지 표시
   void _showSnackBar(String message) {
-    // 기존 타이머가 있으면 취소
-    _dismissTimer?.cancel();
-    
-    setState(() {
-      _showRejectionMessage = true;
-      _canDismissMessage = false;
-      _rejectionMessage = message;
-    });
-    
-    // 3초 후에 터치로 닫을 수 있도록 설정
-    _dismissTimer = Timer(Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() {
-          _canDismissMessage = true;
-        });
-      }
-    });
-    
-    // 10초 후에 자동으로 사라지도록 설정
-    Timer(Duration(seconds: 10), () {
-      if (mounted && _showRejectionMessage) {
-        setState(() {
-          _showRejectionMessage = false;
-        });
-      }
-    });
+    BotToast.showCustomText(
+      toastBuilder: (_) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.8),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          message,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+      duration: const Duration(seconds: 3),
+      align: const Alignment(0, 0.8),
+      onlyOne: true,
+    );
   }
   
 
@@ -799,7 +799,6 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   @override
   void dispose() {
     _model.dispose();
-    _dismissTimer?.cancel();
     
     super.dispose();
   }
@@ -1108,63 +1107,6 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                           ],
                         ),
               ),
-              // 커스텀 스낵바
-              if (_showRejectionMessage)
-                GestureDetector(
-                  onTap: () {
-                    if (_canDismissMessage) {
-                      setState(() {
-                        _showRejectionMessage = false;
-                      });
-                      _dismissTimer?.cancel();
-                    }
-                  },
-                  child: Container(
-                    color: Colors.transparent, // 전체 화면 터치 영역
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Container(
-                        margin: EdgeInsets.only(
-                          bottom: 100,
-                          left: 20,
-                          right: 20,
-                        ),
-                        child: Material(
-                          elevation: 6,
-                          borderRadius: BorderRadius.circular(8),
-                          color: Colors.black.withValues(alpha: 0.5),
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.error_outline,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                                SizedBox(width: 12),
-                                Flexible(
-                                  child: Text(
-                                    _rejectionMessage,
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
               // Next button overlay
               NextButton(
                 showButton: _model.showNextButton,
@@ -1178,46 +1120,6 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         ),
       ),
     );
-  }
-}
-
-/// 애니메이션 없는 페이지 전환
-class NoAnimationPageRoute<T> extends PageRoute<T> {
-  NoAnimationPageRoute({
-    required this.builder,
-    RouteSettings? settings,
-  }) : super(settings: settings);
-
-  final WidgetBuilder builder;
-
-  @override
-  Duration get transitionDuration => Duration.zero;
-
-  @override
-  Duration get reverseTransitionDuration => Duration.zero;
-
-  @override
-  bool get maintainState => true;
-
-  @override
-  Color? get barrierColor => null;
-
-  @override
-  String? get barrierLabel => null;
-
-  @override
-  bool get barrierDismissible => false;
-
-  @override
-  Widget buildPage(BuildContext context, Animation<double> animation,
-      Animation<double> secondaryAnimation) {
-    return builder(context);
-  }
-
-  @override
-  Widget buildTransitions(BuildContext context, Animation<double> animation,
-      Animation<double> secondaryAnimation, Widget child) {
-    return child;
   }
 }
 

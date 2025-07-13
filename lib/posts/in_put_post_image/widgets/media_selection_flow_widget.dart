@@ -14,6 +14,7 @@ import '/pages/thumbnail_selection/thumbnail_selection_page.dart';
 import '../services/selection_result_processor.dart';
 import 'custom_asset_picker_delegate.dart';
 import 'media_editor_widget.dart';
+import '../utils/no_animation_page_route.dart';
 
 /// 미디어 선택부터 편집까지 하나의 플로우로 처리하는 위젯
 class MediaSelectionFlowWidget extends StatefulWidget {
@@ -91,8 +92,8 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: isError 
-            ? Colors.red.shade700.withOpacity(0.9) 
-            : Colors.black.withOpacity(0.8),
+            ? Colors.red.shade700.withValues(alpha: 0.9) 
+            : Colors.black.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
@@ -212,6 +213,12 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
             }
           },
         ),
+        pageRouteBuilder: (Widget picker) {
+          return AssetPickerPageRoute<List<AssetEntity>>(
+            builder: (_) => picker,
+            transitionDuration: Duration.zero,
+          );
+        },
       );
 
       print('[AssetPicker] Picker result: ${result?.length ?? 0} items selected');
@@ -280,7 +287,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
     // ThumbnailSelectionPage로 이동
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
-      MaterialPageRoute(
+      NoAnimationPageRoute(
         builder: (context) => ThumbnailSelectionPage(
           imagePaths: files,
           box: widget.box,

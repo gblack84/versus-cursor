@@ -12,7 +12,7 @@ import '../delegates/korean_camera_picker_delegate.dart';
 import '../services/image_download_service.dart';
 import '/pages/thumbnail_selection/thumbnail_selection_page.dart';
 import '../services/selection_result_processor.dart';
-import 'custom_asset_picker_delegate.dart';
+import '../delegates/camera_floating_button_delegate.dart';
 import 'media_editor_widget.dart';
 import '../utils/no_animation_page_route.dart';
 
@@ -143,7 +143,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       // 커스텀 델리게이트를 사용하여 플로팅 카메라 버튼 추가
       final List<AssetEntity>? result = await AssetPicker.pickAssetsWithDelegate(
         context,
-        delegate: CustomAssetPickerBuilderDelegate(
+        delegate: CameraFloatingButtonDelegate(
           provider: DefaultAssetPickerProvider(
             selectedAssets: selectedAssets,
             maxAssets: 4,

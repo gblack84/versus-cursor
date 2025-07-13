@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 /// 플로팅 카메라 버튼이 있는 커스텀 피커 델리게이트
-class CustomAssetPickerBuilderDelegate extends DefaultAssetPickerBuilderDelegate {
-  CustomAssetPickerBuilderDelegate({
+class CameraFloatingButtonDelegate extends DefaultAssetPickerBuilderDelegate {
+  CameraFloatingButtonDelegate({
     required super.provider,
     required super.initialPermission,
     super.gridCount,

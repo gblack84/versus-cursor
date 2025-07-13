@@ -6,7 +6,6 @@ import '/pages/image_viewer/image_viewer_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:bot_toast/bot_toast.dart';
 import '/backend/backend.dart';
 import 'utils/no_animation_page_route.dart';
 import '/auth/firebase_auth/auth_util.dart';
@@ -26,6 +25,7 @@ import 'services/validation_service.dart';
 import 'helpers/input_field_builder.dart';
 import 'widgets/media_selection_flow_widget.dart';
 import 'utils/debug_helper.dart';
+import 'utils/error_handler.dart';
 
 class InPutPostImageWidget extends StatefulWidget {
   const InPutPostImageWidget({super.key});
@@ -324,8 +324,12 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       }
 
     } catch (e) {
-      DebugHelper.logError('텍스트 검증 오류', e);
-      _showSnackBar('텍스트 검증 중 오류가 발생했습니다.');
+      ErrorHandler.handle(
+        e,
+        type: ErrorType.validation,
+        customMessage: '텍스트 검증 중 오류가 발생했습니다.',
+        context: context,
+      );
     } finally {
       setState(() {
         _model.isValidating = false;
@@ -335,27 +339,17 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
 
   /// Bot Toast로 메시지 표시
-  void _showSnackBar(String message) {
-    BotToast.showCustomText(
-      toastBuilder: (_) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.8),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          message,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ),
-      duration: const Duration(seconds: 3),
-      align: const Alignment(0, 0.8),
-      onlyOne: true,
-    );
+  void _showSnackBar(String message, {bool isError = false}) {
+    if (isError) {
+      ErrorHandler.handle(
+        message,
+        type: ErrorType.unknown,
+        customMessage: message,
+        context: context,
+      );
+    } else {
+      ErrorHandler.showSuccessToast(message);
+    }
   }
   
 
@@ -403,7 +397,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     try {
       final user = currentUser;
       if (user == null) {
-        _showSnackBar('로그인이 필요합니다.');
+        _showSnackBar('로그인이 필요합니다.', isError: true);
         return;
       }
 
@@ -508,8 +502,12 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       );
 
     } catch (e) {
-      DebugHelper.logFirebase('Firestore 저장 오류: $e');
-      _showSnackBar('저장 중 오류가 발생했습니다: ${e.toString()}');
+      ErrorHandler.handle(
+        e,
+        type: ErrorType.storage,
+        customMessage: '저장 중 오류가 발생했습니다.',
+        context: context,
+      );
       setState(() {
         _model.isValidating = false;
       });

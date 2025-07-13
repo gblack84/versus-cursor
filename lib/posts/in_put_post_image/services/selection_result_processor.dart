@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '/app_state.dart';
-import '/core/app_theme.dart';
 import 'media_upload_service.dart';
 import 'image_reorder_service.dart';
 import '../helpers/image_cache_helper.dart';
+import '../utils/debug_helper.dart';
+import '../utils/error_handler.dart';
 
 /// 이미지 선택 결과 처리 서비스
 class SelectionResultProcessor {
@@ -75,17 +76,16 @@ class SelectionResultProcessor {
       // 모달 닫기
       if (context.mounted) {
         Navigator.pop(context);
-        print('선택 완료 및 모달 닫기');
+        DebugHelper.log('선택 완료 및 모달 닫기');
       }
     } catch (e) {
-      print('선택 결과 처리 에러: $e');
       if (context.mounted) {
         onProgressUpdate(0.0);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('이미지 처리 실패: $e'),
-            backgroundColor: AppTheme.of(context).error,
-          ),
+        ErrorHandler.handle(
+          e,
+          type: ErrorType.imageProcessing,
+          customMessage: '이미지 처리 중 오류가 발생했습니다.',
+          context: context,
         );
         Navigator.pop(context);
       }
@@ -139,17 +139,17 @@ class SelectionResultProcessor {
           // 검열 결과 확인
           if (result['isApproved'] != true) {
             // 검열 실패한 이미지는 건너뛰기
-            print('[SelectionProcessor] 이미지 검열 실패: ${result['rejectionReason']}');
+            DebugHelper.logModeration('[SelectionProcessor] 이미지 검열 실패: ${result['rejectionReason']}');
             continue;
           }
         } catch (e) {
           // 업로드 실패 시
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('이미지 업로드 실패: $e'),
-                backgroundColor: AppTheme.of(context).error,
-              ),
+            ErrorHandler.handle(
+              e,
+              type: ErrorType.storage,
+              customMessage: '이미지 업로드 실패',
+              context: context,
             );
           }
           continue; // 이 이미지 건너뛰고 계속

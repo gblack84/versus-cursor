@@ -57,8 +57,8 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   int _currentEditIndex = 0;
   
   // 업로드 상태
-  // bool _isUploading = false;  // 사용하지 않음
-  // double _uploadProgress = 0.0;  // 사용하지 않음
+  bool _isUploading = false;
+  double _uploadProgress = 0.0;
   
   // 재시도 상태 추적
   bool _isRetrying = false;

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '/core/app_theme.dart';
 import '../utils/debug_helper.dart';
+import '../helpers/image_cache_helper.dart';
 
 /// MediaSelectionBox의 기본 추상 클래스
 abstract class BaseMediaSelectionBox extends StatefulWidget {
@@ -56,19 +57,11 @@ mixin MediaSelectionBoxMixin<T extends BaseMediaSelectionBox> on State<T> {
 
   /// 메모리 캐시 너비 계산
   int calculateMemCacheWidth() {
-    final pixelRatio = MediaQuery.of(context).devicePixelRatio;
-    
-    double baseWidth;
-    if (widget.dynamicWidth != null && widget.dynamicWidth!.isFinite) {
-      baseWidth = widget.dynamicWidth!;
-    } else {
-      baseWidth = widget.isHorizontal 
-          ? MediaQuery.of(context).size.width / 2 
-          : MediaQuery.of(context).size.width;
-    }
-    
-    final targetWidth = (baseWidth * pixelRatio).round();
-    return targetWidth.clamp(200, 800);
+    return ImageCacheHelper.calculateMemCacheWidthForBox(
+      context,
+      dynamicWidth: widget.dynamicWidth,
+      isHorizontal: widget.isHorizontal,
+    );
   }
 
   /// 기본 컨테이너 빌드
@@ -181,27 +174,11 @@ mixin MediaSelectionBoxMixin<T extends BaseMediaSelectionBox> on State<T> {
   /// 이미지 프리로드
   void preloadImages() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.imageUrls.isNotEmpty) {
-        // 첫 번째 이미지
-        precacheImage(
-          CachedNetworkImageProvider(
-            widget.imageUrls[0],
-            cacheKey: widget.imageUrls[0],
-          ),
-          context,
-        );
-        
-        // 두 번째 이미지가 있으면 프리로드
-        if (widget.imageUrls.length > 1) {
-          precacheImage(
-            CachedNetworkImageProvider(
-              widget.imageUrls[1],
-              cacheKey: widget.imageUrls[1],
-            ),
-            context,
-          );
-        }
-      }
+      ImageCacheHelper.preloadImages(
+        context,
+        widget.imageUrls,
+        memCacheWidth: calculateMemCacheWidth(),
+      );
     });
   }
 

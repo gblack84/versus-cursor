@@ -2,9 +2,9 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '/app_state.dart';
 import 'media_upload_service.dart';
+import '../helpers/image_cache_helper.dart';
 
 /// 이미지 업로드 프로세스를 조율하는 서비스 클래스
 class ImageUploadOrchestrator {
@@ -274,11 +274,7 @@ class ImageUploadOrchestrator {
 
   /// 이미지 프리캐싱
   Future<void> _precacheImage(String url) async {
-    try {
-      await precacheImage(CachedNetworkImageProvider(url), context);
-    } catch (e) {
-      print('프리캐싱 실패 (무시됨): $e');
-    }
+    await ImageCacheHelper.preloadImages(context, [url]);
   }
 
   /// 기존 이미지 재사용

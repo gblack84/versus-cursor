@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '/app_state.dart';
 import '/core/app_theme.dart';
 import 'media_upload_service.dart';
 import 'image_reorder_service.dart';
+import '../helpers/image_cache_helper.dart';
 
 /// 이미지 선택 결과 처리 서비스
 class SelectionResultProcessor {
@@ -172,9 +172,10 @@ class SelectionResultProcessor {
         });
         
         // 프리캐싱
-        precacheImage(CachedNetworkImageProvider(displayUrl), context).catchError((e) {
-          print('프리캐싱 실패 (무시됨): $e');
-        });
+        ImageCacheHelper.preloadImages(
+          context,
+          [displayUrl],
+        );
       }
     }
   }

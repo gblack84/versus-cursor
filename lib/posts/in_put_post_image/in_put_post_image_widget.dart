@@ -26,6 +26,8 @@ import 'helpers/input_field_builder.dart';
 import 'widgets/media_selection_flow_widget.dart';
 import 'utils/debug_helper.dart';
 import 'utils/error_handler.dart';
+import 'constants/dimensions.dart';
+import 'constants/animation_constants.dart';
 
 class InPutPostImageWidget extends StatefulWidget {
   const InPutPostImageWidget({super.key});
@@ -49,15 +51,6 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   double? _lastAspectRatioB;
   
 
-  // 상수 정의
-  static const Duration _shakeAnimationDuration = Duration(milliseconds: 200);
-  
-  static const double _defaultPadding = 10.0;
-  static const double _smallPadding = 2.5;
-  static const double _scrollThreshold = 100.0;
-  static const double _appBarFontSize = 22.0;
-  static const double _appBarElevation = 2.0;
-  static const double _verticalSpacing = 15.0;
 
   @override
   void initState() {
@@ -87,13 +80,13 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     
     // 흔들림 애니메이션 초기화
     _model.shakeController = AnimationController(
-      duration: _shakeAnimationDuration,
+      duration: AnimationConstants.shakeAnimationDuration,
       vsync: this,
     );
     
     _model.shakeAnimation = Tween<double>(
       begin: 0,
-      end: 8,
+      end: AnimationConstants.shakeAnimationExtent,
     ).animate(CurvedAnimation(
       parent: _model.shakeController!,
       curve: Curves.easeInOut,
@@ -118,7 +111,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     if (!mounted) return;
     
     final isNearBottom = _model.scrollController!.position.pixels >=
-        _model.scrollController!.position.maxScrollExtent - _scrollThreshold;
+        _model.scrollController!.position.maxScrollExtent - Dimensions.scrollThreshold;
     
     // 필수 필드가 채워져 있을 때만 스크롤에 따라 버튼 표시
     final shouldShow = isNearBottom || _areRequiredFieldsFilled();
@@ -222,7 +215,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       children: [
         Padding(
           padding: EdgeInsetsDirectional.fromSTEB(
-              _defaultPadding, _verticalSpacing, _defaultPadding, 0.0),
+              Dimensions.defaultPadding, Dimensions.verticalSpacing, Dimensions.defaultPadding, 0.0),
           child: InputFieldBuilder.buildQuestionTitleField(
             context: context,
             controller: _model.textController1!,
@@ -526,7 +519,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     return Column(
       children: [
         Padding(
-          padding: EdgeInsetsDirectional.fromSTEB(0.0, _defaultPadding, 0.0, 0.0),
+          padding: EdgeInsetsDirectional.fromSTEB(0.0, Dimensions.defaultPadding, 0.0, 0.0),
           child: Container(
             width: double.infinity,
             decoration: BoxDecoration(
@@ -797,7 +790,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       // 가로 배치 (좌/우)
       if (isAbsellected) {
         return Padding(
-          padding: EdgeInsetsDirectional.fromSTEB(_smallPadding * 2, 0.0, _smallPadding * 2, 0.0),
+          padding: EdgeInsetsDirectional.fromSTEB(Dimensions.smallPadding * 2, 0.0, Dimensions.smallPadding * 2, 0.0),
           child: Center(
             child: SizedBox(
               width: boxSizeA.width,
@@ -808,7 +801,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         );
       } else {
         return Padding(
-          padding: EdgeInsetsDirectional.fromSTEB(_smallPadding * 2, 0.0, _smallPadding * 2, 0.0),
+          padding: EdgeInsetsDirectional.fromSTEB(Dimensions.smallPadding * 2, 0.0, Dimensions.smallPadding * 2, 0.0),
           child: Row(
             mainAxisSize: MainAxisSize.max,
             children: [
@@ -818,7 +811,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                   child: aBoxWidget,
                 ),
               ),
-              SizedBox(width: _smallPadding * 2),
+              SizedBox(width: Dimensions.smallPadding * 2),
               Expanded(
                 child: SizedBox(
                   height: boxSizeB.height,
@@ -835,7 +828,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         mainAxisSize: MainAxisSize.max,
         children: [
           Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(_smallPadding, 0.0, _smallPadding, _smallPadding),
+            padding: EdgeInsetsDirectional.fromSTEB(Dimensions.smallPadding, 0.0, Dimensions.smallPadding, Dimensions.smallPadding),
             child: SizedBox(
               width: boxSizeA.width,
               height: boxSizeA.height,
@@ -844,7 +837,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           ),
           if (!isAbsellected)
             Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(_smallPadding, _smallPadding, _smallPadding, 0.0),
+              padding: EdgeInsetsDirectional.fromSTEB(Dimensions.smallPadding, Dimensions.smallPadding, Dimensions.smallPadding, 0.0),
               child: SizedBox(
                 width: boxSizeB.width,
                 height: boxSizeB.height,
@@ -925,12 +918,12 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
               style: _getTextStyle(
                 baseStyle: AppTheme.of(context).headlineMedium,
                 color: Colors.white,
-                fontSize: _appBarFontSize,
+                fontSize: Dimensions.appBarFontSize,
               ),
             ),
             actions: [],
             centerTitle: false,
-            elevation: _appBarElevation,
+            elevation: Dimensions.appBarElevation,
           ),
         ),
         body: Container(

@@ -4,11 +4,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image/image.dart' as img;
 import '/services/cloud_image_moderation_service.dart';
 import '../utils/debug_helper.dart';
+import '../constants/image_constants.dart';
+import '../constants/strings.dart';
+import '../constants/config.dart';
 
 class MediaUploadService {
-  static const int displayMaxWidth = 800;
-  static const int thumbnailSize = 150;
-  static const int jpegQuality = 85;
 
   /// 이미지를 3가지 크기로 업로드 (original, display, thumbnail)
   /// 반환값: URLs와 aspect ratio 정보를 포함한 Map
@@ -22,7 +22,7 @@ class MediaUploadService {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
-        throw Exception('사용자가 로그인되어 있지 않습니다.');
+        throw Exception(StringConstants.userNotLoggedIn);
       }
 
       final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -31,7 +31,7 @@ class MediaUploadService {
       // 원본 이미지 디코딩
       final originalImage = img.decodeImage(imageBytes);
       if (originalImage == null) {
-        throw Exception('이미지를 디코딩할 수 없습니다.');
+        throw Exception(StringConstants.imageDecodeError);
       }
 
       // 이미지 비율 계산
@@ -45,32 +45,32 @@ class MediaUploadService {
         imageBytes,
         '$basePath/${timestamp}_${box}_original.jpg',
         metadata: {
-          'box': box,
-          'type': 'original',
-          'width': originalImage.width.toString(),
-          'height': originalImage.height.toString(),
+          ConfigConstants.boxMetadataKey: box,
+          ConfigConstants.typeMetadataKey: ConfigConstants.originalType,
+          ConfigConstants.widthMetadataKey: originalImage.width.toString(),
+          ConfigConstants.heightMetadataKey: originalImage.height.toString(),
         },
       );
 
       // 2. Display 이미지 생성 및 업로드 (너비가 800px보다 큰 경우만)
-      if (originalImage.width > displayMaxWidth) {
+      if (originalImage.width > ImageConstants.displayMaxWidth) {
         final displayImage = img.copyResize(
           originalImage,
-          width: displayMaxWidth,
+          width: ImageConstants.displayMaxWidth,
           maintainAspect: true,
         );
         final displayBytes = Uint8List.fromList(
-          img.encodeJpg(displayImage, quality: jpegQuality),
+          img.encodeJpg(displayImage, quality: ImageConstants.jpegQuality),
         );
         
         futures['display'] = _uploadToFirebase(
           displayBytes,
           '$basePath/${timestamp}_${box}_display.jpg',
           metadata: {
-            'box': box,
-            'type': 'display',
-            'width': displayImage.width.toString(),
-            'height': displayImage.height.toString(),
+            ConfigConstants.boxMetadataKey: box,
+            ConfigConstants.typeMetadataKey: ConfigConstants.displayType,
+            ConfigConstants.widthMetadataKey: displayImage.width.toString(),
+            ConfigConstants.heightMetadataKey: displayImage.height.toString(),
           },
         );
       } else {
@@ -79,19 +79,19 @@ class MediaUploadService {
       }
 
       // 3. Thumbnail 생성 및 업로드
-      final thumbnailImage = _createSquareThumbnail(originalImage, thumbnailSize);
+      final thumbnailImage = _createSquareThumbnail(originalImage, ImageConstants.thumbnailSize);
       final thumbnailBytes = Uint8List.fromList(
-        img.encodeJpg(thumbnailImage, quality: jpegQuality),
+        img.encodeJpg(thumbnailImage, quality: ImageConstants.jpegQuality),
       );
       
       futures['thumbnail'] = _uploadToFirebase(
         thumbnailBytes,
         '$basePath/${timestamp}_${box}_thumb.jpg',
         metadata: {
-          'box': box,
-          'type': 'thumbnail',
-          'width': thumbnailSize.toString(),
-          'height': thumbnailSize.toString(),
+          ConfigConstants.boxMetadataKey: box,
+          ConfigConstants.typeMetadataKey: ConfigConstants.thumbnailType,
+          ConfigConstants.widthMetadataKey: ImageConstants.thumbnailSize.toString(),
+          ConfigConstants.heightMetadataKey: ImageConstants.thumbnailSize.toString(),
         },
       );
 

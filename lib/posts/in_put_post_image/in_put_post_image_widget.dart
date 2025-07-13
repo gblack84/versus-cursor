@@ -2,15 +2,12 @@
 import '/core/app_theme.dart';
 import '/core/app_utils.dart';
 import '/utils/content_filter.dart';
-import '/widgets/highlighted_text_field.dart';
 import '/pages/image_viewer/image_viewer_page.dart';
-import 'package:easy_debounce/easy_debounce.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:bot_toast/bot_toast.dart';
-import 'dart:async';
 import '/backend/backend.dart';
 import 'utils/no_animation_page_route.dart';
 import '/auth/firebase_auth/auth_util.dart';
@@ -57,13 +54,10 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   
   static const double _defaultPadding = 10.0;
   static const double _smallPadding = 2.5;
-  static const double _largeFontSize = 30.0;
   static const double _scrollThreshold = 100.0;
-  static const double _iconSize = 22.0;
   static const double _appBarFontSize = 22.0;
   static const double _appBarElevation = 2.0;
   static const double _verticalSpacing = 15.0;
-  static const double _inputFontSize = 30.0;
 
   @override
   void initState() {
@@ -716,37 +710,6 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     fontStyle: baseStyle.fontStyle,
     color: color,
   );
-
-  /// 공통 InputDecoration 생성 헬퍼 메서드
-  InputDecoration _getInputDecoration({
-    required BuildContext context,
-    required String hintText,
-    required double fontSize,
-    String? labelText,
-    Widget? suffixIcon,
-    double borderWidth = 3.0,
-    bool isDense = false,
-  }) {
-    final border = UnderlineInputBorder(
-      borderSide: BorderSide(color: Colors.black, width: borderWidth),
-      borderRadius: BorderRadius.circular(12.0),
-    );
-    return InputDecoration(
-      isDense: isDense,
-      labelText: labelText,
-      labelStyle: _getTextStyle(baseStyle: AppTheme.of(context).bodyMedium, fontSize: fontSize),
-      alignLabelWithHint: false,
-      hintText: hintText,
-      hintStyle: _getTextStyle(baseStyle: AppTheme.of(context).labelMedium, fontSize: fontSize),
-      enabledBorder: border,
-      focusedBorder: border,
-      errorBorder: border,
-      focusedErrorBorder: border,
-      filled: true,
-      fillColor: AppTheme.of(context).secondaryBackground,
-      suffixIcon: suffixIcon,
-    );
-  }
 
   /// A/B 타이틀 필드를 생성하는 공통 메서드
   Widget _buildTitleField({

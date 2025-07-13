@@ -27,6 +27,7 @@ import 'components/simple_character_count.dart';
 import 'components/layout_debug_info.dart';
 import 'components/warning_message.dart';
 import 'services/validation_service.dart';
+import 'helpers/input_field_builder.dart';
 import 'widgets/media_selection_flow_widget.dart';
 
 class InPutPostImageWidget extends StatefulWidget {
@@ -228,78 +229,19 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         Padding(
           padding: EdgeInsetsDirectional.fromSTEB(
               _defaultPadding, _verticalSpacing, _defaultPadding, 0.0),
-          child: ValidatedTextField(
-            controller: _model.textController1,
-            focusNode: _model.textFieldFocusNode1,
-            onChanged: (value) {
-              // 텍스트가 비어있으면 에러 초기화
-              if (value.trim().isEmpty) {
-                final needsUpdate = _model.isQuestionTitleEmpty || 
-                    _model.validationResults.containsKey('questionTitle') || 
-                    _model.hasBlockedWordInTitle;
-                if (needsUpdate) {
-                  setState(() {
-                    _model.isQuestionTitleEmpty = false;
-                    _model.validationResults.remove('questionTitle');
-                    _model.hasBlockedWordInTitle = false;
-                  });
-                }
+          child: InputFieldBuilder.buildQuestionTitleField(
+            context: context,
+            controller: _model.textController1!,
+            focusNode: _model.textFieldFocusNode1!,
+            model: _model,
+            onRequiredFieldsCheck: _checkRequiredFieldsAndUpdateButton,
+            onBlockedWordChanged: (isBlocked) {
+              if (mounted) {
+                setState(() {
+                  _model.hasBlockedWordInTitle = isBlocked;
+                });
               }
-              
-              // 필수 필드 체크
-              _checkRequiredFieldsAndUpdateButton();
-              
-              // 디바운스된 필터링
-              EasyDebounce.debounce(
-                '_model.textController1',
-                Duration(milliseconds: 500),
-                () {
-                  final result = ContentFilter.filterText(value);
-                  if (_model.hasBlockedWordInTitle != result.isBlocked) {
-                    if (mounted) {
-                      setState(() {
-                        _model.hasBlockedWordInTitle = result.isBlocked;
-                      });
-                    }
-                  }
-                },
-              );
             },
-            validationResult: _model.validationResults['questionTitle'],
-            showValidationResults: false,
-            decoration: _getInputDecoration(
-              context: context,
-              hintText: AppLocalizations.of(context).getText(
-                'jr6l0zdb' /* Enter question title */,
-              ),
-              labelText: AppLocalizations.of(context).getText(
-                '5kzcbgop' /* Question Title */,
-              ),
-              fontSize: _largeFontSize,
-              suffixIcon: _model.textController1!.text.isNotEmpty
-                  ? InkWell(
-                      onTap: () async {
-                        _model.textController1?.clear();
-                        _model.validationResults.remove('questionTitle');
-                        _model.hasValidationViolations = false;
-                        _model.hasBlockedWordInTitle = false;
-                      },
-                      child: Icon(
-                        Icons.clear,
-                        color: AppTheme.of(context).primaryText,
-                        size: _iconSize,
-                      ),
-                    )
-                  : null,
-            ),
-            style: _getTextStyle(
-              baseStyle: AppTheme.of(context).bodyMedium,
-              fontSize: _inputFontSize,
-            ),
-            minLines: 1,
-            maxLines: 5,
-            textInputAction: TextInputAction.done,
-            maxLength: 60,
           ),
         ),
         CharacterCountDisplay(

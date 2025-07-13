@@ -7,12 +7,14 @@ import '/services/perspective_api_service.dart';
 import '/widgets/highlighted_text_field.dart';
 import '/utils/content_filter.dart';
 
+/// 통합된 입력 필드 위젯
+/// ValidatedInputField와 SimpleValidatedField를 하나로 통합
 class SimpleValidatedField extends StatelessWidget {
   final TextEditingController? controller;
   final FocusNode? focusNode;
   final String labelKey;
   final String hintKey;
-  final String fieldName;
+  final String? fieldName; // optional for backward compatibility
   final int? maxLength;
   final int? maxLines;
   final int? minLines;
@@ -25,6 +27,11 @@ class SimpleValidatedField extends StatelessWidget {
   final Function()? onRequiredFieldsCheck;
   final PerspectiveResult? validationResult;
   final bool showClearButton;
+  final bool showValidationResults;
+  final String? debounceKey;
+  final Duration debounceDuration;
+  final Function(String)? onChanged; // simple onChanged callback
+  final VoidCallback? onClear; // simple clear callback
 
   const SimpleValidatedField({
     Key? key,
@@ -32,7 +39,7 @@ class SimpleValidatedField extends StatelessWidget {
     this.focusNode,
     required this.labelKey,
     required this.hintKey,
-    required this.fieldName,
+    this.fieldName,
     this.maxLength,
     this.maxLines = 1,
     this.minLines = 1,
@@ -45,6 +52,11 @@ class SimpleValidatedField extends StatelessWidget {
     this.onRequiredFieldsCheck,
     this.validationResult,
     this.showClearButton = true,
+    this.showValidationResults = false,
+    this.debounceKey,
+    this.debounceDuration = const Duration(milliseconds: 500),
+    this.onChanged,
+    this.onClear,
   }) : super(key: key);
 
   @override
@@ -53,25 +65,40 @@ class SimpleValidatedField extends StatelessWidget {
       controller: controller,
       focusNode: focusNode,
       onChanged: (value) {
+        // Simple onChanged callback
+        if (onChanged != null) {
+          onChanged!(value);
+        }
+        
         // 필수 필드 체크
         if (onRequiredFieldsCheck != null) {
           onRequiredFieldsCheck!();
         }
         
-        // 디바운스된 필터링
-        EasyDebounce.debounce(
-          'simple_validated_field_$fieldName',
-          Duration(milliseconds: 500),
-          () {
-            final result = ContentFilter.filterText(value);
-            if (onFieldChanged != null) {
-              onFieldChanged!(value, fieldName, result.isBlocked);
-            }
-          },
-        );
+        // 디바운스된 필터링 (fieldName이 있는 경우에만)
+        if (fieldName != null && onFieldChanged != null) {
+          EasyDebounce.debounce(
+            debounceKey ?? 'simple_validated_field_$fieldName',
+            debounceDuration,
+            () {
+              final result = ContentFilter.filterText(value);
+              onFieldChanged!(value, fieldName!, result.isBlocked);
+            },
+          );
+        } else if (debounceKey != null && onFieldChanged != null) {
+          // debounceKey만 있는 경우 (ValidatedInputField 호환)
+          EasyDebounce.debounce(
+            debounceKey!,
+            debounceDuration,
+            () {
+              final result = ContentFilter.filterText(value);
+              onFieldChanged!(value, '', result.isBlocked);
+            },
+          );
+        }
       },
       validationResult: validationResult,
-      showValidationResults: false,
+      showValidationResults: showValidationResults,
       minLines: minLines,
       maxLines: maxLines,
       textInputAction: textInputAction,
@@ -135,8 +162,12 @@ class SimpleValidatedField extends StatelessWidget {
             ? InkWell(
                 onTap: () {
                   controller?.clear();
+                  // 두 가지 clear 콜백 모두 지원
                   if (onFieldCleared != null) {
                     onFieldCleared!();
+                  }
+                  if (onClear != null) {
+                    onClear!();
                   }
                 },
                 child: Icon(

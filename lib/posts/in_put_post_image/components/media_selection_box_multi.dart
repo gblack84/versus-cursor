@@ -88,6 +88,23 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
     super.dispose();
   }
   
+  /// 메모리 캐시 너비 계산
+  int _calculateMemCacheWidth() {
+    final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+    
+    double baseWidth;
+    if (widget.dynamicWidth != null && widget.dynamicWidth!.isFinite) {
+      baseWidth = widget.dynamicWidth!;
+    } else {
+      baseWidth = widget.isHorizontal 
+          ? MediaQuery.of(context).size.width / 2 
+          : MediaQuery.of(context).size.width;
+    }
+    
+    final targetWidth = (baseWidth * pixelRatio).round();
+    return targetWidth.clamp(200, 800);
+  }
+
   @override
   void didUpdateWidget(MediaSelectionBoxMulti oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -110,27 +127,6 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
     }
   }
   
-  int _calculateMemCacheWidth() {
-    // 디바이스 픽셀 밀도 가져오기
-    final pixelRatio = MediaQuery.of(context).devicePixelRatio;
-    
-    // 동적 너비가 제공되면 사용, 아니면 화면 너비 기준으로 계산
-    double baseWidth;
-    if (widget.dynamicWidth != null && widget.dynamicWidth!.isFinite) {
-      baseWidth = widget.dynamicWidth!;
-    } else {
-      baseWidth = widget.isHorizontal ? MediaQuery.of(context).size.width / 2 : MediaQuery.of(context).size.width;
-    }
-    
-    // 실제 표시될 픽셀 크기 계산
-    // Firebase Storage의 display 이미지는 최대 800px이므로 그에 맞춰 최적화
-    final targetWidth = (baseWidth * pixelRatio).round();
-    
-    // display 이미지 크기(800px)를 넘지 않도록 제한
-    // 최소 200px 보장으로 저해상도 기기에서도 품질 유지
-    return targetWidth.clamp(200, 800);
-  }
-  
   Widget _buildRemoteImage(int index) {
     if (index >= widget.imageUrls.length) {
       return Icon(
@@ -147,7 +143,6 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
       memCacheWidth: _calculateMemCacheWidth(),
       placeholder: (context, url) => Container(
         color: AppTheme.of(context).secondaryBackground,
-        // 모든 경우에 빈 컨테이너 반환 (오버레이에서 로딩 처리)
         child: const SizedBox.shrink(),
       ),
       fadeInDuration: const Duration(milliseconds: 150),
@@ -163,6 +158,182 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
     );
   }
   
+  /// 우측 상단 클로즈 버튼 빌드
+  Widget? _buildTopRightCloseButton() {
+    // A박스 - 이미지가 있을 때 X 아이콘 (삭제)
+    if (widget.label == 'A' && widget.imageUrls.isNotEmpty && widget.onCancel != null) {
+      return Align(
+        alignment: AlignmentDirectional(1.0, -1.0),
+        child: Padding(
+          padding: EdgeInsets.all(widget.isHorizontal ? 10.0 : 10.0),
+          child: InkWell(
+            splashColor: Colors.transparent,
+            focusColor: Colors.transparent,
+            hoverColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            onTap: () {
+              final safeIndex = widget.imageUrls.isEmpty ? 0 : _currentIndex.clamp(0, widget.imageUrls.length - 1);
+              print('${widget.label}박스 이미지 삭제 시도 - 현재 인덱스: $_currentIndex, 안전한 인덱스: $safeIndex, 전체 이미지 수: ${widget.imageUrls.length}');
+              widget.onCancel?.call(safeIndex);
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.6),
+                shape: BoxShape.circle,
+              ),
+              padding: EdgeInsets.all(4.0),
+              child: Icon(
+                Icons.close,
+                color: Colors.white,
+                size: 24.0,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    
+    // B박스의 X 아이콘 - 이미지 유무에 따라 다른 스타일
+    if (widget.label == 'B' && widget.onCancel != null) {
+      return Align(
+        alignment: AlignmentDirectional(1.0, -1.0),
+        child: Padding(
+          padding: EdgeInsets.all(widget.isHorizontal ? 10.0 : 10.0),
+          child: InkWell(
+            splashColor: Colors.transparent,
+            focusColor: Colors.transparent,
+            hoverColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            onTap: () {
+              final safeIndex = widget.imageUrls.isEmpty ? 0 : _currentIndex.clamp(0, widget.imageUrls.length - 1);
+              print('${widget.label}박스 이미지 삭제 시도 - 현재 인덱스: $_currentIndex, 안전한 인덱스: $safeIndex, 전체 이미지 수: ${widget.imageUrls.length}');
+              widget.onCancel?.call(safeIndex);
+            },
+            child: widget.imageUrls.isNotEmpty
+              ? Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: EdgeInsets.all(4.0),
+                  child: Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 24.0,
+                  ),
+                )
+              : Icon(
+                  Icons.cancel,
+                  color: Colors.black.withValues(alpha: 0.6),
+                  size: 40.0,
+                ),
+          ),
+        ),
+      );
+    }
+    
+    return null;
+  }
+
+  /// 액션 버튼들 빌드
+  Widget? _buildActionButtons() {
+    if (widget.imageUrls.isEmpty) return null;
+    
+    return Positioned(
+      right: 12.0,
+      bottom: 12.0,
+      child: widget.isHorizontal 
+        ? Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _buildActionButtonList(),
+          )
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: _buildActionButtonList(),
+          ),
+    );
+  }
+  
+  /// 액션 버튼 리스트 생성
+  List<Widget> _buildActionButtonList() {
+    final buttons = <Widget>[];
+    
+    // +B 아이콘 (A박스에만, B박스가 숨겨진 상태일 때)
+    if (widget.label == 'A' && widget.showPlusIcon && widget.onPlusIconTap != null) {
+      buttons.add(
+        Container(
+          margin: EdgeInsets.only(
+            bottom: widget.isHorizontal ? 8.0 : 0.0,
+            right: widget.isHorizontal ? 0.0 : 8.0,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.6),
+            shape: BoxShape.circle,
+          ),
+          child: IconButton(
+            icon: Icon(Icons.add),
+            color: Colors.white,
+            iconSize: 29.0,
+            padding: EdgeInsets.all(8.0),
+            constraints: BoxConstraints(
+              minWidth: 45.0,
+              minHeight: 45.0,
+            ),
+            onPressed: widget.onPlusIconTap!,
+          ),
+        ),
+      );
+    }
+    
+    // +이미지 아이콘
+    buttons.add(
+      Container(
+        margin: EdgeInsets.only(
+          bottom: widget.isHorizontal ? 8.0 : 0.0,
+          right: widget.isHorizontal ? 0.0 : 8.0,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.6),
+          shape: BoxShape.circle,
+        ),
+        child: IconButton(
+          icon: Icon(Icons.add_photo_alternate_outlined),
+          color: Colors.white,
+          iconSize: 29.0,
+          padding: EdgeInsets.all(8.0),
+          constraints: BoxConstraints(
+            minWidth: 45.0,
+            minHeight: 45.0,
+          ),
+          onPressed: widget.onAddImageTap ?? () {},
+        ),
+      ),
+    );
+    
+    // 편집 아이콘
+    buttons.add(
+      Container(
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.6),
+          shape: BoxShape.circle,
+        ),
+        child: IconButton(
+          icon: Icon(Icons.edit_outlined),
+          color: Colors.white,
+          iconSize: 29.0,
+          padding: EdgeInsets.all(8.0),
+          constraints: BoxConstraints(
+            minWidth: 45.0,
+            minHeight: 45.0,
+          ),
+          onPressed: widget.onEditTap ?? () {},
+        ),
+      ),
+    );
+    
+    return buttons;
+  }
+
   @override
   Widget build(BuildContext context) {
     // 동적 높이가 제공되면 사용, 아니면 기본값 사용
@@ -281,8 +452,8 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                           color: AppTheme.of(context).primaryText,
                           size: iconSize,
                         )
-                      : FaIcon(
-                          FontAwesomeIcons.image,
+                      : Icon(
+                          Icons.image,
                           color: AppTheme.of(context).primaryText,
                           size: iconSize,
                         ),
@@ -294,280 +465,30 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                   padding: EdgeInsets.all(widget.isHorizontal ? 8.0 : 10.0),
                   child: Text(
                     widget.label,
-                    style: AppTheme.of(context).bodyMedium.override(
-                          font: GoogleFonts.plusJakartaSans(
-                            fontWeight: AppTheme.of(context)
-                                .bodyMedium
-                                .fontWeight,
-                            fontStyle: AppTheme.of(context)
-                                .bodyMedium
-                                .fontStyle,
-                          ),
-                          fontSize: 50.0,
-                          letterSpacing: 0.0,
-                          color: widget.imageUrls.isNotEmpty
-                              ? Colors.white 
-                              : AppTheme.of(context).primaryText,
-                          fontWeight: AppTheme.of(context)
-                              .bodyMedium
-                              .fontWeight,
-                          fontStyle: AppTheme.of(context)
-                              .bodyMedium
-                              .fontStyle,
-                        ),
+                    style: TextStyle(
+                      fontSize: 50.0,
+                      letterSpacing: 0.0,
+                      color: widget.imageUrls.isNotEmpty
+                          ? Colors.white 
+                          : AppTheme.of(context).primaryText,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-              // 오른쪽 상단 아이콘 처리
-              // A박스 - 이미지가 있을 때 X 아이콘 (삭제)
-              if (widget.label == 'A' && widget.imageUrls.isNotEmpty && widget.onCancel != null)
-                Align(
-                  alignment: AlignmentDirectional(1.0, -1.0),
-                  child: Padding(
-                    padding: EdgeInsets.all(widget.isHorizontal ? 10.0 : 10.0),
-                    child: InkWell(
-                      splashColor: Colors.transparent,
-                      focusColor: Colors.transparent,
-                      hoverColor: Colors.transparent,
-                      highlightColor: Colors.transparent,
-                      onTap: () {
-                        final safeIndex = widget.imageUrls.isEmpty ? 0 : _currentIndex.clamp(0, widget.imageUrls.length - 1);
-                        print('${widget.label}박스 이미지 삭제 시도 - 현재 인덱스: $_currentIndex, 안전한 인덱스: $safeIndex, 전체 이미지 수: ${widget.imageUrls.length}');
-                        widget.onCancel?.call(safeIndex);
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.6),
-                          shape: BoxShape.circle,
-                        ),
-                        padding: EdgeInsets.all(4.0),
-                        child: Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 24.0,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              // + 아이콘 - A박스에서 이미지가 없을 때만 표시 (B박스 표시용)
-              if (widget.label == 'A' && widget.imageUrls.isEmpty && widget.showPlusIcon && widget.onPlusIconTap != null)
-                Align(
-                  alignment: AlignmentDirectional(1.0, -1.0),
-                  child: Padding(
-                    padding: EdgeInsets.all(widget.isHorizontal ? 10.0 : 10.0),
-                    child: InkWell(
-                      splashColor: Colors.transparent,
-                      focusColor: Colors.transparent,
-                      hoverColor: Colors.transparent,
-                      highlightColor: Colors.transparent,
-                      onTap: widget.onPlusIconTap,
-                      child: Icon(
-                        Icons.add,
-                        color: AppTheme.of(context).primaryText,
-                        size: 29.0,
-                      ),
-                    ),
-                  ),
-                ),
-              // B박스의 X 아이콘 - 이미지 유무에 따라 다른 스타일
-              if (widget.label == 'B' && widget.onCancel != null)
-                Align(
-                  alignment: AlignmentDirectional(1.0, -1.0),
-                  child: Padding(
-                    padding: EdgeInsets.all(widget.isHorizontal ? 10.0 : 10.0),
-                    child: InkWell(
-                      splashColor: Colors.transparent,
-                      focusColor: Colors.transparent,
-                      hoverColor: Colors.transparent,
-                      highlightColor: Colors.transparent,
-                      onTap: () {
-                        final safeIndex = widget.imageUrls.isEmpty ? 0 : _currentIndex.clamp(0, widget.imageUrls.length - 1);
-                        print('${widget.label}박스 이미지 삭제 시도 - 현재 인덱스: $_currentIndex, 안전한 인덱스: $safeIndex, 전체 이미지 수: ${widget.imageUrls.length}');
-                        widget.onCancel?.call(safeIndex);
-                      },
-                      child: widget.imageUrls.isNotEmpty
-                        // 이미지가 있을 때 - A박스와 동일한 스타일
-                        ? Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.6),
-                              shape: BoxShape.circle,
-                            ),
-                            padding: EdgeInsets.all(4.0),
-                            child: Icon(
-                              Icons.close,
-                              color: Colors.white,
-                              size: 24.0,
-                            ),
-                          )
-                        // 이미지가 없을 때 - 큰 X 아이콘
-                        : Icon(
-                            Icons.cancel,
-                            color: Colors.black.withValues(alpha: 0.6),
-                            size: 40.0,
-                          ),
-                    ),
-                  ),
-                ),
-              // 이미지가 있을 때 오른쪽 하단 아이콘들
-              if (widget.imageUrls.isNotEmpty)
-                Positioned(
-                  right: 12.0,
-                  bottom: 12.0,
-                  child: widget.isHorizontal 
-                    ? Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // +B 아이콘 (A박스에만, B박스가 숨겨진 상태일 때)
-                          if (widget.label == 'A' && widget.showPlusIcon && widget.onPlusIconTap != null)
-                            Container(
-                              margin: EdgeInsets.only(bottom: 8.0),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.6),
-                                shape: BoxShape.circle,
-                              ),
-                              child: IconButton(
-                                icon: Icon(Icons.add),
-                                color: Colors.white,
-                                iconSize: 29.0,
-                                padding: EdgeInsets.all(8.0),
-                                constraints: BoxConstraints(
-                                  minWidth: 45.0,
-                                  minHeight: 45.0,
-                                ),
-                                onPressed: widget.onPlusIconTap,
-                              ),
-                            ),
-                          // +이미지 아이콘
-                          Container(
-                            margin: EdgeInsets.only(bottom: 8.0),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.6),
-                              shape: BoxShape.circle,
-                            ),
-                            child: IconButton(
-                              icon: Icon(Icons.add_photo_alternate_outlined),
-                              color: Colors.white,
-                              iconSize: 29.0,
-                              padding: EdgeInsets.all(8.0),
-                              constraints: BoxConstraints(
-                                minWidth: 45.0,
-                                minHeight: 45.0,
-                              ),
-                              onPressed: widget.onAddImageTap,
-                            ),
-                          ),
-                          // 편집 아이콘
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.6),
-                              shape: BoxShape.circle,
-                            ),
-                            child: IconButton(
-                              icon: Icon(Icons.edit_outlined),
-                              color: Colors.white,
-                              iconSize: 29.0,
-                              padding: EdgeInsets.all(8.0),
-                              constraints: BoxConstraints(
-                                minWidth: 45.0,
-                                minHeight: 45.0,
-                              ),
-                              onPressed: widget.onEditTap,
-                            ),
-                          ),
-                        ],
-                      )
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // +B 아이콘 (A박스에만, B박스가 숨겨진 상태일 때)
-                      if (widget.label == 'A' && widget.showPlusIcon && widget.onPlusIconTap != null)
-                        Container(
-                          margin: EdgeInsets.only(right: 8.0),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.6),
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            icon: Icon(Icons.add),
-                            color: Colors.white,
-                            iconSize: 29.0,
-                            padding: EdgeInsets.all(8.0),
-                            constraints: BoxConstraints(
-                              minWidth: 45.0,
-                              minHeight: 45.0,
-                            ),
-                            onPressed: widget.onPlusIconTap,
-                          ),
-                        ),
-                      // +이미지 아이콘
-                      Container(
-                        margin: EdgeInsets.only(right: 8.0),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.6),
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          icon: Icon(Icons.add_photo_alternate_outlined),
-                          color: Colors.white,
-                          iconSize: 29.0,
-                          padding: EdgeInsets.all(8.0),
-                          constraints: BoxConstraints(
-                            minWidth: 45.0,
-                            minHeight: 45.0,
-                          ),
-                          onPressed: widget.onAddImageTap,
-                        ),
-                      ),
-                      // 편집 아이콘
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.6),
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          icon: Icon(Icons.edit_outlined),
-                          color: Colors.white,
-                          iconSize: 29.0,
-                          padding: EdgeInsets.all(8.0),
-                          constraints: BoxConstraints(
-                            minWidth: 45.0,
-                            minHeight: 45.0,
-                          ),
-                          onPressed: widget.onEditTap,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              // 이미지 카운터 (이미지가 2개 이상일 때만 표시)
-              if (widget.imageUrls.length > 1)
-                Positioned(
-                  left: 12,
-                  bottom: 12,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${_currentIndex + 1} / ${widget.imageUrls.length}',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
+              // 우측 상단 클로즈 버튼
+              if (_buildTopRightCloseButton() != null) _buildTopRightCloseButton()!,
+              // 액션 버튼들 (이미지가 있을 때만)
+              if (_buildActionButtons() != null) _buildActionButtons()!,
+              // 이미지 카운터
+              if (_buildImageCounter() != null) _buildImageCounter()!,
             ],
           ),
         ),
       ),
     );
     
-    // 흔들림 애니메이션이 있으면 Transform으로 감싸기
+    // 흔들림 애니메이션 적용
     if (widget.shakeAnimation != null) {
       return AnimatedBuilder(
         animation: widget.shakeAnimation!,
@@ -582,5 +503,30 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
     }
     
     return content;
+  }
+  
+  /// 이미지 카운터 빌드
+  Widget? _buildImageCounter() {
+    if (widget.imageUrls.length <= 1) return null;
+    
+    return Positioned(
+      left: 12,
+      bottom: 12,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          '${_currentIndex + 1} / ${widget.imageUrls.length}',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
   }
 }

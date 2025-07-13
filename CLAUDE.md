@@ -680,7 +680,78 @@ This project represents a sophisticated social media application with a unique "
   - 부드러운 재시도 플로우 구현
 - **커밋**: 19f868a
 
+### 2025-07-13: 대규모 코드베이스 최적화 (10단계)
+- **작업 내용**:
+  - `/lib/posts/in_put_post_image/` 디렉토리 전체 최적화 (34개 파일)
+  - 10단계에 걸친 체계적인 리팩토링 수행
+- **주요 단계**:
+  1. **메모리 누수 수정 및 인덱스 관리**
+     - PageController dispose 추가
+     - 스크롤 리스너 해제 추가
+     - 이미지 삭제 시 인덱스 범위 검증
+     - 배열 동기화 보장 (images, aspectRatios, assetIds)
+  2. **Consumer 위젯 통합 및 setState 최소화**
+     - 중복 Consumer 위젯 제거
+     - setState 호출 전 상태 변경 확인
+     - 불필요한 리빌드 방지
+  3. **BaseMediaSelectionBox 생성**
+     - 공통 로직을 mixin으로 추출
+     - 코드 재사용성 향상
+  4. **입력 필드 빌더 통합**
+     - InputFieldBuilder 헬퍼 클래스 생성
+     - 중복된 입력 필드 로직 통합
+  5. **사용하지 않는 코드/import 제거**
+     - 미사용 import 정리
+     - 백업 파일 삭제
+     - 중복 코드 제거
+  6. **디버그 코드 조건부 컴파일**
+     - DebugHelper 유틸리티 클래스 생성
+     - 태그 기반 로깅 시스템 구현
+     - 프로덕션에서 디버그 코드 자동 제외
+  7. **이미지 캐싱 최적화**
+     - ImageCacheHelper 클래스 생성
+     - 동적 메모리 캐시 크기 계산
+     - PageView 스와이프 시 이미지 프리로딩
+  8. **에러 처리 개선**
+     - ErrorHandler 유틸리티 클래스 생성
+     - 에러 타입 분류 시스템
+     - tryAsync/trySync 래퍼 구현
+     - 일관된 Toast UI
+  9. **파일명 정리 및 일관성 적용**
+     - field_decoration_helper.dart 삭제 (미사용)
+     - custom_asset_picker_delegate.dart → camera_floating_button_delegate.dart
+     - media_selection_box.dart → media_selection_box_single.dart
+     - 클래스명 일관성 개선
+  10. **상수 분리**
+      - 8개의 상수 파일로 체계적 분리:
+        - dimensions.dart (UI 치수)
+        - image_constants.dart (이미지 처리)
+        - animation_constants.dart (애니메이션)
+        - strings.dart (문자열)
+        - text_limits.dart (텍스트 제한)
+        - colors.dart (색상)
+        - config.dart (설정)
+        - constants.dart (export 파일)
+- **결과**:
+  - 코드 유지보수성 대폭 향상
+  - 성능 최적화로 앱 반응성 개선
+  - 체계적인 디렉토리 구조 확립
+  - 재사용 가능한 컴포넌트 라이브러리 구축
+- **새로운 디렉토리 구조**:
+  ```
+  lib/posts/in_put_post_image/
+  ├── components/        # 재사용 가능한 UI 컴포넌트
+  ├── constants/         # 중앙 집중식 상수 관리
+  ├── delegates/         # 커스텀 델리게이트
+  ├── helpers/          # 헬퍼 클래스 및 유틸리티
+  ├── services/         # 비즈니스 로직 서비스
+  ├── utils/            # 공통 유틸리티
+  └── widgets/          # 복합 위젯
+  ```
+
 ### 향후 개선 가능 사항
+
+#### 기존 이미지 기능 개선
 1. **애니메이션 추가**: 레이아웃 전환 시 부드러운 애니메이션
 2. **사용자 설정**: 자동 레이아웃을 끄고 수동으로 선택하는 옵션
 3. **고급 레이아웃**: 3x3, 2x2 등 더 복잡한 레이아웃 옵션
@@ -694,3 +765,51 @@ This project represents a sophisticated social media application with a unique "
    - 커스텀 필터 추가
    - 텍스트 에디터 폰트 옵션 확장
    - 스티커/이모지 라이브러리 통합
+
+#### 비디오 기능 통합 계획
+**현재 구조는 비디오 통합을 고려하여 설계됨**
+- `isVideoSelectedA/B` 상태 변수 이미 준비
+- 미디어 타입별 플로우 분기 가능한 구조
+- 컴포넌트 기반 아키텍처로 확장 용이
+
+**구현 로드맵**:
+1. **Phase 1: 미디어 타입 선택 UI (1-2일)**
+   - A박스 클릭 시 이미지/비디오 선택 바텀시트
+   - 선택 시 A/B 박스 자동 동기화
+   - 아이콘 변경 (이미지: photo, 비디오: videocam)
+
+2. **Phase 2: 비디오 선택 및 미리보기 (3-4일)**
+   - VideoSelectionFlow 위젯 생성
+   - 비디오 피커 통합 (wechat_assets_picker 활용)
+   - 비디오 썸네일 자동 생성
+   - 비디오 미리보기 UI
+
+3. **Phase 3: 비디오 업로드 (2-3일)**
+   - VideoUploadService 생성
+   - 비디오 압축 및 최적화
+   - Firebase Storage 통합
+   - 업로드 진행률 표시
+
+4. **Phase 4: 비디오 재생 (2일)**
+   - VideoPlayerWidget 구현
+   - 재생/일시정지 컨트롤
+   - 음소거/볼륨 조절
+   - 진행바 표시
+
+**예상 코드 구조**:
+```dart
+// 미디어 타입에 따른 분기
+if (model.isVideoSelectedA) {
+  // 비디오 플로우
+  VideoSelectionFlow(box: 'A')
+} else {
+  // 이미지 플로우 (현재 구현)
+  MediaSelectionFlow(box: 'A')
+}
+```
+
+**재사용 가능한 컴포넌트**:
+- ErrorHandler → 비디오 에러도 처리
+- ValidationService → 비디오 크기/길이 검증
+- MediaUploadService → 비디오 업로드 추가
+- 모든 상수 파일 → 비디오 관련 상수만 추가

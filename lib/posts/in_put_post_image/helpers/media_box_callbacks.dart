@@ -69,6 +69,13 @@ class MediaBoxCallbacks {
         appState.removeAtIndexFromAssetEntityIdsA(index);
       }
       print('삭제 후 남은 이미지 개수: ${appState.uploadImageA.length}');
+      
+      // currentIndex 조정
+      if (appState.uploadImageA.isNotEmpty) {
+        model.currentImageIndexA = model.currentImageIndexA.clamp(0, appState.uploadImageA.length - 1);
+      } else {
+        model.currentImageIndexA = 0;
+      }
     } else {
       print('삭제 실패 - 인덱스가 범위를 벗어남');
     }
@@ -82,6 +89,13 @@ class MediaBoxCallbacks {
       }
       if (index < appState.assetEntityIdsB.length) {
         appState.removeAtIndexFromAssetEntityIdsB(index);
+      }
+      
+      // currentIndex 조정
+      if (appState.uploadImageB.isNotEmpty) {
+        model.currentImageIndexB = model.currentImageIndexB.clamp(0, appState.uploadImageB.length - 1);
+      } else {
+        model.currentImageIndexB = 0;
       }
     } else {
       // B박스에 이미지가 없을 때 X 클릭 시 B박스 숨기기

@@ -798,6 +798,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
   @override
   void dispose() {
+    _model.scrollController?.removeListener(_scrollListener);
     _model.dispose();
     
     super.dispose();

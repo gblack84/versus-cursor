@@ -46,39 +46,47 @@ class ImageUploadOrchestrator {
         timeout: const Duration(seconds: 15),
       );
       
-      // 검열 결과 확인
+      // 편집된 이미지 검열 결과 저장
+      bool firstImageRejected = false;
+      String? firstImageRejectionReason;
+      
       if (editedResult['isApproved'] != true) {
-        return ImageUploadResult(
-          success: false,
-          rejectionReason: editedResult['rejectionReason'] ?? '커뮤니티 가이드라인 위반',
-        );
+        firstImageRejected = true;
+        firstImageRejectionReason = editedResult['rejectionReason'] ?? '커뮤니티 가이드라인 위반';
+        print('[ImageUploadOrchestrator] 첫 번째 이미지 검열 실패');
       }
       
       final editedDisplayUrl = editedResult['urls']['display'] as String;
       final editedAspectRatio = editedResult['aspectRatio'] as double;
       
-      // 2. 추가 모드 처리
-      if (isAddMode && currentIndex != null) {
-        // 기존 이미지들을 그대로 복사
-        if (existingImageUrls != null && existingAspectRatios != null) {
-          reorderedUrls.addAll(existingImageUrls);
-          reorderedRatios.addAll(existingAspectRatios);
+      // 2. 첫 번째 이미지가 승인된 경우에만 추가
+      if (!firstImageRejected) {
+        if (isAddMode && currentIndex != null) {
+          // 기존 이미지들을 그대로 복사
+          if (existingImageUrls != null && existingAspectRatios != null) {
+            reorderedUrls.addAll(existingImageUrls);
+            reorderedRatios.addAll(existingAspectRatios);
+          }
+          
+          // 새 이미지를 추가
+          reorderedUrls.add(editedDisplayUrl);
+          reorderedRatios.add(editedAspectRatio);
+        } else {
+          // 편집된 이미지를 맨 앞에 배치
+          reorderedUrls.add(editedDisplayUrl);
+          reorderedRatios.add(editedAspectRatio);
         }
         
-        // 새 이미지를 추가
-        reorderedUrls.add(editedDisplayUrl);
-        reorderedRatios.add(editedAspectRatio);
-      } else {
-        // 편집된 이미지를 맨 앞에 배치
-        reorderedUrls.add(editedDisplayUrl);
-        reorderedRatios.add(editedAspectRatio);
+        // 첫 번째 이미지 즉시 프리캐싱
+        await _precacheImage(editedDisplayUrl);
       }
       
-      // 첫 번째 이미지 즉시 프리캐싱
-      await _precacheImage(editedDisplayUrl);
       onProgress?.call(0.4);
       
       // 3. 나머지 이미지들 처리
+      final rejectionReasonsMap = <String, List<int>>{}; // 거부 이유별 이미지 번호
+      int rejectedCount = 0;
+      
       if (!isAddMode && existingImageUrls != null && existingImageUrls.isNotEmpty) {
         // 기존 URL 재사용 모드
         await _reuseExistingImages(
@@ -89,15 +97,79 @@ class ImageUploadOrchestrator {
           reorderedRatios: reorderedRatios,
         );
         onProgress?.call(0.8);
+        // 재사용 모드에서는 첫 번째 이미지만 검열했으므로
+        // 첫 번째 이미지가 거부되었다면 전체 거부 (시나리오 2)로 이미 처리됨
       } else {
         // 새로 업로드 모드
-        await _uploadRemainingImages(
+        final uploadResult = await _uploadRemainingImages(
           allFiles: allFiles,
           currentEditIndex: currentEditIndex,
           reorderedUrls: reorderedUrls,
           reorderedRatios: reorderedRatios,
           onProgress: onProgress,
         );
+        
+        rejectedCount = uploadResult['rejectedCount'] as int;
+        final resultRejectionMap = uploadResult['rejectionReasonsMap'] as Map<String, List<int>>;
+        
+        // 결과를 rejectionReasonsMap에 병합
+        resultRejectionMap.forEach((reason, numbers) {
+          rejectionReasonsMap.putIfAbsent(reason, () => []).addAll(numbers);
+        });
+        
+        // 첫 번째 이미지가 거부된 경우 추가
+        if (firstImageRejected) {
+          rejectedCount++;
+          rejectionReasonsMap.putIfAbsent(firstImageRejectionReason!, () => []).add(0);
+        }
+        
+        // 전체 이미지 개수와 거부된 이미지 개수 확인
+        final totalImages = allFiles.length;
+        final approvedCount = totalImages - rejectedCount;
+        
+        print('[ImageUploadOrchestrator] 전체 이미지: $totalImages, 거부: $rejectedCount, 승인: $approvedCount');
+        
+        // 시나리오 판단
+        if (approvedCount == 0) {
+          // 시나리오 2: 모든 이미지가 거부됨
+          // 거부 이유 메시지 생성
+          final messages = <String>[];
+          rejectionReasonsMap.forEach((reason, numbers) {
+            final adjustedNumbers = numbers.map((n) => n + 1).toList()..sort();
+            messages.add('$reason: ${adjustedNumbers.join(",")}');
+          });
+          
+          return ImageUploadResult(
+            success: false,
+            rejectionReason: messages.join('\n'),
+            scenarioType: 2,
+          );
+        } else if (rejectedCount > 0) {
+          // 시나리오 1: 일부 이미지만 거부됨
+          onProgress?.call(1.0);
+          
+          // AppState 업데이트 먼저 수행
+          _updateAppState(
+            reorderedUrls: reorderedUrls,
+            reorderedRatios: reorderedRatios,
+            reorderedAssetIds: reorderedAssetIds,
+          );
+          
+          // 거부 이유 메시지 생성
+          final messages = <String>[];
+          rejectionReasonsMap.forEach((reason, numbers) {
+            final adjustedNumbers = numbers.map((n) => n + 1).toList()..sort();
+            messages.add('$reason: ${adjustedNumbers.join(",")}');
+          });
+          
+          return ImageUploadResult(
+            success: true,
+            imageUrls: reorderedUrls,
+            aspectRatios: reorderedRatios,
+            assetIds: reorderedAssetIds,
+            rejectionReason: messages.join('\n'),
+          );
+        }
       }
       
       // 4. AssetEntity ID 순서 맞추기
@@ -228,7 +300,7 @@ class ImageUploadOrchestrator {
   }
 
   /// 나머지 이미지 업로드
-  Future<void> _uploadRemainingImages({
+  Future<Map<String, dynamic>> _uploadRemainingImages({
     required List<File> allFiles,
     required int currentEditIndex,
     required List<String> reorderedUrls,
@@ -251,14 +323,16 @@ class ImageUploadOrchestrator {
       // 업로드 작업을 병렬로 시작
       for (final fileBytes in allFileBytes) {
         uploadFutures.add(
-          MediaUploadService.uploadImageWithVariants(
+          MediaUploadService.uploadAndWaitForModeration(
             imageBytes: fileBytes,
             box: box,
+            timeout: const Duration(seconds: 15),
           ).catchError((e) {
             print('[ImageUploadOrchestrator] 이미지 업로드 실패 (건너뜀): $e');
             return <String, dynamic>{
               'urls': {'display': '', 'original': '', 'thumbnail': ''},
               'aspectRatio': 1.0,
+              'isApproved': true, // 에러 시 기본값
             };
           })
         );
@@ -271,22 +345,45 @@ class ImageUploadOrchestrator {
       
       // 결과 처리 및 프리캐싱
       final precacheFutures = <Future<void>>[];
+      int imageIndex = 1; // 편집된 이미지가 0번이므로 1부터 시작
+      int rejectedCount = 0; // 거부된 이미지 개수 추적
+      final rejectionReasonsMap = <String, List<int>>{}; // 거부 이유별 이미지 번호
+      
       for (final result in results) {
-        final displayUrl = result['urls']['display'];
-        if (displayUrl != null && displayUrl.isNotEmpty) {
-          reorderedUrls.add(displayUrl);
-          reorderedRatios.add(result['aspectRatio']);
-          
-          // 백그라운드 프리캐싱
-          precacheFutures.add(_precacheImage(displayUrl));
+        // 검열 결과 확인
+        if (result['isApproved'] == true) {
+          final displayUrl = result['urls']['display'];
+          if (displayUrl != null && displayUrl.isNotEmpty) {
+            reorderedUrls.add(displayUrl);
+            reorderedRatios.add(result['aspectRatio']);
+            
+            // 백그라운드 프리캐싱
+            precacheFutures.add(_precacheImage(displayUrl));
+          }
+        } else {
+          print('[ImageUploadOrchestrator] ${imageIndex}번째 이미지 검열 실패');
+          rejectedCount++;
+          final reason = result['rejectionReason'] ?? '커뮤니티 가이드라인 위반';
+          rejectionReasonsMap.putIfAbsent(reason, () => []).add(imageIndex);
         }
+        imageIndex++;
       }
       
       // 나머지 이미지들은 백그라운드에서 계속 프리캐싱
       Future.wait(precacheFutures).then((_) {
         print('모든 이미지 프리캐싱 완료');
       });
+      
+      return {
+        'rejectedCount': rejectedCount,
+        'rejectionReasonsMap': rejectionReasonsMap,
+      };
     }
+    
+    return {
+      'rejectedCount': 0,
+      'rejectionReasonsMap': <String, List<int>>{},
+    };
   }
 
   /// AssetEntity ID 재정렬
@@ -347,6 +444,7 @@ class ImageUploadResult {
   final List<String>? assetIds;
   final String? rejectionReason;
   final String? error;
+  final int? scenarioType; // 1: 일부 거부, 2: 모든 거부
 
   ImageUploadResult({
     required this.success,
@@ -355,5 +453,6 @@ class ImageUploadResult {
     this.assetIds,
     this.rejectionReason,
     this.error,
+    this.scenarioType,
   });
 }

@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '/core/app_theme.dart';
+import '../utils/debug_helper.dart';
 
 /// MediaSelectionBox의 기본 추상 클래스
 abstract class BaseMediaSelectionBox extends StatefulWidget {
@@ -220,8 +221,8 @@ mixin MediaSelectionBoxMixin<T extends BaseMediaSelectionBox> on State<T> {
       fadeOutDuration: const Duration(milliseconds: 150),
       errorWidget: (context, url, error) {
         if (!mounted) return const SizedBox.shrink();
-        print('이미지 로드 에러: $error');
-        print('문제 URL: $url');
+        DebugHelper.logError('이미지 로드 에러', error);
+        DebugHelper.logError('문제 URL: $url');
         return Icon(
           Icons.error,
           color: AppTheme.of(context).error,

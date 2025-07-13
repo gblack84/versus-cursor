@@ -4,7 +4,6 @@ import '/core/app_utils.dart';
 import '/utils/content_filter.dart';
 import '/pages/image_viewer/image_viewer_page.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -26,6 +25,7 @@ import 'components/warning_message.dart';
 import 'services/validation_service.dart';
 import 'helpers/input_field_builder.dart';
 import 'widgets/media_selection_flow_widget.dart';
+import 'utils/debug_helper.dart';
 
 class InPutPostImageWidget extends StatefulWidget {
   const InPutPostImageWidget({super.key});
@@ -137,17 +137,17 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     
     final appState = Provider.of<AppState>(context, listen: false);
     
-    if (!kReleaseMode) {
-      print('=== 스마트 레이아웃 업데이트 시작 ===');
-      print('A 이미지 개수: ${appState.uploadImageA.length}');
-      print('B 이미지 개수: ${appState.uploadImageB.length}');
-      print('A 비율 정보 개수: ${appState.uploadImageAspectRatioA.length}');
-      print('B 비율 정보 개수: ${appState.uploadImageAspectRatioB.length}');
-    }
+    DebugHelper.runInDebug(() {
+      DebugHelper.logLayout('=== 스마트 레이아웃 업데이트 시작 ===');
+      DebugHelper.logLayout('A 이미지 개수: ${appState.uploadImageA.length}');
+      DebugHelper.logLayout('B 이미지 개수: ${appState.uploadImageB.length}');
+      DebugHelper.logLayout('A 비율 정보 개수: ${appState.uploadImageAspectRatioA.length}');
+      DebugHelper.logLayout('B 비율 정보 개수: ${appState.uploadImageAspectRatioB.length}');
+    });
     
     // 이미지가 하나도 없으면 기본 레이아웃(horizontal)으로 초기화
     if (appState.uploadImageA.isEmpty && appState.uploadImageB.isEmpty) {
-      if (!kReleaseMode) print('이미지가 없어 기본 레이아웃(horizontal)으로 초기화');
+      DebugHelper.logLayout('이미지가 없어 기본 레이아웃(horizontal)으로 초기화');
       if (_model.currentLayout != LayoutType.horizontal) {
         // mounted 체크 추가
         if (mounted) {
@@ -167,17 +167,17 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     
     if (appState.uploadImageAspectRatioA.isNotEmpty) {
       ratioA = appState.uploadImageAspectRatioA.first;
-      if (!kReleaseMode) print('A 이미지 비율: $ratioA');
+      DebugHelper.logLayout('A 이미지 비율: $ratioA');
     }
     
     if (appState.uploadImageAspectRatioB.isNotEmpty) {
       ratioB = appState.uploadImageAspectRatioB.first;
-      if (!kReleaseMode) print('B 이미지 비율: $ratioB');
+      DebugHelper.logLayout('B 이미지 비율: $ratioB');
     }
     
     // 스마트 레이아웃 결정
     final optimalLayout = AspectRatioAnalyzer.getOptimalLayout(ratioA, ratioB);
-    if (!kReleaseMode) print('결정된 레이아웃: ${AspectRatioAnalyzer.getLayoutDescription(optimalLayout)}');
+    DebugHelper.logLayout('결정된 레이아웃: ${AspectRatioAnalyzer.getLayoutDescription(optimalLayout)}');
     
     // 레이아웃이 변경된 경우에만 업데이트
     if (_model.currentLayout != optimalLayout) {
@@ -193,20 +193,20 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
             // 세로 배치 = 이미지가 위/아래로 배치
             _model.isRatioVertical = false;
             _model.isRatioHorizontal = true;
-            if (!kReleaseMode) print('세로 배치(위/아래)로 변경');
+            DebugHelper.logLayout('세로 배치(위/아래)로 변경');
           } else {
             // 가로 배치 = 이미지가 좌/우로 배치
             _model.isRatioVertical = true;
             _model.isRatioHorizontal = false;
-            if (!kReleaseMode) print('가로 배치(좌/우)로 변경');
+            DebugHelper.logLayout('가로 배치(좌/우)로 변경');
           }
         });
       }
     } else {
-      if (!kReleaseMode) print('레이아웃 변경 없음');
+      DebugHelper.logLayout('레이아웃 변경 없음');
     }
     
-    if (!kReleaseMode) print('=== 스마트 레이아웃 업데이트 완료 ===');
+    DebugHelper.logLayout('=== 스마트 레이아웃 업데이트 완료 ===');
   }
 
   /// 필수 필드가 모두 채워졌는지 확인
@@ -324,7 +324,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       }
 
     } catch (e) {
-      if (!kReleaseMode) print('텍스트 검증 오류: $e');
+      DebugHelper.logError('텍스트 검증 오류', e);
       _showSnackBar('텍스트 검증 중 오류가 발생했습니다.');
     } finally {
       setState(() {
@@ -382,14 +382,14 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
             : appState.uploadImageAspectRatioB,
           onComplete: (imageUrl) {
             // 검열 통과 후 호출됨
-            if (!kReleaseMode) print('검열 통과 및 업로드 완료: $imageUrl');
+            DebugHelper.logModeration('검열 통과 및 업로드 완료: $imageUrl');
             
             // 스마트 레이아웃 업데이트 (단일 이미지도 처리)
             _updateLayoutBasedOnImages();
           },
           onMultiComplete: (imageUrls) {
             // 검열 통과 후 호출됨
-            if (!kReleaseMode) print('검열 통과 및 업로드 완료: ${imageUrls.length}개');
+            DebugHelper.logModeration('검열 통과 및 업로드 완료: ${imageUrls.length}개');
             
             // 스마트 레이아웃 업데이트
             _updateLayoutBasedOnImages();
@@ -508,7 +508,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       );
 
     } catch (e) {
-      if (!kReleaseMode) print('Firestore 저장 오류: $e');
+      DebugHelper.logFirebase('Firestore 저장 오류: $e');
       _showSnackBar('저장 중 오류가 발생했습니다: ${e.toString()}');
       setState(() {
         _model.isValidating = false;
@@ -567,11 +567,13 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       aspectRatioB: (appState.uploadImageA.isEmpty && appState.uploadImageB.isEmpty) ? null : aspectRatioB,
     );
     
-    if (!kReleaseMode && appState.uploadImageA.isEmpty && appState.uploadImageB.isEmpty) {
-      print('대기 상태 박스 크기: ${unifiedSize.height}px, 레이아웃: ${_model.currentLayout}');
-    } else if (!kReleaseMode) {
-      print('이미지 있는 상태 박스 크기: ${unifiedSize.height}px');
-    }
+    DebugHelper.runInDebug(() {
+      if (appState.uploadImageA.isEmpty && appState.uploadImageB.isEmpty) {
+        DebugHelper.logLayout('대기 상태 박스 크기: ${unifiedSize.height}px, 레이아웃: ${_model.currentLayout}');
+      } else {
+        DebugHelper.logLayout('이미지 있는 상태 박스 크기: ${unifiedSize.height}px');
+      }
+    });
     
     return (unifiedSize, unifiedSize);
   }

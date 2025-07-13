@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '/core/app_theme.dart';
+import '../utils/debug_helper.dart';
 
 class MediaSelectionBoxMulti extends StatefulWidget {
   final String label; // 'A' or 'B'
@@ -109,12 +110,12 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
     
     // 이미지 개수가 변경되었을 때
     if (widget.imageUrls.length != oldWidget.imageUrls.length) {
-      print('${widget.label}박스 이미지 개수 변경: ${oldWidget.imageUrls.length} → ${widget.imageUrls.length}');
+      DebugHelper.logImageSelection('${widget.label}박스 이미지 개수 변경: ${oldWidget.imageUrls.length} → ${widget.imageUrls.length}');
       
       // 현재 인덱스가 범위를 벗어나면 조정
       if (_currentIndex >= widget.imageUrls.length && widget.imageUrls.isNotEmpty) {
         _currentIndex = widget.imageUrls.length - 1;
-        print('${widget.label}박스 인덱스 조정: $_currentIndex');
+        DebugHelper.logImageSelection('${widget.label}박스 인덱스 조정: $_currentIndex');
         // PageController가 attach 상태인지 확인
         if (_pageController.hasClients) {
           _pageController.jumpToPage(_currentIndex);
@@ -146,8 +147,8 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
       fadeInDuration: const Duration(milliseconds: 150),
       fadeOutDuration: const Duration(milliseconds: 150),
       errorWidget: (context, url, error) {
-        print('이미지 로드 에러: $error');
-        print('문제 URL: $url');
+        DebugHelper.logError('이미지 로드 에러', error);
+        DebugHelper.logError('문제 URL: $url');
         return Icon(
           Icons.error,
           color: AppTheme.of(context).error,
@@ -171,7 +172,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
             highlightColor: Colors.transparent,
             onTap: () {
               final safeIndex = widget.imageUrls.isEmpty ? 0 : _currentIndex.clamp(0, widget.imageUrls.length - 1);
-              print('${widget.label}박스 이미지 삭제 시도 - 현재 인덱스: $_currentIndex, 안전한 인덱스: $safeIndex, 전체 이미지 수: ${widget.imageUrls.length}');
+              DebugHelper.logImageSelection('${widget.label}박스 이미지 삭제 시도 - 현재 인덱스: $_currentIndex, 안전한 인덱스: $safeIndex, 전체 이미지 수: ${widget.imageUrls.length}');
               widget.onCancel?.call(safeIndex);
             },
             child: Container(
@@ -204,7 +205,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
             highlightColor: Colors.transparent,
             onTap: () {
               final safeIndex = widget.imageUrls.isEmpty ? 0 : _currentIndex.clamp(0, widget.imageUrls.length - 1);
-              print('${widget.label}박스 이미지 삭제 시도 - 현재 인덱스: $_currentIndex, 안전한 인덱스: $safeIndex, 전체 이미지 수: ${widget.imageUrls.length}');
+              DebugHelper.logImageSelection('${widget.label}박스 이미지 삭제 시도 - 현재 인덱스: $_currentIndex, 안전한 인덱스: $safeIndex, 전체 이미지 수: ${widget.imageUrls.length}');
               widget.onCancel?.call(safeIndex);
             },
             child: widget.imageUrls.isNotEmpty
@@ -339,9 +340,11 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
         ? (widget.isHorizontal ? 350.0 : 250.0)
         : (widget.isHorizontal ? 350.0 : 200.0));
     
-    if (widget.dynamicHeight != null) {
-      print('${widget.label}박스: dynamicHeight=${widget.dynamicHeight}, isHorizontal=${widget.isHorizontal}');
-    }
+    DebugHelper.runInDebug(() {
+      if (widget.dynamicHeight != null) {
+        DebugHelper.logLayout('${widget.label}박스: dynamicHeight=${widget.dynamicHeight}, isHorizontal=${widget.isHorizontal}');
+      }
+    });
     
     // 박스 높이에 비례한 동적 아이콘 크기 계산
     // 가로형일 때는 45%, 세로형일 때는 40%
@@ -380,7 +383,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                           physics: const PageScrollPhysics(),
                           allowImplicitScrolling: true, // 인접 페이지 프리로딩
                           onPageChanged: (index) {
-                            print('${widget.label}박스 PageView 페이지 변경: $index');
+                            DebugHelper.logImageSelection('${widget.label}박스 PageView 페이지 변경: $index');
                             setState(() {
                               _currentIndex = index;
                             });

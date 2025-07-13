@@ -66,8 +66,8 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: isError 
-            ? Colors.red.shade700.withOpacity(0.9) 
-            : Colors.black.withOpacity(0.8),
+            ? Colors.red.shade700.withValues(alpha: 0.9) 
+            : Colors.black.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(

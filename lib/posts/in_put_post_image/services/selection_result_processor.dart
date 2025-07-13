@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '/app_state.dart';
@@ -131,14 +129,19 @@ class SelectionResultProcessor {
         onProgressUpdate(0.3 + (0.6 * (i + 1) / newAssets.length));
         
         Map<String, dynamic> result;
-        String? newImageUrl;
         try {
-          result = await MediaUploadService.uploadImageWithVariants(
+          result = await MediaUploadService.uploadAndWaitForModeration(
             imageBytes: bytes,
             box: box,
-            onModerationStatusUpdate: (status) => _handleModerationStatusUpdate(status, newImageUrl),
-            onRejected: (reason) => _handleModerationRejected(reason, newImageUrl),
+            timeout: const Duration(seconds: 15),
           );
+          
+          // 검열 결과 확인
+          if (result['isApproved'] != true) {
+            // 검열 실패한 이미지는 건너뛰기
+            print('[SelectionProcessor] 이미지 검열 실패: ${result['rejectionReason']}');
+            continue;
+          }
         } catch (e) {
           // 업로드 실패 시
           if (context.mounted) {
@@ -154,7 +157,6 @@ class SelectionResultProcessor {
         
         final displayUrl = result['urls']['display'];
         final aspectRatio = result['aspectRatio'];
-        newImageUrl = displayUrl;
         
         // AppState에 추가
         appState.update(() {
@@ -174,57 +176,6 @@ class SelectionResultProcessor {
           print('프리캐싱 실패 (무시됨): $e');
         });
       }
-    }
-  }
-
-  /// 검열 상태 업데이트 처리
-  void _handleModerationStatusUpdate(String status, String? imageUrl) {
-    print('[MediaSelection] 추가 이미지 검열 상태 업데이트: $status');
-    if (imageUrl != null && context.mounted) {
-      appState.updateImageModerationStatus(
-        imageUrl,
-        status,
-        isBoxA: box == 'A',
-      );
-    }
-  }
-
-  /// 검열 거부 처리
-  void _handleModerationRejected(String reason, String? imageUrl) {
-    print('[MediaSelection] 추가 이미지 거부됨: $reason');
-    if (imageUrl != null && context.mounted) {
-      // 거부된 이미지 제거
-      if (box == 'A') {
-        final imageIndex = appState.uploadImageA.indexOf(imageUrl);
-        if (imageIndex >= 0) {
-          appState.removeFromUploadImageA(imageUrl);
-          if (imageIndex < appState.uploadImageAspectRatioA.length) {
-            appState.removeAtIndexFromUploadImageAspectRatioA(imageIndex);
-          }
-          if (imageIndex < appState.assetEntityIdsA.length) {
-            appState.removeAtIndexFromAssetEntityIdsA(imageIndex);
-          }
-        }
-      } else {
-        final imageIndex = appState.uploadImageB.indexOf(imageUrl);
-        if (imageIndex >= 0) {
-          appState.removeFromUploadImageB(imageUrl);
-          if (imageIndex < appState.uploadImageAspectRatioB.length) {
-            appState.removeAtIndexFromUploadImageAspectRatioB(imageIndex);
-          }
-          if (imageIndex < appState.assetEntityIdsB.length) {
-            appState.removeAtIndexFromAssetEntityIdsB(imageIndex);
-          }
-        }
-      }
-      
-      // 스낵바 표시
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(reason),
-          backgroundColor: AppTheme.of(context).error,
-        ),
-      );
     }
   }
 }

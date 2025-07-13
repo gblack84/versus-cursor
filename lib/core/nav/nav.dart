@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:bot_toast/bot_toast.dart';
 
 import '/auth/base_auth_user_provider.dart';
 
@@ -204,7 +205,7 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           ),
         )
       ].map((r) => r.toRoute(appStateNotifier)).toList(),
-      observers: [routeObserver],
+      observers: [routeObserver, BotToastNavigatorObserver()],
     );
 
 extension NavParamExtensions on Map<String, String?> {

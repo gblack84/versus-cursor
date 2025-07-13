@@ -15,8 +15,8 @@ class MediaUploadService {
     required Uint8List imageBytes,
     required String box,
     String? customPath,
-    Function(String)? onModerationStatusUpdate,
-    Function(String)? onRejected,
+    Function(String)? onModerationStatusUpdate, // deprecated - use uploadAndWaitForModeration
+    Function(String)? onRejected, // deprecated - use uploadAndWaitForModeration
   }) async {
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -113,21 +113,7 @@ class MediaUploadService {
         'filePath': '$basePath/${timestamp}_${box}_original.jpg',
       };
       
-      // 백그라운드에서 검열 상태 모니터링 시작
-      if (onModerationStatusUpdate != null || onRejected != null) {
-        print('[MediaUpload] 검열 모니터링 시작');
-        print('[MediaUpload] filePath: ${uploadResult['filePath']}');
-        print('[MediaUpload] onModerationStatusUpdate 전달됨: ${onModerationStatusUpdate != null}');
-        print('[MediaUpload] onRejected 전달됨: ${onRejected != null}');
-        _startModerationMonitoring(
-          filePath: uploadResult['filePath'] as String,
-          storageRef: FirebaseStorage.instance.ref('$basePath/${timestamp}_${box}_original.jpg'),
-          onStatusUpdate: onModerationStatusUpdate,
-          onRejected: onRejected,
-        );
-      } else {
-        print('[MediaUpload] 검열 모니터링 건너뜀 (콜백 없음)');
-      }
+      // 백그라운드 검열 모니터링 제거됨 - uploadAndWaitForModeration 사용
       
       return uploadResult;
     } catch (e) {
@@ -233,68 +219,5 @@ class MediaUploadService {
           ? CloudImageModerationService.getRejectionReason(moderation)
           : null,
     };
-  }
-  
-  /// 백그라운드에서 검열 상태를 모니터링하고 거부 시 자동 삭제
-  static void _startModerationMonitoring({
-    required String filePath,
-    required Reference storageRef,
-    Function(String)? onStatusUpdate,
-    Function(String)? onRejected,
-  }) {
-    // 검열 상태를 실시간으로 감시
-    CloudImageModerationService.watchModerationStatus(filePath).listen(
-      (moderation) async {
-        if (moderation == null) {
-          onStatusUpdate?.call('pending');
-          return;
-        }
-        
-        // 상태 업데이트 콜백
-        print('[MediaUpload] 검열 상태 변경: ${moderation.moderationStatus}');
-        print('[MediaUpload] onStatusUpdate 콜백 존재: ${onStatusUpdate != null}');
-        onStatusUpdate?.call(moderation.moderationStatus);
-        
-        // 거부된 경우 처리
-        if (moderation.moderationStatus == 'rejected') {
-          print('[MediaUpload] 이미지 거부 감지: $filePath');
-          print('[MediaUpload] onRejected 콜백 존재: ${onRejected != null}');
-          
-          try {
-            // Storage에서 이미지 삭제 (원본, display, thumbnail 모두)
-            final basePath = storageRef.fullPath.replaceAll('_original.jpg', '');
-            final futures = <Future>[];
-            
-            // 원본 삭제
-            futures.add(storageRef.delete().catchError((_) {}));
-            
-            // display 버전 삭제
-            final displayRef = FirebaseStorage.instance.ref('${basePath}_display.jpg');
-            futures.add(displayRef.delete().catchError((_) {}));
-            
-            // thumbnail 버전 삭제
-            final thumbRef = FirebaseStorage.instance.ref('${basePath}_thumb.jpg');
-            futures.add(thumbRef.delete().catchError((_) {}));
-            
-            await Future.wait(futures);
-            
-            // 거부 콜백 호출
-            final reason = CloudImageModerationService.getRejectionReason(moderation);
-            print('[MediaUpload] 거부 이유: $reason');
-            print('[MediaUpload] onRejected 콜백 호출 시작');
-            onRejected?.call(reason);
-            print('[MediaUpload] onRejected 콜백 호출 완료');
-            
-            print('거부된 이미지 삭제 완료: $filePath');
-          } catch (e) {
-            print('거부된 이미지 삭제 중 오류: $e');
-          }
-        }
-      },
-      onError: (error) {
-        print('검열 상태 모니터링 오류: $error');
-        onStatusUpdate?.call('error');
-      },
-    );
   }
 }

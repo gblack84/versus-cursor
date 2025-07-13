@@ -45,8 +45,10 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
   
-  // Consumer 최적화를 위한 이전 이미지 수 추적
+  // Consumer 최적화를 위한 이전 상태 추적
   int _lastImageCount = 0;
+  double? _lastAspectRatioA;
+  double? _lastAspectRatioB;
   
 
   // 상수 정의
@@ -76,11 +78,12 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     // 초기 레이아웃 설정 - 비율 정보가 있을 때만
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final appState = Provider.of<AppState>(context, listen: false);
-      // 초기 이미지 수 설정
+      // 초기 상태 설정
       _lastImageCount = appState.uploadImageA.length + appState.uploadImageB.length;
+      _lastAspectRatioA = appState.uploadImageAspectRatioA.isNotEmpty ? appState.uploadImageAspectRatioA.first : null;
+      _lastAspectRatioB = appState.uploadImageAspectRatioB.isNotEmpty ? appState.uploadImageAspectRatioB.first : null;
       
-      if (appState.uploadImageAspectRatioA.isNotEmpty || 
-          appState.uploadImageAspectRatioB.isNotEmpty) {
+      if (_lastAspectRatioA != null || _lastAspectRatioB != null) {
         _updateLayoutBasedOnImages();
       }
     });
@@ -117,12 +120,17 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   }
 
   void _scrollListener() {
+    if (!mounted) return;
+    
     final isNearBottom = _model.scrollController!.position.pixels >=
         _model.scrollController!.position.maxScrollExtent - _scrollThreshold;
     
-    if (isNearBottom != _model.showNextButton) {
+    // 필수 필드가 채워져 있을 때만 스크롤에 따라 버튼 표시
+    final shouldShow = isNearBottom || _areRequiredFieldsFilled();
+    
+    if (shouldShow != _model.showNextButton) {
       setState(() {
-        _model.showNextButton = isNearBottom;
+        _model.showNextButton = shouldShow;
       });
     }
   }
@@ -226,9 +234,10 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
             onChanged: (value) {
               // 텍스트가 비어있으면 에러 초기화
               if (value.trim().isEmpty) {
-                if (_model.isQuestionTitleEmpty || 
+                final needsUpdate = _model.isQuestionTitleEmpty || 
                     _model.validationResults.containsKey('questionTitle') || 
-                    _model.hasBlockedWordInTitle) {
+                    _model.hasBlockedWordInTitle;
+                if (needsUpdate) {
                   setState(() {
                     _model.isQuestionTitleEmpty = false;
                     _model.validationResults.remove('questionTitle');
@@ -247,9 +256,11 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                 () {
                   final result = ContentFilter.filterText(value);
                   if (_model.hasBlockedWordInTitle != result.isBlocked) {
-                    setState(() {
-                      _model.hasBlockedWordInTitle = result.isBlocked;
-                    });
+                    if (mounted) {
+                      setState(() {
+                        _model.hasBlockedWordInTitle = result.isBlocked;
+                      });
+                    }
                   }
                 },
               );
@@ -305,9 +316,10 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
   /// 필수 필드 체크 및 버튼 표시 업데이트
   void _checkRequiredFieldsAndUpdateButton() {
-    if (_areRequiredFieldsFilled() && !_model.showNextButton) {
+    final shouldShowButton = _areRequiredFieldsFilled();
+    if (shouldShowButton != _model.showNextButton) {
       setState(() {
-        _model.showNextButton = true;
+        _model.showNextButton = shouldShowButton;
       });
     }
   }
@@ -328,23 +340,33 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         bTitle: _model.textController4?.text,
       );
 
-      setState(() {
-        // 빈 필드 상태 업데이트
-        _model.isQuestionTitleEmpty = result.emptyResult.isQuestionTitleEmpty;
-        _model.isATitleEmpty = result.emptyResult.isATitleEmpty;
-        _model.isBTitleEmpty = result.emptyResult.isBTitleEmpty;
+      // 상태 변경이 필요한지 확인
+      final needsUpdate = 
+          _model.isQuestionTitleEmpty != result.emptyResult.isQuestionTitleEmpty ||
+          _model.isATitleEmpty != result.emptyResult.isATitleEmpty ||
+          _model.isBTitleEmpty != result.emptyResult.isBTitleEmpty ||
+          _model.validationResults != result.validationResults ||
+          _model.hasValidationViolations != (!result.isValid && result.violations.isNotEmpty);
+      
+      if (needsUpdate) {
+        setState(() {
+          // 빈 필드 상태 업데이트
+          _model.isQuestionTitleEmpty = result.emptyResult.isQuestionTitleEmpty;
+          _model.isATitleEmpty = result.emptyResult.isATitleEmpty;
+          _model.isBTitleEmpty = result.emptyResult.isBTitleEmpty;
 
-        // 검증 결과 업데이트
-        _model.validationResults = result.validationResults;
-        _model.hasValidationViolations = !result.isValid && result.violations.isNotEmpty;
-        
-        // 검증 통과 시 비어있음 에러 상태 초기화
-        if (result.isValid) {
-          _model.isQuestionTitleEmpty = false;
-          _model.isATitleEmpty = false;
-          _model.isBTitleEmpty = false;
-        }
-      });
+          // 검증 결과 업데이트
+          _model.validationResults = result.validationResults;
+          _model.hasValidationViolations = !result.isValid && result.violations.isNotEmpty;
+          
+          // 검증 통과 시 비어있음 에러 상태 초기화
+          if (result.isValid) {
+            _model.isQuestionTitleEmpty = false;
+            _model.isATitleEmpty = false;
+            _model.isBTitleEmpty = false;
+          }
+        });
+      }
 
       if (result.errorMessage != null) {
         _showSnackBar(result.errorMessage!);
@@ -576,35 +598,10 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
             decoration: BoxDecoration(
               color: AppTheme.of(context).secondaryBackground,
             ),
-            child: Consumer<AppState>(
-              builder: (context, appState, child) {
-                final aspectRatioA = appState.uploadImageA.isNotEmpty && appState.uploadImageAspectRatioA.isNotEmpty 
-                    ? appState.uploadImageAspectRatioA.first 
-                    : null;
-                final aspectRatioB = appState.uploadImageB.isNotEmpty && appState.uploadImageAspectRatioB.isNotEmpty 
-                    ? appState.uploadImageAspectRatioB.first 
-                    : null;
-                
-                final boxSizes = _calculateBoxSizes(aspectRatioA, aspectRatioB, appState);
-                
-                return _buildMediaLayoutContent(
-                  isAbsellected: _model.absellected,
-                  boxSizeA: boxSizes.$1,
-                  boxSizeB: boxSizes.$2,
-                  appState: appState,
-                );
-              },
-            ),
+            child: _buildMediaBoxes(),
           ),
         ),
-        Consumer<AppState>(
-          builder: (context, appState, _) {
-            if (appState.uploadImageA.isEmpty && appState.uploadImageB.isNotEmpty) {
-              return WarningMessage(message: 'A 먼저 이미지를 추가해주세요');
-            }
-            return SizedBox.shrink();
-          },
-        ),
+        _buildWarningMessage(),
       ],
     );
   }
@@ -704,6 +701,58 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           },
         ),
       ),
+    );
+  }
+
+  /// Consumer 위젯 통합 - 미디어 박스 빌드
+  Widget _buildMediaBoxes() {
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        // 이미지 수와 비율 변경 감지
+        final currentImageCount = appState.uploadImageA.length + appState.uploadImageB.length;
+        final currentAspectRatioA = appState.uploadImageA.isNotEmpty && appState.uploadImageAspectRatioA.isNotEmpty 
+            ? appState.uploadImageAspectRatioA.first 
+            : null;
+        final currentAspectRatioB = appState.uploadImageB.isNotEmpty && appState.uploadImageAspectRatioB.isNotEmpty 
+            ? appState.uploadImageAspectRatioB.first 
+            : null;
+        
+        // 상태가 변경되었을 때만 레이아웃 업데이트
+        if (_lastImageCount != currentImageCount || 
+            _lastAspectRatioA != currentAspectRatioA || 
+            _lastAspectRatioB != currentAspectRatioB) {
+          _lastImageCount = currentImageCount;
+          _lastAspectRatioA = currentAspectRatioA;
+          _lastAspectRatioB = currentAspectRatioB;
+          
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _updateLayoutBasedOnImages();
+            }
+          });
+        }
+        
+        final boxSizes = _calculateBoxSizes(currentAspectRatioA, currentAspectRatioB, appState);
+        
+        return _buildMediaLayoutContent(
+          isAbsellected: _model.absellected,
+          boxSizeA: boxSizes.$1,
+          boxSizeB: boxSizes.$2,
+          appState: appState,
+        );
+      },
+    );
+  }
+
+  /// Consumer 위젯 통합 - 경고 메시지
+  Widget _buildWarningMessage() {
+    return Consumer<AppState>(
+      builder: (context, appState, _) {
+        if (appState.uploadImageA.isEmpty && appState.uploadImageB.isNotEmpty) {
+          return WarningMessage(message: 'A 먼저 이미지를 추가해주세요');
+        }
+        return SizedBox.shrink();
+      },
     );
   }
 
@@ -924,6 +973,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       openAssetsPicker: _openAssetsPicker,
       showSnackBar: () => _showSnackBar('이미지가 수정되었습니다.'),
       updateLayout: _updateLayoutBasedOnImages,
+      setState: setState,
     );
     
     return MediaSelectionBoxMulti(
@@ -986,25 +1036,6 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           ),
           child: Stack(
             children: [
-              // AppState의 이미지 리스트 변경 감지
-              Consumer<AppState>(
-                builder: (context, appState, _) {
-                  // 현재 전체 이미지 수 계산
-                  final currentImageCount = appState.uploadImageA.length + appState.uploadImageB.length;
-                  
-                  // 이미지 수가 실제로 변경되었을 때만 레이아웃 업데이트
-                  if (_lastImageCount != currentImageCount) {
-                    _lastImageCount = currentImageCount;
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) {
-                        _updateLayoutBasedOnImages();
-                      }
-                    });
-                  }
-                  
-                  return SizedBox.shrink(); // 보이지 않는 위젯
-                },
-              ),
               SingleChildScrollView(
                 controller: _model.scrollController,
                 primary: false,

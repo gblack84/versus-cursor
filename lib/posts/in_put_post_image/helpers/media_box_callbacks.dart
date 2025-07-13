@@ -11,6 +11,7 @@ class MediaBoxCallbacks {
   final Function(BuildContext, String, {bool isAddMode, int? currentIndex}) openAssetsPicker;
   final VoidCallback showSnackBar;
   final VoidCallback updateLayout;
+  final void Function(VoidCallback) setState;
 
   MediaBoxCallbacks({
     required this.context,
@@ -19,13 +20,16 @@ class MediaBoxCallbacks {
     required this.openAssetsPicker,
     required this.showSnackBar,
     required this.updateLayout,
+    required this.setState,
   });
 
   AppState get appState => Provider.of<AppState>(context, listen: false);
 
   /// 박스 표시 토글
   void toggleBoxVisibility() {
-    model.absellected = false;
+    setState(() {
+      model.absellected = false;
+    });
   }
 
   /// 이미지 추가 처리
@@ -40,20 +44,24 @@ class MediaBoxCallbacks {
 
   /// 현재 인덱스 업데이트
   void updateCurrentIndex(String box, int index) {
-    if (box == 'A') {
-      model.currentImageIndexA = index;
-    } else {
-      model.currentImageIndexB = index;
-    }
+    setState(() {
+      if (box == 'A') {
+        model.currentImageIndexA = index;
+      } else {
+        model.currentImageIndexB = index;
+      }
+    });
   }
 
   /// 이미지 삭제 처리 (단순화)
   void deleteImage(String box, int index) {
-    if (box == 'A') {
-      _deleteFromA(index);
-    } else {
-      _deleteFromB(index);
-    }
+    setState(() {
+      if (box == 'A') {
+        _deleteFromA(index);
+      } else {
+        _deleteFromB(index);
+      }
+    });
     updateLayout();
   }
 
@@ -99,7 +107,9 @@ class MediaBoxCallbacks {
       }
     } else {
       // B박스에 이미지가 없을 때 X 클릭 시 B박스 숨기기
-      model.absellected = true;
+      setState(() {
+        model.absellected = true;
+      });
     }
   }
 }

@@ -44,6 +44,12 @@
       "languageVersion": "3.1"
     },
     {
+      "name": "bot_toast",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/bot_toast-4.1.3",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "cached_network_image",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/cached_network_image-3.4.1",
       "packageUri": "lib/",
@@ -789,7 +795,7 @@
     },
     {
       "name": "pro_image_editor",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/pro_image_editor-10.2.2",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/pro_image_editor-10.3.2",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },

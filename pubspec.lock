@@ -57,6 +57,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
+  bot_toast:
+    dependency: "direct main"
+    description:
+      name: bot_toast
+      sha256: "6b93030a99a98335b8827ecd83021e92e885ffc61d261d3825ffdecdd17f3bdf"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.1.3"
   cached_network_image:
     dependency: "direct main"
     description:
@@ -1041,10 +1049,10 @@ packages:
     dependency: "direct main"
     description:
       name: pro_image_editor
-      sha256: ccb87cee58659181336e96194599a88b9542de59a37ded2fdd65d5339f3d1423
+      sha256: cb2f82f0743d0f772078a6b8e7d2484b8761f249e58d9b7bf2287328fdb9c39f
       url: "https://pub.dev"
     source: hosted
-    version: "10.2.2"
+    version: "10.3.2"
   pro_video_editor:
     dependency: "direct main"
     description:

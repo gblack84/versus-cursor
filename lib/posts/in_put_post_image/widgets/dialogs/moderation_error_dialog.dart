@@ -41,17 +41,10 @@ class ModerationErrorDialog extends StatelessWidget {
       ),
       actions: [
         TextButton(
-          onPressed: () async {
+          onPressed: () {
             Navigator.pop(context); // 경고 다이얼로그 닫기
-            Navigator.pop(context); // 에디터 닫기
-            Navigator.pop(context); // MediaSelectionFlowWidget 닫기
-            
-            // 검열 실패 시에만 모달 업 애니메이션으로 피커 열기
-            if (onRetry != null) {
-              onRetry!();
-            } else {
-              await _showAssetPickerWithAnimation(context);
-            }
+            // onRetry 콜백 호출 (Navigator.pop들은 콜백 내부에서 처리)
+            onRetry?.call();
           },
           child: Text(
             '다시 선택',
@@ -62,25 +55,6 @@ class ModerationErrorDialog extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-  
-  /// 애니메이션과 함께 피커 다시 열기
-  Future<void> _showAssetPickerWithAnimation(BuildContext context) async {
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        color: Colors.black,
-        child: const Center(
-          child: Text(
-            '피커를 다시 여는 중...',
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      ),
     );
   }
   

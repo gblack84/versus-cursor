@@ -1,6 +1,7 @@
 import 'package:provider/provider.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:bot_toast/bot_toast.dart';
 
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -102,6 +103,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'versus-space',
+      builder: BotToastInit(),
       scrollBehavior: MyAppScrollBehavior(),
       localizationsDelegates: [
         AppLocalizationsDelegate(),

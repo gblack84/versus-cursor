@@ -3,6 +3,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image/image.dart' as img;
 import '/services/cloud_image_moderation_service.dart';
+import '/services/storage_service.dart';
 import '../utils/debug_helper.dart';
 import '../constants/image_constants.dart';
 import '../constants/strings.dart';
@@ -210,13 +211,37 @@ class MediaUploadService {
       timeout: timeout,
     );
     
+    // 검열 결과 확인
+    final isApproved = CloudImageModerationService.isImageSafe(moderation);
+    final isRejected = CloudImageModerationService.isImageRejected(moderation);
+    
+    // 거부된 경우 이미지 삭제
+    if (isRejected) {
+      DebugHelper.log('[MediaUpload] 부적절한 이미지 감지, 삭제 시작: $filePath');
+      
+      // 모든 버전 삭제
+      final deleteSuccess = await StorageService.deleteAllImageVersions(filePath);
+      
+      if (deleteSuccess) {
+        DebugHelper.log('[MediaUpload] 부적절한 이미지 삭제 완료');
+      } else {
+        DebugHelper.log('[MediaUpload] 부적절한 이미지 삭제 실패');
+      }
+      
+      // URL로도 삭제 시도 (백업)
+      if (!deleteSuccess) {
+        final urls = uploadResult['urls'] as Map<String, String>;
+        await StorageService.deleteMultipleImages(urls.values.toList());
+      }
+    }
+    
     // 검열 결과를 포함하여 반환
     return {
       ...uploadResult,
       'moderation': moderation,
-      'isApproved': CloudImageModerationService.isImageSafe(moderation),
-      'isRejected': CloudImageModerationService.isImageRejected(moderation),
-      'rejectionReason': moderation != null && CloudImageModerationService.isImageRejected(moderation)
+      'isApproved': isApproved,
+      'isRejected': isRejected,
+      'rejectionReason': moderation != null && isRejected
           ? CloudImageModerationService.getRejectionReason(moderation)
           : null,
     };

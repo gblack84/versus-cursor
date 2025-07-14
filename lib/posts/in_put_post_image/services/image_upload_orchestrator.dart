@@ -1,21 +1,26 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '/app_state.dart';
 import 'media_upload_service.dart';
 import '../helpers/image_cache_helper.dart';
+import '../in_put_post_image_model.dart';
+import '../utils/debug_helper.dart';
 
 /// 이미지 업로드 프로세스를 조율하는 서비스 클래스
 class ImageUploadOrchestrator {
   final BuildContext context;
   final AppState appState;
   final String box;
+  final InPutPostImageModel? model; // 편집 모드 감지를 위해 추가
   
   ImageUploadOrchestrator({
     required this.context,
     required this.appState,
     required this.box,
+    this.model,
   });
 
   /// 멀티 이미지 업로드 처리
@@ -132,6 +137,14 @@ class ImageUploadOrchestrator {
         // 시나리오 판단
         if (approvedCount == 0) {
           // 시나리오 2: 모든 이미지가 거부됨
+          // 편집 모드일 경우 빈 배열로 DB 업데이트
+          if (model != null && model!.isEditMode) {
+            await _updateFirestoreAfterRejection(
+              approvedUrls: [],
+              box: box,
+            );
+          }
+          
           // 거부 이유 메시지 생성
           final messages = <String>[];
           rejectionReasonsMap.forEach((reason, numbers) {
@@ -154,6 +167,14 @@ class ImageUploadOrchestrator {
             reorderedRatios: reorderedRatios,
             reorderedAssetIds: reorderedAssetIds,
           );
+          
+          // 편집 모드일 경우 승인된 이미지만으로 DB 업데이트
+          if (model != null && model!.isEditMode) {
+            await _updateFirestoreAfterRejection(
+              approvedUrls: reorderedUrls,
+              box: box,
+            );
+          }
           
           // 거부 이유 메시지 생성
           final messages = <String>[];
@@ -187,6 +208,14 @@ class ImageUploadOrchestrator {
         reorderedRatios: reorderedRatios,
         reorderedAssetIds: reorderedAssetIds,
       );
+      
+      // 6. 편집 모드일 경우 DB 업데이트
+      if (model != null && model!.isEditMode && rejectedCount > 0) {
+        await _updateFirestoreAfterRejection(
+          approvedUrls: reorderedUrls,
+          box: box,
+        );
+      }
       
       onProgress?.call(1.0);
       
@@ -224,6 +253,14 @@ class ImageUploadOrchestrator {
       
       // 검열 결과 확인
       if (result['isApproved'] != true) {
+        // 편집 모드일 경우 빈 배열로 DB 업데이트
+        if (model != null && model!.isEditMode) {
+          await _updateFirestoreAfterRejection(
+            approvedUrls: [],
+            box: box,
+          );
+        }
+        
         return ImageUploadResult(
           success: false,
           rejectionReason: result['rejectionReason'] ?? '커뮤니티 가이드라인 위반',
@@ -429,6 +466,53 @@ class ImageUploadOrchestrator {
         appState.assetEntityIdsB = reorderedAssetIds;
       }
     });
+  }
+  
+  /// Firestore에서 거부된 이미지 후 업데이트
+  Future<void> _updateFirestoreAfterRejection({
+    required List<String> approvedUrls,
+    required String box,
+  }) async {
+    // 편집 모드가 아니거나 postRef가 없으면 무시
+    if (model == null || !model!.isEditMode || model!.existingPostRef == null) {
+      return;
+    }
+    
+    try {
+      final postRef = model!.existingPostRef!;
+      
+      // 필드 이름 결정
+      final optionField = box == 'A' ? 'optionA' : 'optionB';
+      final pollOptionField = box == 'A' ? 'option_1_media_urls' : 'option_2_media_urls';
+      
+      // 트랜잭션으로 원자성 보장
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        // posts_record 업데이트
+        transaction.update(postRef, {
+          '$optionField.mediaUrls': approvedUrls,
+        });
+        
+        // poll_details 서브컬렉션 업데이트
+        final pollDetailsQuery = await postRef
+            .collection('poll_details')
+            .limit(1)
+            .get();
+            
+        if (pollDetailsQuery.docs.isNotEmpty) {
+          final pollDetailsRef = pollDetailsQuery.docs.first.reference;
+          transaction.update(pollDetailsRef, {
+            pollOptionField: approvedUrls,
+            // 첫 번째 이미지 URL도 업데이트 (단일 URL 필드)
+            '${pollOptionField.replaceAll('_urls', '_url')}': approvedUrls.isNotEmpty ? approvedUrls.first : '',
+          });
+        }
+      });
+      
+      DebugHelper.log('[ImageUploadOrchestrator] 거부된 이미지 후 Firestore 업데이트 성공 - $box 박스');
+    } catch (e) {
+      DebugHelper.logError('Firestore 업데이트 중 오류', e);
+      // 에러가 발생해도 사용자 경험은 방해하지 않음
+    }
   }
 }
 

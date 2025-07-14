@@ -79,31 +79,55 @@ exports.moderateImage = functions
         detections.racy === "VERY_LIKELY";
       
       if (isInappropriate) {
-        console.log("Inappropriate content detected, applying blur.");
-        
-        // 이미지에 블러 처리
-        const blurredBuffer = await sharp(imageBuffer)
-          .blur(20)
-          .toBuffer();
-        
-        // 블러 처리된 이미지를 새 경로에 저장
-        const blurredPath = filePath.replace(/(\.[^.]+)$/, "_blur$1");
-        const blurredFile = bucket.file(blurredPath);
-        
-        await blurredFile.save(blurredBuffer, {
-          metadata: {
-            contentType: contentType,
-            originalPath: filePath,
-            blurred: "true"
-          }
-        });
-        
-        // 원본 이미지 삭제 (옵션)
-        // await file.delete();
+        console.log("Inappropriate content detected, deleting image.");
         
         moderationData.moderationStatus = "rejected";
-        moderationData.blurredUrl = `gs://${object.bucket}/${blurredPath}`;
-        moderationData.action = "blurred";
+        moderationData.action = "deleted";
+        
+        // Firestore에 먼저 기록
+        await admin.firestore()
+          .collection("image_moderation")
+          .doc(moderationId)
+          .set(moderationData);
+        
+        // 모든 버전의 이미지 삭제
+        try {
+          // original, display, thumbnail 버전 모두 삭제
+          const baseFileName = filePath.replace(/_original\.|_display\.|_thumbnail\./, '.');
+          const extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+          const versions = ['_original', '_display', '_thumbnail'];
+          
+          for (const version of versions) {
+            for (const ext of extensions) {
+              if (baseFileName.endsWith(ext)) {
+                const versionPath = baseFileName.replace(ext, `${version}${ext}`);
+                try {
+                  await bucket.file(versionPath).delete();
+                  console.log(`Deleted: ${versionPath}`);
+                } catch (deleteError) {
+                  // 파일이 없는 경우는 무시
+                  if (!deleteError.message.includes('No such object')) {
+                    console.error(`Failed to delete ${versionPath}:`, deleteError.message);
+                  }
+                }
+              }
+            }
+          }
+          
+          console.log(`All versions of inappropriate image deleted: ${filePath}`);
+        } catch (deleteError) {
+          console.error("Error deleting inappropriate image:", deleteError);
+          // 삭제 실패 시 Firestore 업데이트
+          await admin.firestore()
+            .collection("image_moderation")
+            .doc(moderationId)
+            .update({
+              deleteError: deleteError.message,
+              deleteFailedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+        }
+        
+        return null; // 추가 처리 중단
       } else {
         moderationData.moderationStatus = "approved";
       }

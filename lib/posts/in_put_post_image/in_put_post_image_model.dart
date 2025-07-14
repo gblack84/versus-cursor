@@ -50,6 +50,11 @@ class InPutPostImageModel extends AppModel<InPutPostImageWidget> {
   // Current image index for each box
   int currentImageIndexA = 0;
   int currentImageIndexB = 0;
+  
+  // Edit mode detection
+  bool isEditMode = false;
+  DocumentReference? existingPostRef;
+  String? existingPostId;
 
   ///  State fields for stateful widgets in this page.
 

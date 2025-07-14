@@ -7,6 +7,7 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:bot_toast/bot_toast.dart';
 import '/app_state.dart';
 import '../services/image_upload_orchestrator.dart';
+import '../in_put_post_image_model.dart';
 
 /// 이미지 에디터 페이지 위젯
 class MediaEditorWidget extends StatefulWidget {
@@ -28,6 +29,7 @@ class MediaEditorWidget extends StatefulWidget {
   final VoidCallback? onBackToPicker;
   final VoidCallback? onCloseModal;
   final Function(double)? onProgressUpdate;
+  final InPutPostImageModel? model;
 
   const MediaEditorWidget({
     super.key,
@@ -49,6 +51,7 @@ class MediaEditorWidget extends StatefulWidget {
     this.onBackToPicker,
     this.onCloseModal,
     this.onProgressUpdate,
+    this.model,
   });
 
   @override
@@ -102,6 +105,7 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
         context: context,
         appState: appState,
         box: widget.box,
+        model: widget.model,
       );
       
       // 멀티 이미지 처리

@@ -15,6 +15,7 @@ import '../services/selection_result_processor.dart';
 import '../delegates/camera_floating_button_delegate.dart';
 import 'media_editor_widget.dart';
 import '../utils/no_animation_page_route.dart';
+import '../in_put_post_image_model.dart';
 
 /// 미디어 선택부터 편집까지 하나의 플로우로 처리하는 위젯
 class MediaSelectionFlowWidget extends StatefulWidget {
@@ -30,6 +31,7 @@ class MediaSelectionFlowWidget extends StatefulWidget {
     this.existingAssetIds,
     this.isAddMode = false,
     this.currentIndex,
+    this.model,
   });
 
   final String box; // 'A' or 'B'
@@ -42,6 +44,7 @@ class MediaSelectionFlowWidget extends StatefulWidget {
   final List<String>? existingAssetIds; // 기존 AssetEntity ID들
   final bool isAddMode; // 추가 모드인지 여부
   final int? currentIndex; // 현재 보고 있는 이미지 인덱스
+  final InPutPostImageModel? model; // 편집 모드 감지를 위해 추가
 
   @override
   State<MediaSelectionFlowWidget> createState() => _MediaSelectionFlowWidgetState();
@@ -408,6 +411,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       selectedAssets: _selectedAssets,
       currentEditIndex: _currentEditIndex,
       box: widget.box,
+      model: widget.model,
       isAddMode: widget.isAddMode,
       currentIndex: widget.currentIndex,
       existingImageUrls: widget.existingImageUrls,

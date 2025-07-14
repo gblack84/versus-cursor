@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '/services/perspective_api_service.dart';
+import '../constants/field_styles.dart';
 
 class ValidationService {
   /// 필수 필드가 비어있는지 확인
@@ -42,16 +43,16 @@ class ValidationService {
     final textsToValidate = <String, String>{};
     
     if (questionTitle?.isNotEmpty == true) {
-      textsToValidate['questionTitle'] = questionTitle!;
+      textsToValidate[FieldStyles.questionTitle] = questionTitle!;
     }
     if (description?.isNotEmpty == true) {
-      textsToValidate['description'] = description!;
+      textsToValidate[FieldStyles.description] = description!;
     }
     if (aTitle?.isNotEmpty == true) {
-      textsToValidate['aTitle'] = aTitle!;
+      textsToValidate[FieldStyles.textA] = aTitle!;
     }
     if (bTitle?.isNotEmpty == true) {
-      textsToValidate['bTitle'] = bTitle!;
+      textsToValidate[FieldStyles.textB] = bTitle!;
     }
 
     if (textsToValidate.isEmpty) {
@@ -101,13 +102,13 @@ class ValidationService {
   /// 필드명을 사용자 친화적 이름으로 변환
   static String getFieldDisplayName(String fieldName) {
     switch (fieldName) {
-      case 'questionTitle':
+      case FieldStyles.questionTitle:
         return 'Question Title';
-      case 'description':
+      case FieldStyles.description:
         return 'Description';
-      case 'aTitle':
+      case FieldStyles.textA:
         return 'A title';
-      case 'bTitle':
+      case FieldStyles.textB:
         return 'B title';
       default:
         return fieldName;

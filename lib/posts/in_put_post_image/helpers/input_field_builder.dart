@@ -1,20 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:easy_debounce/easy_debounce.dart';
 import '/core/app_theme.dart';
 import '/core/app_localizations.dart';
 import '/services/perspective_api_service.dart';
-import '/widgets/highlighted_text_field.dart';
-import '/utils/content_filter.dart';
 import '../components/simple_validated_field.dart';
 import '../in_put_post_image_model.dart';
+import '../constants/field_styles.dart';
 
 /// 입력 필드 빌더 헬퍼
 class InputFieldBuilder {
-  // 공통 상수
-  static const double _largeFontSize = 30.0;
-  static const double _inputFontSize = 14.0;
-  static const double _iconSize = 22.0;
   /// 제목 입력 필드 생성
   static Widget buildTitleField({
     required BuildContext context,
@@ -28,20 +22,14 @@ class InputFieldBuilder {
       focusNode: focusNode,
       labelKey: 'bjdyxvvl',
       hintKey: 'a8xnk2go',
-      fieldName: 'title',
-      maxLength: 100,
-      maxLines: 1,
-      minLines: 1,
-      isDense: true,
-      fontSize: 30.0,
-      borderWidth: 2.0,
-      textInputAction: TextInputAction.done,
-      validationResult: model.validationResults['title'],
+      fieldName: FieldStyles.questionTitle,
+      maxLength: 100, // 오버라이드 (60→100)
+      validationResult: model.validationResults[FieldStyles.questionTitle],
       onFieldChanged: (value, fieldName, isBlocked) {
         // ContentFilter is handled in SimpleValidatedField
       },
       onFieldCleared: () {
-        model.validationResults.remove('title');
+        model.validationResults.remove(FieldStyles.questionTitle);
         onRequiredFieldsCheck();
       },
       onRequiredFieldsCheck: onRequiredFieldsCheck,
@@ -61,20 +49,14 @@ class InputFieldBuilder {
       focusNode: focusNode,
       labelKey: '6knmjp9w',
       hintKey: 'pxj6gckn',
-      fieldName: 'description',
-      maxLength: 2000,
-      maxLines: null,
-      minLines: 4,
-      isDense: false,
-      fontSize: 14.0,
-      borderWidth: 2.0,
-      textInputAction: TextInputAction.newline,
-      validationResult: model.validationResults['description'],
+      fieldName: FieldStyles.description,
+      maxLength: 2000, // 오버라이드 (200→2000)
+      validationResult: model.validationResults[FieldStyles.description],
       onFieldChanged: (value, fieldName, isBlocked) {
         // ContentFilter is handled in SimpleValidatedField
       },
       onFieldCleared: () {
-        model.validationResults.remove('description');
+        model.validationResults.remove(FieldStyles.description);
         onRequiredFieldsCheck();
       },
       onRequiredFieldsCheck: onRequiredFieldsCheck,
@@ -128,7 +110,7 @@ class InputFieldBuilder {
     );
   }
   
-  /// 질문 제목 필드 생성 (ValidatedTextField 사용)
+  /// 질문 제목 필드 생성 (SimpleValidatedField 사용)
   static Widget buildQuestionTitleField({
     required BuildContext context,
     required TextEditingController controller,
@@ -137,66 +119,27 @@ class InputFieldBuilder {
     required Function() onRequiredFieldsCheck,
     required Function(bool) onBlockedWordChanged,
   }) {
-    return ValidatedTextField(
+    return SimpleValidatedField(
       controller: controller,
       focusNode: focusNode,
-      onChanged: (value) {
-        // 텍스트가 비어있으면 에러 초기화
-        if (value.trim().isEmpty) {
-          model.validationResults.remove('questionTitle');
-          model.hasBlockedWordInTitle = false;
-          onBlockedWordChanged(false);
-        }
-        
-        // 필수 필드 체크
-        onRequiredFieldsCheck();
-        
-        // 디바운스된 필터링
-        EasyDebounce.debounce(
-          'question_title_field',
-          Duration(milliseconds: 500),
-          () {
-            final result = ContentFilter.filterText(value);
-            if (model.hasBlockedWordInTitle != result.isBlocked) {
-              model.hasBlockedWordInTitle = result.isBlocked;
-              onBlockedWordChanged(result.isBlocked);
-            }
-          },
-        );
+      labelKey: '5kzcbgop',
+      hintKey: 'jr6l0zdb',
+      fieldName: FieldStyles.questionTitle,
+      validationResult: model.validationResults[FieldStyles.questionTitle],
+      onFieldChanged: (value, fieldName, isBlocked) {
+        model.hasBlockedWordInTitle = isBlocked;
+        model.isQuestionTitleEmpty = value.trim().isEmpty;
+        onBlockedWordChanged(isBlocked);
       },
-      validationResult: model.validationResults['questionTitle'],
-      showValidationResults: false,
-      decoration: getInputDecoration(
-        context: context,
-        hintKey: 'jr6l0zdb',
-        labelKey: '5kzcbgop',
-        fontSize: _largeFontSize,
-        suffixIcon: controller.text.isNotEmpty
-            ? InkWell(
-                onTap: () {
-                  controller.clear();
-                  model.validationResults.remove('questionTitle');
-                  model.hasValidationViolations = false;
-                  model.hasBlockedWordInTitle = false;
-                  onBlockedWordChanged(false);
-                  onRequiredFieldsCheck();
-                },
-                child: Icon(
-                  Icons.clear,
-                  color: AppTheme.of(context).primaryText,
-                  size: _iconSize,
-                ),
-              )
-            : null,
-      ),
-      style: getTextStyle(
-        context: context,
-        fontSize: _inputFontSize,
-      ),
-      minLines: 1,
-      maxLines: 5,
-      textInputAction: TextInputAction.done,
-      maxLength: 60,
+      onFieldCleared: () {
+        model.validationResults.remove(FieldStyles.questionTitle);
+        model.hasValidationViolations = false;
+        model.hasBlockedWordInTitle = false;
+        model.isQuestionTitleEmpty = true;
+        onBlockedWordChanged(false);
+        onRequiredFieldsCheck();
+      },
+      onRequiredFieldsCheck: onRequiredFieldsCheck,
     );
   }
   
@@ -209,7 +152,7 @@ class InputFieldBuilder {
     Widget? suffixIcon,
   }) {
     return InputDecoration(
-      isDense: true,
+      contentPadding: const EdgeInsets.only(bottom: 8.0),
       labelText: AppLocalizations.of(context).getText(labelKey),
       labelStyle: AppTheme.of(context).bodyMedium.override(
             font: GoogleFonts.plusJakartaSans(

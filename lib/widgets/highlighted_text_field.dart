@@ -192,10 +192,10 @@ class ValidatedTextField extends StatelessWidget {
       textInputAction: textInputAction,
       maxLength: maxLength,
       style: style,
+      autocorrect: false,
+      enableSuggestions: false,
       decoration: decoration?.copyWith(
         errorText: null, // 에러 텍스트는 필드 외부에서 처리
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        isDense: true,
         counterText: '',
       ) ?? InputDecoration(
         hintText: hintText,
@@ -237,7 +237,11 @@ class ValidatedTextField extends StatelessWidget {
               minLines: minLines,
               textInputAction: textInputAction,
               maxLength: maxLength,
-              style: style,
+              style: (style ?? const TextStyle()).copyWith(
+                color: Colors.transparent,
+              ),
+              autocorrect: false,
+              enableSuggestions: false,
               decoration: decoration?.copyWith(
                 counterText: '',
               ),

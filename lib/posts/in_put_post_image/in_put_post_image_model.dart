@@ -26,6 +26,7 @@ class InPutPostImageModel extends AppModel<InPutPostImageWidget> {
 
   // 금지어 감지 상태
   bool hasBlockedWordInTitle = false;
+  bool hasBlockedWordInDescription = false;
   bool hasBlockedWordInATitle = false;
   bool hasBlockedWordInBTitle = false;
 
@@ -35,9 +36,12 @@ class InPutPostImageModel extends AppModel<InPutPostImageWidget> {
   bool hasValidationViolations = false;
   
   // 필수 필드 비어있음 에러 상태
-  bool isQuestionTitleEmpty = false;
-  bool isATitleEmpty = false;
-  bool isBTitleEmpty = false;
+  bool isQuestionTitleEmpty = true;
+  bool isATitleEmpty = true;
+  bool isBTitleEmpty = true;
+  
+  // 검증 시도 여부 (다음 버튼 클릭 여부)
+  bool hasValidated = false;
   
   // 흔들림 애니메이션 컨트롤러
   AnimationController? shakeController;

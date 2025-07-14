@@ -28,6 +28,7 @@ import 'utils/debug_helper.dart';
 import 'utils/error_handler.dart';
 import 'constants/dimensions.dart';
 import 'constants/animation_constants.dart';
+import 'constants/field_styles.dart';
 
 class InPutPostImageWidget extends StatefulWidget {
   const InPutPostImageWidget({super.key});
@@ -99,10 +100,13 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   void _initializeControllers() {
     _model.textController1 ??= TextEditingController();
     _model.textFieldFocusNode1 ??= FocusNode();
+    
     _model.textController2 ??= TextEditingController();
     _model.textFieldFocusNode2 ??= FocusNode();
+    
     _model.textController3 ??= TextEditingController();
     _model.textFieldFocusNode3 ??= FocusNode();
+    
     _model.textController4 ??= TextEditingController();
     _model.textFieldFocusNode4 ??= FocusNode();
   }
@@ -236,7 +240,9 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           maxLength: 60,
           isEmpty: _model.isQuestionTitleEmpty,
           hasBlockedWord: _model.hasBlockedWordInTitle,
-          validationResult: _model.validationResults['questionTitle'],
+          validationResult: _model.validationResults[FieldStyles.questionTitle],
+          horizontalPadding: 22.0, // 10 + 12
+          hasValidated: _model.hasValidated,
         ),
         LayoutDebugInfo(currentLayout: _model.currentLayout),
       ],
@@ -256,9 +262,10 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   /// 모든 텍스트 필드 검증
   Future<void> _validateAllTexts() async {
     try {
-      // 로딩 상태 표시
+      // 로딩 상태 표시 및 검증 시도 표시
       setState(() {
         _model.isValidating = true;
+        _model.hasValidated = true;
       });
 
       // ValidationService를 사용하여 검증
@@ -728,11 +735,6 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
             labelKey: labelKey,
             hintKey: hintKey,
             fieldName: fieldName,
-            maxLength: 20,
-            maxLines: 5,
-            minLines: 1,
-            fontSize: 14.0,
-            borderWidth: 2.0,
             validationResult: _model.validationResults[fieldName],
             onFieldChanged: onFieldChanged,
             onFieldCleared: onFieldCleared,
@@ -952,44 +954,46 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                                 focusNode: _model.textFieldFocusNode2,
                                 labelKey: '94dz6d39',
                                 hintKey: 'gipyr3sq',
-                                fieldName: 'description',
-                                maxLength: 200,
-                                maxLines: 5,
-                                minLines: 1,
-                                fontSize: 30.0,
-                                borderWidth: 2.0,
-                                isDense: false,
-                                validationResult: _model.validationResults['description'],
+                                fieldName: FieldStyles.description,
+                                validationResult: _model.validationResults[FieldStyles.description],
                                 onFieldChanged: (value, fieldName, isBlocked) {
-                                  // ContentFilter is handled in SimpleValidatedField
+                                  _model.hasBlockedWordInDescription = isBlocked;
+                                  setState(() {});
                                 },
                                 onFieldCleared: () {
-                                  _model.validationResults.remove('description');
+                                  _model.validationResults.remove(FieldStyles.description);
                                   _model.hasValidationViolations = _model.validationResults.values.any((r) => r.isToxic);
+                                  _model.hasBlockedWordInDescription = false;
                                   setState(() {});
                                 },
                               ),
                             ),
-                            // Description 글자 수 표시
-                            SimpleCharacterCount(
+                            // Description 글자 수 및 경고 표시
+                            CharacterCountDisplay(
                               controller: _model.textController2,
                               maxLength: 200,
+                              isEmpty: false,  // Description은 필수 필드가 아님
+                              hasBlockedWord: _model.hasBlockedWordInDescription,
+                              validationResult: _model.validationResults[FieldStyles.description],
+                              horizontalPadding: 22.0, // 10 + 12
+                              hasValidated: _model.hasValidated,
                             ),
                             _buildTitleField(
                               controller: _model.textController3,
                               focusNode: _model.textFieldFocusNode3,
                               labelKey: 'jvx92fb4',
                               hintKey: 'tkzl6wqo',
-                              fieldName: 'aTitle',
+                              fieldName: FieldStyles.textA,
                               isEmpty: _model.isATitleEmpty,
                               hasBlockedWord: _model.hasBlockedWordInATitle,
                               onFieldChanged: (value, fieldName, isBlocked) {
                                 _model.hasBlockedWordInATitle = isBlocked;
+                                _model.isATitleEmpty = value.trim().isEmpty;
                                 setState(() {});
                               },
                               onFieldCleared: () {
-                                _model.isATitleEmpty = false;
-                                _model.validationResults.remove('aTitle');
+                                _model.isATitleEmpty = true;
+                                _model.validationResults.remove(FieldStyles.textA);
                                 _model.hasValidationViolations = _model.validationResults.values.any((r) => r.isToxic);
                                 _model.hasBlockedWordInATitle = false;
                                 setState(() {});
@@ -1001,23 +1005,26 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                               maxLength: 20,
                               isEmpty: _model.isATitleEmpty,
                               hasBlockedWord: _model.hasBlockedWordInATitle,
-                              validationResult: _model.validationResults['aTitle'],
+                              validationResult: _model.validationResults[FieldStyles.textA],
+                              horizontalPadding: 32.0, // 20 + 12
+                              hasValidated: _model.hasValidated,
                             ),
                             _buildTitleField(
                               controller: _model.textController4,
                               focusNode: _model.textFieldFocusNode4,
                               labelKey: 't8flxbe7',
                               hintKey: 'gwsufdly',
-                              fieldName: 'bTitle',
+                              fieldName: FieldStyles.textB,
                               isEmpty: _model.isBTitleEmpty,
                               hasBlockedWord: _model.hasBlockedWordInBTitle,
                               onFieldChanged: (value, fieldName, isBlocked) {
                                 _model.hasBlockedWordInBTitle = isBlocked;
+                                _model.isBTitleEmpty = value.trim().isEmpty;
                                 setState(() {});
                               },
                               onFieldCleared: () {
-                                _model.isBTitleEmpty = false;
-                                _model.validationResults.remove('bTitle');
+                                _model.isBTitleEmpty = true;
+                                _model.validationResults.remove(FieldStyles.textB);
                                 _model.hasValidationViolations = _model.validationResults.values.any((r) => r.isToxic);
                                 _model.hasBlockedWordInBTitle = false;
                                 setState(() {});
@@ -1029,8 +1036,10 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                               maxLength: 20,
                               isEmpty: _model.isBTitleEmpty,
                               hasBlockedWord: _model.hasBlockedWordInBTitle,
-                              validationResult: _model.validationResults['bTitle'],
+                              validationResult: _model.validationResults[FieldStyles.textB],
                               blockedMessage: '⚠️ 부적절한 언어가 포함됨',
+                              horizontalPadding: 32.0, // 20 + 12
+                              hasValidated: _model.hasValidated,
                             ),
                             // 스크롤 감지를 위한 최소 여백
                             SizedBox(height: 100.0),

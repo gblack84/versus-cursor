@@ -24,6 +24,7 @@ import 'components/warning_message.dart';
 import 'services/validation_service.dart';
 import 'helpers/input_field_builder.dart';
 import 'widgets/media_selection_flow_widget.dart';
+import 'widgets/dialogs/target_audience_dialog.dart';
 import 'utils/debug_helper.dart';
 import 'utils/error_handler.dart';
 import 'constants/dimensions.dart';
@@ -319,8 +320,13 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           appState.isVerticalLayout = _model.isRatioVertical;
         });
         
-        // Firestore에 저장
-        await _saveToFirestore();
+        // 타겟 오디언스 다이얼로그 표시
+        final targetAudience = await TargetAudienceDialog.show(context);
+        
+        if (targetAudience != null) {
+          // 타겟 설정이 완료되면 Firestore에 저장
+          await _saveToFirestore(targetAudience);
+        }
       }
 
     } catch (e) {
@@ -363,6 +369,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       NoAnimationPageRoute(
         builder: (context) => MediaSelectionFlowWidget(
           box: box,
+          model: _model,
           isAddMode: isAddMode,
           currentIndex: currentIndex,
           existingAssetIds: box == 'A' 
@@ -393,7 +400,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     );
   }
 
-  Future<void> _saveToFirestore() async {
+  Future<void> _saveToFirestore(Map<String, dynamic> targetAudience) async {
     try {
       final user = currentUser;
       if (user == null) {
@@ -453,6 +460,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           'status': 'approved',
           'aiScore': 0,
         },
+        targetAudience: targetAudience,
       );
 
       // Firestore에 저장
@@ -618,6 +626,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       NoAnimationPageRoute(
         builder: (context) => MediaSelectionFlowWidget(
           box: box,
+          model: _model,
           initialImageUrl: images[currentIndex],
           startWithEditor: true,
           existingImageUrls: images.length > 1 ? images : null,

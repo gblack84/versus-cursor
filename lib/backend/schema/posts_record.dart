@@ -206,6 +206,11 @@ class PostsRecord extends FirestoreRecord {
   Map<String, dynamic> get moderation => _moderation ?? const {};
   bool hasModeration() => _moderation != null;
 
+  // "targetAudience" field.
+  Map<String, dynamic>? _targetAudience;
+  Map<String, dynamic> get targetAudience => _targetAudience ?? const {};
+  bool hasTargetAudience() => _targetAudience != null;
+
   void _initializeFields() {
     _userid = snapshotData['userid'] as String?;
     _content = snapshotData['content'] as String?;
@@ -245,6 +250,7 @@ class PostsRecord extends FirestoreRecord {
     _optionB = snapshotData['optionB'] as Map<String, dynamic>?;
     _stats = snapshotData['stats'] as Map<String, dynamic>?;
     _moderation = snapshotData['moderation'] as Map<String, dynamic>?;
+    _targetAudience = snapshotData['targetAudience'] as Map<String, dynamic>?;
   }
 
   static CollectionReference get collection =>
@@ -316,6 +322,7 @@ Map<String, dynamic> createPostsRecordData({
   Map<String, dynamic>? optionB,
   Map<String, dynamic>? stats,
   Map<String, dynamic>? moderation,
+  Map<String, dynamic>? targetAudience,
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
@@ -354,6 +361,7 @@ Map<String, dynamic> createPostsRecordData({
       'optionB': optionB,
       'stats': stats,
       'moderation': moderation,
+      'targetAudience': targetAudience,
     }.withoutNulls,
   );
 

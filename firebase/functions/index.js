@@ -1,7 +1,6 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const vision = require("@google-cloud/vision");
-const sharp = require("sharp");
 
 admin.initializeApp();
 
@@ -33,7 +32,7 @@ exports.moderateImage = functions
     }
     
     // 썸네일이나 블러 처리된 이미지는 무시 (무한 루프 방지)
-    if (filePath.includes("_blur") || filePath.includes("_thumb")) {
+    if (filePath.includes("_blur") || filePath.includes("_thumb") || filePath.includes("_display")) {
       console.log("Already processed image, skipping moderation.");
       return null;
     }
@@ -79,7 +78,7 @@ exports.moderateImage = functions
         detections.racy === "VERY_LIKELY";
       
       if (isInappropriate) {
-        console.log("Inappropriate content detected, deleting image.");
+        console.log("Inappropriate content detected, deleting image (updated logic).");
         
         moderationData.moderationStatus = "rejected";
         moderationData.action = "deleted";
@@ -93,9 +92,9 @@ exports.moderateImage = functions
         // 모든 버전의 이미지 삭제
         try {
           // original, display, thumbnail 버전 모두 삭제
-          const baseFileName = filePath.replace(/_original\.|_display\.|_thumbnail\./, '.');
+          const baseFileName = filePath.replace(/_original\.|_display\.|_thumb\./, '.');
           const extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-          const versions = ['_original', '_display', '_thumbnail'];
+          const versions = ['_original', '_display', '_thumb'];
           
           for (const version of versions) {
             for (const ext of extensions) {

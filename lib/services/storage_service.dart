@@ -7,6 +7,8 @@ class StorageService {
   /// 이미지 경로에서 모든 버전(original, display, thumbnail) 삭제
   static Future<bool> deleteAllImageVersions(String imagePath) async {
     try {
+      print('[StorageService] 삭제 시작 - 원본 경로: $imagePath');
+      
       // 경로 파싱 (예: users/uid/posts/images/timestamp_box_type.jpg)
       final pathParts = imagePath.split('/');
       if (pathParts.length < 5) {
@@ -23,8 +25,8 @@ class StorageService {
         baseFileName = fileName.replaceAll('_original', '');
       } else if (fileName.contains('_display.')) {
         baseFileName = fileName.replaceAll('_display', '');
-      } else if (fileName.contains('_thumbnail.')) {
-        baseFileName = fileName.replaceAll('_thumbnail', '');
+      } else if (fileName.contains('_thumb.')) {
+        baseFileName = fileName.replaceAll('_thumb', '');
       }
       
       // 확장자 분리
@@ -37,8 +39,13 @@ class StorageService {
         final filesToDelete = [
           '$directory/${nameWithoutExt}_original$extension',
           '$directory/${nameWithoutExt}_display$extension',
-          '$directory/${nameWithoutExt}_thumbnail$extension',
+          '$directory/${nameWithoutExt}_thumb$extension',
         ];
+        
+        print('[StorageService] 삭제할 파일들:');
+        for (final file in filesToDelete) {
+          print('  - $file');
+        }
 
         // 병렬로 삭제 시도
         final deleteResults = await Future.wait(
@@ -88,19 +95,27 @@ class StorageService {
       // Firebase Storage URL 패턴
       // https://firebasestorage.googleapis.com/v0/b/bucket-name/o/encoded-path?alt=media&token=...
       
+      print('[StorageService] URL 파싱 시작: $url');
+      
       final uri = Uri.parse(url);
       final pathSegments = uri.pathSegments;
       
-      if (pathSegments.length > 3 && pathSegments[2] == 'o') {
+      print('[StorageService] pathSegments: $pathSegments');
+      print('[StorageService] pathSegments 길이: ${pathSegments.length}');
+      
+      // pathSegments 예시: ['v0', 'b', 'versus-space-1lwwiw.appspot.com', 'o', 'users%2F...']
+      if (pathSegments.length > 4 && pathSegments[3] == 'o') {
         // encoded path 디코딩
-        final encodedPath = pathSegments[3];
+        final encodedPath = pathSegments[4];
         final decodedPath = Uri.decodeComponent(encodedPath);
+        print('[StorageService] 추출된 경로: $decodedPath');
         return decodedPath;
       }
       
+      print('[StorageService] URL 파싱 실패 - 올바른 형식이 아님');
       return null;
     } catch (e) {
-      print('[StorageService] URL 파싱 실패: $e');
+      print('[StorageService] URL 파싱 중 오류: $e');
       return null;
     }
   }

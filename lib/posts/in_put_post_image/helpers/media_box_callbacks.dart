@@ -141,7 +141,7 @@ class MediaBoxCallbacks {
       if (success) {
         DebugHelper.log('[MediaBoxCallbacks] $box 박스 이미지 Storage 삭제 성공');
         
-        // 편집 모드일 때만 Firestore 업데이트
+        // 편집 모드일 때만 Firestore 업데이트 (새 게시물은 아직 DB에 없으므로)
         if (model.isEditMode && model.existingPostRef != null) {
           await _updateFirestoreImageUrls(imageUrl, box);
         }

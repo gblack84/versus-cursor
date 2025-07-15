@@ -144,7 +144,7 @@ class ImageUploadOrchestratorV2 {
       
       if (!editedResult.isAppropriate) {
         // 편집된 이미지가 거부된 경우
-        _showRejectionToast({editedResult.reason: [currentEditIndex + 1]});
+        _showRejectionToast({editedResult.reason: [currentEditIndex + 1]}, moderationResult: editedResult);
         
         return ImageProcessResult(
           success: false,
@@ -152,6 +152,7 @@ class ImageUploadOrchestratorV2 {
           rejectedCount: 1,
           allRejected: false,
           rejectedIndices: [currentEditIndex + 1],
+          moderationResult: editedResult,
         );
       }
     }
@@ -250,7 +251,7 @@ class ImageUploadOrchestratorV2 {
     
     if (!result.isAppropriate) {
       // 거부 메시지 표시
-      _showRejectionToast({result.reason: [1]});
+      _showRejectionToast({result.reason: [1]}, moderationResult: result);
       
       return ImageProcessResult(
         success: false,
@@ -258,6 +259,7 @@ class ImageUploadOrchestratorV2 {
         rejectedCount: 1,
         allRejected: true,
         rejectedIndices: [1],
+        moderationResult: result,
       );
     }
     
@@ -320,12 +322,37 @@ class ImageUploadOrchestratorV2 {
   }
   
   /// 거부 메시지 표시 (ErrorHandler 스타일과 통일)
-  void _showRejectionToast(Map<String, List<int>> rejectedReasons) {
+  void _showRejectionToast(Map<String, List<int>> rejectedReasons, {ModerationResult? moderationResult}) {
     final messages = <String>[];
     
-    rejectedReasons.forEach((reason, indices) {
-      messages.add('$reason: ${indices.join(", ")}');
-    });
+    // 단일 이미지인 경우 더 구체적인 메시지 제공
+    if (rejectedReasons.length == 1 && moderationResult != null) {
+      final reason = rejectedReasons.keys.first;
+      
+      // 텍스트 문제인지 이미지 문제인지 구분
+      if (moderationResult.hasText && reason.isNotEmpty) {
+        // 텍스트 관련 거부 이유들
+        final textReasons = ['욕설', '유해한 콘텐츠', '심각한 유해 콘텐츠', '혐오 표현', '모욕적 표현', '위협적 표현'];
+        if (textReasons.contains(reason)) {
+          messages.add('편집된 텍스트가 부적절합니다: $reason');
+        } else {
+          messages.add('콘텐츠가 부적절합니다: $reason');
+        }
+      } else {
+        // 이미지 관련 거부 이유들
+        final imageReasons = ['성인 콘텐츠', '폭력적 콘텐츠', '선정적 콘텐츠'];
+        if (imageReasons.contains(reason)) {
+          messages.add('이미지가 부적절합니다: $reason');
+        } else {
+          messages.add('콘텐츠가 부적절합니다: $reason');
+        }
+      }
+    } else {
+      // 멀티 이미지인 경우 기존 방식 유지
+      rejectedReasons.forEach((reason, indices) {
+        messages.add('$reason: ${indices.join(", ")}');
+      });
+    }
     
     final message = messages.join('\n');
     
@@ -336,15 +363,29 @@ class ImageUploadOrchestratorV2 {
           color: Colors.red.shade700.withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Text(
-          message,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 아이콘 추가
+            Icon(
+              moderationResult?.hasText == true ? Icons.text_fields : Icons.image_not_supported,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-      duration: const Duration(seconds: 3),
+      duration: const Duration(seconds: 4),
       align: const Alignment(0, 0.8),
       onlyOne: true,
     );
@@ -358,6 +399,7 @@ class ImageProcessResult {
   final int rejectedCount;
   final bool allRejected;
   final List<int> rejectedIndices;
+  final ModerationResult? moderationResult; // 단일 이미지 검열 결과
   
   ImageProcessResult({
     required this.success,
@@ -365,5 +407,6 @@ class ImageProcessResult {
     required this.rejectedCount,
     required this.allRejected,
     required this.rejectedIndices,
+    this.moderationResult,
   });
 }

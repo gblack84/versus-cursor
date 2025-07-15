@@ -134,6 +134,24 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "cloud_functions",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/cloud_functions-5.6.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "cloud_functions_platform_interface",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/cloud_functions_platform_interface-5.8.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "cloud_functions_web",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/cloud_functions_web-4.11.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
       "name": "collection",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/collection-1.19.1",
       "packageUri": "lib/",

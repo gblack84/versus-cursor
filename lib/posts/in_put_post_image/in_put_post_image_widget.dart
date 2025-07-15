@@ -14,6 +14,7 @@ export 'in_put_post_image_model.dart';
 import 'helpers/aspect_ratio_analyzer.dart';
 import 'helpers/dynamic_box_calculator.dart';
 import 'helpers/media_box_callbacks.dart';
+import 'helpers/ratio_calculator.dart';
 import 'components/media_selection_box_multi.dart';
 import 'components/character_count_display.dart';
 import 'components/next_button.dart';
@@ -165,12 +166,20 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     double? ratioB;
     
     if (appState.uploadImageAspectRatioA.isNotEmpty) {
-      ratioA = appState.uploadImageAspectRatioA.first;
+      // 기존 로직 (첫 번째 이미지만 사용)
+      // ratioA = appState.uploadImageAspectRatioA.first;
+      
+      // 새로운 로직 (하이브리드 계산)
+      ratioA = RatioCalculator.getRatio(appState.uploadImageAspectRatioA);
       DebugHelper.logLayout('A 이미지 비율: $ratioA');
     }
     
     if (appState.uploadImageAspectRatioB.isNotEmpty) {
-      ratioB = appState.uploadImageAspectRatioB.first;
+      // 기존 로직 (첫 번째 이미지만 사용)
+      // ratioB = appState.uploadImageAspectRatioB.first;
+      
+      // 새로운 로직 (하이브리드 계산)
+      ratioB = RatioCalculator.getRatio(appState.uploadImageAspectRatioB);
       DebugHelper.logLayout('B 이미지 비율: $ratioB');
     }
     
@@ -770,10 +779,10 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         // 이미지 수와 비율 변경 감지
         final currentImageCount = appState.tempImageFilesA.length + appState.tempImageFilesB.length;
         final currentAspectRatioA = appState.tempImageFilesA.isNotEmpty && appState.uploadImageAspectRatioA.isNotEmpty 
-            ? appState.uploadImageAspectRatioA.first 
+            ? RatioCalculator.getRatio(appState.uploadImageAspectRatioA)  // 하이브리드 계산 사용
             : null;
         final currentAspectRatioB = appState.tempImageFilesB.isNotEmpty && appState.uploadImageAspectRatioB.isNotEmpty 
-            ? appState.uploadImageAspectRatioB.first 
+            ? RatioCalculator.getRatio(appState.uploadImageAspectRatioB)  // 하이브리드 계산 사용
             : null;
         
         // 상태가 변경되었을 때만 레이아웃 업데이트

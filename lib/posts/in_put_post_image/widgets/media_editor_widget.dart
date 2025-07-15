@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import '/app_state.dart';
 import '../services/image_upload_orchestrator_v2.dart';
 import '../in_put_post_image_model.dart';
+import '/services/image_moderation_service.dart';
 
 /// 이미지 에디터 페이지 위젯
 class MediaEditorWidget extends StatefulWidget {
@@ -122,7 +123,29 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
   }
 
   /// 거부 메시지 생성
-  String _buildRejectionMessage(ImageProcessResult result) {
+  String _buildRejectionMessage(ImageProcessResult result, {ModerationResult? moderationResult}) {
+    // 단일 이미지 거부 시 더 구체적인 메시지 제공
+    if (result.rejectedCount == 1 && moderationResult != null) {
+      // 텍스트 문제인지 이미지 문제인지 구분
+      if (moderationResult.hasText && moderationResult.reason.isNotEmpty) {
+        // 텍스트 관련 거부 이유들
+        final textReasons = ['욕설', '유해한 콘텐츠', '심각한 유해 콘텐츠', '혐오 표현', '모욕적 표현', '위협적 표현'];
+        if (textReasons.contains(moderationResult.reason)) {
+          return '편집된 텍스트가 부적절합니다: ${moderationResult.reason}';
+        }
+      }
+      
+      // 이미지 관련 거부 이유들
+      final imageReasons = ['성인 콘텐츠', '폭력적 콘텐츠', '선정적 콘텐츠'];
+      if (imageReasons.contains(moderationResult.reason)) {
+        return '이미지가 부적절합니다: ${moderationResult.reason}';
+      }
+      
+      // 기타 경우
+      return '콘텐츠가 부적절합니다: ${moderationResult.reason}';
+    }
+    
+    // 멀티 이미지 거부 시 기존 방식 유지
     if (result.rejectedCount == 1) {
       return '커뮤니티 가이드라인 위반';
     } else {
@@ -191,7 +214,7 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
                 _isInRejectionRetryMode = true;
               });
               
-              // 거부 메시지 생성
+              // 거부 메시지 생성 (멀티 이미지의 경우 기존 방식 유지)
               final rejectionMessage = _buildRejectionMessage(result);
               _showToast(rejectionMessage, isError: true);
               
@@ -255,8 +278,8 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
               _isInRejectionRetryMode = true;
             });
             
-            // 거부 메시지 표시
-            final rejectionMessage = _buildRejectionMessage(result);
+            // 거부 메시지 표시 (단일 이미지이므로 구체적인 이유 표시)
+            final rejectionMessage = _buildRejectionMessage(result, moderationResult: result.moderationResult);
             _showToast(rejectionMessage, isError: true);
             
             // 피커 열기 (모달은 닫지 않음)

@@ -190,10 +190,12 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           name: ImageViewerPage.routeName,
           path: ImageViewerPage.routePath,
           builder: (context, params) => ImageViewerPage(
-            imageUrls: (params.getParam<String>(
-              'imageUrls',
-              ParamType.String,
-            ) ?? '').split(','),
+            imageUrls: params.getParam<String>('imageUrls', ParamType.String) != null
+                ? (params.getParam<String>('imageUrls', ParamType.String) ?? '').split(',')
+                : [],
+            imagePaths: params.getParam<String>('imagePaths', ParamType.String) != null
+                ? (params.getParam<String>('imagePaths', ParamType.String) ?? '').split('|')
+                : [],
             initialIndex: params.getParam(
               'initialIndex',
               ParamType.int,

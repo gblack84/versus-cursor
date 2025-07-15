@@ -456,6 +456,26 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                           size: iconSize,
                         ),
                 ),
+              // + 아이콘 - A박스에서 이미지가 없을 때 표시 (B박스 표시용)
+              if (widget.label == 'A' && !_hasImages && widget.showPlusIcon && widget.onPlusIconTap != null)
+                Align(
+                  alignment: AlignmentDirectional(1.0, -1.0),
+                  child: Padding(
+                    padding: EdgeInsets.all(widget.isHorizontal ? 10.0 : 10.0),
+                    child: InkWell(
+                      splashColor: Colors.transparent,
+                      focusColor: Colors.transparent,
+                      hoverColor: Colors.transparent,
+                      highlightColor: Colors.transparent,
+                      onTap: widget.onPlusIconTap,
+                      child: Icon(
+                        Icons.add,
+                        color: AppTheme.of(context).primaryText,
+                        size: 29.0,
+                      ),
+                    ),
+                  ),
+                ),
               // Label (A or B)
               Align(
                 alignment: AlignmentDirectional(-1.0, -1.0),

@@ -34,6 +34,7 @@ class ImageUploadOrchestratorV2 {
     List<String>? existingAssetIds,
     Function(double)? onProgress,
     Function(int current, int total)? onModerationProgress,
+    bool showToast = true, // 토스트 표시 여부
   }) async {
     
     onProgress?.call(0.1);
@@ -115,7 +116,9 @@ class ImageUploadOrchestratorV2 {
       
       // 모든 이미지가 거부된 경우
       if (approvedFiles.isEmpty) {
-        _showRejectionToast(rejectedReasons);
+        if (showToast) {
+          _showRejectionToast(rejectedReasons);
+        }
         return ImageProcessResult(
           success: false,
           approvedCount: 0,
@@ -127,7 +130,9 @@ class ImageUploadOrchestratorV2 {
       
       // 일부 이미지가 거부된 경우
       if (rejectedIndices.isNotEmpty) {
-        _showRejectionToast(rejectedReasons);
+        if (showToast) {
+          _showRejectionToast(rejectedReasons);
+        }
         print('[ImageUploadOrchestrator] 일부 이미지 거부됨. 승인: ${approvedFiles.length}개, 거부: ${rejectedIndices.length}개');
       }
     } else {
@@ -144,7 +149,9 @@ class ImageUploadOrchestratorV2 {
       
       if (!editedResult.isAppropriate) {
         // 편집된 이미지가 거부된 경우
-        _showRejectionToast({editedResult.reason: [currentEditIndex + 1]}, moderationResult: editedResult);
+        if (showToast) {
+          _showRejectionToast({editedResult.reason: [currentEditIndex + 1]}, moderationResult: editedResult);
+        }
         
         return ImageProcessResult(
           success: false,
@@ -323,6 +330,14 @@ class ImageUploadOrchestratorV2 {
   
   /// 거부 메시지 표시 (ErrorHandler 스타일과 통일)
   void _showRejectionToast(Map<String, List<int>> rejectedReasons, {ModerationResult? moderationResult}) {
+    print('[DEBUG] _showRejectionToast 호출됨');
+    print('[DEBUG] rejectedReasons: $rejectedReasons');
+    print('[DEBUG] moderationResult: ${moderationResult != null ? "있음" : "없음"}');
+    if (moderationResult != null) {
+      print('[DEBUG] - hasText: ${moderationResult.hasText}');
+      print('[DEBUG] - reason: ${moderationResult.reason}');
+    }
+    
     final messages = <String>[];
     
     // 단일 이미지인 경우 더 구체적인 메시지 제공

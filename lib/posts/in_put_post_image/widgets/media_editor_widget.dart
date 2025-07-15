@@ -66,7 +66,20 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
   bool _isInRejectionRetryMode = false;
 
   /// Bot Toast 메시지 표시 헬퍼
-  void _showToast(String message, {bool isError = false}) {
+  void _showToast(String message, {bool isError = false, IconData? icon}) {
+    print('[DEBUG] _showToast 호출됨: $message (isError: $isError)');
+    
+    // 메시지 내용에 따라 아이콘 자동 결정
+    if (icon == null && isError) {
+      if (message.contains('편집된 텍스트가 부적절합니다')) {
+        icon = Icons.text_fields;
+      } else if (message.contains('이미지가 부적절합니다')) {
+        icon = Icons.image_not_supported;
+      } else {
+        icon = Icons.error_outline;
+      }
+    }
+    
     BotToast.showCustomText(
       toastBuilder: (_) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -76,12 +89,27 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
             : Colors.black.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Text(
-          message,
-          style: const TextStyle(color: Colors.white, fontSize: 14),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+            ],
+            Flexible(
+              child: Text(
+                message,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
+            ),
+          ],
         ),
       ),
-      duration: const Duration(seconds: 3),
+      duration: const Duration(seconds: 4),
       align: const Alignment(0, 0.8),
       onlyOne: true,
     );
@@ -124,6 +152,10 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
 
   /// 거부 메시지 생성
   String _buildRejectionMessage(ImageProcessResult result, {ModerationResult? moderationResult}) {
+    print('[DEBUG] _buildRejectionMessage 호출됨');
+    print('[DEBUG] rejectedCount: ${result.rejectedCount}');
+    print('[DEBUG] moderationResult: ${moderationResult != null ? "있음" : "없음"}');
+    
     // 단일 이미지 거부 시 더 구체적인 메시지 제공
     if (result.rejectedCount == 1 && moderationResult != null) {
       // 텍스트 문제인지 이미지 문제인지 구분
@@ -203,6 +235,7 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
           onModerationProgress: (current, total) {
             // 검열 진행 상황은 ProImageEditor의 loadingDialogMsg로 표시됨
           },
+          showToast: false, // 토스트는 여기서 통합 관리
         );
         
         if (!result.success || result.allRejected) {
@@ -221,7 +254,13 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
               // 피커 열기 (모달은 닫지 않음)
               widget.onBackToPicker?.call();
             } else {
-              _showToast('이미지 처리 실패', isError: true);
+              // 편집 모드에서 이미지가 거부된 경우
+              if (result.moderationResult != null && !result.moderationResult!.isAppropriate) {
+                final detailedMessage = _buildRejectionMessage(result, moderationResult: result.moderationResult);
+                _showToast(detailedMessage, isError: true);
+              } else {
+                _showToast('이미지 처리 실패', isError: true);
+              }
               Navigator.pop(context); // 에디터 닫기
             }
           }
@@ -255,7 +294,7 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
           // 일부 이미지가 거부된 경우 Toast 표시
           if (result.rejectedCount > 0) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              final rejectionMessage = _buildRejectionMessage(result);
+              final rejectionMessage = _buildRejectionMessage(result, moderationResult: result.moderationResult);
               _showToast(rejectionMessage, isError: true);
             });
           }

@@ -24,9 +24,13 @@ class MediaSelectionFlowWidget extends StatefulWidget {
     required this.box,
     required this.onComplete,
     this.onMultiComplete,
+    this.onFileComplete,
+    this.onMultiFileComplete,
     this.initialImageUrl,
+    this.initialImageFile,
     this.startWithEditor = false,
     this.existingImageUrls,
+    this.existingImageFiles,
     this.existingAspectRatios,
     this.existingAssetIds,
     this.isAddMode = false,
@@ -37,9 +41,13 @@ class MediaSelectionFlowWidget extends StatefulWidget {
   final String box; // 'A' or 'B'
   final Function(String imageUrl) onComplete; // 단일 이미지 완료 콜백
   final Function(List<String> imageUrls)? onMultiComplete; // 멀티 이미지 완료 콜백
+  final Function(File imageFile)? onFileComplete; // 단일 파일 완료 콜백
+  final Function(List<File> imageFiles)? onMultiFileComplete; // 멀티 파일 완료 콜백
   final String? initialImageUrl; // 편집할 기존 이미지 URL
+  final File? initialImageFile; // 편집할 기존 이미지 File
   final bool startWithEditor; // 에디터로 바로 시작할지 여부
   final List<String>? existingImageUrls; // 기존 이미지 URL들 (재사용용)
+  final List<File>? existingImageFiles; // 기존 이미지 File들
   final List<double>? existingAspectRatios; // 기존 이미지 비율들
   final List<String>? existingAssetIds; // 기존 AssetEntity ID들
   final bool isAddMode; // 추가 모드인지 여부
@@ -71,10 +79,16 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
     super.initState();
     
     // 기존 이미지가 있고 에디터로 바로 시작하는 경우
-    if (widget.startWithEditor && widget.initialImageUrl != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _downloadAndEditExistingImage();
-      });
+    if (widget.startWithEditor) {
+      if (widget.initialImageFile != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _editExistingFile();
+        });
+      } else if (widget.initialImageUrl != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _downloadAndEditExistingImage();
+        });
+      }
     } else {
       // 에디터로 바로 시작하지 않는 경우, 피커 열기
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -88,7 +102,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
     super.dispose();
   }
 
-  /// Bot Toast 메시지 표시 헬퍼
+  /// Bot Toast 메시지 표시 헬퍼 (ErrorHandler 스타일과 통일)
   void _showToast(String message, {bool isError = false}) {
     BotToast.showCustomText(
       toastBuilder: (_) => Container(
@@ -227,10 +241,11 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       print('[AssetPicker] Picker result: ${result?.length ?? 0} items selected');
       
       if (result != null && result.isNotEmpty) {
-        // 기존 이미지가 있는 경우 - diff 처리
-        if (widget.existingImageUrls != null && 
-            widget.existingImageUrls!.isNotEmpty) {
-          print('[AssetPicker] Processing with existing images (diff mode)');
+        // 추가 모드이거나 기존 이미지가 있는 경우 - diff 처리
+        if (widget.isAddMode || 
+            (widget.existingImageUrls != null && widget.existingImageUrls!.isNotEmpty) ||
+            (widget.existingImageFiles != null && widget.existingImageFiles!.isNotEmpty)) {
+          print('[AssetPicker] Processing with existing images (diff mode) - isAddMode: ${widget.isAddMode}');
           await _processSelectionResult(result);
           return;
         }
@@ -344,6 +359,48 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
     }
   }
 
+  /// 기존 파일 편집
+  Future<void> _editExistingFile() async {
+    setState(() {
+      _selectedFile = widget.initialImageFile;
+      
+      // 멀티 이미지 편집 시 전체 파일 목록 설정
+      if (widget.existingImageFiles != null && widget.existingImageFiles!.isNotEmpty) {
+        _allSelectedFiles = List<File>.from(widget.existingImageFiles!);
+        _currentEditIndex = widget.currentIndex ?? 0;
+      }
+      
+      // AssetEntity ID들도 복원
+      if (widget.existingAssetIds != null && widget.existingAssetIds!.isNotEmpty) {
+        // AssetEntity 복원은 비동기로 처리
+        _restoreAssetEntities();
+      }
+    });
+  }
+  
+  /// AssetEntity ID들을 비동기로 복원
+  Future<void> _restoreAssetEntities() async {
+    if (widget.existingAssetIds == null) return;
+    
+    final restoredAssets = <AssetEntity>[];
+    for (String id in widget.existingAssetIds!) {
+      try {
+        final asset = await AssetEntity.fromId(id);
+        if (asset != null) {
+          restoredAssets.add(asset);
+        }
+      } catch (e) {
+        print('[MediaSelectionFlow] AssetEntity 복원 실패 (ID: $id): $e');
+      }
+    }
+    
+    if (mounted) {
+      setState(() {
+        _selectedAssets = restoredAssets;
+      });
+    }
+  }
+
   /// 기존 이미지 다운로드 후 편집
   Future<void> _downloadAndEditExistingImage() async {
     try {
@@ -419,7 +476,19 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       existingAssetIds: widget.existingAssetIds,
       startWithEditor: widget.startWithEditor,
       isRetrying: _isRetrying,
-      onSingleComplete: widget.onComplete,
+      onSingleComplete: (imageUrl) {
+        // URL 기반 완료 처리
+        widget.onComplete(imageUrl);
+        
+        // File 기반에서 편집 시작한 경우, File 콜백도 호출
+        // 단, 멀티 이미지가 아닌 경우에만 (멀티 이미지는 이미 처리됨)
+        if (widget.initialImageFile != null && 
+            widget.onFileComplete != null && 
+            _allSelectedFiles.isEmpty) {
+          // 편집된 파일이 _selectedFile에 저장되어 있음
+          widget.onFileComplete!(_selectedFile!);
+        }
+      },
       onMultiComplete: widget.onMultiComplete,
       onBackToThumbnail: () {
         if (_allSelectedFiles.isNotEmpty) {

@@ -30,6 +30,7 @@ import 'utils/error_handler.dart';
 import 'constants/dimensions.dart';
 import 'constants/animation_constants.dart';
 import 'constants/field_styles.dart';
+import 'services/media_upload_service.dart';
 
 class InPutPostImageWidget extends StatefulWidget {
   const InPutPostImageWidget({super.key});
@@ -69,7 +70,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final appState = Provider.of<AppState>(context, listen: false);
       // 초기 상태 설정
-      _lastImageCount = appState.uploadImageA.length + appState.uploadImageB.length;
+      _lastImageCount = appState.tempImageFilesA.length + appState.tempImageFilesB.length;
       _lastAspectRatioA = appState.uploadImageAspectRatioA.isNotEmpty ? appState.uploadImageAspectRatioA.first : null;
       _lastAspectRatioB = appState.uploadImageAspectRatioB.isNotEmpty ? appState.uploadImageAspectRatioB.first : null;
       
@@ -137,14 +138,14 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     
     DebugHelper.runInDebug(() {
       DebugHelper.logLayout('=== 스마트 레이아웃 업데이트 시작 ===');
-      DebugHelper.logLayout('A 이미지 개수: ${appState.uploadImageA.length}');
-      DebugHelper.logLayout('B 이미지 개수: ${appState.uploadImageB.length}');
+      DebugHelper.logLayout('A 이미지 개수: ${appState.tempImageFilesA.length}');
+      DebugHelper.logLayout('B 이미지 개수: ${appState.tempImageFilesB.length}');
       DebugHelper.logLayout('A 비율 정보 개수: ${appState.uploadImageAspectRatioA.length}');
       DebugHelper.logLayout('B 비율 정보 개수: ${appState.uploadImageAspectRatioB.length}');
     });
     
     // 이미지가 하나도 없으면 기본 레이아웃(horizontal)으로 초기화
-    if (appState.uploadImageA.isEmpty && appState.uploadImageB.isEmpty) {
+    if (appState.tempImageFilesA.isEmpty && appState.tempImageFilesB.isEmpty) {
       DebugHelper.logLayout('이미지가 없어 기본 레이아웃(horizontal)으로 초기화');
       if (_model.currentLayout != LayoutType.horizontal) {
         // mounted 체크 추가
@@ -173,8 +174,27 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       DebugHelper.logLayout('B 이미지 비율: $ratioB');
     }
     
-    // 스마트 레이아웃 결정
-    final optimalLayout = AspectRatioAnalyzer.getOptimalLayout(ratioA, ratioB);
+    // 스마트 레이아웃 결정 - A박스만 있어도 레이아웃 계산
+    LayoutType optimalLayout;
+    if (ratioA != null && ratioB == null && appState.tempImageFilesB.isEmpty) {
+      // A박스만 있는 경우에도 이미지 비율에 따라 레이아웃 결정
+      final orientation = AspectRatioAnalyzer.getOrientation(ratioA);
+      if (orientation == ImageOrientation.landscape) {
+        // 가로형 이미지 → 세로 배치가 더 적합
+        optimalLayout = LayoutType.vertical;
+      } else if (orientation == ImageOrientation.portrait) {
+        // 세로형 이미지 → 가로 배치가 더 적합
+        optimalLayout = LayoutType.horizontal;
+      } else {
+        // 정사각형 → 기본 가로 배치
+        optimalLayout = LayoutType.horizontal;
+      }
+      DebugHelper.logLayout('A박스만 있음 - 이미지 방향: $orientation');
+    } else {
+      // 일반적인 경우 (A/B 둘 다 있거나 B만 있는 경우)
+      optimalLayout = AspectRatioAnalyzer.getOptimalLayout(ratioA, ratioB);
+    }
+    
     DebugHelper.logLayout('결정된 레이아웃: ${AspectRatioAnalyzer.getLayoutDescription(optimalLayout)}');
     
     // 레이아웃이 변경된 경우에만 업데이트
@@ -414,6 +434,26 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
       final appState = context.read<AppState>();
       
+      // 임시 파일들을 Firebase Storage에 업로드
+      List<String> uploadedUrlsA = [];
+      List<String> uploadedUrlsB = [];
+      
+      if (appState.tempImageFilesA.isNotEmpty) {
+        DebugHelper.log('A박스 이미지 업로드 중: ${appState.tempImageFilesA.length}개');
+        uploadedUrlsA = await MediaUploadService.uploadTempFiles(
+          files: appState.tempImageFilesA,
+          box: 'A',
+        );
+      }
+      
+      if (appState.tempImageFilesB.isNotEmpty) {
+        DebugHelper.log('B박스 이미지 업로드 중: ${appState.tempImageFilesB.length}개');
+        uploadedUrlsB = await MediaUploadService.uploadTempFiles(
+          files: appState.tempImageFilesB,
+          box: 'B',
+        );
+      }
+      
       // 사용자 정보 가져오기
       final userDoc = await UsersRecord.getDocumentOnce(
         FirebaseFirestore.instance.collection('users').doc(user.uid)
@@ -443,12 +483,12 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         },
         optionA: {
           'title': appState.uploadTextA,
-          'mediaUrls': appState.uploadImageA,
+          'mediaUrls': uploadedUrlsA,
           'mediaType': 'image',
         },
         optionB: {
           'title': appState.uploadTextB,
-          'mediaUrls': appState.uploadImageB,
+          'mediaUrls': uploadedUrlsB,
           'mediaType': 'image',
         },
         stats: {
@@ -470,8 +510,8 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       final pollDetailsData = createPollDetailsRecordData(
         option1: appState.uploadTextA,
         option2: appState.uploadTextB,
-        option1MediaUrl: appState.uploadImageA.isNotEmpty ? appState.uploadImageA.first : null,
-        option2MediaUrl: appState.uploadImageB.isNotEmpty ? appState.uploadImageB.first : null,
+        option1MediaUrl: uploadedUrlsA.isNotEmpty ? uploadedUrlsA.first : null,
+        option2MediaUrl: uploadedUrlsB.isNotEmpty ? uploadedUrlsB.first : null,
         option1MediaType: 'image',
         option2MediaType: 'image',
         resultTime: 7, // 7일 후 결과 공개
@@ -485,6 +525,12 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         appState.uploadTextB = '';
         appState.uploadImageA = [];
         appState.uploadImageB = [];
+        appState.clearTempImageFilesA();
+        appState.clearTempImageFilesB();
+        appState.uploadImageAspectRatioA = [];
+        appState.uploadImageAspectRatioB = [];
+        appState.assetEntityIdsA = [];
+        appState.assetEntityIdsB = [];
         appState.questionTitle = '';
         appState.questionDescription = '';
       });
@@ -555,29 +601,36 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
   /// 박스 크기 계산
   (Size, Size) _calculateBoxSizes(double? aspectRatioA, double? aspectRatioB, AppState appState) {
+    // A 박스만 선택된 경우 (absellected가 true일 때만)
     if (_model.absellected) {
       final size = DynamicBoxCalculator.getBoxSize(
         context: context,
-        layoutType: _model.currentLayout,
+        layoutType: LayoutType.single,
         box: 'A',
         aspectRatio: aspectRatioA,
         hasOtherBox: false,
       );
+      
+      DebugHelper.runInDebug(() {
+        DebugHelper.logLayout('A박스만 선택됨 - 크기: ${size.height}px');
+      });
+      
       return (size, size);
     }
     
+    // 스마트 레이아웃 적용 (B박스가 비어있어도 레이아웃 계산)
     final unifiedSize = DynamicBoxCalculator.getUnifiedSize(
       context: context,
       layoutType: _model.currentLayout,
-      aspectRatioA: (appState.uploadImageA.isEmpty && appState.uploadImageB.isEmpty) ? null : aspectRatioA,
-      aspectRatioB: (appState.uploadImageA.isEmpty && appState.uploadImageB.isEmpty) ? null : aspectRatioB,
+      aspectRatioA: (appState.tempImageFilesA.isEmpty && appState.tempImageFilesB.isEmpty) ? null : aspectRatioA,
+      aspectRatioB: (appState.tempImageFilesA.isEmpty && appState.tempImageFilesB.isEmpty) ? null : aspectRatioB,
     );
     
     DebugHelper.runInDebug(() {
-      if (appState.uploadImageA.isEmpty && appState.uploadImageB.isEmpty) {
+      if (appState.tempImageFilesA.isEmpty && appState.tempImageFilesB.isEmpty) {
         DebugHelper.logLayout('대기 상태 박스 크기: ${unifiedSize.height}px, 레이아웃: ${_model.currentLayout}');
       } else {
-        DebugHelper.logLayout('이미지 있는 상태 박스 크기: ${unifiedSize.height}px');
+        DebugHelper.logLayout('스마트 레이아웃 박스 크기: ${unifiedSize.height}px, 레이아웃: ${_model.currentLayout}');
       }
     });
     
@@ -589,17 +642,33 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   Future<void> _handleBoxTap(String box) async {
     final appState = Provider.of<AppState>(context, listen: false);
     
-    if (box == 'B' && appState.uploadImageA.isEmpty) {
+    if (box == 'B' && appState.tempImageFilesA.isEmpty) {
       _showBBoxWarning();
     } else {
-      final images = box == 'A' ? appState.uploadImageA : appState.uploadImageB;
-      if (images.isEmpty) {
+      final imageFiles = box == 'A' ? appState.tempImageFilesA : appState.tempImageFilesB;
+      final imageUrls = box == 'A' ? appState.uploadImageA : appState.uploadImageB;
+      
+      if (imageFiles.isEmpty && imageUrls.isEmpty) {
         await _openAssetsPicker(context, box);
-      } else {
+      } else if (imageFiles.isNotEmpty) {
+        // File 기반 이미지 뷰어로 이동
+        final imagePaths = imageFiles.map((file) => file.path).toList();
         context.pushNamed(
           ImageViewerPage.routeName,
           queryParameters: {
-            'imageUrls': images.join(','),
+            'imagePaths': imagePaths.join('|'), // 구분자로 | 사용
+            'initialIndex': box == 'A' 
+              ? _model.currentImageIndexA.toString() 
+              : _model.currentImageIndexB.toString(),
+            'box': box,
+          },
+        );
+      } else {
+        // URL 기반 이미지 뷰어로 이동
+        context.pushNamed(
+          ImageViewerPage.routeName,
+          queryParameters: {
+            'imageUrls': imageUrls.join(','),
             'initialIndex': box == 'A' 
               ? _model.currentImageIndexA.toString() 
               : _model.currentImageIndexB.toString(),
@@ -613,40 +682,85 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   /// 이미지 편집 처리
   Future<void> _handleImageEdit(String box) async {
     final appState = Provider.of<AppState>(context, listen: false);
-    final images = box == 'A' ? appState.uploadImageA : appState.uploadImageB;
+    final imageFiles = box == 'A' ? appState.tempImageFilesA : appState.tempImageFilesB;
+    final imageUrls = box == 'A' ? appState.uploadImageA : appState.uploadImageB;
     
-    if (images.isEmpty) return;
+    if (imageFiles.isEmpty && imageUrls.isEmpty) return;
     
-    final currentIndex = images.length == 1 
+    final currentIndex = (imageFiles.isNotEmpty ? imageFiles.length : imageUrls.length) == 1 
       ? 0 
       : (box == 'A' ? _model.currentImageIndexA : _model.currentImageIndexB);
     
-    await Navigator.push(
-      context,
-      NoAnimationPageRoute(
-        builder: (context) => MediaSelectionFlowWidget(
-          box: box,
-          model: _model,
-          initialImageUrl: images[currentIndex],
-          startWithEditor: true,
-          existingImageUrls: images.length > 1 ? images : null,
-          existingAspectRatios: images.length > 1 
-            ? (box == 'A' ? appState.uploadImageAspectRatioA : appState.uploadImageAspectRatioB)
-            : null,
-          onComplete: (newImageUrl) {
-            appState.update(() {
-              if (box == 'A') {
-                appState.uploadImageA[currentIndex] = newImageUrl;
-              } else {
-                appState.uploadImageB[currentIndex] = newImageUrl;
+    // File 기반 편집
+    if (imageFiles.isNotEmpty) {
+      await Navigator.push(
+        context,
+        NoAnimationPageRoute(
+          builder: (context) => MediaSelectionFlowWidget(
+            box: box,
+            model: _model,
+            initialImageFile: imageFiles[currentIndex],
+            startWithEditor: true,
+            currentIndex: currentIndex,
+            existingImageFiles: imageFiles.length > 1 ? imageFiles : null,
+            existingAspectRatios: imageFiles.length > 1 
+              ? (box == 'A' ? appState.uploadImageAspectRatioA : appState.uploadImageAspectRatioB)
+              : null,
+            existingAssetIds: imageFiles.length > 1
+              ? (box == 'A' ? appState.assetEntityIdsA : appState.assetEntityIdsB)
+              : null,
+            onComplete: (newImageUrl) {
+              // File 기반에서는 onFileComplete를 사용해야 함
+              _showSnackBar('이미지가 수정되었습니다.');
+              if (imageFiles.length > 1) _updateLayoutBasedOnImages();
+            },
+            onFileComplete: (newImageFile) {
+              // 편집된 파일로 교체 - 인덱스 범위 검증
+              if ((box == 'A' && currentIndex < appState.tempImageFilesA.length) ||
+                  (box == 'B' && currentIndex < appState.tempImageFilesB.length)) {
+                appState.update(() {
+                  if (box == 'A') {
+                    appState.tempImageFilesA[currentIndex] = newImageFile;
+                  } else {
+                    appState.tempImageFilesB[currentIndex] = newImageFile;
+                  }
+                });
+                _showSnackBar('이미지가 수정되었습니다.');
+                if (imageFiles.length > 1) _updateLayoutBasedOnImages();
               }
-            });
-            _showSnackBar('이미지가 수정되었습니다.');
-            if (images.length > 1) _updateLayoutBasedOnImages();
-          },
+            },
+          ),
         ),
-      ),
-    );
+      );
+    } else {
+      // URL 기반 편집 (하위 호환성)
+      await Navigator.push(
+        context,
+        NoAnimationPageRoute(
+          builder: (context) => MediaSelectionFlowWidget(
+            box: box,
+            model: _model,
+            initialImageUrl: imageUrls[currentIndex],
+            startWithEditor: true,
+            existingImageUrls: imageUrls.length > 1 ? imageUrls : null,
+            existingAspectRatios: imageUrls.length > 1 
+              ? (box == 'A' ? appState.uploadImageAspectRatioA : appState.uploadImageAspectRatioB)
+              : null,
+            onComplete: (newImageUrl) {
+              appState.update(() {
+                if (box == 'A') {
+                  appState.uploadImageA[currentIndex] = newImageUrl;
+                } else {
+                  appState.uploadImageB[currentIndex] = newImageUrl;
+                }
+              });
+              _showSnackBar('이미지가 수정되었습니다.');
+              if (imageUrls.length > 1) _updateLayoutBasedOnImages();
+            },
+          ),
+        ),
+      );
+    }
   }
 
   /// Consumer 위젯 통합 - 미디어 박스 빌드
@@ -654,11 +768,11 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     return Consumer<AppState>(
       builder: (context, appState, child) {
         // 이미지 수와 비율 변경 감지
-        final currentImageCount = appState.uploadImageA.length + appState.uploadImageB.length;
-        final currentAspectRatioA = appState.uploadImageA.isNotEmpty && appState.uploadImageAspectRatioA.isNotEmpty 
+        final currentImageCount = appState.tempImageFilesA.length + appState.tempImageFilesB.length;
+        final currentAspectRatioA = appState.tempImageFilesA.isNotEmpty && appState.uploadImageAspectRatioA.isNotEmpty 
             ? appState.uploadImageAspectRatioA.first 
             : null;
-        final currentAspectRatioB = appState.uploadImageB.isNotEmpty && appState.uploadImageAspectRatioB.isNotEmpty 
+        final currentAspectRatioB = appState.tempImageFilesB.isNotEmpty && appState.uploadImageAspectRatioB.isNotEmpty 
             ? appState.uploadImageAspectRatioB.first 
             : null;
         
@@ -693,7 +807,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   Widget _buildWarningMessage() {
     return Consumer<AppState>(
       builder: (context, appState, _) {
-        if (appState.uploadImageA.isEmpty && appState.uploadImageB.isNotEmpty) {
+        if (appState.tempImageFilesA.isEmpty && appState.tempImageFilesB.isNotEmpty) {
           return WarningMessage(message: 'A 먼저 이미지를 추가해주세요');
         }
         return SizedBox.shrink();
@@ -776,10 +890,11 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       height: boxSizeA.height,
       isSelected: isAbsellected,
       isVideoSelected: _model.isVideoSelectedA,
-      imageUrls: appState.uploadImageA,
+      imageUrls: [],  // File 기반으로 변경, URL은 사용하지 않음
       showPlusIcon: isAbsellected,
       isHorizontal: _model.isRatioVertical,
       boxColor: AppTheme.of(context).primary,
+      appState: appState,
       shakeAnimation: null,
     );
 
@@ -790,10 +905,11 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       height: boxSizeB.height,
       isSelected: false,
       isVideoSelected: _model.isVideoSelectedB,
-      imageUrls: appState.uploadImageB,
+      imageUrls: [],  // File 기반으로 변경, URL은 사용하지 않음
       showPlusIcon: false,
       isHorizontal: _model.isRatioVertical,
       boxColor: AppTheme.of(context).secondary,
+      appState: appState,
       shakeAnimation: _model.shakeAnimation,
     );
 
@@ -873,6 +989,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     required bool showPlusIcon,
     required bool isHorizontal,
     required Color boxColor,
+    required AppState appState,
     Animation<double>? shakeAnimation,
   }) {
     final callbacks = MediaBoxCallbacks(
@@ -890,6 +1007,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       isSelected: isSelected,
       isVideoSelected: isVideoSelected,
       imageUrls: imageUrls,
+      imageFiles: box == 'A' ? appState.tempImageFilesA : appState.tempImageFilesB,
       showPlusIcon: showPlusIcon,
       dynamicHeight: height,
       dynamicWidth: width,

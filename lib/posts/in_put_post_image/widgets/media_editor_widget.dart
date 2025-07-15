@@ -1,12 +1,14 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 import 'package:provider/provider.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:bot_toast/bot_toast.dart';
+import 'package:path_provider/path_provider.dart';
 import '/app_state.dart';
-import '../services/image_upload_orchestrator.dart';
+import '../services/image_upload_orchestrator_v2.dart';
 import '../in_put_post_image_model.dart';
 
 /// 이미지 에디터 페이지 위젯
@@ -84,6 +86,45 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
     );
   }
 
+  /// 편집된 이미지를 File로 저장
+  Future<File> _saveEditedImageAsFile(Uint8List bytes) async {
+    // 임시 디렉토리에 파일 저장
+    final tempDir = await getTemporaryDirectory();
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final tempPath = '${tempDir.path}/edited_image_${widget.box}_$timestamp.jpg';
+    
+    final file = File(tempPath);
+    await file.writeAsBytes(bytes);
+    
+    return file;
+  }
+
+  /// 이미지의 비율 계산
+  Future<double?> _calculateImageAspectRatio(Uint8List bytes) async {
+    try {
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+      
+      final width = image.width.toDouble();
+      final height = image.height.toDouble();
+      
+      return width / height;
+    } catch (e) {
+      print('이미지 비율 계산 실패: $e');
+      return null;
+    }
+  }
+
+  /// 거부 메시지 생성
+  String _buildRejectionMessage(ImageProcessResult result) {
+    if (result.rejectedCount == 1) {
+      return '커뮤니티 가이드라인 위반';
+    } else {
+      return '커뮤니티 가이드라인 위반: ${result.rejectedIndices.join(", ")}';
+    }
+  }
+
   /// 이미지 편집 완료 처리
   Future<void> _handleImageEditingComplete(Uint8List bytes) async {
     print('[MediaEditor] onImageEditingComplete 호출됨');
@@ -100,23 +141,30 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
       // AppState 접근
       final appState = Provider.of<AppState>(context, listen: false);
       
-      // ImageUploadOrchestrator 생성
-      final orchestrator = ImageUploadOrchestrator(
+      // ImageUploadOrchestratorV2 생성
+      final orchestrator = ImageUploadOrchestratorV2(
         context: context,
         appState: appState,
         box: widget.box,
         model: widget.model,
       );
       
+      // 편집된 이미지를 File로 저장
+      final editedFile = await _saveEditedImageAsFile(bytes);
+      
+      // 편집된 이미지의 비율 계산
+      final aspectRatio = await _calculateImageAspectRatio(bytes);
+      
       // 멀티 이미지 처리
       if (widget.allSelectedFiles.isNotEmpty) {
-        // 멀티 이미지 업로드 처리
-        final result = await orchestrator.handleMultiImageUpload(
-          editedImageBytes: bytes,
+        // 멀티 이미지 처리 (검열만 수행, 업로드 X)
+        final result = await orchestrator.handleMultiImageProcess(
+          editedImageFile: editedFile,
           allFiles: widget.allSelectedFiles,
           currentEditIndex: widget.currentEditIndex,
           selectedAssets: widget.selectedAssets,
           isAddMode: widget.isAddMode,
+          isEditMode: widget.startWithEditor,  // 편집 모드 플래그 추가
           currentIndex: widget.currentIndex,
           existingImageUrls: widget.existingImageUrls,
           existingAspectRatios: widget.existingAspectRatios,
@@ -129,52 +177,57 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
           },
         );
         
-        if (!result.success) {
-          // 검열 실패 또는 업로드 실패
+        if (!result.success || result.allRejected) {
+          // 검열 실패
           if (mounted) {
-            
-            if (result.rejectionReason != null) {
+            if (result.allRejected) {
               // 시나리오 2: 모든 이미지가 거부된 경우
-              if (result.scenarioType == 2) {
-                setState(() {
-                  _isInRejectionRetryMode = true;
-                });
-                // 토스트 먼저 표시
-                _showToast(result.rejectionReason!, isError: true);
-                
-                // 피커 열기 (모달은 닫지 않음)
-                widget.onBackToPicker?.call();
-              } else {
-                // 시나리오 1: 일부 이미지만 거부된 경우
-                _showToast(result.rejectionReason!, isError: true);
-                Navigator.pop(context);
-              }
+              setState(() {
+                _isInRejectionRetryMode = true;
+              });
+              
+              // 거부 메시지 생성
+              final rejectionMessage = _buildRejectionMessage(result);
+              _showToast(rejectionMessage, isError: true);
+              
+              // 피커 열기 (모달은 닫지 않음)
+              widget.onBackToPicker?.call();
             } else {
-              _showToast('이미지 업로드 실패: ${result.error ?? "알 수 없는 오류"}', isError: true);
+              _showToast('이미지 처리 실패', isError: true);
               Navigator.pop(context); // 에디터 닫기
             }
           }
           return;
         }
         
-        // 시나리오 1 체크: 일부 이미지가 거부되었지만 성공한 경우
-        final rejectionMessage = result.rejectionReason;
-        
-        // 모달 먼저 닫기 (Toast와 콜백 호출 전에)
+        // 성공: 일부 이미지가 거부되었을 수도 있음
         if (mounted) {
-          print('[MediaEditor] 멀티 이미지 업로드 완료');
+          print('[MediaEditor] 멀티 이미지 처리 완료');
+          
+          // 비율 업데이트 (편집된 이미지의 인덱스에 해당하는 비율 업데이트)
+          if (aspectRatio != null && widget.currentEditIndex < (widget.box == 'A' ? appState.uploadImageAspectRatioA.length : appState.uploadImageAspectRatioB.length)) {
+            appState.update(() {
+              if (widget.box == 'A') {
+                appState.uploadImageAspectRatioA[widget.currentEditIndex] = aspectRatio;
+              } else {
+                appState.uploadImageAspectRatioB[widget.currentEditIndex] = aspectRatio;
+              }
+            });
+          }
+          
           print('[MediaEditor] Navigator.pop 호출 전');
           Navigator.pop(context); // 에디터 닫기
           print('[MediaEditor] Navigator.pop 호출 완료');
           
-          // 콜백 호출
-          if (widget.onMultiComplete != null && result.imageUrls != null) {
-            widget.onMultiComplete!(result.imageUrls!);
+          // 콜백 호출 (File이 AppState에 저장됨)
+          if (widget.onMultiComplete != null) {
+            widget.onMultiComplete!([]);  // URL 대신 빈 배열 전달
           }
           
-          // Toast는 마지막에 (다음 프레임에서 안전하게)
-          if (rejectionMessage != null && result.success) {
+          // 일부 이미지가 거부된 경우 Toast 표시
+          if (result.rejectedCount > 0) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
+              final rejectionMessage = _buildRejectionMessage(result);
               _showToast(rejectionMessage, isError: true);
             });
           }
@@ -182,49 +235,68 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
         
       } else {
         // 단일 이미지 처리
-        final result = await orchestrator.handleSingleImageUpload(
-          imageBytes: bytes,
-          selectedAssets: widget.selectedAssets,
-          isEditMode: widget.startWithEditor && widget.existingImageUrls != null && widget.existingImageUrls!.isNotEmpty,
+        final result = await orchestrator.handleSingleImageProcess(
+          imageFile: editedFile,
+          assetId: widget.selectedAssets.isNotEmpty ? widget.selectedAssets.first.id : null,
           onProgress: (progress) {
             widget.onProgressUpdate?.call(progress);
           },
-          onModerationStart: () {
-            // 검열은 ProImageEditor의 loadingDialogMsg로 표시됨
-          },
         );
         
-        if (!result.success) {
-          // 검열 실패 또는 업로드 실패
+        if (!result.success || result.allRejected) {
+          // 검열 실패
           if (mounted) {
+            setState(() {
+              _isInRejectionRetryMode = true;
+            });
             
-            if (result.rejectionReason != null) {
-              // 단일 이미지가 거부된 경우
-              setState(() {
-                _isInRejectionRetryMode = true;
-              });
-              // 토스트 먼저 표시
-              _showToast(result.rejectionReason!, isError: true);
-              
-              // 피커 열기 (모달은 닫지 않음)
-              widget.onBackToPicker?.call();
-            } else {
-              _showToast('이미지 업로드 실패: ${result.error ?? "알 수 없는 오류"}', isError: true);
-              Navigator.pop(context); // 에디터 닫기
-            }
+            // 거부 메시지 표시
+            final rejectionMessage = _buildRejectionMessage(result);
+            _showToast(rejectionMessage, isError: true);
+            
+            // 피커 열기 (모달은 닫지 않음)
+            widget.onBackToPicker?.call();
           }
           return;
         }
         
-        // 모달 먼저 닫기 (콜백 호출 전에)
+        // 성공: 모달 닫기
         if (mounted) {
-          Navigator.pop(context);
-          print('단일 이미지 업로드 완료 및 모달 닫기');
+          // 비율 업데이트 (startWithEditor인 경우)
+          if (aspectRatio != null && widget.startWithEditor) {
+            appState.update(() {
+              if (widget.box == 'A') {
+                // 현재 인덱스의 비율 업데이트
+                final currentIndex = widget.currentIndex ?? 0;
+                if (currentIndex < appState.uploadImageAspectRatioA.length) {
+                  appState.uploadImageAspectRatioA[currentIndex] = aspectRatio;
+                }
+              } else {
+                // 현재 인덱스의 비율 업데이트
+                final currentIndex = widget.currentIndex ?? 0;
+                if (currentIndex < appState.uploadImageAspectRatioB.length) {
+                  appState.uploadImageAspectRatioB[currentIndex] = aspectRatio;
+                }
+              }
+            });
+          } else if (aspectRatio != null) {
+            // 새 이미지인 경우 비율 추가
+            appState.update(() {
+              if (widget.box == 'A') {
+                appState.addToUploadImageAspectRatioA(aspectRatio);
+              } else {
+                appState.addToUploadImageAspectRatioB(aspectRatio);
+              }
+            });
+          }
           
-          // Navigator.pop 이후에 콜백 호출 (microtask로 다음 프레임에 실행)
-          if (result.imageUrls != null && result.imageUrls!.isNotEmpty) {
+          Navigator.pop(context);
+          print('단일 이미지 처리 완료 및 모달 닫기');
+          
+          // 콜백 호출 (File이 AppState에 저장됨)
+          if (widget.onSingleComplete != null) {
             Future.microtask(() {
-              widget.onSingleComplete?.call(result.imageUrls!.first);
+              widget.onSingleComplete!(''); // URL 대신 빈 문자열 전달
             });
           }
         }

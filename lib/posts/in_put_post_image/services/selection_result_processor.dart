@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
+import 'package:bot_toast/bot_toast.dart';
 import '/app_state.dart';
+import '/services/image_moderation_service.dart';
 import 'media_upload_service.dart';
 import 'image_reorder_service.dart';
 import '../helpers/image_cache_helper.dart';
@@ -118,65 +123,129 @@ class SelectionResultProcessor {
     });
   }
 
-  /// 새 이미지 업로드 처리
+  /// 새 이미지 처리 (검열 후 File 객체로 저장)
   Future<void> _handleNewAssets(List<AssetEntity> newAssets) async {
+    final approvedFiles = <File>[];
+    final approvedAssets = <AssetEntity>[];
+    final rejectedIndices = <int>[];
+    final rejectedReasons = <String, List<int>>{};
+    
+    // 검열 진행
     for (int i = 0; i < newAssets.length; i++) {
       final asset = newAssets[i];
       final file = await asset.file;
-      if (file != null) {
-        final bytes = await file.readAsBytes();
-        
-        onProgressUpdate(0.3 + (0.6 * (i + 1) / newAssets.length));
-        
-        Map<String, dynamic> result;
-        try {
-          result = await MediaUploadService.uploadAndWaitForModeration(
-            imageBytes: bytes,
-            box: box,
-            timeout: const Duration(seconds: 15),
-          );
-          
-          // 검열 결과 확인
-          if (result['isApproved'] != true) {
-            // 검열 실패한 이미지는 건너뛰기
-            DebugHelper.logModeration('[SelectionProcessor] 이미지 검열 실패: ${result['rejectionReason']}');
-            continue;
-          }
-        } catch (e) {
-          // 업로드 실패 시
-          if (context.mounted) {
-            ErrorHandler.handle(
-              e,
-              type: ErrorType.storage,
-              customMessage: '이미지 업로드 실패',
-              context: context,
-            );
-          }
-          continue; // 이 이미지 건너뛰고 계속
-        }
-        
-        final displayUrl = result['urls']['display'];
-        final aspectRatio = result['aspectRatio'];
-        
-        // AppState에 추가
-        appState.update(() {
-          if (box == 'A') {
-            appState.addToUploadImageA(displayUrl);
-            appState.addToUploadImageAspectRatioA(aspectRatio);
-            appState.addToAssetEntityIdsA(asset.id);
-          } else {
-            appState.addToUploadImageB(displayUrl);
-            appState.addToUploadImageAspectRatioB(aspectRatio);
-            appState.addToAssetEntityIdsB(asset.id);
-          }
-        });
-        
-        // 프리캐싱
-        ImageCacheHelper.preloadImages(
-          context,
-          [displayUrl],
+      if (file == null) continue;
+      
+      onProgressUpdate(0.3 + (0.3 * (i + 1) / newAssets.length));
+      
+      try {
+        // 이미지 검열
+        final result = await ImageModerationService.checkImage(
+          imageFile: file,
+          box: box,
         );
+        
+        if (result.isAppropriate) {
+          approvedFiles.add(file);
+          approvedAssets.add(asset);
+        } else {
+          // 기존 이미지 개수를 고려하여 실제 번호 계산
+          final existingCount = box == 'A' ? appState.tempImageFilesA.length : appState.tempImageFilesB.length;
+          final actualIndex = existingCount + i + 1;
+          rejectedIndices.add(actualIndex); // 사용자에게 표시할 번호
+          
+          // 거부 이유별로 그룹화
+          if (rejectedReasons.containsKey(result.reason)) {
+            rejectedReasons[result.reason]!.add(actualIndex);
+          } else {
+            rejectedReasons[result.reason] = [actualIndex];
+          }
+          
+          DebugHelper.logModeration('[SelectionProcessor] 이미지 검열 실패: ${result.reason}');
+        }
+      } catch (e) {
+        // 검열 오류 시 통과로 처리 (나중에 서버에서 재검증)
+        DebugHelper.logError('이미지 검열 중 오류', e);
+        approvedFiles.add(file);
+        approvedAssets.add(asset);
       }
     }
+    
+    onProgressUpdate(0.7);
+    
+    // 검열 결과 처리
+    if (rejectedIndices.isNotEmpty && approvedFiles.isEmpty) {
+      // 모든 이미지가 거부됨
+      _showRejectionToast(rejectedReasons);
+      return;
+    } else if (rejectedIndices.isNotEmpty) {
+      // 일부 이미지만 거부됨
+      _showRejectionToast(rejectedReasons);
+    }
+    
+    // 승인된 이미지들을 AppState에 File 객체로 저장
+    for (int i = 0; i < approvedFiles.length; i++) {
+      final file = approvedFiles[i];
+      final asset = approvedAssets[i];
+      
+      // 이미지 비율 계산
+      final bytes = await file.readAsBytes();
+      final aspectRatio = await _calculateAspectRatio(bytes);
+      
+      appState.update(() {
+        if (box == 'A') {
+          appState.addToTempImageFilesA(file);
+          appState.addToUploadImageAspectRatioA(aspectRatio);
+          appState.addToAssetEntityIdsA(asset.id);
+        } else {
+          appState.addToTempImageFilesB(file);
+          appState.addToUploadImageAspectRatioB(aspectRatio);
+          appState.addToAssetEntityIdsB(asset.id);
+        }
+      });
+    }
+    
+    onProgressUpdate(1.0);
+  }
+  
+  /// 이미지 비율 계산
+  Future<double> _calculateAspectRatio(Uint8List bytes) async {
+    try {
+      final decodedImage = await decodeImageFromList(bytes);
+      return decodedImage.width / decodedImage.height;
+    } catch (e) {
+      return 1.0; // 기본값
+    }
+  }
+  
+  /// 거부 메시지 표시 (ErrorHandler 스타일과 통일)
+  void _showRejectionToast(Map<String, List<int>> rejectedReasons) {
+    final messages = <String>[];
+    
+    rejectedReasons.forEach((reason, indices) {
+      messages.add('$reason: ${indices.join(", ")}');
+    });
+    
+    final message = messages.join('\n');
+    
+    BotToast.showCustomText(
+      toastBuilder: (_) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.red.shade700.withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          message,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+          ),
+        ),
+      ),
+      duration: const Duration(seconds: 3),
+      align: const Alignment(0, 0.8),
+      onlyOne: true,
+    );
   }
 }

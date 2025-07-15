@@ -173,22 +173,31 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                       ),
                       
                       // Page Indicator
-                      if (widget.imageUrls.length > 1)
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(20.0),
-                          ),
-                          child: Text(
-                            '${_model.currentIndex + 1} / ${widget.imageUrls.length}',
-                            style: AppTheme.of(context).bodySmall.override(
-                                  color: Colors.white,
-                                ),
-                          ),
-                        )
-                      else
-                        SizedBox(width: 48.0),
+                      Builder(
+                        builder: (context) {
+                          final totalCount = widget.imagePaths.isNotEmpty 
+                              ? widget.imagePaths.length 
+                              : widget.imageUrls.length;
+                          
+                          if (totalCount > 1) {
+                            return Container(
+                              padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(20.0),
+                              ),
+                              child: Text(
+                                '${_model.currentIndex + 1} / $totalCount',
+                                style: AppTheme.of(context).bodySmall.override(
+                                      color: Colors.white,
+                                    ),
+                              ),
+                            );
+                          } else {
+                            return SizedBox(width: 48.0);
+                          }
+                        },
+                      ),
                     ],
                   ),
                 ),

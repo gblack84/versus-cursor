@@ -414,7 +414,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                         ),
                       ),
                       // 페이지 인디케이터 (이미지가 2개 이상일 때만 표시)
-                      if (widget.imageUrls.length > 1)
+                      if (_imageCount > 1)
                         Positioned(
                           bottom: 8,
                           left: 0,
@@ -422,7 +422,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: List.generate(
-                              widget.imageUrls.length,
+                              _imageCount,
                               (index) => Container(
                                 width: 8,
                                 height: 8,
@@ -505,7 +505,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
   
   /// 이미지 카운터 빌드
   Widget? _buildImageCounter() {
-    if (widget.imageUrls.length <= 1) return null;
+    if (_imageCount <= 1) return null;
     
     return Positioned(
       left: 12,
@@ -517,7 +517,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
-          '${_currentIndex + 1} / ${widget.imageUrls.length}',
+          '${_currentIndex + 1} / $_imageCount',
           style: TextStyle(
             color: Colors.white,
             fontSize: 12,

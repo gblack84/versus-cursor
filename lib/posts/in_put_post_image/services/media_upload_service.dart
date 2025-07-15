@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image/image.dart' as img;
@@ -245,5 +246,45 @@ class MediaUploadService {
           ? CloudImageModerationService.getRejectionReason(moderation)
           : null,
     };
+  }
+
+  /// 임시 저장된 File 객체들을 Firebase Storage에 업로드
+  /// 게시 버튼 클릭 시 호출됨
+  static Future<List<String>> uploadTempFiles({
+    required List<File> files,
+    required String box,
+    String? customPath,
+  }) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception(StringConstants.userNotLoggedIn);
+      }
+
+      final uploadedUrls = <String>[];
+      
+      // 각 파일을 순차적으로 업로드 (순서 유지를 위해)
+      for (int i = 0; i < files.length; i++) {
+        final file = files[i];
+        final bytes = await file.readAsBytes();
+        
+        // uploadImageWithVariants를 사용하여 3가지 크기로 업로드
+        final result = await uploadImageWithVariants(
+          imageBytes: bytes,
+          box: box,
+          customPath: customPath,
+        );
+        
+        // display URL만 저장 (posts_record에서 사용)
+        uploadedUrls.add(result['urls']['display']);
+        
+        DebugHelper.log('File ${i + 1}/${files.length} 업로드 완료');
+      }
+      
+      return uploadedUrls;
+    } catch (e) {
+      DebugHelper.logError('임시 파일 업로드 실패', e);
+      rethrow;
+    }
   }
 }

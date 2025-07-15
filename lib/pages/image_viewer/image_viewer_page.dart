@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '/core/app_theme.dart';
@@ -8,12 +9,14 @@ export 'image_viewer_model.dart';
 class ImageViewerPage extends StatefulWidget {
   const ImageViewerPage({
     super.key,
-    required this.imageUrls,
+    this.imageUrls = const [],
+    this.imagePaths = const [],
     this.initialIndex = 0,
     this.box,
   });
 
   final List<String> imageUrls;
+  final List<String> imagePaths; // File paths for local images
   final int initialIndex;
   final String? box;
 
@@ -36,6 +39,10 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
     _model = createModel(context, () => ImageViewerModel());
     _model.currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: widget.initialIndex);
+    
+    // Validate that we have either URLs or paths
+    assert(widget.imageUrls.isNotEmpty || widget.imagePaths.isNotEmpty,
+        'Either imageUrls or imagePaths must be provided');
   }
 
   @override
@@ -43,6 +50,56 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
     _model.dispose();
     _pageController.dispose();
     super.dispose();
+  }
+
+  Widget _buildImageWidget(int index) {
+    // File 경로가 있는 경우
+    if (widget.imagePaths.isNotEmpty && index < widget.imagePaths.length) {
+      final file = File(widget.imagePaths[index]);
+      return Image.file(
+        file,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
+      );
+    }
+    
+    // URL이 있는 경우
+    if (widget.imageUrls.isNotEmpty && index < widget.imageUrls.length) {
+      return CachedNetworkImage(
+        imageUrl: widget.imageUrls[index],
+        fit: BoxFit.contain,
+        placeholder: (context, url) => Center(
+          child: CircularProgressIndicator(
+            color: AppTheme.of(context).primary,
+          ),
+        ),
+        errorWidget: (context, url, error) => _buildErrorWidget(),
+      );
+    }
+    
+    return _buildErrorWidget();
+  }
+
+  Widget _buildErrorWidget() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            color: AppTheme.of(context).error,
+            size: 64.0,
+          ),
+          SizedBox(height: 16.0),
+          Text(
+            '이미지를 불러올 수 없습니다',
+            style: AppTheme.of(context).bodyMedium.override(
+                  color: Colors.white,
+                ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -55,7 +112,9 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
           // Image PageView
           PageView.builder(
             controller: _pageController,
-            itemCount: widget.imageUrls.length,
+            itemCount: widget.imagePaths.isNotEmpty 
+                ? widget.imagePaths.length 
+                : widget.imageUrls.length,
             onPageChanged: (index) {
               setState(() {
                 _model.currentIndex = index;
@@ -66,34 +125,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                 minScale: 1.0,
                 maxScale: 4.0,
                 child: Center(
-                  child: CachedNetworkImage(
-                    imageUrl: widget.imageUrls[index],
-                    fit: BoxFit.contain,
-                    placeholder: (context, url) => Center(
-                      child: CircularProgressIndicator(
-                        color: AppTheme.of(context).primary,
-                      ),
-                    ),
-                    errorWidget: (context, url, error) => Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            color: AppTheme.of(context).error,
-                            size: 64.0,
-                          ),
-                          SizedBox(height: 16.0),
-                          Text(
-                            '이미지를 불러올 수 없습니다',
-                            style: AppTheme.of(context).bodyMedium.override(
-                                  color: Colors.white,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  child: _buildImageWidget(index),
                 ),
               );
             },

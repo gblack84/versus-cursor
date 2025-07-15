@@ -537,28 +537,88 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   
   /// 선택 결과 처리 (diff 계산)
   Future<void> _processSelectionResult(List<AssetEntity> selectedAssets) async {
-    setState(() {
-      _isUploading = true;
-    });
-    
-    final appState = Provider.of<AppState>(context, listen: false);
-    final processor = SelectionResultProcessor(
-      context: context,
-      appState: appState,
-      box: widget.box,
-      existingAssetIds: widget.existingAssetIds,
-      onProgressUpdate: (progress) {
-        setState(() {
-          _uploadProgress = progress;
-        });
-      },
-      onMultiComplete: widget.onMultiComplete,
+    // 로딩 토스트 표시 (피커 위에 오버레이로 표시)
+    final cancel = BotToast.showCustomLoading(
+      toastBuilder: (_) => Container(
+        width: double.infinity,
+        height: double.infinity,
+        color: Colors.black.withValues(alpha: 0.7),
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.8),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  '안전성 검사중 입니다...',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      allowClick: false, // 로딩 중 클릭 방지
+      clickClose: false,
     );
     
-    await processor.processSelectionResult(selectedAssets);
-    
-    setState(() {
-      _isUploading = false;
-    });
+    try {
+      setState(() {
+        _isUploading = true;
+      });
+      
+      final appState = Provider.of<AppState>(context, listen: false);
+      final processor = SelectionResultProcessor(
+        context: context,
+        appState: appState,
+        box: widget.box,
+        existingAssetIds: widget.existingAssetIds,
+        onProgressUpdate: (progress) {
+          setState(() {
+            _uploadProgress = progress;
+          });
+        },
+        onMultiComplete: widget.onMultiComplete,
+      );
+      
+      await processor.processSelectionResult(selectedAssets);
+      
+      // 로딩 토스트 제거
+      cancel();
+      
+      // 모든 모달 닫기 (피커 + MediaSelectionFlow)
+      if (mounted) {
+        // 모든 라우트를 닫고 첫 번째 라우트(질문 작성 페이지)로 돌아가기
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } catch (e) {
+      // 에러 발생 시에도 로딩 토스트 제거
+      cancel();
+      
+      if (mounted) {
+        // 에러 시에도 모달 닫기
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+      
+      rethrow;
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
+    }
   }
 }

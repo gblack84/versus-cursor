@@ -78,11 +78,8 @@ class SelectionResultProcessor {
         onMultiComplete!(urls);
       }
       
-      // 모달 닫기
-      if (context.mounted) {
-        Navigator.pop(context);
-        DebugHelper.log('선택 완료 및 모달 닫기');
-      }
+      // 모달 닫기는 호출한 곳에서 처리
+      DebugHelper.log('선택 완료');
     } catch (e) {
       if (context.mounted) {
         onProgressUpdate(0.0);
@@ -92,7 +89,7 @@ class SelectionResultProcessor {
           customMessage: '이미지 처리 중 오류가 발생했습니다.',
           context: context,
         );
-        Navigator.pop(context);
+        // 에러 시에도 모달 닫기는 호출한 곳에서 처리
       }
     }
   }

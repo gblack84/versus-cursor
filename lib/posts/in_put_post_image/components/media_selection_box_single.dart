@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -12,7 +13,8 @@ class MediaSelectionBox extends StatelessWidget {
   final VoidCallback? onCancel;
   final bool isHorizontal;
   final Color boxColor;
-  final String? imageUrl; // 선택된 이미지 URL
+  final String? imageUrl; // 선택된 이미지 URL (하위 호환성을 위해 유지)
+  final File? imageFile; // 선택된 이미지 File 객체
   final bool showPlusIcon; // A박스 전용 + 아이콘 표시
   final VoidCallback? onPlusIconTap; // + 아이콘 탭 콜백
   final Animation<double>? shakeAnimation; // 흔들림 애니메이션
@@ -32,6 +34,7 @@ class MediaSelectionBox extends StatelessWidget {
     required this.isHorizontal,
     required this.boxColor,
     this.imageUrl,
+    this.imageFile,
     this.showPlusIcon = false,
     this.onPlusIconTap,
     this.shakeAnimation,
@@ -71,7 +74,17 @@ class MediaSelectionBox extends StatelessWidget {
           child: Stack(
             children: [
               // 이미지가 있으면 이미지 표시, 없으면 아이콘 표시
-              if (imageUrl != null && imageUrl!.isNotEmpty)
+              if (imageFile != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(20.0),
+                  child: Image.file(
+                    imageFile!,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: double.infinity,
+                  ),
+                )
+              else if (imageUrl != null && imageUrl!.isNotEmpty)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(20.0),
                   child: CachedNetworkImage(
@@ -146,7 +159,7 @@ class MediaSelectionBox extends StatelessWidget {
               ),
               // 오른쪽 상단 아이콘 처리
               // A박스 - 이미지가 있을 때 X 아이콘 (삭제)
-              if (label == 'A' && imageUrl != null && imageUrl!.isNotEmpty && onCancel != null)
+              if (label == 'A' && (imageFile != null || (imageUrl != null && imageUrl!.isNotEmpty)) && onCancel != null)
                 Align(
                   alignment: AlignmentDirectional(1.0, -1.0),
                   child: Padding(
@@ -220,7 +233,7 @@ class MediaSelectionBox extends StatelessWidget {
                   ),
                 ),
               // 이미지가 있을 때 오른쪽 하단 아이콘들
-              if (imageUrl != null && imageUrl!.isNotEmpty)
+              if (imageFile != null || (imageUrl != null && imageUrl!.isNotEmpty))
                 Positioned(
                   right: 12.0,
                   bottom: 12.0,

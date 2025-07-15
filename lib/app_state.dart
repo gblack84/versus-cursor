@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 
 class AppState extends ChangeNotifier {
   static AppState _instance = AppState._internal();
@@ -127,6 +128,31 @@ class AppState extends ChangeNotifier {
     uploadImageA.insert(index, value);
   }
 
+  // 임시 이미지 파일 저장 (게시 전까지 File 객체로 유지)
+  List<File> _tempImageFilesA = [];
+  List<File> get tempImageFilesA => _tempImageFilesA;
+  set tempImageFilesA(List<File> value) {
+    _tempImageFilesA = value;
+    notifyListeners();
+  }
+
+  void addToTempImageFilesA(File value) {
+    _tempImageFilesA.add(value);
+    notifyListeners();
+  }
+
+  void removeAtIndexFromTempImageFilesA(int index) {
+    if (index >= 0 && index < _tempImageFilesA.length) {
+      _tempImageFilesA.removeAt(index);
+      notifyListeners();
+    }
+  }
+
+  void clearTempImageFilesA() {
+    _tempImageFilesA.clear();
+    notifyListeners();
+  }
+
   List<String> _uploadImageB = [];
   List<String> get uploadImageB => _uploadImageB;
   set uploadImageB(List<String> value) {
@@ -190,6 +216,31 @@ class AppState extends ChangeNotifier {
 
   void insertAtIndexInUploadImageB(int index, String value) {
     uploadImageB.insert(index, value);
+  }
+
+  // 임시 이미지 파일 저장 (게시 전까지 File 객체로 유지)
+  List<File> _tempImageFilesB = [];
+  List<File> get tempImageFilesB => _tempImageFilesB;
+  set tempImageFilesB(List<File> value) {
+    _tempImageFilesB = value;
+    notifyListeners();
+  }
+
+  void addToTempImageFilesB(File value) {
+    _tempImageFilesB.add(value);
+    notifyListeners();
+  }
+
+  void removeAtIndexFromTempImageFilesB(int index) {
+    if (index >= 0 && index < _tempImageFilesB.length) {
+      _tempImageFilesB.removeAt(index);
+      notifyListeners();
+    }
+  }
+
+  void clearTempImageFilesB() {
+    _tempImageFilesB.clear();
+    notifyListeners();
   }
 
   int _uploadImageEditing = 0;

@@ -37,7 +37,7 @@ class MediaBoxCallbacks {
 
   /// 이미지 추가 처리
   Future<void> handleAddImage(String box, int currentIndex) async {
-    if (box == 'B' && appState.uploadImageA.isEmpty) {
+    if (box == 'B' && appState.tempImageFilesA.isEmpty) {
       showBBoxWarning();
     } else {
       // 추가 모드로 피커 열기
@@ -69,9 +69,29 @@ class MediaBoxCallbacks {
   }
 
   void _deleteFromA(int index) {
-    print('A박스 이미지 삭제 실행 - 인덱스: $index, 현재 이미지 개수: ${appState.uploadImageA.length}');
-    if (index < appState.uploadImageA.length) {
-      // Storage에서 삭제할 이미지 URL 캡처
+    print('A박스 이미지 삭제 실행 - 인덱스: $index, 현재 이미지 개수: ${appState.tempImageFilesA.length}');
+    
+    // tempImageFiles 사용 여부 확인
+    if (appState.tempImageFilesA.isNotEmpty) {
+      if (index < appState.tempImageFilesA.length) {
+        // tempImageFiles에서 제거
+        appState.removeAtIndexFromTempImageFilesA(index);
+        if (index < appState.uploadImageAspectRatioA.length) {
+          appState.removeAtIndexFromUploadImageAspectRatioA(index);
+        }
+        if (index < appState.assetEntityIdsA.length) {
+          appState.removeAtIndexFromAssetEntityIdsA(index);
+        }
+        
+        // currentIndex 조정
+        if (appState.tempImageFilesA.isNotEmpty) {
+          model.currentImageIndexA = model.currentImageIndexA.clamp(0, appState.tempImageFilesA.length - 1);
+        } else {
+          model.currentImageIndexA = 0;
+        }
+      }
+    } else if (index < appState.uploadImageA.length) {
+      // 기존 URL 기반 처리 (하위 호환성)
       final imageUrl = appState.uploadImageA[index];
       print('삭제 전 이미지 URL: $imageUrl');
       
@@ -100,8 +120,32 @@ class MediaBoxCallbacks {
   }
 
   void _deleteFromB(int index) {
-    if (index < appState.uploadImageB.length) {
-      // Storage에서 삭제할 이미지 URL 캡처
+    // tempImageFiles 사용 여부 확인
+    if (appState.tempImageFilesB.isNotEmpty) {
+      if (index < appState.tempImageFilesB.length) {
+        // tempImageFiles에서 제거
+        appState.removeAtIndexFromTempImageFilesB(index);
+        if (index < appState.uploadImageAspectRatioB.length) {
+          appState.removeAtIndexFromUploadImageAspectRatioB(index);
+        }
+        if (index < appState.assetEntityIdsB.length) {
+          appState.removeAtIndexFromAssetEntityIdsB(index);
+        }
+        
+        // currentIndex 조정
+        if (appState.tempImageFilesB.isNotEmpty) {
+          model.currentImageIndexB = model.currentImageIndexB.clamp(0, appState.tempImageFilesB.length - 1);
+        } else {
+          model.currentImageIndexB = 0;
+        }
+      } else {
+        // B박스에 이미지가 없을 때 X 클릭 시 B박스 숨기기
+        setState(() {
+          model.absellected = true;
+        });
+      }
+    } else if (index < appState.uploadImageB.length) {
+      // 기존 URL 기반 처리 (하위 호환성)
       final imageUrl = appState.uploadImageB[index];
       
       // AppState에서 제거

@@ -977,7 +977,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       isSelected: isAbsellected,
       isVideoSelected: _model.isVideoSelectedA,
       imageUrls: [],  // File 기반으로 변경, URL은 사용하지 않음
-      showPlusIcon: isAbsellected,
+      showPlusIcon: !isAbsellected,  // B박스가 표시 중일 때 + 아이콘 표시
       isHorizontal: _model.isRatioVertical,
       boxColor: AppTheme.of(context).primary,
       appState: appState,

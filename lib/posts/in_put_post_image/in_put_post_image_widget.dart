@@ -299,6 +299,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       setState(() {
         _model.isValidating = true;
         _model.hasValidated = true;
+        _model.validationMessage = "내용을 검토하고 있습니다...";
       });
 
       // ValidationService를 사용하여 검증
@@ -307,6 +308,14 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         description: _model.textController2?.text,
         aTitle: _model.textController3?.text,
         bTitle: _model.textController4?.text,
+        context: context,
+        onProgressUpdate: (message) {
+          if (mounted) {
+            setState(() {
+              _model.validationMessage = message;
+            });
+          }
+        },
       );
 
       // 상태 변경이 필요한지 확인
@@ -340,8 +349,19 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       if (result.errorMessage != null) {
         _showSnackBar(result.errorMessage!);
       } else if (!result.isValid && result.violations.isNotEmpty) {
-        ValidationService.showViolationDialog(context, result.violations);
+        ValidationService.showViolationDialog(context, result.violations, geminiResult: result.geminiResult);
       } else if (result.isValid) {
+        // Gemini 경고가 있는 경우 처리
+        if (result.geminiResult?.severity == 'warning') {
+          final proceed = await ValidationService.showWarningDialog(
+            context,
+            result.geminiResult!.reason,
+            result.geminiResult!.suggestions,
+          );
+          if (!proceed) {
+            return; // 사용자가 수정하기를 선택한 경우
+          }
+        }
         // 검증 완료 - AppState에 텍스트 저장
         context.read<AppState>().update(() {
           final appState = context.read<AppState>();
@@ -371,6 +391,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     } finally {
       setState(() {
         _model.isValidating = false;
+        _model.validationMessage = null;
       });
     }
   }
@@ -1259,6 +1280,39 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                           ],
                         ),
               ),
+              // 검증 중 메시지 오버레이
+              if (_model.isValidating && _model.validationMessage != null)
+                Positioned(
+                  bottom: 100,
+                  left: 20,
+                  right: 20,
+                  child: Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.black87,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _model.validationMessage!,
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               // Next button overlay
               NextButton(
                 showButton: _model.showNextButton,

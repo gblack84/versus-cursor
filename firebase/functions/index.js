@@ -2,6 +2,7 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const vision = require("@google-cloud/vision");
 const axios = require("axios");
+const { ChatGoogleGenerativeAI } = require("@langchain/google-genai");
 
 admin.initializeApp();
 
@@ -11,6 +12,18 @@ const visionClient = new vision.ImageAnnotatorClient();
 // Perspective API 설정
 const PERSPECTIVE_API_KEY = process.env.PERSPECTIVE_API_KEY || functions.config().perspective?.api_key;
 const PERSPECTIVE_API_URL = 'https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze';
+
+// Gemini API 설정
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || functions.config().gemini?.api_key;
+let geminiModel;
+if (GEMINI_API_KEY) {
+  geminiModel = new ChatGoogleGenerativeAI({
+    apiKey: GEMINI_API_KEY,
+    modelName: "gemini-pro",
+    temperature: 0.3,
+    maxOutputTokens: 1000,
+  });
+}
 
 // 텍스트 언어 분석 함수
 function analyzeTextLanguage(text) {
@@ -411,3 +424,222 @@ exports.moderateImage = functions
       return null;
     }
   });
+
+// Gemini AI를 활용한 포스트 콘텐츠 통합 검증
+exports.validatePostContentWithGemini = functions
+  .region("asia-northeast3")
+  .https.onCall(async (data, context) => {
+    // 인증 확인
+    if (!context.auth) {
+      throw new functions.https.HttpsError('unauthenticated', '로그인이 필요합니다.');
+    }
+
+    if (!GEMINI_API_KEY) {
+      console.warn('[WARNING] GEMINI_API_KEY가 설정되지 않음');
+      // API 키가 없으면 기본 통과 처리 (Phase 1)
+      return {
+        isValid: true,
+        reason: '',
+        severity: 'pass',
+        suggestions: ''
+      };
+    }
+
+    const { 
+      question, 
+      titleA, 
+      titleB, 
+      descriptionText,
+      imageUrlA, 
+      imageUrlB,
+      visionDataA, 
+      visionDataB,
+      perspectiveData,
+      userId 
+    } = data;
+
+    try {
+      console.log(`[Gemini Validation] 시작 - 사용자: ${userId}`);
+      
+      // 사용자 이력 가져오기
+      const userHistory = await getUserPostingHistory(userId);
+      
+      // 프롬프트 구성
+      const prompt = buildValidationPrompt({
+        question,
+        titleA,
+        titleB,
+        descriptionText,
+        visionDataA,
+        visionDataB,
+        perspectiveData
+      }, userHistory);
+      
+      // Gemini 모델 호출
+      const response = await geminiModel.invoke(prompt);
+      const text = response.content;
+      
+      console.log('[Gemini Response]:', text);
+      
+      // JSON 파싱
+      let geminiResult;
+      try {
+        // JSON 부분만 추출 (```json ... ``` 사이)
+        const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          geminiResult = JSON.parse(jsonMatch[1]);
+        } else {
+          // 직접 파싱 시도
+          geminiResult = JSON.parse(text);
+        }
+      } catch (parseError) {
+        console.error('[Gemini] JSON 파싱 실패:', parseError);
+        // 파싱 실패 시 기본 통과
+        geminiResult = {
+          isValid: true,
+          severity: 'pass',
+          reason: '',
+          suggestions: ''
+        };
+      }
+      
+      // 검증 결과 로깅
+      await logValidationResult({
+        userId,
+        content: { question, titleA, titleB, descriptionText },
+        geminiResult,
+        timestamp: admin.firestore.FieldValue.serverTimestamp()
+      });
+      
+      return {
+        isValid: geminiResult.isValid !== false,
+        reason: geminiResult.reason || '',
+        severity: geminiResult.severity || 'pass',
+        suggestions: geminiResult.suggestions || '',
+        confidence: geminiResult.confidence || 0.5
+      };
+      
+    } catch (error) {
+      console.error('[Gemini Validation] 오류:', error);
+      // 오류 시 통과 처리 (서비스 중단 방지)
+      return {
+        isValid: true,
+        reason: '',
+        severity: 'pass',
+        suggestions: ''
+      };
+    }
+  });
+
+// 사용자 포스팅 이력 조회
+async function getUserPostingHistory(userId) {
+  try {
+    const db = admin.firestore();
+    
+    // 최근 30일간의 거부된 포스트 수
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const rejectedSnapshot = await db
+      .collection('content_validations')
+      .where('userId', '==', userId)
+      .where('geminiResult.isValid', '==', false)
+      .where('timestamp', '>=', thirtyDaysAgo)
+      .get();
+    
+    // 신고된 포스트 수 (posts_record에서)
+    const reportedSnapshot = await db
+      .collection('posts_record')
+      .where('user_ref', '==', db.doc(`users_record/${userId}`))
+      .where('reported_count', '>', 0)
+      .get();
+    
+    return {
+      rejectedCount: rejectedSnapshot.size,
+      reportCount: reportedSnapshot.size,
+      isNewUser: rejectedSnapshot.size === 0 && reportedSnapshot.size === 0
+    };
+  } catch (error) {
+    console.error('[getUserPostingHistory] 오류:', error);
+    return {
+      rejectedCount: 0,
+      reportCount: 0,
+      isNewUser: true
+    };
+  }
+}
+
+// Gemini 프롬프트 구성
+function buildValidationPrompt(data, userHistory) {
+  // Phase 1: 텍스트만 검증
+  const prompt = `당신은 Versus Space 앱의 콘텐츠 검증 AI입니다.
+사용자들이 의미 있는 A vs B 비교를 만들도록 도와주세요.
+
+[제출된 내용]
+질문: ${data.question || '없음'}
+설명: ${data.descriptionText || '없음'}
+A 옵션: ${data.titleA || '없음'}
+B 옵션: ${data.titleB || '없음'}
+
+[텍스트 유해성 검사 결과]
+${data.perspectiveData ? `
+- 독성: ${(data.perspectiveData.TOXICITY * 100).toFixed(1)}%
+- 모욕: ${(data.perspectiveData.INSULT * 100).toFixed(1)}%
+- 욕설: ${(data.perspectiveData.PROFANITY * 100).toFixed(1)}%
+` : '검사 결과 없음'}
+
+[사용자 이력]
+- 최근 거부된 포스트: ${userHistory.rejectedCount}개
+- 신고 이력: ${userHistory.reportCount}개
+- 신규 사용자: ${userHistory.isNewUser ? '예' : '아니오'}
+
+평가 기준:
+1. 진정한 비교 질문인가?
+   - "vs", "어떤게 더", "뭐가 나은" 등의 비교 표현 확인
+   - A와 B가 명확히 구분되는 선택지인가?
+
+2. 비교가 가능한 대상인가?
+   - 두 옵션이 논리적으로 비교 가능한가?
+   - 극단적으로 무관한 조합은 아닌가?
+
+3. 악의적 의도가 있는가?
+   - 명백한 트롤링이나 장난
+   - 특정인/집단 조롱
+   - 스팸성 콘텐츠
+   - 광고
+
+4. 창의성 고려
+   - 재미있고 창의적인 비교는 허용
+   - 주관적 선호도 비교도 OK
+   - 문화적 맥락 고려
+
+응답 형식 (JSON):
+\`\`\`json
+{
+  "isValid": true/false,
+  "severity": "pass" / "warning" / "error",
+  "reason": "구체적인 거부/경고 이유",
+  "suggestions": "개선 제안 (선택)",
+  "confidence": 0.0-1.0
+}
+\`\`\`
+
+예시:
+- 통과: {"isValid": true, "severity": "pass", "reason": "", "confidence": 0.9}
+- 경고: {"isValid": true, "severity": "warning", "reason": "비교 대상이 모호합니다", "suggestions": "더 구체적인 옵션을 제시해주세요", "confidence": 0.7}
+- 거부: {"isValid": false, "severity": "error", "reason": "무의미한 비교입니다", "suggestions": "실제로 비교 가능한 대상을 선택해주세요", "confidence": 0.8}`;
+
+  return prompt;
+}
+
+// 검증 결과 로깅
+async function logValidationResult(data) {
+  try {
+    await admin.firestore()
+      .collection('content_validations')
+      .add(data);
+  } catch (error) {
+    console.error('[logValidationResult] 로깅 실패:', error);
+    // 로깅 실패는 무시 (서비스 중단 방지)
+  }
+}

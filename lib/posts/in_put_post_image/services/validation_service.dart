@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '/services/perspective_api_service.dart';
 import '../constants/field_styles.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import '/auth/firebase_auth/auth_util.dart';
+import '/core/app_state.dart';
+import 'package:provider/provider.dart';
 
 class ValidationService {
   /// 필수 필드가 비어있는지 확인
@@ -22,6 +26,8 @@ class ValidationService {
     required String? description,
     required String? aTitle,
     required String? bTitle,
+    BuildContext? context,
+    Function(String)? onProgressUpdate,
   }) async {
     // 빈 필드 체크
     final emptyResult = checkEmptyFields(
@@ -82,6 +88,40 @@ class ValidationService {
         }
       });
 
+      // Perspective API 검증 통과 시 Gemini AI 검증 수행
+      if (!hasViolations && context != null) {
+        // 진행 상태 업데이트
+        onProgressUpdate?.call("AI가 내용을 분석하고 있습니다...");
+        
+        final geminiResult = await validateWithGemini(
+          context: context,
+          questionTitle: questionTitle,
+          description: description,
+          aTitle: aTitle,
+          bTitle: bTitle,
+          perspectiveResults: results,
+        );
+        
+        if (geminiResult != null) {
+          // Gemini 검증 결과 처리
+          if (!geminiResult.isValid) {
+            hasViolations = true;
+            violations.add(geminiResult.reason);
+          } else if (geminiResult.severity == 'warning') {
+            // 경고의 경우 별도 처리를 위해 결과에 포함만 시킴
+            // hasViolations를 true로 설정하지 않음
+          }
+          
+          return ValidationResult(
+            isValid: !hasViolations,
+            emptyResult: emptyResult,
+            validationResults: results,
+            violations: violations,
+            geminiResult: geminiResult,
+          );
+        }
+      }
+
       return ValidationResult(
         isValid: !hasViolations,
         emptyResult: emptyResult,
@@ -141,8 +181,63 @@ class ValidationService {
     }
   }
 
+  /// Gemini AI로 통합 검증
+  static Future<GeminiValidationResult?> validateWithGemini({
+    required BuildContext context,
+    required String? questionTitle,
+    required String? description,
+    required String? aTitle,
+    required String? bTitle,
+    required Map<String, PerspectiveResult> perspectiveResults,
+  }) async {
+    try {
+      final appState = context.read<AppState>();
+      final currentUser = currentUserReference;
+      
+      if (currentUser == null) return null;
+      
+      // Perspective 점수 변환
+      Map<String, double> perspectiveScores = {};
+      perspectiveResults.forEach((key, result) {
+        if (result.allScores.isNotEmpty) {
+          perspectiveScores = result.allScores;
+        }
+      });
+      
+      // Cloud Function 호출
+      final functions = FirebaseFunctions.instanceFor(region: 'asia-northeast3');
+      final callable = functions.httpsCallable('validatePostContentWithGemini');
+      
+      final response = await callable.call({
+        'question': questionTitle ?? '',
+        'titleA': aTitle ?? '',
+        'titleB': bTitle ?? '',
+        'descriptionText': description ?? '',
+        'imageUrlA': appState.uploadImageUrlsA.isNotEmpty ? appState.uploadImageUrlsA.first : null,
+        'imageUrlB': appState.uploadImageUrlsB.isNotEmpty ? appState.uploadImageUrlsB.first : null,
+        'perspectiveData': perspectiveScores,
+        'userId': currentUser.id,
+      });
+      
+      final data = response.data as Map<String, dynamic>;
+      
+      return GeminiValidationResult(
+        isValid: data['isValid'] ?? true,
+        reason: data['reason'] ?? '',
+        severity: data['severity'] ?? 'pass',
+        suggestions: data['suggestions'] ?? '',
+        confidence: (data['confidence'] ?? 0.5).toDouble(),
+      );
+      
+    } catch (e) {
+      print('Gemini validation error: $e');
+      // Gemini 검증 실패시 null 반환 (Perspective API 결과만 사용)
+      return null;
+    }
+  }
+
   /// 위반 사항 다이얼로그 표시
-  static void showViolationDialog(BuildContext context, List<String> violations) {
+  static void showViolationDialog(BuildContext context, List<String> violations, {GeminiValidationResult? geminiResult}) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -158,6 +253,24 @@ class ValidationService {
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Text('• $violation', style: const TextStyle(color: Colors.red)),
               )),
+              if (geminiResult?.suggestions != null && geminiResult!.suggestions.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('💡 제안:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text(geminiResult.suggestions),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 10),
               const Text('내용을 수정한 후 다시 시도해주세요.'),
             ],
@@ -171,6 +284,61 @@ class ValidationService {
         );
       },
     );
+  }
+  
+  /// Gemini 경고 다이얼로그 표시
+  static Future<bool> showWarningDialog(
+    BuildContext context, 
+    String reason, 
+    String? suggestions,
+  ) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('콘텐츠 개선 제안'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(reason),
+              if (suggestions != null && suggestions.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('💡 제안:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text(suggestions),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              const Text('계속 진행하시겠습니까?'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('수정하기'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('계속하기'),
+            ),
+          ],
+        );
+      },
+    );
+    
+    return result ?? false;
   }
 }
 
@@ -196,6 +364,7 @@ class ValidationResult {
   final Map<String, PerspectiveResult> validationResults;
   final List<String> violations;
   final String? errorMessage;
+  final GeminiValidationResult? geminiResult;
 
   ValidationResult({
     required this.isValid,
@@ -203,5 +372,23 @@ class ValidationResult {
     required this.validationResults,
     required this.violations,
     this.errorMessage,
+    this.geminiResult,
+  });
+}
+
+/// Gemini AI 검증 결과
+class GeminiValidationResult {
+  final bool isValid;
+  final String reason;
+  final String severity;
+  final String suggestions;
+  final double confidence;
+
+  GeminiValidationResult({
+    required this.isValid,
+    required this.reason,
+    required this.severity,
+    required this.suggestions,
+    required this.confidence,
   });
 }

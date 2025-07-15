@@ -32,6 +32,7 @@ class InPutPostImageModel extends AppModel<InPutPostImageWidget> {
 
   // Perspective API 검증 관련
   bool isValidating = false;
+  String? validationMessage;  // 검증 중 메시지 표시용
   Map<String, PerspectiveResult> validationResults = {};
   bool hasValidationViolations = false;
   

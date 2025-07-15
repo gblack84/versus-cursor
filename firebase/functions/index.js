@@ -14,7 +14,12 @@ const PERSPECTIVE_API_URL = 'https://commentanalyzer.googleapis.com/v1alpha1/com
 
 // Perspective API로 텍스트 검열
 async function checkTextWithPerspective(text) {
-  if (!PERSPECTIVE_API_KEY || !text || text.trim().length < 3) {
+  if (!PERSPECTIVE_API_KEY) {
+    console.warn('[WARNING] PERSPECTIVE_API_KEY가 설정되지 않음');
+    return { isInappropriate: false, reason: '' };
+  }
+  
+  if (!text || text.trim().length < 3) {
     return { isInappropriate: false, reason: '' };
   }
 
@@ -140,17 +145,26 @@ exports.checkImageContent = functions
       
       try {
         const [textResult] = await visionClient.textDetection({
-          image: { content: image }
+          image: { content: image },
+          imageContext: {
+            languageHints: ['ko', 'en']  // 한국어와 영어 힌트 추가
+          }
         });
         
         if (textResult.textAnnotations && textResult.textAnnotations.length > 0) {
           textDetected = textResult.textAnnotations[0].description || '';
-          console.log(`추출된 텍스트 (${textDetected.length}자): ${textDetected.substring(0, 100)}...`);
+          console.log(`[OCR] 추출된 텍스트 (${textDetected.length}자): ${textDetected.substring(0, 100)}...`);
           
           // 텍스트가 있으면 Perspective API로 검열
           const textCheckResult = await checkTextWithPerspective(textDetected);
           isTextInappropriate = textCheckResult.isInappropriate;
           textReason = textCheckResult.reason;
+          
+          if (isTextInappropriate) {
+            console.log(`[Perspective API] 부적절한 텍스트 감지: ${textReason}`);
+          }
+        } else {
+          console.log('[OCR] 텍스트가 감지되지 않음');
         }
       } catch (ocrError) {
         console.error("OCR 처리 중 오류:", ocrError);

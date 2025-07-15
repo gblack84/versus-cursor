@@ -28,6 +28,13 @@ class ImageModerationService {
       });
 
       final data = response.data;
+      
+      // 디버깅용 로그
+      print('[ImageModerationService] Cloud Function 응답:');
+      print('  - isAppropriate: ${data['isAppropriate']}');
+      print('  - reason: ${data['reason']}');
+      print('  - hasText: ${data['hasText']}');
+      
       return ModerationResult(
         isAppropriate: data['isAppropriate'] ?? false,
         reason: data['reason'] ?? '',
@@ -71,8 +78,8 @@ class ImageModerationService {
         throw Exception('이미지 디코딩 실패');
       }
 
-      // 검열용으로 작은 크기로 리사이즈 (최대 500px)
-      const maxSize = 500;
+      // 검열용으로 리사이즈 (최대 800px - 텍스트 가독성 향상)
+      const maxSize = 800;
       img.Image resized;
       
       if (image.width > maxSize || image.height > maxSize) {

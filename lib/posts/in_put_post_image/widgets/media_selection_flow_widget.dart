@@ -265,8 +265,19 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         } else {
           print('[AssetPicker] Multiple images selected (${result.length}), opening thumbnail selection');
           // 여러 장 선택한 경우 썸네일 선택 페이지로 이동
+          print('[MediaSelection] 멀티 이미지 파일 변환 시작');
           final files = await Future.wait(
-            result.map((asset) async => await asset.file)
+            result.map((asset) async {
+              final file = await asset.file;
+              if (file != null) {
+                final bytes = await file.readAsBytes();
+                print('[MediaSelection] AssetEntity -> File 변환:');
+                print('  - Asset ID: ${asset.id}');
+                print('  - 파일 경로: ${file.path}');
+                print('  - 파일 크기: ${bytes.length} bytes');
+              }
+              return file;
+            })
           );
           
           final validFiles = files.whereType<File>().toList();

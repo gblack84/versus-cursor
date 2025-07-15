@@ -301,9 +301,20 @@ class ImageUploadOrchestratorV2 {
     try {
       final bytes = await file.readAsBytes();
       final decodedImage = await decodeImageFromList(bytes);
-      return decodedImage.width / decodedImage.height;
+      final width = decodedImage.width;
+      final height = decodedImage.height;
+      final ratio = width / height;
+      
+      print('[ImageUploadOrchestrator] 이미지 비율 계산:');
+      print('  - 파일 경로: ${file.path}');
+      print('  - 파일 크기: ${bytes.length} bytes');
+      print('  - 이미지 크기: ${width}x${height}');
+      print('  - 계산된 비율: $ratio');
+      
+      return ratio;
     } catch (e) {
       print('[ImageUploadOrchestrator] 비율 계산 실패: $e');
+      print('  - 파일 경로: ${file.path}');
       return 1.0; // 기본값
     }
   }

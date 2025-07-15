@@ -105,7 +105,10 @@ class SelectionResultProcessor {
         for (final removedId in removedIds.reversed) {
           final index = appState.assetEntityIdsA.indexOf(removedId);
           if (index != -1) {
-            appState.uploadImageA.removeAt(index);
+            // File 기반 삭제
+            if (index < appState.tempImageFilesA.length) {
+              appState.tempImageFilesA.removeAt(index);
+            }
             appState.uploadImageAspectRatioA.removeAt(index);
             appState.assetEntityIdsA.removeAt(index);
           }
@@ -114,7 +117,10 @@ class SelectionResultProcessor {
         for (final removedId in removedIds.reversed) {
           final index = appState.assetEntityIdsB.indexOf(removedId);
           if (index != -1) {
-            appState.uploadImageB.removeAt(index);
+            // File 기반 삭제
+            if (index < appState.tempImageFilesB.length) {
+              appState.tempImageFilesB.removeAt(index);
+            }
             appState.uploadImageAspectRatioB.removeAt(index);
             appState.assetEntityIdsB.removeAt(index);
           }
@@ -212,8 +218,17 @@ class SelectionResultProcessor {
   Future<double> _calculateAspectRatio(Uint8List bytes) async {
     try {
       final decodedImage = await decodeImageFromList(bytes);
-      return decodedImage.width / decodedImage.height;
+      final width = decodedImage.width;
+      final height = decodedImage.height;
+      final ratio = width / height;
+      
+      DebugHelper.log('[SelectionProcessor] 이미지 비율 계산:');
+      DebugHelper.log('  - 이미지 크기: ${width}x${height}');
+      DebugHelper.log('  - 계산된 비율: $ratio');
+      
+      return ratio;
     } catch (e) {
+      DebugHelper.logError('비율 계산 실패', e);
       return 1.0; // 기본값
     }
   }

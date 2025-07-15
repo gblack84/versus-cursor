@@ -12,47 +12,102 @@ const visionClient = new vision.ImageAnnotatorClient();
 const PERSPECTIVE_API_KEY = process.env.PERSPECTIVE_API_KEY || functions.config().perspective?.api_key;
 const PERSPECTIVE_API_URL = 'https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze';
 
+// 텍스트 언어 분석 함수
+function analyzeTextLanguage(text) {
+  const koreanChars = (text.match(/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/g) || []).length;
+  const englishChars = (text.match(/[a-zA-Z]/g) || []).length;
+  const totalChars = text.length;
+  
+  return {
+    hasKorean: koreanChars > 0,
+    hasEnglish: englishChars > 0,
+    koreanRatio: koreanChars / totalChars,
+    englishRatio: englishChars / totalChars,
+    primaryLanguage: koreanChars > englishChars ? 'ko' : 'en'
+  };
+}
+
 // Perspective API로 텍스트 검열
 async function checkTextWithPerspective(text) {
   if (!PERSPECTIVE_API_KEY) {
     console.warn('[WARNING] PERSPECTIVE_API_KEY가 설정되지 않음');
+    console.log('[Perspective API] 현재 API 키 길이:', PERSPECTIVE_API_KEY ? PERSPECTIVE_API_KEY.length : 0);
     return { isInappropriate: false, reason: '' };
   }
   
   if (!text || text.trim().length < 3) {
+    console.log('[Perspective API] 텍스트가 너무 짧아 검열 생략:', text);
     return { isInappropriate: false, reason: '' };
   }
+
+  console.log('[Perspective API] 검열할 텍스트:', text);
+
+  // 언어 분석
+  const langInfo = analyzeTextLanguage(text);
+  console.log(`[Perspective API] 언어 분석: 한국어=${langInfo.hasKorean}, 영어=${langInfo.hasEnglish}, 주언어=${langInfo.primaryLanguage}`);
+
+  // 기본 속성 설정 (모든 언어 지원)
+  const requestedAttributes = {
+    TOXICITY: {},
+    SEVERE_TOXICITY: {},
+    IDENTITY_ATTACK: {},
+    INSULT: {},
+    PROFANITY: {},
+    THREAT: {}
+  };
+
+  // 영어 텍스트일 때만 SEXUALLY_EXPLICIT 추가
+  if (!langInfo.hasKorean || langInfo.englishRatio > 0.8) {
+    requestedAttributes.SEXUALLY_EXPLICIT = {};
+    console.log('[Perspective API] SEXUALLY_EXPLICIT 속성 추가됨');
+  }
+
+  // 언어 설정
+  const languages = langInfo.hasKorean ? ['ko'] : ['en'];
+  console.log(`[Perspective API] 요청 언어: ${languages.join(', ')}`);
 
   try {
     const response = await axios.post(
       `${PERSPECTIVE_API_URL}?key=${PERSPECTIVE_API_KEY}`,
       {
         comment: { text: text },
-        requestedAttributes: {
-          TOXICITY: {},
-          SEVERE_TOXICITY: {},
-          IDENTITY_ATTACK: {},
-          INSULT: {},
-          PROFANITY: {},
-          THREAT: {},
-          SEXUALLY_EXPLICIT: {}
-        },
-        languages: ['ko', 'en']
+        requestedAttributes: requestedAttributes,
+        languages: languages
       }
     );
 
     const scores = response.data.attributeScores;
     
-    // 점수 임계값 설정
+    // 응답 점수 로깅 (SEXUALLY_EXPLICIT는 조건부)
+    const logScores = {
+      TOXICITY: scores.TOXICITY?.summaryScore?.value,
+      SEVERE_TOXICITY: scores.SEVERE_TOXICITY?.summaryScore?.value,
+      IDENTITY_ATTACK: scores.IDENTITY_ATTACK?.summaryScore?.value,
+      INSULT: scores.INSULT?.summaryScore?.value,
+      PROFANITY: scores.PROFANITY?.summaryScore?.value,
+      THREAT: scores.THREAT?.summaryScore?.value
+    };
+    
+    if (scores.SEXUALLY_EXPLICIT) {
+      logScores.SEXUALLY_EXPLICIT = scores.SEXUALLY_EXPLICIT.summaryScore?.value;
+    }
+    
+    console.log('[Perspective API] 응답 점수:', logScores);
+    
+    // 점수 임계값 설정 (낮을수록 더 엄격)
     const thresholds = {
       SEVERE_TOXICITY: 0.5,
-      TOXICITY: 0.7,
+      TOXICITY: 0.6,        // 0.7 → 0.6 (더 엄격)
       IDENTITY_ATTACK: 0.7,
-      INSULT: 0.7,
-      PROFANITY: 0.7,
-      THREAT: 0.7,
-      SEXUALLY_EXPLICIT: 0.7
+      INSULT: 0.5,          // 0.7 → 0.5 (더 엄격)
+      PROFANITY: 0.5,       // 0.7 → 0.5 (더 엄격)
+      THREAT: 0.7
     };
+    
+    // SEXUALLY_EXPLICIT는 영어 텍스트일 때만 추가
+    if (scores.SEXUALLY_EXPLICIT) {
+      thresholds.SEXUALLY_EXPLICIT = 0.7;
+    }
 
     // 부적절한 콘텐츠 감지
     let isInappropriate = false;
@@ -80,7 +135,8 @@ async function checkTextWithPerspective(text) {
 
     return { isInappropriate, reason };
   } catch (error) {
-    console.error('Perspective API 오류:', error);
+    console.error('[Perspective API] 오류 발생:', error.response?.data || error.message);
+    console.error('[Perspective API] 상태 코드:', error.response?.status);
     // API 오류 시 기본 필터링만 적용
     return checkTextWithBasicFilter(text);
   }

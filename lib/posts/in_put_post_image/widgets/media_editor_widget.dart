@@ -108,10 +108,15 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
       
       final width = image.width.toDouble();
       final height = image.height.toDouble();
+      final ratio = width / height;
       
-      return width / height;
+      print('[MediaEditor] 편집된 이미지 비율 계산:');
+      print('  - 이미지 크기: ${width.toInt()}x${height.toInt()}');
+      print('  - 계산된 비율: $ratio');
+      
+      return ratio;
     } catch (e) {
-      print('이미지 비율 계산 실패: $e');
+      print('[MediaEditor] 이미지 비율 계산 실패: $e');
       return null;
     }
   }

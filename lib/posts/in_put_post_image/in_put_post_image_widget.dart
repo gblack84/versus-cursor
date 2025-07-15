@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '/backend/backend.dart';
+import 'package:bot_toast/bot_toast.dart';
 import 'utils/no_animation_page_route.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import 'in_put_post_image_model.dart';
@@ -32,6 +33,8 @@ import 'constants/dimensions.dart';
 import 'constants/animation_constants.dart';
 import 'constants/field_styles.dart';
 import 'services/media_upload_service.dart';
+import 'services/selection_result_processor.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 class InPutPostImageWidget extends StatefulWidget {
   const InPutPostImageWidget({super.key});
@@ -393,7 +396,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     final appState = context.read<AppState>();
     
     // Navigator.push로 즉시 전환
-    await Navigator.push(
+    final result = await Navigator.push<Map<String, dynamic>>(
       parentContext,
       NoAnimationPageRoute(
         builder: (context) => MediaSelectionFlowWidget(
@@ -427,6 +430,80 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         ),
       ),
     );
+    
+    // 이미지 처리 중인 경우 로딩 표시
+    if (result != null && result['action'] == 'processing' && isAddMode) {
+      final selectedAssets = result['selectedAssets'] as List<AssetEntity>?;
+      if (selectedAssets != null) {
+        // 로딩 토스트 표시
+        final cancel = BotToast.showCustomLoading(
+          toastBuilder: (_) => Container(
+            width: double.infinity,
+            height: double.infinity,
+            color: Colors.black.withValues(alpha: 0.7),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      '안전성 검사중 입니다...',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          allowClick: false,
+          clickClose: false,
+        );
+        
+        // SelectionResultProcessor 직접 실행
+        try {
+          final processor = SelectionResultProcessor(
+            context: context,
+            appState: appState,
+            box: box,
+            existingAssetIds: box == 'A' 
+              ? appState.assetEntityIdsA
+              : appState.assetEntityIdsB,
+            onProgressUpdate: (progress) {
+              // 진행률 업데이트 (필요시 사용)
+            },
+            onMultiComplete: (imageUrls) {
+              // 멀티 이미지 완료 처리
+              DebugHelper.logModeration('검열 통과 및 업로드 완료: ${imageUrls.length}개');
+              
+              // 스마트 레이아웃 업데이트
+              _updateLayoutBasedOnImages();
+            },
+            onProcessingComplete: () {
+              // 처리 완료 시 로딩 토스트 제거
+              cancel();
+            },
+          );
+          
+          await processor.processSelectionResult(selectedAssets);
+        } catch (e) {
+          cancel();
+          _showSnackBar('이미지 처리 중 오류가 발생했습니다', isError: true);
+        }
+      }
+    }
   }
 
   Future<void> _saveToFirestore(Map<String, dynamic> targetAudience) async {

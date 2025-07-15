@@ -20,6 +20,7 @@ class SelectionResultProcessor {
   final List<String>? existingAssetIds;
   final Function(double) onProgressUpdate;
   final Function(List<String>)? onMultiComplete;
+  final VoidCallback? onProcessingComplete;
 
   SelectionResultProcessor({
     required this.context,
@@ -28,6 +29,7 @@ class SelectionResultProcessor {
     this.existingAssetIds,
     required this.onProgressUpdate,
     this.onMultiComplete,
+    this.onProcessingComplete,
   });
 
   /// 선택 결과 처리
@@ -80,6 +82,9 @@ class SelectionResultProcessor {
       
       // 모달 닫기는 호출한 곳에서 처리
       DebugHelper.log('선택 완료');
+      
+      // 처리 완료 콜백 호출
+      onProcessingComplete?.call();
     } catch (e) {
       if (context.mounted) {
         onProgressUpdate(0.0);

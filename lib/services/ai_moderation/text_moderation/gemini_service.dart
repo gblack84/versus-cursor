@@ -44,6 +44,31 @@ class GeminiModerationService {
       
       final result = response.data;
       print('[GeminiModerationService] Response received from Cloud Function');
+      
+      // 새로운 응답 형식 확인 (action 필드가 있는지)
+      if (result['action'] != null) {
+        print('[GeminiModerationService] New format detected - action: ${result['action']}');
+        
+        // 새 형식을 기존 형식으로 변환
+        final isValid = result['action'] != 'BLOCK';
+        final severityMap = {
+          'PROCEED': 'pass',
+          'PROCEED_WITH_SUGGESTION': 'warning',
+          'BLOCK': 'error'
+        };
+        final severity = severityMap[result['action']] ?? 'pass';
+        final feedback = result['feedback'] as Map<String, dynamic>?;
+        
+        return GeminiModerationResult(
+          isValid: isValid,
+          reason: feedback?['title'] ?? '',
+          severity: severity,
+          suggestions: feedback?['description'] ?? '',
+          confidence: (result['confidence'] ?? 1.0).toDouble(),
+        );
+      }
+      
+      // 기존 형식 처리 (하위 호환성)
       print('[GeminiModerationService] isValid: ${result['isValid']}, severity: ${result['severity']}');
       
       // Cloud Function에서 반환한 결과를 GeminiModerationResult로 변환

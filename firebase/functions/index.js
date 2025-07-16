@@ -617,10 +617,37 @@ exports.validatePostContentWithGemini = functions
         console.error('[Gemini] JSON 파싱 실패:', parseError);
         // 파싱 실패 시 기본 통과
         geminiResult = {
-          isValid: true,
-          severity: 'pass',
-          reason: '',
-          suggestions: ''
+          action: 'PROCEED',
+          feedback: null,
+          confidence: 0.5
+        };
+      }
+      
+      // 새로운 응답 형식 처리
+      let finalResult;
+      if (geminiResult.action) {
+        // 새 형식
+        const severityMap = {
+          'PROCEED': 'pass',
+          'PROCEED_WITH_SUGGESTION': 'warning',
+          'BLOCK': 'error'
+        };
+        
+        finalResult = {
+          isValid: geminiResult.action !== 'BLOCK',
+          reason: geminiResult.feedback?.title || '',
+          severity: severityMap[geminiResult.action] || 'pass',
+          suggestions: geminiResult.feedback?.description || '',
+          confidence: geminiResult.confidence || 0.5
+        };
+      } else if (geminiResult.isValid !== undefined) {
+        // 기존 형식 (하위 호환성)
+        finalResult = {
+          isValid: geminiResult.isValid !== false,
+          reason: geminiResult.reason || '',
+          severity: geminiResult.severity || 'pass',
+          suggestions: geminiResult.suggestions || '',
+          confidence: geminiResult.confidence || 0.5
         };
       }
       
@@ -628,17 +655,11 @@ exports.validatePostContentWithGemini = functions
       await logValidationResult({
         userId,
         content: { question, titleA, titleB, descriptionText },
-        geminiResult,
+        geminiResult: finalResult,
         timestamp: admin.firestore.FieldValue.serverTimestamp()
       });
       
-      return {
-        isValid: geminiResult.isValid !== false,
-        reason: geminiResult.reason || '',
-        severity: geminiResult.severity || 'pass',
-        suggestions: geminiResult.suggestions || '',
-        confidence: geminiResult.confidence || 0.5
-      };
+      return finalResult;
       
     } catch (error) {
       console.error('[Gemini Validation] 오류:', error);
@@ -708,9 +729,14 @@ async function getUserPostingHistory(userId) {
 
 // Gemini 프롬프트 구성
 function buildValidationPrompt(data, userHistory) {
-  // Phase 1: 텍스트만 검증
-  const prompt = `당신은 Versus Space 앱의 콘텐츠 검증 AI입니다.
-사용자들이 의미 있는 A vs B 비교를 만들도록 도와주세요.
+  const prompt = `
+########################################################################
+# Versus Space – 콘텐츠 검증 AI 통합 프롬프트 4.0
+########################################################################
+
+/*============================== 1) 역할(Persona) ==============================*/
+당신은 'Versus Space' 커뮤니티의 재치 있고 현명한 커뮤니티-매니저 AI입니다.  
+목표: (1) 유해 콘텐츠 차단  (2) 재미‧의미있는 비교 장려  (3) 친절한 코칭 제공
 
 [제출된 내용]
 질문: ${data.question || '없음'}
@@ -725,46 +751,64 @@ ${data.perspectiveData ? `
 - 욕설: ${(data.perspectiveData.PROFANITY * 100).toFixed(1)}%
 ` : '검사 결과 없음'}
 
+${data.visionDataA || data.visionDataB ? `
+[이미지 분석 결과]` : ''}
+${data.visionDataA ? `
+A 이미지:
+- 주요 라벨: ${data.visionDataA.labels?.slice(0, 5).map(l => l.description).join(', ') || '없음'}
+- SafeSearch: 성인(${data.visionDataA.safeSearch?.adult}), 폭력(${data.visionDataA.safeSearch?.violence})
+- 얼굴 감지: ${data.visionDataA.faces?.length > 0 ? '있음' : '없음'}` : ''}
+${data.visionDataB ? `
+B 이미지:
+- 주요 라벨: ${data.visionDataB.labels?.slice(0, 5).map(l => l.description).join(', ') || '없음'}
+- SafeSearch: 성인(${data.visionDataB.safeSearch?.adult}), 폭력(${data.visionDataB.safeSearch?.violence})
+- 얼굴 감지: ${data.visionDataB.faces?.length > 0 ? '있음' : '없음'}` : ''}
+
 [사용자 이력]
 - 최근 거부된 포스트: ${userHistory.rejectedCount}개
 - 신고 이력: ${userHistory.reportCount}개
 - 신규 사용자: ${userHistory.isNewUser ? '예' : '아니오'}
 
-평가 기준:
-1. 진정한 비교 질문인가?
-   - "vs", "어떤게 더", "뭐가 나은" 등의 비교 표현 확인
-   - A와 B가 명확히 구분되는 선택지인가?
+/*===================== 2) 두 단계 필터링(Workflow) =====================*/
+① 1차 필터 – 절대 금지 영역 ⇒ "action":"BLOCK"  
+② 2차 필터 – 품질·의도 판단 ⇒ "PROCEED" / "PROCEED_WITH_SUGGESTION" / "BLOCK"
 
-2. 비교가 가능한 대상인가?
-   - 두 옵션이 논리적으로 비교 가능한가?
-   - 극단적으로 무관한 조합은 아닌가?
+/*==================== 3) 1차 필터 – 절대 금지(BLOCK) ====================*/
+다음 항목 중 하나라도 충족하면 무조건 BLOCK.
+- 혐오‧차별: 인종·성별·종교·국적·성적 지향 등 집단 비하·폭력 선동
+- 범죄 조장: 범죄 계획·방법·미화, 불법상품·서비스 홍보, 테러·극단주의
+- 개인정보 노출: 동의 없는 실명·연락처·주소·얼굴 등
+- 노골적 성적/폭력 묘사, 아동 착취
+- 스팸·사기·피싱·전문가/타인 사칭·허위 정보 유포
 
-3. 악의적 의도가 있는가?
-   - 명백한 트롤링이나 장난
-   - 특정인/집단 조롱
-   - 스팸성 콘텐츠
-   - 광고
+/*==================== 4) 2차 필터 – 품질·의도 판단 ====================*/
+A. PROCEED – 창의적·재미있고 비교 가능 (밸런스게임, 밈 등)  
+B. PROCEED_WITH_SUGGESTION – 논리 부족·정보 모호하지만 악의 없음  
+   → feedback에 구체적 개선 팁 제시  
+C. BLOCK – 무의미 장난·트롤링·정책 경계선(질문·옵션 불일치 등)
 
-4. 창의성 고려
-   - 재미있고 창의적인 비교는 허용
-   - 주관적 선호도 비교도 OK
-   - 문화적 맥락 고려
+/*====================== 5) 특별 가이드라인(세부 룰) ======================*/
+● 정치·종교  
+  - 정책·이념·공인 행보 토론 ▶ 허용  
+  - 특정 인물·집단 비방·음모론 ▶ BLOCK  
 
-응답 형식 (JSON):
-\`\`\`json
+● 얼굴·외모  
+  - '일반인' 얼굴 평가·점수 ▶ BLOCK  
+  - 본인 스타일 질문 또는 공인 공식 사진 비교 ▶ 허용  
+  - 얼굴 노출 이미지 → Vision safeSearch 통과 필수  
+
+● 이미지 일관성  
+  - 이미지가 질문/옵션과 무관하면 BLOCK 또는 재촬영 권고  
+
+/*===================== 7) 출력(JSON) – 반드시 준수 =====================*/
 {
-  "isValid": true/false,
-  "severity": "pass" / "warning" / "error",
-  "reason": "구체적인 거부/경고 이유",
-  "suggestions": "개선 제안 (선택)",
+  "action": "PROCEED" | "PROCEED_WITH_SUGGESTION" | "BLOCK",
+  "feedback": {
+    "title": "짧고 핵심적인 한 줄",
+    "description": "사용자에게 보여줄 상세 가이드"
+  } | null,
   "confidence": 0.0-1.0
-}
-\`\`\`
-
-예시:
-- 통과: {"isValid": true, "severity": "pass", "reason": "", "confidence": 0.9}
-- 경고: {"isValid": true, "severity": "warning", "reason": "비교 대상이 모호합니다", "suggestions": "더 구체적인 옵션을 제시해주세요", "confidence": 0.7}
-- 거부: {"isValid": false, "severity": "error", "reason": "무의미한 비교입니다", "suggestions": "실제로 비교 가능한 대상을 선택해주세요", "confidence": 0.8}`;
+}`;
 
   return prompt;
 }

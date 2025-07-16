@@ -82,6 +82,26 @@ class ValidationService {
         onProgressUpdate: onProgressUpdate,
       );
 
+      // PROCEED_WITH_SUGGESTION 케이스 처리
+      if (moderationResult.geminiResult?.severity == 'warning' && context != null) {
+        // 개선 제안이 있는 경우
+        final proceed = await showImprovementDialog(
+          context,
+          moderationResult.geminiResult!.reason,
+          moderationResult.geminiResult!.suggestions,
+        );
+        
+        if (!proceed) {
+          return ValidationResult(
+            isValid: false,
+            emptyResult: emptyResult,
+            aiModerationResult: moderationResult,
+            violations: [],
+            errorMessage: '사용자가 수정을 선택했습니다.',
+          );
+        }
+      }
+
       return ValidationResult(
         isValid: moderationResult.isValid,
         emptyResult: emptyResult,
@@ -165,42 +185,26 @@ class ValidationService {
     }
   }
 
-  /// Gemini 경고 다이얼로그 표시
-  static Future<bool> showWarningDialog(
+  /// 개선 제안 다이얼로그 표시
+  static Future<bool> showImprovementDialog(
     BuildContext context,
-    String reason,
-    String? suggestions,
+    String title,
+    String? description,
   ) async {
     final result = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('콘텐츠 개선 제안'),
+          title: Text(title),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(reason),
-              if (suggestions != null && suggestions.isNotEmpty) ...[
+              if (description != null && description.isNotEmpty) ...[
+                Text(description),
                 const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('💡 제안:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text(suggestions),
-                    ],
-                  ),
-                ),
               ],
-              const SizedBox(height: 16),
-              const Text('계속 진행하시겠습니까?'),
+              const Text('이대로 게시하시겠습니까?'),
             ],
           ),
           actions: [
@@ -218,6 +222,15 @@ class ValidationService {
     );
 
     return result ?? false;
+  }
+
+  /// Gemini 경고 다이얼로그 표시 (기존 호환성 유지)
+  static Future<bool> showWarningDialog(
+    BuildContext context,
+    String reason,
+    String? suggestions,
+  ) async {
+    return showImprovementDialog(context, reason, suggestions);
   }
 }
 

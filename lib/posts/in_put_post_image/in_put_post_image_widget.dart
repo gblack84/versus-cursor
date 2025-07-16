@@ -1,4 +1,5 @@
 // upload_choice_bottom_sheet_widget.dart 임시 제거 - 새로운 업로드 위젯 구현 필요
+import 'dart:async';
 import '/core/app_theme.dart';
 import '/core/app_utils.dart';
 import '/utils/content_filter.dart';
@@ -20,7 +21,6 @@ import 'components/media_selection_box_multi.dart';
 import 'components/character_count_display.dart';
 import 'components/next_button.dart';
 import 'components/simple_validated_field.dart';
-import 'components/simple_character_count.dart';
 import 'components/layout_debug_info.dart';
 import 'components/warning_message.dart';
 import 'services/validation_service.dart';
@@ -28,6 +28,8 @@ import 'helpers/input_field_builder.dart';
 import 'widgets/media_selection_flow_widget.dart';
 import 'widgets/dialogs/target_audience_dialog.dart';
 import 'utils/debug_helper.dart';
+import '/services/storage_service.dart';
+import 'services/media_upload_service.dart';
 import 'utils/error_handler.dart';
 import 'constants/dimensions.dart';
 import 'constants/animation_constants.dart';
@@ -49,13 +51,13 @@ class InPutPostImageWidget extends StatefulWidget {
 class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     with SingleTickerProviderStateMixin {
   late InPutPostImageModel _model;
+  Timer? _layoutUpdateTimer;
+  bool _isUpdatingLayout = false;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
   
   // Consumer 최적화를 위한 이전 상태 추적
   int _lastImageCount = 0;
-  double? _lastAspectRatioA;
-  double? _lastAspectRatioB;
   
 
 
@@ -70,16 +72,15 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     _model.scrollController ??= ScrollController();
     _model.scrollController!.addListener(_scrollListener);
     
-    // 초기 레이아웃 설정 - 비율 정보가 있을 때만
+    // 초기 레이아웃 설정
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final appState = Provider.of<AppState>(context, listen: false);
       // 초기 상태 설정
       _lastImageCount = appState.tempImageFilesA.length + appState.tempImageFilesB.length;
-      _lastAspectRatioA = appState.uploadImageAspectRatioA.isNotEmpty ? appState.uploadImageAspectRatioA.first : null;
-      _lastAspectRatioB = appState.uploadImageAspectRatioB.isNotEmpty ? appState.uploadImageAspectRatioB.first : null;
       
-      if (_lastAspectRatioA != null || _lastAspectRatioB != null) {
-        _updateLayoutBasedOnImages();
+      // 초기 레이아웃 설정은 _performLayoutUpdate를 직접 호출
+      if (_lastImageCount > 0) {
+        _performLayoutUpdate();
       }
     });
 
@@ -133,24 +134,32 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     }
   }
 
-  /// 이미지 비율에 따라 레이아웃 자동 결정
+  /// 이미지 비율에 따라 레이아웃 자동 결정 (Debounced)
   void _updateLayoutBasedOnImages() {
-    // mounted 체크 추가
+    // 기존 타이머가 있다면 취소
+    _layoutUpdateTimer?.cancel();
+    
+    // 300ms 후에 업데이트 실행 (debounce)
+    _layoutUpdateTimer = Timer(const Duration(milliseconds: 300), () {
+      _performLayoutUpdate();
+    });
+  }
+  
+  /// 실제 레이아웃 업데이트 수행
+  void _performLayoutUpdate() {
+    // mounted 체크
     if (!mounted) return;
     
-    final appState = Provider.of<AppState>(context, listen: false);
+    // 이미 업데이트 중이면 스킵
+    if (_isUpdatingLayout) return;
     
-    DebugHelper.runInDebug(() {
-      DebugHelper.logLayout('=== 스마트 레이아웃 업데이트 시작 ===');
-      DebugHelper.logLayout('A 이미지 개수: ${appState.tempImageFilesA.length}');
-      DebugHelper.logLayout('B 이미지 개수: ${appState.tempImageFilesB.length}');
-      DebugHelper.logLayout('A 비율 정보 개수: ${appState.uploadImageAspectRatioA.length}');
-      DebugHelper.logLayout('B 비율 정보 개수: ${appState.uploadImageAspectRatioB.length}');
-    });
+    _isUpdatingLayout = true;
+    
+    try {
+      final appState = Provider.of<AppState>(context, listen: false);
     
     // 이미지가 하나도 없으면 기본 레이아웃(horizontal)으로 초기화
     if (appState.tempImageFilesA.isEmpty && appState.tempImageFilesB.isEmpty) {
-      DebugHelper.logLayout('이미지가 없어 기본 레이아웃(horizontal)으로 초기화');
       if (_model.currentLayout != LayoutType.horizontal) {
         // mounted 체크 추가
         if (mounted) {
@@ -173,8 +182,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       // ratioA = appState.uploadImageAspectRatioA.first;
       
       // 새로운 로직 (하이브리드 계산)
-      ratioA = RatioCalculator.getRatio(appState.uploadImageAspectRatioA);
-      DebugHelper.logLayout('A 이미지 비율: $ratioA');
+      ratioA = RatioCalculator.getRatio(appState.uploadImageAspectRatioA, box: 'A');
     }
     
     if (appState.uploadImageAspectRatioB.isNotEmpty) {
@@ -182,8 +190,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       // ratioB = appState.uploadImageAspectRatioB.first;
       
       // 새로운 로직 (하이브리드 계산)
-      ratioB = RatioCalculator.getRatio(appState.uploadImageAspectRatioB);
-      DebugHelper.logLayout('B 이미지 비율: $ratioB');
+      ratioB = RatioCalculator.getRatio(appState.uploadImageAspectRatioB, box: 'B');
     }
     
     // 스마트 레이아웃 결정 - A박스만 있어도 레이아웃 계산
@@ -201,13 +208,10 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         // 정사각형 → 기본 가로 배치
         optimalLayout = LayoutType.horizontal;
       }
-      DebugHelper.logLayout('A박스만 있음 - 이미지 방향: $orientation');
     } else {
       // 일반적인 경우 (A/B 둘 다 있거나 B만 있는 경우)
       optimalLayout = AspectRatioAnalyzer.getOptimalLayout(ratioA, ratioB);
     }
-    
-    DebugHelper.logLayout('결정된 레이아웃: ${AspectRatioAnalyzer.getLayoutDescription(optimalLayout)}');
     
     // 레이아웃이 변경된 경우에만 업데이트
     if (_model.currentLayout != optimalLayout) {
@@ -223,20 +227,17 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
             // 세로 배치 = 이미지가 위/아래로 배치
             _model.isRatioVertical = false;
             _model.isRatioHorizontal = true;
-            DebugHelper.logLayout('세로 배치(위/아래)로 변경');
           } else {
             // 가로 배치 = 이미지가 좌/우로 배치
             _model.isRatioVertical = true;
             _model.isRatioHorizontal = false;
-            DebugHelper.logLayout('가로 배치(좌/우)로 변경');
           }
         });
       }
-    } else {
-      DebugHelper.logLayout('레이아웃 변경 없음');
     }
-    
-    DebugHelper.logLayout('=== 스마트 레이아웃 업데이트 완료 ===');
+    } finally {
+      _isUpdatingLayout = false;
+    }
   }
 
   /// 필수 필드가 모두 채워졌는지 확인
@@ -302,6 +303,54 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         _model.validationMessage = "내용을 검토하고 있습니다...";
       });
 
+      final appState = context.read<AppState>();
+      
+      // 이미지가 있다면 먼저 업로드
+      if (appState.tempImageFilesA.isNotEmpty || appState.tempImageFilesB.isNotEmpty) {
+        setState(() {
+          _model.validationMessage = "이미지를 업로드하고 있습니다...";
+        });
+        
+        try {
+          // A박스 이미지 업로드
+          if (appState.tempImageFilesA.isNotEmpty) {
+            DebugHelper.log('A박스 이미지 업로드 중: ${appState.tempImageFilesA.length}개');
+            final urlsA = await MediaUploadService.uploadTempFiles(
+              files: appState.tempImageFilesA,
+              box: 'A',
+            );
+            appState.update(() {
+              appState.uploadImageA.clear();
+              appState.uploadImageA.addAll(urlsA);
+            });
+          }
+          
+          // B박스 이미지 업로드
+          if (appState.tempImageFilesB.isNotEmpty) {
+            DebugHelper.log('B박스 이미지 업로드 중: ${appState.tempImageFilesB.length}개');
+            final urlsB = await MediaUploadService.uploadTempFiles(
+              files: appState.tempImageFilesB,
+              box: 'B',
+            );
+            appState.update(() {
+              appState.uploadImageB.clear();
+              appState.uploadImageB.addAll(urlsB);
+            });
+          }
+          
+          setState(() {
+            _model.validationMessage = "내용을 검토하고 있습니다...";
+          });
+        } catch (uploadError) {
+          DebugHelper.logError('이미지 업로드 실패', uploadError);
+          _showSnackBar('이미지 업로드 중 오류가 발생했습니다.', isError: true);
+          setState(() {
+            _model.isValidating = false;
+          });
+          return;
+        }
+      }
+
       // ValidationService를 사용하여 검증
       final result = await ValidationService.validateAllTexts(
         questionTitle: _model.textController1?.text,
@@ -316,6 +365,8 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
             });
           }
         },
+        visionDataA: _model.visionResultA,
+        visionDataB: _model.visionResultB,
       );
 
       // 상태 변경이 필요한지 확인
@@ -323,7 +374,6 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           _model.isQuestionTitleEmpty != result.emptyResult.isQuestionTitleEmpty ||
           _model.isATitleEmpty != result.emptyResult.isATitleEmpty ||
           _model.isBTitleEmpty != result.emptyResult.isBTitleEmpty ||
-          _model.validationResults != result.validationResults ||
           _model.hasValidationViolations != (!result.isValid && result.violations.isNotEmpty);
       
       if (needsUpdate) {
@@ -334,7 +384,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           _model.isBTitleEmpty = result.emptyResult.isBTitleEmpty;
 
           // 검증 결과 업데이트
-          _model.validationResults = result.validationResults;
+          // _model.validationResults = result.validationResults; // AI Moderation으로 이동됨
           _model.hasValidationViolations = !result.isValid && result.violations.isNotEmpty;
           
           // 검증 통과 시 비어있음 에러 상태 초기화
@@ -346,23 +396,35 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         });
       }
 
+      // 3단계: 결과 처리
       if (result.errorMessage != null) {
-        _showSnackBar(result.errorMessage!);
+        _showSnackBar(result.errorMessage!, isError: true);
+        await _cleanupUploadedImages(); // 에러 시에도 정리
       } else if (!result.isValid && result.violations.isNotEmpty) {
+        // BLOCK 케이스
         ValidationService.showViolationDialog(context, result.violations, geminiResult: result.geminiResult);
+        await _cleanupUploadedImages(); // 업로드된 이미지 삭제
+        return; // 로컬 파일은 유지
       } else if (result.isValid) {
-        // Gemini 경고가 있는 경우 처리
+        // PROCEED 또는 PROCEED_WITH_SUGGESTION 케이스
+        bool shouldProceed = true;
+        
+        // PROCEED_WITH_SUGGESTION 처리
         if (result.geminiResult?.severity == 'warning') {
-          final proceed = await ValidationService.showWarningDialog(
+          shouldProceed = await ValidationService.showImprovementDialog(
             context,
             result.geminiResult!.reason,
             result.geminiResult!.suggestions,
           );
-          if (!proceed) {
-            return; // 사용자가 수정하기를 선택한 경우
+          
+          if (!shouldProceed) {
+            // 사용자가 수정 선택
+            await _cleanupUploadedImages(); // 업로드된 이미지 삭제
+            return; // 로컬 파일은 유지
           }
         }
-        // 검증 완료 - AppState에 텍스트 저장
+        
+        // 검증 통과 또는 계속하기 선택 - AppState에 텍스트 저장
         context.read<AppState>().update(() {
           final appState = context.read<AppState>();
           appState.uploadTextA = _model.textController3?.text ?? '';
@@ -375,13 +437,21 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         // 타겟 오디언스 다이얼로그 표시
         final targetAudience = await TargetAudienceDialog.show(context);
         
-        if (targetAudience != null) {
-          // 타겟 설정이 완료되면 Firestore에 저장
-          await _saveToFirestore(targetAudience);
+        if (targetAudience == null) {
+          // 사용자가 취소함
+          await _cleanupUploadedImages(); // 업로드된 이미지 삭제
+          return; // 로컬 파일은 유지
         }
+        
+        // Firestore 저장 진행
+        await _saveToFirestore(targetAudience);
       }
 
     } catch (e) {
+      // 에러 발생 시에도 정리
+      await _cleanupUploadedImages();
+      
+      // 에러 처리
       ErrorHandler.handle(
         e,
         type: ErrorType.validation,
@@ -437,16 +507,12 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           onComplete: (imageUrl) {
             // 검열 통과 후 호출됨
             DebugHelper.logModeration('검열 통과 및 업로드 완료: $imageUrl');
-            
-            // 스마트 레이아웃 업데이트 (단일 이미지도 처리)
-            _updateLayoutBasedOnImages();
+            // 레이아웃은 Consumer에서 자동으로 처리됨
           },
           onMultiComplete: (imageUrls) {
             // 검열 통과 후 호출됨
             DebugHelper.logModeration('검열 통과 및 업로드 완료: ${imageUrls.length}개');
-            
-            // 스마트 레이아웃 업데이트
-            _updateLayoutBasedOnImages();
+            // 레이아웃은 Consumer에서 자동으로 처리됨
           },
         ),
       ),
@@ -508,9 +574,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
             onMultiComplete: (imageUrls) {
               // 멀티 이미지 완료 처리
               DebugHelper.logModeration('검열 통과 및 업로드 완료: ${imageUrls.length}개');
-              
-              // 스마트 레이아웃 업데이트
-              _updateLayoutBasedOnImages();
+              // 레이아웃은 Consumer에서 자동으로 처리됨
             },
             onProcessingComplete: () {
               // 처리 완료 시 로딩 토스트 제거
@@ -541,25 +605,9 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
       final appState = context.read<AppState>();
       
-      // 임시 파일들을 Firebase Storage에 업로드
-      List<String> uploadedUrlsA = [];
-      List<String> uploadedUrlsB = [];
-      
-      if (appState.tempImageFilesA.isNotEmpty) {
-        DebugHelper.log('A박스 이미지 업로드 중: ${appState.tempImageFilesA.length}개');
-        uploadedUrlsA = await MediaUploadService.uploadTempFiles(
-          files: appState.tempImageFilesA,
-          box: 'A',
-        );
-      }
-      
-      if (appState.tempImageFilesB.isNotEmpty) {
-        DebugHelper.log('B박스 이미지 업로드 중: ${appState.tempImageFilesB.length}개');
-        uploadedUrlsB = await MediaUploadService.uploadTempFiles(
-          files: appState.tempImageFilesB,
-          box: 'B',
-        );
-      }
+      // 이미 업로드된 URL 사용 (중복 업로드 제거)
+      final uploadedUrlsA = appState.uploadImageA;
+      final uploadedUrlsB = appState.uploadImageB;
       
       // 사용자 정보 가져오기
       final userDoc = await UsersRecord.getDocumentOnce(
@@ -626,21 +674,8 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
       await PollDetailsRecord.createDoc(postRef).set(pollDetailsData);
 
-      // AppState 초기화
-      appState.update(() {
-        appState.uploadTextA = '';
-        appState.uploadTextB = '';
-        appState.uploadImageA = [];
-        appState.uploadImageB = [];
-        appState.clearTempImageFilesA();
-        appState.clearTempImageFilesB();
-        appState.uploadImageAspectRatioA = [];
-        appState.uploadImageAspectRatioB = [];
-        appState.assetEntityIdsA = [];
-        appState.assetEntityIdsB = [];
-        appState.questionTitle = '';
-        appState.questionDescription = '';
-      });
+      // 성공 시 전체 정리
+      await _cleanupAllData();
 
       setState(() {
         _model.isValidating = false;
@@ -718,10 +753,6 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         hasOtherBox: false,
       );
       
-      DebugHelper.runInDebug(() {
-        DebugHelper.logLayout('A박스만 선택됨 - 크기: ${size.height}px');
-      });
-      
       return (size, size);
     }
     
@@ -732,14 +763,6 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       aspectRatioA: (appState.tempImageFilesA.isEmpty && appState.tempImageFilesB.isEmpty) ? null : aspectRatioA,
       aspectRatioB: (appState.tempImageFilesA.isEmpty && appState.tempImageFilesB.isEmpty) ? null : aspectRatioB,
     );
-    
-    DebugHelper.runInDebug(() {
-      if (appState.tempImageFilesA.isEmpty && appState.tempImageFilesB.isEmpty) {
-        DebugHelper.logLayout('대기 상태 박스 크기: ${unifiedSize.height}px, 레이아웃: ${_model.currentLayout}');
-      } else {
-        DebugHelper.logLayout('스마트 레이아웃 박스 크기: ${unifiedSize.height}px, 레이아웃: ${_model.currentLayout}');
-      }
-    });
     
     return (unifiedSize, unifiedSize);
   }
@@ -819,7 +842,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
             onComplete: (newImageUrl) {
               // File 기반에서는 onFileComplete를 사용해야 함
               _showSnackBar('이미지가 수정되었습니다.');
-              if (imageFiles.length > 1) _updateLayoutBasedOnImages();
+              // 레이아웃은 Consumer에서 자동으로 처리됨
             },
             onFileComplete: (newImageFile) {
               // 편집된 파일로 교체 - 인덱스 범위 검증
@@ -833,7 +856,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                   }
                 });
                 _showSnackBar('이미지가 수정되었습니다.');
-                if (imageFiles.length > 1) _updateLayoutBasedOnImages();
+                // 레이아웃은 Consumer에서 자동으로 처리됨
               }
             },
           ),
@@ -862,7 +885,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                 }
               });
               _showSnackBar('이미지가 수정되었습니다.');
-              if (imageUrls.length > 1) _updateLayoutBasedOnImages();
+              // 레이아웃은 Consumer에서 자동으로 처리됨
             },
           ),
         ),
@@ -874,29 +897,27 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   Widget _buildMediaBoxes() {
     return Consumer<AppState>(
       builder: (context, appState, child) {
-        // 이미지 수와 비율 변경 감지
+        // 이미지 수 변경 감지
         final currentImageCount = appState.tempImageFilesA.length + appState.tempImageFilesB.length;
-        final currentAspectRatioA = appState.tempImageFilesA.isNotEmpty && appState.uploadImageAspectRatioA.isNotEmpty 
-            ? RatioCalculator.getRatio(appState.uploadImageAspectRatioA)  // 하이브리드 계산 사용
-            : null;
-        final currentAspectRatioB = appState.tempImageFilesB.isNotEmpty && appState.uploadImageAspectRatioB.isNotEmpty 
-            ? RatioCalculator.getRatio(appState.uploadImageAspectRatioB)  // 하이브리드 계산 사용
-            : null;
         
-        // 상태가 변경되었을 때만 레이아웃 업데이트
-        if (_lastImageCount != currentImageCount || 
-            _lastAspectRatioA != currentAspectRatioA || 
-            _lastAspectRatioB != currentAspectRatioB) {
+        // 이미지 수가 변경되었을 때만 레이아웃 업데이트
+        if (_lastImageCount != currentImageCount) {
           _lastImageCount = currentImageCount;
-          _lastAspectRatioA = currentAspectRatioA;
-          _lastAspectRatioB = currentAspectRatioB;
-          
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              _updateLayoutBasedOnImages();
-            }
-          });
+          // debounced update 호출
+          _updateLayoutBasedOnImages();
         }
+        
+        // 현재 레이아웃에 따른 비율 계산 (매 빌드마다 계산하지 않음)
+        final currentAspectRatioA = _model.currentLayout != LayoutType.horizontal && 
+            appState.tempImageFilesA.isNotEmpty && 
+            appState.uploadImageAspectRatioA.isNotEmpty 
+                ? RatioCalculator.getRatio(appState.uploadImageAspectRatioA, box: 'A')
+                : null;
+        final currentAspectRatioB = _model.currentLayout != LayoutType.horizontal && 
+            appState.tempImageFilesB.isNotEmpty && 
+            appState.uploadImageAspectRatioB.isNotEmpty 
+                ? RatioCalculator.getRatio(appState.uploadImageAspectRatioB, box: 'B')
+                : null;
         
         final boxSizes = _calculateBoxSizes(currentAspectRatioA, currentAspectRatioB, appState);
         
@@ -977,8 +998,12 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
   @override
   void dispose() {
+    // 페이지 나갈 때 업로드된 이미지 정리
+    _cleanupUploadedImages();
+    
     _model.scrollController?.removeListener(_scrollListener);
     _model.dispose();
+    _layoutUpdateTimer?.cancel();
     
     super.dispose();
   }
@@ -1105,7 +1130,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       showBBoxWarning: _showBBoxWarning,
       openAssetsPicker: _openAssetsPicker,
       showSnackBar: () => _showSnackBar('이미지가 수정되었습니다.'),
-      updateLayout: _updateLayoutBasedOnImages,
+      updateLayout: () {}, // 레이아웃은 Consumer에서 자동 처리
       setState: setState,
     );
     
@@ -1128,6 +1153,61 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       onAddImageTap: () => callbacks.handleAddImage(box, box == 'A' ? _model.currentImageIndexA : _model.currentImageIndexB),
       onCurrentIndexChanged: (index) => setState(() => callbacks.updateCurrentIndex(box, index)),
     );
+  }
+
+  /// Firebase Storage에서 업로드된 이미지만 삭제 (로컬 파일은 유지)
+  Future<void> _cleanupUploadedImages() async {
+    final appState = context.read<AppState>();
+    
+    // Firebase Storage에서 업로드된 이미지 삭제
+    final urlsToDelete = [
+      ...appState.uploadImageA,
+      ...appState.uploadImageB,
+    ];
+    
+    if (urlsToDelete.isNotEmpty) {
+      try {
+        await StorageService.deleteMultipleImages(urlsToDelete);
+        DebugHelper.log('업로드된 이미지 정리 완료: ${urlsToDelete.length}개');
+      } catch (e) {
+        DebugHelper.logError('이미지 삭제 중 오류', e);
+      }
+    }
+    
+    // AppState 정리 (URL만, 로컬 파일은 유지)
+    appState.update(() {
+      appState.uploadImageA.clear();
+      appState.uploadImageB.clear();
+    });
+  }
+
+  /// 모든 임시 데이터 정리 (페이지 나갈 때 또는 성공 후)
+  Future<void> _cleanupAllData() async {
+    // 먼저 업로드된 이미지 정리
+    await _cleanupUploadedImages();
+    
+    final appState = context.read<AppState>();
+    
+    // AppState의 모든 데이터 정리
+    appState.update(() {
+      // 로컬 파일도 정리
+      appState.tempImageFilesA.clear();
+      appState.tempImageFilesB.clear();
+      appState.assetEntityIdsA.clear();
+      appState.assetEntityIdsB.clear();
+      appState.uploadImageAspectRatioA.clear();
+      appState.uploadImageAspectRatioB.clear();
+      
+      // 텍스트 정리
+      appState.uploadTextA = '';
+      appState.uploadTextB = '';
+      appState.questionTitle = '';
+      appState.questionDescription = '';
+    });
+    
+    // Vision 데이터 정리
+    _model.visionResultA = null;
+    _model.visionResultB = null;
   }
 
   @override

@@ -69,6 +69,9 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
         );
       });
     }
+    
+    // 레이아웃 정보 로그 (최초 한 번만)
+    _logLayoutInfo();
   }
   
   @override
@@ -91,10 +94,25 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
   
   /// 이미지가 있는지 확인
   bool get _hasImages => _imageCount > 0;
+  
+  /// 레이아웃 정보 로그
+  void _logLayoutInfo() {
+    DebugHelper.runInDebug(() {
+      if (widget.dynamicHeight != null) {
+        DebugHelper.logLayout('${widget.label}박스: dynamicHeight=${widget.dynamicHeight}, isHorizontal=${widget.isHorizontal}');
+      }
+    });
+  }
 
   @override
   void didUpdateWidget(MediaSelectionBoxMulti oldWidget) {
     super.didUpdateWidget(oldWidget);
+    
+    // 레이아웃 정보가 변경되었을 때만 로그
+    if (oldWidget.dynamicHeight != widget.dynamicHeight ||
+        oldWidget.isHorizontal != widget.isHorizontal) {
+      _logLayoutInfo();
+    }
     
     // 이미지 개수 계산
     final oldCount = oldWidget.imageFiles?.length ?? oldWidget.imageUrls.length;
@@ -349,12 +367,6 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
     final double boxHeight = widget.dynamicHeight ?? (widget.isSelected 
         ? (widget.isHorizontal ? 350.0 : 250.0)
         : (widget.isHorizontal ? 350.0 : 200.0));
-    
-    DebugHelper.runInDebug(() {
-      if (widget.dynamicHeight != null) {
-        DebugHelper.logLayout('${widget.label}박스: dynamicHeight=${widget.dynamicHeight}, isHorizontal=${widget.isHorizontal}');
-      }
-    });
     
     // 박스 높이에 비례한 동적 아이콘 크기 계산
     // 가로형일 때는 45%, 세로형일 때는 40%

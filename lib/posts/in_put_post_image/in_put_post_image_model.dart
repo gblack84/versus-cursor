@@ -36,6 +36,10 @@ class InPutPostImageModel extends AppModel<InPutPostImageWidget> {
   Map<String, PerspectiveResult> validationResults = {};
   bool hasValidationViolations = false;
   
+  // Vision API 검증 결과 저장
+  Map<String, dynamic>? visionResultA;
+  Map<String, dynamic>? visionResultB;
+  
   // 필수 필드 비어있음 에러 상태
   bool isQuestionTitleEmpty = true;
   bool isATitleEmpty = true;

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '/app_state.dart';
+import '/backend/schema/image_moderation_record.dart';
+import '/services/cloud_image_moderation_service.dart';
 import 'media_upload_service.dart';
 import '../helpers/image_cache_helper.dart';
 import '../in_put_post_image_model.dart';
@@ -59,6 +61,18 @@ class ImageUploadOrchestrator {
         firstImageRejected = true;
         firstImageRejectionReason = editedResult['rejectionReason'] ?? '커뮤니티 가이드라인 위반';
         print('[ImageUploadOrchestrator] 첫 번째 이미지 검열 실패');
+      }
+      
+      // Vision API 데이터를 model에 저장 (첫 번째 이미지)
+      if (model != null && editedResult['moderation'] != null) {
+        final moderation = editedResult['moderation'] as ImageModerationRecord;
+        final visionData = _extractVisionData(moderation);
+        
+        if (box == 'A') {
+          model!.visionResultA = visionData;
+        } else {
+          model!.visionResultB = visionData;
+        }
       }
       
       final editedDisplayUrl = editedResult['urls']['display'] as String;
@@ -250,6 +264,18 @@ class ImageUploadOrchestrator {
         box: box,
         timeout: const Duration(seconds: 15),
       );
+      
+      // Vision API 데이터를 model에 저장
+      if (model != null && result['moderation'] != null) {
+        final moderation = result['moderation'] as ImageModerationRecord;
+        final visionData = _extractVisionData(moderation);
+        
+        if (box == 'A') {
+          model!.visionResultA = visionData;
+        } else {
+          model!.visionResultB = visionData;
+        }
+      }
       
       // 검열 결과 확인
       if (result['isApproved'] != true) {
@@ -447,6 +473,46 @@ class ImageUploadOrchestrator {
         }
       }
     }
+  }
+
+  /// Vision API 데이터 추출 (확장된 버전)
+  Map<String, dynamic> _extractVisionData(ImageModerationRecord moderation) {
+    return {
+      'safeSearch': {
+        'adult': moderation.safeSearchResults.adult,
+        'violence': moderation.safeSearchResults.violence,
+        'racy': moderation.safeSearchResults.racy,
+        'medical': moderation.safeSearchResults.medical,
+        'spoof': moderation.safeSearchResults.spoof,
+      },
+      'labels': moderation.labels.map((label) => {
+        'description': label.description,
+        'score': label.score,
+      }).toList(),
+      'detectedText': moderation.detectedText.isNotEmpty ? moderation.detectedText : null,
+      'logos': moderation.logos.map((logo) => {
+        'description': logo.description,
+        'score': logo.score,
+      }).toList(),
+      'objects': moderation.objects.map((obj) => {
+        'name': obj.name,
+        'score': obj.score,
+      }).toList(),
+      'dominantColors': moderation.dominantColors.map((color) => {
+        'red': color.color['red'] ?? 0,
+        'green': color.color['green'] ?? 0,
+        'blue': color.color['blue'] ?? 0,
+        'score': color.score,
+      }).toList(),
+      'faces': moderation.faces.map((face) => {
+        'joy': face.joyLikelihood,
+        'sorrow': face.sorrowLikelihood,
+        'anger': face.angerLikelihood,
+        'surprise': face.surpriseLikelihood,
+      }).toList(),
+      'moderationStatus': moderation.moderationStatus,
+      'moderatedAt': moderation.moderatedAt?.toIso8601String(),
+    };
   }
 
   /// AppState 업데이트

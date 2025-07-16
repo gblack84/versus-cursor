@@ -3,6 +3,7 @@ const admin = require("firebase-admin");
 const vision = require("@google-cloud/vision");
 const axios = require("axios");
 const { ChatGoogleGenerativeAI } = require("@langchain/google-genai");
+const { validateContentWithGenkit } = require("./genkit_service");
 
 admin.initializeApp();
 
@@ -15,6 +16,11 @@ const PERSPECTIVE_API_URL = 'https://commentanalyzer.googleapis.com/v1alpha1/com
 
 // Gemini API 설정
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || functions.config().gemini?.api_key;
+// Genkit용 환경 변수 추가
+process.env.GOOGLE_GENAI_API_KEY = process.env.GOOGLE_GENAI_API_KEY || 
+                                   functions.config().google?.genai_api_key || 
+                                   functions.config().gemini?.api_key;
+
 let geminiModel;
 if (GEMINI_API_KEY) {
   geminiModel = new ChatGoogleGenerativeAI({
@@ -116,6 +122,8 @@ async function checkTextWithPerspective(text) {
       PROFANITY: 0.5,       // 0.7 → 0.5 (더 엄격)
       THREAT: 0.7
     };
+    
+    console.log('[Perspective API] 임계값 설정:', thresholds);
     
     // SEXUALLY_EXPLICIT는 영어 텍스트일 때만 추가
     if (scores.SEXUALLY_EXPLICIT) {
@@ -307,12 +315,29 @@ exports.moderateImage = functions
       const file = bucket.file(filePath);
       const [imageBuffer] = await file.download();
       
-      // Vision API로 SafeSearch 검출
-      const [result] = await visionClient.safeSearchDetection({
-        image: { content: imageBuffer.toString("base64") }
-      });
+      // Vision API로 종합적인 이미지 분석
+      const request = {
+        image: { content: imageBuffer.toString("base64") },
+        features: [
+          { type: 'SAFE_SEARCH_DETECTION' },
+          { type: 'LABEL_DETECTION', maxResults: 20 },
+          { type: 'TEXT_DETECTION' },
+          { type: 'LOGO_DETECTION', maxResults: 5 },
+          { type: 'OBJECT_LOCALIZATION', maxResults: 10 },
+          { type: 'IMAGE_PROPERTIES' },
+          { type: 'FACE_DETECTION', maxResults: 10 }
+        ]
+      };
+      
+      const [result] = await visionClient.annotateImage(request);
       
       const detections = result.safeSearchAnnotation;
+      const labels = result.labelAnnotations || [];
+      const texts = result.textAnnotations || [];
+      const logos = result.logoAnnotations || [];
+      const objects = result.localizedObjectAnnotations || [];
+      const imageProperties = result.imagePropertiesAnnotation || {};
+      const faces = result.faceAnnotations || [];
       console.log("SafeSearch results:", detections);
       
       // 검열 결과를 Firestore에 저장
@@ -330,6 +355,34 @@ exports.moderateImage = functions
           violence: detections.violence || "UNKNOWN",
           racy: detections.racy || "UNKNOWN"
         },
+        // 새로운 Vision API 데이터 추가
+        labels: labels.map(label => ({
+          description: label.description,
+          score: label.score,
+          topicality: label.topicality
+        })),
+        detectedText: texts.length > 0 ? texts[0].description : null,
+        logos: logos.map(logo => ({
+          description: logo.description,
+          score: logo.score
+        })),
+        objects: objects.map(obj => ({
+          name: obj.name,
+          score: obj.score,
+          boundingPoly: obj.boundingPoly
+        })),
+        dominantColors: imageProperties.dominantColors?.colors?.slice(0, 5).map(color => ({
+          color: color.color,
+          score: color.score,
+          pixelFraction: color.pixelFraction
+        })) || [],
+        faces: faces.map(face => ({
+          joyLikelihood: face.joyLikelihood,
+          sorrowLikelihood: face.sorrowLikelihood,
+          angerLikelihood: face.angerLikelihood,
+          surpriseLikelihood: face.surpriseLikelihood,
+          detectionConfidence: face.detectionConfidence
+        })),
         moderatedAt: admin.firestore.FieldValue.serverTimestamp(),
         originalMetadata: object.metadata || {}
       };
@@ -461,6 +514,74 @@ exports.validatePostContentWithGemini = functions
     try {
       console.log(`[Gemini Validation] 시작 - 사용자: ${userId}`);
       
+      // Genkit 사용 여부 (환경 변수로 제어)
+      const useGenkit = process.env.USE_GENKIT === 'true' || functions.config().genkit?.enabled === 'true';
+      
+      if (useGenkit) {
+        console.log('[Gemini] Genkit 모드 사용');
+        
+        // Genkit을 사용한 검증
+        const genkitResult = await validateContentWithGenkit({
+          userId,
+          questionTitle: question,
+          description: descriptionText,
+          titleA,
+          titleB,
+          imageUrlA,
+          imageUrlB,
+          visionDataA,
+          visionDataB,
+          perspectiveScores: perspectiveData,
+          admin
+        });
+        
+        if (genkitResult) {
+          // 에러가 발생한 경우 로그만 남기고 기본값 반환
+          if (genkitResult.error) {
+            console.log('[Gemini] Genkit 검증 중 에러 발생, 기본값으로 통과 처리');
+            console.log('[Gemini] 에러 메시지:', genkitResult.errorMessage);
+          } else {
+            // 토큰 사용량 로깅
+            if (genkitResult.tokenUsage) {
+              const usage = genkitResult.tokenUsage;
+              const total = usage.totalTokenCount || usage.totalTokens || 
+                           (usage.promptTokenCount || 0) + (usage.candidatesTokenCount || 0);
+              console.log('[Gemini] 토큰 사용량 요약:');
+              console.log(`  - 전체: ${total} 토큰`);
+            }
+            // 정상적인 검증 결과 로깅
+            await logValidationResult({
+              userId,
+              content: { question, titleA, titleB, descriptionText },
+              geminiResult: {
+                isValid: genkitResult.isValid,
+                severity: genkitResult.severity,
+                reason: genkitResult.reason,
+                suggestions: genkitResult.suggestions,
+                confidence: genkitResult.confidence
+              },
+              tokenUsage: genkitResult.tokenUsage ? {
+                promptTokenCount: genkitResult.tokenUsage.promptTokenCount || 0,
+                candidatesTokenCount: genkitResult.tokenUsage.candidatesTokenCount || 0,
+                totalTokenCount: genkitResult.tokenUsage.totalTokenCount || 0
+              } : null,
+              timestamp: admin.firestore.FieldValue.serverTimestamp()
+            });
+          }
+          
+          return {
+            isValid: genkitResult.isValid !== false,
+            reason: genkitResult.reason || '',
+            severity: genkitResult.severity || 'pass',
+            suggestions: genkitResult.suggestions || '',
+            confidence: genkitResult.confidence || 0.5
+          };
+        }
+      }
+      
+      // 기존 LangChain 구현 (fallback)
+      console.log('[Gemini] LangChain 모드 사용');
+      
       // 사용자 이력 가져오기
       const userHistory = await getUserPostingHistory(userId);
       
@@ -533,6 +654,21 @@ exports.validatePostContentWithGemini = functions
 
 // 사용자 포스팅 이력 조회
 async function getUserPostingHistory(userId) {
+  // TODO: Production 배포 전 Firestore 인덱스 생성 필요
+  // 필요한 인덱스: content_validations 컬렉션
+  // - userId (오름차순)
+  // - geminiResult.isValid (오름차순)
+  // - timestamp (내림차순)
+  
+  // 현재는 테스트를 위해 기본값 반환
+  console.log('[getUserPostingHistory] 테스트 모드 - 기본값 반환');
+  return {
+    rejectedCount: 0,
+    reportCount: 0,
+    isNewUser: true
+  };
+  
+  /* Production 코드 (인덱스 생성 후 주석 해제)
   try {
     const db = admin.firestore();
     
@@ -567,6 +703,7 @@ async function getUserPostingHistory(userId) {
       isNewUser: true
     };
   }
+  */
 }
 
 // Gemini 프롬프트 구성

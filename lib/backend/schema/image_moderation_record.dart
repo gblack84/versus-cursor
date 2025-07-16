@@ -63,6 +63,36 @@ class ImageModerationRecord extends FirestoreRecord {
   String get error => _error ?? '';
   bool hasError() => _error != null;
 
+  // "labels" field - 감지된 객체/개념
+  List<LabelAnnotation>? _labels;
+  List<LabelAnnotation> get labels => _labels ?? const [];
+  bool hasLabels() => _labels != null;
+
+  // "detectedText" field - OCR로 감지된 텍스트
+  String? _detectedText;
+  String get detectedText => _detectedText ?? '';
+  bool hasDetectedText() => _detectedText != null;
+
+  // "logos" field - 감지된 브랜드 로고
+  List<LogoAnnotation>? _logos;
+  List<LogoAnnotation> get logos => _logos ?? const [];
+  bool hasLogos() => _logos != null;
+
+  // "objects" field - 위치 정보가 있는 객체들
+  List<LocalizedObject>? _objects;
+  List<LocalizedObject> get objects => _objects ?? const [];
+  bool hasObjects() => _objects != null;
+
+  // "dominantColors" field - 주요 색상들
+  List<ColorInfo>? _dominantColors;
+  List<ColorInfo> get dominantColors => _dominantColors ?? const [];
+  bool hasDominantColors() => _dominantColors != null;
+
+  // "faces" field - 얼굴 감지 정보
+  List<FaceAnnotation>? _faces;
+  List<FaceAnnotation> get faces => _faces ?? const [];
+  bool hasFaces() => _faces != null;
+
   void _initializeFields() {
     _imageUrl = snapshotData['imageUrl'] as String?;
     _downloadUrl = snapshotData['downloadUrl'] as String?;
@@ -74,6 +104,24 @@ class ImageModerationRecord extends FirestoreRecord {
     _blurredUrl = snapshotData['blurredUrl'] as String?;
     _action = snapshotData['action'] as String?;
     _error = snapshotData['error'] as String?;
+    
+    // 새로운 Vision API 필드 초기화
+    _labels = (snapshotData['labels'] as List<dynamic>?)
+        ?.map((e) => LabelAnnotation.fromMap(e as Map<String, dynamic>))
+        .toList();
+    _detectedText = snapshotData['detectedText'] as String?;
+    _logos = (snapshotData['logos'] as List<dynamic>?)
+        ?.map((e) => LogoAnnotation.fromMap(e as Map<String, dynamic>))
+        .toList();
+    _objects = (snapshotData['objects'] as List<dynamic>?)
+        ?.map((e) => LocalizedObject.fromMap(e as Map<String, dynamic>))
+        .toList();
+    _dominantColors = (snapshotData['dominantColors'] as List<dynamic>?)
+        ?.map((e) => ColorInfo.fromMap(e as Map<String, dynamic>))
+        .toList();
+    _faces = (snapshotData['faces'] as List<dynamic>?)
+        ?.map((e) => FaceAnnotation.fromMap(e as Map<String, dynamic>))
+        .toList();
   }
 
   static CollectionReference get collection =>
@@ -144,6 +192,135 @@ class SafeSearchResults {
         if (violence != null) 'violence': violence,
         if (racy != null) 'racy': racy,
       };
+}
+
+// Vision API Label 정보
+class LabelAnnotation {
+  final String description;
+  final double score;
+  final double? topicality;
+
+  LabelAnnotation({
+    required this.description,
+    required this.score,
+    this.topicality,
+  });
+
+  factory LabelAnnotation.fromMap(Map<String, dynamic> data) => LabelAnnotation(
+    description: data['description'] ?? '',
+    score: (data['score'] ?? 0.0).toDouble(),
+    topicality: data['topicality']?.toDouble(),
+  );
+
+  Map<String, dynamic> toMap() => {
+    'description': description,
+    'score': score,
+    if (topicality != null) 'topicality': topicality,
+  };
+}
+
+// 로고 정보
+class LogoAnnotation {
+  final String description;
+  final double score;
+
+  LogoAnnotation({
+    required this.description,
+    required this.score,
+  });
+
+  factory LogoAnnotation.fromMap(Map<String, dynamic> data) => LogoAnnotation(
+    description: data['description'] ?? '',
+    score: (data['score'] ?? 0.0).toDouble(),
+  );
+
+  Map<String, dynamic> toMap() => {
+    'description': description,
+    'score': score,
+  };
+}
+
+// 객체 위치 정보
+class LocalizedObject {
+  final String name;
+  final double score;
+  final Map<String, dynamic>? boundingPoly;
+
+  LocalizedObject({
+    required this.name,
+    required this.score,
+    this.boundingPoly,
+  });
+
+  factory LocalizedObject.fromMap(Map<String, dynamic> data) => LocalizedObject(
+    name: data['name'] ?? '',
+    score: (data['score'] ?? 0.0).toDouble(),
+    boundingPoly: data['boundingPoly'] as Map<String, dynamic>?,
+  );
+
+  Map<String, dynamic> toMap() => {
+    'name': name,
+    'score': score,
+    if (boundingPoly != null) 'boundingPoly': boundingPoly,
+  };
+}
+
+// 색상 정보
+class ColorInfo {
+  final Map<String, dynamic> color;
+  final double score;
+  final double? pixelFraction;
+
+  ColorInfo({
+    required this.color,
+    required this.score,
+    this.pixelFraction,
+  });
+
+  factory ColorInfo.fromMap(Map<String, dynamic> data) => ColorInfo(
+    color: data['color'] ?? {},
+    score: (data['score'] ?? 0.0).toDouble(),
+    pixelFraction: data['pixelFraction']?.toDouble(),
+  );
+
+  Map<String, dynamic> toMap() => {
+    'color': color,
+    'score': score,
+    if (pixelFraction != null) 'pixelFraction': pixelFraction,
+  };
+}
+
+// 얼굴 감지 정보
+class FaceAnnotation {
+  final String? joyLikelihood;
+  final String? sorrowLikelihood;
+  final String? angerLikelihood;
+  final String? surpriseLikelihood;
+  final double? detectionConfidence;
+
+  FaceAnnotation({
+    this.joyLikelihood,
+    this.sorrowLikelihood,
+    this.angerLikelihood,
+    this.surpriseLikelihood,
+    this.detectionConfidence,
+  });
+
+  factory FaceAnnotation.fromMap(Map<String, dynamic> data) => FaceAnnotation(
+    joyLikelihood: data['joyLikelihood'] as String?,
+    sorrowLikelihood: data['sorrowLikelihood'] as String?,
+    angerLikelihood: data['angerLikelihood'] as String?,
+    surpriseLikelihood: data['surpriseLikelihood'] as String?,
+    detectionConfidence: data['detectionConfidence']?.toDouble(),
+  );
+
+  Map<String, dynamic> toMap() => {
+    if (joyLikelihood != null) 'joyLikelihood': joyLikelihood,
+    if (sorrowLikelihood != null) 'sorrowLikelihood': sorrowLikelihood,
+    if (angerLikelihood != null) 'angerLikelihood': angerLikelihood,
+    if (surpriseLikelihood != null) 'surpriseLikelihood': surpriseLikelihood,
+    if (detectionConfidence != null) 'detectionConfidence': detectionConfidence,
+  };
 }
 
 Map<String, dynamic> createImageModerationRecordData({

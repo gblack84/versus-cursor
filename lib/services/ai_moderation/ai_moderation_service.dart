@@ -36,6 +36,7 @@ class AIModerationService {
       if (options.enableGeminiAI && violations.isEmpty) {
         onProgressUpdate?.call('AI가 내용을 분석하고 있습니다...');
         
+        // 클라이언트에서 직접 Gemini 호출
         geminiResult = await GeminiModerationService.validateContent(
           userId: request.userId,
           questionTitle: request.questionTitle,
@@ -44,11 +45,20 @@ class AIModerationService {
           titleB: request.titleB,
           imageUrlA: request.imageUrlsA?.firstOrNull,
           imageUrlB: request.imageUrlsB?.firstOrNull,
+          visionDataA: request.visionDataA,
+          visionDataB: request.visionDataB,
           perspectiveScores: textResult?.scores,
         );
         
-        if (geminiResult != null && !geminiResult.isValid) {
-          violations.add(geminiResult.reason);
+        if (geminiResult != null) {
+          if (!geminiResult.isValid) {
+            violations.add(geminiResult.reason);
+          } else if (geminiResult.severity == 'warning') {
+            // 경고는 violations에 추가하지 않고 결과에만 포함
+          }
+        } else {
+          // Gemini API 실패 시 로그만 남기고 계속 진행
+          print('[AIModerationService] Gemini API 응답 없음 - 기본 통과 처리');
         }
       }
 

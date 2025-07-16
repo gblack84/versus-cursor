@@ -3,7 +3,7 @@ import '/services/ai_moderation/ai_moderation_service.dart';
 import '/services/ai_moderation/models/moderation_result.dart' as ai;
 import '../constants/field_styles.dart';
 import '/auth/firebase_auth/auth_util.dart';
-import '/core/app_state.dart';
+import '/app_state.dart';
 import 'package:provider/provider.dart';
 
 class ValidationService {
@@ -28,6 +28,8 @@ class ValidationService {
     required String? bTitle,
     BuildContext? context,
     Function(String)? onProgressUpdate,
+    Map<String, dynamic>? visionDataA,
+    Map<String, dynamic>? visionDataB,
   }) async {
     // 빈 필드 체크
     final emptyResult = checkEmptyFields(
@@ -67,8 +69,10 @@ class ValidationService {
         description: description,
         titleA: aTitle,
         titleB: bTitle,
-        imageUrlsA: appState?.uploadImageUrlsA,
-        imageUrlsB: appState?.uploadImageUrlsB,
+        imageUrlsA: appState?.uploadImageA,
+        imageUrlsB: appState?.uploadImageB,
+        visionDataA: visionDataA,
+        visionDataB: visionDataB,
         userId: currentUser.id,
       );
 

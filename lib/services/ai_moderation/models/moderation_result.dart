@@ -80,6 +80,8 @@ class ModerationRequest {
   final String? titleB;
   final List<String>? imageUrlsA;
   final List<String>? imageUrlsB;
+  final Map<String, dynamic>? visionDataA;
+  final Map<String, dynamic>? visionDataB;
   final String userId;
   final Map<String, dynamic>? metadata;
 
@@ -90,6 +92,8 @@ class ModerationRequest {
     this.titleB,
     this.imageUrlsA,
     this.imageUrlsB,
+    this.visionDataA,
+    this.visionDataB,
     required this.userId,
     this.metadata,
   });

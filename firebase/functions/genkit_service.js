@@ -50,8 +50,12 @@ C. BLOCK – 무의미 장난·트롤링·정책 경계선(질문·옵션 불일
   - 정책·이념·공인 행보 토론 ▶ 허용  
   - 특정 인물·집단 비방·음모론 ▶ BLOCK  
 
-● 얼굴·외모  
-  - '일반인' 얼굴 평가·점수 ▶ BLOCK  
+● 얼굴·외모 【★★★ 매우 중요 - 이미지에 사람 얼굴이 있을 때 필수 확인 ★★★】
+  - 사람 얼굴 평가·점수·비교 ▶ 무조건 BLOCK  
+  - 다음 모두 해당 시 BLOCK:
+    ① 이미지에 사람 얼굴이 포함됨
+    ② "닮았나요", "누구 같나요", "무엇을 닮았나요" 등 외모 비교 질문
+    ③ 선택지가 동물, 캐릭터, 사물 등 (예: 요다/개구리, 강아지/고양이 등)
   - 본인 스타일 질문 또는 공인 공식 사진 비교 ▶ 허용  
   - 얼굴 노출 이미지 → Vision safeSearch 통과 필수  
 
@@ -217,8 +221,11 @@ async function validateContentWithGenkit({
     // 사용자 기록 가져오기
     const userHistory = await getUserHistory(userId, admin);
     
-    // 프롬프트 구성
-    const userPrompt = `
+    // 1. 시스템 프롬프트는 그대로 둡니다.
+    const systemPrompt = VERSUS_VALIDATION_PROMPT;
+
+    // 2. 사용자가 입력한 텍스트 콘텐츠를 별도로 구성합니다.
+    const userTextContent = `
 사용자가 작성한 콘텐츠:
 - 질문: ${questionTitle || '없음'}
 - 설명: ${description || '없음'}
@@ -253,47 +260,45 @@ ${userHistory.map((post, i) => `${i + 1}. ${post.questionTitle} (A: ${post.title
 이 콘텐츠를 검증해주세요. 특히 다음 사항을 확인하세요:
 1. 질문과 A/B 옵션의 논리적 연관성
 2. 이미지가 있는 경우, 이미지 내용과 질문/옵션의 관련성
-3. 전체적인 맥락의 적절성`;
+3. 전체적인 맥락의 적절성
+
+【중요】 이미지에 사람 얼굴이 포함되어 있고, 질문이 "닮았나요" 형태이며, 
+선택지가 동물/캐릭터/사물인 경우 = 얼굴 평가로 간주하여 반드시 BLOCK 처리하세요.`;
 
     // 모델 초기화 (처음 호출 시)
     if (!geminiPro) {
       geminiPro = 'googleai/gemini-1.5-flash';
     }
 
-    // 멀티모달 프롬프트 생성 (이미지가 있는 경우)
-    let generatePrompt;
-    const textPrompt = `${VERSUS_VALIDATION_PROMPT}\n\n${userPrompt}`;
-    
-    // 이미지 URL이 있으면 멀티모달 프롬프트 생성
-    const hasImages = imageUrlA || imageUrlB;
-    if (hasImages) {
-      const media = [];
-      
-      if (imageUrlA) {
-        console.log('[Genkit] A 이미지 포함:', imageUrlA);
-        media.push({ 
+    // 3. 최종 프롬프트를 시스템 지침, 사용자 텍스트, 사용자 이미지 순서로 구성합니다.
+    const generatePrompt = [
+      { text: systemPrompt },
+      { text: userTextContent }
+    ];
+
+    if (imageUrlA) {
+      console.log('[Genkit] A 이미지 포함:', imageUrlA);
+      generatePrompt.push({ 
+        media: { 
           url: imageUrlA,
           contentType: 'image/jpeg'
-        });
-      }
-      
-      if (imageUrlB) {
-        console.log('[Genkit] B 이미지 포함:', imageUrlB);
-        media.push({ 
+        } 
+      });
+    }
+    
+    if (imageUrlB) {
+      console.log('[Genkit] B 이미지 포함:', imageUrlB);
+      generatePrompt.push({ 
+        media: { 
           url: imageUrlB,
           contentType: 'image/jpeg'
-        });
-      }
-      
-      // Genkit 문서에 맞는 배열 형식으로 프롬프트 구성
-      generatePrompt = [
-        { text: textPrompt },
-        ...media.map(m => ({ media: m }))
-      ];
-      
-      console.log('[Genkit] 멀티모달 프롬프트 사용 - 이미지 개수:', media.length);
+        } 
+      });
+    }
+
+    if (imageUrlA || imageUrlB) {
+      console.log('[Genkit] 멀티모달 프롬프트 사용 - 이미지 개수:', (imageUrlA ? 1 : 0) + (imageUrlB ? 1 : 0));
     } else {
-      generatePrompt = textPrompt;
       console.log('[Genkit] 텍스트 전용 프롬프트 사용');
     }
 

@@ -63,7 +63,7 @@ async function checkTextWithPerspective(text) {
 
   // 언어 분석
   const langInfo = analyzeTextLanguage(text);
-  console.log(`[Perspective API] 언어 분석: 한국어=${langInfo.hasKorean}, 영어=${langInfo.hasEnglish}, 주언어=${langInfo.primaryLanguage}`);
+  console.log(`[Perspective API] Language analysis: Korean=${langInfo.hasKorean}, English=${langInfo.hasEnglish}, Primary=${langInfo.primaryLanguage}`);
 
   // 기본 속성 설정 (모든 언어 지원)
   const requestedAttributes = {
@@ -205,7 +205,7 @@ exports.checkImageContent = functions
     }
 
     try {
-      console.log(`이미지 검열 시작 - 사용자: ${context.auth.uid}, 박스: ${box || 'unknown'}`);
+      console.log(`Image moderation started - User: ${context.auth.uid}, Box: ${box || 'unknown'}`);
       
       // Vision API로 SafeSearch 검출
       const [result] = await visionClient.safeSearchDetection({
@@ -272,7 +272,7 @@ exports.checkImageContent = functions
       
       // 로그 기록 (최소한의 정보만)
       if (isInappropriate) {
-        console.log(`부적절한 콘텐츠 감지 - 사용자: ${context.auth.uid}, 이유: ${reason}`);
+        console.log(`Inappropriate content detected - User: ${context.auth.uid}, Reason: ${reason}`);
       }
       
       return {
@@ -340,14 +340,25 @@ exports.moderateImage = functions
       const faces = result.faceAnnotations || [];
       console.log("SafeSearch results:", detections);
       
-      // 검열 결과를 Firestore에 저장
-      const moderationId = filePath.replace(/[/.]/g, "_");
+      // 메타데이터에서 정보 추출
+      const metadata = object.metadata || {};
+      const userId = metadata.uploadedBy || "unknown";
+      const sessionId = metadata.sessionId || "default";
+      const box = metadata.box || "unknown";
+      
+      // 세션 기반 모더레이션 ID 생성 (userId_sessionId_box)
+      const moderationId = `${userId}_${sessionId}_${box}`;
+      console.log(`Moderation ID: ${moderationId} for file: ${filePath}`);
+      
       const moderationData = {
         imageUrl: `gs://${object.bucket}/${filePath}`,
         downloadUrl: object.mediaLink || "",
         filePath: filePath,
-        userId: object.metadata?.uploadedBy || "unknown",
+        userId: userId,
+        sessionId: sessionId,
+        box: box,
         moderationStatus: "pending",
+        lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
         safeSearchResults: {
           adult: detections.adult || "UNKNOWN",
           spoof: detections.spoof || "UNKNOWN",
@@ -401,11 +412,11 @@ exports.moderateImage = functions
         moderationData.moderationStatus = "rejected";
         moderationData.action = "deleted";
         
-        // Firestore에 먼저 기록
+        // Firestore에 먼저 기록 (merge 옵션으로 업데이트 또는 생성)
         await admin.firestore()
           .collection("image_moderation")
           .doc(moderationId)
-          .set(moderationData);
+          .set(moderationData, { merge: true });
         
         // 모든 버전의 이미지 삭제
         try {
@@ -449,11 +460,11 @@ exports.moderateImage = functions
         moderationData.moderationStatus = "approved";
       }
       
-      // Firestore에 검열 결과 저장
+      // Firestore에 검열 결과 저장 (merge 옵션으로 업데이트 또는 생성)
       await admin.firestore()
         .collection("image_moderation")
         .doc(moderationId)
-        .set(moderationData);
+        .set(moderationData, { merge: true });
       
       console.log(`Image moderation completed for ${filePath}`);
       return null;
@@ -462,17 +473,26 @@ exports.moderateImage = functions
       console.error("Error moderating image:", error);
       
       // 에러 발생 시에도 기록 남기기
-      const moderationId = filePath.replace(/[/.]/g, "_");
+      const metadata = object.metadata || {};
+      const userId = metadata.uploadedBy || "unknown";
+      const sessionId = metadata.sessionId || "default";
+      const box = metadata.box || "unknown";
+      const moderationId = `${userId}_${sessionId}_${box}`;
+      
       await admin.firestore()
         .collection("image_moderation")
         .doc(moderationId)
         .set({
           imageUrl: `gs://${object.bucket}/${filePath}`,
           filePath: filePath,
+          userId: userId,
+          sessionId: sessionId,
+          box: box,
           moderationStatus: "error",
           error: error.message,
-          moderatedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
+          moderatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
       
       return null;
     }
@@ -508,11 +528,14 @@ exports.validatePostContentWithGemini = functions
       visionDataA, 
       visionDataB,
       perspectiveData,
-      userId 
+      userId,
+      sessionId,
+      documentId,
+      revisionCount
     } = data;
 
     try {
-      console.log(`[Gemini Validation] 시작 - 사용자: ${userId}`);
+      console.log(`[Gemini Validation] Started - User: ${userId}`);
       
       // Genkit 사용 여부 (환경 변수로 제어)
       const useGenkit = process.env.USE_GENKIT === 'true' || functions.config().genkit?.enabled === 'true';
@@ -538,19 +561,19 @@ exports.validatePostContentWithGemini = functions
         if (genkitResult) {
           // 에러가 발생한 경우 로그만 남기고 기본값 반환
           if (genkitResult.error) {
-            console.log('[Gemini] Genkit 검증 중 에러 발생, 기본값으로 통과 처리');
-            console.log('[Gemini] 에러 메시지:', genkitResult.errorMessage);
+            console.log('[Gemini] Error occurred during Genkit validation, defaulting to pass');
+            console.log('[Gemini] Error message:', genkitResult.errorMessage);
           } else {
             // 토큰 사용량 로깅
             if (genkitResult.tokenUsage) {
               const usage = genkitResult.tokenUsage;
               const total = usage.totalTokenCount || usage.totalTokens || 
                            (usage.promptTokenCount || 0) + (usage.candidatesTokenCount || 0);
-              console.log('[Gemini] 토큰 사용량 요약:');
-              console.log(`  - 전체: ${total} 토큰`);
+              console.log('[Gemini] Token usage summary:');
+              console.log(`  - Total: ${total} tokens`);
             }
             // 정상적인 검증 결과 로깅
-            await logValidationResult({
+            const validationDocId = await logValidationResult({
               userId,
               content: { question, titleA, titleB, descriptionText },
               geminiResult: {
@@ -566,7 +589,17 @@ exports.validatePostContentWithGemini = functions
                 totalTokenCount: genkitResult.tokenUsage.totalTokenCount || 0
               } : null,
               timestamp: admin.firestore.FieldValue.serverTimestamp()
-            });
+            }, sessionId, documentId);
+            
+            // 문서 ID를 결과에 포함
+            return {
+              isValid: genkitResult.isValid !== false,
+              reason: genkitResult.reason || '',
+              severity: genkitResult.severity || 'pass',
+              suggestions: genkitResult.suggestions || '',
+              confidence: genkitResult.confidence || 0.5,
+              documentId: validationDocId
+            };
           }
           
           return {
@@ -652,14 +685,18 @@ exports.validatePostContentWithGemini = functions
       }
       
       // 검증 결과 로깅
-      await logValidationResult({
+      const validationDocId = await logValidationResult({
         userId,
         content: { question, titleA, titleB, descriptionText },
         geminiResult: finalResult,
         timestamp: admin.firestore.FieldValue.serverTimestamp()
-      });
+      }, sessionId, documentId);
       
-      return finalResult;
+      // 문서 ID를 결과에 포함
+      return {
+        ...finalResult,
+        documentId: validationDocId
+      };
       
     } catch (error) {
       console.error('[Gemini Validation] 오류:', error);
@@ -814,13 +851,42 @@ C. BLOCK – 무의미 장난·트롤링·정책 경계선(질문·옵션 불일
 }
 
 // 검증 결과 로깅
-async function logValidationResult(data) {
+async function logValidationResult(data, sessionId, documentId) {
   try {
-    await admin.firestore()
-      .collection('content_validations')
-      .add(data);
+    const db = admin.firestore();
+    const collection = db.collection('content_validations');
+    let finalDocId = documentId;
+    
+    if (documentId) {
+      // 기존 문서 업데이트
+      await collection.doc(documentId).set({
+        ...data,
+        lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+        revisionCount: admin.firestore.FieldValue.increment(1)
+      }, { merge: true });
+      
+      console.log(`[logValidationResult] Document updated: ${documentId}`);
+    } else if (sessionId) {
+      // 세션 ID 기반으로 문서 ID 생성
+      finalDocId = `${data.userId}_${sessionId}`;
+      await collection.doc(finalDocId).set({
+        ...data,
+        sessionId: sessionId,
+        revisionCount: 1
+      });
+      
+      console.log(`[logValidationResult] New document created with session: ${finalDocId}`);
+    } else {
+      // 기존 방식 (새 문서 생성)
+      const docRef = await collection.add(data);
+      finalDocId = docRef.id;
+      console.log(`[logValidationResult] New document created (auto ID): ${finalDocId}`);
+    }
+    
+    return finalDocId;
   } catch (error) {
-    console.error('[logValidationResult] 로깅 실패:', error);
+    console.error('[logValidationResult] Logging failed:', error);
     // 로깅 실패는 무시 (서비스 중단 방지)
+    return null;
   }
 }

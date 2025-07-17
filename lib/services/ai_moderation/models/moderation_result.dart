@@ -62,6 +62,7 @@ class GeminiModerationResult {
   final String severity;
   final String suggestions;
   final double confidence;
+  final String? documentId;
 
   GeminiModerationResult({
     required this.isValid,
@@ -69,6 +70,7 @@ class GeminiModerationResult {
     required this.severity,
     required this.suggestions,
     required this.confidence,
+    this.documentId,
   });
 }
 
@@ -84,6 +86,9 @@ class ModerationRequest {
   final Map<String, dynamic>? visionDataB;
   final String userId;
   final Map<String, dynamic>? metadata;
+  final String? sessionId;
+  final String? documentId;
+  final int? revisionCount;
 
   ModerationRequest({
     this.questionTitle,
@@ -96,5 +101,8 @@ class ModerationRequest {
     this.visionDataB,
     required this.userId,
     this.metadata,
+    this.sessionId,
+    this.documentId,
+    this.revisionCount,
   });
 }

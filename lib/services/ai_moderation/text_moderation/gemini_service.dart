@@ -23,6 +23,9 @@ class GeminiModerationService {
     Map<String, dynamic>? visionDataA,
     Map<String, dynamic>? visionDataB,
     Map<String, double>? perspectiveScores,
+    String? sessionId,
+    String? documentId,
+    int? revisionCount,
   }) async {
     try {
       print('[GeminiModerationService] Calling Cloud Function validatePostContentWithGemini');
@@ -40,6 +43,9 @@ class GeminiModerationService {
         'visionDataB': visionDataB,
         'perspectiveData': perspectiveScores,
         'userId': userId,
+        'sessionId': sessionId,
+        'documentId': documentId,
+        'revisionCount': revisionCount,
       });
       
       final result = response.data;
@@ -65,6 +71,7 @@ class GeminiModerationService {
           severity: severity,
           suggestions: feedback?['description'] ?? '',
           confidence: (result['confidence'] ?? 1.0).toDouble(),
+          documentId: result['documentId'] as String?,
         );
       }
       
@@ -78,6 +85,7 @@ class GeminiModerationService {
         severity: result['severity'] ?? 'pass',
         suggestions: result['suggestions'] ?? '',
         confidence: (result['confidence'] ?? 1.0).toDouble(),
+        documentId: result['documentId'] as String?,
       );
     } on FirebaseFunctionsException catch (e) {
       print('[GeminiModerationService] Cloud Function Error: ${e.code} - ${e.message}');

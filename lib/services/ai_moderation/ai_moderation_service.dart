@@ -49,6 +49,9 @@ class AIModerationService {
           visionDataA: request.visionDataA,
           visionDataB: request.visionDataB,
           perspectiveScores: textResult?.scores,
+          sessionId: request.sessionId,
+          documentId: request.documentId,
+          revisionCount: request.revisionCount,
         );
         
         if (geminiResult != null) {
@@ -181,7 +184,8 @@ class AIModerationService {
       );
       
       if (!proceed) {
-        throw Exception('사용자가 수정을 선택했습니다');
+        // 사용자가 수정을 선택한 경우 - 정상적인 흐름이므로 에러를 던지지 않음
+        return;
       }
     } else if (!result.isValid) {
       // 차단 다이얼로그
@@ -200,8 +204,18 @@ class AIModerationService {
     String reason,
     String? suggestions,
   ) async {
+    return _showSuggestionDialog(context, reason, suggestions);
+  }
+
+  /// 제안 다이얼로그
+  static Future<bool> _showSuggestionDialog(
+    BuildContext context,
+    String reason,
+    String? suggestions,
+  ) async {
     final result = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: AppTheme.of(context).secondaryBackground,
@@ -243,9 +257,8 @@ class AIModerationService {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.black,
                       side: const BorderSide(color: Colors.black, width: 1),
                       shape: RoundedRectangleBorder(
@@ -256,9 +269,8 @@ class AIModerationService {
                     child: const Text('수정하기'),
                   ),
                   const SizedBox(width: 8),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.black,
                       side: const BorderSide(color: Colors.black, width: 1),
                       shape: RoundedRectangleBorder(
@@ -287,6 +299,7 @@ class AIModerationService {
   ) async {
     await showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: AppTheme.of(context).secondaryBackground,

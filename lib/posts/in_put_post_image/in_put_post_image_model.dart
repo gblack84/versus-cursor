@@ -61,6 +61,11 @@ class InPutPostImageModel extends AppModel<InPutPostImageWidget> {
   bool isEditMode = false;
   DocumentReference? existingPostRef;
   String? existingPostId;
+  
+  // Validation session management
+  String? validationSessionId;
+  String? validationDocumentId;
+  int validationRevisionCount = 0;
 
   ///  State fields for stateful widgets in this page.
 

@@ -18,6 +18,7 @@ class MediaUploadService {
     required Uint8List imageBytes,
     required String box,
     String? customPath,
+    String? sessionId,
     Function(String)? onModerationStatusUpdate, // deprecated - use uploadAndWaitForModeration
     Function(String)? onRejected, // deprecated - use uploadAndWaitForModeration
   }) async {
@@ -51,6 +52,7 @@ class MediaUploadService {
           ConfigConstants.typeMetadataKey: ConfigConstants.originalType,
           ConfigConstants.widthMetadataKey: originalImage.width.toString(),
           ConfigConstants.heightMetadataKey: originalImage.height.toString(),
+          if (sessionId != null) 'sessionId': sessionId,
         },
       );
 
@@ -73,6 +75,7 @@ class MediaUploadService {
             ConfigConstants.typeMetadataKey: ConfigConstants.displayType,
             ConfigConstants.widthMetadataKey: displayImage.width.toString(),
             ConfigConstants.heightMetadataKey: displayImage.height.toString(),
+            if (sessionId != null) 'sessionId': sessionId,
           },
         );
       } else {
@@ -94,6 +97,7 @@ class MediaUploadService {
           ConfigConstants.typeMetadataKey: ConfigConstants.thumbnailType,
           ConfigConstants.widthMetadataKey: ImageConstants.thumbnailSize.toString(),
           ConfigConstants.heightMetadataKey: ImageConstants.thumbnailSize.toString(),
+          if (sessionId != null) 'sessionId': sessionId,
         },
       );
 
@@ -196,6 +200,7 @@ class MediaUploadService {
     required Uint8List imageBytes,
     required String box,
     String? customPath,
+    String? sessionId,
     Duration timeout = const Duration(seconds: 30),
   }) async {
     // 이미지 업로드
@@ -203,6 +208,7 @@ class MediaUploadService {
       imageBytes: imageBytes,
       box: box,
       customPath: customPath,
+      sessionId: sessionId,
     );
     
     // 검열 결과 대기
@@ -254,6 +260,7 @@ class MediaUploadService {
     required List<File> files,
     required String box,
     String? customPath,
+    String? sessionId,
   }) async {
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -273,12 +280,15 @@ class MediaUploadService {
           imageBytes: bytes,
           box: box,
           customPath: customPath,
+          sessionId: sessionId,
         );
         
         // display URL만 저장 (posts_record에서 사용)
-        uploadedUrls.add(result['urls']['display']);
+        final displayUrl = result['urls']['display'];
+        uploadedUrls.add(displayUrl);
         
         DebugHelper.log('File ${i + 1}/${files.length} 업로드 완료');
+        DebugHelper.log('[uploadTempFiles] Display URL: $displayUrl');
       }
       
       return uploadedUrls;

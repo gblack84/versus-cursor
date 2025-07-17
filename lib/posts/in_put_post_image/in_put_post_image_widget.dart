@@ -71,6 +71,11 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     _model.scrollController ??= ScrollController();
     _model.scrollController!.addListener(_scrollListener);
     
+    // 검증 세션 ID 생성 (타임스탬프 + 랜덤 문자열)
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final random = DateTime.now().microsecondsSinceEpoch.toString().substring(10);
+    _model.validationSessionId = '${timestamp}_$random';
+    
     // 초기 레이아웃 설정
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final appState = Provider.of<AppState>(context, listen: false);
@@ -317,6 +322,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
             final urlsA = await MediaUploadService.uploadTempFiles(
               files: appState.tempImageFilesA,
               box: 'A',
+              sessionId: _model.validationSessionId,
             );
             appState.update(() {
               appState.uploadImageA.clear();
@@ -330,6 +336,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
             final urlsB = await MediaUploadService.uploadTempFiles(
               files: appState.tempImageFilesB,
               box: 'B',
+              sessionId: _model.validationSessionId,
             );
             appState.update(() {
               appState.uploadImageB.clear();
@@ -365,8 +372,21 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         },
         visionDataA: _model.visionResultA,
         visionDataB: _model.visionResultB,
+        sessionId: _model.validationSessionId,
+        documentId: _model.validationDocumentId,
+        revisionCount: _model.validationRevisionCount,
       );
 
+      // Gemini 결과에서 문서 ID 업데이트
+      if (result.geminiResult?.documentId != null) {
+        _model.validationDocumentId = result.geminiResult!.documentId;
+        _model.validationRevisionCount++;
+        DebugHelper.log('검증 문서 ID 업데이트: ${_model.validationDocumentId}, revision: ${_model.validationRevisionCount}');
+      }
+      
+      // 사용자가 수정하기를 선택했는지 확인
+      DebugHelper.log('[검증 결과] userRequestedModification: ${result.userRequestedModification}');
+      
       // 상태 변경이 필요한지 확인
       final needsUpdate = 
           _model.isQuestionTitleEmpty != result.emptyResult.isQuestionTitleEmpty ||
@@ -401,6 +421,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         // BLOCK 케이스
         setState(() {
           _model.isShowingDialog = true;
+          _model.validationMessage = null;
         });
         
         await ValidationService.showViolationDialog(context, result.violations, geminiResult: result.geminiResult);
@@ -413,30 +434,27 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         return; // 로컬 파일은 유지
       } else if (result.isValid) {
         // PROCEED 또는 PROCEED_WITH_SUGGESTION 케이스
-        bool shouldProceed = true;
         
-        // PROCEED_WITH_SUGGESTION 처리
-        if (result.geminiResult?.severity == 'warning') {
-          setState(() {
-            _model.isShowingDialog = true;
-          });
+        // 사용자가 수정하기를 선택한 경우 처리
+        if (result.userRequestedModification) {
+          DebugHelper.log('[수정하기 선택] userRequestedModification = true');
+          DebugHelper.log('[수정하기 선택] Firebase Storage 이미지 삭제 시작');
+          DebugHelper.log('[수정하기 선택] uploadImageA: ${context.read<AppState>().uploadImageA}');
+          DebugHelper.log('[수정하기 선택] uploadImageB: ${context.read<AppState>().uploadImageB}');
+          await _cleanupUploadedImages(); // 업로드된 이미지 삭제
+          DebugHelper.log('[수정하기 선택] cleanup 완료');
           
-          shouldProceed = await ValidationService.showImprovementDialog(
-            context,
-            result.geminiResult!.reason,
-            result.geminiResult!.suggestions,
-          );
-          
-          setState(() {
-            _model.isShowingDialog = false;
-          });
-          
-          if (!shouldProceed) {
-            // 사용자가 수정 선택
-            await _cleanupUploadedImages(); // 업로드된 이미지 삭제
-            return; // 로컬 파일은 유지
+          if (mounted) {
+            setState(() {
+              _model.isValidating = false;
+              _model.validationMessage = null;
+            });
           }
+          return; // 로컬 파일은 유지
         }
+        
+        // PROCEED_WITH_SUGGESTION 처리는 이제 ValidationService에서 처리됨
+        // 여기서는 다이얼로그를 다시 표시하지 않음
         
         // 검증 통과 또는 계속하기 선택 - AppState에 텍스트 저장
         context.read<AppState>().update(() {
@@ -451,6 +469,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         // 타겟 오디언스 다이얼로그 표시
         setState(() {
           _model.isShowingDialog = true;
+          _model.validationMessage = null;
         });
         
         final targetAudience = await TargetAudienceDialog.show(context);
@@ -462,6 +481,10 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         if (targetAudience == null) {
           // 사용자가 취소함
           await _cleanupUploadedImages(); // 업로드된 이미지 삭제
+          setState(() {
+            _model.isValidating = false;
+            _model.validationMessage = null;
+          });
           return; // 로컬 파일은 유지
         }
         
@@ -470,6 +493,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       }
 
     } catch (e) {
+      DebugHelper.logError('[_validateAllTexts] catch 블록 진입', e);
       // 에러 발생 시에도 정리
       await _cleanupUploadedImages();
       
@@ -487,6 +511,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         context: context,
       );
     } finally {
+      DebugHelper.log('[_validateAllTexts] finally 블록 진입');
       setState(() {
         _model.isValidating = false;
         _model.validationMessage = null;
@@ -705,6 +730,14 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
       // 성공 시 전체 정리
       await _cleanupAllData();
+
+      // 검증 세션 초기화 (새로운 게시물 작성을 위해)
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final random = DateTime.now().microsecondsSinceEpoch.toString().substring(10);
+      _model.validationSessionId = '${timestamp}_$random';
+      _model.validationDocumentId = null;
+      _model.validationRevisionCount = 0;
+      DebugHelper.log('검증 세션 초기화 완료 - 새 세션 ID: ${_model.validationSessionId}');
 
       setState(() {
         _model.isValidating = false;
@@ -1188,6 +1221,11 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   Future<void> _cleanupUploadedImages() async {
     final appState = context.read<AppState>();
     
+    // 디버그 로그 추가
+    DebugHelper.log('[_cleanupUploadedImages] 시작');
+    DebugHelper.log('[_cleanupUploadedImages] uploadImageA: ${appState.uploadImageA.length}개');
+    DebugHelper.log('[_cleanupUploadedImages] uploadImageB: ${appState.uploadImageB.length}개');
+    
     // Firebase Storage에서 업로드된 이미지 삭제
     final urlsToDelete = [
       ...appState.uploadImageA,
@@ -1196,11 +1234,32 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     
     if (urlsToDelete.isNotEmpty) {
       try {
-        await StorageService.deleteMultipleImages(urlsToDelete);
-        DebugHelper.log('업로드된 이미지 정리 완료: ${urlsToDelete.length}개');
+        DebugHelper.log('Firebase Storage에서 이미지 삭제 시작: ${urlsToDelete.length}개');
+        
+        // URL 로깅
+        for (int i = 0; i < urlsToDelete.length; i++) {
+          DebugHelper.log('[삭제할 URL ${i+1}] ${urlsToDelete[i]}');
+        }
+        
+        final results = await StorageService.deleteMultipleImages(urlsToDelete);
+        
+        // 삭제 결과 로깅
+        int successCount = 0;
+        results.forEach((url, success) {
+          if (success) {
+            successCount++;
+            DebugHelper.log('[삭제 성공] $url');
+          } else {
+            DebugHelper.logError('이미지 삭제 실패', url);
+          }
+        });
+        
+        DebugHelper.log('이미지 삭제 완료: 성공 $successCount/${urlsToDelete.length}개');
       } catch (e) {
         DebugHelper.logError('이미지 삭제 중 오류', e);
       }
+    } else {
+      DebugHelper.log('[_cleanupUploadedImages] 삭제할 이미지가 없습니다');
     }
     
     // AppState 정리 (URL만, 로컬 파일은 유지)
@@ -1208,6 +1267,8 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       appState.uploadImageA.clear();
       appState.uploadImageB.clear();
     });
+    
+    DebugHelper.log('[_cleanupUploadedImages] 완료');
   }
 
   /// 모든 임시 데이터 정리 (페이지 나갈 때 또는 성공 후)
@@ -1426,7 +1487,9 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
               NextButton(
                 showButton: _model.showNextButton && !_model.isValidating && !_model.isShowingDialog,
                 onPressed: () async {
+                  DebugHelper.log('[NextButton] 다음 버튼 클릭');
                   await _validateAllTexts();
+                  DebugHelper.log('[NextButton] _validateAllTexts 완료');
                 },
               ),
             ],

@@ -5,6 +5,7 @@ import '../constants/field_styles.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/app_state.dart';
 import 'package:provider/provider.dart';
+import '/core/app_theme.dart';
 
 class ValidationService {
   /// 필수 필드가 비어있는지 확인
@@ -30,6 +31,9 @@ class ValidationService {
     Function(String)? onProgressUpdate,
     Map<String, dynamic>? visionDataA,
     Map<String, dynamic>? visionDataB,
+    String? sessionId,
+    String? documentId,
+    int? revisionCount,
   }) async {
     // 빈 필드 체크
     final emptyResult = checkEmptyFields(
@@ -74,6 +78,9 @@ class ValidationService {
         visionDataA: visionDataA,
         visionDataB: visionDataB,
         userId: currentUser.id,
+        sessionId: sessionId,
+        documentId: documentId,
+        revisionCount: revisionCount,
       );
 
       // AI Moderation 실행
@@ -92,12 +99,14 @@ class ValidationService {
         );
         
         if (!proceed) {
+          print('[ValidationService] 사용자가 수정하기를 선택함');
           return ValidationResult(
-            isValid: false,
+            isValid: true, // true로 변경하여 InPutPostImageWidget의 432줄 조건을 통과하도록 함
             emptyResult: emptyResult,
             aiModerationResult: moderationResult,
             violations: [],
-            errorMessage: '사용자가 수정을 선택했습니다.',
+            errorMessage: null, // 에러 메시지 제거 - 정상적인 사용자 선택
+            userRequestedModification: true, // 사용자가 수정하기를 선택함
           );
         }
       }
@@ -156,6 +165,7 @@ class ValidationService {
       // 기본 다이얼로그 표시
       await showDialog(
         context: context,
+        barrierDismissible: false,
         builder: (BuildContext context) {
           return AlertDialog(
             title: const Text('부적절한 내용 감지'),
@@ -191,36 +201,87 @@ class ValidationService {
     String title,
     String? description,
   ) async {
+    print('[ValidationService] showImprovementDialog 호출됨');
     final result = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: AppTheme.of(context).secondaryBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Text(title),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (description != null && description.isNotEmpty) ...[
-                Text(description),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.of(context).secondaryBackground,
+                    border: Border.all(color: Colors.black, width: 1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('✓ 제안:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text(description),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 16),
               ],
               const Text('이대로 게시하시겠습니까?'),
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('수정하기'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('계속하기'),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8, right: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.black,
+                      side: const BorderSide(color: Colors.black, width: 1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () {
+                      print('[ValidationService] 수정하기 버튼 클릭됨');
+                      Navigator.of(context).pop(false);
+                    },
+                    child: const Text('수정하기'),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.black,
+                      side: const BorderSide(color: Colors.black, width: 1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () {
+                      print('[ValidationService] 계속하기 버튼 클릭됨');
+                      Navigator.of(context).pop(true);
+                    },
+                    child: const Text('계속하기'),
+                  ),
+                ],
+              ),
             ),
           ],
         );
       },
     );
 
+    print('[ValidationService] 다이얼로그 결과: $result');
     return result ?? false;
   }
 
@@ -256,6 +317,7 @@ class ValidationResult {
   final ai.ModerationResult? aiModerationResult;
   final List<String> violations;
   final String? errorMessage;
+  final bool userRequestedModification; // 사용자가 수정하기를 선택했는지 여부
 
   ValidationResult({
     required this.isValid,
@@ -263,6 +325,7 @@ class ValidationResult {
     required this.aiModerationResult,
     required this.violations,
     this.errorMessage,
+    this.userRequestedModification = false,
   });
 
   // 이전 버전 호환성을 위한 getter

@@ -773,6 +773,31 @@ This project represents a sophisticated social media application with a unique "
   - 일관된 UI 디자인
   - 쉬운 스타일 수정 및 유지보수
 
+### 2025-07-15~16: AI 검열 시스템 고도화 및 Genkit 통합
+- **Gemini AI 통합 (Phase 1)**:
+  - Google Gemini AI API를 활용한 이미지 검증 시스템 구현
+  - Genkit Firebase Functions 프레임워크 통합
+  - 토큰 사용량 추적 시스템 구현 (inputTokens, outputTokens, totalTokens)
+- **AI 검열 시스템 개선**:
+  - 검열 로직을 별도 서비스로 분리 (ai_moderation_service.dart)
+  - 얼굴 평가 관련 BLOCK 처리 강화
+  - 다음 버튼 클릭 시 이미지 업로드 및 AI 검증 자동 실행
+  - 로딩 표시 개선 (이미지 추가 시, 네비게이션 시)
+- **UI/UX 개선**:
+  - 멀티 이미지 페이지 인디케이터 및 카운터 복구
+  - A/B 박스 플러스 아이콘 표시 조건 최적화
+  - B박스가 숨겨진 상태에서만 + 아이콘 표시
+- **시스템 아키텍처**:
+  - Firebase Functions에 Genkit 프레임워크 도입
+  - 비동기 이미지 검증 플로우 구현
+  - 에러 처리 및 재시도 로직 강화
+- **커밋 이력**:
+  - 0cfed3a5: Gemini AI 통합 검증 시스템 구현 (Phase 1)
+  - 0d0c85af: AI 검열 시스템 분리 및 구조 개선
+  - 20df3027: Genkit 통합 및 토큰 사용량 추적 개선
+  - fc415fcf: 다음 버튼 클릭 시 이미지 업로드 및 AI 검증 플로우 구현
+  - 6fc80488: AI 검열 시스템 개선 - 얼굴 평가 BLOCK 처리 강화
+
 ### 향후 개선 가능 사항
 
 #### 기존 이미지 기능 개선

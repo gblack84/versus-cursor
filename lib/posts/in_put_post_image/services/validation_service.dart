@@ -137,11 +137,11 @@ class ValidationService {
   }
 
   /// 위반 사항 다이얼로그 표시
-  static void showViolationDialog(
+  static Future<void> showViolationDialog(
     BuildContext context,
     List<String> violations, {
     ai.GeminiModerationResult? geminiResult,
-  }) {
+  }) async {
     // AIModerationService의 다이얼로그 사용
     if (geminiResult != null) {
       final moderationResult = ai.ModerationResult(
@@ -151,10 +151,10 @@ class ValidationService {
         geminiResult: geminiResult,
       );
       
-      AIModerationService.showModerationDialog(context, moderationResult);
+      await AIModerationService.showModerationDialog(context, moderationResult);
     } else {
       // 기본 다이얼로그 표시
-      showDialog(
+      await showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(

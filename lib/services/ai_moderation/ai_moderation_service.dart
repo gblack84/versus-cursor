@@ -3,6 +3,7 @@ import '/services/perspective_api_service.dart';
 import 'models/moderation_result.dart';
 import 'constants/moderation_config.dart';
 import 'text_moderation/gemini_service.dart';
+import '/core/app_theme.dart';
 
 /// 통합 AI 검열 서비스
 /// 
@@ -203,6 +204,10 @@ class AIModerationService {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: AppTheme.of(context).secondaryBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text('콘텐츠 개선 제안'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -214,13 +219,14 @@ class AIModerationService {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
+                    color: AppTheme.of(context).secondaryBackground,
+                    border: Border.all(color: Colors.black, width: 1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('💡 제안:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text('✓ 제안:', style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 4),
                       Text(suggestions),
                     ],
@@ -232,13 +238,38 @@ class AIModerationService {
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('수정하기'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('계속하기'),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8, right: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: Colors.black,
+                      side: const BorderSide(color: Colors.black, width: 1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('수정하기'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: Colors.black,
+                      side: const BorderSide(color: Colors.black, width: 1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text('계속하기'),
+                  ),
+                ],
+              ),
             ),
           ],
         );
@@ -258,6 +289,10 @@ class AIModerationService {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: AppTheme.of(context).secondaryBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text('부적절한 내용 감지'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -274,13 +309,14 @@ class AIModerationService {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
+                    color: AppTheme.of(context).secondaryBackground,
+                    border: Border.all(color: Colors.black, width: 1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('💡 제안:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text('✓ 제안:', style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 4),
                       Text(suggestions),
                     ],
@@ -292,9 +328,19 @@ class AIModerationService {
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('확인'),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8, right: 8),
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.black,
+                  side: const BorderSide(color: Colors.black, width: 1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('확인'),
+              ),
             ),
           ],
         );

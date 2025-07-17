@@ -35,6 +35,7 @@ class InPutPostImageModel extends AppModel<InPutPostImageWidget> {
   String? validationMessage;  // 검증 중 메시지 표시용
   Map<String, PerspectiveResult> validationResults = {};
   bool hasValidationViolations = false;
+  bool isShowingDialog = false;  // 다이얼로그 표시 상태
   
   // Vision API 검증 결과 저장
   Map<String, dynamic>? visionResultA;

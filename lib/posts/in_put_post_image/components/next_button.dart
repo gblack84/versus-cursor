@@ -4,7 +4,6 @@ import '/core/app_theme.dart';
 
 class NextButton extends StatelessWidget {
   final bool showButton;
-  final bool isValidating;
   final VoidCallback? onPressed;
   final double bottom;
   final double right;
@@ -12,7 +11,6 @@ class NextButton extends StatelessWidget {
   const NextButton({
     Key? key,
     required this.showButton,
-    required this.isValidating,
     this.onPressed,
     this.bottom = 30.0,
     this.right = 20.0,
@@ -27,25 +25,14 @@ class NextButton extends StatelessWidget {
         opacity: showButton ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 300),
         child: FloatingActionButton.extended(
-          onPressed: showButton && !isValidating ? onPressed : null,
-          backgroundColor: isValidating 
-              ? Colors.grey 
-              : AppTheme.of(context).primary,
-          icon: isValidating
-              ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-              : const Icon(
-                  Icons.arrow_forward,
-                  color: Colors.white,
-                ),
+          onPressed: showButton ? onPressed : null,
+          backgroundColor: AppTheme.of(context).primary,
+          icon: const Icon(
+            Icons.arrow_forward,
+            color: Colors.white,
+          ),
           label: Text(
-            isValidating ? '검증 중...' : '다음',
+            '다음',
             style: AppTheme.of(context).bodyMedium.override(
                   font: GoogleFonts.plusJakartaSans(),
                   color: Colors.white,

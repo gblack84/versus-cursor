@@ -34,7 +34,6 @@ import 'utils/error_handler.dart';
 import 'constants/dimensions.dart';
 import 'constants/animation_constants.dart';
 import 'constants/field_styles.dart';
-import 'services/media_upload_service.dart';
 import 'services/selection_result_processor.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
@@ -350,7 +349,6 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           return;
         }
       }
-
       // ValidationService를 사용하여 검증
       final result = await ValidationService.validateAllTexts(
         questionTitle: _model.textController1?.text,
@@ -395,14 +393,22 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           }
         });
       }
-
       // 3단계: 결과 처리
       if (result.errorMessage != null) {
         _showSnackBar(result.errorMessage!, isError: true);
         await _cleanupUploadedImages(); // 에러 시에도 정리
       } else if (!result.isValid && result.violations.isNotEmpty) {
         // BLOCK 케이스
-        ValidationService.showViolationDialog(context, result.violations, geminiResult: result.geminiResult);
+        setState(() {
+          _model.isShowingDialog = true;
+        });
+        
+        await ValidationService.showViolationDialog(context, result.violations, geminiResult: result.geminiResult);
+        
+        setState(() {
+          _model.isShowingDialog = false;
+        });
+        
         await _cleanupUploadedImages(); // 업로드된 이미지 삭제
         return; // 로컬 파일은 유지
       } else if (result.isValid) {
@@ -411,11 +417,19 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         
         // PROCEED_WITH_SUGGESTION 처리
         if (result.geminiResult?.severity == 'warning') {
+          setState(() {
+            _model.isShowingDialog = true;
+          });
+          
           shouldProceed = await ValidationService.showImprovementDialog(
             context,
             result.geminiResult!.reason,
             result.geminiResult!.suggestions,
           );
+          
+          setState(() {
+            _model.isShowingDialog = false;
+          });
           
           if (!shouldProceed) {
             // 사용자가 수정 선택
@@ -435,7 +449,15 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         });
         
         // 타겟 오디언스 다이얼로그 표시
+        setState(() {
+          _model.isShowingDialog = true;
+        });
+        
         final targetAudience = await TargetAudienceDialog.show(context);
+        
+        setState(() {
+          _model.isShowingDialog = false;
+        });
         
         if (targetAudience == null) {
           // 사용자가 취소함
@@ -451,7 +473,13 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       // 에러 발생 시에도 정리
       await _cleanupUploadedImages();
       
-      // 에러 처리
+      // AI 검증으로 인한 정상적인 차단은 에러로 처리하지 않음
+      if (e.toString().contains('콘텐츠가 차단되었습니다') || 
+          e.toString().contains('사용자가 수정을 선택했습니다')) {
+        return;
+      }
+      
+      // 실제 에러만 처리
       ErrorHandler.handle(
         e,
         type: ErrorType.validation,
@@ -462,6 +490,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       setState(() {
         _model.isValidating = false;
         _model.validationMessage = null;
+        _model.isShowingDialog = false;  // 에러 발생 시에도 초기화
       });
     }
   }
@@ -1361,7 +1390,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                         ),
               ),
               // 검증 중 메시지 오버레이
-              if (_model.isValidating && _model.validationMessage != null)
+              if (_model.isValidating && _model.validationMessage != null && !_model.isShowingDialog)
                 Positioned(
                   bottom: 100,
                   left: 20,
@@ -1395,8 +1424,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
                 ),
               // Next button overlay
               NextButton(
-                showButton: _model.showNextButton,
-                isValidating: _model.isValidating,
+                showButton: _model.showNextButton && !_model.isValidating && !_model.isShowingDialog,
                 onPressed: () async {
                   await _validateAllTexts();
                 },

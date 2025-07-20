@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 /// 타겟 오디언스 설정을 위한 모델 클래스
 class TargetAudienceModel extends ChangeNotifier {
   // 수집 방식
-  String _collectionType = 'quick'; // quick, public, custom
+  String _collectionType = 'quick'; // quick, public, custom, test
   String get collectionType => _collectionType;
   set collectionType(String value) {
     _collectionType = value;
@@ -126,26 +126,36 @@ class TargetAudienceModel extends ChangeNotifier {
     return _currentStep == 2;
   }
 
-  // Firestore 저장용 Map 변환
+  // Firestore 저장용 Map 변환 (Firebase Functions 호환)
   Map<String, dynamic> toMap() {
     final Map<String, dynamic> data = {
-      'collectionType': _collectionType,
+      'type': _collectionType, // 'collectionType' → 'type'으로 변경 (Functions 호환)
       'targetCount': _targetCount,
       'isPremium': _isPremium,
       'createdAt': DateTime.now(),
-      'status': {
-        'current': 'setting',
-        'collectedCount': 0,
-        'startedAt': null,
-        'completedAt': null,
-      },
+      'status': 'pending', // 단순화 (Functions에서 처리)
     };
 
     // Custom 설정인 경우 criteria 추가
     if (_collectionType == 'custom') {
+      // 연령대 변환 (한국어 → 영어)
+      String convertedAgeGroup = _selectedAgeGroup;
+      if (_selectedAgeGroup != '전체') {
+        final ageMapping = {
+          '10대': '10s',
+          '20대': '20s',
+          '30대': '30s',
+          '40대': '40s',
+          '50대 이상': '50s+',
+        };
+        convertedAgeGroup = ageMapping[_selectedAgeGroup] ?? 'all';
+      } else {
+        convertedAgeGroup = 'all';
+      }
+
       data['criteria'] = {
         'interests': _selectedInterests,
-        'ageGroup': _selectedAgeGroup,
+        'ageGroup': convertedAgeGroup,
         'gender': _selectedGender,
         'activeUserOnly': _activeUserOnly,
       };

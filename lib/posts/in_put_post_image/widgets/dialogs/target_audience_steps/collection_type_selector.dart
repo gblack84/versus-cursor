@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/core/app_theme.dart';
+import '/auth/firebase_auth/auth_util.dart';
+import '/backend/backend.dart';
 import '../../../models/target_audience_model.dart';
 import '../../../constants/target_audience_constants.dart';
 
 /// Step 1: 수집 방식 선택
-class CollectionTypeSelector extends StatelessWidget {
+class CollectionTypeSelector extends StatefulWidget {
   final Function(String) onTypeSelected;
 
   const CollectionTypeSelector({
@@ -14,9 +16,56 @@ class CollectionTypeSelector extends StatelessWidget {
   });
 
   @override
+  State<CollectionTypeSelector> createState() => _CollectionTypeSelectorState();
+}
+
+class _CollectionTypeSelectorState extends State<CollectionTypeSelector> {
+  String? userRole;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserRole();
+  }
+
+  Future<void> _loadUserRole() async {
+    if (currentUserReference != null) {
+      final userDoc = await currentUserReference!.get();
+      final userData = userDoc.data() as Map<String, dynamic>?;
+      
+      setState(() {
+        userRole = userData?['role'] as String?;
+        isLoading = false;
+      });
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Consumer<TargetAudienceModel>(
       builder: (context, model, child) {
+        if (isLoading) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        // role에 따라 표시할 타입 필터링
+        final availableTypes = TargetAudienceConstants.collectionTypes.entries
+            .where((entry) {
+              // test 타입은 admin 또는 tester role일 때만 표시
+              if (entry.key == 'test') {
+                return userRole == 'admin' || userRole == 'tester';
+              }
+              return true;
+            })
+            .toList();
+
         return SingleChildScrollView(
           padding: const EdgeInsets.all(TargetAudienceConstants.contentPadding),
           child: Column(
@@ -32,7 +81,7 @@ class CollectionTypeSelector extends StatelessWidget {
               const SizedBox(height: 32),
               
               // 수집 방식 옵션들
-              ...TargetAudienceConstants.collectionTypes.entries.map((entry) {
+              ...availableTypes.map((entry) {
                 final typeInfo = entry.value;
                 final isSelected = model.collectionType == typeInfo.id;
                 
@@ -43,7 +92,7 @@ class CollectionTypeSelector extends StatelessWidget {
                     typeInfo: typeInfo,
                     isSelected: isSelected,
                     onTap: () {
-                      onTypeSelected(typeInfo.id);
+                      widget.onTypeSelected(typeInfo.id);
                     },
                   ),
                 );

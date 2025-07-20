@@ -3,7 +3,7 @@ import '/services/perspective_api_service.dart';
 import 'models/moderation_result.dart';
 import 'constants/moderation_config.dart';
 import 'text_moderation/gemini_service.dart';
-import '/core/app_theme.dart';
+import '/design_system/design_system.dart';
 
 /// 통합 AI 검열 서비스
 /// 
@@ -207,157 +207,39 @@ class AIModerationService {
     return _showSuggestionDialog(context, reason, suggestions);
   }
 
-  /// 제안 다이얼로그
+  /// 제안 다이얼로그 (VersusDialog로 마이그레이션됨)
   static Future<bool> _showSuggestionDialog(
     BuildContext context,
     String reason,
     String? suggestions,
   ) async {
-    final result = await showDialog<bool>(
+    final result = await VersusDialog.warning(
       context: context,
+      title: '콘텐츠 개선 제안',
+      content: reason,
+      suggestions: suggestions,
+      confirmText: '계속하기',
+      cancelText: '수정하기',
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppTheme.of(context).secondaryBackground,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: const Text('콘텐츠 개선 제안'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(reason),
-              if (suggestions != null && suggestions.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.of(context).secondaryBackground,
-                    border: Border.all(color: Colors.black, width: 1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('✓ 제안:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text(suggestions),
-                    ],
-                  ),
-                ),
-              ],
-              const SizedBox(height: 16),
-              const Text('계속 진행하시겠습니까?'),
-            ],
-          ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8, right: 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      side: const BorderSide(color: Colors.black, width: 1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onPressed: () => Navigator.of(context).pop(false),
-                    child: const Text('수정하기'),
-                  ),
-                  const SizedBox(width: 8),
-                  OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      side: const BorderSide(color: Colors.black, width: 1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onPressed: () => Navigator.of(context).pop(true),
-                    child: const Text('계속하기'),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
     );
     
     return result ?? false;
   }
 
-  /// 차단 다이얼로그
+  /// 차단 다이얼로그 (VersusDialog로 마이그레이션됨)
   static Future<void> _showBlockDialog(
     BuildContext context,
     List<String> violations,
     String? suggestions,
   ) async {
-    await showDialog(
+    await VersusDialog.error(
       context: context,
+      title: '부적절한 내용 감지',
+      content: '다음 항목에서 부적절한 내용이 감지되었습니다:',
+      violations: violations,
+      suggestions: suggestions,
+      confirmText: '확인',
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppTheme.of(context).secondaryBackground,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: const Text('부적절한 내용 감지'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('다음 항목에서 부적절한 내용이 감지되었습니다:'),
-              const SizedBox(height: 10),
-              ...violations.map((violation) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Text('• $violation', style: const TextStyle(color: Colors.red)),
-              )),
-              if (suggestions != null && suggestions.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.of(context).secondaryBackground,
-                    border: Border.all(color: Colors.black, width: 1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('✓ 제안:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text(suggestions),
-                    ],
-                  ),
-                ),
-              ],
-              const SizedBox(height: 10),
-              const Text('내용을 수정한 후 다시 시도해주세요.'),
-            ],
-          ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8, right: 8),
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.black,
-                  side: const BorderSide(color: Colors.black, width: 1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('확인'),
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }

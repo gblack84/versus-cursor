@@ -11,6 +11,7 @@ import 'auth/firebase_auth/auth_util.dart';
 import 'backend/firebase/firebase_config.dart';
 import 'core/app_theme.dart';
 import 'core/app_utils.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -79,13 +80,27 @@ class _MyAppState extends State<MyApp> {
     _router = createRouter(_appStateNotifier);
     
     userStream = versusSpaceFirebaseUserStream()
-      ..listen((user) => _appStateNotifier.update(user));
+      ..listen((user) {
+        _appStateNotifier.update(user);
+        
+        // NotificationService 초기화
+        if (user.loggedIn && user.uid != null && user.uid!.isNotEmpty) {
+          // 사용자가 로그인하면 알림 리스닝 시작
+          NotificationService.instance.startListening(user.uid!);
+          debugPrint('[Main] 알림 서비스 시작: ${user.uid}');
+        } else {
+          // 사용자가 로그아웃하면 알림 리스닝 중지
+          NotificationService.instance.stopListening();
+          debugPrint('[Main] 알림 서비스 중지');
+        }
+      });
     jwtTokenStream.listen((_) {});
   }
 
   @override
   void dispose() {
     authUserSub.cancel();
+    NotificationService.instance.stopListening();
     super.dispose();
   }
 

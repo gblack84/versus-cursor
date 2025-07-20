@@ -3,7 +3,11 @@ const admin = require("firebase-admin");
 const vision = require("@google-cloud/vision");
 const axios = require("axios");
 const { ChatGoogleGenerativeAI } = require("@langchain/google-genai");
-const { validateContentWithGenkit } = require("./genkit_service");
+const { validateContentWithGenkit } = require("./ai/contentModeration");
+
+// 알림 관련 모듈 import
+const { matchTargetUsers } = require('./notifications/targetMatcher');
+const { createNotificationsForUsers } = require('./notifications/notificationCreator');
 
 admin.initializeApp();
 
@@ -890,3 +894,101 @@ async function logValidationResult(data, sessionId, documentId) {
     return null;
   }
 }
+
+// ==================== 알림 시스템 ====================
+
+/**
+ * 새 투표 게시물이 생성될 때 타겟 사용자에게 알림 전송
+ * 
+ * 트리거: posts_record 컬렉션에 새 문서가 생성될 때
+ * 기능:
+ * 1. targetAudience 설정 확인
+ * 2. 타겟 사용자 매칭
+ * 3. 알림 생성 및 전송
+ */
+exports.onPostCreatedSendNotifications = functions
+  .region('asia-northeast3')
+  .firestore
+  .document('posts_record/{postId}')
+  .onCreate(async (snapshot, context) => {
+    const postId = context.params.postId;
+    const postData = snapshot.data();
+    
+    console.log(`[알림 시스템] 새 게시물 생성: ${postId}`);
+    
+    try {
+      // 1. targetAudience 확인
+      if (!postData.targetAudience) {
+        console.log('[알림 시스템] targetAudience 설정 없음 - 알림 전송 안 함');
+        return null;
+      }
+      
+      const { type, targetCount = 100 } = postData.targetAudience;
+      
+      // 지원하는 타겟 타입 확인 (quick, public, custom, test)
+      if (!['quick', 'public', 'custom', 'test'].includes(type)) {
+        console.log(`[알림 시스템] 지원하지 않는 타겟 타입: ${type}`);
+        return null;
+      }
+      
+      // test 타입 추가 보안 검증
+      if (type === 'test') {
+        const creatorId = postData.uid || postData.userid || postData.creatorInfo?.uid;
+        if (creatorId) {
+          const creatorDoc = await admin.firestore()
+            .collection('users_record')
+            .doc(creatorId)
+            .get();
+          
+          if (creatorDoc.exists) {
+            const creatorData = creatorDoc.data();
+            if (creatorData.role !== 'admin' && creatorData.role !== 'tester') {
+              console.error('[알림 시스템] 테스트 모드 권한 없음 - 일반 사용자는 사용 불가');
+              return null;
+            }
+          }
+        }
+        console.log('[알림 시스템] 테스트 모드 검증 통과');
+      }
+      
+      console.log(`[알림 시스템] 타겟 설정: ${type}, 목표 수: ${targetCount}`);
+      
+      // 2. 타겟 사용자 매칭 (postData 전달하여 AI 분석 가능)
+      const matchedUsers = await matchTargetUsers(postData.targetAudience, postData);
+      
+      if (matchedUsers.length === 0) {
+        console.log('[알림 시스템] 매칭된 사용자 없음');
+        await snapshot.ref.update({
+          'targetAudience.status': 'no_matches',
+          'targetAudience.processedAt': admin.firestore.FieldValue.serverTimestamp()
+        });
+        return null;
+      }
+      
+      console.log(`[알림 시스템] ${matchedUsers.length}명의 사용자 매칭됨`);
+      
+      // 3. 알림 생성
+      await createNotificationsForUsers(matchedUsers, postId, postData);
+      
+      // 4. 게시물 상태 업데이트
+      await snapshot.ref.update({
+        'targetAudience.status': 'notifications_sent',
+        'targetAudience.matchedCount': matchedUsers.length,
+        'targetAudience.processedAt': admin.firestore.FieldValue.serverTimestamp()
+      });
+      
+      console.log(`[알림 시스템] 게시물 ${postId} 알림 전송 완료`);
+      
+    } catch (error) {
+      console.error('[알림 시스템] 오류 발생:', error);
+      
+      // 오류 상태 기록
+      await snapshot.ref.update({
+        'targetAudience.status': 'error',
+        'targetAudience.error': error.message,
+        'targetAudience.processedAt': admin.firestore.FieldValue.serverTimestamp()
+      });
+      
+      throw error; // 재시도를 위해 오류 다시 던지기
+    }
+  });

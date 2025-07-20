@@ -1,21 +1,6 @@
-const { genkit } = require('genkit');
-const { googleAI } = require('@genkit-ai/googleai');
-const functions = require('firebase-functions');
-
-// Firebase config에서 API 키 가져오기
-const GOOGLE_GENAI_API_KEY = process.env.GOOGLE_GENAI_API_KEY || 
-                            functions.config().google?.genai_api_key || 
-                            functions.config().gemini?.api_key;
-
-// Genkit 초기화 (API 키 직접 전달)
-const ai = genkit({
-  plugins: [googleAI({
-    apiKey: GOOGLE_GENAI_API_KEY
-  })],
-});
-
-// Gemini Pro 모델 정의 (함수 내에서 호출)
-let geminiPro;
+// 공통 AI 설정 import
+const { ai, models, aiConfig, GOOGLE_GENAI_API_KEY, updateTokenUsage } = require('./config');
+const admin = require('firebase-admin');
 
 // 프롬프트 템플릿
 const VERSUS_VALIDATION_PROMPT = `
@@ -149,12 +134,12 @@ async function getUserHistory(userId, admin) {
     console.log(`[Genkit] 사용자 기록 ${history.length}개 조회 성공`);
     return history;
   } catch (error) {
-    console.error('[Genkit] 사용자 기록 조회 실패:', error);
-    console.error('[Genkit] 에러 상세:', error.message);
+    console.error('[Content Moderation] 사용자 기록 조회 실패:', error);
+    console.error('[Content Moderation] 에러 상세:', error.message);
     
     // 인덱스 관련 에러인 경우 구체적인 메시지 출력
     if (error.code === 9 || error.message?.includes('index')) {
-      console.error('[Genkit] Firestore 인덱스가 필요합니다. Firebase Console에서 인덱스를 생성해주세요.');
+      console.error('[Content Moderation] Firestore 인덱스가 필요합니다. Firebase Console에서 인덱스를 생성해주세요.');
     }
     
     // 에러 발생 시에도 빈 배열 반환하여 서비스 계속 진행
@@ -179,8 +164,8 @@ async function validateContentWithGenkit({
   try {
     // API 키 확인
     if (!GOOGLE_GENAI_API_KEY) {
-      console.error('[Genkit] API 키가 설정되지 않았습니다.');
-      console.error('[Genkit] 환경 변수를 확인하세요: GOOGLE_GENAI_API_KEY, google.genai_api_key, gemini.api_key');
+      console.error('[Content Moderation] API 키가 설정되지 않았습니다.');
+      console.error('[Content Moderation] 환경 변수를 확인하세요: GOOGLE_GENAI_API_KEY, google.genai_api_key, gemini.api_key');
       return {
         isValid: true,
         severity: 'pass',
@@ -191,10 +176,10 @@ async function validateContentWithGenkit({
       };
     }
     
-    console.log('[Genkit] API 키 설정 확인: ', GOOGLE_GENAI_API_KEY ? '있음' : '없음');
+    console.log('[Content Moderation] API 키 설정 확인: ', GOOGLE_GENAI_API_KEY ? '있음' : '없음');
     
     // 입력된 콘텐츠 로깅
-    console.log('[Genkit] 검증 요청 콘텐츠:');
+    console.log('[Content Moderation] 검증 요청 콘텐츠:');
     console.log(`  - 질문: ${questionTitle || '없음'}`);
     console.log(`  - 설명: ${description || '없음'}`);
     console.log(`  - A 옵션: ${titleA || '없음'}`);
@@ -206,13 +191,13 @@ async function validateContentWithGenkit({
     
     // Vision 데이터 상세 로깅
     if (visionDataA) {
-      console.log('[Genkit] A 이미지 Vision 분석:');
+      console.log('[Content Moderation] A 이미지 Vision 분석:');
       console.log(`  - SafeSearch: ${JSON.stringify(visionDataA.safeSearch || {})}`);
       console.log(`  - 라벨 수: ${visionDataA.labels?.length || 0}`);
       console.log(`  - 텍스트 감지: ${visionDataA.hasText ? '예' : '아니오'}`);
     }
     if (visionDataB) {
-      console.log('[Genkit] B 이미지 Vision 분석:');
+      console.log('[Content Moderation] B 이미지 Vision 분석:');
       console.log(`  - SafeSearch: ${JSON.stringify(visionDataB.safeSearch || {})}`);
       console.log(`  - 라벨 수: ${visionDataB.labels?.length || 0}`);
       console.log(`  - 텍스트 감지: ${visionDataB.hasText ? '예' : '아니오'}`);
@@ -265,10 +250,8 @@ ${userHistory.map((post, i) => `${i + 1}. ${post.questionTitle} (A: ${post.title
 【중요】 이미지에 사람 얼굴이 포함되어 있고, 질문이 "닮았나요" 형태이며, 
 선택지가 동물/캐릭터/사물인 경우 = 얼굴 평가로 간주하여 반드시 BLOCK 처리하세요.`;
 
-    // 모델 초기화 (처음 호출 시)
-    if (!geminiPro) {
-      geminiPro = 'googleai/gemini-1.5-flash';
-    }
+    // 콘텐츠 검열용 모델 사용
+    const geminiModel = models.contentModeration;
 
     // 3. 최종 프롬프트를 시스템 지침, 사용자 텍스트, 사용자 이미지 순서로 구성합니다.
     const generatePrompt = [
@@ -277,7 +260,7 @@ ${userHistory.map((post, i) => `${i + 1}. ${post.questionTitle} (A: ${post.title
     ];
 
     if (imageUrlA) {
-      console.log('[Genkit] A 이미지 포함:', imageUrlA);
+      console.log('[Content Moderation] A 이미지 포함:', imageUrlA);
       generatePrompt.push({ 
         media: { 
           url: imageUrlA,
@@ -287,7 +270,7 @@ ${userHistory.map((post, i) => `${i + 1}. ${post.questionTitle} (A: ${post.title
     }
     
     if (imageUrlB) {
-      console.log('[Genkit] B 이미지 포함:', imageUrlB);
+      console.log('[Content Moderation] B 이미지 포함:', imageUrlB);
       generatePrompt.push({ 
         media: { 
           url: imageUrlB,
@@ -297,37 +280,29 @@ ${userHistory.map((post, i) => `${i + 1}. ${post.questionTitle} (A: ${post.title
     }
 
     if (imageUrlA || imageUrlB) {
-      console.log('[Genkit] 멀티모달 프롬프트 사용 - 이미지 개수:', (imageUrlA ? 1 : 0) + (imageUrlB ? 1 : 0));
+      console.log('[Content Moderation] 멀티모달 프롬프트 사용 - 이미지 개수:', (imageUrlA ? 1 : 0) + (imageUrlB ? 1 : 0));
     } else {
-      console.log('[Genkit] 텍스트 전용 프롬프트 사용');
+      console.log('[Content Moderation] 텍스트 전용 프롬프트 사용');
     }
 
-    // Genkit을 사용한 생성
+    // Genkit을 사용한 생성 (공통 설정 사용)
     const result = await ai.generate({
-      model: geminiPro,
+      model: geminiModel,
       prompt: generatePrompt,
-      config: {
-        temperature: 0.3,
-        maxOutputTokens: 1000,
-      }
+      config: aiConfig.moderation
     });
     
     // result 전체 구조 로깅 (토큰 정보 위치 파악용)
-    console.log('[Genkit] Result 전체 구조:', JSON.stringify(result, null, 2));
+    console.log('[Content Moderation] Result 전체 구조:', JSON.stringify(result, null, 2));
 
-    // 토큰 사용량 로깅 - 다양한 위치 확인
+    // 토큰 사용량 로깅 및 통계 업데이트
     const usage = result.usage || result.usageMetadata || result.metadata?.tokenUsage || result.tokenUsage;
     
     if (usage) {
-      console.log('[Genkit] 토큰 사용량:');
-      console.log(`  - 프롬프트: ${usage.promptTokenCount || usage.inputTokens || 0} 토큰`);
-      console.log(`  - 응답: ${usage.candidatesTokenCount || usage.outputTokens || 0} 토큰`);
-      console.log(`  - 전체: ${usage.totalTokenCount || usage.totalTokens || 0} 토큰`);
-      if (usage.cachedContentTokenCount) {
-        console.log(`  - 캐시됨: ${usage.cachedContentTokenCount} 토큰`);
-      }
+      // 중앙 집중식 토큰 사용량 추적
+      updateTokenUsage('moderation', usage);
     } else {
-      console.log('[Genkit] 토큰 사용량 정보 없음');
+      console.log('[Content Moderation] 토큰 사용량 정보 없음');
     }
 
     // 응답 파싱
@@ -337,11 +312,11 @@ ${userHistory.map((post, i) => `${i + 1}. ${post.questionTitle} (A: ${post.title
     // result.output이 이미 객체인 경우 직접 사용
     if (result.output && typeof result.output === 'object') {
       responseData = result.output;
-      console.log('[Genkit] AI 응답 (객체):', responseData);
+      console.log('[Content Moderation] AI 응답 (객체):', responseData);
     } else {
       // 문자열인 경우 파싱 시도
       const responseText = result.output || result.text || result.content || JSON.stringify(result);
-      console.log('[Genkit] AI 응답 (텍스트):', responseText);
+      console.log('[Content Moderation] AI 응답 (텍스트):', responseText);
       
       try {
         if (typeof responseText === 'string') {
@@ -353,7 +328,7 @@ ${userHistory.map((post, i) => `${i + 1}. ${post.questionTitle} (A: ${post.title
           responseData = responseText;
         }
       } catch (parseError) {
-        console.error('[Genkit] JSON 파싱 실패:', parseError);
+        console.error('[Content Moderation] JSON 파싱 실패:', parseError);
         responseData = null;
       }
     }
@@ -362,7 +337,7 @@ ${userHistory.map((post, i) => `${i + 1}. ${post.questionTitle} (A: ${post.title
       // 검증 결과 로깅
       // 새로운 응답 형식 처리
       if (responseData.action) {
-        console.log('[Genkit] AI 검증 결과 (새 형식):');
+        console.log('[Content Moderation] AI 검증 결과 (새 형식):');
         console.log(`  - action: ${responseData.action}`);
         console.log(`  - feedback: ${responseData.feedback ? JSON.stringify(responseData.feedback) : 'null'}`);
         console.log(`  - confidence: ${responseData.confidence || 'N/A'}`);
@@ -380,7 +355,7 @@ ${userHistory.map((post, i) => `${i + 1}. ${post.questionTitle} (A: ${post.title
       }
       // 기존 형식 처리 (하위 호환성)
       else if (responseData.isValid !== undefined) {
-        console.log('[Genkit] AI 검증 결과 (기존 형식):');
+        console.log('[Content Moderation] AI 검증 결과 (기존 형식):');
         console.log(`  - isValid: ${responseData.isValid}`);
         console.log(`  - severity: ${responseData.severity || 'pass'}`);
         console.log(`  - reason: ${responseData.reason || '없음'}`);
@@ -413,20 +388,20 @@ ${userHistory.map((post, i) => `${i + 1}. ${post.questionTitle} (A: ${post.title
     };
 
   } catch (error) {
-    console.error('[Genkit] 콘텐츠 검증 오류:', error);
-    console.error('[Genkit] 에러 타입:', error.constructor.name);
-    console.error('[Genkit] 에러 메시지:', error.message);
-    console.error('[Genkit] 에러 스택:', error.stack);
+    console.error('[Content Moderation] 콘텐츠 검증 오류:', error);
+    console.error('[Content Moderation] 에러 타입:', error.constructor.name);
+    console.error('[Content Moderation] 에러 메시지:', error.message);
+    console.error('[Content Moderation] 에러 스택:', error.stack);
     
     // API 키 오류 처리
     if (error.message?.includes('API key') || error.message?.includes('401')) {
-      console.error('[Genkit] API 키 오류 - GOOGLE_GENAI_API_KEY 확인 필요');
-      console.error('[Genkit] 현재 API 키 설정 여부:', !!process.env.GOOGLE_GENAI_API_KEY);
+      console.error('[Content Moderation] API 키 오류 - GOOGLE_GENAI_API_KEY 확인 필요');
+      console.error('[Content Moderation] 현재 API 키 설정 여부:', !!process.env.GOOGLE_GENAI_API_KEY);
     }
     
     // 인덱스 관련 에러
     if (error.code === 9 || error.message?.includes('index')) {
-      console.error('[Genkit] Firestore 인덱스 문제일 수 있습니다.');
+      console.error('[Content Moderation] Firestore 인덱스 문제일 수 있습니다.');
     }
     
     // 서비스 중단 방지를 위해 기본값 반환
@@ -442,7 +417,5 @@ ${userHistory.map((post, i) => `${i + 1}. ${post.questionTitle} (A: ${post.title
 }
 
 module.exports = {
-  validateContentWithGenkit,
-  ai,
-  geminiPro
+  validateContentWithGenkit
 };

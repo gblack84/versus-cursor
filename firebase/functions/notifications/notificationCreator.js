@@ -42,8 +42,13 @@ function generateTargetReason(targetAudience, user) {
 
 // 알림 생성 함수
 async function createNotificationsForUsers(users, postId, postData) {
+  console.log('[알림 생성] ========== 알림 생성 시작 ==========');
+  console.log(`[알림 생성] 대상 사용자 수: ${users.length}명`);
+  console.log(`[알림 생성] 게시물 ID: ${postId}`);
+  console.log(`[알림 생성] 타겟 타입: ${postData.targetAudience?.type || '알 수 없음'}`);
+  
   if (users.length === 0) {
-    console.log('알림을 보낼 사용자가 없습니다');
+    console.log('[알림 생성] ⚠️ 알림을 보낼 사용자가 없습니다');
     return;
   }
   
@@ -54,9 +59,12 @@ async function createNotificationsForUsers(users, postId, postData) {
     new Date(Date.now() + 15 * 60 * 1000) // 15분 후 만료
   );
   
-  let successCount = 0;
+  console.log('[알림 생성] 만료 시간:', new Date(Date.now() + 15 * 60 * 1000).toISOString());
   
-  users.forEach(user => {
+  let successCount = 0;
+  const notificationIds = [];
+  
+  users.forEach((user, index) => {
     // 각 사용자별 알림 문서 생성
     const notificationRef = notificationsRef.doc();
     
@@ -67,8 +75,8 @@ async function createNotificationsForUsers(users, postId, postData) {
       type: 'voting_request',
       source_id: postId,
       
-      // 콘텐츠
-      content: {
+      // 콘텐츠 - Flutter 스키마에 맞춰 JSON 문자열로 저장
+      content: JSON.stringify({
         title: '새로운 투표가 도착했어요!',
         message: generateTargetReason(postData.targetAudience, user),
         postData: {
@@ -80,37 +88,62 @@ async function createNotificationsForUsers(users, postId, postData) {
           authorName: postData.authorName || postData.author_name || '익명',
           category: postData.category || null,
         }
-      },
+      }),
       
       // 메타데이터
       created_at: now,
       read: false,
-      target_audience: postData.targetAudience.type,
+      target_audience: [postData.targetAudience.type], // Flutter 스키마에 맞춰 배열로 저장
       expiry_time: expiryTime,
       interaction_type: 'vote',
       
-      // 추가 정보
-      targetReason: generateTargetReason(postData.targetAudience, user),
+      // targetReason 필드 제거 (Flutter 스키마에 없음)
     };
     
     batch.set(notificationRef, notificationData);
     successCount++;
+    notificationIds.push(notificationRef.id);
+    
+    // 테스트 모드일 경우 각 알림 상세 로깅
+    if (postData.targetAudience?.type === 'test') {
+      console.log(`[알림 생성] 테스트 알림 #${user.testIndex || index + 1}:`);
+      console.log(`  - 알림 ID: ${notificationRef.id}`);
+      console.log(`  - 사용자: ${user.displayName} (${user.id})`);
+      console.log(`  - 메시지: ${notificationData.targetReason}`);
+    }
   });
   
   // 배치 커밋 (최대 500개씩)
   if (successCount > 0) {
-    await batch.commit();
-    console.log(`${successCount}개의 알림이 생성되었습니다`);
-    
-    // 투표 통계 업데이트
-    await admin.firestore()
-      .collection('posts_record')
-      .doc(postId)
-      .update({
-        notificationsSent: successCount,
-        notificationsSentAt: now,
+    try {
+      console.log('[알림 생성] Firestore 배치 커밋 시작...');
+      await batch.commit();
+      console.log(`[알림 생성] ✅ ${successCount}개의 알림이 성공적으로 생성되었습니다`);
+      
+      // 생성된 알림 ID 로깅 (처음 5개만)
+      console.log('[알림 생성] 생성된 알림 ID (처음 5개):');
+      notificationIds.slice(0, 5).forEach((id, idx) => {
+        console.log(`  ${idx + 1}. ${id}`);
       });
+      
+      // 투표 통계 업데이트
+      console.log('[알림 생성] 게시물 통계 업데이트 중...');
+      await admin.firestore()
+        .collection('posts_record')
+        .doc(postId)
+        .update({
+          notificationsSent: successCount,
+          notificationsSentAt: now,
+        });
+      console.log('[알림 생성] ✅ 게시물 통계 업데이트 완료');
+      
+    } catch (error) {
+      console.error('[알림 생성] ❌ 배치 커밋 중 오류 발생:', error);
+      throw error;
+    }
   }
+  
+  console.log('[알림 생성] ========== 알림 생성 종료 ==========');
 }
 
 module.exports = { createNotificationsForUsers };

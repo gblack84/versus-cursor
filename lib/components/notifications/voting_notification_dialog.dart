@@ -224,49 +224,7 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
                       VersusSpacing.gapMD,
                       
                       // 투표 버튼들
-                      Row(
-                        children: [
-                          // A 선택 버튼
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () => _vote('A'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: VersusColors.primary,
-                                foregroundColor: Colors.white,
-                                shape: VersusRadius.buttonShape,
-                                padding: VersusSpacing.buttonInternal,
-                              ),
-                              child: Text(
-                                'A 선택',
-                                style: VersusTextStyles.buttonMedium.copyWith(
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                          
-                          VersusSpacing.gapH(VersusSpacing.sm),
-                          
-                          // B 선택 버튼
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () => _vote('B'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: VersusColors.secondary,
-                                foregroundColor: Colors.white,
-                                shape: VersusRadius.buttonShape,
-                                padding: VersusSpacing.buttonInternal,
-                              ),
-                              child: Text(
-                                'B 선택',
-                                style: VersusTextStyles.buttonMedium.copyWith(
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                      _buildVoteButtons(),
                     ],
                   ],
                 ),
@@ -280,8 +238,18 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
 
   /// 새로운 VersusNotificationBox를 사용한 A/B 박스 구성
   Widget _buildVersusBoxes() {
+    // B 옵션이 있는지 확인
+    final bool hasBOption = widget.imageUrlB != null || widget.optionB.isNotEmpty;
+    final bool hasOnlyTextB = widget.imageUrlB == null && widget.optionB.isNotEmpty;
+    
     // 사이즈 데이터가 제공된 경우 일관된 크기 사용
     if (widget.sizeData != null) {
+      // 단일 이미지/옵션인 경우 또는 B가 텍스트만 있는 경우 단일 박스만 표시
+      if (!hasBOption || hasOnlyTextB) {
+        return _buildSingleBox(widget.sizeData!);
+      }
+      
+      // 두 옵션 모두 이미지가 있는 경우 박스 쌍 표시
       return VersusNotificationBoxBuilder.buildBoxPair(
         context: context,
         sizeData: widget.sizeData!,
@@ -289,8 +257,8 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
         titleB: widget.optionB,
         imageUrlA: widget.imageUrlA,
         imageUrlB: widget.imageUrlB,
-        onTapA: () => _vote('A'),
-        onTapB: () => _vote('B'),
+        onTapA: null,  // 박스 클릭으로 투표 비활성화
+        onTapB: null,  // 박스 클릭으로 투표 비활성화
         selectedBox: _hasVoted ? null : null, // 선택 상태는 투표 후에만
         showResults: widget.showResults || _hasVoted,
         votePercentageA: widget.votePercentageA,
@@ -306,13 +274,43 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
     return _buildDefaultBoxes();
   }
   
+  /// 단일 박스 빌드 (B 옵션이 없을 때)
+  Widget _buildSingleBox(VersusBoxSizeData sizeData) {
+    // 중앙에 A박스만 표시 - 단일 이미지 모드에서 A/B 타이틀 함께 표시
+    final bool hasOnlyText = widget.imageUrlB == null && widget.optionB.isNotEmpty;
+    
+    return Center(
+      child: VersusNotificationBox(
+        boxType: 'A',
+        boxSize: VersusBoxSizeCalculator.calculateVotingSize(sizeData, context).sizeA,
+        title: widget.optionA,
+        imageUrl: widget.imageUrlA,
+        onTap: null,  // 박스 클릭으로 투표 비활성화
+        isSelected: false,
+        showResult: widget.showResults || _hasVoted,
+        votePercentage: widget.votePercentageA,
+        voteCount: widget.voteCountA,
+        animationController: _controller,
+        showDebugInfo: widget.showDebugInfo,
+        // 단일 이미지 모드에서 B 타이틀 함께 표시
+        isSingleImageMode: hasOnlyText,
+        dualModeSecondTitle: hasOnlyText ? widget.optionB : null,
+      ),
+    );
+  }
+  
   /// 기본 크기의 박스들 (fallback)
   Widget _buildDefaultBoxes() {
+    // B 옵션이 있는지 확인
+    final bool hasBOption = widget.imageUrlB != null || widget.optionB.isNotEmpty;
+    final bool hasOnlyTextB = widget.imageUrlB == null && widget.optionB.isNotEmpty;
+    
     // 기본 사이즈 데이터 생성
+    // aspectRatio를 null로 설정하여 이미지의 원본 비율을 유지하도록 함
     final defaultSizeData = VersusBoxSizeData(
-      layoutType: LayoutType.horizontal,
-      aspectRatioA: widget.imageUrlA != null ? 1.0 : null,
-      aspectRatioB: widget.imageUrlB != null ? 1.0 : null,
+      layoutType: hasBOption ? LayoutType.horizontal : LayoutType.single,
+      aspectRatioA: null,  // 이미지 원본 비율 사용
+      aspectRatioB: null,  // 이미지 원본 비율 사용
       originalSizeA: const Size(150, 150),
       originalSizeB: const Size(150, 150),
       screenWidth: MediaQuery.of(context).size.width,
@@ -327,6 +325,28 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
       context,
     );
     
+    // 단일 박스인 경우 또는 B가 텍스트만 있는 경우
+    if (!hasBOption || hasOnlyTextB) {
+      return Center(
+        child: VersusNotificationBox(
+          boxType: 'A',
+          boxSize: votingSizes.sizeA,
+          title: widget.optionA,
+          imageUrl: widget.imageUrlA,
+          onTap: null,  // 박스 클릭으로 투표 비활성화
+          showResult: widget.showResults || _hasVoted,
+          votePercentage: widget.votePercentageA,
+          voteCount: widget.voteCountA,
+          animationController: _controller,
+          showDebugInfo: widget.showDebugInfo,
+          // 단일 이미지 모드에서 B 타이틀 함께 표시
+          isSingleImageMode: hasOnlyTextB,
+          dualModeSecondTitle: hasOnlyTextB ? widget.optionB : null,
+        ),
+      );
+    }
+    
+    // 두 박스 모두 표시
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -354,6 +374,80 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
           voteCount: widget.voteCountB,
           animationController: _controller,
           showDebugInfo: widget.showDebugInfo,
+        ),
+      ],
+    );
+  }
+  
+  /// 투표 버튼 빌드
+  Widget _buildVoteButtons() {
+    // B 옵션이 있는지 확인
+    final bool hasBOption = widget.imageUrlB != null || widget.optionB.isNotEmpty;
+    final bool hasOnlyTextB = widget.imageUrlB == null && widget.optionB.isNotEmpty;
+    
+    // 단일 옵션인 경우 A 버튼만 표시
+    if (!hasBOption) {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () => _vote('A'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: VersusColors.primary,
+            foregroundColor: Colors.white,
+            shape: VersusRadius.buttonShape,
+            padding: VersusSpacing.buttonInternal,
+          ),
+          child: Text(
+            '선택하기',
+            style: VersusTextStyles.buttonMedium.copyWith(
+              color: Colors.white,
+            ),
+          ),
+        ),
+      );
+    }
+    
+    // 두 옵션 모두 있는 경우 A/B 버튼 표시
+    return Row(
+      children: [
+        // A 선택 버튼
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () => _vote('A'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: VersusColors.primary,
+              foregroundColor: Colors.white,
+              shape: VersusRadius.buttonShape,
+              padding: VersusSpacing.buttonInternal,
+            ),
+            child: Text(
+              'A 선택',
+              style: VersusTextStyles.buttonMedium.copyWith(
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+        
+        VersusSpacing.gapH(VersusSpacing.sm),
+        
+        // B 선택 버튼
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () => _vote('B'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: VersusColors.secondary,
+              foregroundColor: Colors.white,
+              shape: VersusRadius.buttonShape,
+              padding: VersusSpacing.buttonInternal,
+            ),
+            child: Text(
+              'B 선택',
+              style: VersusTextStyles.buttonMedium.copyWith(
+                color: Colors.white,
+              ),
+            ),
+          ),
         ),
       ],
     );

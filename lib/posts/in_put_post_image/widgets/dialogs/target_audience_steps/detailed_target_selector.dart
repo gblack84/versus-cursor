@@ -79,7 +79,10 @@ class DetailedTargetSelector extends StatelessWidget {
               return FilterChip(
                 label: Text(interest),
                 selected: isSelected,
-                onSelected: (_) => model.toggleInterest(interest),
+                onSelected: (_) {
+                  debugPrint('[DetailedTargetSelector] 관심사 토글: $interest (현재: $isSelected)');
+                  model.toggleInterest(interest);
+                },
                 selectedColor: AppTheme.of(context).primary,
                 checkmarkColor: Colors.white,
                 backgroundColor: AppTheme.of(context).secondaryBackground,
@@ -122,7 +125,10 @@ class DetailedTargetSelector extends StatelessWidget {
             final isSelected = model.selectedAgeGroup == entry.key;
             
             return InkWell(
-              onTap: () => model.selectedAgeGroup = entry.key,
+              onTap: () {
+                debugPrint('[DetailedTargetSelector] 연령대 선택: ${entry.value} (${entry.key})');
+                model.selectedAgeGroup = entry.key;
+              },
               borderRadius: BorderRadius.circular(20),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -207,7 +213,10 @@ class DetailedTargetSelector extends StatelessWidget {
                   right: entry.key != TargetAudienceConstants.genderOptions.keys.last ? 8 : 0,
                 ),
                 child: InkWell(
-                  onTap: () => model.selectedGender = entry.key,
+                  onTap: () {
+                    debugPrint('[DetailedTargetSelector] 성별 선택: ${entry.value} (${entry.key})');
+                    model.selectedGender = entry.key;
+                  },
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12),

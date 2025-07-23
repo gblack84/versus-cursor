@@ -12,6 +12,7 @@ import 'backend/firebase/firebase_config.dart';
 import 'core/app_theme.dart';
 import 'core/app_utils.dart';
 import 'services/notification_service.dart';
+import 'services/global_notification_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -87,10 +88,12 @@ class _MyAppState extends State<MyApp> {
         if (user.loggedIn && user.uid != null && user.uid!.isNotEmpty) {
           // 사용자가 로그인하면 알림 리스닝 시작
           NotificationService.instance.startListening(user.uid!);
+          GlobalNotificationManager.instance.startListening();
           debugPrint('[Main] 알림 서비스 시작: ${user.uid}');
         } else {
           // 사용자가 로그아웃하면 알림 리스닝 중지
           NotificationService.instance.stopListening();
+          GlobalNotificationManager.instance.stopListening();
           debugPrint('[Main] 알림 서비스 중지');
         }
       });
@@ -101,6 +104,7 @@ class _MyAppState extends State<MyApp> {
   void dispose() {
     authUserSub.cancel();
     NotificationService.instance.stopListening();
+    GlobalNotificationManager.instance.stopListening();
     super.dispose();
   }
 
@@ -118,7 +122,12 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'versus-space',
-      builder: BotToastInit(),
+      builder: (context, child) {
+        // BotToast 초기화
+        final botToastBuilder = BotToastInit();
+        
+        return botToastBuilder(context, child);
+      },
       scrollBehavior: MyAppScrollBehavior(),
       localizationsDelegates: [
         AppLocalizationsDelegate(),

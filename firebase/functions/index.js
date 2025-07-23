@@ -914,16 +914,26 @@ exports.onPostCreatedSendNotifications = functions
     const postId = context.params.postId;
     const postData = snapshot.data();
     
-    console.log(`[알림 시스템] 새 게시물 생성: ${postId}`);
+    console.log('[onPostCreate] ========== 새 게시물 생성 감지 ==========');
+    console.log(`[onPostCreate] 게시물 ID: ${postId}`);
+    console.log(`[onPostCreate] 생성 시간: ${new Date().toISOString()}`);
+    console.log(`[onPostCreate] 생성자 ID: ${postData.uid || postData.userid || '알 수 없음'}`);
+    
+    // targetAudience 전체 내용 로깅
+    console.log('[onPostCreate] targetAudience 데이터:');
+    console.log(JSON.stringify(postData.targetAudience, null, 2));
     
     try {
       // 1. targetAudience 확인
       if (!postData.targetAudience) {
-        console.log('[알림 시스템] targetAudience 설정 없음 - 알림 전송 안 함');
+        console.log('[onPostCreate] ❌ targetAudience 필드가 없음 - 알림 전송 안 함');
+        console.log('[onPostCreate] 게시물 데이터 전체 필드:');
+        console.log(Object.keys(postData).join(', '));
         return null;
       }
       
       const { type, targetCount = 100 } = postData.targetAudience;
+      console.log(`[onPostCreate] 타겟 타입: ${type}, 목표 수: ${targetCount}`);
       
       // 지원하는 타겟 타입 확인 (quick, public, custom, test)
       if (!['quick', 'public', 'custom', 'test'].includes(type)) {
@@ -977,17 +987,27 @@ exports.onPostCreatedSendNotifications = functions
         'targetAudience.processedAt': admin.firestore.FieldValue.serverTimestamp()
       });
       
-      console.log(`[알림 시스템] 게시물 ${postId} 알림 전송 완료`);
+      console.log('[onPostCreate] ========== 알림 전송 프로세스 완료 ==========');
+      console.log(`[onPostCreate] 게시물 ID: ${postId}`);
+      console.log(`[onPostCreate] 매칭된 사용자 수: ${matchedUsers.length}`);
+      console.log(`[onPostCreate] 완료 시간: ${new Date().toISOString()}`);
       
     } catch (error) {
-      console.error('[알림 시스템] 오류 발생:', error);
+      console.error('[onPostCreate] ❌❌❌ 오류 발생 ❌❌❌');
+      console.error('[onPostCreate] 오류 타입:', error.name);
+      console.error('[onPostCreate] 오류 메시지:', error.message);
+      console.error('[onPostCreate] 스택 트레이스:', error.stack);
       
       // 오류 상태 기록
-      await snapshot.ref.update({
-        'targetAudience.status': 'error',
-        'targetAudience.error': error.message,
-        'targetAudience.processedAt': admin.firestore.FieldValue.serverTimestamp()
-      });
+      try {
+        await snapshot.ref.update({
+          'targetAudience.status': 'error',
+          'targetAudience.error': error.message,
+          'targetAudience.processedAt': admin.firestore.FieldValue.serverTimestamp()
+        });
+      } catch (updateError) {
+        console.error('[onPostCreate] 오류 상태 업데이트 실패:', updateError);
+      }
       
       throw error; // 재시도를 위해 오류 다시 던지기
     }

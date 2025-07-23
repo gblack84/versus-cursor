@@ -65,14 +65,19 @@ async function matchTargetUsers(targetAudience, postData = null) {
       
     case 'test':
       // 테스트 모드: 생성자 본인에게만 전송
-      console.log('[테스트 모드] 생성자에게만 알림 전송');
+      console.log('[테스트 모드] ========== 테스트 모드 시작 ==========');
+      console.log('[테스트 모드] 요청된 타겟 수:', targetCount);
       
       const creatorId = postData?.uid || postData?.userid || postData?.creatorInfo?.uid;
+      console.log('[테스트 모드] 생성자 ID 확인:', creatorId || '찾을 수 없음');
+      
       if (!creatorId) {
-        console.error('[테스트 모드] 생성자 ID를 찾을 수 없음');
+        console.error('[테스트 모드] 오류: 생성자 ID를 postData에서 찾을 수 없음');
+        console.error('[테스트 모드] postData 키 확인:', Object.keys(postData || {}));
         return [];
       }
       
+      console.log('[테스트 모드] Firestore에서 사용자 정보 조회 중...');
       const creator = await admin.firestore()
         .collection('users_record')
         .doc(creatorId)
@@ -80,29 +85,44 @@ async function matchTargetUsers(targetAudience, postData = null) {
       
       if (creator.exists) {
         const creatorData = creator.data();
+        console.log('[테스트 모드] 사용자 정보 조회 성공');
+        console.log('[테스트 모드] - 이름:', creatorData.display_name || '이름 없음');
+        console.log('[테스트 모드] - 역할:', creatorData.role || '역할 없음');
+        console.log('[테스트 모드] - 이메일:', creatorData.email || '이메일 없음');
         
         // role 검증 (보안)
         if (creatorData.role === 'admin' || creatorData.role === 'tester') {
+          console.log('[테스트 모드] ✅ 권한 검증 통과 (role: ' + creatorData.role + ')');
+          
           // targetCount만큼 반복 (최대 10개)
           const testCount = Math.min(targetCount, 10);
+          console.log(`[테스트 모드] 생성할 알림 수: ${testCount}개 (요청: ${targetCount}, 최대: 10)`);
+          
           for (let i = 0; i < testCount; i++) {
-            matchedUsers.push({
+            const testNotification = {
               id: creatorId,
               displayName: creatorData.display_name || '테스터',
               ...creatorData,
               testIndex: i + 1  // 알림 구분용
-            });
+            };
+            matchedUsers.push(testNotification);
+            console.log(`[테스트 모드] - 알림 #${i + 1} 준비 완료`);
           }
-          console.log(`[테스트 모드] ${matchedUsers.length}개 알림 생성 (모두 ${creatorData.display_name}에게)`);
+          
+          console.log(`[테스트 모드] ✅ 총 ${matchedUsers.length}개 알림이 ${creatorData.display_name}(${creatorId})에게 전송될 예정`);
+          console.log('[테스트 모드] ========== 테스트 모드 종료 ==========');
           
           // test 모드는 바로 리턴 (AI 추천 과정 생략)
           return matchedUsers;
         } else {
-          console.error('[테스트 모드] 권한 없음 - 일반 사용자는 테스트 모드 사용 불가');
+          console.error('[테스트 모드] ❌ 권한 없음 - 일반 사용자는 테스트 모드 사용 불가');
+          console.error('[테스트 모드] - 현재 role:', creatorData.role);
+          console.error('[테스트 모드] - 필요 role: admin 또는 tester');
           return [];
         }
       } else {
-        console.error('[테스트 모드] 생성자 문서를 찾을 수 없음');
+        console.error('[테스트 모드] ❌ 생성자 문서를 찾을 수 없음');
+        console.error('[테스트 모드] - 문서 경로:', `users_record/${creatorId}`);
         return [];
       }
       break;

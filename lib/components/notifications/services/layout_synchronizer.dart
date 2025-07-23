@@ -25,28 +25,60 @@ class LayoutSynchronizer {
     bool hasImageB = false,
   }) {
     
-    // 1. 세로 배치 → 가로 배치 변환 (공간 절약)
+    // 1. 단일 이미지의 경우 원본 레이아웃 유지
+    final isSingleImage = hasImageA && !hasImageB;
+    
+    // 2. 세로 배치 처리
     if (originalLayout == LayoutType.vertical) {
+      // 단일 이미지는 세로 배치 유지 (비율 보존)
+      if (isSingleImage) {
+        return VotingLayoutConfig(
+          layoutType: LayoutType.vertical,
+          reason: 'Single image vertical layout preserved for aspect ratio',
+          conversionRules: [
+            'Single image maintains vertical layout',
+            'Aspect ratio preserved',
+            'Optimal for notification display',
+          ],
+        );
+      }
+      
+      // 두 개의 이미지 - 비율에 따라 최적 레이아웃 결정
+      // 가로형 이미지들은 세로 배치 유지 (더 크게 표시)
+      if (aspectRatioA != null && aspectRatioB != null && 
+          aspectRatioA > 1.3 && aspectRatioB > 1.3) {
+        return VotingLayoutConfig(
+          layoutType: LayoutType.vertical,
+          reason: 'Landscape images kept in vertical layout for better visibility',
+          conversionRules: [
+            'Both images are landscape oriented',
+            'Vertical layout provides larger display area',
+            'Aspect ratios preserved without cropping',
+          ],
+        );
+      }
+      
+      // 그 외의 경우 가로 배치로 변환
       return VotingLayoutConfig(
         layoutType: LayoutType.horizontal,
-        reason: 'Vertical to horizontal for space efficiency',
+        reason: 'Vertical to horizontal for balanced comparison',
         conversionRules: [
-          'Original vertical layout converted to horizontal',
-          'Both images displayed side by side',
-          'Reduced height for notification constraint',
+          'Mixed or portrait images work well side by side',
+          'Horizontal layout for fair comparison',
+          'Optimized for notification space',
         ],
       );
     }
     
-    // 2. 단일 이미지 → A + 빈 B박스 형태
+    // 2. 단일 이미지 → 세로 배치 유지 (비율 보존)
     if (originalLayout == LayoutType.single) {
       return VotingLayoutConfig(
-        layoutType: LayoutType.horizontal,
-        reason: 'Single image with empty B box for voting UI',
+        layoutType: LayoutType.vertical,
+        reason: 'Single image vertical layout for aspect ratio preservation',
         conversionRules: [
-          'Single image placed in A box',
-          'Empty B box added for voting balance',
-          'Horizontal layout for consistent voting experience',
+          'Single image maintains vertical layout',
+          'Full width utilization for better visibility',
+          'Aspect ratio preserved without cropping',
         ],
       );
     }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/core/app_theme.dart';
+import '/auth/firebase_auth/auth_util.dart';
 import '../../models/target_audience_model.dart';
 import '../../constants/target_audience_constants.dart';
 import 'target_audience_steps/collection_type_selector.dart';
@@ -16,11 +17,14 @@ class TargetAudienceDialog extends StatefulWidget {
 
   /// 다이얼로그 표시 헬퍼 메서드
   static Future<Map<String, dynamic>?> show(BuildContext context) async {
-    return showDialog<Map<String, dynamic>>(
+    debugPrint('[TargetAudienceDialog] 다이얼로그 표시 요청');
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
       barrierDismissible: false,
       builder: (context) => const TargetAudienceDialog(),
     );
+    debugPrint('[TargetAudienceDialog] 다이얼로그 닫힘, 결과: $result');
+    return result;
   }
 }
 
@@ -33,6 +37,7 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
   @override
   void initState() {
     super.initState();
+    debugPrint('[TargetAudienceDialog] initState() - 다이얼로그 초기화');
     _pageController = PageController();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -53,20 +58,27 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
   }
 
   void _goToNextStep(TargetAudienceModel model) {
+    debugPrint('[TargetAudienceDialog] 다음 단계로 이동 요청');
+    debugPrint('[TargetAudienceDialog]   - 현재 단계: ${model.currentStep}');
+    debugPrint('[TargetAudienceDialog]   - 수집 방식: ${model.collectionType}');
+    
     if (model.currentStep < 2) {
       // Custom이 아니고 Step 2에서는 완료
       if (model.collectionType != 'custom' && model.currentStep == 1) {
+        debugPrint('[TargetAudienceDialog] Custom이 아니므로 설정 완료');
         _completeSetup(model);
         return;
       }
       
       model.currentStep = model.currentStep + 1;
+      debugPrint('[TargetAudienceDialog] 단계 ${model.currentStep}로 이동');
       _pageController.animateToPage(
         model.currentStep,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
     } else {
+      debugPrint('[TargetAudienceDialog] 마지막 단계 완료');
       _completeSetup(model);
     }
   }
@@ -83,7 +95,24 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
   }
 
   void _completeSetup(TargetAudienceModel model) {
-    Navigator.of(context).pop(model.toMap());
+    final result = model.toMap();
+    
+    // 테스트 모드인 경우 직접 알림 생성 플래그 추가
+    if (model.collectionType == 'test') {
+      result['shouldCreateTestNotification'] = true;
+      result['testUserId'] = currentUserUid;
+      debugPrint('[TargetAudienceDialog] 테스트 모드 - 직접 알림 생성 플래그 설정');
+    }
+    
+    debugPrint('[TargetAudienceDialog] ========== 설정 완료 ==========');
+    debugPrint('[TargetAudienceDialog] 최종 결과:');
+    debugPrint('[TargetAudienceDialog]   - 수집 방식: ${result['type']}');
+    debugPrint('[TargetAudienceDialog]   - 목표 수: ${result['targetCount']}');
+    debugPrint('[TargetAudienceDialog]   - 관심사: ${result['interests']}');
+    debugPrint('[TargetAudienceDialog]   - 연령대: ${result['ageGroup']}');
+    debugPrint('[TargetAudienceDialog]   - 성별: ${result['gender']}');
+    debugPrint('[TargetAudienceDialog] =====================================');
+    Navigator.of(context).pop(result);
   }
 
   @override

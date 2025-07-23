@@ -54,11 +54,15 @@ async function analyzePostContent(postData) {
       }
     });
 
-    // 토큰 사용량 추적
+    // 토큰 사용량 추적 및 상세 로깅
     const usage = result.usage || result.usageMetadata;
     if (usage) {
       updateTokenUsage('recommendation', usage);
       await logAIUsage('recommendation', usage);
+      console.log('[User Recommendation] 토큰 사용량 (분석):');
+      console.log(`  - 입력 토큰: ${usage.promptTokenCount || usage.inputTokens || 0}`);
+      console.log(`  - 출력 토큰: ${usage.candidatesTokenCount || usage.outputTokens || 0}`);
+      console.log(`  - 총 토큰: ${usage.totalTokenCount || usage.totalTokens || 0}`);
     }
 
     // 응답 파싱
@@ -73,7 +77,15 @@ async function analyzePostContent(postData) {
       }
     }
 
-      console.log('[User Recommendation] 투표 분석 완료:', analysis);
+      // 상세 로깅 추가
+      console.log('[User Recommendation] 투표 분석 완료:');
+      console.log('  - 주요 주제:', analysis.topics?.join(', ') || '없음');
+      console.log('  - 타겟 연령대:', analysis.targetAge?.join(', ') || '전체');
+      console.log('  - 관련 관심사:', analysis.relatedInterests?.join(', ') || '없음');
+      console.log('  - 콘텐츠 유형:', analysis.contentType || 'general');
+      console.log('  - 타겟 성별:', analysis.targetGender || 'all');
+      console.log('  - 참여도 점수:', analysis.engagementScore || 50);
+      
       return analysis;
 
     } catch (error) {
@@ -223,11 +235,15 @@ ${JSON.stringify(userSummaries, null, 2)}
       }
     });
 
-    // 토큰 사용량 추적
+    // 토큰 사용량 추적 및 상세 로깅
     const usage = result.usage || result.usageMetadata;
     if (usage) {
       updateTokenUsage('recommendation', usage);
       await logAIUsage('recommendation', usage);
+      console.log('[User Recommendation] 토큰 사용량 (분석):');
+      console.log(`  - 입력 토큰: ${usage.promptTokenCount || usage.inputTokens || 0}`);
+      console.log(`  - 출력 토큰: ${usage.candidatesTokenCount || usage.outputTokens || 0}`);
+      console.log(`  - 총 토큰: ${usage.totalTokenCount || usage.totalTokens || 0}`);
     }
 
     // 응답 파싱
@@ -244,6 +260,14 @@ ${JSON.stringify(userSummaries, null, 2)}
     }
 
     console.log(`[User Recommendation] 순위 매기기 완료: ${rankings.length}명`);
+    
+    // 상위 5명의 점수 상세 로깅
+    console.log('[User Recommendation] 상위 5명 AI 점수:');
+    rankings.slice(0, 5).forEach((ranking, idx) => {
+      console.log(`  ${idx + 1}. ${ranking.userId}:`);
+      console.log(`     - 점수: ${ranking.score}/100`);
+      console.log(`     - 이유: ${ranking.reasons?.join(', ') || '없음'}`);
+    });
     
     // 원본 사용자 데이터와 매칭
     const rankedUsers = rankings
@@ -315,9 +339,20 @@ async function getAIRecommendedUsers(postData, candidateUsers, targetCount) {
       .slice(0, targetCount);
     
     console.log(`[User Recommendation] AI 추천 완료: ${recommendedUsers.length}명 선택됨`);
-    console.log('[User Recommendation] 평균 AI 점수:', 
-      recommendedUsers.reduce((sum, u) => sum + (u.aiScore || 0), 0) / recommendedUsers.length
-    );
+    
+    // 추천 결과 상세 통계
+    const avgScore = recommendedUsers.reduce((sum, u) => sum + (u.aiScore || 0), 0) / recommendedUsers.length;
+    const maxScore = Math.max(...recommendedUsers.map(u => u.aiScore || 0));
+    const minScore = Math.min(...recommendedUsers.map(u => u.aiScore || 0));
+    
+    console.log('[User Recommendation] 추천 통계:');
+    console.log(`  - 평균 AI 점수: ${avgScore.toFixed(1)}/100`);
+    console.log(`  - 최고 점수: ${maxScore}/100`);
+    console.log(`  - 최저 점수: ${minScore}/100`);
+    console.log(`  - 점수 분포:`);
+    console.log(`    * 80점 이상: ${recommendedUsers.filter(u => (u.aiScore || 0) >= 80).length}명`);
+    console.log(`    * 60-79점: ${recommendedUsers.filter(u => (u.aiScore || 0) >= 60 && (u.aiScore || 0) < 80).length}명`);
+    console.log(`    * 60점 미만: ${recommendedUsers.filter(u => (u.aiScore || 0) < 60).length}명`);
     
     return recommendedUsers;
 

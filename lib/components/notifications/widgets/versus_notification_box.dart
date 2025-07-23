@@ -52,6 +52,12 @@ class VersusNotificationBox extends StatelessWidget {
   
   /// 디버그 정보 표시 여부
   final bool showDebugInfo;
+  
+  /// 단일 이미지 모드에서 B 타이틀 (A박스에 함께 표시)
+  final String? dualModeSecondTitle;
+  
+  /// 단일 이미지 모드 여부
+  final bool isSingleImageMode;
 
   const VersusNotificationBox({
     Key? key,
@@ -69,6 +75,8 @@ class VersusNotificationBox extends StatelessWidget {
     this.customTextSize,
     this.showLabel = true,
     this.showDebugInfo = false,
+    this.dualModeSecondTitle,
+    this.isSingleImageMode = false,
   }) : super(key: key);
 
   @override
@@ -269,6 +277,11 @@ class VersusNotificationBox extends StatelessWidget {
   
   /// 컨텐츠 (제목, 라벨 등)
   Widget _buildContent() {
+    // 단일 이미지 모드에서 듀얼 타이틀 표시
+    if (isSingleImageMode && dualModeSecondTitle != null) {
+      return _buildDualTitleContent();
+    }
+    
     return Positioned.fill(
       child: Padding(
         padding: const EdgeInsets.all(12.0),
@@ -395,6 +408,110 @@ class VersusNotificationBox extends StatelessWidget {
             color: Colors.white,
             fontSize: 10,
             fontFamily: 'monospace',
+          ),
+        ),
+      ),
+    );
+  }
+  
+  /// 단일 이미지 모드에서 A/B 타이틀을 함께 표시
+  Widget _buildDualTitleContent() {
+    return Positioned.fill(
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.only(
+              bottomLeft: VersusRadius.container.bottomLeft,
+              bottomRight: VersusRadius.container.bottomRight,
+            ),
+            gradient: LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [
+                Colors.black.withValues(alpha: 0.85),
+                Colors.black.withValues(alpha: 0.7),
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.3, 1.0],
+            ),
+          ),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // A 옵션
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                    decoration: BoxDecoration(
+                      color: VersusColors.primary.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(4.0),
+                    ),
+                    child: Text(
+                      'A',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: _getAdaptiveTextSize() * 0.8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8.0),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: _getAdaptiveTextSize(),
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 8.0),
+              
+              // B 옵션
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                    decoration: BoxDecoration(
+                      color: VersusColors.secondary.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(4.0),
+                    ),
+                    child: Text(
+                      'B',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: _getAdaptiveTextSize() * 0.8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8.0),
+                  Expanded(
+                    child: Text(
+                      dualModeSecondTitle!,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: _getAdaptiveTextSize(),
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),

@@ -17,8 +17,10 @@
 - **Navigation**: GoRouter for declarative navigation
 - **Authentication**: Firebase Auth with multiple providers (Email, Google, Apple, Phone, GitHub)
 - **Backend**: Firebase ecosystem (Firestore, Storage, Functions, Performance)
+- **AI Integration**: Google Genkit framework for unified AI management
+- **Notification System**: Real-time voting request notifications with AI targeting
 - **Internationalization**: Built-in support for English and German (English fully translated, German pending)
-- **Content Moderation**: Integration with Perspective API for content filtering
+- **Content Moderation**: Multi-layer AI system (Perspective API + Gemini AI + Cloud Vision)
 - **Search**: Algolia integration for advanced search capabilities
 
 ### Key Directories
@@ -41,14 +43,20 @@
 │   │   ├── app_utils.dart       # 유틸리티 함수 (이전 flutter_flow_util.dart)
 │   │   └── internationalization.dart  # i18n support
 │   ├── components/              # Reusable UI components
+│   │   └── notifications/       # Notification UI components (new)
 │   ├── custom_code/             # Custom Flutter code
 │   │   ├── actions/             # Custom actions
 │   │   └── widgets/             # Custom widgets
+│   ├── design_system/           # Design tokens and components (new)
+│   ├── models/                  # Data models (new)
 │   ├── pages/                   # Application screens/pages
 │   ├── login/                   # Authentication screens
 │   ├── createaccount/           # Account creation flow
 │   ├── posts/                   # Post-related features (오타 수정: pots → posts)
-│   ├── services/                # External services (Perspective API)
+│   ├── services/                # Business logic services
+│   │   ├── ai_moderation/      # AI content moderation (enhanced)
+│   │   ├── notification_service.dart
+│   │   └── target_audience_service.dart
 │   ├── utils/                   # Utility functions
 │   └── widgets/                 # Custom widgets
 ├── assets/                      # Static assets
@@ -57,6 +65,9 @@
 │   └── videos/                  # Video assets
 ├── firebase/                    # Firebase configuration
 │   ├── functions/               # Cloud Functions
+│   │   ├── ai/                  # AI system with Genkit (new)
+│   │   ├── notifications/       # Notification system (new)
+│   │   └── index.js            # Functions entry point
 │   ├── firestore.rules         # Firestore security rules
 │   └── firebase.json           # Firebase project config
 ├── android/                     # Android-specific configuration
@@ -84,6 +95,20 @@
 - **Anonymous Posting**: Support for anonymous posts and comments
 - **Reporting System**: Content moderation with reporting functionality
 
+### AI-Powered Features (New)
+- **Smart Notifications**: AI-based user targeting for voting requests
+- **Target Audience Modes**: 
+  - Quick Collection: AI recommends optimal users
+  - Public: Random distribution to active users
+  - Custom: Filter by interests, age, gender
+  - Test Mode: Admin/tester development tool
+- **Content Moderation**: 
+  - Text analysis with Perspective API
+  - AI logic validation with Gemini
+  - Image safety with Cloud Vision API
+  - Multi-stage validation pipeline
+- **User Matching**: AI analyzes content and user profiles for relevance
+
 ### Authentication & Users
 - **Multiple Auth Methods**: Email, Google, Apple, Phone (SMS), GitHub, Anonymous
 - **User Onboarding**: Multi-step account creation with profile setup
@@ -95,9 +120,10 @@
 ### Data Models (Firestore Collections)
 
 **Core Collections:**
-- `users_record` - User profiles, settings, points, rankings
-- `posts_record` - Versus posts with A/B content, voting, metadata
+- `users_record` - User profiles, settings, points, rankings, role (admin/tester)
+- `posts_record` - Versus posts with A/B content, voting, metadata, targetAudience
 - `comments_record` - Comments with like/dislike subcollections
+- `notifications_record` - Voting request notifications with real-time sync
 - `characters_record` - User avatar/character information
 - `encodings_record` - Video encoding status tracking
 
@@ -156,6 +182,14 @@ algolia: ^1.1.1
 - **Services**: Authentication, Firestore, Storage, Functions, Hosting
 - **Web API Key**: Configured for web deployment
 - **Platform Support**: iOS, Android, Web with proper configuration files
+- **Cloud Functions**: 
+  - onUserDeleted - Clean up user data
+  - checkImageContent - Image moderation trigger
+  - moderateImage - Vision API integration
+  - validatePostContentWithGemini - AI content validation
+  - onPostCreate - Notification system trigger
+  - getUserPostingHistory - User history analysis
+  - testNotificationSystem - Development testing
 
 ### 플랫폼별 배포 설정 권장사항
 
@@ -797,6 +831,30 @@ This project represents a sophisticated social media application with a unique "
   - 20df3027: Genkit 통합 및 토큰 사용량 추적 개선
   - fc415fcf: 다음 버튼 클릭 시 이미지 업로드 및 AI 검증 플로우 구현
   - 6fc80488: AI 검열 시스템 개선 - 얼굴 평가 BLOCK 처리 강화
+
+### 2025-07-20: AI 기반 투표 알림 시스템 구현
+- **Genkit Framework 통합**:
+  - Google의 최신 AI 개발 프레임워크 도입
+  - 통합 AI 설정 및 관리 시스템 구축
+  - 토큰 사용량 추적 및 비용 계산
+- **알림 시스템 구현**:
+  - Firebase Functions onCreate 트리거 활용
+  - 4가지 타겟 모드: quick(AI), public(랜덤), custom(조건), test(개발)
+  - NotificationService로 실시간 알림 표시
+  - NotificationOverlay UI 컴포넌트 구현
+- **AI 사용자 매칭**:
+  - Gemini 1.5 Pro를 활용한 스마트 매칭
+  - 게시물 내용과 사용자 프로필 분석
+  - 관련성 점수 기반 타겟팅
+- **테스트 모드**:
+  - admin/tester 역할 전용 기능
+  - 본인에게만 반복 알림 전송
+  - UI/플로우 테스트 지원
+- **문서화**:
+  - 포괄적인 README.md 작성
+  - AI, 알림, 서비스 레이어 문서화
+  - 백엔드 다이어그램 업데이트
+- **커밋**: a1fea4f9
 
 ### 향후 개선 가능 사항
 

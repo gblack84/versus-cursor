@@ -102,6 +102,7 @@ dependencies:
   pro_image_editor: ^10.3.1
   pro_video_editor: ^0.1.8
   provider: ^6.1.5
+  flutter_sfsymbols: ^2.0.0
   wechat_assets_picker: ^9.5.1
   wechat_camera_picker: ^4.3.7
   rxdart: ^0.28.0

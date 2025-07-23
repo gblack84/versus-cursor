@@ -434,6 +434,12 @@
       "languageVersion": "3.6"
     },
     {
+      "name": "flutter_sfsymbols",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/flutter_sfsymbols-2.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "flutter_shaders",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/flutter_shaders-0.1.3",
       "packageUri": "lib/",

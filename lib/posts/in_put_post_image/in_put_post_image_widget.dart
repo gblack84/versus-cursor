@@ -1,5 +1,6 @@
 // upload_choice_bottom_sheet_widget.dart 임시 제거 - 새로운 업로드 위젯 구현 필요
 import 'dart:async';
+import 'dart:convert';
 import '/core/app_theme.dart';
 import '/core/app_utils.dart';
 import '/utils/content_filter.dart';
@@ -11,6 +12,7 @@ import '/backend/backend.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'utils/no_animation_page_route.dart';
 import '/auth/firebase_auth/auth_util.dart';
+import '/services/target_audience_service.dart';
 import 'in_put_post_image_model.dart';
 export 'in_put_post_image_model.dart';
 import 'helpers/aspect_ratio_analyzer.dart';
@@ -472,13 +474,16 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           _model.validationMessage = null;
         });
         
+        DebugHelper.log('[_validateAllTexts] TargetAudienceDialog.show() 호출 전');
         final targetAudience = await TargetAudienceDialog.show(context);
+        DebugHelper.log('[_validateAllTexts] TargetAudienceDialog.show() 반환값: $targetAudience');
         
         setState(() {
           _model.isShowingDialog = false;
         });
         
         if (targetAudience == null) {
+          DebugHelper.log('[_validateAllTexts] targetAudience가 null - 사용자가 취소함');
           // 사용자가 취소함
           await _cleanupUploadedImages(); // 업로드된 이미지 삭제
           setState(() {
@@ -488,8 +493,15 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           return; // 로컬 파일은 유지
         }
         
+        DebugHelper.log('[_validateAllTexts] targetAudience 값 확인:');
+        DebugHelper.log('  - type: ${targetAudience['type']}');
+        DebugHelper.log('  - targetCount: ${targetAudience['targetCount']}');
+        DebugHelper.log('  - isPremium: ${targetAudience['isPremium']}');
+        
         // Firestore 저장 진행
+        DebugHelper.log('[_validateAllTexts] _saveToFirestore 호출 시작');
         await _saveToFirestore(targetAudience);
+        DebugHelper.log('[_validateAllTexts] _saveToFirestore 호출 완료');
       }
 
     } catch (e) {
@@ -646,9 +658,15 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   }
 
   Future<void> _saveToFirestore(Map<String, dynamic> targetAudience) async {
+    DebugHelper.log('[_saveToFirestore] ========== 게시물 저장 시작 ==========');
+    DebugHelper.log('[_saveToFirestore] targetAudience: $targetAudience');
+    
     try {
       final user = currentUser;
+      DebugHelper.log('[_saveToFirestore] 현재 사용자: ${user?.uid}');
+      
       if (user == null) {
+        DebugHelper.log('[_saveToFirestore] 사용자가 로그인되지 않음');
         _showSnackBar('로그인이 필요합니다.', isError: true);
         return;
       }
@@ -663,7 +681,12 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       final uploadedUrlsA = appState.uploadImageA;
       final uploadedUrlsB = appState.uploadImageB;
       
+      DebugHelper.log('[_saveToFirestore] 업로드된 이미지 URL:');
+      DebugHelper.log('  - A박스: ${uploadedUrlsA.length}개');
+      DebugHelper.log('  - B박스: ${uploadedUrlsB.length}개');
+      
       // 사용자 정보 가져오기
+      DebugHelper.log('[_saveToFirestore] 사용자 정보 조회 중...');
       final userDoc = await UsersRecord.getDocumentOnce(
         FirebaseFirestore.instance.collection('users').doc(user.uid)
       );
@@ -713,9 +736,16 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       );
 
       // Firestore에 저장
+      DebugHelper.log('[_saveToFirestore] Firestore에 게시물 저장 시작...');
       final postRef = await PostsRecord.collection.add(postsRecordData);
+      DebugHelper.log('[_saveToFirestore] ✅ 게시물 저장 성공! ID: ${postRef.id}');
+      
+      // Firestore 일관성을 위한 지연 추가
+      DebugHelper.log('[_saveToFirestore] Firestore 일관성을 위해 500ms 대기 중...');
+      await Future.delayed(const Duration(milliseconds: 500));
 
       // PollDetails 서브컬렉션 생성
+      DebugHelper.log('[_saveToFirestore] PollDetails 서브컬렉션 생성 중...');
       final pollDetailsData = createPollDetailsRecordData(
         option1: appState.uploadTextA,
         option2: appState.uploadTextB,
@@ -727,9 +757,39 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       );
 
       await PollDetailsRecord.createDoc(postRef).set(pollDetailsData);
+      DebugHelper.log('[_saveToFirestore] ✅ PollDetails 저장 성공!');
 
-      // 성공 시 전체 정리
-      await _cleanupAllData();
+      // 테스트 알림을 위한 데이터 미리 저장 (데이터 정리 전에!)
+      final testNotificationData = {
+        'questionTitle': appState.questionTitle,
+        'description': appState.questionDescription,
+        'optionA': appState.uploadTextA,
+        'optionB': appState.uploadTextB,
+        'imageUrlA': uploadedUrlsA.isNotEmpty ? uploadedUrlsA.first : null,
+        'imageUrlB': uploadedUrlsB.isNotEmpty ? uploadedUrlsB.first : null,
+        // 이미지 비율 정보 추가
+        'aspectRatioA': appState.uploadImageAspectRatioA.isNotEmpty ? appState.uploadImageAspectRatioA.first : null,
+        'aspectRatioB': appState.uploadImageAspectRatioB.isNotEmpty ? appState.uploadImageAspectRatioB.first : null,
+        // 현재 레이아웃 타입 추가
+        'layoutType': _model.currentLayout.name,
+      };
+      
+      // 테스트 모드인 경우 직접 알림 생성 (데이터 정리 전에!)
+      if (targetAudience['shouldCreateTestNotification'] == true) {
+        DebugHelper.log('[_saveToFirestore] 테스트 모드 - 직접 알림 생성 시작');
+        DebugHelper.log('[_saveToFirestore] 게시물 ID: ${postRef.id}');
+        DebugHelper.log('[_saveToFirestore] 알림 데이터: $testNotificationData');
+        await _createTestNotificationDirectly(
+          postId: postRef.id,  // 실제 게시물 ID 사용
+          userId: targetAudience['testUserId'] ?? user.uid,
+          postData: testNotificationData,
+        );
+      }
+
+      // 성공 시 전체 정리 (이미지는 삭제하지 않음 - 게시물에서 사용 중)
+      DebugHelper.log('[_saveToFirestore] 전체 데이터 정리 중... (이미지는 유지)');
+      await _cleanupAllData(deleteImages: false);
+      DebugHelper.log('[_saveToFirestore] ✅ 데이터 정리 완료');
 
       // 검증 세션 초기화 (새로운 게시물 작성을 위해)
       final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -737,14 +797,17 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       _model.validationSessionId = '${timestamp}_$random';
       _model.validationDocumentId = null;
       _model.validationRevisionCount = 0;
-      DebugHelper.log('검증 세션 초기화 완료 - 새 세션 ID: ${_model.validationSessionId}');
+      DebugHelper.log('[_saveToFirestore] 검증 세션 초기화 완료 - 새 세션 ID: ${_model.validationSessionId}');
 
       setState(() {
         _model.isValidating = false;
       });
 
       // 성공 메시지 표시
+      DebugHelper.log('[_saveToFirestore] 성공 메시지 표시');
       _showSnackBar('게시물이 성공적으로 저장되었습니다!');
+      
+      DebugHelper.log('[_saveToFirestore] ========== 게시물 저장 완료 ==========');
       
       // 텍스트 필드 초기화
       _model.textController1?.clear();
@@ -769,6 +832,73 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       setState(() {
         _model.isValidating = false;
       });
+    }
+  }
+
+  /// 테스트 모드에서 직접 알림 생성
+  Future<void> _createTestNotificationDirectly({
+    required String postId,
+    required String userId,
+    required Map<String, dynamic> postData,
+  }) async {
+    try {
+      DebugHelper.log('[_createTestNotificationDirectly] 시작');
+      DebugHelper.log('[_createTestNotificationDirectly] postId: $postId');
+      DebugHelper.log('[_createTestNotificationDirectly] userId: $userId');
+      DebugHelper.log('[_createTestNotificationDirectly] postData: $postData');
+      
+      final now = Timestamp.now();
+      
+      // content를 Map에서 JSON 문자열로 변환
+      final contentMap = {
+        'title': '🧪 테스트 투표 요청',
+        'message': '${postData['questionTitle']}',
+        'postData': {
+          'questionTitle': postData['questionTitle'],
+          'description': postData['description'] ?? '',
+          'optionA': postData['optionA'],
+          'optionB': postData['optionB'],
+          'imageUrlA': postData['imageUrlA'],
+          'imageUrlB': postData['imageUrlB'],
+          'aspectRatioA': postData['aspectRatioA'],
+          'aspectRatioB': postData['aspectRatioB'],
+          'layoutType': postData['layoutType'],
+          'authorName': currentUserDisplayName,
+          'category': 'test',
+        }
+      };
+      
+      // aspectRatio 데이터 확인
+      DebugHelper.log('[_createTestNotificationDirectly] aspectRatioA: ${postData['aspectRatioA']}');
+      DebugHelper.log('[_createTestNotificationDirectly] aspectRatioB: ${postData['aspectRatioB']}');
+      DebugHelper.log('[_createTestNotificationDirectly] layoutType: ${postData['layoutType']}');
+      
+      DebugHelper.log('[_createTestNotificationDirectly] contentMap: $contentMap');
+      
+      final notificationData = {
+        'notification_id': 'test_${DateTime.now().millisecondsSinceEpoch}',
+        'user_id': userId,
+        'type': 'voting_request',
+        'source_id': postId,
+        'content': jsonEncode(contentMap),  // Map을 JSON 문자열로 변환
+        'created_at': now,
+        'read': false,
+        'target_audience': ['test'],  // String 배열로 변경
+        'expiry_time': Timestamp.fromDate(DateTime.now().add(const Duration(minutes: 15))),
+        'interaction_type': 'vote',
+      };
+      
+      DebugHelper.log('[_createTestNotificationDirectly] Firestore에 알림 생성 중...');
+      final docRef = await FirebaseFirestore.instance
+          .collection('notifications_record')
+          .add(notificationData);
+          
+      DebugHelper.log('[_createTestNotificationDirectly] ✅ 테스트 알림 생성 성공! ID: ${docRef.id}');
+      _showSnackBar('테스트 알림이 생성되었습니다!');
+      
+    } catch (e) {
+      DebugHelper.logError('[_createTestNotificationDirectly] 테스트 알림 생성 실패', e);
+      _showSnackBar('테스트 알림 생성 실패: ${e.toString()}', isError: true);
     }
   }
 
@@ -1272,14 +1402,21 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   }
 
   /// 모든 임시 데이터 정리 (페이지 나갈 때 또는 성공 후)
-  Future<void> _cleanupAllData() async {
-    // 먼저 업로드된 이미지 정리
-    await _cleanupUploadedImages();
+  /// @param deleteImages - true면 Firebase Storage의 이미지도 삭제, false면 AppState만 정리
+  Future<void> _cleanupAllData({bool deleteImages = true}) async {
+    // deleteImages가 true일 때만 업로드된 이미지 정리
+    if (deleteImages) {
+      await _cleanupUploadedImages();
+    }
     
     final appState = context.read<AppState>();
     
     // AppState의 모든 데이터 정리
     appState.update(() {
+      // Firebase URLs 정리 (게시물 저장 성공 시에도 필요)
+      appState.uploadImageA.clear();
+      appState.uploadImageB.clear();
+      
       // 로컬 파일도 정리
       appState.tempImageFilesA.clear();
       appState.tempImageFilesB.clear();

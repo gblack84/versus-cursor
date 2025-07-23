@@ -83,6 +83,17 @@ class VersusBoxSizeCalculator {
       hasImageB: sizeData.hasImageB,
     );
     
+    print('[VersusBoxSizeCalculator] ========== 크기 계산 시작 ==========');
+    print('  화면 정보:');
+    print('    - 화면 너비: ${screenWidth.toStringAsFixed(1)}px');
+    print('    - 컨테이너 너비: ${containerWidth.toStringAsFixed(1)}px (화면의 ${(containerWidth/screenWidth*100).toStringAsFixed(0)}%)');
+    print('    - 컨테이너 높이: ${containerHeight.toStringAsFixed(1)}px');
+    print('    - 스케일 팩터: ${(scaleFactor * 100).toStringAsFixed(0)}%');
+    print('  레이아웃 최적화:');
+    print('    - 원본 레이아웃: ${sizeData.layoutType}');
+    print('    - 최적화된 레이아웃: ${votingLayout.layoutType}');
+    print('    - 변환 이유: ${votingLayout.reason}');
+    
     // 3. 레이아웃 변환에 따른 크기 조정 팩터 계산
     final sizeAdjustment = LayoutSynchronizer.calculateSizeAdjustment(
       originalLayout: sizeData.layoutType,
@@ -90,11 +101,12 @@ class VersusBoxSizeCalculator {
       originalSize: sizeData.originalSizeA,
     );
     
-    // 4. 최적 간격 계산
-    final spacing = LayoutSynchronizer.calculateOptimalSpacing(
-      layoutType: votingLayout.layoutType,
-      containerWidth: containerWidth,
-      boxCount: sizeData.hasImageB ? 2 : 1,
+    // 4. 최적 간격 계산 (동적 간격 사용)
+    final dynamicSpacing = VotingNotificationConstraints.getDynamicBoxSpacing(screenWidth);
+    final spacing = VotingSpacing(
+      horizontal: dynamicSpacing,
+      vertical: dynamicSpacing * 1.5,
+      reason: 'Dynamic spacing based on screen size',
     );
     
     // 5. 각 박스의 크기 계산
@@ -105,7 +117,7 @@ class VersusBoxSizeCalculator {
       final availableWidth = containerWidth - spacing.horizontal;
       final boxWidth = sizeData.hasImageB 
           ? availableWidth / 2 
-          : availableWidth;
+          : availableWidth * 0.95; // 단일 이미지는 95% 너비 사용
       
       sizeA = _calculateOptimizedBoxSize(
         originalSize: sizeData.originalSizeA,
@@ -125,35 +137,74 @@ class VersusBoxSizeCalculator {
               sizeAdjustment: sizeAdjustment,
               aspectRatio: sizeData.aspectRatioB,
             )
-          : Size(boxWidth, sizeA.height); // B박스가 없으면 A와 같은 높이
+          : Size.zero; // B박스가 없으면 크기 0
       
     } else {
-      // 세로 배치 (드물지만 극단적인 세로형 이미지의 경우)
-      final availableHeight = containerHeight - spacing.vertical;
-      final boxHeight = availableHeight / 2;
+      // 세로 배치
+      final isSingleImage = sizeData.hasImageA && !sizeData.hasImageB;
       
-      sizeA = _calculateOptimizedBoxSize(
-        originalSize: sizeData.originalSizeA,
-        containerWidth: containerWidth,
-        containerHeight: boxHeight,
-        scaleFactor: scaleFactor,
-        sizeAdjustment: sizeAdjustment,
-        aspectRatio: sizeData.aspectRatioA,
-      );
-      
-      sizeB = _calculateOptimizedBoxSize(
-        originalSize: sizeData.originalSizeB,
-        containerWidth: containerWidth,
-        containerHeight: boxHeight,
-        scaleFactor: scaleFactor,
-        sizeAdjustment: sizeAdjustment,
-        aspectRatio: sizeData.aspectRatioB,
-      );
+      if (isSingleImage) {
+        // 단일 이미지는 전체 높이와 너비 사용 (더 큰 이미지 표시)
+        sizeA = _calculateOptimizedBoxSize(
+          originalSize: sizeData.originalSizeA,
+          containerWidth: containerWidth * 0.95,  // 95% 너비 사용 (좌우 여백)
+          containerHeight: containerHeight * 0.9,  // 90% 높이 사용
+          scaleFactor: scaleFactor,
+          sizeAdjustment: sizeAdjustment,
+          aspectRatio: sizeData.aspectRatioA,
+        );
+        sizeB = Size.zero;
+      } else {
+        // 두 개의 이미지는 높이를 나눔
+        final availableHeight = containerHeight - spacing.vertical;
+        final boxHeight = availableHeight / 2;
+        
+        sizeA = _calculateOptimizedBoxSize(
+          originalSize: sizeData.originalSizeA,
+          containerWidth: containerWidth,
+          containerHeight: boxHeight,
+          scaleFactor: scaleFactor,
+          sizeAdjustment: sizeAdjustment,
+          aspectRatio: sizeData.aspectRatioA,
+        );
+        
+        sizeB = _calculateOptimizedBoxSize(
+          originalSize: sizeData.originalSizeB,
+          containerWidth: containerWidth,
+          containerHeight: boxHeight,
+          scaleFactor: scaleFactor,
+          sizeAdjustment: sizeAdjustment,
+          aspectRatio: sizeData.aspectRatioB,
+        );
+      }
     }
     
     // 6. 최종 크기 제약 조건 적용
-    sizeA = VotingNotificationConstraints.constrainBoxSize(sizeA, 1.0);
-    sizeB = VotingNotificationConstraints.constrainBoxSize(sizeB, 1.0);
+    // 레이아웃에 따라 적절한 maxWidth 설정
+    double maxWidthForBox;
+    if (votingLayout.layoutType == LayoutType.horizontal) {
+      // 가로 배치: 각 박스는 전체 너비의 절반에서 간격을 뺀 크기
+      maxWidthForBox = (containerWidth - spacing.horizontal) / 2;
+    } else {
+      // 세로 배치: 각 박스는 전체 너비 사용 가능
+      maxWidthForBox = containerWidth;
+    }
+    
+    sizeA = VotingNotificationConstraints.constrainBoxSize(sizeA, 1.0, maxWidth: maxWidthForBox);
+    if (sizeData.hasImageB) {
+      sizeB = VotingNotificationConstraints.constrainBoxSize(sizeB, 1.0, maxWidth: maxWidthForBox);
+    }
+    
+    print('  최종 박스 크기:');
+    print('    - A박스: ${sizeA.width.toStringAsFixed(1)} x ${sizeA.height.toStringAsFixed(1)}');
+    if (sizeData.hasImageB) {
+      print('    - B박스: ${sizeB.width.toStringAsFixed(1)} x ${sizeB.height.toStringAsFixed(1)}');
+    }
+    print('    - A박스 비율: ${sizeData.aspectRatioA?.toStringAsFixed(3) ?? 'null'}');
+    if (sizeData.hasImageB) {
+      print('    - B박스 비율: ${sizeData.aspectRatioB?.toStringAsFixed(3) ?? 'null'}');
+    }
+    print('[VersusBoxSizeCalculator] ========== 크기 계산 완료 ==========');
     
     return VotingBoxSizes(
       sizeA: sizeA,
@@ -301,6 +352,7 @@ class VersusBoxSizeCalculator {
     
     // 1. 이미지 비율이 있으면 비율 기준으로 계산
     if (aspectRatio != null) {
+      // 컨테이너에 맞는 최대 크기 계산
       double width = containerWidth;
       double height = width / aspectRatio;
       
@@ -308,6 +360,12 @@ class VersusBoxSizeCalculator {
       if (height > containerHeight) {
         height = containerHeight;
         width = height * aspectRatio;
+      }
+      
+      // 너비가 컨테이너를 초과하면 너비 기준으로 재계산
+      if (width > containerWidth) {
+        width = containerWidth;
+        height = width / aspectRatio;
       }
       
       calculatedSize = Size(width, height);

@@ -123,7 +123,10 @@ class TargetCountSelector extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: OutlinedButton(
-                    onPressed: () => onCountChanged(count),
+                    onPressed: () {
+                      debugPrint('[TargetCountSelector] 목표 응답 수 선택: $count');
+                      onCountChanged(count);
+                    },
                     style: OutlinedButton.styleFrom(
                       backgroundColor: isSelected 
                           ? AppTheme.of(context).primary 
@@ -198,7 +201,10 @@ class TargetCountSelector extends StatelessWidget {
 
   Widget _buildPremiumOption(BuildContext context, TargetAudienceModel model) {
     return InkWell(
-      onTap: () => onPremiumChanged(!model.isPremium),
+      onTap: () {
+        debugPrint('[TargetCountSelector] 프리미엄 옵션 토글: ${!model.isPremium}');
+        onPremiumChanged(!model.isPremium);
+      },
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(20),

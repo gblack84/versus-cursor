@@ -36,15 +36,15 @@ const aiConfig = {
   // 콘텐츠 검열 설정
   moderation: {
     temperature: 0.3,
-    maxOutputTokens: 1000,
-    timeout: 5000 // 5초
+    maxOutputTokens: 1000
+    // timeout은 Gemini API generation_config에서 지원하지 않음
   },
   
   // 사용자 추천 설정
   recommendation: {
     temperature: 0.5,
-    maxOutputTokens: 2000,
-    timeout: 10000 // 10초
+    maxOutputTokens: 2000
+    // timeout은 Gemini API generation_config에서 지원하지 않음
   },
   
   // 임베딩 설정

@@ -2,6 +2,7 @@ import '/core/app_theme.dart';
 import '/core/app_utils.dart';
 import '/core/app_widgets.dart';
 import '/index.dart';
+import '/components/notifications/voting_overlay.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'testpage_select_model.dart';
@@ -673,6 +674,58 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                               0.0, 0.0, 0.0, 0.0),
                                       color:
                                           AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
+                                          .titleSmall
+                                          .override(
+                                            font: GoogleFonts.plusJakartaSans(
+                                              fontWeight:
+                                                  AppTheme.of(context)
+                                                      .titleSmall
+                                                      .fontWeight,
+                                              fontStyle:
+                                                  AppTheme.of(context)
+                                                      .titleSmall
+                                                      .fontStyle,
+                                            ),
+                                            color: Colors.white,
+                                            letterSpacing: 0.0,
+                                            fontWeight:
+                                                AppTheme.of(context)
+                                                    .titleSmall
+                                                    .fontWeight,
+                                            fontStyle:
+                                                AppTheme.of(context)
+                                                    .titleSmall
+                                                    .fontStyle,
+                                          ),
+                                      elevation: 0.0,
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                  ),
+                                  AppButtonWidget(
+                                    onPressed: () {
+                                      VotingOverlay.showVotingNotification(
+                                        context,
+                                        question: '어떤 스마트폰을 선호하시나요?',
+                                        optionA: 'iPhone 15 Pro',
+                                        optionB: 'Galaxy S24 Ultra',
+                                        imageUrlA: 'https://picsum.photos/200/200?random=1',
+                                        imageUrlB: 'https://picsum.photos/200/200?random=2',
+                                        onVote: (option) {
+                                          print('투표 완료: $option 선택됨!');
+                                          // 나중에 실제 투표 제출 로직 구현
+                                        },
+                                      );
+                                    },
+                                    text: '투표테스트',
+                                    options: AppButtonOptions(
+                                      height: 30.0,
+                                      padding: EdgeInsetsDirectional.fromSTEB(
+                                          5.0, 0.0, 5.0, 0.0),
+                                      iconPadding:
+                                          EdgeInsetsDirectional.fromSTEB(
+                                              0.0, 0.0, 0.0, 0.0),
+                                      color: Color(0xFFFF6B6B),  // 다른 색상으로 구분
                                       textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(

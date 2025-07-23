@@ -26,11 +26,13 @@ class _CollectionTypeSelectorState extends State<CollectionTypeSelector> {
   @override
   void initState() {
     super.initState();
+    debugPrint('[CollectionTypeSelector] initState() - 사용자 역할 로드 시작');
     _loadUserRole();
   }
 
   Future<void> _loadUserRole() async {
     if (currentUserReference != null) {
+      debugPrint('[CollectionTypeSelector] 사용자 문서 조회 중...');
       final userDoc = await currentUserReference!.get();
       final userData = userDoc.data() as Map<String, dynamic>?;
       
@@ -38,7 +40,11 @@ class _CollectionTypeSelectorState extends State<CollectionTypeSelector> {
         userRole = userData?['role'] as String?;
         isLoading = false;
       });
+      
+      debugPrint('[CollectionTypeSelector] 사용자 역할: $userRole');
+      debugPrint('[CollectionTypeSelector] 테스트 모드 표시 여부: ${userRole == 'admin' || userRole == 'tester'}');
     } else {
+      debugPrint('[CollectionTypeSelector] 현재 사용자 참조 없음');
       setState(() {
         isLoading = false;
       });
@@ -92,6 +98,9 @@ class _CollectionTypeSelectorState extends State<CollectionTypeSelector> {
                     typeInfo: typeInfo,
                     isSelected: isSelected,
                     onTap: () {
+                      debugPrint('[CollectionTypeSelector] 수집 방식 선택: ${typeInfo.id}');
+                      debugPrint('[CollectionTypeSelector]   - 제목: ${typeInfo.title}');
+                      debugPrint('[CollectionTypeSelector]   - 설명: ${typeInfo.subtitle}');
                       widget.onTypeSelected(typeInfo.id);
                     },
                   ),

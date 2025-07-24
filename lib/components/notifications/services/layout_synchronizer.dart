@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/versus_box_size_data.dart';
-import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
+import '../../../posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
 
 /// 질문 작성 페이지와 투표 알림 간 레이아웃 동기화 서비스
 /// 
@@ -9,6 +9,11 @@ import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
 class LayoutSynchronizer {
   
   /// 투표 알림에 최적화된 레이아웃으로 변환
+  /// 
+  /// AspectRatioAnalyzer와 동일한 스마트 레이아웃 규칙 적용:
+  /// - 가로 이미지들 → 세로 배치
+  /// - 세로 이미지들 → 가로 배치
+  /// - 혼합형 → 더 극단적인 비율 우선
   /// 
   /// [originalLayout] 원본 레이아웃 타입
   /// [containerWidth] 알림 컨테이너 너비
@@ -26,83 +31,98 @@ class LayoutSynchronizer {
   }) {
     
     // 1. 단일 이미지의 경우 원본 레이아웃 유지
-    final isSingleImage = hasImageA && !hasImageB;
+    final isSingleImage = (hasImageA && !hasImageB) || (!hasImageA && hasImageB);
     
-    // 2. 세로 배치 처리
-    if (originalLayout == LayoutType.vertical) {
-      // 단일 이미지는 세로 배치 유지 (비율 보존)
-      if (isSingleImage) {
-        return VotingLayoutConfig(
-          layoutType: LayoutType.vertical,
-          reason: 'Single image vertical layout preserved for aspect ratio',
-          conversionRules: [
-            'Single image maintains vertical layout',
-            'Aspect ratio preserved',
-            'Optimal for notification display',
-          ],
-        );
-      }
-      
-      // 두 개의 이미지 - 비율에 따라 최적 레이아웃 결정
-      // 가로형 이미지들은 세로 배치 유지 (더 크게 표시)
-      if (aspectRatioA != null && aspectRatioB != null && 
-          aspectRatioA > 1.3 && aspectRatioB > 1.3) {
-        return VotingLayoutConfig(
-          layoutType: LayoutType.vertical,
-          reason: 'Landscape images kept in vertical layout for better visibility',
-          conversionRules: [
-            'Both images are landscape oriented',
-            'Vertical layout provides larger display area',
-            'Aspect ratios preserved without cropping',
-          ],
-        );
-      }
-      
-      // 그 외의 경우 가로 배치로 변환
-      return VotingLayoutConfig(
-        layoutType: LayoutType.horizontal,
-        reason: 'Vertical to horizontal for balanced comparison',
-        conversionRules: [
-          'Mixed or portrait images work well side by side',
-          'Horizontal layout for fair comparison',
-          'Optimized for notification space',
-        ],
-      );
-    }
-    
-    // 2. 단일 이미지 → 세로 배치 유지 (비율 보존)
-    if (originalLayout == LayoutType.single) {
+    if (isSingleImage) {
       return VotingLayoutConfig(
         layoutType: LayoutType.vertical,
-        reason: 'Single image vertical layout for aspect ratio preservation',
+        reason: 'Single image vertical layout preserved for aspect ratio',
         conversionRules: [
           'Single image maintains vertical layout',
-          'Full width utilization for better visibility',
-          'Aspect ratio preserved without cropping',
+          'Aspect ratio preserved',
+          'Optimal for notification display',
         ],
       );
     }
     
-    // 3. 작은 화면에서 추가 최적화
-    if (containerWidth < 350) {
-      return _optimizeForSmallScreen(
-        originalLayout: originalLayout,
-        containerWidth: containerWidth,
-        aspectRatioA: aspectRatioA,
-        aspectRatioB: aspectRatioB,
-        hasImageA: hasImageA,
-        hasImageB: hasImageB,
+    // 2. 멀티 이미지인 경우 AspectRatioAnalyzer와 동일한 로직 사용
+    if (aspectRatioA != null && aspectRatioB != null) {
+      // 스마트 레이아웃 규칙 적용
+      final optimalLayout = AspectRatioAnalyzer.getOptimalLayout(aspectRatioA, aspectRatioB);
+      
+      // 이미지 방향 분석
+      final orientationA = AspectRatioAnalyzer.getOrientation(aspectRatioA);
+      final orientationB = AspectRatioAnalyzer.getOrientation(aspectRatioB);
+      
+      // 레이아웃 결정 이유 생성
+      String reason = '';
+      List<String> rules = [];
+      
+      // 둘 다 가로형 → 세로 배치
+      if (orientationA == ImageOrientation.landscape && 
+          orientationB == ImageOrientation.landscape) {
+        reason = 'Both landscape images - vertical layout for better visibility';
+        rules = [
+          'Both images are landscape oriented',
+          'Vertical layout provides larger display area',
+          'Smart layout rule: landscape images → vertical arrangement',
+        ];
+      }
+      // 둘 다 세로형 → 가로 배치
+      else if (orientationA == ImageOrientation.portrait && 
+               orientationB == ImageOrientation.portrait) {
+        reason = 'Both portrait images - horizontal layout for efficiency';
+        rules = [
+          'Both images are portrait oriented',
+          'Horizontal layout maximizes space usage',
+          'Smart layout rule: portrait images → horizontal arrangement',
+        ];
+      }
+      // 정사각형 + 가로형 → 세로 배치
+      else if ((orientationA == ImageOrientation.square && orientationB == ImageOrientation.landscape) ||
+               (orientationA == ImageOrientation.landscape && orientationB == ImageOrientation.square)) {
+        reason = 'Square + landscape mix - vertical layout preferred';
+        rules = [
+          'Mixed square and landscape images',
+          'Vertical layout accommodates different ratios',
+          'Smart layout rule: square + landscape → vertical arrangement',
+        ];
+      }
+      // 정사각형 + 세로형 → 가로 배치
+      else if ((orientationA == ImageOrientation.square && orientationB == ImageOrientation.portrait) ||
+               (orientationA == ImageOrientation.portrait && orientationB == ImageOrientation.square)) {
+        reason = 'Square + portrait mix - horizontal layout preferred';
+        rules = [
+          'Mixed square and portrait images',
+          'Horizontal layout balances different ratios',
+          'Smart layout rule: square + portrait → horizontal arrangement',
+        ];
+      }
+      // 혼합형 (가로 + 세로)
+      else {
+        reason = 'Mixed orientations - layout based on extreme ratios';
+        rules = [
+          'Mixed landscape and portrait images',
+          'Layout determined by more extreme ratio',
+          'Smart layout rule: mixed → extreme ratio priority',
+        ];
+      }
+      
+      return VotingLayoutConfig(
+        layoutType: optimalLayout,
+        reason: reason,
+        conversionRules: rules,
       );
     }
     
-    // 4. 가로 배치는 그대로 유지
+    // 3. 비율 정보가 없는 경우 원본 레이아웃 유지
     return VotingLayoutConfig(
-      layoutType: LayoutType.horizontal,
-      reason: 'Original horizontal layout preserved',
+      layoutType: originalLayout,
+      reason: 'Original layout preserved (no aspect ratio data)',
       conversionRules: [
-        'Horizontal layout maintained',
-        'Optimal for voting interaction',
-        'No conversion needed',
+        'No aspect ratio information available',
+        'Original layout maintained',
+        'Default behavior for unknown ratios',
       ],
     );
   }
@@ -164,9 +184,9 @@ class LayoutSynchronizer {
     // 세로 → 가로 변환
     if (originalLayout == LayoutType.vertical && targetLayout == LayoutType.horizontal) {
       return SizeAdjustmentFactor(
-        widthFactor: 0.8,  // 가로 80% 축소
-        heightFactor: 0.7, // 세로 70% 축소 (공간 절약)
-        reason: 'Vertical to horizontal conversion requires size reduction',
+        widthFactor: 0.9,  // 가로 90% (크기 유지)
+        heightFactor: 0.85, // 세로 85% (약간의 축소)
+        reason: 'Vertical to horizontal conversion with minimal size reduction',
       );
     }
     

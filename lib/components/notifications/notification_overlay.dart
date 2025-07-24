@@ -59,6 +59,8 @@ class NotificationOverlay {
     required String optionB,
     String? imageUrlA,
     String? imageUrlB,
+    String? descriptionA,
+    String? descriptionB,
     required Function(String option) onVote,
     VoidCallback? onDismiss,
     VersusBoxSizeData? sizeData,
@@ -75,6 +77,8 @@ class NotificationOverlay {
     debugPrint('[NotificationOverlay] 옵션 B: $optionB');
     debugPrint('[NotificationOverlay] 이미지 A: ${imageUrlA != null ? '있음' : '없음'}');
     debugPrint('[NotificationOverlay] 이미지 B: ${imageUrlB != null ? '있음' : '없음'}');
+    debugPrint('[NotificationOverlay] 설명 A: ${descriptionA != null ? '있음' : '없음'}');
+    debugPrint('[NotificationOverlay] 설명 B: ${descriptionB != null ? '있음' : '없음'}');
     debugPrint('[NotificationOverlay] 결과 표시: $showResults');
     debugPrint('[NotificationOverlay] 디버그 정보 표시: $showDebugInfo');
     
@@ -84,41 +88,49 @@ class NotificationOverlay {
       hide();
     }
 
-    _currentEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        top: MediaQuery.of(context).viewPadding.top + 10, // 상태바 아래
-        left: 0,
-        right: 0,
+    // showDialog를 사용하여 모달 다이얼로그로 표시
+    showDialog(
+      context: context,
+      barrierDismissible: false,  // 배경 터치로 닫기 방지
+      barrierColor: Colors.black54,  // 반투명 어두운 배경
+      builder: (BuildContext dialogContext) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: MediaQuery.of(context).size.width * 0.04,  // 좌우 4%씩 여백 = 92% 사용
+          vertical: 60.0
+        ),
+        alignment: Alignment.topCenter, // 상단 정렬로 변경 (GlobalNotificationManager와 동일)
         child: VotingNotificationDialog(
-          question: question,
-          optionA: optionA,
-          optionB: optionB,
-          imageUrlA: imageUrlA,
-          imageUrlB: imageUrlB,
-          onVote: (option) {
-            debugPrint('[NotificationOverlay] 사용자가 투표함: $option');
-            onVote(option);
-          },
-          onDismiss: () {
-            debugPrint('[NotificationOverlay] 사용자가 알림을 닫음 (X 버튼 또는 나중에)');
-            if (onDismiss != null) {
-              onDismiss();
-            } else {
-              hide();
-            }
-          },
-          sizeData: sizeData,
-          showResults: showResults,
-          votePercentageA: votePercentageA,
-          votePercentageB: votePercentageB,
-          voteCountA: voteCountA,
-          voteCountB: voteCountB,
-          showDebugInfo: showDebugInfo,
+            question: question,
+            optionA: optionA,
+            optionB: optionB,
+            imageUrlA: imageUrlA,
+            imageUrlB: imageUrlB,
+            descriptionA: descriptionA,
+            descriptionB: descriptionB,
+            onVote: (option) {
+              debugPrint('[NotificationOverlay] 사용자가 투표함: $option');
+              Navigator.of(dialogContext).pop(); // 다이얼로그 닫기
+              onVote(option);
+            },
+            onDismiss: () {
+              debugPrint('[NotificationOverlay] 사용자가 알림을 닫음 (X 버튼 또는 나중에)');
+              Navigator.of(dialogContext).pop(); // 다이얼로그 닫기
+              if (onDismiss != null) {
+                onDismiss();
+              }
+            },
+            sizeData: sizeData,
+            showResults: showResults,
+            votePercentageA: votePercentageA,
+            votePercentageB: votePercentageB,
+            voteCountA: voteCountA,
+            voteCountB: voteCountB,
+            showDebugInfo: showDebugInfo,
         ),
       ),
     );
-
-    Overlay.of(context).insert(_currentEntry!);
+    
     _lastShowTime = DateTime.now();
     debugPrint('[NotificationOverlay] ✅ 투표 알림 표시됨');
     debugPrint('[NotificationOverlay] ========== showVoting() 종료 ==========');

@@ -767,6 +767,9 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         'optionB': appState.uploadTextB,
         'imageUrlA': uploadedUrlsA.isNotEmpty ? uploadedUrlsA.first : null,
         'imageUrlB': uploadedUrlsB.isNotEmpty ? uploadedUrlsB.first : null,
+        // A/B 설명은 현재 questionDescription을 사용
+        'descriptionA': appState.questionDescription,
+        'descriptionB': appState.questionDescription,
         // 이미지 비율 정보 추가
         'aspectRatioA': appState.uploadImageAspectRatioA.isNotEmpty ? appState.uploadImageAspectRatioA.first : null,
         'aspectRatioB': appState.uploadImageAspectRatioB.isNotEmpty ? appState.uploadImageAspectRatioB.first : null,
@@ -860,6 +863,8 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           'optionB': postData['optionB'],
           'imageUrlA': postData['imageUrlA'],
           'imageUrlB': postData['imageUrlB'],
+          'descriptionA': postData['descriptionA'] ?? '',
+          'descriptionB': postData['descriptionB'] ?? '',
           'aspectRatioA': postData['aspectRatioA'],
           'aspectRatioB': postData['aspectRatioB'],
           'layoutType': postData['layoutType'],

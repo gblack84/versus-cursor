@@ -12,10 +12,10 @@ class VotingNotificationConstraints {
   static const double defaultNotificationPadding = 16.0;  // 기본 패딩
   static const double largeScreenPadding = 20.0;         // 큰 화면 패딩
   
-  // 박스 크기 제약 (대폭 상향 조정)
-  static const double maxBoxHeight = 500.0;      // 투표 알림에서 최대 박스 높이
-  static const double minBoxHeight = 100.0;      // 투표 알림에서 최소 박스 높이
-  static const double defaultBoxHeight = 300.0;  // 기본 박스 높이
+  // 박스 크기 제약 (화면 기반 동적 계산)
+  static const double maxBoxHeightRatio = 0.8;   // 화면 높이의 80%까지 허용
+  static const double minBoxHeight = 150.0;      // 투표 알림에서 최소 박스 높이 (상향)
+  static const double defaultBoxHeight = 350.0;  // 기본 박스 높이 (상향)
   
   // 박스 간 간격
   static const double boxSpacing = 8.0;         // A/B 박스 간 간격
@@ -101,13 +101,32 @@ class VotingNotificationConstraints {
     return screenWidth > largeScreenThreshold ? 12.0 : 8.0;
   }
   
+  /// 화면 높이에 따른 최대 박스 높이 계산
+  /// 
+  /// [screenHeight] 현재 화면 높이
+  /// 반환값: 화면 높이의 80%를 넘지 않는 최대 박스 높이
+  static double getMaxBoxHeight(double screenHeight) {
+    return screenHeight * maxBoxHeightRatio;
+  }
+  
+  /// 동적 알림 최대 높이 계산
+  /// 
+  /// [screenHeight] 현재 화면 높이
+  /// 반환값: 알림 전체가 차지할 수 있는 최대 높이
+  static double getMaxNotificationHeight(double screenHeight) {
+    // 상단 여백(상태바) + 하단 여백 고려
+    const double systemPadding = 100.0;
+    return (screenHeight - systemPadding) * maxBoxHeightRatio;
+  }
+  
   /// 박스 크기 제약 조건 확인
   /// 
   /// [proposedSize] 제안된 박스 크기
   /// [scaleFactor] 스케일링 팩터
   /// [maxWidth] 최대 허용 너비 (optional)
+  /// [screenHeight] 화면 높이 (동적 최대 높이 계산용)
   /// 반환값: 제약 조건을 만족하는 조정된 크기
-  static Size constrainBoxSize(Size proposedSize, double scaleFactor, {double? maxWidth}) {
+  static Size constrainBoxSize(Size proposedSize, double scaleFactor, {double? maxWidth, double? screenHeight}) {
     // 스케일링 적용
     final scaledWidth = proposedSize.width * scaleFactor;
     final scaledHeight = proposedSize.height * scaleFactor;
@@ -116,9 +135,12 @@ class VotingNotificationConstraints {
     double constrainedWidth = scaledWidth;
     double constrainedHeight = scaledHeight;
     
+    // 동적 최대 높이 계산
+    final maxHeight = screenHeight != null ? getMaxBoxHeight(screenHeight) : 500.0;
+    
     // 높이 제약 적용
-    if (scaledHeight > maxBoxHeight || scaledHeight < minBoxHeight) {
-      constrainedHeight = scaledHeight.clamp(minBoxHeight, maxBoxHeight);
+    if (scaledHeight > maxHeight || scaledHeight < minBoxHeight) {
+      constrainedHeight = scaledHeight.clamp(minBoxHeight, maxHeight);
       // 비율 유지하면서 너비 조정
       final aspectRatio = proposedSize.width / proposedSize.height;
       constrainedWidth = constrainedHeight * aspectRatio;
@@ -132,7 +154,7 @@ class VotingNotificationConstraints {
       constrainedHeight = constrainedWidth / aspectRatio;
       
       // 높이가 다시 제약을 벗어났는지 확인
-      constrainedHeight = constrainedHeight.clamp(minBoxHeight, maxBoxHeight);
+      constrainedHeight = constrainedHeight.clamp(minBoxHeight, maxHeight);
     }
     
     return Size(constrainedWidth, constrainedHeight);
@@ -195,7 +217,7 @@ class VotingNotificationConstraints {
     print('  Notification Width: ${notificationWidth.toStringAsFixed(1)}px');
     print('  Dynamic Padding: ${padding.toStringAsFixed(1)}px');
     print('  Box Spacing: ${spacing.toStringAsFixed(1)}px');
-    print('  Max Box Height: ${maxBoxHeight.toStringAsFixed(1)}px');
+    print('  Max Box Height Ratio: ${(maxBoxHeightRatio * 100).toStringAsFixed(0)}%');
     print('  Default Box Height: ${defaultBoxHeight.toStringAsFixed(1)}px');
   }
 }

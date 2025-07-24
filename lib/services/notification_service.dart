@@ -229,6 +229,8 @@ class NotificationService {
     debugPrint('[NotificationService]   - optionB: ${postData['optionB']}');
     debugPrint('[NotificationService]   - imageUrlA: ${postData['imageUrlA'] != null ? '있음' : '없음'}');
     debugPrint('[NotificationService]   - imageUrlB: ${postData['imageUrlB'] != null ? '있음' : '없음'}');
+    debugPrint('[NotificationService]   - descriptionA: ${postData['descriptionA'] != null ? '있음' : '없음'}');
+    debugPrint('[NotificationService]   - descriptionB: ${postData['descriptionB'] != null ? '있음' : '없음'}');
     
     // BuildContext 가져오기 (appNavigatorKey 사용)
     final context = appNavigatorKey.currentContext;
@@ -249,6 +251,8 @@ class NotificationService {
       optionB: postData['optionB'] ?? '',
       imageUrlA: postData['imageUrlA'],
       imageUrlB: postData['imageUrlB'],
+      descriptionA: postData['descriptionA'],
+      descriptionB: postData['descriptionB'],
       onVote: (option) {
         debugPrint('[NotificationService] 사용자가 투표함: $option');
         return _handleVote(

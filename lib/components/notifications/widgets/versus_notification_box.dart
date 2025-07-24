@@ -5,6 +5,7 @@ import '../models/versus_box_size_data.dart';
 import '../services/versus_box_size_calculator.dart';
 import '../constants/voting_notification_constraints.dart';
 import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
+import 'notification_image_viewer.dart';
 
 /// 투표 알림에서 사용되는 A/B 박스 컴포넌트
 /// 
@@ -58,6 +59,22 @@ class VersusNotificationBox extends StatelessWidget {
   
   /// 단일 이미지 모드 여부
   final bool isSingleImageMode;
+  
+  /// 설명 텍스트 (하단에 1줄로 표시)
+  final String? description;
+  
+  /// 이미지 뷰어 표시를 위한 전체 데이터
+  final String? question;
+  final String? otherOptionTitle;
+  final String? otherImageUrl;
+  final String? otherDescription;
+  
+  /// 멀티이미지 지원을 위한 데이터
+  final List<String>? imageUrls;
+  final List<String>? otherImageUrls;
+  
+  /// 이미지 탭 가능 여부
+  final bool enableImageTap;
 
   const VersusNotificationBox({
     Key? key,
@@ -77,6 +94,14 @@ class VersusNotificationBox extends StatelessWidget {
     this.showDebugInfo = false,
     this.dualModeSecondTitle,
     this.isSingleImageMode = false,
+    this.description,
+    this.question,
+    this.otherOptionTitle,
+    this.otherImageUrl,
+    this.otherDescription,
+    this.imageUrls,
+    this.otherImageUrls,
+    this.enableImageTap = true,
   }) : super(key: key);
 
   @override
@@ -104,7 +129,15 @@ class VersusNotificationBox extends StatelessWidget {
   /// 박스 컨테이너 위젯
   Widget _buildBoxContainer(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        // 이미지가 있고 이미지 탭이 활성화되어 있으면 이미지 뷰어 표시
+        if (enableImageTap && imageUrl != null && question != null) {
+          _showImageViewer(context);
+        } else if (onTap != null) {
+          // 일반 탭 핸들러 실행
+          onTap!();
+        }
+      },
       child: Container(
         width: boxSize.width,
         height: boxSize.height,
@@ -122,6 +155,10 @@ class VersusNotificationBox extends StatelessWidget {
             
             // 컨텐츠 (제목, 라벨 등)
             _buildContent(),
+            
+            // 멀티이미지 카운트 인디케이터
+            if (imageUrls != null && imageUrls!.length > 1) 
+              _buildMultiImageIndicator(),
             
             // 디버그 정보
             if (showDebugInfo) _buildDebugInfo(),
@@ -289,12 +326,34 @@ class VersusNotificationBox extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // A/B 라벨
-            if (showLabel) _buildLabel(),
+            if (showLabel) Flexible(
+              flex: 0,
+              child: _buildLabel(),
+            ),
             
             const Spacer(),
             
-            // 제목
-            _buildTitle(),
+            // 제목 및 설명 - Flexible로 감싸서 오버플로우 방지
+            Flexible(
+              fit: FlexFit.loose,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Flexible(
+                    fit: FlexFit.loose,
+                    child: _buildTitle(),
+                  ),
+                  if (description != null && description!.isNotEmpty) ...[
+                    const SizedBox(height: 4.0),
+                    Flexible(
+                      fit: FlexFit.loose,
+                      child: _buildDescription(),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -336,6 +395,26 @@ class VersusNotificationBox extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
         maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+  
+  /// 설명 (1줄만 표시)
+  Widget _buildDescription() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.7),
+        borderRadius: VersusRadius.radiusSmall,
+      ),
+      child: Text(
+        description!,
+        style: VersusTextStyles.bodySmall.copyWith(
+          color: Colors.white70,
+          fontSize: _getAdaptiveTextSize() * 0.8,
+        ),
+        maxLines: 2,  // 2줄로 확장하여 더 많은 내용 표시
         overflow: TextOverflow.ellipsis,
       ),
     );
@@ -387,6 +466,44 @@ class VersusNotificationBox extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+  
+  /// 멀티이미지 카운트 인디케이터
+  Widget _buildMultiImageIndicator() {
+    final imageCount = imageUrls?.length ?? 0;
+    if (imageCount <= 1) return const SizedBox.shrink();
+    
+    return Positioned(
+      top: 8,
+      right: 8,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.8),
+          borderRadius: BorderRadius.circular(12.0),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.photo_library,
+              size: 12,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 2),
+            Text(
+              '$imageCount',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -527,6 +644,64 @@ class VersusNotificationBox extends StatelessWidget {
       baseTextSize: VotingNotificationConstraints.defaultTextSize,
     );
   }
+  
+  /// 이미지 뷰어 표시 (멀티이미지 지원)
+  void _showImageViewer(BuildContext context) {
+    if (question == null) return;
+    
+    // 멀티이미지 데이터 준비
+    final effectiveImageUrlsA = _getEffectiveImageUrls('A');
+    final effectiveImageUrlsB = _getEffectiveImageUrls('B');
+    
+    // 초기 인덱스 계산 (A박스의 모든 이미지 → B박스의 모든 이미지 순서)
+    int initialIndex = 0;
+    if (boxType == 'B') {
+      // B박스를 탭했다면 A박스 이미지들을 건너뛰고 B박스 첫 번째 이미지로 이동
+      initialIndex = effectiveImageUrlsA.length;
+    }
+    
+    NotificationImageViewer.show(
+      context,
+      question: question!,
+      optionA: boxType == 'A' ? title : (otherOptionTitle ?? ''),
+      optionB: boxType == 'B' ? title : (otherOptionTitle ?? ''),
+      // 단일 이미지 호환성
+      imageUrlA: effectiveImageUrlsA.isNotEmpty ? effectiveImageUrlsA.first : null,
+      imageUrlB: effectiveImageUrlsB.isNotEmpty ? effectiveImageUrlsB.first : null,
+      // 멀티이미지 지원
+      imageUrlsA: effectiveImageUrlsA.isNotEmpty ? effectiveImageUrlsA : null,
+      imageUrlsB: effectiveImageUrlsB.isNotEmpty ? effectiveImageUrlsB : null,
+      descriptionA: boxType == 'A' ? description : otherDescription,
+      descriptionB: boxType == 'B' ? description : otherDescription,
+      initialIndex: initialIndex,
+    );
+  }
+  
+  /// 박스별 효과적인 이미지 URL 리스트 반환
+  /// 
+  /// 멀티이미지가 있으면 우선 사용, 없으면 단일 이미지 사용
+  List<String> _getEffectiveImageUrls(String boxType) {
+    if (boxType == 'A') {
+      // 현재 박스(A)의 멀티이미지 우선
+      if (imageUrls != null && imageUrls!.isNotEmpty) {
+        return imageUrls!;
+      }
+      // 단일 이미지 사용
+      if (imageUrl != null) {
+        return [imageUrl!];
+      }
+    } else if (boxType == 'B') {
+      // 다른 박스(B)의 멀티이미지 우선
+      if (otherImageUrls != null && otherImageUrls!.isNotEmpty) {
+        return otherImageUrls!;
+      }
+      // 단일 이미지 사용
+      if (otherImageUrl != null) {
+        return [otherImageUrl!];
+      }
+    }
+    return [];
+  }
 }
 
 /// 투표 알림 박스 빌더
@@ -540,6 +715,7 @@ class VersusNotificationBoxBuilder {
     required String boxType,
     required String title,
     String? imageUrl,
+    String? description,
     VoidCallback? onTap,
     bool isSelected = false,
     bool showResult = false,
@@ -547,6 +723,16 @@ class VersusNotificationBoxBuilder {
     int? voteCount,
     AnimationController? animationController,
     bool showDebugInfo = false,
+    // 멀티이미지 지원 파라미터 추가
+    List<String>? imageUrls,
+    List<String>? otherImageUrls,
+    String? question,
+    String? otherOptionTitle,
+    String? otherImageUrl,
+    String? otherDescription,
+    bool isSingleImageMode = false,
+    String? dualModeSecondTitle,
+    bool enableImageTap = true,
   }) {
     // 투표용 크기 계산
     final votingSizes = VersusBoxSizeCalculator.calculateVotingSize(
@@ -562,6 +748,7 @@ class VersusNotificationBoxBuilder {
       boxSize: boxSize,
       title: title,
       imageUrl: imageUrl,
+      description: description,
       onTap: onTap,
       isSelected: isSelected,
       showResult: showResult,
@@ -569,6 +756,16 @@ class VersusNotificationBoxBuilder {
       voteCount: voteCount,
       animationController: animationController,
       showDebugInfo: showDebugInfo,
+      // 멀티이미지 지원 파라미터 전달
+      imageUrls: imageUrls,
+      otherImageUrls: otherImageUrls,
+      question: question,
+      otherOptionTitle: otherOptionTitle,
+      otherImageUrl: otherImageUrl,
+      otherDescription: otherDescription,
+      isSingleImageMode: isSingleImageMode,
+      dualModeSecondTitle: dualModeSecondTitle,
+      enableImageTap: enableImageTap,
     );
   }
   
@@ -580,6 +777,8 @@ class VersusNotificationBoxBuilder {
     required String titleB,
     String? imageUrlA,
     String? imageUrlB,
+    String? descriptionA,
+    String? descriptionB,
     VoidCallback? onTapA,
     VoidCallback? onTapB,
     String? selectedBox,
@@ -590,6 +789,11 @@ class VersusNotificationBoxBuilder {
     int? voteCountB,
     AnimationController? animationController,
     bool showDebugInfo = false,
+    // 멀티이미지 지원 파라미터 추가
+    List<String>? imageUrlsA,
+    List<String>? imageUrlsB,
+    String? question,
+    bool enableImageTap = true,
   }) {
     // 투표용 크기 계산
     final votingSizes = VersusBoxSizeCalculator.calculateVotingSize(
@@ -608,6 +812,7 @@ class VersusNotificationBoxBuilder {
             boxType: 'A',
             title: titleA,
             imageUrl: imageUrlA,
+            description: descriptionA,
             onTap: onTapA,
             isSelected: selectedBox == 'A',
             showResult: showResults,
@@ -615,6 +820,14 @@ class VersusNotificationBoxBuilder {
             voteCount: voteCountA,
             animationController: animationController,
             showDebugInfo: showDebugInfo,
+            // 멀티이미지 지원 파라미터 전달
+            imageUrls: imageUrlsA,
+            otherImageUrls: imageUrlsB,
+            question: question,
+            otherOptionTitle: titleB,
+            otherImageUrl: imageUrlB,
+            otherDescription: descriptionB,
+            enableImageTap: enableImageTap,
           ),
           SizedBox(width: votingSizes.spacing?.horizontal ?? 8.0),
           buildFromSizeData(
@@ -623,6 +836,7 @@ class VersusNotificationBoxBuilder {
             boxType: 'B',
             title: titleB,
             imageUrl: imageUrlB,
+            description: descriptionB,
             onTap: onTapB,
             isSelected: selectedBox == 'B',
             showResult: showResults,
@@ -630,6 +844,14 @@ class VersusNotificationBoxBuilder {
             voteCount: voteCountB,
             animationController: animationController,
             showDebugInfo: showDebugInfo,
+            // 멀티이미지 지원 파라미터 전달
+            imageUrls: imageUrlsB,
+            otherImageUrls: imageUrlsA,
+            question: question,
+            otherOptionTitle: titleA,
+            otherImageUrl: imageUrlA,
+            otherDescription: descriptionA,
+            enableImageTap: enableImageTap,
           ),
         ],
       );
@@ -643,6 +865,7 @@ class VersusNotificationBoxBuilder {
             boxType: 'A',
             title: titleA,
             imageUrl: imageUrlA,
+            description: descriptionA,
             onTap: onTapA,
             isSelected: selectedBox == 'A',
             showResult: showResults,
@@ -650,6 +873,14 @@ class VersusNotificationBoxBuilder {
             voteCount: voteCountA,
             animationController: animationController,
             showDebugInfo: showDebugInfo,
+            // 멀티이미지 지원 파라미터 전달
+            imageUrls: imageUrlsA,
+            otherImageUrls: imageUrlsB,
+            question: question,
+            otherOptionTitle: titleB,
+            otherImageUrl: imageUrlB,
+            otherDescription: descriptionB,
+            enableImageTap: enableImageTap,
           ),
           SizedBox(height: votingSizes.spacing?.vertical ?? 12.0),
           buildFromSizeData(
@@ -658,6 +889,7 @@ class VersusNotificationBoxBuilder {
             boxType: 'B',
             title: titleB,
             imageUrl: imageUrlB,
+            description: descriptionB,
             onTap: onTapB,
             isSelected: selectedBox == 'B',
             showResult: showResults,
@@ -665,6 +897,14 @@ class VersusNotificationBoxBuilder {
             voteCount: voteCountB,
             animationController: animationController,
             showDebugInfo: showDebugInfo,
+            // 멀티이미지 지원 파라미터 전달
+            imageUrls: imageUrlsB,
+            otherImageUrls: imageUrlsA,
+            question: question,
+            otherOptionTitle: titleA,
+            otherImageUrl: imageUrlA,
+            otherDescription: descriptionA,
+            enableImageTap: enableImageTap,
           ),
         ],
       );

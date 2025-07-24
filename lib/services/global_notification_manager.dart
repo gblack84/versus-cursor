@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:bot_toast/bot_toast.dart';
 import '/backend/backend.dart';
 import '/components/notifications/voting_notification_dialog.dart';
 import '/components/notifications/models/versus_box_size_data.dart';
@@ -123,6 +122,10 @@ class GlobalNotificationManager {
       String optionB = '';
       String? imageUrlA;
       String? imageUrlB;
+      List<String>? imageUrlsA;
+      List<String>? imageUrlsB;
+      String? descriptionA;
+      String? descriptionB;
       double? aspectRatioA;
       double? aspectRatioB;
       String? layoutType;
@@ -140,6 +143,8 @@ class GlobalNotificationManager {
             optionB = postData['optionB'] ?? '';
             imageUrlA = postData['imageUrlA'];
             imageUrlB = postData['imageUrlB'];
+            descriptionA = postData['descriptionA'];
+            descriptionB = postData['descriptionB'];
             aspectRatioA = postData['aspectRatioA']?.toDouble();
             aspectRatioB = postData['aspectRatioB']?.toDouble();
             layoutType = postData['layoutType'];
@@ -149,6 +154,8 @@ class GlobalNotificationManager {
             debugPrint('[GlobalNotificationManager]   - question: $question');
             debugPrint('[GlobalNotificationManager]   - optionA: $optionA');
             debugPrint('[GlobalNotificationManager]   - optionB: $optionB');
+            debugPrint('[GlobalNotificationManager]   - descriptionA: $descriptionA');
+            debugPrint('[GlobalNotificationManager]   - descriptionB: $descriptionB');
             debugPrint('[GlobalNotificationManager]   - aspectRatioA: $aspectRatioA');
             debugPrint('[GlobalNotificationManager]   - aspectRatioB: $aspectRatioB');
             debugPrint('[GlobalNotificationManager]   - layoutType: $layoutType');
@@ -177,12 +184,18 @@ class GlobalNotificationManager {
         // 실제 게시물 데이터 사용
         question = postData['questionTitle'] ?? postData['question_title'] ?? '';
         
+        // descriptionA와 descriptionB 추출
+        descriptionA = postData['descriptionA'] ?? '';
+        descriptionB = postData['descriptionB'] ?? '';
+        
         // optionA와 optionB는 객체 형태로 저장됨
         if (postData['optionA'] is Map) {
           final optionAData = postData['optionA'] as Map<String, dynamic>;
           optionA = optionAData['title'] ?? '';
           if (optionAData['mediaUrls'] is List && (optionAData['mediaUrls'] as List).isNotEmpty) {
-            imageUrlA = (optionAData['mediaUrls'] as List).first;
+            final mediaList = (optionAData['mediaUrls'] as List).cast<String>();
+            imageUrlsA = mediaList;
+            imageUrlA = mediaList.first; // 기존 호환성
           }
         } else {
           optionA = postData['option_a'] ?? postData['text_a'] ?? '';
@@ -192,7 +205,9 @@ class GlobalNotificationManager {
           final optionBData = postData['optionB'] as Map<String, dynamic>;
           optionB = optionBData['title'] ?? '';
           if (optionBData['mediaUrls'] is List && (optionBData['mediaUrls'] as List).isNotEmpty) {
-            imageUrlB = (optionBData['mediaUrls'] as List).first;
+            final mediaList = (optionBData['mediaUrls'] as List).cast<String>();
+            imageUrlsB = mediaList;
+            imageUrlB = mediaList.first; // 기존 호환성
           }
         } else {
           optionB = postData['option_b'] ?? postData['text_b'] ?? '';
@@ -203,8 +218,8 @@ class GlobalNotificationManager {
       debugPrint('  - 질문: $question');
       debugPrint('  - 옵션A: $optionA');
       debugPrint('  - 옵션B: $optionB');
-      debugPrint('  - 이미지A: ${imageUrlA != null ? "있음" : "없음"}');
-      debugPrint('  - 이미지B: ${imageUrlB != null ? "있음" : "없음"}');
+      debugPrint('  - 이미지A: ${imageUrlA != null ? "있음" : "없음"} (멀티: ${imageUrlsA?.length ?? 0}개)');
+      debugPrint('  - 이미지B: ${imageUrlB != null ? "있음" : "없음"} (멀티: ${imageUrlsB?.length ?? 0}개)');
       
       // VersusBoxSizeData 생성 (비율 정보가 있는 경우)
       VersusBoxSizeData? sizeData;
@@ -219,8 +234,10 @@ class GlobalNotificationManager {
             );
           }
           
-          // 기본 박스 크기 (알림용 작은 크기)
-          const baseSize = Size(150, 150);
+          // 기본 박스 크기 (화면 크기에 따라 동적으로 설정) - 더 크게 설정
+          final screenWidth = MediaQuery.of(context).size.width;
+          final screenHeight = MediaQuery.of(context).size.height;
+          final baseSize = Size(screenWidth * 0.7, screenHeight * 0.5);
           
           sizeData = VersusBoxSizeData(
             layoutType: parsedLayoutType,
@@ -244,67 +261,74 @@ class GlobalNotificationManager {
       }
       
       // SafeArea 계산
-      final safeAreaTop = MediaQuery.of(context).padding.top;
       final screenWidth = MediaQuery.of(context).size.width;
       
       // 크기 제약 디버그 출력
       VotingNotificationConstraints.printConstraints(screenWidth);
       
-      // BotToast를 사용하여 알림 표시
-      BotToast.showAttachedWidget(
-        target: Offset(screenWidth / 2, safeAreaTop + 20),  // SafeArea 고려
-        enableSafeArea: true,
-        onlyOne: true,     // 중복 알림 방지
-        ignoreContentClick: false,  // 다이얼로그 내용은 클릭 가능
-        attachedBuilder: (_) => Material(
-          color: Colors.transparent,
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            child: VotingNotificationDialog(
-              question: question,
-              optionA: optionA,
-              optionB: optionB,
-              imageUrlA: imageUrlA,
-              imageUrlB: imageUrlB,
-              sizeData: sizeData,  // 사이즈 데이터 전달
-              showDebugInfo: false,  // 디버그 정보 비활성화
-              onVote: (selectedOption) async {
-                debugPrint('[GlobalNotificationManager] 투표 완료: $selectedOption');
-                
-                // 알림을 읽음으로 표시
-                await _markAsRead(notification);
-                
-                // TODO: 실제 투표 로직 구현
-                // await _submitVote(notification.sourceId, selectedOption);
-                
-                _isShowingNotification = false;
-                _currentNotification = null;
-                
-                // BotToast 닫기
-                BotToast.cleanAll();
-                
-                // 다음 알림 처리
-                _processQueue();
-              },
-              onDismiss: () {
-                debugPrint('[GlobalNotificationManager] 알림 닫힘');
-                _isShowingNotification = false;
-                _currentNotification = null;
-                
-                // BotToast 닫기
-                BotToast.cleanAll();
-                
-                // 다음 알림 처리
-                Future.delayed(const Duration(milliseconds: 500), () {
-                  _processQueue();
-                });
-              },
+      // 표준 showDialog를 사용하여 알림 표시 (Navigator context 문제 해결)
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        barrierColor: Colors.black54,  // 검은색 반투명 배경
+        builder: (BuildContext dialogContext) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.of(context).size.width * 0.04,  // 좌우 4%씩 여백 = 92% 사용
+              vertical: 60.0
             ),
-          ),
-        ),
-        duration: null, // 수동으로 닫을 때까지 유지
-        animationDuration: const Duration(milliseconds: 300),
-        animationReverseDuration: const Duration(milliseconds: 300),
+            alignment: Alignment.topCenter,
+            child: VotingNotificationDialog(
+                question: question,
+                optionA: optionA,
+                optionB: optionB,
+                imageUrlA: imageUrlA,
+                imageUrlB: imageUrlB,
+                imageUrlsA: imageUrlsA, // 멀티이미지 지원
+                imageUrlsB: imageUrlsB, // 멀티이미지 지원
+                descriptionA: descriptionA,
+                descriptionB: descriptionB,
+                sizeData: sizeData,  // 사이즈 데이터 전달
+                showDebugInfo: false,  // 디버그 정보 비활성화
+                onVote: (selectedOption) async {
+                  debugPrint('[GlobalNotificationManager] 투표 완료: $selectedOption');
+                  
+                  // 알림을 읽음으로 표시
+                  await _markAsRead(notification);
+                  
+                  // TODO: 실제 투표 로직 구현
+                  // await _submitVote(notification.sourceId, selectedOption);
+                  
+                  _isShowingNotification = false;
+                  _currentNotification = null;
+                  
+                  // 다이얼로그 닫기
+                  if (dialogContext.mounted) {
+                    Navigator.of(dialogContext).pop();
+                  }
+                  
+                  // 다음 알림 처리
+                  _processQueue();
+                },
+                onDismiss: () {
+                  debugPrint('[GlobalNotificationManager] 알림 닫힘');
+                  _isShowingNotification = false;
+                  _currentNotification = null;
+                  
+                  // 다이얼로그 닫기
+                  if (dialogContext.mounted) {
+                    Navigator.of(dialogContext).pop();
+                  }
+                  
+                  // 다음 알림 처리
+                  Future.delayed(const Duration(milliseconds: 500), () {
+                    _processQueue();
+                  });
+                },
+              ),
+            );
+        },
       );
     } catch (e) {
       debugPrint('[GlobalNotificationManager] ❌ 알림 표시 오류: $e');

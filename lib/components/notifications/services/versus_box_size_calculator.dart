@@ -138,8 +138,8 @@ class VersusBoxSizeCalculator {
         // 단일 이미지는 전체 높이와 너비 사용 (더 큰 이미지 표시)
         sizeA = _calculateOptimizedBoxSize(
           originalSize: sizeData.originalSizeA,
-          containerWidth: containerWidth * 0.85,  // 85% 너비 사용
-          containerHeight: containerHeight * 0.75,  // 75% 높이 사용
+          containerWidth: containerWidth * 0.9,  // 90% 너비 사용 (증가)
+          containerHeight: containerHeight * 0.85,  // 85% 높이 사용 (증가)
           scaleFactor: scaleFactor,
           sizeAdjustment: sizeAdjustment,
           aspectRatio: sizeData.aspectRatioA,
@@ -292,30 +292,40 @@ class VersusBoxSizeCalculator {
     required SizeAdjustmentFactor sizeAdjustment,
     double? aspectRatio,
   }) {
+    // 🚨 안전장치: 비정상적으로 큰 값들을 제한
+    const double maxSafeWidth = 2000.0;  // 최대 너비 2000px
+    const double maxSafeHeight = 2000.0; // 최대 높이 2000px
+    
+    final safeContainerWidth = math.min(containerWidth, maxSafeWidth);
+    final safeContainerHeight = math.min(containerHeight, maxSafeHeight);
+    final safeScaleFactor = math.min(scaleFactor, 3.0); // 최대 3배 확대
+    
+    print('[SAFE] Container 크기 제한: ${containerWidth.toStringAsFixed(1)} → ${safeContainerWidth.toStringAsFixed(1)}');
+    
     Size calculatedSize;
     
     // 1. 이미지 비율이 있으면 비율 기준으로 계산
     if (aspectRatio != null) {
       // 컨테이너에 맞는 최대 크기 계산
-      double width = containerWidth;
+      double width = safeContainerWidth;
       double height = width / aspectRatio;
       
       // 높이가 컨테이너를 초과하면 높이 기준으로 재계산
-      if (height > containerHeight) {
-        height = containerHeight;
+      if (height > safeContainerHeight) {
+        height = safeContainerHeight;
         width = height * aspectRatio;
       }
       
       // 너비가 컨테이너를 초과하면 너비 기준으로 재계산
-      if (width > containerWidth) {
-        width = containerWidth;
+      if (width > safeContainerWidth) {
+        width = safeContainerWidth;
         height = width / aspectRatio;
       }
       
       calculatedSize = Size(width, height);
     } else {
       // 비율이 없으면 원본 크기 기준으로 스케일링
-      final targetSize = Size(containerWidth, containerHeight);
+      final targetSize = Size(safeContainerWidth, safeContainerHeight);
       calculatedSize = scaleToFit(originalSize, targetSize);
     }
     
@@ -324,11 +334,18 @@ class VersusBoxSizeCalculator {
     
     // 3. 화면 크기에 따른 스케일링 팩터 적용
     calculatedSize = Size(
-      calculatedSize.width * scaleFactor,
-      calculatedSize.height * scaleFactor,
+      calculatedSize.width * safeScaleFactor,
+      calculatedSize.height * safeScaleFactor,
     );
     
-    return calculatedSize;
+    // 🚨 최종 안전장치: 계산된 크기가 여전히 너무 크면 강제로 제한
+    final finalWidth = math.min(calculatedSize.width, maxSafeWidth);
+    final finalHeight = math.min(calculatedSize.height, maxSafeHeight);
+    
+    final finalSize = Size(finalWidth, finalHeight);
+    print('[SAFE] 최종 크기: ${calculatedSize.width.toStringAsFixed(1)} x ${calculatedSize.height.toStringAsFixed(1)} → ${finalSize.width.toStringAsFixed(1)} x ${finalSize.height.toStringAsFixed(1)}');
+    
+    return finalSize;
   }
 
   /// 가로 배치 전용 박스 크기 계산
@@ -344,16 +361,21 @@ class VersusBoxSizeCalculator {
     required SizeAdjustmentFactor sizeAdjustment,
     required bool hasImageB,
   }) {
-    // 1. 박스 너비 계산
-    final availableWidth = containerWidth - spacing;
+    // 1. 동적 간격 계산 (컨테이너의 1%, 최소 4px)
+    final dynamicSpacing = hasImageB 
+        ? math.max(containerWidth * 0.01, 4.0)  // 두 개일 때만 간격 필요
+        : 0.0;  // 단일 이미지는 간격 불필요
     
-    // 단일 이미지는 70%, 두 개 이미지는 각각 48% 사용 (간격 포함 96%)
+    // 2. 박스 너비 계산
+    final availableWidth = containerWidth - dynamicSpacing;
+    
+    // 단일 이미지는 80%, 두 개 이미지는 각각 49.5% 사용 (간격 포함 99%)
     final boxWidth = hasImageB 
-        ? availableWidth * 0.48  // 두 개일 때는 48%씩 (더 크게)
-        : availableWidth * 0.7;  // 단일 이미지는 70% 사용
+        ? availableWidth * 0.495  // 두 개일 때는 49.5%씩 (최대한 크게)
+        : containerWidth * 0.8;  // 단일 이미지는 80% 사용 (증가)
     
     // 2. 평균 높이 계산
-    final maxBoxHeight = containerHeight * 0.8; // 가로 배치에서는 높이를 화면의 80%까지 사용
+    final maxBoxHeight = containerHeight * 0.9; // 가로 배치에서는 높이를 화면의 90%까지 사용 (증가)
     double unifiedHeight;
     
     if (aspectRatioA != null && aspectRatioB != null && hasImageB) {
@@ -380,9 +402,14 @@ class VersusBoxSizeCalculator {
     // 3. 높이 제한 적용
     unifiedHeight = unifiedHeight.clamp(150.0, maxBoxHeight);
     
-    // 4. 크기 조정 팩터 적용
-    Size sizeA = Size(boxWidth, unifiedHeight);
-    Size sizeB = hasImageB ? Size(boxWidth, unifiedHeight) : Size.zero;
+    // 4. 실제 사용할 간격으로 크기 재계산 (동적 간격 적용)
+    final actualBoxWidth = hasImageB 
+        ? (containerWidth - dynamicSpacing) * 0.495
+        : containerWidth * 0.8;
+    
+    // 5. 크기 조정 팩터 적용
+    Size sizeA = Size(actualBoxWidth, unifiedHeight);
+    Size sizeB = hasImageB ? Size(actualBoxWidth, unifiedHeight) : Size.zero;
     
     sizeA = sizeAdjustment.apply(sizeA);
     if (hasImageB) {
@@ -402,11 +429,13 @@ class VersusBoxSizeCalculator {
     }
     
     print('[VersusBoxSizeCalculator] 가로 배치 통일된 크기 계산:');
-    print('  - 통일 너비: ${boxWidth.toStringAsFixed(1)}px');
+    print('  - 동적 간격: ${dynamicSpacing.toStringAsFixed(1)}px');
+    print('  - 박스 너비: ${actualBoxWidth.toStringAsFixed(1)}px (${hasImageB ? "49.5%" : "80%"})');
     print('  - 통일 높이: ${unifiedHeight.toStringAsFixed(1)}px');
     print('  - A박스 최종: ${sizeA.width.toStringAsFixed(1)} x ${sizeA.height.toStringAsFixed(1)}');
     if (hasImageB) {
       print('  - B박스 최종: ${sizeB.width.toStringAsFixed(1)} x ${sizeB.height.toStringAsFixed(1)}');
+      print('  - 총 사용률: ${((sizeA.width * 2 + dynamicSpacing) / containerWidth * 100).toStringAsFixed(1)}%');
       print('  - 크기 일치: ${(sizeA.width - sizeB.width).abs() < 1.0 && (sizeA.height - sizeB.height).abs() < 1.0 ? "✅" : "❌"}');
     }
     
@@ -434,7 +463,7 @@ class VersusBoxSizeCalculator {
     
     // 3. 전체 높이가 컨테이너를 초과하는지 확인
     final totalRequiredHeight = heightA + heightB + spacing;
-    final maxAvailableHeight = containerHeight * 0.78;
+    final maxAvailableHeight = containerHeight * 0.88; // 88%로 증가
     
     // 4. 필요시 전체 스케일링 적용
     if (totalRequiredHeight > maxAvailableHeight) {

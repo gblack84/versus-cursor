@@ -12,12 +12,24 @@
 - 세로 배치 → 가로 배치 (공간 절약)
 - 단일 이미지 → A + 빈 B박스
 - 화면 크기별 최적화
+- **박스 크기 통일**: 가로/세로 배치 시 평균 크기 사용으로 일관성 확보
 
 ### 3. 적응형 크기 조정
 다양한 화면 크기에서 일관된 사용자 경험을 제공합니다:
 - 큰 화면 (>400px): 90% 스케일링
 - 중간 화면 (350-400px): 80% 스케일링  
 - 작은 화면 (<350px): 70% 스케일링
+
+### 4. 멀티이미지 지원 (새로운 기능)
+- 각 박스에 여러 개의 이미지 표시 가능
+- PageView를 통한 이미지 탐색
+- 이미지 뷰어로 전체화면 보기 지원
+
+### 5. 향상된 UX (새로운 기능)
+- **모달 다이얼로그 전환**: 검은색 반투명 배경으로 몰입도 향상
+- **92% 화면 너비 사용**: 적절한 여백으로 가독성 개선
+- **30초 자동 닫기 제거**: 사용자가 직접 선택할 때까지 대기
+- **배경 터치 방지**: 실수로 닫히지 않도록 보호
 
 ## 📁 파일 구조
 
@@ -26,18 +38,19 @@ lib/components/notifications/
 ├── models/
 │   └── versus_box_size_data.dart          # 사이즈 데이터 모델
 ├── services/
-│   ├── versus_box_size_calculator.dart    # 크기 계산 서비스
+│   ├── versus_box_size_calculator.dart    # 크기 계산 서비스 (박스 크기 평균화 포함)
 │   └── layout_synchronizer.dart           # 레이아웃 동기화
 ├── widgets/
-│   └── versus_notification_box.dart       # 투표 박스 컴포넌트
+│   ├── versus_notification_box.dart       # 투표 박스 컴포넌트
+│   └── notification_image_viewer.dart     # 멀티이미지 뷰어 (새로운 파일)
 ├── constants/
 │   └── voting_notification_constraints.dart # 크기 제약 조건
 ├── utils/
 │   └── adaptive_text_size.dart            # 적응형 텍스트 크기
 ├── examples/
 │   └── voting_system_example.dart         # 사용 예제
-├── voting_notification_dialog.dart        # 투표 알림 다이얼로그
-├── notification_overlay.dart              # 알림 오버레이
+├── voting_notification_dialog.dart        # 투표 알림 다이얼로그 (모달 UI 업데이트)
+├── notification_overlay.dart              # 알림 오버레이 (showDialog 사용)
 └── README.md                              # 이 문서
 ```
 
@@ -62,6 +75,31 @@ NotificationOverlay.showVoting(
   imageUrlA: 'https://example.com/image_a.jpg',
   imageUrlB: 'https://example.com/image_b.jpg',
   sizeData: sizeData, // 👈 캡처된 사이즈 데이터
+  onVote: (option) {
+    print('투표: $option');
+  },
+);
+```
+
+### 1-1. 멀티이미지 사용법 (새로운 기능)
+
+```dart
+// 멀티이미지 투표 알림 표시
+NotificationOverlay.showVoting(
+  context,
+  question: '어떤 스타일이 더 좋나요?',
+  optionA: '스타일 A',
+  optionB: '스타일 B',
+  imageUrlsA: [ // 👈 멀티이미지 A
+    'https://example.com/style_a_1.jpg',
+    'https://example.com/style_a_2.jpg',
+    'https://example.com/style_a_3.jpg',
+  ],
+  imageUrlsB: [ // 👈 멀티이미지 B
+    'https://example.com/style_b_1.jpg',
+    'https://example.com/style_b_2.jpg',
+  ],
+  sizeData: sizeData,
   onVote: (option) {
     print('투표: $option');
   },
@@ -372,6 +410,7 @@ NotificationOverlay.showVoting(context, question: '질문', optionA: 'A', option
 
 ---
 
-**버전**: 1.0.0  
-**최종 업데이트**: 2025-07-19  
+**버전**: 1.1.0  
+**최종 업데이트**: 2025-07-23  
 **작성자**: SuperClaude Framework
+**변경사항**: 멀티이미지 지원, 박스 크기 평균화, 모달 UI 개선

@@ -856,6 +856,37 @@ This project represents a sophisticated social media application with a unique "
   - 백엔드 다이어그램 업데이트
 - **커밋**: a1fea4f9
 
+### 2025-07-23: 알림 시스템 UX 개선 및 멀티이미지 지원
+- **박스 크기 통일 구현**:
+  - 세로 배치: 통일된 너비 사용 (85% of container)
+  - 가로 배치: 평균 높이 사용으로 일관성 확보
+  - VersusBoxSizeCalculator 서비스 개선
+- **멀티이미지 지원 추가**:
+  - imageUrlsA/B 배열 속성 추가
+  - PageView를 통한 이미지 탐색 기능
+  - NotificationImageViewer 위젯 구현
+  - 전체화면 이미지 보기 지원
+- **알림 UX 대규모 개선**:
+  - Overlay → showDialog 모달 전환
+  - 검은색 반투명 배경 (Colors.black54)
+  - 92% 화면 너비 사용 (좌우 4% 여백)
+  - 30초 자동 닫기 제거
+  - 배경 터치 방지 (barrierDismissible: false)
+- **GlobalNotificationManager 구현**:
+  - 알림 큐 관리 시스템
+  - 순차적 알림 표시
+  - NotificationService와 완벽한 연동
+  - 사용자 반응 추적 지원
+- **빌드 에러 수정**:
+  - voting_notification_dialog.dart 들여쓰기 문제 해결
+  - 중복 닫는 괄호 제거
+- **결과**:
+  - 일관된 박스 크기로 깔끔한 UI
+  - 풍부한 멀티미디어 경험 제공
+  - 몰입도 높은 모달 UI
+  - 안정적인 알림 표시 시스템
+- **커밋**: 87d6d739
+
 ### 향후 개선 가능 사항
 
 #### 기존 이미지 기능 개선

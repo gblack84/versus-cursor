@@ -205,6 +205,12 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
               ParamType.String,
             ),
           ),
+        ),
+        AppRoute(
+          name: NotificationsListWidget.routeName,
+          path: NotificationsListWidget.routePath,
+          requireAuth: true,
+          builder: (context, params) => NotificationsListWidget(),
         )
       ].map((r) => r.toRoute(appStateNotifier)).toList(),
       observers: [routeObserver, BotToastNavigatorObserver()],

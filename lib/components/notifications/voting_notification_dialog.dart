@@ -108,7 +108,7 @@ class VotingNotificationDialog extends StatefulWidget {
 }
 
 class _VotingNotificationDialogState extends State<VotingNotificationDialog>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
@@ -172,6 +172,13 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
 
   @override
   Widget build(BuildContext context) {
+    // 멀티이미지 데이터 디버그
+    print('[VotingNotificationDialog] ===== 멀티이미지 데이터 확인 =====');
+    print('  - effectiveImageUrlsA: ${widget.effectiveImageUrlsA.length}개');
+    print('  - effectiveImageUrlsB: ${widget.effectiveImageUrlsB.length}개');
+    print('  - imageUrlsA: ${widget.imageUrlsA?.length ?? 0}개');
+    print('  - imageUrlsB: ${widget.imageUrlsB?.length ?? 0}개');
+    
     return SlideTransition(
       position: _slideAnimation,
       child: FadeTransition(
@@ -223,7 +230,7 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
                               '새로운 투표 도착!',
                               style: VersusTextStyles.headingSmall,
                             ),
-                            VersusSpacing.gapXS,
+                            const SizedBox(height: 2.0),  // 더 작은 간격 사용
                             Text(
                               _hasVoted ? '투표 완료!' : '참여해보세요',
                               style: _hasVoted 
@@ -245,24 +252,36 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
                     ],
                   ),
                   
-                  VersusSpacing.gapMD,
+                  VersusSpacing.gapMD,  // 16px로 복원
                   
                   // 질문
-                  Text(
-                    widget.question,
-                    style: VersusTextStyles.bodyLarge.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '질문:',
+                        style: VersusTextStyles.labelSmall.copyWith(
+                          color: VersusColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.question,
+                        style: VersusTextStyles.bodyLarge.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                   
-                  VersusSpacing.gapMD,
+                  VersusSpacing.gapMD,  // 16px로 복원
                   
-                  // A vs B 박스들 (새로운 VersusNotificationBox 사용)
+                  // A vs B 박스들
                   _buildVersusBoxes(),
                   
                   if (!_hasVoted) ...[
-                    VersusSpacing.gapMD,
+                    VersusSpacing.gapMD,  // 16px로 복원
                     
                     // 투표 버튼들
                     _buildVoteButtons(),
@@ -276,21 +295,41 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
     );
   }
 
-  /// 새로운 VersusNotificationBox를 사용한 A/B 박스 구성
+  /// A/B 박스 구성
   Widget _buildVersusBoxes() {
     // B 옵션이 있는지 확인
     final bool hasBOption = widget.primaryImageUrlB != null || widget.optionB.isNotEmpty;
     final bool hasOnlyTextB = widget.primaryImageUrlB == null && widget.optionB.isNotEmpty;
     
-    // 사이즈 데이터가 제공된 경우 일관된 크기 사용
-    if (widget.sizeData != null) {
-      // 단일 이미지/옵션인 경우 또는 B가 텍스트만 있는 경우 단일 박스만 표시
-      if (!hasBOption || hasOnlyTextB) {
-        return _buildSingleBox(widget.sizeData!);
+    // 단일 박스만 필요한 경우
+    if (!hasBOption || hasOnlyTextB) {
+      Widget boxWidget;
+      if (widget.sizeData != null) {
+        boxWidget = _buildSingleBox(widget.sizeData!);
+      } else {
+        boxWidget = _buildDefaultBoxes();
       }
       
-      // 두 옵션 모두 이미지가 있는 경우 박스 쌍 표시
-      return VersusNotificationBoxBuilder.buildBoxPair(
+      // 단일 박스일 때도 설명 표시
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          boxWidget,
+          const SizedBox(height: 12),
+          // 설명만 표시
+          _buildOptionsText(),
+        ],
+      );
+    }
+    
+    // 두 박스 표시
+    Widget boxesWidget;
+    if (widget.sizeData != null) {
+      print('[VotingNotificationDialog] buildBoxPair 호출 전 데이터 확인:');
+      print('  - imageUrlsA 전달: ${widget.effectiveImageUrlsA.length}개');
+      print('  - imageUrlsB 전달: ${widget.effectiveImageUrlsB.length}개');
+      
+      boxesWidget = VersusNotificationBoxBuilder.buildBoxPair(
         context: context,
         sizeData: widget.sizeData!,
         titleA: widget.optionA,
@@ -299,9 +338,8 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
         imageUrlB: widget.primaryImageUrlB,
         descriptionA: widget.descriptionA,
         descriptionB: widget.descriptionB,
-        onTapA: null,  // 박스 클릭으로 투표 비활성화
-        onTapB: null,  // 박스 클릭으로 투표 비활성화
-        selectedBox: _hasVoted ? null : null, // 선택 상태는 투표 후에만
+        onTapA: _hasVoted ? null : () => _vote('A'),
+        onTapB: _hasVoted ? null : () => _vote('B'),
         showResults: widget.showResults || _hasVoted,
         votePercentageA: widget.votePercentageA,
         votePercentageB: widget.votePercentageB,
@@ -313,17 +351,64 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
         imageUrlsA: widget.effectiveImageUrlsA,
         imageUrlsB: widget.effectiveImageUrlsB,
         question: widget.question,
+        enableImageTap: true,  // 명시적으로 true 설정
       );
+    } else {
+      boxesWidget = _buildDefaultBoxes();
     }
     
-    // 사이즈 데이터가 없는 경우 기본 크기 사용
-    return _buildDefaultBoxes();
+    // 박스들과 텍스트를 포함하는 Column 반환
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        boxesWidget,
+        const SizedBox(height: 12),
+        // 제목과 설명을 표시하는 위젯
+        _buildOptionsText(),
+      ],
+    );
+  }
+  
+  /// 옵션 텍스트 빌드 (설명만 표시)
+  Widget _buildOptionsText() {
+    // 설명이 있는 경우에만 표시 (A 또는 B 중 하나만)
+    final description = widget.descriptionA ?? widget.descriptionB;
+    
+    if (description == null || description.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '설명:',
+          style: VersusTextStyles.labelSmall.copyWith(
+            color: VersusColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          description,
+          style: VersusTextStyles.bodySmall.copyWith(
+            color: VersusColors.textPrimary,  // textSecondary → textPrimary로 변경
+          ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
   }
   
   /// 단일 박스 빌드 (B 옵션이 없을 때)
   Widget _buildSingleBox(VersusBoxSizeData sizeData) {
     // 중앙에 A박스만 표시 - 단일 이미지 모드에서 A/B 타이틀 함께 표시
     final bool hasOnlyText = widget.primaryImageUrlB == null && widget.optionB.isNotEmpty;
+    
+    print('[VotingNotificationDialog] _buildSingleBox 호출:');
+    print('  - imageUrlsA: ${widget.effectiveImageUrlsA.length}개');
+    print('  - imageUrlsB: ${widget.effectiveImageUrlsB.length}개');
     
     return Center(
       child: VersusNotificationBox(
@@ -349,6 +434,7 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
         // 멀티이미지 지원 파라미터 추가
         imageUrls: widget.effectiveImageUrlsA,
         otherImageUrls: widget.effectiveImageUrlsB,
+        enableImageTap: true,  // 명시적으로 true 설정
       ),
     );
   }
@@ -408,6 +494,7 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
           // 멀티이미지 지원 파라미터 추가
           imageUrls: widget.effectiveImageUrlsA,
           otherImageUrls: widget.effectiveImageUrlsB,
+          enableImageTap: true,  // 명시적으로 true 설정
         ),
       );
     }
@@ -435,6 +522,7 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
           // 멀티이미지 지원 파라미터 추가
           imageUrls: widget.effectiveImageUrlsA,
           otherImageUrls: widget.effectiveImageUrlsB,
+          enableImageTap: true,  // 명시적으로 true 설정
         ),
         SizedBox(width: votingSizes.spacing?.horizontal ?? 8.0),
         VersusNotificationBox(
@@ -456,6 +544,7 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
           // 멀티이미지 지원 파라미터 추가
           imageUrls: widget.effectiveImageUrlsB,
           otherImageUrls: widget.effectiveImageUrlsA,
+          enableImageTap: true,  // 명시적으로 true 설정
         ),
       ],
     );
@@ -465,7 +554,6 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
   Widget _buildVoteButtons() {
     // B 옵션이 있는지 확인
     final bool hasBOption = widget.primaryImageUrlB != null || widget.optionB.isNotEmpty;
-    final bool hasOnlyTextB = widget.primaryImageUrlB == null && widget.optionB.isNotEmpty;
     
     // 단일 옵션인 경우 A 버튼만 표시
     if (!hasBOption) {

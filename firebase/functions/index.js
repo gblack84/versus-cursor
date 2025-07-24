@@ -505,6 +505,10 @@ exports.moderateImage = functions
 // Gemini AI를 활용한 포스트 콘텐츠 통합 검증
 exports.validatePostContentWithGemini = functions
   .region("asia-northeast3")
+  .runWith({
+    timeoutSeconds: 300, // 5분 타임아웃 (기본 60초에서 증가)
+    memory: '1GB'        // 메모리도 증가 (AI 처리를 위해)
+  })
   .https.onCall(async (data, context) => {
     // 인증 확인
     if (!context.auth) {
@@ -704,12 +708,35 @@ exports.validatePostContentWithGemini = functions
       
     } catch (error) {
       console.error('[Gemini Validation] 오류:', error);
-      // 오류 시 통과 처리 (서비스 중단 방지)
+      console.error('[Gemini Validation] 오류 타입:', error.name);
+      console.error('[Gemini Validation] 오류 메시지:', error.message);
+      
+      // 타임아웃 에러 특별 처리
+      if (error.message && error.message.includes('DEADLINE_EXCEEDED')) {
+        console.error('[Gemini Validation] ❌ AI 검증 타임아웃 - 기본 통과 처리');
+        
+        // 타임아웃 통계 기록
+        try {
+          await admin.firestore().collection('validation_errors').add({
+            type: 'timeout',
+            userId: userId,
+            timestamp: admin.firestore.FieldValue.serverTimestamp(),
+            error: error.message,
+            sessionId: sessionId
+          });
+        } catch (logError) {
+          console.error('[Gemini Validation] 로그 기록 실패:', logError);
+        }
+      }
+      
+      // 모든 오류 시 통과 처리 (서비스 중단 방지)
       return {
         isValid: true,
         reason: '',
         severity: 'pass',
-        suggestions: ''
+        suggestions: '',
+        error: 'validation_failed',
+        errorDetails: error.message
       };
     }
   });

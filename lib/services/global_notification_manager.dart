@@ -143,6 +143,21 @@ class GlobalNotificationManager {
             optionB = postData['optionB'] ?? '';
             imageUrlA = postData['imageUrlA'];
             imageUrlB = postData['imageUrlB'];
+            // 멀티이미지 지원 추가
+            if (postData['imageUrlsA'] is List) {
+              imageUrlsA = (postData['imageUrlsA'] as List).cast<String>();
+              debugPrint('[GlobalNotificationManager] ✅ imageUrlsA 파싱 성공: ${imageUrlsA?.length}개');
+              for (int i = 0; i < (imageUrlsA?.length ?? 0); i++) {
+                debugPrint('[GlobalNotificationManager]   - imageUrlsA[$i]: ${imageUrlsA![i].substring(0, 50)}...');
+              }
+            }
+            if (postData['imageUrlsB'] is List) {
+              imageUrlsB = (postData['imageUrlsB'] as List).cast<String>();
+              debugPrint('[GlobalNotificationManager] ✅ imageUrlsB 파싱 성공: ${imageUrlsB?.length}개');
+              for (int i = 0; i < (imageUrlsB?.length ?? 0); i++) {
+                debugPrint('[GlobalNotificationManager]   - imageUrlsB[$i]: ${imageUrlsB![i].substring(0, 50)}...');
+              }
+            }
             descriptionA = postData['descriptionA'];
             descriptionB = postData['descriptionB'];
             aspectRatioA = postData['aspectRatioA']?.toDouble();
@@ -154,6 +169,8 @@ class GlobalNotificationManager {
             debugPrint('[GlobalNotificationManager]   - question: $question');
             debugPrint('[GlobalNotificationManager]   - optionA: $optionA');
             debugPrint('[GlobalNotificationManager]   - optionB: $optionB');
+            debugPrint('[GlobalNotificationManager]   - imageUrlsA: ${imageUrlsA?.length ?? 0}개');
+            debugPrint('[GlobalNotificationManager]   - imageUrlsB: ${imageUrlsB?.length ?? 0}개');
             debugPrint('[GlobalNotificationManager]   - descriptionA: $descriptionA');
             debugPrint('[GlobalNotificationManager]   - descriptionB: $descriptionB');
             debugPrint('[GlobalNotificationManager]   - aspectRatioA: $aspectRatioA');
@@ -267,6 +284,10 @@ class GlobalNotificationManager {
       VotingNotificationConstraints.printConstraints(screenWidth);
       
       // 표준 showDialog를 사용하여 알림 표시 (Navigator context 문제 해결)
+      debugPrint('[GlobalNotificationManager] VotingNotificationDialog 생성 전 최종 데이터:');
+      debugPrint('  - imageUrlsA 전달: ${imageUrlsA?.length ?? 0}개');
+      debugPrint('  - imageUrlsB 전달: ${imageUrlsB?.length ?? 0}개');
+      
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -276,7 +297,7 @@ class GlobalNotificationManager {
             backgroundColor: Colors.transparent,
             insetPadding: EdgeInsets.symmetric(
               horizontal: MediaQuery.of(context).size.width * 0.04,  // 좌우 4%씩 여백 = 92% 사용
-              vertical: 60.0
+              vertical: MediaQuery.of(context).size.height * 0.05  // 상하 5%씩 동적 여백
             ),
             alignment: Alignment.topCenter,
             child: VotingNotificationDialog(

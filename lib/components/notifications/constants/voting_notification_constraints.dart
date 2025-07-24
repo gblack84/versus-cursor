@@ -43,9 +43,9 @@ class VotingNotificationConstraints {
   static const Duration voteCompleteDuration = Duration(seconds: 1);
   
   // 텍스트 크기 제약
-  static const double maxTextSize = 16.0;
-  static const double minTextSize = 10.0;
-  static const double defaultTextSize = 12.0;
+  static const double maxTextSize = 24.0;     // 16.0 → 24.0 (1.5배 증가)
+  static const double minTextSize = 14.0;     // 10.0 → 14.0 (가독성 향상)
+  static const double defaultTextSize = 18.0; // 12.0 → 18.0 (1.5배 증가)
   
   // 아이콘 크기
   static const double labelIconSize = 32.0;     // A/B 라벨 아이콘 크기

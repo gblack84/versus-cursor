@@ -203,8 +203,40 @@ async function validateContentWithGenkit({
       console.log(`  - 텍스트 감지: ${visionDataB.hasText ? '예' : '아니오'}`);
     }
     
-    // 사용자 기록 가져오기
-    const userHistory = await getUserHistory(userId, admin);
+    // 🔥 병렬 처리 개선: 사용자 기록과 이미지 URL 변환을 동시에 처리
+    const startTime = Date.now();
+    
+    // 병렬 작업 시작
+    const [userHistory, displayUrls] = await Promise.all([
+      // 사용자 기록 가져오기
+      getUserHistory(userId, admin),
+      
+      // 이미지 URL 변환 (display 크기 사용)
+      Promise.resolve({
+        displayImageA: imageUrlA ? imageUrlA.replace('_original.jpg', '_display.jpg') : null,
+        displayImageB: imageUrlB ? imageUrlB.replace('_original.jpg', '_display.jpg') : null
+      })
+    ]);
+    
+    console.log(`[Content Moderation] 병렬 처리 완료 - ${Date.now() - startTime}ms`);
+    
+    // display 이미지 URL 검증 및 fallback
+    let displayImageA = displayUrls.displayImageA;
+    let displayImageB = displayUrls.displayImageB;
+    
+    if (imageUrlA && displayImageA) {
+      if (!displayImageA.includes('_display.jpg') && imageUrlA.includes('_original.jpg')) {
+        console.log('[Content Moderation] ⚠️ Display 이미지 변환 실패, 원본 사용:', imageUrlA);
+        displayImageA = imageUrlA;
+      }
+    }
+    
+    if (imageUrlB && displayImageB) {
+      if (!displayImageB.includes('_display.jpg') && imageUrlB.includes('_original.jpg')) {
+        console.log('[Content Moderation] ⚠️ Display 이미지 변환 실패, 원본 사용:', imageUrlB);
+        displayImageB = imageUrlB;
+      }
+    }
     
     // 1. 시스템 프롬프트는 그대로 둡니다.
     const systemPrompt = VERSUS_VALIDATION_PROMPT;
@@ -259,21 +291,22 @@ ${userHistory.map((post, i) => `${i + 1}. ${post.questionTitle} (A: ${post.title
       { text: userTextContent }
     ];
 
-    if (imageUrlA) {
-      console.log('[Content Moderation] A 이미지 포함:', imageUrlA);
+    // 이미지 URL이 있는 경우 프롬프트에 추가
+    if (displayImageA) {
+      console.log('[Content Moderation] A 이미지 포함 (display):', displayImageA);
       generatePrompt.push({ 
         media: { 
-          url: imageUrlA,
+          url: displayImageA,
           contentType: 'image/jpeg'
         } 
       });
     }
     
-    if (imageUrlB) {
-      console.log('[Content Moderation] B 이미지 포함:', imageUrlB);
+    if (displayImageB) {
+      console.log('[Content Moderation] B 이미지 포함 (display):', displayImageB);
       generatePrompt.push({ 
         media: { 
-          url: imageUrlB,
+          url: displayImageB,
           contentType: 'image/jpeg'
         } 
       });
@@ -286,11 +319,13 @@ ${userHistory.map((post, i) => `${i + 1}. ${post.questionTitle} (A: ${post.title
     }
 
     // Genkit을 사용한 생성 (공통 설정 사용)
+    const aiStartTime = Date.now();
     const result = await ai.generate({
       model: geminiModel,
       prompt: generatePrompt,
       config: aiConfig.moderation
     });
+    console.log(`[Content Moderation] AI 처리 완료 - ${Date.now() - aiStartTime}ms`);
     
     // result 전체 구조 로깅 (토큰 정보 위치 파악용)
     console.log('[Content Moderation] Result 전체 구조:', JSON.stringify(result, null, 2));

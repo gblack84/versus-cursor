@@ -3,6 +3,7 @@ import '/core/app_utils.dart';
 import '/core/app_widgets.dart';
 import '/index.dart';
 import '/components/notifications/voting_overlay.dart';
+import '/components/notifications/notification_badge_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'testpage_select_model.dart';
@@ -89,6 +90,11 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
             ),
           ),
           actions: [
+            NotificationAppBarAction(
+              onPressed: () {
+                context.pushNamed('notifications_list');
+              },
+            ),
             ClipRRect(
               borderRadius: BorderRadius.circular(8.0),
               child: Image.asset(

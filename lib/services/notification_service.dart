@@ -229,6 +229,8 @@ class NotificationService {
     debugPrint('[NotificationService]   - optionB: ${postData['optionB']}');
     debugPrint('[NotificationService]   - imageUrlA: ${postData['imageUrlA'] != null ? '있음' : '없음'}');
     debugPrint('[NotificationService]   - imageUrlB: ${postData['imageUrlB'] != null ? '있음' : '없음'}');
+    debugPrint('[NotificationService]   - imageUrlsA: ${postData['imageUrlsA'] != null ? '${(postData['imageUrlsA'] as List).length}개' : '없음'}');
+    debugPrint('[NotificationService]   - imageUrlsB: ${postData['imageUrlsB'] != null ? '${(postData['imageUrlsB'] as List).length}개' : '없음'}');
     debugPrint('[NotificationService]   - descriptionA: ${postData['descriptionA'] != null ? '있음' : '없음'}');
     debugPrint('[NotificationService]   - descriptionB: ${postData['descriptionB'] != null ? '있음' : '없음'}');
     
@@ -243,6 +245,17 @@ class NotificationService {
     debugPrint('[NotificationService] ✅ context 획득 성공');
     debugPrint('[NotificationService] NotificationOverlay.showVoting 호출 중...');
     
+    // 멀티이미지 데이터 추출
+    List<String>? imageUrlsA;
+    List<String>? imageUrlsB;
+    
+    if (postData['imageUrlsA'] is List) {
+      imageUrlsA = (postData['imageUrlsA'] as List).map((e) => e.toString()).toList();
+    }
+    if (postData['imageUrlsB'] is List) {
+      imageUrlsB = (postData['imageUrlsB'] as List).map((e) => e.toString()).toList();
+    }
+    
     // 알림 표시
     NotificationOverlay.showVoting(
       context,
@@ -251,6 +264,8 @@ class NotificationService {
       optionB: postData['optionB'] ?? '',
       imageUrlA: postData['imageUrlA'],
       imageUrlB: postData['imageUrlB'],
+      imageUrlsA: imageUrlsA,
+      imageUrlsB: imageUrlsB,
       descriptionA: postData['descriptionA'],
       descriptionB: postData['descriptionB'],
       onVote: (option) {

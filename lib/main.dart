@@ -26,8 +26,11 @@ void main() async {
   final appState = AppState(); // Initialize AppState
   await appState.initializePersistedState();
 
-  runApp(ChangeNotifierProvider(
-    create: (context) => appState,
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (context) => appState),
+      Provider<NotificationService>(create: (context) => NotificationService.instance),
+    ],
     child: MyApp(),
   ));
 }

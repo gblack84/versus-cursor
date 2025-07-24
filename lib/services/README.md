@@ -15,6 +15,7 @@ services/
 │   ├── models/
 │   └── constants/
 ├── notification_service.dart    # 실시간 알림 처리
+├── global_notification_manager.dart # 글로벌 알림 매니저 (새로운 파일)
 ├── target_audience_service.dart # 타겟 오디언스 관리
 ├── perspective_api_service.dart # Google Perspective API
 ├── cloud_image_moderation_service.dart # Cloud Vision API
@@ -106,7 +107,44 @@ class TargetAudienceModel {
 }
 ```
 
-### 3. AI Moderation Service
+### 3. GlobalNotificationManager
+
+**글로벌 알림 표시 및 관리 시스템**
+
+#### 주요 기능
+- NotificationService와 연동하여 알림 표시
+- 알림 큐 관리 및 순차 표시
+- 모달 다이얼로그 형태로 알림 표시
+- 멀티이미지 알림 지원
+- 사용자 반응 추적 (투표, 닫기, 나중에)
+
+#### 사용 방법
+```dart
+// 싱글톤 인스턴스
+final manager = GlobalNotificationManager.instance;
+
+// 알림 리스닝 시작 (앱 시작 시)
+manager.startListening();
+
+// 알림 리스닝 중지 (앱 종료 시)
+manager.stopListening();
+```
+
+#### 알림 표시 플로우
+1. NotificationService가 새 알림 감지
+2. GlobalNotificationManager가 알림 큐에 추가
+3. 순차적으로 모달 다이얼로그 표시
+4. 사용자 상호작용 처리 (투표/닫기)
+5. 다음 알림 자동 표시
+
+#### 특징
+- **큐 관리**: 여러 알림을 순차적으로 표시
+- **모달 UI**: 검은색 반투명 배경으로 몰입도 향상
+- **92% 화면 너비**: 적절한 여백으로 가독성 개선
+- **멀티이미지**: PageView로 여러 이미지 탐색 가능
+- **박스 크기 평균화**: 일관된 UI 표현
+
+### 4. AI Moderation Service
 
 **통합 AI 콘텐츠 검열 시스템**
 
@@ -138,7 +176,7 @@ if (!result.isValid) {
 }
 ```
 
-### 4. Perspective API Service
+### 5. Perspective API Service
 
 **Google Perspective API를 통한 텍스트 유해성 검사**
 
@@ -161,7 +199,7 @@ if (scores['TOXICITY']! > 0.6) {
 }
 ```
 
-### 5. Cloud Image Moderation Service
+### 6. Cloud Image Moderation Service
 
 **Google Cloud Vision API를 통한 이미지 검열**
 
@@ -187,7 +225,7 @@ if (result.allRejected) {
 }
 ```
 
-### 6. Storage Service
+### 7. Storage Service
 
 **Firebase Storage 파일 관리 서비스**
 

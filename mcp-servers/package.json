@@ -11,6 +11,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@21st-dev/magic": "^0.1.0",
     "@modelcontextprotocol/server-everything": "^2025.7.1",
     "@modelcontextprotocol/server-filesystem": "^2025.7.1",
     "@modelcontextprotocol/server-memory": "^2025.4.25",

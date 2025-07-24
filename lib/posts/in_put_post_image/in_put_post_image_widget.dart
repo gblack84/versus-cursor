@@ -767,6 +767,9 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         'optionB': appState.uploadTextB,
         'imageUrlA': uploadedUrlsA.isNotEmpty ? uploadedUrlsA.first : null,
         'imageUrlB': uploadedUrlsB.isNotEmpty ? uploadedUrlsB.first : null,
+        // 멀티이미지 지원 추가
+        'imageUrlsA': uploadedUrlsA,
+        'imageUrlsB': uploadedUrlsB,
         // A/B 설명은 현재 questionDescription을 사용
         'descriptionA': appState.questionDescription,
         'descriptionB': appState.questionDescription,
@@ -776,6 +779,13 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         // 현재 레이아웃 타입 추가
         'layoutType': _model.currentLayout.name,
       };
+      
+      // 멀티이미지 데이터 검증
+      DebugHelper.log('[_saveToFirestore] 멀티이미지 데이터 검증:');
+      DebugHelper.log('  - uploadedUrlsA: ${uploadedUrlsA.length}개');
+      DebugHelper.log('  - uploadedUrlsB: ${uploadedUrlsB.length}개');
+      DebugHelper.log('  - testNotificationData.imageUrlsA: ${testNotificationData['imageUrlsA']}');
+      DebugHelper.log('  - testNotificationData.imageUrlsB: ${testNotificationData['imageUrlsB']}');
       
       // 테스트 모드인 경우 직접 알림 생성 (데이터 정리 전에!)
       if (targetAudience['shouldCreateTestNotification'] == true) {
@@ -863,6 +873,9 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           'optionB': postData['optionB'],
           'imageUrlA': postData['imageUrlA'],
           'imageUrlB': postData['imageUrlB'],
+          // 멀티이미지 지원 추가
+          'imageUrlsA': postData['imageUrlsA'],
+          'imageUrlsB': postData['imageUrlsB'],
           'descriptionA': postData['descriptionA'] ?? '',
           'descriptionB': postData['descriptionB'] ?? '',
           'aspectRatioA': postData['aspectRatioA'],
@@ -877,6 +890,21 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       DebugHelper.log('[_createTestNotificationDirectly] aspectRatioA: ${postData['aspectRatioA']}');
       DebugHelper.log('[_createTestNotificationDirectly] aspectRatioB: ${postData['aspectRatioB']}');
       DebugHelper.log('[_createTestNotificationDirectly] layoutType: ${postData['layoutType']}');
+      
+      // 멀티이미지 데이터 확인
+      DebugHelper.log('[_createTestNotificationDirectly] 멀티이미지 데이터 확인:');
+      DebugHelper.log('  - imageUrlsA: ${(postData['imageUrlsA'] as List?)?.length ?? 0}개');
+      if (postData['imageUrlsA'] is List) {
+        for (int i = 0; i < (postData['imageUrlsA'] as List).length; i++) {
+          DebugHelper.log('    - imageUrlsA[$i]: ${(postData['imageUrlsA'] as List)[i]}');
+        }
+      }
+      DebugHelper.log('  - imageUrlsB: ${(postData['imageUrlsB'] as List?)?.length ?? 0}개');
+      if (postData['imageUrlsB'] is List) {
+        for (int i = 0; i < (postData['imageUrlsB'] as List).length; i++) {
+          DebugHelper.log('    - imageUrlsB[$i]: ${(postData['imageUrlsB'] as List)[i]}');
+        }
+      }
       
       DebugHelper.log('[_createTestNotificationDirectly] contentMap: $contentMap');
       

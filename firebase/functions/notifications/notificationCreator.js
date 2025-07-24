@@ -85,6 +85,11 @@ async function createNotificationsForUsers(users, postId, postData) {
           optionB: postData.optionB || postData.option_b || '',
           imageUrlA: postData.imageUrlA || postData.image_url_a || null,
           imageUrlB: postData.imageUrlB || postData.image_url_b || null,
+          // 멀티이미지 지원 추가
+          imageUrlsA: postData.imageUrlsA || postData.image_urls_a || null,
+          imageUrlsB: postData.imageUrlsB || postData.image_urls_b || null,
+          descriptionA: postData.descriptionA || postData.description_a || null,
+          descriptionB: postData.descriptionB || postData.description_b || null,
           authorName: postData.authorName || postData.author_name || '익명',
           category: postData.category || null,
         }

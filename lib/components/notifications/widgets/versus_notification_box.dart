@@ -106,6 +106,14 @@ class VersusNotificationBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 멀티이미지 데이터 디버그
+    print('[VersusNotificationBox] ===== 박스 $boxType 데이터 확인 =====');
+    print('  - imageUrl: ${imageUrl != null ? "있음" : "없음"}');
+    print('  - imageUrls: ${imageUrls?.length ?? 0}개');
+    print('  - otherImageUrls: ${otherImageUrls?.length ?? 0}개');
+    print('  - enableImageTap: $enableImageTap');
+    print('  - question: ${question != null ? "있음" : "없음"}');
+    
     return _buildAnimatedBox(context);
   }
   
@@ -128,6 +136,18 @@ class VersusNotificationBox extends StatelessWidget {
   
   /// 박스 컨테이너 위젯
   Widget _buildBoxContainer(BuildContext context) {
+    // 🚨 안전장치: 박스 크기 제한
+    const double maxSafeSize = 1000.0;
+    final safeWidth = boxSize.width.clamp(0.0, maxSafeSize); 
+    final safeHeight = boxSize.height.clamp(0.0, maxSafeSize);
+    
+    // 비정상적으로 큰 값이 감지되면 로그 출력
+    if (boxSize.width > maxSafeSize || boxSize.height > maxSafeSize) {
+      print('[VersusNotificationBox] 🚨 비정상적으로 큰 박스 크기 감지!');
+      print('  - 원본 크기: ${boxSize.width.toStringAsFixed(1)} x ${boxSize.height.toStringAsFixed(1)}');
+      print('  - 제한된 크기: ${safeWidth.toStringAsFixed(1)} x ${safeHeight.toStringAsFixed(1)}');
+    }
+    
     return GestureDetector(
       onTap: () {
         // 이미지가 있고 이미지 탭이 활성화되어 있으면 이미지 뷰어 표시
@@ -139,8 +159,8 @@ class VersusNotificationBox extends StatelessWidget {
         }
       },
       child: Container(
-        width: boxSize.width,
-        height: boxSize.height,
+        width: safeWidth,
+        height: safeHeight,
         decoration: _buildBoxDecoration(),
         child: Stack(
           children: [
@@ -200,14 +220,19 @@ class VersusNotificationBox extends StatelessWidget {
   
   /// 이미지 배경
   Widget _buildImageBackground() {
+    // 안전한 크기 계산 (이미 clamp된 값 사용)
+    const double maxSafeSize = 1000.0;
+    final safeWidth = boxSize.width.clamp(0.0, maxSafeSize); 
+    final safeHeight = boxSize.height.clamp(0.0, maxSafeSize);
+    
     return CachedNetworkImage(
       imageUrl: imageUrl!,
-      width: boxSize.width,
-      height: boxSize.height,
+      width: safeWidth,
+      height: safeHeight,
       fit: BoxFit.cover,
       placeholder: (context, url) => _buildPlaceholder(),
       errorWidget: (context, url, error) => _buildErrorWidget(),
-      memCacheWidth: (boxSize.width * 2).round(), // 고해상도 지원
+      memCacheWidth: (safeWidth * 2).round().clamp(100, 4000), // 메모리 캐시도 제한
       fadeInDuration: const Duration(milliseconds: 200),
     );
   }
@@ -320,42 +345,51 @@ class VersusNotificationBox extends StatelessWidget {
     }
     
     return Positioned.fill(
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // A/B 라벨
-            if (showLabel) Flexible(
-              flex: 0,
-              child: _buildLabel(),
-            ),
-            
-            const Spacer(),
-            
-            // 제목 및 설명 - Flexible로 감싸서 오버플로우 방지
-            Flexible(
-              fit: FlexFit.loose,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Flexible(
-                    fit: FlexFit.loose,
-                    child: _buildTitle(),
-                  ),
-                  if (description != null && description!.isNotEmpty) ...[
-                    const SizedBox(height: 4.0),
-                    Flexible(
-                      fit: FlexFit.loose,
-                      child: _buildDescription(),
-                    ),
+      child: Stack(
+        children: [
+          // A/B 라벨은 상단에
+          Positioned(
+            top: 12.0,
+            left: 12.0,
+            child: showLabel ? _buildLabel() : const SizedBox.shrink(),
+          ),
+          
+          // 제목은 하단에 위치
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.only(
+                  bottomLeft: VersusRadius.container.bottomLeft,
+                  bottomRight: VersusRadius.container.bottomRight,
+                ),
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.8),
+                    Colors.black.withValues(alpha: 0.6),
+                    Colors.transparent,
                   ],
-                ],
+                  stops: const [0.0, 0.3, 1.0],
+                ),
+              ),
+              padding: const EdgeInsets.all(12.0),
+              child: Text(
+                title,
+                style: VersusTextStyles.bodyMedium.copyWith(
+                  color: Colors.white,
+                  fontSize: _getAdaptiveTextSize(),
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -363,10 +397,12 @@ class VersusNotificationBox extends StatelessWidget {
   /// A/B 라벨
   Widget _buildLabel() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.6),
-        borderRadius: VersusRadius.radiusSmall,
+        color: boxType == 'A' 
+          ? VersusColors.primary.withValues(alpha: 0.3)
+          : VersusColors.secondary.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(4.0),
       ),
       child: Text(
         boxType,
@@ -379,46 +415,8 @@ class VersusNotificationBox extends StatelessWidget {
     );
   }
   
-  /// 제목
-  Widget _buildTitle() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.7),
-        borderRadius: VersusRadius.radiusSmall,
-      ),
-      child: Text(
-        title,
-        style: VersusTextStyles.bodyMedium.copyWith(
-          color: Colors.white,
-          fontSize: _getAdaptiveTextSize(),
-          fontWeight: FontWeight.w600,
-        ),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
-    );
-  }
-  
-  /// 설명 (1줄만 표시)
-  Widget _buildDescription() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.7),
-        borderRadius: VersusRadius.radiusSmall,
-      ),
-      child: Text(
-        description!,
-        style: VersusTextStyles.bodySmall.copyWith(
-          color: Colors.white70,
-          fontSize: _getAdaptiveTextSize() * 0.8,
-        ),
-        maxLines: 2,  // 2줄로 확장하여 더 많은 내용 표시
-        overflow: TextOverflow.ellipsis,
-      ),
-    );
-  }
+  // 이미지 내 텍스트 표시는 제거됨 - 알림 다이얼로그에서는 이미지 외부에 표시
+  // 이미지 뷰어에서는 여전히 사용될 수 있으므로 메서드는 유지
   
   /// 플레이스홀더 위젯
   Widget _buildPlaceholder() {
@@ -473,6 +471,11 @@ class VersusNotificationBox extends StatelessWidget {
   /// 멀티이미지 카운트 인디케이터
   Widget _buildMultiImageIndicator() {
     final imageCount = imageUrls?.length ?? 0;
+    print('[VersusNotificationBox] _buildMultiImageIndicator 호출:');
+    print('  - boxType: $boxType');
+    print('  - imageUrls length: $imageCount');
+    print('  - 표시 여부: ${imageCount > 1}');
+    
     if (imageCount <= 1) return const SizedBox.shrink();
     
     return Positioned(
@@ -507,6 +510,7 @@ class VersusNotificationBox extends StatelessWidget {
       ),
     );
   }
+  
   
   /// 디버그 정보 위젯
   Widget _buildDebugInfo() {
@@ -647,11 +651,22 @@ class VersusNotificationBox extends StatelessWidget {
   
   /// 이미지 뷰어 표시 (멀티이미지 지원)
   void _showImageViewer(BuildContext context) {
-    if (question == null) return;
+    print('[VersusNotificationBox] _showImageViewer 호출됨!');
+    print('  - boxType: $boxType');
+    print('  - question: ${question != null ? "있음" : "없음"}');
+    
+    if (question == null) {
+      print('[VersusNotificationBox] question이 null이어서 뷰어를 열 수 없음');
+      return;
+    }
     
     // 멀티이미지 데이터 준비
     final effectiveImageUrlsA = _getEffectiveImageUrls('A');
     final effectiveImageUrlsB = _getEffectiveImageUrls('B');
+    
+    print('[VersusNotificationBox] 이미지 뷰어에 전달할 데이터:');
+    print('  - effectiveImageUrlsA: ${effectiveImageUrlsA.length}개');
+    print('  - effectiveImageUrlsB: ${effectiveImageUrlsB.length}개');
     
     // 초기 인덱스 계산 (A박스의 모든 이미지 → B박스의 모든 이미지 순서)
     int initialIndex = 0;
@@ -680,26 +695,61 @@ class VersusNotificationBox extends StatelessWidget {
   /// 박스별 효과적인 이미지 URL 리스트 반환
   /// 
   /// 멀티이미지가 있으면 우선 사용, 없으면 단일 이미지 사용
-  List<String> _getEffectiveImageUrls(String boxType) {
-    if (boxType == 'A') {
-      // 현재 박스(A)의 멀티이미지 우선
-      if (imageUrls != null && imageUrls!.isNotEmpty) {
-        return imageUrls!;
+  List<String> _getEffectiveImageUrls(String forBoxType) {
+    print('[VersusNotificationBox] _getEffectiveImageUrls 호출:');
+    print('  - 현재 박스: $boxType');
+    print('  - 요청 박스: $forBoxType');
+    
+    if (forBoxType == 'A') {
+      // 현재 박스가 A인 경우
+      if (boxType == 'A') {
+        // 자신의 멀티이미지 우선
+        if (imageUrls != null && imageUrls!.isNotEmpty) {
+          print('  - A박스 멀티이미지 사용: ${imageUrls!.length}개');
+          return imageUrls!;
+        }
+        // 단일 이미지 사용
+        if (imageUrl != null) {
+          print('  - A박스 단일이미지 사용');
+          return [imageUrl!];
+        }
+      } else {
+        // 다른 박스(B)의 데이터 사용
+        if (otherImageUrls != null && otherImageUrls!.isNotEmpty) {
+          print('  - A박스(other) 멀티이미지 사용: ${otherImageUrls!.length}개');
+          return otherImageUrls!;
+        }
+        if (otherImageUrl != null) {
+          print('  - A박스(other) 단일이미지 사용');
+          return [otherImageUrl!];
+        }
       }
-      // 단일 이미지 사용
-      if (imageUrl != null) {
-        return [imageUrl!];
-      }
-    } else if (boxType == 'B') {
-      // 다른 박스(B)의 멀티이미지 우선
-      if (otherImageUrls != null && otherImageUrls!.isNotEmpty) {
-        return otherImageUrls!;
-      }
-      // 단일 이미지 사용
-      if (otherImageUrl != null) {
-        return [otherImageUrl!];
+    } else if (forBoxType == 'B') {
+      // 현재 박스가 B인 경우
+      if (boxType == 'B') {
+        // 자신의 멀티이미지 우선
+        if (imageUrls != null && imageUrls!.isNotEmpty) {
+          print('  - B박스 멀티이미지 사용: ${imageUrls!.length}개');
+          return imageUrls!;
+        }
+        // 단일 이미지 사용
+        if (imageUrl != null) {
+          print('  - B박스 단일이미지 사용');
+          return [imageUrl!];
+        }
+      } else {
+        // 다른 박스(A)의 데이터 사용
+        if (otherImageUrls != null && otherImageUrls!.isNotEmpty) {
+          print('  - B박스(other) 멀티이미지 사용: ${otherImageUrls!.length}개');
+          return otherImageUrls!;
+        }
+        if (otherImageUrl != null) {
+          print('  - B박스(other) 단일이미지 사용');
+          return [otherImageUrl!];
+        }
       }
     }
+    print('  - 이미지 없음');
     return [];
   }
 }

@@ -59,6 +59,8 @@ class NotificationOverlay {
     required String optionB,
     String? imageUrlA,
     String? imageUrlB,
+    List<String>? imageUrlsA,
+    List<String>? imageUrlsB,
     String? descriptionA,
     String? descriptionB,
     required Function(String option) onVote,
@@ -77,6 +79,8 @@ class NotificationOverlay {
     debugPrint('[NotificationOverlay] 옵션 B: $optionB');
     debugPrint('[NotificationOverlay] 이미지 A: ${imageUrlA != null ? '있음' : '없음'}');
     debugPrint('[NotificationOverlay] 이미지 B: ${imageUrlB != null ? '있음' : '없음'}');
+    debugPrint('[NotificationOverlay] 멀티이미지 A: ${imageUrlsA != null ? '${imageUrlsA.length}개' : '없음'}');
+    debugPrint('[NotificationOverlay] 멀티이미지 B: ${imageUrlsB != null ? '${imageUrlsB.length}개' : '없음'}');
     debugPrint('[NotificationOverlay] 설명 A: ${descriptionA != null ? '있음' : '없음'}');
     debugPrint('[NotificationOverlay] 설명 B: ${descriptionB != null ? '있음' : '없음'}');
     debugPrint('[NotificationOverlay] 결과 표시: $showResults');
@@ -106,6 +110,8 @@ class NotificationOverlay {
             optionB: optionB,
             imageUrlA: imageUrlA,
             imageUrlB: imageUrlB,
+            imageUrlsA: imageUrlsA,
+            imageUrlsB: imageUrlsB,
             descriptionA: descriptionA,
             descriptionB: descriptionB,
             onVote: (option) {

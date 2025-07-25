@@ -1,4 +1,5 @@
 const admin = require('firebase-admin');
+const { v4: uuidv4 } = require('uuid');
 
 // 타겟 이유 메시지 생성
 function generateTargetReason(targetAudience, user) {
@@ -142,6 +143,29 @@ async function createNotificationsForUsers(users, postId, postData) {
         });
       console.log('[알림 생성] ✅ 게시물 통계 업데이트 완료');
       
+      // 채팅 메시지 생성 (타겟 타입이 custom, test일 때만)
+      if (['custom', 'test'].includes(postData.targetAudience?.type)) {
+        console.log('[알림 생성] 채팅 메시지 생성 시작...');
+        const senderId = postData.userid || postData.uid || postData.creatorInfo?.uid;
+        
+        if (senderId) {
+          // 각 대상 사용자와의 채팅 메시지 생성
+          const chatPromises = users.map(async (user) => {
+            try {
+              await createVoteRequestChatMessage(senderId, user.id, postId, postData);
+              console.log(`[알림 생성] 채팅 메시지 생성 완료: ${user.displayName}`);
+            } catch (error) {
+              console.error(`[알림 생성] 채팅 메시지 생성 실패 (${user.displayName}):`, error);
+            }
+          });
+          
+          await Promise.all(chatPromises);
+          console.log('[알림 생성] ✅ 모든 채팅 메시지 생성 완료');
+        } else {
+          console.log('[알림 생성] ⚠️ 발신자 ID를 찾을 수 없어 채팅 메시지를 생성하지 않음');
+        }
+      }
+      
     } catch (error) {
       console.error('[알림 생성] ❌ 배치 커밋 중 오류 발생:', error);
       throw error;
@@ -149,6 +173,67 @@ async function createNotificationsForUsers(users, postId, postData) {
   }
   
   console.log('[알림 생성] ========== 알림 생성 종료 ==========');
+}
+
+// 투표 요청 채팅 메시지 생성 함수
+async function createVoteRequestChatMessage(senderId, recipientId, postId, postData) {
+  try {
+    // 참가자 ID 정렬 (일관된 채팅방 ID 생성을 위해)
+    const participantIds = [senderId, recipientId].sort();
+    const chatId = participantIds.join('_');
+    
+    // 기존 채팅방 확인
+    const chatRef = admin.firestore()
+      .collection('chats_record')
+      .doc(chatId);
+      
+    const chatDoc = await chatRef.get();
+    
+    if (!chatDoc.exists) {
+      // 새 채팅방 생성
+      await chatRef.set({
+        participantlds: participantIds,
+        lastMessageContent: '투표 요청을 보냈습니다',
+        lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+        created_at: admin.firestore.FieldValue.serverTimestamp(),
+        chat_name: '채팅',
+      });
+    }
+    
+    // 투표 요청 메시지 생성
+    const messageId = uuidv4();
+    
+    // optionA와 optionB에서 텍스트와 이미지 추출
+    const optionAData = postData.optionA || {};
+    const optionBData = postData.optionB || {};
+    
+    await chatRef.collection('messages').add({
+      message_id: messageId,
+      sender_id: senderId,
+      content: '',
+      time_stamp: admin.firestore.FieldValue.serverTimestamp(),
+      is_read: false,
+      message_type: 'vote_request',
+      vote_post_id: postId,
+      vote_title: postData.questionTitle || postData.question_title || '',
+      vote_description: postData.content || '',
+      vote_option_a_text: optionAData.text || optionAData.title || '',
+      vote_option_b_text: optionBData.text || optionBData.title || '',
+      vote_option_a_image: optionAData.imageUrl || optionAData.image_url || '',
+      vote_option_b_image: optionBData.imageUrl || optionBData.image_url || '',
+      vote_status: 'pending',
+    });
+    
+    // 채팅방 마지막 메시지 업데이트
+    await chatRef.update({
+      lastMessageContent: `투표 요청: ${postData.questionTitle || ''}`,
+      lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    
+  } catch (error) {
+    console.error('[채팅 메시지 생성] 오류:', error);
+    throw error;
+  }
 }
 
 module.exports = { createNotificationsForUsers };

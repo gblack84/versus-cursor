@@ -18,7 +18,8 @@
     "genkit": "^1.14.1",
     "qs": "^6.7.0",
     "razorpay": "^2.8.4",
-    "stripe": "^8.0.1"
+    "stripe": "^8.0.1",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "eslint": "^6.8.0",

@@ -29,3 +29,10 @@ export '/pages/image_viewer/image_viewer_page.dart'
     show ImageViewerPage;
 export '/pages/notifications_list/notifications_list_widget.dart'
     show NotificationsListWidget;
+export '/pages/home/home_page_widget.dart' show HomePageWidget;
+export '/pages/search/search_page_widget.dart' show SearchPageWidget;
+export '/pages/profile/profile_page_widget.dart' show ProfilePageWidget;
+export '/pages/chat/chat_list/chat_list_widget.dart' show ChatListWidget;
+export '/pages/chat/friends_list/friends_list_widget.dart' show FriendsListWidget;
+export '/pages/chat/chat_search/chat_search_widget.dart' show ChatSearchWidget;
+export '/pages/chat/chat_detail/chat_detail_widget.dart' show ChatDetailWidget;

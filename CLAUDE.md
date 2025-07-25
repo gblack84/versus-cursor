@@ -50,6 +50,7 @@
 │   ├── design_system/           # Design tokens and components (new)
 │   ├── models/                  # Data models (new)
 │   ├── pages/                   # Application screens/pages
+│   ├── providers/               # State management providers (new)
 │   ├── login/                   # Authentication screens
 │   ├── createaccount/           # Account creation flow
 │   ├── posts/                   # Post-related features (오타 수정: pots → posts)
@@ -94,6 +95,7 @@
 - **Rankings & Points**: Dual point system (points_A for answers, points_Q for questions)
 - **Anonymous Posting**: Support for anonymous posts and comments
 - **Reporting System**: Content moderation with reporting functionality
+- **Dual-Mode Navigation**: Context-aware bottom navigation (main/chat modes)
 
 ### AI-Powered Features (New)
 - **Smart Notifications**: AI-based user targeting for voting requests
@@ -951,3 +953,21 @@ if (model.isVideoSelectedA) {
 - ValidationService → 비디오 크기/길이 검증
 - MediaUploadService → 비디오 업로드 추가
 - 모든 상수 파일 → 비디오 관련 상수만 추가
+
+## Migration History
+
+### 2025-07-25: 네비게이션 시스템 구현 및 디자인 시스템 적용
+- **작업 내용**:
+  - 듀얼 모드 네비게이션 시스템 구현 (메인/채팅 모드)
+  - NavigationProvider 상태 관리 추가
+  - MainNavigationShell 컴포넌트 생성
+  - GoRouter ShellRoute 통합
+  - 디자인 시스템 전체 적용:
+    - HomePageWidget: 피드 카드 디자인
+    - ProfilePageWidget: 사용자 정보 표시
+    - ChatListWidget: 채팅 목록
+    - 모든 컴포넌트 VersusColors, VersusSpacing, VersusTextStyles 사용
+- **결과**:
+  - 컨텍스트 인식 네비게이션 완성
+  - 통일된 디자인 언어 적용
+  - AppTheme 의존성 완전 제거

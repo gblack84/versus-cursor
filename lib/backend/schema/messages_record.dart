@@ -36,8 +36,8 @@ class MessagesRecord extends FirestoreRecord {
   bool hasAttachmentUrl() => _attachmentUrl != null;
 
   // "attachment_type" field.
-  DateTime? _attachmentType;
-  DateTime? get attachmentType => _attachmentType;
+  String? _attachmentType;
+  String get attachmentType => _attachmentType ?? '';
   bool hasAttachmentType() => _attachmentType != null;
 
   // "time_stamp" field.
@@ -50,6 +50,87 @@ class MessagesRecord extends FirestoreRecord {
   bool get isRead => _isRead ?? false;
   bool hasIsRead() => _isRead != null;
 
+  // "media_type" field.
+  String? _mediaType;
+  String get mediaType => _mediaType ?? 'text';
+  bool hasMediaType() => _mediaType != null;
+
+  // "image_url" field.
+  String? _imageUrl;
+  String get imageUrl => _imageUrl ?? '';
+  bool hasImageUrl() => _imageUrl != null;
+
+  // "video_url" field.
+  String? _videoUrl;
+  String get videoUrl => _videoUrl ?? '';
+  bool hasVideoUrl() => _videoUrl != null;
+
+  // "thumbnail_url" field.
+  String? _thumbnailUrl;
+  String get thumbnailUrl => _thumbnailUrl ?? '';
+  bool hasThumbnailUrl() => _thumbnailUrl != null;
+
+  // "media_size" field.
+  int? _mediaSize;
+  int get mediaSize => _mediaSize ?? 0;
+  bool hasMediaSize() => _mediaSize != null;
+
+  // "media_width" field.
+  double? _mediaWidth;
+  double? get mediaWidth => _mediaWidth;
+  bool hasMediaWidth() => _mediaWidth != null;
+
+  // "media_height" field.
+  double? _mediaHeight;
+  double? get mediaHeight => _mediaHeight;
+  bool hasMediaHeight() => _mediaHeight != null;
+
+  // "message_type" field.
+  String? _messageType;
+  String get messageType => _messageType ?? 'text';
+  bool hasMessageType() => _messageType != null;
+
+  // Vote request fields
+  // "vote_post_id" field.
+  String? _votePostId;
+  String get votePostId => _votePostId ?? '';
+  bool hasVotePostId() => _votePostId != null;
+
+  // "vote_title" field.
+  String? _voteTitle;
+  String get voteTitle => _voteTitle ?? '';
+  bool hasVoteTitle() => _voteTitle != null;
+
+  // "vote_description" field.
+  String? _voteDescription;
+  String get voteDescription => _voteDescription ?? '';
+  bool hasVoteDescription() => _voteDescription != null;
+
+  // "vote_option_a_text" field.
+  String? _voteOptionAText;
+  String get voteOptionAText => _voteOptionAText ?? '';
+  bool hasVoteOptionAText() => _voteOptionAText != null;
+
+  // "vote_option_b_text" field.
+  String? _voteOptionBText;
+  String get voteOptionBText => _voteOptionBText ?? '';
+  bool hasVoteOptionBText() => _voteOptionBText != null;
+
+  // "vote_option_a_image" field.
+  String? _voteOptionAImage;
+  String get voteOptionAImage => _voteOptionAImage ?? '';
+  bool hasVoteOptionAImage() => _voteOptionAImage != null;
+
+  // "vote_option_b_image" field.
+  String? _voteOptionBImage;
+  String get voteOptionBImage => _voteOptionBImage ?? '';
+  bool hasVoteOptionBImage() => _voteOptionBImage != null;
+
+  // "vote_status" field.
+  String? _voteStatus;
+  String get voteStatus => _voteStatus ?? 'pending';
+  bool hasVoteStatus() => _voteStatus != null;
+
   DocumentReference get parentReference => reference.parent.parent!;
 
   void _initializeFields() {
@@ -57,9 +138,31 @@ class MessagesRecord extends FirestoreRecord {
     _senderId = snapshotData['sender_id'] as String?;
     _content = snapshotData['content'] as String?;
     _attachmentUrl = snapshotData['attachment_url'] as String?;
-    _attachmentType = snapshotData['attachment_type'] as DateTime?;
+    _attachmentType = snapshotData['attachment_type'] as String?;
     _timeStamp = snapshotData['time_stamp'] as DateTime?;
     _isRead = snapshotData['is_read'] as bool?;
+    
+    // Media fields
+    _mediaType = snapshotData['media_type'] as String?;
+    _imageUrl = snapshotData['image_url'] as String?;
+    _videoUrl = snapshotData['video_url'] as String?;
+    _thumbnailUrl = snapshotData['thumbnail_url'] as String?;
+    _mediaSize = castToType<int>(snapshotData['media_size']);
+    _mediaWidth = castToType<double>(snapshotData['media_width']);
+    _mediaHeight = castToType<double>(snapshotData['media_height']);
+    
+    // Message type
+    _messageType = snapshotData['message_type'] as String?;
+    
+    // Vote request fields
+    _votePostId = snapshotData['vote_post_id'] as String?;
+    _voteTitle = snapshotData['vote_title'] as String?;
+    _voteDescription = snapshotData['vote_description'] as String?;
+    _voteOptionAText = snapshotData['vote_option_a_text'] as String?;
+    _voteOptionBText = snapshotData['vote_option_b_text'] as String?;
+    _voteOptionAImage = snapshotData['vote_option_a_image'] as String?;
+    _voteOptionBImage = snapshotData['vote_option_b_image'] as String?;
+    _voteStatus = snapshotData['vote_status'] as String?;
   }
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
@@ -106,9 +209,25 @@ Map<String, dynamic> createMessagesRecordData({
   String? senderId,
   String? content,
   String? attachmentUrl,
-  DateTime? attachmentType,
+  String? attachmentType,
   DateTime? timeStamp,
   bool? isRead,
+  String? mediaType,
+  String? imageUrl,
+  String? videoUrl,
+  String? thumbnailUrl,
+  int? mediaSize,
+  double? mediaWidth,
+  double? mediaHeight,
+  String? messageType,
+  String? votePostId,
+  String? voteTitle,
+  String? voteDescription,
+  String? voteOptionAText,
+  String? voteOptionBText,
+  String? voteOptionAImage,
+  String? voteOptionBImage,
+  String? voteStatus,
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
@@ -119,6 +238,22 @@ Map<String, dynamic> createMessagesRecordData({
       'attachment_type': attachmentType,
       'time_stamp': timeStamp,
       'is_read': isRead,
+      'media_type': mediaType,
+      'image_url': imageUrl,
+      'video_url': videoUrl,
+      'thumbnail_url': thumbnailUrl,
+      'media_size': mediaSize,
+      'media_width': mediaWidth,
+      'media_height': mediaHeight,
+      'message_type': messageType,
+      'vote_post_id': votePostId,
+      'vote_title': voteTitle,
+      'vote_description': voteDescription,
+      'vote_option_a_text': voteOptionAText,
+      'vote_option_b_text': voteOptionBText,
+      'vote_option_a_image': voteOptionAImage,
+      'vote_option_b_image': voteOptionBImage,
+      'vote_status': voteStatus,
     }.withoutNulls,
   );
 
@@ -136,7 +271,23 @@ class MessagesRecordDocumentEquality implements Equality<MessagesRecord> {
         e1?.attachmentUrl == e2?.attachmentUrl &&
         e1?.attachmentType == e2?.attachmentType &&
         e1?.timeStamp == e2?.timeStamp &&
-        e1?.isRead == e2?.isRead;
+        e1?.isRead == e2?.isRead &&
+        e1?.mediaType == e2?.mediaType &&
+        e1?.imageUrl == e2?.imageUrl &&
+        e1?.videoUrl == e2?.videoUrl &&
+        e1?.thumbnailUrl == e2?.thumbnailUrl &&
+        e1?.mediaSize == e2?.mediaSize &&
+        e1?.mediaWidth == e2?.mediaWidth &&
+        e1?.mediaHeight == e2?.mediaHeight &&
+        e1?.messageType == e2?.messageType &&
+        e1?.votePostId == e2?.votePostId &&
+        e1?.voteTitle == e2?.voteTitle &&
+        e1?.voteDescription == e2?.voteDescription &&
+        e1?.voteOptionAText == e2?.voteOptionAText &&
+        e1?.voteOptionBText == e2?.voteOptionBText &&
+        e1?.voteOptionAImage == e2?.voteOptionAImage &&
+        e1?.voteOptionBImage == e2?.voteOptionBImage &&
+        e1?.voteStatus == e2?.voteStatus;
   }
 
   @override
@@ -147,7 +298,23 @@ class MessagesRecordDocumentEquality implements Equality<MessagesRecord> {
         e?.attachmentUrl,
         e?.attachmentType,
         e?.timeStamp,
-        e?.isRead
+        e?.isRead,
+        e?.mediaType,
+        e?.imageUrl,
+        e?.videoUrl,
+        e?.thumbnailUrl,
+        e?.mediaSize,
+        e?.mediaWidth,
+        e?.mediaHeight,
+        e?.messageType,
+        e?.votePostId,
+        e?.voteTitle,
+        e?.voteDescription,
+        e?.voteOptionAText,
+        e?.voteOptionBText,
+        e?.voteOptionAImage,
+        e?.voteOptionBImage,
+        e?.voteStatus
       ]);
 
   @override

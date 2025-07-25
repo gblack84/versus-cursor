@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/components/notifications/notification_overlay.dart';
 import '/core/nav/nav.dart';
@@ -401,5 +402,86 @@ class NotificationService {
       'queueLength': _notificationQueue.length,
       'isProcessingQueue': _isProcessingQueue,
     };
+  }
+
+  /// 투표 요청을 채팅 메시지로 생성
+  Future<void> createVoteRequestChatMessage({
+    required String senderId,
+    required String recipientId,
+    required String postId,
+    required PostsRecord post,
+  }) async {
+    try {
+      debugPrint('[NotificationService] 투표 요청 채팅 메시지 생성 시작');
+      debugPrint('[NotificationService] senderId: $senderId, recipientId: $recipientId');
+      
+      // 1. 기존 채팅방 찾기 또는 생성
+      DocumentReference chatRef;
+      
+      // 참가자 ID 정렬 (일관된 채팅방 ID 생성을 위해)
+      final participantIds = [senderId, recipientId]..sort();
+      final chatId = participantIds.join('_');
+      
+      // 기존 채팅방 확인
+      final existingChat = await FirebaseFirestore.instance
+          .collection('chats_record')
+          .doc(chatId)
+          .get();
+      
+      if (existingChat.exists) {
+        chatRef = existingChat.reference;
+        debugPrint('[NotificationService] 기존 채팅방 사용: $chatId');
+      } else {
+        // 새 채팅방 생성
+        chatRef = FirebaseFirestore.instance
+            .collection('chats_record')
+            .doc(chatId);
+            
+        await chatRef.set({
+          'participantlds': participantIds,
+          'lastMessageContent': '투표 요청을 보냈습니다',
+          'lastMessageAt': FieldValue.serverTimestamp(),
+          'created_at': FieldValue.serverTimestamp(),
+          'chat_name': '채팅',
+        });
+        
+        debugPrint('[NotificationService] 새 채팅방 생성: $chatId');
+      }
+      
+      // 2. 투표 요청 메시지 생성
+      final messageId = const Uuid().v4();
+      
+      // optionA와 optionB에서 텍스트와 이미지 추출
+      final optionAData = post.optionA;
+      final optionBData = post.optionB;
+      
+      await chatRef.collection('messages').add({
+        'message_id': messageId,
+        'sender_id': senderId,
+        'content': '',
+        'time_stamp': FieldValue.serverTimestamp(),
+        'is_read': false,
+        'message_type': 'vote_request',
+        'vote_post_id': postId,
+        'vote_title': post.questionTitle,
+        'vote_description': post.content,
+        'vote_option_a_text': optionAData['text'] ?? '',
+        'vote_option_b_text': optionBData['text'] ?? '',
+        'vote_option_a_image': optionAData['imageUrl'] ?? '',
+        'vote_option_b_image': optionBData['imageUrl'] ?? '',
+        'vote_status': 'pending',
+      });
+      
+      // 3. 채팅방 마지막 메시지 업데이트
+      await chatRef.update({
+        'lastMessageContent': '투표 요청: ${post.questionTitle}',
+        'lastMessageAt': FieldValue.serverTimestamp(),
+      });
+      
+      debugPrint('[NotificationService] 투표 요청 채팅 메시지 생성 완료');
+      
+    } catch (e) {
+      debugPrint('[NotificationService] 투표 요청 채팅 메시지 생성 오류: $e');
+    }
   }
 }

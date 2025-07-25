@@ -8,9 +8,7 @@ import '/auth/base_auth_user_provider.dart';
 
 import '/core/app_utils.dart';
 
-import '/backend/backend.dart';
 import '/index.dart';
-import '/components/navigation/main_navigation_shell.dart';
 
 export 'package:go_router/go_router.dart';
 export 'serialization_util.dart';
@@ -77,143 +75,73 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
       debugLogDiagnostics: true,
       refreshListenable: appStateNotifier,
       navigatorKey: appNavigatorKey,
-      errorBuilder: (context, state) => StartPageWidget(),
+      errorBuilder: (context, state) => appStateNotifier.loggedIn
+          ? TestpageSelectWidget()
+          : StartPageWidget(),
       routes: [
-        GoRoute(
+        AppRoute(
+          name: '_initialize',
           path: '/',
-          redirect: (context, state) {
-            if (appStateNotifier.loggedIn) {
-              return '/home';
-            }
-            return null;
-          },
-          builder: (context, state) => StartPageWidget(),
-        ),
-        // ShellRoute for bottom navigation
-        ShellRoute(
-          builder: (context, state, child) => MainNavigationShell(child: child),
-          routes: [
-            // Main navigation routes
-            GoRoute(
-              name: HomePageWidget.routeName,
-              path: HomePageWidget.routePath,
-              pageBuilder: (context, state) => CustomTransitionPage(
-                child: HomePageWidget(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
-              ),
-            ),
-            GoRoute(
-              name: SearchPageWidget.routeName,
-              path: SearchPageWidget.routePath,
-              pageBuilder: (context, state) => CustomTransitionPage(
-                child: SearchPageWidget(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
-              ),
-            ),
-            GoRoute(
-              name: ProfilePageWidget.routeName,
-              path: ProfilePageWidget.routePath,
-              pageBuilder: (context, state) => CustomTransitionPage(
-                child: ProfilePageWidget(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
-              ),
-            ),
-            GoRoute(
-              name: InPutPostImageWidget.routeName,
-              path: InPutPostImageWidget.routePath,
-              pageBuilder: (context, state) => CustomTransitionPage(
-                child: InPutPostImageWidget(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
-              ),
-            ),
-            // Chat routes
-            GoRoute(
-              name: ChatListWidget.routeName,
-              path: ChatListWidget.routePath,
-              pageBuilder: (context, state) => CustomTransitionPage(
-                child: ChatListWidget(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
-              ),
-            ),
-            GoRoute(
-              name: FriendsListWidget.routeName,
-              path: FriendsListWidget.routePath,
-              pageBuilder: (context, state) => CustomTransitionPage(
-                child: FriendsListWidget(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
-              ),
-            ),
-            GoRoute(
-              name: ChatSearchWidget.routeName,
-              path: ChatSearchWidget.routePath,
-              pageBuilder: (context, state) => CustomTransitionPage(
-                child: ChatSearchWidget(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
-              ),
-            ),
-          ],
+          builder: (context, _) => appStateNotifier.loggedIn
+              ? TestpageSelectWidget()
+              : StartPageWidget(),
         ),
         AppRoute(
           name: LoginPageWidget.routeName,
           path: LoginPageWidget.routePath,
           builder: (context, params) => LoginPageWidget(),
-        ).toRoute(appStateNotifier),
+        ),
         AppRoute(
           name: CreateAccountWidget.routeName,
           path: CreateAccountWidget.routePath,
           builder: (context, params) => CreateAccountWidget(),
-        ).toRoute(appStateNotifier),
+        ),
         AppRoute(
           name: ForgotPasswordWidget.routeName,
           path: ForgotPasswordWidget.routePath,
           builder: (context, params) => ForgotPasswordWidget(),
-        ).toRoute(appStateNotifier),
+        ),
         AppRoute(
           name: UserInfoInputWidget.routeName,
           path: UserInfoInputWidget.routePath,
           requireAuth: true,
           builder: (context, params) => UserInfoInputWidget(),
-        ).toRoute(appStateNotifier),
+        ),
         AppRoute(
           name: TestpageSelectWidget.routeName,
           path: TestpageSelectWidget.routePath,
           builder: (context, params) => TestpageSelectWidget(),
-        ).toRoute(appStateNotifier),
-        AppRoute(
-          name: 'dev_page',
-          path: '/dev',
-          builder: (context, params) => TestpageSelectWidget(),
-        ).toRoute(appStateNotifier),
+        ),
         AppRoute(
           name: ExpertiseSelectWidget.routeName,
           path: ExpertiseSelectWidget.routePath,
           builder: (context, params) => ExpertiseSelectWidget(),
-        ).toRoute(appStateNotifier),
+        ),
         AppRoute(
           name: TestalgoriaWidget.routeName,
           path: TestalgoriaWidget.routePath,
           builder: (context, params) => TestalgoriaWidget(),
-        ).toRoute(appStateNotifier),
+        ),
         AppRoute(
           name: HobbiesSelectWidget.routeName,
           path: HobbiesSelectWidget.routePath,
           builder: (context, params) => HobbiesSelectWidget(),
-        ).toRoute(appStateNotifier),
+        ),
         AppRoute(
           name: AgrredSelectWidget.routeName,
           path: AgrredSelectWidget.routePath,
           builder: (context, params) => AgrredSelectWidget(),
-        ).toRoute(appStateNotifier),
+        ),
         AppRoute(
           name: StartPageWidget.routeName,
           path: StartPageWidget.routePath,
           builder: (context, params) => StartPageWidget(),
-        ).toRoute(appStateNotifier),
+        ),
         AppRoute(
           name: TestdividerWidget.routeName,
           path: TestdividerWidget.routePath,
           builder: (context, params) => TestdividerWidget(),
-        ).toRoute(appStateNotifier),
+        ),
         AppRoute(
           name: PhoneCreatAccountWidget.routeName,
           path: PhoneCreatAccountWidget.routePath,
@@ -223,7 +151,7 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
               ParamType.String,
             ),
           ),
-        ).toRoute(appStateNotifier),
+        ),
         AppRoute(
           name: PhonelogeinpincodeWidget.routeName,
           path: PhonelogeinpincodeWidget.routePath,
@@ -233,12 +161,17 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
               ParamType.String,
             ),
           ),
-        ).toRoute(appStateNotifier),
+        ),
         AppRoute(
           name: BlankpppWidget.routeName,
           path: BlankpppWidget.routePath,
           builder: (context, params) => BlankpppWidget(),
-        ).toRoute(appStateNotifier),
+        ),
+        AppRoute(
+          name: InPutPostImageWidget.routeName,
+          path: InPutPostImageWidget.routePath,
+          builder: (context, params) => InPutPostImageWidget(),
+        ),
         AppRoute(
           name: ProImageEditorPage.routeName,
           path: ProImageEditorPage.routePath,
@@ -252,7 +185,7 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
               ParamType.String,
             ),
           ),
-        ).toRoute(appStateNotifier),
+        ),
         AppRoute(
           name: ImageViewerPage.routeName,
           path: ImageViewerPage.routePath,
@@ -272,24 +205,14 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
               ParamType.String,
             ),
           ),
-        ).toRoute(appStateNotifier),
+        ),
         AppRoute(
           name: NotificationsListWidget.routeName,
           path: NotificationsListWidget.routePath,
           requireAuth: true,
           builder: (context, params) => NotificationsListWidget(),
-        ).toRoute(appStateNotifier),
-        AppRoute(
-          name: ChatDetailWidget.routeName,
-          path: ChatDetailWidget.routePath,
-          requireAuth: true,
-          builder: (context, params) => ChatDetailWidget(
-            chatDocument: params.state.extra != null
-                ? (params.state.extra as Map<String, dynamic>)['chatDocument'] as ChatsRecord?
-                : null,
-          ),
-        ).toRoute(appStateNotifier),
-      ],
+        )
+      ].map((r) => r.toRoute(appStateNotifier)).toList(),
       observers: [routeObserver, BotToastNavigatorObserver()],
     );
 

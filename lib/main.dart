@@ -13,6 +13,7 @@ import 'core/app_theme.dart';
 import 'core/app_utils.dart';
 import 'services/notification_service.dart';
 import 'services/global_notification_manager.dart';
+import 'providers/navigation_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +30,7 @@ void main() async {
   runApp(MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (context) => appState),
+      ChangeNotifierProvider(create: (context) => NavigationProvider()),
       Provider<NotificationService>(create: (context) => NotificationService.instance),
     ],
     child: MyApp(),

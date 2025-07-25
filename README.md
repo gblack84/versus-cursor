@@ -10,12 +10,37 @@ Versus Space는 사용자들이 A vs B 형식의 비교 질문을 만들고, 투
 - 📊 **A vs B 투표**: 텍스트, 이미지, 비디오를 활용한 비교 콘텐츠
 - 🤖 **AI 콘텐츠 검열**: Gemini AI와 Cloud Vision API를 통한 안전한 콘텐츠 관리
 - 🎯 **스마트 타겟팅**: AI 기반 사용자 매칭으로 관련성 높은 투표 전달
-- 💬 **실시간 알림**: Firebase를 활용한 실시간 투표 요청 알림
+- 💬 **실시간 채팅**: 텍스트, 이미지, 비디오, 투표 메시지 지원
+- 🔔 **실시간 알림**: Firebase를 활용한 실시간 투표 요청 알림
 - 👥 **소셜 기능**: 좋아요, 댓글, 친구 시스템
+- 🗳️ **투표 메시지**: 채팅에서 직접 A vs B 투표 요청 및 참여
 
-## 최근 업데이트 (2025-07-20)
+## 최근 업데이트
 
-### 🚀 AI 기반 알림 시스템 구축
+### 🎨 2025-07-25: 네비게이션 시스템, 디자인 시스템 및 채팅 UI 업그레이드
+
+#### 듀얼 모드 네비게이션
+- **메인 모드**: 홈 / 검색 / 질문작성 / 채팅 / 유저 (5개 탭)
+- **채팅 모드**: 채팅 / 친구 / 검색 / 홈 (4개 탭)
+- **스마트 전환**: 컨텍스트에 따른 자동 모드 변경
+- **애니메이션**: 300ms 부드러운 전환 효과
+
+#### 디자인 시스템 통합
+- **색상 토큰**: VersusColors (primary, secondary, background 등)
+- **간격 시스템**: VersusSpacing (4px 기반)
+- **텍스트 스타일**: VersusTextStyles (Plus Jakarta Sans)
+- **컴포넌트**: VersusButton, VersusDialog 등
+
+#### 💬 채팅 시스템 현대화
+- **flutter_chat_ui 통합**: 프로페셔널한 채팅 UI 라이브러리 도입
+- **풍부한 메시지 타입**: 텍스트, 이미지, 비디오, A vs B 투표 메시지 지원
+- **미디어 업로드**: 갤러리/카메라를 통한 이미지, 비디오 공유
+- **투표 메시지 통합**: 알림 시스템과 연동된 투표 요청 메시지
+- **링크 미리보기**: URL 자동 감지 및 미리보기 표시
+- **한국어 지원**: 완전한 한국어 UI 및 메시지
+- **커스텀 테마**: Versus 디자인 시스템과 완벽한 통합
+
+### 🚀 2025-07-20: AI 기반 알림 시스템 구축
 - **Genkit 프레임워크 통합**: Google의 최신 AI 개발 프레임워크 도입
 - **스마트 사용자 매칭**: Gemini 1.5 Pro를 활용한 AI 추천 시스템
 - **실시간 알림 서비스**: Flutter 앱과 Firebase Functions 연동
@@ -30,9 +55,14 @@ Versus Space는 사용자들이 A vs B 형식의 비교 질문을 만들고, 투
 
 ### Frontend
 - **Framework**: Flutter (Dart)
-- **State Management**: Provider
-- **Navigation**: GoRouter
-- **UI Components**: Custom widgets + FlutterFlow 마이그레이션
+- **State Management**: Provider Pattern (NavigationProvider 등)
+- **Navigation**: GoRouter with ShellRoute
+- **UI Components**: Design System + Custom widgets
+- **Design System**: Token-based (Colors, Spacing, Typography)
+- **Chat UI**: flutter_chat_ui, flutter_chat_types
+- **Media Pickers**: wechat_assets_picker, wechat_camera_picker
+- **Media Processing**: flutter_image_compress, video_thumbnail
+- **Link Preview**: flutter_link_previewer
 
 ### Backend
 - **Database**: Firebase Firestore
@@ -55,10 +85,21 @@ versus-space/
 │   ├── services/                 # 비즈니스 로직 서비스
 │   │   ├── ai_moderation/       # AI 콘텐츠 검열
 │   │   ├── notification_service.dart
-│   │   └── target_audience_service.dart
+│   │   ├── target_audience_service.dart
+│   │   └── chat_media_upload_service.dart  # 채팅 미디어 업로드
 │   ├── posts/                    # 게시물 관련 기능
-│   ├── components/               # 재사용 가능한 UI 컴포넌트
-│   └── main.dart                # 앱 진입점
+│   ├── pages/                    # 앱 페이지들
+│   │   ├── chat/                # 채팅 관련 페이지
+│   │   ├── home/                # 홈 페이지
+│   │   └── profile/             # 프로필 페이지
+│   ├── providers/               # 상태 관리 프로바이더
+│   ├── components/              # 재사용 가능한 UI 컴포넌트
+│   │   ├── chat/                # 채팅 관련 컴포넌트
+│   │   │   └── vote_request_message.dart  # 투표 요청 메시지 UI
+│   │   └── notifications/       # 알림 관련 컴포넌트
+│   ├── utils/                   # 유틸리티 함수
+│   │   └── chat_message_converter.dart  # 채팅 메시지 변환
+│   └── main.dart               # 앱 진입점
 │
 ├── firebase/                     # Firebase 설정 및 함수
 │   └── functions/
@@ -97,6 +138,15 @@ versus-space/
    ```bash
    flutter pub get
    ```
+   
+   주요 의존성:
+   - `flutter_chat_ui: ^1.6.15` - 채팅 UI
+   - `flutter_chat_types: ^3.6.2` - 채팅 메시지 타입
+   - `flutter_link_previewer: ^3.2.2` - 링크 미리보기
+   - `wechat_assets_picker: ^9.5.1` - 갤러리 이미지/비디오 선택
+   - `wechat_camera_picker: ^5.0.1` - 카메라 촬영
+   - `flutter_image_compress: ^2.3.0` - 이미지 압축
+   - `video_thumbnail: ^0.5.3` - 비디오 썸네일 생성
 
 3. **Firebase 설정**
    ```bash

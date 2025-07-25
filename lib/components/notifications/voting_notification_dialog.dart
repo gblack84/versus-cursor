@@ -42,6 +42,9 @@ class VotingNotificationDialog extends StatefulWidget {
   
   /// 디버그 정보 표시 여부
   final bool showDebugInfo;
+  
+  /// 알림을 보낸 사람의 이름
+  final String? authorName;
 
   const VotingNotificationDialog({
     super.key,
@@ -63,6 +66,7 @@ class VotingNotificationDialog extends StatefulWidget {
     this.voteCountA,
     this.voteCountB,
     this.showDebugInfo = false,
+    this.authorName,
   });
 
   /// 멀티이미지 지원 헬퍼 메서드들
@@ -206,36 +210,54 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
                   // 헤더
                   Row(
                     children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: VersusColors.primary.withValues(alpha: 0.1),
-                          borderRadius: VersusRadius.radiusCircular,
-                        ),
-                        child: Center(
-                          child: Icon(
-                            VersusIcons.target.getIcon(VersusIcons.currentStyle),
-                            size: 20,
-                            color: VersusColors.primary,
-                          ),
+                      // 테스트 유저 프로필 이미지
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: VersusColors.borderLight,
+                        child: Icon(
+                          Icons.person,
+                          size: 24,
+                          color: VersusColors.textSecondary,
                         ),
                       ),
-                      VersusSpacing.gapH(VersusSpacing.sm),
+                      VersusSpacing.gapH(2),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              '새로운 투표 도착!',
-                              style: VersusTextStyles.headingSmall,
+                            Row(
+                              children: [
+                                Image.asset(
+                                  'assets/images/pikle_icon.png',
+                                  width: 30,
+                                  height: 30,
+                                ),
+                                Text(
+                                  'Pikle 도착!',
+                                  style: VersusTextStyles.headingSmall,
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 2.0),  // 더 작은 간격 사용
-                            Text(
-                              _hasVoted ? '투표 완료!' : '참여해보세요',
-                              style: _hasVoted 
-                                ? VersusTextStyles.success 
-                                : VersusTextStyles.labelSmall,
+                            Padding(
+                              padding: const EdgeInsets.only(left: 6.0),
+                              child: RichText(
+                                text: TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: widget.authorName ?? 'Test User',
+                                      style: VersusTextStyles.labelSmall.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: VersusColors.textPrimary,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: '님이 물어봅니다',
+                                      style: VersusTextStyles.labelSmall,
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -256,12 +278,13 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
                   
                   // 질문
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        '질문:',
+                        'Title.',
                         style: VersusTextStyles.labelSmall.copyWith(
-                          color: VersusColors.textSecondary,
+                          color: VersusColors.textPrimary,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -379,12 +402,13 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
     }
     
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
-          '설명:',
+          'Description.',
           style: VersusTextStyles.labelSmall.copyWith(
-            color: VersusColors.textSecondary,
+            color: VersusColors.textPrimary,
+            fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 4),

@@ -129,6 +129,7 @@ class GlobalNotificationManager {
       double? aspectRatioA;
       double? aspectRatioB;
       String? layoutType;
+      String? authorName;
       
       // 먼저 content 필드에서 데이터 파싱 시도
       if (notification.content.isNotEmpty) {
@@ -163,6 +164,7 @@ class GlobalNotificationManager {
             aspectRatioA = postData['aspectRatioA']?.toDouble();
             aspectRatioB = postData['aspectRatioB']?.toDouble();
             layoutType = postData['layoutType'];
+            authorName = postData['authorName'];
             
             debugPrint('[GlobalNotificationManager] ✅ content 필드에서 데이터 파싱 성공');
             debugPrint('[GlobalNotificationManager] 파싱된 데이터:');
@@ -176,6 +178,7 @@ class GlobalNotificationManager {
             debugPrint('[GlobalNotificationManager]   - aspectRatioA: $aspectRatioA');
             debugPrint('[GlobalNotificationManager]   - aspectRatioB: $aspectRatioB');
             debugPrint('[GlobalNotificationManager]   - layoutType: $layoutType');
+            debugPrint('[GlobalNotificationManager]   - authorName: $authorName');
           }
         } catch (e) {
           debugPrint('[GlobalNotificationManager] content 파싱 실패, 게시물 조회로 전환: $e');
@@ -312,6 +315,7 @@ class GlobalNotificationManager {
                 descriptionB: descriptionB,
                 sizeData: sizeData,  // 사이즈 데이터 전달
                 showDebugInfo: false,  // 디버그 정보 비활성화
+                authorName: authorName,  // 작성자 이름 전달
                 onVote: (selectedOption) async {
                   debugPrint('[GlobalNotificationManager] 투표 완료: $selectedOption');
                   

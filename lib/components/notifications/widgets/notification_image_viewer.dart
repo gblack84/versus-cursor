@@ -89,12 +89,30 @@ class _NotificationImageViewerState extends State<NotificationImageViewer> {
   int _currentIndexInBoxA = 0;
   int _currentIndexInBoxB = 0;
   
+  // 텍스트 확장/축소 상태
+  bool _isQuestionExpanded = false;
+  bool _isDescriptionExpanded = false;
+  
   @override
   void initState() {
     super.initState();
     
+    // 멀티이미지 데이터 디버그
+    print('[NotificationImageViewer] ===== initState 디버그 =====');
+    print('  - widget.imageUrlsA: ${widget.imageUrlsA?.length ?? 0}개');
+    print('  - widget.imageUrlsB: ${widget.imageUrlsB?.length ?? 0}개');
+    print('  - widget.imageUrlA: ${widget.imageUrlA != null ? "있음" : "없음"}');
+    print('  - widget.imageUrlB: ${widget.imageUrlB != null ? "있음" : "없음"}');
+    print('  - widget.optionA: ${widget.optionA}');
+    print('  - widget.optionB: ${widget.optionB}');
+    
     // 초기 박스 타입과 인덱스 계산
     final effectiveUrlsA = _getEffectiveImageUrls('A');
+    final effectiveUrlsB = _getEffectiveImageUrls('B');
+    
+    print('  - effectiveUrlsA: ${effectiveUrlsA.length}개');
+    print('  - effectiveUrlsB: ${effectiveUrlsB.length}개');
+    print('  - initialIndex: ${widget.initialIndex}');
     
     if (widget.initialIndex >= effectiveUrlsA.length) {
       // B박스에서 시작
@@ -107,6 +125,10 @@ class _NotificationImageViewerState extends State<NotificationImageViewer> {
       _currentIndexInBoxA = widget.initialIndex;
       _currentIndexInBoxB = 0;
     }
+    
+    print('  - 시작 박스: $_currentBoxType');
+    print('  - A박스 인덱스: $_currentIndexInBoxA');
+    print('  - B박스 인덱스: $_currentIndexInBoxB');
     
     // 각 박스별 PageController 초기화
     _pageControllerA = PageController(initialPage: _currentIndexInBoxA);
@@ -198,131 +220,174 @@ class _NotificationImageViewerState extends State<NotificationImageViewer> {
       return const SizedBox.shrink();
     }
     
+    // 단일 이미지 모드 체크 (B박스가 비어있는 경우)
+    final bool isSingleImageMode = effectiveUrlsB.isEmpty;
+    
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // 헤더
-            _buildHeader(),
-            
-            // 이미지 뷰어 - Stack 구조로 변경
-            Expanded(
-              child: GestureDetector(
-                onHorizontalDragEnd: (details) {
-                  // 스와이프 속도와 방향 확인
-                  if (details.primaryVelocity == null) return;
-                  
-                  print('[NotificationImageViewer] 좌우 스와이프 감지:');
-                  print('  - 속도: ${details.primaryVelocity}');
-                  print('  - 현재 박스: $_currentBoxType');
-                  print('  - A 이미지 수: ${effectiveUrlsA.length}');
-                  print('  - B 이미지 수: ${effectiveUrlsB.length}');
-                  
-                  if (details.primaryVelocity! < -300) {
-                    // 왼쪽 스와이프 - B로 이동
-                    if (effectiveUrlsB.isNotEmpty && _currentBoxType == 'A') {
-                      print('  → A에서 B로 전환!');
-                      setState(() {
-                        _currentBoxType = 'B';
-                      });
-                    }
-                  } else if (details.primaryVelocity! > 300) {
-                    // 오른쪽 스와이프 - A로 이동
-                    if (effectiveUrlsA.isNotEmpty && _currentBoxType == 'B') {
-                      print('  → B에서 A로 전환!');
-                      setState(() {
-                        _currentBoxType = 'A';
-                      });
-                    }
-                  }
-                },
-                child: Stack(
-                  children: [
-                    // A박스 레이어
-                    AnimatedOpacity(
-                      opacity: _currentBoxType == 'A' ? 1.0 : 0.0,
-                      duration: const Duration(milliseconds: 300),
-                      child: IgnorePointer(
-                        ignoring: _currentBoxType != 'A',
-                        child: effectiveUrlsA.isNotEmpty
-                            ? PageView.builder(
-                                controller: _pageControllerA,
-                                scrollDirection: Axis.vertical,
-                                onPageChanged: (index) {
-                                  setState(() {
-                                    _currentIndexInBoxA = index;
-                                  });
-                                },
-                                itemCount: effectiveUrlsA.length,
-                                itemBuilder: (context, index) {
-                                  return _buildImageView((
-                                    imageUrl: effectiveUrlsA[index],
-                                    title: widget.optionA,
-                                    description: widget.descriptionA,
-                                    boxType: 'A',
-                                    imageIndex: index + 1,
-                                    totalInBox: effectiveUrlsA.length,
-                                  ));
-                                },
-                              )
-                            : const SizedBox.shrink(),
-                      ),
-                    ),
-                    
-                    // B박스 레이어
-                    AnimatedOpacity(
-                      opacity: _currentBoxType == 'B' ? 1.0 : 0.0,
-                      duration: const Duration(milliseconds: 300),
-                      child: IgnorePointer(
-                        ignoring: _currentBoxType != 'B',
-                        child: effectiveUrlsB.isNotEmpty
-                            ? PageView.builder(
-                                controller: _pageControllerB,
-                                scrollDirection: Axis.vertical,
-                                onPageChanged: (index) {
-                                  setState(() {
-                                    _currentIndexInBoxB = index;
-                                  });
-                                },
-                                itemCount: effectiveUrlsB.length,
-                                itemBuilder: (context, index) {
-                                  return _buildImageView((
-                                    imageUrl: effectiveUrlsB[index],
-                                    title: widget.optionB,
-                                    description: widget.descriptionB,
-                                    boxType: 'B',
-                                    imageIndex: index + 1,
-                                    totalInBox: effectiveUrlsB.length,
-                                  ));
-                                },
-                              )
-                            : const SizedBox.shrink(),
-                      ),
-                    ),
-                  ],
+            Column(
+              children: [
+                // 헤더
+                _buildHeader(),
+                
+                // 이미지 뷰어
+                Expanded(
+                  child: isSingleImageMode
+                      ? _buildSingleModeViewer(effectiveUrlsA)
+                      : _buildDualModeViewer(effectiveUrlsA, effectiveUrlsB),
                 ),
-              ),
+                
+                // 페이지 인디케이터
+                if ((effectiveUrlsA.length + effectiveUrlsB.length) > 1) 
+                  _buildPageIndicator(effectiveUrlsA.length + effectiveUrlsB.length),
+                  
+                // 하단 정보
+                _buildBottomInfo(_getCurrentImageData()),
+              ],
             ),
-            
-            // 페이지 인디케이터
-            if ((effectiveUrlsA.length + effectiveUrlsB.length) > 1) 
-              _buildPageIndicator(effectiveUrlsA.length + effectiveUrlsB.length),
-            
-            // 하단 정보
-            _buildBottomInfo(_getCurrentImageData()),
+            // 스와이프 힌트를 화면 정중앙에 표시
+            if (_shouldShowSwipeHint())
+              Center(
+                child: _buildSwipeHint(),
+              ),
           ],
         ),
       ),
-      floatingActionButton: _buildSwipeHint(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+    );
+  }
+  
+  /// 단일 이미지 모드 뷰어 (A박스만 표시)
+  Widget _buildSingleModeViewer(List<String> effectiveUrlsA) {
+    return effectiveUrlsA.isNotEmpty
+        ? PageView.builder(
+            controller: _pageControllerA,
+            scrollDirection: Axis.vertical,
+            onPageChanged: (index) {
+              setState(() {
+                _currentIndexInBoxA = index;
+              });
+            },
+            itemCount: effectiveUrlsA.length,
+            itemBuilder: (context, index) {
+              return _buildImageView((
+                imageUrl: effectiveUrlsA[index],
+                title: widget.optionA,
+                description: widget.descriptionA,
+                boxType: 'A',
+                imageIndex: index + 1,
+                totalInBox: effectiveUrlsA.length,
+              ));
+            },
+          )
+        : const SizedBox.shrink();
+  }
+  
+  /// 듀얼 모드 뷰어 (A/B 박스 모두 표시)
+  Widget _buildDualModeViewer(List<String> effectiveUrlsA, List<String> effectiveUrlsB) {
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        // 스와이프 속도와 방향 확인
+        if (details.primaryVelocity == null) return;
+        
+        print('[NotificationImageViewer] 좌우 스와이프 감지:');
+        print('  - 속도: ${details.primaryVelocity}');
+        print('  - 현재 박스: $_currentBoxType');
+        print('  - A 이미지 수: ${effectiveUrlsA.length}');
+        print('  - B 이미지 수: ${effectiveUrlsB.length}');
+        
+        if (details.primaryVelocity! < -300) {
+          // 왼쪽 스와이프 - B로 이동
+          if (effectiveUrlsB.isNotEmpty && _currentBoxType == 'A') {
+            print('  → A에서 B로 전환!');
+            setState(() {
+              _currentBoxType = 'B';
+            });
+          }
+        } else if (details.primaryVelocity! > 300) {
+          // 오른쪽 스와이프 - A로 이동
+          if (effectiveUrlsA.isNotEmpty && _currentBoxType == 'B') {
+            print('  → B에서 A로 전환!');
+            setState(() {
+              _currentBoxType = 'A';
+            });
+          }
+        }
+      },
+      child: Stack(
+        children: [
+          // A박스 레이어
+          AnimatedOpacity(
+            opacity: _currentBoxType == 'A' ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 300),
+            child: IgnorePointer(
+              ignoring: _currentBoxType != 'A',
+              child: effectiveUrlsA.isNotEmpty
+                  ? PageView.builder(
+                      controller: _pageControllerA,
+                      scrollDirection: Axis.vertical,
+                      onPageChanged: (index) {
+                        setState(() {
+                          _currentIndexInBoxA = index;
+                        });
+                      },
+                      itemCount: effectiveUrlsA.length,
+                      itemBuilder: (context, index) {
+                        return _buildImageView((
+                          imageUrl: effectiveUrlsA[index],
+                          title: widget.optionA,
+                          description: widget.descriptionA,
+                          boxType: 'A',
+                          imageIndex: index + 1,
+                          totalInBox: effectiveUrlsA.length,
+                        ));
+                      },
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ),
+          
+          // B박스 레이어
+          AnimatedOpacity(
+            opacity: _currentBoxType == 'B' ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 300),
+            child: IgnorePointer(
+              ignoring: _currentBoxType != 'B',
+              child: effectiveUrlsB.isNotEmpty
+                  ? PageView.builder(
+                      controller: _pageControllerB,
+                      scrollDirection: Axis.vertical,
+                      onPageChanged: (index) {
+                        setState(() {
+                          _currentIndexInBoxB = index;
+                        });
+                      },
+                      itemCount: effectiveUrlsB.length,
+                      itemBuilder: (context, index) {
+                        return _buildImageView((
+                          imageUrl: effectiveUrlsB[index],
+                          title: widget.optionB,
+                          description: widget.descriptionB,
+                          boxType: 'B',
+                          imageIndex: index + 1,
+                          totalInBox: effectiveUrlsB.length,
+                        ));
+                      },
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ),
+        ],
+      ),
     );
   }
   
   Widget _buildHeader() {
     final currentImage = _getCurrentImageData();
-    final effectiveUrlsA = _getEffectiveImageUrls('A');
     final effectiveUrlsB = _getEffectiveImageUrls('B');
+    final bool isSingleMode = effectiveUrlsB.isEmpty;
     
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -333,84 +398,30 @@ class _NotificationImageViewerState extends State<NotificationImageViewer> {
             icon: const Icon(Icons.close, color: Colors.white),
           ),
           
-          // 현재 박스 타입과 이미지 위치 표시
-          if (effectiveUrlsA.isNotEmpty && effectiveUrlsB.isNotEmpty) ...[
-            const SizedBox(width: 16),
-            Row(
-              children: [
-                // A/B 전환 가능 표시
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                  decoration: BoxDecoration(
-                    color: Colors.black38,
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.swap_horiz,
-                        size: 14,
-                        color: Colors.white70,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'A ⇄ B',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // 현재 위치
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(16.0),
-                    border: Border.all(
-                      color: _currentBoxType == 'A' ? Colors.red : Colors.green,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Text(
-                    '${currentImage.boxType} ${currentImage.imageIndex}/${currentImage.totalInBox}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ] else ...[
-            const SizedBox(width: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(16.0),
-                border: Border.all(
-                  color: _currentBoxType == 'A' ? Colors.red : Colors.green,
-                  width: 1.5,
-                ),
-              ),
-              child: Text(
-                '${currentImage.boxType} ${currentImage.imageIndex}/${currentImage.totalInBox}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-          
           const Spacer(),
+          
+          // 현재 위치 표시 (오른쪽 끝)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+            decoration: BoxDecoration(
+              color: Colors.black54,
+              borderRadius: BorderRadius.circular(16.0),
+              border: Border.all(
+                color: isSingleMode ? Colors.red : (_currentBoxType == 'A' ? Colors.red : Colors.green),
+                width: 1.5,
+              ),
+            ),
+            child: Text(
+              isSingleMode 
+                  ? '${currentImage.imageIndex}/${currentImage.totalInBox}'
+                  : '${currentImage.boxType} ${currentImage.imageIndex}/${currentImage.totalInBox}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -451,6 +462,7 @@ class _NotificationImageViewerState extends State<NotificationImageViewer> {
   Widget _buildPageIndicator(int count) {
     final effectiveUrlsA = _getEffectiveImageUrls('A');
     final effectiveUrlsB = _getEffectiveImageUrls('B');
+    final bool isSingleMode = effectiveUrlsB.isEmpty;
     
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -474,7 +486,7 @@ class _NotificationImageViewerState extends State<NotificationImageViewer> {
                       decoration: BoxDecoration(
                         color: isActive 
                           ? Colors.red 
-                          : (_currentBoxType == 'A' ? Colors.red.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.3)),
+                          : (isSingleMode || _currentBoxType == 'A' ? Colors.red.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.3)),
                         borderRadius: BorderRadius.circular(3.0),
                       ),
                     );
@@ -482,7 +494,7 @@ class _NotificationImageViewerState extends State<NotificationImageViewer> {
                 ),
               ],
               
-              // A/B 구분선
+              // A/B 구분선 (듀얼 모드에서만 표시)
               if (effectiveUrlsA.isNotEmpty && effectiveUrlsB.isNotEmpty) ...[
                 const SizedBox(width: 16),
                 Container(
@@ -522,9 +534,9 @@ class _NotificationImageViewerState extends State<NotificationImageViewer> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                _currentBoxType == 'A' ? 'A 이미지' : 'B 이미지',
+                isSingleMode ? '이미지' : (_currentBoxType == 'A' ? 'A 이미지' : 'B 이미지'),
                 style: TextStyle(
-                  color: _currentBoxType == 'A' ? Colors.red : Colors.green,
+                  color: isSingleMode ? Colors.red : (_currentBoxType == 'A' ? Colors.red : Colors.green),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -562,7 +574,13 @@ class _NotificationImageViewerState extends State<NotificationImageViewer> {
     final isA = data.boxType == 'A';
     final labelColor = isA ? VersusColors.primary : VersusColors.secondary;
     
-    return Container(
+    // 단일 이미지 모드 체크 (B박스가 비어있는 경우)
+    final effectiveUrlsB = _getEffectiveImageUrls('B');
+    final bool isSingleMode = effectiveUrlsB.isEmpty;
+    
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -576,87 +594,300 @@ class _NotificationImageViewerState extends State<NotificationImageViewer> {
           stops: const [0.0, 0.5, 1.0],
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 질문 제목
-          Text(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // 텍스트 스타일 정의
+          const questionStyle = TextStyle(
+            color: Colors.white70,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          );
+          const descriptionStyle = TextStyle(
+            color: Colors.white70,
+            fontSize: 14,
+            height: 1.5,
+          );
+          
+          // 텍스트가 지정된 줄 수를 초과하는지 확인
+          final questionExceedsLimit = _exceedsMaxLines(
             widget.question,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 12),
+            questionStyle,
+            constraints.maxWidth - 50, // Q: 라벨 너비 고려
+            2
+          );
           
-          // 옵션 정보
-          Row(
+          final descriptionExceedsLimit = data.description != null && 
+            data.description!.isNotEmpty &&
+            _exceedsMaxLines(
+              data.description!,
+              descriptionStyle,
+              constraints.maxWidth - 50, // D: 라벨 너비 고려
+              3
+            );
+          
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-                decoration: BoxDecoration(
-                  color: labelColor.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: Text(
-                  isA ? 'A' : 'B',
-                  style: TextStyle(
-                    color: labelColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+              // 질문 제목
+              GestureDetector(
+                onTap: questionExceedsLimit ? () {
+                  setState(() {
+                    _isQuestionExpanded = !_isQuestionExpanded;
+                  });
+                } : null,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Q: ',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Expanded(
+                        child: AnimatedCrossFade(
+                          firstChild: Text(
+                            widget.question,
+                            style: questionStyle,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          secondChild: Text(
+                            widget.question,
+                            style: questionStyle,
+                          ),
+                          crossFadeState: _isQuestionExpanded 
+                              ? CrossFadeState.showSecond 
+                              : CrossFadeState.showFirst,
+                          duration: const Duration(milliseconds: 200),
+                        ),
+                      ),
+                      if (questionExceedsLimit)
+                        AnimatedRotation(
+                          turns: _isQuestionExpanded ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 200),
+                          child: Icon(
+                            Icons.expand_more,
+                            color: Colors.white70,
+                            size: 20,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  data.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+              const SizedBox(height: 12),
+              
+              // 옵션 정보
+              if (isSingleMode) ...[
+                // 단일 이미지 모드: A/B 타이틀 모두 표시
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // A 옵션
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                          decoration: BoxDecoration(
+                            color: VersusColors.primary.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: Text(
+                            'A',
+                            style: TextStyle(
+                              color: VersusColors.primary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            widget.optionA,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // B 옵션
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                          decoration: BoxDecoration(
+                            color: VersusColors.secondary.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: Text(
+                            'B',
+                            style: TextStyle(
+                              color: VersusColors.secondary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            widget.optionB,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ] else ...[
+                // 듀얼 모드: 현재 보고 있는 이미지의 타이틀만 표시
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                      decoration: BoxDecoration(
+                        color: labelColor.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      child: Text(
+                        isA ? 'A' : 'B',
+                        style: TextStyle(
+                          color: labelColor,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        data.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              
+              // 설명 (있는 경우)
+              if (data.description != null && data.description!.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                GestureDetector(
+                  onTap: descriptionExceedsLimit ? () {
+                    setState(() {
+                      _isDescriptionExpanded = !_isDescriptionExpanded;
+                    });
+                  } : null,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'D: ',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            height: 1.5,
+                          ),
+                        ),
+                        Expanded(
+                          child: AnimatedCrossFade(
+                            firstChild: Text(
+                              data.description!,
+                              style: descriptionStyle,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            secondChild: Text(
+                              data.description!,
+                              style: descriptionStyle,
+                            ),
+                            crossFadeState: _isDescriptionExpanded 
+                                ? CrossFadeState.showSecond 
+                                : CrossFadeState.showFirst,
+                            duration: const Duration(milliseconds: 200),
+                          ),
+                        ),
+                        if (descriptionExceedsLimit)
+                          AnimatedRotation(
+                            turns: _isDescriptionExpanded ? 0.5 : 0,
+                            duration: const Duration(milliseconds: 200),
+                            child: Icon(
+                              Icons.expand_more,
+                              color: Colors.white70,
+                              size: 20,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
-          ),
-          
-          // 설명 (있는 경우)
-          if (data.description != null && data.description!.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Container(
-              constraints: const BoxConstraints(maxHeight: 150),
-              child: SingleChildScrollView(
-                child: Text(
-                  data.description!,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                    height: 1.5,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
+          );
+        },
       ),
     );
   }
   
-  /// 스와이프 힌트 표시
-  Widget? _buildSwipeHint() {
+  /// 스와이프 힌트 표시 여부 결정
+  bool _shouldShowSwipeHint() {
     final effectiveUrlsA = _getEffectiveImageUrls('A');
     final effectiveUrlsB = _getEffectiveImageUrls('B');
     
     // 이미지가 없거나 하나만 있으면 힌트 표시 안 함
-    if ((effectiveUrlsA.length + effectiveUrlsB.length) <= 1) return null;
+    return (effectiveUrlsA.length + effectiveUrlsB.length) > 1;
+  }
+  
+  /// 텍스트가 지정된 줄 수를 초과하는지 확인
+  bool _exceedsMaxLines(String text, TextStyle style, double maxWidth, int maxLines) {
+    final TextPainter textPainter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      maxLines: maxLines,
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: maxWidth);
+    
+    return textPainter.didExceedMaxLines;
+  }
+  
+  /// 스와이프 힌트 표시
+  Widget _buildSwipeHint() {
+    final effectiveUrlsA = _getEffectiveImageUrls('A');
+    final effectiveUrlsB = _getEffectiveImageUrls('B');
     
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: const Duration(seconds: 2),
       builder: (context, value, child) {
-        if (value < 0.9) {
+        // 투명도 계산: 1.5초까지는 완전 불투명, 1.5초~2초 사이에 페이드아웃
+        double opacity;
+        if (value < 0.75) {  // 0~1.5초
+          opacity = 1.0;  // 완전 불투명
+        } else {  // 1.5초~2초
+          opacity = (1.0 - value) * 4;  // 1.0에서 0.0으로 감소
+        }
+        
+        if (opacity > 0) {
           return Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -669,14 +900,14 @@ class _NotificationImageViewerState extends State<NotificationImageViewer> {
                 if (effectiveUrlsA.isNotEmpty && effectiveUrlsB.isNotEmpty) ...[
                   Icon(
                     Icons.swipe,
-                    color: Colors.white.withValues(alpha: 1.0 - value),
+                    color: Colors.white.withValues(alpha: opacity),
                     size: 24,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '좌우: A/B 전환\n상하: 이미지',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 1.0 - value),
+                      color: Colors.white.withValues(alpha: opacity),
                       fontSize: 10,
                       height: 1.2,
                     ),
@@ -685,14 +916,14 @@ class _NotificationImageViewerState extends State<NotificationImageViewer> {
                 ] else ...[
                   Icon(
                     Icons.swipe_vertical,
-                    color: Colors.white.withValues(alpha: 1.0 - value),
+                    color: Colors.white.withValues(alpha: opacity),
                     size: 24,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '위아래로\n스와이프',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 1.0 - value),
+                      color: Colors.white.withValues(alpha: opacity),
                       fontSize: 11,
                       height: 1.2,
                     ),

@@ -576,7 +576,7 @@ class VersusNotificationBox extends StatelessWidget {
                       'A',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: _getAdaptiveTextSize() * 0.8,
+                        fontSize: _getAdaptiveTextSize() * 0.7,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -587,7 +587,7 @@ class VersusNotificationBox extends StatelessWidget {
                       title,
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: _getAdaptiveTextSize(),
+                        fontSize: _getAdaptiveTextSize() * 0.85,
                         fontWeight: FontWeight.w600,
                       ),
                       maxLines: 2,
@@ -612,7 +612,7 @@ class VersusNotificationBox extends StatelessWidget {
                       'B',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: _getAdaptiveTextSize() * 0.8,
+                        fontSize: _getAdaptiveTextSize() * 0.7,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -623,7 +623,7 @@ class VersusNotificationBox extends StatelessWidget {
                       dualModeSecondTitle!,
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: _getAdaptiveTextSize(),
+                        fontSize: _getAdaptiveTextSize() * 0.85,
                         fontWeight: FontWeight.w600,
                       ),
                       maxLines: 2,
@@ -654,6 +654,8 @@ class VersusNotificationBox extends StatelessWidget {
     print('[VersusNotificationBox] _showImageViewer 호출됨!');
     print('  - boxType: $boxType');
     print('  - question: ${question != null ? "있음" : "없음"}');
+    print('  - title: $title');
+    print('  - otherOptionTitle: $otherOptionTitle');
     
     if (question == null) {
       print('[VersusNotificationBox] question이 null이어서 뷰어를 열 수 없음');
@@ -667,6 +669,8 @@ class VersusNotificationBox extends StatelessWidget {
     print('[VersusNotificationBox] 이미지 뷰어에 전달할 데이터:');
     print('  - effectiveImageUrlsA: ${effectiveImageUrlsA.length}개');
     print('  - effectiveImageUrlsB: ${effectiveImageUrlsB.length}개');
+    print('  - imageUrls (자신): ${imageUrls?.length ?? 0}개');
+    print('  - otherImageUrls (상대): ${otherImageUrls?.length ?? 0}개');
     
     // 초기 인덱스 계산 (A박스의 모든 이미지 → B박스의 모든 이미지 순서)
     int initialIndex = 0;
@@ -678,8 +682,9 @@ class VersusNotificationBox extends StatelessWidget {
     NotificationImageViewer.show(
       context,
       question: question!,
+      // 항상 올바른 A/B 타이틀을 전달
       optionA: boxType == 'A' ? title : (otherOptionTitle ?? ''),
-      optionB: boxType == 'B' ? title : (otherOptionTitle ?? ''),
+      optionB: boxType == 'A' ? (otherOptionTitle ?? '') : title,
       // 단일 이미지 호환성
       imageUrlA: effectiveImageUrlsA.isNotEmpty ? effectiveImageUrlsA.first : null,
       imageUrlB: effectiveImageUrlsB.isNotEmpty ? effectiveImageUrlsB.first : null,
@@ -687,7 +692,7 @@ class VersusNotificationBox extends StatelessWidget {
       imageUrlsA: effectiveImageUrlsA.isNotEmpty ? effectiveImageUrlsA : null,
       imageUrlsB: effectiveImageUrlsB.isNotEmpty ? effectiveImageUrlsB : null,
       descriptionA: boxType == 'A' ? description : otherDescription,
-      descriptionB: boxType == 'B' ? description : otherDescription,
+      descriptionB: boxType == 'A' ? otherDescription : description,
       initialIndex: initialIndex,
     );
   }

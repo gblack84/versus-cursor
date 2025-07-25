@@ -20,10 +20,15 @@
 - 중간 화면 (350-400px): 80% 스케일링  
 - 작은 화면 (<350px): 70% 스케일링
 
-### 4. 멀티이미지 지원 (새로운 기능)
+### 4. 멀티이미지 지원 (v1.1.0 추가, v1.2.0 개선)
 - 각 박스에 여러 개의 이미지 표시 가능
-- PageView를 통한 이미지 탐색
+- PageView를 통한 이미지 탐색 (위아래 스와이프)
 - 이미지 뷰어로 전체화면 보기 지원
+- **v1.2.0 개선사항**:
+  - 단일 이미지 모드 지원 (B박스가 텍스트만 있을 때)
+  - 단일 모드에서 A/B 타이틀 모두 표시
+  - 좌우 스와이프 자동 비활성화
+  - 멀티이미지 카운트 정확도 개선
 
 ### 5. 향상된 UX (새로운 기능)
 - **모달 다이얼로그 전환**: 검은색 반투명 배경으로 몰입도 향상
@@ -227,9 +232,10 @@ static const Duration autoHideDuration = Duration(seconds: 30);
 static const double maxBoxHeight = 160.0;
 static const double minBoxHeight = 80.0;
 
-// 텍스트 크기 제한
-static const double maxTextSize = 16.0;
-static const double minTextSize = 10.0;
+// 텍스트 크기 제한 (v1.2.0에서 조정됨)
+static const double maxTextSize = 20.0;    // 16.0 → 20.0
+static const double minTextSize = 10.0;    // 유지
+static const double defaultTextSize = 14.0; // 12.0 → 18.0 → 14.0
 ```
 
 ## 🧪 테스트
@@ -322,6 +328,14 @@ VersusNotificationBox(
 )
 ```
 
+#### 5. 단일 이미지 모드에서 멀티이미지가 표시되지 않음 (v1.2.0)
+```dart
+// 원인: B박스 타이틀이 비어있어 단일 모드로 잘못 인식됨
+// 해결: NotificationImageViewer.show 호출 시 올바른 타이틀 전달 확인
+optionA: boxType == 'A' ? title : (otherOptionTitle ?? ''),
+optionB: boxType == 'A' ? (otherOptionTitle ?? '') : title,
+```
+
 ### 디버그 도구
 
 #### 1. 사이즈 정보 출력
@@ -343,6 +357,15 @@ LayoutSynchronizer.printConversionInfo(
 #### 3. 제약 조건 확인
 ```dart
 VotingNotificationConstraints.printConstraints(screenWidth);
+```
+
+#### 4. 멀티이미지 디버그 (v1.2.0 추가)
+```dart
+// NotificationImageViewer 초기화 시 자동 출력되는 로그
+// - 이미지 URL 개수
+// - 타이틀 정보
+// - 박스별 이미지 개수
+// - 초기 인덱스 및 박스 타입
 ```
 
 ## 📈 성능 지표
@@ -410,7 +433,9 @@ NotificationOverlay.showVoting(context, question: '질문', optionA: 'A', option
 
 ---
 
-**버전**: 1.1.0  
-**최종 업데이트**: 2025-07-23  
+**버전**: 1.2.0  
+**최종 업데이트**: 2025-07-25  
 **작성자**: SuperClaude Framework
-**변경사항**: 멀티이미지 지원, 박스 크기 평균화, 모달 UI 개선
+**변경사항**: 
+- v1.1.0 (2025-07-23): 멀티이미지 지원, 박스 크기 평균화, 모달 UI 개선
+- v1.2.0 (2025-07-25): 단일 이미지 모드 개선, 멀티이미지 뷰어 수정, 텍스트 크기 조정

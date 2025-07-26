@@ -9,6 +9,10 @@ const { validateContentWithGenkit } = require("./ai/contentModeration");
 const { matchTargetUsers } = require('./notifications/targetMatcher');
 const { createNotificationsForUsers } = require('./notifications/notificationCreator');
 
+// 최적화 유틸리티 import
+const { batchUpdateVoteResults, processWithRetry } = require('./utils/batch-processor');
+const { queueVoteUpdate, queueMessageStatusUpdate, queueProgressUpdate, getThrottle } = require('./utils/realtime-throttle');
+
 admin.initializeApp();
 
 // Vision API 클라이언트 초기화
@@ -1037,5 +1041,427 @@ exports.onPostCreatedSendNotifications = functions
       }
       
       throw error; // 재시도를 위해 오류 다시 던지기
+    }
+  });
+
+// 투표 발생 시 투표 추적 채팅방 업데이트 (스로틀링 적용)
+exports.onPostVoteUpdate = functions
+  .region('asia-northeast3')
+  .runWith({
+    memory: '512MB',
+    timeoutSeconds: 60
+  })
+  .firestore
+  .document('posts_record/{postId}')
+  .onUpdate(async (change, context) => {
+    const postId = context.params.postId;
+    const beforeData = change.before.data();
+    const afterData = change.after.data();
+    
+    // 투표 수 변경 확인
+    const beforeVotesA = beforeData.votes_a || beforeData.vote_count_a || 0;
+    const beforeVotesB = beforeData.votes_b || beforeData.vote_count_b || 0;
+    const afterVotesA = afterData.votes_a || afterData.vote_count_a || 0;
+    const afterVotesB = afterData.votes_b || afterData.vote_count_b || 0;
+    
+    const totalBeforeVotes = beforeVotesA + beforeVotesB;
+    const totalAfterVotes = afterVotesA + afterVotesB;
+    
+    // 투표가 발생했는지 확인
+    if (totalAfterVotes <= totalBeforeVotes) {
+      return null; // 투표 증가가 없으면 무시
+    }
+    
+    console.log(`[투표 업데이트] 게시물 ${postId}에 새로운 투표 발생`);
+    console.log(`[투표 업데이트] A: ${beforeVotesA} → ${afterVotesA}, B: ${beforeVotesB} → ${afterVotesB}`);
+    
+    try {
+      // 글로벌 투표 추적 채팅방 찾기
+      const voteChatId = 'vote_tracking_global';
+      const voteChatRef = admin.firestore()
+        .collection('chats_record')
+        .doc(voteChatId);
+      
+      const voteChatDoc = await voteChatRef.get();
+      if (!voteChatDoc.exists) {
+        console.log(`[투표 업데이트] 글로벌 투표 추적 채팅방이 없음: ${voteChatId}`);
+        return null;
+      }
+      
+      // 누가 어디에 투표했는지 확인
+      let voteInfo = '';
+      if (afterVotesA > beforeVotesA) {
+        voteInfo = `A(${afterData.option_a || 'A'})에 투표`;
+      } else if (afterVotesB > beforeVotesB) {
+        voteInfo = `B(${afterData.option_b || 'B'})에 투표`;
+      }
+      
+      // 현재 투표 상황 계산
+      const totalVotes = afterVotesA + afterVotesB;
+      const percentA = totalVotes > 0 ? Math.round((afterVotesA / totalVotes) * 100) : 0;
+      const percentB = totalVotes > 0 ? Math.round((afterVotesB / totalVotes) * 100) : 0;
+      
+      // 투표한 사용자 정보 가져오기 (작성자 정보 포함)
+      const creatorId = afterData.uid || afterData.userid || afterData.user_ref?.id;
+      let creatorName = '알 수 없음';
+      
+      if (creatorId) {
+        try {
+          const creatorDoc = await admin.firestore()
+            .collection('users_record')
+            .doc(creatorId)
+            .get();
+          
+          if (creatorDoc.exists) {
+            creatorName = creatorDoc.data().display_name || '익명';
+          }
+        } catch (error) {
+          console.log(`[투표 업데이트] 작성자 정보 가져오기 실패: ${error.message}`);
+        }
+      }
+      
+      // 스로틀링을 통한 효율적인 업데이트
+      // 실시간 업데이트를 큐에 추가 (즉시 처리하지 않고 배치로 처리)
+      const progressContent = `${creatorName}님의 투표에 참여했습니다! ${voteInfo}\\n\\n` +
+                            `"${afterData.question_title || '제목 없음'}"\\n\\n` +
+                            `현재 투표 현황:\\n` +
+                            `A: ${afterVotesA}표 (${percentA}%)\\n` +
+                            `B: ${afterVotesB}표 (${percentB}%)\\n` +
+                            `총 ${totalVotes}표`;
+      
+      // 진행 상황 업데이트를 스로틀 큐에 추가
+      queueProgressUpdate(postId, progressContent);
+      
+      // 채팅방 마지막 메시지는 즉시 업데이트 (사용자 경험을 위해)
+      await voteChatRef.update({
+        last_message_content: `새로운 투표! 현재 A:${afterVotesA} vs B:${afterVotesB}`,
+        last_message_at: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      
+      console.log(`[투표 업데이트] ✅ 투표 진행 상황 큐에 추가됨`);
+      
+      // 투표 완료 확인 (목표 투표 수 도달 또는 타겟 수 도달)
+      const targetAudience = afterData.targetAudience || {};
+      const targetCount = targetAudience.targetCount || afterData.target_votes || 10; // 기본 목표 10표
+      const matchedCount = targetAudience.matchedCount || 0;
+      
+      // 완료 조건: 1) 목표 투표 수 도달 또는 2) 타겟 사용자 수만큼 투표
+      const isVoteComplete = totalVotes >= targetCount || 
+                            (matchedCount > 0 && totalVotes >= matchedCount);
+      
+      if (isVoteComplete && !afterData.vote_completed) {
+        console.log(`[투표 완료] 투표 완료 감지! 총 ${totalVotes}표 / 목표 ${targetCount}표`);
+        
+        // 1. 게시물 상태 업데이트
+        await change.after.ref.update({
+          vote_completed: true,
+          vote_completed_at: admin.firestore.FieldValue.serverTimestamp(),
+          vote_status: 'completed'
+        });
+        
+        // 2. 모든 참여자 상태 업데이트 (processing → result_arrived)
+        await processVoteCompletion(postId, {
+          votesA: afterVotesA,
+          votesB: afterVotesB,
+          totalVotes,
+          percentA,
+          percentB,
+          winner: afterVotesA > afterVotesB ? 'A' : afterVotesB > afterVotesA ? 'B' : 'draw',
+          questionTitle: afterData.question_title || afterData.questionTitle,
+          optionA: afterData.option_a || afterData.optionA?.title || 'A',
+          optionB: afterData.option_b || afterData.optionB?.title || 'B',
+          creatorId,
+          creatorName
+        });
+        
+        // 3. 완료 메시지 추가
+        const completionMessage = {
+          message_id: `${Date.now()}_vote_complete`,
+          sender_id: 'system',
+          content: `🎉 투표가 완료되었습니다!\\n\\n` +
+                   `최종 결과:\\n` +
+                   `A(${afterData.option_a || afterData.optionA?.title || 'A'}): ${afterVotesA}표 (${percentA}%)\\n` +
+                   `B(${afterData.option_b || afterData.optionB?.title || 'B'}): ${afterVotesB}표 (${percentB}%)\\n\\n` +
+                   `승자: ${afterVotesA > afterVotesB ? 'A' : afterVotesB > afterVotesA ? 'B' : '무승부'}!`,
+          time_stamp: admin.firestore.FieldValue.serverTimestamp(),
+          message_type: 'vote_completion',
+          vote_post_id: postId,
+          final_votes_a: afterVotesA,
+          final_votes_b: afterVotesB,
+          winner: afterVotesA > afterVotesB ? 'A' : afterVotesB > afterVotesA ? 'B' : 'draw',
+        };
+        
+        await voteChatRef.collection('messages').add(completionMessage);
+        console.log(`[투표 완료] 🎉 투표 완료 처리 완료`);
+      }
+      
+    } catch (error) {
+      console.error('[투표 업데이트] ❌ 오류 발생:', error);
+    }
+  });
+
+// 투표 완료 시 모든 참여자 상태 업데이트 및 결과 알림 생성 (최적화된 버전)
+async function processVoteCompletion(postId, voteResults) {
+  console.log(`[processVoteCompletion] ========== 투표 완료 처리 시작 (최적화 버전) ==========`);
+  console.log(`[processVoteCompletion] 게시물 ID: ${postId}`);
+  console.log(`[processVoteCompletion] 최종 결과: A=${voteResults.votesA}표, B=${voteResults.votesB}표`);
+  
+  const db = admin.firestore();
+  const startTime = Date.now();
+  
+  try {
+    // 1. 병렬로 데이터 조회
+    const [messagesSnapshot, notificationsSnapshot, processingMessagesSnapshot] = await Promise.all([
+      // 관련 메시지 조회
+      db.collection('chats_record')
+        .doc('vote_tracking_global')
+        .collection('messages')
+        .where('vote_post_id', '==', postId)
+        .where('message_type', 'in', ['vote_request', 'vote_created'])
+        .get(),
+      
+      // 알림 문서 조회
+      db.collection('notifications_record')
+        .where('sourceId', '==', postId)
+        .where('type', '==', 'vote_request')
+        .get(),
+      
+      // 진행중 메시지 조회
+      db.collection('chats_record')
+        .doc('vote_tracking_global')
+        .collection('messages')
+        .where('vote_post_id', '==', postId)
+        .where('message_type', '==', 'vote_progress_update')
+        .get()
+    ]);
+    
+    console.log(`[processVoteCompletion] 데이터 조회 완료 (${Date.now() - startTime}ms)`);
+    console.log(`[processVoteCompletion] - 관련 메시지: ${messagesSnapshot.size}개`);
+    console.log(`[processVoteCompletion] - 관련 알림: ${notificationsSnapshot.size}개`);
+    console.log(`[processVoteCompletion] - 진행중 메시지: ${processingMessagesSnapshot.size}개`);
+    
+    // 2. 참여자 목록 수집
+    const participantIds = new Set();
+    notificationsSnapshot.forEach(doc => {
+      const userId = doc.data().userId;
+      if (userId) participantIds.add(userId);
+    });
+    
+    // 3. 배치 처리를 위한 작업 목록 생성
+    const batchOperations = [];
+    
+    // 메시지 상태 업데이트 작업
+    messagesSnapshot.forEach(doc => {
+      const messageData = doc.data();
+      batchOperations.push({
+        type: 'update',
+        ref: doc.ref,
+        data: messageData.message_type === 'vote_created' 
+          ? { vote_global_status: 'completed' }
+          : { vote_user_status: 'result_arrived' }
+      });
+    });
+    
+    // 알림 상태 업데이트 작업
+    notificationsSnapshot.forEach(doc => {
+      batchOperations.push({
+        type: 'update',
+        ref: doc.ref,
+        data: {
+          status: 'completed',
+          completedAt: admin.firestore.FieldValue.serverTimestamp()
+        }
+      });
+    });
+    
+    // 결과 알림 생성 작업
+    const resultNotificationData = {
+      type: 'vote_result',
+      sourceId: postId,
+      sourceType: 'post',
+      title: '투표 결과가 도착했습니다!',
+      message: `"${voteResults.questionTitle}" 투표가 완료되었습니다. 결과를 확인해보세요!`,
+      imageUrl: null,
+      actionUrl: `/posts/${postId}`,
+      read: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      priority: 'high',
+      content: JSON.stringify({
+        postData: {
+          postId,
+          questionTitle: voteResults.questionTitle,
+          optionA: voteResults.optionA,
+          optionB: voteResults.optionB,
+          votesA: voteResults.votesA,
+          votesB: voteResults.votesB,
+          percentA: voteResults.percentA,
+          percentB: voteResults.percentB,
+          winner: voteResults.winner,
+          totalVotes: voteResults.totalVotes
+        }
+      })
+    };
+    
+    // 각 참여자에게 결과 알림 생성
+    for (const userId of participantIds) {
+      const notificationRef = db.collection('notifications_record').doc();
+      batchOperations.push({
+        type: 'set',
+        ref: notificationRef,
+        data: { ...resultNotificationData, userId }
+      });
+    }
+    
+    // 생성자에게도 결과 알림
+    if (voteResults.creatorId && !participantIds.has(voteResults.creatorId)) {
+      const creatorNotificationRef = db.collection('notifications_record').doc();
+      batchOperations.push({
+        type: 'set',
+        ref: creatorNotificationRef,
+        data: {
+          ...resultNotificationData,
+          userId: voteResults.creatorId,
+          title: '내 투표가 완료되었습니다!',
+          message: `"${voteResults.questionTitle}" 투표가 완료되었습니다. 총 ${voteResults.totalVotes}명이 참여했습니다!`
+        }
+      });
+    }
+    
+    // 4. 배치 처리 실행 (500개씩 나눠서 처리)
+    const batchResults = await require('./utils/batch-processor').processBatch(
+      batchOperations,
+      (batch, operation) => {
+        if (operation.type === 'update') {
+          batch.update(operation.ref, operation.data);
+        } else if (operation.type === 'set') {
+          batch.set(operation.ref, operation.data);
+        }
+      },
+      500 // Firestore 배치 제한
+    );
+    
+    // 5. 진행중 메시지 삭제 (병렬 처리)
+    const deleteResults = await require('./utils/batch-processor').processParallelBatch(
+      processingMessagesSnapshot.docs,
+      async (doc) => doc.ref.delete(),
+      50 // 동시에 50개씩 삭제
+    );
+    
+    const totalTime = Date.now() - startTime;
+    
+    console.log(`[processVoteCompletion] ✅ 투표 완료 처리 성공 (총 ${totalTime}ms)`);
+    console.log(`[processVoteCompletion] - 배치 처리 결과:`, batchResults);
+    console.log(`[processVoteCompletion] - 삭제 성공: ${deleteResults.filter(r => r.status === 'fulfilled').length}개`);
+    console.log(`[processVoteCompletion] - 총 작업 수: ${batchOperations.length + processingMessagesSnapshot.size}개`);
+    
+    // 성능이 느린 경우 경고
+    if (totalTime > 5000) {
+      console.warn(`[processVoteCompletion] ⚠️ 처리 시간이 5초를 초과했습니다: ${totalTime}ms`);
+    }
+    
+  } catch (error) {
+    console.error('[processVoteCompletion] ❌ 오류 발생:', error);
+    throw error;
+  }
+}
+
+// 예약된 함수: 스로틀 큐 플러시 (1분마다)
+exports.flushThrottleQueue = functions
+  .region('asia-northeast3')
+  .pubsub.schedule('every 1 minutes')
+  .onRun(async (context) => {
+    console.log('[flushThrottleQueue] 스로틀 큐 플러시 시작');
+    
+    try {
+      const throttle = getThrottle();
+      await throttle.flushAll();
+      console.log('[flushThrottleQueue] ✅ 스로틀 큐 플러시 완료');
+    } catch (error) {
+      console.error('[flushThrottleQueue] ❌ 플러시 실패:', error);
+    }
+    
+    return null;
+  });
+
+// 예약된 함수: 24시간 후 자동 투표 종료
+exports.checkVoteTimeouts = functions
+  .region('asia-northeast3')
+  .pubsub.schedule('every 1 hours')
+  .onRun(async (context) => {
+    console.log('[checkVoteTimeouts] ========== 투표 타임아웃 확인 시작 ==========');
+    
+    const db = admin.firestore();
+    const now = Date.now();
+    const twentyFourHoursAgo = new Date(now - 24 * 60 * 60 * 1000);
+    
+    try {
+      // 24시간이 지났고 아직 완료되지 않은 투표 찾기
+      const expiredVotesSnapshot = await db
+        .collection('posts_record')
+        .where('vote_completed', '!=', true)
+        .where('created_at', '<', twentyFourHoursAgo)
+        .where('targetAudience.type', 'in', ['quick', 'public', 'custom', 'test'])
+        .limit(50) // 배치 처리를 위해 제한
+        .get();
+      
+      console.log(`[checkVoteTimeouts] 만료된 투표 ${expiredVotesSnapshot.size}개 발견`);
+      
+      // 각 만료된 투표 처리
+      const updatePromises = expiredVotesSnapshot.docs.map(async (doc) => {
+        const postData = doc.data();
+        const postId = doc.id;
+        
+        const votesA = postData.votes_a || postData.vote_count_a || 0;
+        const votesB = postData.votes_b || postData.vote_count_b || 0;
+        const totalVotes = votesA + votesB;
+        
+        // 최소 1표라도 있는 경우만 완료 처리
+        if (totalVotes > 0) {
+          const percentA = Math.round((votesA / totalVotes) * 100);
+          const percentB = Math.round((votesB / totalVotes) * 100);
+          
+          // 게시물 상태 업데이트
+          await doc.ref.update({
+            vote_completed: true,
+            vote_completed_at: admin.firestore.FieldValue.serverTimestamp(),
+            vote_status: 'completed',
+            vote_timeout: true
+          });
+          
+          // 투표 완료 처리
+          await processVoteCompletion(postId, {
+            votesA,
+            votesB,
+            totalVotes,
+            percentA,
+            percentB,
+            winner: votesA > votesB ? 'A' : votesB > votesA ? 'B' : 'draw',
+            questionTitle: postData.question_title || postData.questionTitle,
+            optionA: postData.option_a || postData.optionA?.title || 'A',
+            optionB: postData.option_b || postData.optionB?.title || 'B',
+            creatorId: postData.uid || postData.userid,
+            creatorName: '시스템'
+          });
+          
+          console.log(`[checkVoteTimeouts] 투표 ${postId} 타임아웃으로 완료 처리됨`);
+        } else {
+          // 투표가 전혀 없는 경우는 취소 처리
+          await doc.ref.update({
+            vote_completed: true,
+            vote_status: 'cancelled',
+            vote_cancelled_at: admin.firestore.FieldValue.serverTimestamp(),
+            vote_cancelled_reason: 'no_votes_timeout'
+          });
+          
+          console.log(`[checkVoteTimeouts] 투표 ${postId} 참여자 없음으로 취소됨`);
+        }
+      });
+      
+      await Promise.all(updatePromises);
+      
+      console.log(`[checkVoteTimeouts] ✅ 타임아웃 확인 완료`);
+      
+    } catch (error) {
+      console.error('[checkVoteTimeouts] ❌ 오류 발생:', error);
     }
   });

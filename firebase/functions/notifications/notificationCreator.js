@@ -143,6 +143,41 @@ async function createNotificationsForUsers(users, postId, postData) {
         });
       console.log('[알림 생성] ✅ 게시물 통계 업데이트 완료');
       
+      // 글로벌 투표 추적 채팅방에 상태 업데이트 메시지 추가
+      const voteChatId = 'vote_tracking_global';
+      const voteChatRef = admin.firestore()
+        .collection('chats_record')
+        .doc(voteChatId);
+        
+      const voteChatDoc = await voteChatRef.get();
+      if (voteChatDoc.exists) {
+        console.log('[알림 생성] 글로벌 투표 추적 채팅방에 상태 업데이트 중...');
+        
+        const statusMessage = {
+          message_id: `${Date.now()}_system_status`,
+          sender_id: 'system',
+          content: `${successCount}명에게 투표 요청을 보냈습니다.\n\n타겟 타입: ${postData.targetAudience?.type || '알 수 없음'}`,
+          time_stamp: admin.firestore.FieldValue.serverTimestamp(),
+          message_type: 'vote_status_update',
+          vote_post_id: postId,
+          target_count: successCount,
+        };
+        
+        await voteChatRef.collection('messages').add(statusMessage);
+        
+        // 테스트 모드가 아닐 때만 채팅방 마지막 메시지 업데이트
+        // (테스트 모드에서는 Flutter 앱에서 이미 "Pikle AI가 투표 요청을 보냈습니다"로 설정함)
+        if (postData.targetAudience?.type !== 'test') {
+          await voteChatRef.update({
+            last_message_content: `시스템: ${successCount}명에게 투표 요청을 보냈습니다`,
+            last_message_at: admin.firestore.FieldValue.serverTimestamp(),
+          });
+          console.log('[알림 생성] ✅ 글로벌 투표 추적 채팅방 업데이트 완료');
+        } else {
+          console.log('[알림 생성] 테스트 모드 - 채팅방 업데이트 건너뛰기 (Flutter에서 이미 처리됨)');
+        }
+      }
+      
       // 채팅 메시지 생성 (타겟 타입이 custom, test일 때만)
       if (['custom', 'test'].includes(postData.targetAudience?.type)) {
         console.log('[알림 생성] 채팅 메시지 생성 시작...');
@@ -175,60 +210,85 @@ async function createNotificationsForUsers(users, postId, postData) {
   console.log('[알림 생성] ========== 알림 생성 종료 ==========');
 }
 
-// 투표 요청 채팅 메시지 생성 함수
+// 투표 요청 채팅 메시지 생성 함수 (글로벌 채팅방으로 통합)
 async function createVoteRequestChatMessage(senderId, recipientId, postId, postData) {
   try {
-    // 참가자 ID 정렬 (일관된 채팅방 ID 생성을 위해)
-    const participantIds = [senderId, recipientId].sort();
-    const chatId = participantIds.join('_');
-    
-    // 기존 채팅방 확인
+    // 글로벌 투표 추적 채팅방 사용
+    const voteChatId = 'vote_tracking_global';
     const chatRef = admin.firestore()
       .collection('chats_record')
-      .doc(chatId);
+      .doc(voteChatId);
       
     const chatDoc = await chatRef.get();
     
     if (!chatDoc.exists) {
-      // 새 채팅방 생성
+      console.log('[채팅 메시지 생성] 글로벌 투표 추적 채팅방이 없음 - 생성 중...');
+      // 글로벌 채팅방이 없으면 생성
       await chatRef.set({
-        participantlds: participantIds,
-        lastMessageContent: '투표 요청을 보냈습니다',
+        participantlds: [],
+        lastMessageContent: '투표 추적 채팅방입니다',
         lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
         created_at: admin.firestore.FieldValue.serverTimestamp(),
-        chat_name: '채팅',
+        chat_name: '투표 피드',
+        chat_type: 'vote_tracking',
+        is_global: true,
       });
     }
     
-    // 투표 요청 메시지 생성
-    const messageId = uuidv4();
+    // 수신자를 참여자에 추가
+    await chatRef.update({
+      participantlds: admin.firestore.FieldValue.arrayUnion(recipientId),
+    });
     
-    // optionA와 optionB에서 텍스트와 이미지 추출
-    const optionAData = postData.optionA || {};
-    const optionBData = postData.optionB || {};
+    // 수신자 정보 가져오기
+    let recipientName = '알 수 없음';
+    try {
+      const recipientDoc = await admin.firestore()
+        .collection('users_record')
+        .doc(recipientId)
+        .get();
+      
+      if (recipientDoc.exists) {
+        recipientName = recipientDoc.data().display_name || '익명';
+      }
+    } catch (error) {
+      console.log(`[채팅 메시지 생성] 수신자 정보 가져오기 실패: ${error.message}`);
+    }
+    
+    // 투표 요청 수신 메시지 생성 (수신자가 받았다는 메시지)
+    const messageId = uuidv4();
     
     await chatRef.collection('messages').add({
       message_id: messageId,
-      sender_id: senderId,
-      content: '',
+      sender_id: recipientId, // 수신자가 보낸 것처럼 표시
+      content: `${recipientName}님이 투표 요청을 받았습니다.\n\n제목: ${postData.questionTitle || postData.question_title || ''}`,
       time_stamp: admin.firestore.FieldValue.serverTimestamp(),
       is_read: false,
-      message_type: 'vote_request',
+      message_type: 'vote_request_received',
       vote_post_id: postId,
       vote_title: postData.questionTitle || postData.question_title || '',
       vote_description: postData.content || '',
-      vote_option_a_text: optionAData.text || optionAData.title || '',
-      vote_option_b_text: optionBData.text || optionBData.title || '',
-      vote_option_a_image: optionAData.imageUrl || optionAData.image_url || '',
-      vote_option_b_image: optionBData.imageUrl || optionBData.image_url || '',
+      vote_option_a_text: postData.optionA?.text || postData.optionA?.title || '',
+      vote_option_b_text: postData.optionB?.text || postData.optionB?.title || '',
+      vote_option_a_image: postData.optionA?.imageUrl || postData.optionA?.image_url || '',
+      vote_option_b_image: postData.optionB?.imageUrl || postData.optionB?.image_url || '',
       vote_status: 'pending',
+      creator_id: senderId,
+      recipient_id: recipientId,
+      recipient_name: recipientName,
     });
     
-    // 채팅방 마지막 메시지 업데이트
-    await chatRef.update({
-      lastMessageContent: `투표 요청: ${postData.questionTitle || ''}`,
-      lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+    // 테스트 모드가 아닐 때만 채팅방 마지막 메시지 업데이트
+    // (테스트 모드에서는 Flutter 앱에서 이미 "Pikle AI가 투표 요청을 보냈습니다"로 설정함)
+    if (postData.targetAudience?.type !== 'test') {
+      await chatRef.update({
+        lastMessageContent: `${recipientName}님이 투표 요청을 받았습니다`,
+        lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      console.log(`[채팅 메시지 생성] 글로벌 채팅방에 투표 수신 메시지 추가 완료: ${recipientName}`);
+    } else {
+      console.log(`[채팅 메시지 생성] 테스트 모드 - 채팅방 업데이트 건너뛰기 (Flutter에서 Pikle AI 메시지로 이미 처리됨)`);
+    }
     
   } catch (error) {
     console.error('[채팅 메시지 생성] 오류:', error);

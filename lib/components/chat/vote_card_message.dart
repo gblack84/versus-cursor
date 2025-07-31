@@ -622,7 +622,7 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
   Future<void> _submitVote(String option) async {
     try {
       final postRef = FirebaseFirestore.instance
-          .collection('posts_record')
+          .collection('posts')
           .doc(widget.postId);
       
       final userId = currentUserUid;

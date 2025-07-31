@@ -51,7 +51,7 @@ class NotificationService {
     debugPrint('[NotificationService]   - expiry_time > ${Timestamp.now().toDate()}');
     
     _notificationListener = FirebaseFirestore.instance
-        .collection('notifications_record')
+        .collection('notifications')
         .where('user_id', isEqualTo: userId)
         .where('type', isEqualTo: 'voting_request')
         .where('read', isEqualTo: false)
@@ -309,7 +309,7 @@ class NotificationService {
       };
       
       await FirebaseFirestore.instance
-          .collection('posts_record')
+          .collection('posts')
           .doc(postId)
           .collection('votes')
           .add(voteData);
@@ -317,7 +317,7 @@ class NotificationService {
       // 2. 투표 수 업데이트 (트랜잭션)
       await FirebaseFirestore.instance.runTransaction((transaction) async {
         final postRef = FirebaseFirestore.instance
-            .collection('posts_record')
+            .collection('posts')
             .doc(postId);
         
         final postDoc = await transaction.get(postRef);
@@ -370,7 +370,7 @@ class NotificationService {
   Future<void> _markNotificationAsRead(String notificationId) async {
     try {
       await FirebaseFirestore.instance
-          .collection('notifications_record')
+          .collection('notifications')
           .doc(notificationId)
           .update({
         'read': true,
@@ -386,7 +386,7 @@ class NotificationService {
   /// 사용자의 읽지 않은 알림 수 가져오기
   Stream<int> getUnreadNotificationCount(String userId) {
     return FirebaseFirestore.instance
-        .collection('notifications_record')
+        .collection('notifications')
         .where('user_id', isEqualTo: userId)
         .where('type', isEqualTo: 'voting_request')
         .where('read', isEqualTo: false)
@@ -427,7 +427,7 @@ class NotificationService {
       
       // 기존 채팅방 확인
       final existingChat = await FirebaseFirestore.instance
-          .collection('chats_record')
+          .collection('chats')
           .doc(chatId)
           .get();
       
@@ -437,7 +437,7 @@ class NotificationService {
       } else {
         // 새 채팅방 생성
         chatRef = FirebaseFirestore.instance
-            .collection('chats_record')
+            .collection('chats')
             .doc(chatId);
             
         await chatRef.set({

@@ -99,7 +99,7 @@ class _MyAppState extends State<MyApp> {
           // lastActive 필드 업데이트
           try {
             await FirebaseFirestore.instance
-              .collection('users_record')
+              .collection('users')
               .doc(user.uid)
               .update({
                 'lastActive': FieldValue.serverTimestamp(),

@@ -189,7 +189,7 @@ class GlobalNotificationManager {
       if (question.isEmpty) {
         debugPrint('[GlobalNotificationManager] 게시물 정보 조회 중...');
         final postDoc = await FirebaseFirestore.instance
-            .collection('posts_record')
+            .collection('posts')
             .doc(notification.sourceId)
             .get();
         

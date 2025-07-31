@@ -274,7 +274,7 @@ final imageUrls = await StorageService.uploadImage(
 
 // 3. 게시물 생성
 final postRef = await FirebaseFirestore.instance
-  .collection('posts_record')
+  .collection('posts')
   .add(postData);
 
 // 4. 타겟 오디언스 설정

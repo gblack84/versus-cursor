@@ -135,7 +135,7 @@ class TargetAudienceService {
 
       // 4. Firestore에 저장
       final docRef = await FirebaseFirestore.instance
-          .collection('posts_record')
+          .collection('posts')
           .add(completePostData);
 
       print('[TargetAudienceService] 투표 생성 완료: ${docRef.id}');
@@ -169,7 +169,7 @@ class TargetAudienceService {
       }
 
       await FirebaseFirestore.instance
-          .collection('posts_record')
+          .collection('posts')
           .doc(postId)
           .update(updateData);
 
@@ -186,7 +186,7 @@ class TargetAudienceService {
   Future<TargetAudienceStats> getUserStats(String userId) async {
     try {
       final querySnapshot = await FirebaseFirestore.instance
-          .collection('posts_record')
+          .collection('posts')
           .where('user', isEqualTo: userId)
           .where('targetAudience', isNotEqualTo: null)
           .orderBy('targetAudience')

@@ -54,7 +54,7 @@ class TestNotificationButton extends StatelessWidget {
       debugPrint('[TestNotificationButton] Firestore에 저장 중...');
       
       final docRef = await FirebaseFirestore.instance
-          .collection('notifications_record')
+          .collection('notifications')
           .add(notificationData);
       
       debugPrint('[TestNotificationButton] ✅ 알림 생성 성공! ID: ${docRef.id}');

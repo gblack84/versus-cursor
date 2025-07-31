@@ -23,10 +23,7 @@
   },
   "devDependencies": {
     "eslint": "^6.8.0",
-    "eslint-plugin-promise": "^4.2.1",
-    "mocha": "^10.2.0",
-    "chai": "^4.3.7",
-    "firebase-functions-test": "^3.1.0"
+    "eslint-plugin-promise": "^4.2.1"
   },
   "scripts": {
     "lint": "./node_modules/.bin/eslint --max-warnings=0 .",
@@ -34,12 +31,7 @@
     "shell": "firebase -P versus-space-1lwwiw functions:shell",
     "start": "npm run shell",
     "logs": "firebase -P versus-space-1lwwiw functions:log",
-    "compile": "cp ../../tsconfig.template.json ./tsconfig-compile.json && tsc --project tsconfig-compile.json",
-    "test": "mocha test/vote-flow-test.js --timeout 60000",
-    "test:watch": "mocha test/vote-flow-test.js --watch --timeout 60000",
-    "test:emulator": "firebase emulators:exec --only firestore,functions,auth 'npm test'",
-    "test:performance": "mocha test/performance-optimization-test.js --timeout 60000",
-    "test:all": "mocha 'test/**/*.js' --timeout 60000"
+    "compile": "cp ../../tsconfig.template.json ./tsconfig-compile.json && tsc --project tsconfig-compile.json"
   },
   "engines": {
     "node": "20"

@@ -54,16 +54,6 @@ notifications/
 - 관심사, 연령대, 성별 기준
 - AI 점수로 우선순위 정렬
 
-**1.4 테스트 모드 (Test) - 개발용**
-```javascript
-{
-  type: 'test',
-  targetCount: 10  // 실제로는 본인에게만 전송
-}
-```
-- admin/tester 역할 전용
-- UI/플로우 테스트용
-- 선택한 수만큼 본인에게 반복 전송
 
 #### 매칭 프로세스
 
@@ -129,7 +119,6 @@ const matchedUsers = await matchTargetUsers(
 - **Quick**: "AI가 당신에게 추천하는 투표입니다"
 - **Public**: "모든 사용자에게 공개된 투표입니다"
 - **Custom**: "게임, 기술에 관심있으신 20대 분들을 위한 투표입니다"
-- **Test**: "🧪 테스트 알림 #1 - UI/플로우 확인용"
 
 #### 배치 처리
 
@@ -192,25 +181,22 @@ class NotificationService {
 
 ## 테스트 방법
 
-### 1. 테스트 계정 설정
+### 1. 플랫폼별 테스트 계정 사용
 
-```javascript
-// Firestore에서 사용자 role 설정
-{
-  uid: 'test_user_id',
-  email: 'tester@versus.test',
-  role: 'tester',  // 또는 'admin'
-  ...
-}
-```
+이제 플랫폼별로 자동 생성되는 테스트 계정을 사용합니다:
 
-### 2. 테스트 모드 사용
+- **iOS**: `tester-ios@versus.test`
+- **Android**: `tester-android@versus.test`
+- **Web**: `tester-web@versus.test`
+- **macOS**: `tester-macos@versus.test`
 
-1. 테스터 계정으로 로그인
-2. 게시물 작성 시 타겟 오디언스 선택
-3. "테스트 모드" 옵션 선택 (테스터만 표시)
-4. 원하는 알림 수 설정
-5. 본인에게만 알림 전송됨
+### 2. 테스트 방법
+
+1. 각 플랫폼에서 "플랫폼 테스트" 버튼으로 로그인
+2. 한 플랫폼에서 게시물 작성
+3. 타겟 오디언스 설정 (quick, public, custom)
+4. 다른 플랫폼에서 알림 수신 확인
+5. 실제 사용자 시나리오와 동일하게 테스트
 
 ### 3. 테스트 스크립트
 
@@ -226,8 +212,8 @@ async function testNotifications() {
     optionA: 'A 옵션',
     optionB: 'B 옵션',
     targetAudience: {
-      type: 'test',
-      targetCount: 5
+      type: 'quick',  // 또는 'public', 'custom'
+      targetCount: 50
     }
   };
   
@@ -264,15 +250,8 @@ async function testNotifications() {
 
 ### 1. 권한 검증
 
-```javascript
-// 테스트 모드 권한 확인
-if (targetAudience.type === 'test') {
-  const creator = await getUser(postData.uid);
-  if (creator.role !== 'admin' && creator.role !== 'tester') {
-    throw new Error('Unauthorized');
-  }
-}
-```
+- 모든 타겟 타입은 일반 사용자도 사용 가능
+- admin/tester role은 향후 다른 기능에서 활용
 
 ### 2. 데이터 검증
 
@@ -311,11 +290,6 @@ console.log(`[알림] ${successCount}개 알림 생성 완료`);
 - 네트워크 연결 확인
 - 폴백 모드 동작 확인
 
-### 3. 테스트 모드 접근 불가
-
-- 사용자 role 확인
-- Firestore 권한 규칙 확인
-- 클라이언트 동기화 확인
 
 ## 향후 계획
 

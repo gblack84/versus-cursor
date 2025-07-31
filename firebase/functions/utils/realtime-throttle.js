@@ -80,7 +80,7 @@ class RealtimeThrottle {
       const voteCountB = grouped.votes.filter(v => v.option === 'B').length;
       const voters = [...new Set(grouped.votes.map(v => v.userId))];
       
-      const postRef = db.collection('posts_record').doc(postId);
+      const postRef = db.collection('posts').doc(postId);
       batch.update(postRef, {
         vote_count_a: admin.firestore.FieldValue.increment(voteCountA),
         vote_count_b: admin.firestore.FieldValue.increment(voteCountB),
@@ -107,45 +107,38 @@ class RealtimeThrottle {
         messageGroups.get(update.messageId).push(update);
       });
       
-      // 각 메시지 업데이트
+      // 각 사용자의 AI 채팅방에서 메시지 업데이트
       for (const [messageId, messageUpdates] of messageGroups) {
-        const messageRef = db
-          .collection('chats_record')
-          .doc('vote_tracking_global')
-          .collection('messages')
-          .doc(messageId);
+        const aiAssistantId = 'ai_assistant';
         
-        const participantUpdates = {};
-        messageUpdates.forEach(update => {
-          participantUpdates[`vote_participants.${update.userId}`] = {
-            status: update.status,
-            voted_option: update.votedOption,
-            timestamp: admin.firestore.FieldValue.serverTimestamp()
-          };
-        });
-        
-        batch.update(messageRef, participantUpdates);
+        // 각 사용자별로 처리
+        for (const update of messageUpdates) {
+          // AI와의 1:1 채팅방 ID
+          const chatId = [aiAssistantId, update.userId].sort().join('_');
+          
+          // 해당 채팅방의 메시지 찾기
+          const messageQuery = await db
+            .collection('chats')
+            .doc(chatId)
+            .collection('messages')
+            .where('vote_post_id', '==', postId)
+            .where('message_type', 'in', ['vote_request', 'vote_created'])
+            .limit(1)
+            .get();
+          
+          if (!messageQuery.empty) {
+            const messageDoc = messageQuery.docs[0];
+            batch.update(messageDoc.ref, {
+              vote_status: update.status,
+              voted_option: update.votedOption,
+              updated_at: admin.firestore.FieldValue.serverTimestamp()
+            });
+          }
+        }
       }
     }
     
-    // 진행 상황 메시지 생성 (스로틀링)
-    if (grouped.progressUpdates.length > 0) {
-      const latestProgress = grouped.progressUpdates[grouped.progressUpdates.length - 1];
-      const progressRef = db
-        .collection('chats_record')
-        .doc('vote_tracking_global')
-        .collection('messages')
-        .doc();
-      
-      batch.set(progressRef, {
-        message_id: progressRef.id,
-        sender_id: 'system',
-        message_type: 'vote_progress_update',
-        vote_post_id: postId,
-        content: latestProgress.content,
-        time_stamp: admin.firestore.FieldValue.serverTimestamp()
-      });
-    }
+    // 진행 상황 메시지는 AI 채팅방에 생성하지 않음 (필요시 추가 가능)
     
     await batch.commit();
     console.log(`Processed ${updates.length} updates for post ${postId}`);

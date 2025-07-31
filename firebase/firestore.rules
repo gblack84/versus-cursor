@@ -356,5 +356,11 @@ service cloud.firestore {
       allow write: if true;
       allow delete: if true;
     }
+
+    // users 컬렉션 규칙 (기본 users 컬렉션용)
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth.uid == userId;
+    }
   }
 }

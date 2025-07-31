@@ -173,41 +173,51 @@ async function processWithRetry(items, processor, options = {}) {
  */
 async function batchUpdateVoteResults(postId, participants) {
   const db = admin.firestore();
-  const batch = db.batch();
+  const aiAssistantId = 'ai_assistant';
+  const updatePromises = [];
   
-  // 메시지 쿼리
-  const messagesQuery = await db
-    .collection('chats_record')
-    .doc('vote_tracking_global')
-    .collection('messages')
-    .where('vote_post_id', '==', postId)
-    .where('message_type', '==', 'vote_request')
-    .get();
+  // 각 참여자의 AI 채팅방에서 메시지 업데이트
+  for (const userId of participants) {
+    // AI와의 1:1 채팅방 ID
+    const chatId = [aiAssistantId, userId].sort().join('_');
+    
+    // 해당 채팅방의 투표 메시지 업데이트
+    const messagesPromise = db
+      .collection('chats')
+      .doc(chatId)
+      .collection('messages')
+      .where('vote_post_id', '==', postId)
+      .where('message_type', 'in', ['vote_request', 'vote_created'])
+      .get()
+      .then(snapshot => {
+        const batch = db.batch();
+        
+        snapshot.forEach(doc => {
+          batch.update(doc.ref, {
+            vote_status: 'completed',
+            updated_at: admin.firestore.FieldValue.serverTimestamp()
+          });
+        });
+        
+        // 알림 생성
+        const notificationRef = db.collection('notifications').doc();
+        batch.set(notificationRef, {
+          user_id: userId,
+          type: 'vote_result',
+          source_id: postId,
+          title: '투표 결과가 도착했습니다!',
+          body: '참여하신 투표의 결과를 확인해보세요.',
+          created_at: admin.firestore.FieldValue.serverTimestamp(),
+          read: false
+        });
+        
+        return batch.commit();
+      });
+    
+    updatePromises.push(messagesPromise);
+  }
   
-  // 배치 업데이트
-  messagesQuery.docs.forEach(doc => {
-    batch.update(doc.ref, {
-      vote_user_status: 'result_arrived',
-      vote_global_status: 'completed',
-      updated_at: admin.firestore.FieldValue.serverTimestamp()
-    });
-  });
-  
-  // 알림 생성
-  participants.forEach(userId => {
-    const notificationRef = db.collection('notifications_record').doc();
-    batch.set(notificationRef, {
-      user_id: userId,
-      type: 'vote_result',
-      source_id: postId,
-      title: '투표 결과가 도착했습니다!',
-      body: '참여하신 투표의 결과를 확인해보세요.',
-      created_at: admin.firestore.FieldValue.serverTimestamp(),
-      read: false
-    });
-  });
-  
-  await batch.commit();
+  await Promise.all(updatePromises);
 }
 
 module.exports = {

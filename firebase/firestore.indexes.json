@@ -1,17 +1,7 @@
 {
   "indexes": [
     {
-      "collectionGroup": "users_record",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "lastActive",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "users_record",
+      "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -25,7 +15,7 @@
       ]
     },
     {
-      "collectionGroup": "users_record",
+      "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -39,7 +29,7 @@
       ]
     },
     {
-      "collectionGroup": "users_record",
+      "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -53,7 +43,7 @@
       ]
     },
     {
-      "collectionGroup": "notifications_record",
+      "collectionGroup": "notifications",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -70,11 +60,59 @@
         },
         {
           "fieldPath": "expiry_time",
-          "order": "DESCENDING"
+          "order": "ASCENDING"
         },
         {
           "fieldPath": "created_at",
           "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "notifications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "read",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "type",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "user_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "expiry_time",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "created_at",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "notifications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "read",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "type",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "user_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "expiry_time",
+          "order": "ASCENDING"
         }
       ]
     }

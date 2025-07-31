@@ -1,0 +1,266 @@
+/**
+ * AI 피클 채팅 서비스
+ * AI 어시스턴트와의 채팅 메시지 생성 및 관리
+ */
+
+const { admin } = require('../config/firebase');
+const { v4: uuidv4 } = require('uuid');
+
+// AI 어시스턴트 상수
+const AI_ASSISTANT_ID = 'ai_assistant';
+const AI_ASSISTANT_NAME = 'AI 피클';
+
+/**
+ * AI와의 1:1 채팅방 ID 생성
+ * @param {string} userId - 사용자 ID
+ * @returns {string} 채팅방 ID
+ */
+function getAIChatId(userId) {
+  return [AI_ASSISTANT_ID, userId].sort().join('_');
+}
+
+/**
+ * 투표 요청 메시지 생성 (투표 받는 사용자용)
+ * @param {string} userId - 대상 사용자 ID
+ * @param {string} postId - 게시물 ID
+ * @param {Object} postData - 게시물 데이터
+ * @returns {Promise<string>} 생성된 메시지 ID
+ */
+async function createVoteRequestMessage(userId, postId, postData) {
+  const chatId = getAIChatId(userId);
+  const messageId = uuidv4();
+  const now = admin.firestore.Timestamp.now();
+  
+  const messageData = {
+    // 기본 메시지 정보
+    message_id: messageId,
+    sender_id: AI_ASSISTANT_ID,
+    receiver_id: userId,
+    content: `${postData.authorName || '누군가'}님이 당신의 의견을 듣고 싶어해요!`,
+    time_stamp: now,
+    is_read: false,
+    
+    // 투표 메시지 정보
+    message_type: 'vote_request',
+    vote_post_id: postId,
+    vote_title: postData.questionTitle || postData.question_title || '',
+    vote_description: postData.description || '',
+    vote_option_a_text: postData.optionA || postData.option_a || '',
+    vote_option_b_text: postData.optionB || postData.option_b || '',
+    vote_option_a_image: postData.imageUrlA || postData.image_url_a || null,
+    vote_option_b_image: postData.imageUrlB || postData.image_url_b || null,
+    
+    // 멀티이미지 지원
+    vote_option_a_images: postData.imageUrlsA || postData.image_urls_a || null,
+    vote_option_b_images: postData.imageUrlsB || postData.image_urls_b || null,
+    
+    // 카드 상태
+    card_status: 'voting_request', // 초기 상태: 피클요청
+    vote_status: 'pending',
+    vote_end_time: admin.firestore.Timestamp.fromDate(
+      new Date(Date.now() + 10 * 60 * 1000) // 10분 후
+    )
+  };
+  
+  // 채팅방이 없으면 생성
+  const chatRef = admin.firestore().collection('chats').doc(chatId);
+  const chatDoc = await chatRef.get();
+  
+  if (!chatDoc.exists) {
+    await chatRef.set({
+      user_a: AI_ASSISTANT_ID,
+      user_b: userId,
+      last_message: messageData.content,
+      last_message_time: now,
+      last_message_sent_by: AI_ASSISTANT_ID,
+      users: [AI_ASSISTANT_ID, userId]
+    });
+  } else {
+    // 마지막 메시지 업데이트
+    await chatRef.update({
+      last_message: messageData.content,
+      last_message_time: now,
+      last_message_sent_by: AI_ASSISTANT_ID
+    });
+  }
+  
+  // 메시지 생성
+  await chatRef.collection('messages').doc(messageId).set(messageData);
+  
+  console.log(`[AI 채팅] 투표 요청 메시지 생성: userId=${userId}, messageId=${messageId}`);
+  return messageId;
+}
+
+/**
+ * 투표 생성 메시지 (작성자용)
+ * @param {string} userId - 작성자 ID
+ * @param {string} postId - 게시물 ID
+ * @param {Object} postData - 게시물 데이터
+ * @returns {Promise<string>} 생성된 메시지 ID
+ */
+async function createVoteCreatedMessage(userId, postId, postData) {
+  const chatId = getAIChatId(userId);
+  const messageId = uuidv4();
+  const now = admin.firestore.Timestamp.now();
+  
+  const messageData = {
+    // 기본 메시지 정보
+    message_id: messageId,
+    sender_id: AI_ASSISTANT_ID,
+    receiver_id: userId,
+    content: '피클이 생성되었어요! 10분 후에 결과가 공개됩니다.',
+    time_stamp: now,
+    is_read: false,
+    
+    // 투표 메시지 정보
+    message_type: 'vote_created',
+    vote_post_id: postId,
+    vote_title: postData.questionTitle || postData.question_title || '',
+    vote_description: postData.description || '',
+    vote_option_a_text: postData.optionA || postData.option_a || '',
+    vote_option_b_text: postData.optionB || postData.option_b || '',
+    vote_option_a_image: postData.imageUrlA || postData.image_url_a || null,
+    vote_option_b_image: postData.imageUrlB || postData.image_url_b || null,
+    
+    // 멀티이미지 지원
+    vote_option_a_images: postData.imageUrlsA || postData.image_urls_a || null,
+    vote_option_b_images: postData.imageUrlsB || postData.image_urls_b || null,
+    
+    // 카드 상태
+    card_status: 'in_progress', // 작성자는 진행중 상태로 시작
+    vote_status: 'active',
+    vote_end_time: admin.firestore.Timestamp.fromDate(
+      new Date(Date.now() + 10 * 60 * 1000) // 10분 후
+    )
+  };
+  
+  // 채팅방이 없으면 생성
+  const chatRef = admin.firestore().collection('chats').doc(chatId);
+  const chatDoc = await chatRef.get();
+  
+  if (!chatDoc.exists) {
+    await chatRef.set({
+      user_a: AI_ASSISTANT_ID,
+      user_b: userId,
+      last_message: messageData.content,
+      last_message_time: now,
+      last_message_sent_by: AI_ASSISTANT_ID,
+      users: [AI_ASSISTANT_ID, userId]
+    });
+  } else {
+    // 마지막 메시지 업데이트
+    await chatRef.update({
+      last_message: messageData.content,
+      last_message_time: now,
+      last_message_sent_by: AI_ASSISTANT_ID
+    });
+  }
+  
+  // 메시지 생성
+  await chatRef.collection('messages').doc(messageId).set(messageData);
+  
+  console.log(`[AI 채팅] 투표 생성 메시지 생성: userId=${userId}, messageId=${messageId}`);
+  return messageId;
+}
+
+/**
+ * 카드 상태 업데이트
+ * @param {string} userId - 사용자 ID
+ * @param {string} messageId - 메시지 ID
+ * @param {string} newStatus - 새로운 상태
+ * @param {Object} additionalData - 추가 데이터
+ */
+async function updateCardStatus(userId, messageId, newStatus, additionalData = {}) {
+  const chatId = getAIChatId(userId);
+  const messageRef = admin.firestore()
+    .collection('chats')
+    .doc(chatId)
+    .collection('messages')
+    .doc(messageId);
+  
+  const updateData = {
+    card_status: newStatus,
+    ...additionalData
+  };
+  
+  await messageRef.update(updateData);
+  
+  console.log(`[AI 채팅] 카드 상태 업데이트: messageId=${messageId}, status=${newStatus}`);
+}
+
+/**
+ * 투표 참여 시 상태 업데이트
+ * @param {string} userId - 사용자 ID
+ * @param {string} postId - 게시물 ID
+ * @param {string} choice - 선택 (A/B)
+ */
+async function updateVoteParticipation(userId, postId, choice) {
+  const chatId = getAIChatId(userId);
+  
+  // 해당 투표 메시지 찾기
+  const messagesSnapshot = await admin.firestore()
+    .collection('chats')
+    .doc(chatId)
+    .collection('messages')
+    .where('vote_post_id', '==', postId)
+    .where('message_type', '==', 'vote_request')
+    .get();
+  
+  if (!messagesSnapshot.empty) {
+    const messageDoc = messagesSnapshot.docs[0];
+    await updateCardStatus(userId, messageDoc.id, 'in_progress', {
+      user_voted: true,
+      vote_choice: choice,
+      vote_participated_at: admin.firestore.Timestamp.now()
+    });
+  }
+}
+
+/**
+ * 투표 완료 메시지 생성
+ * @param {string} userId - 대상 사용자 ID
+ * @param {string} postId - 게시물 ID
+ * @param {Object} voteResults - 투표 결과
+ */
+async function createVoteResultMessage(userId, postId, voteResults) {
+  const chatId = getAIChatId(userId);
+  
+  // 기존 투표 메시지 상태 업데이트
+  const messagesSnapshot = await admin.firestore()
+    .collection('chats')
+    .doc(chatId)
+    .collection('messages')
+    .where('vote_post_id', '==', postId)
+    .where('message_type', 'in', ['vote_request', 'vote_created'])
+    .get();
+  
+  const updatePromises = [];
+  messagesSnapshot.forEach(doc => {
+    const data = doc.data();
+    const finalStatus = data.user_voted ? 'completed' : 'not_participated';
+    
+    updatePromises.push(
+      updateCardStatus(userId, doc.id, finalStatus, {
+        vote_status: 'completed',
+        vote_results: {
+          votesA: voteResults.displayVotesA,
+          votesB: voteResults.displayVotesB,
+          winner: voteResults.displayVotesA > voteResults.displayVotesB ? 'A' : 'B'
+        }
+      })
+    );
+  });
+  
+  await Promise.all(updatePromises);
+  
+  console.log(`[AI 채팅] 투표 결과 메시지 업데이트 완료: userId=${userId}, postId=${postId}`);
+}
+
+module.exports = {
+  getAIChatId,
+  createVoteRequestMessage,
+  createVoteCreatedMessage,
+  updateCardStatus,
+  updateVoteParticipation,
+  createVoteResultMessage
+};

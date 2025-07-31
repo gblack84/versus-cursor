@@ -53,35 +53,70 @@ C. BLOCK – 무의미 장난·트롤링·정책 경계선(질문·옵션 불일
 🤥 **사기·허위 정보**: 스팸, 피싱, AI/전문가/타인 사칭  
 🔞 **음란·성적으로 노골적 콘텐츠**: 공익 목적 없는 성적 만족용 질문
 
-/*===================== 7) 출력(JSON) – 반드시 준수 =====================*/
+/*===================== 7) 예상 투표 비율 추론 =====================*/
+질문과 옵션을 분석하여 일반적인 사람들이 어떻게 투표할지 예측하세요.
+- 문화적 맥락, 세대별 선호도, 보편적 가치관 고려
+- 한국 사용자 기준으로 예측
+- 너무 극단적인 비율은 피하고 자연스러운 분포로 (20:80보다는 35:65 선호)
+- 두 옵션이 비슷한 매력을 가진 경우 50:50에 가깝게
+
+/*===================== 8) 출력(JSON) – 반드시 준수 =====================*/
 {
   "action": "PROCEED" | "PROCEED_WITH_SUGGESTION" | "BLOCK",
   "feedback": {
     "title": "짧고 핵심적인 한 줄",
     "description": "사용자에게 보여줄 상세 가이드"
   } | null,
-  "confidence": 0.0-1.0           // 신뢰도(선택)
+  "confidence": 0.0-1.0,          // 신뢰도(선택)
+  "expectedRatio": {
+    "A": 0.0-1.0,                 // A 예상 비율
+    "B": 0.0-1.0,                 // B 예상 비율 (A + B = 1.0)
+    "reasoning": "예측 근거"      // 내부 참고용
+  }
 }
 
-/*========================== 8) 응답 예시 ==========================*/
+/*========================== 9) 응답 예시 ==========================*/
 ① 완전 통과
-{ "action":"PROCEED", "feedback":null, "confidence":0.92 }
+{ 
+  "action":"PROCEED", 
+  "feedback":null, 
+  "confidence":0.92,
+  "expectedRatio": {
+    "A": 0.65,
+    "B": 0.35,
+    "reasoning": "피자가 대중적으로 더 선호되는 음식"
+  }
+}
 
 ② 개선 권장
-{ "action":"PROCEED_WITH_SUGGESTION",
+{ 
+  "action":"PROCEED_WITH_SUGGESTION",
   "feedback":{
     "title":"후보 정보가 더 궁금해요!",
     "description":"각 후보의 경력·공약을 한두 줄씩 적어주면 투표가 더 쉬워집니다 😊"
   },
-  "confidence":0.74 }
+  "confidence":0.74,
+  "expectedRatio": {
+    "A": 0.52,
+    "B": 0.48,
+    "reasoning": "정보 부족으로 명확한 선호도 예측 어려움"
+  }
+}
 
 ③ 차단
-{ "action":"BLOCK",
+{ 
+  "action":"BLOCK",
   "feedback":{
     "title":"비교가 성립하지 않아요 😢",
     "description":"A·B 옵션이 질문과 무관합니다. 직접 비교 가능한 대상을 선택해 주세요."
   },
-  "confidence":0.86 }
+  "confidence":0.86,
+  "expectedRatio": {
+    "A": 0.5,
+    "B": 0.5,
+    "reasoning": "차단된 콘텐츠는 기본값 사용"
+  }
+}
 `;
 
 // 새로운 응답 형식을 기존 형식으로 변환하는 함수
@@ -93,12 +128,20 @@ function convertResponseFormat(aiResponse) {
     'BLOCK': 'error'
   };
 
+  // 예상 비율 기본값 설정
+  const expectedRatio = aiResponse.expectedRatio || {
+    A: 0.5,
+    B: 0.5,
+    reasoning: "기본값 사용"
+  };
+
   return {
     isValid: aiResponse.action !== 'BLOCK',
     severity: severityMap[aiResponse.action] || 'pass',
     reason: aiResponse.feedback?.title || '',
     suggestions: aiResponse.feedback?.description || '',
-    confidence: aiResponse.confidence || 0.5
+    confidence: aiResponse.confidence || 0.5,
+    expectedRatio: expectedRatio
   };
 }
 
@@ -108,8 +151,8 @@ async function getUserHistory(userId, admin) {
     // 인덱스 문제로 인한 임시 조치: orderBy 제거
     // TODO: Firestore 복합 인덱스 생성 후 orderBy 다시 추가
     const userPostsSnapshot = await admin.firestore()
-      .collection('posts_record')
-      .where('user_info.user_ref', '==', admin.firestore().doc(`users_record/${userId}`))
+      .collection('posts')
+      .where('user_info.user_ref', '==', admin.firestore().doc(`users/${userId}`))
       .limit(5)
       .get();
 
@@ -278,6 +321,7 @@ ${userHistory.map((post, i) => `${i + 1}. ${post.questionTitle} (A: ${post.title
 1. 질문과 A/B 옵션의 논리적 연관성
 2. 이미지가 있는 경우, 이미지 내용과 질문/옵션의 관련성
 3. 전체적인 맥락의 적절성
+4. 예상 투표 비율 추론 (한국 사용자 기준)
 
 【중요】 이미지에 사람 얼굴이 포함되어 있고, 질문이 "닮았나요" 형태이며, 
 선택지가 동물/캐릭터/사물인 경우 = 얼굴 평가로 간주하여 반드시 BLOCK 처리하세요.`;

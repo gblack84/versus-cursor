@@ -63,6 +63,8 @@ class GeminiModerationResult {
   final String suggestions;
   final double confidence;
   final String? documentId;
+  final double expectedRatioA;
+  final double expectedRatioB;
 
   GeminiModerationResult({
     required this.isValid,
@@ -71,6 +73,8 @@ class GeminiModerationResult {
     required this.suggestions,
     required this.confidence,
     this.documentId,
+    this.expectedRatioA = 0.5,
+    this.expectedRatioB = 0.5,
   });
 }
 

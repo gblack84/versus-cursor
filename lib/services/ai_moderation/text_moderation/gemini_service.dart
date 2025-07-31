@@ -32,7 +32,7 @@ class GeminiModerationService {
       
       // Cloud Function 호출
       final callable = _functions.httpsCallable('validatePostContentWithGemini');
-      final response = await callable.call<Map<String, dynamic>>({
+      final response = await callable.call({
         'question': questionTitle,
         'titleA': titleA,
         'titleB': titleB,
@@ -48,7 +48,8 @@ class GeminiModerationService {
         'revisionCount': revisionCount,
       });
       
-      final result = response.data;
+      // 타입 안전 변환
+      final result = Map<String, dynamic>.from(response.data as Map);
       print('[GeminiModerationService] Response received from Cloud Function');
       
       // 새로운 응답 형식 확인 (action 필드가 있는지)
@@ -65,6 +66,11 @@ class GeminiModerationService {
         final severity = severityMap[result['action']] ?? 'pass';
         final feedback = result['feedback'] as Map<String, dynamic>?;
         
+        // expectedRatio 처리
+        final expectedRatio = result['expectedRatio'] != null 
+            ? Map<String, dynamic>.from(result['expectedRatio'] as Map) 
+            : null;
+        
         return GeminiModerationResult(
           isValid: isValid,
           reason: feedback?['title'] ?? '',
@@ -72,11 +78,18 @@ class GeminiModerationService {
           suggestions: feedback?['description'] ?? '',
           confidence: (result['confidence'] ?? 1.0).toDouble(),
           documentId: result['documentId'] as String?,
+          expectedRatioA: expectedRatio?['A']?.toDouble() ?? 0.5,
+          expectedRatioB: expectedRatio?['B']?.toDouble() ?? 0.5,
         );
       }
       
       // 기존 형식 처리 (하위 호환성)
       print('[GeminiModerationService] isValid: ${result['isValid']}, severity: ${result['severity']}');
+      
+      // expectedRatio 처리
+      final expectedRatio = result['expectedRatio'] != null 
+          ? Map<String, dynamic>.from(result['expectedRatio'] as Map) 
+          : null;
       
       // Cloud Function에서 반환한 결과를 GeminiModerationResult로 변환
       return GeminiModerationResult(
@@ -86,6 +99,8 @@ class GeminiModerationService {
         suggestions: result['suggestions'] ?? '',
         confidence: (result['confidence'] ?? 1.0).toDouble(),
         documentId: result['documentId'] as String?,
+        expectedRatioA: expectedRatio?['A']?.toDouble() ?? 0.5,
+        expectedRatioB: expectedRatio?['B']?.toDouble() ?? 0.5,
       );
     } on FirebaseFunctionsException catch (e) {
       print('[GeminiModerationService] Cloud Function Error: ${e.code} - ${e.message}');

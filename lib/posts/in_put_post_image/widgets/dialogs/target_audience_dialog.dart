@@ -97,13 +97,6 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
   void _completeSetup(TargetAudienceModel model) {
     final result = model.toMap();
     
-    // 테스트 모드인 경우 직접 알림 생성 플래그 추가
-    if (model.collectionType == 'test') {
-      result['shouldCreateTestNotification'] = true;
-      result['testUserId'] = currentUserUid;
-      debugPrint('[TargetAudienceDialog] 테스트 모드 - 직접 알림 생성 플래그 설정');
-    }
-    
     debugPrint('[TargetAudienceDialog] ========== 설정 완료 ==========');
     debugPrint('[TargetAudienceDialog] 최종 결과:');
     debugPrint('[TargetAudienceDialog]   - 수집 방식: ${result['type']}');

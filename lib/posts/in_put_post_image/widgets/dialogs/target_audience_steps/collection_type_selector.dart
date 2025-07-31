@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/core/app_theme.dart';
-import '/auth/firebase_auth/auth_util.dart';
-import '/backend/backend.dart';
 import '../../../models/target_audience_model.dart';
 import '../../../constants/target_audience_constants.dart';
 
@@ -20,57 +18,13 @@ class CollectionTypeSelector extends StatefulWidget {
 }
 
 class _CollectionTypeSelectorState extends State<CollectionTypeSelector> {
-  String? userRole;
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    debugPrint('[CollectionTypeSelector] initState() - 사용자 역할 로드 시작');
-    _loadUserRole();
-  }
-
-  Future<void> _loadUserRole() async {
-    if (currentUserReference != null) {
-      debugPrint('[CollectionTypeSelector] 사용자 문서 조회 중...');
-      final userDoc = await currentUserReference!.get();
-      final userData = userDoc.data() as Map<String, dynamic>?;
-      
-      setState(() {
-        userRole = userData?['role'] as String?;
-        isLoading = false;
-      });
-      
-      debugPrint('[CollectionTypeSelector] 사용자 역할: $userRole');
-      debugPrint('[CollectionTypeSelector] 테스트 모드 표시 여부: ${userRole == 'admin' || userRole == 'tester'}');
-    } else {
-      debugPrint('[CollectionTypeSelector] 현재 사용자 참조 없음');
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<TargetAudienceModel>(
       builder: (context, model, child) {
-        if (isLoading) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        }
-
-        // role에 따라 표시할 타입 필터링
-        final availableTypes = TargetAudienceConstants.collectionTypes.entries
-            .where((entry) {
-              // test 타입은 admin 또는 tester role일 때만 표시
-              if (entry.key == 'test') {
-                return userRole == 'admin' || userRole == 'tester';
-              }
-              return true;
-            })
-            .toList();
+        // 모든 타입 표시
+        final availableTypes = TargetAudienceConstants.collectionTypes.entries.toList();
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(TargetAudienceConstants.contentPadding),

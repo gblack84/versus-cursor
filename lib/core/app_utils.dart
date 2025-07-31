@@ -227,6 +227,31 @@ Rect? getWidgetBoundingBox(BuildContext context) {
 bool get isAndroid => !kIsWeb && Platform.isAndroid;
 bool get isiOS => !kIsWeb && Platform.isIOS;
 bool get isWeb => kIsWeb;
+bool get isMacOS => !kIsWeb && Platform.isMacOS;
+bool get isWindows => !kIsWeb && Platform.isWindows;
+bool get isLinux => !kIsWeb && Platform.isLinux;
+
+// 플랫폼 문자열 반환 함수
+String getPlatformSuffix() {
+  if (kIsWeb) return 'web';
+  if (Platform.isIOS) return 'ios';
+  if (Platform.isAndroid) return 'android';
+  if (Platform.isMacOS) return 'macos';
+  if (Platform.isWindows) return 'windows';
+  if (Platform.isLinux) return 'linux';
+  return 'unknown';
+}
+
+// 플랫폼 표시 이름
+String getPlatformDisplayName() {
+  if (kIsWeb) return 'Web';
+  if (Platform.isIOS) return 'iOS';
+  if (Platform.isAndroid) return 'Android';
+  if (Platform.isMacOS) return 'macOS';
+  if (Platform.isWindows) return 'Windows';
+  if (Platform.isLinux) return 'Linux';
+  return 'Unknown';
+}
 
 const kBreakpointSmall = 479.0;
 const kBreakpointMedium = 767.0;

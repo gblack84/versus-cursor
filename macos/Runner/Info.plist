@@ -28,5 +28,24 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.636984750551-qdoebo17prehltqnv2onocn5qa5sb3vl</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>versusspace.com</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>versusspace</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

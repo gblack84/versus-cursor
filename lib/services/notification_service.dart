@@ -388,8 +388,11 @@ class NotificationService {
     return FirebaseFirestore.instance
         .collection('notifications_record')
         .where('user_id', isEqualTo: userId)
+        .where('type', isEqualTo: 'voting_request')
         .where('read', isEqualTo: false)
         .where('expiry_time', isGreaterThan: Timestamp.now())
+        .orderBy('expiry_time', descending: false)
+        .orderBy('created_at', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs.length);
   }

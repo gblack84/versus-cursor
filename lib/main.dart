@@ -9,6 +9,7 @@ import 'auth/firebase_auth/firebase_user_provider.dart';
 import 'auth/firebase_auth/auth_util.dart';
 
 import 'backend/firebase/firebase_config.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'core/app_theme.dart';
 import 'core/app_utils.dart';
 import 'services/notification_service.dart';
@@ -86,7 +87,7 @@ class _MyAppState extends State<MyApp> {
     _router = createRouter(_appStateNotifier);
     
     userStream = versusSpaceFirebaseUserStream()
-      ..listen((user) {
+      ..listen((user) async {
         _appStateNotifier.update(user);
         
         // NotificationService 초기화
@@ -94,7 +95,19 @@ class _MyAppState extends State<MyApp> {
           // 사용자가 로그인하면 알림 리스닝 시작
           NotificationService.instance.startListening(user.uid!);
           GlobalNotificationManager.instance.startListening();
-          debugPrint('[Main] 알림 서비스 시작: ${user.uid}');
+          
+          // lastActive 필드 업데이트
+          try {
+            await FirebaseFirestore.instance
+              .collection('users_record')
+              .doc(user.uid)
+              .update({
+                'lastActive': FieldValue.serverTimestamp(),
+              });
+            debugPrint('[Main] 알림 서비스 시작 및 lastActive 업데이트: ${user.uid}');
+          } catch (e) {
+            debugPrint('[Main] lastActive 업데이트 실패: $e');
+          }
         } else {
           // 사용자가 로그아웃하면 알림 리스닝 중지
           NotificationService.instance.stopListening();

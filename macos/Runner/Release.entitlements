@@ -8,6 +8,11 @@
 	<true/>
 	<key>com.apple.security.network.server</key>
 	<true/>
-	
+	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+	<true/>
+	<key>com.apple.security.keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)com.mycompany.versusspace</string>
+	</array>
 </dict>
 </plist>

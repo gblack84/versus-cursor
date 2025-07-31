@@ -590,30 +590,34 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                               ),
                                             ),
                                             SizedBox(width: 12.0),
-                                            // 테스터 계정
+                                            // 플랫폼별 테스트 계정
                                             AppButtonWidget(
                                               onPressed: () async {
                                                 GoRouter.of(context).prepareAuthEvent();
                                                 
+                                                // iOS 플랫폼 고정
+                                                final testEmail = 'tester-ios@versus.test';
+                                                final testPassword = 'test1234!';
+                                                
                                                 // 먼저 로그인 시도
                                                 var user = await authManager.signInWithEmail(
                                                   context,
-                                                  'tester@versus.test',
-                                                  'test1234!',
+                                                  testEmail,
+                                                  testPassword,
                                                 );
                                                 
                                                 // 계정이 없으면 생성
                                                 if (user == null) {
                                                   user = await authManager.createAccountWithEmail(
                                                     context,
-                                                    'tester@versus.test',
-                                                    'test1234!',
+                                                    testEmail,
+                                                    testPassword,
                                                   );
                                                   
                                                   if (user == null) {
                                                     ScaffoldMessenger.of(context).showSnackBar(
                                                       SnackBar(
-                                                        content: Text('테스터 계정 생성 실패'),
+                                                        content: Text('iOS 테스터 계정 생성 실패'),
                                                       ),
                                                     );
                                                     return;
@@ -621,10 +625,11 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   
                                                   // 사용자 문서 생성
                                                   final usersCreateData = {
-                                                    'email': 'tester@versus.test',
-                                                    'display_name': '테스터',
+                                                    'email': testEmail,
+                                                    'display_name': '테스터 (아이폰 16 프로)',
                                                     'created_time': FieldValue.serverTimestamp(),
                                                     'role': 'tester',
+                                                    'platform': 'ios',  // 플랫폼 정보 저장
                                                     'uid': user.uid,
                                                   };
                                                   await UsersRecord.collection.doc(user.uid).set(usersCreateData);
@@ -634,6 +639,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   ...mapToFirestore({
                                                     'last_active_time': FieldValue.serverTimestamp(),
                                                     'role': 'tester',
+                                                    'platform': 'ios',
                                                   }),
                                                 });
                                                 
@@ -642,9 +648,9 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   context.mounted,
                                                 );
                                               },
-                                              text: '테스터',
+                                              text: '아이폰 16 프로',
                                               options: AppButtonOptions(
-                                                width: 100.0,
+                                                width: 120.0,
                                                 height: 40.0,
                                                 padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                                                 iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
@@ -653,6 +659,249 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   font: GoogleFonts.plusJakartaSans(),
                                                   color: Colors.white,
                                                   fontSize: 14.0,
+                                                  letterSpacing: 0.0,
+                                                ),
+                                                elevation: 3.0,
+                                                borderSide: BorderSide(
+                                                  color: Colors.transparent,
+                                                  width: 1.0,
+                                                ),
+                                                borderRadius: BorderRadius.circular(8.0),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 12.0),
+                                        // 두 번째 줄: Android, macOS, 웹앱
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            // Android 테스트 계정
+                                            AppButtonWidget(
+                                              onPressed: () async {
+                                                GoRouter.of(context).prepareAuthEvent();
+                                                
+                                                final testEmail = 'tester-android@versus.test';
+                                                final testPassword = 'test1234!';
+                                                
+                                                // 먼저 로그인 시도
+                                                var user = await authManager.signInWithEmail(
+                                                  context,
+                                                  testEmail,
+                                                  testPassword,
+                                                );
+                                                
+                                                // 계정이 없으면 생성
+                                                if (user == null) {
+                                                  user = await authManager.createAccountWithEmail(
+                                                    context,
+                                                    testEmail,
+                                                    testPassword,
+                                                  );
+                                                  
+                                                  if (user == null) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text('Android 테스터 계정 생성 실패'),
+                                                      ),
+                                                    );
+                                                    return;
+                                                  }
+                                                  
+                                                  // 사용자 문서 생성
+                                                  final usersCreateData = {
+                                                    'email': testEmail,
+                                                    'display_name': '테스터 (Android)',
+                                                    'created_time': FieldValue.serverTimestamp(),
+                                                    'role': 'tester',
+                                                    'platform': 'android',
+                                                    'uid': user.uid,
+                                                  };
+                                                  await UsersRecord.collection.doc(user.uid).set(usersCreateData);
+                                                }
+                                                
+                                                await currentUserReference!.update({
+                                                  ...mapToFirestore({
+                                                    'last_active_time': FieldValue.serverTimestamp(),
+                                                    'role': 'tester',
+                                                    'platform': 'android',
+                                                  }),
+                                                });
+                                                
+                                                context.pushNamedAuth(
+                                                  TestpageSelectWidget.routeName,
+                                                  context.mounted,
+                                                );
+                                              },
+                                              text: 'Android',
+                                              options: AppButtonOptions(
+                                                width: 80.0,
+                                                height: 40.0,
+                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
+                                                iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
+                                                color: AppTheme.of(context).secondary,
+                                                textStyle: AppTheme.of(context).titleSmall.override(
+                                                  font: GoogleFonts.plusJakartaSans(),
+                                                  color: Colors.white,
+                                                  fontSize: 13.0,
+                                                  letterSpacing: 0.0,
+                                                ),
+                                                elevation: 3.0,
+                                                borderSide: BorderSide(
+                                                  color: Colors.transparent,
+                                                  width: 1.0,
+                                                ),
+                                                borderRadius: BorderRadius.circular(8.0),
+                                              ),
+                                            ),
+                                            SizedBox(width: 8.0),
+                                            // macOS 테스트 계정
+                                            AppButtonWidget(
+                                              onPressed: () async {
+                                                GoRouter.of(context).prepareAuthEvent();
+                                                
+                                                final testEmail = 'tester-macos@versus.test';
+                                                final testPassword = 'test1234!';
+                                                
+                                                // 먼저 로그인 시도
+                                                var user = await authManager.signInWithEmail(
+                                                  context,
+                                                  testEmail,
+                                                  testPassword,
+                                                );
+                                                
+                                                // 계정이 없으면 생성
+                                                if (user == null) {
+                                                  user = await authManager.createAccountWithEmail(
+                                                    context,
+                                                    testEmail,
+                                                    testPassword,
+                                                  );
+                                                  
+                                                  if (user == null) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text('macOS 테스터 계정 생성 실패'),
+                                                      ),
+                                                    );
+                                                    return;
+                                                  }
+                                                  
+                                                  // 사용자 문서 생성
+                                                  final usersCreateData = {
+                                                    'email': testEmail,
+                                                    'display_name': '테스터 (macOS)',
+                                                    'created_time': FieldValue.serverTimestamp(),
+                                                    'role': 'tester',
+                                                    'platform': 'macos',
+                                                    'uid': user.uid,
+                                                  };
+                                                  await UsersRecord.collection.doc(user.uid).set(usersCreateData);
+                                                }
+                                                
+                                                await currentUserReference!.update({
+                                                  ...mapToFirestore({
+                                                    'last_active_time': FieldValue.serverTimestamp(),
+                                                    'role': 'tester',
+                                                    'platform': 'macos',
+                                                  }),
+                                                });
+                                                
+                                                context.pushNamedAuth(
+                                                  TestpageSelectWidget.routeName,
+                                                  context.mounted,
+                                                );
+                                              },
+                                              text: 'macOS 앱',
+                                              options: AppButtonOptions(
+                                                width: 90.0,
+                                                height: 40.0,
+                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
+                                                iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
+                                                color: AppTheme.of(context).secondary,
+                                                textStyle: AppTheme.of(context).titleSmall.override(
+                                                  font: GoogleFonts.plusJakartaSans(),
+                                                  color: Colors.white,
+                                                  fontSize: 13.0,
+                                                  letterSpacing: 0.0,
+                                                ),
+                                                elevation: 3.0,
+                                                borderSide: BorderSide(
+                                                  color: Colors.transparent,
+                                                  width: 1.0,
+                                                ),
+                                                borderRadius: BorderRadius.circular(8.0),
+                                              ),
+                                            ),
+                                            SizedBox(width: 8.0),
+                                            // 웹앱 테스트 계정
+                                            AppButtonWidget(
+                                              onPressed: () async {
+                                                GoRouter.of(context).prepareAuthEvent();
+                                                
+                                                final testEmail = 'tester-web@versus.test';
+                                                final testPassword = 'test1234!';
+                                                
+                                                // 먼저 로그인 시도
+                                                var user = await authManager.signInWithEmail(
+                                                  context,
+                                                  testEmail,
+                                                  testPassword,
+                                                );
+                                                
+                                                // 계정이 없으면 생성
+                                                if (user == null) {
+                                                  user = await authManager.createAccountWithEmail(
+                                                    context,
+                                                    testEmail,
+                                                    testPassword,
+                                                  );
+                                                  
+                                                  if (user == null) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text('웹앱 테스터 계정 생성 실패'),
+                                                      ),
+                                                    );
+                                                    return;
+                                                  }
+                                                  
+                                                  // 사용자 문서 생성
+                                                  final usersCreateData = {
+                                                    'email': testEmail,
+                                                    'display_name': '테스터 (웹앱)',
+                                                    'created_time': FieldValue.serverTimestamp(),
+                                                    'role': 'tester',
+                                                    'platform': 'web',
+                                                    'uid': user.uid,
+                                                  };
+                                                  await UsersRecord.collection.doc(user.uid).set(usersCreateData);
+                                                }
+                                                
+                                                await currentUserReference!.update({
+                                                  ...mapToFirestore({
+                                                    'last_active_time': FieldValue.serverTimestamp(),
+                                                    'role': 'tester',
+                                                    'platform': 'web',
+                                                  }),
+                                                });
+                                                
+                                                context.pushNamedAuth(
+                                                  TestpageSelectWidget.routeName,
+                                                  context.mounted,
+                                                );
+                                              },
+                                              text: '웹앱',
+                                              options: AppButtonOptions(
+                                                width: 70.0,
+                                                height: 40.0,
+                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
+                                                iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
+                                                color: AppTheme.of(context).secondary,
+                                                textStyle: AppTheme.of(context).titleSmall.override(
+                                                  font: GoogleFonts.plusJakartaSans(),
+                                                  color: Colors.white,
+                                                  fontSize: 13.0,
                                                   letterSpacing: 0.0,
                                                 ),
                                                 elevation: 3.0,

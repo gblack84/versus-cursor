@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 /// 타겟 오디언스 설정을 위한 모델 클래스
 class TargetAudienceModel extends ChangeNotifier {
   // 수집 방식
-  String _collectionType = 'quick'; // quick, public, custom, test
+  String _collectionType = 'quick'; // quick, public, custom
   String get collectionType => _collectionType;
   set collectionType(String value) {
     _collectionType = value;

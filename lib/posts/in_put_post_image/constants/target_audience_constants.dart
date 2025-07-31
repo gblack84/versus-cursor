@@ -23,13 +23,6 @@ class TargetAudienceConstants {
       icon: '⚙️',
       description: '',
     ),
-    'test': CollectionTypeInfo(
-      id: 'test',
-      title: '테스트 모드',
-      subtitle: '선택한 수만큼 본인에게만 알림이 전송됩니다',
-      icon: '🧪',
-      description: '테스트',
-    ),
   };
 
   // 목표 응답 수 옵션

@@ -1,6 +1,5 @@
 // upload_choice_bottom_sheet_widget.dart 임시 제거 - 새로운 업로드 위젯 구현 필요
 import 'dart:async';
-import 'dart:convert';
 import '/core/app_theme.dart';
 import '/core/app_utils.dart';
 import '/utils/content_filter.dart';
@@ -38,6 +37,7 @@ import 'constants/animation_constants.dart';
 import 'constants/field_styles.dart';
 import 'services/selection_result_processor.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
+import '/services/ai_moderation/models/moderation_result.dart' as ai;
 
 class InPutPostImageWidget extends StatefulWidget {
   const InPutPostImageWidget({super.key});
@@ -500,7 +500,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         
         // Firestore 저장 진행
         DebugHelper.log('[_validateAllTexts] _saveToFirestore 호출 시작');
-        await _saveToFirestore(targetAudience);
+        await _saveToFirestore(targetAudience, result.geminiResult);
         DebugHelper.log('[_validateAllTexts] _saveToFirestore 호출 완료');
       }
 
@@ -657,9 +657,10 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     }
   }
 
-  Future<void> _saveToFirestore(Map<String, dynamic> targetAudience) async {
+  Future<void> _saveToFirestore(Map<String, dynamic> targetAudience, ai.GeminiModerationResult? geminiResult) async {
     DebugHelper.log('[_saveToFirestore] ========== 게시물 저장 시작 ==========');
     DebugHelper.log('[_saveToFirestore] targetAudience: $targetAudience');
+    DebugHelper.log('[_saveToFirestore] 예상 투표 비율 - A: ${geminiResult?.expectedRatioA ?? 0.5}, B: ${geminiResult?.expectedRatioB ?? 0.5}');
     
     try {
       final user = currentUser;
@@ -692,48 +693,53 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       );
 
       // Posts 문서 생성
-      final postsRecordData = createPostsRecordData(
-        userid: user.uid,
-        uid: user.uid,
-        email: user.email,
-        displayName: userDoc.displayName,
-        photoUrl: userDoc.photoUrl,
-        content: appState.questionDescription,
-        questionTitle: appState.questionTitle,
-        createdAt: DateTime.now(),
-        createdTime: DateTime.now(),
-        category: '', // 카테고리 선택 기능 추가 시 업데이트
-        isAnonymous: false,
-        visibility: 1, // 1: public
-        commentcount: 0,
-        likecount: 0,
-        participantcount: 0,
-        creatorInfo: {
-          'uid': user.uid,
-          'displayName': userDoc.displayName,
-          'photoUrl': userDoc.photoUrl,
-        },
-        optionA: {
-          'title': appState.uploadTextA,
-          'mediaUrls': uploadedUrlsA,
-          'mediaType': 'image',
-        },
-        optionB: {
-          'title': appState.uploadTextB,
-          'mediaUrls': uploadedUrlsB,
-          'mediaType': 'image',
-        },
-        stats: {
-          'voteCountA': 0,
-          'voteCountB': 0,
-          'totalVotes': 0,
-        },
-        moderation: {
-          'status': 'approved',
-          'aiScore': 0,
-        },
-        targetAudience: targetAudience,
-      );
+      final postsRecordData = {
+        ...createPostsRecordData(
+          userid: user.uid,
+          uid: user.uid,
+          email: user.email,
+          displayName: userDoc.displayName,
+          photoUrl: userDoc.photoUrl,
+          content: appState.questionDescription,
+          questionTitle: appState.questionTitle,
+          createdAt: DateTime.now(),
+          createdTime: DateTime.now(),
+          category: '', // 카테고리 선택 기능 추가 시 업데이트
+          isAnonymous: false,
+          visibility: 1, // 1: public
+          commentcount: 0,
+          likecount: 0,
+          participantcount: 0,
+          creatorInfo: {
+            'uid': user.uid,
+            'displayName': userDoc.displayName,
+            'photoUrl': userDoc.photoUrl,
+          },
+          optionA: {
+            'title': appState.uploadTextA,
+            'mediaUrls': uploadedUrlsA,
+            'mediaType': 'image',
+          },
+          optionB: {
+            'title': appState.uploadTextB,
+            'mediaUrls': uploadedUrlsB,
+            'mediaType': 'image',
+          },
+          stats: {
+            'voteCountA': 0,
+            'voteCountB': 0,
+            'totalVotes': 0,
+          },
+          moderation: {
+            'status': 'approved',
+            'aiScore': 0,
+            'expected_ratio_a': geminiResult?.expectedRatioA ?? 0.5,
+            'expected_ratio_b': geminiResult?.expectedRatioB ?? 0.5,
+          },
+          targetAudience: targetAudience,
+        ),
+        'isNotificationEnabled': true,  // 알림 전송 활성화
+      };
 
       // Firestore에 저장
       DebugHelper.log('[_saveToFirestore] Firestore에 게시물 저장 시작...');
@@ -759,45 +765,12 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       await PollDetailsRecord.createDoc(postRef).set(pollDetailsData);
       DebugHelper.log('[_saveToFirestore] ✅ PollDetails 저장 성공!');
 
-      // 테스트 알림을 위한 데이터 미리 저장 (데이터 정리 전에!)
-      final testNotificationData = {
-        'questionTitle': appState.questionTitle,
-        'description': appState.questionDescription,
-        'optionA': appState.uploadTextA,
-        'optionB': appState.uploadTextB,
-        'imageUrlA': uploadedUrlsA.isNotEmpty ? uploadedUrlsA.first : null,
-        'imageUrlB': uploadedUrlsB.isNotEmpty ? uploadedUrlsB.first : null,
-        // 멀티이미지 지원 추가
-        'imageUrlsA': uploadedUrlsA,
-        'imageUrlsB': uploadedUrlsB,
-        // A/B 설명은 현재 questionDescription을 사용
-        'descriptionA': appState.questionDescription,
-        'descriptionB': appState.questionDescription,
-        // 이미지 비율 정보 추가
-        'aspectRatioA': appState.uploadImageAspectRatioA.isNotEmpty ? appState.uploadImageAspectRatioA.first : null,
-        'aspectRatioB': appState.uploadImageAspectRatioB.isNotEmpty ? appState.uploadImageAspectRatioB.first : null,
-        // 현재 레이아웃 타입 추가
-        'layoutType': _model.currentLayout.name,
-      };
-      
       // 멀티이미지 데이터 검증
       DebugHelper.log('[_saveToFirestore] 멀티이미지 데이터 검증:');
       DebugHelper.log('  - uploadedUrlsA: ${uploadedUrlsA.length}개');
       DebugHelper.log('  - uploadedUrlsB: ${uploadedUrlsB.length}개');
-      DebugHelper.log('  - testNotificationData.imageUrlsA: ${testNotificationData['imageUrlsA']}');
-      DebugHelper.log('  - testNotificationData.imageUrlsB: ${testNotificationData['imageUrlsB']}');
-      
-      // 테스트 모드인 경우 직접 알림 생성 (데이터 정리 전에!)
-      if (targetAudience['shouldCreateTestNotification'] == true) {
-        DebugHelper.log('[_saveToFirestore] 테스트 모드 - 직접 알림 생성 시작');
-        DebugHelper.log('[_saveToFirestore] 게시물 ID: ${postRef.id}');
-        DebugHelper.log('[_saveToFirestore] 알림 데이터: $testNotificationData');
-        await _createTestNotificationDirectly(
-          postId: postRef.id,  // 실제 게시물 ID 사용
-          userId: targetAudience['testUserId'] ?? user.uid,
-          postData: testNotificationData,
-        );
-      }
+      DebugHelper.log('  - imageUrlsA: $uploadedUrlsA');
+      DebugHelper.log('  - imageUrlsB: $uploadedUrlsB');
 
       // 성공 시 전체 정리 (이미지는 삭제하지 않음 - 게시물에서 사용 중)
       DebugHelper.log('[_saveToFirestore] 전체 데이터 정리 중... (이미지는 유지)');
@@ -848,92 +821,6 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     }
   }
 
-  /// 테스트 모드에서 직접 알림 생성
-  Future<void> _createTestNotificationDirectly({
-    required String postId,
-    required String userId,
-    required Map<String, dynamic> postData,
-  }) async {
-    try {
-      DebugHelper.log('[_createTestNotificationDirectly] 시작');
-      DebugHelper.log('[_createTestNotificationDirectly] postId: $postId');
-      DebugHelper.log('[_createTestNotificationDirectly] userId: $userId');
-      DebugHelper.log('[_createTestNotificationDirectly] postData: $postData');
-      
-      final now = Timestamp.now();
-      
-      // content를 Map에서 JSON 문자열로 변환
-      final contentMap = {
-        'title': '🧪 테스트 투표 요청',
-        'message': '${postData['questionTitle']}',
-        'postData': {
-          'questionTitle': postData['questionTitle'],
-          'description': postData['description'] ?? '',
-          'optionA': postData['optionA'],
-          'optionB': postData['optionB'],
-          'imageUrlA': postData['imageUrlA'],
-          'imageUrlB': postData['imageUrlB'],
-          // 멀티이미지 지원 추가
-          'imageUrlsA': postData['imageUrlsA'],
-          'imageUrlsB': postData['imageUrlsB'],
-          'descriptionA': postData['descriptionA'] ?? '',
-          'descriptionB': postData['descriptionB'] ?? '',
-          'aspectRatioA': postData['aspectRatioA'],
-          'aspectRatioB': postData['aspectRatioB'],
-          'layoutType': postData['layoutType'],
-          'authorName': currentUserDisplayName,
-          'category': 'test',
-        }
-      };
-      
-      // aspectRatio 데이터 확인
-      DebugHelper.log('[_createTestNotificationDirectly] aspectRatioA: ${postData['aspectRatioA']}');
-      DebugHelper.log('[_createTestNotificationDirectly] aspectRatioB: ${postData['aspectRatioB']}');
-      DebugHelper.log('[_createTestNotificationDirectly] layoutType: ${postData['layoutType']}');
-      
-      // 멀티이미지 데이터 확인
-      DebugHelper.log('[_createTestNotificationDirectly] 멀티이미지 데이터 확인:');
-      DebugHelper.log('  - imageUrlsA: ${(postData['imageUrlsA'] as List?)?.length ?? 0}개');
-      if (postData['imageUrlsA'] is List) {
-        for (int i = 0; i < (postData['imageUrlsA'] as List).length; i++) {
-          DebugHelper.log('    - imageUrlsA[$i]: ${(postData['imageUrlsA'] as List)[i]}');
-        }
-      }
-      DebugHelper.log('  - imageUrlsB: ${(postData['imageUrlsB'] as List?)?.length ?? 0}개');
-      if (postData['imageUrlsB'] is List) {
-        for (int i = 0; i < (postData['imageUrlsB'] as List).length; i++) {
-          DebugHelper.log('    - imageUrlsB[$i]: ${(postData['imageUrlsB'] as List)[i]}');
-        }
-      }
-      
-      DebugHelper.log('[_createTestNotificationDirectly] contentMap: $contentMap');
-      
-      final notificationData = {
-        'notification_id': 'test_${DateTime.now().millisecondsSinceEpoch}',
-        'user_id': userId,
-        'type': 'voting_request',
-        'source_id': postId,
-        'content': jsonEncode(contentMap),  // Map을 JSON 문자열로 변환
-        'created_at': now,
-        'read': false,
-        'target_audience': ['test'],  // String 배열로 변경
-        'expiry_time': Timestamp.fromDate(DateTime.now().add(const Duration(minutes: 15))),
-        'interaction_type': 'vote',
-      };
-      
-      DebugHelper.log('[_createTestNotificationDirectly] Firestore에 알림 생성 중...');
-      final docRef = await FirebaseFirestore.instance
-          .collection('notifications_record')
-          .add(notificationData);
-          
-      DebugHelper.log('[_createTestNotificationDirectly] ✅ 테스트 알림 생성 성공! ID: ${docRef.id}');
-      _showSnackBar('테스트 알림이 생성되었습니다!');
-      
-    } catch (e) {
-      DebugHelper.logError('[_createTestNotificationDirectly] 테스트 알림 생성 실패', e);
-      _showSnackBar('테스트 알림 생성 실패: ${e.toString()}', isError: true);
-    }
-  }
 
   /// 흔들림 애니메이션 실행
   void _triggerShakeAnimation() {

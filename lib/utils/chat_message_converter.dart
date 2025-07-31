@@ -16,14 +16,16 @@ class ChatMessageConverter {
         : firestoreMessage.reference.id;
     final status = firestoreMessage.isRead ? types.Status.seen : types.Status.sent;
 
-    // 투표 요청 메시지
-    if (firestoreMessage.messageType == 'vote_request') {
+    // 투표 메시지 (vote_request, vote_request_received, vote_created 모두 처리)
+    if (firestoreMessage.messageType == 'vote_request' || 
+        firestoreMessage.messageType == 'vote_request_received' ||
+        firestoreMessage.messageType == 'vote_created') {
       return types.CustomMessage(
         author: author,
         createdAt: createdAt,
         id: id,
         metadata: {
-          'type': 'vote_request',
+          'type': firestoreMessage.messageType == 'vote_created' ? 'vote_created' : 'vote_request',
           'postId': firestoreMessage.votePostId,
           'title': firestoreMessage.voteTitle,
           'description': firestoreMessage.voteDescription,

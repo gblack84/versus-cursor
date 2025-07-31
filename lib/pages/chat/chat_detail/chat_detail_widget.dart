@@ -13,7 +13,7 @@ import '/backend/backend.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/utils/chat_message_converter.dart';
 import '/services/chat_media_upload_service.dart';
-import '/components/chat/vote_request_message.dart';
+import '/components/chat/vote_card_message.dart';
 import 'chat_detail_model.dart';
 export 'chat_detail_model.dart';
 
@@ -313,27 +313,42 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
   Widget _customMessageBuilder(types.CustomMessage message, {required int messageWidth}) {
     final metadata = message.metadata ?? {};
     
-    if (metadata['type'] == 'vote_request') {
-      return VoteRequestMessage(
-        postId: metadata['postId'] ?? '',
-        title: metadata['title'] ?? '',
-        description: metadata['description'] ?? '',
-        optionAText: metadata['optionAText'] ?? '',
-        optionBText: metadata['optionBText'] ?? '',
-        optionAImage: metadata['optionAImage'],
-        optionBImage: metadata['optionBImage'],
-        voteStatus: metadata['voteStatus'] ?? 'pending',
-        isMe: message.author.id == _currentUser.id,
-        timestamp: DateTime.fromMillisecondsSinceEpoch(message.createdAt ?? 0),
-        onTap: () {
-          // 투표 페이지로 이동
-          final postId = metadata['postId'];
-          if (postId != null && postId.isNotEmpty) {
-            context.pushNamed(
-              'PostView',
-              queryParameters: {'postId': postId},
-            );
-          }
+    // 투표 메시지 (투표 요청 및 투표 생성)
+    if (metadata['type'] == 'vote_request' || metadata['type'] == 'vote_created') {
+      // Firestore에서 추가 데이터 가져오기
+      final messageDoc = widget.chatDocument?.reference
+          .collection('messages')
+          .where('message_id', isEqualTo: message.id)
+          .limit(1);
+      
+      return StreamBuilder<QuerySnapshot>(
+        stream: messageDoc?.snapshots(),
+        builder: (context, snapshot) {
+          final messageData = snapshot.data?.docs.firstOrNull?.data() as Map<String, dynamic>?;
+          
+          return VoteCardMessage(
+            postId: metadata['postId'] ?? '',
+            title: metadata['title'] ?? '',
+            description: metadata['description'],
+            optionAText: metadata['optionAText'] ?? '',
+            optionBText: metadata['optionBText'] ?? '',
+            optionAImage: metadata['optionAImage'],
+            optionBImage: metadata['optionBImage'],
+            optionAImages: messageData?['vote_option_a_images'] != null 
+                ? List<String>.from(messageData!['vote_option_a_images']) 
+                : null,
+            optionBImages: messageData?['vote_option_b_images'] != null 
+                ? List<String>.from(messageData!['vote_option_b_images']) 
+                : null,
+            cardStatus: messageData?['card_status'] ?? 'voting_request',
+            voteEndTime: messageData?['vote_end_time']?.toDate(),
+            userVoted: messageData?['user_voted'] ?? false,
+            voteChoice: messageData?['vote_choice'],
+            voteResults: messageData?['vote_results'],
+            isMe: message.author.id == _currentUser.id,
+            timestamp: DateTime.fromMillisecondsSinceEpoch(message.createdAt ?? 0),
+            messageType: metadata['type'],
+          );
         },
       );
     }

@@ -135,7 +135,7 @@ const { validatePostContent } = require('./ai/contentModeration');
 
 // Firebase Function에서 사용
 exports.onPostCreate = functions.firestore
-  .document('posts_record/{postId}')
+  .document('posts/{postId}')
   .onCreate(async (snap, context) => {
     const postData = snap.data();
     

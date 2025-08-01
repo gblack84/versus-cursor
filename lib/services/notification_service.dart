@@ -10,7 +10,7 @@ import '/backend/backend.dart';
 
 /// 실시간 투표 알림을 관리하는 서비스
 /// 
-/// Firebase Firestore의 notifications_record 컬렉션을 감시하여
+/// Firebase Firestore의 notifications 컬렉션을 감시하여
 /// 새로운 투표 알림이 도착하면 UI에 표시합니다.
 class NotificationService {
   // 싱글톤 인스턴스
@@ -44,7 +44,7 @@ class NotificationService {
     debugPrint('[NotificationService] ========== 알림 리스닝 시작 ==========');
     debugPrint('[NotificationService] 사용자 ID: $userId');
     debugPrint('[NotificationService] 쿼리 조건:');
-    debugPrint('[NotificationService]   - collection: notifications_record');
+    debugPrint('[NotificationService]   - collection: notifications');
     debugPrint('[NotificationService]   - user_id == $userId');
     debugPrint('[NotificationService]   - type == voting_request');
     debugPrint('[NotificationService]   - read == false');
@@ -377,6 +377,41 @@ class NotificationService {
     try {
       debugPrint('[NotificationService] 투표 처리: postId=$postId, option=$option');
       
+      // 먼저 중복 투표 체크
+      final postDoc = await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(postId)
+          .get();
+          
+      if (!postDoc.exists) {
+        throw Exception('게시물을 찾을 수 없습니다');
+      }
+      
+      final postData = postDoc.data() as Map<String, dynamic>;
+      final votedUserIDsA = List<String>.from(postData['votedUserIDsA'] ?? []);
+      final votedUserIDsB = List<String>.from(postData['votedUserIDsB'] ?? []);
+      final userId = currentUserUid;
+      
+      // 이미 투표했는지 확인
+      if (votedUserIDsA.contains(userId) || votedUserIDsB.contains(userId)) {
+        debugPrint('[NotificationService] 이미 투표한 게시물');
+        
+        // 알림 읽음 처리
+        await _markNotificationAsRead(notificationId);
+        
+        // 사용자에게 친절한 메시지 표시
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('이미 투표하신 게시물입니다 😊'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+        return;
+      }
+      
       // 1. 투표 저장
       final voteData = {
         'user': currentUserReference,
@@ -405,10 +440,16 @@ class NotificationService {
         
         final currentData = postDoc.data() as Map<String, dynamic>;
         final voteCountField = option == 'A' ? 'vote_count_a' : 'vote_count_b';
+        final votedUsersField = option == 'A' ? 'votedUserIDsA' : 'votedUserIDsB';
         final currentCount = (currentData[voteCountField] ?? 0) as int;
+        final currentVotedUsers = List<String>.from(currentData[votedUsersField] ?? []);
+        
+        // 투표한 사용자 목록에 추가
+        currentVotedUsers.add(userId);
         
         transaction.update(postRef, {
           voteCountField: currentCount + 1,
+          votedUsersField: currentVotedUsers,
           'total_votes': (currentData['total_votes'] ?? 0) + 1,
           'last_vote_at': FieldValue.serverTimestamp(),
         });

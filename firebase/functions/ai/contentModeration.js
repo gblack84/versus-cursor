@@ -421,6 +421,12 @@ ${userHistory.map((post, i) => `${i + 1}. ${post.questionTitle} (A: ${post.title
         console.log(`  - feedback: ${responseData.feedback ? JSON.stringify(responseData.feedback) : 'null'}`);
         console.log(`  - confidence: ${responseData.confidence || 'N/A'}`);
         
+        // expectedRatio 로깅 추가
+        console.log('[Content Moderation] Expected Ratio from AI:');
+        console.log(`  - A: ${responseData.expectedRatio?.A || '없음'}`);
+        console.log(`  - B: ${responseData.expectedRatio?.B || '없음'}`);
+        console.log(`  - reasoning: ${responseData.expectedRatio?.reasoning || '없음'}`);
+        
         // 새 형식을 기존 형식으로 변환
         const converted = convertResponseFormat(responseData);
         

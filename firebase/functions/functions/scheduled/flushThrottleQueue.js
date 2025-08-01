@@ -21,6 +21,9 @@ exports.flushThrottleQueue = functions
     const db = admin.firestore();
     const now = admin.firestore.Timestamp.now();
     
+    console.log('[10분 타이머] ========== Scheduled Function 실행 시작 ==========');
+    console.log('[10분 타이머] 현재 시간:', now.toDate().toISOString());
+    
     try {
       // 10분 타이머가 만료된 투표 찾기
       const expiredVotesSnapshot = await db.collection('posts')
@@ -32,6 +35,7 @@ exports.flushThrottleQueue = functions
       
       if (expiredVotesSnapshot.empty) {
         console.log('[10분 타이머] 만료된 투표 없음');
+        console.log('[10분 타이머] ========== Scheduled Function 종료 ==========');
         return null;
       }
       
@@ -48,11 +52,20 @@ exports.flushThrottleQueue = functions
           const actualVotesB = postData.votedUserIDsB?.length || postData.votes_b || postData.vote_count_b || 0;
           const actualTotal = actualVotesA + actualVotesB;
           
+          // AI 예상 비율 읽기 (Flutter가 저장한 위치에서)
+          const expectedRatio = {
+            A: postData.moderation?.expected_ratio_a || 0.5,
+            B: postData.moderation?.expected_ratio_b || 0.5
+          };
+          
+          console.log(`[투표 처리] AI 예상 비율 - A: ${expectedRatio.A}, B: ${expectedRatio.B}`);
+          
           // 투표 증폭 계산 (목표: 100명)
           const targetCount = 100;
           const displayVotes = calculateDisplayVotes(
             { A: actualVotesA, B: actualVotesB },
-            targetCount
+            targetCount,
+            expectedRatio  // AI 예상 비율 전달
           );
           
           // 표시용 비율 계산
@@ -136,6 +149,7 @@ exports.flushThrottleQueue = functions
       const failed = results.filter(r => r.status === 'rejected').length;
       
       console.log(`[10분 타이머] 처리 완료 - 성공: ${succeeded}, 실패: ${failed}`);
+      console.log('[10분 타이머] ========== Scheduled Function 종료 ==========');
       
       return { succeeded, failed };
       

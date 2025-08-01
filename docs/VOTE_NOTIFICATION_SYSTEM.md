@@ -62,7 +62,7 @@
 exports.onPostCreatedSendNotifications = functions
   .region('asia-northeast3')
   .firestore
-  .document('posts_record/{postId}')
+  .document('posts/{postId}')
   .onCreate(async (snapshot, context) => {
     // 1. 타겟 사용자 매칭
     const targetUsers = await matchTargetUsers(targetAudience, creatorId);
@@ -83,7 +83,7 @@ exports.onPostVoteUpdate = functions
   .region('asia-northeast3')
   .runWith({ memory: '512MB', timeoutSeconds: 60 })
   .firestore
-  .document('posts_record/{postId}')
+  .document('posts/{postId}')
   .onUpdate(async (change, context) => {
     // 1. 투표 업데이트 큐에 추가
     queueVoteUpdate(postId, userId, option);
@@ -192,7 +192,7 @@ Dialog(
    ↓
 3. AI가 타겟 사용자 분석
    ↓
-4. 알림 전송 (notifications_record)
+4. 알림 전송 (notifications)
    ↓
 5. 채팅 메시지 생성 (vote_tracking_global)
 ```
@@ -269,7 +269,7 @@ exports.onPostVoteUpdate = functions
   .region('asia-northeast3')
   .runWith({ memory: '512MB', timeoutSeconds: 60 })
   .firestore
-  .document('posts_record/{postId}')
+  .document('posts/{postId}')
   .onUpdate(async (change, context) => {
     const beforeData = change.before.data();
     const afterData = change.after.data();

@@ -115,9 +115,9 @@ firebase functions:log -n 100 --project versus-space-1lwwiw
    - 알림 생성 로그가 있는지 확인
 
 3. **Firestore 데이터 확인**
-   - `posts_record` 컬렉션에 게시물이 저장되었는지 확인
+   - `posts` 컬렉션에 게시물이 저장되었는지 확인
    - `targetAudience` 필드가 올바르게 저장되었는지 확인
-   - `notifications_record` 컬렉션에 알림이 생성되었는지 확인
+   - `notifications` 컬렉션에 알림이 생성되었는지 확인
 
 ### 4.2 일반적인 문제와 해결책
 

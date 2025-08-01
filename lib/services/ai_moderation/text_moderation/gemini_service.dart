@@ -51,6 +51,8 @@ class GeminiModerationService {
       // 타입 안전 변환
       final result = Map<String, dynamic>.from(response.data as Map);
       print('[GeminiModerationService] Response received from Cloud Function');
+      print('[GeminiModerationService] Full response data: ${response.data}');
+      print('[GeminiModerationService] expectedRatio in response: ${result['expectedRatio']}');
       
       // 새로운 응답 형식 확인 (action 필드가 있는지)
       if (result['action'] != null) {
@@ -70,6 +72,10 @@ class GeminiModerationService {
         final expectedRatio = result['expectedRatio'] != null 
             ? Map<String, dynamic>.from(result['expectedRatio'] as Map) 
             : null;
+        
+        print('[GeminiModerationService] Creating GeminiModerationResult with:');
+        print('  - expectedRatioA: ${expectedRatio?['A']?.toDouble() ?? 0.5}');
+        print('  - expectedRatioB: ${expectedRatio?['B']?.toDouble() ?? 0.5}');
         
         return GeminiModerationResult(
           isValid: isValid,

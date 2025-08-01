@@ -81,7 +81,13 @@ exports.validatePostContentWithGemini = functions
         }, sessionId, documentId);
       }
       
-      return {
+      console.log('[AI 검증] AI 검증 결과:');
+      console.log('  - isValid:', result.isValid);
+      console.log('  - expectedRatio:', JSON.stringify(result.expectedRatio));
+      console.log('  - expectedRatio.A:', result.expectedRatio?.A);
+      console.log('  - expectedRatio.B:', result.expectedRatio?.B);
+      
+      const returnData = {
         isValid: result.isValid !== false,
         reason: result.reason || '',
         severity: result.severity || 'pass',
@@ -90,6 +96,9 @@ exports.validatePostContentWithGemini = functions
         expectedRatio: result.expectedRatio || { A: 0.5, B: 0.5 },
         documentId: documentId
       };
+      
+      console.log('[AI 검증] 반환할 데이터:', JSON.stringify(returnData));
+      return returnData;
       
     } catch (error) {
       console.error('[AI 검증] 오류 발생:', error);

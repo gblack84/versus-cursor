@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '/backend/backend.dart';
+import '/auth/firebase_auth/auth_util.dart';
 import '/components/notifications/voting_notification_dialog.dart';
 import '/components/notifications/models/versus_box_size_data.dart';
 import '/components/notifications/constants/voting_notification_constraints.dart';
@@ -385,8 +386,8 @@ class GlobalNotificationManager {
                     debugPrint('[GlobalNotificationManager] 알림 읽음 처리 실패 (무시): $error');
                   });
                   
-                  // TODO: 실제 투표 로직 구현
-                  // await _submitVote(notification.sourceId, selectedOption);
+                  // 실제 투표 로직 구현
+                  await _submitVote(notification.sourceId, selectedOption);
                   
                   // 다음 알림 처리 (약간의 지연 후)
                   Future.delayed(const Duration(milliseconds: 300), () {
@@ -485,4 +486,50 @@ class GlobalNotificationManager {
   
   /// 현재 표시 중인지 여부
   bool get isShowingNotification => _isShowingNotification;
+  
+  /// 실제 투표 처리
+  Future<void> _submitVote(String postId, String selectedOption) async {
+    try {
+      final userId = currentUserUid;
+      if (userId.isEmpty) {
+        debugPrint('[GlobalNotificationManager] 투표 실패: 사용자 인증 필요');
+        return;
+      }
+      
+      final postRef = PostsRecord.collection.doc(postId);
+      
+      // 중복 투표 확인
+      final postSnapshot = await postRef.get();
+      if (!postSnapshot.exists) {
+        debugPrint('[GlobalNotificationManager] 투표 실패: 게시물을 찾을 수 없음');
+        return;
+      }
+      
+      final postData = postSnapshot.data() as Map<String, dynamic>;
+      final votedUsersA = List<String>.from(postData['votedUserIDsA'] ?? []);
+      final votedUsersB = List<String>.from(postData['votedUserIDsB'] ?? []);
+      
+      if (votedUsersA.contains(userId) || votedUsersB.contains(userId)) {
+        debugPrint('[GlobalNotificationManager] 이미 투표한 사용자');
+        return;
+      }
+      
+      // 투표 저장
+      final Map<String, dynamic> updateData = {
+        'votedUserIDs$selectedOption': FieldValue.arrayUnion([userId]),
+      };
+      
+      // 다양한 필드명 지원 (호환성)
+      final voteLetter = selectedOption.toLowerCase();
+      updateData['votes_$voteLetter'] = FieldValue.increment(1);
+      updateData['vote_count_$voteLetter'] = FieldValue.increment(1);
+      
+      await postRef.update(updateData);
+      
+      debugPrint('[GlobalNotificationManager] 투표 저장 완료: $selectedOption (게시물: $postId)');
+    } catch (e) {
+      debugPrint('[GlobalNotificationManager] 투표 저장 실패: $e');
+      // 에러는 무시하고 계속 진행 (UX 우선)
+    }
+  }
 }

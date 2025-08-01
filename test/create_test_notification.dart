@@ -59,7 +59,7 @@ Future<void> createTestNotification({
     
     // Firestore에 저장
     final docRef = await FirebaseFirestore.instance
-        .collection('notifications_record')
+        .collection('notifications')
         .add(notificationData);
     
     print('[테스트 알림 생성] ✅ 성공! 문서 ID: ${docRef.id}');
@@ -97,7 +97,7 @@ Future<void> checkExistingNotifications(String userId) async {
     print('[알림 확인] 기존 알림 조회 중...');
     
     final querySnapshot = await FirebaseFirestore.instance
-        .collection('notifications_record')
+        .collection('notifications')
         .where('user_id', isEqualTo: userId)
         .where('type', isEqualTo: 'voting_request')
         .where('read', isEqualTo: false)

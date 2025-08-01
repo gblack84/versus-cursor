@@ -138,7 +138,7 @@ await createNotificationsForUsers(
 ```javascript
 // index.js
 exports.onPostCreate = functions.firestore
-  .document('posts_record/{postId}')
+  .document('posts/{postId}')
   .onCreate(async (snap, context) => {
     const postData = snap.data();
     
@@ -167,7 +167,7 @@ exports.onPostCreate = functions.firestore
 class NotificationService {
   void startListening(String userId) {
     FirebaseFirestore.instance
-      .collection('notifications_record')
+      .collection('notifications')
       .where('user_id', isEqualTo: userId)
       .where('type', isEqualTo: 'voting_request')
       .where('read', isEqualTo: false)

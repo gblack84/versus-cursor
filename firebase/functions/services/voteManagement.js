@@ -225,30 +225,38 @@ function calculateDisplayVotes(actualVotes, targetCount, expectedRatio = { A: 0.
     }, targetCount);
   }
   
-  // 투표가 적은 경우 (1-3명): 실제와 예상의 가중평균
-  if (actualTotal <= 3) {
-    const actualRatioA = actualVotes.A / actualTotal;
-    const actualRatioB = actualVotes.B / actualTotal;
-    
-    // 가중치: 실제 투표 수가 많을수록 실제 비율에 가중치
-    const weight = actualTotal / 10; // 10명일 때 100% 실제 비율
-    
-    const finalRatioA = (actualRatioA * weight) + (expectedRatio.A * (1 - weight));
-    const finalRatioB = (actualRatioB * weight) + (expectedRatio.B * (1 - weight));
-    
-    return addRandomVariation({
-      A: Math.round(targetCount * finalRatioA),
-      B: Math.round(targetCount * finalRatioB)
-    }, targetCount);
+  // 개선된 가중치 공식 - 더 부드러운 전환과 AI 영향력 유지
+  let weight;
+  
+  if (actualTotal <= 5) {
+    // 1-5명: 20-50% 실제 비율 (AI가 50-80% 영향)
+    weight = 0.2 + (actualTotal * 0.06);
+  } else if (actualTotal <= 20) {
+    // 6-20명: 50-80% 실제 비율 (AI가 20-50% 영향)
+    weight = 0.5 + ((actualTotal - 5) * 0.02);
+  } else if (actualTotal <= 50) {
+    // 21-50명: 80-90% 실제 비율 (AI가 10-20% 영향)
+    weight = 0.8 + ((actualTotal - 20) * 0.003);
+  } else {
+    // 50명 이상: 90% 실제 비율 (AI가 10% 영향)
+    weight = 0.9;
   }
   
-  // 투표가 충분한 경우 (4명 이상): 실제 비율 사용
-  const ratioA = actualVotes.A / actualTotal;
-  const ratioB = actualVotes.B / actualTotal;
+  console.log(`[투표 증폭] 실제 투표: ${actualTotal}명, 가중치: ${weight} (실제 ${Math.round(weight * 100)}%, AI ${Math.round((1 - weight) * 100)}%)`);
+  
+  // 실제 비율 계산
+  const actualRatioA = actualVotes.A / actualTotal;
+  const actualRatioB = actualVotes.B / actualTotal;
+  
+  // AI 예상과 실제 투표 조합
+  const finalRatioA = (actualRatioA * weight) + (expectedRatio.A * (1 - weight));
+  const finalRatioB = (actualRatioB * weight) + (expectedRatio.B * (1 - weight));
+  
+  console.log(`[투표 증폭] 최종 비율 - A: ${Math.round(finalRatioA * 100)}%, B: ${Math.round(finalRatioB * 100)}%`);
   
   return addRandomVariation({
-    A: Math.round(targetCount * ratioA),
-    B: Math.round(targetCount * ratioB)
+    A: Math.round(targetCount * finalRatioA),
+    B: Math.round(targetCount * finalRatioB)
   }, targetCount);
 }
 

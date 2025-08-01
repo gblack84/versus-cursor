@@ -161,7 +161,7 @@ class _TagsLabelsWidgetState extends State<TagsLabelsWidget>
                   padding: EdgeInsetsDirectional.fromSTEB(8.0, 0.0, 8.0, 0.0),
                   child: Text(
                     AppLocalizations.of(context).getText(
-                      '3rcbycua' /* #flutterflow */,
+                      '3rcbycua' /* #versus */,
                     ),
                     style: AppTheme.of(context).bodyMedium.override(
                           font: GoogleFonts.plusJakartaSans(

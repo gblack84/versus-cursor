@@ -185,7 +185,7 @@ versus-space/
 ## 개발 가이드
 
 ### 브랜치 전략
-- `flutterflow`: 메인 개발 브랜치
+- `main`: 메인 개발 브랜치 (이전 `flutterflow` 브랜치에서 마이그레이션)
 - `feature/*`: 기능 개발 브랜치
 - `hotfix/*`: 긴급 수정 브랜치
 

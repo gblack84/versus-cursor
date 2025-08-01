@@ -1027,7 +1027,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                               AppState().selectedLang =
                                                   AppLocalizations.of(context)
                                                       .languageCode;
-                                              AppState().DisplayName = _model
+                                              AppState().displayName = _model
                                                   .displayNameTextController
                                                   .text;
                                               setState(() {});

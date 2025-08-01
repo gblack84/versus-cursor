@@ -164,7 +164,7 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
                     ),
                     onPressed: () async {
                       Navigator.pop(context);
-                      AppState().upLoadTextEditing = 0;
+                      AppState().uploadTextEditing = 0;
                       setState(() {});
                       await showModalBottomSheet(
                         isScrollControlled: true,

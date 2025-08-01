@@ -941,7 +941,7 @@ final kTranslationsMap = <Map<String, Map<String, String>>>[
       'de': '',
     },
     '3rcbycua': {
-      'en': '#flutterflow',
+      'en': '#versus',
       'de': '',
     },
   },

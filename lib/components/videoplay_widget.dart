@@ -51,7 +51,7 @@ class _VideoplayWidgetState extends State<VideoplayWidget> {
         color: AppTheme.of(context).secondaryBackground,
       ),
       child: AppVideoPlayer(
-        path: '${AppState().UpLoadvideoA}',
+        path: '${AppState().uploadVideoA}',
         videoType: VideoType.network,
         autoPlay: false,
         looping: true,

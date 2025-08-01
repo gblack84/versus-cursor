@@ -33,11 +33,6 @@ class AppState extends ChangeNotifier {
     _displayName = value;
   }
 
-  // Alias for FlutterFlow compatibility
-  String get DisplayName => _displayName;
-  set DisplayName(String value) {
-    _displayName = value;
-  }
 
   String _uploadTextA = '';
   String get uploadTextA => _uploadTextA;
@@ -45,11 +40,6 @@ class AppState extends ChangeNotifier {
     _uploadTextA = value;
   }
 
-  // Alias for FlutterFlow compatibility
-  String get upLoadTextA => _uploadTextA;
-  set upLoadTextA(String value) {
-    _uploadTextA = value;
-  }
 
   String _uploadTextB = '';
   String get uploadTextB => _uploadTextB;
@@ -57,11 +47,6 @@ class AppState extends ChangeNotifier {
     _uploadTextB = value;
   }
 
-  // Alias for FlutterFlow compatibility
-  String get upLoadTextB => _uploadTextB;
-  set upLoadTextB(String value) {
-    _uploadTextB = value;
-  }
 
   List<String> _uploadImageA = [];
   List<String> get uploadImageA => _uploadImageA;
@@ -69,29 +54,16 @@ class AppState extends ChangeNotifier {
     _uploadImageA = value;
   }
 
-  // Alias for FlutterFlow compatibility
-  List<String> get UpLoadImageA => _uploadImageA;
-  set UpLoadImageA(List<String> value) {
-    _uploadImageA = value;
-  }
 
   void addToUploadImageA(String value) {
     uploadImageA.add(value);
   }
 
-  // Alias for FlutterFlow compatibility
-  void addToUpLoadImageA(String value) {
-    uploadImageA.add(value);
-  }
 
   void removeFromUploadImageA(String value) {
     uploadImageA.remove(value);
   }
 
-  // Alias for FlutterFlow compatibility
-  void removeFromUpLoadImageA(String value) {
-    uploadImageA.remove(value);
-  }
 
   void removeAtIndexFromUploadImageA(int index) {
     if (index >= 0 && index < uploadImageA.length) {
@@ -159,29 +131,16 @@ class AppState extends ChangeNotifier {
     _uploadImageB = value;
   }
 
-  // Alias for FlutterFlow compatibility
-  List<String> get UpLoadImageB => _uploadImageB;
-  set UpLoadImageB(List<String> value) {
-    _uploadImageB = value;
-  }
 
   void addToUploadImageB(String value) {
     uploadImageB.add(value);
   }
 
-  // Alias for FlutterFlow compatibility
-  void addToUpLoadImageB(String value) {
-    uploadImageB.add(value);
-  }
 
   void removeFromUploadImageB(String value) {
     uploadImageB.remove(value);
   }
 
-  // Alias for FlutterFlow compatibility
-  void removeFromUpLoadImageB(String value) {
-    uploadImageB.remove(value);
-  }
 
   void removeAtIndexFromUploadImageB(int index) {
     if (index >= 0 && index < uploadImageB.length) {
@@ -249,11 +208,6 @@ class AppState extends ChangeNotifier {
     _uploadImageEditing = value;
   }
 
-  // Alias for FlutterFlow compatibility
-  int get upLoadImageEditing => _uploadImageEditing;
-  set upLoadImageEditing(int value) {
-    _uploadImageEditing = value;
-  }
 
   int _uploadTextEditing = 0;
   int get uploadTextEditing => _uploadTextEditing;
@@ -261,11 +215,6 @@ class AppState extends ChangeNotifier {
     _uploadTextEditing = value;
   }
 
-  // Alias for FlutterFlow compatibility
-  int get upLoadTextEditing => _uploadTextEditing;
-  set upLoadTextEditing(int value) {
-    _uploadTextEditing = value;
-  }
 
   String _previewText = '';
   String get previewText => _previewText;
@@ -273,11 +222,6 @@ class AppState extends ChangeNotifier {
     _previewText = value;
   }
 
-  // Alias for FlutterFlow compatibility
-  String get PreviewText => _previewText;
-  set PreviewText(String value) {
-    _previewText = value;
-  }
 
   String _uploadVideoA = '';
   String get uploadVideoA => _uploadVideoA;
@@ -285,11 +229,6 @@ class AppState extends ChangeNotifier {
     _uploadVideoA = value;
   }
 
-  // Alias for FlutterFlow compatibility
-  String get UpLoadvideoA => _uploadVideoA;
-  set UpLoadvideoA(String value) {
-    _uploadVideoA = value;
-  }
 
   String _uploadVideoB = '';
   String get uploadVideoB => _uploadVideoB;
@@ -297,11 +236,6 @@ class AppState extends ChangeNotifier {
     _uploadVideoB = value;
   }
 
-  // Alias for FlutterFlow compatibility
-  String get UpLoadvideoB => _uploadVideoB;
-  set UpLoadvideoB(String value) {
-    _uploadVideoB = value;
-  }
 
   int _uploadVideoEdit = 0;
   int get uploadVideoEdit => _uploadVideoEdit;
@@ -309,11 +243,6 @@ class AppState extends ChangeNotifier {
     _uploadVideoEdit = value;
   }
 
-  // Alias for FlutterFlow compatibility
-  int get UpLoadVideoEdit => _uploadVideoEdit;
-  set UpLoadVideoEdit(int value) {
-    _uploadVideoEdit = value;
-  }
 
   bool _selectedVideoSet = false;
   bool get selectedVideoSet => _selectedVideoSet;
@@ -321,11 +250,6 @@ class AppState extends ChangeNotifier {
     _selectedVideoSet = value;
   }
 
-  // Alias for FlutterFlow compatibility
-  bool get sellectedvideoset => _selectedVideoSet;
-  set sellectedvideoset(bool value) {
-    _selectedVideoSet = value;
-  }
 
   String _uploadYoutubeA = '';
   String get uploadYoutubeA => _uploadYoutubeA;

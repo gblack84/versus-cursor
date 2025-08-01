@@ -19,9 +19,10 @@ service cloud.firestore {
       allow create: if true;
       allow read: if true;
       allow update: if request.auth != null && (
-        // 투표 필드만 업데이트 허용
+        // 투표 필드와 타이머 관련 필드 업데이트 허용
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['votedUserIDsA', 'votedUserIDsB', 'votes_a', 'votes_b', 'vote_count_a', 'vote_count_b'])
+          .hasOnly(['votedUserIDsA', 'votedUserIDsB', 'votes_a', 'votes_b', 'vote_count_a', 'vote_count_b', 
+                    'total_votes', 'last_vote_at', 'timer_started_at', 'timer_expiry_at', 'vote_request_status'])
         // 중복 투표 방지
         && !(request.auth.uid in resource.data.votedUserIDsA)
         && !(request.auth.uid in resource.data.votedUserIDsB)
@@ -37,6 +38,28 @@ service cloud.firestore {
     }
 
     match /{path=**}/images/{document} {
+      allow read: if true;
+    }
+
+    match /posts/{parent}/PollDetails/{document} {
+      allow create: if true;
+      allow read: if true;
+      allow write: if false;
+      allow delete: if false;
+    }
+
+    match /{path=**}/PollDetails/{document} {
+      allow read: if true;
+    }
+
+    match /posts/{parent}/votes/{document} {
+      allow create: if request.auth != null;
+      allow read: if true;
+      allow write: if false;
+      allow delete: if false;
+    }
+
+    match /{path=**}/votes/{document} {
       allow read: if true;
     }
 

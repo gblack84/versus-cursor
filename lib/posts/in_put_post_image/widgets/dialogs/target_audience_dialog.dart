@@ -130,7 +130,7 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -209,7 +209,7 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
                   decoration: BoxDecoration(
                     color: isActive 
                         ? AppTheme.of(context).primary 
-                        : AppTheme.of(context).secondaryText.withOpacity(0.3),
+                        : AppTheme.of(context).secondaryText.withValues(alpha: 0.3),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -238,7 +238,7 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
                       margin: const EdgeInsets.symmetric(horizontal: 8),
                       color: isCompleted
                           ? AppTheme.of(context).primary
-                          : AppTheme.of(context).secondaryText.withOpacity(0.3),
+                          : AppTheme.of(context).secondaryText.withValues(alpha: 0.3),
                     ),
                   ),
               ],

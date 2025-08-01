@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
-import '/core/app_utils.dart';
 import '/design_system/design_system.dart';
 
 class FriendsListWidget extends StatefulWidget {

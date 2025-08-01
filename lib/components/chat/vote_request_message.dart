@@ -53,7 +53,7 @@ class VoteRequestMessage extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -87,7 +87,7 @@ class VoteRequestMessage extends StatelessWidget {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.2),
+                      color: statusColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -118,7 +118,7 @@ class VoteRequestMessage extends StatelessWidget {
                 Text(
                   description,
                   style: VersusTextStyles.bodySmall.copyWith(
-                    color: isMe ? Colors.white.withOpacity(0.8) : VersusColors.textSecondary,
+                    color: isMe ? Colors.white.withValues(alpha: 0.8) : VersusColors.textSecondary,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -164,7 +164,7 @@ class VoteRequestMessage extends StatelessWidget {
                   _formatTime(timestamp!),
                   style: VersusTextStyles.labelSmall.copyWith(
                     fontSize: 11,
-                    color: isMe ? Colors.white.withOpacity(0.6) : VersusColors.textSecondary,
+                    color: isMe ? Colors.white.withValues(alpha: 0.6) : VersusColors.textSecondary,
                   ),
                 ),
               ],
@@ -184,10 +184,10 @@ class VoteRequestMessage extends StatelessWidget {
     return Container(
       height: 80,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -200,7 +200,7 @@ class VoteRequestMessage extends StatelessWidget {
                 child: CachedNetworkImage(
                   imageUrl: imageUrl,
                   fit: BoxFit.cover,
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   colorBlendMode: BlendMode.darken,
                 ),
               ),
@@ -239,7 +239,7 @@ class VoteRequestMessage extends StatelessWidget {
                 shadows: imageUrl != null
                     ? [
                         Shadow(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                           blurRadius: 4,
                         ),
                       ]

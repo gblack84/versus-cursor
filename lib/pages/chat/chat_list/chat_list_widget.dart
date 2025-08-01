@@ -164,7 +164,7 @@ class _ChatListWidgetState extends State<ChatListWidget> {
                 height: 56,
                 decoration: BoxDecoration(
                   color: isAIChat 
-                      ? Colors.purple.withOpacity(0.1)  // AI 채팅방은 보라색 배경
+                      ? Colors.purple.withValues(alpha: 0.1)  // AI 채팅방은 보라색 배경
                       : VersusColors.primaryWithAlpha(0.1),
                   shape: BoxShape.circle,
                 ),

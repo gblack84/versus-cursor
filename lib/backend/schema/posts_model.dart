@@ -211,15 +211,10 @@ class PostsModel extends FirestoreRecord {
   Map<String, dynamic> get targetAudience => _targetAudience ?? const {};
   bool hasTargetAudience() => _targetAudience != null;
 
-  // "descriptionA" field.
-  String? _descriptionA;
-  String get descriptionA => _descriptionA ?? '';
-  bool hasDescriptionA() => _descriptionA != null;
-
-  // "descriptionB" field.
-  String? _descriptionB;
-  String get descriptionB => _descriptionB ?? '';
-  bool hasDescriptionB() => _descriptionB != null;
+  // "description" field.
+  String? _description;
+  String get description => _description ?? '';
+  bool hasDescription() => _description != null;
 
   void _initializeFields() {
     _userid = snapshotData['userid'] as String?;
@@ -261,8 +256,7 @@ class PostsModel extends FirestoreRecord {
     _stats = snapshotData['stats'] as Map<String, dynamic>?;
     _moderation = snapshotData['moderation'] as Map<String, dynamic>?;
     _targetAudience = snapshotData['targetAudience'] as Map<String, dynamic>?;
-    _descriptionA = snapshotData['descriptionA'] as String?;
-    _descriptionB = snapshotData['descriptionB'] as String?;
+    _description = snapshotData['description'] as String?;
   }
 
   static CollectionReference get collection =>
@@ -335,8 +329,7 @@ Map<String, dynamic> createPostsModelData({
   Map<String, dynamic>? stats,
   Map<String, dynamic>? moderation,
   Map<String, dynamic>? targetAudience,
-  String? descriptionA,
-  String? descriptionB,
+  String? description,
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
@@ -376,8 +369,7 @@ Map<String, dynamic> createPostsModelData({
       'stats': stats,
       'moderation': moderation,
       'targetAudience': targetAudience,
-      'descriptionA': descriptionA,
-      'descriptionB': descriptionB,
+      'description': description,
     }.withoutNulls,
   );
 

@@ -168,8 +168,7 @@ class GlobalNotificationManager {
       String? imageUrlB;
       List<String>? imageUrlsA;
       List<String>? imageUrlsB;
-      String? descriptionA;
-      String? descriptionB;
+      String? description;
       double? aspectRatioA;
       double? aspectRatioB;
       String? layoutType;
@@ -203,8 +202,7 @@ class GlobalNotificationManager {
                 debugPrint('[GlobalNotificationManager]   - imageUrlsB[$i]: ${imageUrlsB[i].substring(0, 50)}...');
               }
             }
-            descriptionA = postData['descriptionA'];
-            descriptionB = postData['descriptionB'];
+            description = postData['description'] ?? postData['descriptionA'] ?? postData['descriptionB'] ?? '';
             aspectRatioA = postData['aspectRatioA']?.toDouble();
             aspectRatioB = postData['aspectRatioB']?.toDouble();
             layoutType = postData['layoutType'];
@@ -217,8 +215,7 @@ class GlobalNotificationManager {
             debugPrint('[GlobalNotificationManager]   - optionB: $optionB');
             debugPrint('[GlobalNotificationManager]   - imageUrlsA: ${imageUrlsA?.length ?? 0}개');
             debugPrint('[GlobalNotificationManager]   - imageUrlsB: ${imageUrlsB?.length ?? 0}개');
-            debugPrint('[GlobalNotificationManager]   - descriptionA: $descriptionA');
-            debugPrint('[GlobalNotificationManager]   - descriptionB: $descriptionB');
+            debugPrint('[GlobalNotificationManager]   - description: $description');
             debugPrint('[GlobalNotificationManager]   - aspectRatioA: $aspectRatioA');
             debugPrint('[GlobalNotificationManager]   - aspectRatioB: $aspectRatioB');
             debugPrint('[GlobalNotificationManager]   - layoutType: $layoutType');
@@ -248,9 +245,8 @@ class GlobalNotificationManager {
         // 실제 게시물 데이터 사용
         question = postData['questionTitle'] ?? postData['question_title'] ?? '';
         
-        // descriptionA와 descriptionB 추출
-        descriptionA = postData['descriptionA'] ?? postData['description_a'] ?? '';
-        descriptionB = postData['descriptionB'] ?? postData['description_b'] ?? '';
+        // description 추출
+        description = postData['description'] ?? postData['descriptionA'] ?? postData['descriptionB'] ?? '';
         
         // optionA와 optionB는 객체 형태로 저장됨
         if (postData['optionA'] is Map) {
@@ -362,8 +358,7 @@ class GlobalNotificationManager {
                 imageUrlB: imageUrlB,
                 imageUrlsA: imageUrlsA, // 멀티이미지 지원
                 imageUrlsB: imageUrlsB, // 멀티이미지 지원
-                descriptionA: descriptionA,
-                descriptionB: descriptionB,
+                description: description,
                 sizeData: sizeData,  // 사이즈 데이터 전달
                 showDebugInfo: false,  // 디버그 정보 비활성화
                 authorName: authorName,  // 작성자 이름 전달

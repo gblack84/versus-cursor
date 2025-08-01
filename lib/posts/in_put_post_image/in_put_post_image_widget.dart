@@ -737,6 +737,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           },
           targetAudience: targetAudience,
         ),
+        'description': appState.questionDescription,  // Firebase Functions를 위한 description 필드 추가
         'isNotificationEnabled': true,  // 알림 전송 활성화
       };
 
@@ -1109,8 +1110,11 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
   @override
   void dispose() {
+    // AppState를 먼저 저장
+    final appState = context.read<AppState>();
+    
     // 페이지 나갈 때 업로드된 이미지 정리
-    _cleanupUploadedImages();
+    _cleanupUploadedImagesWithAppState(appState);
     
     _model.scrollController?.removeListener(_scrollListener);
     _model.dispose();
@@ -1266,8 +1270,61 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     );
   }
 
+  /// AppState를 인자로 받는 정리 메서드 (dispose에서 사용)
+  Future<void> _cleanupUploadedImagesWithAppState(AppState appState) async {
+    // 디버그 로그 추가
+    DebugHelper.log('[_cleanupUploadedImagesWithAppState] 시작');
+    DebugHelper.log('[_cleanupUploadedImagesWithAppState] uploadImageA: ${appState.uploadImageA.length}개');
+    DebugHelper.log('[_cleanupUploadedImagesWithAppState] uploadImageB: ${appState.uploadImageB.length}개');
+    
+    // Firebase Storage에서 업로드된 이미지 삭제
+    final urlsToDelete = [
+      ...appState.uploadImageA,
+      ...appState.uploadImageB,
+    ];
+    
+    if (urlsToDelete.isNotEmpty) {
+      try {
+        DebugHelper.log('Firebase Storage에서 이미지 삭제 시작: ${urlsToDelete.length}개');
+        
+        // URL 로깅
+        for (int i = 0; i < urlsToDelete.length; i++) {
+          DebugHelper.log('[삭제할 URL ${i+1}] ${urlsToDelete[i]}');
+        }
+        
+        final results = await StorageService.deleteMultipleImages(urlsToDelete);
+        
+        // 삭제 결과 로깅
+        int successCount = 0;
+        results.forEach((url, success) {
+          if (success) {
+            successCount++;
+            DebugHelper.log('[삭제 성공] $url');
+          } else {
+            DebugHelper.logError('이미지 삭제 실패', url);
+          }
+        });
+        
+        DebugHelper.log('이미지 삭제 완료: 성공 $successCount/${urlsToDelete.length}개');
+      } catch (e) {
+        DebugHelper.logError('이미지 삭제 중 오류', e);
+      }
+    } else {
+      DebugHelper.log('[_cleanupUploadedImagesWithAppState] 삭제할 이미지가 없습니다');
+    }
+    
+    // AppState 정리 (URL만, 로컬 파일은 유지)
+    appState.update(() {
+      appState.uploadImageA.clear();
+      appState.uploadImageB.clear();
+    });
+    
+    DebugHelper.log('[_cleanupUploadedImagesWithAppState] 완료');
+  }
+
   /// Firebase Storage에서 업로드된 이미지만 삭제 (로컬 파일은 유지)
   Future<void> _cleanupUploadedImages() async {
+    if (!mounted) return;
     final appState = context.read<AppState>();
     
     // 디버그 로그 추가

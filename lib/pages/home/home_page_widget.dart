@@ -209,9 +209,7 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                             ),
                             SizedBox(height: 4),
                             Text(
-                              post.descriptionA.isNotEmpty 
-                                  ? post.descriptionA 
-                                  : 'Option A',
+                              (post.optionA['title'] as String?) ?? 'Option A',
                               style: VersusTextStyles.bodySmall,
                               textAlign: TextAlign.center,
                               maxLines: 2,
@@ -254,9 +252,7 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                             ),
                             SizedBox(height: 4),
                             Text(
-                              post.descriptionB.isNotEmpty 
-                                  ? post.descriptionB 
-                                  : 'Option B',
+                              (post.optionB['title'] as String?) ?? 'Option B',
                               style: VersusTextStyles.bodySmall,
                               textAlign: TextAlign.center,
                               maxLines: 2,

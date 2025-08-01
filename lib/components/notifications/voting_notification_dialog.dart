@@ -16,8 +16,7 @@ class VotingNotificationDialog extends StatefulWidget {
   /// 멀티이미지 지원 (새로운 기능)
   final List<String>? imageUrlsA;
   final List<String>? imageUrlsB;
-  final String? descriptionA;
-  final String? descriptionB;
+  final String? description;
   final Function(String option) onVote;
   final VoidCallback? onDismiss;
   
@@ -55,8 +54,7 @@ class VotingNotificationDialog extends StatefulWidget {
     this.imageUrlB,
     this.imageUrlsA,
     this.imageUrlsB, 
-    this.descriptionA,
-    this.descriptionB,
+    this.description,
     required this.onVote,
     this.onDismiss,
     this.sizeData,
@@ -359,8 +357,7 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
         titleB: widget.optionB,
         imageUrlA: widget.primaryImageUrlA,
         imageUrlB: widget.primaryImageUrlB,
-        descriptionA: widget.descriptionA,
-        descriptionB: widget.descriptionB,
+        description: widget.description,
         onTapA: _hasVoted ? null : () => _vote('A'),
         onTapB: _hasVoted ? null : () => _vote('B'),
         showResults: widget.showResults || _hasVoted,
@@ -395,7 +392,7 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
   /// 옵션 텍스트 빌드 (설명만 표시)
   Widget _buildOptionsText() {
     // 설명이 있는 경우에만 표시 (A 또는 B 중 하나만)
-    final description = widget.descriptionA ?? widget.descriptionB;
+    final description = widget.description;
     
     if (description == null || description.isEmpty) {
       return const SizedBox.shrink();
@@ -440,11 +437,11 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
         boxSize: VersusBoxSizeCalculator.calculateVotingSize(sizeData, context).sizeA,
         title: widget.optionA,
         imageUrl: widget.primaryImageUrlA,
-        description: widget.descriptionA,
+        description: widget.description,
         question: widget.question,
         otherOptionTitle: widget.optionB,
         otherImageUrl: widget.primaryImageUrlB,
-        otherDescription: widget.descriptionB,
+        otherDescription: widget.description,
         onTap: null,  // 박스 클릭으로 투표 비활성화
         isSelected: false,
         showResult: widget.showResults || _hasVoted,
@@ -501,11 +498,11 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
           boxSize: votingSizes.sizeA,
           title: widget.optionA,
           imageUrl: widget.primaryImageUrlA,
-          description: widget.descriptionA,
+          description: widget.description,
           question: widget.question,
           otherOptionTitle: widget.optionB,
           otherImageUrl: widget.primaryImageUrlB,
-          otherDescription: widget.descriptionB,
+          otherDescription: widget.description,
           onTap: null,  // 박스 클릭으로 투표 비활성화
           showResult: widget.showResults || _hasVoted,
           votePercentage: widget.votePercentageA,
@@ -532,11 +529,11 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
           boxSize: votingSizes.sizeA,
           title: widget.optionA,
           imageUrl: widget.primaryImageUrlA,
-          description: widget.descriptionA,
+          description: widget.description,
           question: widget.question,
           otherOptionTitle: widget.optionB,
           otherImageUrl: widget.primaryImageUrlB,
-          otherDescription: widget.descriptionB,
+          otherDescription: widget.description,
           onTap: _hasVoted ? null : () => _vote('A'),
           showResult: widget.showResults || _hasVoted,
           votePercentage: widget.votePercentageA,
@@ -554,11 +551,11 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
           boxSize: votingSizes.sizeB,
           title: widget.optionB,
           imageUrl: widget.primaryImageUrlB,
-          description: widget.descriptionB,
+          description: widget.description,
           question: widget.question,
           otherOptionTitle: widget.optionA,
           otherImageUrl: widget.primaryImageUrlA,
-          otherDescription: widget.descriptionA,
+          otherDescription: widget.description,
           onTap: _hasVoted ? null : () => _vote('B'),
           showResult: widget.showResults || _hasVoted,
           votePercentage: widget.votePercentageB,

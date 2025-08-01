@@ -61,8 +61,7 @@ class NotificationOverlay {
     String? imageUrlB,
     List<String>? imageUrlsA,
     List<String>? imageUrlsB,
-    String? descriptionA,
-    String? descriptionB,
+    String? description,
     required Function(String option) onVote,
     VoidCallback? onDismiss,
     VersusBoxSizeData? sizeData,
@@ -82,8 +81,7 @@ class NotificationOverlay {
     debugPrint('[NotificationOverlay] 이미지 B: ${imageUrlB != null ? '있음' : '없음'}');
     debugPrint('[NotificationOverlay] 멀티이미지 A: ${imageUrlsA != null ? '${imageUrlsA.length}개' : '없음'}');
     debugPrint('[NotificationOverlay] 멀티이미지 B: ${imageUrlsB != null ? '${imageUrlsB.length}개' : '없음'}');
-    debugPrint('[NotificationOverlay] 설명 A: ${descriptionA != null ? '있음' : '없음'}');
-    debugPrint('[NotificationOverlay] 설명 B: ${descriptionB != null ? '있음' : '없음'}');
+    debugPrint('[NotificationOverlay] 설명: ${description != null ? '있음' : '없음'}');
     debugPrint('[NotificationOverlay] 결과 표시: $showResults');
     debugPrint('[NotificationOverlay] 디버그 정보 표시: $showDebugInfo');
     
@@ -113,8 +111,7 @@ class NotificationOverlay {
             imageUrlB: imageUrlB,
             imageUrlsA: imageUrlsA,
             imageUrlsB: imageUrlsB,
-            descriptionA: descriptionA,
-            descriptionB: descriptionB,
+            description: description,
             onVote: (option) {
               debugPrint('[NotificationOverlay] 사용자가 투표함: $option');
               Navigator.of(dialogContext).pop(); // 다이얼로그 닫기

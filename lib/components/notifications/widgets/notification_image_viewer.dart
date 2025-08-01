@@ -16,8 +16,7 @@ class NotificationImageViewer extends StatefulWidget {
   /// 멀티이미지 지원 (새로운 기능)
   final List<String>? imageUrlsA;
   final List<String>? imageUrlsB;
-  final String? descriptionA;
-  final String? descriptionB;
+  final String? description;
   final int initialIndex;
   
   const NotificationImageViewer({
@@ -29,8 +28,7 @@ class NotificationImageViewer extends StatefulWidget {
     this.imageUrlB,
     this.imageUrlsA,
     this.imageUrlsB,
-    this.descriptionA,
-    this.descriptionB,
+    this.description,
     this.initialIndex = 0,
   }) : super(key: key);
   
@@ -43,8 +41,7 @@ class NotificationImageViewer extends StatefulWidget {
     String? imageUrlB,
     List<String>? imageUrlsA,
     List<String>? imageUrlsB,
-    String? descriptionA,
-    String? descriptionB,
+    String? description,
     int initialIndex = 0,
   }) {
     // Overlay context에서는 rootNavigator를 사용해야 함
@@ -61,8 +58,7 @@ class NotificationImageViewer extends StatefulWidget {
           imageUrlB: imageUrlB,
           imageUrlsA: imageUrlsA,
           imageUrlsB: imageUrlsB,
-          descriptionA: descriptionA,
-          descriptionB: descriptionB,
+          description: description,
           initialIndex: initialIndex,
         ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -182,7 +178,7 @@ class _NotificationImageViewerState extends State<NotificationImageViewer> {
       return (
         imageUrl: effectiveUrlsA[index],
         title: widget.optionA,
-        description: widget.descriptionA,
+        description: widget.description,
         boxType: 'A',
         imageIndex: index + 1,
         totalInBox: effectiveUrlsA.length,
@@ -192,7 +188,7 @@ class _NotificationImageViewerState extends State<NotificationImageViewer> {
       return (
         imageUrl: effectiveUrlsB[index],
         title: widget.optionB,
-        description: widget.descriptionB,
+        description: widget.description,
         boxType: 'B',
         imageIndex: index + 1,
         totalInBox: effectiveUrlsB.length,
@@ -275,7 +271,7 @@ class _NotificationImageViewerState extends State<NotificationImageViewer> {
               return _buildImageView((
                 imageUrl: effectiveUrlsA[index],
                 title: widget.optionA,
-                description: widget.descriptionA,
+                description: widget.description,
                 boxType: 'A',
                 imageIndex: index + 1,
                 totalInBox: effectiveUrlsA.length,
@@ -338,7 +334,7 @@ class _NotificationImageViewerState extends State<NotificationImageViewer> {
                         return _buildImageView((
                           imageUrl: effectiveUrlsA[index],
                           title: widget.optionA,
-                          description: widget.descriptionA,
+                          description: widget.description,
                           boxType: 'A',
                           imageIndex: index + 1,
                           totalInBox: effectiveUrlsA.length,
@@ -369,7 +365,7 @@ class _NotificationImageViewerState extends State<NotificationImageViewer> {
                         return _buildImageView((
                           imageUrl: effectiveUrlsB[index],
                           title: widget.optionB,
-                          description: widget.descriptionB,
+                          description: widget.description,
                           boxType: 'B',
                           imageIndex: index + 1,
                           totalInBox: effectiveUrlsB.length,

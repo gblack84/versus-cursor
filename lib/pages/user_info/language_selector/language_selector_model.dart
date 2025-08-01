@@ -17,7 +17,7 @@ class LanguageSelectorModel extends AppModel<LanguageSelectorWidget> {
 
   /// Action blocks.
   Future saveLanguageToFirestore(BuildContext context) async {
-    await currentUserReference!.update(createUsersRecordData(
+    await currentUserReference!.update(createUsersModelData(
       role: '',
     ));
   }

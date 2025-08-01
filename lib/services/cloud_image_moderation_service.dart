@@ -7,7 +7,7 @@ class CloudImageModerationService {
   CloudImageModerationService._internal();
 
   // 이미지 파일 경로로 검열 상태 확인
-  static Future<ImageModerationRecord?> checkModerationStatus(String filePath) async {
+  static Future<ImageModerationModel?> checkModerationStatus(String filePath) async {
     try {
       final moderationId = filePath.replaceAll(RegExp(r'[/.]'), '_');
       final doc = await FirebaseFirestore.instance
@@ -16,7 +16,7 @@ class CloudImageModerationService {
           .get();
       
       if (doc.exists) {
-        return ImageModerationRecord.getDocumentFromData(
+        return ImageModerationModel.getDocumentFromData(
           doc.data()!,
           doc.reference,
         );
@@ -29,7 +29,7 @@ class CloudImageModerationService {
   }
 
   // 검열 결과를 기다리는 함수 (최대 30초)
-  static Future<ImageModerationRecord?> waitForModeration(
+  static Future<ImageModerationModel?> waitForModeration(
     String filePath, {
     Duration timeout = const Duration(seconds: 30),
     Duration pollInterval = const Duration(seconds: 1),
@@ -45,7 +45,7 @@ class CloudImageModerationService {
             .get();
         
         if (doc.exists) {
-          final record = ImageModerationRecord.getDocumentFromData(
+          final record = ImageModerationModel.getDocumentFromData(
             doc.data()!,
             doc.reference,
           );
@@ -68,7 +68,7 @@ class CloudImageModerationService {
   }
 
   // 검열 상태를 실시간으로 감시하는 스트림
-  static Stream<ImageModerationRecord?> watchModerationStatus(String filePath) {
+  static Stream<ImageModerationModel?> watchModerationStatus(String filePath) {
     final moderationId = filePath.replaceAll(RegExp(r'[/.]'), '_');
     
     return FirebaseFirestore.instance
@@ -77,35 +77,35 @@ class CloudImageModerationService {
         .snapshots()
         .map((snapshot) {
           if (snapshot.exists) {
-            return ImageModerationRecord.fromSnapshot(snapshot);
+            return ImageModerationModel.fromSnapshot(snapshot);
           }
           return null;
         });
   }
 
   // 이미지가 안전한지 확인
-  static bool isImageSafe(ImageModerationRecord? moderation) {
+  static bool isImageSafe(ImageModerationModel? moderation) {
     if (moderation == null) return true; // 검열 결과가 없으면 일단 안전하다고 가정
     
     return moderation.moderationStatus == 'approved';
   }
 
   // 이미지가 거부되었는지 확인
-  static bool isImageRejected(ImageModerationRecord? moderation) {
+  static bool isImageRejected(ImageModerationModel? moderation) {
     if (moderation == null) return false;
     
     return moderation.moderationStatus == 'rejected';
   }
 
   // 검열 중인지 확인
-  static bool isModerationPending(ImageModerationRecord? moderation) {
+  static bool isModerationPending(ImageModerationModel? moderation) {
     if (moderation == null) return true; // 검열 결과가 없으면 대기 중
     
     return moderation.moderationStatus == 'pending';
   }
 
   // 에러가 발생했는지 확인
-  static bool hasError(ImageModerationRecord? moderation) {
+  static bool hasError(ImageModerationModel? moderation) {
     if (moderation == null) return false;
     
     return moderation.moderationStatus == 'error';
@@ -130,7 +130,7 @@ class CloudImageModerationService {
   }
 
   // 거부 이유 가져오기
-  static String getRejectionReason(ImageModerationRecord moderation) {
+  static String getRejectionReason(ImageModerationModel moderation) {
     final results = moderation.safeSearchResults;
     final reasons = <String>[];
     

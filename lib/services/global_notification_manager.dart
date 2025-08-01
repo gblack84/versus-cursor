@@ -21,10 +21,10 @@ class GlobalNotificationManager {
   GlobalNotificationManager._internal();
   
   /// 알림 큐
-  final List<NotificationsRecord> _notificationQueue = [];
+  final List<NotificationsModel> _notificationQueue = [];
   
   /// 현재 표시 중인 알림
-  NotificationsRecord? _currentNotification;
+  NotificationsModel? _currentNotification;
   
   /// 알림 표시 중 여부
   bool _isShowingNotification = false;
@@ -33,7 +33,7 @@ class GlobalNotificationManager {
   final Set<String> _processedNotificationIds = {};
   
   /// 스트림 구독
-  StreamSubscription<List<NotificationsRecord>>? _notificationSubscription;
+  StreamSubscription<List<NotificationsModel>>? _notificationSubscription;
   
   /// 큐 처리 타이머
   Timer? _queueTimer;
@@ -91,7 +91,7 @@ class GlobalNotificationManager {
   }
   
   /// 새로운 알림 처리
-  void _handleNewNotifications(List<NotificationsRecord> notifications) {
+  void _handleNewNotifications(List<NotificationsModel> notifications) {
     // 기존 큐에 없고, 이미 처리되지 않은 새로운 알림만 추가
     for (final notification in notifications) {
       final notificationId = notification.reference.id;
@@ -141,7 +141,7 @@ class GlobalNotificationManager {
   }
   
   /// 알림 표시
-  Future<void> _showNotification(NotificationsRecord notification) async {
+  Future<void> _showNotification(NotificationsModel notification) async {
     // Navigator context 가져오기
     final context = appNavigatorKey.currentContext;
     if (context == null) {
@@ -426,7 +426,7 @@ class GlobalNotificationManager {
   }
   
   /// 알림을 읽음으로 표시
-  Future<void> _markAsRead(NotificationsRecord notification) async {
+  Future<void> _markAsRead(NotificationsModel notification) async {
     try {
       await notification.reference.update({
         'read': true,
@@ -496,7 +496,7 @@ class GlobalNotificationManager {
         return;
       }
       
-      final postRef = PostsRecord.collection.doc(postId);
+      final postRef = PostsModel.collection.doc(postId);
       
       // 중복 투표 확인
       final postSnapshot = await postRef.get();

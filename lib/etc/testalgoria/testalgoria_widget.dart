@@ -308,7 +308,7 @@ class _TestalgoriaWidgetState extends State<TestalgoriaWidget> {
                   ),
                   onPressed: () async {
                     setState(() => _model.algoliaSearchResults = null);
-                    await JopsCategoryRecord.search(
+                    await JopsCategoryModel.search(
                       term: _model.textController.text,
                     )
                         .then((r) => _model.algoliaSearchResults = r)

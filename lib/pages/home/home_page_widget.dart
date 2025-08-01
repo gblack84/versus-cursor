@@ -41,14 +41,14 @@ class _HomePageWidgetState extends State<HomePageWidget> {
       ),
       body: SafeArea(
         top: true,
-        child: StreamBuilder<List<PostsRecord>>(
+        child: StreamBuilder<List<PostsModel>>(
           stream: FirebaseFirestore.instance
               .collection('posts')
               .orderBy('createdAt', descending: true)
               .limit(20)
               .snapshots()
               .map((snapshot) => 
-                  snapshot.docs.map((doc) => PostsRecord.fromSnapshot(doc)).toList()),
+                  snapshot.docs.map((doc) => PostsModel.fromSnapshot(doc)).toList()),
           builder: (context, snapshot) {
             // 로딩 상태
             if (!snapshot.hasData) {
@@ -108,7 +108,7 @@ class _HomePageWidgetState extends State<HomePageWidget> {
     );
   }
 
-  Widget _buildVersusCard(BuildContext context, PostsRecord post) {
+  Widget _buildVersusCard(BuildContext context, PostsModel post) {
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: VersusSpacing.md, 

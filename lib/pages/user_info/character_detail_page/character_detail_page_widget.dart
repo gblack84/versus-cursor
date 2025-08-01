@@ -91,8 +91,8 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                         padding: EdgeInsets.all(8.0),
                         child: Container(
                           decoration: BoxDecoration(),
-                          child: StreamBuilder<List<CharactersRecord>>(
-                            stream: queryCharactersRecord(),
+                          child: StreamBuilder<List<CharactersModel>>(
+                            stream: queryCharactersModel(),
                             builder: (context, snapshot) {
                               // Customize what your widget looks like when it's loading.
                               if (!snapshot.hasData) {
@@ -107,8 +107,8 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                                   ),
                                 );
                               }
-                              List<CharactersRecord>
-                                  gridViewCharactersRecordList = snapshot.data!;
+                              List<CharactersModel>
+                                  gridViewCharactersModelList = snapshot.data!;
 
                               return GridView.builder(
                                 padding: EdgeInsets.fromLTRB(
@@ -126,10 +126,10 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                                 ),
                                 shrinkWrap: true,
                                 scrollDirection: Axis.vertical,
-                                itemCount: gridViewCharactersRecordList.length,
+                                itemCount: gridViewCharactersModelList.length,
                                 itemBuilder: (context, gridViewIndex) {
-                                  final gridViewCharactersRecord =
-                                      gridViewCharactersRecordList[
+                                  final gridViewCharactersModel =
+                                      gridViewCharactersModelList[
                                           gridViewIndex];
                                   return Container(
                                     width: 100.0,
@@ -138,7 +138,7 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                                       shape: BoxShape.circle,
                                       border: Border.all(
                                         color: _model.selectedCharacterUrl ==
-                                                gridViewCharactersRecord
+                                                gridViewCharactersModel
                                                     .charactersImageUrl
                                             ? Color(0xFF6E6E6E)
                                             : Color(0x00FFFFFF),
@@ -151,7 +151,7 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                                       highlightColor: Colors.transparent,
                                       onTap: () async {
                                         _model.selectedCharacterUrl =
-                                            gridViewCharactersRecord
+                                            gridViewCharactersModel
                                                 .charactersImageUrl;
                                         setState(() {});
                                       },
@@ -168,7 +168,7 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                                           fadeOutDuration:
                                               Duration(milliseconds: 500),
                                           imageUrl:
-                                              '${gridViewCharactersRecord.charactersImageUrl}',
+                                              '${gridViewCharactersModel.charactersImageUrl}',
                                           fit: BoxFit.cover,
                                         ),
                                       ),
@@ -187,7 +187,7 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
             ),
             AppButtonWidget(
               onPressed: () async {
-                await currentUserReference!.update(createUsersRecordData(
+                await currentUserReference!.update(createUsersModelData(
                   photoUrl: '${_model.selectedCharacterUrl}',
                 ));
                 Navigator.pop(context);
@@ -274,7 +274,7 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                     }
                   }
 
-                  await currentUserReference!.update(createUsersRecordData(
+                  await currentUserReference!.update(createUsersModelData(
                     photoUrl: _model.uploadedFileUrl_userUploadProfileImage,
                   ));
                   Navigator.pop(context);

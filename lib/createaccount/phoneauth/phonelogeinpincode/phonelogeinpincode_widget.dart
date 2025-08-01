@@ -685,7 +685,7 @@ Enter the 6-digit code sent t... */
                         ? null
                         : () async {
                             await currentUserReference!
-                                .update(createUsersRecordData(
+                                .update(createUsersModelData(
                               photoUrl:
                                   'https://firebasestorage.googleapis.com/v0/b/versus-space-1lwwiw.appspot.com/o/characters%2Fdefault%2Fdefaultimage.jpg?alt=media&token=b485c8ad-c393-4ec7-bc1a-c1c3c93ec4ec',
                             ));

@@ -53,8 +53,8 @@ class _FriendsListWidgetState extends State<FriendsListWidget> {
         top: true,
         child: currentUserReference == null
             ? _buildNotLoggedIn()
-            : StreamBuilder<List<FriendsListRecord>>(
-                stream: queryFriendsListRecord(
+            : StreamBuilder<List<FriendsListModel>>(
+                stream: queryFriendsListModel(
                   parent: currentUserReference,
                   queryBuilder: (friendsListRecord) => friendsListRecord
                       .where('follower', isEqualTo: true)
@@ -149,9 +149,9 @@ class _FriendsListWidgetState extends State<FriendsListWidget> {
     );
   }
 
-  Widget _buildFriendItem(FriendsListRecord friend) {
-    return FutureBuilder<UsersRecord?>(
-      future: UsersRecord.getDocumentOnce(
+  Widget _buildFriendItem(FriendsListModel friend) {
+    return FutureBuilder<UsersModel?>(
+      future: UsersModel.getDocumentOnce(
         FirebaseFirestore.instance.doc('/users/${friend.friendsId}'),
       ),
       builder: (context, snapshot) {

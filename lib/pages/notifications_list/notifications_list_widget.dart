@@ -40,8 +40,8 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
       ),
       body: SafeArea(
         top: true,
-        child: StreamBuilder<List<NotificationsRecord>>(
-          stream: queryNotificationsRecord(
+        child: StreamBuilder<List<NotificationsModel>>(
+          stream: queryNotificationsModel(
             queryBuilder: (notificationsRecord) => notificationsRecord
                 .where('user_id', isEqualTo: currentUserUid)
                 .orderBy('created_at', descending: true),
@@ -62,7 +62,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
               );
             }
 
-            List<NotificationsRecord> notifications = snapshot.data!;
+            List<NotificationsModel> notifications = snapshot.data!;
             
             if (notifications.isEmpty) {
               return Center(

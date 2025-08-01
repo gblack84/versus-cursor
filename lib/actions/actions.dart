@@ -7,7 +7,7 @@ Future selectedLanguage(
   BuildContext context, {
   String? language,
 }) async {
-  await currentUserReference!.update(createUsersRecordData(
+  await currentUserReference!.update(createUsersModelData(
     language: valueOrDefault(currentUserDocument?.language, ''),
   ));
 }

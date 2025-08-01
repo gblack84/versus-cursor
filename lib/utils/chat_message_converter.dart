@@ -4,9 +4,9 @@ import '/auth/firebase_auth/auth_util.dart';
 
 /// Firestore 메시지를 flutter_chat_types Message로 변환하는 유틸리티
 class ChatMessageConverter {
-  /// MessagesRecord를 types.Message로 변환
-  static types.Message convertToMessage(MessagesRecord firestoreMessage, {
-    required UsersRecord senderUser,
+  /// MessagesModel를 types.Message로 변환
+  static types.Message convertToMessage(MessagesModel firestoreMessage, {
+    required UsersModel senderUser,
   }) {
     final author = _convertToUser(senderUser);
     final createdAt = firestoreMessage.timeStamp?.millisecondsSinceEpoch ?? 
@@ -81,8 +81,8 @@ class ChatMessageConverter {
     );
   }
 
-  /// UsersRecord를 types.User로 변환
-  static types.User _convertToUser(UsersRecord firestoreUser) {
+  /// UsersModel를 types.User로 변환
+  static types.User _convertToUser(UsersModel firestoreUser) {
     // AI 사용자 특별 처리
     if (firestoreUser.uid == 'ai_assistant') {
       return const types.User(
@@ -104,14 +104,14 @@ class ChatMessageConverter {
   }
 
   /// 현재 사용자를 types.User로 변환
-  static types.User convertCurrentUser(UsersRecord currentUser) {
+  static types.User convertCurrentUser(UsersModel currentUser) {
     return _convertToUser(currentUser);
   }
 
   /// 메시지 리스트를 일괄 변환
   static Future<List<types.Message>> convertMessageList(
-    List<MessagesRecord> firestoreMessages,
-    Map<String, UsersRecord> usersMap,
+    List<MessagesModel> firestoreMessages,
+    Map<String, UsersModel> usersMap,
   ) async {
     final messages = <types.Message>[];
     
@@ -126,10 +126,10 @@ class ChatMessageConverter {
   }
 
   /// 사용자 ID 목록으로 사용자 맵 생성
-  static Future<Map<String, UsersRecord>> fetchUsersMap(
+  static Future<Map<String, UsersModel>> fetchUsersMap(
     List<String> userIds,
   ) async {
-    final usersMap = <String, UsersRecord>{};
+    final usersMap = <String, UsersModel>{};
     
     // 중복 제거
     final uniqueUserIds = userIds.toSet().toList();
@@ -143,7 +143,7 @@ class ChatMessageConverter {
             .get();
         
         if (userDoc.exists) {
-          final user = UsersRecord.fromSnapshot(userDoc);
+          final user = UsersModel.fromSnapshot(userDoc);
           usersMap[userId] = user;
         }
       } catch (e) {
@@ -175,7 +175,7 @@ class ChatMessageConverter {
 
   /// 투표 요청 메시지 생성 (A vs B 형식)
   static types.CustomMessage createVoteRequestMessage({
-    required UsersRecord author,
+    required UsersModel author,
     required String messageId,
     required String postId,
     required String title,

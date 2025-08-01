@@ -17,7 +17,7 @@ class UserInfoInputModel extends AppModel<UserInfoInputWidget> {
 
   final formKey = GlobalKey<FormState>();
   // Stores action output result for [Backend Call - Read Document] action in user_info_input widget.
-  UsersRecord? userDocument;
+  UsersModel? userDocument;
   // State field(s) for DisplayName widget.
   FocusNode? displayNameFocusNode;
   TextEditingController? displayNameTextController;

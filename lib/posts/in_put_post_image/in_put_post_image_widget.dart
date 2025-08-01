@@ -688,13 +688,13 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       
       // 사용자 정보 가져오기
       DebugHelper.log('[_saveToFirestore] 사용자 정보 조회 중...');
-      final userDoc = await UsersRecord.getDocumentOnce(
+      final userDoc = await UsersModel.getDocumentOnce(
         FirebaseFirestore.instance.collection('users').doc(user.uid)
       );
 
       // Posts 문서 생성
       final postsRecordData = {
-        ...createPostsRecordData(
+        ...createPostsModelData(
           userid: user.uid,
           uid: user.uid,
           email: user.email,
@@ -743,7 +743,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
       // Firestore에 저장
       DebugHelper.log('[_saveToFirestore] Firestore에 게시물 저장 시작...');
-      final postRef = await PostsRecord.collection.add(postsRecordData);
+      final postRef = await PostsModel.collection.add(postsRecordData);
       DebugHelper.log('[_saveToFirestore] ✅ 게시물 저장 성공! ID: ${postRef.id}');
       
       // Firestore 일관성을 위한 지연 추가
@@ -752,7 +752,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
       // PollDetails 서브컬렉션 생성
       DebugHelper.log('[_saveToFirestore] PollDetails 서브컬렉션 생성 중...');
-      final pollDetailsData = createPollDetailsRecordData(
+      final pollDetailsData = createPollDetailsModelData(
         option1: appState.uploadTextA,
         option2: appState.uploadTextB,
         option1MediaUrl: uploadedUrlsA.isNotEmpty ? uploadedUrlsA.first : null,
@@ -762,7 +762,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         resultTime: 7, // 7일 후 결과 공개
       );
 
-      await PollDetailsRecord.createDoc(postRef).set(pollDetailsData);
+      await PollDetailsModel.createDoc(postRef).set(pollDetailsData);
       DebugHelper.log('[_saveToFirestore] ✅ PollDetails 저장 성공!');
 
       // 멀티이미지 데이터 검증

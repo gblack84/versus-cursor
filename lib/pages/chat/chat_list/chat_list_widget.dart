@@ -52,8 +52,8 @@ class _ChatListWidgetState extends State<ChatListWidget> {
       ),
       body: SafeArea(
         top: true,
-        child: StreamBuilder<List<ChatsRecord>>(
-          stream: queryChatsRecord(
+        child: StreamBuilder<List<ChatsModel>>(
+          stream: queryChatsModel(
             queryBuilder: (chatsRecord) => chatsRecord
                 .where('participantlds', arrayContains: currentUserUid)
                 .orderBy('last_message_at', descending: true),
@@ -125,7 +125,7 @@ class _ChatListWidgetState extends State<ChatListWidget> {
     );
   }
 
-  Widget _buildChatItem(ChatsRecord chat) {
+  Widget _buildChatItem(ChatsModel chat) {
     // AI 채팅방인지 확인
     final isAIChat = chat.participantlds.contains('ai_assistant') || 
                      chat.chatType == 'ai_chat';

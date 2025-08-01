@@ -40,7 +40,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
     // On page load action.
     SchedulerBinding.instance.addPostFrameCallback((_) async {
       _model.userDocument =
-          await UsersRecord.getDocumentOnce(currentUserReference!);
+          await UsersModel.getDocumentOnce(currentUserReference!);
 
       setState(() {});
     });
@@ -1015,7 +1015,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                               }
 
                                               await currentUserReference!
-                                                  .update(createUsersRecordData(
+                                                  .update(createUsersModelData(
                                                 displayName: _model
                                                     .displayNameTextController
                                                     .text,

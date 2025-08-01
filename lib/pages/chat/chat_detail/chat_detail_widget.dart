@@ -26,7 +26,7 @@ class ChatDetailWidget extends StatefulWidget {
   static const String routeName = 'ChatDetail';
   static const String routePath = '/chat-detail';
 
-  final ChatsRecord? chatDocument;
+  final ChatsModel? chatDocument;
 
   @override
   State<ChatDetailWidget> createState() => _ChatDetailWidgetState();
@@ -36,7 +36,7 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
   late ChatDetailModel _model;
   final scaffoldKey = GlobalKey<ScaffoldState>();
   late types.User _currentUser;
-  Map<String, UsersRecord> _usersMap = {};
+  Map<String, UsersModel> _usersMap = {};
   bool _isLoadingUsers = true;
   final ChatMediaUploadService _mediaUploadService = ChatMediaUploadService();
   bool _isUploadingMedia = false;
@@ -52,7 +52,7 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
     // 현재 사용자 설정
     if (currentUserReference != null) {
       final currentUserDoc = await currentUserReference!.get();
-      final currentUserRecord = UsersRecord.fromSnapshot(currentUserDoc);
+      final currentUserRecord = UsersModel.fromSnapshot(currentUserDoc);
       _currentUser = ChatMessageConverter.convertCurrentUser(currentUserRecord);
     }
 
@@ -79,8 +79,8 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
     final messageId = const Uuid().v4();
     
     // Firestore에 메시지 저장
-    await MessagesRecord.createDoc(widget.chatDocument!.reference)
-        .set(createMessagesRecordData(
+    await MessagesModel.createDoc(widget.chatDocument!.reference)
+        .set(createMessagesModelData(
       messageId: messageId,
       content: message.text,
       senderId: currentUserUid,
@@ -89,7 +89,7 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
 
     // 채팅방 정보 업데이트
     await widget.chatDocument!.reference.update({
-      ...createChatsRecordData(
+      ...createChatsModelData(
         lastMessageContent: message.text,
         lastMessageAt: getCurrentTimestamp(),
       ),
@@ -267,7 +267,7 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
 
         // Firestore에 이미지 메시지 저장
         await widget.chatDocument!.reference.collection('messages').add(
-          createMessagesRecordData(
+          createMessagesModelData(
             messageId: messageId,
             senderId: currentUserUid,
             content: '',
@@ -290,7 +290,7 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
 
         // Firestore에 비디오 메시지 저장
         await widget.chatDocument!.reference.collection('messages').add(
-          createMessagesRecordData(
+          createMessagesModelData(
             messageId: messageId,
             senderId: currentUserUid,
             content: '',
@@ -417,8 +417,8 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
                 ),
               )
             : widget.chatDocument != null
-                ? StreamBuilder<List<MessagesRecord>>(
-                    stream: queryMessagesRecord(
+                ? StreamBuilder<List<MessagesModel>>(
+                    stream: queryMessagesModel(
                       parent: widget.chatDocument?.reference,
                       queryBuilder: (messagesRecord) => messagesRecord
                           .orderBy('time_stamp', descending: true),
@@ -443,7 +443,7 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
                         // AI 사용자 특별 처리
                         if (message.senderId == 'ai_assistant') {
                           // AI 사용자 정보 하드코딩
-                          final aiUser = UsersRecord.getDocumentFromData({
+                          final aiUser = UsersModel.getDocumentFromData({
                             'uid': 'ai_assistant',
                             'display_name': 'AI 피클',
                             'photo_url': '', // AI 아바타 이미지 경로 (필요시 추가)

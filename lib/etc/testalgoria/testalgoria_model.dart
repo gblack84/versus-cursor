@@ -11,7 +11,7 @@ class TestalgoriaModel extends AppModel<TestalgoriaWidget> {
   TextEditingController? textController;
   String? Function(BuildContext, String?)? textControllerValidator;
   // Algolia Search Results from action on IconButton
-  List<JopsCategoryRecord>? algoliaSearchResults = [];
+  List<JopsCategoryModel>? algoliaSearchResults = [];
 
   @override
   void initState(BuildContext context) {}

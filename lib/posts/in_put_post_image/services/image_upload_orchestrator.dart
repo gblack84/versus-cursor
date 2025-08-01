@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '/app_state.dart';
-import '/backend/schema/image_moderation_record.dart';
+import '/backend/schema/image_moderation_model.dart';
 import '/services/cloud_image_moderation_service.dart';
 import 'media_upload_service.dart';
 import '../helpers/image_cache_helper.dart';
@@ -65,7 +65,7 @@ class ImageUploadOrchestrator {
       
       // Vision API 데이터를 model에 저장 (첫 번째 이미지)
       if (model != null && editedResult['moderation'] != null) {
-        final moderation = editedResult['moderation'] as ImageModerationRecord;
+        final moderation = editedResult['moderation'] as ImageModerationModel;
         final visionData = _extractVisionData(moderation);
         
         if (box == 'A') {
@@ -267,7 +267,7 @@ class ImageUploadOrchestrator {
       
       // Vision API 데이터를 model에 저장
       if (model != null && result['moderation'] != null) {
-        final moderation = result['moderation'] as ImageModerationRecord;
+        final moderation = result['moderation'] as ImageModerationModel;
         final visionData = _extractVisionData(moderation);
         
         if (box == 'A') {
@@ -476,7 +476,7 @@ class ImageUploadOrchestrator {
   }
 
   /// Vision API 데이터 추출 (확장된 버전)
-  Map<String, dynamic> _extractVisionData(ImageModerationRecord moderation) {
+  Map<String, dynamic> _extractVisionData(ImageModerationModel moderation) {
     return {
       'safeSearch': {
         'adult': moderation.safeSearchResults.adult,

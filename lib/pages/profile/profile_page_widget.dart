@@ -64,8 +64,8 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                   ],
                 ),
               )
-            : StreamBuilder<UsersRecord>(
-                stream: UsersRecord.getDocument(currentUserReference!),
+            : StreamBuilder<UsersModel>(
+                stream: UsersModel.getDocument(currentUserReference!),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return Center(

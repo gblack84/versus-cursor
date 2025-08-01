@@ -285,7 +285,7 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           requireAuth: true,
           builder: (context, params) => ChatDetailWidget(
             chatDocument: params.state.extra != null
-                ? (params.state.extra as Map<String, dynamic>)['chatDocument'] as ChatsRecord?
+                ? (params.state.extra as Map<String, dynamic>)['chatDocument'] as ChatsModel?
                 : null,
           ),
         ).toRoute(appStateNotifier),

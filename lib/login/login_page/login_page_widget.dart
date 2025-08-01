@@ -553,7 +553,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                     'role': 'admin',
                                                     'uid': user.uid,
                                                   };
-                                                  await UsersRecord.collection.doc(user.uid).set(usersCreateData);
+                                                  await UsersModel.collection.doc(user.uid).set(usersCreateData);
                                                 }
                                                 
                                                 await currentUserReference!.update({
@@ -632,7 +632,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                     'platform': 'ios',  // 플랫폼 정보 저장
                                                     'uid': user.uid,
                                                   };
-                                                  await UsersRecord.collection.doc(user.uid).set(usersCreateData);
+                                                  await UsersModel.collection.doc(user.uid).set(usersCreateData);
                                                 }
                                                 
                                                 await currentUserReference!.update({
@@ -717,7 +717,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                     'platform': 'android',
                                                     'uid': user.uid,
                                                   };
-                                                  await UsersRecord.collection.doc(user.uid).set(usersCreateData);
+                                                  await UsersModel.collection.doc(user.uid).set(usersCreateData);
                                                 }
                                                 
                                                 await currentUserReference!.update({
@@ -796,7 +796,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                     'platform': 'macos',
                                                     'uid': user.uid,
                                                   };
-                                                  await UsersRecord.collection.doc(user.uid).set(usersCreateData);
+                                                  await UsersModel.collection.doc(user.uid).set(usersCreateData);
                                                 }
                                                 
                                                 await currentUserReference!.update({
@@ -875,7 +875,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                     'platform': 'web',
                                                     'uid': user.uid,
                                                   };
-                                                  await UsersRecord.collection.doc(user.uid).set(usersCreateData);
+                                                  await UsersModel.collection.doc(user.uid).set(usersCreateData);
                                                 }
                                                 
                                                 await currentUserReference!.update({

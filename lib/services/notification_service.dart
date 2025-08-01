@@ -30,10 +30,10 @@ class NotificationService {
   bool _isProcessingQueue = false;
   
   // 알림 스트림 (GlobalNotificationManager를 위한)
-  final StreamController<List<NotificationsRecord>> _notificationsStreamController = 
-      StreamController<List<NotificationsRecord>>.broadcast();
+  final StreamController<List<NotificationsModel>> _notificationsStreamController = 
+      StreamController<List<NotificationsModel>>.broadcast();
   
-  Stream<List<NotificationsRecord>> get notificationsStream => 
+  Stream<List<NotificationsModel>> get notificationsStream => 
       _notificationsStreamController.stream;
 
   /// 알림 리스닝 시작
@@ -88,11 +88,11 @@ class NotificationService {
     debugPrint('[NotificationService] 변경 사항 수: ${snapshot.docChanges.length}');
     
     // 현재 활성 알림 리스트 생성
-    final List<NotificationsRecord> activeNotifications = [];
+    final List<NotificationsModel> activeNotifications = [];
     
     for (var doc in snapshot.docs) {
       try {
-        final notification = NotificationsRecord.fromSnapshot(doc);
+        final notification = NotificationsModel.fromSnapshot(doc);
         activeNotifications.add(notification);
       } catch (e) {
         debugPrint('[NotificationService] 알림 파싱 오류: $e');
@@ -531,7 +531,7 @@ class NotificationService {
     required String senderId,
     required String recipientId,
     required String postId,
-    required PostsRecord post,
+    required PostsModel post,
   }) async {
     try {
       debugPrint('[NotificationService] 투표 요청 채팅 메시지 생성 시작');

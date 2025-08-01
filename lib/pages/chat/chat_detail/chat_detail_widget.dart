@@ -58,7 +58,7 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
 
     // 채팅 참가자들의 사용자 정보 로드
     if (widget.chatDocument != null) {
-      final participantIds = widget.chatDocument!.participantlds;
+      final participantIds = widget.chatDocument!.participantIds;
       _usersMap = await ChatMessageConverter.fetchUsersMap(participantIds);
     }
 
@@ -93,7 +93,7 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
         lastMessageContent: message.text,
         lastMessageAt: getCurrentTimestamp(),
       ),
-      'participantlds': FieldValue.arrayUnion([currentUserUid]),
+      'participantIds': FieldValue.arrayUnion([currentUserUid]),
     });
   }
 

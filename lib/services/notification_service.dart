@@ -206,8 +206,7 @@ class NotificationService {
             'imageUrlB': data['imageUrlB'],
             'imageUrlsA': data['imageUrlsA'],
             'imageUrlsB': data['imageUrlsB'],
-            'descriptionA': data['descriptionA'] ?? data['description'],
-            'descriptionB': data['descriptionB'],
+            'description': data['description'],
             'authorName': data['authorName'] ?? data['author_name'] ?? 'Anonymous',
           }
         };
@@ -268,8 +267,7 @@ class NotificationService {
               'imageUrlB': postData['option_b'] is Map ? postData['option_b']['imageUrl'] : postData['imageUrlB'],
               'imageUrlsA': postData['option_a'] is Map ? postData['option_a']['imageUrls'] : postData['imageUrlsA'],
               'imageUrlsB': postData['option_b'] is Map ? postData['option_b']['imageUrls'] : postData['imageUrlsB'],
-              'descriptionA': postData['description_a'] ?? postData['descriptionA'] ?? postData['description'],
-              'descriptionB': postData['description_b'] ?? postData['descriptionB'],
+              'description': postData['description'] ?? postData['descriptionA'] ?? postData['descriptionB'],
               'authorName': postData['author_name'] ?? postData['authorName'] ?? postData['author_display_name'] ?? 'Anonymous',
             }
           };
@@ -307,8 +305,7 @@ class NotificationService {
     debugPrint('[NotificationService]   - imageUrlB: ${postData['imageUrlB'] != null ? '있음' : '없음'}');
     debugPrint('[NotificationService]   - imageUrlsA: ${postData['imageUrlsA'] != null ? '${(postData['imageUrlsA'] as List).length}개' : '없음'}');
     debugPrint('[NotificationService]   - imageUrlsB: ${postData['imageUrlsB'] != null ? '${(postData['imageUrlsB'] as List).length}개' : '없음'}');
-    debugPrint('[NotificationService]   - descriptionA: ${postData['descriptionA'] != null ? '있음' : '없음'}');
-    debugPrint('[NotificationService]   - descriptionB: ${postData['descriptionB'] != null ? '있음' : '없음'}');
+    debugPrint('[NotificationService]   - description: ${postData['description'] != null ? '있음' : '없음'}');
     debugPrint('[NotificationService]   - authorName: ${postData['authorName']}');
     
     // BuildContext 가져오기 (appNavigatorKey 사용)
@@ -343,8 +340,7 @@ class NotificationService {
       imageUrlB: postData['imageUrlB'],
       imageUrlsA: imageUrlsA,
       imageUrlsB: imageUrlsB,
-      descriptionA: postData['descriptionA'],
-      descriptionB: postData['descriptionB'],
+      description: postData['description'],
       authorName: postData['authorName'],
       onVote: (option) {
         debugPrint('[NotificationService] 사용자가 투표함: $option');
@@ -560,7 +556,7 @@ class NotificationService {
             .doc(chatId);
             
         await chatRef.set({
-          'participantlds': participantIds,
+          'participantIds': participantIds,
           'lastMessageContent': '투표 요청을 보냈습니다',
           'lastMessageAt': FieldValue.serverTimestamp(),
           'created_at': FieldValue.serverTimestamp(),
@@ -586,7 +582,7 @@ class NotificationService {
         'message_type': 'vote_request',
         'vote_post_id': postId,
         'vote_title': post.questionTitle,
-        'vote_description': post.content,
+        'vote_description': post.description,
         'vote_option_a_text': optionAData['text'] ?? '',
         'vote_option_b_text': optionBData['text'] ?? '',
         'vote_option_a_image': optionAData['imageUrl'] ?? '',

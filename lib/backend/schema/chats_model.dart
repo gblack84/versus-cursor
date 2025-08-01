@@ -26,10 +26,10 @@ class ChatsModel extends FirestoreRecord {
   String get chatType => _chatType ?? '';
   bool hasChatType() => _chatType != null;
 
-  // "participantlds" field.
-  List<String>? _participantlds;
-  List<String> get participantlds => _participantlds ?? const [];
-  bool hasParticipantlds() => _participantlds != null;
+  // "participantIds" field.
+  List<String>? _participantIds;
+  List<String> get participantIds => _participantIds ?? const [];
+  bool hasParticipantIds() => _participantIds != null;
 
   // "chat_name" field.
   String? _chatName;
@@ -89,7 +89,11 @@ class ChatsModel extends FirestoreRecord {
   void _initializeFields() {
     _chatId = snapshotData['chat_id'] as String?;
     _chatType = snapshotData['chat_type'] as String?;
-    _participantlds = getDataList(snapshotData['participantlds']);
+    _participantIds = getDataList(snapshotData['participantIds']);
+    // 이전 필드명 호환성 유지
+    if (_participantIds == null || _participantIds!.isEmpty) {
+      _participantIds = getDataList(snapshotData['participantlds']);
+    }
     _chatName = snapshotData['chat_name'] as String?;
     _lastMessageContent = snapshotData['last_message_content'] as String?;
     _lastMessageAt = snapshotData['last_message_at'] as DateTime?;
@@ -180,7 +184,7 @@ class ChatsModelDocumentEquality implements Equality<ChatsModel> {
     const listEquality = ListEquality();
     return e1?.chatId == e2?.chatId &&
         e1?.chatType == e2?.chatType &&
-        listEquality.equals(e1?.participantlds, e2?.participantlds) &&
+        listEquality.equals(e1?.participantIds, e2?.participantIds) &&
         e1?.chatName == e2?.chatName &&
         e1?.lastMessageContent == e2?.lastMessageContent &&
         e1?.lastMessageAt == e2?.lastMessageAt &&
@@ -198,7 +202,7 @@ class ChatsModelDocumentEquality implements Equality<ChatsModel> {
   int hash(ChatsModel? e) => const ListEquality().hash([
         e?.chatId,
         e?.chatType,
-        e?.participantlds,
+        e?.participantIds,
         e?.chatName,
         e?.lastMessageContent,
         e?.lastMessageAt,

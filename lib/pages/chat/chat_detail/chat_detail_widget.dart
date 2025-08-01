@@ -326,10 +326,13 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
         builder: (context, snapshot) {
           final messageData = snapshot.data?.docs.firstOrNull?.data() as Map<String, dynamic>?;
           
+          // description 필드 직접 사용
+          final description = messageData?['vote_description'] ?? metadata['description'];
+          
           return VoteCardMessage(
             postId: metadata['postId'] ?? '',
             title: metadata['title'] ?? '',
-            description: metadata['description'],
+            description: description,
             optionAText: metadata['optionAText'] ?? '',
             optionBText: metadata['optionBText'] ?? '',
             optionAImage: metadata['optionAImage'],
@@ -437,12 +440,29 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
 
                       final messages = <types.Message>[];
                       for (final message in snapshot.data!) {
-                        final senderUser = _usersMap[message.senderId];
-                        if (senderUser != null) {
+                        // AI 사용자 특별 처리
+                        if (message.senderId == 'ai_assistant') {
+                          // AI 사용자 정보 하드코딩
+                          final aiUser = UsersRecord.getDocumentFromData({
+                            'uid': 'ai_assistant',
+                            'display_name': 'AI 피클',
+                            'photo_url': '', // AI 아바타 이미지 경로 (필요시 추가)
+                            'email': 'ai@pikle.app',
+                          }, FirebaseFirestore.instance.collection('users').doc('ai_assistant'));
+                          
                           messages.add(ChatMessageConverter.convertToMessage(
                             message,
-                            senderUser: senderUser,
+                            senderUser: aiUser,
                           ));
+                        } else {
+                          // 일반 사용자 처리
+                          final senderUser = _usersMap[message.senderId];
+                          if (senderUser != null) {
+                            messages.add(ChatMessageConverter.convertToMessage(
+                              message,
+                              senderUser: senderUser,
+                            ));
+                          }
                         }
                       }
 

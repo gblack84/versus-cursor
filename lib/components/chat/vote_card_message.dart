@@ -602,8 +602,6 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
           imageUrlB: widget.optionBImage,
           imageUrlsA: widget.optionAImages,
           imageUrlsB: widget.optionBImages,
-          descriptionA: null,
-          descriptionB: null,
           onVote: (option) async {
             // 투표 처리
             await _submitVote(option);

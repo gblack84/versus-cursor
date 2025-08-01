@@ -44,7 +44,6 @@ async function createVoteRequestMessage(userId, postId, postData) {
     message_type: 'vote_request',
     vote_post_id: postId,
     vote_title: postData.questionTitle || postData.question_title || '',
-    vote_description: postData.description || '',
     vote_option_a_text: postData.optionA || postData.option_a || '',
     vote_option_b_text: postData.optionB || postData.option_b || '',
     vote_option_a_image: postData.imageUrlA || postData.image_url_a || null,
@@ -53,6 +52,9 @@ async function createVoteRequestMessage(userId, postId, postData) {
     // 멀티이미지 지원
     vote_option_a_images: postData.imageUrlsA || postData.image_urls_a || null,
     vote_option_b_images: postData.imageUrlsB || postData.image_urls_b || null,
+    
+    // 전체 설명
+    vote_description: postData.description || '',
     
     // 카드 상태
     card_status: 'voting_request', // 초기 상태: 피클요청
@@ -73,7 +75,10 @@ async function createVoteRequestMessage(userId, postId, postData) {
       last_message: messageData.content,
       last_message_time: now,
       last_message_sent_by: AI_ASSISTANT_ID,
-      users: [AI_ASSISTANT_ID, userId]
+      users: [AI_ASSISTANT_ID, userId],
+      participantlds: [AI_ASSISTANT_ID, userId],  // Flutter 호환성을 위해 추가
+      chat_name: 'AI 피클',  // AI 채팅방 이름
+      chat_type: 'ai_chat'  // 채팅 타입 명시
     });
   } else {
     // 마지막 메시지 업데이트
@@ -116,7 +121,6 @@ async function createVoteCreatedMessage(userId, postId, postData) {
     message_type: 'vote_created',
     vote_post_id: postId,
     vote_title: postData.questionTitle || postData.question_title || '',
-    vote_description: postData.description || '',
     vote_option_a_text: postData.optionA || postData.option_a || '',
     vote_option_b_text: postData.optionB || postData.option_b || '',
     vote_option_a_image: postData.imageUrlA || postData.image_url_a || null,
@@ -125,6 +129,9 @@ async function createVoteCreatedMessage(userId, postId, postData) {
     // 멀티이미지 지원
     vote_option_a_images: postData.imageUrlsA || postData.image_urls_a || null,
     vote_option_b_images: postData.imageUrlsB || postData.image_urls_b || null,
+    
+    // 전체 설명
+    vote_description: postData.description || '',
     
     // 카드 상태
     card_status: 'in_progress', // 작성자는 진행중 상태로 시작
@@ -145,7 +152,10 @@ async function createVoteCreatedMessage(userId, postId, postData) {
       last_message: messageData.content,
       last_message_time: now,
       last_message_sent_by: AI_ASSISTANT_ID,
-      users: [AI_ASSISTANT_ID, userId]
+      users: [AI_ASSISTANT_ID, userId],
+      participantlds: [AI_ASSISTANT_ID, userId],  // Flutter 호환성을 위해 추가
+      chat_name: 'AI 피클',  // AI 채팅방 이름
+      chat_type: 'ai_chat'  // 채팅 타입 명시
     });
   } else {
     // 마지막 메시지 업데이트

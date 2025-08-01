@@ -47,17 +47,39 @@ exports.onPostCreatedSendNotifications = functions
       // 작성자에게 AI 채팅 메시지 생성
       const creatorId = postData.uid || postData.userid;
       if (creatorId) {
+        // optionA/optionB가 Map 구조인지 확인하고 처리
+        let optionATitle = '';
+        let optionBTitle = '';
+        let imageUrlsA = [];
+        let imageUrlsB = [];
+        
+        // optionA 처리
+        if (typeof postData.optionA === 'object' && postData.optionA !== null) {
+          optionATitle = postData.optionA.title || '';
+          imageUrlsA = postData.optionA.mediaUrls || [];
+        } else {
+          optionATitle = postData.optionA || postData.option_a || '';
+        }
+        
+        // optionB 처리
+        if (typeof postData.optionB === 'object' && postData.optionB !== null) {
+          optionBTitle = postData.optionB.title || '';
+          imageUrlsB = postData.optionB.mediaUrls || [];
+        } else {
+          optionBTitle = postData.optionB || postData.option_b || '';
+        }
+        
         await createVoteCreatedMessage(creatorId, postId, {
           ...postData,
           authorName: postData.authorName || postData.author_name || '익명',
           questionTitle: postData.question_title || postData.questionTitle,
-          optionA: postData.option_a || postData.optionA?.title || 'A',
-          optionB: postData.option_b || postData.optionB?.title || 'B',
-          imageUrlA: postData.image_url_a || postData.imageUrlA,
-          imageUrlB: postData.image_url_b || postData.imageUrlB,
-          imageUrlsA: postData.image_urls_a || postData.imageUrlsA,
-          imageUrlsB: postData.image_urls_b || postData.imageUrlsB,
-          description: postData.description
+          optionA: optionATitle,
+          optionB: optionBTitle,
+          imageUrlA: imageUrlsA.length > 0 ? imageUrlsA[0] : (postData.image_url_a || postData.imageUrlA),
+          imageUrlB: imageUrlsB.length > 0 ? imageUrlsB[0] : (postData.image_url_b || postData.imageUrlB),
+          imageUrlsA: imageUrlsA.length > 0 ? imageUrlsA : (postData.image_urls_a || postData.imageUrlsA || []),
+          imageUrlsB: imageUrlsB.length > 0 ? imageUrlsB : (postData.image_urls_b || postData.imageUrlsB || []),
+          description: postData.description || ''
         });
         console.log(`[알림] 작성자 AI 채팅 메시지 생성 완료: userId=${creatorId}`);
       }

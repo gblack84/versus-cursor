@@ -103,7 +103,6 @@
   - Quick Collection: AI recommends optimal users
   - Public: Random distribution to active users
   - Custom: Filter by interests, age, gender
-  - Test Mode: Admin/tester development tool
 - **Content Moderation**: 
   - Text analysis with Perspective API
   - AI logic validation with Gemini
@@ -121,31 +120,32 @@
 
 ### Data Models (Firestore Collections)
 
+**Note**: Flutter 앱은 `_record` 접미사 없이 사용하지만, 일부 Flutter 코드에서는 아직 `_record` 참조가 남아있음
+
 **Core Collections:**
-- `users_record` - User profiles, settings, points, rankings, role (admin/tester)
-- `posts_record` - Versus posts with A/B content, voting, metadata, targetAudience
-- `comments_record` - Comments with like/dislike subcollections
-- `notifications_record` - Voting request notifications with real-time sync
-- `characters_record` - User avatar/character information
-- `encodings_record` - Video encoding status tracking
+- `users` - User profiles, settings, points, rankings, role (admin/tester)
+- `posts` - Versus posts with A/B content, voting, metadata, targetAudience
+- `comments` - Comments with like/dislike subcollections
+- `notifications` - Voting request notifications with real-time sync
+- `characters` - User avatar/character information
+- `encodings` - Video encoding status tracking
 
 **Social Collections:**
-- `chats_record` - Direct messages with message subcollection
-- `group_chats_record` - Group conversations
-- `friends_list_record` - Friend connections
-- `likes_record`, `dislikes_record` - Post interactions
+- `chats` - Direct messages with message subcollection
+- `group_chats` - Group conversations
+- `friends_list` - Friend connections
+- `likes`, `dislikes` - Post interactions
 
 **Feature Collections:**
-- `rankings_record` - Leaderboards with ranked posts
-- `premium_users_record` - Premium subscriptions
-- `searches_record` - Search history
-- `notifications_record` - User notifications
+- `rankings` - Leaderboards with ranked posts
+- `premium_users` - Premium subscriptions
+- `searches` - Search history
 
 **Content Collections:**
-- `jops_category_record`, `jops_name_record` - Job categories
-- `interest_record` - Interest categories with weights
-- `user_contents_record` - User content with polls and feeds
-- `point_record` - Point transactions
+- `jops_category`, `jops_name` - Job categories
+- `interest` - Interest categories with weights
+- `user_contents` - User content with polls and feeds
+- `point` - Point transactions
 
 ## Development Configuration
 
@@ -189,9 +189,9 @@ algolia: ^1.1.1
   - checkImageContent - Image moderation trigger
   - moderateImage - Vision API integration
   - validatePostContentWithGemini - AI content validation
-  - onPostCreatedSendNotifications - Notification system trigger
+  - onPostCreatedSendNotifications - Notification system trigger (posts collection)
   - getUserPostingHistory - User history analysis
-  - testNotificationSystem - Development testing
+  - ~~testNotificationSystem~~ - 삭제됨 (2025-07-31)
   - onPostVoteUpdate - Vote update detection and completion
   - processVoteCompletion - Automatic vote completion processing
   - flushThrottleQueue - Throttle queue processing (every 1 minute)
@@ -994,3 +994,27 @@ if (model.isVideoSelectedA) {
   - 총 11개 Firebase Functions 프로덕션 배포
   - 자동 투표 완료 처리 시스템 가동
   - 테스트 및 성능 검증 완료
+
+### 2025-07-31: Firebase 컬렉션 이름 정규화 및 구조 개선
+- **작업 내용**:
+  - 모든 Firebase Functions에서 `_record` 접미사 제거
+  - Flutter 앱과 컬렉션 이름 완전 통일 (users, posts, notifications 등)
+  - 테스트 관련 코드 완전 삭제 (1,329줄 제거)
+  - Firebase Functions 디렉토리 구조 개선:
+    - `/config/`: 설정 파일 (Genkit 설정 등)
+    - `/services/`: 공통 서비스 레이어 (aiChatService 등)
+    - `/functions/`: 개별 함수 구현
+  - Firestore 인덱스 업데이트 및 배포
+  - 테스트 모드 제거 (앱 UI 및 Firebase Functions)
+- **영향받은 컬렉션**:
+  - `users_record` → `users`
+  - `posts_record` → `posts`
+  - `notifications_record` → `notifications`
+  - `chats_record` → `chats`
+  - `messages_record` → `messages`
+  - `votes_record` → `votes`
+- **결과**:
+  - 알림 시스템 정상 작동
+  - 컬렉션 이름 불일치 문제 해결
+  - 코드베이스 정리 및 구조 개선
+  - Git 4개 커밋으로 변경사항 정리

@@ -72,6 +72,7 @@ class NotificationOverlay {
     int? voteCountA,
     int? voteCountB,
     bool showDebugInfo = false,
+    String? authorName,
   }) {
     debugPrint('[NotificationOverlay] ========== showVoting() 호출됨 ==========');
     debugPrint('[NotificationOverlay] 질문: $question');
@@ -133,6 +134,7 @@ class NotificationOverlay {
             voteCountA: voteCountA,
             voteCountB: voteCountB,
             showDebugInfo: showDebugInfo,
+            authorName: authorName,
         ),
       ),
     );

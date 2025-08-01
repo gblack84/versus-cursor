@@ -187,10 +187,34 @@ class NotificationService {
       return;
     }
     
-    // 알림 데이터 추출 - content가 String 또는 Map일 수 있음
+    // 알림 데이터 추출 - content가 String, Map, 또는 없을 수 있음
     Map<String, dynamic>? content;
     
-    if (data['content'] is String) {
+    // content 필드 자체가 없거나 null인 경우 처리
+    if (data['content'] == null) {
+      debugPrint('[NotificationService] ⚠️ content 필드가 없음, 직접 데이터 사용 시도');
+      
+      // content가 없으면 notification 데이터 자체에서 추출 시도
+      if (data['question'] != null || data['questionTitle'] != null) {
+        content = {
+          'title': 'Pikle 도착!',
+          'message': '새로운 투표 요청이 도착했습니다',
+          'postData': {
+            'questionTitle': data['question'] ?? data['questionTitle'] ?? '',
+            'optionA': data['optionA'] ?? '',
+            'optionB': data['optionB'] ?? '',
+            'imageUrlA': data['imageUrlA'],
+            'imageUrlB': data['imageUrlB'],
+            'imageUrlsA': data['imageUrlsA'],
+            'imageUrlsB': data['imageUrlsB'],
+            'descriptionA': data['descriptionA'] ?? data['description'],
+            'descriptionB': data['descriptionB'],
+            'authorName': data['authorName'] ?? data['author_name'] ?? 'Anonymous',
+          }
+        };
+        debugPrint('[NotificationService] ✅ notification 데이터에서 content 생성 성공');
+      }
+    } else if (data['content'] is String) {
       // JSON 문자열인 경우
       try {
         debugPrint('[NotificationService] content를 JSON 문자열로 파싱 시도...');
@@ -198,7 +222,6 @@ class NotificationService {
         debugPrint('[NotificationService] ✅ JSON 파싱 성공');
       } catch (e) {
         debugPrint('[NotificationService] ❌ JSON 파싱 실패: $e');
-        return;
       }
     } else if (data['content'] is Map) {
       // 이미 Map인 경우 (이전 버전 호환성)
@@ -206,11 +229,64 @@ class NotificationService {
       content = data['content'] as Map<String, dynamic>;
     } else {
       debugPrint('[NotificationService] ❌ content가 올바른 형식이 아님: ${data['content'].runtimeType}');
-      return;
+    }
+    
+    // content가 여전히 null이거나 postData가 없으면 posts 컬렉션에서 직접 가져오기
+    if (content == null || content['postData'] == null || 
+        (content['postData']['optionA'] == null || content['postData']['optionA'] == '')) {
+      debugPrint('[NotificationService] ⚠️ content 파싱 실패 또는 데이터 불완전, posts 컬렉션에서 직접 조회');
+      
+      try {
+        // posts 컬렉션에서 데이터 가져오기
+        final postDoc = await FirebaseFirestore.instance
+            .collection('posts')
+            .doc(postId)
+            .get();
+            
+        if (postDoc.exists) {
+          final postData = postDoc.data()!;
+          debugPrint('[NotificationService] ✅ posts 컬렉션에서 데이터 조회 성공');
+          debugPrint('[NotificationService] Post 데이터 구조:');
+          postData.forEach((key, value) {
+            if (value is Map) {
+              debugPrint('[NotificationService]   $key: ${value.keys.toList()}');
+            } else if (value is List) {
+              debugPrint('[NotificationService]   $key: List(${value.length}개)');
+            } else {
+              debugPrint('[NotificationService]   $key: $value');
+            }
+          });
+          
+          // posts 컬렉션의 데이터 구조에 맞춰 파싱
+          content = {
+            'title': 'Pikle 도착!',
+            'message': '새로운 투표 요청이 도착했습니다',
+            'postData': {
+              'questionTitle': postData['question_title'] ?? postData['questionTitle'] ?? '',
+              'optionA': postData['option_a'] is Map ? postData['option_a']['text'] ?? '' : postData['option_a'] ?? '',
+              'optionB': postData['option_b'] is Map ? postData['option_b']['text'] ?? '' : postData['option_b'] ?? '',
+              'imageUrlA': postData['option_a'] is Map ? postData['option_a']['imageUrl'] : postData['imageUrlA'],
+              'imageUrlB': postData['option_b'] is Map ? postData['option_b']['imageUrl'] : postData['imageUrlB'],
+              'imageUrlsA': postData['option_a'] is Map ? postData['option_a']['imageUrls'] : postData['imageUrlsA'],
+              'imageUrlsB': postData['option_b'] is Map ? postData['option_b']['imageUrls'] : postData['imageUrlsB'],
+              'descriptionA': postData['description_a'] ?? postData['descriptionA'] ?? postData['description'],
+              'descriptionB': postData['description_b'] ?? postData['descriptionB'],
+              'authorName': postData['author_name'] ?? postData['authorName'] ?? postData['author_display_name'] ?? 'Anonymous',
+            }
+          };
+          debugPrint('[NotificationService] ✅ posts 데이터로 content 재구성 완료');
+        } else {
+          debugPrint('[NotificationService] ❌ postId에 해당하는 post를 찾을 수 없음: $postId');
+          return;
+        }
+      } catch (e) {
+        debugPrint('[NotificationService] ❌ posts 컬렉션 조회 실패: $e');
+        return;
+      }
     }
     
     if (content == null) {
-      debugPrint('[NotificationService] ❌ content가 없는 알림: $notificationId');
+      debugPrint('[NotificationService] ❌ content를 생성할 수 없는 알림: $notificationId');
       return;
     }
     
@@ -234,6 +310,7 @@ class NotificationService {
     debugPrint('[NotificationService]   - imageUrlsB: ${postData['imageUrlsB'] != null ? '${(postData['imageUrlsB'] as List).length}개' : '없음'}');
     debugPrint('[NotificationService]   - descriptionA: ${postData['descriptionA'] != null ? '있음' : '없음'}');
     debugPrint('[NotificationService]   - descriptionB: ${postData['descriptionB'] != null ? '있음' : '없음'}');
+    debugPrint('[NotificationService]   - authorName: ${postData['authorName']}');
     
     // BuildContext 가져오기 (appNavigatorKey 사용)
     final context = appNavigatorKey.currentContext;
@@ -269,6 +346,7 @@ class NotificationService {
       imageUrlsB: imageUrlsB,
       descriptionA: postData['descriptionA'],
       descriptionB: postData['descriptionB'],
+      authorName: postData['authorName'],
       onVote: (option) {
         debugPrint('[NotificationService] 사용자가 투표함: $option');
         return _handleVote(

@@ -83,6 +83,16 @@ class ChatMessageConverter {
 
   /// UsersRecord를 types.User로 변환
   static types.User _convertToUser(UsersRecord firestoreUser) {
+    // AI 사용자 특별 처리
+    if (firestoreUser.uid == 'ai_assistant') {
+      return const types.User(
+        id: 'ai_assistant',
+        firstName: 'AI',
+        lastName: '피클',
+        imageUrl: null, // AI 아바타 이미지 경로 추가 가능
+      );
+    }
+    
     return types.User(
       id: firestoreUser.uid,
       firstName: firestoreUser.displayName.split(' ').first,

@@ -80,15 +80,20 @@ async function createNotificationsForUsers(users, postId, postData) {
         message: generateTargetReason(postData.targetAudience, user),
         postData: {
           questionTitle: postData.questionTitle || postData.question_title || '',
-          optionA: postData.optionA || postData.option_a || '',
-          optionB: postData.optionB || postData.option_b || '',
-          imageUrlA: postData.imageUrlA || postData.image_url_a || null,
-          imageUrlB: postData.imageUrlB || postData.image_url_b || null,
+          // optionA/optionB가 Map 구조인지 확인하고 처리
+          optionA: typeof postData.optionA === 'object' && postData.optionA !== null 
+            ? (postData.optionA.title || '') 
+            : (postData.optionA || postData.option_a || ''),
+          optionB: typeof postData.optionB === 'object' && postData.optionB !== null 
+            ? (postData.optionB.title || '') 
+            : (postData.optionB || postData.option_b || ''),
+          // 이미지 URL 처리 (멀티이미지 우선)
+          imageUrlA: postData.optionA?.mediaUrls?.[0] || postData.imageUrlA || postData.image_url_a || null,
+          imageUrlB: postData.optionB?.mediaUrls?.[0] || postData.imageUrlB || postData.image_url_b || null,
           // 멀티이미지 지원 추가
-          imageUrlsA: postData.imageUrlsA || postData.image_urls_a || null,
-          imageUrlsB: postData.imageUrlsB || postData.image_urls_b || null,
-          descriptionA: postData.descriptionA || postData.description_a || null,
-          descriptionB: postData.descriptionB || postData.description_b || null,
+          imageUrlsA: postData.optionA?.mediaUrls || postData.imageUrlsA || postData.image_urls_a || null,
+          imageUrlsB: postData.optionB?.mediaUrls || postData.imageUrlsB || postData.image_urls_b || null,
+          description: postData.description || null,
           authorName: postData.authorName || postData.author_name || '익명',
           category: postData.category || null,
         }
@@ -140,17 +145,39 @@ async function createNotificationsForUsers(users, postId, postData) {
       // 각 대상 사용자에 대해 AI 채팅 메시지 생성
       const chatPromises = users.map(async (user) => {
         try {
+          // optionA/optionB가 Map 구조인지 확인하고 처리
+          let optionATitle = '';
+          let optionBTitle = '';
+          let imageUrlsA = [];
+          let imageUrlsB = [];
+          
+          // optionA 처리
+          if (typeof postData.optionA === 'object' && postData.optionA !== null) {
+            optionATitle = postData.optionA.title || '';
+            imageUrlsA = postData.optionA.mediaUrls || [];
+          } else {
+            optionATitle = postData.optionA || postData.option_a || '';
+          }
+          
+          // optionB 처리
+          if (typeof postData.optionB === 'object' && postData.optionB !== null) {
+            optionBTitle = postData.optionB.title || '';
+            imageUrlsB = postData.optionB.mediaUrls || [];
+          } else {
+            optionBTitle = postData.optionB || postData.option_b || '';
+          }
+          
           await createVoteRequestMessage(user.id, postId, {
             ...postData,
             authorName: postData.authorName || postData.author_name || '익명',
             questionTitle: postData.question_title || postData.questionTitle,
-            optionA: postData.option_a || postData.optionA?.title || 'A',
-            optionB: postData.option_b || postData.optionB?.title || 'B',
-            imageUrlA: postData.image_url_a || postData.imageUrlA,
-            imageUrlB: postData.image_url_b || postData.imageUrlB,
-            imageUrlsA: postData.image_urls_a || postData.imageUrlsA,
-            imageUrlsB: postData.image_urls_b || postData.imageUrlsB,
-            description: postData.description
+            optionA: optionATitle,
+            optionB: optionBTitle,
+            imageUrlA: imageUrlsA.length > 0 ? imageUrlsA[0] : (postData.image_url_a || postData.imageUrlA),
+            imageUrlB: imageUrlsB.length > 0 ? imageUrlsB[0] : (postData.image_url_b || postData.imageUrlB),
+            imageUrlsA: imageUrlsA.length > 0 ? imageUrlsA : (postData.image_urls_a || postData.imageUrlsA || []),
+            imageUrlsB: imageUrlsB.length > 0 ? imageUrlsB : (postData.image_urls_b || postData.imageUrlsB || []),
+            description: postData.description || ''
           });
           console.log(`[알림 생성] AI 채팅 메시지 생성 완료: ${user.displayName || user.id}`);
         } catch (error) {

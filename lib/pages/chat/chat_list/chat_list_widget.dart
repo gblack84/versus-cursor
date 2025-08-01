@@ -126,6 +126,10 @@ class _ChatListWidgetState extends State<ChatListWidget> {
   }
 
   Widget _buildChatItem(ChatsRecord chat) {
+    // AI 채팅방인지 확인
+    final isAIChat = chat.participantlds.contains('ai_assistant') || 
+                     chat.chatType == 'ai_chat';
+    
     return InkWell(
       onTap: () {
         // 채팅 상세 페이지로 이동
@@ -159,13 +163,15 @@ class _ChatListWidgetState extends State<ChatListWidget> {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: VersusColors.primaryWithAlpha(0.1),
+                  color: isAIChat 
+                      ? Colors.purple.withOpacity(0.1)  // AI 채팅방은 보라색 배경
+                      : VersusColors.primaryWithAlpha(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
                   child: Icon(
-                    Icons.person,
-                    color: VersusColors.primary,
+                    isAIChat ? Icons.smart_toy : Icons.person,  // AI는 로봇 아이콘
+                    color: isAIChat ? Colors.purple : VersusColors.primary,
                     size: 28,
                   ),
                 ),
@@ -180,9 +186,11 @@ class _ChatListWidgetState extends State<ChatListWidget> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          chat.chatName.isNotEmpty 
-                              ? chat.chatName 
-                              : '채팅',
+                          isAIChat
+                              ? 'AI 피클'  // AI 채팅방 이름
+                              : (chat.chatName.isNotEmpty 
+                                  ? chat.chatName 
+                                  : '채팅'),
                           style: VersusTextStyles.buttonMedium.copyWith(
                             color: Colors.black,
                           ),

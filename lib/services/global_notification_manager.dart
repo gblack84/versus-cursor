@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '/backend/backend.dart';
 import '/components/notifications/voting_notification_dialog.dart';
 import '/components/notifications/models/versus_box_size_data.dart';
@@ -27,15 +28,27 @@ class GlobalNotificationManager {
   /// 알림 표시 중 여부
   bool _isShowingNotification = false;
   
+  /// 처리된 알림 ID 세트 (중복 표시 방지)
+  final Set<String> _processedNotificationIds = {};
+  
   /// 스트림 구독
   StreamSubscription<List<NotificationsRecord>>? _notificationSubscription;
   
   /// 큐 처리 타이머
   Timer? _queueTimer;
   
+  /// 정리 타이머
+  Timer? _cleanupTimer;
+  
+  /// SharedPreferences 키
+  static const String _processedIdsKey = 'processed_notification_ids';
+  
   /// NotificationService와 연동 시작
-  void startListening() {
+  void startListening() async {
     debugPrint('[GlobalNotificationManager] ========== 알림 매니저 시작 ==========');
+    
+    // 저장된 처리 기록 로드
+    await _loadProcessedNotifications();
     
     // NotificationService의 스트림 구독
     _notificationSubscription = NotificationService.instance.notificationsStream.listen(
@@ -52,23 +65,44 @@ class GlobalNotificationManager {
     _queueTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       _processQueue();
     });
+    
+    // 정리 타이머 시작 (30분마다 오래된 기록 정리)
+    _cleanupTimer = Timer.periodic(const Duration(minutes: 30), (_) {
+      _cleanupProcessedNotifications();
+    });
   }
   
   /// 리스닝 중지
   void stopListening() {
     debugPrint('[GlobalNotificationManager] 알림 매니저 중지');
+    
+    // 처리 기록 저장
+    _saveProcessedNotifications();
+    
     _notificationSubscription?.cancel();
     _queueTimer?.cancel();
+    _cleanupTimer?.cancel();
     _notificationQueue.clear();
     _currentNotification = null;
     _isShowingNotification = false;
+    // 세션 종료 시 처리 기록은 유지 (다음 세션에서 사용하기 위해)
+    // _processedNotificationIds.clear();
   }
   
   /// 새로운 알림 처리
   void _handleNewNotifications(List<NotificationsRecord> notifications) {
-    // 기존 큐에 없는 새로운 알림만 추가
+    // 기존 큐에 없고, 이미 처리되지 않은 새로운 알림만 추가
     for (final notification in notifications) {
-      if (!_notificationQueue.any((n) => n.reference.id == notification.reference.id)) {
+      final notificationId = notification.reference.id;
+      
+      // 이미 처리된 알림은 무시
+      if (_processedNotificationIds.contains(notificationId)) {
+        debugPrint('[GlobalNotificationManager] 이미 처리된 알림 무시: $notificationId');
+        continue;
+      }
+      
+      // 큐에 없는 경우만 추가
+      if (!_notificationQueue.any((n) => n.reference.id == notificationId)) {
         debugPrint('[GlobalNotificationManager] 큐에 알림 추가: ${notification.sourceId}');
         _notificationQueue.add(notification);
       }
@@ -80,6 +114,7 @@ class GlobalNotificationManager {
     );
     
     debugPrint('[GlobalNotificationManager] 현재 큐 크기: ${_notificationQueue.length}');
+    debugPrint('[GlobalNotificationManager] 처리된 알림 수: ${_processedNotificationIds.length}');
     
     // 즉시 처리 시도
     _processQueue();
@@ -112,6 +147,14 @@ class GlobalNotificationManager {
       debugPrint('[GlobalNotificationManager] ❌ Navigator context를 가져올 수 없음');
       return;
     }
+    
+    // 알림을 처리 목록에 추가 (중복 표시 방지)
+    final notificationId = notification.reference.id;
+    _processedNotificationIds.add(notificationId);
+    debugPrint('[GlobalNotificationManager] 알림을 처리 목록에 추가: $notificationId');
+    
+    // 처리 기록 저장 (비동기로 처리하여 UI 블로킹 방지)
+    _saveProcessedNotifications();
     
     _isShowingNotification = true;
     _currentNotification = notification;
@@ -205,8 +248,8 @@ class GlobalNotificationManager {
         question = postData['questionTitle'] ?? postData['question_title'] ?? '';
         
         // descriptionA와 descriptionB 추출
-        descriptionA = postData['descriptionA'] ?? '';
-        descriptionB = postData['descriptionB'] ?? '';
+        descriptionA = postData['descriptionA'] ?? postData['description_a'] ?? '';
+        descriptionB = postData['descriptionB'] ?? postData['description_b'] ?? '';
         
         // optionA와 optionB는 객체 형태로 저장됨
         if (postData['optionA'] is Map) {
@@ -217,8 +260,10 @@ class GlobalNotificationManager {
             imageUrlsA = mediaList;
             imageUrlA = mediaList.first; // 기존 호환성
           }
+          debugPrint('[GlobalNotificationManager] optionA Map 파싱 - title: $optionA, mediaUrls: ${imageUrlsA?.length ?? 0}개');
         } else {
           optionA = postData['option_a'] ?? postData['text_a'] ?? '';
+          debugPrint('[GlobalNotificationManager] optionA 문자열 파싱: $optionA');
         }
         
         if (postData['optionB'] is Map) {
@@ -229,9 +274,14 @@ class GlobalNotificationManager {
             imageUrlsB = mediaList;
             imageUrlB = mediaList.first; // 기존 호환성
           }
+          debugPrint('[GlobalNotificationManager] optionB Map 파싱 - title: $optionB, mediaUrls: ${imageUrlsB?.length ?? 0}개');
         } else {
           optionB = postData['option_b'] ?? postData['text_b'] ?? '';
+          debugPrint('[GlobalNotificationManager] optionB 문자열 파싱: $optionB');
         }
+        
+        // 작성자 이름 추출
+        authorName = postData['authorName'] ?? postData['author_name'] ?? postData['author_display_name'] ?? '익명';
       }
       
       debugPrint('[GlobalNotificationManager] 투표 알림 표시');
@@ -319,22 +369,29 @@ class GlobalNotificationManager {
                 onVote: (selectedOption) async {
                   debugPrint('[GlobalNotificationManager] 투표 완료: $selectedOption');
                   
-                  // 알림을 읽음으로 표시
-                  await _markAsRead(notification);
-                  
-                  // TODO: 실제 투표 로직 구현
-                  // await _submitVote(notification.sourceId, selectedOption);
-                  
+                  // 상태 즉시 업데이트 (권한 오류와 관계없이)
                   _isShowingNotification = false;
                   _currentNotification = null;
                   
-                  // 다이얼로그 닫기
+                  // 다이얼로그 먼저 닫기
                   if (dialogContext.mounted) {
                     Navigator.of(dialogContext).pop();
                   }
                   
-                  // 다음 알림 처리
-                  _processQueue();
+                  // 비동기로 알림을 읽음으로 표시 시도
+                  _markAsRead(notification).then((_) {
+                    debugPrint('[GlobalNotificationManager] 알림 읽음 처리 성공');
+                  }).catchError((error) {
+                    debugPrint('[GlobalNotificationManager] 알림 읽음 처리 실패 (무시): $error');
+                  });
+                  
+                  // TODO: 실제 투표 로직 구현
+                  // await _submitVote(notification.sourceId, selectedOption);
+                  
+                  // 다음 알림 처리 (약간의 지연 후)
+                  Future.delayed(const Duration(milliseconds: 300), () {
+                    _processQueue();
+                  });
                 },
                 onDismiss: () {
                   debugPrint('[GlobalNotificationManager] 알림 닫힘');
@@ -345,6 +402,11 @@ class GlobalNotificationManager {
                   if (dialogContext.mounted) {
                     Navigator.of(dialogContext).pop();
                   }
+                  
+                  // 닫힌 알림도 처리된 것으로 표시
+                  _markAsRead(notification).catchError((error) {
+                    debugPrint('[GlobalNotificationManager] 알림 읽음 처리 실패 (무시): $error');
+                  });
                   
                   // 다음 알림 처리
                   Future.delayed(const Duration(milliseconds: 500), () {
@@ -372,6 +434,49 @@ class GlobalNotificationManager {
       debugPrint('[GlobalNotificationManager] 알림 읽음 처리 완료');
     } catch (e) {
       debugPrint('[GlobalNotificationManager] ❌ 읽음 처리 실패: $e');
+    }
+  }
+  
+  /// 오래된 처리 기록 정리
+  void _cleanupProcessedNotifications() {
+    final beforeCount = _processedNotificationIds.length;
+    
+    // 메모리 사용을 줄이기 위해 최대 1000개까지만 유지
+    if (_processedNotificationIds.length > 1000) {
+      // 가장 오래된 항목들을 제거 (Set은 순서가 없으므로 모두 제거 후 최근 500개만 다시 추가)
+      final recentIds = _processedNotificationIds.toList().sublist(
+        _processedNotificationIds.length - 500
+      );
+      _processedNotificationIds.clear();
+      _processedNotificationIds.addAll(recentIds);
+      
+      debugPrint('[GlobalNotificationManager] 처리 기록 정리 완료: $beforeCount -> ${_processedNotificationIds.length}');
+      
+      // 정리 후 저장
+      _saveProcessedNotifications();
+    }
+  }
+  
+  /// 처리된 알림 ID 로드
+  Future<void> _loadProcessedNotifications() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedIds = prefs.getStringList(_processedIdsKey) ?? [];
+      _processedNotificationIds.addAll(savedIds);
+      debugPrint('[GlobalNotificationManager] 저장된 처리 기록 로드: ${savedIds.length}개');
+    } catch (e) {
+      debugPrint('[GlobalNotificationManager] 처리 기록 로드 실패: $e');
+    }
+  }
+  
+  /// 처리된 알림 ID 저장
+  Future<void> _saveProcessedNotifications() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_processedIdsKey, _processedNotificationIds.toList());
+      debugPrint('[GlobalNotificationManager] 처리 기록 저장 완료: ${_processedNotificationIds.length}개');
+    } catch (e) {
+      debugPrint('[GlobalNotificationManager] 처리 기록 저장 실패: $e');
     }
   }
   

@@ -127,48 +127,6 @@ class LayoutSynchronizer {
     );
   }
   
-  /// 작은 화면에서의 추가 최적화
-  static VotingLayoutConfig _optimizeForSmallScreen({
-    required LayoutType originalLayout,
-    required double containerWidth,
-    double? aspectRatioA,
-    double? aspectRatioB,
-    bool hasImageA = false,
-    bool hasImageB = false,
-  }) {
-    
-    // 극도로 세로형 이미지들의 경우 세로 배치 유지 고려
-    if (aspectRatioA != null && aspectRatioB != null) {
-      final orientationA = AspectRatioAnalyzer.getOrientation(aspectRatioA);
-      final orientationB = AspectRatioAnalyzer.getOrientation(aspectRatioB);
-      
-      // 둘 다 극도로 세로형 (비율 < 0.5)이면 세로 배치가 더 나을 수 있음
-      if (aspectRatioA < 0.5 && aspectRatioB < 0.5 && 
-          orientationA == ImageOrientation.portrait && 
-          orientationB == ImageOrientation.portrait) {
-        return VotingLayoutConfig(
-          layoutType: LayoutType.vertical,
-          reason: 'Extreme portrait images better in vertical on small screen',
-          conversionRules: [
-            'Both images are extremely tall (ratio < 0.5)',
-            'Vertical layout provides better visibility',
-            'Small screen optimization applied',
-          ],
-        );
-      }
-    }
-    
-    // 기본적으로는 가로 배치 (투표 UI의 일관성을 위해)
-    return VotingLayoutConfig(
-      layoutType: LayoutType.horizontal,
-      reason: 'Small screen with horizontal layout for voting consistency',
-      conversionRules: [
-        'Small screen detected (< 350px)',
-        'Horizontal layout for voting consistency',
-        'Compact sizing applied',
-      ],
-    );
-  }
   
   /// 레이아웃 변환 시 크기 조정 팩터 계산
   /// 

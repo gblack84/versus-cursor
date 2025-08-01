@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
 
 /// 테스트용 알림을 수동으로 생성하는 스크립트
 /// 

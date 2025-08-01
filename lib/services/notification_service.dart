@@ -359,7 +359,8 @@ class NotificationService {
         debugPrint('[NotificationService] 사용자가 알림을 닫음');
         _markNotificationAsRead(notificationId);
       },
-      // TODO: VersusBoxSizeData 연동 (posts_record에서 가져오기)
+      // VersusBoxSizeData는 posts 컬렉션에서 별도로 가져와야 합니다.
+      // 현재는 기본값을 사용하며, 추후 PostsModel에 포함될 예정입니다.
     );
     
     debugPrint('[NotificationService] ✅ 알림 표시 완료: $notificationId');

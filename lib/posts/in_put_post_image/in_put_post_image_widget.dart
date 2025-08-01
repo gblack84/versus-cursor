@@ -11,7 +11,6 @@ import '/backend/backend.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'utils/no_animation_page_route.dart';
 import '/auth/firebase_auth/auth_util.dart';
-import '/services/target_audience_service.dart';
 import 'in_put_post_image_model.dart';
 export 'in_put_post_image_model.dart';
 import 'helpers/aspect_ratio_analyzer.dart';

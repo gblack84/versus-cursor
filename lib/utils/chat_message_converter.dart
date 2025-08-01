@@ -1,6 +1,5 @@
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import '/backend/backend.dart';
-import '/auth/firebase_auth/auth_util.dart';
 
 /// Firestore 메시지를 flutter_chat_types Message로 변환하는 유틸리티
 class ChatMessageConverter {

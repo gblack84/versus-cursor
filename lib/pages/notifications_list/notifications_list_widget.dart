@@ -110,7 +110,8 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
                         });
                       }
                       
-                      // TODO: 알림 상세 보기 또는 관련 게시물로 이동
+                      // 알림 클릭 시 관련 게시물로 이동하는 기능이 필요합니다.
+                      // 현재는 알림 읽음 처리만 수행하고 있습니다.
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('알림 상세 보기 구현 예정'),

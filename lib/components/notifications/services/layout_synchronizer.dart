@@ -127,7 +127,6 @@ class LayoutSynchronizer {
     );
   }
   
-  
   /// 레이아웃 변환 시 크기 조정 팩터 계산
   /// 
   /// [originalLayout] 원본 레이아웃

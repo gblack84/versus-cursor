@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2019 gomgom. https://www.gomgom.net
  *
- * Source code has been modified by FlutterFlow, Inc. and the below license 
+ * Source code has been modified and the below license 
  * applies only to this file. Adapted from "language_picker" pub.dev package.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy

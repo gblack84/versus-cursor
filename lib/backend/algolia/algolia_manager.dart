@@ -29,7 +29,7 @@ class AppAlgoliaManager {
       : algolia = Algolia.init(
           applicationId: kAlgoliaApplicationId,
           apiKey: kAlgoliaApiKey,
-          extraUserAgents: ['FlutterFlow_3.1.0'],
+          extraUserAgents: ['VersusSpace_1.0.0'],
         );
   final Algolia algolia;
 

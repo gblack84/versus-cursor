@@ -74,7 +74,7 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
   }
 
   void _handleSendPressed(types.PartialText message) async {
-    if (widget.chatDocument == null || currentUserUid == null) return;
+    if (widget.chatDocument == null) return;
 
     final messageId = const Uuid().v4();
     

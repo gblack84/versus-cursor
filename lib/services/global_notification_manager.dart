@@ -191,16 +191,16 @@ class GlobalNotificationManager {
             // 멀티이미지 지원 추가
             if (postData['imageUrlsA'] is List) {
               imageUrlsA = (postData['imageUrlsA'] as List).cast<String>();
-              debugPrint('[GlobalNotificationManager] ✅ imageUrlsA 파싱 성공: ${imageUrlsA?.length}개');
-              for (int i = 0; i < (imageUrlsA?.length ?? 0); i++) {
-                debugPrint('[GlobalNotificationManager]   - imageUrlsA[$i]: ${imageUrlsA![i].substring(0, 50)}...');
+              debugPrint('[GlobalNotificationManager] ✅ imageUrlsA 파싱 성공: ${imageUrlsA.length}개');
+              for (int i = 0; i < imageUrlsA.length; i++) {
+                debugPrint('[GlobalNotificationManager]   - imageUrlsA[$i]: ${imageUrlsA[i].substring(0, 50)}...');
               }
             }
             if (postData['imageUrlsB'] is List) {
               imageUrlsB = (postData['imageUrlsB'] as List).cast<String>();
-              debugPrint('[GlobalNotificationManager] ✅ imageUrlsB 파싱 성공: ${imageUrlsB?.length}개');
-              for (int i = 0; i < (imageUrlsB?.length ?? 0); i++) {
-                debugPrint('[GlobalNotificationManager]   - imageUrlsB[$i]: ${imageUrlsB![i].substring(0, 50)}...');
+              debugPrint('[GlobalNotificationManager] ✅ imageUrlsB 파싱 성공: ${imageUrlsB.length}개');
+              for (int i = 0; i < imageUrlsB.length; i++) {
+                debugPrint('[GlobalNotificationManager]   - imageUrlsB[$i]: ${imageUrlsB[i].substring(0, 50)}...');
               }
             }
             descriptionA = postData['descriptionA'];

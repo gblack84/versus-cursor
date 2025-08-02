@@ -72,19 +72,19 @@ async function createVoteRequestMessage(userId, postId, postData) {
     await chatRef.set({
       user_a: AI_ASSISTANT_ID,
       user_b: userId,
-      last_message: messageData.content,
-      last_message_time: now,
+      last_message_content: messageData.content,
+      last_message_at: now,
       last_message_sent_by: AI_ASSISTANT_ID,
       users: [AI_ASSISTANT_ID, userId],
-      participantlds: [AI_ASSISTANT_ID, userId],  // Flutter 호환성을 위해 추가
+      participantIds: [AI_ASSISTANT_ID, userId],  // Flutter 호환성을 위해 추가
       chat_name: 'AI 피클',  // AI 채팅방 이름
       chat_type: 'ai_chat'  // 채팅 타입 명시
     });
   } else {
     // 마지막 메시지 업데이트
     await chatRef.update({
-      last_message: messageData.content,
-      last_message_time: now,
+      last_message_content: messageData.content,
+      last_message_at: now,
       last_message_sent_by: AI_ASSISTANT_ID
     });
   }
@@ -149,19 +149,19 @@ async function createVoteCreatedMessage(userId, postId, postData) {
     await chatRef.set({
       user_a: AI_ASSISTANT_ID,
       user_b: userId,
-      last_message: messageData.content,
-      last_message_time: now,
+      last_message_content: messageData.content,
+      last_message_at: now,
       last_message_sent_by: AI_ASSISTANT_ID,
       users: [AI_ASSISTANT_ID, userId],
-      participantlds: [AI_ASSISTANT_ID, userId],  // Flutter 호환성을 위해 추가
+      participantIds: [AI_ASSISTANT_ID, userId],  // Flutter 호환성을 위해 추가
       chat_name: 'AI 피클',  // AI 채팅방 이름
       chat_type: 'ai_chat'  // 채팅 타입 명시
     });
   } else {
     // 마지막 메시지 업데이트
     await chatRef.update({
-      last_message: messageData.content,
-      last_message_time: now,
+      last_message_content: messageData.content,
+      last_message_at: now,
       last_message_sent_by: AI_ASSISTANT_ID
     });
   }

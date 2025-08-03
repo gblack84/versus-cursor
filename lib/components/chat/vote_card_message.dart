@@ -115,60 +115,37 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
     
     return GestureDetector(
       onTap: _handleTap,
-      child: Container(
-        margin: EdgeInsets.only(
-          left: widget.isMe ? 50 : 16,
-          right: widget.isMe ? 16 : 50,
-          bottom: 8,
-        ),
-        decoration: BoxDecoration(
-          color: widget.isMe ? VersusColors.primary : VersusColors.backgroundSecondary,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(widget.isMe ? 16 : 4),
-            bottomRight: Radius.circular(widget.isMe ? 4 : 16),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+          _buildHeader(statusInfo),
+          const SizedBox(height: VersusSpacing.sm),
+          _buildTitle(),
+          if (widget.description != null && widget.description!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            _buildDescription(),
           ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(VersusSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(statusInfo),
-              const SizedBox(height: VersusSpacing.sm),
-              _buildTitle(),
-              if (widget.description != null && widget.description!.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                _buildDescription(),
-              ],
-              const SizedBox(height: VersusSpacing.sm),
-              _buildVersusBoxes(),
-              if (_shouldShowTimer()) ...[
-                const SizedBox(height: VersusSpacing.sm),
-                _buildTimer(),
-              ],
-              if (_shouldShowAction()) ...[
-                const SizedBox(height: VersusSpacing.sm),
-                _buildActionButton(),
-              ],
-              if (_shouldShowResult()) ...[
-                const SizedBox(height: VersusSpacing.sm),
-                _buildResults(),
-              ],
-              if (widget.timestamp != null) ...[
-                const SizedBox(height: VersusSpacing.xs),
-                _buildTimestamp(),
-              ],
-            ],
-          ),
+          const SizedBox(height: VersusSpacing.sm),
+          _buildVersusBoxes(),
+          if (_shouldShowTimer()) ...[
+            const SizedBox(height: VersusSpacing.sm),
+            _buildTimer(),
+          ],
+          if (_shouldShowAction()) ...[
+            const SizedBox(height: VersusSpacing.sm),
+            _buildActionButton(),
+          ],
+          if (_shouldShowResult()) ...[
+            const SizedBox(height: VersusSpacing.sm),
+            _buildResults(),
+          ],
+          if (widget.timestamp != null) ...[
+            const SizedBox(height: VersusSpacing.xs),
+            _buildTimestamp(),
+          ],
+        ],
         ),
       ),
     );
@@ -186,7 +163,7 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
         Text(
           widget.messageType == 'vote_created' ? '내가 만든 피클' : 'Pikle 도착!',
           style: VersusTextStyles.labelSmall.copyWith(
-            color: widget.isMe ? Colors.white : VersusColors.textSecondary,
+            color: VersusColors.textSecondary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -228,7 +205,7 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
     return Text(
       widget.title,
       style: VersusTextStyles.bodyLarge.copyWith(
-        color: widget.isMe ? Colors.white : VersusColors.textPrimary,
+        color: VersusColors.textPrimary,
         fontWeight: FontWeight.w600,
       ),
       maxLines: 2,
@@ -240,7 +217,7 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
     return Text(
       widget.description!,
       style: VersusTextStyles.bodySmall.copyWith(
-        color: widget.isMe ? Colors.white.withValues(alpha: 0.8) : VersusColors.textSecondary,
+        color: VersusColors.textSecondary,
       ),
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
@@ -266,7 +243,7 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
         Text(
           'VS',
           style: VersusTextStyles.labelSmall.copyWith(
-            color: widget.isMe ? Colors.white : VersusColors.textSecondary,
+            color: VersusColors.textSecondary,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -562,7 +539,7 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
       _formatTime(widget.timestamp!),
       style: VersusTextStyles.labelSmall.copyWith(
         fontSize: 11,
-        color: widget.isMe ? Colors.white.withValues(alpha: 0.6) : VersusColors.textSecondary,
+        color: VersusColors.textSecondary.withValues(alpha: 0.8),
       ),
     );
   }

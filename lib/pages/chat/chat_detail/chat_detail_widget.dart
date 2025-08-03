@@ -320,6 +320,9 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
   Widget _customMessageBuilder(types.CustomMessage message, {required int messageWidth}) {
     final metadata = message.metadata ?? {};
     
+    // 디버깅 로그 추가
+    print('[Chat] customMessageBuilder: type=${metadata['type']}, postId=${metadata['postId']}');
+    
     // 투표 메시지 (투표 요청 및 투표 생성)
     if (metadata['type'] == 'vote_request' || metadata['type'] == 'vote_created') {
       // Firestore에서 추가 데이터 가져오기
@@ -361,40 +364,81 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
             );
           });
           
-          return VoteRequestMessage(
-            postId: metadata['postId'] ?? '',
-            title: metadata['title'] ?? '',
-            description: description,
-            optionAText: metadata['optionAText'] ?? '',
-            optionBText: metadata['optionBText'] ?? '',
-            optionAImage: metadata['optionAImage'],
-            optionBImage: metadata['optionBImage'],
-            aspectRatioA: aspectRatioA != null ? aspectRatioA.toDouble() : null,
-            aspectRatioB: aspectRatioB != null ? aspectRatioB.toDouble() : null,
-            voteStatus: messageData?['vote_status'] ?? 'pending',
-            isMe: message.author.id == _currentUser.id,
-            timestamp: DateTime.fromMillisecondsSinceEpoch(message.createdAt ?? 0),
-            onTap: () {
-              // 투표 다이얼로그 표시
-              _showVotingDialog(
-                postId: metadata['postId'] ?? '',
-                title: metadata['title'] ?? '',
-                description: description,
-                optionAText: metadata['optionAText'] ?? '',
-                optionBText: metadata['optionBText'] ?? '',
-                optionAImage: metadata['optionAImage'],
-                optionBImage: metadata['optionBImage'],
-                imageUrlsA: messageData?['vote_option_a_images'] != null 
-                    ? List<String>.from(messageData!['vote_option_a_images']) 
-                    : null,
-                imageUrlsB: messageData?['vote_option_b_images'] != null 
-                    ? List<String>.from(messageData!['vote_option_b_images']) 
-                    : null,
-                aspectRatioA: aspectRatioA != null ? aspectRatioA.toDouble() : null,
-                aspectRatioB: aspectRatioB != null ? aspectRatioB.toDouble() : null,
-              );
-            },
-          );
+          // vote_request 타입은 VoteRequestMessage 사용
+          if (metadata['type'] == 'vote_request') {
+            return VoteRequestMessage(
+              postId: metadata['postId'] ?? '',
+              title: metadata['title'] ?? '',
+              description: description,
+              optionAText: metadata['optionAText'] ?? '',
+              optionBText: metadata['optionBText'] ?? '',
+              optionAImage: metadata['optionAImage'],
+              optionBImage: metadata['optionBImage'],
+              aspectRatioA: aspectRatioA != null ? aspectRatioA.toDouble() : null,
+              aspectRatioB: aspectRatioB != null ? aspectRatioB.toDouble() : null,
+              voteStatus: messageData?['vote_status'] ?? 'pending',
+              isMe: message.author.id == _currentUser.id,
+              timestamp: DateTime.fromMillisecondsSinceEpoch(message.createdAt ?? 0),
+              onTap: () {
+                // 투표 다이얼로그 표시
+                _showVotingDialog(
+                  postId: metadata['postId'] ?? '',
+                  title: metadata['title'] ?? '',
+                  description: description,
+                  optionAText: metadata['optionAText'] ?? '',
+                  optionBText: metadata['optionBText'] ?? '',
+                  optionAImage: metadata['optionAImage'],
+                  optionBImage: metadata['optionBImage'],
+                  imageUrlsA: messageData?['vote_option_a_images'] != null 
+                      ? List<String>.from(messageData!['vote_option_a_images']) 
+                      : null,
+                  imageUrlsB: messageData?['vote_option_b_images'] != null 
+                      ? List<String>.from(messageData!['vote_option_b_images']) 
+                      : null,
+                  aspectRatioA: aspectRatioA != null ? aspectRatioA.toDouble() : null,
+                  aspectRatioB: aspectRatioB != null ? aspectRatioB.toDouble() : null,
+                );
+              },
+            );
+          } else if (metadata['type'] == 'vote_created') {
+            // vote_created 타입은 VoteCardMessage 사용
+            print('[채팅 디테일] vote_created 메시지를 VoteCardMessage로 처리');
+            return VoteCardMessage(
+              postId: metadata['postId'] ?? '',
+              title: metadata['title'] ?? '',
+              description: description,
+              optionAText: metadata['optionAText'] ?? '',
+              optionBText: metadata['optionBText'] ?? '',
+              optionAImage: metadata['optionAImage'],
+              optionBImage: metadata['optionBImage'],
+              optionAImages: messageData?['vote_option_a_images'] != null 
+                  ? List<String>.from(messageData!['vote_option_a_images']) 
+                  : null,
+              optionBImages: messageData?['vote_option_b_images'] != null 
+                  ? List<String>.from(messageData!['vote_option_b_images']) 
+                  : null,
+              aspectRatioA: aspectRatioA != null ? aspectRatioA.toDouble() : null,
+              aspectRatioB: aspectRatioB != null ? aspectRatioB.toDouble() : null,
+              cardStatus: messageData?['card_status'] ?? 'in_progress',
+              messageType: 'vote_created',
+              isMe: message.author.id == _currentUser.id,
+              timestamp: DateTime.fromMillisecondsSinceEpoch(message.createdAt ?? 0),
+              voteEndTime: messageData?['vote_end_time'] != null
+                  ? (messageData!['vote_end_time'] as Timestamp).toDate()
+                  : null,
+              userVoted: messageData?['user_voted'] ?? false,
+              voteChoice: messageData?['vote_choice'],
+              voteResults: messageData?['vote_results_a'] != null ? {
+                'votesA': messageData?['vote_results_a'],
+                'votesB': messageData?['vote_results_b'],
+                'percentageA': messageData?['vote_percent_a'],
+                'percentageB': messageData?['vote_percent_b'],
+              } : null,
+            );
+          }
+          
+          // 기본값 처리
+          return const SizedBox.shrink();
         },
       );
     }
@@ -481,10 +525,25 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
                         );
                       }
 
+                      // 전체 메시지 수 확인
+                      print('[Chat] 전체 메시지 수: ${snapshot.data!.length}');
+                      
                       final messages = <types.Message>[];
                       for (final message in snapshot.data!) {
+                        // 디버깅 로그
+                        print('[Chat] 메시지 처리: messageId=${message.messageId}, senderId=${message.senderId}, messageType=${message.messageType}');
+                        
                         // AI 사용자 특별 처리
                         if (message.senderId == 'ai_assistant') {
+                          print('[Chat] AI 메시지 감지: messageType=${message.messageType}');
+                          
+                          // vote_created 타입 특별 로깅
+                          if (message.messageType == 'vote_created') {
+                            print('[Chat] ⭐️ vote_created 메시지 발견!');
+                            print('[Chat] vote_created 내용: ${message.content}');
+                            print('[Chat] vote_created postId: ${message.votePostId}');
+                          }
+                          
                           // AI 사용자 정보 하드코딩
                           final aiUser = UsersModel.getDocumentFromData({
                             'uid': 'ai_assistant',
@@ -493,10 +552,13 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
                             'email': 'ai@pikle.app',
                           }, FirebaseFirestore.instance.collection('users').doc('ai_assistant'));
                           
-                          messages.add(ChatMessageConverter.convertToMessage(
+                          final convertedMessage = ChatMessageConverter.convertToMessage(
                             message,
                             senderUser: aiUser,
-                          ));
+                          );
+                          print('[Chat] AI 메시지 변환 완료: author.id=${convertedMessage.author.id}, currentUser.id=${_currentUser.id}');
+                          
+                          messages.add(convertedMessage);
                         } else {
                           // 일반 사용자 처리
                           final senderUser = _usersMap[message.senderId];
@@ -719,7 +781,7 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
   ChatTheme _buildChatTheme() {
     return DefaultChatTheme(
       backgroundColor: VersusColors.backgroundPrimary,
-      primaryColor: VersusColors.primary,
+      primaryColor: VersusColors.backgroundSecondary,
       secondaryColor: VersusColors.backgroundSecondary,
       inputBackgroundColor: VersusColors.backgroundSecondary,
       inputTextColor: VersusColors.textPrimary,
@@ -765,8 +827,8 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
         color: VersusColors.textSecondary,
       ),
       messageBorderRadius: 20,
-      messageInsetsHorizontal: 12,
-      messageInsetsVertical: 8,
+      messageInsetsHorizontal: 16,
+      messageInsetsVertical: 12,
       receivedMessageBodyTextStyle: VersusTextStyles.bodyMedium.copyWith(
         color: VersusColors.textPrimary,
       ),

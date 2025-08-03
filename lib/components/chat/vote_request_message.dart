@@ -175,33 +175,11 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
             });
           },
           onLongPress: _isVoting ? null : _toggleExpanded,
-          child: Stack(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Stack(
         children: [
-          Container(
-            margin: ResponsiveBreakpoints.getMessageMargin(context, widget.isMe),
-            decoration: BoxDecoration(
-              color: widget.isMe ? VersusColors.primary : VersusColors.backgroundSecondary,
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(16),
-                topRight: const Radius.circular(16),
-                bottomLeft: Radius.circular(widget.isMe ? 16 : 4),
-                bottomRight: Radius.circular(widget.isMe ? 4 : 16),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Container(
-              constraints: BoxConstraints(
-                maxWidth: ResponsiveBreakpoints.getMaxMessageWidth(context),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(VersusSpacing.md),
-                child: Column(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 헤더
@@ -210,14 +188,14 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
                   Icon(
                     Icons.how_to_vote,
                     size: 16,
-                    color: widget.isMe ? Colors.white : VersusColors.primary,
+                    color: VersusColors.primary,
                     semanticLabel: '투표 아이콘',
                   ),
                   const SizedBox(width: VersusSpacing.xs),
                   Text(
                     '투표 요청',
                     style: VersusTextStyles.labelSmall.copyWith(
-                      color: widget.isMe ? Colors.white : VersusColors.textSecondary,
+                      color: VersusColors.textSecondary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -258,7 +236,7 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
                 child: Text(
                   widget.title,
                   style: VersusTextStyles.bodyLarge.copyWith(
-                    color: widget.isMe ? Colors.white : VersusColors.textPrimary,
+                    color: VersusColors.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                   maxLines: 2,
@@ -270,7 +248,7 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
                 Text(
                   widget.description,
                   style: VersusTextStyles.bodySmall.copyWith(
-                    color: widget.isMe ? Colors.white.withValues(alpha: 0.8) : VersusColors.textSecondary,
+                    color: VersusColors.textSecondary,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -294,31 +272,22 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
                     _formatTime(widget.timestamp!),
                     style: VersusTextStyles.labelSmall.copyWith(
                       fontSize: 11,
-                      color: widget.isMe ? Colors.white.withValues(alpha: 0.6) : VersusColors.textSecondary,
+                      color: VersusColors.textSecondary.withValues(alpha: 0.8),
                     ),
                   ),
                 ),
               ],
                 ],
               ),
-            ),
-          ),
-        ),
       // 투표 중 오버레이
       if (_isVoting)
         Positioned.fill(
           child: Semantics(
             label: '투표 처리 중',
             child: Container(
-              margin: ResponsiveBreakpoints.getMessageMargin(context, widget.isMe),
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(widget.isMe ? 16 : 4),
-                  bottomRight: Radius.circular(widget.isMe ? 4 : 16),
-                ),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Center(
                 child: CircularProgressIndicator(
@@ -332,8 +301,9 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
           ),
         ),
         ],
-      ),
-      ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -404,7 +374,7 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
           Text(
             'VS',
             style: VersusTextStyles.labelSmall.copyWith(
-              color: widget.isMe ? Colors.white : VersusColors.textSecondary,
+              color: VersusColors.textSecondary,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -443,7 +413,7 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
             Text(
               'VS',
               style: VersusTextStyles.labelSmall.copyWith(
-                color: widget.isMe ? Colors.white : VersusColors.textSecondary,
+                color: VersusColors.textSecondary,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -604,7 +574,7 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
           ? Icons.view_column_outlined
           : Icons.view_agenda_outlined,
         size: 12,
-        color: widget.isMe ? Colors.white.withValues(alpha: 0.8) : VersusColors.textSecondary,
+        color: VersusColors.textSecondary,
       ),
       ),
     );

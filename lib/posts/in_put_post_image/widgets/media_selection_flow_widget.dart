@@ -125,6 +125,55 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   /// AssetPicker 열기
   Future<void> _openPicker() async {
     try {
+      // 권한 확인 및 요청
+      final PermissionState permission = await PhotoManager.requestPermissionExtend();
+      print('[AssetPicker] Permission state: $permission');
+      
+      if (permission.isAuth != true) {
+        // 권한이 거부된 경우
+        if (permission == PermissionState.denied) {
+          _showToast('사진 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.', isError: true);
+        } else if (permission == PermissionState.limited) {
+          _showToast('제한된 사진 접근만 허용되었습니다.\n모든 사진에 접근하려면 설정을 변경해주세요.');
+        }
+        
+        // 설정으로 이동하는 다이얼로그 표시
+        if (mounted) {
+          final bool? openSettings = await showDialog<bool>(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('사진 접근 권한'),
+                content: Text(
+                  permission == PermissionState.denied
+                    ? '사진을 선택하려면 갤러리 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.'
+                    : '선택한 사진만 접근 가능합니다.\n모든 사진에 접근하려면 설정을 변경해주세요.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('취소'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text('설정으로 이동'),
+                  ),
+                ],
+              );
+            },
+          );
+          
+          if (openSettings == true) {
+            await PhotoManager.openSetting();
+          }
+        }
+        
+        // 권한이 없으면 플로우 종료
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+        return;
+      }
       // 기존에 선택된 AssetEntity 복원
       List<AssetEntity> selectedAssets = [];
       
@@ -165,7 +214,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
             requestType: RequestType.image,
             sortPathsByModifiedDate: true, // 최신 사진을 맨 위에 표시
           ),
-          initialPermission: PermissionState.authorized,
+          initialPermission: permission,
           gridCount: 4,
           shouldRevertGrid: false, // 최신 사진이 맨 위에 오도록 설정
           pickerTheme: ThemeData.dark().copyWith(
@@ -347,6 +396,14 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   /// 피커 내에서 카메라 열기
   Future<AssetEntity?> _openCameraForPicker(BuildContext context) async {
     try {
+      // 카메라 권한 확인
+      final PermissionState cameraPermission = await PhotoManager.requestPermissionExtend();
+      
+      if (cameraPermission.isAuth != true) {
+        _showToast('카메라 권한이 필요합니다.', isError: true);
+        return null;
+      }
+      
       final AssetEntity? entity = await CameraPicker.pickFromCamera(
         context,
         pickerConfig: CameraPickerConfig(
@@ -364,6 +421,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       }
     } catch (e) {
       print('[AssetPicker] Camera error: $e');
+      _showToast('카메라 오류가 발생했습니다.', isError: true);
       return null;
     }
   }

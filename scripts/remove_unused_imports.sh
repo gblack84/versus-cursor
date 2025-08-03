@@ -17,7 +17,6 @@ declare -a files_with_unused_imports=(
     "lib/posts/in_put_post_image/widgets/media_selection_flow_widget.dart:../services/selection_result_processor.dart"
     "lib/utils/chat_message_converter.dart:/auth/firebase_auth/auth_util.dart"
     "lib/services/chat_media_upload_service.dart:package:path/path.dart"
-    "test/create_test_notification.dart:package:firebase_core/firebase_core.dart"
 )
 
 # Function to remove specific import from file

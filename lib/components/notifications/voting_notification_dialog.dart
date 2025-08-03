@@ -44,6 +44,10 @@ class VotingNotificationDialog extends StatefulWidget {
   
   /// 알림을 보낸 사람의 이름
   final String? authorName;
+  
+  /// 이미지 aspect ratio (스마트 레이아웃용)
+  final double? aspectRatioA;
+  final double? aspectRatioB;
 
   const VotingNotificationDialog({
     super.key,
@@ -65,6 +69,8 @@ class VotingNotificationDialog extends StatefulWidget {
     this.voteCountB,
     this.showDebugInfo = false,
     this.authorName,
+    this.aspectRatioA,
+    this.aspectRatioB,
   });
 
   /// 멀티이미지 지원 헬퍼 메서드들
@@ -146,6 +152,9 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
 
   @override
   void dispose() {
+    if (_controller.isAnimating) {
+      _controller.stop();
+    }
     _controller.dispose();
     super.dispose();
   }
@@ -168,7 +177,9 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
     
     // 투표 완료 후 자동 사라짐
     Future.delayed(VotingNotificationConstraints.voteCompleteDuration, () {
-      if (mounted) _dismiss();
+      if (mounted) {
+        _dismiss();
+      }
     });
   }
 
@@ -181,7 +192,10 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
     print('  - imageUrlsA: ${widget.imageUrlsA?.length ?? 0}개');
     print('  - imageUrlsB: ${widget.imageUrlsB?.length ?? 0}개');
     
-    return SlideTransition(
+    return Semantics(
+      label: '투표 알림: ${widget.question}',
+      container: true,
+      child: SlideTransition(
       position: _slideAnimation,
       child: FadeTransition(
         opacity: _fadeAnimation,
@@ -312,6 +326,7 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
             ),
           ),
         ),
+      ),
       ),
     );
   }

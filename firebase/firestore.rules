@@ -41,19 +41,23 @@ service cloud.firestore {
       allow read: if true;
     }
 
-    match /posts/{parent}/PollDetails/{document} {
+    match /posts/{parent}/poll_details/{document} {
       allow create: if true;
       allow read: if true;
       allow write: if false;
       allow delete: if false;
     }
 
-    match /{path=**}/PollDetails/{document} {
+    match /{path=**}/poll_details/{document} {
       allow read: if true;
     }
 
     match /posts/{parent}/votes/{document} {
-      allow create: if request.auth != null;
+      allow create: if request.auth != null 
+        && request.auth.uid != null
+        && request.resource.data.user == /databases/$(database)/documents/users/$(request.auth.uid)
+        && request.resource.data.keys().hasAll(['user', 'option', 'created_at'])
+        && request.resource.data.keys().hasOnly(['user', 'option', 'created_at', 'from_chat']);
       allow read: if true;
       allow write: if false;
       allow delete: if false;

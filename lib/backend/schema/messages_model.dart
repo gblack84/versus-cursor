@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 
 import '/backend/schema/util/firestore_util.dart';
+import '/backend/schema/util/schema_util.dart';
 
 import 'index.dart';
 import '/core/app_utils.dart';
@@ -131,6 +132,52 @@ class MessagesModel extends FirestoreRecord {
   String get voteStatus => _voteStatus ?? 'pending';
   bool hasVoteStatus() => _voteStatus != null;
 
+  // NEW: Missing vote-related fields
+  // "receiver_id" field.
+  String? _receiverId;
+  String get receiverId => _receiverId ?? '';
+  bool hasReceiverId() => _receiverId != null;
+
+  // "vote_option_a_images" field.
+  List<String>? _voteOptionAImages;
+  List<String> get voteOptionAImages => _voteOptionAImages ?? const [];
+  bool hasVoteOptionAImages() => _voteOptionAImages != null;
+
+  // "vote_option_b_images" field.
+  List<String>? _voteOptionBImages;
+  List<String> get voteOptionBImages => _voteOptionBImages ?? const [];
+  bool hasVoteOptionBImages() => _voteOptionBImages != null;
+
+  // "card_status" field.
+  String? _cardStatus;
+  String get cardStatus => _cardStatus ?? '';
+  bool hasCardStatus() => _cardStatus != null;
+
+  // "vote_end_time" field.
+  DateTime? _voteEndTime;
+  DateTime? get voteEndTime => _voteEndTime;
+  bool hasVoteEndTime() => _voteEndTime != null;
+
+  // "user_voted" field.
+  bool? _userVoted;
+  bool get userVoted => _userVoted ?? false;
+  bool hasUserVoted() => _userVoted != null;
+
+  // "vote_choice" field.
+  String? _voteChoice;
+  String get voteChoice => _voteChoice ?? '';
+  bool hasVoteChoice() => _voteChoice != null;
+
+  // "vote_results" field.
+  Map<String, dynamic>? _voteResults;
+  Map<String, dynamic> get voteResults => _voteResults ?? const {};
+  bool hasVoteResults() => _voteResults != null;
+
+  // "vote_participated_at" field.
+  DateTime? _voteParticipatedAt;
+  DateTime? get voteParticipatedAt => _voteParticipatedAt;
+  bool hasVoteParticipatedAt() => _voteParticipatedAt != null;
+
   DocumentReference get parentReference => reference.parent.parent!;
 
   void _initializeFields() {
@@ -163,6 +210,17 @@ class MessagesModel extends FirestoreRecord {
     _voteOptionAImage = snapshotData['vote_option_a_image'] as String?;
     _voteOptionBImage = snapshotData['vote_option_b_image'] as String?;
     _voteStatus = snapshotData['vote_status'] as String?;
+    
+    // Initialize new vote-related fields
+    _receiverId = snapshotData['receiver_id'] as String?;
+    _voteOptionAImages = getDataList(snapshotData['vote_option_a_images']);
+    _voteOptionBImages = getDataList(snapshotData['vote_option_b_images']);
+    _cardStatus = snapshotData['card_status'] as String?;
+    _voteEndTime = snapshotData['vote_end_time'] as DateTime?;
+    _userVoted = snapshotData['user_voted'] as bool?;
+    _voteChoice = snapshotData['vote_choice'] as String?;
+    _voteResults = snapshotData['vote_results'] as Map<String, dynamic>?;
+    _voteParticipatedAt = snapshotData['vote_participated_at'] as DateTime?;
   }
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
@@ -228,6 +286,15 @@ Map<String, dynamic> createMessagesModelData({
   String? voteOptionAImage,
   String? voteOptionBImage,
   String? voteStatus,
+  String? receiverId,
+  List<String>? voteOptionAImages,
+  List<String>? voteOptionBImages,
+  String? cardStatus,
+  DateTime? voteEndTime,
+  bool? userVoted,
+  String? voteChoice,
+  Map<String, dynamic>? voteResults,
+  DateTime? voteParticipatedAt,
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
@@ -254,6 +321,15 @@ Map<String, dynamic> createMessagesModelData({
       'vote_option_a_image': voteOptionAImage,
       'vote_option_b_image': voteOptionBImage,
       'vote_status': voteStatus,
+      'receiver_id': receiverId,
+      'vote_option_a_images': voteOptionAImages,
+      'vote_option_b_images': voteOptionBImages,
+      'card_status': cardStatus,
+      'vote_end_time': voteEndTime,
+      'user_voted': userVoted,
+      'vote_choice': voteChoice,
+      'vote_results': voteResults,
+      'vote_participated_at': voteParticipatedAt,
     }.withoutNulls,
   );
 
@@ -265,6 +341,7 @@ class MessagesModelDocumentEquality implements Equality<MessagesModel> {
 
   @override
   bool equals(MessagesModel? e1, MessagesModel? e2) {
+    const listEquality = ListEquality();
     return e1?.messageId == e2?.messageId &&
         e1?.senderId == e2?.senderId &&
         e1?.content == e2?.content &&
@@ -287,7 +364,16 @@ class MessagesModelDocumentEquality implements Equality<MessagesModel> {
         e1?.voteOptionBText == e2?.voteOptionBText &&
         e1?.voteOptionAImage == e2?.voteOptionAImage &&
         e1?.voteOptionBImage == e2?.voteOptionBImage &&
-        e1?.voteStatus == e2?.voteStatus;
+        e1?.voteStatus == e2?.voteStatus &&
+        e1?.receiverId == e2?.receiverId &&
+        listEquality.equals(e1?.voteOptionAImages, e2?.voteOptionAImages) &&
+        listEquality.equals(e1?.voteOptionBImages, e2?.voteOptionBImages) &&
+        e1?.cardStatus == e2?.cardStatus &&
+        e1?.voteEndTime == e2?.voteEndTime &&
+        e1?.userVoted == e2?.userVoted &&
+        e1?.voteChoice == e2?.voteChoice &&
+        e1?.voteResults == e2?.voteResults &&
+        e1?.voteParticipatedAt == e2?.voteParticipatedAt;
   }
 
   @override
@@ -314,7 +400,16 @@ class MessagesModelDocumentEquality implements Equality<MessagesModel> {
         e?.voteOptionBText,
         e?.voteOptionAImage,
         e?.voteOptionBImage,
-        e?.voteStatus
+        e?.voteStatus,
+        e?.receiverId,
+        e?.voteOptionAImages,
+        e?.voteOptionBImages,
+        e?.cardStatus,
+        e?.voteEndTime,
+        e?.userVoted,
+        e?.voteChoice,
+        e?.voteResults,
+        e?.voteParticipatedAt
       ]);
 
   @override

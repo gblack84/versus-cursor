@@ -21,6 +21,8 @@ class VoteCardMessage extends StatefulWidget {
     this.optionBImage,
     this.optionAImages,
     this.optionBImages,
+    this.aspectRatioA,
+    this.aspectRatioB,
     required this.cardStatus,
     this.voteEndTime,
     this.userVoted = false,
@@ -40,6 +42,8 @@ class VoteCardMessage extends StatefulWidget {
   final String? optionBImage;
   final List<String>? optionAImages;
   final List<String>? optionBImages;
+  final double? aspectRatioA;
+  final double? aspectRatioB;
   final String cardStatus; // voting_request, in_progress, completed, not_participated
   final DateTime? voteEndTime;
   final bool userVoted;

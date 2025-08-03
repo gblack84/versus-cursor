@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '/backend/backend.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/components/notifications/voting_notification_dialog.dart';
@@ -142,10 +143,29 @@ class GlobalNotificationManager {
   
   /// 알림 표시
   Future<void> _showNotification(NotificationsModel notification) async {
-    // Navigator context 가져오기
-    final context = appNavigatorKey.currentContext;
+    // Navigator와 인증 상태가 모두 준비될 때까지 대기
+    int attempts = 0;
+    BuildContext? context;
+    
+    while (attempts < 20) {  // 최대 10초 대기
+      context = appNavigatorKey.currentContext;
+      final user = FirebaseAuth.instance.currentUser;
+      
+      if (context != null && user != null) {
+        // 모든 조건이 충족됨
+        break;
+      }
+      
+      await Future.delayed(const Duration(milliseconds: 500));
+      attempts++;
+    }
+    
     if (context == null) {
-      debugPrint('[GlobalNotificationManager] ❌ Navigator context를 가져올 수 없음');
+      debugPrint('[GlobalNotificationManager] Context 준비 실패, 알림 재시도 예약');
+      // 5초 후 재시도
+      Future.delayed(const Duration(seconds: 5), () {
+        _notificationQueue.add(notification);
+      });
       return;
     }
     
@@ -346,8 +366,8 @@ class GlobalNotificationManager {
           return Dialog(
             backgroundColor: Colors.transparent,
             insetPadding: EdgeInsets.symmetric(
-              horizontal: MediaQuery.of(context).size.width * 0.04,  // 좌우 4%씩 여백 = 92% 사용
-              vertical: MediaQuery.of(context).size.height * 0.05  // 상하 5%씩 동적 여백
+              horizontal: MediaQuery.of(dialogContext).size.width * 0.04,  // 좌우 4%씩 여백 = 92% 사용
+              vertical: MediaQuery.of(dialogContext).size.height * 0.05  // 상하 5%씩 동적 여백
             ),
             alignment: Alignment.topCenter,
             child: VotingNotificationDialog(
@@ -483,47 +503,91 @@ class GlobalNotificationManager {
   bool get isShowingNotification => _isShowingNotification;
   
   /// 실제 투표 처리
+  /// 
+  /// 클라이언트에서 직접 처리합니다.
   Future<void> _submitVote(String postId, String selectedOption) async {
     try {
-      final userId = currentUserUid;
-      if (userId.isEmpty) {
-        debugPrint('[GlobalNotificationManager] 투표 실패: 사용자 인증 필요');
+      // currentUserReference 사용 (채팅에서 투표할 때와 동일)
+      if (currentUserReference == null) {
+        debugPrint('[GlobalNotificationManager] currentUserReference가 null');
         return;
       }
       
-      final postRef = PostsModel.collection.doc(postId);
-      
-      // 중복 투표 확인
-      final postSnapshot = await postRef.get();
-      if (!postSnapshot.exists) {
-        debugPrint('[GlobalNotificationManager] 투표 실패: 게시물을 찾을 수 없음');
+      // 사용자 문서 존재 확인
+      final userDoc = await currentUserReference!.get();
+      if (!userDoc.exists) {
+        debugPrint('[GlobalNotificationManager] 사용자 문서가 존재하지 않음: ${currentUserReference!.path}');
         return;
       }
       
-      final postData = postSnapshot.data() as Map<String, dynamic>;
-      final votedUsersA = List<String>.from(postData['votedUserIDsA'] ?? []);
-      final votedUsersB = List<String>.from(postData['votedUserIDsB'] ?? []);
+      debugPrint('[GlobalNotificationManager] 투표 시도');
+      debugPrint('  - userId: ${currentUserUid}');
+      debugPrint('  - userRef: ${currentUserReference!.path}');
+      debugPrint('  - postId: $postId');
+      debugPrint('  - option: $selectedOption');
       
-      if (votedUsersA.contains(userId) || votedUsersB.contains(userId)) {
-        debugPrint('[GlobalNotificationManager] 이미 투표한 사용자');
-        return;
-      }
+      // 모든 작업을 하나의 트랜잭션으로 처리
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final postRef = FirebaseFirestore.instance
+            .collection('posts')
+            .doc(postId);
+        
+        // 1. posts 문서 읽기
+        final postDoc = await transaction.get(postRef);
+        if (!postDoc.exists) {
+          throw Exception('게시물을 찾을 수 없습니다');
+        }
+        
+        final currentData = postDoc.data() as Map<String, dynamic>;
+        final voteCountField = selectedOption == 'A' ? 'vote_count_a' : 'vote_count_b';
+        final votedUsersField = selectedOption == 'A' ? 'votedUserIDsA' : 'votedUserIDsB';
+        final currentCount = (currentData[voteCountField] ?? 0) as int;
+        final currentVotedUsersA = List<String>.from(currentData['votedUserIDsA'] ?? []);
+        final currentVotedUsersB = List<String>.from(currentData['votedUserIDsB'] ?? []);
+        
+        // 2. 중복 투표 확인 (양쪽 모두 확인)
+        if (currentVotedUsersA.contains(currentUserUid) || currentVotedUsersB.contains(currentUserUid)) {
+          debugPrint('[GlobalNotificationManager] 이미 투표한 사용자입니다');
+          throw Exception('이미 투표한 사용자입니다');
+        }
+        
+        // 3. votes 서브컬렉션에 투표 문서 생성
+        final voteRef = postRef.collection('votes').doc();
+        final voteData = {
+          'user': currentUserReference,  // currentUserReference 사용
+          'option': selectedOption,
+          'created_at': FieldValue.serverTimestamp(),
+          'from_chat': false,  // 알림 기반 투표는 채팅이 아님
+        };
+        
+        debugPrint('[GlobalNotificationManager] 📤 트랜잭션 내에서 투표 데이터 생성:');
+        debugPrint('  - user (DocumentReference): ${currentUserReference!.path}');
+        debugPrint('  - option: $selectedOption');
+        debugPrint('  - voteRef: ${voteRef.path}');
+        
+        transaction.set(voteRef, voteData);
+        
+        // 4. posts 문서 업데이트
+        final currentVotedUsers = selectedOption == 'A' ? currentVotedUsersA : currentVotedUsersB;
+        currentVotedUsers.add(currentUserUid);
+        
+        final updateData = {
+          voteCountField: currentCount + 1,
+          votedUsersField: currentVotedUsers,
+          'total_votes': (currentData['total_votes'] ?? 0) + 1,
+          'last_vote_at': FieldValue.serverTimestamp(),
+        };
+        
+        debugPrint('[GlobalNotificationManager] 📊 posts 문서 업데이트:');
+        debugPrint('  - $voteCountField: ${currentCount + 1}');
+        debugPrint('  - $votedUsersField에 사용자 추가');
+        
+        transaction.update(postRef, updateData);
+      });
       
-      // 투표 저장
-      final Map<String, dynamic> updateData = {
-        'votedUserIDs$selectedOption': FieldValue.arrayUnion([userId]),
-      };
-      
-      // 다양한 필드명 지원 (호환성)
-      final voteLetter = selectedOption.toLowerCase();
-      updateData['votes_$voteLetter'] = FieldValue.increment(1);
-      updateData['vote_count_$voteLetter'] = FieldValue.increment(1);
-      
-      await postRef.update(updateData);
-      
-      debugPrint('[GlobalNotificationManager] 투표 저장 완료: $selectedOption (게시물: $postId)');
+      debugPrint('[GlobalNotificationManager] ✅ 투표 저장 완료: $selectedOption (게시물: $postId)');
     } catch (e) {
-      debugPrint('[GlobalNotificationManager] 투표 저장 실패: $e');
+      debugPrint('[GlobalNotificationManager] ❌ 투표 저장 실패: $e');
       // 에러는 무시하고 계속 진행 (UX 우선)
     }
   }

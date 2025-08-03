@@ -76,10 +76,16 @@ class UsersModel extends FirestoreRecord {
   String get phoneNumber => _phoneNumber ?? '';
   bool hasPhoneNumber() => _phoneNumber != null;
 
-  // "is_prmium_user" field.
-  bool? _isPrmiumUser;
-  bool get isPrmiumUser => _isPrmiumUser ?? false;
-  bool hasIsPrmiumUser() => _isPrmiumUser != null;
+  // "is_premium_user" field (Fixed typo: prmium -> premium)
+  bool? _isPremiumUser;
+  bool get isPremiumUser => _isPremiumUser ?? false;
+  bool hasIsPremiumUser() => _isPremiumUser != null;
+  
+  // Deprecated: kept for backwards compatibility
+  @Deprecated('Use isPremiumUser instead')
+  bool get isPrmiumUser => isPremiumUser;
+  @Deprecated('Use hasIsPremiumUser instead')
+  bool hasIsPrmiumUser() => hasIsPremiumUser();
 
   // "anonymous_posts_count" field.
   int? _anonymousPostsCount;
@@ -150,10 +156,16 @@ class UsersModel extends FirestoreRecord {
   int get anonymousQuestionCount => _anonymousQuestionCount ?? 0;
   bool hasAnonymousQuestionCount() => _anonymousQuestionCount != null;
 
-  // "frinds" field.
-  List<String>? _frinds;
-  List<String> get frinds => _frinds ?? const [];
-  bool hasFrinds() => _frinds != null;
+  // "friends" field (Fixed typo: frinds -> friends)
+  List<String>? _friends;
+  List<String> get friends => _friends ?? const [];
+  bool hasFriends() => _friends != null;
+  
+  // Deprecated: kept for backwards compatibility
+  @Deprecated('Use friends instead')
+  List<String> get frinds => friends;
+  @Deprecated('Use hasFriends instead')
+  bool hasFrinds() => hasFriends();
 
   // "active_chats" field.
   List<String>? _activeChats;
@@ -233,7 +245,7 @@ class UsersModel extends FirestoreRecord {
     _createdTime = snapshotData['created_time'] as DateTime?;
     _photoUrl = snapshotData['photo_url'] as String?;
     _phoneNumber = snapshotData['phone_number'] as String?;
-    _isPrmiumUser = snapshotData['is_prmium_user'] as bool?;
+    _isPremiumUser = snapshotData['is_premium_user'] as bool? ?? snapshotData['is_prmium_user'] as bool?;
     _anonymousPostsCount =
         castToType<int>(snapshotData['anonymous_posts_count']);
     _anonymousCommentsCount =
@@ -253,7 +265,7 @@ class UsersModel extends FirestoreRecord {
         snapshotData['receive_Title_Update_Notifications'] as bool?;
     _anonymousQuestionCount =
         castToType<int>(snapshotData['anonymous_Question_Count']);
-    _frinds = getDataList(snapshotData['frinds']);
+    _friends = getDataList(snapshotData['friends'] ?? snapshotData['frinds']);
     _activeChats = getDataList(snapshotData['active_chats']);
     _groupChats = getDataList(snapshotData['group_chats']);
     _totalAPoints = castToType<int>(snapshotData['total_a_points']);
@@ -313,7 +325,7 @@ Map<String, dynamic> createUsersModelData({
   DateTime? createdTime,
   String? photoUrl,
   String? phoneNumber,
-  bool? isPrmiumUser,
+  bool? isPremiumUser,
   int? anonymousPostsCount,
   int? anonymousCommentsCount,
   String? currentRank,
@@ -349,7 +361,7 @@ Map<String, dynamic> createUsersModelData({
       'created_time': createdTime,
       'photo_url': photoUrl,
       'phone_number': phoneNumber,
-      'is_prmium_user': isPrmiumUser,
+      'is_premium_user': isPremiumUser,
       'anonymous_posts_count': anonymousPostsCount,
       'anonymous_comments_count': anonymousCommentsCount,
       'current_rank': currentRank,
@@ -396,7 +408,7 @@ class UsersModelDocumentEquality implements Equality<UsersModel> {
         e1?.createdTime == e2?.createdTime &&
         e1?.photoUrl == e2?.photoUrl &&
         e1?.phoneNumber == e2?.phoneNumber &&
-        e1?.isPrmiumUser == e2?.isPrmiumUser &&
+        e1?.isPremiumUser == e2?.isPremiumUser &&
         e1?.anonymousPostsCount == e2?.anonymousPostsCount &&
         e1?.anonymousCommentsCount == e2?.anonymousCommentsCount &&
         e1?.currentRank == e2?.currentRank &&
@@ -412,7 +424,7 @@ class UsersModelDocumentEquality implements Equality<UsersModel> {
         e1?.receiveTitleUpdateNotifications ==
             e2?.receiveTitleUpdateNotifications &&
         e1?.anonymousQuestionCount == e2?.anonymousQuestionCount &&
-        listEquality.equals(e1?.frinds, e2?.frinds) &&
+        listEquality.equals(e1?.friends, e2?.friends) &&
         listEquality.equals(e1?.activeChats, e2?.activeChats) &&
         listEquality.equals(e1?.groupChats, e2?.groupChats) &&
         e1?.totalAPoints == e2?.totalAPoints &&
@@ -442,7 +454,7 @@ class UsersModelDocumentEquality implements Equality<UsersModel> {
         e?.createdTime,
         e?.photoUrl,
         e?.phoneNumber,
-        e?.isPrmiumUser,
+        e?.isPremiumUser,
         e?.anonymousPostsCount,
         e?.anonymousCommentsCount,
         e?.currentRank,
@@ -456,7 +468,7 @@ class UsersModelDocumentEquality implements Equality<UsersModel> {
         e?.receiveRankUpdateNotifications,
         e?.receiveTitleUpdateNotifications,
         e?.anonymousQuestionCount,
-        e?.frinds,
+        e?.friends,
         e?.activeChats,
         e?.groupChats,
         e?.totalAPoints,

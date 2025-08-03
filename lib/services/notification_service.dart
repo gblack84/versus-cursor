@@ -413,15 +413,30 @@ class NotificationService {
         'user': currentUserReference,
         'option': option,
         'created_at': FieldValue.serverTimestamp(),
-        'from_notification': true,
-        'notification_id': notificationId,
+        'from_chat': false,  // 알림을 통한 투표는 채팅이 아님
       };
       
-      await FirebaseFirestore.instance
-          .collection('posts')
-          .doc(postId)
-          .collection('votes')
-          .add(voteData);
+      // 디버깅: 전송 데이터 확인
+      debugPrint('[NotificationService] 📤 투표 데이터 전송:');
+      debugPrint('  - user: ${currentUserReference?.path}');
+      debugPrint('  - option: $option');
+      debugPrint('  - from_chat: false');
+      debugPrint('  - 투표 경로: posts/$postId/votes');
+      
+      try {
+        final voteRef = await FirebaseFirestore.instance
+            .collection('posts')
+            .doc(postId)
+            .collection('votes')
+            .add(voteData);
+        
+        debugPrint('[NotificationService] ✅ 투표 저장 성공: ${voteRef.id}');
+      } catch (error) {
+        debugPrint('[NotificationService] ❌ 투표 저장 실패:');
+        debugPrint('  - 에러: $error');
+        debugPrint('  - 타입: ${error.runtimeType}');
+        rethrow;
+      }
       
       // 2. 투표 수 업데이트 (트랜잭션)
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -587,6 +602,10 @@ class NotificationService {
         'vote_option_b_text': optionBData['text'] ?? '',
         'vote_option_a_image': optionAData['imageUrl'] ?? '',
         'vote_option_b_image': optionBData['imageUrl'] ?? '',
+        'vote_option_a_images': optionAData['imageUrls'],
+        'vote_option_b_images': optionBData['imageUrls'],
+        'vote_aspect_ratio_a': optionAData['aspectRatio'],
+        'vote_aspect_ratio_b': optionBData['aspectRatio'],
         'vote_status': 'pending',
       });
       

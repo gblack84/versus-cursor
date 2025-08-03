@@ -1,0 +1,21 @@
+// 디버깅용 임시 보안 규칙
+// 주의: 이 규칙은 보안이 완화되어 있으므로 프로덕션에서 사용하지 마세요!
+// 문제 해결 후 즉시 원래 규칙으로 되돌려야 합니다.
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 기존 규칙들은 그대로 유지...
+    
+    // votes 서브컬렉션 - 임시로 완화된 규칙
+    match /posts/{parent}/votes/{document} {
+      // 디버깅: 인증된 사용자라면 모두 허용
+      allow create: if request.auth != null;
+      allow read: if true;
+      allow write: if false;
+      allow delete: if false;
+    }
+    
+    // 나머지 규칙들은 firestore.rules 파일과 동일하게 유지
+  }
+}

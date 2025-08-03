@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:collection/collection.dart';
 
@@ -71,6 +72,52 @@ class NotificationsModel extends FirestoreRecord {
   String get interactionType => _interactionType ?? '';
   bool hasInteractionType() => _interactionType != null;
 
+  // NEW: Extended notification fields
+  // "status" field.
+  String? _status;
+  String get status => _status ?? '';
+  bool hasStatus() => _status != null;
+
+  // "completed_at" field.
+  DateTime? _completedAt;
+  DateTime? get completedAt => _completedAt;
+  bool hasCompletedAt() => _completedAt != null;
+
+  // "title" field.
+  String? _title;
+  String get title => _title ?? '';
+  bool hasTitle() => _title != null;
+
+  // "message" field.
+  String? _message;
+  String get message => _message ?? '';
+  bool hasMessage() => _message != null;
+
+  // "image_url" field.
+  String? _imageUrl;
+  String get imageUrl => _imageUrl ?? '';
+  bool hasImageUrl() => _imageUrl != null;
+
+  // "action_url" field.
+  String? _actionUrl;
+  String get actionUrl => _actionUrl ?? '';
+  bool hasActionUrl() => _actionUrl != null;
+
+  // "priority" field.
+  String? _priority;
+  String get priority => _priority ?? 'normal';
+  bool hasPriority() => _priority != null;
+
+  // "source_type" field.
+  String? _sourceType;
+  String get sourceType => _sourceType ?? '';
+  bool hasSourceType() => _sourceType != null;
+
+  // Structured content from JSON
+  Map<String, dynamic>? _postData;
+  Map<String, dynamic> get postData => _postData ?? const {};
+  bool hasPostData() => _postData != null;
+
   void _initializeFields() {
     _notificationId = snapshotData['notification_id'] as String?;
     _userId = snapshotData['user_id'] as String?;
@@ -83,6 +130,28 @@ class NotificationsModel extends FirestoreRecord {
     _expiryTime = snapshotData['expiry_time'] as DateTime?;
     _location = snapshotData['location'] as LatLng?;
     _interactionType = snapshotData['interaction_type'] as String?;
+    
+    // Initialize extended fields
+    _status = snapshotData['status'] as String?;
+    _completedAt = snapshotData['completedAt'] as DateTime? ?? snapshotData['completed_at'] as DateTime?;
+    _title = snapshotData['title'] as String?;
+    _message = snapshotData['message'] as String?;
+    _imageUrl = snapshotData['imageUrl'] as String? ?? snapshotData['image_url'] as String?;
+    _actionUrl = snapshotData['actionUrl'] as String? ?? snapshotData['action_url'] as String?;
+    _priority = snapshotData['priority'] as String?;
+    _sourceType = snapshotData['sourceType'] as String? ?? snapshotData['source_type'] as String?;
+    
+    // Parse JSON content if present
+    if (_content != null) {
+      try {
+        final parsed = json.decode(_content!);
+        if (parsed is Map<String, dynamic> && parsed.containsKey('postData')) {
+          _postData = parsed['postData'] as Map<String, dynamic>?;
+        }
+      } catch (e) {
+        // If content is not valid JSON, keep it as string
+      }
+    }
   }
 
   static CollectionReference get collection =>
@@ -130,6 +199,15 @@ Map<String, dynamic> createNotificationsModelData({
   DateTime? expiryTime,
   LatLng? location,
   String? interactionType,
+  String? status,
+  DateTime? completedAt,
+  String? title,
+  String? message,
+  String? imageUrl,
+  String? actionUrl,
+  String? priority,
+  String? sourceType,
+  Map<String, dynamic>? postData,
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
@@ -143,6 +221,14 @@ Map<String, dynamic> createNotificationsModelData({
       'expiry_time': expiryTime,
       'location': location,
       'interaction_type': interactionType,
+      'status': status,
+      'completed_at': completedAt,
+      'title': title,
+      'message': message,
+      'image_url': imageUrl,
+      'action_url': actionUrl,
+      'priority': priority,
+      'source_type': sourceType,
     }.withoutNulls,
   );
 
@@ -166,7 +252,15 @@ class NotificationsModelDocumentEquality
         listEquality.equals(e1?.targetAudience, e2?.targetAudience) &&
         e1?.expiryTime == e2?.expiryTime &&
         e1?.location == e2?.location &&
-        e1?.interactionType == e2?.interactionType;
+        e1?.interactionType == e2?.interactionType &&
+        e1?.status == e2?.status &&
+        e1?.completedAt == e2?.completedAt &&
+        e1?.title == e2?.title &&
+        e1?.message == e2?.message &&
+        e1?.imageUrl == e2?.imageUrl &&
+        e1?.actionUrl == e2?.actionUrl &&
+        e1?.priority == e2?.priority &&
+        e1?.sourceType == e2?.sourceType;
   }
 
   @override
@@ -181,7 +275,15 @@ class NotificationsModelDocumentEquality
         e?.targetAudience,
         e?.expiryTime,
         e?.location,
-        e?.interactionType
+        e?.interactionType,
+        e?.status,
+        e?.completedAt,
+        e?.title,
+        e?.message,
+        e?.imageUrl,
+        e?.actionUrl,
+        e?.priority,
+        e?.sourceType
       ]);
 
   @override

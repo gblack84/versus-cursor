@@ -14,6 +14,9 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/utils/chat_message_converter.dart';
 import '/services/chat_media_upload_service.dart';
 import '/components/chat/vote_card_message.dart';
+import '/components/chat/vote_request_message.dart';
+import '/components/notifications/voting_notification_dialog.dart';
+import '/services/chat_image_cache_service.dart';
 import 'chat_detail_model.dart';
 export 'chat_detail_model.dart';
 
@@ -40,6 +43,9 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
   bool _isLoadingUsers = true;
   final ChatMediaUploadService _mediaUploadService = ChatMediaUploadService();
   bool _isUploadingMedia = false;
+  
+  // 스크롤 컨트롤러 (프리로딩 최적화용)
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -70,6 +76,7 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
   @override
   void dispose() {
     _model.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -329,7 +336,32 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
           // description 필드 직접 사용
           final description = messageData?['vote_description'] ?? metadata['description'];
           
-          return VoteCardMessage(
+          // aspectRatio 데이터 추출
+          final aspectRatioA = messageData?['vote_aspect_ratio_a'] ?? metadata['aspectRatioA'];
+          final aspectRatioB = messageData?['vote_aspect_ratio_b'] ?? metadata['aspectRatioB'];
+          
+          // 이미지 프리로딩
+          final imageA = metadata['optionAImage'];
+          final imageB = metadata['optionBImage'];
+          final imagesA = messageData?['vote_option_a_images'] != null 
+              ? List<String>.from(messageData!['vote_option_a_images']) 
+              : null;
+          final imagesB = messageData?['vote_option_b_images'] != null 
+              ? List<String>.from(messageData!['vote_option_b_images']) 
+              : null;
+          
+          // 비동기로 이미지 프리로딩 (UI 차단하지 않음)
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ChatImageCacheService.instance.preloadVoteMessageImages(
+              context,
+              imageUrlA: imageA,
+              imageUrlB: imageB,
+              imageUrlsA: imagesA,
+              imageUrlsB: imagesB,
+            );
+          });
+          
+          return VoteRequestMessage(
             postId: metadata['postId'] ?? '',
             title: metadata['title'] ?? '',
             description: description,
@@ -337,20 +369,31 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
             optionBText: metadata['optionBText'] ?? '',
             optionAImage: metadata['optionAImage'],
             optionBImage: metadata['optionBImage'],
-            optionAImages: messageData?['vote_option_a_images'] != null 
-                ? List<String>.from(messageData!['vote_option_a_images']) 
-                : null,
-            optionBImages: messageData?['vote_option_b_images'] != null 
-                ? List<String>.from(messageData!['vote_option_b_images']) 
-                : null,
-            cardStatus: messageData?['card_status'] ?? 'voting_request',
-            voteEndTime: messageData?['vote_end_time']?.toDate(),
-            userVoted: messageData?['user_voted'] ?? false,
-            voteChoice: messageData?['vote_choice'],
-            voteResults: messageData?['vote_results'],
+            aspectRatioA: aspectRatioA != null ? aspectRatioA.toDouble() : null,
+            aspectRatioB: aspectRatioB != null ? aspectRatioB.toDouble() : null,
+            voteStatus: messageData?['vote_status'] ?? 'pending',
             isMe: message.author.id == _currentUser.id,
             timestamp: DateTime.fromMillisecondsSinceEpoch(message.createdAt ?? 0),
-            messageType: metadata['type'],
+            onTap: () {
+              // 투표 다이얼로그 표시
+              _showVotingDialog(
+                postId: metadata['postId'] ?? '',
+                title: metadata['title'] ?? '',
+                description: description,
+                optionAText: metadata['optionAText'] ?? '',
+                optionBText: metadata['optionBText'] ?? '',
+                optionAImage: metadata['optionAImage'],
+                optionBImage: metadata['optionBImage'],
+                imageUrlsA: messageData?['vote_option_a_images'] != null 
+                    ? List<String>.from(messageData!['vote_option_a_images']) 
+                    : null,
+                imageUrlsB: messageData?['vote_option_b_images'] != null 
+                    ? List<String>.from(messageData!['vote_option_b_images']) 
+                    : null,
+                aspectRatioA: aspectRatioA != null ? aspectRatioA.toDouble() : null,
+                aspectRatioB: aspectRatioB != null ? aspectRatioB.toDouble() : null,
+              );
+            },
           );
         },
       );
@@ -567,6 +610,110 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
                   ),
       ),
     );
+  }
+
+  void _showVotingDialog({
+    required String postId,
+    required String title,
+    required String? description,
+    required String optionAText,
+    required String optionBText,
+    String? optionAImage,
+    String? optionBImage,
+    List<String>? imageUrlsA,
+    List<String>? imageUrlsB,
+    double? aspectRatioA,
+    double? aspectRatioB,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black54,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.92,
+          ),
+          child: VotingNotificationDialog(
+            question: title,
+            optionA: optionAText,
+            optionB: optionBText,
+            imageUrlA: optionAImage,
+            imageUrlB: optionBImage,
+            imageUrlsA: imageUrlsA,
+            imageUrlsB: imageUrlsB,
+            description: description,
+            authorName: '',
+            aspectRatioA: aspectRatioA,
+            aspectRatioB: aspectRatioB,
+            onVote: (option) async {
+              Navigator.of(context).pop();
+              await _handleVoteFromMessage(
+                postId: postId,
+                option: option,
+              );
+            },
+            onDismiss: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleVoteFromMessage({
+    required String postId,
+    required String option,
+  }) async {
+    try {
+      // 투표 처리 로직 - 보안 규칙에 맞게 수정
+      final voteData = {
+        'user': currentUserReference,
+        'option': option,
+        'created_at': FieldValue.serverTimestamp(),
+        'from_chat': true,
+      };
+      
+      await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(postId)
+          .collection('votes')
+          .add(voteData);
+      
+      // 투표 수 업데이트
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final postRef = FirebaseFirestore.instance
+            .collection('posts')
+            .doc(postId);
+        
+        final postDoc = await transaction.get(postRef);
+        if (!postDoc.exists) {
+          throw Exception('게시물을 찾을 수 없습니다');
+        }
+        
+        final currentData = postDoc.data() as Map<String, dynamic>;
+        final voteCountField = option == 'A' ? 'vote_count_a' : 'vote_count_b';
+        final votedUsersField = option == 'A' ? 'votedUserIDsA' : 'votedUserIDsB';
+        final currentCount = (currentData[voteCountField] ?? 0) as int;
+        final currentVotedUsers = List<String>.from(currentData[votedUsersField] ?? []);
+        
+        currentVotedUsers.add(currentUserUid);
+        
+        transaction.update(postRef, {
+          voteCountField: currentCount + 1,
+          votedUsersField: currentVotedUsers,
+          'total_votes': (currentData['total_votes'] ?? 0) + 1,
+          'last_vote_at': FieldValue.serverTimestamp(),
+        });
+      });
+      
+      BotToast.showText(text: '투표가 완료되었습니다!');
+    } catch (e) {
+      BotToast.showText(text: '투표 처리 중 오류가 발생했습니다: $e');
+    }
   }
 
   ChatTheme _buildChatTheme() {

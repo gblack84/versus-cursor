@@ -216,6 +216,72 @@ class PostsModel extends FirestoreRecord {
   String get description => _description ?? '';
   bool hasDescription() => _description != null;
 
+  // NEW: Vote system fields
+  // "vote_start_time" field.
+  DateTime? _voteStartTime;
+  DateTime? get voteStartTime => _voteStartTime;
+  bool hasVoteStartTime() => _voteStartTime != null;
+
+  // "vote_end_time" field.
+  DateTime? _voteEndTime;
+  DateTime? get voteEndTime => _voteEndTime;
+  bool hasVoteEndTime() => _voteEndTime != null;
+
+  // "vote_status" field.
+  String? _voteStatus;
+  String get voteStatus => _voteStatus ?? '';
+  bool hasVoteStatus() => _voteStatus != null;
+
+  // "vote_completed" field.
+  bool? _voteCompleted;
+  bool get voteCompleted => _voteCompleted ?? false;
+  bool hasVoteCompleted() => _voteCompleted != null;
+
+  // "votes_a" field.
+  int? _votesA;
+  int get votesA => _votesA ?? 0;
+  bool hasVotesA() => _votesA != null;
+
+  // "votes_b" field.
+  int? _votesB;
+  int get votesB => _votesB ?? 0;
+  bool hasVotesB() => _votesB != null;
+
+  // "voted_user_ids_a" field.
+  List<String>? _votedUserIdsA;
+  List<String> get votedUserIdsA => _votedUserIdsA ?? const [];
+  bool hasVotedUserIdsA() => _votedUserIdsA != null;
+
+  // "voted_user_ids_b" field.
+  List<String>? _votedUserIdsB;
+  List<String> get votedUserIdsB => _votedUserIdsB ?? const [];
+  bool hasVotedUserIdsB() => _votedUserIdsB != null;
+
+  // "total_votes" field.
+  int? _totalVotes;
+  int get totalVotes => _totalVotes ?? 0;
+  bool hasTotalVotes() => _totalVotes != null;
+
+  // "vote_timeout" field.
+  bool? _voteTimeout;
+  bool get voteTimeout => _voteTimeout ?? false;
+  bool hasVoteTimeout() => _voteTimeout != null;
+
+  // "vote_completed_at" field.
+  DateTime? _voteCompletedAt;
+  DateTime? get voteCompletedAt => _voteCompletedAt;
+  bool hasVoteCompletedAt() => _voteCompletedAt != null;
+
+  // "vote_cancelled_at" field.
+  DateTime? _voteCancelledAt;
+  DateTime? get voteCancelledAt => _voteCancelledAt;
+  bool hasVoteCancelledAt() => _voteCancelledAt != null;
+
+  // "vote_cancelled_reason" field.
+  String? _voteCancelledReason;
+  String get voteCancelledReason => _voteCancelledReason ?? '';
+  bool hasVoteCancelledReason() => _voteCancelledReason != null;
+
   void _initializeFields() {
     _userid = snapshotData['userid'] as String?;
     _content = snapshotData['content'] as String?;
@@ -235,6 +301,8 @@ class PostsModel extends FirestoreRecord {
     _initialCommentLimit = castToType<int>(snapshotData['initialCommentLimit']);
     _currentCommentCount = castToType<int>(snapshotData['currentCommentCount']);
     _isVotingComplete = snapshotData['isVotingComplete'] as bool?;
+    // Support both field names for backwards compatibility
+    _voteCompleted = snapshotData['vote_completed'] as bool? ?? snapshotData['voteCompleted'] as bool?;
     _expansionPointsUsed = castToType<int>(snapshotData['expansionPointsUsed']);
     _expandedUserCount = castToType<int>(snapshotData['expandedUserCount']);
     _expansionStatus = snapshotData['expansionStatus'] as String?;
@@ -257,6 +325,20 @@ class PostsModel extends FirestoreRecord {
     _moderation = snapshotData['moderation'] as Map<String, dynamic>?;
     _targetAudience = snapshotData['targetAudience'] as Map<String, dynamic>?;
     _description = snapshotData['description'] as String?;
+    
+    // Initialize vote system fields with backwards compatibility
+    _voteStartTime = snapshotData['vote_start_time'] as DateTime? ?? snapshotData['voteStartTime'] as DateTime?;
+    _voteEndTime = snapshotData['vote_end_time'] as DateTime? ?? snapshotData['voteEndTime'] as DateTime?;
+    _voteStatus = snapshotData['vote_status'] as String? ?? snapshotData['voteStatus'] as String?;
+    _votesA = castToType<int>(snapshotData['votes_a'] ?? snapshotData['vote_count_a']);
+    _votesB = castToType<int>(snapshotData['votes_b'] ?? snapshotData['vote_count_b']);
+    _votedUserIdsA = getDataList(snapshotData['voted_user_ids_a'] ?? snapshotData['votedUserIDsA']);
+    _votedUserIdsB = getDataList(snapshotData['voted_user_ids_b'] ?? snapshotData['votedUserIDsB']);
+    _totalVotes = castToType<int>(snapshotData['total_votes']);
+    _voteTimeout = snapshotData['vote_timeout'] as bool?;
+    _voteCompletedAt = snapshotData['vote_completed_at'] as DateTime?;
+    _voteCancelledAt = snapshotData['vote_cancelled_at'] as DateTime?;
+    _voteCancelledReason = snapshotData['vote_cancelled_reason'] as String?;
   }
 
   static CollectionReference get collection =>
@@ -330,6 +412,19 @@ Map<String, dynamic> createPostsModelData({
   Map<String, dynamic>? moderation,
   Map<String, dynamic>? targetAudience,
   String? description,
+  DateTime? voteStartTime,
+  DateTime? voteEndTime,
+  String? voteStatus,
+  bool? voteCompleted,
+  int? votesA,
+  int? votesB,
+  List<String>? votedUserIdsA,
+  List<String>? votedUserIdsB,
+  int? totalVotes,
+  bool? voteTimeout,
+  DateTime? voteCompletedAt,
+  DateTime? voteCancelledAt,
+  String? voteCancelledReason,
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
@@ -370,6 +465,19 @@ Map<String, dynamic> createPostsModelData({
       'moderation': moderation,
       'targetAudience': targetAudience,
       'description': description,
+      'vote_start_time': voteStartTime,
+      'vote_end_time': voteEndTime,
+      'vote_status': voteStatus,
+      'vote_completed': voteCompleted,
+      'votes_a': votesA,
+      'votes_b': votesB,
+      'voted_user_ids_a': votedUserIdsA,
+      'voted_user_ids_b': votedUserIdsB,
+      'total_votes': totalVotes,
+      'vote_timeout': voteTimeout,
+      'vote_completed_at': voteCompletedAt,
+      'vote_cancelled_at': voteCancelledAt,
+      'vote_cancelled_reason': voteCancelledReason,
     }.withoutNulls,
   );
 
@@ -419,7 +527,22 @@ class PostsModelDocumentEquality implements Equality<PostsModel> {
         e1?.optionA == e2?.optionA &&
         e1?.optionB == e2?.optionB &&
         e1?.stats == e2?.stats &&
-        e1?.moderation == e2?.moderation;
+        e1?.moderation == e2?.moderation &&
+        e1?.targetAudience == e2?.targetAudience &&
+        e1?.description == e2?.description &&
+        e1?.voteStartTime == e2?.voteStartTime &&
+        e1?.voteEndTime == e2?.voteEndTime &&
+        e1?.voteStatus == e2?.voteStatus &&
+        e1?.voteCompleted == e2?.voteCompleted &&
+        e1?.votesA == e2?.votesA &&
+        e1?.votesB == e2?.votesB &&
+        listEquality.equals(e1?.votedUserIdsA, e2?.votedUserIdsA) &&
+        listEquality.equals(e1?.votedUserIdsB, e2?.votedUserIdsB) &&
+        e1?.totalVotes == e2?.totalVotes &&
+        e1?.voteTimeout == e2?.voteTimeout &&
+        e1?.voteCompletedAt == e2?.voteCompletedAt &&
+        e1?.voteCancelledAt == e2?.voteCancelledAt &&
+        e1?.voteCancelledReason == e2?.voteCancelledReason;
   }
 
   @override
@@ -461,7 +584,22 @@ class PostsModelDocumentEquality implements Equality<PostsModel> {
         e?.optionA,
         e?.optionB,
         e?.stats,
-        e?.moderation
+        e?.moderation,
+        e?.targetAudience,
+        e?.description,
+        e?.voteStartTime,
+        e?.voteEndTime,
+        e?.voteStatus,
+        e?.voteCompleted,
+        e?.votesA,
+        e?.votesB,
+        e?.votedUserIdsA,
+        e?.votedUserIdsB,
+        e?.totalVotes,
+        e?.voteTimeout,
+        e?.voteCompletedAt,
+        e?.voteCancelledAt,
+        e?.voteCancelledReason
       ]);
 
   @override

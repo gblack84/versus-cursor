@@ -106,6 +106,18 @@ class VersusNotificationBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: '옵션 $boxType: $title',
+      selected: isSelected,
+      hint: showResult && votePercentage != null 
+          ? '투표 결과: ${(votePercentage! * 100).toStringAsFixed(0)}%' 
+          : '탭하여 선택',
+      child: _buildBox(context),
+    );
+  }
+
+  Widget _buildBox(BuildContext context) {
     // 멀티이미지 데이터 디버그
     print('[VersusNotificationBox] ===== 박스 $boxType 데이터 확인 =====');
     print('  - imageUrl: ${imageUrl != null ? "있음" : "없음"}');
@@ -271,7 +283,8 @@ class VersusNotificationBox extends StatelessWidget {
   
   /// 투표 결과 오버레이
   Widget _buildResultOverlay() {
-    if (votePercentage == null) return const SizedBox.shrink();
+    // showResult가 true여도 votePercentage가 null일 수 있음
+    if (!showResult || votePercentage == null) return const SizedBox.shrink();
     
     return Positioned.fill(
       child: Container(
@@ -424,18 +437,6 @@ class VersusNotificationBox extends StatelessWidget {
       width: boxSize.width,
       height: boxSize.height,
       color: VersusColors.borderLight,
-      child: Center(
-        child: SizedBox(
-          width: 24,
-          height: 24,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              VersusColors.primary,
-            ),
-          ),
-        ),
-      ),
     );
   }
   

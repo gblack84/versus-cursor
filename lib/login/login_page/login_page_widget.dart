@@ -362,14 +362,39 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                         return;
                                       }
 
-                                      await currentUserReference!.update({
-                                        ...mapToFirestore(
-                                          {
-                                            'last_active_time':
-                                                FieldValue.serverTimestamp(),
-                                          },
-                                        ),
-                                      });
+                                      // authenticatedUserStream이 currentUser를 설정할 때까지 대기
+                                      int attempts = 0;
+                                      while (currentUserReference == null && attempts < 20) {
+                                        await Future.delayed(const Duration(milliseconds: 500));
+                                        attempts++;
+                                      }
+                                      
+                                      if (currentUserReference == null) {
+                                        debugPrint('경고: currentUserReference가 설정되지 않음');
+                                        // 직접 DocumentReference 생성하여 업데이트
+                                        final directRef = FirebaseFirestore.instance
+                                            .collection('users')
+                                            .doc(user.uid);
+                                        
+                                        await directRef.update({
+                                          ...mapToFirestore(
+                                            {
+                                              'last_active_time':
+                                                  FieldValue.serverTimestamp(),
+                                            },
+                                          ),
+                                        });
+                                      } else {
+                                        // 정상적으로 currentUserReference 사용
+                                        await currentUserReference!.update({
+                                          ...mapToFirestore(
+                                            {
+                                              'last_active_time':
+                                                  FieldValue.serverTimestamp(),
+                                            },
+                                          ),
+                                        });
+                                      }
 
                                       context.pushNamedAuth(
                                         TestpageSelectWidget.routeName,
@@ -556,12 +581,35 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   await UsersModel.collection.doc(user.uid).set(usersCreateData);
                                                 }
                                                 
-                                                await currentUserReference!.update({
-                                                  ...mapToFirestore({
-                                                    'last_active_time': FieldValue.serverTimestamp(),
-                                                    'role': 'admin',
-                                                  }),
-                                                });
+                                                // authenticatedUserStream이 currentUser를 설정할 때까지 대기
+                                                int attempts = 0;
+                                                while (currentUserReference == null && attempts < 20) {
+                                                  await Future.delayed(const Duration(milliseconds: 500));
+                                                  attempts++;
+                                                }
+                                                
+                                                if (currentUserReference == null) {
+                                                  debugPrint('경고: currentUserReference가 설정되지 않음');
+                                                  // 직접 DocumentReference 생성하여 업데이트
+                                                  final directRef = FirebaseFirestore.instance
+                                                      .collection('users')
+                                                      .doc(user.uid);
+                                                  
+                                                  await directRef.update({
+                                                    ...mapToFirestore({
+                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'role': 'admin',
+                                                    }),
+                                                  });
+                                                } else {
+                                                  // 정상적으로 currentUserReference 사용
+                                                  await currentUserReference!.update({
+                                                    ...mapToFirestore({
+                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'role': 'admin',
+                                                    }),
+                                                  });
+                                                }
                                                 
                                                 context.pushNamedAuth(
                                                   TestpageSelectWidget.routeName,
@@ -635,13 +683,37 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   await UsersModel.collection.doc(user.uid).set(usersCreateData);
                                                 }
                                                 
-                                                await currentUserReference!.update({
-                                                  ...mapToFirestore({
-                                                    'last_active_time': FieldValue.serverTimestamp(),
-                                                    'role': 'tester',
-                                                    'platform': 'ios',
-                                                  }),
-                                                });
+                                                // authenticatedUserStream이 currentUser를 설정할 때까지 대기
+                                                int attempts = 0;
+                                                while (currentUserReference == null && attempts < 20) {
+                                                  await Future.delayed(const Duration(milliseconds: 500));
+                                                  attempts++;
+                                                }
+                                                
+                                                if (currentUserReference == null) {
+                                                  debugPrint('경고: currentUserReference가 설정되지 않음');
+                                                  // 직접 DocumentReference 생성하여 업데이트
+                                                  final directRef = FirebaseFirestore.instance
+                                                      .collection('users')
+                                                      .doc(user.uid);
+                                                  
+                                                  await directRef.update({
+                                                    ...mapToFirestore({
+                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'role': 'tester',
+                                                      'platform': 'ios',
+                                                    }),
+                                                  });
+                                                } else {
+                                                  // 정상적으로 currentUserReference 사용
+                                                  await currentUserReference!.update({
+                                                    ...mapToFirestore({
+                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'role': 'tester',
+                                                      'platform': 'ios',
+                                                    }),
+                                                  });
+                                                }
                                                 
                                                 context.pushNamedAuth(
                                                   TestpageSelectWidget.routeName,
@@ -720,13 +792,37 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   await UsersModel.collection.doc(user.uid).set(usersCreateData);
                                                 }
                                                 
-                                                await currentUserReference!.update({
-                                                  ...mapToFirestore({
-                                                    'last_active_time': FieldValue.serverTimestamp(),
-                                                    'role': 'tester',
-                                                    'platform': 'android',
-                                                  }),
-                                                });
+                                                // authenticatedUserStream이 currentUser를 설정할 때까지 대기
+                                                int attempts = 0;
+                                                while (currentUserReference == null && attempts < 20) {
+                                                  await Future.delayed(const Duration(milliseconds: 500));
+                                                  attempts++;
+                                                }
+                                                
+                                                if (currentUserReference == null) {
+                                                  debugPrint('경고: currentUserReference가 설정되지 않음');
+                                                  // 직접 DocumentReference 생성하여 업데이트
+                                                  final directRef = FirebaseFirestore.instance
+                                                      .collection('users')
+                                                      .doc(user.uid);
+                                                  
+                                                  await directRef.update({
+                                                    ...mapToFirestore({
+                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'role': 'tester',
+                                                      'platform': 'android',
+                                                    }),
+                                                  });
+                                                } else {
+                                                  // 정상적으로 currentUserReference 사용
+                                                  await currentUserReference!.update({
+                                                    ...mapToFirestore({
+                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'role': 'tester',
+                                                      'platform': 'android',
+                                                    }),
+                                                  });
+                                                }
                                                 
                                                 context.pushNamedAuth(
                                                   TestpageSelectWidget.routeName,
@@ -799,13 +895,37 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   await UsersModel.collection.doc(user.uid).set(usersCreateData);
                                                 }
                                                 
-                                                await currentUserReference!.update({
-                                                  ...mapToFirestore({
-                                                    'last_active_time': FieldValue.serverTimestamp(),
-                                                    'role': 'tester',
-                                                    'platform': 'macos',
-                                                  }),
-                                                });
+                                                // authenticatedUserStream이 currentUser를 설정할 때까지 대기
+                                                int attempts = 0;
+                                                while (currentUserReference == null && attempts < 20) {
+                                                  await Future.delayed(const Duration(milliseconds: 500));
+                                                  attempts++;
+                                                }
+                                                
+                                                if (currentUserReference == null) {
+                                                  debugPrint('경고: currentUserReference가 설정되지 않음');
+                                                  // 직접 DocumentReference 생성하여 업데이트
+                                                  final directRef = FirebaseFirestore.instance
+                                                      .collection('users')
+                                                      .doc(user.uid);
+                                                  
+                                                  await directRef.update({
+                                                    ...mapToFirestore({
+                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'role': 'tester',
+                                                      'platform': 'macos',
+                                                    }),
+                                                  });
+                                                } else {
+                                                  // 정상적으로 currentUserReference 사용
+                                                  await currentUserReference!.update({
+                                                    ...mapToFirestore({
+                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'role': 'tester',
+                                                      'platform': 'macos',
+                                                    }),
+                                                  });
+                                                }
                                                 
                                                 context.pushNamedAuth(
                                                   TestpageSelectWidget.routeName,
@@ -878,13 +998,37 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   await UsersModel.collection.doc(user.uid).set(usersCreateData);
                                                 }
                                                 
-                                                await currentUserReference!.update({
-                                                  ...mapToFirestore({
-                                                    'last_active_time': FieldValue.serverTimestamp(),
-                                                    'role': 'tester',
-                                                    'platform': 'web',
-                                                  }),
-                                                });
+                                                // authenticatedUserStream이 currentUser를 설정할 때까지 대기
+                                                int attempts = 0;
+                                                while (currentUserReference == null && attempts < 20) {
+                                                  await Future.delayed(const Duration(milliseconds: 500));
+                                                  attempts++;
+                                                }
+                                                
+                                                if (currentUserReference == null) {
+                                                  debugPrint('경고: currentUserReference가 설정되지 않음');
+                                                  // 직접 DocumentReference 생성하여 업데이트
+                                                  final directRef = FirebaseFirestore.instance
+                                                      .collection('users')
+                                                      .doc(user.uid);
+                                                  
+                                                  await directRef.update({
+                                                    ...mapToFirestore({
+                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'role': 'tester',
+                                                      'platform': 'web',
+                                                    }),
+                                                  });
+                                                } else {
+                                                  // 정상적으로 currentUserReference 사용
+                                                  await currentUserReference!.update({
+                                                    ...mapToFirestore({
+                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'role': 'tester',
+                                                      'platform': 'web',
+                                                    }),
+                                                  });
+                                                }
                                                 
                                                 context.pushNamedAuth(
                                                   TestpageSelectWidget.routeName,

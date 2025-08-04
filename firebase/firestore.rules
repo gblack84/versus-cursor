@@ -22,10 +22,16 @@ service cloud.firestore {
         // 투표 필드와 타이머 관련 필드 업데이트 허용
         request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['votedUserIDsA', 'votedUserIDsB', 'votes_a', 'votes_b', 'vote_count_a', 'vote_count_b', 
-                    'total_votes', 'last_vote_at', 'timer_started_at', 'timer_expiry_at', 'vote_request_status'])
-        // 중복 투표 방지
-        && !(request.auth.uid in resource.data.votedUserIDsA)
-        && !(request.auth.uid in resource.data.votedUserIDsB)
+                    'total_votes', 'last_vote_at', 'timer_started_at', 'timer_expiry_at', 'vote_request_status',
+                    // AI 채팅 투표 관련 추가 필드
+                    'voteStartTime', 'voteEndTime', 'voteStatus', 'voteCompleted',
+                    // 알림 관련 필드
+                    'notificationsSent', 'notificationsSentAt'])
+        // 중복 투표 방지 (필드가 존재하는 경우에만 확인)
+        && (
+          (!('votedUserIDsA' in resource.data) || !(request.auth.uid in resource.data.votedUserIDsA))
+          && (!('votedUserIDsB' in resource.data) || !(request.auth.uid in resource.data.votedUserIDsB))
+        )
       );
       allow delete: if false;
     }
@@ -139,11 +145,17 @@ service cloud.firestore {
       allow create: if true;
       allow read: if true;
       allow update: if request.auth != null && (
-        // 사용자가 참여자인 경우만
-        request.auth.uid in resource.data.users
-        // 마지막 메시지 관련 필드만 업데이트
-        && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['last_message', 'last_message_time', 'last_message_sent_by'])
+        // AI 채팅방인 경우 (chatId에 'ai_assistant' 포함)
+        (chatId.matches('.*ai_assistant.*') && 
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['last_message_content', 'last_message_at', 'last_message_sent_by', 'participantIds']))
+        ||
+        // 일반 채팅방인 경우
+        (request.auth.uid in resource.data.users && 
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['last_message', 'last_message_time', 'last_message_sent_by', 
+                     // Flutter 코드에서 사용하는 필드명도 허용
+                     'last_message_content', 'last_message_at', 'lastMessageContent', 'lastMessageAt']))
       );
       allow delete: if false;
     }
@@ -164,11 +176,17 @@ service cloud.firestore {
       allow create: if true;
       allow read: if true;
       allow update: if request.auth != null && (
-        // 사용자가 채팅방 참여자인 경우
-        request.auth.uid in get(/databases/$(database)/documents/chats/$(parent)).data.users
-        // 투표 상태나 읽음 상태 업데이트 허용
-        && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['is_read', 'vote_status', 'card_status', 'user_voted', 'vote_choice', 'vote_participated_at', 'vote_results'])
+        // AI 채팅방인 경우 (parent에 'ai_assistant' 포함)
+        (parent.matches('.*ai_assistant.*') && 
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['is_read', 'vote_status', 'card_status', 'user_voted', 'vote_choice', 
+                     'vote_participated_at', 'vote_results', 'vote_end_time']))
+        ||
+        // 일반 채팅방인 경우
+        (request.auth.uid in get(/databases/$(database)/documents/chats/$(parent)).data.users && 
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['is_read', 'vote_status', 'card_status', 'user_voted', 'vote_choice', 
+                     'vote_participated_at', 'vote_results']))
       );
       allow delete: if false;
     }

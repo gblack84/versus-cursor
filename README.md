@@ -2,7 +2,7 @@
 
 AI 기반 투표 및 소셜 플랫폼 - A vs B 형식의 비교 콘텐츠를 통한 의견 공유 커뮤니티
 
-## 프로젝트 소개
+## 🎯 프로젝트 소개
 
 Versus Space는 사용자들이 A vs B 형식의 비교 질문을 만들고, 투표하며, 의견을 공유할 수 있는 소셜 미디어 플랫폼입니다. AI 기술을 활용하여 콘텐츠 검열, 사용자 매칭, 맞춤형 알림 등의 기능을 제공합니다.
 
@@ -13,9 +13,34 @@ Versus Space는 사용자들이 A vs B 형식의 비교 질문을 만들고, 투
 - 💬 **실시간 채팅**: 텍스트, 이미지, 비디오, 투표 메시지 지원
 - 🔔 **실시간 알림**: Firebase를 활용한 실시간 투표 요청 알림
 - 👥 **소셜 기능**: 좋아요, 댓글, 친구 시스템
-- 🗳️ **투표 메시지**: 채팅에서 직접 A vs B 투표 요청 및 참여
+- 🗳️ **투표 시스템**: 10분 타이머, 실시간 결과 업데이트, 중복 투표 방지
 
-## 최근 업데이트
+## 📢 최근 주요 업데이트
+
+### 🔒 2025-08-04: 투표 시스템 보안 강화 및 타이머 기능 완성
+- **Firebase Security Rules 업데이트**:
+  - 투표 타이머 필드 추가 (`voteStartTime`, `voteEndTime`, `voteStatus`, `voteCompleted`)
+  - 중복 투표 방지 로직 개선 (필드 존재 여부 체크)
+  - AI 채팅 투표 시스템 완벽 지원
+- **투표 시스템 개선**:
+  - 10분 타이머 자동 완료 처리 (`flushThrottleQueue` 매 1분 실행)
+  - 백업 타임아웃 체크 (`checkVoteTimeouts` 매 시간 실행)
+  - 실시간 투표 상태 추적 및 알림
+- **문서화**:
+  - [Firebase 보안 규칙 가이드](/firebase/SECURITY_RULES_UPDATE_GUIDE.md) 작성
+  - 투표 시스템 아키텍처 문서 업데이트
+
+### 🔧 2025-08-03: Firebase와 Flutter 필드 동기화 완료
+- **해결된 문제**: 37개 이상의 필드 불일치 해결
+- **영향받은 모델**: Posts, Messages, Notifications, Users
+- **AI 채팅 시스템 수정**:
+  - 채팅방 ID 생성 로직 변경 (대소문자 정렬 문제 해결)
+  - `migrateAIChatRooms` 함수로 기존 채팅방 마이그레이션
+- **새로운 기능**:
+  - 투표 시스템 완전 작동 (10분 타이머, 중복 방지)
+  - 멀티이미지 지원 (A/B 각각 여러 이미지)
+  - AI 채팅 투표 카드 완성
+  - 구조화된 알림 시스템
 
 ### 🎨 2025-07-25: 네비게이션 시스템, 디자인 시스템 및 채팅 UI 업그레이드
 
@@ -251,14 +276,99 @@ npm test
    - 알림 시스템 동작 확인
    - 다양한 타겟 수 테스트
 
-## 문서
+## 🔗 시스템 상호작용
 
-각 모듈별 상세 문서는 해당 디렉토리의 README.md를 참조하세요:
+### 주요 데이터 플로우
 
-- [AI 시스템](/firebase/functions/ai/README.md)
-- [알림 시스템](/firebase/functions/notifications/README.md)
-- [서비스 레이어](/lib/services/README.md)
-- [AI 검열 시스템](/lib/services/ai_moderation/README.md)
+1. **게시물 생성 플로우**
+   ```
+   사용자 입력 → AI 검열 → Firebase Storage 업로드 → Firestore 저장 
+   → Cloud Functions 트리거 → AI 사용자 매칭 → 알림 생성 → 실시간 전송
+   ```
+
+2. **투표 처리 플로우 (10분 타이머)**
+   ```
+   투표 클릭 → 중복 확인 → Firestore 업데이트 (voteStartTime 기록)
+   → Cloud Functions 감지 → 투표 집계 → 10분 타이머 시작
+   → flushThrottleQueue (매 1분) → 타임아웃 확인
+   → 완료 시 (voteStatus: 'completed') → 결과 알림 → AI 채팅 업데이트
+   ```
+
+3. **채팅 시스템 플로우**
+   ```
+   메시지 작성 → 타입 결정 (텍스트/이미지/투표) → Firestore 저장
+   → 실시간 동기화 → 수신자 화면 업데이트 → 알림 표시
+   ```
+
+### Firebase Functions와 Flutter 연동
+
+- **실시간 리스너**: Firestore 변경사항을 Flutter 앱에서 실시간 감지
+- **트리거 함수**: 문서 생성/수정/삭제 시 자동 실행
+- **스케줄 함수**: 주기적인 작업 처리 (투표 타임아웃, 큐 플러시)
+- **필드 동기화**: 37개 이상의 필드가 완벽하게 동기화됨
+
+## 📚 문서
+
+### 시스템 아키텍처
+- [전체 아키텍처 문서](/ARCHITECTURE.md) - 시스템 구조, 데이터 흐름, 확장성
+
+### Backend (Firebase)
+- [Firebase Functions 개요](/firebase/functions/README.md) - 서버리스 함수 목록
+- [Firebase 보안 규칙 가이드](/firebase/SECURITY_RULES_UPDATE_GUIDE.md) - 보안 규칙 설정 및 업데이트
+- [AI 시스템 (Genkit)](/firebase/functions/ai/README.md) - AI 통합 및 설정
+- [알림 시스템](/firebase/functions/notifications/README.md) - 타겟 매칭 및 알림
+- [서비스 레이어](/firebase/functions/services/README.md) - 비즈니스 로직
+- [설정 관리](/firebase/functions/config/README.md) - 환경 설정
+- [개별 함수](/firebase/functions/functions/README.md) - 함수별 상세 설명
+- [유틸리티](/firebase/functions/utils/README.md) - 공통 유틸리티
+
+### Frontend (Flutter)
+- [백엔드 통합](/lib/backend/README.md) - Firebase 통합 레이어
+- [데이터 모델](/lib/backend/schema/README.md) - Firestore 스키마
+- [서비스](/lib/services/README.md) - Flutter 서비스 레이어
+- [AI 검열](/lib/services/ai_moderation/README.md) - 콘텐츠 검열 시스템
+- [컴포넌트](/lib/components/README.md) - 재사용 가능한 UI 컴포넌트
+- [페이지](/lib/pages/README.md) - 앱 화면들
+- [프로바이더](/lib/providers/README.md) - 상태 관리
+- [모델](/lib/models/README.md) - 데이터 모델
+- [유틸리티](/lib/utils/README.md) - 공통 유틸리티
+- [인증](/lib/auth/README.md) - 인증 시스템
+- [커스텀 코드](/lib/custom_code/README.md) - 고급 기능 구현
+- [디자인 시스템](/lib/design_system/README.md) - UI/UX 가이드
+
+### 특수 모듈
+- [이미지 게시물 작성](/lib/posts/in_put_post_image/README.md) - A vs B 이미지 콘텐츠
+
+## 🔑 핵심 통합 사항
+
+### Firestore 컬렉션 구조
+```
+users (사용자)
+├── points_A, points_Q (포인트)
+├── interests[], expertise[] (관심사)
+└── role (admin/tester/user)
+
+posts (게시물)
+├── vote_* fields (투표 시스템)
+├── targetAudience (타겟 설정)
+└── optionA/B (선택지 정보)
+
+messages (채팅 - chats의 서브컬렉션)
+├── message_type (text/image/vote_request)
+├── vote_* fields (투표 카드)
+└── card_status (상태 추적)
+
+notifications (알림)
+├── type (voting_request 등)
+├── content (JSON 형식)
+└── postData (게시물 정보)
+```
+
+### 중요 시스템 규칙
+1. **컬렉션 이름**: 모든 `_record` 접미사 제거됨 (2025-07-31)
+2. **필드 동기화**: Firebase Functions와 Flutter 모델 완전 일치
+3. **실시간 동기화**: 모든 변경사항은 실시간으로 반영
+4. **AI 통합**: Genkit 프레임워크로 통합 관리
 
 ## 기여 가이드
 

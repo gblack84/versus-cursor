@@ -83,6 +83,14 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       // 초기 상태 설정
       _lastImageCount = appState.tempImageFilesA.length + appState.tempImageFilesB.length;
       
+      // B박스가 비어있으면 자동으로 단일 이미지 모드로 설정
+      if (appState.tempImageFilesB.isEmpty && appState.uploadImageB.isEmpty) {
+        setState(() {
+          _model.absellected = true;
+        });
+        DebugHelper.logLayout('[Debug] 초기화: B박스 비어있음 - 단일 이미지 모드 활성화');
+      }
+      
       // 초기 레이아웃 설정은 _performLayoutUpdate를 직접 호출
       if (_lastImageCount > 0) {
         _performLayoutUpdate();
@@ -162,6 +170,22 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     
     try {
       final appState = Provider.of<AppState>(context, listen: false);
+      
+      // B박스가 비어있으면 자동으로 단일 이미지 모드로 설정
+      if (appState.tempImageFilesB.isEmpty && appState.uploadImageB.isEmpty) {
+        if (!_model.absellected) {
+          setState(() {
+            _model.absellected = true;
+          });
+          DebugHelper.logLayout('[Debug] 레이아웃 업데이트: B박스 비어있음 - 단일 이미지 모드 활성화');
+        }
+      }
+    
+    // 디버그: B박스 상태 확인
+    DebugHelper.logLayout('[Debug] B박스 상태 확인:');
+    DebugHelper.logLayout('  - tempImageFilesB 개수: ${appState.tempImageFilesB.length}');
+    DebugHelper.logLayout('  - uploadImageAspectRatioB 개수: ${appState.uploadImageAspectRatioB.length}');
+    DebugHelper.logLayout('  - absellected: ${_model.absellected}');
     
     // 이미지가 하나도 없으면 기본 레이아웃(horizontal)으로 초기화
     if (appState.tempImageFilesA.isEmpty && appState.tempImageFilesB.isEmpty) {
@@ -188,19 +212,28 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       
       // 새로운 로직 (하이브리드 계산)
       ratioA = RatioCalculator.getRatio(appState.uploadImageAspectRatioA, box: 'A');
+      DebugHelper.logLayout('[Debug] A박스 비율 계산됨: $ratioA');
     }
     
-    if (appState.uploadImageAspectRatioB.isNotEmpty) {
+    // absellected가 true이면 B박스 비율은 무시
+    if (!_model.absellected && appState.uploadImageAspectRatioB.isNotEmpty) {
       // 기존 로직 (첫 번째 이미지만 사용)
       // ratioB = appState.uploadImageAspectRatioB.first;
       
       // 새로운 로직 (하이브리드 계산)
       ratioB = RatioCalculator.getRatio(appState.uploadImageAspectRatioB, box: 'B');
+      DebugHelper.logLayout('[Debug] B박스 비율 계산됨: $ratioB');
+    } else {
+      DebugHelper.logLayout('[Debug] B박스 비율 무시됨 (absellected=${_model.absellected})');
     }
     
-    // 스마트 레이아웃 결정 - A박스만 있어도 레이아웃 계산
+    // 스마트 레이아웃 결정
     LayoutType optimalLayout;
-    if (ratioA != null && ratioB == null && appState.tempImageFilesB.isEmpty) {
+    if (_model.absellected) {
+      // 단일 이미지 모드에서는 항상 single 레이아웃 사용
+      optimalLayout = LayoutType.single;
+      DebugHelper.logLayout('[Debug] 단일 이미지 모드 - LayoutType.single 사용');
+    } else if (ratioA != null && ratioB == null && appState.tempImageFilesB.isEmpty) {
       // A박스만 있는 경우에도 이미지 비율에 따라 레이아웃 결정
       final orientation = AspectRatioAnalyzer.getOrientation(ratioA);
       if (orientation == ImageOrientation.landscape) {
@@ -691,6 +724,30 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         FirebaseFirestore.instance.collection('users').doc(user.uid)
       );
 
+      // aspectRatio 계산
+      final aspectRatioA = appState.uploadImageAspectRatioA.isNotEmpty 
+          ? RatioCalculator.getRatio(appState.uploadImageAspectRatioA, box: 'A')
+          : null;
+      final aspectRatioB = (_model.absellected || appState.uploadImageAspectRatioB.isEmpty)
+          ? null
+          : RatioCalculator.getRatio(appState.uploadImageAspectRatioB, box: 'B');
+      
+      // layoutType 결정
+      String layoutType;
+      if (_model.absellected || (appState.uploadImageB.isEmpty && appState.uploadTextB.isNotEmpty)) {
+        layoutType = 'single';
+      } else if (_model.isHorizontalLayout) {
+        layoutType = 'horizontal';
+      } else {
+        layoutType = 'vertical';
+      }
+          
+      DebugHelper.log('[_saveToFirestore] AspectRatio 정보:');
+      DebugHelper.log('  - A박스: $aspectRatioA');
+      DebugHelper.log('  - B박스: $aspectRatioB');
+      DebugHelper.log('  - 단일 이미지 모드: ${_model.absellected}');
+      DebugHelper.log('  - 레이아웃 타입: $layoutType');
+      
       // Posts 문서 생성
       final postsRecordData = {
         ...createPostsModelData(
@@ -718,11 +775,13 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
             'title': appState.uploadTextA,
             'mediaUrls': uploadedUrlsA,
             'mediaType': 'image',
+            'aspectRatio': aspectRatioA,
           },
           optionB: {
             'title': appState.uploadTextB,
             'mediaUrls': uploadedUrlsB,
             'mediaType': 'image',
+            'aspectRatio': aspectRatioB,
           },
           stats: {
             'voteCountA': 0,
@@ -739,6 +798,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         ),
         'description': appState.questionDescription,  // Firebase Functions를 위한 description 필드 추가
         'isNotificationEnabled': true,  // 알림 전송 활성화
+        'layoutType': layoutType,  // 레이아웃 타입 저장
       };
 
       // Firestore에 저장
@@ -857,6 +917,10 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   (Size, Size) _calculateBoxSizes(double? aspectRatioA, double? aspectRatioB, AppState appState) {
     // A 박스만 선택된 경우 (absellected가 true일 때만)
     if (_model.absellected) {
+      DebugHelper.logLayout('[Debug] ========== 단일 이미지 모드 크기 계산 ==========');
+      DebugHelper.logLayout('[Debug] aspectRatioA: $aspectRatioA');
+      DebugHelper.logLayout('[Debug] 이미지 있음: ${appState.tempImageFilesA.isNotEmpty}');
+      
       final size = DynamicBoxCalculator.getBoxSize(
         context: context,
         layoutType: LayoutType.single,
@@ -865,6 +929,8 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         hasOtherBox: false,
       );
       
+      DebugHelper.logLayout('[Debug] 계산된 박스 크기: ${size.width} x ${size.height}');
+      DebugHelper.logLayout('[Debug] ========== 계산 완료 ==========');
       return (size, size);
     }
     
@@ -1020,16 +1086,25 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         }
         
         // 현재 레이아웃에 따른 비율 계산 (매 빌드마다 계산하지 않음)
-        final currentAspectRatioA = _model.currentLayout != LayoutType.horizontal && 
+        // 단일 이미지 모드이거나 세로 레이아웃일 때 비율 계산
+        final currentAspectRatioA = (_model.absellected || _model.currentLayout != LayoutType.horizontal) && 
             appState.tempImageFilesA.isNotEmpty && 
             appState.uploadImageAspectRatioA.isNotEmpty 
                 ? RatioCalculator.getRatio(appState.uploadImageAspectRatioA, box: 'A')
                 : null;
-        final currentAspectRatioB = _model.currentLayout != LayoutType.horizontal && 
+        // absellected가 true이면 B박스의 비율은 계산하지 않음
+        final currentAspectRatioB = !_model.absellected &&
+            _model.currentLayout != LayoutType.horizontal && 
             appState.tempImageFilesB.isNotEmpty && 
             appState.uploadImageAspectRatioB.isNotEmpty 
                 ? RatioCalculator.getRatio(appState.uploadImageAspectRatioB, box: 'B')
                 : null;
+        
+        DebugHelper.logLayout('[Debug] Consumer에서 aspectRatio 계산:');
+        DebugHelper.logLayout('  - currentAspectRatioA: $currentAspectRatioA');
+        DebugHelper.logLayout('  - currentAspectRatioB: $currentAspectRatioB');
+        DebugHelper.logLayout('  - absellected: ${_model.absellected}');
+        DebugHelper.logLayout('  - currentLayout: ${_model.currentLayout}');
         
         final boxSizes = _calculateBoxSizes(currentAspectRatioA, currentAspectRatioB, appState);
         
@@ -1239,6 +1314,11 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     required AppState appState,
     Animation<double>? shakeAnimation,
   }) {
+    // 디버그 로그 추가
+    if (_model.absellected && box == 'A') {
+      DebugHelper.logLayout('[Debug] 단일 이미지 모드 - MediaSelectionBox 높이: $height');
+    }
+    
     final callbacks = MediaBoxCallbacks(
       context: context,
       model: _model,

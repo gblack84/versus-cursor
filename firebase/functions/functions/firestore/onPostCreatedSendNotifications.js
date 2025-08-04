@@ -37,11 +37,12 @@ exports.onPostCreatedSendNotifications = functions
       const voteEndTime = new Date(now + 10 * 60 * 1000); // 10분 후
       
       // 게시물에 타이머 정보 업데이트
+      // PostsModel은 snake_case로 필드를 저장함
       await snap.ref.update({
-        voteStartTime: admin.firestore.Timestamp.fromDate(voteStartTime),
-        voteEndTime: admin.firestore.Timestamp.fromDate(voteEndTime),
-        voteStatus: 'active',
-        voteCompleted: false
+        vote_start_time: admin.firestore.Timestamp.fromDate(voteStartTime),
+        vote_end_time: admin.firestore.Timestamp.fromDate(voteEndTime),
+        vote_status: 'active',
+        vote_completed: false
       });
       
       // 작성자에게 AI 채팅 메시지 생성

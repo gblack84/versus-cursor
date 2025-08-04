@@ -1,6 +1,8 @@
-# Services Layer
+# Flutter Services Layer Documentation
 
-## 개요
+이 디렉토리는 Versus Space 앱의 비즈니스 로직과 서비스 레이어를 담당합니다.
+
+## 📋 개요
 
 Versus Space 애플리케이션의 서비스 레이어로, 비즈니스 로직과 외부 서비스 통합을 담당합니다.
 
@@ -62,13 +64,35 @@ NotificationOverlay.hide();
   'content': {
     'title': String,
     'message': String,
-    'postData': {...}
+    'postData': {
+      'questionTitle': String,
+      'optionA': String,
+      'optionB': String,
+      'imageUrlA': String?,
+      'imageUrlB': String?,
+      'imageUrlsA': List<String>?,
+      'imageUrlsB': List<String>?,
+      'aspectRatioA': double?,     // v1.3.0: 이미지 비율 정보
+      'aspectRatioB': double?,     // v1.3.0: 이미지 비율 정보
+      'layoutType': String?,       // v1.3.0: 'horizontal', 'vertical', 'single'
+      'description': String?,
+      'authorName': String
+    }
   },
   'created_at': Timestamp,
   'read': bool,
   'expiry_time': Timestamp
 }
 ```
+
+#### 알림 데이터 플로우 (v1.3.0)
+1. **알림 생성 시점**: Firebase Functions에서 기본 알림 데이터 생성
+2. **클라이언트 수신**: NotificationService가 알림 감지
+3. **데이터 보강**: 
+   - content가 불완전한 경우 posts 컬렉션에서 직접 조회
+   - optionA/optionB Map에서 aspectRatio, mediaUrls 추출
+   - layoutType 정보 추가
+4. **UI 표시**: NotificationOverlay → VotingNotificationDialog로 전달
 
 ### 2. TargetAudienceService
 
@@ -387,6 +411,50 @@ testWidgets('게시물 작성 플로우', (tester) async {
 2. **입력 검증**: 모든 사용자 입력 검증
 3. **권한 확인**: 작업 전 권한 검증
 4. **데이터 암호화**: 민감한 데이터 암호화
+
+## 최근 변경사항
+
+### 2025-08-04: 스마트 레이아웃 시스템 통합
+**작업 내용**: 
+- NotificationService에 aspectRatio와 layoutType 데이터 전달 로직 추가
+- posts 컬렉션에서 optionA/optionB Map 구조로 데이터 추출
+- NotificationOverlay에 aspectRatio 파라미터 추가
+- VotingNotificationDialog에서 VersusBoxSizeData 자동 생성
+
+**해결된 문제**:
+- 질문 작성 시 세로 배치였던 콘텐츠가 알림에서 가로로 표시되는 문제
+- aspectRatio null로 인한 기본 레이아웃 적용 문제
+- 스마트 레이아웃 시스템이 알림에서 작동하지 않던 문제
+
+### 2025-08-03: AI 채팅 메시지 통합
+**문제**: Android와 Web에서 AI 채팅 메시지가 표시되지 않음 (iOS는 정상)
+
+**원인**: 
+- Firebase Functions의 채팅방 ID 생성 로직 문제
+- JavaScript `.sort()` 함수가 대소문자에 따라 다른 순서로 정렬
+- 결과적으로 일부 사용자는 잘못된 채팅방 ID를 가짐
+
+**해결**:
+1. Firebase Functions `aiChatService.js` 수정
+   - 채팅방 ID를 `ai_assistant_userId` 형식으로 고정
+2. 기존 채팅방 마이그레이션 함수 추가
+3. Flutter 쿼리는 이미 올바르게 작성되어 있음:
+   ```dart
+   .where('participantIds', arrayContains: currentUserId)
+   ```
+
+### 투표 권한 문제 해결
+**문제**: 투표 시 permission-denied 오류 발생
+
+**원인**: votedUserIDsA/B 필드가 없는 새 게시물에서 보안 규칙 실패
+
+**해결**: Firebase Security Rules 수정으로 필드 존재 여부 확인 추가
+
+### 알림 시스템 개선
+- GlobalNotificationManager 추가로 알림 큐 관리
+- 모달 다이얼로그 UI로 전환 (92% 화면 너비)
+- 멀티이미지 지원 추가
+- 박스 크기 평균화로 일관된 UI
 
 ## 향후 계획
 

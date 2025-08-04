@@ -12,6 +12,8 @@ const { moderateImage } = require('./functions/storage/moderateImage');
 // HTTPS 함수
 const { checkImageContent } = require('./functions/https/checkImageContent');
 const { validatePostContentWithGemini } = require('./functions/https/validatePostContentWithGemini');
+const { testCreateAIChatMessage } = require('./functions/https/testCreateAIChatMessage');
+const { migrateAIChatRooms } = require('./functions/https/migrateAIChatRooms');
 
 // Firestore 함수
 const { onPostCreatedSendNotifications } = require('./functions/firestore/onPostCreatedSendNotifications');
@@ -19,7 +21,6 @@ const { onPostVoteUpdate } = require('./functions/firestore/onPostVoteUpdate');
 
 // Scheduled 함수
 const { flushThrottleQueue } = require('./functions/scheduled/flushThrottleQueue');
-const { checkVoteTimeouts } = require('./functions/scheduled/checkVoteTimeouts');
 
 // 기존 함수들 (아직 이동되지 않은 경우 - 향후 제거 예정)
 const { getUserPostingHistory } = require('./ai/userHistoryAnalyzer');
@@ -35,6 +36,8 @@ module.exports = {
   // HTTPS
   checkImageContent,
   validatePostContentWithGemini,
+  testCreateAIChatMessage,
+  migrateAIChatRooms,
   
   // Firestore
   onPostCreatedSendNotifications,
@@ -42,7 +45,6 @@ module.exports = {
   
   // Scheduled
   flushThrottleQueue,
-  checkVoteTimeouts,
   
   // AI (임시)
   getUserPostingHistory

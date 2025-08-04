@@ -4,11 +4,13 @@
 이 모듈은 Versus Space 앱의 핵심 기능인 이미지 기반 A/B 콘텐츠 생성을 담당합니다. 사용자가 두 개의 이미지(A vs B)를 선택, 편집, 업로드하고 텍스트 설명을 추가하여 게시물을 작성할 수 있습니다.
 
 ## 주요 기능 (Key Features)
-- 📸 **멀티 이미지 선택**: wechat_assets_picker를 이용한 갤러리 접근
+- 📸 **멀티 이미지 선택**: wechat_assets_picker를 이용한 갤러리 접근 (최대 4개)
 - ✏️ **이미지 편집**: ProImageEditor를 통한 고급 편집 기능
 - 🔄 **스마트 레이아웃**: 이미지 비율에 따른 자동 레이아웃 조정
-- 🛡️ **콘텐츠 검열**: Cloud Vision API와 Perspective API를 통한 이미지/텍스트 검열
+- 🛡️ **AI 콘텐츠 검열**: Gemini AI, Cloud Vision API, Perspective API를 통한 다단계 검열
 - 💾 **Firebase 통합**: Storage에 이미지 업로드 및 Firestore 데이터 저장
+- 🎯 **타겟 오디언스**: AI 기반 사용자 매칭 및 타겟팅
+- 🔔 **실시간 알림**: 투표 요청 알림 시스템
 
 ## 디렉토리 구조 (Directory Structure)
 
@@ -59,10 +61,19 @@ in_put_post_image/
 편집 완료 → 재업로드 → 검열 → UI 업데이트
 ```
 
-### 3. 검열 프로세스
-- **이미지**: Cloud Vision API → 선정성, 폭력성 등 체크
-- **텍스트**: Perspective API → 유해성 점수 분석
-- **결과 처리**: 거부 시 구체적인 이유 표시
+### 3. AI 검열 프로세스 (다단계)
+- **1단계 - 이미지**: Cloud Vision API → 선정성, 폭력성 등 체크
+- **2단계 - AI 검증**: Gemini AI → 논리성, 적절성 검증
+- **3단계 - 텍스트**: Perspective API → 유해성 점수 분석
+- **결과 처리**: 거부 시 구체적인 이유 표시 (한국어)
+
+### 4. 게시물 생성 및 알림 플로우
+```
+다음 버튼 클릭 → 이미지 업로드 + AI 검증 → 
+타겟 오디언스 설정 → Firestore 저장 → 
+Cloud Functions 트리거 → AI 사용자 매칭 → 
+알림 생성 및 전송
+```
 
 ## 주요 상호작용 (Key Interactions)
 
@@ -107,9 +118,38 @@ in_put_post_image/
 2. **비동기 처리**: 업로드/검열은 시간이 걸리므로 로딩 상태 관리 필수
 3. **에러 처리**: 네트워크 오류, 검열 실패 등 다양한 시나리오 고려
 4. **메모리 관리**: 대용량 이미지 처리 시 메모리 누수 주의
+5. **AI 검열**: 토큰 사용량 모니터링 및 비용 관리
+6. **타겟팅**: 개인정보 보호 및 타겟 정확도 균형
+
+## 최근 주요 업데이트
+
+### 2025-07-15~16: AI 검열 시스템 고도화
+- Gemini AI API 통합으로 콘텐츠 적절성 검증
+- Genkit Framework 도입으로 AI 시스템 통합 관리
+- 다단계 검열 프로세스 구축 (이미지 → AI → 텍스트)
+- 토큰 사용량 추적 시스템 구현
+
+### 2025-07-13: 대규모 코드베이스 최적화
+- 10단계 체계적 리팩토링 완료
+- 메모리 누수 수정 및 성능 최적화
+- 컴포넌트 분리 및 재사용성 향상
+- 중앙 집중식 상수 관리 시스템 구축
+
+### 2025-07-14: 텍스트 필드 UI/UX 개선
+- 중앙 집중식 필드 스타일 관리 (FieldStyles)
+- 실시간 문자 카운터 개선
+- 유효성 검사 UX 향상
+
+### 2025-07-09: 스마트 레이아웃 시스템
+- 이미지 비율 자동 분석
+- 동적 박스 크기 계산
+- 가로/세로 레이아웃 자동 전환
 
 ## 관련 문서
 - [Components 상세 문서](./components/README.md)
 - [Services 상세 문서](./services/README.md)
 - [Helpers 상세 문서](./helpers/README.md)
 - [Widgets 상세 문서](./widgets/README.md)
+- [Constants 상세 문서](./constants/README.md)
+- [Delegates 상세 문서](./delegates/README.md)
+- [Utils 상세 문서](./utils/README.md)

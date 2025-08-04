@@ -39,20 +39,31 @@ async function sendSmartNotifications(postId, postData) {
     
     // 2. 타겟 사용자 매칭
     const matchedUsers = await matchTargetUsers(postData.targetAudience, postData);
-    results.matchedUsers = matchedUsers.length;
     
-    if (matchedUsers.length === 0) {
-      console.log('[알림 서비스] 매칭된 사용자 없음');
+    // 3. 작성자 제외 필터링
+    const creatorId = postData.uid || postData.userid;
+    const filteredUsers = matchedUsers.filter(user => {
+      const isCreator = user.id === creatorId;
+      if (isCreator) {
+        console.log(`[알림 서비스] 작성자 제외: ${user.id}`);
+      }
+      return !isCreator;
+    });
+    
+    results.matchedUsers = filteredUsers.length;
+    
+    if (filteredUsers.length === 0) {
+      console.log('[알림 서비스] 매칭된 사용자 없음 (작성자 제외 후)');
       return results;
     }
     
-    console.log(`[알림 서비스] ${matchedUsers.length}명의 사용자 매칭됨`);
+    console.log(`[알림 서비스] ${filteredUsers.length}명의 사용자 매칭됨 (작성자 제외)`);
     
-    // 3. 알림 생성
-    await createNotificationsForUsers(matchedUsers, postId, postData);
+    // 4. 알림 생성
+    await createNotificationsForUsers(filteredUsers, postId, postData);
     
     results.success = true;
-    results.notificationsSent = matchedUsers.length;
+    results.notificationsSent = filteredUsers.length;
     
     return results;
     

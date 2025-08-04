@@ -180,16 +180,7 @@ class VotingNotificationConstraints {
   /// [containerWidth] 컨테이너 너비
   /// 반환값: 레이아웃 변환 필요 여부
   static bool shouldConvertLayout(String originalLayout, double containerWidth) {
-    // 세로 배치는 공간 절약을 위해 항상 가로 배치로 변환
-    if (originalLayout == 'vertical') {
-      return true;
-    }
-    
-    // 작은 화면에서는 단일 이미지도 A+빈B 형태로 변환
-    if (originalLayout == 'single' && containerWidth < mediumScreenThreshold) {
-      return true;
-    }
-    
+    // 자동 변환 비활성화 - 원본 레이아웃을 그대로 유지
     return false;
   }
   

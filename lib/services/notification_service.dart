@@ -256,17 +256,27 @@ class NotificationService {
           });
           
           // posts 컬렉션의 데이터 구조에 맞춰 파싱
+          debugPrint('[NotificationService] optionA 데이터: ${postData['optionA']}');
+          debugPrint('[NotificationService] optionB 데이터: ${postData['optionB']}');
+          
+          // optionA와 optionB에서 데이터 추출
+          final optionAData = postData['optionA'] as Map<String, dynamic>?;
+          final optionBData = postData['optionB'] as Map<String, dynamic>?;
+          
           content = {
             'title': 'Pikle 도착!',
             'message': '새로운 투표 요청이 도착했습니다',
             'postData': {
               'questionTitle': postData['question_title'] ?? postData['questionTitle'] ?? '',
-              'optionA': postData['option_a'] is Map ? postData['option_a']['text'] ?? '' : postData['option_a'] ?? '',
-              'optionB': postData['option_b'] is Map ? postData['option_b']['text'] ?? '' : postData['option_b'] ?? '',
-              'imageUrlA': postData['option_a'] is Map ? postData['option_a']['imageUrl'] : postData['imageUrlA'],
-              'imageUrlB': postData['option_b'] is Map ? postData['option_b']['imageUrl'] : postData['imageUrlB'],
-              'imageUrlsA': postData['option_a'] is Map ? postData['option_a']['imageUrls'] : postData['imageUrlsA'],
-              'imageUrlsB': postData['option_b'] is Map ? postData['option_b']['imageUrls'] : postData['imageUrlsB'],
+              'optionA': optionAData?['title'] ?? postData['option_a'] ?? '',
+              'optionB': optionBData?['title'] ?? postData['option_b'] ?? '',
+              'imageUrlA': optionAData?['mediaUrls']?.isNotEmpty == true ? optionAData!['mediaUrls'][0] : postData['imageUrlA'],
+              'imageUrlB': optionBData?['mediaUrls']?.isNotEmpty == true ? optionBData!['mediaUrls'][0] : postData['imageUrlB'],
+              'imageUrlsA': optionAData?['mediaUrls'] ?? postData['imageUrlsA'],
+              'imageUrlsB': optionBData?['mediaUrls'] ?? postData['imageUrlsB'],
+              'aspectRatioA': optionAData?['aspectRatio'],
+              'aspectRatioB': optionBData?['aspectRatio'],
+              'layoutType': postData['layoutType'] ?? (optionBData == null ? 'single' : 'horizontal'),
               'description': postData['description'] ?? postData['descriptionA'] ?? postData['descriptionB'],
               'authorName': postData['author_name'] ?? postData['authorName'] ?? postData['author_display_name'] ?? 'Anonymous',
             }
@@ -330,6 +340,16 @@ class NotificationService {
       imageUrlsB = (postData['imageUrlsB'] as List).map((e) => e.toString()).toList();
     }
     
+    // aspectRatio와 layoutType 추출
+    final aspectRatioA = postData['aspectRatioA'] as double?;
+    final aspectRatioB = postData['aspectRatioB'] as double?;
+    final layoutType = postData['layoutType'] as String?;
+    
+    debugPrint('[NotificationService] 레이아웃 정보:');
+    debugPrint('[NotificationService]   - aspectRatioA: $aspectRatioA');
+    debugPrint('[NotificationService]   - aspectRatioB: $aspectRatioB');
+    debugPrint('[NotificationService]   - layoutType: $layoutType');
+    
     // 알림 표시
     NotificationOverlay.showVoting(
       context,
@@ -342,6 +362,9 @@ class NotificationService {
       imageUrlsB: imageUrlsB,
       description: postData['description'],
       authorName: postData['authorName'],
+      aspectRatioA: aspectRatioA,
+      aspectRatioB: aspectRatioB,
+      layoutType: layoutType,
       onVote: (option) {
         debugPrint('[NotificationService] 사용자가 투표함: $option');
         return _handleVote(

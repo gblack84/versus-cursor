@@ -109,22 +109,7 @@ class ResponsiveBreakpoints {
     switch (deviceType) {
       case DeviceType.mobileSmall:
       case DeviceType.mobile:
-        return 100.0;
-      case DeviceType.mobileLarge:
-        return 120.0;
-      case DeviceType.tablet:
-        return 140.0;
-      case DeviceType.desktop:
-      case DeviceType.desktopLarge:
-        return 160.0;
-    }
-  }
-  
-  static double _getExpandedImageHeight(DeviceType deviceType) {
-    switch (deviceType) {
-      case DeviceType.mobileSmall:
-      case DeviceType.mobile:
-        return 180.0;
+        return 200.0;
       case DeviceType.mobileLarge:
         return 200.0;
       case DeviceType.tablet:
@@ -135,18 +120,33 @@ class ResponsiveBreakpoints {
     }
   }
   
+  static double _getExpandedImageHeight(DeviceType deviceType) {
+    switch (deviceType) {
+      case DeviceType.mobileSmall:
+      case DeviceType.mobile:
+        return 300.0;
+      case DeviceType.mobileLarge:
+        return 300.0;
+      case DeviceType.tablet:
+        return 360.0;
+      case DeviceType.desktop:
+      case DeviceType.desktopLarge:
+        return 420.0;
+    }
+  }
+  
   static double _getBaseTextHeight(DeviceType deviceType) {
     switch (deviceType) {
       case DeviceType.mobileSmall:
       case DeviceType.mobile:
-        return 70.0;
+        return 140.0;  // 이미지의 70% (200 * 0.7)
       case DeviceType.mobileLarge:
-        return 80.0;
+        return 140.0;
       case DeviceType.tablet:
-        return 90.0;
+        return 168.0;  // 240 * 0.7
       case DeviceType.desktop:
       case DeviceType.desktopLarge:
-        return 100.0;
+        return 196.0;  // 280 * 0.7
     }
   }
   
@@ -154,14 +154,14 @@ class ResponsiveBreakpoints {
     switch (deviceType) {
       case DeviceType.mobileSmall:
       case DeviceType.mobile:
-        return 100.0;
+        return 210.0;  // 확장 시 약간 더 크게 (300 * 0.7)
       case DeviceType.mobileLarge:
-        return 120.0;
+        return 210.0;
       case DeviceType.tablet:
-        return 140.0;
+        return 252.0;  // 360 * 0.7
       case DeviceType.desktop:
       case DeviceType.desktopLarge:
-        return 160.0;
+        return 294.0;  // 420 * 0.7
     }
   }
 }

@@ -372,11 +372,21 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
               description: description,
               optionAText: metadata['optionAText'] ?? '',
               optionBText: metadata['optionBText'] ?? '',
-              optionAImage: metadata['optionAImage'],
-              optionBImage: metadata['optionBImage'],
+              optionAImage: metadata['optionAImage']?.isNotEmpty == true ? metadata['optionAImage'] : null,
+              optionBImage: metadata['optionBImage']?.isNotEmpty == true ? metadata['optionBImage'] : null,
+              imageUrlsA: imagesA ?? (metadata['optionAImages'] != null 
+                  ? List<String>.from(metadata['optionAImages']) 
+                  : null),
+              imageUrlsB: imagesB ?? (metadata['optionBImages'] != null 
+                  ? List<String>.from(metadata['optionBImages']) 
+                  : null),
+              votePercentageA: metadata['votePercentageA'] as double?,
+              votePercentageB: metadata['votePercentageB'] as double?,
+              voteCountA: metadata['voteCountA'] as int?,
+              voteCountB: metadata['voteCountB'] as int?,
               aspectRatioA: aspectRatioA != null ? aspectRatioA.toDouble() : null,
               aspectRatioB: aspectRatioB != null ? aspectRatioB.toDouble() : null,
-              voteStatus: messageData?['vote_status'] ?? 'pending',
+              voteStatus: messageData?['card_status'] ?? messageData?['vote_status'] ?? metadata['cardStatus'] ?? 'pending',
               isMe: message.author.id == _currentUser.id,
               timestamp: DateTime.fromMillisecondsSinceEpoch(message.createdAt ?? 0),
               onTap: () {
@@ -409,8 +419,8 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
               description: description,
               optionAText: metadata['optionAText'] ?? '',
               optionBText: metadata['optionBText'] ?? '',
-              optionAImage: metadata['optionAImage'],
-              optionBImage: metadata['optionBImage'],
+              optionAImage: metadata['optionAImage']?.isNotEmpty == true ? metadata['optionAImage'] : null,
+              optionBImage: metadata['optionBImage']?.isNotEmpty == true ? metadata['optionBImage'] : null,
               optionAImages: messageData?['vote_option_a_images'] != null 
                   ? List<String>.from(messageData!['vote_option_a_images']) 
                   : null,
@@ -433,7 +443,12 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
                 'votesB': messageData?['vote_results_b'],
                 'percentageA': (messageData?['vote_percent_a'] as num?)?.toDouble(),
                 'percentageB': (messageData?['vote_percent_b'] as num?)?.toDouble(),
-              } : null,
+              } : (metadata['voteCountA'] != null ? {
+                'votesA': metadata['voteCountA'],
+                'votesB': metadata['voteCountB'],
+                'percentageA': metadata['votePercentageA'],
+                'percentageB': metadata['votePercentageB'],
+              } : null),
             );
           }
           

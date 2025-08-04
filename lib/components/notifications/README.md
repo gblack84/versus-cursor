@@ -36,6 +36,12 @@
 - **30초 자동 닫기 제거**: 사용자가 직접 선택할 때까지 대기
 - **배경 터치 방지**: 실수로 닫히지 않도록 보호
 
+### 6. 스마트 레이아웃 시스템 (v1.3.0 추가)
+- **AspectRatio 기반 자동 레이아웃**: 이미지 비율에 따라 최적의 레이아웃 자동 결정
+- **데이터 전달 체인**: 질문 작성 → Firestore → NotificationService → VotingNotificationDialog
+- **VersusBoxSizeData 자동 생성**: aspectRatio 정보로 자동 크기 계산
+- **layoutType 지원**: horizontal, vertical, single 레이아웃 타입 자동 전달
+
 ## 📁 파일 구조
 
 ```
@@ -318,6 +324,24 @@ final constrainedSize = VotingNotificationConstraints.constrainBoxSize(size, 1.0
 VotingSystemExample.showDebugVoting(context);
 ```
 
+### 6. 알림에서 레이아웃이 다르게 표시됨 (v1.3.0)
+```dart
+// 원인: aspectRatio 또는 layoutType 정보가 전달되지 않음
+// 해결 1: Firestore에 layoutType 저장 확인
+'layoutType': layoutType,  // 'horizontal', 'vertical', 'single'
+
+// 해결 2: NotificationService에서 aspectRatio 추출 확인
+final optionAData = postData['optionA'] as Map<String, dynamic>?;
+final aspectRatioA = optionAData?['aspectRatio'];
+
+// 해결 3: NotificationOverlay에 파라미터 전달 확인
+NotificationOverlay.showVoting(
+  aspectRatioA: aspectRatioA,
+  aspectRatioB: aspectRatioB,
+  layoutType: layoutType,
+);
+```
+
 #### 4. 텍스트가 잘림
 ```dart
 // 원인: 적응형 텍스트 크기가 너무 작게 계산됨
@@ -433,9 +457,10 @@ NotificationOverlay.showVoting(context, question: '질문', optionA: 'A', option
 
 ---
 
-**버전**: 1.2.0  
-**최종 업데이트**: 2025-07-25  
+**버전**: 1.3.0  
+**최종 업데이트**: 2025-08-04  
 **작성자**: SuperClaude Framework
 **변경사항**: 
 - v1.1.0 (2025-07-23): 멀티이미지 지원, 박스 크기 평균화, 모달 UI 개선
 - v1.2.0 (2025-07-25): 단일 이미지 모드 개선, 멀티이미지 뷰어 수정, 텍스트 크기 조정
+- v1.3.0 (2025-08-04): 스마트 레이아웃 시스템 통합, aspectRatio 데이터 전달 체인 구축

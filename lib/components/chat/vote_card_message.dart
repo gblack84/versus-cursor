@@ -6,6 +6,7 @@ import '/design_system/design_system.dart';
 import '/backend/backend.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/components/notifications/voting_notification_dialog.dart';
+import '/utils/responsive_breakpoints.dart';
 
 /// AI 피클 채팅에서 사용되는 투표 카드 메시지 위젯
 /// 4가지 상태를 지원: voting_request, in_progress, completed, not_participated
@@ -52,6 +53,28 @@ class VoteCardMessage extends StatefulWidget {
   final bool isMe;
   final DateTime? timestamp;
   final String messageType; // vote_request, vote_created
+
+  /// A박스의 이미지 URL 리스트 반환 (멀티이미지 우선, 없으면 단일 이미지)
+  List<String> get effectiveImageUrlsA {
+    if (optionAImages != null && optionAImages!.isNotEmpty) {
+      return optionAImages!;
+    }
+    if (optionAImage != null && optionAImage!.isNotEmpty) {
+      return [optionAImage!];
+    }
+    return [];
+  }
+  
+  /// B박스의 이미지 URL 리스트 반환 (멀티이미지 우선, 없으면 단일 이미지)
+  List<String> get effectiveImageUrlsB {
+    if (optionBImages != null && optionBImages!.isNotEmpty) {
+      return optionBImages!;
+    }
+    if (optionBImage != null && optionBImage!.isNotEmpty) {
+      return [optionBImage!];
+    }
+    return [];
+  }
 
   @override
   State<VoteCardMessage> createState() => _VoteCardMessageState();
@@ -225,6 +248,23 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
   }
   
   Widget _buildVersusBoxes() {
+    // 이미지 유무 확인
+    final bool hasImages = widget.optionAImage != null || widget.optionBImage != null ||
+        (widget.optionAImages != null && widget.optionAImages!.isNotEmpty) ||
+        (widget.optionBImages != null && widget.optionBImages!.isNotEmpty);
+    
+    // 반응형 높이 계산
+    final double boxHeight = ResponsiveBreakpoints.getVsBoxHeight(context, hasImages, false);
+    
+    // 단일 이미지 모드 체크 (B가 이미지 없이 텍스트만 있을 때)
+    final bool hasOnlyTextB = widget.effectiveImageUrlsB.isEmpty && widget.optionBText.isNotEmpty;
+    
+    if (hasOnlyTextB) {
+      // 단일 이미지 모드: 하나의 박스만 표시
+      return _buildSingleImageBox(boxHeight);
+    }
+    
+    // 일반 모드: 두 개의 박스 표시
     return Row(
       children: [
         Expanded(
@@ -237,6 +277,7 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
             isSelected: widget.voteChoice == 'A',
             votePercentage: widget.voteResults?['percentageA'],
             voteCount: widget.voteResults?['votesA'],
+            height: boxHeight,
           ),
         ),
         const SizedBox(width: VersusSpacing.xs),
@@ -258,6 +299,7 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
             isSelected: widget.voteChoice == 'B',
             votePercentage: widget.voteResults?['percentageB'],
             voteCount: widget.voteResults?['votesB'],
+            height: boxHeight,
           ),
         ),
       ],
@@ -273,12 +315,15 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
     bool isSelected = false,
     double? votePercentage,
     int? voteCount,
+    bool isSingleImageMode = false,
+    String? dualModeSecondTitle,
+    required double height,
   }) {
     final effectiveImageUrl = (images != null && images.isNotEmpty) ? images.first : imageUrl;
     final hasMultipleImages = (images != null && images.length > 1);
     
     return Container(
-      height: 100,
+      height: height,
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
@@ -365,23 +410,118 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  text,
-                  style: VersusTextStyles.bodySmall.copyWith(
-                    color: effectiveImageUrl != null ? Colors.white : color,
-                    fontWeight: FontWeight.w600,
-                    shadows: effectiveImageUrl != null
-                        ? [
-                            Shadow(
-                              color: Colors.black.withValues(alpha: 0.5),
-                              blurRadius: 4,
+                if (isSingleImageMode && dualModeSecondTitle != null) ...[
+                  // 단일 이미지 모드: A/B 타이틀 함께 표시
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // A 옵션
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
                             ),
-                          ]
-                        : null,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF6B6B).withValues(alpha: 0.8),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'A',
+                              style: VersusTextStyles.labelSmall.copyWith(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              text,
+                              style: VersusTextStyles.bodySmall.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withValues(alpha: 0.5),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      // B 옵션
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4ECDC4).withValues(alpha: 0.8),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'B',
+                              style: VersusTextStyles.labelSmall.copyWith(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              dualModeSecondTitle,
+                              style: VersusTextStyles.bodySmall.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withValues(alpha: 0.5),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                ] else ...[
+                  // 일반 모드: 각 옵션 텍스트만 표시
+                  Text(
+                    text,
+                    style: VersusTextStyles.bodySmall.copyWith(
+                      color: effectiveImageUrl != null ? Colors.white : color,
+                      fontWeight: FontWeight.w600,
+                      shadows: effectiveImageUrl != null
+                          ? [
+                              Shadow(
+                                color: Colors.black.withValues(alpha: 0.5),
+                                blurRadius: 4,
+                              ),
+                            ]
+                          : null,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
                 if (votePercentage != null && voteCount != null) ...[
                   const SizedBox(height: 2),
                   Container(
@@ -425,6 +565,23 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
             ),
         ],
       ),
+    );
+  }
+  
+  Widget _buildSingleImageBox(double height) {
+    // 단일 이미지 모드: B가 텍스트만 있을 때 하나의 박스에 A/B 모두 표시
+    return _buildOptionBox(
+      label: 'A',  // 라벨은 A로 표시하지만
+      text: widget.optionAText,
+      imageUrl: widget.optionAImage,
+      images: widget.optionAImages,
+      color: const Color(0xFFFF6B6B),
+      isSelected: widget.userVoted && widget.voteChoice == 'A',
+      votePercentage: widget.voteResults?['percentageA'],
+      voteCount: widget.voteResults?['votesA'],
+      isSingleImageMode: true,
+      dualModeSecondTitle: widget.optionBText,  // B 옵션 텍스트도 함께 전달
+      height: height,
     );
   }
   

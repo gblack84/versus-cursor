@@ -38,11 +38,7 @@ functions/
 
 ### scheduled/flushThrottleQueue.js
 - **스케줄**: 매 1분마다 실행
-- **기능**: 스로틀 큐 처리
-
-### scheduled/checkVoteTimeouts.js
-- **스케줄**: 매 시간 실행
-- **기능**: 24시간 경과 투표 타임아웃 처리
+- **기능**: 10분 타이머 만료된 투표 자동 완료 처리
 
 ## 함수 작성 가이드
 

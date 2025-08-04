@@ -15,8 +15,14 @@ class VoteRequestMessage extends StatefulWidget {
     required this.optionBText,
     this.optionAImage,
     this.optionBImage,
+    this.imageUrlsA,
+    this.imageUrlsB,
     this.aspectRatioA,
     this.aspectRatioB,
+    this.votePercentageA,
+    this.votePercentageB,
+    this.voteCountA,
+    this.voteCountB,
     required this.voteStatus,
     required this.isMe,
     required this.timestamp,
@@ -30,12 +36,40 @@ class VoteRequestMessage extends StatefulWidget {
   final String optionBText;
   final String? optionAImage;
   final String? optionBImage;
+  final List<String>? imageUrlsA;
+  final List<String>? imageUrlsB;
   final double? aspectRatioA;
   final double? aspectRatioB;
+  final double? votePercentageA;
+  final double? votePercentageB;
+  final int? voteCountA;
+  final int? voteCountB;
   final String voteStatus;
   final bool isMe;
   final DateTime? timestamp;
   final VoidCallback onTap;
+
+  /// A박스의 이미지 URL 리스트 반환 (멀티이미지 우선, 없으면 단일 이미지)
+  List<String> get effectiveImageUrlsA {
+    if (imageUrlsA != null && imageUrlsA!.isNotEmpty) {
+      return imageUrlsA!;
+    }
+    if (optionAImage != null && optionAImage!.isNotEmpty) {
+      return [optionAImage!];
+    }
+    return [];
+  }
+  
+  /// B박스의 이미지 URL 리스트 반환 (멀티이미지 우선, 없으면 단일 이미지)
+  List<String> get effectiveImageUrlsB {
+    if (imageUrlsB != null && imageUrlsB!.isNotEmpty) {
+      return imageUrlsB!;
+    }
+    if (optionBImage != null && optionBImage!.isNotEmpty) {
+      return [optionBImage!];
+    }
+    return [];
+  }
 
   @override
   State<VoteRequestMessage> createState() => _VoteRequestMessageState();
@@ -317,10 +351,18 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
     final baseHeight = ResponsiveBreakpoints.getVsBoxHeight(context, hasImages, false);
     final expandedHeight = ResponsiveBreakpoints.getVsBoxHeight(context, hasImages, true);
     
+    // 단일 이미지 모드 체크 (B가 이미지 없이 텍스트만 있을 때)
+    final bool hasOnlyTextB = widget.effectiveImageUrlsB.isEmpty && widget.optionBText.isNotEmpty;
+    
     return AnimatedBuilder(
       animation: Listenable.merge([_expandAnimation, _layoutTransitionAnimation]),
       builder: (context, child) {
         final height = baseHeight + (_expandAnimation.value * (expandedHeight - baseHeight));
+        
+        // 단일 이미지 모드일 때는 하나의 박스만 표시
+        if (hasOnlyTextB) {
+          return _buildSingleImageBox(height);
+        }
         
         // 레이아웃 전환 중인 경우
         if (_layoutTransitionController.isAnimating && _previousLayoutType != null) {
@@ -366,8 +408,16 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
               label: 'A',
               text: widget.optionAText,
               imageUrl: widget.optionAImage,
+              imageUrls: widget.effectiveImageUrlsA,
               color: const Color(0xFFFF6B6B),
               aspectRatio: widget.aspectRatioA,
+              votePercentage: widget.votePercentageA,
+              voteCount: widget.voteCountA,
+              isSelected: widget.voteStatus == 'completed' && widget.votePercentageA != null && 
+                         widget.votePercentageB != null && 
+                         widget.votePercentageA! > widget.votePercentageB!,
+              isSingleImageMode: false,
+              dualModeSecondTitle: null,
             ),
           ),
           const SizedBox(width: VersusSpacing.xs),
@@ -384,8 +434,16 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
               label: 'B',
               text: widget.optionBText,
               imageUrl: widget.optionBImage,
+              imageUrls: widget.effectiveImageUrlsB,
               color: const Color(0xFF4ECDC4),
               aspectRatio: widget.aspectRatioB,
+              votePercentage: widget.votePercentageB,
+              voteCount: widget.voteCountB,
+              isSelected: widget.voteStatus == 'completed' && widget.votePercentageA != null && 
+                         widget.votePercentageB != null && 
+                         widget.votePercentageB! > widget.votePercentageA!,
+              isSingleImageMode: false,
+              dualModeSecondTitle: null,
             ),
           ),
         ],
@@ -402,8 +460,16 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
             label: 'A',
             text: widget.optionAText,
             imageUrl: widget.optionAImage,
+            imageUrls: widget.effectiveImageUrlsA,
             color: const Color(0xFFFF6B6B),
             aspectRatio: widget.aspectRatioA,
+            votePercentage: widget.votePercentageA,
+            voteCount: widget.voteCountA,
+            isSelected: widget.voteStatus == 'completed' && widget.votePercentageA != null && 
+                       widget.votePercentageB != null && 
+                       widget.votePercentageA! > widget.votePercentageB!,
+            isSingleImageMode: false,
+            dualModeSecondTitle: null,
           ),
         ),
         const SizedBox(height: VersusSpacing.xs),
@@ -426,8 +492,16 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
             label: 'B',
             text: widget.optionBText,
             imageUrl: widget.optionBImage,
+            imageUrls: widget.effectiveImageUrlsB,
             color: const Color(0xFF4ECDC4),
             aspectRatio: widget.aspectRatioB,
+            votePercentage: widget.votePercentageB,
+            voteCount: widget.voteCountB,
+            isSelected: widget.voteStatus == 'completed' && widget.votePercentageA != null && 
+                       widget.votePercentageB != null && 
+                       widget.votePercentageB! > widget.votePercentageA!,
+            isSingleImageMode: false,
+            dualModeSecondTitle: null,
           ),
         ),
       ],
@@ -438,12 +512,23 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
     required String label,
     required String text,
     String? imageUrl,
+    List<String>? imageUrls,
     required Color color,
     double? aspectRatio,
+    double? votePercentage,
+    int? voteCount,
+    bool isSelected = false,
+    bool isSingleImageMode = false,
+    String? dualModeSecondTitle,
   }) {
+    // 멀티이미지 우선 사용
+    final effectiveImageUrl = (imageUrls != null && imageUrls.isNotEmpty) 
+        ? imageUrls.first : imageUrl;
+    final hasMultipleImages = (imageUrls != null && imageUrls.length > 1);
+    
     return Semantics(
       label: '옵션 $label: $text',
-      image: imageUrl != null,
+      image: effectiveImageUrl != null,
       button: false,
       child: AnimatedContainer(
       duration: const Duration(milliseconds: 400),
@@ -458,12 +543,12 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
       ),
       child: Stack(
         children: [
-          if (imageUrl != null && imageUrl.isNotEmpty)
+          if (effectiveImageUrl != null && effectiveImageUrl.isNotEmpty)
             Positioned.fill(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(7),
                 child: CachedNetworkImage(
-                  imageUrl: imageUrl,
+                  imageUrl: effectiveImageUrl,
                   fit: BoxFit.cover,
                   color: Colors.black.withValues(alpha: 0.3),
                   colorBlendMode: BlendMode.darken,
@@ -514,24 +599,152 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
             bottom: 4,
             left: 4,
             right: 4,
-            child: Text(
-              text,
-              style: VersusTextStyles.bodySmall.copyWith(
-                color: imageUrl != null ? Colors.white : color,
-                fontWeight: FontWeight.w600,
-                shadows: imageUrl != null
-                    ? [
-                        Shadow(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          blurRadius: 4,
-                        ),
-                      ]
-                    : null,
-              ),
-              maxLines: _isExpanded ? 4 : 2,
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isSingleImageMode && dualModeSecondTitle != null) ...[
+                  // 단일 이미지 모드: A/B 타이틀 함께 표시
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // A 옵션
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF6B6B).withValues(alpha: 0.8),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'A',
+                              style: VersusTextStyles.labelSmall.copyWith(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              text,
+                              style: VersusTextStyles.bodySmall.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      // B 옵션
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4ECDC4).withValues(alpha: 0.8),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'B',
+                              style: VersusTextStyles.labelSmall.copyWith(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              dualModeSecondTitle,
+                              style: VersusTextStyles.bodySmall.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  // 일반 모드: 각 옵션 텍스트만 표시
+                  Text(
+                    text,
+                    style: VersusTextStyles.bodySmall.copyWith(
+                      color: effectiveImageUrl != null ? Colors.white : color,
+                      fontWeight: FontWeight.w600,
+                      shadows: effectiveImageUrl != null
+                          ? [
+                              Shadow(
+                                color: Colors.black.withValues(alpha: 0.5),
+                                blurRadius: 4,
+                              ),
+                            ]
+                          : null,
+                    ),
+                    maxLines: _isExpanded ? 4 : 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
             ),
           ),
+          // 멀티이미지 인디케이터
+          if (hasMultipleImages)
+            Positioned(
+              top: 4,
+              right: 4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.photo_library,
+                      size: 12,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      '${imageUrls.length}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           // 확장 힌트
           if (!_isExpanded && (widget.optionAImage != null || widget.optionBImage != null))
             Positioned(
@@ -550,6 +763,47 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
                   Icons.zoom_out_map,
                   size: 12,
                   color: Colors.white.withValues(alpha: 0.8),
+                ),
+              ),
+            ),
+          // 투표 결과 표시
+          if (votePercentage != null && voteCount != null)
+            Positioned(
+              bottom: 24,
+              left: 4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  '${votePercentage.toInt()}% (${voteCount}명)',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          // 선택 표시
+          if (isSelected)
+            Positioned(
+              top: 4,
+              left: 4,
+              right: 4,
+              bottom: 4,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(7),
+                  border: Border.all(
+                    color: color,
+                    width: 2,
+                  ),
                 ),
               ),
             ),
@@ -635,5 +889,26 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
     } else {
       return '${difference.inDays}일 전';
     }
+  }
+
+  Widget _buildSingleImageBox(double height) {
+    // 단일 이미지 모드에서는 하나의 박스만 표시하고
+    // A/B 타이틀을 함께 표시 (B가 텍스트만 있을 때)
+    return SizedBox(
+      height: height,
+      child: _buildSmartOptionBox(
+        label: 'A',  // 라벨은 A로 표시하지만
+        text: widget.optionAText,
+        imageUrl: widget.optionAImage,
+        imageUrls: widget.effectiveImageUrlsA,
+        color: const Color(0xFFFF6B6B),
+        aspectRatio: widget.aspectRatioA,
+        votePercentage: widget.votePercentageA,
+        voteCount: widget.voteCountA,
+        isSelected: widget.voteStatus == 'completed',
+        isSingleImageMode: true,
+        dualModeSecondTitle: widget.optionBText,  // B 옵션 텍스트도 함께 전달
+      ),
+    );
   }
 }

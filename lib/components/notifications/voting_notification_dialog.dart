@@ -337,11 +337,43 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
     final bool hasBOption = widget.primaryImageUrlB != null || widget.optionB.isNotEmpty;
     final bool hasOnlyTextB = widget.primaryImageUrlB == null && widget.optionB.isNotEmpty;
     
+    // sizeData가 없고 aspectRatio가 있으면 생성
+    VersusBoxSizeData? effectiveSizeData = widget.sizeData;
+    if (effectiveSizeData == null && (widget.aspectRatioA != null || widget.aspectRatioB != null)) {
+      // aspectRatio 정보를 사용하여 VersusBoxSizeData 생성
+      final screenWidth = MediaQuery.of(context).size.width;
+      final screenHeight = MediaQuery.of(context).size.height;
+      final baseSize = Size(screenWidth * 0.7, screenHeight * 0.5);
+      
+      // 레이아웃 결정
+      LayoutType layoutType;
+      if (!hasBOption || hasOnlyTextB) {
+        layoutType = LayoutType.single;
+      } else if (widget.aspectRatioA != null && widget.aspectRatioB != null) {
+        layoutType = AspectRatioAnalyzer.getOptimalLayout(widget.aspectRatioA, widget.aspectRatioB);
+        print('[VotingNotificationDialog] AspectRatioAnalyzer 결과: $layoutType (A: ${widget.aspectRatioA}, B: ${widget.aspectRatioB})');
+      } else {
+        layoutType = LayoutType.horizontal;
+      }
+      
+      effectiveSizeData = VersusBoxSizeData(
+        layoutType: layoutType,
+        aspectRatioA: widget.aspectRatioA,
+        aspectRatioB: widget.aspectRatioB,
+        originalSizeA: baseSize,
+        originalSizeB: baseSize,
+        screenWidth: screenWidth,
+        createdAt: DateTime.now(),
+        hasImageA: widget.primaryImageUrlA != null,
+        hasImageB: widget.primaryImageUrlB != null,
+      );
+    }
+    
     // 단일 박스만 필요한 경우
     if (!hasBOption || hasOnlyTextB) {
       Widget boxWidget;
-      if (widget.sizeData != null) {
-        boxWidget = _buildSingleBox(widget.sizeData!);
+      if (effectiveSizeData != null) {
+        boxWidget = _buildSingleBox(effectiveSizeData);
       } else {
         boxWidget = _buildDefaultBoxes();
       }
@@ -360,14 +392,14 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
     
     // 두 박스 표시
     Widget boxesWidget;
-    if (widget.sizeData != null) {
+    if (effectiveSizeData != null) {
       print('[VotingNotificationDialog] buildBoxPair 호출 전 데이터 확인:');
       print('  - imageUrlsA 전달: ${widget.effectiveImageUrlsA.length}개');
       print('  - imageUrlsB 전달: ${widget.effectiveImageUrlsB.length}개');
       
       boxesWidget = VersusNotificationBoxBuilder.buildBoxPair(
         context: context,
-        sizeData: widget.sizeData!,
+        sizeData: effectiveSizeData,
         titleA: widget.optionA,
         titleB: widget.optionB,
         imageUrlA: widget.primaryImageUrlA,
@@ -482,15 +514,27 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
     final bool hasOnlyTextB = widget.primaryImageUrlB == null && widget.optionB.isNotEmpty;
     
     // 기본 사이즈 데이터 생성
-    // aspectRatio를 null로 설정하여 이미지의 원본 비율을 유지하도록 함
+    // aspectRatio를 전달받은 값이나 null로 설정
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final baseSize = Size(screenWidth * 0.7, screenHeight * 0.5);
     
+    // AspectRatioAnalyzer를 사용하여 최적 레이아웃 결정
+    LayoutType layoutType;
+    if (!hasBOption || hasOnlyTextB) {
+      layoutType = LayoutType.single;
+    } else if (widget.aspectRatioA != null && widget.aspectRatioB != null) {
+      // aspectRatio가 있으면 분석해서 결정
+      layoutType = AspectRatioAnalyzer.getOptimalLayout(widget.aspectRatioA, widget.aspectRatioB);
+      print('[VotingNotificationDialog] AspectRatioAnalyzer 결과: $layoutType');
+    } else {
+      layoutType = LayoutType.horizontal; // 기본값
+    }
+    
     final defaultSizeData = VersusBoxSizeData(
-      layoutType: hasBOption ? LayoutType.horizontal : LayoutType.single,
-      aspectRatioA: null,  // 이미지 원본 비율 사용
-      aspectRatioB: null,  // 이미지 원본 비율 사용
+      layoutType: layoutType,
+      aspectRatioA: widget.aspectRatioA,  // 전달받은 비율 사용
+      aspectRatioB: widget.aspectRatioB,  // 전달받은 비율 사용
       originalSizeA: baseSize,
       originalSizeB: baseSize,
       screenWidth: screenWidth,

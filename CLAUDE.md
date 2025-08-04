@@ -120,7 +120,7 @@
 
 ### Data Models (Firestore Collections)
 
-**Note**: Flutter 앱은 `_record` 접미사 없이 사용하지만, 일부 Flutter 코드에서는 아직 `_record` 참조가 남아있음
+**Note**: 모든 컬렉션은 `_record` 접미사 없이 사용됨 (2025-07-31 완전 마이그레이션 완료)
 
 **Core Collections:**
 - `users` - User profiles, settings, points, rankings, role (admin/tester)
@@ -184,16 +184,14 @@ algolia: ^1.1.1
 - **Services**: Authentication, Firestore, Storage, Functions, Hosting
 - **Web API Key**: Configured for web deployment
 - **Platform Support**: iOS, Android, Web with proper configuration files
-- **Cloud Functions** (11개 배포됨): 
+- **Cloud Functions** (10개 배포됨): 
   - onUserDeleted - Clean up user data
   - checkImageContent - Image moderation trigger
   - moderateImage - Vision API integration
   - validatePostContentWithGemini - AI content validation
   - onPostCreatedSendNotifications - Notification system trigger (posts collection)
   - getUserPostingHistory - User history analysis
-  - ~~testNotificationSystem~~ - 삭제됨 (2025-07-31)
   - onPostVoteUpdate - Vote update detection and completion
-  - processVoteCompletion - Automatic vote completion processing
   - flushThrottleQueue - Throttle queue processing (every 1 minute)
   - checkVoteTimeouts - Vote timeout checking (every hour)
 
@@ -1018,3 +1016,74 @@ if (model.isVideoSelectedA) {
   - 컬렉션 이름 불일치 문제 해결
   - 코드베이스 정리 및 구조 개선
   - Git 4개 커밋으로 변경사항 정리
+
+### 2025-08-03: Firebase Functions와 Flutter 모델 간 필드 불일치 완전 해결
+- **작업 내용**:
+  - Posts Model: 13개 투표 관련 필드 추가 (vote_start_time, vote_end_time, votes_a, votes_b 등)
+  - Messages Model: 9개 투표 카드 필드 추가 (receiver_id, vote_option_a_images[], card_status 등)
+  - Notifications Model: 9개 필드 추가 + JSON 파싱 로직 구현
+  - Users Model: 오타 수정 (frinds → friends, is_prmium_user → is_premium_user)
+  - 모든 모델에서 backward compatibility 유지 (@Deprecated 어노테이션 사용)
+- **해결된 기능**:
+  - 투표 시스템 완전 작동: 타이머, 상태 추적, 완료 처리
+  - 멀티이미지 지원: A/B 각각 여러 이미지 표시 가능
+  - AI 채팅 투표 카드: 상태 업데이트 및 결과 표시
+  - 구조화된 알림: 이미지, 액션 버튼 포함 풍부한 알림
+  - 중복 투표 방지: 투표자 ID 추적으로 완벽한 제어
+- **커밋**: 7b69d723, d6ea12f6
+
+### 2025-08-04: 투표 타이머 시스템 보안 강화 및 완성
+- **작업 내용**:
+  - Firebase Security Rules 대규모 업데이트:
+    - 투표 타이머 필드 추가: `voteStartTime`, `voteEndTime`, `voteStatus`, `voteCompleted`
+    - 알림 관련 필드 추가: `notificationsSent`, `notificationsSentAt`
+    - 중복 투표 방지 로직 개선 (필드 존재 여부 체크)
+    - AI 채팅 투표 시스템 완벽 지원
+  - 투표 시스템 개선:
+    - 10분 타이머 자동 완료 처리
+    - `flushThrottleQueue`: 매 1분마다 실행되는 스케줄 함수
+    - `checkVoteTimeouts`: 매 시간마다 실행되는 백업 체크
+    - 실시간 투표 상태 추적 및 알림
+  - Firebase Functions 활성화:
+    - 12개 활성 함수로 증가 (기존 9개)
+    - 투표 관련 함수 3개 추가 배포
+- **보안 개선사항**:
+  - 필드 존재 여부를 체크하여 안전한 투표 처리
+  - 타임스탬프 기반 중복 투표 방지
+  - 투표 상태 무결성 보장
+- **문서화**:
+  - [Firebase 보안 규칙 가이드](/firebase/SECURITY_RULES_UPDATE_GUIDE.md) 신규 작성
+  - 투표 타이머 시스템 아키텍처 문서 업데이트
+  - 전체 시스템 아키텍처 문서 (ARCHITECTURE.md) 작성
+- **결과**:
+  - 10분 투표 타이머 완벽 작동
+  - 실시간 투표 완료 처리
+  - 중복 투표 완전 차단
+  - AI 채팅과 투표 시스템 완벽 통합
+- **커밋**: 2388a3e6
+
+### 2025-08-04: 스마트 레이아웃 시스템 완성 및 알림 통합
+- **작업 내용**:
+  - NotificationService 데이터 전달 체인 구축:
+    - posts 컬렉션의 optionA/optionB Map에서 aspectRatio 추출
+    - layoutType 정보 추가 ('horizontal', 'vertical', 'single')
+    - NotificationOverlay에 aspectRatio 파라미터 추가
+  - VotingNotificationDialog 개선:
+    - aspectRatio 정보를 받아 VersusBoxSizeData 자동 생성
+    - AspectRatioAnalyzer로 최적 레이아웃 결정
+    - 기존 스마트 레이아웃 시스템과 완전 통합
+  - InPutPostImageWidget 수정:
+    - layoutType 정보 Firestore 저장 추가
+    - 질문 작성 시 레이아웃 타입 명시적 저장
+- **해결된 문제**:
+  - 세로 배치로 작성한 질문이 알림에서 가로로 표시되는 문제
+  - aspectRatio null로 인한 기본 레이아웃 적용 문제
+  - 알림 다이얼로그에서 스마트 레이아웃이 작동하지 않던 문제
+- **결과**:
+  - 질문 작성 시의 레이아웃이 알림에서도 동일하게 유지
+  - aspectRatio 기반 자동 레이아웃 시스템 완전 작동
+  - 일관된 사용자 경험 제공
+- **문서 업데이트**:
+  - lib/components/notifications/README.md: v1.3.0 업데이트
+  - lib/services/README.md: 알림 데이터 플로우 추가
+  - ARCHITECTURE.md: 스마트 레이아웃 시스템 다이어그램 추가

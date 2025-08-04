@@ -72,6 +72,9 @@ class NotificationOverlay {
     int? voteCountB,
     bool showDebugInfo = false,
     String? authorName,
+    double? aspectRatioA,
+    double? aspectRatioB,
+    String? layoutType,
   }) {
     debugPrint('[NotificationOverlay] ========== showVoting() 호출됨 ==========');
     debugPrint('[NotificationOverlay] 질문: $question');
@@ -132,6 +135,8 @@ class NotificationOverlay {
             voteCountB: voteCountB,
             showDebugInfo: showDebugInfo,
             authorName: authorName,
+            aspectRatioA: aspectRatioA,
+            aspectRatioB: aspectRatioB,
         ),
       ),
     );

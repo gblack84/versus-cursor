@@ -32,6 +32,16 @@ class ChatMessageConverter {
           'optionBText': firestoreMessage.voteOptionBText,
           'optionAImage': firestoreMessage.voteOptionAImage,
           'optionBImage': firestoreMessage.voteOptionBImage,
+          // 멀티이미지 지원
+          'optionAImages': firestoreMessage.voteOptionAImages,
+          'optionBImages': firestoreMessage.voteOptionBImages,
+          // 투표 결과 데이터
+          'votePercentageA': firestoreMessage.voteResults['percentageA'],
+          'votePercentageB': firestoreMessage.voteResults['percentageB'],
+          'voteCountA': firestoreMessage.voteResults['votesA'],
+          'voteCountB': firestoreMessage.voteResults['votesB'],
+          // 카드 상태
+          'cardStatus': firestoreMessage.cardStatus,
           'voteStatus': firestoreMessage.voteStatus,
         },
       );

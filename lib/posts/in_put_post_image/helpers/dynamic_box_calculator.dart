@@ -60,15 +60,23 @@ class DynamicBoxCalculator {
     if (box == 'A') {
       final boxWidth = screenWidth - padding * 2;
       
+      print('[DynamicBoxCalculator] getSingleBoxSize:');
+      print('  - screenWidth: $screenWidth');
+      print('  - boxWidth: $boxWidth');
+      print('  - aspectRatio: $aspectRatio');
+      
       if (aspectRatio == null) {
+        print('  - aspectRatio가 null이므로 기본 높이 사용: $defaultHeightSingle');
         return Size(boxWidth, defaultHeightSingle);
       }
       
       // 이미지 비율에 맞춰 높이 계산
       double height = boxWidth / aspectRatio;
+      print('  - 계산된 초기 높이: $height');
       
       // 단일 이미지는 좀 더 큰 높이 허용
       height = height.clamp(minHeightHorizontal, maxHeightHorizontal * 1.2);
+      print('  - 제한 적용 후 높이: $height (최소: $minHeightHorizontal, 최대: ${maxHeightHorizontal * 1.2})');
       
       return Size(boxWidth, height);
     }
@@ -85,6 +93,12 @@ class DynamicBoxCalculator {
     double? aspectRatio,
     bool hasOtherBox = true,
   }) {
+    print('[DynamicBoxCalculator] getBoxSize 호출:');
+    print('  - layoutType: $layoutType');
+    print('  - box: $box');
+    print('  - aspectRatio: $aspectRatio');
+    print('  - hasOtherBox: $hasOtherBox');
+    
     // 단일 이미지 레이아웃
     if (layoutType == LayoutType.single || !hasOtherBox) {
       return getSingleBoxSize(context, aspectRatio, box);

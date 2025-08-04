@@ -142,8 +142,22 @@ async function createNotificationsForUsers(users, postId, postData) {
       // AI 채팅 메시지 생성 (모든 타겟 타입에 대해)
       console.log('[알림 생성] AI 채팅 메시지 생성 시작...');
       
-      // 각 대상 사용자에 대해 AI 채팅 메시지 생성
-      const chatPromises = users.map(async (user) => {
+      // 작성자 ID 가져오기
+      const creatorId = postData.uid || postData.userid;
+      console.log(`[알림 생성] 작성자 ID: ${creatorId}`);
+      console.log(`[알림 생성] 대상 사용자 수: ${users.length}`);
+      console.log(`[알림 생성] 대상 사용자 IDs:`, users.map(u => u.id));
+      
+      // 각 대상 사용자에 대해 AI 채팅 메시지 생성 (작성자 제외)
+      const chatPromises = users
+        .filter(user => {
+          const shouldExclude = user.id === creatorId || user.id === postData.uid || user.id === postData.userid;
+          if (shouldExclude) {
+            console.log(`[알림 생성] 작성자 제외됨: ${user.id}`);
+          }
+          return !shouldExclude;
+        })  // 작성자는 제외
+        .map(async (user) => {
         try {
           // optionA/optionB가 Map 구조인지 확인하고 처리
           let optionATitle = '';
@@ -176,7 +190,7 @@ async function createNotificationsForUsers(users, postId, postData) {
             imageUrlA: imageUrlsA.length > 0 ? imageUrlsA[0] : (postData.image_url_a || postData.imageUrlA),
             imageUrlB: imageUrlsB.length > 0 ? imageUrlsB[0] : (postData.image_url_b || postData.imageUrlB),
             imageUrlsA: imageUrlsA.length > 0 ? imageUrlsA : (postData.image_urls_a || postData.imageUrlsA || []),
-            imageUrlsB: imageUrlsB.length > 0 ? imageUrlsB : (postData.image_urls_b || postData.imageUrlsB || []),
+            imageUrlsB: imageUrlsB.length > 0 ? imageUrlsB : (postData.image_urls_b || postData.imageUrlB || []),
             description: postData.description || ''
           });
           console.log(`[알림 생성] AI 채팅 메시지 생성 완료: ${user.displayName || user.id}`);
@@ -186,7 +200,7 @@ async function createNotificationsForUsers(users, postId, postData) {
       });
       
       await Promise.all(chatPromises);
-      console.log('[알림 생성] ✅ 모든 AI 채팅 메시지 생성 완료');
+      console.log(`[알림 생성] ✅ 모든 AI 채팅 메시지 생성 완료 (작성자 제외): ${chatPromises.length}개`);
       
     } catch (error) {
       console.error('[알림 생성] ❌ 배치 커밋 중 오류 발생:', error);

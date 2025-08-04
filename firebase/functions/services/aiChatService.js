@@ -16,7 +16,8 @@ const AI_ASSISTANT_NAME = 'AI 피클';
  * @returns {string} 채팅방 ID
  */
 function getAIChatId(userId) {
-  return [AI_ASSISTANT_ID, userId].sort().join('_');
+  // AI 채팅방은 항상 'ai_assistant_userId' 형식으로 고정
+  return `${AI_ASSISTANT_ID}_${userId}`;
 }
 
 /**
@@ -108,12 +109,14 @@ async function createVoteCreatedMessage(userId, postId, postData) {
   const messageId = uuidv4();
   const now = admin.firestore.Timestamp.now();
   
+  console.log(`[AI 채팅] createVoteCreatedMessage 시작: userId=${userId}, chatId=${chatId}`);
+  
   const messageData = {
     // 기본 메시지 정보
     message_id: messageId,
-    sender_id: AI_ASSISTANT_ID,
-    receiver_id: userId,
-    content: '피클이 생성되었어요! 10분 후에 결과가 공개됩니다.',
+    sender_id: userId,
+    receiver_id: AI_ASSISTANT_ID,
+    content: '새로운 질문을 만들었어요! AI의 의견을 들어볼까요?',
     time_stamp: now,
     is_read: false,
     
@@ -169,7 +172,14 @@ async function createVoteCreatedMessage(userId, postId, postData) {
   // 메시지 생성
   await chatRef.collection('messages').doc(messageId).set(messageData);
   
-  console.log(`[AI 채팅] 투표 생성 메시지 생성: userId=${userId}, messageId=${messageId}`);
+  console.log(`[AI 채팅] 투표 생성 메시지 생성 완료:`);
+  console.log(`  - userId=${userId}`);
+  console.log(`  - messageId=${messageId}`);
+  console.log(`  - sender_id=${messageData.sender_id}`);
+  console.log(`  - receiver_id=${messageData.receiver_id}`);
+  console.log(`  - chatId=${chatId}`);
+  console.log(`  - message_type=${messageData.message_type}`);
+  
   return messageId;
 }
 
@@ -244,19 +254,35 @@ async function createVoteResultMessage(userId, postId, voteResults) {
     .where('message_type', 'in', ['vote_request', 'vote_created'])
     .get();
   
+  console.log(`[AI 채팅] 투표 결과 업데이트: userId=${userId}, 메시지 수=${messagesSnapshot.size}`);
+  
   const updatePromises = [];
   messagesSnapshot.forEach(doc => {
     const data = doc.data();
-    const finalStatus = data.user_voted ? 'completed' : 'not_participated';
+    let finalStatus;
+    
+    // 작성자 메시지는 투표 완료 시 항상 'completed'
+    if (data.message_type === 'vote_created') {
+      finalStatus = 'completed';
+    } else {
+      // 일반 투표 요청 메시지는 참여 여부에 따라 결정
+      finalStatus = data.user_voted ? 'completed' : 'not_participated';
+    }
+    
+    console.log(`[AI 채팅] 메시지 상태 업데이트: messageId=${doc.id}, type=${data.message_type}, finalStatus=${finalStatus}`);
     
     updatePromises.push(
-      updateCardStatus(userId, doc.id, finalStatus, {
+      doc.ref.update({
+        card_status: finalStatus,
         vote_status: 'completed',
-        vote_results: {
-          votesA: voteResults.displayVotesA,
-          votesB: voteResults.displayVotesB,
-          winner: voteResults.displayVotesA > voteResults.displayVotesB ? 'A' : 'B'
-        }
+        vote_completed_at: admin.firestore.Timestamp.now(),
+        // 투표 결과 정보 추가
+        vote_results_a: voteResults.displayVotesA || voteResults.votesA,
+        vote_results_b: voteResults.displayVotesB || voteResults.votesB,
+        vote_winner: voteResults.displayVotesA > voteResults.displayVotesB ? 'A' : 
+                     voteResults.displayVotesB > voteResults.displayVotesA ? 'B' : 'draw',
+        vote_percent_a: voteResults.percentA,
+        vote_percent_b: voteResults.percentB
       })
     );
   });

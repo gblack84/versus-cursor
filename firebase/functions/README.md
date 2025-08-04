@@ -15,22 +15,32 @@ firebase/functions/
 └── index.js         # 함수 엔트리 포인트
 ```
 
-## 주요 변경사항 (2025-07-31)
+## 주요 변경사항
 
-### 컬렉션 이름 정규화
+### 2025-08-04: 투표 타이머 시스템 강화
+- **Firebase Security Rules 업데이트**
+  - 투표 타이머 필드 추가: `voteStartTime`, `voteEndTime`, `voteStatus`, `voteCompleted`
+  - 알림 관련 필드 추가: `notificationsSent`, `notificationsSentAt`
+  - 중복 투표 방지 로직 개선 (필드 존재 여부 체크)
+- **투표 시스템 개선**
+  - 10분 타이머 자동 완료 처리
+  - 실시간 투표 상태 업데이트
+  - AI 채팅 투표 카드 지원
+
+### 2025-08-03: AI 채팅 시스템 수정
+- **채팅방 ID 생성 로직 변경**
+  - 기존: `[AI_ASSISTANT_ID, userId].sort().join('_')` (대소문자 정렬 문제)
+  - 수정: `${AI_ASSISTANT_ID}_${userId}` (일관된 형식)
+- **마이그레이션 함수 추가**
+  - `migrateAIChatRooms`: 기존 채팅방 ID 형식 통일
+  - `testCreateAIChatMessage`: AI 채팅 테스트 도구
+
+### 2025-07-31: 컬렉션 이름 정규화
 - 모든 Firebase Functions에서 `_record` 접미사 제거
 - Flutter 앱과 일치하도록 컬렉션 이름 통일
 - 예시: `users_record` → `users`, `posts_record` → `posts`
 
-### 영향받은 컬렉션
-- `users_record` → `users`
-- `posts_record` → `posts`
-- `notifications_record` → `notifications`
-- `chats_record` → `chats`
-- `messages_record` → `messages`
-- `votes_record` → `votes`
-
-## 활성 함수 목록 (11개)
+## 활성 함수 목록 (12개)
 
 ### 1. 사용자 관리
 - **onUserDeleted**: 사용자 삭제 시 관련 데이터 정리
@@ -43,13 +53,18 @@ firebase/functions/
 ### 3. 알림 시스템
 - **onPostCreatedSendNotifications**: 게시물 생성 시 타겟 사용자에게 알림 발송
 - **getUserPostingHistory**: 사용자 게시 기록 분석
-- **testNotificationSystem**: 알림 시스템 테스트
 
 ### 4. 투표 시스템
-- **onPostVoteUpdate**: 투표 업데이트 감지
-- **processVoteCompletion**: 투표 자동 완료 처리
-- **flushThrottleQueue**: 스로틀 큐 처리 (매 1분)
+- **onPostVoteUpdate**: 투표 업데이트 감지 및 완료 처리
+- **flushThrottleQueue**: 10분 타이머 만료 시 투표 자동 완료 (매 1분)
 - **checkVoteTimeouts**: 투표 타임아웃 확인 (매 시간)
+
+### 5. AI 채팅 시스템
+- **migrateAIChatRooms**: 기존 채팅방 ID 마이그레이션
+- **testCreateAIChatMessage**: AI 채팅 메시지 테스트
+
+### 내부 서비스 함수 (export되지 않음)
+- **processVoteCompletion**: voteManagement.js에 구현되어 있으며, 다른 함수들에서 내부적으로 호출됨
 
 ## 기술 스택
 
@@ -97,3 +112,81 @@ firebase functions:config:get
 - 배치 처리로 Firestore 작업 최적화
 - 병렬 처리로 응답 시간 단축
 - 1000명 동시 처리 지원 (< 60초)
+
+### AI 채팅방 마이그레이션 (2025-08-03)
+마이그레이션 함수를 사용하여 기존 채팅방 ID를 수정할 수 있습니다:
+
+```bash
+# AI 채팅방 마이그레이션 실행
+curl -X POST https://asia-northeast3-versus-space-1lwwiw.cloudfunctions.net/migrateAIChatRooms
+```
+
+**마이그레이션 내용**:
+- 기존: `userId_ai_assistant` 또는 `AacklMhqMxV8B1JgEAjG7aocxvg1_ai_assistant` 형식
+- 신규: `ai_assistant_userId` 형식으로 통일
+- 메시지 서브컬렉션도 함께 마이그레이션
+- 기존 채팅방은 삭제하지 않고 마이그레이션 표시만 추가
+
+## 최근 문제 해결 (2025-08-03)
+
+### AI 채팅 메시지 표시 문제
+**문제**: Android와 Web에서 AI 채팅 메시지가 표시되지 않음 (iOS는 정상)
+
+**원인 분석**:
+- Firebase Functions는 정상적으로 메시지 생성
+- JavaScript `.sort()` 함수가 대소문자를 다르게 정렬
+- 사용자 ID가 대문자로 시작하면 채팅방 ID가 잘못 생성됨
+  - 예: `AacklMhq...` → `AacklMhq..._ai_assistant` (잘못됨)
+  - 예: `XChONL4...` → `XChONL4..._ai_assistant` (잘못됨)
+  - 정상: `ai_assistant_userId` 형식이어야 함
+
+**해결**:
+1. `aiChatService.js`에서 채팅방 ID 생성 로직 수정
+   - 기존: `[AI_ASSISTANT_ID, userId].sort().join('_')`
+   - 수정: `${AI_ASSISTANT_ID}_${userId}`
+2. `migrateAIChatRooms` 함수 추가로 기존 채팅방 마이그레이션
+3. 새로운 채팅은 올바른 ID로 생성됨
+
+### 테스트 함수 사용법
+```bash
+# AI 채팅 메시지 수동 생성
+curl -X POST https://asia-northeast3-versus-space-1lwwiw.cloudfunctions.net/testCreateAIChatMessage \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "사용자ID",
+    "postId": "게시물ID",
+    "messageType": "request" # 또는 "created"
+  }'
+```
+
+## 투표 타이머 시스템 상세
+
+### 10분 타이머 동작 방식
+1. **투표 시작**: 첫 투표 시 `voteStartTime` 기록
+2. **타이머 설정**: `voteEndTime = voteStartTime + 10분`
+3. **상태 추적**: `voteStatus = 'active'`
+4. **자동 완료**: 
+   - `flushThrottleQueue` (매 1분): 실시간 체크
+   - `checkVoteTimeouts` (매 시간): 백업 체크
+5. **완료 처리**: `voteStatus = 'completed'`, AI 채팅 메시지 업데이트
+
+### 투표 관련 필드 설명
+```javascript
+{
+  // 시간 관리
+  voteStartTime: Timestamp,      // 첫 투표 시간
+  voteEndTime: Timestamp,        // 종료 예정 시간 (시작 + 10분)
+  voteStatus: String,            // 'active' | 'completed' | 'expired'
+  voteCompleted: Boolean,        // 완료 여부
+  
+  // 투표 데이터
+  votes_a: Number,               // A 옵션 투표 수
+  votes_b: Number,               // B 옵션 투표 수
+  total_votes: Number,           // 전체 투표 수
+  votedUserIDsA: Array,          // A 투표자 ID 목록
+  votedUserIDsB: Array,          // B 투표자 ID 목록
+  
+  // 알림 관리
+  notificationsSent: Boolean,    // 알림 발송 여부
+  notificationsSentAt: Timestamp // 알림 발송 시간
+}

@@ -431,8 +431,8 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
               voteResults: messageData?['vote_results_a'] != null ? {
                 'votesA': messageData?['vote_results_a'],
                 'votesB': messageData?['vote_results_b'],
-                'percentageA': messageData?['vote_percent_a'],
-                'percentageB': messageData?['vote_percent_b'],
+                'percentageA': (messageData?['vote_percent_a'] as num?)?.toDouble(),
+                'percentageB': (messageData?['vote_percent_b'] as num?)?.toDouble(),
               } : null,
             );
           }

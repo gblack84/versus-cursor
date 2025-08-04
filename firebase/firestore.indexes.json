@@ -135,15 +135,15 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "voteStatus",
+          "fieldPath": "vote_status",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "voteEndTime",
+          "fieldPath": "vote_end_time",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "voteCompleted",
+          "fieldPath": "vote_completed",
           "order": "ASCENDING"
         }
       ]

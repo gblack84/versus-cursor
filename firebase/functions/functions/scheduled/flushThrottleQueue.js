@@ -9,6 +9,38 @@ const { processVoteCompletion, calculateDisplayVotes } = require("../../services
 const { createVoteResultMessage } = require("../../services/aiChatService");
 // throttleQueue\ub294 onPostVoteUpdate\uc5d0\uc11c export\ub418\uc5b4\uc57c \ud568\n// \uc784\uc2dc\ub85c \ud604\uc7ac\ub294 \uac01 \ud568\uc218\uac00 \ub3c5\ub9bd\uc801\uc73c\ub85c \uc791\ub3d9\ud558\ub3c4\ub85d \uc124\uc815\nconst throttleQueue = new Map();
 
+// Timestamp 파싱 헬퍼 함수
+function parseTimestamp(value) {
+  if (!value) return null;
+  
+  // 이미 Timestamp 객체인 경우
+  if (value.toDate && typeof value.toDate === 'function') {
+    return value;
+  }
+  
+  // {_seconds, _nanoseconds} 형식인 경우
+  if (value._seconds !== undefined) {
+    return new admin.firestore.Timestamp(value._seconds, value._nanoseconds || 0);
+  }
+  
+  // 다른 형식 시도
+  if (value.seconds !== undefined) {
+    return new admin.firestore.Timestamp(value.seconds, value.nanoseconds || 0);
+  }
+  
+  // Date 객체인 경우
+  if (value instanceof Date) {
+    return admin.firestore.Timestamp.fromDate(value);
+  }
+  
+  // 문자열인 경우
+  if (typeof value === 'string') {
+    return admin.firestore.Timestamp.fromDate(new Date(value));
+  }
+  
+  return null;
+}
+
 exports.flushThrottleQueue = functions
   .region("asia-northeast3")
   .runWith({
@@ -26,24 +58,58 @@ exports.flushThrottleQueue = functions
     
     try {
       // 10분 타이머가 만료된 투표 찾기
-      const expiredVotesSnapshot = await db.collection('posts')
-        .where('voteStatus', '==', 'active')
-        .where('voteEndTime', '<=', now)
-        .where('voteCompleted', '==', false)
-        .limit(30) // 한 번에 처리할 최대 개수
+      // 먼저 모든 active 투표를 가져온 후 JavaScript에서 필터링
+      const activeVotesSnapshot = await db.collection('posts')
+        .where('vote_status', '==', 'active')
+        .where('vote_completed', '==', false)
+        .limit(100) // 더 많은 문서 가져오기
         .get();
       
-      if (expiredVotesSnapshot.empty) {
-        console.log('[10분 타이머] 만료된 투표 없음');
+      if (activeVotesSnapshot.empty) {
+        console.log('[10분 타이머] Active 상태인 투표 없음');
         console.log('[10분 타이머] ========== Scheduled Function 종료 ==========');
         return null;
       }
       
-      console.log(`[10분 타이머] ${expiredVotesSnapshot.size}개의 만료된 투표 발견`);
+      console.log(`[10분 타이머] ${activeVotesSnapshot.size}개의 active 투표 확인 중...`);
+      
+      // JavaScript에서 만료된 투표 필터링
+      const expiredVotes = [];
+      activeVotesSnapshot.forEach(doc => {
+        const data = doc.data();
+        const voteEndTime = parseTimestamp(data.vote_end_time);
+        
+        if (voteEndTime && voteEndTime.toMillis() <= now.toMillis()) {
+          expiredVotes.push(doc);
+          console.log(`[10분 타이머] 만료된 투표 발견: ${doc.id}`);
+          console.log(`  - vote_end_time: ${voteEndTime.toDate().toISOString()}`);
+          console.log(`  - 현재 시간: ${now.toDate().toISOString()}`);
+        }
+      });
+      
+      if (expiredVotes.length === 0) {
+        console.log('[10분 타이머] 만료된 투표 없음');
+        
+        // 디버그 정보 출력
+        console.log('[10분 타이머] ========== 디버그: Active 투표 상태 ==========');
+        activeVotesSnapshot.forEach(doc => {
+          const data = doc.data();
+          const voteEndTime = parseTimestamp(data.vote_end_time);
+          console.log(`[10분 타이머] Post ${doc.id}:`);
+          console.log(`  - vote_end_time 원본: ${JSON.stringify(data.vote_end_time)}`);
+          console.log(`  - vote_end_time 파싱: ${voteEndTime ? voteEndTime.toDate().toISOString() : 'null'}`);
+          console.log(`  - 남은 시간: ${voteEndTime ? Math.round((voteEndTime.toMillis() - now.toMillis()) / 1000 / 60) + '분' : 'N/A'}`);
+        });
+        
+        console.log('[10분 타이머] ========== Scheduled Function 종료 ==========');
+        return null;
+      }
+      
+      console.log(`[10분 타이머] ${expiredVotes.length}개의 만료된 투표 처리 시작`);
       
       // 각 게시물에 대해 투표 종료 처리
       const results = await Promise.allSettled(
-        expiredVotesSnapshot.docs.map(async (doc) => {
+        expiredVotes.map(async (doc) => {
           const postId = doc.id;
           const postData = doc.data();
           
@@ -96,9 +162,9 @@ exports.flushThrottleQueue = functions
           try {
             // 1. 게시물 상태 업데이트
             await doc.ref.update({
-              voteCompleted: true,
-              voteCompletedAt: admin.firestore.FieldValue.serverTimestamp(),
-              voteStatus: 'completed',
+              vote_completed: true,
+              vote_completed_at: admin.firestore.FieldValue.serverTimestamp(),
+              vote_status: 'completed',
               // 표시용 투표 수 (증폭된 수)
               display_votes_a: displayVotes.A,
               display_votes_b: displayVotes.B,

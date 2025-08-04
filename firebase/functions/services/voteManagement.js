@@ -310,64 +310,10 @@ function calculateProgressiveDisplayVotes(actualVotes, targetCount, elapsedMinut
   return calculateDisplayVotes(actualVotes, expectedVoters, expectedRatio);
 }
 
-/**
- * 24시간 후 자동 투표 종료 확인 및 처리
- * @param {Object} postDoc - Firestore 문서
- */
-async function processExpiredVote(postDoc) {
-  const postData = postDoc.data();
-  const postId = postDoc.id;
-  
-  const votesA = postData.votes_a || postData.vote_count_a || 0;
-  const votesB = postData.votes_b || postData.vote_count_b || 0;
-  const totalVotes = votesA + votesB;
-  
-  // 최소 1표라도 있는 경우만 완료 처리
-  if (totalVotes > 0) {
-    const percentA = Math.round((votesA / totalVotes) * 100);
-    const percentB = Math.round((votesB / totalVotes) * 100);
-    
-    // 게시물 상태 업데이트
-    await postDoc.ref.update({
-      vote_completed: true,
-      vote_completed_at: admin.firestore.FieldValue.serverTimestamp(),
-      vote_status: 'completed',
-      vote_timeout: true
-    });
-    
-    // 투표 완료 처리
-    await processVoteCompletion(postId, {
-      votesA,
-      votesB,
-      totalVotes,
-      percentA,
-      percentB,
-      winner: votesA > votesB ? 'A' : votesB > votesA ? 'B' : 'draw',
-      questionTitle: postData.question_title || postData.questionTitle,
-      optionA: postData.option_a || postData.optionA?.title || 'A',
-      optionB: postData.option_b || postData.optionB?.title || 'B',
-      creatorId: postData.uid || postData.userid,
-      creatorName: '시스템'
-    });
-    
-    console.log(`[투표 타임아웃] 투표 ${postId} 타임아웃으로 완료 처리됨`);
-  } else {
-    // 투표가 전혀 없는 경우는 취소 처리
-    await postDoc.ref.update({
-      vote_completed: true,
-      vote_status: 'cancelled',
-      vote_cancelled_at: admin.firestore.FieldValue.serverTimestamp(),
-      vote_cancelled_reason: 'no_votes_timeout'
-    });
-    
-    console.log(`[투표 타임아웃] 투표 ${postId} 참여자 없음으로 취소됨`);
-  }
-}
 
 module.exports = {
   processVoteCompletion,
   processBatch,
-  processExpiredVote,
   calculateDisplayVotes,
   calculateProgressiveDisplayVotes
 };

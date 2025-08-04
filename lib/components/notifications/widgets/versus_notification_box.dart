@@ -392,10 +392,12 @@ class VersusNotificationBox extends StatelessWidget {
               padding: const EdgeInsets.all(12.0),
               child: Text(
                 title,
-                style: VersusTextStyles.bodyMedium.copyWith(
+                style: TextStyle(
                   color: Colors.white,
                   fontSize: _getAdaptiveTextSize(),
                   fontWeight: FontWeight.w600,
+                  fontFamily: VersusTextStyles.bodyMedium.fontFamily,
+                  letterSpacing: VersusTextStyles.bodyMedium.letterSpacing,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -642,12 +644,25 @@ class VersusNotificationBox extends StatelessWidget {
   
   /// 적응형 텍스트 크기 계산
   double _getAdaptiveTextSize() {
-    if (customTextSize != null) return customTextSize!;
+    if (customTextSize != null) {
+      print('[VersusNotificationBox] 커스텀 텍스트 크기 사용: $customTextSize');
+      return customTextSize!;
+    }
     
-    return VotingNotificationConstraints.getAdaptiveTextSize(
+    final textSize = VotingNotificationConstraints.getAdaptiveTextSize(
       boxSize.height,
       baseTextSize: VotingNotificationConstraints.defaultTextSize,
     );
+    
+    print('[VersusNotificationBox] 텍스트 크기 계산:');
+    print('  - boxType: $boxType');
+    print('  - title: $title');
+    print('  - boxSize.height: ${boxSize.height}');
+    print('  - 계산된 텍스트 크기: ${textSize}px');
+    print('  - minTextSize: ${VotingNotificationConstraints.minTextSize}px');
+    print('  - maxTextSize: ${VotingNotificationConstraints.maxTextSize}px');
+    
+    return textSize;
   }
   
   /// 이미지 뷰어 표시 (멀티이미지 지원)

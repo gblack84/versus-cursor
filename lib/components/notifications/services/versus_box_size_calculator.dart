@@ -138,8 +138,8 @@ class VersusBoxSizeCalculator {
         // 단일 이미지는 전체 높이와 너비 사용 (더 큰 이미지 표시)
         sizeA = _calculateOptimizedBoxSize(
           originalSize: sizeData.originalSizeA,
-          containerWidth: containerWidth * 0.9,  // 90% 너비 사용 (증가)
-          containerHeight: containerHeight * 0.85,  // 85% 높이 사용 (증가)
+          containerWidth: containerWidth * 0.95,  // 95% 너비 사용 (증가)
+          containerHeight: containerHeight * 0.9,  // 90% 높이 사용 (증가)
           scaleFactor: scaleFactor,
           sizeAdjustment: sizeAdjustment,
           aspectRatio: sizeData.aspectRatioA,
@@ -454,8 +454,8 @@ class VersusBoxSizeCalculator {
     required double scaleFactor,
     required SizeAdjustmentFactor sizeAdjustment,
   }) {
-    // 1. 통일된 너비 계산 (컨테이너의 85%)
-    final unifiedWidth = containerWidth * 0.85;
+    // 1. 통일된 너비 계산 (컨테이너의 95%)
+    final unifiedWidth = containerWidth * 0.95;
     
     // 2. 각 이미지 비율에 맞춰 개별 높이 계산
     double heightA = aspectRatioA != null ? unifiedWidth / aspectRatioA : 200.0;

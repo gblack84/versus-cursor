@@ -44,7 +44,7 @@ class VotingNotificationConstraints {
   
   // 텍스트 크기 제약
   static const double maxTextSize = 20.0;     // 16.0 → 24.0 → 20.0 (적정 크기로 조정)
-  static const double minTextSize = 10.0;     // 10.0 → 14.0 → 10.0 (원래 크기로 복원)
+  static const double minTextSize = 12.0;     // 10.0 → 12.0 (가독성 향상을 위해 상향)
   static const double defaultTextSize = 14.0; // 12.0 → 18.0 → 14.0 (이전과 유사하게 조정)
   
   // 아이콘 크기
@@ -171,7 +171,19 @@ class VotingNotificationConstraints {
     final adaptedSize = baseTextSize * heightRatio;
     
     // 최소/최대 크기 제한 적용
-    return adaptedSize.clamp(minTextSize, maxTextSize);
+    final finalSize = adaptedSize.clamp(minTextSize, maxTextSize);
+    
+    print('[VotingNotificationConstraints] 적응형 텍스트 크기 계산:');
+    print('  - boxHeight: $boxHeight');
+    print('  - defaultBoxHeight: $defaultBoxHeight');
+    print('  - heightRatio: $heightRatio');
+    print('  - baseTextSize: $baseTextSize');
+    print('  - adaptedSize: $adaptedSize');
+    print('  - minTextSize: $minTextSize');
+    print('  - maxTextSize: $maxTextSize');
+    print('  - finalSize: $finalSize');
+    
+    return finalSize;
   }
   
   /// 레이아웃 변환이 필요한지 확인

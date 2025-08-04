@@ -736,7 +736,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       String layoutType;
       if (_model.absellected || (appState.uploadImageB.isEmpty && appState.uploadTextB.isNotEmpty)) {
         layoutType = 'single';
-      } else if (_model.isHorizontalLayout) {
+      } else if (_model.currentLayout == LayoutType.horizontal) {
         layoutType = 'horizontal';
       } else {
         layoutType = 'vertical';

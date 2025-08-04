@@ -46,6 +46,12 @@ async function createNotificationsForUsers(users, postId, postData) {
   console.log(`[알림 생성] 게시물 ID: ${postId}`);
   console.log(`[알림 생성] 타겟 타입: ${postData.targetAudience?.type || '알 수 없음'}`);
   
+  // 스마트 레이아웃 데이터 로깅
+  console.log('[알림 생성] 스마트 레이아웃 데이터:');
+  console.log(`  - layoutType: ${postData.layoutType || 'null'}`);
+  console.log(`  - optionA.aspectRatio: ${postData.optionA?.aspectRatio || 'null'}`);
+  console.log(`  - optionB.aspectRatio: ${postData.optionB?.aspectRatio || 'null'}`);
+  
   if (users.length === 0) {
     console.log('[알림 생성] ⚠️ 알림을 보낼 사용자가 없습니다');
     return;
@@ -96,6 +102,10 @@ async function createNotificationsForUsers(users, postId, postData) {
           description: postData.description || null,
           authorName: postData.authorName || postData.author_name || '익명',
           category: postData.category || null,
+          // 스마트 레이아웃을 위한 aspectRatio 및 layoutType 추가
+          aspectRatioA: postData.optionA?.aspectRatio || null,
+          aspectRatioB: postData.optionB?.aspectRatio || null,
+          layoutType: postData.layoutType || null,
         }
       }),
       
@@ -191,7 +201,11 @@ async function createNotificationsForUsers(users, postId, postData) {
             imageUrlB: imageUrlsB.length > 0 ? imageUrlsB[0] : (postData.image_url_b || postData.imageUrlB),
             imageUrlsA: imageUrlsA.length > 0 ? imageUrlsA : (postData.image_urls_a || postData.imageUrlsA || []),
             imageUrlsB: imageUrlsB.length > 0 ? imageUrlsB : (postData.image_urls_b || postData.imageUrlB || []),
-            description: postData.description || ''
+            description: postData.description || '',
+            // 스마트 레이아웃 정보 전달
+            aspectRatioA: postData.optionA?.aspectRatio || null,
+            aspectRatioB: postData.optionB?.aspectRatio || null,
+            layoutType: postData.layoutType || null
           });
           console.log(`[알림 생성] AI 채팅 메시지 생성 완료: ${user.displayName || user.id}`);
         } catch (error) {

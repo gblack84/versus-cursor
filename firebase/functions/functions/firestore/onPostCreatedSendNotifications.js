@@ -80,7 +80,11 @@ exports.onPostCreatedSendNotifications = functions
           imageUrlB: imageUrlsB.length > 0 ? imageUrlsB[0] : (postData.image_url_b || postData.imageUrlB),
           imageUrlsA: imageUrlsA.length > 0 ? imageUrlsA : (postData.image_urls_a || postData.imageUrlsA || []),
           imageUrlsB: imageUrlsB.length > 0 ? imageUrlsB : (postData.image_urls_b || postData.imageUrlsB || []),
-          description: postData.description || ''
+          description: postData.description || '',
+          // 스마트 레이아웃 정보 전달
+          aspectRatioA: postData.optionA?.aspectRatio || null,
+          aspectRatioB: postData.optionB?.aspectRatio || null,
+          layoutType: postData.layoutType || null
         });
         console.log(`[알림] 작성자 AI 채팅 메시지 생성 완료: userId=${creatorId}`);
       }

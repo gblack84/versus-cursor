@@ -5,10 +5,13 @@
 
 const functions = require("firebase-functions");
 const { checkImageContent } = require("../../services/imageModeration");
+const { createLogger } = require("../../config/logger");
 
 exports.checkImageContent = functions
   .region("asia-northeast3")
   .https.onCall(async (data, context) => {
+    const logger = createLogger('checkImageContent');
+    
     // 인증 확인
     if (!context.auth) {
       throw new functions.https.HttpsError('unauthenticated', '로그인이 필요합니다.');
@@ -21,14 +24,14 @@ exports.checkImageContent = functions
     }
 
     try {
-      console.log(`[이미지 검사] 이미지 검사 시작 - User: ${context.auth.uid}, Box: ${box || 'unknown'}`);
+      logger.debug(`이미지 검사 시작 - User: ${logger.maskSensitive(context.auth.uid)}, Box: ${box || 'unknown'}`);
       
       // 이미지 검사 서비스 호출
       const result = await checkImageContent(image);
       
       // 로그 기록 (최소한의 정보만)
       if (!result.isAppropriate) {
-        console.log(`[이미지 검사] 부적절한 콘텐츠 감지 - User: ${context.auth.uid}, Reason: ${result.reason}`);
+        logger.warning(`부적절한 콘텐츠 감지 - User: ${logger.maskSensitive(context.auth.uid)}, Reason: ${result.reason}`);
       }
       
       return {
@@ -40,7 +43,7 @@ exports.checkImageContent = functions
       };
       
     } catch (error) {
-      console.error('[이미지 검사] 오류 발생:', error);
+      logger.error('오류 발생', error);
       throw new functions.https.HttpsError('internal', '이미지 검사 중 오류가 발생했습니다.');
     }
   });

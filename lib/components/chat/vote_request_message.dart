@@ -858,9 +858,15 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
         return Colors.green;
       case 'expired':
         return Colors.grey;
+      case 'not_participated':
+        return Colors.grey;  // 미참여는 회색
+      case 'in_progress':
+        return Colors.blue;
+      case 'voting_request':
+        return Colors.red;  // 대기중 상태는 빨강색으로 표시
       case 'pending':
       default:
-        return VersusColors.primary;
+        return Colors.red;  // 대기중 상태는 빨강색으로 표시
     }
   }
 
@@ -870,6 +876,12 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
         return '완료';
       case 'expired':
         return '만료';
+      case 'not_participated':
+        return '미참여';
+      case 'in_progress':
+        return '진행중';
+      case 'voting_request':
+        return '대기중';  // '피클요청' -> '대기중'으로 변경
       case 'pending':
       default:
         return '대기중';

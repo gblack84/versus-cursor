@@ -6,6 +6,7 @@
 const functions = require("firebase-functions");
 const { admin } = require("../../config/firebase");
 const { updateVoteParticipation } = require("../../services/aiChatService");
+const { createLogger } = require("../../config/logger");
 
 exports.onPostVoteUpdate = functions
   .region("asia-northeast3")
@@ -16,12 +17,13 @@ exports.onPostVoteUpdate = functions
   .firestore
   .document('posts/{postId}')
   .onUpdate(async (change, context) => {
+    const logger = createLogger('onPostVoteUpdate');
     const before = change.before.data();
     const after = change.after.data();
     const postId = context.params.postId;
     
     // 투표 상태 확인 (10분 타이머 중인지)
-    if (after.voteStatus !== 'active' || after.voteCompleted === true) {
+    if (after.voteCompleted === true) {
       return null; // 이미 종료된 투표
     }
     
@@ -54,15 +56,15 @@ exports.onPostVoteUpdate = functions
       return null; // 새로운 투표자 없음
     }
     
-    console.log(`[투표 업데이트] Post ${postId}: ${newVoters.length}명이 ${votedOption}에 투표`);
+    logger.info(`Post ${postId}: ${newVoters.length}명이 ${votedOption}에 투표`);
     
     // 각 새로운 투표자의 AI 채팅 메시지 업데이트
     const updatePromises = newVoters.map(async (userId) => {
       try {
         await updateVoteParticipation(userId, postId, votedOption);
-        console.log(`[투표 업데이트] ${userId}의 AI 채팅 메시지 업데이트 완료`);
+        logger.debug(`${logger.maskSensitive(userId)}의 AI 채팅 메시지 업데이트 완료`);
       } catch (error) {
-        console.error(`[투표 업데이트] ${userId} 메시지 업데이트 실패:`, error);
+        logger.error(`${logger.maskSensitive(userId)} 메시지 업데이트 실패`, error);
       }
     });
     
@@ -70,7 +72,7 @@ exports.onPostVoteUpdate = functions
     
     // 현재 투표 수 로그
     const currentVoteCount = afterVotesA + afterVotesB;
-    console.log(`[투표 업데이트] Post ${postId} 현재 투표 수: A=${afterVotesA}, B=${afterVotesB}, 총=${currentVoteCount}`);
+    logger.info(`Post ${postId} 현재 투표 수: A=${afterVotesA}, B=${afterVotesB}, 총=${currentVoteCount}`);
     
     return null;
   });

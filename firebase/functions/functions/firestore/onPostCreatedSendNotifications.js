@@ -7,6 +7,7 @@ const functions = require("firebase-functions");
 const { admin } = require("../../config/firebase");
 const { sendSmartNotifications } = require("../../services/notificationService");
 const { createVoteCreatedMessage } = require("../../services/aiChatService");
+const { createLogger } = require("../../config/logger");
 
 exports.onPostCreatedSendNotifications = functions
   .region("asia-northeast3")
@@ -17,16 +18,17 @@ exports.onPostCreatedSendNotifications = functions
   .firestore
   .document('posts/{postId}')
   .onCreate(async (snap, context) => {
+    const logger = createLogger('onPostCreatedSendNotifications');
     const postData = snap.data();
     const postId = context.params.postId;
     
     // 디버그 로그
-    console.log(`[알림] 게시물 생성 감지: ${postId}`);
-    console.log(`[알림] targetAudience 설정:`, postData.targetAudience);
+    logger.info(`게시물 생성 감지: ${postId}`);
+    logger.debug('targetAudience 설정', { targetAudience: postData.targetAudience });
     
     // 알림 비활성화된 경우 스킵
     if (!postData.isNotificationEnabled) {
-      console.log('[알림] 알림이 비활성화되어 있습니다.');
+      logger.info('알림이 비활성화되어 있습니다.');
       return null;
     }
     
@@ -41,7 +43,6 @@ exports.onPostCreatedSendNotifications = functions
       await snap.ref.update({
         vote_start_time: admin.firestore.Timestamp.fromDate(voteStartTime),
         vote_end_time: admin.firestore.Timestamp.fromDate(voteEndTime),
-        vote_status: 'active',
         vote_completed: false
       });
       
@@ -86,7 +87,7 @@ exports.onPostCreatedSendNotifications = functions
           aspectRatioB: postData.optionB?.aspectRatio || null,
           layoutType: postData.layoutType || null
         });
-        console.log(`[알림] 작성자 AI 채팅 메시지 생성 완료: userId=${creatorId}`);
+        logger.info(`작성자 AI 채팅 메시지 생성 완료: userId=${logger.maskSensitive(creatorId)}`);
       }
       
       // 스마트 알림 전송 (10분 타이머 정보 포함)
@@ -96,7 +97,7 @@ exports.onPostCreatedSendNotifications = functions
         voteEndTime
       });
       
-      console.log(`[알림] 알림 전송 완료:`, {
+      logger.info('알림 전송 완료', {
         postId,
         success: result.success,
         notificationsSent: result.notificationsSent,
@@ -108,7 +109,7 @@ exports.onPostCreatedSendNotifications = functions
       return result;
       
     } catch (error) {
-      console.error('[알림] 알림 전송 중 오류:', error);
+      logger.error('알림 전송 중 오류', error);
       
       // 오류 로깅
       await admin.firestore().collection('notification_errors').add({

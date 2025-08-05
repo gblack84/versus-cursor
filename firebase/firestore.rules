@@ -180,13 +180,17 @@ service cloud.firestore {
         (parent.matches('.*ai_assistant.*') && 
          request.resource.data.diff(resource.data).affectedKeys()
            .hasOnly(['is_read', 'vote_status', 'card_status', 'user_voted', 'vote_choice', 
-                     'vote_participated_at', 'vote_results', 'vote_end_time']))
+                     'vote_participated_at', 'vote_results', 'vote_end_time',
+                     // 개별 사용자 투표 상태 추적 필드 추가
+                     'user_votes', 'last_vote_update']))
         ||
         // 일반 채팅방인 경우
         (request.auth.uid in get(/databases/$(database)/documents/chats/$(parent)).data.users && 
          request.resource.data.diff(resource.data).affectedKeys()
            .hasOnly(['is_read', 'vote_status', 'card_status', 'user_voted', 'vote_choice', 
-                     'vote_participated_at', 'vote_results']))
+                     'vote_participated_at', 'vote_results',
+                     // 개별 사용자 투표 상태 추적 필드 추가
+                     'user_votes', 'last_vote_update']))
       );
       allow delete: if false;
     }

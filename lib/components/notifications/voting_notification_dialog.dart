@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '/design_system/design_system.dart';
 import 'models/versus_box_size_data.dart';
@@ -18,7 +19,7 @@ class VotingNotificationDialog extends StatefulWidget {
   final List<String>? imageUrlsB;
   final String? description;
   final Function(String option) onVote;
-  final VoidCallback? onDismiss;
+  final Function(bool hasVoted)? onDismiss;
   
   /// 질문 작성 페이지에서 생성된 사이즈 데이터 (선택사항)
   /// 제공되면 일관된 크기로 표시, 없으면 기본 크기 사용
@@ -122,6 +123,7 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
   late Animation<double> _fadeAnimation;
   
   bool _hasVoted = false;
+  Timer? _autoCloseTimer;
 
   @override
   void initState() {
@@ -148,10 +150,19 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
     ));
 
     _controller.forward();
+    
+    // 10분 자동 닫기 타이머 시작
+    _autoCloseTimer = Timer(VotingNotificationConstraints.votingTimeLimit, () {
+      if (mounted && !_hasVoted) {
+        debugPrint('[VotingNotificationDialog] 10분 시간 제한 도달 - 자동 닫기');
+        _dismiss();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _autoCloseTimer?.cancel();
     if (_controller.isAnimating) {
       _controller.stop();
     }
@@ -159,10 +170,14 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
     super.dispose();
   }
 
+  /// 사용자가 투표했는지 여부를 외부에서 확인 가능하도록
+  bool get hasVoted => _hasVoted;
+
   void _dismiss() async {
     await _controller.reverse();
     if (widget.onDismiss != null) {
-      widget.onDismiss!();
+      // 투표 여부를 onDismiss에 전달
+      widget.onDismiss!(_hasVoted);
     }
   }
 
@@ -172,6 +187,9 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
     setState(() {
       _hasVoted = true;
     });
+    
+    // 타이머 취소 (투표했으므로 10분 타이머 불필요)
+    _autoCloseTimer?.cancel();
     
     widget.onVote(option);
     
@@ -185,12 +203,7 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
 
   @override
   Widget build(BuildContext context) {
-    // 멀티이미지 데이터 디버그
-    print('[VotingNotificationDialog] ===== 멀티이미지 데이터 확인 =====');
-    print('  - effectiveImageUrlsA: ${widget.effectiveImageUrlsA.length}개');
-    print('  - effectiveImageUrlsB: ${widget.effectiveImageUrlsB.length}개');
-    print('  - imageUrlsA: ${widget.imageUrlsA?.length ?? 0}개');
-    print('  - imageUrlsB: ${widget.imageUrlsB?.length ?? 0}개');
+    // 멀티이미지 데이터 디버그 - 로그 제거
     
     return Semantics(
       label: '투표 알림: ${widget.question}',
@@ -351,7 +364,7 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
         layoutType = LayoutType.single;
       } else if (widget.aspectRatioA != null && widget.aspectRatioB != null) {
         layoutType = AspectRatioAnalyzer.getOptimalLayout(widget.aspectRatioA, widget.aspectRatioB);
-        print('[VotingNotificationDialog] AspectRatioAnalyzer 결과: $layoutType (A: ${widget.aspectRatioA}, B: ${widget.aspectRatioB})');
+        // AspectRatioAnalyzer 결과 - 로그 제거
       } else {
         layoutType = LayoutType.horizontal;
       }
@@ -393,9 +406,7 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
     // 두 박스 표시
     Widget boxesWidget;
     if (effectiveSizeData != null) {
-      print('[VotingNotificationDialog] buildBoxPair 호출 전 데이터 확인:');
-      print('  - imageUrlsA 전달: ${widget.effectiveImageUrlsA.length}개');
-      print('  - imageUrlsB 전달: ${widget.effectiveImageUrlsB.length}개');
+      // buildBoxPair 호출 전 데이터 확인 - 로그 제거
       
       boxesWidget = VersusNotificationBoxBuilder.buildBoxPair(
         context: context,
@@ -474,9 +485,7 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
     // 중앙에 A박스만 표시 - 단일 이미지 모드에서 A/B 타이틀 함께 표시
     final bool hasOnlyText = widget.primaryImageUrlB == null && widget.optionB.isNotEmpty;
     
-    print('[VotingNotificationDialog] _buildSingleBox 호출:');
-    print('  - imageUrlsA: ${widget.effectiveImageUrlsA.length}개');
-    print('  - imageUrlsB: ${widget.effectiveImageUrlsB.length}개');
+    // _buildSingleBox 호출 - 로그 제거
     
     return Center(
       child: VersusNotificationBox(
@@ -526,7 +535,7 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
     } else if (widget.aspectRatioA != null && widget.aspectRatioB != null) {
       // aspectRatio가 있으면 분석해서 결정
       layoutType = AspectRatioAnalyzer.getOptimalLayout(widget.aspectRatioA, widget.aspectRatioB);
-      print('[VotingNotificationDialog] AspectRatioAnalyzer 결과: $layoutType');
+      // AspectRatioAnalyzer 결과 - 로그 제거
     } else {
       layoutType = LayoutType.horizontal; // 기본값
     }

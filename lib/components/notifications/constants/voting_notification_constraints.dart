@@ -39,12 +39,13 @@ class VotingNotificationConstraints {
   static const double slideOffset = -1.0; // 위에서 아래로 슬라이드
   
   // 알림 자동 사라짐 시간
-  static const Duration autoHideDuration = Duration(seconds: 30);
+  static const Duration autoHideDuration = Duration(seconds: 30);  // 현재 사용하지 않음
   static const Duration voteCompleteDuration = Duration(seconds: 1);
+  static const Duration votingTimeLimit = Duration(minutes: 10);    // 10분 투표 제한 시간
   
   // 텍스트 크기 제약
   static const double maxTextSize = 20.0;     // 16.0 → 24.0 → 20.0 (적정 크기로 조정)
-  static const double minTextSize = 12.0;     // 10.0 → 12.0 (가독성 향상을 위해 상향)
+  static const double minTextSize = 16.0;     // 10.0 → 12.0 → 16.0 (작은 박스에서도 가독성 보장)
   static const double defaultTextSize = 14.0; // 12.0 → 18.0 → 14.0 (이전과 유사하게 조정)
   
   // 아이콘 크기

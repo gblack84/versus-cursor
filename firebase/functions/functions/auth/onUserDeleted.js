@@ -5,12 +5,14 @@
 
 const functions = require("firebase-functions");
 const { admin } = require("../../config/firebase");
+const { createLogger } = require("../../config/logger");
 
 exports.onUserDeleted = functions
   .region("asia-northeast3")
   .auth.user()
   .onDelete(async (user) => {
-    console.log(`[사용자 삭제] 사용자 삭제 처리 시작: ${user.uid}`);
+    const logger = createLogger('onUserDeleted');
+    logger.info(`사용자 삭제 처리 시작: ${logger.maskSensitive(user.uid)}`);
     
     try {
       const firestore = admin.firestore();
@@ -18,9 +20,9 @@ exports.onUserDeleted = functions
       // 사용자 문서 삭제
       await firestore.collection("users").doc(user.uid).delete();
       
-      console.log(`[사용자 삭제] 사용자 데이터 삭제 완료: ${user.uid}`);
+      logger.info(`사용자 데이터 삭제 완료: ${logger.maskSensitive(user.uid)}`);
     } catch (error) {
-      console.error('[사용자 삭제] 오류 발생:', error);
+      logger.error('오류 발생', error);
       throw error;
     }
   });

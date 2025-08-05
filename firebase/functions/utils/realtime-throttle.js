@@ -129,7 +129,7 @@ class RealtimeThrottle {
           if (!messageQuery.empty) {
             const messageDoc = messageQuery.docs[0];
             batch.update(messageDoc.ref, {
-              vote_status: update.status,
+              card_status: update.status === 'active' ? 'in_progress' : update.status,
               voted_option: update.votedOption,
               updated_at: admin.firestore.FieldValue.serverTimestamp()
             });

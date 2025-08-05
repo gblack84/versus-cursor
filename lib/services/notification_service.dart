@@ -6,6 +6,7 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/components/notifications/notification_overlay.dart';
 import '/core/nav/nav.dart';
 import '/backend/backend.dart';
+import '/posts/in_put_post_image/utils/debug_helper.dart';
 
 /// 실시간 투표 알림을 관리하는 서비스
 /// 
@@ -40,14 +41,7 @@ class NotificationService {
     // 기존 리스너 정리
     stopListening();
     
-    debugPrint('[NotificationService] ========== 알림 리스닝 시작 ==========');
-    debugPrint('[NotificationService] 사용자 ID: $userId');
-    debugPrint('[NotificationService] 쿼리 조건:');
-    debugPrint('[NotificationService]   - collection: notifications');
-    debugPrint('[NotificationService]   - user_id == $userId');
-    debugPrint('[NotificationService]   - type == voting_request');
-    debugPrint('[NotificationService]   - read == false');
-    debugPrint('[NotificationService]   - expiry_time > ${Timestamp.now().toDate()}');
+    DebugHelper.info('알림 리스닝 시작 - 사용자: ${DebugHelper.maskSensitive(userId)}', tag: 'NotificationService');
     
     _notificationListener = FirebaseFirestore.instance
         .collection('notifications')
@@ -61,13 +55,11 @@ class NotificationService {
         .listen(
           _handleNotificationChanges,
           onError: (error) {
-            debugPrint('[NotificationService] ❌ 리스너 오류: $error');
-            debugPrint('[NotificationService] 오류 타입: ${error.runtimeType}');
-            debugPrint('[NotificationService] 스택 트레이스: ${StackTrace.current}');
+            DebugHelper.error('리스너 오류', error: error, tag: 'NotificationService');
           },
         );
     
-    debugPrint('[NotificationService] ✅ 리스너 설정 완료');
+    // 리스너 설정 완료 - 로그 제거
   }
 
   /// 알림 리스닝 중지
@@ -77,14 +69,12 @@ class NotificationService {
     _displayedNotifications.clear();
     _notificationQueue.clear();
     _notificationsStreamController.add([]); // 빈 리스트 전송
-    debugPrint('[NotificationService] 알림 리스닝 중지');
+    DebugHelper.info('알림 리스닝 중지', tag: 'NotificationService');
   }
 
   /// Firestore 스냅샷 변경 처리
   void _handleNotificationChanges(QuerySnapshot snapshot) {
-    debugPrint('[NotificationService] Firestore 스냅샷 변경 감지');
-    debugPrint('[NotificationService] 전체 문서 수: ${snapshot.docs.length}');
-    debugPrint('[NotificationService] 변경 사항 수: ${snapshot.docChanges.length}');
+    DebugHelper.debug('스냅샷 변경: ${snapshot.docs.length}개 문서, ${snapshot.docChanges.length}개 변경', tag: 'NotificationService');
     
     // 현재 활성 알림 리스트 생성
     final List<NotificationsModel> activeNotifications = [];
@@ -94,13 +84,13 @@ class NotificationService {
         final notification = NotificationsModel.fromSnapshot(doc);
         activeNotifications.add(notification);
       } catch (e) {
-        debugPrint('[NotificationService] 알림 파싱 오류: $e');
+        DebugHelper.warning('알림 파싱 오류', tag: 'NotificationService');
       }
     }
     
     // GlobalNotificationManager에 알림 전달
     _notificationsStreamController.add(activeNotifications);
-    debugPrint('[NotificationService] GlobalNotificationManager에 ${activeNotifications.length}개 알림 전달');
+    DebugHelper.debug('GlobalNotificationManager에 ${activeNotifications.length}개 알림 전달', tag: 'NotificationService');
     
     // 기존 로직은 주석 처리 (GlobalNotificationManager가 처리)
     /*
@@ -138,30 +128,29 @@ class NotificationService {
   /// 알림 큐 순차 처리
   Future<void> _processNotificationQueue() async {
     if (_isProcessingQueue || _notificationQueue.isEmpty) {
-      debugPrint('[NotificationService] 큐 처리 건너뜀 - 처리중: $_isProcessingQueue, 큐 비어있음: ${_notificationQueue.isEmpty}');
+      // 큐 상태 체크 - 로그 제거
       return;
     }
     
-    debugPrint('[NotificationService] 큐 처리 시작. 대기 중인 알림: ${_notificationQueue.length}개');
+    DebugHelper.debug('큐 처리 시작: ${_notificationQueue.length}개', tag: 'NotificationService');
     _isProcessingQueue = true;
     
     while (_notificationQueue.isNotEmpty) {
       final doc = _notificationQueue.removeAt(0);
-      debugPrint('[NotificationService] 큐에서 알림 처리 중: ${doc.id}, 남은 알림: ${_notificationQueue.length}개');
+      // 개별 알림 처리 - 로그 제거
       
       try {
         await _showVotingNotification(doc);
         // 다음 알림까지 약간의 딜레이
-        debugPrint('[NotificationService] 다음 알림까지 500ms 대기...');
+        // 다음 알림 대기 - 로그 제거
         await Future.delayed(const Duration(milliseconds: 500));
       } catch (e) {
-        debugPrint('[NotificationService] ❌ 알림 표시 오류: $e');
-        debugPrint('[NotificationService] 오류 스택: ${StackTrace.current}');
+        DebugHelper.error('알림 표시 오류', error: e, tag: 'NotificationService');
       }
     }
     
     _isProcessingQueue = false;
-    debugPrint('[NotificationService] 큐 처리 완료');
+    // 큐 처리 완료 - 로그 제거
   }
 
   /// 투표 알림 표시
@@ -170,19 +159,10 @@ class NotificationService {
     final notificationId = doc.id;
     final postId = data['source_id'] as String?;
     
-    debugPrint('[NotificationService] ========== 알림 표시 시작 ==========');
-    debugPrint('[NotificationService] 알림 ID: $notificationId');
-    debugPrint('[NotificationService] 전체 데이터 구조:');
-    data.forEach((key, value) {
-      if (value is Map) {
-        debugPrint('[NotificationService]   $key: ${value.keys.toList()}');
-      } else {
-        debugPrint('[NotificationService]   $key: $value');
-      }
-    });
+    DebugHelper.debug('알림 표시: ${DebugHelper.maskSensitive(notificationId)}', tag: 'NotificationService');
     
     if (postId == null) {
-      debugPrint('[NotificationService] ❌ postId가 없는 알림: $notificationId');
+      DebugHelper.warning('postId가 없는 알림', tag: 'NotificationService');
       return;
     }
     
@@ -191,7 +171,7 @@ class NotificationService {
     
     // content 필드 자체가 없거나 null인 경우 처리
     if (data['content'] == null) {
-      debugPrint('[NotificationService] ⚠️ content 필드가 없음, 직접 데이터 사용 시도');
+      DebugHelper.debug('content 필드 없음 - 직접 데이터 사용', tag: 'NotificationService');
       
       // content가 없으면 notification 데이터 자체에서 추출 시도
       if (data['question'] != null || data['questionTitle'] != null) {
@@ -210,29 +190,28 @@ class NotificationService {
             'authorName': data['authorName'] ?? data['author_name'] ?? 'Anonymous',
           }
         };
-        debugPrint('[NotificationService] ✅ notification 데이터에서 content 생성 성공');
+        // content 생성 성공 - 로그 제거
       }
     } else if (data['content'] is String) {
       // JSON 문자열인 경우
       try {
-        debugPrint('[NotificationService] content를 JSON 문자열로 파싱 시도...');
+        DebugHelper.debug('content JSON 파싱', tag: 'NotificationService');
         content = jsonDecode(data['content'] as String) as Map<String, dynamic>;
-        debugPrint('[NotificationService] ✅ JSON 파싱 성공');
       } catch (e) {
-        debugPrint('[NotificationService] ❌ JSON 파싱 실패: $e');
+        DebugHelper.warning('JSON 파싱 실패', tag: 'NotificationService');
       }
     } else if (data['content'] is Map) {
       // 이미 Map인 경우 (이전 버전 호환성)
-      debugPrint('[NotificationService] content가 이미 Map 형태');
+      // content가 Map 형태 - 로그 제거
       content = data['content'] as Map<String, dynamic>;
     } else {
-      debugPrint('[NotificationService] ❌ content가 올바른 형식이 아님: ${data['content'].runtimeType}');
+      DebugHelper.warning('content 형식 오류: ${data['content'].runtimeType}', tag: 'NotificationService');
     }
     
     // content가 여전히 null이거나 postData가 없으면 posts 컬렉션에서 직접 가져오기
     if (content == null || content['postData'] == null || 
         (content['postData']['optionA'] == null || content['postData']['optionA'] == '')) {
-      debugPrint('[NotificationService] ⚠️ content 파싱 실패 또는 데이터 불완전, posts 컬렉션에서 직접 조회');
+      DebugHelper.debug('posts 컬렉션에서 데이터 조회', tag: 'NotificationService');
       
       try {
         // posts 컬렉션에서 데이터 가져오기
@@ -243,21 +222,7 @@ class NotificationService {
             
         if (postDoc.exists) {
           final postData = postDoc.data()!;
-          debugPrint('[NotificationService] ✅ posts 컬렉션에서 데이터 조회 성공');
-          debugPrint('[NotificationService] Post 데이터 구조:');
-          postData.forEach((key, value) {
-            if (value is Map) {
-              debugPrint('[NotificationService]   $key: ${value.keys.toList()}');
-            } else if (value is List) {
-              debugPrint('[NotificationService]   $key: List(${value.length}개)');
-            } else {
-              debugPrint('[NotificationService]   $key: $value');
-            }
-          });
-          
-          // posts 컬렉션의 데이터 구조에 맞춰 파싱
-          debugPrint('[NotificationService] optionA 데이터: ${postData['optionA']}');
-          debugPrint('[NotificationService] optionB 데이터: ${postData['optionB']}');
+          DebugHelper.debug('posts 데이터 조회 성공', tag: 'NotificationService');
           
           // optionA와 optionB에서 데이터 추출
           final optionAData = postData['optionA'] as Map<String, dynamic>?;
@@ -281,53 +246,40 @@ class NotificationService {
               'authorName': postData['author_name'] ?? postData['authorName'] ?? postData['author_display_name'] ?? 'Anonymous',
             }
           };
-          debugPrint('[NotificationService] ✅ posts 데이터로 content 재구성 완료');
+          // posts 데이터로 content 재구성 - 로그 제거
         } else {
-          debugPrint('[NotificationService] ❌ postId에 해당하는 post를 찾을 수 없음: $postId');
+          DebugHelper.warning('post를 찾을 수 없음: ${DebugHelper.maskSensitive(postId)}', tag: 'NotificationService');
           return;
         }
       } catch (e) {
-        debugPrint('[NotificationService] ❌ posts 컬렉션 조회 실패: $e');
+        DebugHelper.error('posts 컬렉션 조회 실패', error: e, tag: 'NotificationService');
         return;
       }
     }
     
     if (content == null) {
-      debugPrint('[NotificationService] ❌ content를 생성할 수 없는 알림: $notificationId');
+      DebugHelper.error('content 생성 실패', tag: 'NotificationService');
       return;
     }
     
-    debugPrint('[NotificationService] content 데이터:');
-    debugPrint('[NotificationService]   - title: ${content['title']}');
-    debugPrint('[NotificationService]   - message: ${content['message']}');
+    // content 데이터 확인 - 로그 제거
     
     final postData = content['postData'] as Map<String, dynamic>?;
     if (postData == null) {
-      debugPrint('[NotificationService] ❌ postData가 없는 알림: $notificationId');
+      DebugHelper.warning('postData가 없는 알림', tag: 'NotificationService');
       return;
     }
     
-    debugPrint('[NotificationService] postData 내용:');
-    debugPrint('[NotificationService]   - questionTitle: ${postData['questionTitle']}');
-    debugPrint('[NotificationService]   - optionA: ${postData['optionA']}');
-    debugPrint('[NotificationService]   - optionB: ${postData['optionB']}');
-    debugPrint('[NotificationService]   - imageUrlA: ${postData['imageUrlA'] != null ? '있음' : '없음'}');
-    debugPrint('[NotificationService]   - imageUrlB: ${postData['imageUrlB'] != null ? '있음' : '없음'}');
-    debugPrint('[NotificationService]   - imageUrlsA: ${postData['imageUrlsA'] != null ? '${(postData['imageUrlsA'] as List).length}개' : '없음'}');
-    debugPrint('[NotificationService]   - imageUrlsB: ${postData['imageUrlsB'] != null ? '${(postData['imageUrlsB'] as List).length}개' : '없음'}');
-    debugPrint('[NotificationService]   - description: ${postData['description'] != null ? '있음' : '없음'}');
-    debugPrint('[NotificationService]   - authorName: ${postData['authorName']}');
+    // postData 내용 확인 - 로그 제거
     
     // BuildContext 가져오기 (appNavigatorKey 사용)
     final context = appNavigatorKey.currentContext;
     if (context == null) {
-      debugPrint('[NotificationService] ❌ context를 가져올 수 없음');
-      debugPrint('[NotificationService] appNavigatorKey.currentContext가 null입니다');
+      DebugHelper.error('context를 가져올 수 없음', tag: 'NotificationService');
       return;
     }
     
-    debugPrint('[NotificationService] ✅ context 획득 성공');
-    debugPrint('[NotificationService] NotificationOverlay.showVoting 호출 중...');
+    // context 획득 성공 - 로그 제거
     
     // 멀티이미지 데이터 추출
     List<String>? imageUrlsA;
@@ -345,10 +297,7 @@ class NotificationService {
     final aspectRatioB = postData['aspectRatioB'] as double?;
     final layoutType = postData['layoutType'] as String?;
     
-    debugPrint('[NotificationService] 레이아웃 정보:');
-    debugPrint('[NotificationService]   - aspectRatioA: $aspectRatioA');
-    debugPrint('[NotificationService]   - aspectRatioB: $aspectRatioB');
-    debugPrint('[NotificationService]   - layoutType: $layoutType');
+    DebugHelper.debug('레이아웃: ${layoutType ?? "default"}', tag: 'NotificationService');
     
     // 알림 표시
     NotificationOverlay.showVoting(
@@ -366,7 +315,7 @@ class NotificationService {
       aspectRatioB: aspectRatioB,
       layoutType: layoutType,
       onVote: (option) {
-        debugPrint('[NotificationService] 사용자가 투표함: $option');
+        DebugHelper.info('사용자 투표: $option', tag: 'NotificationService');
         return _handleVote(
           context,
           notificationId: notificationId,
@@ -375,15 +324,20 @@ class NotificationService {
         );
       },
       onDismiss: () {
-        debugPrint('[NotificationService] 사용자가 알림을 닫음');
+        // 사용자가 알림을 닫음 - 로그 제거
         _markNotificationAsRead(notificationId);
+        // 투표하지 않았다면 'not_participated' 상태로 업데이트
+        updateVoteMessageStatus(
+          postId: postId,
+          userId: currentUserUid,
+          status: 'not_participated',
+        );
       },
       // VersusBoxSizeData는 posts 컬렉션에서 별도로 가져와야 합니다.
       // 현재는 기본값을 사용하며, 추후 PostsModel에 포함될 예정입니다.
     );
     
-    debugPrint('[NotificationService] ✅ 알림 표시 완료: $notificationId');
-    debugPrint('[NotificationService] ========== 알림 표시 종료 ==========');
+    // 알림 표시 완료 - 로그 제거
   }
 
   /// 투표 처리
@@ -394,7 +348,7 @@ class NotificationService {
     required String option,
   }) async {
     try {
-      debugPrint('[NotificationService] 투표 처리: postId=$postId, option=$option');
+      DebugHelper.info('투표 처리 시작: postId=${DebugHelper.maskSensitive(postId)}, option=$option', tag: 'NotificationService');
       
       // 먼저 중복 투표 체크
       final postDoc = await FirebaseFirestore.instance
@@ -413,7 +367,7 @@ class NotificationService {
       
       // 이미 투표했는지 확인
       if (votedUserIDsA.contains(userId) || votedUserIDsB.contains(userId)) {
-        debugPrint('[NotificationService] 이미 투표한 게시물');
+        DebugHelper.info('이미 투표한 게시물', tag: 'NotificationService');
         
         // 알림 읽음 처리
         await _markNotificationAsRead(notificationId);
@@ -439,12 +393,7 @@ class NotificationService {
         'from_chat': false,  // 알림을 통한 투표는 채팅이 아님
       };
       
-      // 디버깅: 전송 데이터 확인
-      debugPrint('[NotificationService] 📤 투표 데이터 전송:');
-      debugPrint('  - user: ${currentUserReference?.path}');
-      debugPrint('  - option: $option');
-      debugPrint('  - from_chat: false');
-      debugPrint('  - 투표 경로: posts/$postId/votes');
+      // 투표 데이터 전송 - 로그 제거
       
       try {
         final voteRef = await FirebaseFirestore.instance
@@ -453,11 +402,9 @@ class NotificationService {
             .collection('votes')
             .add(voteData);
         
-        debugPrint('[NotificationService] ✅ 투표 저장 성공: ${voteRef.id}');
+        // 투표 저장 성공 - 로그 제거
       } catch (error) {
-        debugPrint('[NotificationService] ❌ 투표 저장 실패:');
-        debugPrint('  - 에러: $error');
-        debugPrint('  - 타입: ${error.runtimeType}');
+        DebugHelper.error('투표 저장 실패', error: error, tag: 'NotificationService');
         rethrow;
       }
       
@@ -503,10 +450,10 @@ class NotificationService {
         );
       }
       
-      debugPrint('[NotificationService] 투표 완료');
+      DebugHelper.info('투표 완료', tag: 'NotificationService');
       
     } catch (e) {
-      debugPrint('[NotificationService] 투표 처리 오류: $e');
+      DebugHelper.error('투표 처리 오류', error: e, tag: 'NotificationService');
       
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -530,9 +477,9 @@ class NotificationService {
         'read_at': FieldValue.serverTimestamp(),
       });
       
-      debugPrint('[NotificationService] 알림 읽음 처리: $notificationId');
+      // 알림 읽음 처리 - 로그 제거
     } catch (e) {
-      debugPrint('[NotificationService] 알림 읽음 처리 오류: $e');
+      DebugHelper.warning('알림 읽음 처리 오류', tag: 'NotificationService');
     }
   }
 
@@ -568,8 +515,7 @@ class NotificationService {
     required PostsModel post,
   }) async {
     try {
-      debugPrint('[NotificationService] 투표 요청 채팅 메시지 생성 시작');
-      debugPrint('[NotificationService] senderId: $senderId, recipientId: $recipientId');
+      DebugHelper.debug('투표 요청 메시지 생성', tag: 'NotificationService');
       
       // 1. 기존 채팅방 찾기 또는 생성
       DocumentReference chatRef;
@@ -586,7 +532,7 @@ class NotificationService {
       
       if (existingChat.exists) {
         chatRef = existingChat.reference;
-        debugPrint('[NotificationService] 기존 채팅방 사용: $chatId');
+        // 기존 채팅방 사용 - 로그 제거
       } else {
         // 새 채팅방 생성
         chatRef = FirebaseFirestore.instance
@@ -601,7 +547,7 @@ class NotificationService {
           'chat_name': '채팅',
         });
         
-        debugPrint('[NotificationService] 새 채팅방 생성: $chatId');
+        // 새 채팅방 생성 - 로그 제거
       }
       
       // 2. 투표 요청 메시지 생성
@@ -638,10 +584,50 @@ class NotificationService {
         'lastMessageAt': FieldValue.serverTimestamp(),
       });
       
-      debugPrint('[NotificationService] 투표 요청 채팅 메시지 생성 완료');
+      // 투표 요청 메시지 생성 완료 - 로그 제거
       
     } catch (e) {
-      debugPrint('[NotificationService] 투표 요청 채팅 메시지 생성 오류: $e');
+      DebugHelper.error('투표 요청 메시지 생성 오류', error: e, tag: 'NotificationService');
+    }
+  }
+
+  /// AI 채팅 메시지의 투표 상태 업데이트
+  Future<void> updateVoteMessageStatus({
+    required String postId,
+    required String userId,
+    required String status,
+  }) async {
+    try {
+      DebugHelper.debug('AI 채팅 메시지 상태 업데이트: $status', tag: 'NotificationService');
+      
+      // AI 채팅방 ID 생성
+      final aiChatId = 'ai_assistant_${userId}';
+      
+      // 해당 투표 메시지 찾기
+      final messagesSnapshot = await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(aiChatId)
+          .collection('messages')
+          .where('vote_post_id', isEqualTo: postId)
+          .where('message_type', isEqualTo: 'vote_request')
+          .get();
+      
+      if (messagesSnapshot.docs.isEmpty) {
+        DebugHelper.warning('투표 메시지를 찾을 수 없음', tag: 'NotificationService');
+        return;
+      }
+      
+      // 메시지 상태 업데이트
+      for (final doc in messagesSnapshot.docs) {
+        await doc.reference.update({
+          'card_status': status,
+          'updated_at': FieldValue.serverTimestamp(),
+        });
+        // 메시지 상태 업데이트 완료 - 로그 제거
+      }
+      
+    } catch (e) {
+      DebugHelper.error('AI 채팅 메시지 상태 업데이트 오류', error: e, tag: 'NotificationService');
     }
   }
 }

@@ -11,6 +11,7 @@ import '/components/notifications/constants/voting_notification_constraints.dart
 import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
 import '/core/nav/nav.dart';
 import 'notification_service.dart';
+import '/posts/in_put_post_image/utils/debug_helper.dart';
 
 /// 글로벌 알림 관리자
 /// 
@@ -47,7 +48,7 @@ class GlobalNotificationManager {
   
   /// NotificationService와 연동 시작
   void startListening() async {
-    debugPrint('[GlobalNotificationManager] ========== 알림 매니저 시작 ==========');
+    DebugHelper.info('알림 매니저 시작', tag: 'GlobalNotificationManager');
     
     // 저장된 처리 기록 로드
     await _loadProcessedNotifications();
@@ -55,11 +56,11 @@ class GlobalNotificationManager {
     // NotificationService의 스트림 구독
     _notificationSubscription = NotificationService.instance.notificationsStream.listen(
       (notifications) {
-        debugPrint('[GlobalNotificationManager] 새로운 알림 수신: ${notifications.length}개');
+        DebugHelper.debug('새 알림 수신: ${notifications.length}개', tag: 'GlobalNotificationManager');
         _handleNewNotifications(notifications);
       },
       onError: (error) {
-        debugPrint('[GlobalNotificationManager] ❌ 스트림 오류: $error');
+        DebugHelper.error('스트림 오류', error: error, tag: 'GlobalNotificationManager');
       },
     );
     
@@ -76,7 +77,7 @@ class GlobalNotificationManager {
   
   /// 리스닝 중지
   void stopListening() {
-    debugPrint('[GlobalNotificationManager] 알림 매니저 중지');
+    DebugHelper.info('알림 매니저 중지', tag: 'GlobalNotificationManager');
     
     // 처리 기록 저장
     _saveProcessedNotifications();
@@ -99,13 +100,13 @@ class GlobalNotificationManager {
       
       // 이미 처리된 알림은 무시
       if (_processedNotificationIds.contains(notificationId)) {
-        debugPrint('[GlobalNotificationManager] 이미 처리된 알림 무시: $notificationId');
+        // 이미 처리된 알림 무시 - 로그 제거
         continue;
       }
       
       // 큐에 없는 경우만 추가
       if (!_notificationQueue.any((n) => n.reference.id == notificationId)) {
-        debugPrint('[GlobalNotificationManager] 큐에 알림 추가: ${notification.sourceId}');
+        // 큐에 알림 추가 - 로그 제거
         _notificationQueue.add(notification);
       }
     }
@@ -115,8 +116,7 @@ class GlobalNotificationManager {
       (a.createdAt ?? DateTime.now()).compareTo(b.createdAt ?? DateTime.now())
     );
     
-    debugPrint('[GlobalNotificationManager] 현재 큐 크기: ${_notificationQueue.length}');
-    debugPrint('[GlobalNotificationManager] 처리된 알림 수: ${_processedNotificationIds.length}');
+    DebugHelper.debug('큐 크기: ${_notificationQueue.length}, 처리된: ${_processedNotificationIds.length}', tag: 'GlobalNotificationManager');
     
     // 즉시 처리 시도
     _processQueue();
@@ -136,7 +136,7 @@ class GlobalNotificationManager {
     
     // 다음 알림 가져오기
     final notification = _notificationQueue.removeAt(0);
-    debugPrint('[GlobalNotificationManager] 알림 표시 시작: ${notification.sourceId}');
+    // 알림 표시 시작 - 로그 제거
     
     _showNotification(notification);
   }
@@ -161,7 +161,7 @@ class GlobalNotificationManager {
     }
     
     if (context == null) {
-      debugPrint('[GlobalNotificationManager] Context 준비 실패, 알림 재시도 예약');
+      DebugHelper.warning('Context 준비 실패 - 재시도 예약', tag: 'GlobalNotificationManager');
       // 5초 후 재시도
       Future.delayed(const Duration(seconds: 5), () {
         _notificationQueue.add(notification);
@@ -172,7 +172,7 @@ class GlobalNotificationManager {
     // 알림을 처리 목록에 추가 (중복 표시 방지)
     final notificationId = notification.reference.id;
     _processedNotificationIds.add(notificationId);
-    debugPrint('[GlobalNotificationManager] 알림을 처리 목록에 추가: $notificationId');
+    // 처리 목록에 추가 - 로그 제거
     
     // 처리 기록 저장 (비동기로 처리하여 UI 블로킹 방지)
     _saveProcessedNotifications();
@@ -197,7 +197,7 @@ class GlobalNotificationManager {
       // 먼저 content 필드에서 데이터 파싱 시도
       if (notification.content.isNotEmpty) {
         try {
-          debugPrint('[GlobalNotificationManager] content 필드 파싱 시도...');
+          DebugHelper.debug('content 파싱', tag: 'GlobalNotificationManager');
           final contentData = jsonDecode(notification.content) as Map<String, dynamic>;
           
           if (contentData.containsKey('postData')) {
@@ -210,17 +210,11 @@ class GlobalNotificationManager {
             // 멀티이미지 지원 추가
             if (postData['imageUrlsA'] is List) {
               imageUrlsA = (postData['imageUrlsA'] as List).cast<String>();
-              debugPrint('[GlobalNotificationManager] ✅ imageUrlsA 파싱 성공: ${imageUrlsA.length}개');
-              for (int i = 0; i < imageUrlsA.length; i++) {
-                debugPrint('[GlobalNotificationManager]   - imageUrlsA[$i]: ${imageUrlsA[i].substring(0, 50)}...');
-              }
+              // imageUrlsA 파싱 성공 - 로그 제거
             }
             if (postData['imageUrlsB'] is List) {
               imageUrlsB = (postData['imageUrlsB'] as List).cast<String>();
-              debugPrint('[GlobalNotificationManager] ✅ imageUrlsB 파싱 성공: ${imageUrlsB.length}개');
-              for (int i = 0; i < imageUrlsB.length; i++) {
-                debugPrint('[GlobalNotificationManager]   - imageUrlsB[$i]: ${imageUrlsB[i].substring(0, 50)}...');
-              }
+              // imageUrlsB 파싱 성공 - 로그 제거
             }
             description = postData['description'] ?? postData['descriptionA'] ?? postData['descriptionB'] ?? '';
             aspectRatioA = postData['aspectRatioA']?.toDouble();
@@ -228,34 +222,23 @@ class GlobalNotificationManager {
             layoutType = postData['layoutType'];
             authorName = postData['authorName'];
             
-            debugPrint('[GlobalNotificationManager] ✅ content 필드에서 데이터 파싱 성공');
-            debugPrint('[GlobalNotificationManager] 파싱된 데이터:');
-            debugPrint('[GlobalNotificationManager]   - question: $question');
-            debugPrint('[GlobalNotificationManager]   - optionA: $optionA');
-            debugPrint('[GlobalNotificationManager]   - optionB: $optionB');
-            debugPrint('[GlobalNotificationManager]   - imageUrlsA: ${imageUrlsA?.length ?? 0}개');
-            debugPrint('[GlobalNotificationManager]   - imageUrlsB: ${imageUrlsB?.length ?? 0}개');
-            debugPrint('[GlobalNotificationManager]   - description: $description');
-            debugPrint('[GlobalNotificationManager]   - aspectRatioA: $aspectRatioA');
-            debugPrint('[GlobalNotificationManager]   - aspectRatioB: $aspectRatioB');
-            debugPrint('[GlobalNotificationManager]   - layoutType: $layoutType');
-            debugPrint('[GlobalNotificationManager]   - authorName: $authorName');
+            // content 파싱 성공 - 로그 제거
           }
         } catch (e) {
-          debugPrint('[GlobalNotificationManager] content 파싱 실패, 게시물 조회로 전환: $e');
+          DebugHelper.debug('content 파싱 실패, posts 조회', tag: 'GlobalNotificationManager');
         }
       }
       
       // content 파싱이 실패하거나 데이터가 없으면 게시물 직접 조회
       if (question.isEmpty) {
-        debugPrint('[GlobalNotificationManager] 게시물 정보 조회 중...');
+        // 게시물 정보 조회 - 로그 제거
         final postDoc = await FirebaseFirestore.instance
             .collection('posts')
             .doc(notification.sourceId)
             .get();
         
         if (!postDoc.exists) {
-          debugPrint('[GlobalNotificationManager] ❌ 게시물을 찾을 수 없음: ${notification.sourceId}');
+          DebugHelper.warning('게시물을 찾을 수 없음', tag: 'GlobalNotificationManager');
           _isShowingNotification = false;
           return;
         }
@@ -277,10 +260,10 @@ class GlobalNotificationManager {
             imageUrlsA = mediaList;
             imageUrlA = mediaList.first; // 기존 호환성
           }
-          debugPrint('[GlobalNotificationManager] optionA Map 파싱 - title: $optionA, mediaUrls: ${imageUrlsA?.length ?? 0}개');
+          // optionA Map 파싱 - 로그 제거
         } else {
           optionA = postData['option_a'] ?? postData['text_a'] ?? '';
-          debugPrint('[GlobalNotificationManager] optionA 문자열 파싱: $optionA');
+          // optionA 문자열 파싱 - 로그 제거
         }
         
         if (postData['optionB'] is Map) {
@@ -291,22 +274,17 @@ class GlobalNotificationManager {
             imageUrlsB = mediaList;
             imageUrlB = mediaList.first; // 기존 호환성
           }
-          debugPrint('[GlobalNotificationManager] optionB Map 파싱 - title: $optionB, mediaUrls: ${imageUrlsB?.length ?? 0}개');
+          // optionB Map 파싱 - 로그 제거
         } else {
           optionB = postData['option_b'] ?? postData['text_b'] ?? '';
-          debugPrint('[GlobalNotificationManager] optionB 문자열 파싱: $optionB');
+          // optionB 문자열 파싱 - 로그 제거
         }
         
         // 작성자 이름 추출
         authorName = postData['authorName'] ?? postData['author_name'] ?? postData['author_display_name'] ?? '익명';
       }
       
-      debugPrint('[GlobalNotificationManager] 투표 알림 표시');
-      debugPrint('  - 질문: $question');
-      debugPrint('  - 옵션A: $optionA');
-      debugPrint('  - 옵션B: $optionB');
-      debugPrint('  - 이미지A: ${imageUrlA != null ? "있음" : "없음"} (멀티: ${imageUrlsA?.length ?? 0}개)');
-      debugPrint('  - 이미지B: ${imageUrlB != null ? "있음" : "없음"} (멀티: ${imageUrlsB?.length ?? 0}개)');
+      DebugHelper.info('투표 알림 표시', tag: 'GlobalNotificationManager');
       
       // VersusBoxSizeData 생성 (비율 정보가 있는 경우)
       VersusBoxSizeData? sizeData;
@@ -338,12 +316,9 @@ class GlobalNotificationManager {
             hasImageB: imageUrlB != null,
           );
           
-          debugPrint('[GlobalNotificationManager] VersusBoxSizeData 생성 성공');
-          debugPrint('  - layoutType: ${sizeData.layoutType}');
-          debugPrint('  - aspectRatioA: ${sizeData.aspectRatioA}');
-          debugPrint('  - aspectRatioB: ${sizeData.aspectRatioB}');
+          // VersusBoxSizeData 생성 성공 - 로그 제거
         } catch (e) {
-          debugPrint('[GlobalNotificationManager] VersusBoxSizeData 생성 실패: $e');
+          DebugHelper.warning('VersusBoxSizeData 생성 실패', tag: 'GlobalNotificationManager');
         }
       }
       
@@ -351,12 +326,10 @@ class GlobalNotificationManager {
       final screenWidth = MediaQuery.of(context).size.width;
       
       // 크기 제약 디버그 출력
-      VotingNotificationConstraints.printConstraints(screenWidth);
+      // VotingNotificationConstraints 크기 제약 - 로그 제거
       
       // 표준 showDialog를 사용하여 알림 표시 (Navigator context 문제 해결)
-      debugPrint('[GlobalNotificationManager] VotingNotificationDialog 생성 전 최종 데이터:');
-      debugPrint('  - imageUrlsA 전달: ${imageUrlsA?.length ?? 0}개');
-      debugPrint('  - imageUrlsB 전달: ${imageUrlsB?.length ?? 0}개');
+      // VotingNotificationDialog 생성 - 로그 제거
       
       showDialog(
         context: context,
@@ -383,7 +356,7 @@ class GlobalNotificationManager {
                 showDebugInfo: false,  // 디버그 정보 비활성화
                 authorName: authorName,  // 작성자 이름 전달
                 onVote: (selectedOption) async {
-                  debugPrint('[GlobalNotificationManager] 투표 완료: $selectedOption');
+                  DebugHelper.info('투표 완료: $selectedOption', tag: 'GlobalNotificationManager');
                   
                   // 상태 즉시 업데이트 (권한 오류와 관계없이)
                   _isShowingNotification = false;
@@ -396,9 +369,9 @@ class GlobalNotificationManager {
                   
                   // 비동기로 알림을 읽음으로 표시 시도
                   _markAsRead(notification).then((_) {
-                    debugPrint('[GlobalNotificationManager] 알림 읽음 처리 성공');
+                    // 알림 읽음 처리 성공 - 로그 제거
                   }).catchError((error) {
-                    debugPrint('[GlobalNotificationManager] 알림 읽음 처리 실패 (무시): $error');
+                    // 알림 읽음 처리 실패 - 로그 제거
                   });
                   
                   // 실제 투표 로직 구현
@@ -409,8 +382,8 @@ class GlobalNotificationManager {
                     _processQueue();
                   });
                 },
-                onDismiss: () {
-                  debugPrint('[GlobalNotificationManager] 알림 닫힘');
+                onDismiss: (hasVoted) {
+                  // 알림 닫힘 - 로그 제거
                   _isShowingNotification = false;
                   _currentNotification = null;
                   
@@ -421,7 +394,7 @@ class GlobalNotificationManager {
                   
                   // 닫힌 알림도 처리된 것으로 표시
                   _markAsRead(notification).catchError((error) {
-                    debugPrint('[GlobalNotificationManager] 알림 읽음 처리 실패 (무시): $error');
+                    // 알림 읽음 처리 실패 - 로그 제거
                   });
                   
                   // 다음 알림 처리
@@ -434,7 +407,7 @@ class GlobalNotificationManager {
         },
       );
     } catch (e) {
-      debugPrint('[GlobalNotificationManager] ❌ 알림 표시 오류: $e');
+      DebugHelper.error('알림 표시 오류', error: e, tag: 'GlobalNotificationManager');
       _isShowingNotification = false;
       _currentNotification = null;
     }
@@ -447,9 +420,9 @@ class GlobalNotificationManager {
         'read': true,
         'read_at': FieldValue.serverTimestamp(),
       });
-      debugPrint('[GlobalNotificationManager] 알림 읽음 처리 완료');
+      // 알림 읽음 처리 완료 - 로그 제거
     } catch (e) {
-      debugPrint('[GlobalNotificationManager] ❌ 읽음 처리 실패: $e');
+      DebugHelper.warning('읽음 처리 실패', tag: 'GlobalNotificationManager');
     }
   }
   
@@ -466,7 +439,7 @@ class GlobalNotificationManager {
       _processedNotificationIds.clear();
       _processedNotificationIds.addAll(recentIds);
       
-      debugPrint('[GlobalNotificationManager] 처리 기록 정리 완료: $beforeCount -> ${_processedNotificationIds.length}');
+      DebugHelper.debug('처리 기록 정리: $beforeCount -> ${_processedNotificationIds.length}', tag: 'GlobalNotificationManager');
       
       // 정리 후 저장
       _saveProcessedNotifications();
@@ -479,9 +452,9 @@ class GlobalNotificationManager {
       final prefs = await SharedPreferences.getInstance();
       final savedIds = prefs.getStringList(_processedIdsKey) ?? [];
       _processedNotificationIds.addAll(savedIds);
-      debugPrint('[GlobalNotificationManager] 저장된 처리 기록 로드: ${savedIds.length}개');
+      // 저장된 처리 기록 로드 - 로그 제거
     } catch (e) {
-      debugPrint('[GlobalNotificationManager] 처리 기록 로드 실패: $e');
+      DebugHelper.warning('처리 기록 로드 실패', tag: 'GlobalNotificationManager');
     }
   }
   
@@ -490,9 +463,9 @@ class GlobalNotificationManager {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setStringList(_processedIdsKey, _processedNotificationIds.toList());
-      debugPrint('[GlobalNotificationManager] 처리 기록 저장 완료: ${_processedNotificationIds.length}개');
+      // 처리 기록 저장 - 로그 제거
     } catch (e) {
-      debugPrint('[GlobalNotificationManager] 처리 기록 저장 실패: $e');
+      DebugHelper.warning('처리 기록 저장 실패', tag: 'GlobalNotificationManager');
     }
   }
   
@@ -509,22 +482,18 @@ class GlobalNotificationManager {
     try {
       // currentUserReference 사용 (채팅에서 투표할 때와 동일)
       if (currentUserReference == null) {
-        debugPrint('[GlobalNotificationManager] currentUserReference가 null');
+        DebugHelper.warning('currentUserReference가 null', tag: 'GlobalNotificationManager');
         return;
       }
       
       // 사용자 문서 존재 확인
       final userDoc = await currentUserReference!.get();
       if (!userDoc.exists) {
-        debugPrint('[GlobalNotificationManager] 사용자 문서가 존재하지 않음: ${currentUserReference!.path}');
+        DebugHelper.warning('사용자 문서가 존재하지 않음', tag: 'GlobalNotificationManager');
         return;
       }
       
-      debugPrint('[GlobalNotificationManager] 투표 시도');
-      debugPrint('  - userId: ${currentUserUid}');
-      debugPrint('  - userRef: ${currentUserReference!.path}');
-      debugPrint('  - postId: $postId');
-      debugPrint('  - option: $selectedOption');
+      DebugHelper.debug('투표 시도: postId=${DebugHelper.maskSensitive(postId)}, option=$selectedOption', tag: 'GlobalNotificationManager');
       
       // 모든 작업을 하나의 트랜잭션으로 처리
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -547,7 +516,7 @@ class GlobalNotificationManager {
         
         // 2. 중복 투표 확인 (양쪽 모두 확인)
         if (currentVotedUsersA.contains(currentUserUid) || currentVotedUsersB.contains(currentUserUid)) {
-          debugPrint('[GlobalNotificationManager] 이미 투표한 사용자입니다');
+          DebugHelper.info('이미 투표한 사용자', tag: 'GlobalNotificationManager');
           throw Exception('이미 투표한 사용자입니다');
         }
         
@@ -560,10 +529,7 @@ class GlobalNotificationManager {
           'from_chat': false,  // 알림 기반 투표는 채팅이 아님
         };
         
-        debugPrint('[GlobalNotificationManager] 📤 트랜잭션 내에서 투표 데이터 생성:');
-        debugPrint('  - user (DocumentReference): ${currentUserReference!.path}');
-        debugPrint('  - option: $selectedOption');
-        debugPrint('  - voteRef: ${voteRef.path}');
+        // 트랜잭션 내 투표 데이터 - 로그 제거
         
         transaction.set(voteRef, voteData);
         
@@ -578,16 +544,14 @@ class GlobalNotificationManager {
           'last_vote_at': FieldValue.serverTimestamp(),
         };
         
-        debugPrint('[GlobalNotificationManager] 📊 posts 문서 업데이트:');
-        debugPrint('  - $voteCountField: ${currentCount + 1}');
-        debugPrint('  - $votedUsersField에 사용자 추가');
+        // posts 문서 업데이트 - 로그 제거
         
         transaction.update(postRef, updateData);
       });
       
-      debugPrint('[GlobalNotificationManager] ✅ 투표 저장 완료: $selectedOption (게시물: $postId)');
+      DebugHelper.info('투표 저장 완료', tag: 'GlobalNotificationManager');
     } catch (e) {
-      debugPrint('[GlobalNotificationManager] ❌ 투표 저장 실패: $e');
+      DebugHelper.error('투표 저장 실패', error: e, tag: 'GlobalNotificationManager');
       // 에러는 무시하고 계속 진행 (UX 우선)
     }
   }

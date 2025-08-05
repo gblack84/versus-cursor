@@ -40,9 +40,12 @@ class ChatMessageConverter {
           'votePercentageB': firestoreMessage.voteResults['percentageB'],
           'voteCountA': firestoreMessage.voteResults['votesA'],
           'voteCountB': firestoreMessage.voteResults['votesB'],
-          // 카드 상태
+          // 카드 상태 (실시간 업데이트를 위해 두 필드 모두 전달)
           'cardStatus': firestoreMessage.cardStatus,
           'voteStatus': firestoreMessage.voteStatus,
+          // Firebase Functions에서 사용하는 필드명도 추가
+          'card_status': firestoreMessage.cardStatus,
+          'vote_status': firestoreMessage.voteStatus,
         },
       );
     }

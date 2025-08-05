@@ -56,7 +56,7 @@ async function processVoteCompletion(postId, voteResults) {
         .then(snapshot => {
           const updates = [];
           snapshot.forEach(doc => {
-            updates.push(doc.ref.update({ vote_status: 'completed' }));
+            // 상태 업데이트는 aiChatService.createVoteResultMessage에서 처리
           });
           return Promise.all(updates);
         });

@@ -58,8 +58,7 @@ async function createVoteRequestMessage(userId, postId, postData) {
     vote_description: postData.description || '',
     
     // 카드 상태
-    card_status: 'voting_request', // 초기 상태: 피클요청
-    vote_status: 'pending',
+    card_status: 'voting_request', // 초기 상태: 대기중
     vote_end_time: admin.firestore.Timestamp.fromDate(
       new Date(Date.now() + 10 * 60 * 1000) // 10분 후
     )
@@ -138,7 +137,6 @@ async function createVoteCreatedMessage(userId, postId, postData) {
     
     // 카드 상태
     card_status: 'in_progress', // 작성자는 진행중 상태로 시작
-    vote_status: 'active',
     vote_end_time: admin.firestore.Timestamp.fromDate(
       new Date(Date.now() + 10 * 60 * 1000) // 10분 후
     )
@@ -245,6 +243,19 @@ async function updateVoteParticipation(userId, postId, choice) {
 async function createVoteResultMessage(userId, postId, voteResults) {
   const chatId = getAIChatId(userId);
   
+  // 실제 투표 여부 확인을 위해 posts 컬렉션에서 데이터 가져오기
+  const postDoc = await admin.firestore()
+    .collection('posts')
+    .doc(postId)
+    .get();
+  
+  const postData = postDoc.data();
+  const votedUserIDsA = postData.votedUserIDsA || [];
+  const votedUserIDsB = postData.votedUserIDsB || [];
+  const userVoted = votedUserIDsA.includes(userId) || votedUserIDsB.includes(userId);
+  
+  console.log(`[AI 채팅] 투표 여부 확인: userId=${userId}, postId=${postId}, voted=${userVoted}`);
+  
   // 기존 투표 메시지 상태 업데이트
   const messagesSnapshot = await admin.firestore()
     .collection('chats')
@@ -265,16 +276,15 @@ async function createVoteResultMessage(userId, postId, voteResults) {
     if (data.message_type === 'vote_created') {
       finalStatus = 'completed';
     } else {
-      // 일반 투표 요청 메시지는 참여 여부에 따라 결정
-      finalStatus = data.user_voted ? 'completed' : 'not_participated';
+      // 일반 투표 요청 메시지는 실제 투표 여부로 결정
+      finalStatus = userVoted ? 'completed' : 'not_participated';
     }
     
-    console.log(`[AI 채팅] 메시지 상태 업데이트: messageId=${doc.id}, type=${data.message_type}, finalStatus=${finalStatus}`);
+    console.log(`[AI 채팅] 메시지 상태 업데이트: messageId=${doc.id}, type=${data.message_type}, userVoted=${userVoted}, finalStatus=${finalStatus}`);
     
     updatePromises.push(
       doc.ref.update({
         card_status: finalStatus,
-        vote_status: 'completed',
         vote_completed_at: admin.firestore.Timestamp.now(),
         // 투표 결과 정보 추가
         vote_results_a: voteResults.displayVotesA || voteResults.votesA,

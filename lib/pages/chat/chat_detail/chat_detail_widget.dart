@@ -320,15 +320,15 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
   Widget _customMessageBuilder(types.CustomMessage message, {required int messageWidth}) {
     final metadata = message.metadata ?? {};
     
-    // 디버깅 로그 추가
-    print('[Chat] customMessageBuilder: type=${metadata['type']}, postId=${metadata['postId']}');
-    
     // 투표 메시지 (투표 요청 및 투표 생성)
     if (metadata['type'] == 'vote_request' || metadata['type'] == 'vote_created') {
       // Firestore에서 추가 데이터 가져오기
+      // vote_post_id로 검색하여 메시지 찾기
+      final postId = metadata['postId'] ?? '';
       final messageDoc = widget.chatDocument?.reference
           .collection('messages')
-          .where('message_id', isEqualTo: message.id)
+          .where('vote_post_id', isEqualTo: postId)
+          .where('message_type', isEqualTo: metadata['type'])
           .limit(1);
       
       return StreamBuilder<QuerySnapshot>(
@@ -342,6 +342,19 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
           // aspectRatio 데이터 추출
           final aspectRatioA = messageData?['vote_aspect_ratio_a'] ?? metadata['aspectRatioA'];
           final aspectRatioB = messageData?['vote_aspect_ratio_b'] ?? metadata['aspectRatioB'];
+          
+          // 현재 사용자의 투표 상태 확인
+          final userVotes = messageData?['user_votes'] as Map<String, dynamic>?;
+          final currentUserVote = userVotes?[currentUserUid] as Map<String, dynamic>?;
+          final hasUserVoted = currentUserVote != null;
+          final userVoteOption = currentUserVote?['option'] as String?;
+          
+          // 투표 상태 디버깅
+          if (messageData != null) {
+            print('[VoteStatus Debug] postId=$postId, hasUserVoted=$hasUserVoted, userVoteOption=$userVoteOption');
+            print('[VoteStatus Debug] user_votes 전체: ${messageData['user_votes']}');
+            print('[VoteStatus Debug] 현재 사용자 UID: $currentUserUid');
+          }
           
           // 이미지 프리로딩
           final imageA = metadata['optionAImage'];
@@ -380,16 +393,37 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
               imageUrlsB: imagesB ?? (metadata['optionBImages'] != null 
                   ? List<String>.from(metadata['optionBImages']) 
                   : null),
-              votePercentageA: metadata['votePercentageA'] as double?,
-              votePercentageB: metadata['votePercentageB'] as double?,
-              voteCountA: metadata['voteCountA'] as int?,
-              voteCountB: metadata['voteCountB'] as int?,
+              // 투표 결과도 실시간 데이터 우선 사용
+              votePercentageA: (messageData?['vote_percent_a'] as num?)?.toDouble() ?? 
+                              metadata['votePercentageA'] as double?,
+              votePercentageB: (messageData?['vote_percent_b'] as num?)?.toDouble() ?? 
+                              metadata['votePercentageB'] as double?,
+              voteCountA: messageData?['vote_results_a'] as int? ?? 
+                         metadata['voteCountA'] as int?,
+              voteCountB: messageData?['vote_results_b'] as int? ?? 
+                         metadata['voteCountB'] as int?,
               aspectRatioA: aspectRatioA != null ? aspectRatioA.toDouble() : null,
               aspectRatioB: aspectRatioB != null ? aspectRatioB.toDouble() : null,
-              voteStatus: messageData?['card_status'] ?? messageData?['vote_status'] ?? metadata['cardStatus'] ?? 'pending',
+              // messageData는 Firestore의 실시간 데이터, metadata는 ChatMessageConverter의 고정 데이터
+              // 실시간 업데이트를 위해 messageData를 우선 사용
+              voteStatus: hasUserVoted ? 'completed' :  // 사용자가 투표했으면 'completed'
+                         messageData?['card_status'] ?? 
+                         messageData?['vote_status'] ?? 
+                         metadata['cardStatus'] ?? 
+                         metadata['voteStatus'] ?? 
+                         'not_participated',  // 기본값을 'not_participated'로 변경
               isMe: message.author.id == _currentUser.id,
               timestamp: DateTime.fromMillisecondsSinceEpoch(message.createdAt ?? 0),
               onTap: () {
+                // 이미 투표한 경우 알림 표시
+                if (hasUserVoted) {
+                  BotToast.showText(
+                    text: '이미 ${userVoteOption == 'A' ? 'A' : 'B'} 옵션에 투표하셨습니다.',
+                    duration: const Duration(seconds: 2),
+                  );
+                  return;
+                }
+                
                 // 투표 다이얼로그 표시
                 _showVotingDialog(
                   postId: metadata['postId'] ?? '',
@@ -545,8 +579,6 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
                       
                       final messages = <types.Message>[];
                       for (final message in snapshot.data!) {
-                        // 디버깅 로그
-                        print('[Chat] 메시지 처리: messageId=${message.messageId}, senderId=${message.senderId}, messageType=${message.messageType}');
                         
                         // AI 사용자 특별 처리
                         if (message.senderId == 'ai_assistant') {
@@ -732,7 +764,7 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
                 option: option,
               );
             },
-            onDismiss: () {
+            onDismiss: (hasVoted) {
               Navigator.of(context).pop();
             },
           ),
@@ -786,6 +818,48 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
           'last_vote_at': FieldValue.serverTimestamp(),
         });
       });
+      
+      // 채팅 메시지의 투표 상태 업데이트
+      if (widget.chatDocument != null) {
+        print('[Vote] 메시지 업데이트 시작: postId=$postId');
+        
+        final messageQuery = await widget.chatDocument!.reference
+            .collection('messages')
+            .where('vote_post_id', isEqualTo: postId)
+            .where('message_type', isEqualTo: 'vote_request')
+            .limit(1)
+            .get();
+        
+        print('[Vote] 쿼리 결과: ${messageQuery.docs.length}개 메시지 발견');
+        
+        if (messageQuery.docs.isNotEmpty) {
+          final messageDoc = messageQuery.docs.first;
+          print('[Vote] 메시지 ID: ${messageDoc.id}, message_id 필드: ${messageDoc.data()['message_id']}');
+          
+          // 개별 사용자의 투표 정보를 저장할 맵 가져오기 또는 생성
+          final currentUserVotes = Map<String, dynamic>.from(
+            messageDoc.data()['user_votes'] ?? {}
+          );
+          
+          // 현재 사용자의 투표 정보 추가
+          currentUserVotes[currentUserUid] = {
+            'option': option,
+            'voted_at': FieldValue.serverTimestamp(),
+          };
+          
+          // 메시지 문서 업데이트
+          await messageDoc.reference.update({
+            'user_votes': currentUserVotes,
+            // 전체 투표 상태도 업데이트 (모든 사용자가 투표했는지 확인 필요)
+            'vote_status': 'participated', // 최소 한 명이 투표한 상태
+            'last_vote_update': FieldValue.serverTimestamp(),
+          });
+          
+          print('[Vote] 메시지 업데이트 완료');
+        } else {
+          print('[Vote] 경고: 해당 postId의 메시지를 찾을 수 없음');
+        }
+      }
       
       BotToast.showText(text: '투표가 완료되었습니다!');
     } catch (e) {

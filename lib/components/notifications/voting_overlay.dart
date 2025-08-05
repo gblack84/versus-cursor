@@ -28,7 +28,7 @@ class VotingOverlay {
           imageUrlA: imageUrlA,
           imageUrlB: imageUrlB,
           onVote: onVote,
-          onDismiss: hide,
+          onDismiss: (hasVoted) => hide(),
         ),
       ),
     );

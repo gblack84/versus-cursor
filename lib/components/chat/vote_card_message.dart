@@ -747,7 +747,7 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
               Navigator.of(context).pop();
             }
           },
-          onDismiss: () {
+          onDismiss: (hasVoted) {
             Navigator.of(context).pop();
           },
         ),

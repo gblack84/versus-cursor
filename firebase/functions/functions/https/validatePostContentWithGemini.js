@@ -6,6 +6,7 @@
 const functions = require("firebase-functions");
 const { validateContentWithGenkit } = require("../../ai/contentModeration");
 const { admin } = require("../../config/firebase");
+const { createLogger } = require("../../config/logger");
 
 exports.validatePostContentWithGemini = functions
   .region("asia-northeast3")
@@ -14,6 +15,8 @@ exports.validatePostContentWithGemini = functions
     memory: '1GB'        // 메모리 증가 (AI 처리를 위해)
   })
   .https.onCall(async (data, context) => {
+    const logger = createLogger('validatePostContentWithGemini');
+    
     // 인증 확인
     if (!context.auth) {
       throw new functions.https.HttpsError('unauthenticated', '로그인이 필요합니다.');
@@ -36,11 +39,11 @@ exports.validatePostContentWithGemini = functions
     } = data;
 
     try {
-      console.log(`[AI 검증] 콘텐츠 검증 시작 - User: ${userId || context.auth.uid}`);
+      logger.info(`콘텐츠 검증 시작 - User: ${logger.maskSensitive(userId || context.auth.uid)}`);
       
       // AI 검증이 설정되지 않은 경우 기본 통과
       if (!process.env.GOOGLE_GENAI_API_KEY && !functions.config().google?.genai_api_key) {
-        console.log('[AI 검증] API 키가 설정되지 않아 기본 통과 처리');
+        logger.warning('API 키가 설정되지 않아 기본 통과 처리');
         return {
           isValid: true,
           reason: '',
@@ -78,14 +81,15 @@ exports.validatePostContentWithGemini = functions
           },
           tokenUsage: result.tokenUsage,
           timestamp: admin.firestore.FieldValue.serverTimestamp()
-        }, sessionId, documentId);
+        }, sessionId, documentId, logger);
       }
       
-      console.log('[AI 검증] AI 검증 결과:');
-      console.log('  - isValid:', result.isValid);
-      console.log('  - expectedRatio:', JSON.stringify(result.expectedRatio));
-      console.log('  - expectedRatio.A:', result.expectedRatio?.A);
-      console.log('  - expectedRatio.B:', result.expectedRatio?.B);
+      logger.debug('AI 검증 결과', {
+        isValid: result.isValid,
+        expectedRatio: result.expectedRatio,
+        expectedRatioA: result.expectedRatio?.A,
+        expectedRatioB: result.expectedRatio?.B
+      });
       
       const returnData = {
         isValid: result.isValid !== false,
@@ -97,15 +101,15 @@ exports.validatePostContentWithGemini = functions
         documentId: documentId
       };
       
-      console.log('[AI 검증] 반환할 데이터:', JSON.stringify(returnData));
+      logger.debug('반환할 데이터', returnData);
       return returnData;
       
     } catch (error) {
-      console.error('[AI 검증] 오류 발생:', error);
+      logger.error('오류 발생', error);
       
       // 타임아웃 에러 특별 처리
       if (error.message && error.message.includes('DEADLINE_EXCEEDED')) {
-        console.error('[AI 검증] ❌ AI 검증 타임아웃 - 기본 통과 처리');
+        logger.error('❌ AI 검증 타임아웃 - 기본 통과 처리');
         
         // 타임아웃 통계 기록
         try {
@@ -117,7 +121,7 @@ exports.validatePostContentWithGemini = functions
             sessionId: sessionId
           });
         } catch (logError) {
-          console.error('[AI 검증] 로그 기록 실패:', logError);
+          logger.error('로그 기록 실패', logError);
         }
       }
       
@@ -137,7 +141,7 @@ exports.validatePostContentWithGemini = functions
 /**
  * 검증 결과 로깅
  */
-async function logValidationResult(data, sessionId, documentId) {
+async function logValidationResult(data, sessionId, documentId, logger) {
   try {
     const db = admin.firestore();
     const collection = db.collection('content_validations');
@@ -151,7 +155,7 @@ async function logValidationResult(data, sessionId, documentId) {
         revisionCount: admin.firestore.FieldValue.increment(1)
       }, { merge: true });
       
-      console.log(`[AI 검증] 검증 결과 업데이트: ${documentId}`);
+      logger.debug(`검증 결과 업데이트: ${documentId}`);
     } else if (sessionId) {
       // 세션 ID 기반으로 문서 ID 생성
       finalDocId = `${data.userId}_${sessionId}`;
@@ -161,17 +165,17 @@ async function logValidationResult(data, sessionId, documentId) {
         revisionCount: 1
       });
       
-      console.log(`[AI 검증] 새 검증 결과 생성: ${finalDocId}`);
+      logger.debug(`새 검증 결과 생성: ${finalDocId}`);
     } else {
       // 기존 방식 (새 문서 생성)
       const docRef = await collection.add(data);
       finalDocId = docRef.id;
-      console.log(`[AI 검증] 새 검증 결과 생성 (auto ID): ${finalDocId}`);
+      logger.debug(`새 검증 결과 생성 (auto ID): ${finalDocId}`);
     }
     
     return finalDocId;
   } catch (error) {
-    console.error('[AI 검증] 로깅 실패:', error);
+    logger.error('로깅 실패', error);
     // 로깅 실패는 무시 (서비스 중단 방지)
     return null;
   }

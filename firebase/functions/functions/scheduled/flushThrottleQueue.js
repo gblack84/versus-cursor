@@ -7,6 +7,7 @@ const functions = require("firebase-functions");
 const { admin } = require("../../config/firebase");
 const { processVoteCompletion, calculateDisplayVotes } = require("../../services/voteManagement");
 const { createVoteResultMessage } = require("../../services/aiChatService");
+const { createLogger } = require("../../config/logger");
 // throttleQueue\ub294 onPostVoteUpdate\uc5d0\uc11c export\ub418\uc5b4\uc57c \ud568\n// \uc784\uc2dc\ub85c \ud604\uc7ac\ub294 \uac01 \ud568\uc218\uac00 \ub3c5\ub9bd\uc801\uc73c\ub85c \uc791\ub3d9\ud558\ub3c4\ub85d \uc124\uc815\nconst throttleQueue = new Map();
 
 // Timestamp 파싱 헬퍼 함수
@@ -50,28 +51,28 @@ exports.flushThrottleQueue = functions
   .pubsub
   .schedule('every 1 minutes')
   .onRun(async (context) => {
+    const logger = createLogger('flushThrottleQueue');
     const db = admin.firestore();
     const now = admin.firestore.Timestamp.now();
     
-    console.log('[10분 타이머] ========== Scheduled Function 실행 시작 ==========');
-    console.log('[10분 타이머] 현재 시간:', now.toDate().toISOString());
+    logger.info('========== Scheduled Function 실행 시작 ==========');
+    logger.debug(`현재 시간: ${now.toDate().toISOString()}`);
     
     try {
       // 10분 타이머가 만료된 투표 찾기
       // 먼저 모든 active 투표를 가져온 후 JavaScript에서 필터링
       const activeVotesSnapshot = await db.collection('posts')
-        .where('vote_status', '==', 'active')
         .where('vote_completed', '==', false)
         .limit(100) // 더 많은 문서 가져오기
         .get();
       
       if (activeVotesSnapshot.empty) {
-        console.log('[10분 타이머] Active 상태인 투표 없음');
-        console.log('[10분 타이머] ========== Scheduled Function 종료 ==========');
+        logger.debug('Active 상태인 투표 없음');
+        logger.info('========== Scheduled Function 종료 ==========');
         return null;
       }
       
-      console.log(`[10분 타이머] ${activeVotesSnapshot.size}개의 active 투표 확인 중...`);
+      logger.info(`${activeVotesSnapshot.size}개의 active 투표 확인 중...`);
       
       // JavaScript에서 만료된 투표 필터링
       const expiredVotes = [];
@@ -81,31 +82,35 @@ exports.flushThrottleQueue = functions
         
         if (voteEndTime && voteEndTime.toMillis() <= now.toMillis()) {
           expiredVotes.push(doc);
-          console.log(`[10분 타이머] 만료된 투표 발견: ${doc.id}`);
-          console.log(`  - vote_end_time: ${voteEndTime.toDate().toISOString()}`);
-          console.log(`  - 현재 시간: ${now.toDate().toISOString()}`);
+          logger.debug(`만료된 투표 발견: ${doc.id}`, {
+            voteEndTime: voteEndTime.toDate().toISOString(),
+            currentTime: now.toDate().toISOString()
+          });
         }
       });
       
       if (expiredVotes.length === 0) {
-        console.log('[10분 타이머] 만료된 투표 없음');
+        logger.debug('만료된 투표 없음');
         
         // 디버그 정보 출력
-        console.log('[10분 타이머] ========== 디버그: Active 투표 상태 ==========');
+        logger.debug('========== 디버그: Active 투표 상태 ==========');
         activeVotesSnapshot.forEach(doc => {
           const data = doc.data();
           const voteEndTime = parseTimestamp(data.vote_end_time);
-          console.log(`[10분 타이머] Post ${doc.id}:`);
-          console.log(`  - vote_end_time 원본: ${JSON.stringify(data.vote_end_time)}`);
-          console.log(`  - vote_end_time 파싱: ${voteEndTime ? voteEndTime.toDate().toISOString() : 'null'}`);
-          console.log(`  - 남은 시간: ${voteEndTime ? Math.round((voteEndTime.toMillis() - now.toMillis()) / 1000 / 60) + '분' : 'N/A'}`);
+          const remainingMinutes = voteEndTime ? Math.round((voteEndTime.toMillis() - now.toMillis()) / 1000 / 60) : null;
+          
+          logger.debug(`Post ${doc.id}`, {
+            voteEndTimeRaw: logger.maskData(data.vote_end_time),
+            voteEndTimeParsed: voteEndTime ? voteEndTime.toDate().toISOString() : 'null',
+            remainingTime: remainingMinutes ? `${remainingMinutes}분` : 'N/A'
+          });
         });
         
-        console.log('[10분 타이머] ========== Scheduled Function 종료 ==========');
+        logger.info('========== Scheduled Function 종료 ==========');
         return null;
       }
       
-      console.log(`[10분 타이머] ${expiredVotes.length}개의 만료된 투표 처리 시작`);
+      logger.info(`${expiredVotes.length}개의 만료된 투표 처리 시작`);
       
       // 각 게시물에 대해 투표 종료 처리
       const results = await Promise.allSettled(
@@ -124,7 +129,7 @@ exports.flushThrottleQueue = functions
             B: postData.moderation?.expected_ratio_b || 0.5
           };
           
-          console.log(`[투표 처리] AI 예상 비율 - A: ${expectedRatio.A}, B: ${expectedRatio.B}`);
+          logger.debug(`AI 예상 비율 - A: ${expectedRatio.A}, B: ${expectedRatio.B}`);
           
           // 투표 증폭 계산 (목표: 100명)
           const targetCount = 100;
@@ -164,7 +169,6 @@ exports.flushThrottleQueue = functions
             await doc.ref.update({
               vote_completed: true,
               vote_completed_at: admin.firestore.FieldValue.serverTimestamp(),
-              vote_status: 'completed',
               // 표시용 투표 수 (증폭된 수)
               display_votes_a: displayVotes.A,
               display_votes_b: displayVotes.B,
@@ -202,9 +206,9 @@ exports.flushThrottleQueue = functions
             );
             await Promise.all(messagePromises);
             
-            console.log(`[10분 타이머] Post ${postId} 완료 처리 성공`);
+            logger.info(`Post ${postId} 완료 처리 성공`);
           } catch (error) {
-            console.error(`[10분 타이머] Post ${postId} 처리 실패:`, error);
+            logger.error(`Post ${postId} 처리 실패`, error);
             throw error;
           }
         })
@@ -214,13 +218,13 @@ exports.flushThrottleQueue = functions
       const succeeded = results.filter(r => r.status === 'fulfilled').length;
       const failed = results.filter(r => r.status === 'rejected').length;
       
-      console.log(`[10분 타이머] 처리 완료 - 성공: ${succeeded}, 실패: ${failed}`);
-      console.log('[10분 타이머] ========== Scheduled Function 종료 ==========');
+      logger.info(`처리 완료 - 성공: ${succeeded}, 실패: ${failed}`);
+      logger.info('========== Scheduled Function 종료 ==========');
       
       return { succeeded, failed };
       
     } catch (error) {
-      console.error('[10분 타이머] 오류 발생:', error);
+      logger.error('오류 발생', error);
       throw error;
     }
   });

@@ -120,8 +120,8 @@ class NotificationOverlay {
               Navigator.of(dialogContext).pop(); // 다이얼로그 닫기
               onVote(option);
             },
-            onDismiss: () {
-              debugPrint('[NotificationOverlay] 사용자가 알림을 닫음 (X 버튼 또는 나중에)');
+            onDismiss: (hasVoted) {
+              debugPrint('[NotificationOverlay] 사용자가 알림을 닫음 (X 버튼 또는 나중에), 투표 여부: $hasVoted');
               Navigator.of(dialogContext).pop(); // 다이얼로그 닫기
               if (onDismiss != null) {
                 onDismiss();

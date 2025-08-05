@@ -193,8 +193,8 @@ async function batchUpdateVoteResults(postId, participants) {
         const batch = db.batch();
         
         snapshot.forEach(doc => {
+          // 상태 업데이트는 aiChatService.createVoteResultMessage에서 처리
           batch.update(doc.ref, {
-            vote_status: 'completed',
             updated_at: admin.firestore.FieldValue.serverTimestamp()
           });
         });

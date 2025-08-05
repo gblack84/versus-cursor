@@ -550,6 +550,66 @@ class GlobalNotificationManager {
       });
       
       DebugHelper.info('투표 저장 완료', tag: 'GlobalNotificationManager');
+      
+      // 5. AI 채팅 메시지 업데이트 (트랜잭션 외부에서 처리)
+      try {
+        // posts 문서를 다시 읽어서 작성자 ID 가져오기
+        final postDoc = await FirebaseFirestore.instance
+            .collection('posts')
+            .doc(postId)
+            .get();
+        
+        if (postDoc.exists) {
+          final postData = postDoc.data() as Map<String, dynamic>;
+          final authorId = postData['user_id'] ?? postData['userId'] ?? postData['author_id'];
+          
+          if (authorId != null) {
+            // AI 채팅 ID 계산
+            final aiChatId = 'ai_assistant_$authorId';
+            DebugHelper.debug('AI 채팅 메시지 업데이트 시도: chatId=$aiChatId', tag: 'GlobalNotificationManager');
+            
+            // AI 채팅에서 해당 postId의 메시지 찾기
+            final aiMessageQuery = await FirebaseFirestore.instance
+                .collection('chats')
+                .doc(aiChatId)
+                .collection('messages')
+                .where('vote_post_id', isEqualTo: postId)
+                .limit(1)
+                .get();
+            
+            if (aiMessageQuery.docs.isNotEmpty) {
+              final messageDoc = aiMessageQuery.docs.first;
+              final messageData = messageDoc.data();
+              DebugHelper.debug('AI 채팅 메시지 찾음: messageId=${messageDoc.id}', tag: 'GlobalNotificationManager');
+              
+              // 개별 사용자의 투표 정보를 저장할 맵 가져오기 또는 생성
+              final currentUserVotes = Map<String, dynamic>.from(
+                messageData['user_votes'] ?? {}
+              );
+              
+              // 현재 사용자의 투표 정보 추가
+              currentUserVotes[currentUserUid] = {
+                'option': selectedOption,
+                'voted_at': FieldValue.serverTimestamp(),
+              };
+              
+              // 메시지 문서 업데이트
+              await messageDoc.reference.update({
+                'user_votes': currentUserVotes,
+                'vote_status': 'participated',
+                'last_vote_update': FieldValue.serverTimestamp(),
+              });
+              
+              DebugHelper.debug('AI 채팅 메시지 user_votes 업데이트 완료', tag: 'GlobalNotificationManager');
+            } else {
+              DebugHelper.debug('AI 채팅에서 해당 postId의 메시지를 찾을 수 없음', tag: 'GlobalNotificationManager');
+            }
+          }
+        }
+      } catch (e) {
+        DebugHelper.warning('AI 채팅 메시지 업데이트 실패: $e', tag: 'GlobalNotificationManager');
+        // AI 채팅 업데이트 실패는 무시하고 계속 진행
+      }
     } catch (e) {
       DebugHelper.error('투표 저장 실패', error: e, tag: 'GlobalNotificationManager');
       // 에러는 무시하고 계속 진행 (UX 우선)

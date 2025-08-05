@@ -22,6 +22,10 @@ class DebugHelper {
     LogLevel.ERROR: '❌',
   };
   
+  /// 중복 로그 억제를 위한 캐시
+  static final Map<String, DateTime> _lastLogTimes = {};
+  static const Duration _duplicateThreshold = Duration(milliseconds: 500);
+  
   /// 디버그 모드인지 확인
   static bool get isDebugMode => !kReleaseMode;
   
@@ -56,9 +60,26 @@ class DebugHelper {
     // 로그 레벨 확인
     if (level.index < minimumLevel.index) return;
     
+    // 중복 로그 억제
+    final logKey = '$level|$tag|$message';
+    final now = DateTime.now();
+    if (_lastLogTimes.containsKey(logKey)) {
+      final lastTime = _lastLogTimes[logKey]!;
+      if (now.difference(lastTime) < _duplicateThreshold) {
+        return; // 중복 로그 무시
+      }
+    }
+    _lastLogTimes[logKey] = now;
+    
+    // 오래된 캐시 항목 정리 (메모리 누수 방지)
+    if (_lastLogTimes.length > 100) {
+      _lastLogTimes.removeWhere((key, time) => 
+        now.difference(time) > const Duration(seconds: 10));
+    }
+    
     final emoji = _levelEmojis[level] ?? '';
     final prefix = tag != null ? '[$tag] ' : '';
-    final timestamp = DateTime.now().toIso8601String().substring(11, 19);
+    final timestamp = now.toIso8601String().substring(11, 19);
     
     print('$timestamp $emoji $prefix$message');
   }

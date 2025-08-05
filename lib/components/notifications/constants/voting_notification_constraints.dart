@@ -174,16 +174,6 @@ class VotingNotificationConstraints {
     // 최소/최대 크기 제한 적용
     final finalSize = adaptedSize.clamp(minTextSize, maxTextSize);
     
-    print('[VotingNotificationConstraints] 적응형 텍스트 크기 계산:');
-    print('  - boxHeight: $boxHeight');
-    print('  - defaultBoxHeight: $defaultBoxHeight');
-    print('  - heightRatio: $heightRatio');
-    print('  - baseTextSize: $baseTextSize');
-    print('  - adaptedSize: $adaptedSize');
-    print('  - minTextSize: $minTextSize');
-    print('  - maxTextSize: $maxTextSize');
-    print('  - finalSize: $finalSize');
-    
     return finalSize;
   }
   

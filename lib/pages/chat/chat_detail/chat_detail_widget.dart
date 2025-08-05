@@ -17,6 +17,7 @@ import '/components/chat/vote_card_message.dart';
 import '/components/chat/vote_request_message.dart';
 import '/components/notifications/voting_notification_dialog.dart';
 import '/services/chat_image_cache_service.dart';
+import '/posts/in_put_post_image/utils/debug_helper.dart';
 import 'chat_detail_model.dart';
 export 'chat_detail_model.dart';
 
@@ -46,6 +47,9 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
   
   // 스크롤 컨트롤러 (프리로딩 최적화용)
   final ScrollController _scrollController = ScrollController();
+  
+  // 이전 user_votes 상태를 추적하기 위한 맵
+  final Map<String, Map<String, dynamic>?> _previousUserVotes = {};
 
   @override
   void initState() {
@@ -325,14 +329,32 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
       // Firestore에서 추가 데이터 가져오기
       // vote_post_id로 검색하여 메시지 찾기
       final postId = metadata['postId'] ?? '';
-      final messageDoc = widget.chatDocument?.reference
-          .collection('messages')
-          .where('vote_post_id', isEqualTo: postId)
-          .where('message_type', isEqualTo: metadata['type'])
-          .limit(1);
+      
+      // AI 채팅인지 일반 채팅인지 확인
+      Stream<QuerySnapshot>? messageStream;
+      if (widget.chatDocument != null) {
+        // 일반 채팅
+        messageStream = widget.chatDocument!.reference
+            .collection('messages')
+            .where('vote_post_id', isEqualTo: postId)
+            .where('message_type', isEqualTo: metadata['type'])
+            .limit(1)
+            .snapshots();
+      } else {
+        // AI 채팅
+        final aiChatId = 'ai_assistant_$currentUserUid';
+        messageStream = FirebaseFirestore.instance
+            .collection('chats')
+            .doc(aiChatId)
+            .collection('messages')
+            .where('vote_post_id', isEqualTo: postId)
+            .where('message_type', isEqualTo: metadata['type'])
+            .limit(1)
+            .snapshots();
+      }
       
       return StreamBuilder<QuerySnapshot>(
-        stream: messageDoc?.snapshots(),
+        stream: messageStream,
         builder: (context, snapshot) {
           final messageData = snapshot.data?.docs.firstOrNull?.data() as Map<String, dynamic>?;
           
@@ -349,11 +371,24 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
           final hasUserVoted = currentUserVote != null;
           final userVoteOption = currentUserVote?['option'] as String?;
           
-          // 투표 상태 디버깅
+          // 투표 상태 디버깅 - user_votes가 변경된 경우에만 로그 출력
+          String? userVotesStr;
+          String? previousVotesStr;
+          
           if (messageData != null) {
-            print('[VoteStatus Debug] postId=$postId, hasUserVoted=$hasUserVoted, userVoteOption=$userVoteOption');
-            print('[VoteStatus Debug] user_votes 전체: ${messageData['user_votes']}');
-            print('[VoteStatus Debug] 현재 사용자 UID: $currentUserUid');
+            userVotesStr = messageData['user_votes']?.toString();
+            previousVotesStr = _previousUserVotes[postId]?.toString();
+            
+            if (userVotesStr != previousVotesStr) {
+              DebugHelper.debug('[VoteStatus] 투표 상태 변경 감지!', tag: 'Vote');
+              DebugHelper.debug('[VoteStatus] postId=$postId, hasUserVoted=$hasUserVoted, userVoteOption=$userVoteOption', tag: 'Vote');
+              DebugHelper.debug('[VoteStatus] user_votes 전체: ${messageData['user_votes']}', tag: 'Vote');
+              DebugHelper.debug('[VoteStatus] 현재 사용자 UID: $currentUserUid', tag: 'Vote');
+              DebugHelper.debug('[VoteStatus] widget.chatDocument: ${widget.chatDocument != null ? "있음" : "null (AI 채팅)"}', tag: 'Vote');
+              
+              // 현재 상태를 이전 상태로 저장
+              _previousUserVotes[postId] = Map<String, dynamic>.from(messageData['user_votes'] ?? {});
+            }
           }
           
           // 이미지 프리로딩
@@ -406,12 +441,20 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
               aspectRatioB: aspectRatioB != null ? aspectRatioB.toDouble() : null,
               // messageData는 Firestore의 실시간 데이터, metadata는 ChatMessageConverter의 고정 데이터
               // 실시간 업데이트를 위해 messageData를 우선 사용
-              voteStatus: hasUserVoted ? 'completed' :  // 사용자가 투표했으면 'completed'
-                         messageData?['card_status'] ?? 
-                         messageData?['vote_status'] ?? 
-                         metadata['cardStatus'] ?? 
-                         metadata['voteStatus'] ?? 
-                         'not_participated',  // 기본값을 'not_participated'로 변경
+              voteStatus: (() {
+                final status = hasUserVoted ? 'completed' :  // 사용자가 투표했으면 'completed'
+                               messageData?['card_status'] ?? 
+                               messageData?['vote_status'] ?? 
+                               metadata['cardStatus'] ?? 
+                               metadata['voteStatus'] ?? 
+                               'not_participated';  // 기본값을 'not_participated'로 변경
+                
+                // 상태가 변경된 경우에만 로그 출력
+                if (userVotesStr != previousVotesStr) {
+                  DebugHelper.debug('[VoteStatus] 최종 voteStatus: $status (hasUserVoted: $hasUserVoted)', tag: 'Vote');
+                }
+                return status;
+              })(),
               isMe: message.author.id == _currentUser.id,
               timestamp: DateTime.fromMillisecondsSinceEpoch(message.createdAt ?? 0),
               onTap: () {
@@ -446,7 +489,7 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
             );
           } else if (metadata['type'] == 'vote_created') {
             // vote_created 타입은 VoteCardMessage 사용
-            print('[채팅 디테일] vote_created 메시지를 VoteCardMessage로 처리');
+            // vote_created 메시지를 VoteCardMessage로 처리 로그 제거됨
             return VoteCardMessage(
               postId: metadata['postId'] ?? '',
               title: metadata['title'] ?? '',
@@ -575,20 +618,18 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
                       }
 
                       // 전체 메시지 수 확인
-                      print('[Chat] 전체 메시지 수: ${snapshot.data!.length}');
+                      // 로그 제거됨 - 중복 로그 방지
                       
                       final messages = <types.Message>[];
                       for (final message in snapshot.data!) {
                         
                         // AI 사용자 특별 처리
                         if (message.senderId == 'ai_assistant') {
-                          print('[Chat] AI 메시지 감지: messageType=${message.messageType}');
+                          // AI 메시지 감지 로그 제거됨
                           
-                          // vote_created 타입 특별 로깅
+                          // vote_created 타입 처리 (로그 제거됨)
                           if (message.messageType == 'vote_created') {
-                            print('[Chat] ⭐️ vote_created 메시지 발견!');
-                            print('[Chat] vote_created 내용: ${message.content}');
-                            print('[Chat] vote_created postId: ${message.votePostId}');
+                            // vote_created 메시지 발견 로그 제거됨
                           }
                           
                           // AI 사용자 정보 하드코딩
@@ -603,7 +644,7 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
                             message,
                             senderUser: aiUser,
                           );
-                          print('[Chat] AI 메시지 변환 완료: author.id=${convertedMessage.author.id}, currentUser.id=${_currentUser.id}');
+                          // AI 메시지 변환 완료 로그 제거됨
                           
                           messages.add(convertedMessage);
                         } else {
@@ -778,6 +819,11 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
     required String option,
   }) async {
     try {
+      DebugHelper.debug('=== 투표 처리 시작 ===', tag: 'Vote');
+      DebugHelper.debug('postId: $postId, option: $option', tag: 'Vote');
+      DebugHelper.debug('widget.chatDocument: ${widget.chatDocument != null ? "있음" : "null"}', tag: 'Vote');
+      DebugHelper.debug('currentUserUid: $currentUserUid', tag: 'Vote');
+      
       // 투표 처리 로직 - 보안 규칙에 맞게 수정
       final voteData = {
         'user': currentUserReference,
@@ -821,7 +867,8 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
       
       // 채팅 메시지의 투표 상태 업데이트
       if (widget.chatDocument != null) {
-        print('[Vote] 메시지 업데이트 시작: postId=$postId');
+        // 일반 채팅의 경우
+        DebugHelper.debug('일반 채팅 메시지 업데이트 시작: postId=$postId', tag: 'Vote');
         
         final messageQuery = await widget.chatDocument!.reference
             .collection('messages')
@@ -830,11 +877,11 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
             .limit(1)
             .get();
         
-        print('[Vote] 쿼리 결과: ${messageQuery.docs.length}개 메시지 발견');
+        DebugHelper.debug('쿼리 결과: ${messageQuery.docs.length}개 메시지 발견', tag: 'Vote');
         
         if (messageQuery.docs.isNotEmpty) {
           final messageDoc = messageQuery.docs.first;
-          print('[Vote] 메시지 ID: ${messageDoc.id}, message_id 필드: ${messageDoc.data()['message_id']}');
+          DebugHelper.debug('메시지 ID: ${messageDoc.id}', tag: 'Vote');
           
           // 개별 사용자의 투표 정보를 저장할 맵 가져오기 또는 생성
           final currentUserVotes = Map<String, dynamic>.from(
@@ -855,9 +902,85 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
             'last_vote_update': FieldValue.serverTimestamp(),
           });
           
-          print('[Vote] 메시지 업데이트 완료');
+          DebugHelper.debug('메시지 업데이트 완료', tag: 'Vote');
         } else {
-          print('[Vote] 경고: 해당 postId의 메시지를 찾을 수 없음');
+          DebugHelper.warning('해당 postId의 메시지를 찾을 수 없음', tag: 'Vote');
+        }
+      } else {
+        // AI 채팅의 경우
+        DebugHelper.debug('AI 채팅 메시지 업데이트 시작: postId=$postId', tag: 'Vote');
+        
+        // AI 채팅방 ID 생성
+        final aiChatId = 'ai_assistant_$currentUserUid';
+        DebugHelper.debug('AI 채팅방 ID: $aiChatId', tag: 'Vote');
+        
+        final aiChatRef = FirebaseFirestore.instance.collection('chats').doc(aiChatId);
+        
+        // 먼저 채팅방이 존재하는지 확인
+        final chatExists = await aiChatRef.get();
+        DebugHelper.debug('AI 채팅방 존재 여부: ${chatExists.exists}', tag: 'Vote');
+        
+        if (!chatExists.exists) {
+          DebugHelper.warning('AI 채팅방이 존재하지 않음', tag: 'Vote');
+          return;
+        }
+        
+        // 모든 vote_request 메시지를 가져와서 확인
+        final allMessagesQuery = await aiChatRef
+            .collection('messages')
+            .where('message_type', isEqualTo: 'vote_request')
+            .get();
+        
+        DebugHelper.debug('전체 vote_request 메시지 수: ${allMessagesQuery.docs.length}', tag: 'Vote');
+        
+        for (final doc in allMessagesQuery.docs) {
+          final data = doc.data();
+          DebugHelper.debug('메시지 확인 - ID: ${doc.id}, vote_post_id: ${data['vote_post_id']}', tag: 'Vote');
+        }
+        
+        final messageQuery = await aiChatRef
+            .collection('messages')
+            .where('vote_post_id', isEqualTo: postId)
+            .where('message_type', isEqualTo: 'vote_request')
+            .limit(1)
+            .get();
+        
+        DebugHelper.debug('AI 채팅 쿼리 결과: ${messageQuery.docs.length}개 메시지 발견', tag: 'Vote');
+        
+        if (messageQuery.docs.isNotEmpty) {
+          final messageDoc = messageQuery.docs.first;
+          final messageData = messageDoc.data();
+          DebugHelper.debug('AI 채팅 메시지 ID: ${messageDoc.id}', tag: 'Vote');
+          DebugHelper.debug('현재 user_votes: ${messageData['user_votes']}', tag: 'Vote');
+          
+          // 개별 사용자의 투표 정보를 저장할 맵 가져오기 또는 생성
+          final currentUserVotes = Map<String, dynamic>.from(
+            messageDoc.data()['user_votes'] ?? {}
+          );
+          
+          // 현재 사용자의 투표 정보 추가
+          currentUserVotes[currentUserUid] = {
+            'option': option,
+            'voted_at': FieldValue.serverTimestamp(),
+          };
+          
+          DebugHelper.debug('업데이트할 user_votes: $currentUserVotes', tag: 'Vote');
+          
+          // 메시지 문서 업데이트
+          await messageDoc.reference.update({
+            'user_votes': currentUserVotes,
+            'vote_status': 'participated',
+            'last_vote_update': FieldValue.serverTimestamp(),
+          });
+          
+          DebugHelper.debug('AI 채팅 메시지 업데이트 완료', tag: 'Vote');
+          
+          // 업데이트 확인
+          final updatedDoc = await messageDoc.reference.get();
+          final updatedData = updatedDoc.data();
+          DebugHelper.debug('업데이트 후 user_votes: ${updatedData?['user_votes']}', tag: 'Vote');
+        } else {
+          DebugHelper.warning('AI 채팅에서 해당 postId의 메시지를 찾을 수 없음', tag: 'Vote');
         }
       }
       

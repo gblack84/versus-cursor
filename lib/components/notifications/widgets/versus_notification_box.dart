@@ -118,13 +118,7 @@ class VersusNotificationBox extends StatelessWidget {
   }
 
   Widget _buildBox(BuildContext context) {
-    // 멀티이미지 데이터 디버그
-    print('[VersusNotificationBox] ===== 박스 $boxType 데이터 확인 =====');
-    print('  - imageUrl: ${imageUrl != null ? "있음" : "없음"}');
-    print('  - imageUrls: ${imageUrls?.length ?? 0}개');
-    print('  - otherImageUrls: ${otherImageUrls?.length ?? 0}개');
-    print('  - enableImageTap: $enableImageTap');
-    print('  - question: ${question != null ? "있음" : "없음"}');
+    // 멀티이미지 데이터 디버그 (제거됨)
     
     return _buildAnimatedBox(context);
   }
@@ -153,12 +147,7 @@ class VersusNotificationBox extends StatelessWidget {
     final safeWidth = boxSize.width.clamp(0.0, maxSafeSize); 
     final safeHeight = boxSize.height.clamp(0.0, maxSafeSize);
     
-    // 비정상적으로 큰 값이 감지되면 로그 출력
-    if (boxSize.width > maxSafeSize || boxSize.height > maxSafeSize) {
-      print('[VersusNotificationBox] 🚨 비정상적으로 큰 박스 크기 감지!');
-      print('  - 원본 크기: ${boxSize.width.toStringAsFixed(1)} x ${boxSize.height.toStringAsFixed(1)}');
-      print('  - 제한된 크기: ${safeWidth.toStringAsFixed(1)} x ${safeHeight.toStringAsFixed(1)}');
-    }
+    // 비정상적으로 큰 값이 감지되면 로그 출력 (제거됨)
     
     return GestureDetector(
       onTap: () {
@@ -474,10 +463,6 @@ class VersusNotificationBox extends StatelessWidget {
   /// 멀티이미지 카운트 인디케이터
   Widget _buildMultiImageIndicator() {
     final imageCount = imageUrls?.length ?? 0;
-    print('[VersusNotificationBox] _buildMultiImageIndicator 호출:');
-    print('  - boxType: $boxType');
-    print('  - imageUrls length: $imageCount');
-    print('  - 표시 여부: ${imageCount > 1}');
     
     if (imageCount <= 1) return const SizedBox.shrink();
     
@@ -645,7 +630,6 @@ class VersusNotificationBox extends StatelessWidget {
   /// 적응형 텍스트 크기 계산
   double _getAdaptiveTextSize() {
     if (customTextSize != null) {
-      print('[VersusNotificationBox] 커스텀 텍스트 크기 사용: $customTextSize');
       return customTextSize!;
     }
     
@@ -654,27 +638,14 @@ class VersusNotificationBox extends StatelessWidget {
       baseTextSize: VotingNotificationConstraints.defaultTextSize,
     );
     
-    print('[VersusNotificationBox] 텍스트 크기 계산:');
-    print('  - boxType: $boxType');
-    print('  - title: $title');
-    print('  - boxSize.height: ${boxSize.height}');
-    print('  - 계산된 텍스트 크기: ${textSize}px');
-    print('  - minTextSize: ${VotingNotificationConstraints.minTextSize}px');
-    print('  - maxTextSize: ${VotingNotificationConstraints.maxTextSize}px');
+    // 텍스트 크기 계산 로그 제거됨
     
     return textSize;
   }
   
   /// 이미지 뷰어 표시 (멀티이미지 지원)
   void _showImageViewer(BuildContext context) {
-    print('[VersusNotificationBox] _showImageViewer 호출됨!');
-    print('  - boxType: $boxType');
-    print('  - question: ${question != null ? "있음" : "없음"}');
-    print('  - title: $title');
-    print('  - otherOptionTitle: $otherOptionTitle');
-    
     if (question == null) {
-      print('[VersusNotificationBox] question이 null이어서 뷰어를 열 수 없음');
       return;
     }
     
@@ -682,11 +653,7 @@ class VersusNotificationBox extends StatelessWidget {
     final effectiveImageUrlsA = _getEffectiveImageUrls('A');
     final effectiveImageUrlsB = _getEffectiveImageUrls('B');
     
-    print('[VersusNotificationBox] 이미지 뷰어에 전달할 데이터:');
-    print('  - effectiveImageUrlsA: ${effectiveImageUrlsA.length}개');
-    print('  - effectiveImageUrlsB: ${effectiveImageUrlsB.length}개');
-    print('  - imageUrls (자신): ${imageUrls?.length ?? 0}개');
-    print('  - otherImageUrls (상대): ${otherImageUrls?.length ?? 0}개');
+    // 이미지 뷰어 데이터 로그 제거됨
     
     // 초기 인덱스 계산 (A박스의 모든 이미지 → B박스의 모든 이미지 순서)
     int initialIndex = 0;
@@ -716,31 +683,25 @@ class VersusNotificationBox extends StatelessWidget {
   /// 
   /// 멀티이미지가 있으면 우선 사용, 없으면 단일 이미지 사용
   List<String> _getEffectiveImageUrls(String forBoxType) {
-    print('[VersusNotificationBox] _getEffectiveImageUrls 호출:');
-    print('  - 현재 박스: $boxType');
-    print('  - 요청 박스: $forBoxType');
+    // _getEffectiveImageUrls 로그 제거됨
     
     if (forBoxType == 'A') {
       // 현재 박스가 A인 경우
       if (boxType == 'A') {
         // 자신의 멀티이미지 우선
         if (imageUrls != null && imageUrls!.isNotEmpty) {
-          print('  - A박스 멀티이미지 사용: ${imageUrls!.length}개');
           return imageUrls!;
         }
         // 단일 이미지 사용
         if (imageUrl != null) {
-          print('  - A박스 단일이미지 사용');
           return [imageUrl!];
         }
       } else {
         // 다른 박스(B)의 데이터 사용
         if (otherImageUrls != null && otherImageUrls!.isNotEmpty) {
-          print('  - A박스(other) 멀티이미지 사용: ${otherImageUrls!.length}개');
           return otherImageUrls!;
         }
         if (otherImageUrl != null) {
-          print('  - A박스(other) 단일이미지 사용');
           return [otherImageUrl!];
         }
       }
@@ -749,27 +710,22 @@ class VersusNotificationBox extends StatelessWidget {
       if (boxType == 'B') {
         // 자신의 멀티이미지 우선
         if (imageUrls != null && imageUrls!.isNotEmpty) {
-          print('  - B박스 멀티이미지 사용: ${imageUrls!.length}개');
           return imageUrls!;
         }
         // 단일 이미지 사용
         if (imageUrl != null) {
-          print('  - B박스 단일이미지 사용');
           return [imageUrl!];
         }
       } else {
         // 다른 박스(A)의 데이터 사용
         if (otherImageUrls != null && otherImageUrls!.isNotEmpty) {
-          print('  - B박스(other) 멀티이미지 사용: ${otherImageUrls!.length}개');
           return otherImageUrls!;
         }
         if (otherImageUrl != null) {
-          print('  - B박스(other) 단일이미지 사용');
           return [otherImageUrl!];
         }
       }
     }
-    print('  - 이미지 없음');
     return [];
   }
 }

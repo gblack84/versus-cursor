@@ -61,7 +61,10 @@ async function createVoteRequestMessage(userId, postId, postData) {
     card_status: 'voting_request', // 초기 상태: 대기중
     vote_end_time: admin.firestore.Timestamp.fromDate(
       new Date(Date.now() + 10 * 60 * 1000) // 10분 후
-    )
+    ),
+    
+    // 개별 사용자의 투표 정보를 저장할 필드 초기화
+    user_votes: {}
   };
   
   // 채팅방이 없으면 생성
@@ -136,10 +139,13 @@ async function createVoteCreatedMessage(userId, postId, postData) {
     vote_description: postData.description || '',
     
     // 카드 상태
-    card_status: 'in_progress', // 작성자는 진행중 상태로 시작
+    card_status: 'in_progress', // 작성자는 진홉중 상태로 시작
     vote_end_time: admin.firestore.Timestamp.fromDate(
       new Date(Date.now() + 10 * 60 * 1000) // 10분 후
-    )
+    ),
+    
+    // 개별 사용자의 투표 정보를 저장할 필드 초기화
+    user_votes: {}
   };
   
   // 채팅방이 없으면 생성

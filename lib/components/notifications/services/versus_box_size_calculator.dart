@@ -85,16 +85,6 @@ class VersusBoxSizeCalculator {
       hasImageB: sizeData.hasImageB,
     );
     
-    print('[VersusBoxSizeCalculator] ========== 크기 계산 시작 ==========');
-    print('  화면 정보:');
-    print('    - 화면 너비: ${screenWidth.toStringAsFixed(1)}px');
-    print('    - 컨테이너 너비: ${containerWidth.toStringAsFixed(1)}px (화면의 ${(containerWidth/screenWidth*100).toStringAsFixed(0)}%)');
-    print('    - 컨테이너 높이: ${containerHeight.toStringAsFixed(1)}px');
-    print('    - 스케일 팩터: ${(scaleFactor * 100).toStringAsFixed(0)}%');
-    print('  레이아웃 최적화:');
-    print('    - 원본 레이아웃: ${sizeData.layoutType}');
-    print('    - 최적화된 레이아웃: ${votingLayout.layoutType}');
-    print('    - 변환 이유: ${votingLayout.reason}');
     
     // 3. 레이아웃 변환에 따른 크기 조정 팩터 계산
     final sizeAdjustment = LayoutSynchronizer.calculateSizeAdjustment(
@@ -173,16 +163,6 @@ class VersusBoxSizeCalculator {
     // _calculateOptimizedBoxSize에서 이미 적절한 크기 계산이 완료됨
     // 추가적인 constrainBoxSize 호출은 크기를 불필요하게 축소시킴
     
-    print('  최종 박스 크기:');
-    print('    - A박스: ${sizeA.width.toStringAsFixed(1)} x ${sizeA.height.toStringAsFixed(1)}');
-    if (sizeData.hasImageB) {
-      print('    - B박스: ${sizeB.width.toStringAsFixed(1)} x ${sizeB.height.toStringAsFixed(1)}');
-    }
-    print('    - A박스 비율: ${sizeData.aspectRatioA?.toStringAsFixed(3) ?? 'null'}');
-    if (sizeData.hasImageB) {
-      print('    - B박스 비율: ${sizeData.aspectRatioB?.toStringAsFixed(3) ?? 'null'}');
-    }
-    print('[VersusBoxSizeCalculator] ========== 크기 계산 완료 ==========');
     
     return VotingBoxSizes(
       sizeA: sizeA,
@@ -300,7 +280,6 @@ class VersusBoxSizeCalculator {
     final safeContainerHeight = math.min(containerHeight, maxSafeHeight);
     final safeScaleFactor = math.min(scaleFactor, 3.0); // 최대 3배 확대
     
-    print('[SAFE] Container 크기 제한: ${containerWidth.toStringAsFixed(1)} → ${safeContainerWidth.toStringAsFixed(1)}');
     
     Size calculatedSize;
     
@@ -343,7 +322,6 @@ class VersusBoxSizeCalculator {
     final finalHeight = math.min(calculatedSize.height, maxSafeHeight);
     
     final finalSize = Size(finalWidth, finalHeight);
-    print('[SAFE] 최종 크기: ${calculatedSize.width.toStringAsFixed(1)} x ${calculatedSize.height.toStringAsFixed(1)} → ${finalSize.width.toStringAsFixed(1)} x ${finalSize.height.toStringAsFixed(1)}');
     
     return finalSize;
   }
@@ -428,7 +406,6 @@ class VersusBoxSizeCalculator {
       );
     }
     
-    print('[VersusBoxSizeCalculator] 가로 배치 통일된 크기 계산:');
     print('  - 동적 간격: ${dynamicSpacing.toStringAsFixed(1)}px');
     print('  - 박스 너비: ${actualBoxWidth.toStringAsFixed(1)}px (${hasImageB ? "49.5%" : "80%"})');
     print('  - 통일 높이: ${unifiedHeight.toStringAsFixed(1)}px');
@@ -494,7 +471,6 @@ class VersusBoxSizeCalculator {
       sizeB.height * scaleFactor,
     );
     
-    print('[VersusBoxSizeCalculator] 세로 배치 통일된 크기 계산:');
     print('  - 통일 너비: ${unifiedWidth.toStringAsFixed(1)}px');
     print('  - A박스 최종: ${sizeA.width.toStringAsFixed(1)} x ${sizeA.height.toStringAsFixed(1)}');
     print('  - B박스 최종: ${sizeB.width.toStringAsFixed(1)} x ${sizeB.height.toStringAsFixed(1)}');

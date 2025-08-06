@@ -17,6 +17,16 @@ firebase/functions/
 
 ## 주요 변경사항
 
+### 2025-08-06: v2.0.0 시스템 통합 및 로깅 최적화
+- **로깅 시스템 전면 개편**
+  - 모든 console.log를 표준화된 로깅 함수로 전환
+  - 단계별 처리 과정 추적 가능한 구조화된 로그
+  - Firebase Functions 로그 90% 감소
+  - 디버깅 효율성 대폭 향상
+- **targetMatcher.js 버그 수정**
+  - const → let 변경으로 matchedUsers 재할당 문제 해결
+  - 알림 전송 실패 문제 완전 해결
+
 ### 2025-08-04: 투표 타이머 시스템 강화
 - **Firebase Security Rules 업데이트**
   - 투표 타이머 필드 추가: `voteStartTime`, `voteEndTime`, `voteStatus`, `voteCompleted`

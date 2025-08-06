@@ -41,16 +41,13 @@ function generateTargetReason(targetAudience, user) {
 
 // 알림 생성 함수
 async function createNotificationsForUsers(users, postId, postData) {
-  console.log('[알림 생성] ========== 알림 생성 시작 ==========');
-  console.log(`[알림 생성] 대상 사용자 수: ${users.length}명`);
-  console.log(`[알림 생성] 게시물 ID: ${postId}`);
-  console.log(`[알림 생성] 타겟 타입: ${postData.targetAudience?.type || '알 수 없음'}`);
-  
-  // 스마트 레이아웃 데이터 로깅
-  console.log('[알림 생성] 스마트 레이아웃 데이터:');
-  console.log(`  - layoutType: ${postData.layoutType || 'null'}`);
-  console.log(`  - optionA.aspectRatio: ${postData.optionA?.aspectRatio || 'null'}`);
-  console.log(`  - optionB.aspectRatio: ${postData.optionB?.aspectRatio || 'null'}`);
+  // 알림 생성 - 주요 정보만 로깅
+  console.log('🔔 [NOTIFICATION] 알림 생성 시작', {
+    timestamp: new Date().toISOString(),
+    postId,
+    userCount: users.length,
+    targetType: postData.targetAudience?.type
+  });
   
   if (users.length === 0) {
     console.log('[알림 생성] ⚠️ 알림을 보낼 사용자가 없습니다');
@@ -64,7 +61,7 @@ async function createNotificationsForUsers(users, postId, postData) {
     new Date(Date.now() + 15 * 60 * 1000) // 15분 후 만료
   );
   
-  console.log('[알림 생성] 만료 시간:', new Date(Date.now() + 15 * 60 * 1000).toISOString());
+  // 만료 시간은 고정값이므로 로깅 제거
   
   let successCount = 0;
   const notificationIds = [];
@@ -128,18 +125,10 @@ async function createNotificationsForUsers(users, postId, postData) {
   // 배치 커밋 (최대 500개씩)
   if (successCount > 0) {
     try {
-      console.log('[알림 생성] Firestore 배치 커밋 시작...');
       await batch.commit();
-      console.log(`[알림 생성] ✅ ${successCount}개의 알림이 성공적으로 생성되었습니다`);
-      
-      // 생성된 알림 ID 로깅 (처음 5개만)
-      console.log('[알림 생성] 생성된 알림 ID (처음 5개):');
-      notificationIds.slice(0, 5).forEach((id, idx) => {
-        console.log(`  ${idx + 1}. ${id}`);
-      });
+      console.log(`[알림 생성] ✅ ${successCount}개의 알림 생성 완료`);
       
       // 투표 통계 업데이트
-      console.log('[알림 생성] 게시물 통계 업데이트 중...');
       await admin.firestore()
         .collection('posts')
         .doc(postId)
@@ -147,24 +136,14 @@ async function createNotificationsForUsers(users, postId, postData) {
           notificationsSent: successCount,
           notificationsSentAt: now,
         });
-      console.log('[알림 생성] ✅ 게시물 통계 업데이트 완료');
       
       // AI 채팅 메시지 생성 (모든 타겟 타입에 대해)
-      console.log('[알림 생성] AI 채팅 메시지 생성 시작...');
-      
-      // 작성자 ID 가져오기
       const creatorId = postData.uid || postData.userid;
-      console.log(`[알림 생성] 작성자 ID: ${creatorId}`);
-      console.log(`[알림 생성] 대상 사용자 수: ${users.length}`);
-      console.log(`[알림 생성] 대상 사용자 IDs:`, users.map(u => u.id));
       
       // 각 대상 사용자에 대해 AI 채팅 메시지 생성 (작성자 제외)
       const chatPromises = users
         .filter(user => {
           const shouldExclude = user.id === creatorId || user.id === postData.uid || user.id === postData.userid;
-          if (shouldExclude) {
-            console.log(`[알림 생성] 작성자 제외됨: ${user.id}`);
-          }
           return !shouldExclude;
         })  // 작성자는 제외
         .map(async (user) => {
@@ -207,22 +186,20 @@ async function createNotificationsForUsers(users, postId, postData) {
             aspectRatioB: postData.optionB?.aspectRatio || null,
             layoutType: postData.layoutType || null
           });
-          console.log(`[알림 생성] AI 채팅 메시지 생성 완료: ${user.displayName || user.id}`);
         } catch (error) {
-          console.error(`[알림 생성] AI 채팅 메시지 생성 실패 (${user.displayName || user.id}):`, error);
+          console.error(`[알림 생성] AI 채팅 메시지 생성 실패:`, error);
         }
       });
       
       await Promise.all(chatPromises);
-      console.log(`[알림 생성] ✅ 모든 AI 채팅 메시지 생성 완료 (작성자 제외): ${chatPromises.length}개`);
+      console.log(`[알림 생성] ✅ AI 채팅 메시지 생성 완료: ${chatPromises.length}개`);
       
     } catch (error) {
       console.error('[알림 생성] ❌ 배치 커밋 중 오류 발생:', error);
       throw error;
     }
   }
-  
-  console.log('[알림 생성] ========== 알림 생성 종료 ==========');
+  // 알림 생성 프로세스 종료
 }
 
 

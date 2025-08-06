@@ -1185,11 +1185,15 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
   @override
   void dispose() {
-    // AppState를 먼저 저장
-    final appState = context.read<AppState>();
-    
     // 페이지 나갈 때 업로드된 이미지 정리
-    _cleanupUploadedImagesWithAppState(appState);
+    // AppState를 try-catch로 안전하게 가져오기
+    try {
+      final appState = context.read<AppState>();
+      _cleanupUploadedImagesWithAppState(appState);
+    } catch (e) {
+      // context가 더 이상 유효하지 않은 경우 - 이미 정리되었을 가능성이 높음
+      DebugHelper.error('dispose에서 AppState 접근 실패 - 이미 정리됨', error: e);
+    }
     
     _model.scrollController?.removeListener(_scrollListener);
     _model.dispose();

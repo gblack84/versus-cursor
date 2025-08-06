@@ -10,18 +10,51 @@
 - **주요 기능**:
   - 조건부 디버그 로그 출력
   - 태그 기반 로깅 시스템
+  - 로그 레벨 지원 (DEBUG, INFO, WARNING, ERROR)
+  - 영구 중복 방지 로깅 (v2.0.0 추가)
   - 프로덕션에서 자동 비활성화
 - **주요 메서드**:
   ```dart
+  // 기본 로깅 메서드
   static void log(String message, {String? tag})
+  static void debug(String message, {String? tag})
+  static void info(String message, {String? tag})
+  static void warning(String message, {String? tag})
+  static void error(String message, {dynamic error, String? tag})
+  
+  // 영구 중복 방지 로깅 (v2.0.0 신규)
+  static void logOnce(String logId, String message, {String? tag, LogLevel level})
+  
+  // 특화 로깅 메서드
   static void logError(String message, dynamic error)
   static void logImageSelection(String message)
   static void logLayout(String message)
+  static void logFirebase(String message)
+  static void logVote(String message, {LogLevel level})
+  
+  // 유틸리티 메서드
   static void runInDebug(Function callback)
+  static String maskData(dynamic data)
+  static String maskSensitive(String value, {int visibleChars})
   ```
 - **사용 예시**:
   ```dart
+  // 일반 로깅
   DebugHelper.log('이미지 업로드 시작', tag: 'UPLOAD');
+  
+  // 중복 방지 로깅 (세션 동안 한 번만 출력)
+  DebugHelper.logOnce(
+    'img_${imageId}',
+    '이미지 처리: $imageId',
+    tag: 'ImageProcessor'
+  );
+  
+  // 레벨별 로깅
+  DebugHelper.info('정보성 메시지');
+  DebugHelper.warning('경고 메시지');
+  DebugHelper.error('에러 발생', error: exception);
+  
+  // 개발 모드 전용 실행
   DebugHelper.runInDebug(() {
     print('개발 모드에서만 실행됨');
   });
@@ -132,7 +165,24 @@ class FileUtils {
    DebugHelper.log('완료', tag: 'IMAGE_UPLOAD');
    ```
 
-2. **조건부 실행**:
+2. **중복 방지 로깅 (v2.0.0)**:
+   ```dart
+   // 문서별 로깅 - 같은 문서는 한 번만 로깅
+   DebugHelper.logOnce(
+     'doc_${doc.id}',
+     '문서 처리: ${doc.id}',
+     tag: 'FirebaseListener'
+   );
+   
+   // 이미지별 로깅 - 같은 이미지는 한 번만 로깅
+   DebugHelper.logOnce(
+     'img_${url.hashCode}',
+     '이미지 로드: $url',
+     tag: 'ImageLoader'
+   );
+   ```
+
+3. **조건부 실행**:
    ```dart
    DebugHelper.runInDebug(() {
      // 무거운 디버그 작업

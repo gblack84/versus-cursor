@@ -18,6 +18,7 @@ import '/components/chat/vote_request_message.dart';
 import '/components/notifications/voting_notification_dialog.dart';
 import '/services/chat_image_cache_service.dart';
 import '/posts/in_put_post_image/utils/debug_helper.dart';
+import '/services/vote_status_service.dart';
 import 'chat_detail_model.dart';
 export 'chat_detail_model.dart';
 
@@ -385,6 +386,8 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
               DebugHelper.debug('[VoteStatus] user_votes 전체: ${messageData['user_votes']}', tag: 'Vote');
               DebugHelper.debug('[VoteStatus] 현재 사용자 UID: $currentUserUid', tag: 'Vote');
               DebugHelper.debug('[VoteStatus] widget.chatDocument: ${widget.chatDocument != null ? "있음" : "null (AI 채팅)"}', tag: 'Vote');
+              DebugHelper.debug('[VoteStatus] cardStatus: ${messageData?['card_status']}', tag: 'Vote');
+              DebugHelper.debug('[VoteStatus] messageType: ${metadata['type']}', tag: 'Vote');
               
               // 현재 상태를 이전 상태로 저장
               _previousUserVotes[postId] = Map<String, dynamic>.from(messageData['user_votes'] ?? {});
@@ -441,22 +444,23 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
               aspectRatioB: aspectRatioB != null ? aspectRatioB.toDouble() : null,
               // messageData는 Firestore의 실시간 데이터, metadata는 ChatMessageConverter의 고정 데이터
               // 실시간 업데이트를 위해 messageData를 우선 사용
-              voteStatus: (() {
-                final status = hasUserVoted ? 'completed' :  // 사용자가 투표했으면 'completed'
-                               messageData?['card_status'] ?? 
-                               messageData?['vote_status'] ?? 
-                               metadata['cardStatus'] ?? 
-                               metadata['voteStatus'] ?? 
-                               'not_participated';  // 기본값을 'not_participated'로 변경
-                
-                // 상태가 변경된 경우에만 로그 출력
-                if (userVotesStr != previousVotesStr) {
-                  DebugHelper.debug('[VoteStatus] 최종 voteStatus: $status (hasUserVoted: $hasUserVoted)', tag: 'Vote');
-                }
-                return status;
-              })(),
+              voteStatus: VoteStatusService.getUserVoteStatus(
+                userVotes: messageData?['user_votes'] as Map<String, dynamic>?,
+                userId: currentUserUid,
+                cardStatus: messageData?['card_status'] ?? metadata['cardStatus'],
+                voteEndTime: messageData?['vote_end_time'] != null 
+                    ? (messageData!['vote_end_time'] as Timestamp).toDate()
+                    : null,
+              ),
+              userVotes: messageData?['user_votes'] as Map<String, dynamic>? ?? metadata['userVotes'] as Map<String, dynamic>?,
+              voteEndTime: messageData?['vote_end_time'] != null 
+                  ? (messageData!['vote_end_time'] as Timestamp).toDate()
+                  : (metadata['voteEndTime'] != null ? metadata['voteEndTime'] as DateTime : null),
+              cardStatus: messageData?['card_status'] ?? metadata['cardStatus'] ?? 'in_progress',
               isMe: message.author.id == _currentUser.id,
               timestamp: DateTime.fromMillisecondsSinceEpoch(message.createdAt ?? 0),
+              messageId: snapshot.data?.docs.firstOrNull?.id ?? message.id,
+              chatId: widget.chatDocument?.reference.id,
               onTap: () {
                 // 이미 투표한 경우 알림 표시
                 if (hasUserVoted) {
@@ -512,9 +516,8 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
               timestamp: DateTime.fromMillisecondsSinceEpoch(message.createdAt ?? 0),
               voteEndTime: messageData?['vote_end_time'] != null
                   ? (messageData!['vote_end_time'] as Timestamp).toDate()
-                  : null,
-              userVoted: messageData?['user_voted'] ?? false,
-              voteChoice: messageData?['vote_choice'],
+                  : (metadata['voteEndTime'] != null ? metadata['voteEndTime'] as DateTime : null),
+              userVotes: messageData?['user_votes'] as Map<String, dynamic>? ?? metadata['userVotes'] as Map<String, dynamic>?,
               voteResults: messageData?['vote_results_a'] != null ? {
                 'votesA': messageData?['vote_results_a'],
                 'votesB': messageData?['vote_results_b'],
@@ -526,6 +529,8 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
                 'percentageA': metadata['votePercentageA'],
                 'percentageB': metadata['votePercentageB'],
               } : null),
+              messageId: snapshot.data?.docs.firstOrNull?.id ?? message.id,
+              chatId: widget.chatDocument?.reference.id,
             );
           }
           
@@ -852,15 +857,14 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
         final currentData = postDoc.data() as Map<String, dynamic>;
         final voteCountField = option == 'A' ? 'vote_count_a' : 'vote_count_b';
         final votedUsersField = option == 'A' ? 'votedUserIDsA' : 'votedUserIDsB';
+        final votesField = option == 'A' ? 'votes_a' : 'votes_b';
         final currentCount = (currentData[voteCountField] ?? 0) as int;
-        final currentVotedUsers = List<String>.from(currentData[votedUsersField] ?? []);
-        
-        currentVotedUsers.add(currentUserUid);
         
         transaction.update(postRef, {
           voteCountField: currentCount + 1,
-          votedUsersField: currentVotedUsers,
-          'total_votes': (currentData['total_votes'] ?? 0) + 1,
+          votedUsersField: FieldValue.arrayUnion([currentUserUid]),
+          votesField: FieldValue.increment(1),
+          'total_votes': FieldValue.increment(1),
           'last_vote_at': FieldValue.serverTimestamp(),
         });
       });

@@ -159,14 +159,18 @@ class MessagesModel extends FirestoreRecord {
   bool hasVoteEndTime() => _voteEndTime != null;
 
   // "user_voted" field.
+  @deprecated
   bool? _userVoted;
+  @deprecated
   bool get userVoted => _userVoted ?? false;
-  bool hasUserVoted() => _userVoted != null;
+  bool hasUserVoted() => _userVotes != null && _userVotes!.isNotEmpty;
 
   // "vote_choice" field.
+  @deprecated
   String? _voteChoice;
+  @deprecated
   String get voteChoice => _voteChoice ?? '';
-  bool hasVoteChoice() => _voteChoice != null;
+  bool hasVoteChoice() => _userVotes != null && _userVotes!.isNotEmpty;
 
   // "vote_results" field.
   Map<String, dynamic>? _voteResults;
@@ -174,9 +178,58 @@ class MessagesModel extends FirestoreRecord {
   bool hasVoteResults() => _voteResults != null;
 
   // "vote_participated_at" field.
+  @deprecated
   DateTime? _voteParticipatedAt;
+  @deprecated
   DateTime? get voteParticipatedAt => _voteParticipatedAt;
-  bool hasVoteParticipatedAt() => _voteParticipatedAt != null;
+  bool hasVoteParticipatedAt() => _userVotes != null && _userVotes!.isNotEmpty;
+
+  // "user_votes" field - 개별 사용자의 투표 정보를 추적하는 핵심 필드
+  Map<String, dynamic>? _userVotes;
+  Map<String, dynamic> get userVotes => _userVotes ?? const {};
+  bool hasUserVotes() => _userVotes != null;
+
+  // 헬퍼 메서드들
+  /// 특정 사용자의 투표 정보 가져오기
+  Map<String, dynamic>? getUserVote(String userId) {
+    if (_userVotes == null) return null;
+    return _userVotes![userId] as Map<String, dynamic>?;
+  }
+
+  /// 특정 사용자가 투표했는지 확인
+  bool checkUserVoted(String userId) {
+    if (_userVotes == null) return false;
+    return _userVotes!.containsKey(userId);
+  }
+
+  /// 특정 사용자의 투표 선택 가져오기
+  String? getUserVoteChoice(String userId) {
+    final vote = getUserVote(userId);
+    return vote?['option'] as String?;
+  }
+
+  /// 특정 사용자의 투표 시간 가져오기
+  DateTime? getUserVoteTime(String userId) {
+    final vote = getUserVote(userId);
+    return vote?['voted_at'] as DateTime?;
+  }
+
+  // 기존 코드 호환성을 위한 getter (현재 사용자 기준)
+  bool get userVotedCompat {
+    // currentUserUid가 없으면 기존 필드 사용
+    final userId = senderId; // 메시지 발신자를 기본값으로 사용
+    return checkUserVoted(userId);
+  }
+
+  String get voteChoiceCompat {
+    final userId = senderId; // 메시지 발신자를 기본값으로 사용
+    return getUserVoteChoice(userId) ?? '';
+  }
+
+  DateTime? get voteParticipatedAtCompat {
+    final userId = senderId; // 메시지 발신자를 기본값으로 사용
+    return getUserVoteTime(userId);
+  }
 
   DocumentReference get parentReference => reference.parent.parent!;
 
@@ -217,10 +270,11 @@ class MessagesModel extends FirestoreRecord {
     _voteOptionBImages = getDataList(snapshotData['vote_option_b_images']);
     _cardStatus = snapshotData['card_status'] as String?;
     _voteEndTime = snapshotData['vote_end_time'] as DateTime?;
-    _userVoted = snapshotData['user_voted'] as bool?;
-    _voteChoice = snapshotData['vote_choice'] as String?;
+    // _userVoted = snapshotData['user_voted'] as bool?;  // deprecated - use user_votes instead
+    // _voteChoice = snapshotData['vote_choice'] as String?;  // deprecated - use user_votes instead
     _voteResults = snapshotData['vote_results'] as Map<String, dynamic>?;
-    _voteParticipatedAt = snapshotData['vote_participated_at'] as DateTime?;
+    // _voteParticipatedAt = snapshotData['vote_participated_at'] as DateTime?;  // deprecated - use user_votes instead
+    _userVotes = snapshotData['user_votes'] as Map<String, dynamic>?;
   }
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
@@ -295,6 +349,7 @@ Map<String, dynamic> createMessagesModelData({
   String? voteChoice,
   Map<String, dynamic>? voteResults,
   DateTime? voteParticipatedAt,
+  Map<String, dynamic>? userVotes,
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
@@ -330,6 +385,7 @@ Map<String, dynamic> createMessagesModelData({
       'vote_choice': voteChoice,
       'vote_results': voteResults,
       'vote_participated_at': voteParticipatedAt,
+      'user_votes': userVotes,
     }.withoutNulls,
   );
 
@@ -370,10 +426,11 @@ class MessagesModelDocumentEquality implements Equality<MessagesModel> {
         listEquality.equals(e1?.voteOptionBImages, e2?.voteOptionBImages) &&
         e1?.cardStatus == e2?.cardStatus &&
         e1?.voteEndTime == e2?.voteEndTime &&
-        e1?.userVoted == e2?.userVoted &&
-        e1?.voteChoice == e2?.voteChoice &&
+        // e1?.userVoted == e2?.userVoted &&  // deprecated - use userVotes
+        // e1?.voteChoice == e2?.voteChoice &&  // deprecated - use userVotes
         e1?.voteResults == e2?.voteResults &&
-        e1?.voteParticipatedAt == e2?.voteParticipatedAt;
+        // e1?.voteParticipatedAt == e2?.voteParticipatedAt &&  // deprecated - use userVotes
+        e1?.userVotes == e2?.userVotes;
   }
 
   @override
@@ -406,10 +463,11 @@ class MessagesModelDocumentEquality implements Equality<MessagesModel> {
         e?.voteOptionBImages,
         e?.cardStatus,
         e?.voteEndTime,
-        e?.userVoted,
-        e?.voteChoice,
+        // e?.userVoted,  // deprecated - use userVotes
+        // e?.voteChoice,  // deprecated - use userVotes
         e?.voteResults,
-        e?.voteParticipatedAt
+        // e?.voteParticipatedAt,  // deprecated - use userVotes
+        e?.userVotes
       ]);
 
   @override

@@ -19,6 +19,15 @@ exports.onPostCreatedSendNotifications = functions
   .document('posts/{postId}')
   .onCreate(async (snap, context) => {
     const logger = createLogger('onPostCreatedSendNotifications');
+    
+    // 🚀 트리거 실행 확인 로그 - 가장 먼저 실행
+    console.log('🚀 [TRIGGER] onCreate 트리거 실행됨', { 
+      postId: context.params.postId, 
+      timestamp: new Date().toISOString(),
+      eventId: context.eventId,
+      eventType: context.eventType
+    });
+    
     const postData = snap.data();
     const postId = context.params.postId;
     

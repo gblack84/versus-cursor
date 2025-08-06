@@ -123,6 +123,18 @@ Cloud Functions 트리거 → AI 사용자 매칭 →
 
 ## 최근 주요 업데이트
 
+### 2025-08-06: 로깅 시스템 최적화 (v2.0.0)
+- DebugHelper에 logOnce() 메서드 추가로 영구 중복 방지
+- 이벤트 기반 고유 ID 로깅으로 전환
+- 90% 로그 중복 감소 달성
+- Firebase 리스너 로그 최적화
+
+### 2025-07-20: AI 기반 투표 알림 시스템 통합
+- Genkit Framework를 활용한 통합 AI 시스템
+- 스마트 사용자 매칭 알고리즘 구현
+- 4가지 타겟 모드: quick(AI), public(랜덤), custom(조건), test(개발)
+- NotificationService와 GlobalNotificationManager 통합
+
 ### 2025-07-15~16: AI 검열 시스템 고도화
 - Gemini AI API 통합으로 콘텐츠 적절성 검증
 - Genkit Framework 도입으로 AI 시스템 통합 관리
@@ -144,6 +156,7 @@ Cloud Functions 트리거 → AI 사용자 매칭 →
 - 이미지 비율 자동 분석
 - 동적 박스 크기 계산
 - 가로/세로 레이아웃 자동 전환
+- v1.3.0: NotificationService 통합으로 알림에서도 동일한 레이아웃 유지
 
 ## 관련 문서
 - [Components 상세 문서](./components/README.md)

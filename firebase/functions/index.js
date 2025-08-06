@@ -14,6 +14,7 @@ const { checkImageContent } = require('./functions/https/checkImageContent');
 const { validatePostContentWithGemini } = require('./functions/https/validatePostContentWithGemini');
 const { testCreateAIChatMessage } = require('./functions/https/testCreateAIChatMessage');
 const { migrateAIChatRooms } = require('./functions/https/migrateAIChatRooms');
+const { migrateVoteData } = require('./functions/https/migrateVoteData');
 
 // Firestore 함수
 const { onPostCreatedSendNotifications } = require('./functions/firestore/onPostCreatedSendNotifications');
@@ -38,6 +39,7 @@ module.exports = {
   validatePostContentWithGemini,
   testCreateAIChatMessage,
   migrateAIChatRooms,
+  migrateVoteData,
   
   // Firestore
   onPostCreatedSendNotifications,

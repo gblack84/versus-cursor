@@ -22,9 +22,8 @@ class DebugHelper {
     LogLevel.ERROR: '❌',
   };
   
-  /// 중복 로그 억제를 위한 캐시
-  static final Map<String, DateTime> _lastLogTimes = {};
-  static const Duration _duplicateThreshold = Duration(milliseconds: 500);
+  /// 영구 중복 방지를 위한 로그 ID 세트
+  static final Set<String> _processedLogIds = {};
   
   /// 디버그 모드인지 확인
   static bool get isDebugMode => !kReleaseMode;
@@ -55,28 +54,37 @@ class DebugHelper {
     _log(LogLevel.ERROR, errorMessage, tag: tag);
   }
   
+  /// 고유 ID를 사용하여 한 번만 로깅
+  /// 세션 동안 같은 ID는 한 번만 출력됨
+  static void logOnce(String logId, String message, {
+    String? tag,
+    LogLevel level = LogLevel.DEBUG,
+  }) {
+    // 이미 처리된 로그 ID면 무시
+    if (_processedLogIds.contains(logId)) {
+      return;
+    }
+    
+    // 로그 ID 추가
+    _processedLogIds.add(logId);
+    
+    // 메모리 관리: 10,000개 초과 시 오래된 5,000개 제거
+    if (_processedLogIds.length > 10000) {
+      final idsToKeep = _processedLogIds.toList().sublist(5000);
+      _processedLogIds.clear();
+      _processedLogIds.addAll(idsToKeep);
+    }
+    
+    // 실제 로그 출력
+    _log(level, message, tag: tag);
+  }
+  
   /// 내부 로그 메서드
   static void _log(LogLevel level, String message, {String? tag}) {
     // 로그 레벨 확인
     if (level.index < minimumLevel.index) return;
     
-    // 중복 로그 억제
-    final logKey = '$level|$tag|$message';
     final now = DateTime.now();
-    if (_lastLogTimes.containsKey(logKey)) {
-      final lastTime = _lastLogTimes[logKey]!;
-      if (now.difference(lastTime) < _duplicateThreshold) {
-        return; // 중복 로그 무시
-      }
-    }
-    _lastLogTimes[logKey] = now;
-    
-    // 오래된 캐시 항목 정리 (메모리 누수 방지)
-    if (_lastLogTimes.length > 100) {
-      _lastLogTimes.removeWhere((key, time) => 
-        now.difference(time) > const Duration(seconds: 10));
-    }
-    
     final emoji = _levelEmojis[level] ?? '';
     final prefix = tag != null ? '[$tag] ' : '';
     final timestamp = now.toIso8601String().substring(11, 19);
@@ -148,5 +156,16 @@ class DebugHelper {
     final start = value.substring(0, visibleChars);
     final end = value.substring(value.length - visibleChars);
     return '$start....$end';
+  }
+  
+  /// 투표 관련 로그 (특별히 제어되는 로그)
+  static void logVote(String message, {LogLevel level = LogLevel.DEBUG}) {
+    // 투표 로그는 DEBUG 모드에서만 출력하고, 중복 억제 시간을 더 길게 설정
+    if (kReleaseMode) return; // 릴리스 모드에서는 투표 로그 완전 비활성화
+    
+    // 투표 로그는 INFO 레벨 이상일 때만 출력
+    if (minimumLevel.index > LogLevel.INFO.index) return;
+    
+    _log(level, message, tag: 'Vote');
   }
 }

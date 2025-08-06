@@ -379,7 +379,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                         await directRef.update({
                                           ...mapToFirestore(
                                             {
-                                              'last_active_time':
+                                              'lastActive':
                                                   FieldValue.serverTimestamp(),
                                             },
                                           ),
@@ -389,7 +389,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                         await currentUserReference!.update({
                                           ...mapToFirestore(
                                             {
-                                              'last_active_time':
+                                              'lastActive':
                                                   FieldValue.serverTimestamp(),
                                             },
                                           ),
@@ -597,7 +597,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   
                                                   await directRef.update({
                                                     ...mapToFirestore({
-                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue.serverTimestamp(),
                                                       'role': 'admin',
                                                     }),
                                                   });
@@ -605,7 +605,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   // 정상적으로 currentUserReference 사용
                                                   await currentUserReference!.update({
                                                     ...mapToFirestore({
-                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue.serverTimestamp(),
                                                       'role': 'admin',
                                                     }),
                                                   });
@@ -699,7 +699,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   
                                                   await directRef.update({
                                                     ...mapToFirestore({
-                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue.serverTimestamp(),
                                                       'role': 'tester',
                                                       'platform': 'ios',
                                                     }),
@@ -708,7 +708,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   // 정상적으로 currentUserReference 사용
                                                   await currentUserReference!.update({
                                                     ...mapToFirestore({
-                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue.serverTimestamp(),
                                                       'role': 'tester',
                                                       'platform': 'ios',
                                                     }),
@@ -808,7 +808,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   
                                                   await directRef.update({
                                                     ...mapToFirestore({
-                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue.serverTimestamp(),
                                                       'role': 'tester',
                                                       'platform': 'android',
                                                     }),
@@ -817,7 +817,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   // 정상적으로 currentUserReference 사용
                                                   await currentUserReference!.update({
                                                     ...mapToFirestore({
-                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue.serverTimestamp(),
                                                       'role': 'tester',
                                                       'platform': 'android',
                                                     }),
@@ -911,7 +911,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   
                                                   await directRef.update({
                                                     ...mapToFirestore({
-                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue.serverTimestamp(),
                                                       'role': 'tester',
                                                       'platform': 'macos',
                                                     }),
@@ -920,7 +920,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   // 정상적으로 currentUserReference 사용
                                                   await currentUserReference!.update({
                                                     ...mapToFirestore({
-                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue.serverTimestamp(),
                                                       'role': 'tester',
                                                       'platform': 'macos',
                                                     }),
@@ -1014,7 +1014,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   
                                                   await directRef.update({
                                                     ...mapToFirestore({
-                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue.serverTimestamp(),
                                                       'role': 'tester',
                                                       'platform': 'web',
                                                     }),
@@ -1023,7 +1023,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   // 정상적으로 currentUserReference 사용
                                                   await currentUserReference!.update({
                                                     ...mapToFirestore({
-                                                      'last_active_time': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue.serverTimestamp(),
                                                       'role': 'tester',
                                                       'platform': 'web',
                                                     }),

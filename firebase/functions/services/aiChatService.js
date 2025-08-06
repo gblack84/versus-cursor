@@ -1,6 +1,11 @@
 /**
  * AI 피클 채팅 서비스
  * AI 어시스턴트와의 채팅 메시지 생성 및 관리
+ * 
+ * 로깅 가이드라인:
+ * - 주요 이벤트만 로깅 (메시지 생성, 업데이트 완료)
+ * - 개인정보는 마스킹하거나 제외
+ * - 중복 로그 방지를 위해 간결하게 유지
  */
 
 const { admin } = require('../config/firebase');
@@ -95,7 +100,7 @@ async function createVoteRequestMessage(userId, postId, postData) {
   // 메시지 생성
   await chatRef.collection('messages').doc(messageId).set(messageData);
   
-  console.log(`[AI 채팅] 투표 요청 메시지 생성: userId=${userId}, messageId=${messageId}`);
+  // 투표 요청 메시지 생성 완료
   return messageId;
 }
 
@@ -111,7 +116,12 @@ async function createVoteCreatedMessage(userId, postId, postData) {
   const messageId = uuidv4();
   const now = admin.firestore.Timestamp.now();
   
-  console.log(`[AI 채팅] createVoteCreatedMessage 시작: userId=${userId}, chatId=${chatId}`);
+  // AI 채팅 메시지 생성 - 주요 이벤트만 로깅
+  console.log('🤖 [AI_CHAT] 투표 생성 메시지', {
+    timestamp: new Date().toISOString(),
+    postId,
+    messageId
+  });
   
   const messageData = {
     // 기본 메시지 정보
@@ -176,13 +186,7 @@ async function createVoteCreatedMessage(userId, postId, postData) {
   // 메시지 생성
   await chatRef.collection('messages').doc(messageId).set(messageData);
   
-  console.log(`[AI 채팅] 투표 생성 메시지 생성 완료:`);
-  console.log(`  - userId=${userId}`);
-  console.log(`  - messageId=${messageId}`);
-  console.log(`  - sender_id=${messageData.sender_id}`);
-  console.log(`  - receiver_id=${messageData.receiver_id}`);
-  console.log(`  - chatId=${chatId}`);
-  console.log(`  - message_type=${messageData.message_type}`);
+  console.log(`[AI 채팅] 투표 생성 메시지 완료: messageId=${messageId}`);
   
   return messageId;
 }
@@ -209,7 +213,7 @@ async function updateCardStatus(userId, messageId, newStatus, additionalData = {
   
   await messageRef.update(updateData);
   
-  console.log(`[AI 채팅] 카드 상태 업데이트: messageId=${messageId}, status=${newStatus}`);
+  // 카드 상태 업데이트 완료
 }
 
 /**
@@ -232,10 +236,18 @@ async function updateVoteParticipation(userId, postId, choice) {
   
   if (!messagesSnapshot.empty) {
     const messageDoc = messagesSnapshot.docs[0];
+    const messageData = messageDoc.data();
+    
+    // user_votes Map 업데이트
+    const userVotes = messageData.user_votes || {};
+    userVotes[userId] = {
+      option: choice,
+      voted_at: admin.firestore.Timestamp.now()
+    };
+    
     await updateCardStatus(userId, messageDoc.id, 'in_progress', {
-      user_voted: true,
-      vote_choice: choice,
-      vote_participated_at: admin.firestore.Timestamp.now()
+      user_votes: userVotes,
+      last_vote_update: admin.firestore.Timestamp.now()
     });
   }
 }
@@ -249,18 +261,24 @@ async function updateVoteParticipation(userId, postId, choice) {
 async function createVoteResultMessage(userId, postId, voteResults) {
   const chatId = getAIChatId(userId);
   
-  // 실제 투표 여부 확인을 위해 posts 컬렉션에서 데이터 가져오기
-  const postDoc = await admin.firestore()
-    .collection('posts')
-    .doc(postId)
-    .get();
+  // 먼저 posts 컬렉션에서 실제 투표 여부 확인
+  const postDoc = await admin.firestore().collection('posts').doc(postId).get();
+  let userVoted = false;
+  let userChoice = null;
   
-  const postData = postDoc.data();
-  const votedUserIDsA = postData.votedUserIDsA || [];
-  const votedUserIDsB = postData.votedUserIDsB || [];
-  const userVoted = votedUserIDsA.includes(userId) || votedUserIDsB.includes(userId);
-  
-  console.log(`[AI 채팅] 투표 여부 확인: userId=${userId}, postId=${postId}, voted=${userVoted}`);
+  if (postDoc.exists) {
+    const postData = postDoc.data();
+    const votedUsersA = postData.votedUserIDsA || [];
+    const votedUsersB = postData.votedUserIDsB || [];
+    
+    if (votedUsersA.includes(userId)) {
+      userVoted = true;
+      userChoice = 'A';
+    } else if (votedUsersB.includes(userId)) {
+      userVoted = true;
+      userChoice = 'B';
+    }
+  }
   
   // 기존 투표 메시지 상태 업데이트
   const messagesSnapshot = await admin.firestore()
@@ -271,41 +289,53 @@ async function createVoteResultMessage(userId, postId, voteResults) {
     .where('message_type', 'in', ['vote_request', 'vote_created'])
     .get();
   
-  console.log(`[AI 채팅] 투표 결과 업데이트: userId=${userId}, 메시지 수=${messagesSnapshot.size}`);
+  // 투표 결과 업데이트 시작
   
   const updatePromises = [];
   messagesSnapshot.forEach(doc => {
     const data = doc.data();
     let finalStatus;
+    const updateData = {
+      card_status: '',
+      vote_completed_at: admin.firestore.Timestamp.now(),
+      // 투표 결과 정보 추가
+      vote_results_a: voteResults.displayVotesA || voteResults.votesA,
+      vote_results_b: voteResults.displayVotesB || voteResults.votesB,
+      vote_winner: voteResults.displayVotesA > voteResults.displayVotesB ? 'A' : 
+                   voteResults.displayVotesB > voteResults.displayVotesA ? 'B' : 'draw',
+      vote_percent_a: voteResults.percentA,
+      vote_percent_b: voteResults.percentB
+    };
+    
+    // 실제로 투표했다면 user_votes에 추가
+    if (userVoted && userChoice) {
+      const currentUserVotes = data.user_votes || {};
+      // 이미 있는 user_votes 유지하면서 현재 사용자 추가
+      updateData.user_votes = {
+        ...currentUserVotes,
+        [userId]: {
+          option: userChoice,
+          voted_at: admin.firestore.Timestamp.now()
+        }
+      };
+    }
     
     // 작성자 메시지는 투표 완료 시 항상 'completed'
     if (data.message_type === 'vote_created') {
       finalStatus = 'completed';
     } else {
-      // 일반 투표 요청 메시지는 실제 투표 여부로 결정
+      // 일반 투표 요청 메시지는 실제 투표 여부에 따라 상태 결정
       finalStatus = userVoted ? 'completed' : 'not_participated';
     }
     
-    console.log(`[AI 채팅] 메시지 상태 업데이트: messageId=${doc.id}, type=${data.message_type}, userVoted=${userVoted}, finalStatus=${finalStatus}`);
+    updateData.card_status = finalStatus;
     
-    updatePromises.push(
-      doc.ref.update({
-        card_status: finalStatus,
-        vote_completed_at: admin.firestore.Timestamp.now(),
-        // 투표 결과 정보 추가
-        vote_results_a: voteResults.displayVotesA || voteResults.votesA,
-        vote_results_b: voteResults.displayVotesB || voteResults.votesB,
-        vote_winner: voteResults.displayVotesA > voteResults.displayVotesB ? 'A' : 
-                     voteResults.displayVotesB > voteResults.displayVotesA ? 'B' : 'draw',
-        vote_percent_a: voteResults.percentA,
-        vote_percent_b: voteResults.percentB
-      })
-    );
+    updatePromises.push(doc.ref.update(updateData));
   });
   
   await Promise.all(updatePromises);
   
-  console.log(`[AI 채팅] 투표 결과 메시지 업데이트 완료: userId=${userId}, postId=${postId}`);
+  console.log(`[AI 채팅] 투표 결과 업데이트 완료: postId=${postId}`);
 }
 
 module.exports = {

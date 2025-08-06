@@ -43,6 +43,16 @@
       ]
     },
     {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "last_active_time",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "notifications",
       "queryScope": "COLLECTION",
       "fields": [
@@ -144,6 +154,20 @@
         },
         {
           "fieldPath": "vote_completed",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "vote_post_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "message_type",
           "order": "ASCENDING"
         }
       ]

@@ -7,7 +7,6 @@ import '/backend/backend.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/components/notifications/voting_notification_dialog.dart';
 import '/components/notifications/models/versus_box_size_data.dart';
-import '/components/notifications/constants/voting_notification_constraints.dart';
 import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
 import '/core/nav/nav.dart';
 import 'notification_service.dart';
@@ -100,14 +99,18 @@ class GlobalNotificationManager {
       
       // 이미 처리된 알림은 무시
       if (_processedNotificationIds.contains(notificationId)) {
-        // 이미 처리된 알림 무시 - 로그 제거
         continue;
       }
       
       // 큐에 없는 경우만 추가
       if (!_notificationQueue.any((n) => n.reference.id == notificationId)) {
-        // 큐에 알림 추가 - 로그 제거
         _notificationQueue.add(notification);
+        DebugHelper.logOnce(
+          'notif_queued_$notificationId',
+          '알림 큐에 추가: ${DebugHelper.maskSensitive(notificationId)}',
+          tag: 'GlobalNotificationManager',
+          level: LogLevel.DEBUG
+        );
       }
     }
     
@@ -136,8 +139,6 @@ class GlobalNotificationManager {
     
     // 다음 알림 가져오기
     final notification = _notificationQueue.removeAt(0);
-    // 알림 표시 시작 - 로그 제거
-    
     _showNotification(notification);
   }
   
@@ -172,7 +173,6 @@ class GlobalNotificationManager {
     // 알림을 처리 목록에 추가 (중복 표시 방지)
     final notificationId = notification.reference.id;
     _processedNotificationIds.add(notificationId);
-    // 처리 목록에 추가 - 로그 제거
     
     // 처리 기록 저장 (비동기로 처리하여 UI 블로킹 방지)
     _saveProcessedNotifications();
@@ -197,7 +197,6 @@ class GlobalNotificationManager {
       // 먼저 content 필드에서 데이터 파싱 시도
       if (notification.content.isNotEmpty) {
         try {
-          DebugHelper.debug('content 파싱', tag: 'GlobalNotificationManager');
           final contentData = jsonDecode(notification.content) as Map<String, dynamic>;
           
           if (contentData.containsKey('postData')) {
@@ -210,28 +209,23 @@ class GlobalNotificationManager {
             // 멀티이미지 지원 추가
             if (postData['imageUrlsA'] is List) {
               imageUrlsA = (postData['imageUrlsA'] as List).cast<String>();
-              // imageUrlsA 파싱 성공 - 로그 제거
-            }
+              }
             if (postData['imageUrlsB'] is List) {
               imageUrlsB = (postData['imageUrlsB'] as List).cast<String>();
-              // imageUrlsB 파싱 성공 - 로그 제거
             }
             description = postData['description'] ?? postData['descriptionA'] ?? postData['descriptionB'] ?? '';
             aspectRatioA = postData['aspectRatioA']?.toDouble();
             aspectRatioB = postData['aspectRatioB']?.toDouble();
             layoutType = postData['layoutType'];
             authorName = postData['authorName'];
-            
-            // content 파싱 성공 - 로그 제거
           }
         } catch (e) {
-          DebugHelper.debug('content 파싱 실패, posts 조회', tag: 'GlobalNotificationManager');
+          // content 파싱 실패 시 posts 조회로 진행
         }
       }
       
       // content 파싱이 실패하거나 데이터가 없으면 게시물 직접 조회
       if (question.isEmpty) {
-        // 게시물 정보 조회 - 로그 제거
         final postDoc = await FirebaseFirestore.instance
             .collection('posts')
             .doc(notification.sourceId)
@@ -260,10 +254,8 @@ class GlobalNotificationManager {
             imageUrlsA = mediaList;
             imageUrlA = mediaList.first; // 기존 호환성
           }
-          // optionA Map 파싱 - 로그 제거
         } else {
           optionA = postData['option_a'] ?? postData['text_a'] ?? '';
-          // optionA 문자열 파싱 - 로그 제거
         }
         
         if (postData['optionB'] is Map) {
@@ -274,17 +266,20 @@ class GlobalNotificationManager {
             imageUrlsB = mediaList;
             imageUrlB = mediaList.first; // 기존 호환성
           }
-          // optionB Map 파싱 - 로그 제거
         } else {
           optionB = postData['option_b'] ?? postData['text_b'] ?? '';
-          // optionB 문자열 파싱 - 로그 제거
         }
         
         // 작성자 이름 추출
         authorName = postData['authorName'] ?? postData['author_name'] ?? postData['author_display_name'] ?? '익명';
       }
       
-      DebugHelper.info('투표 알림 표시', tag: 'GlobalNotificationManager');
+      DebugHelper.logOnce(
+        'notif_show_$notificationId',
+        '투표 알림 표시: ${DebugHelper.maskSensitive(notificationId)}',
+        tag: 'GlobalNotificationManager',
+        level: LogLevel.INFO
+      );
       
       // VersusBoxSizeData 생성 (비율 정보가 있는 경우)
       VersusBoxSizeData? sizeData;
@@ -315,21 +310,12 @@ class GlobalNotificationManager {
             hasImageA: imageUrlA != null,
             hasImageB: imageUrlB != null,
           );
-          
-          // VersusBoxSizeData 생성 성공 - 로그 제거
         } catch (e) {
           DebugHelper.warning('VersusBoxSizeData 생성 실패', tag: 'GlobalNotificationManager');
         }
       }
       
-      // SafeArea 계산
-      final screenWidth = MediaQuery.of(context).size.width;
-      
-      // 크기 제약 디버그 출력
-      // VotingNotificationConstraints 크기 제약 - 로그 제거
-      
       // 표준 showDialog를 사용하여 알림 표시 (Navigator context 문제 해결)
-      // VotingNotificationDialog 생성 - 로그 제거
       
       showDialog(
         context: context,
@@ -369,9 +355,7 @@ class GlobalNotificationManager {
                   
                   // 비동기로 알림을 읽음으로 표시 시도
                   _markAsRead(notification).then((_) {
-                    // 알림 읽음 처리 성공 - 로그 제거
                   }).catchError((error) {
-                    // 알림 읽음 처리 실패 - 로그 제거
                   });
                   
                   // 실제 투표 로직 구현
@@ -383,7 +367,6 @@ class GlobalNotificationManager {
                   });
                 },
                 onDismiss: (hasVoted) {
-                  // 알림 닫힘 - 로그 제거
                   _isShowingNotification = false;
                   _currentNotification = null;
                   
@@ -394,7 +377,6 @@ class GlobalNotificationManager {
                   
                   // 닫힌 알림도 처리된 것으로 표시
                   _markAsRead(notification).catchError((error) {
-                    // 알림 읽음 처리 실패 - 로그 제거
                   });
                   
                   // 다음 알림 처리
@@ -420,7 +402,6 @@ class GlobalNotificationManager {
         'read': true,
         'read_at': FieldValue.serverTimestamp(),
       });
-      // 알림 읽음 처리 완료 - 로그 제거
     } catch (e) {
       DebugHelper.warning('읽음 처리 실패', tag: 'GlobalNotificationManager');
     }
@@ -452,7 +433,6 @@ class GlobalNotificationManager {
       final prefs = await SharedPreferences.getInstance();
       final savedIds = prefs.getStringList(_processedIdsKey) ?? [];
       _processedNotificationIds.addAll(savedIds);
-      // 저장된 처리 기록 로드 - 로그 제거
     } catch (e) {
       DebugHelper.warning('처리 기록 로드 실패', tag: 'GlobalNotificationManager');
     }
@@ -463,7 +443,6 @@ class GlobalNotificationManager {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setStringList(_processedIdsKey, _processedNotificationIds.toList());
-      // 처리 기록 저장 - 로그 제거
     } catch (e) {
       DebugHelper.warning('처리 기록 저장 실패', tag: 'GlobalNotificationManager');
     }
@@ -474,6 +453,20 @@ class GlobalNotificationManager {
   
   /// 현재 표시 중인지 여부
   bool get isShowingNotification => _isShowingNotification;
+  
+  /// 현재 표시 중인 알림 반환
+  NotificationsModel? get currentNotification => _currentNotification;
+  
+  /// 디버그 정보 반환
+  Map<String, dynamic> getDebugInfo() {
+    return {
+      'isShowingNotification': _isShowingNotification,
+      'queueLength': _notificationQueue.length,
+      'processedCount': _processedNotificationIds.length,
+      'currentNotificationId': _currentNotification?.reference.id,
+      'currentNotificationType': _currentNotification?.type,
+    };
+  }
   
   /// 실제 투표 처리
   /// 
@@ -493,7 +486,12 @@ class GlobalNotificationManager {
         return;
       }
       
-      DebugHelper.debug('투표 시도: postId=${DebugHelper.maskSensitive(postId)}, option=$selectedOption', tag: 'GlobalNotificationManager');
+      DebugHelper.logOnce(
+        'vote_submit_${postId}_$currentUserUid',
+        '투표 시도: postId=${DebugHelper.maskSensitive(postId)}, option=$selectedOption',
+        tag: 'GlobalNotificationManager',
+        level: LogLevel.DEBUG
+      );
       
       // 모든 작업을 하나의 트랜잭션으로 처리
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -529,8 +527,6 @@ class GlobalNotificationManager {
           'from_chat': false,  // 알림 기반 투표는 채팅이 아님
         };
         
-        // 트랜잭션 내 투표 데이터 - 로그 제거
-        
         transaction.set(voteRef, voteData);
         
         // 4. posts 문서 업데이트
@@ -544,12 +540,15 @@ class GlobalNotificationManager {
           'last_vote_at': FieldValue.serverTimestamp(),
         };
         
-        // posts 문서 업데이트 - 로그 제거
-        
         transaction.update(postRef, updateData);
       });
       
-      DebugHelper.info('투표 저장 완료', tag: 'GlobalNotificationManager');
+      DebugHelper.logOnce(
+        'vote_complete_${postId}_$currentUserUid',
+        '투표 저장 완료',
+        tag: 'GlobalNotificationManager',
+        level: LogLevel.INFO
+      );
       
       // 5. AI 채팅 메시지 업데이트 (트랜잭션 외부에서 처리)
       try {
@@ -566,7 +565,12 @@ class GlobalNotificationManager {
           if (authorId != null) {
             // AI 채팅 ID 계산
             final aiChatId = 'ai_assistant_$authorId';
-            DebugHelper.debug('AI 채팅 메시지 업데이트 시도: chatId=$aiChatId', tag: 'GlobalNotificationManager');
+            DebugHelper.logOnce(
+              'ai_chat_update_$postId',
+              'AI 채팅 메시지 업데이트 시도: chatId=$aiChatId',
+              tag: 'GlobalNotificationManager',
+              level: LogLevel.DEBUG
+            );
             
             // AI 채팅에서 해당 postId의 메시지 찾기
             final aiMessageQuery = await FirebaseFirestore.instance
@@ -580,7 +584,6 @@ class GlobalNotificationManager {
             if (aiMessageQuery.docs.isNotEmpty) {
               final messageDoc = aiMessageQuery.docs.first;
               final messageData = messageDoc.data();
-              DebugHelper.debug('AI 채팅 메시지 찾음: messageId=${messageDoc.id}', tag: 'GlobalNotificationManager');
               
               // 개별 사용자의 투표 정보를 저장할 맵 가져오기 또는 생성
               final currentUserVotes = Map<String, dynamic>.from(
@@ -599,10 +602,8 @@ class GlobalNotificationManager {
                 'vote_status': 'participated',
                 'last_vote_update': FieldValue.serverTimestamp(),
               });
-              
-              DebugHelper.debug('AI 채팅 메시지 user_votes 업데이트 완료', tag: 'GlobalNotificationManager');
             } else {
-              DebugHelper.debug('AI 채팅에서 해당 postId의 메시지를 찾을 수 없음', tag: 'GlobalNotificationManager');
+              // AI 채팅에서 해당 postId의 메시지를 찾을 수 없음
             }
           }
         }

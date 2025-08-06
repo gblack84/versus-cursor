@@ -47,6 +47,8 @@ app.*.map.json
 # Firebase
 google-services.json
 GoogleService-Info.plist
+firebase/functions/service-account-key.json
+firebase/functions/service-account-*.json
 
 # Environment variables
 .env

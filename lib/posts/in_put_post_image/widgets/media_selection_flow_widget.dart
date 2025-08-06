@@ -65,9 +65,6 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   List<AssetEntity> _selectedAssets = []; // AssetEntity 저장
   int _currentEditIndex = 0;
   
-  // 업로드 상태
-  bool _isUploading = false;
-  double _uploadProgress = 0.0;
   
   // 재시도 상태 추적
   bool _isRetrying = false;
@@ -471,24 +468,14 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   /// 기존 이미지 다운로드 후 편집
   Future<void> _downloadAndEditExistingImage() async {
     try {
-      setState(() {
-        _isUploading = true;
-        _uploadProgress = 0.0;
-      });
-      
       // Firebase Storage URL에서 이미지 다운로드
       final localPath = await ImageDownloadService.downloadImage(widget.initialImageUrl!);
       final file = File(localPath);
       
       setState(() {
-        _isUploading = false;
         _selectedFile = file;
       });
     } catch (e) {
-      setState(() {
-        _isUploading = false;
-      });
-      
       // 에러 발생 시 모달 닫기
       if (mounted) {
         _showToast('이미지를 불러올 수 없습니다: $e', isError: true);
@@ -594,10 +581,6 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   /// 선택 결과 처리 (diff 계산)
   Future<void> _processSelectionResult(List<AssetEntity> selectedAssets) async {
     try {
-      setState(() {
-        _isUploading = true;
-      });
-      
       // MediaSelectionFlow 모달 닫기 - processing 액션 전달
       if (mounted) {
         Navigator.pop(context, {'action': 'processing', 'selectedAssets': selectedAssets});
@@ -608,12 +591,6 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         Navigator.pop(context);
       }
       rethrow;
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isUploading = false;
-        });
-      }
     }
   }
 }

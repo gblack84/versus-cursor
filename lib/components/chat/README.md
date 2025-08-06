@@ -353,6 +353,16 @@ ChatL10nKo _getKoreanL10n() {
 - 스크롤 시 추가 로드
 - 메모리 효율적 관리
 
+## 최근 업데이트 (v2.0.0)
+
+### 2025-08-06: 시스템 통합
+- **컬렉션 이름 정규화**: `messages_record` → `messages`, `chats_record` → `chats`
+- **AI 채팅 ID 형식 통일**: `ai_assistant_userId` 형식으로 표준화
+- **투표 카드 메시지 개선**: 
+  - 멀티이미지 지원 (`vote_option_a_images[]`, `vote_option_b_images[]`)
+  - 실시간 상태 업데이트 (`card_status`, `vote_end_time`)
+  - 개별 투표 추적 (`user_votes` Map)
+
 ## 향후 개선사항
 
 1. **읽음 확인 기능**
@@ -395,5 +405,6 @@ ChatL10nKo _getKoreanL10n() {
 ---
 
 **작성일**: 2025-07-26  
-**버전**: 1.0  
+**최종 업데이트**: 2025-08-06  
+**버전**: 1.1  
 **작성자**: SuperClaude Framework  

@@ -22,8 +22,9 @@ class ImageCacheHelper {
     // 최소/최대값으로 제한하여 메모리 사용량 최적화
     final cacheWidth = targetWidth.clamp(kMinMemCacheWidth, kMaxMemCacheWidth);
     
-    DebugHelper.log('캐시 너비 계산: 표시크기=$displayWidth, 픽셀비율=$pixelRatio, 캐시크기=$cacheWidth', 
-                    tag: 'ImageCache');
+    // 캐시 너비 계산은 DEBUG 레벨로
+    DebugHelper.debug('캐시 너비 계산: 표시크기=$displayWidth, 픽셀비율=$pixelRatio, 캐시크기=$cacheWidth', 
+                      tag: 'ImageCache');
     
     return cacheWidth;
   }
@@ -59,17 +60,22 @@ class ImageCacheHelper {
     // 최대 프리로드 개수 제한
     final urlsToPreload = imageUrls.take(kMaxPreloadCount).toList();
     
-    DebugHelper.log('이미지 프리로드 시작: ${urlsToPreload.length}개', tag: 'ImageCache');
+    // 프리로드 시작은 URL 해시로 한 번만 로깅
+    final preloadId = urlsToPreload.map((url) => url.hashCode).join('_');
+    DebugHelper.logOnce(
+      'preload_batch_$preloadId',
+      '이미지 프리로드 시작: ${urlsToPreload.length}개',
+      tag: 'ImageCache',
+      level: LogLevel.DEBUG
+    );
     
     try {
       await Future.wait(
         urlsToPreload.map((url) => _preloadSingleImage(context, url, memCacheWidth)),
         eagerError: false,
       );
-      
-      DebugHelper.log('이미지 프리로드 완료', tag: 'ImageCache');
     } catch (e) {
-      DebugHelper.logError('이미지 프리로드 실패', e);
+      DebugHelper.error('이미지 프리로드 실패', error: e, tag: 'ImageCache');
     }
   }
   
@@ -88,8 +94,21 @@ class ImageCacheHelper {
       );
       
       await precacheImage(provider, context);
+      
+      // 각 이미지 URL에 대해 한 번만 로깅
+      DebugHelper.logOnce(
+        'preload_${imageUrl.hashCode}',
+        '이미지 프리캐시: ${DebugHelper.maskSensitive(imageUrl)}',
+        tag: 'ImageCache',
+        level: LogLevel.DEBUG
+      );
     } catch (e) {
-      DebugHelper.logError('이미지 프리로드 실패: $imageUrl', e);
+      DebugHelper.logOnce(
+        'preload_error_${imageUrl.hashCode}',
+        '이미지 프리로드 실패: ${DebugHelper.maskSensitive(imageUrl)}',
+        tag: 'ImageCache',
+        level: LogLevel.WARNING
+      );
     }
   }
   
@@ -120,8 +139,9 @@ class ImageCacheHelper {
       indicesToPreload.add(currentIndex + 2);
     }
     
-    DebugHelper.log('인접 이미지 프리로드: 현재=$currentIndex, 프리로드=${indicesToPreload.join(",")}', 
-                    tag: 'ImageCache');
+    // 인접 이미지 프리로드는 DEBUG 레벨로
+    DebugHelper.debug('인접 이미지 프리로드: 현재=$currentIndex, 프리로드=${indicesToPreload.join(",")}', 
+                      tag: 'ImageCache');
     
     for (final index in indicesToPreload) {
       if (index >= 0 && index < imageUrls.length) {
@@ -133,21 +153,22 @@ class ImageCacheHelper {
   /// 캐시 클리어 (메모리 부족 시)
   static void clearMemoryCache() {
     PaintingBinding.instance.imageCache.clear();
-    DebugHelper.log('이미지 메모리 캐시 클리어', tag: 'ImageCache');
+    DebugHelper.info('이미지 메모리 캐시 클리어', tag: 'ImageCache');
   }
   
   /// 특정 이미지 캐시에서 제거
   static void evictFromCache(String imageUrl) {
     final provider = CachedNetworkImageProvider(imageUrl);
     provider.evict();
-    DebugHelper.log('캐시에서 이미지 제거: $imageUrl', tag: 'ImageCache');
+    DebugHelper.debug('캐시에서 이미지 제거: ${DebugHelper.maskSensitive(imageUrl)}', tag: 'ImageCache');
   }
   
   /// 캐시 상태 확인 (디버그용)
   static void logCacheStatus() {
     DebugHelper.runInDebug(() {
       final cache = PaintingBinding.instance.imageCache;
-      DebugHelper.log(
+      // 캐시 상태는 명시적 호출 시에만 표시
+      DebugHelper.info(
         '캐시 상태: 현재크기=${cache.currentSizeBytes}bytes, '
         '최대크기=${cache.maximumSizeBytes}bytes, '
         '이미지수=${cache.currentSize}개',

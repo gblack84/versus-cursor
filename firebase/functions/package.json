@@ -1,6 +1,6 @@
 {
   "name": "cloud-functions",
-  "description": "Firebase Cloud Functions",
+  "description": "Firebase Cloud Functions - Updated 2025-08-06",
   "dependencies": {
     "@genkit-ai/googleai": "^1.14.1",
     "@google-cloud/vision": "^5.3.0",
@@ -28,6 +28,9 @@
   "scripts": {
     "lint": "./node_modules/.bin/eslint --max-warnings=0 .",
     "serve": "firebase -P versus-space-1lwwiw emulators:start --only functions",
+    "migrate:dry": "node scripts/migrate-vote-data.js --dry-run",
+    "migrate:test": "node scripts/migrate-vote-data.js --dry-run --limit=10",
+    "migrate:run": "node scripts/migrate-vote-data.js",
     "shell": "firebase -P versus-space-1lwwiw functions:shell",
     "start": "npm run shell",
     "logs": "firebase -P versus-space-1lwwiw functions:log",

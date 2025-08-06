@@ -1,140 +1,48 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '/design_system/design_system.dart';
-import '/backend/backend.dart';
-import '/auth/firebase_auth/auth_util.dart';
 import '/components/notifications/voting_notification_dialog.dart';
 import '/utils/responsive_breakpoints.dart';
+import 'base_vote_message.dart';
 
 /// AI 피클 채팅에서 사용되는 투표 카드 메시지 위젯
 /// 4가지 상태를 지원: voting_request, in_progress, completed, not_participated
-class VoteCardMessage extends StatefulWidget {
+class VoteCardMessage extends BaseVoteMessage {
   const VoteCardMessage({
     super.key,
-    required this.postId,
-    required this.title,
-    this.description,
-    required this.optionAText,
-    required this.optionBText,
-    this.optionAImage,
-    this.optionBImage,
-    this.optionAImages,
-    this.optionBImages,
-    this.aspectRatioA,
-    this.aspectRatioB,
-    required this.cardStatus,
-    this.voteEndTime,
-    this.userVoted = false,
-    this.voteChoice,
-    this.voteResults,
-    required this.isMe,
-    required this.timestamp,
-    required this.messageType,
+    required super.postId,
+    required super.title,
+    super.description,
+    required super.optionAText,
+    required super.optionBText,
+    super.optionAImage,
+    super.optionBImage,
+    super.optionAImages,
+    super.optionBImages,
+    super.aspectRatioA,
+    super.aspectRatioB,
+    required super.cardStatus,
+    super.voteEndTime,
+    super.userVotes,
+    super.voteResults,
+    required super.isMe,
+    super.timestamp,
+    required super.messageType,
+    super.messageId,
+    super.chatId,
   });
-
-  final String postId;
-  final String title;
-  final String? description;
-  final String optionAText;
-  final String optionBText;
-  final String? optionAImage;
-  final String? optionBImage;
-  final List<String>? optionAImages;
-  final List<String>? optionBImages;
-  final double? aspectRatioA;
-  final double? aspectRatioB;
-  final String cardStatus; // voting_request, in_progress, completed, not_participated
-  final DateTime? voteEndTime;
-  final bool userVoted;
-  final String? voteChoice;
-  final Map<String, dynamic>? voteResults;
-  final bool isMe;
-  final DateTime? timestamp;
-  final String messageType; // vote_request, vote_created
-
-  /// A박스의 이미지 URL 리스트 반환 (멀티이미지 우선, 없으면 단일 이미지)
-  List<String> get effectiveImageUrlsA {
-    if (optionAImages != null && optionAImages!.isNotEmpty) {
-      return optionAImages!;
-    }
-    if (optionAImage != null && optionAImage!.isNotEmpty) {
-      return [optionAImage!];
-    }
-    return [];
-  }
-  
-  /// B박스의 이미지 URL 리스트 반환 (멀티이미지 우선, 없으면 단일 이미지)
-  List<String> get effectiveImageUrlsB {
-    if (optionBImages != null && optionBImages!.isNotEmpty) {
-      return optionBImages!;
-    }
-    if (optionBImage != null && optionBImage!.isNotEmpty) {
-      return [optionBImage!];
-    }
-    return [];
-  }
 
   @override
   State<VoteCardMessage> createState() => _VoteCardMessageState();
 }
 
-class _VoteCardMessageState extends State<VoteCardMessage> {
-  Timer? _timer;
-  Duration _remainingTime = Duration.zero;
-  
-  @override
-  void initState() {
-    super.initState();
-    _startTimer();
-  }
-  
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-  
-  void _startTimer() {
-    if (widget.voteEndTime != null && 
-        (widget.cardStatus == 'voting_request' || widget.cardStatus == 'in_progress')) {
-      _updateRemainingTime();
-      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-        _updateRemainingTime();
-      });
-    }
-  }
-  
-  void _updateRemainingTime() {
-    final now = DateTime.now();
-    final endTime = widget.voteEndTime;
-    
-    if (endTime != null && endTime.isAfter(now)) {
-      setState(() {
-        _remainingTime = endTime.difference(now);
-      });
-    } else {
-      _timer?.cancel();
-      setState(() {
-        _remainingTime = Duration.zero;
-      });
-    }
-  }
-  
-  String _formatRemainingTime() {
-    if (_remainingTime.inSeconds <= 0) {
-      return '투표 종료';
-    }
-    
-    final minutes = _remainingTime.inMinutes;
-    final seconds = _remainingTime.inSeconds % 60;
-    return '${minutes}분 ${seconds}초 남음';
-  }
+class _VoteCardMessageState extends State<VoteCardMessage> 
+    with BaseVoteMessageStateMixin<VoteCardMessage> {
 
   @override
   Widget build(BuildContext context) {
-    final statusInfo = _getStatusInfo();
+    final statusInfo = getStatusInfo();
     
     return GestureDetector(
       onTap: _handleTap,
@@ -152,21 +60,21 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
           ],
           const SizedBox(height: VersusSpacing.sm),
           _buildVersusBoxes(),
-          if (_shouldShowTimer()) ...[
+          if (shouldShowTimer()) ...[
             const SizedBox(height: VersusSpacing.sm),
-            _buildTimer(),
+            buildTimer(),
           ],
-          if (_shouldShowAction()) ...[
+          if (shouldShowAction()) ...[
             const SizedBox(height: VersusSpacing.sm),
             _buildActionButton(),
           ],
-          if (_shouldShowResult()) ...[
+          if (shouldShowResult()) ...[
             const SizedBox(height: VersusSpacing.sm),
             _buildResults(),
           ],
           if (widget.timestamp != null) ...[
             const SizedBox(height: VersusSpacing.xs),
-            _buildTimestamp(),
+            buildTimestamp(),
           ],
         ],
         ),
@@ -274,7 +182,7 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
             imageUrl: widget.optionAImage,
             images: widget.optionAImages,
             color: const Color(0xFFFF6B6B),
-            isSelected: widget.voteChoice == 'A',
+            isSelected: widget.currentUserChoice == 'A',
             votePercentage: widget.voteResults?['percentageA'],
             voteCount: widget.voteResults?['votesA'],
             height: boxHeight,
@@ -296,7 +204,7 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
             imageUrl: widget.optionBImage,
             images: widget.optionBImages,
             color: const Color(0xFF4ECDC4),
-            isSelected: widget.voteChoice == 'B',
+            isSelected: widget.currentUserChoice == 'B',
             votePercentage: widget.voteResults?['percentageB'],
             voteCount: widget.voteResults?['votesB'],
             height: boxHeight,
@@ -576,7 +484,7 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
       imageUrl: widget.optionAImage,
       images: widget.optionAImages,
       color: const Color(0xFFFF6B6B),
-      isSelected: widget.userVoted && widget.voteChoice == 'A',
+      isSelected: widget.hasCurrentUserVoted && widget.currentUserChoice == 'A',
       votePercentage: widget.voteResults?['percentageA'],
       voteCount: widget.voteResults?['votesA'],
       isSingleImageMode: true,
@@ -585,36 +493,6 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
     );
   }
   
-  Widget _buildTimer() {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: VersusSpacing.sm,
-        vertical: 4,
-      ),
-      decoration: BoxDecoration(
-        color: VersusColors.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.timer,
-            size: 14,
-            color: VersusColors.primary,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            _formatRemainingTime(),
-            style: VersusTextStyles.labelSmall.copyWith(
-              color: VersusColors.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
   
   Widget _buildActionButton() {
     return SizedBox(
@@ -691,15 +569,6 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
     );
   }
   
-  Widget _buildTimestamp() {
-    return Text(
-      _formatTime(widget.timestamp!),
-      style: VersusTextStyles.labelSmall.copyWith(
-        fontSize: 11,
-        color: VersusColors.textSecondary.withValues(alpha: 0.8),
-      ),
-    );
-  }
   
   void _handleTap() {
     if (widget.cardStatus == 'voting_request') {
@@ -742,7 +611,7 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
           imageUrlsB: widget.optionBImages,
           onVote: (option) async {
             // 투표 처리
-            await _submitVote(option);
+            await submitVote(option);
             if (context.mounted) {
               Navigator.of(context).pop();
             }
@@ -755,93 +624,4 @@ class _VoteCardMessageState extends State<VoteCardMessage> {
     );
   }
   
-  Future<void> _submitVote(String option) async {
-    try {
-      final postRef = FirebaseFirestore.instance
-          .collection('posts')
-          .doc(widget.postId);
-      
-      final userId = currentUserUid;
-      if (userId.isEmpty) return;
-      
-      // 투표 업데이트
-      if (option == 'A') {
-        await postRef.update({
-          'votedUserIDsA': FieldValue.arrayUnion([userId]),
-        });
-      } else {
-        await postRef.update({
-          'votedUserIDsB': FieldValue.arrayUnion([userId]),
-        });
-      }
-    } catch (e) {
-      print('투표 실패: $e');
-    }
-  }
-  
-  bool _shouldShowTimer() {
-    return (widget.cardStatus == 'voting_request' || 
-            widget.cardStatus == 'in_progress') &&
-           widget.voteEndTime != null &&
-           _remainingTime.inSeconds > 0;
-  }
-  
-  bool _shouldShowAction() {
-    return widget.cardStatus == 'voting_request' || 
-           (widget.cardStatus == 'in_progress' && widget.messageType == 'vote_created');
-  }
-  
-  bool _shouldShowResult() {
-    return widget.cardStatus == 'completed' && widget.voteResults != null;
-  }
-  
-  Map<String, dynamic> _getStatusInfo() {
-    switch (widget.cardStatus) {
-      case 'voting_request':
-        return {
-          'text': '피클요청',
-          'color': VersusColors.primary,
-          'icon': Icons.how_to_vote,
-        };
-      case 'in_progress':
-        return {
-          'text': '진행중',
-          'color': VersusColors.warning,
-          'icon': Icons.timer,
-        };
-      case 'completed':
-        return {
-          'text': '완료',
-          'color': VersusColors.success,
-          'icon': Icons.check_circle,
-        };
-      case 'not_participated':
-        return {
-          'text': '미참여',
-          'color': VersusColors.textSecondary,
-          'icon': Icons.block,
-        };
-      default:
-        return {
-          'text': '알 수 없음',
-          'color': VersusColors.textSecondary,
-          'icon': Icons.help,
-        };
-    }
-  }
-  
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
-
-    if (difference.inMinutes < 1) {
-      return '방금';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}분 전';
-    } else if (difference.inDays < 1) {
-      return '${difference.inHours}시간 전';
-    } else {
-      return '${difference.inDays}일 전';
-    }
-  }
 }

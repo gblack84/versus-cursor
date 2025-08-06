@@ -46,6 +46,9 @@ class ChatMessageConverter {
           // Firebase Functions에서 사용하는 필드명도 추가
           'card_status': firestoreMessage.cardStatus,
           'vote_status': firestoreMessage.voteStatus,
+          // 투표 상태 추적을 위한 핵심 필드
+          'userVotes': firestoreMessage.userVotes,
+          'voteEndTime': firestoreMessage.voteEndTime,
         },
       );
     }

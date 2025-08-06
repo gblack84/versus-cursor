@@ -4,71 +4,62 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '/design_system/design_system.dart';
 import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
 import '/utils/responsive_breakpoints.dart';
+import 'base_vote_message.dart';
 
-class VoteRequestMessage extends StatefulWidget {
-  const VoteRequestMessage({
+class VoteRequestMessage extends BaseVoteMessage {
+  VoteRequestMessage({
     super.key,
-    required this.postId,
-    required this.title,
-    required this.description,
-    required this.optionAText,
-    required this.optionBText,
-    this.optionAImage,
-    this.optionBImage,
-    this.imageUrlsA,
-    this.imageUrlsB,
-    this.aspectRatioA,
-    this.aspectRatioB,
-    this.votePercentageA,
-    this.votePercentageB,
-    this.voteCountA,
-    this.voteCountB,
-    required this.voteStatus,
-    required this.isMe,
-    required this.timestamp,
+    required super.postId,
+    required super.title,
+    required String description,
+    required super.optionAText,
+    required super.optionBText,
+    super.optionAImage,
+    super.optionBImage,
+    List<String>? imageUrlsA,
+    List<String>? imageUrlsB,
+    super.aspectRatioA,
+    super.aspectRatioB,
+    double? votePercentageA,
+    double? votePercentageB,
+    int? voteCountA,
+    int? voteCountB,
+    required String voteStatus,  // 이전 호환성을 위해 유지
+    required super.isMe,
+    required DateTime? timestamp,
     required this.onTap,
-  });
+    super.userVotes,
+    super.voteEndTime,
+    String? cardStatus,
+    super.messageId,
+    super.chatId,
+  }) : super(
+    description: description,
+    optionAImages: imageUrlsA,
+    optionBImages: imageUrlsB,
+    voteResults: _buildVoteResults(votePercentageA, votePercentageB, voteCountA, voteCountB),
+    timestamp: timestamp,
+    messageType: 'vote_request',
+    cardStatus: cardStatus ?? voteStatus,  // voteStatus를 fallback으로 사용
+  );
 
-  final String postId;
-  final String title;
-  final String description;
-  final String optionAText;
-  final String optionBText;
-  final String? optionAImage;
-  final String? optionBImage;
-  final List<String>? imageUrlsA;
-  final List<String>? imageUrlsB;
-  final double? aspectRatioA;
-  final double? aspectRatioB;
-  final double? votePercentageA;
-  final double? votePercentageB;
-  final int? voteCountA;
-  final int? voteCountB;
-  final String voteStatus;
-  final bool isMe;
-  final DateTime? timestamp;
   final VoidCallback onTap;
-
-  /// A박스의 이미지 URL 리스트 반환 (멀티이미지 우선, 없으면 단일 이미지)
-  List<String> get effectiveImageUrlsA {
-    if (imageUrlsA != null && imageUrlsA!.isNotEmpty) {
-      return imageUrlsA!;
-    }
-    if (optionAImage != null && optionAImage!.isNotEmpty) {
-      return [optionAImage!];
-    }
-    return [];
-  }
   
-  /// B박스의 이미지 URL 리스트 반환 (멀티이미지 우선, 없으면 단일 이미지)
-  List<String> get effectiveImageUrlsB {
-    if (imageUrlsB != null && imageUrlsB!.isNotEmpty) {
-      return imageUrlsB!;
+  static Map<String, dynamic>? _buildVoteResults(
+    double? percentageA, 
+    double? percentageB, 
+    int? countA, 
+    int? countB
+  ) {
+    if (percentageA != null || countA != null) {
+      return {
+        'percentageA': percentageA,
+        'percentageB': percentageB,
+        'votesA': countA,
+        'votesB': countB,
+      };
     }
-    if (optionBImage != null && optionBImage!.isNotEmpty) {
-      return [optionBImage!];
-    }
-    return [];
+    return null;
   }
 
   @override
@@ -89,6 +80,9 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
   
   // 투표 상태 변경 애니메이션
   bool _isVoting = false;
+  
+  // 투표 상태 캐시
+  String get voteStatus => widget.currentUserVoteStatus;
 
   @override
   void initState() {
@@ -160,8 +154,10 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _getStatusColor();
-    final statusText = _getStatusText();
+    // BaseVoteMessage에서 상속받은 currentUserVoteStatus 사용
+    final voteStatus = widget.currentUserVoteStatus;
+    final statusColor = _getStatusColor(voteStatus);
+    final statusText = _getStatusText(voteStatus);
 
     return Semantics(
       button: true,
@@ -277,10 +273,10 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (widget.description.isNotEmpty) ...[
+              if (widget.description != null && widget.description!.isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Text(
-                  widget.description,
+                  widget.description!,
                   style: VersusTextStyles.bodySmall.copyWith(
                     color: VersusColors.textSecondary,
                   ),
@@ -411,11 +407,13 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
               imageUrls: widget.effectiveImageUrlsA,
               color: const Color(0xFFFF6B6B),
               aspectRatio: widget.aspectRatioA,
-              votePercentage: widget.votePercentageA,
-              voteCount: widget.voteCountA,
-              isSelected: widget.voteStatus == 'completed' && widget.votePercentageA != null && 
-                         widget.votePercentageB != null && 
-                         widget.votePercentageA! > widget.votePercentageB!,
+              votePercentage: widget.voteResults?['percentageA'] as double?,
+              voteCount: widget.voteResults?['votesA'] as int?,
+              isSelected: voteStatus == 'completed' && 
+                         widget.voteResults?['percentageA'] != null && 
+                         widget.voteResults?['percentageB'] != null && 
+                         (widget.voteResults!['percentageA'] as double) > 
+                         (widget.voteResults!['percentageB'] as double),
               isSingleImageMode: false,
               dualModeSecondTitle: null,
             ),
@@ -437,11 +435,13 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
               imageUrls: widget.effectiveImageUrlsB,
               color: const Color(0xFF4ECDC4),
               aspectRatio: widget.aspectRatioB,
-              votePercentage: widget.votePercentageB,
-              voteCount: widget.voteCountB,
-              isSelected: widget.voteStatus == 'completed' && widget.votePercentageA != null && 
-                         widget.votePercentageB != null && 
-                         widget.votePercentageB! > widget.votePercentageA!,
+              votePercentage: widget.voteResults?['percentageB'] as double?,
+              voteCount: widget.voteResults?['votesB'] as int?,
+              isSelected: voteStatus == 'completed' && 
+                         widget.voteResults?['percentageA'] != null && 
+                         widget.voteResults?['percentageB'] != null && 
+                         (widget.voteResults!['percentageB'] as double) > 
+                         (widget.voteResults!['percentageA'] as double),
               isSingleImageMode: false,
               dualModeSecondTitle: null,
             ),
@@ -463,11 +463,13 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
             imageUrls: widget.effectiveImageUrlsA,
             color: const Color(0xFFFF6B6B),
             aspectRatio: widget.aspectRatioA,
-            votePercentage: widget.votePercentageA,
-            voteCount: widget.voteCountA,
-            isSelected: widget.voteStatus == 'completed' && widget.votePercentageA != null && 
-                       widget.votePercentageB != null && 
-                       widget.votePercentageA! > widget.votePercentageB!,
+            votePercentage: widget.voteResults?['percentageA'] as double?,
+            voteCount: widget.voteResults?['votesA'] as int?,
+            isSelected: voteStatus == 'completed' && 
+                       widget.voteResults?['percentageA'] != null && 
+                       widget.voteResults?['percentageB'] != null && 
+                       (widget.voteResults!['percentageA'] as double) > 
+                       (widget.voteResults!['percentageB'] as double),
             isSingleImageMode: false,
             dualModeSecondTitle: null,
           ),
@@ -495,11 +497,13 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
             imageUrls: widget.effectiveImageUrlsB,
             color: const Color(0xFF4ECDC4),
             aspectRatio: widget.aspectRatioB,
-            votePercentage: widget.votePercentageB,
-            voteCount: widget.voteCountB,
-            isSelected: widget.voteStatus == 'completed' && widget.votePercentageA != null && 
-                       widget.votePercentageB != null && 
-                       widget.votePercentageB! > widget.votePercentageA!,
+            votePercentage: widget.voteResults?['percentageB'] as double?,
+            voteCount: widget.voteResults?['votesB'] as int?,
+            isSelected: voteStatus == 'completed' && 
+                       widget.voteResults?['percentageA'] != null && 
+                       widget.voteResults?['percentageB'] != null && 
+                       (widget.voteResults!['percentageB'] as double) > 
+                       (widget.voteResults!['percentageA'] as double),
             isSingleImageMode: false,
             dualModeSecondTitle: null,
           ),
@@ -852,8 +856,8 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
     return (widget.optionAImage != null || widget.optionBImage != null) && !_isExpanded;
   }
 
-  Color _getStatusColor() {
-    switch (widget.voteStatus) {
+  Color _getStatusColor(String status) {
+    switch (status) {
       case 'completed':
         return Colors.green;
       case 'expired':
@@ -870,8 +874,8 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
     }
   }
 
-  String _getStatusText() {
-    switch (widget.voteStatus) {
+  String _getStatusText(String status) {
+    switch (status) {
       case 'completed':
         return '완료';
       case 'expired':
@@ -879,6 +883,10 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
       case 'not_participated':
         return '미참여';
       case 'in_progress':
+        // 진행중 상태에서 사용자가 투표했는지 확인
+        if (widget.hasCurrentUserVoted) {
+          return '투표완료(진행중)';
+        }
         return '진행중';
       case 'voting_request':
         return '대기중';  // '피클요청' -> '대기중'으로 변경
@@ -906,6 +914,7 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
   Widget _buildSingleImageBox(double height) {
     // 단일 이미지 모드에서는 하나의 박스만 표시하고
     // A/B 타이틀을 함께 표시 (B가 텍스트만 있을 때)
+    final voteStatus = widget.currentUserVoteStatus;
     return SizedBox(
       height: height,
       child: _buildSmartOptionBox(
@@ -915,9 +924,9 @@ class _VoteRequestMessageState extends State<VoteRequestMessage>
         imageUrls: widget.effectiveImageUrlsA,
         color: const Color(0xFFFF6B6B),
         aspectRatio: widget.aspectRatioA,
-        votePercentage: widget.votePercentageA,
-        voteCount: widget.voteCountA,
-        isSelected: widget.voteStatus == 'completed',
+        votePercentage: widget.voteResults?['percentageA'] as double?,
+        voteCount: widget.voteResults?['votesA'] as int?,
+        isSelected: voteStatus == 'completed',
         isSingleImageMode: true,
         dualModeSecondTitle: widget.optionBText,  // B 옵션 텍스트도 함께 전달
       ),

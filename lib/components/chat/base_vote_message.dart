@@ -29,6 +29,7 @@ abstract class BaseVoteMessage extends StatefulWidget {
     required this.messageType,
     this.messageId,
     this.chatId,
+    this.currentUserName,
   });
 
   final String postId;
@@ -51,6 +52,7 @@ abstract class BaseVoteMessage extends StatefulWidget {
   final String messageType;
   final String? messageId;
   final String? chatId;
+  final String? currentUserName;
 
   /// 현재 사용자가 투표했는지 확인
   bool get hasCurrentUserVoted {
@@ -206,9 +208,16 @@ mixin BaseVoteMessageStateMixin<T extends BaseVoteMessage> on State<T> {
         statusInfo['icon'] = Icons.how_to_vote;
         break;
       case 'in_progress':
-        statusInfo['text'] = '진행중';
-        statusInfo['color'] = VersusColors.warning;
-        statusInfo['icon'] = Icons.timer;
+        // 사용자가 투표했는지 확인 (VoteCardMessage에서만 적용)
+        if (widget.hasCurrentUserVoted) {
+          statusInfo['text'] = 'Pick 완료!(진행중)';
+          statusInfo['color'] = Colors.blue;
+          statusInfo['icon'] = Icons.check_circle_outline;
+        } else {
+          statusInfo['text'] = '진행중';
+          statusInfo['color'] = Colors.blue;
+          statusInfo['icon'] = Icons.timer;
+        }
         break;
       case 'completed':
         statusInfo['text'] = '완료';

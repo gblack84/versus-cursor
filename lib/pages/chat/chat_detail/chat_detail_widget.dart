@@ -14,7 +14,6 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/utils/chat_message_converter.dart';
 import '/services/chat_media_upload_service.dart';
 import '/components/chat/vote_card_message.dart';
-import '/components/chat/vote_request_message.dart';
 import '/components/notifications/voting_notification_dialog.dart';
 import '/services/chat_image_cache_service.dart';
 import '/posts/in_put_post_image/utils/debug_helper.dart';
@@ -41,6 +40,7 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
   late ChatDetailModel _model;
   final scaffoldKey = GlobalKey<ScaffoldState>();
   late types.User _currentUser;
+  UsersModel? _currentUserRecord; // 현재 사용자 정보 저장
   Map<String, UsersModel> _usersMap = {};
   bool _isLoadingUsers = true;
   final ChatMediaUploadService _mediaUploadService = ChatMediaUploadService();
@@ -64,6 +64,7 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
     if (currentUserReference != null) {
       final currentUserDoc = await currentUserReference!.get();
       final currentUserRecord = UsersModel.fromSnapshot(currentUserDoc);
+      _currentUserRecord = currentUserRecord; // 저장
       _currentUser = ChatMessageConverter.convertCurrentUser(currentUserRecord);
     }
 
@@ -415,81 +416,46 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
             );
           });
           
-          // vote_request 타입은 VoteRequestMessage 사용
+          // vote_request 타입은 VoteCardMessage 사용
           if (metadata['type'] == 'vote_request') {
-            return VoteRequestMessage(
-              postId: metadata['postId'] ?? '',
-              title: metadata['title'] ?? '',
-              description: description,
-              optionAText: metadata['optionAText'] ?? '',
-              optionBText: metadata['optionBText'] ?? '',
-              optionAImage: metadata['optionAImage']?.isNotEmpty == true ? metadata['optionAImage'] : null,
-              optionBImage: metadata['optionBImage']?.isNotEmpty == true ? metadata['optionBImage'] : null,
-              imageUrlsA: imagesA ?? (metadata['optionAImages'] != null 
-                  ? List<String>.from(metadata['optionAImages']) 
-                  : null),
-              imageUrlsB: imagesB ?? (metadata['optionBImages'] != null 
-                  ? List<String>.from(metadata['optionBImages']) 
-                  : null),
-              // 투표 결과도 실시간 데이터 우선 사용
-              votePercentageA: (messageData?['vote_percent_a'] as num?)?.toDouble() ?? 
-                              metadata['votePercentageA'] as double?,
-              votePercentageB: (messageData?['vote_percent_b'] as num?)?.toDouble() ?? 
-                              metadata['votePercentageB'] as double?,
-              voteCountA: messageData?['vote_results_a'] as int? ?? 
-                         metadata['voteCountA'] as int?,
-              voteCountB: messageData?['vote_results_b'] as int? ?? 
-                         metadata['voteCountB'] as int?,
-              aspectRatioA: aspectRatioA != null ? aspectRatioA.toDouble() : null,
-              aspectRatioB: aspectRatioB != null ? aspectRatioB.toDouble() : null,
-              // messageData는 Firestore의 실시간 데이터, metadata는 ChatMessageConverter의 고정 데이터
-              // 실시간 업데이트를 위해 messageData를 우선 사용
-              voteStatus: VoteStatusService.getUserVoteStatus(
-                userVotes: messageData?['user_votes'] as Map<String, dynamic>?,
-                userId: currentUserUid,
-                cardStatus: messageData?['card_status'] ?? metadata['cardStatus'],
-                voteEndTime: messageData?['vote_end_time'] != null 
-                    ? (messageData!['vote_end_time'] as Timestamp).toDate()
-                    : null,
-              ),
-              userVotes: messageData?['user_votes'] as Map<String, dynamic>? ?? metadata['userVotes'] as Map<String, dynamic>?,
-              voteEndTime: messageData?['vote_end_time'] != null 
-                  ? (messageData!['vote_end_time'] as Timestamp).toDate()
-                  : (metadata['voteEndTime'] != null ? metadata['voteEndTime'] as DateTime : null),
-              cardStatus: messageData?['card_status'] ?? metadata['cardStatus'] ?? 'in_progress',
-              isMe: message.author.id == _currentUser.id,
-              timestamp: DateTime.fromMillisecondsSinceEpoch(message.createdAt ?? 0),
-              messageId: snapshot.data?.docs.firstOrNull?.id ?? message.id,
-              chatId: widget.chatDocument?.reference.id,
-              onTap: () {
-                // 이미 투표한 경우 알림 표시
-                if (hasUserVoted) {
-                  BotToast.showText(
-                    text: '이미 ${userVoteOption == 'A' ? 'A' : 'B'} 옵션에 투표하셨습니다.',
-                    duration: const Duration(seconds: 2),
-                  );
-                  return;
-                }
-                
-                // 투표 다이얼로그 표시
-                _showVotingDialog(
+            return VoteCardMessage(
                   postId: metadata['postId'] ?? '',
                   title: metadata['title'] ?? '',
                   description: description,
                   optionAText: metadata['optionAText'] ?? '',
                   optionBText: metadata['optionBText'] ?? '',
-                  optionAImage: metadata['optionAImage'],
-                  optionBImage: metadata['optionBImage'],
-                  imageUrlsA: messageData?['vote_option_a_images'] != null 
-                      ? List<String>.from(messageData!['vote_option_a_images']) 
-                      : null,
-                  imageUrlsB: messageData?['vote_option_b_images'] != null 
-                      ? List<String>.from(messageData!['vote_option_b_images']) 
-                      : null,
+                  optionAImage: metadata['optionAImage']?.isNotEmpty == true ? metadata['optionAImage'] : null,
+                  optionBImage: metadata['optionBImage']?.isNotEmpty == true ? metadata['optionBImage'] : null,
+                  optionAImages: imagesA ?? (metadata['optionAImages'] != null 
+                      ? List<String>.from(metadata['optionAImages']) 
+                      : null),
+                  optionBImages: imagesB ?? (metadata['optionBImages'] != null 
+                      ? List<String>.from(metadata['optionBImages']) 
+                      : null),
                   aspectRatioA: aspectRatioA != null ? aspectRatioA.toDouble() : null,
                   aspectRatioB: aspectRatioB != null ? aspectRatioB.toDouble() : null,
-                );
-              },
+                  currentUserName: _currentUserRecord?.displayName,
+                  cardStatus: messageData?['card_status'] ?? metadata['cardStatus'] ?? 'voting_request',
+                  messageType: 'vote_request',
+                  isMe: message.author.id == _currentUser.id,
+                  timestamp: DateTime.fromMillisecondsSinceEpoch(message.createdAt ?? 0),
+                  voteEndTime: messageData?['vote_end_time'] != null
+                      ? (messageData!['vote_end_time'] as Timestamp).toDate()
+                      : (metadata['voteEndTime'] != null ? metadata['voteEndTime'] as DateTime : null),
+                  userVotes: messageData?['user_votes'] as Map<String, dynamic>? ?? metadata['userVotes'] as Map<String, dynamic>?,
+                  voteResults: messageData?['vote_results_a'] != null ? {
+                    'votesA': messageData?['vote_results_a'],
+                    'votesB': messageData?['vote_results_b'],
+                    'percentageA': (messageData?['vote_percent_a'] as num?)?.toDouble(),
+                    'percentageB': (messageData?['vote_percent_b'] as num?)?.toDouble(),
+                  } : (metadata['voteCountA'] != null ? {
+                    'votesA': metadata['voteCountA'],
+                    'votesB': metadata['voteCountB'],
+                    'percentageA': metadata['votePercentageA'],
+                    'percentageB': metadata['votePercentageB'],
+                  } : null),
+                  messageId: snapshot.data?.docs.firstOrNull?.id ?? message.id,
+                  chatId: widget.chatDocument?.reference.id,
             );
           } else if (metadata['type'] == 'vote_created') {
             // vote_created 타입은 VoteCardMessage 사용
@@ -510,6 +476,7 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
                   : null,
               aspectRatioA: aspectRatioA != null ? aspectRatioA.toDouble() : null,
               aspectRatioB: aspectRatioB != null ? aspectRatioB.toDouble() : null,
+              currentUserName: _currentUserRecord?.displayName,
               cardStatus: messageData?['card_status'] ?? 'in_progress',
               messageType: 'vote_created',
               isMe: message.author.id == _currentUser.id,

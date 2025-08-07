@@ -82,7 +82,9 @@ exports.onPostCreatedSendNotifications = functions
         
         await createVoteCreatedMessage(creatorId, postId, {
           ...postData,
-          authorName: postData.authorName || postData.author_name || '익명',
+          authorName: postData.displayName || postData.display_name || '익명',
+          authorPhotoUrl: postData.photoUrl || postData.photo_url || null,
+          creatorId: creatorId,
           questionTitle: postData.question_title || postData.questionTitle,
           optionA: optionATitle,
           optionB: optionBTitle,

@@ -231,6 +231,11 @@ class MessagesModel extends FirestoreRecord {
     return getUserVoteTime(userId);
   }
 
+  // \"metadata\" field.
+  Map<String, dynamic>? _metadata;
+  Map<String, dynamic> get metadata => _metadata ?? const {};
+  bool hasMetadata() => _metadata != null;
+
   DocumentReference get parentReference => reference.parent.parent!;
 
   void _initializeFields() {
@@ -275,6 +280,7 @@ class MessagesModel extends FirestoreRecord {
     _voteResults = snapshotData['vote_results'] as Map<String, dynamic>?;
     // _voteParticipatedAt = snapshotData['vote_participated_at'] as DateTime?;  // deprecated - use user_votes instead
     _userVotes = snapshotData['user_votes'] as Map<String, dynamic>?;
+    _metadata = snapshotData['metadata'] as Map<String, dynamic>?;
   }
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
@@ -350,6 +356,7 @@ Map<String, dynamic> createMessagesModelData({
   Map<String, dynamic>? voteResults,
   DateTime? voteParticipatedAt,
   Map<String, dynamic>? userVotes,
+  Map<String, dynamic>? metadata,
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
@@ -386,6 +393,7 @@ Map<String, dynamic> createMessagesModelData({
       'vote_results': voteResults,
       'vote_participated_at': voteParticipatedAt,
       'user_votes': userVotes,
+      'metadata': metadata,
     }.withoutNulls,
   );
 

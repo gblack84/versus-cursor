@@ -35,6 +35,9 @@ class VoteCardMessage extends BaseVoteMessage {
     super.messageId,
     super.chatId,
     super.currentUserName,
+    super.senderProfileImageUrl,
+    super.senderDisplayName,
+    super.showSenderProfile,
   });
 
   @override
@@ -109,8 +112,10 @@ class _VoteCardMessageState extends State<VoteCardMessage>
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildHeader(statusInfo),
-                    const SizedBox(height: VersusSpacing.sm),
+                    // 새로운 프로필 헤더 (최상단)
+                    _buildProfileHeader(statusInfo),
+                    const SizedBox(height: VersusSpacing.md),
+                    
                     _buildTitle(),
                     if (widget.description != null && widget.description!.isNotEmpty) ...[
                       const SizedBox(height: 4),
@@ -165,23 +170,94 @@ class _VoteCardMessageState extends State<VoteCardMessage>
     );
   }
   
-  Widget _buildHeader(Map<String, dynamic> statusInfo) {
+  Widget _buildProfileHeader(Map<String, dynamic> statusInfo) {
+    final displayName = widget.senderDisplayName ?? '알 수 없는 사용자';
+    final hasProfileImage = widget.senderProfileImageUrl?.isNotEmpty ?? false;
+    
     return Row(
       children: [
-        Image.asset(
-          'assets/images/pikle_icon.png',
-          width: 16,
-          height: 16,
-        ),
-        const SizedBox(width: VersusSpacing.xs),
-        Text(
-          widget.messageType == 'vote_created' ? '내가 만든 피클' : 'Pikle 도착!',
-          style: VersusTextStyles.labelSmall.copyWith(
-            color: VersusColors.textSecondary,
-            fontWeight: FontWeight.w600,
+        // 프로필 이미지
+        GestureDetector(
+          onTap: () {
+            // TODO: 프로필 페이지로 이동
+            debugPrint('Navigate to profile: $displayName');
+          },
+          child: CircleAvatar(
+            radius: 20,
+            backgroundImage: hasProfileImage
+                ? CachedNetworkImageProvider(widget.senderProfileImageUrl!)
+                : null,
+            backgroundColor: hasProfileImage 
+                ? Colors.transparent 
+                : VersusColors.borderLight,
+            child: !hasProfileImage
+                ? Icon(
+                    Icons.person,
+                    size: 24,
+                    color: VersusColors.textSecondary,
+                  )
+                : null,
           ),
         ),
-        const Spacer(),
+        const SizedBox(width: 12),
+        
+        // 중간 영역: Pikle 브랜딩 + 발신자 정보
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Pikle 도착! 라인
+              Row(
+                children: [
+                  Image.asset(
+                    'assets/images/pikle_icon.png',
+                    width: 20,
+                    height: 20,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    widget.messageType == 'vote_created' 
+                        ? '내가 만든 피클' 
+                        : 'Pikle 도착!',
+                    style: VersusTextStyles.labelMedium.copyWith(
+                      color: VersusColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              
+              // 발신자 정보
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: displayName,
+                        style: VersusTextStyles.labelSmall.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: VersusColors.textPrimary,
+                        ),
+                      ),
+                      TextSpan(
+                        text: widget.messageType == 'vote_created'
+                            ? ' • 투표 생성됨'
+                            : '님이 물어봅니다',
+                        style: VersusTextStyles.labelSmall.copyWith(
+                          color: VersusColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        // 오른쪽: 상태 배지
         Container(
           padding: const EdgeInsets.symmetric(
             horizontal: VersusSpacing.xs,
@@ -241,9 +317,6 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   Widget _buildSmartLayout() {
     // 레이아웃 타입 결정
     final layoutType = _getLayoutType();
-    final hasImages = widget.optionAImage != null || widget.optionBImage != null ||
-        (widget.optionAImages != null && widget.optionAImages!.isNotEmpty) ||
-        (widget.optionBImages != null && widget.optionBImages!.isNotEmpty);
     
     // 스마트 높이 계산 (최대 400px)
     final smartHeight = _calculateSmartHeight(400.0);
@@ -851,6 +924,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
       ),
     );
   }
+
   
   
   void _handleTap() {

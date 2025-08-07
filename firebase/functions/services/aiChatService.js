@@ -73,7 +73,15 @@ async function createVoteRequestMessage(userId, postId, postData) {
     ),
     
     // 개별 사용자의 투표 정보를 저장할 필드 초기화
-    user_votes: {}
+    user_votes: {},
+    
+    // 메타데이터에 실제 작성자 정보 포함
+    metadata: {
+      authorName: postData.displayName || postData.display_name || '익명',
+      authorPhotoUrl: postData.photoUrl || postData.photo_url || null,
+      creatorId: postData.uid || null,
+      postId: postId
+    }
   };
   
   // 채팅방이 없으면 생성
@@ -163,7 +171,15 @@ async function createVoteCreatedMessage(userId, postId, postData) {
     ),
     
     // 개별 사용자의 투표 정보를 저장할 필드 초기화
-    user_votes: {}
+    user_votes: {},
+    
+    // 메타데이터에 실제 작성자 정보 포함
+    metadata: {
+      authorName: postData.displayName || postData.display_name || '익명',
+      authorPhotoUrl: postData.photoUrl || postData.photo_url || null,
+      creatorId: postData.uid || null,
+      postId: postId
+    }
   };
   
   // 채팅방이 없으면 생성

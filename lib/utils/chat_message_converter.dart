@@ -19,37 +19,45 @@ class ChatMessageConverter {
     if (firestoreMessage.messageType == 'vote_request' || 
         firestoreMessage.messageType == 'vote_request_received' ||
         firestoreMessage.messageType == 'vote_created') {
+      // Firebase에서 저장한 metadata와 직접 필드를 병합
+      final combinedMetadata = <String, dynamic>{
+        'type': firestoreMessage.messageType == 'vote_created' ? 'vote_created' : 'vote_request',
+        'postId': firestoreMessage.votePostId,
+        'title': firestoreMessage.voteTitle,
+        'description': firestoreMessage.voteDescription,
+        'optionAText': firestoreMessage.voteOptionAText,
+        'optionBText': firestoreMessage.voteOptionBText,
+        'optionAImage': firestoreMessage.voteOptionAImage,
+        'optionBImage': firestoreMessage.voteOptionBImage,
+        // 멀티이미지 지원
+        'optionAImages': firestoreMessage.voteOptionAImages,
+        'optionBImages': firestoreMessage.voteOptionBImages,
+        // 투표 결과 데이터
+        'votePercentageA': firestoreMessage.voteResults['percentageA'],
+        'votePercentageB': firestoreMessage.voteResults['percentageB'],
+        'voteCountA': firestoreMessage.voteResults['votesA'],
+        'voteCountB': firestoreMessage.voteResults['votesB'],
+        // 카드 상태 (실시간 업데이트를 위해 두 필드 모두 전달)
+        'cardStatus': firestoreMessage.cardStatus,
+        'voteStatus': firestoreMessage.voteStatus,
+        // Firebase Functions에서 사용하는 필드명도 추가
+        'card_status': firestoreMessage.cardStatus,
+        'vote_status': firestoreMessage.voteStatus,
+        // 투표 상태 추적을 위한 핵심 필드
+        'userVotes': firestoreMessage.userVotes,
+        'voteEndTime': firestoreMessage.voteEndTime,
+      };
+      
+      // Firebase Functions에서 저장한 metadata가 있으면 병합
+      if (firestoreMessage.hasMetadata()) {
+        combinedMetadata.addAll(firestoreMessage.metadata);
+      }
+      
       return types.CustomMessage(
         author: author,
         createdAt: createdAt,
         id: id,
-        metadata: {
-          'type': firestoreMessage.messageType == 'vote_created' ? 'vote_created' : 'vote_request',
-          'postId': firestoreMessage.votePostId,
-          'title': firestoreMessage.voteTitle,
-          'description': firestoreMessage.voteDescription,
-          'optionAText': firestoreMessage.voteOptionAText,
-          'optionBText': firestoreMessage.voteOptionBText,
-          'optionAImage': firestoreMessage.voteOptionAImage,
-          'optionBImage': firestoreMessage.voteOptionBImage,
-          // 멀티이미지 지원
-          'optionAImages': firestoreMessage.voteOptionAImages,
-          'optionBImages': firestoreMessage.voteOptionBImages,
-          // 투표 결과 데이터
-          'votePercentageA': firestoreMessage.voteResults['percentageA'],
-          'votePercentageB': firestoreMessage.voteResults['percentageB'],
-          'voteCountA': firestoreMessage.voteResults['votesA'],
-          'voteCountB': firestoreMessage.voteResults['votesB'],
-          // 카드 상태 (실시간 업데이트를 위해 두 필드 모두 전달)
-          'cardStatus': firestoreMessage.cardStatus,
-          'voteStatus': firestoreMessage.voteStatus,
-          // Firebase Functions에서 사용하는 필드명도 추가
-          'card_status': firestoreMessage.cardStatus,
-          'vote_status': firestoreMessage.voteStatus,
-          // 투표 상태 추적을 위한 핵심 필드
-          'userVotes': firestoreMessage.userVotes,
-          'voteEndTime': firestoreMessage.voteEndTime,
-        },
+        metadata: combinedMetadata,
       );
     }
 

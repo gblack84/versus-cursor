@@ -97,7 +97,9 @@ async function createNotificationsForUsers(users, postId, postData) {
           imageUrlsA: postData.optionA?.mediaUrls || postData.imageUrlsA || postData.image_urls_a || null,
           imageUrlsB: postData.optionB?.mediaUrls || postData.imageUrlsB || postData.image_urls_b || null,
           description: postData.description || null,
-          authorName: postData.authorName || postData.author_name || '익명',
+          authorName: postData.displayName || postData.display_name || '익명',
+          authorPhotoUrl: postData.photoUrl || postData.photo_url || null,
+          creatorId: postData.uid || null,
           category: postData.category || null,
           // 스마트 레이아웃을 위한 aspectRatio 및 layoutType 추가
           aspectRatioA: postData.optionA?.aspectRatio || null,
@@ -172,7 +174,9 @@ async function createNotificationsForUsers(users, postId, postData) {
           
           await createVoteRequestMessage(user.id, postId, {
             ...postData,
-            authorName: postData.authorName || postData.author_name || '익명',
+            authorName: postData.displayName || postData.display_name || '익명',
+            authorPhotoUrl: postData.photoUrl || postData.photo_url || null,
+            creatorId: creatorId,
             questionTitle: postData.question_title || postData.questionTitle,
             optionA: optionATitle,
             optionB: optionBTitle,

@@ -30,6 +30,9 @@ abstract class BaseVoteMessage extends StatefulWidget {
     this.messageId,
     this.chatId,
     this.currentUserName,
+    this.senderProfileImageUrl,
+    this.senderDisplayName,
+    this.showSenderProfile = false,
   });
 
   final String postId;
@@ -53,6 +56,9 @@ abstract class BaseVoteMessage extends StatefulWidget {
   final String? messageId;
   final String? chatId;
   final String? currentUserName;
+  final String? senderProfileImageUrl;
+  final String? senderDisplayName;
+  final bool showSenderProfile;
 
   /// 현재 사용자가 투표했는지 확인
   bool get hasCurrentUserVoted {

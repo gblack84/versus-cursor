@@ -14,7 +14,6 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/utils/chat_message_converter.dart';
 import '/services/chat_media_upload_service.dart';
 import '/components/chat/vote_card_message.dart';
-import '/components/notifications/voting_notification_dialog.dart';
 import '/services/chat_image_cache_service.dart';
 import '/posts/in_put_post_image/utils/debug_helper.dart';
 import '/services/vote_status_service.dart';
@@ -447,6 +446,33 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
           
           // vote_request 타입은 VoteCardMessage 사용
           if (metadata['type'] == 'vote_request') {
+            // 디버깅: 메타데이터 구조 확인
+            debugPrint('[VoteRequest] Metadata keys: ${metadata.keys.toList()}');
+            debugPrint('[VoteRequest] authorName: ${metadata['authorName']}');
+            debugPrint('[VoteRequest] authorPhotoUrl: ${metadata['authorPhotoUrl']}');
+            debugPrint('[VoteRequest] authorId: ${metadata['authorId']}');
+            
+            // 발신자 정보 가져오기
+            final senderId = message.author.id;
+            final isReceivedMessage = senderId != currentUserUid;
+            
+            // AI 채팅방에서는 메타데이터에서 실제 발신자 정보 사용
+            String? actualAuthorName = metadata['authorName'] as String?;
+            String? actualAuthorPhoto = metadata['authorPhotoUrl'] as String?;
+            final creatorId = metadata['creatorId'] as String?;
+            
+            // authorPhotoUrl이 없고 creatorId가 있으면 사용자 정보 가져오기
+            if (actualAuthorPhoto == null && creatorId != null) {
+              final creatorUser = _usersMap[creatorId];
+              if (creatorUser != null) {
+                actualAuthorPhoto = creatorUser.photoUrl;
+                actualAuthorName = actualAuthorName ?? creatorUser.displayName;
+              }
+            }
+            
+            // 기존 방식 (일반 채팅방) fallback
+            final senderUser = _usersMap[senderId];
+            
             return VoteCardMessage(
                   postId: metadata['postId'] ?? '',
                   title: metadata['title'] ?? '',
@@ -485,10 +511,41 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
                   } : null),
                   messageId: snapshot.data?.docs.firstOrNull?.id ?? message.id,
                   chatId: widget.chatDocument?.reference.id,
+                  // 발신자 프로필 정보 (메타데이터 우선, 없으면 _usersMap 사용)
+                  senderProfileImageUrl: actualAuthorPhoto ?? senderUser?.photoUrl,
+                  senderDisplayName: actualAuthorName ?? senderUser?.displayName,
+                  showSenderProfile: isReceivedMessage, // 받은 메시지일 때만 표시
             );
           } else if (metadata['type'] == 'vote_created') {
             // vote_created 타입은 VoteCardMessage 사용
             // vote_created 메시지를 VoteCardMessage로 처리 로그 제거됨
+            
+            // 디버깅: 메타데이터 구조 확인
+            debugPrint('[VoteCreated] Metadata keys: ${metadata.keys.toList()}');
+            debugPrint('[VoteCreated] authorName: ${metadata['authorName']}');
+            debugPrint('[VoteCreated] authorPhotoUrl: ${metadata['authorPhotoUrl']}');
+            
+            // 발신자 정보 가져오기
+            final senderId = message.author.id;
+            final isReceivedMessage = senderId != currentUserUid;
+            
+            // AI 채팅방에서는 메타데이터에서 실제 발신자 정보 사용
+            String? actualAuthorName = metadata['authorName'] as String?;
+            String? actualAuthorPhoto = metadata['authorPhotoUrl'] as String?;
+            final creatorId = metadata['creatorId'] as String?;
+            
+            // authorPhotoUrl이 없고 creatorId가 있으면 사용자 정보 가져오기
+            if (actualAuthorPhoto == null && creatorId != null) {
+              final creatorUser = _usersMap[creatorId];
+              if (creatorUser != null) {
+                actualAuthorPhoto = creatorUser.photoUrl;
+                actualAuthorName = actualAuthorName ?? creatorUser.displayName;
+              }
+            }
+            
+            // 기존 방식 (일반 채팅방) fallback
+            final senderUser = _usersMap[senderId];
+            
             return VoteCardMessage(
               postId: metadata['postId'] ?? '',
               title: metadata['title'] ?? '',
@@ -527,6 +584,10 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
               } : null),
               messageId: snapshot.data?.docs.firstOrNull?.id ?? message.id,
               chatId: widget.chatDocument?.reference.id,
+              // 발신자 프로필 정보 (메타데이터 우선, 없으면 _usersMap 사용)
+              senderProfileImageUrl: actualAuthorPhoto ?? senderUser?.photoUrl,
+              senderDisplayName: actualAuthorName ?? senderUser?.displayName,
+              showSenderProfile: isReceivedMessage, // 받은 메시지일 때만 표시
             );
           }
           
@@ -763,57 +824,6 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
     );
   }
 
-  void _showVotingDialog({
-    required String postId,
-    required String title,
-    required String? description,
-    required String optionAText,
-    required String optionBText,
-    String? optionAImage,
-    String? optionBImage,
-    List<String>? imageUrlsA,
-    List<String>? imageUrlsB,
-    double? aspectRatioA,
-    double? aspectRatioB,
-  }) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.black54,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Container(
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.92,
-          ),
-          child: VotingNotificationDialog(
-            question: title,
-            optionA: optionAText,
-            optionB: optionBText,
-            imageUrlA: optionAImage,
-            imageUrlB: optionBImage,
-            imageUrlsA: imageUrlsA,
-            imageUrlsB: imageUrlsB,
-            description: description,
-            authorName: '',
-            aspectRatioA: aspectRatioA,
-            aspectRatioB: aspectRatioB,
-            onVote: (option) async {
-              Navigator.of(context).pop();
-              await _handleVoteFromMessage(
-                postId: postId,
-                option: option,
-              );
-            },
-            onDismiss: (hasVoted) {
-              Navigator.of(context).pop();
-            },
-          ),
-        ),
-      ),
-    );
-  }
 
   Future<void> _handleVoteFromMessage({
     required String postId,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'aspect_ratio_analyzer.dart';
+import '../../../shared/services/unified_box_calculator.dart';
 
 /// 이미지 비율에 따른 동적 박스 크기 계산 클래스
 class DynamicBoxCalculator {
@@ -171,6 +172,7 @@ class DynamicBoxCalculator {
   }
   
   /// A/B 박스 통합 크기 계산 (둘 다 같은 크기로)
+  /// UnifiedBoxCalculator에 위임
   static Size getUnifiedSize({
     required BuildContext context,
     required LayoutType layoutType,
@@ -179,24 +181,18 @@ class DynamicBoxCalculator {
   }) {
     final screenWidth = MediaQuery.of(context).size.width;
     
-    // 레이아웃에 따른 너비 설정
-    double boxWidth;
-    if (layoutType == LayoutType.horizontal) {
-      // 가로 배치: 화면의 절반씩
-      boxWidth = (screenWidth - padding * 3) / 2;
-    } else {
-      // 세로 배치: 전체 너비
-      boxWidth = screenWidth - padding * 2;
-    }
-    
-    // 통합 높이 계산 (평균값 사용)
-    double height = getOptimalHeight(
+    // UnifiedBoxCalculator를 사용하여 통일된 크기 계산
+    final boxSizes = UnifiedBoxCalculator.calculateForQuestion(
+      containerWidth: screenWidth,
       layoutType: layoutType,
-      width: boxWidth,
       aspectRatioA: aspectRatioA,
       aspectRatioB: aspectRatioB,
+      hasImageA: aspectRatioA != null,
+      hasImageB: aspectRatioB != null,
     );
     
-    return Size(boxWidth, height);
+    // 두 박스가 같은 크기를 가지므로 A 박스 크기 반환
+    // (UnifiedBoxCalculator는 항상 통일된 크기를 반환함)
+    return boxSizes.sizeA;
   }
 }

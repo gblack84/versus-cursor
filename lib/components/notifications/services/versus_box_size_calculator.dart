@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../models/versus_box_size_data.dart';
 import '../constants/voting_notification_constraints.dart';
-import 'layout_synchronizer.dart';
+import 'layout_synchronizer.dart'; // VotingSpacing을 위해 필요
 import '../../../posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
 import '../../../posts/in_put_post_image/helpers/dynamic_box_calculator.dart';
 import '../../../posts/in_put_post_image/in_put_post_image_model.dart';
 import '../../../app_state.dart';
+import '../../../shared/services/unified_box_calculator.dart';
 
 /// 질문 작성 페이지와 투표 알림 간 박스 크기 계산 서비스
 /// 
@@ -54,7 +55,7 @@ class VersusBoxSizeCalculator {
     }
   }
   
-  /// 투표 알림에서 사용할 박스 크기 계산 (개선된 버전)
+  /// 투표 알림에서 사용할 박스 크기 계산 (UnifiedBoxCalculator 사용)
   /// 
   /// [sizeData] 원본 사이즈 데이터
   /// [context] 투표 알림의 BuildContext
@@ -69,31 +70,22 @@ class VersusBoxSizeCalculator {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final containerWidth = maxWidth ?? VotingNotificationConstraints.getNotificationWidth(screenWidth);
-    // 화면 높이의 80%를 최대 높이로 설정
-    final containerHeight = maxHeight ?? VotingNotificationConstraints.getMaxNotificationHeight(screenHeight);
     
-    // 1. 화면 크기에 따른 스케일링 팩터 계산
-    final scaleFactor = VotingNotificationConstraints.getScaleFactor(screenWidth);
-    
-    // 2. LayoutSynchronizer를 사용한 최적 레이아웃 결정
-    final votingLayout = LayoutSynchronizer.optimizeForVoting(
-      originalLayout: sizeData.layoutType,
+    // UnifiedBoxCalculator를 사용하여 통일된 크기 계산
+    final boxSizes = UnifiedBoxCalculator.calculateForNotification(
       containerWidth: containerWidth,
+      screenHeight: screenHeight,
+      layoutType: sizeData.layoutType,
       aspectRatioA: sizeData.aspectRatioA,
       aspectRatioB: sizeData.aspectRatioB,
       hasImageA: sizeData.hasImageA,
       hasImageB: sizeData.hasImageB,
     );
     
+    // 화면 크기에 따른 스케일링 팩터 (레거시 호환성)
+    final scaleFactor = VotingNotificationConstraints.getScaleFactor(screenWidth);
     
-    // 3. 레이아웃 변환에 따른 크기 조정 팩터 계산
-    final sizeAdjustment = LayoutSynchronizer.calculateSizeAdjustment(
-      originalLayout: sizeData.layoutType,
-      targetLayout: votingLayout.layoutType,
-      originalSize: sizeData.originalSizeA,
-    );
-    
-    // 4. 최적 간격 계산 (동적 간격 사용)
+    // 간격 정보 (레거시 호환성)
     final dynamicSpacing = VotingNotificationConstraints.getDynamicBoxSpacing(screenWidth);
     final spacing = VotingSpacing(
       horizontal: dynamicSpacing,
@@ -101,76 +93,20 @@ class VersusBoxSizeCalculator {
       reason: 'Dynamic spacing based on screen size',
     );
     
-    // 5. 각 박스의 크기 계산
-    Size sizeA, sizeB;
-    
-    if (votingLayout.layoutType == LayoutType.horizontal) {
-      // 가로 배치 - 평균 높이를 사용한 통일된 크기 계산
-      final boxSizes = _calculateHorizontalLayoutBoxSize(
-        containerWidth: containerWidth,
-        containerHeight: containerHeight,
-        aspectRatioA: sizeData.aspectRatioA,
-        aspectRatioB: sizeData.aspectRatioB,
-        spacing: spacing.horizontal,
-        scaleFactor: scaleFactor,
-        sizeAdjustment: sizeAdjustment,
-        hasImageB: sizeData.hasImageB,
-      );
-      
-      sizeA = boxSizes.sizeA;
-      sizeB = boxSizes.sizeB;
-      
-    } else {
-      // 세로 배치 - 통일된 너비로 계산
-      final isSingleImage = sizeData.hasImageA && !sizeData.hasImageB;
-      
-      if (isSingleImage) {
-        // 단일 이미지는 전체 높이와 너비 사용 (더 큰 이미지 표시)
-        sizeA = _calculateOptimizedBoxSize(
-          originalSize: sizeData.originalSizeA,
-          containerWidth: containerWidth * 0.95,  // 95% 너비 사용 (증가)
-          containerHeight: containerHeight * 0.9,  // 90% 높이 사용 (증가)
-          scaleFactor: scaleFactor,
-          sizeAdjustment: sizeAdjustment,
-          aspectRatio: sizeData.aspectRatioA,
-        );
-        sizeB = Size.zero;
-      } else {
-        // 두 개의 이미지 - 세로 배치 전용 크기 계산
-        sizeA = _calculateVerticalLayoutBoxSize(
-          containerWidth: containerWidth,
-          containerHeight: containerHeight,
-          aspectRatioA: sizeData.aspectRatioA,
-          aspectRatioB: sizeData.aspectRatioB,
-          spacing: spacing.vertical,
-          scaleFactor: scaleFactor,
-          sizeAdjustment: sizeAdjustment,
-        ).sizeA;
-        
-        sizeB = _calculateVerticalLayoutBoxSize(
-          containerWidth: containerWidth,
-          containerHeight: containerHeight,
-          aspectRatioA: sizeData.aspectRatioA,
-          aspectRatioB: sizeData.aspectRatioB,
-          spacing: spacing.vertical,
-          scaleFactor: scaleFactor,
-          sizeAdjustment: sizeAdjustment,
-        ).sizeB;
-      }
-    }
-    
-    // 6. 최종 크기 검증 (제약 조건 적용하지 않음)
-    // _calculateOptimizedBoxSize에서 이미 적절한 크기 계산이 완료됨
-    // 추가적인 constrainBoxSize 호출은 크기를 불필요하게 축소시킴
-    
+    // UnifiedBoxCalculator의 결과를 직접 사용
+    print('[VersusBoxSizeCalculator] UnifiedBoxCalculator 결과 사용:');
+    print('  - Layout: ${boxSizes.layoutType.name}');
+    print('  - SizeA: ${boxSizes.sizeA.width.toStringAsFixed(1)} x ${boxSizes.sizeA.height.toStringAsFixed(1)}');
+    print('  - SizeB: ${boxSizes.sizeB.width.toStringAsFixed(1)} x ${boxSizes.sizeB.height.toStringAsFixed(1)}');
+    print('  - 통일된 크기: ${boxSizes.hasUnifiedSize ? "✅" : "❌"}');
     
     return VotingBoxSizes(
-      sizeA: sizeA,
-      sizeB: sizeB,
-      layoutType: votingLayout.layoutType,
+      sizeA: boxSizes.sizeA,
+      sizeB: boxSizes.sizeB,
+      layoutType: boxSizes.layoutType,
       scaleFactor: scaleFactor,
       spacing: spacing,
-      conversionReason: votingLayout.reason,
+      conversionReason: 'Using UnifiedBoxCalculator',
     );
   }
   

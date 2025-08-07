@@ -7,6 +7,7 @@ import '/design_system/design_system.dart';
 import '/components/notifications/voting_notification_dialog.dart';
 import '/utils/responsive_breakpoints.dart';
 import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
+import '/shared/services/unified_box_calculator.dart';
 import 'base_vote_message.dart';
 
 /// AI 피클 채팅에서 사용되는 투표 카드 메시지 위젯
@@ -318,8 +319,11 @@ class _VoteCardMessageState extends State<VoteCardMessage>
     // 레이아웃 타입 결정
     final layoutType = _getLayoutType();
     
-    // 스마트 높이 계산 (최대 400px)
-    final smartHeight = _calculateSmartHeight(400.0);
+    // 스마트 높이 계산 (레이아웃에 따라 다른 최대값)
+    // 가로 배치: 450px, 세로 배치: 400px
+    final smartHeight = _calculateSmartHeight(
+      layoutType == LayoutType.horizontal ? 450.0 : 400.0
+    );
     
     // 단일 이미지 모드 체크 (B가 이미지 없이 텍스트만 있을 때)
     final bool hasOnlyTextB = widget.effectiveImageUrlsB.isEmpty && widget.optionBText.isNotEmpty;
@@ -375,22 +379,22 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   }
 
   Widget _buildVerticalLayout(double height) {
-    // 세로 레이아웃에서 각 박스의 개별 높이 계산
+    // UnifiedBoxCalculator를 사용하여 통일된 크기 계산
     final maxMessageWidth = ResponsiveBreakpoints.getMaxMessageWidth(context);
-    final boxWidth = maxMessageWidth - 24;
     
-    double heightA = 250.0; // 기본값
-    double heightB = 250.0;
+    final boxSizes = UnifiedBoxCalculator.calculateForMessage(
+      containerWidth: maxMessageWidth,
+      layoutType: LayoutType.vertical,
+      aspectRatioA: widget.aspectRatioA,
+      aspectRatioB: widget.aspectRatioB,
+      hasImageA: widget.effectiveImageUrlsA.isNotEmpty,
+      hasImageB: widget.effectiveImageUrlsB.isNotEmpty,
+    );
     
-    // A 이미지 비율로 높이 계산
-    if (widget.aspectRatioA != null) {
-      heightA = boxWidth / widget.aspectRatioA!;
-    }
-    
-    // B 이미지 비율로 높이 계산
-    if (widget.aspectRatioB != null) {
-      heightB = boxWidth / widget.aspectRatioB!;
-    }
+    // 통일된 높이 사용 (평균값)
+    final boxWidth = boxSizes.boxWidth;
+    double heightA = boxSizes.sizeA.height;
+    double heightB = boxSizes.sizeB.height;
     
     // 전체 높이가 제한을 초과하면 비율에 맞춰 조정
     final totalDesiredHeight = heightA + heightB + 10;
@@ -399,6 +403,10 @@ class _VoteCardMessageState extends State<VoteCardMessage>
       heightA *= scale;
       heightB *= scale;
     }
+    
+    debugPrint('[VoteCardMessage] 세로 레이아웃 UnifiedBoxCalculator:');
+    debugPrint('  - 너비: ${boxWidth.toStringAsFixed(1)}px');
+    debugPrint('  - 통일 높이: ${heightA.toStringAsFixed(1)}px');
     
     // 최소 높이 보장
     heightA = math.max(heightA, 150.0);
@@ -466,26 +474,26 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   
   /// 가로 레이아웃용 높이 계산
   double _calculateHorizontalHeight(double maxHeight) {
-    // 화면 너비의 절반으로 박스 너비 계산
+    // UnifiedBoxCalculator를 사용하여 통일된 크기 계산
     final maxMessageWidth = ResponsiveBreakpoints.getMaxMessageWidth(context);
-    final boxWidth = (maxMessageWidth - 20) / 2; // 10px 간격 고려
     
-    double heightA = 200.0; // 기본값
-    double heightB = 200.0;
+    final boxSizes = UnifiedBoxCalculator.calculateForMessage(
+      containerWidth: maxMessageWidth,
+      layoutType: LayoutType.horizontal,
+      aspectRatioA: widget.aspectRatioA,
+      aspectRatioB: widget.aspectRatioB,
+      hasImageA: widget.effectiveImageUrlsA.isNotEmpty,
+      hasImageB: widget.effectiveImageUrlsB.isNotEmpty,
+    );
     
-    // A 이미지 비율로 높이 계산
-    if (widget.aspectRatioA != null) {
-      heightA = boxWidth / widget.aspectRatioA!;
-    }
+    // 통일된 높이 사용 (평균값)
+    final unifiedHeight = boxSizes.unifiedHeight;
     
-    // B 이미지 비율로 높이 계산
-    if (widget.aspectRatioB != null) {
-      heightB = boxWidth / widget.aspectRatioB!;
-    }
+    debugPrint('[VoteCardMessage] 가로 레이아웃 UnifiedBoxCalculator:');
+    debugPrint('  - 통일 높이: ${unifiedHeight.toStringAsFixed(1)}px');
     
-    // 둘 중 큰 값 사용 (최대 400, 최소 200)
-    final optimalHeight = math.max(heightA, heightB);
-    return optimalHeight.clamp(200.0, maxHeight);
+    // 최대/최소 높이 제한 적용
+    return unifiedHeight.clamp(200.0, maxHeight);
   }
   
   /// 단일 이미지용 높이 계산

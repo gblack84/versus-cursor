@@ -1092,15 +1092,13 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         }
         
         // 현재 레이아웃에 따른 비율 계산 (매 빌드마다 계산하지 않음)
-        // 단일 이미지 모드이거나 세로 레이아웃일 때 비율 계산
-        final currentAspectRatioA = (_model.absellected || _model.currentLayout != LayoutType.horizontal) && 
-            appState.tempImageFilesA.isNotEmpty && 
+        // 이미지가 있으면 레이아웃 타입과 무관하게 항상 비율 계산
+        final currentAspectRatioA = appState.tempImageFilesA.isNotEmpty && 
             appState.uploadImageAspectRatioA.isNotEmpty 
                 ? RatioCalculator.getRatio(appState.uploadImageAspectRatioA, box: 'A')
                 : null;
         // absellected가 true이면 B박스의 비율은 계산하지 않음
         final currentAspectRatioB = !_model.absellected &&
-            _model.currentLayout != LayoutType.horizontal && 
             appState.tempImageFilesB.isNotEmpty && 
             appState.uploadImageAspectRatioB.isNotEmpty 
                 ? RatioCalculator.getRatio(appState.uploadImageAspectRatioB, box: 'B')

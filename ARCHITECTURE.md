@@ -228,6 +228,27 @@ lib/
 - **텍스트**: VersusTextStyles (Plus Jakarta Sans)
 - **컴포넌트**: 일관된 디자인 언어
 
+### 주요 컴포넌트 구조
+
+#### 투표 메시지 시스템 (v2.1.0)
+```
+components/chat/
+├── base_vote_message.dart      # 추상 베이스 클래스
+│   ├── 공통 상태 관리
+│   ├── 투표 로직
+│   └── currentUserName prop
+└── vote_card_message.dart      # 통합 구현체
+    ├── UI 렌더링
+    ├── 스마트 레이아웃
+    └── 사용자 정보 표시
+```
+
+**주요 특징**:
+- 단일 컴포넌트로 통합 (VoteRequestMessage 제거)
+- 사용자 이름 표시 기능
+- 진행중 상태 파란색 표시
+- 결과 표시: "피클! 피클! 피클! {사용자}님 결과를 보러오세요!"
+
 ## 🔄 CI/CD 파이프라인
 
 ### 배포 프로세스

@@ -4,6 +4,40 @@
 
 이 프로젝트는 [Semantic Versioning](https://semver.org/)을 따릅니다.
 
+## [2.1.0] - 2025-08-06
+
+### ✨ 투표 메시지 컴포넌트 통합 및 UI/UX 개선
+
+#### 🔄 Refactoring
+- **투표 메시지 컴포넌트 통합**
+  - `VoteRequestMessage` 컴포넌트 제거 (935줄)
+  - `VoteRequestMessageSkeleton` 컴포넌트 제거 (126줄)
+  - 모든 기능을 `VoteCardMessage`로 통합
+  - 코드 중복 제거로 유지보수성 향상 (총 1,468줄 삭제, 531줄 추가)
+
+#### ✨ New Features
+- **사용자 이름 표시 기능**
+  - `currentUserName` prop 추가 (BaseVoteMessage, VoteCardMessage)
+  - 투표 완료 시 사용자 이름 표시
+  - 결과 텍스트: "피클! 피클! 피클! {사용자}님 결과를 보러오세요!"
+
+#### 💄 UI/UX Improvements
+- **불필요한 UI 요소 제거**
+  - expand/collapse 기능 제거
+  - A/B 라벨 박스 제거
+  - 빨간색 배경 및 테두리 제거
+  - 검은색 라인 버그 수정 (borderRadius 통일)
+  
+- **시각적 개선**
+  - 진행중 상태 색상 변경: 노란색 → 파란색
+  - 투표 결과 섹션 재디자인
+  - 텍스트 크기 계층 구조 최적화
+
+#### 🐛 Bug Fixes
+- Container decoration과 clipBehavior 충돌 해결
+- currentUserRecord 저장 누락 문제 수정
+- Android 테스트 계정 displayName null 처리
+
 ## [2.0.0] - 2025-01-06
 
 ### 🎉 Major Release: 세 가지 핵심 시스템 통합 완료

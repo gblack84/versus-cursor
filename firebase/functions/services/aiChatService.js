@@ -59,6 +59,10 @@ async function createVoteRequestMessage(userId, postId, postData) {
     vote_option_a_images: postData.imageUrlsA || postData.image_urls_a || null,
     vote_option_b_images: postData.imageUrlsB || postData.image_urls_b || null,
     
+    // 스마트 레이아웃을 위한 aspectRatio 추가
+    vote_aspect_ratio_a: postData.aspectRatioA || null,
+    vote_aspect_ratio_b: postData.aspectRatioB || null,
+    
     // 전체 설명
     vote_description: postData.description || '',
     
@@ -144,6 +148,10 @@ async function createVoteCreatedMessage(userId, postId, postData) {
     // 멀티이미지 지원
     vote_option_a_images: postData.imageUrlsA || postData.image_urls_a || null,
     vote_option_b_images: postData.imageUrlsB || postData.image_urls_b || null,
+    
+    // 스마트 레이아웃을 위한 aspectRatio 추가
+    vote_aspect_ratio_a: postData.aspectRatioA || null,
+    vote_aspect_ratio_b: postData.aspectRatioB || null,
     
     // 전체 설명
     vote_description: postData.description || '',

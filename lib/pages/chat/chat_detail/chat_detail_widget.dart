@@ -363,9 +363,38 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
           // description 필드 직접 사용
           final description = messageData?['vote_description'] ?? metadata['description'];
           
-          // aspectRatio 데이터 추출
-          final aspectRatioA = messageData?['vote_aspect_ratio_a'] ?? metadata['aspectRatioA'];
-          final aspectRatioB = messageData?['vote_aspect_ratio_b'] ?? metadata['aspectRatioB'];
+          // aspectRatio 데이터 추출 (강화된 파싱)
+          dynamic rawAspectRatioA = messageData?['vote_aspect_ratio_a'] ?? metadata['aspectRatioA'];
+          dynamic rawAspectRatioB = messageData?['vote_aspect_ratio_b'] ?? metadata['aspectRatioB'];
+          
+          // 타입 변환 및 null 체크
+          double? aspectRatioA;
+          double? aspectRatioB;
+          
+          if (rawAspectRatioA != null) {
+            if (rawAspectRatioA is num) {
+              aspectRatioA = rawAspectRatioA.toDouble();
+            } else if (rawAspectRatioA is String) {
+              aspectRatioA = double.tryParse(rawAspectRatioA);
+            }
+          }
+          
+          if (rawAspectRatioB != null) {
+            if (rawAspectRatioB is num) {
+              aspectRatioB = rawAspectRatioB.toDouble();
+            } else if (rawAspectRatioB is String) {
+              aspectRatioB = double.tryParse(rawAspectRatioB);
+            }
+          }
+          
+          // 디버깅 로그
+          if (rawAspectRatioA != null || rawAspectRatioB != null) {
+            debugPrint('[ChatDetail] AspectRatio 파싱:');
+            debugPrint('  - rawAspectRatioA: $rawAspectRatioA (${rawAspectRatioA.runtimeType})');
+            debugPrint('  - rawAspectRatioB: $rawAspectRatioB (${rawAspectRatioB.runtimeType})');
+            debugPrint('  - aspectRatioA: $aspectRatioA');
+            debugPrint('  - aspectRatioB: $aspectRatioB');
+          }
           
           // 현재 사용자의 투표 상태 확인
           final userVotes = messageData?['user_votes'] as Map<String, dynamic>?;
@@ -432,8 +461,8 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
                   optionBImages: imagesB ?? (metadata['optionBImages'] != null 
                       ? List<String>.from(metadata['optionBImages']) 
                       : null),
-                  aspectRatioA: aspectRatioA != null ? aspectRatioA.toDouble() : null,
-                  aspectRatioB: aspectRatioB != null ? aspectRatioB.toDouble() : null,
+                  aspectRatioA: aspectRatioA,
+                  aspectRatioB: aspectRatioB,
                   currentUserName: _currentUserRecord?.displayName,
                   cardStatus: messageData?['card_status'] ?? metadata['cardStatus'] ?? 'voting_request',
                   messageType: 'vote_request',
@@ -474,8 +503,8 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
               optionBImages: messageData?['vote_option_b_images'] != null 
                   ? List<String>.from(messageData!['vote_option_b_images']) 
                   : null,
-              aspectRatioA: aspectRatioA != null ? aspectRatioA.toDouble() : null,
-              aspectRatioB: aspectRatioB != null ? aspectRatioB.toDouble() : null,
+              aspectRatioA: aspectRatioA,
+              aspectRatioB: aspectRatioB,
               currentUserName: _currentUserRecord?.displayName,
               cardStatus: messageData?['card_status'] ?? 'in_progress',
               messageType: 'vote_created',

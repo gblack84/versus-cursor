@@ -1087,3 +1087,28 @@ if (model.isVideoSelectedA) {
   - lib/components/notifications/README.md: v1.3.0 업데이트
   - lib/services/README.md: 알림 데이터 플로우 추가
   - ARCHITECTURE.md: 스마트 레이아웃 시스템 다이어그램 추가
+
+### 2025-08-06: 투표 메시지 컴포넌트 통합 및 UI/UX 개선
+- **작업 내용**:
+  - VoteRequestMessage 컴포넌트 완전 제거:
+    - vote_request_message.dart (935줄)
+    - vote_request_message_skeleton.dart (126줄)
+    - 모든 기능을 VoteCardMessage로 통합
+  - UI/UX 개선:
+    - expand/collapse 기능 제거
+    - A/B 라벨 박스 제거
+    - 빨간색 배경 및 테두리 제거
+    - 진행중 상태 색상 변경 (노란색 → 파란색)
+  - 사용자 정보 표시:
+    - BaseVoteMessage에 currentUserName prop 추가
+    - 투표 완료 시 "피클! 피클! 피클! {사용자}님 결과를 보러오세요!" 표시
+    - ChatDetailWidget에서 currentUserRecord 저장 및 전달
+- **해결된 문제**:
+  - Container decoration과 clipBehavior 충돌 (borderRadius 통일)
+  - 검은색 라인 표시 버그
+  - Android 테스트 계정 displayName null 처리
+- **결과**:
+  - 코드 중복 제거 (1,468줄 삭제, 531줄 추가)
+  - 단일 컴포넌트로 유지보수성 향상
+  - 일관된 UI/UX 경험 제공
+- **커밋**: de350692

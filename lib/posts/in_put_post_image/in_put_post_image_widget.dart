@@ -732,14 +732,20 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
           ? null
           : RatioCalculator.getRatio(appState.uploadImageAspectRatioB, box: 'B');
       
-      // layoutType 결정
+      // layoutType 결정 - AspectRatioAnalyzer 사용
       String layoutType;
       if (_model.absellected || (appState.uploadImageB.isEmpty && appState.uploadTextB.isNotEmpty)) {
         layoutType = 'single';
-      } else if (_model.currentLayout == LayoutType.horizontal) {
-        layoutType = 'horizontal';
+      } else if (aspectRatioA != null || aspectRatioB != null) {
+        // 이미지가 있으면 AspectRatioAnalyzer로 최적 레이아웃 결정
+        final analyzedLayout = AspectRatioAnalyzer.getOptimalLayout(aspectRatioA, aspectRatioB);
+        layoutType = analyzedLayout.name;
+        DebugHelper.log('[_saveToFirestore] AspectRatioAnalyzer 사용:');
+        DebugHelper.log('  - 분석 결과: ${analyzedLayout.name}');
+        DebugHelper.log('  - UI 상태: ${_model.currentLayout.name}');
       } else {
-        layoutType = 'vertical';
+        // 이미지가 없으면 UI 상태 사용
+        layoutType = _model.currentLayout == LayoutType.horizontal ? 'horizontal' : 'vertical';
       }
           
       DebugHelper.log('[_saveToFirestore] AspectRatio 정보:');

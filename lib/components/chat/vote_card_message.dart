@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '/design_system/design_system.dart';
@@ -244,24 +245,22 @@ class _VoteCardMessageState extends State<VoteCardMessage>
         (widget.optionAImages != null && widget.optionAImages!.isNotEmpty) ||
         (widget.optionBImages != null && widget.optionBImages!.isNotEmpty);
     
-    // 반응형 높이 계산
-    final baseHeight = ResponsiveBreakpoints.getVsBoxHeight(context, hasImages, false);
+    // 스마트 높이 계산 (최대 400px)
+    final smartHeight = _calculateSmartHeight(400.0);
     
     // 단일 이미지 모드 체크 (B가 이미지 없이 텍스트만 있을 때)
     final bool hasOnlyTextB = widget.effectiveImageUrlsB.isEmpty && widget.optionBText.isNotEmpty;
     
-    final height = baseHeight;
-    
     // 단일 이미지 모드일 때는 하나의 박스만 표시
     if (hasOnlyTextB) {
-      return _buildSingleImageBox(height);
+      return _buildSingleImageBox(smartHeight);
     }
     
     // 일반 상태
     if (layoutType == LayoutType.horizontal) {
-      return _buildHorizontalLayout(height);
+      return _buildHorizontalLayout(smartHeight);
     } else {
-      return _buildVerticalLayout(height);
+      return _buildVerticalLayout(smartHeight);
     }
   }
 
@@ -284,15 +283,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
               dualModeSecondTitle: null,
             ),
           ),
-          const SizedBox(width: VersusSpacing.xs),
-          Text(
-            'VS',
-            style: VersusTextStyles.labelSmall.copyWith(
-              color: VersusColors.textSecondary,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(width: VersusSpacing.xs),
+          const SizedBox(width: 10),
           Expanded(
             child: _buildSmartOptionBox(
               label: 'B',
@@ -311,10 +302,39 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   }
 
   Widget _buildVerticalLayout(double height) {
+    // 세로 레이아웃에서 각 박스의 개별 높이 계산
+    final maxMessageWidth = ResponsiveBreakpoints.getMaxMessageWidth(context);
+    final boxWidth = maxMessageWidth - 24;
+    
+    double heightA = 250.0; // 기본값
+    double heightB = 250.0;
+    
+    // A 이미지 비율로 높이 계산
+    if (widget.aspectRatioA != null) {
+      heightA = boxWidth / widget.aspectRatioA!;
+    }
+    
+    // B 이미지 비율로 높이 계산
+    if (widget.aspectRatioB != null) {
+      heightB = boxWidth / widget.aspectRatioB!;
+    }
+    
+    // 전체 높이가 제한을 초과하면 비율에 맞춰 조정
+    final totalDesiredHeight = heightA + heightB + 10;
+    if (totalDesiredHeight > height) {
+      final scale = (height - 10) / (heightA + heightB);
+      heightA *= scale;
+      heightB *= scale;
+    }
+    
+    // 최소 높이 보장
+    heightA = math.max(heightA, 150.0);
+    heightB = math.max(heightB, 150.0);
+    
     return Column(
       children: [
         SizedBox(
-          height: height / 2 - 4,
+          height: heightA,
           child: _buildSmartOptionBox(
             label: 'A',
             text: widget.optionAText,
@@ -326,22 +346,9 @@ class _VoteCardMessageState extends State<VoteCardMessage>
             dualModeSecondTitle: null,
           ),
         ),
-        const SizedBox(height: VersusSpacing.xs),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'VS',
-              style: VersusTextStyles.labelSmall.copyWith(
-                color: VersusColors.textSecondary,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: VersusSpacing.xs),
+        const SizedBox(height: 10),
         SizedBox(
-          height: height / 2 - 4,
+          height: heightB,
           child: _buildSmartOptionBox(
             label: 'B',
             text: widget.optionBText,
@@ -355,6 +362,108 @@ class _VoteCardMessageState extends State<VoteCardMessage>
         ),
       ],
     );
+  }
+  
+  /// 스마트 높이 계산 메서드 - 최대 400px 제한
+  double _calculateSmartHeight(double maxHeight) {
+    const double MAX_HEIGHT = 400.0;
+    const double MIN_HEIGHT = 200.0;
+    
+    // 이미지가 없으면 최소 높이
+    if (widget.aspectRatioA == null && widget.aspectRatioB == null) {
+      return MIN_HEIGHT;
+    }
+    
+    // 레이아웃 타입에 따라 조정
+    final layoutType = _getLayoutType();
+    
+    if (layoutType == LayoutType.horizontal) {
+      // 가로 레이아웃: 두 이미지 중 더 높은 것 기준 (최대 400px)
+      return _calculateHorizontalHeight(MAX_HEIGHT);
+    } else if (layoutType == LayoutType.vertical) {
+      // 세로 레이아웃: 이미지 비율에 따른 동적 높이
+      return _calculateVerticalHeight(MAX_HEIGHT);
+    } else if (layoutType == LayoutType.single) {
+      // 단일 이미지: 적절한 높이 계산
+      return _calculateSingleHeight(MAX_HEIGHT);
+    }
+    
+    return MIN_HEIGHT;
+  }
+  
+  /// 가로 레이아웃용 높이 계산
+  double _calculateHorizontalHeight(double maxHeight) {
+    // 화면 너비의 절반으로 박스 너비 계산
+    final maxMessageWidth = ResponsiveBreakpoints.getMaxMessageWidth(context);
+    final boxWidth = (maxMessageWidth - 20) / 2; // 10px 간격 고려
+    
+    double heightA = 200.0; // 기본값
+    double heightB = 200.0;
+    
+    // A 이미지 비율로 높이 계산
+    if (widget.aspectRatioA != null) {
+      heightA = boxWidth / widget.aspectRatioA!;
+    }
+    
+    // B 이미지 비율로 높이 계산
+    if (widget.aspectRatioB != null) {
+      heightB = boxWidth / widget.aspectRatioB!;
+    }
+    
+    // 둘 중 큰 값 사용 (최대 400, 최소 200)
+    final optimalHeight = math.max(heightA, heightB);
+    return optimalHeight.clamp(200.0, maxHeight);
+  }
+  
+  /// 단일 이미지용 높이 계산
+  double _calculateSingleHeight(double maxHeight) {
+    final maxMessageWidth = ResponsiveBreakpoints.getMaxMessageWidth(context);
+    final boxWidth = maxMessageWidth - 24; // 양쪽 패딩
+    
+    double height = 250.0; // 기본값
+    
+    // 이미지 비율로 높이 계산
+    if (widget.aspectRatioA != null) {
+      height = boxWidth / widget.aspectRatioA!;
+    } else if (widget.aspectRatioB != null) {
+      height = boxWidth / widget.aspectRatioB!;
+    }
+    
+    // 제한 적용 (최대 400, 최소 200)
+    return height.clamp(200.0, maxHeight);
+  }
+  
+  /// 세로 레이아웃용 높이 계산
+  double _calculateVerticalHeight(double maxHeight) {
+    final maxMessageWidth = ResponsiveBreakpoints.getMaxMessageWidth(context);
+    final boxWidth = maxMessageWidth - 24; // 전체 너비 사용
+    
+    double heightA = 250.0; // 기본값
+    double heightB = 250.0;
+    
+    // A 이미지 비율로 높이 계산
+    if (widget.aspectRatioA != null) {
+      heightA = boxWidth / widget.aspectRatioA!;
+      debugPrint('  세로 레이아웃 A박스: 너비=$boxWidth, 비율=${widget.aspectRatioA}, 높이=$heightA');
+    }
+    
+    // B 이미지 비율로 높이 계산
+    if (widget.aspectRatioB != null) {
+      heightB = boxWidth / widget.aspectRatioB!;
+      debugPrint('  세로 레이아웃 B박스: 너비=$boxWidth, 비율=${widget.aspectRatioB}, 높이=$heightB');
+    }
+    
+    // 두 박스 높이 합 + 간격 (10px)
+    final totalHeight = heightA + heightB + 10;
+    
+    // 제한 적용 (최대 600px, 최소 400px) - 세로는 더 큰 높이 허용
+    const double VERTICAL_MAX_HEIGHT = 600.0;
+    const double VERTICAL_MIN_HEIGHT = 400.0;
+    
+    final result = totalHeight.clamp(VERTICAL_MIN_HEIGHT, VERTICAL_MAX_HEIGHT);
+    debugPrint('  세로 레이아웃 총 높이: $totalHeight → 제한 적용: $result');
+    
+    return result;
   }
   
   Widget _buildSmartOptionBox({
@@ -425,15 +534,15 @@ class _VoteCardMessageState extends State<VoteCardMessage>
                       colors: isSingleImageMode
                           ? [
                               Colors.black.withValues(alpha: 0.85),
-                              Colors.black.withValues(alpha: 0.7),
                               Colors.transparent,
                             ]
                           : [
                               Colors.black.withValues(alpha: 0.8),
-                              Colors.black.withValues(alpha: 0.6),
                               Colors.transparent,
                             ],
-                      stops: const [0.0, 0.2, 1.0],
+                      stops: isSingleImageMode
+                          ? const [0.0, 0.3]  // 단일: 30%까지
+                          : const [0.0, 0.2],  // 멀티: 20%까지
                     ),
                   ),
                 ),
@@ -528,22 +637,52 @@ class _VoteCardMessageState extends State<VoteCardMessage>
                     ),
                   ] else ...[
                     // 일반 모드: 각 옵션 텍스트만 표시
-                    Text(
-                      text,
-                      style: VersusTextStyles.bodySmall.copyWith(
-                        color: effectiveImageUrl != null ? Colors.white : color,
-                        fontWeight: FontWeight.w600,
-                        shadows: effectiveImageUrl != null
-                            ? [
-                                Shadow(
-                                  color: Colors.black.withValues(alpha: 0.5),
-                                  blurRadius: 4,
-                                ),
-                              ]
-                            : null,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        // 멀티이미지에서도 A/B 라벨 표시
+                        if (!isSingleImageMode)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: label == 'A' 
+                                  ? const Color(0xFFFF6B6B).withValues(alpha: 0.8)
+                                  : const Color(0xFF4ECDC4).withValues(alpha: 0.8),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              label,
+                              style: VersusTextStyles.labelSmall.copyWith(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        if (!isSingleImageMode)
+                          const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            text,
+                            style: VersusTextStyles.bodySmall.copyWith(
+                              color: effectiveImageUrl != null ? Colors.white : color,
+                              fontWeight: FontWeight.w600,
+                              shadows: effectiveImageUrl != null
+                                  ? [
+                                      Shadow(
+                                        color: Colors.black.withValues(alpha: 0.5),
+                                        blurRadius: 4,
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ],
@@ -612,16 +751,41 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   }
 
   LayoutType _getLayoutType() {
-    // 이미지가 없으면 항상 가로 레이아웃
+    // 디버깅: aspectRatio 값 확인
+    debugPrint('[VoteCardMessage] _getLayoutType 호출');
+    debugPrint('  - aspectRatioA: ${widget.aspectRatioA}');
+    debugPrint('  - aspectRatioB: ${widget.aspectRatioB}');
+    
+    final hasImageA = widget.optionAImage != null || (widget.optionAImages?.isNotEmpty ?? false);
+    final hasImageB = widget.optionBImage != null || (widget.optionBImages?.isNotEmpty ?? false);
+    debugPrint('  - 이미지 A: $hasImageA');
+    debugPrint('  - 이미지 B: $hasImageB');
+    
+    // aspectRatio가 없지만 이미지는 있는 경우 (fallback)
     if (widget.aspectRatioA == null && widget.aspectRatioB == null) {
-      return LayoutType.horizontal;
+      if (hasImageA && hasImageB) {
+        // 이미지가 둘 다 있으면 가로 배치 (기본값)
+        debugPrint('  → aspectRatio null이지만 이미지 있음, fallback으로 horizontal 반환');
+        return LayoutType.horizontal;
+      } else if (hasImageA || hasImageB) {
+        // 이미지가 하나만 있으면 single
+        debugPrint('  → 이미지 하나만 있음, single 반환');
+        return LayoutType.single;
+      } else {
+        // 이미지가 없으면 가로 레이아웃
+        debugPrint('  → 이미지 없음, 기본값 horizontal 반환');
+        return LayoutType.horizontal;
+      }
     }
     
     // AspectRatioAnalyzer를 사용하여 최적 레이아웃 결정
-    return AspectRatioAnalyzer.getOptimalLayout(
+    final layout = AspectRatioAnalyzer.getOptimalLayout(
       widget.aspectRatioA,
       widget.aspectRatioB,
     );
+    
+    debugPrint('  → AspectRatioAnalyzer 결과: ${layout.name}');
+    return layout;
   }
   
   

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '/design_system/design_system.dart';
 import '../models/versus_box_size_data.dart';
-import '../services/versus_box_size_calculator.dart';
+import '/shared/services/unified_box_calculator.dart';
 import '../constants/voting_notification_constraints.dart';
 import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
 import 'notification_image_viewer.dart';
@@ -761,9 +761,14 @@ class VersusNotificationBoxBuilder {
     bool enableImageTap = true,
   }) {
     // 투표용 크기 계산
-    final votingSizes = VersusBoxSizeCalculator.calculateVotingSize(
-      sizeData,
-      context,
+    final votingSizes = UnifiedBoxCalculator.calculateForNotification(
+      containerWidth: MediaQuery.of(context).size.width * 0.92,
+      screenHeight: MediaQuery.of(context).size.height,
+      layoutType: sizeData.layoutType,
+      aspectRatioA: sizeData.aspectRatioA,
+      aspectRatioB: sizeData.aspectRatioB,
+      hasImageA: sizeData.hasImageA,
+      hasImageB: sizeData.hasImageB,
     );
     
     // 박스 타입에 따른 크기 선택
@@ -821,9 +826,14 @@ class VersusNotificationBoxBuilder {
     bool enableImageTap = true,
   }) {
     // 투표용 크기 계산
-    final votingSizes = VersusBoxSizeCalculator.calculateVotingSize(
-      sizeData,
-      context,
+    final votingSizes = UnifiedBoxCalculator.calculateForNotification(
+      containerWidth: MediaQuery.of(context).size.width * 0.92,
+      screenHeight: MediaQuery.of(context).size.height,
+      layoutType: sizeData.layoutType,
+      aspectRatioA: sizeData.aspectRatioA,
+      aspectRatioB: sizeData.aspectRatioB,
+      hasImageA: sizeData.hasImageA,
+      hasImageB: sizeData.hasImageB,
     );
     
     // 레이아웃에 따른 배치
@@ -854,7 +864,7 @@ class VersusNotificationBoxBuilder {
             otherDescription: description,
             enableImageTap: enableImageTap,
           ),
-          SizedBox(width: votingSizes.spacing?.horizontal ?? 8.0),
+          SizedBox(width: votingSizes.spacing),
           buildFromSizeData(
             context: context,
             sizeData: sizeData,
@@ -907,7 +917,7 @@ class VersusNotificationBoxBuilder {
             otherDescription: description,
             enableImageTap: enableImageTap,
           ),
-          SizedBox(height: votingSizes.spacing?.vertical ?? 12.0),
+          SizedBox(height: votingSizes.spacing),
           buildFromSizeData(
             context: context,
             sizeData: sizeData,

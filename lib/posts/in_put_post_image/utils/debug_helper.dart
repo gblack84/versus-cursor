@@ -81,6 +81,9 @@ class DebugHelper {
   
   /// 내부 로그 메서드
   static void _log(LogLevel level, String message, {String? tag}) {
+    // 프로덕션 빌드에서는 로그 완전 비활성화
+    if (kReleaseMode) return;
+    
     // 로그 레벨 확인
     if (level.index < minimumLevel.index) return;
     
@@ -89,7 +92,10 @@ class DebugHelper {
     final prefix = tag != null ? '[$tag] ' : '';
     final timestamp = now.toIso8601String().substring(11, 19);
     
-    print('$timestamp $emoji $prefix$message');
+    // 디버그 모드에서만 출력
+    if (!kReleaseMode) {
+      print('$timestamp $emoji $prefix$message');
+    }
   }
   
   /// 스마트 레이아웃 디버그 로그

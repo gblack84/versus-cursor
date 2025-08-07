@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../constants/layout_constants.dart';
 import '../../posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
 
@@ -107,10 +108,12 @@ class UnifiedBoxCalculator {
         final scalingFactor = maxAvailableHeight / totalRequiredHeight;
         unifiedHeight *= scalingFactor;
         
-        print('[UnifiedBoxCalculator] 세로 배치 스케일링 적용:');
-        print('  - 필요 높이: ${totalRequiredHeight.toStringAsFixed(1)}px');
-        print('  - 최대 높이: ${maxAvailableHeight.toStringAsFixed(1)}px');
-        print('  - 스케일링: ${(scalingFactor * 100).toStringAsFixed(1)}%');
+        if (!kReleaseMode) {
+          print('[UnifiedBoxCalculator] 세로 배치 스케일링 적용:');
+          print('  - 필요 높이: ${totalRequiredHeight.toStringAsFixed(1)}px');
+          print('  - 최대 높이: ${maxAvailableHeight.toStringAsFixed(1)}px');
+          print('  - 스케일링: ${(scalingFactor * 100).toStringAsFixed(1)}%');
+        }
       }
     }
     
@@ -200,6 +203,9 @@ class UnifiedBoxCalculator {
     required double unifiedHeight,
     required double boxWidth,
   }) {
+    // 프로덕션 빌드에서는 로그 비활성화
+    if (kReleaseMode) return;
+    
     print('\n[UnifiedBoxCalculator] 계산 결과:');
     print('  컨테이너: $containerType');
     print('  레이아웃: ${layoutType.name}');

@@ -14,7 +14,7 @@ import '/auth/firebase_auth/auth_util.dart';
 import 'in_put_post_image_model.dart';
 export 'in_put_post_image_model.dart';
 import 'helpers/aspect_ratio_analyzer.dart';
-import 'helpers/dynamic_box_calculator.dart';
+import '/shared/services/unified_box_calculator.dart';
 import 'helpers/media_box_callbacks.dart';
 import 'helpers/ratio_calculator.dart';
 import 'components/media_selection_box_multi.dart';
@@ -927,13 +927,14 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       DebugHelper.logLayout('[Debug] aspectRatioA: $aspectRatioA');
       DebugHelper.logLayout('[Debug] 이미지 있음: ${appState.tempImageFilesA.isNotEmpty}');
       
-      final size = DynamicBoxCalculator.getBoxSize(
-        context: context,
+      final sizes = UnifiedBoxCalculator.calculateForQuestion(
+        containerWidth: MediaQuery.of(context).size.width,
         layoutType: LayoutType.single,
-        box: 'A',
-        aspectRatio: aspectRatioA,
-        hasOtherBox: false,
+        aspectRatioA: aspectRatioA,
+        hasImageA: true,
+        hasImageB: false,
       );
+      final size = sizes.sizeA;
       
       DebugHelper.logLayout('[Debug] 계산된 박스 크기: ${size.width} x ${size.height}');
       DebugHelper.logLayout('[Debug] ========== 계산 완료 ==========');
@@ -941,12 +942,15 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     }
     
     // 스마트 레이아웃 적용 (B박스가 비어있어도 레이아웃 계산)
-    final unifiedSize = DynamicBoxCalculator.getUnifiedSize(
-      context: context,
+    final sizes = UnifiedBoxCalculator.calculateForQuestion(
+      containerWidth: MediaQuery.of(context).size.width,
       layoutType: _model.currentLayout,
       aspectRatioA: (appState.tempImageFilesA.isEmpty && appState.tempImageFilesB.isEmpty) ? null : aspectRatioA,
       aspectRatioB: (appState.tempImageFilesA.isEmpty && appState.tempImageFilesB.isEmpty) ? null : aspectRatioB,
+      hasImageA: appState.tempImageFilesA.isNotEmpty,
+      hasImageB: appState.tempImageFilesB.isNotEmpty,
     );
+    final unifiedSize = Size(sizes.boxWidth, sizes.unifiedHeight);
     
     return (unifiedSize, unifiedSize);
   }

@@ -54,8 +54,6 @@ class RatioCalculator {
     return average;
   }
   
-  /// 레거시 모드 플래그 (테스트용)
-  static bool useLegacyMode = false;
   
   /// 비율 계산 (레거시 모드 지원)
   static double getRatio(List<double> ratios, {String box = ''}) {
@@ -78,15 +76,8 @@ class RatioCalculator {
       }
     }
     
-    // 새로운 계산
-    double result;
-    if (useLegacyMode && ratios.isNotEmpty) {
-      DebugHelper.logLayout('[RatioCalc] 레거시 모드 - 첫 번째 비율 사용: ${ratios.first}');
-      result = ratios.first;
-    } else {
-      // 새로운 계산일 때만 로그 활성화
-      result = calculateRepresentativeRatio(ratios, enableLog: true);
-    }
+    // 계산 수행
+    final result = calculateRepresentativeRatio(ratios, enableLog: true);
     
     // 캐시 업데이트
     if (box == 'A') {

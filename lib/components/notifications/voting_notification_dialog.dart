@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '/design_system/design_system.dart';
 import 'models/versus_box_size_data.dart';
-import 'services/versus_box_size_calculator.dart';
+import '/shared/services/unified_box_calculator.dart';
 import 'widgets/versus_notification_box.dart';
 import 'constants/voting_notification_constraints.dart';
 import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
@@ -490,7 +490,15 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
     return Center(
       child: VersusNotificationBox(
         boxType: 'A',
-        boxSize: VersusBoxSizeCalculator.calculateVotingSize(sizeData, context).sizeA,
+        boxSize: UnifiedBoxCalculator.calculateForNotification(
+          containerWidth: MediaQuery.of(context).size.width * 0.92,
+          screenHeight: MediaQuery.of(context).size.height,
+          layoutType: sizeData.layoutType,
+          aspectRatioA: sizeData.aspectRatioA,
+          aspectRatioB: sizeData.aspectRatioB,
+          hasImageA: sizeData.hasImageA,
+          hasImageB: sizeData.hasImageB,
+        ).sizeA,
         title: widget.optionA,
         imageUrl: widget.primaryImageUrlA,
         description: widget.description,
@@ -553,9 +561,14 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
     );
     
     // 투표용 크기 계산
-    final votingSizes = VersusBoxSizeCalculator.calculateVotingSize(
-      defaultSizeData,
-      context,
+    final votingSizes = UnifiedBoxCalculator.calculateForNotification(
+      containerWidth: screenWidth * 0.92,
+      screenHeight: screenHeight,
+      layoutType: defaultSizeData.layoutType,
+      aspectRatioA: defaultSizeData.aspectRatioA,
+      aspectRatioB: defaultSizeData.aspectRatioB,
+      hasImageA: defaultSizeData.hasImageA,
+      hasImageB: defaultSizeData.hasImageB,
     );
     
     // 단일 박스인 경우 또는 B가 텍스트만 있는 경우
@@ -613,7 +626,7 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
           otherImageUrls: widget.effectiveImageUrlsB,
           enableImageTap: true,  // 명시적으로 true 설정
         ),
-        SizedBox(width: votingSizes.spacing?.horizontal ?? 8.0),
+        SizedBox(width: votingSizes.spacing),
         VersusNotificationBox(
           boxType: 'B',
           boxSize: votingSizes.sizeB,

@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import '/core/app_theme.dart';
 import '../utils/debug_helper.dart';
-import '../helpers/image_cache_helper.dart';
+import '/services/unified_image_cache_service.dart';
 
 class MediaSelectionBoxMulti extends StatefulWidget {
   final String label; // 'A' or 'B'
@@ -62,10 +62,10 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
     // 초기 이미지 프리로드 (URL이 있는 경우에만)
     if (widget.imageUrls.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ImageCacheHelper.preloadImages(
+        UnifiedImageCacheService.instance.preloadImages(
           context,
           widget.imageUrls.take(2).toList(),
-          memCacheWidth: _calculateMemCacheWidth(),
+          overrideMemCacheWidth: _calculateMemCacheWidth(),
         );
       });
     }
@@ -82,9 +82,9 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
   
   /// 메모리 캐시 너비 계산
   int _calculateMemCacheWidth() {
-    return ImageCacheHelper.calculateMemCacheWidthForBox(
+    return UnifiedImageCacheService.calculateForBox(
       context,
-      dynamicWidth: widget.dynamicWidth,
+      boxWidth: widget.dynamicWidth,
       isHorizontal: widget.isHorizontal,
     );
   }
@@ -162,9 +162,11 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
       );
     }
     
-    return CachedNetworkImage(
+    // aspect ratio가 있으면 사용하여 일관된 크롭 보장
+    final imageWidget = CachedNetworkImage(
       imageUrl: widget.imageUrls[index],
       fit: BoxFit.cover,
+      alignment: Alignment.center,  // 중앙 정렬로 일관성 확보
       width: double.infinity,
       height: double.infinity,
       memCacheWidth: _calculateMemCacheWidth(),
@@ -183,6 +185,16 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
         );
       },
     );
+    
+    // aspect ratio 정보가 있고 이미지가 URL인 경우 AspectRatio 적용
+    if (widget.imageUrls.isNotEmpty && index < widget.imageUrls.length) {
+      // 여기서는 AspectRatio를 직접 적용하지 않음
+      // PageView 내부에서는 container 크기가 이미 고정되어 있으므로
+      // alignment만 적용하여 일관성 확보
+      return imageWidget;
+    }
+    
+    return imageWidget;
   }
   
   /// 우측 상단 클로즈 버튼 빌드
@@ -413,11 +425,10 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                             widget.onCurrentIndexChanged?.call(index);
                             
                             // 인접 이미지 프리로드
-                            ImageCacheHelper.preloadAdjacentImages(
+                            UnifiedImageCacheService.instance.preloadAdjacentImages(
                               context,
                               widget.imageUrls,
                               index,
-                              memCacheWidth: _calculateMemCacheWidth(),
                             );
                           },
                           itemBuilder: (context, index) {

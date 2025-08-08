@@ -299,14 +299,12 @@ class VersusDialog {
 class _VersusDialogButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
-  final Color? backgroundColor;
   final Color? foregroundColor;
   final Color? borderColor;
 
   const _VersusDialogButton._({
     required this.text,
     this.onPressed,
-    this.backgroundColor,
     this.foregroundColor,
     this.borderColor,
   });
@@ -327,7 +325,6 @@ class _VersusDialogButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return OutlinedButton(
       style: OutlinedButton.styleFrom(
-        backgroundColor: backgroundColor,
         foregroundColor: foregroundColor ?? VersusColors.borderColor,
         side: BorderSide(
           color: borderColor ?? VersusColors.borderColor,

@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '/design_system/design_system.dart';
 import '../models/versus_box_size_data.dart';
 import '/shared/services/unified_box_calculator.dart';
+import '/services/unified_image_cache_service.dart';
 import '../constants/voting_notification_constraints.dart';
 import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
 import 'notification_image_viewer.dart';
@@ -231,9 +232,10 @@ class VersusNotificationBox extends StatelessWidget {
       width: safeWidth,
       height: safeHeight,
       fit: BoxFit.cover,
+      alignment: Alignment.center,  // 중앙 정렬로 일관성 확보
       placeholder: (context, url) => _buildPlaceholder(),
       errorWidget: (context, url, error) => _buildErrorWidget(),
-      memCacheWidth: (safeWidth * 2).round().clamp(100, 4000), // 메모리 캐시도 제한
+      memCacheWidth: UnifiedImageCacheService.calculateMemCacheWidth(safeWidth), // 통합 캐시 서비스 사용
       fadeInDuration: const Duration(milliseconds: 200),
     );
   }
@@ -761,9 +763,8 @@ class VersusNotificationBoxBuilder {
     bool enableImageTap = true,
   }) {
     // 투표용 크기 계산
-    final votingSizes = UnifiedBoxCalculator.calculateForNotification(
-      containerWidth: MediaQuery.of(context).size.width * 0.92,
-      screenHeight: MediaQuery.of(context).size.height,
+    final votingSizes = UnifiedBoxCalculator.calculateForNotificationDialog(
+      dialogWidth: MediaQuery.of(context).size.width * 0.92,
       layoutType: sizeData.layoutType,
       aspectRatioA: sizeData.aspectRatioA,
       aspectRatioB: sizeData.aspectRatioB,
@@ -826,9 +827,8 @@ class VersusNotificationBoxBuilder {
     bool enableImageTap = true,
   }) {
     // 투표용 크기 계산
-    final votingSizes = UnifiedBoxCalculator.calculateForNotification(
-      containerWidth: MediaQuery.of(context).size.width * 0.92,
-      screenHeight: MediaQuery.of(context).size.height,
+    final votingSizes = UnifiedBoxCalculator.calculateForNotificationDialog(
+      dialogWidth: MediaQuery.of(context).size.width * 0.92,
       layoutType: sizeData.layoutType,
       aspectRatioA: sizeData.aspectRatioA,
       aspectRatioB: sizeData.aspectRatioB,

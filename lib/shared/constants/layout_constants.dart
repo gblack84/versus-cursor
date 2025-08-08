@@ -55,13 +55,13 @@ class LayoutConstants {
   // ============================================================================
   
   /// 메시지 카드 가로 배치 최대 높이 (픽셀)
-  static const double messageHorizontalMaxHeight = 450.0;
+  static const double messageHorizontalMaxHeight = 400.0;
   
   /// 메시지 카드 가로 배치 최소 높이 (픽셀)
   static const double messageHorizontalMinHeight = 200.0;
   
   /// 메시지 카드 세로 배치 최대 높이 (픽셀)
-  static const double messageVerticalMaxHeight = 400.0;
+  static const double messageVerticalMaxHeight = 350.0;
   
   /// 메시지 카드 세로 배치 최소 높이 (픽셀)
   static const double messageVerticalMinHeight = 200.0;
@@ -86,7 +86,7 @@ class LayoutConstants {
   static const double verticalBoxWidthRatio = 0.95; // 95%
   
   /// 단일 이미지 박스 너비 비율
-  static const double singleBoxWidthRatio = 0.8; // 80%
+  static const double singleBoxWidthRatio = 0.95; // 95%
   
   /// 기본 박스 높이 (비율 정보가 없을 때)
   static const double defaultBoxHeight = 350.0;
@@ -111,10 +111,15 @@ class LayoutConstants {
   static double getMaxHeight({
     required String containerType,
     required bool isHorizontal,
+    bool isSingle = false,
     double? screenHeight,
   }) {
     switch (containerType) {
       case containerTypeQuestion:
+        // 단일 이미지는 600px까지 허용
+        if (isSingle) {
+          return questionSingleMaxHeight;
+        }
         return isHorizontal 
             ? questionHorizontalMaxHeight 
             : questionVerticalMaxHeight;
@@ -141,9 +146,14 @@ class LayoutConstants {
   static double getMinHeight({
     required String containerType,
     required bool isHorizontal,
+    bool isSingle = false,
   }) {
     switch (containerType) {
       case containerTypeQuestion:
+        // 단일 이미지는 가로 배치와 같은 최소값 사용 (150px)
+        if (isSingle) {
+          return questionHorizontalMinHeight;
+        }
         return isHorizontal 
             ? questionHorizontalMinHeight 
             : questionVerticalMinHeight;

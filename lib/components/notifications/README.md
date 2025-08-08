@@ -48,9 +48,7 @@
 lib/components/notifications/
 ├── models/
 │   └── versus_box_size_data.dart          # 사이즈 데이터 모델
-├── services/
-│   ├── versus_box_size_calculator.dart    # 크기 계산 서비스 (박스 크기 평균화 포함)
-│   └── layout_synchronizer.dart           # 레이아웃 동기화
+├── services/                              # (현재 비어있음 - 향후 서비스 추가 예정)
 ├── widgets/
 │   ├── versus_notification_box.dart       # 투표 박스 컴포넌트
 │   └── notification_image_viewer.dart     # 멀티이미지 뷰어 (새로운 파일)
@@ -58,8 +56,6 @@ lib/components/notifications/
 │   └── voting_notification_constraints.dart # 크기 제약 조건
 ├── utils/
 │   └── adaptive_text_size.dart            # 적응형 텍스트 크기
-├── examples/
-│   └── voting_system_example.dart         # 사용 예제
 ├── voting_notification_dialog.dart        # 투표 알림 다이얼로그 (모달 UI 업데이트)
 ├── notification_overlay.dart              # 알림 오버레이 (showDialog 사용)
 └── README.md                              # 이 문서
@@ -70,14 +66,7 @@ lib/components/notifications/
 ### 1. 기본 사용법
 
 ```dart
-// 1. 질문 작성 페이지에서 사이즈 데이터 캡처
-final sizeData = VersusBoxSizeCalculator.captureCurrentSizes(
-  context,
-  appState,
-  model,
-);
-
-// 2. 투표 알림 표시 (사이즈 데이터 포함)
+// 투표 알림 표시 (스마트 레이아웃 자동 적용)
 NotificationOverlay.showVoting(
   context,
   question: '어떤 옵션이 더 좋나요?',
@@ -85,7 +74,9 @@ NotificationOverlay.showVoting(
   optionB: '옵션 B',
   imageUrlA: 'https://example.com/image_a.jpg',
   imageUrlB: 'https://example.com/image_b.jpg',
-  sizeData: sizeData, // 👈 캡처된 사이즈 데이터
+  aspectRatioA: 1.5,  // 이미지 비율 정보
+  aspectRatioB: 0.75, // 이미지 비율 정보
+  layoutType: 'horizontal', // 레이아웃 타입
   onVote: (option) {
     print('투표: $option');
   },

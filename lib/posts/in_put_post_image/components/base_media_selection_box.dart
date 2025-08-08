@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '/core/app_theme.dart';
 import '../utils/debug_helper.dart';
-import '../helpers/image_cache_helper.dart';
+import '/services/unified_image_cache_service.dart';
 
 /// MediaSelectionBox의 기본 추상 클래스
 abstract class BaseMediaSelectionBox extends StatefulWidget {
@@ -57,9 +57,9 @@ mixin MediaSelectionBoxMixin<T extends BaseMediaSelectionBox> on State<T> {
 
   /// 메모리 캐시 너비 계산
   int calculateMemCacheWidth() {
-    return ImageCacheHelper.calculateMemCacheWidthForBox(
+    return UnifiedImageCacheService.calculateForBox(
       context,
-      dynamicWidth: widget.dynamicWidth,
+      boxWidth: widget.dynamicWidth,
       isHorizontal: widget.isHorizontal,
     );
   }
@@ -174,10 +174,10 @@ mixin MediaSelectionBoxMixin<T extends BaseMediaSelectionBox> on State<T> {
   /// 이미지 프리로드
   void preloadImages() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ImageCacheHelper.preloadImages(
+      UnifiedImageCacheService.instance.preloadImages(
         context,
         widget.imageUrls,
-        memCacheWidth: calculateMemCacheWidth(),
+        overrideMemCacheWidth: calculateMemCacheWidth(),
       );
     });
   }

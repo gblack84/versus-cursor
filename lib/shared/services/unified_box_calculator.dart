@@ -35,12 +35,14 @@ class UnifiedBoxCalculator {
     final maxHeight = LayoutConstants.getMaxHeight(
       containerType: containerType,
       isHorizontal: isHorizontal,
+      isSingle: isSingle,
       screenHeight: containerHeight,
     );
     
     final minHeight = LayoutConstants.getMinHeight(
       containerType: containerType,
       isHorizontal: isHorizontal,
+      isSingle: isSingle,
     );
     
     // 4. 박스 너비 계산
@@ -132,7 +134,8 @@ class UnifiedBoxCalculator {
     );
   }
   
-  /// 메시지 카드용 간편 계산 메서드
+  /// 메시지 카드용 간편 계산 메서드 (기존 - deprecated)
+  @Deprecated('Use calculateForMessageCard instead')
   static BoxSizes calculateForMessage({
     required double containerWidth,
     required LayoutType layoutType,
@@ -152,7 +155,122 @@ class UnifiedBoxCalculator {
     );
   }
   
-  /// 알림 다이얼로그용 간편 계산 메서드
+  /// 메시지 카드 전용 계산 메서드
+  /// 
+  /// 채팅 버블 내부에서 적절한 크기로 표시되도록 최적화
+  /// - 버블 너비 기준으로 계산
+  /// - 고정 최대 높이: 단일(400px), 가로(400px), 세로(350px 전체)
+  static BoxSizes calculateForMessageCard({
+    required double bubbleWidth,
+    required LayoutType layoutType,
+    double? aspectRatioA,
+    double? aspectRatioB,
+    bool hasImageA = true,
+    bool hasImageB = true,
+  }) {
+    // 1. 박스 간격
+    const double spacing = 8.0;
+    
+    // 2. 박스 너비 계산
+    double boxWidth;
+    if (layoutType == LayoutType.single) {
+      boxWidth = bubbleWidth * 0.8;  // 단일: 80%
+    } else if (layoutType == LayoutType.horizontal) {
+      // 가로 배치: 간격 빼고 절반씩
+      final availableWidth = bubbleWidth - spacing;
+      boxWidth = availableWidth * 0.495;
+    } else {
+      // 세로 배치: 95%
+      boxWidth = bubbleWidth * 0.95;
+    }
+    
+    // 3. 고정 최대 높이 (업데이트된 사양)
+    double maxHeight;
+    double minHeight;
+    
+    if (layoutType == LayoutType.single) {
+      maxHeight = 400.0;  // 단일: 400px
+      minHeight = 100.0;  // 단일 이미지는 최소 100px로 설정 (자연스러운 크기 유지)
+    } else if (layoutType == LayoutType.horizontal) {
+      maxHeight = 400.0;  // 가로: 400px (개별 박스)
+      minHeight = 200.0;
+    } else {
+      // 세로: 전체 350px, 개별 박스는 171px
+      if (hasImageA && hasImageB) {
+        maxHeight = (350.0 - spacing) / 2;  // 171px
+        minHeight = 100.0;  // 세로에서 두 박스일 때는 최소 100px
+      } else {
+        maxHeight = 350.0;  // 박스 하나만 있으면 350px
+        minHeight = 200.0;
+      }
+    }
+    
+    // 4. aspectRatio 기반 높이 계산
+    double heightA = 300.0;  // 기본값
+    double heightB = 300.0;
+    
+    if (aspectRatioA != null && aspectRatioA > 0) {
+      heightA = boxWidth / aspectRatioA;
+    }
+    
+    if (aspectRatioB != null && aspectRatioB > 0) {
+      heightB = boxWidth / aspectRatioB;
+    }
+    
+    // 5. 통일된 높이 계산
+    double unifiedHeight;
+    final isSingle = layoutType == LayoutType.single || 
+                    (hasImageA && !hasImageB) || 
+                    (!hasImageA && hasImageB);
+    
+    if (isSingle) {
+      // 단일 이미지는 해당 이미지의 높이 사용
+      unifiedHeight = hasImageA ? heightA : heightB;
+    } else if (hasImageA && hasImageB) {
+      // 두 이미지 모두 있으면 평균 높이 사용
+      unifiedHeight = (heightA + heightB) / 2;
+    } else {
+      // 하나만 있으면 해당 높이 사용
+      unifiedHeight = hasImageA ? heightA : heightB;
+    }
+    
+    // 6. 높이 제한 적용
+    unifiedHeight = unifiedHeight.clamp(minHeight, maxHeight);
+    
+    // 7. 디버그 정보
+    if (!kReleaseMode) {
+      print('\n[UnifiedBoxCalculator] 메시지 카드 계산:');
+      print('  버블 너비: ${bubbleWidth.toStringAsFixed(1)}px');
+      print('  레이아웃: ${layoutType.name}');
+      print('  박스 너비: ${boxWidth.toStringAsFixed(1)}px');
+      print('  최대 높이: ${maxHeight.toStringAsFixed(1)}px');
+      print('  계산된 높이 A: ${heightA.toStringAsFixed(1)}px');
+      print('  계산된 높이 B: ${heightB.toStringAsFixed(1)}px');
+      print('  통일 높이: ${unifiedHeight.toStringAsFixed(1)}px');
+      
+      if (layoutType == LayoutType.vertical && hasImageA && hasImageB) {
+        final totalHeight = (unifiedHeight * 2) + spacing;
+        print('  세로 전체 높이: ${totalHeight.toStringAsFixed(1)}px (최대 350px)');
+      }
+    }
+    
+    // 8. 최종 크기 반환
+    final sizeA = hasImageA ? Size(boxWidth, unifiedHeight) : Size.zero;
+    final sizeB = hasImageB ? Size(boxWidth, unifiedHeight) : Size.zero;
+    
+    return BoxSizes(
+      sizeA: sizeA,
+      sizeB: sizeB,
+      layoutType: layoutType,
+      containerType: LayoutConstants.containerTypeMessage,
+      spacing: spacing,
+      unifiedHeight: unifiedHeight,
+      boxWidth: boxWidth,
+    );
+  }
+  
+  /// 알림 다이얼로그용 간편 계산 메서드 (기존 - deprecated)
+  @Deprecated('Use calculateForNotificationDialog instead')
   static BoxSizes calculateForNotification({
     required double containerWidth,
     required double screenHeight,
@@ -171,6 +289,120 @@ class UnifiedBoxCalculator {
       aspectRatioB: aspectRatioB,
       hasImageA: hasImageA,
       hasImageB: hasImageB,
+    );
+  }
+  
+  /// 알림 다이얼로그 전용 계산 메서드
+  /// 
+  /// 다이얼로그 내부 공간을 최대한 활용하고 고정된 높이 제한을 사용합니다.
+  /// - 다이얼로그 너비의 95% 사용
+  /// - 고정 최대 높이: 단일(500px), 가로(400px), 세로(350px 전체)
+  static BoxSizes calculateForNotificationDialog({
+    required double dialogWidth,
+    required LayoutType layoutType,
+    double? aspectRatioA,
+    double? aspectRatioB,
+    bool hasImageA = true,
+    bool hasImageB = true,
+  }) {
+    // 1. 박스 간격
+    const double spacing = 8.0;
+    
+    // 2. 박스 너비 계산 - 다이얼로그 너비의 95% 사용
+    double boxWidth;
+    if (layoutType == LayoutType.single) {
+      boxWidth = dialogWidth * 0.95;  // 단일: 95%
+    } else if (layoutType == LayoutType.horizontal) {
+      // 가로 배치: 간격 빼고 절반씩
+      final availableWidth = dialogWidth * 0.95 - spacing;
+      boxWidth = availableWidth / 2;
+    } else {
+      // 세로 배치: 95%
+      boxWidth = dialogWidth * 0.95;
+    }
+    
+    // 3. 고정 최대 높이
+    double maxHeight;
+    double minHeight;
+    
+    if (layoutType == LayoutType.single) {
+      maxHeight = 500.0;
+      minHeight = 150.0;
+    } else if (layoutType == LayoutType.horizontal) {
+      maxHeight = 400.0;
+      minHeight = 150.0;
+    } else {
+      // 세로: 전체 350px, 개별 박스는 171px
+      if (hasImageA && hasImageB) {
+        maxHeight = (350.0 - spacing) / 2;  // 171px
+        minHeight = 100.0;  // 세로에서 두 박스일 때는 최소 100px
+      } else {
+        maxHeight = 350.0;  // 박스 하나만 있으면 350px
+        minHeight = 150.0;
+      }
+    }
+    
+    // 4. aspectRatio 기반 높이 계산
+    double heightA = 300.0;  // 기본값
+    double heightB = 300.0;
+    
+    if (aspectRatioA != null && aspectRatioA > 0) {
+      heightA = boxWidth / aspectRatioA;
+    }
+    
+    if (aspectRatioB != null && aspectRatioB > 0) {
+      heightB = boxWidth / aspectRatioB;
+    }
+    
+    // 5. 통일된 높이 계산
+    double unifiedHeight;
+    final isSingle = layoutType == LayoutType.single || 
+                    (hasImageA && !hasImageB) || 
+                    (!hasImageA && hasImageB);
+    
+    if (isSingle) {
+      // 단일 이미지는 해당 이미지의 높이 사용
+      unifiedHeight = hasImageA ? heightA : heightB;
+    } else if (hasImageA && hasImageB) {
+      // 두 이미지 모두 있으면 평균 높이 사용
+      unifiedHeight = (heightA + heightB) / 2;
+    } else {
+      // 하나만 있으면 해당 높이 사용
+      unifiedHeight = hasImageA ? heightA : heightB;
+    }
+    
+    // 6. 높이 제한 적용
+    unifiedHeight = unifiedHeight.clamp(minHeight, maxHeight);
+    
+    // 7. 디버그 정보
+    if (!kReleaseMode) {
+      print('\n[UnifiedBoxCalculator] 알림 다이얼로그 계산:');
+      print('  다이얼로그 너비: ${dialogWidth.toStringAsFixed(1)}px');
+      print('  레이아웃: ${layoutType.name}');
+      print('  박스 너비: ${boxWidth.toStringAsFixed(1)}px (95% 사용)');
+      print('  최대 높이: ${maxHeight.toStringAsFixed(1)}px');
+      print('  계산된 높이 A: ${heightA.toStringAsFixed(1)}px');
+      print('  계산된 높이 B: ${heightB.toStringAsFixed(1)}px');
+      print('  통일 높이: ${unifiedHeight.toStringAsFixed(1)}px');
+      
+      if (layoutType == LayoutType.vertical && hasImageA && hasImageB) {
+        final totalHeight = (unifiedHeight * 2) + spacing;
+        print('  세로 전체 높이: ${totalHeight.toStringAsFixed(1)}px (최대 350px)');
+      }
+    }
+    
+    // 9. 최종 크기 반환
+    final sizeA = hasImageA ? Size(boxWidth, unifiedHeight) : Size.zero;
+    final sizeB = hasImageB ? Size(boxWidth, unifiedHeight) : Size.zero;
+    
+    return BoxSizes(
+      sizeA: sizeA,
+      sizeB: sizeB,
+      layoutType: layoutType,
+      containerType: LayoutConstants.containerTypeNotification,
+      spacing: spacing,
+      unifiedHeight: unifiedHeight,
+      boxWidth: boxWidth,
     );
   }
   

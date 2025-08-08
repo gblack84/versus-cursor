@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '/design_system/design_system.dart';
@@ -8,6 +7,7 @@ import '/components/notifications/voting_notification_dialog.dart';
 import '/utils/responsive_breakpoints.dart';
 import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
 import '/shared/services/unified_box_calculator.dart';
+import '/services/unified_image_cache_service.dart';
 import 'base_vote_message.dart';
 
 /// AI 피클 채팅에서 사용되는 투표 카드 메시지 위젯
@@ -49,6 +49,10 @@ class _VoteCardMessageState extends State<VoteCardMessage>
     with BaseVoteMessageStateMixin<VoteCardMessage>, TickerProviderStateMixin {
   // 투표 상태 변경 애니메이션
   bool _isVoting = false;
+  
+  // 캐싱 변수 추가 (중복 계산 방지)
+  LayoutType? _cachedLayoutType;
+  BoxSizes? _cachedBoxSizes;
 
   @override
   void initState() {
@@ -58,6 +62,14 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   @override
   void didUpdateWidget(VoteCardMessage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // aspectRatio가 변경되면 캐시 무효화
+    if (oldWidget.aspectRatioA != widget.aspectRatioA ||
+        oldWidget.aspectRatioB != widget.aspectRatioB ||
+        oldWidget.effectiveImageUrlsA.length != widget.effectiveImageUrlsA.length ||
+        oldWidget.effectiveImageUrlsB.length != widget.effectiveImageUrlsB.length) {
+      _cachedLayoutType = null;
+      _cachedBoxSizes = null;
+    }
   }
 
   @override
@@ -316,36 +328,45 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   }
   
   Widget _buildSmartLayout() {
-    // 레이아웃 타입 결정
+    // 레이아웃 타입 결정 (캐싱됨)
     final layoutType = _getLayoutType();
     
-    // 스마트 높이 계산 (레이아웃에 따라 다른 최대값)
-    // 가로 배치: 450px, 세로 배치: 400px
-    final smartHeight = _calculateSmartHeight(
-      layoutType == LayoutType.horizontal ? 450.0 : 400.0
-    );
+    // BoxSizes를 여기서 한 번만 계산 (캐싱)
+    if (_cachedBoxSizes == null) {
+      final maxMessageWidth = ResponsiveBreakpoints.getMaxMessageWidth(context);
+      _cachedBoxSizes = UnifiedBoxCalculator.calculateForMessageCard(
+        bubbleWidth: maxMessageWidth,
+        layoutType: layoutType,
+        aspectRatioA: widget.aspectRatioA,
+        aspectRatioB: widget.aspectRatioB,
+        hasImageA: widget.effectiveImageUrlsA.isNotEmpty,
+        hasImageB: widget.effectiveImageUrlsB.isNotEmpty,
+      );
+      
+      debugPrint('[VoteCardMessage] 박스 크기 계산 완료:');
+      debugPrint('  - 레이아웃: ${layoutType.name}');
+      debugPrint('  - 통일 높이: ${_cachedBoxSizes!.unifiedHeight.toStringAsFixed(1)}px');
+    }
     
     // 단일 이미지 모드 체크 (B가 이미지 없이 텍스트만 있을 때)
     final bool hasOnlyTextB = widget.effectiveImageUrlsB.isEmpty && widget.optionBText.isNotEmpty;
     
     // 단일 이미지 모드일 때는 하나의 박스만 표시
     if (hasOnlyTextB) {
-      return _buildSingleImageBox(smartHeight);
+      return _buildSingleImageBox(_cachedBoxSizes!);
     }
     
     // 일반 상태
     if (layoutType == LayoutType.horizontal) {
-      return _buildHorizontalLayout(smartHeight);
+      return _buildHorizontalLayout(_cachedBoxSizes!);
     } else {
-      return _buildVerticalLayout(smartHeight);
+      return _buildVerticalLayout(_cachedBoxSizes!);
     }
   }
 
-  Widget _buildHorizontalLayout(double height) {
-    // vote_request일 때 VoteRequestMessage와 동일한 스타일 적용
-    
+  Widget _buildHorizontalLayout(BoxSizes boxSizes) {
     return SizedBox(
-      height: height,
+      height: boxSizes.unifiedHeight,
       child: Row(
         children: [
           Expanded(
@@ -378,44 +399,13 @@ class _VoteCardMessageState extends State<VoteCardMessage>
     );
   }
 
-  Widget _buildVerticalLayout(double height) {
-    // UnifiedBoxCalculator를 사용하여 통일된 크기 계산
-    final maxMessageWidth = ResponsiveBreakpoints.getMaxMessageWidth(context);
-    
-    final boxSizes = UnifiedBoxCalculator.calculateForMessage(
-      containerWidth: maxMessageWidth,
-      layoutType: LayoutType.vertical,
-      aspectRatioA: widget.aspectRatioA,
-      aspectRatioB: widget.aspectRatioB,
-      hasImageA: widget.effectiveImageUrlsA.isNotEmpty,
-      hasImageB: widget.effectiveImageUrlsB.isNotEmpty,
-    );
-    
-    // 통일된 높이 사용 (평균값)
-    final boxWidth = boxSizes.boxWidth;
-    double heightA = boxSizes.sizeA.height;
-    double heightB = boxSizes.sizeB.height;
-    
-    // 전체 높이가 제한을 초과하면 비율에 맞춰 조정
-    final totalDesiredHeight = heightA + heightB + 10;
-    if (totalDesiredHeight > height) {
-      final scale = (height - 10) / (heightA + heightB);
-      heightA *= scale;
-      heightB *= scale;
-    }
-    
-    debugPrint('[VoteCardMessage] 세로 레이아웃 UnifiedBoxCalculator:');
-    debugPrint('  - 너비: ${boxWidth.toStringAsFixed(1)}px');
-    debugPrint('  - 통일 높이: ${heightA.toStringAsFixed(1)}px');
-    
-    // 최소 높이 보장
-    heightA = math.max(heightA, 150.0);
-    heightB = math.max(heightB, 150.0);
+  Widget _buildVerticalLayout(BoxSizes boxSizes) {
+    final unifiedHeight = boxSizes.unifiedHeight;
     
     return Column(
       children: [
         SizedBox(
-          height: heightA,
+          height: unifiedHeight,
           child: _buildSmartOptionBox(
             label: 'A',
             text: widget.optionAText,
@@ -429,7 +419,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
         ),
         const SizedBox(height: 10),
         SizedBox(
-          height: heightB,
+          height: unifiedHeight,
           child: _buildSmartOptionBox(
             label: 'B',
             text: widget.optionBText,
@@ -443,108 +433,6 @@ class _VoteCardMessageState extends State<VoteCardMessage>
         ),
       ],
     );
-  }
-  
-  /// 스마트 높이 계산 메서드 - 최대 400px 제한
-  double _calculateSmartHeight(double maxHeight) {
-    const double MAX_HEIGHT = 400.0;
-    const double MIN_HEIGHT = 200.0;
-    
-    // 이미지가 없으면 최소 높이
-    if (widget.aspectRatioA == null && widget.aspectRatioB == null) {
-      return MIN_HEIGHT;
-    }
-    
-    // 레이아웃 타입에 따라 조정
-    final layoutType = _getLayoutType();
-    
-    if (layoutType == LayoutType.horizontal) {
-      // 가로 레이아웃: 두 이미지 중 더 높은 것 기준 (최대 400px)
-      return _calculateHorizontalHeight(MAX_HEIGHT);
-    } else if (layoutType == LayoutType.vertical) {
-      // 세로 레이아웃: 이미지 비율에 따른 동적 높이
-      return _calculateVerticalHeight(MAX_HEIGHT);
-    } else if (layoutType == LayoutType.single) {
-      // 단일 이미지: 적절한 높이 계산
-      return _calculateSingleHeight(MAX_HEIGHT);
-    }
-    
-    return MIN_HEIGHT;
-  }
-  
-  /// 가로 레이아웃용 높이 계산
-  double _calculateHorizontalHeight(double maxHeight) {
-    // UnifiedBoxCalculator를 사용하여 통일된 크기 계산
-    final maxMessageWidth = ResponsiveBreakpoints.getMaxMessageWidth(context);
-    
-    final boxSizes = UnifiedBoxCalculator.calculateForMessage(
-      containerWidth: maxMessageWidth,
-      layoutType: LayoutType.horizontal,
-      aspectRatioA: widget.aspectRatioA,
-      aspectRatioB: widget.aspectRatioB,
-      hasImageA: widget.effectiveImageUrlsA.isNotEmpty,
-      hasImageB: widget.effectiveImageUrlsB.isNotEmpty,
-    );
-    
-    // 통일된 높이 사용 (평균값)
-    final unifiedHeight = boxSizes.unifiedHeight;
-    
-    debugPrint('[VoteCardMessage] 가로 레이아웃 UnifiedBoxCalculator:');
-    debugPrint('  - 통일 높이: ${unifiedHeight.toStringAsFixed(1)}px');
-    
-    // 최대/최소 높이 제한 적용
-    return unifiedHeight.clamp(200.0, maxHeight);
-  }
-  
-  /// 단일 이미지용 높이 계산
-  double _calculateSingleHeight(double maxHeight) {
-    final maxMessageWidth = ResponsiveBreakpoints.getMaxMessageWidth(context);
-    final boxWidth = maxMessageWidth - 24; // 양쪽 패딩
-    
-    double height = 250.0; // 기본값
-    
-    // 이미지 비율로 높이 계산
-    if (widget.aspectRatioA != null) {
-      height = boxWidth / widget.aspectRatioA!;
-    } else if (widget.aspectRatioB != null) {
-      height = boxWidth / widget.aspectRatioB!;
-    }
-    
-    // 제한 적용 (최대 400, 최소 200)
-    return height.clamp(200.0, maxHeight);
-  }
-  
-  /// 세로 레이아웃용 높이 계산
-  double _calculateVerticalHeight(double maxHeight) {
-    final maxMessageWidth = ResponsiveBreakpoints.getMaxMessageWidth(context);
-    final boxWidth = maxMessageWidth - 24; // 전체 너비 사용
-    
-    double heightA = 250.0; // 기본값
-    double heightB = 250.0;
-    
-    // A 이미지 비율로 높이 계산
-    if (widget.aspectRatioA != null) {
-      heightA = boxWidth / widget.aspectRatioA!;
-      debugPrint('  세로 레이아웃 A박스: 너비=$boxWidth, 비율=${widget.aspectRatioA}, 높이=$heightA');
-    }
-    
-    // B 이미지 비율로 높이 계산
-    if (widget.aspectRatioB != null) {
-      heightB = boxWidth / widget.aspectRatioB!;
-      debugPrint('  세로 레이아웃 B박스: 너비=$boxWidth, 비율=${widget.aspectRatioB}, 높이=$heightB');
-    }
-    
-    // 두 박스 높이 합 + 간격 (10px)
-    final totalHeight = heightA + heightB + 10;
-    
-    // 제한 적용 (최대 600px, 최소 400px) - 세로는 더 큰 높이 허용
-    const double VERTICAL_MAX_HEIGHT = 600.0;
-    const double VERTICAL_MIN_HEIGHT = 400.0;
-    
-    final result = totalHeight.clamp(VERTICAL_MIN_HEIGHT, VERTICAL_MAX_HEIGHT);
-    debugPrint('  세로 레이아웃 총 높이: $totalHeight → 제한 적용: $result');
-    
-    return result;
   }
   
   Widget _buildSmartOptionBox({
@@ -577,26 +465,30 @@ class _VoteCardMessageState extends State<VoteCardMessage>
           children: [
             if (effectiveImageUrl != null && effectiveImageUrl.isNotEmpty)
               Positioned.fill(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(7),
-                  child: CachedNetworkImage(
-                    imageUrl: effectiveImageUrl,
-                    fit: BoxFit.cover,
-                    // 메모리 최적화 설정
-                    memCacheWidth: 400,
-                    maxWidthDiskCache: 800,
-                    fadeInDuration: const Duration(milliseconds: 200),
-                    fadeOutDuration: const Duration(milliseconds: 100),
-                    placeholder: (context, url) => Container(
-                      color: color.withValues(alpha: 0.05),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      color: color.withValues(alpha: 0.05),
-                      child: Center(
-                        child: Icon(
-                          Icons.error_outline,
-                          color: color.withValues(alpha: 0.6),
-                          size: 24,
+                child: AspectRatio(
+                  aspectRatio: aspectRatio ?? 1.0,  // 원본 aspect ratio 유지
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(7),
+                    child: CachedNetworkImage(
+                      imageUrl: effectiveImageUrl,
+                      fit: BoxFit.cover,
+                      alignment: Alignment.center,  // 중앙 정렬로 일관성 확보
+                      // 통합 이미지 캐시 서비스 사용
+                      memCacheWidth: _calculateDynamicCacheWidth(),
+                      maxWidthDiskCache: UnifiedImageCacheService.MAX_CACHE_WIDTH,
+                      fadeInDuration: const Duration(milliseconds: 200),
+                      fadeOutDuration: const Duration(milliseconds: 100),
+                      placeholder: (context, url) => Container(
+                        color: color.withValues(alpha: 0.05),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: color.withValues(alpha: 0.05),
+                        child: Center(
+                          child: Icon(
+                            Icons.error_outline,
+                            color: color.withValues(alpha: 0.6),
+                            size: 24,
+                          ),
                         ),
                       ),
                     ),
@@ -814,10 +706,10 @@ class _VoteCardMessageState extends State<VoteCardMessage>
     );
   }
   
-  Widget _buildSingleImageBox(double height) {
+  Widget _buildSingleImageBox(BoxSizes boxSizes) {
     // 단일 이미지 모드: B가 텍스트만 있을 때 하나의 박스에 A/B 모두 표시
     return SizedBox(
-      height: height,
+      height: boxSizes.unifiedHeight,
       child: _buildSmartOptionBox(
         label: 'A',  // 라벨은 A로 표시하지만
         text: widget.optionAText,
@@ -832,8 +724,13 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   }
 
   LayoutType _getLayoutType() {
-    // 디버깅: aspectRatio 값 확인
-    debugPrint('[VoteCardMessage] _getLayoutType 호출');
+    // 캐시된 값이 있으면 반환
+    if (_cachedLayoutType != null) {
+      return _cachedLayoutType!;
+    }
+    
+    // 디버깅: aspectRatio 값 확인 (한 번만 출력)
+    debugPrint('[VoteCardMessage] 레이아웃 타입 계산');
     debugPrint('  - aspectRatioA: ${widget.aspectRatioA}');
     debugPrint('  - aspectRatioB: ${widget.aspectRatioB}');
     
@@ -847,15 +744,18 @@ class _VoteCardMessageState extends State<VoteCardMessage>
       if (hasImageA && hasImageB) {
         // 이미지가 둘 다 있으면 가로 배치 (기본값)
         debugPrint('  → aspectRatio null이지만 이미지 있음, fallback으로 horizontal 반환');
-        return LayoutType.horizontal;
+        _cachedLayoutType = LayoutType.horizontal;
+        return _cachedLayoutType!;
       } else if (hasImageA || hasImageB) {
         // 이미지가 하나만 있으면 single
         debugPrint('  → 이미지 하나만 있음, single 반환');
-        return LayoutType.single;
+        _cachedLayoutType = LayoutType.single;
+        return _cachedLayoutType!;
       } else {
         // 이미지가 없으면 가로 레이아웃
         debugPrint('  → 이미지 없음, 기본값 horizontal 반환');
-        return LayoutType.horizontal;
+        _cachedLayoutType = LayoutType.horizontal;
+        return _cachedLayoutType!;
       }
     }
     
@@ -865,10 +765,36 @@ class _VoteCardMessageState extends State<VoteCardMessage>
       widget.aspectRatioB,
     );
     
-    debugPrint('  → AspectRatioAnalyzer 결과: ${layout.name}');
-    return layout;
+    debugPrint('  → 레이아웃 결정: ${layout.name}');
+    _cachedLayoutType = layout;
+    return _cachedLayoutType!;
   }
   
+  
+  /// 동적 캐시 너비 계산
+  int _calculateDynamicCacheWidth() {
+    // 캐시된 박스 크기가 있으면 사용
+    if (_cachedBoxSizes != null) {
+      final layoutType = _getLayoutType();
+      
+      if (layoutType == LayoutType.horizontal) {
+        // 가로 배치: 박스 너비 기준
+        final width = MediaQuery.of(context).size.width / 2;
+        return UnifiedImageCacheService.calculateMemCacheWidth(width);
+      } else if (layoutType == LayoutType.vertical) {
+        // 세로 배치: 통일된 높이 기준
+        final height = _cachedBoxSizes!.unifiedHeight;
+        return UnifiedImageCacheService.calculateMemCacheWidth(height);
+      } else {
+        // 단일 이미지: 전체 너비 기준
+        final width = MediaQuery.of(context).size.width * 0.9;
+        return UnifiedImageCacheService.calculateMemCacheWidth(width);
+      }
+    }
+    
+    // 기본값
+    return UnifiedImageCacheService.MIN_CACHE_WIDTH;
+  }
   
   Widget _buildActionButton() {
     return SizedBox(

@@ -490,9 +490,8 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
     return Center(
       child: VersusNotificationBox(
         boxType: 'A',
-        boxSize: UnifiedBoxCalculator.calculateForNotification(
-          containerWidth: MediaQuery.of(context).size.width * 0.92,
-          screenHeight: MediaQuery.of(context).size.height,
+        boxSize: UnifiedBoxCalculator.calculateForNotificationDialog(
+          dialogWidth: MediaQuery.of(context).size.width * 0.92,
           layoutType: sizeData.layoutType,
           aspectRatioA: sizeData.aspectRatioA,
           aspectRatioB: sizeData.aspectRatioB,
@@ -561,9 +560,8 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
     );
     
     // 투표용 크기 계산
-    final votingSizes = UnifiedBoxCalculator.calculateForNotification(
-      containerWidth: screenWidth * 0.92,
-      screenHeight: screenHeight,
+    final votingSizes = UnifiedBoxCalculator.calculateForNotificationDialog(
+      dialogWidth: screenWidth * 0.92,
       layoutType: defaultSizeData.layoutType,
       aspectRatioA: defaultSizeData.aspectRatioA,
       aspectRatioB: defaultSizeData.aspectRatioB,

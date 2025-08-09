@@ -473,6 +473,7 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
             final senderUser = _usersMap[senderId];
             
             return VoteCardMessage(
+                  key: ValueKey(message.id),
                   postId: metadata['postId'] ?? '',
                   title: metadata['title'] ?? '',
                   description: description,
@@ -546,6 +547,7 @@ class _ChatDetailWidgetState extends State<ChatDetailWidget> {
             final senderUser = _usersMap[senderId];
             
             return VoteCardMessage(
+              key: ValueKey(message.id),
               postId: metadata['postId'] ?? '',
               title: metadata['title'] ?? '',
               description: description,

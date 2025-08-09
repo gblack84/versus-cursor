@@ -206,8 +206,9 @@ class UnifiedBoxCalculator {
     }
     
     // 4. aspectRatio 기반 높이 계산
-    double heightA = 300.0;  // 기본값
-    double heightB = 300.0;
+    // 기본값을 boxWidth 기반으로 계산 (기본 비율 1.5)
+    double heightA = boxWidth / 1.5;  // 기본 비율 1.5
+    double heightB = boxWidth / 1.5;
     
     if (aspectRatioA != null && aspectRatioA > 0) {
       heightA = boxWidth / aspectRatioA;
@@ -343,8 +344,9 @@ class UnifiedBoxCalculator {
     }
     
     // 4. aspectRatio 기반 높이 계산
-    double heightA = 300.0;  // 기본값
-    double heightB = 300.0;
+    // 기본값을 boxWidth 기반으로 계산 (기본 비율 1.5)
+    double heightA = boxWidth / 1.5;  // 기본 비율 1.5
+    double heightB = boxWidth / 1.5;
     
     if (aspectRatioA != null && aspectRatioA > 0) {
       heightA = boxWidth / aspectRatioA;

@@ -50,6 +50,9 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   // 투표 상태 변경 애니메이션
   bool _isVoting = false;
   
+  // 전역 캐시 맵 (메시지별 BoxSizes 저장)
+  static final Map<String, BoxSizes> _globalBoxSizesCache = {};
+  
   // 캐싱 변수 추가 (중복 계산 방지)
   LayoutType? _cachedLayoutType;
   BoxSizes? _cachedBoxSizes;
@@ -57,6 +60,13 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   @override
   void initState() {
     super.initState();
+    
+    // 전역 캐시에서 BoxSizes 확인
+    final cacheKey = widget.messageId ?? widget.postId;
+    if (_globalBoxSizesCache.containsKey(cacheKey)) {
+      _cachedBoxSizes = _globalBoxSizesCache[cacheKey];
+      debugPrint('[VoteCardMessage] 캐시에서 BoxSizes 로드: $cacheKey');
+    }
   }
   
   @override
@@ -343,9 +353,14 @@ class _VoteCardMessageState extends State<VoteCardMessage>
         hasImageB: widget.effectiveImageUrlsB.isNotEmpty,
       );
       
+      // 전역 캐시에 저장
+      final cacheKey = widget.messageId ?? widget.postId;
+      _globalBoxSizesCache[cacheKey] = _cachedBoxSizes!;
+      
       debugPrint('[VoteCardMessage] 박스 크기 계산 완료:');
       debugPrint('  - 레이아웃: ${layoutType.name}');
       debugPrint('  - 통일 높이: ${_cachedBoxSizes!.unifiedHeight.toStringAsFixed(1)}px');
+      debugPrint('  - 캐시 키: $cacheKey');
     }
     
     // 단일 이미지 모드 체크 (B가 이미지 없이 텍스트만 있을 때)
@@ -379,6 +394,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
               aspectRatio: widget.aspectRatioA,
               isSingleImageMode: false,
               dualModeSecondTitle: null,
+              boxHeight: boxSizes.unifiedHeight,  // 높이 전달
             ),
           ),
           const SizedBox(width: 10),
@@ -392,6 +408,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
               aspectRatio: widget.aspectRatioB,
               isSingleImageMode: false,
               dualModeSecondTitle: null,
+              boxHeight: boxSizes.unifiedHeight,  // 높이 전달
             ),
           ),
         ],
@@ -415,6 +432,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
             aspectRatio: widget.aspectRatioA,
             isSingleImageMode: false,
             dualModeSecondTitle: null,
+            boxHeight: unifiedHeight,  // 높이 전달
           ),
         ),
         const SizedBox(height: 10),
@@ -429,6 +447,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
             aspectRatio: widget.aspectRatioB,
             isSingleImageMode: false,
             dualModeSecondTitle: null,
+            boxHeight: unifiedHeight,  // 높이 전달
           ),
         ),
       ],
@@ -444,11 +463,15 @@ class _VoteCardMessageState extends State<VoteCardMessage>
     double? aspectRatio,
     bool isSingleImageMode = false,
     String? dualModeSecondTitle,
+    double? boxHeight,  // 박스 높이 파라미터 추가
   }) {
     // 멀티이미지 우선 사용
     final effectiveImageUrl = (imageUrls != null && imageUrls.isNotEmpty) 
         ? imageUrls.first : imageUrl;
     final hasMultipleImages = (imageUrls != null && imageUrls.length > 1);
+    
+    // 효과적인 높이 계산 (폴백 처리)
+    final double effectiveHeight = boxHeight ?? 200;  // 기본값 200px
     
     return Semantics(
       label: '옵션 $label: $text',
@@ -457,6 +480,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOutCubic,
+        height: effectiveHeight,  // 고정 높이 설정
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(7),
         ),
@@ -464,31 +488,28 @@ class _VoteCardMessageState extends State<VoteCardMessage>
         child: Stack(
           children: [
             if (effectiveImageUrl != null && effectiveImageUrl.isNotEmpty)
-              Positioned.fill(
-                child: AspectRatio(
-                  aspectRatio: aspectRatio ?? 1.0,  // 원본 aspect ratio 유지
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(7),
-                    child: CachedNetworkImage(
-                      imageUrl: effectiveImageUrl,
-                      fit: BoxFit.cover,
-                      alignment: Alignment.center,  // 중앙 정렬로 일관성 확보
-                      // 통합 이미지 캐시 서비스 사용
-                      memCacheWidth: _calculateDynamicCacheWidth(),
-                      maxWidthDiskCache: UnifiedImageCacheService.MAX_CACHE_WIDTH,
-                      fadeInDuration: const Duration(milliseconds: 200),
-                      fadeOutDuration: const Duration(milliseconds: 100),
-                      placeholder: (context, url) => Container(
-                        color: color.withValues(alpha: 0.05),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: color.withValues(alpha: 0.05),
-                        child: Center(
-                          child: Icon(
-                            Icons.error_outline,
-                            color: color.withValues(alpha: 0.6),
-                            size: 24,
-                          ),
+              SizedBox.expand(  // Positioned.fill + AspectRatio 제거, SizedBox.expand로 교체
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(7),
+                  child: CachedNetworkImage(
+                    imageUrl: effectiveImageUrl,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.center,  // 중앙 정렬로 일관성 확보
+                    // 통합 이미지 캐시 서비스 사용
+                    memCacheWidth: _calculateDynamicCacheWidth(),
+                    maxWidthDiskCache: UnifiedImageCacheService.MAX_CACHE_WIDTH,
+                    fadeInDuration: const Duration(milliseconds: 200),
+                    fadeOutDuration: const Duration(milliseconds: 100),
+                    placeholder: (context, url) => Container(
+                      color: color.withValues(alpha: 0.05),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      color: color.withValues(alpha: 0.05),
+                      child: Center(
+                        child: Icon(
+                          Icons.error_outline,
+                          color: color.withValues(alpha: 0.6),
+                          size: 24,
                         ),
                       ),
                     ),
@@ -719,6 +740,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
         aspectRatio: widget.aspectRatioA,
         isSingleImageMode: true,
         dualModeSecondTitle: widget.optionBText,  // B 옵션 텍스트도 함께 전달
+        boxHeight: boxSizes.unifiedHeight,  // 높이 전달
       ),
     );
   }

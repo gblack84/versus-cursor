@@ -184,16 +184,18 @@ algolia: ^1.1.1
 - **Services**: Authentication, Firestore, Storage, Functions, Hosting
 - **Web API Key**: Configured for web deployment
 - **Platform Support**: iOS, Android, Web with proper configuration files
-- **Cloud Functions** (10개 배포됨): 
+- **Cloud Functions** (11개 배포됨): 
   - onUserDeleted - Clean up user data
-  - checkImageContent - Image moderation trigger
-  - moderateImage - Vision API integration
-  - validatePostContentWithGemini - AI content validation
-  - onPostCreatedSendNotifications - Notification system trigger (posts collection)
-  - getUserPostingHistory - User history analysis
-  - onPostVoteUpdate - Vote update detection and completion
-  - flushThrottleQueue - Throttle queue processing (every 1 minute)
-  - checkVoteTimeouts - Vote timeout checking (every hour)
+  - checkImageContent - Image moderation trigger (HTTPS)
+  - moderateImage - Vision API integration (Storage trigger)
+  - validatePostContentWithGemini - AI content validation (HTTPS)
+  - onPostCreatedSendNotifications - Notification system trigger (Firestore trigger)
+  - getUserPostingHistory - User history analysis (AI)
+  - onPostVoteUpdate - Vote update detection and completion (Firestore trigger)
+  - flushThrottleQueue - Throttle queue processing (Scheduled - every 1 minute)
+  - testCreateAIChatMessage - AI chat message testing (HTTPS)
+  - migrateAIChatRooms - AI chat room migration (HTTPS)
+  - migrateVoteData - Vote data migration (HTTPS)
 
 ### 플랫폼별 배포 설정 권장사항
 
@@ -980,7 +982,7 @@ if (model.isVideoSelectedA) {
   - `processVoteCompletion` 함수: 투표 완료 시 자동 처리
   - `onPostVoteUpdate` 함수: 투표 업데이트 감지 및 완료 확인
   - `flushThrottleQueue` 함수: 스로틀 큐 정기 처리 (1분마다)
-  - `checkVoteTimeouts` 함수: 24시간 타임아웃 확인 (매시간)
+  - `checkVoteTimeouts` 함수: 24시간 타임아웃 확인 (매시간) - *구현되었으나 아직 배포되지 않음*
   - 성능 최적화: 배치 처리, 병렬 처리, 스로틀링
   - 테스트 시스템: vote-flow-test.js, performance-optimization-test.js
 - **성능 개선**:
@@ -1042,7 +1044,7 @@ if (model.isVideoSelectedA) {
   - 투표 시스템 개선:
     - 10분 타이머 자동 완료 처리
     - `flushThrottleQueue`: 매 1분마다 실행되는 스케줄 함수
-    - `checkVoteTimeouts`: 매 시간마다 실행되는 백업 체크
+    - `checkVoteTimeouts`: 매 시간마다 실행되는 백업 체크 - *미배포*
     - 실시간 투표 상태 추적 및 알림
   - Firebase Functions 활성화:
     - 12개 활성 함수로 증가 (기존 9개)
@@ -1112,3 +1114,27 @@ if (model.isVideoSelectedA) {
   - 단일 컴포넌트로 유지보수성 향상
   - 일관된 UI/UX 경험 제공
 - **커밋**: de350692
+
+### 2025-08-08: 스크롤 점프 문제 완전 해결 및 이미지 캐싱 통합
+- **작업 내용**:
+  - UnifiedImageCacheService 구현:
+    - 400-1600px 동적 memCacheWidth 계산
+    - 컨텍스트별 최적화 (메시지 카드, 알림, 질문 작성)
+    - 전역 인스턴스로 일관된 캐싱 정책
+  - VoteCardMessage 전역 캐시 시스템:
+    - static Map<String, BoxSizes>로 메시지별 크기 캐싱
+    - initState에서 캐시 로드, 계산 후 캐시 저장
+    - 위젯 재생성 시에도 크기 일관성 유지
+  - 스크롤 버그 수정:
+    - AspectRatio 위젯 제거 (Positioned.fill 충돌 해결)
+    - SizedBox.expand로 교체
+    - ValueKey(message.id) 추가로 위젯 재사용 방지
+  - UnifiedBoxCalculator 개선:
+    - 기본값 300px → boxWidth/1.5 동적 계산
+    - aspectRatio null 처리 개선
+- **해결된 문제**:
+  - 스크롤 시 메시지 높이 변동 (300px ↔ 117.3px)
+  - 채팅 스크롤 점프/바운싱 현상
+  - 이미지 품질 차이 (발신자/수신자)
+  - 위젯 재사용으로 인한 레이아웃 깨짐
+- **커밋**: efbcea78, 6a4331a6, 84e165b4

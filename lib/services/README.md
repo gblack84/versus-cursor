@@ -22,7 +22,8 @@ services/
 ├── perspective_api_service.dart # Google Perspective API
 ├── cloud_image_moderation_service.dart # Cloud Vision API
 ├── image_moderation_service.dart # 이미지 검열 (레거시)
-└── storage_service.dart        # Firebase Storage 관리
+├── storage_service.dart        # Firebase Storage 관리
+└── unified_image_cache_service.dart # 통합 이미지 캐싱 서비스
 ```
 
 ## 주요 서비스
@@ -328,6 +329,52 @@ void initState() {
 // - 나중에: 알림 숨기기
 // - 닫기(X): 알림 읽음 처리
 ```
+
+### 5. UnifiedImageCacheService
+
+**통합 이미지 캐싱 서비스**
+
+#### 주요 기능
+- 동적 memCacheWidth 계산 (400-1600px)
+- 컨텍스트별 최적화
+- 전역 인스턴스 관리
+- 이미지 프리로딩 지원
+
+#### 사용 방법
+```dart
+// 싱글톤 인스턴스
+final cacheService = UnifiedImageCacheService.instance;
+
+// 동적 캐시 너비 계산
+final cacheWidth = UnifiedImageCacheService.calculateMemCacheWidth(displaySize);
+
+// 박스용 캐시 계산
+final boxCacheWidth = UnifiedImageCacheService.calculateForBox(
+  context,
+  boxWidth: 200,
+  isHorizontal: true,
+);
+
+// 이미지 프리로딩
+await cacheService.preloadImages(
+  context,
+  imageUrls,
+  overrideMemCacheWidth: 800,
+);
+
+// 인접 이미지 프리로드
+await cacheService.preloadAdjacentImages(
+  context,
+  allImageUrls,
+  currentIndex,
+);
+```
+
+#### 캐시 전략
+- **최소 너비**: 400px (모바일 최적화)
+- **최대 너비**: 1600px (고해상도 지원)
+- **스케일 팩터**: 2.0x (레티나 디스플레이)
+- **컨텍스트 인식**: 메시지 카드, 알림, 질문 작성별 최적화
 
 ## 설정 및 환경 변수
 

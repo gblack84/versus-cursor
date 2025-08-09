@@ -88,24 +88,61 @@ final result = await ChatMediaUploadService.uploadChatVideo(
 );
 ```
 
-#### VoteRequestMessage
-투표 요청 메시지 위젯 - A vs B 형식의 투표 UI
+#### VoteCardMessage (v2.0.0 통합)
+투표 카드 메시지 - 통합된 A vs B 투표 UI 컴포넌트
+
+**주요 기능**:
+- 전역 BoxSizes 캐시로 스크롤 성능 최적화
+- 스마트 레이아웃 시스템 (horizontal/vertical/single)
+- 멀티이미지 지원 (PageView)
+- 실시간 투표 상태 업데이트
+- UnifiedImageCacheService 통합
 
 ```dart
-VoteRequestMessage(
+VoteCardMessage(
+  key: ValueKey(message.id),  // Widget 재사용 방지
   postId: postId,
-  title: title,
+  messageId: message.id,
+  authorId: authorId,
+  questionTitle: title,
   description: description,
-  optionAText: optionA,
-  optionBText: optionB,
-  optionAImage: imageA,
-  optionBImage: imageB,
+  titleA: optionA,
+  titleB: optionB,
+  imageUrlA: imageA,       // 단일 이미지
+  imageUrlB: imageB,
+  imageUrlsA: imagesA,     // 멀티이미지
+  imageUrlsB: imagesB,
+  aspectRatioA: 1.5,       // 스마트 레이아웃용
+  aspectRatioB: 0.75,
+  layoutType: 'horizontal',
   voteStatus: status,
+  voteEndTime: endTime,
+  votesA: votesA,
+  votesB: votesB,
+  userVotes: userVotes,    // Map<String, String>
   isMe: isMe,
   timestamp: timestamp,
+  currentUserName: userName,
   onTap: () => navigateToVoting(postId),
 )
 ```
+
+#### BaseVoteMessage
+투표 메시지의 기본 클래스 - 공통 기능 제공
+
+```dart
+abstract class BaseVoteMessage extends StatefulWidget {
+  final String postId;
+  final String? messageId;
+  final String questionTitle;
+  final String? description;
+  final String titleA;
+  final String titleB;
+  // ... 기타 공통 속성
+}
+```
+
+**참고**: 전역 캐시 시스템 (`_globalBoxSizesCache`)은 VoteCardMessage 클래스에 구현되어 있습니다.
 
 ### 3. 채팅 플로우
 
@@ -353,7 +390,68 @@ ChatL10nKo _getKoreanL10n() {
 - 스크롤 시 추가 로드
 - 메모리 효율적 관리
 
+### 4. VoteCardMessage 캐싱 시스템 (v2.0.0)
+전역 캐시로 스크롤 점프 문제 완전 해결
+
+```dart
+class _VoteCardMessageState extends State<VoteCardMessage> {
+  // 전역 캐시 - 앱 실행 중 유지
+  static final Map<String, BoxSizes> _globalBoxSizesCache = {};
+  
+  @override
+  void initState() {
+    super.initState();
+    // 캐시에서 로드
+    final cacheKey = widget.messageId ?? widget.postId;
+    if (_globalBoxSizesCache.containsKey(cacheKey)) {
+      _cachedBoxSizes = _globalBoxSizesCache[cacheKey];
+    }
+  }
+  
+  void _calculateBoxSizes() {
+    // 계산 후 캐시에 저장
+    final cacheKey = widget.messageId ?? widget.postId;
+    _globalBoxSizesCache[cacheKey] = _cachedBoxSizes!;
+  }
+}
+```
+
+### 5. UnifiedImageCacheService 통합
+동적 이미지 캐싱으로 메모리 최적화
+
+```dart
+// 박스 크기에 맞춰 동적 캐시 계산
+final cacheWidth = UnifiedImageCacheService.calculateForBox(
+  context,
+  boxWidth: boxSize.width,
+  isHorizontal: layoutType == LayoutType.horizontal,
+);
+
+// CachedNetworkImage 적용
+CachedNetworkImage(
+  imageUrl: imageUrl,
+  memCacheWidth: cacheWidth,
+  fit: BoxFit.cover,
+)
+```
+
 ## 최근 업데이트 (v2.0.0)
+
+### 2025-08-08: 스크롤 버그 수정 및 성능 최적화
+- **VoteCardMessage 전역 캐시 시스템**:
+  - BoxSizes 계산 결과를 전역 Map에 캐싱
+  - messageId/postId 기반 고유 키 사용
+  - 동일 메시지 재계산 방지로 스크롤 점프 해결
+- **Widget 재사용 방지**:
+  - VoteCardMessage에 ValueKey 추가
+  - flutter_chat_ui의 widget 재사용으로 인한 레이아웃 버그 해결
+- **UnifiedBoxCalculator 개선**:
+  - 동적 기본값 사용 (boxWidth/1.5 instead of 300px)
+  - aspectRatio가 null일 때도 일관된 계산
+- **이미지 캐싱 통합**:
+  - UnifiedImageCacheService 전면 적용
+  - 400-1600px 동적 memCacheWidth 계산
+  - 메모리 사용량 최적화
 
 ### 2025-08-06: 시스템 통합
 - **컬렉션 이름 정규화**: `messages_record` → `messages`, `chats_record` → `chats`
@@ -362,6 +460,7 @@ ChatL10nKo _getKoreanL10n() {
   - 멀티이미지 지원 (`vote_option_a_images[]`, `vote_option_b_images[]`)
   - 실시간 상태 업데이트 (`card_status`, `vote_end_time`)
   - 개별 투표 추적 (`user_votes` Map)
+  - VoteRequestMessage와 VoteCardMessage 통합
 
 ## 향후 개선사항
 
@@ -402,9 +501,26 @@ ChatL10nKo _getKoreanL10n() {
    - 인덱스 최적화
    - 초기 로드 메시지 수 조정
 
+4. **스크롤 점프/버그 (해결됨 v2.0.0)**
+   - **증상**: 스크롤 위로 갔다가 내릴 때 튕기는 현상
+   - **원인**: 
+     - AspectRatio + Positioned.fill 레이아웃 충돌
+     - VoteCardMessage 높이 재계산으로 인한 변동
+     - flutter_chat_ui의 widget 재사용
+   - **해결책**:
+     - 전역 BoxSizes 캐시 구현
+     - ValueKey로 widget 재사용 방지
+     - UnifiedBoxCalculator 동적 기본값 사용
+     - AspectRatio 제거, SizedBox.expand 사용
+
+5. **VoteCardMessage 높이 불일치**
+   - **증상**: 같은 메시지가 다른 높이로 표시
+   - **원인**: aspectRatio null일 때 고정값 300px 사용
+   - **해결책**: boxWidth/1.5 동적 계산
+
 ---
 
 **작성일**: 2025-07-26  
-**최종 업데이트**: 2025-08-06  
-**버전**: 1.1  
+**최종 업데이트**: 2025-08-08  
+**버전**: 2.0  
 **작성자**: SuperClaude Framework  

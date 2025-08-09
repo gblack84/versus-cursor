@@ -17,6 +17,21 @@ Versus Space는 사용자들이 A vs B 형식의 비교 질문을 만들고, 투
 
 ## 📢 최근 주요 업데이트
 
+### 🔧 2025-08-08: 스크롤 버그 수정 및 이미지 캐싱 시스템 통합
+- **이미지 캐싱 통합**:
+  - UnifiedImageCacheService 구현 (400-1600px 동적 캐시)
+  - 모든 이미지 컴포넌트에 통합 적용
+  - 메모리 사용량 최적화 및 로딩 속도 개선
+- **스크롤 점프 문제 해결**:
+  - VoteCardMessage 전역 BoxSizes 캐시 구현
+  - messageId/postId 기반 고유 키 사용
+  - flutter_chat_ui 위젯 재사용 방지 (ValueKey 추가)
+  - UnifiedBoxCalculator 기본값 동적 계산
+- **레이아웃 시스템 통합**:
+  - UnifiedBoxCalculator로 모든 레이아웃 계산 통합
+  - 메시지 카드, 알림 다이얼로그 통일된 크기 시스템
+  - AspectRatio 제거로 렌더링 성능 개선
+
 ### 🔒 2025-08-04: 투표 시스템 보안 강화 및 타이머 기능 완성
 - **Firebase Security Rules 업데이트**:
   - 투표 타이머 필드 추가 (`voteStartTime`, `voteEndTime`, `voteStatus`, `voteCompleted`)
@@ -24,7 +39,7 @@ Versus Space는 사용자들이 A vs B 형식의 비교 질문을 만들고, 투
   - AI 채팅 투표 시스템 완벽 지원
 - **투표 시스템 개선**:
   - 10분 타이머 자동 완료 처리 (`flushThrottleQueue` 매 1분 실행)
-  - 백업 타임아웃 체크 (`checkVoteTimeouts` 매 시간 실행)
+  - 백업 타임아웃 체크 구현 (향후 배포 예정)
   - 실시간 투표 상태 추적 및 알림
 - **문서화**:
   - [Firebase 보안 규칙 가이드](/firebase/SECURITY_RULES_UPDATE_GUIDE.md) 작성

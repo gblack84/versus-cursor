@@ -200,7 +200,21 @@ mixin BaseVoteMessageStateMixin<T extends BaseVoteMessage> on State<T> {
 
   /// 결과 표시 여부
   bool shouldShowResult() {
-    return widget.cardStatus == 'completed' && widget.voteResults != null;
+    // 디버그를 위한 상세 체크
+    final hasCompleted = widget.cardStatus == 'completed';
+    final hasResults = widget.voteResults != null && widget.voteResults!.isNotEmpty;
+    
+    if (!hasCompleted) {
+      print('❌ shouldShowResult: cardStatus is not completed (${widget.cardStatus})');
+    }
+    if (!hasResults) {
+      print('❌ shouldShowResult: voteResults is null or empty');
+    }
+    if (hasCompleted && hasResults) {
+      print('✅ shouldShowResult: YES! Showing pickle message');
+    }
+    
+    return hasCompleted && hasResults;
   }
 
   /// 투표 상태 정보 가져오기

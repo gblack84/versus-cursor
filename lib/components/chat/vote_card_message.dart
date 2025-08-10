@@ -13,6 +13,8 @@ import 'base_vote_message.dart';
 /// AI 피클 채팅에서 사용되는 투표 카드 메시지 위젯
 /// 4가지 상태를 지원: voting_request, in_progress, completed, not_participated
 class VoteCardMessage extends BaseVoteMessage {
+  final String? searchQuery;
+  
   const VoteCardMessage({
     super.key,
     required super.postId,
@@ -39,6 +41,7 @@ class VoteCardMessage extends BaseVoteMessage {
     super.senderProfileImageUrl,
     super.senderDisplayName,
     super.showSenderProfile,
+    this.searchQuery,
   });
 
   @override
@@ -86,10 +89,67 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   void dispose() {
     super.dispose();
   }
+  
+  // 검색어 하이라이팅 헬퍼 메서드
+  Widget _highlightText(String text, TextStyle baseStyle) {
+    if (widget.searchQuery == null || widget.searchQuery!.isEmpty) {
+      return Text(
+        text,
+        style: baseStyle,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+    
+    final lowerText = text.toLowerCase();
+    final lowerQuery = widget.searchQuery!.toLowerCase();
+    final index = lowerText.indexOf(lowerQuery);
+    
+    if (index == -1) {
+      return Text(
+        text,
+        style: baseStyle,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+    
+    // 검색어가 포함된 경우 하이라이팅
+    final beforeText = text.substring(0, index);
+    final matchText = text.substring(index, index + widget.searchQuery!.length);
+    final afterText = text.substring(index + widget.searchQuery!.length);
+    
+    return RichText(
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      text: TextSpan(
+        children: [
+          TextSpan(text: beforeText, style: baseStyle),
+          TextSpan(
+            text: matchText,
+            style: baseStyle.copyWith(
+              backgroundColor: VersusColors.primary.withValues(alpha: 0.3),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          TextSpan(text: afterText, style: baseStyle),
+        ],
+      ),
+    );
+  }
 
 
   @override
   Widget build(BuildContext context) {
+    // 디버깅 로그 추가
+    print('=== VoteCardMessage Debug ===');
+    print('cardStatus: ${widget.cardStatus}');
+    print('voteResults: ${widget.voteResults}');
+    print('currentUserName: ${widget.currentUserName}');
+    print('messageType: ${widget.messageType}');
+    print('shouldShowResult: ${shouldShowResult()}');
+    print('=============================');
+    
     final statusInfo = getStatusInfo();
     // vote_request 타입일 때 상태 텍스트를 '대기중'으로 오버라이드
     if (widget.messageType == 'vote_request' && widget.cardStatus == 'voting_request') {
@@ -128,65 +188,59 @@ class _VoteCardMessageState extends State<VoteCardMessage>
         },
         child: GestureDetector(
           onTap: _isVoting ? null : _handleTap,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Stack(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 새로운 프로필 헤더 (최상단)
-                    _buildProfileHeader(statusInfo),
-                    const SizedBox(height: VersusSpacing.md),
-                    
-                    _buildTitle(),
-                    if (widget.description != null && widget.description!.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      _buildDescription(),
-                    ],
-                    const SizedBox(height: VersusSpacing.sm),
-                    _buildSmartLayout(),
-                    if (shouldShowTimer()) ...[
-                      const SizedBox(height: VersusSpacing.sm),
-                      buildTimer(),
-                    ],
-                    if (shouldShowAction()) ...[
-                      const SizedBox(height: VersusSpacing.sm),
-                      _buildActionButton(),
-                    ],
-                    if (shouldShowResult()) ...[
-                      const SizedBox(height: VersusSpacing.sm),
-                      _buildResults(),
-                    ],
-                    if (widget.timestamp != null) ...[
-                      const SizedBox(height: VersusSpacing.xs),
-                      buildTimestamp(),
-                    ],
+          child: Stack(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 새로운 프로필 헤더 (최상단)
+                  _buildProfileHeader(statusInfo),
+                  const SizedBox(height: VersusSpacing.md),
+                  
+                  _buildTitle(),
+                  if (widget.description != null && widget.description!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    _buildDescription(),
                   ],
-                ),
-                // 투표 중 오버레이
-                if (_isVoting)
-                  Positioned.fill(
-                    child: Semantics(
-                      label: '투표 처리 중',
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white.withValues(alpha: 0.9),
-                            ),
-                            semanticsLabel: '로딩 중',
+                  const SizedBox(height: VersusSpacing.sm),
+                  _buildSmartLayout(),
+                  if (shouldShowTimer()) ...[
+                    const SizedBox(height: VersusSpacing.sm),
+                    buildTimer(),
+                  ],
+                  if (shouldShowAction()) ...[
+                    const SizedBox(height: VersusSpacing.sm),
+                    _buildActionButton(),
+                  ],
+                  if (shouldShowResult()) ...[
+                    const SizedBox(height: VersusSpacing.sm),
+                    _buildResults(),
+                  ],
+                  // 타임스탬프는 이제 버블에서 표시되므로 여기서는 제거
+                ],
+              ),
+              // 투표 중 오버레이
+              if (_isVoting)
+                Positioned.fill(
+                  child: Semantics(
+                    label: '투표 처리 중',
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white.withValues(alpha: 0.9),
                           ),
+                          semanticsLabel: '로딩 중',
                         ),
                       ),
                     ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),
@@ -194,7 +248,12 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   }
   
   Widget _buildProfileHeader(Map<String, dynamic> statusInfo) {
-    final displayName = widget.senderDisplayName ?? '알 수 없는 사용자';
+    // isMe에 따라 표시할 이름과 프로필 결정
+    final displayName = widget.isMe 
+        ? (widget.currentUserName ?? '나')
+        : (widget.senderDisplayName ?? '알 수 없는 사용자');
+    
+    // 프로필 이미지도 isMe에 따라 결정 (현재는 발신자 프로필만 있음)
     final hasProfileImage = widget.senderProfileImageUrl?.isNotEmpty ?? false;
     
     return Row(
@@ -207,13 +266,13 @@ class _VoteCardMessageState extends State<VoteCardMessage>
           },
           child: CircleAvatar(
             radius: 20,
-            backgroundImage: hasProfileImage
+            backgroundImage: hasProfileImage && !widget.isMe
                 ? CachedNetworkImageProvider(widget.senderProfileImageUrl!)
                 : null,
-            backgroundColor: hasProfileImage 
+            backgroundColor: hasProfileImage && !widget.isMe
                 ? Colors.transparent 
                 : VersusColors.borderLight,
-            child: !hasProfileImage
+            child: !hasProfileImage || widget.isMe
                 ? Icon(
                     Icons.person,
                     size: 24,
@@ -239,7 +298,8 @@ class _VoteCardMessageState extends State<VoteCardMessage>
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    widget.messageType == 'vote_created' 
+                    // isMe에 따라 다른 텍스트 표시
+                    widget.isMe
                         ? '내가 만든 피클' 
                         : 'Pikle 도착!',
                     style: VersusTextStyles.labelMedium.copyWith(
@@ -258,14 +318,14 @@ class _VoteCardMessageState extends State<VoteCardMessage>
                   text: TextSpan(
                     children: [
                       TextSpan(
-                        text: displayName,
+                        text: widget.isMe ? '나' : displayName,
                         style: VersusTextStyles.labelSmall.copyWith(
                           fontWeight: FontWeight.w600,
                           color: VersusColors.textPrimary,
                         ),
                       ),
                       TextSpan(
-                        text: widget.messageType == 'vote_created'
+                        text: widget.isMe
                             ? ' • 투표 생성됨'
                             : '님이 물어봅니다',
                         style: VersusTextStyles.labelSmall.copyWith(
@@ -315,25 +375,21 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   }
   
   Widget _buildTitle() {
-    return Text(
+    return _highlightText(
       widget.title,
-      style: VersusTextStyles.bodyLarge.copyWith(
+      VersusTextStyles.bodyLarge.copyWith(
         color: VersusColors.textPrimary,
         fontWeight: FontWeight.w600,
       ),
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
     );
   }
   
   Widget _buildDescription() {
-    return Text(
+    return _highlightText(
       widget.description!,
-      style: VersusTextStyles.bodySmall.copyWith(
+      VersusTextStyles.bodySmall.copyWith(
         color: VersusColors.textSecondary,
       ),
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
     );
   }
   
@@ -658,23 +714,39 @@ class _VoteCardMessageState extends State<VoteCardMessage>
                         if (!isSingleImageMode)
                           const SizedBox(width: 6),
                         Expanded(
-                          child: Text(
-                            text,
-                            style: VersusTextStyles.bodySmall.copyWith(
-                              color: effectiveImageUrl != null ? Colors.white : color,
-                              fontWeight: FontWeight.w600,
-                              shadows: effectiveImageUrl != null
-                                  ? [
-                                      Shadow(
-                                        color: Colors.black.withValues(alpha: 0.5),
-                                        blurRadius: 4,
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          child: widget.searchQuery != null && widget.searchQuery!.isNotEmpty
+                              ? _highlightText(
+                                  text,
+                                  VersusTextStyles.bodySmall.copyWith(
+                                    color: effectiveImageUrl != null ? Colors.white : color,
+                                    fontWeight: FontWeight.w600,
+                                    shadows: effectiveImageUrl != null
+                                        ? [
+                                            Shadow(
+                                              color: Colors.black.withValues(alpha: 0.5),
+                                              blurRadius: 4,
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                )
+                              : Text(
+                                  text,
+                                  style: VersusTextStyles.bodySmall.copyWith(
+                                    color: effectiveImageUrl != null ? Colors.white : color,
+                                    fontWeight: FontWeight.w600,
+                                    shadows: effectiveImageUrl != null
+                                        ? [
+                                            Shadow(
+                                              color: Colors.black.withValues(alpha: 0.5),
+                                              blurRadius: 4,
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                         ),
                       ],
                     ),
@@ -819,6 +891,16 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   }
   
   Widget _buildActionButton() {
+    // 버튼 텍스트 결정
+    String buttonText;
+    if (widget.isMe) {
+      // 내가 만든 투표
+      buttonText = '투표 현황 보기';
+    } else {
+      // 남이 만든 투표
+      buttonText = widget.cardStatus == 'voting_request' ? '투표하기' : '투표 현황 보기';
+    }
+    
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
@@ -834,7 +916,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
           ),
         ),
         child: Text(
-          widget.cardStatus == 'voting_request' ? '투표하기' : '투표 현황 보기',
+          buttonText,
           style: VersusTextStyles.buttonMedium.copyWith(
             color: Colors.white,
           ),
@@ -951,6 +1033,8 @@ class _VoteCardMessageState extends State<VoteCardMessage>
           imageUrlB: widget.optionBImage,
           imageUrlsA: widget.optionAImages,
           imageUrlsB: widget.optionBImages,
+          aspectRatioA: widget.aspectRatioA,
+          aspectRatioB: widget.aspectRatioB,
           onVote: (option) async {
             // 투표 처리
             await submitVote(option);

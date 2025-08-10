@@ -3,7 +3,7 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/core/app_utils.dart';
 import '/design_system/design_system.dart';
-import '/pages/chat/chat_detail/chat_detail_widget.dart';
+import '/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart';
 
 class ChatListWidget extends StatefulWidget {
   const ChatListWidget({Key? key}) : super(key: key);
@@ -134,7 +134,7 @@ class _ChatListWidgetState extends State<ChatListWidget> {
       onTap: () {
         // 채팅 상세 페이지로 이동
         context.pushNamed(
-          ChatDetailWidget.routeName,
+          ChatDetailWidgetV2.routeName,
           extra: <String, dynamic>{
             'chatDocument': chat,
             kTransitionInfoKey: TransitionInfo(

@@ -86,6 +86,16 @@ class MessagesModel extends FirestoreRecord {
   double? get mediaHeight => _mediaHeight;
   bool hasMediaHeight() => _mediaHeight != null;
 
+  // "delivered_at" field - When message was delivered to server
+  DateTime? _deliveredAt;
+  DateTime? get deliveredAt => _deliveredAt;
+  bool hasDeliveredAt() => _deliveredAt != null;
+
+  // "seen_at" field - When message was seen by recipient
+  DateTime? _seenAt;
+  DateTime? get seenAt => _seenAt;
+  bool hasSeenAt() => _seenAt != null;
+
   // "message_type" field.
   String? _messageType;
   String get messageType => _messageType ?? 'text';
@@ -231,6 +241,36 @@ class MessagesModel extends FirestoreRecord {
     return getUserVoteTime(userId);
   }
 
+  // \"vote_aspect_ratio_a\" field.
+  double? _voteAspectRatioA;
+  double? get voteAspectRatioA => _voteAspectRatioA;
+  bool hasVoteAspectRatioA() => _voteAspectRatioA != null;
+
+  // \"vote_aspect_ratio_b\" field.
+  double? _voteAspectRatioB;
+  double? get voteAspectRatioB => _voteAspectRatioB;
+  bool hasVoteAspectRatioB() => _voteAspectRatioB != null;
+
+  // \"vote_results_a\" field.
+  int? _voteResultsA;
+  int get voteResultsA => _voteResultsA ?? 0;
+  bool hasVoteResultsA() => _voteResultsA != null;
+
+  // \"vote_results_b\" field.
+  int? _voteResultsB;
+  int get voteResultsB => _voteResultsB ?? 0;
+  bool hasVoteResultsB() => _voteResultsB != null;
+
+  // \"vote_percent_a\" field.
+  double? _votePercentA;
+  double get votePercentA => _votePercentA ?? 0.0;
+  bool hasVotePercentA() => _votePercentA != null;
+
+  // \"vote_percent_b\" field.
+  double? _votePercentB;
+  double get votePercentB => _votePercentB ?? 0.0;
+  bool hasVotePercentB() => _votePercentB != null;
+
   // \"metadata\" field.
   Map<String, dynamic>? _metadata;
   Map<String, dynamic> get metadata => _metadata ?? const {};
@@ -256,6 +296,10 @@ class MessagesModel extends FirestoreRecord {
     _mediaWidth = castToType<double>(snapshotData['media_width']);
     _mediaHeight = castToType<double>(snapshotData['media_height']);
     
+    // Message lifecycle fields
+    _deliveredAt = snapshotData['delivered_at'] as DateTime?;
+    _seenAt = snapshotData['seen_at'] as DateTime?;
+    
     // Message type
     _messageType = snapshotData['message_type'] as String?;
     
@@ -280,6 +324,15 @@ class MessagesModel extends FirestoreRecord {
     _voteResults = snapshotData['vote_results'] as Map<String, dynamic>?;
     // _voteParticipatedAt = snapshotData['vote_participated_at'] as DateTime?;  // deprecated - use user_votes instead
     _userVotes = snapshotData['user_votes'] as Map<String, dynamic>?;
+    
+    // AspectRatio and vote results fields
+    _voteAspectRatioA = castToType<double>(snapshotData['vote_aspect_ratio_a']);
+    _voteAspectRatioB = castToType<double>(snapshotData['vote_aspect_ratio_b']);
+    _voteResultsA = castToType<int>(snapshotData['vote_results_a']);
+    _voteResultsB = castToType<int>(snapshotData['vote_results_b']);
+    _votePercentA = castToType<double>(snapshotData['vote_percent_a']);
+    _votePercentB = castToType<double>(snapshotData['vote_percent_b']);
+    
     _metadata = snapshotData['metadata'] as Map<String, dynamic>?;
   }
 
@@ -356,6 +409,12 @@ Map<String, dynamic> createMessagesModelData({
   Map<String, dynamic>? voteResults,
   DateTime? voteParticipatedAt,
   Map<String, dynamic>? userVotes,
+  double? voteAspectRatioA,
+  double? voteAspectRatioB,
+  int? voteResultsA,
+  int? voteResultsB,
+  double? votePercentA,
+  double? votePercentB,
   Map<String, dynamic>? metadata,
 }) {
   final firestoreData = mapToFirestore(
@@ -393,6 +452,12 @@ Map<String, dynamic> createMessagesModelData({
       'vote_results': voteResults,
       'vote_participated_at': voteParticipatedAt,
       'user_votes': userVotes,
+      'vote_aspect_ratio_a': voteAspectRatioA,
+      'vote_aspect_ratio_b': voteAspectRatioB,
+      'vote_results_a': voteResultsA,
+      'vote_results_b': voteResultsB,
+      'vote_percent_a': votePercentA,
+      'vote_percent_b': votePercentB,
       'metadata': metadata,
     }.withoutNulls,
   );

@@ -35,4 +35,4 @@ export '/pages/profile/profile_page_widget.dart' show ProfilePageWidget;
 export '/pages/chat/chat_list/chat_list_widget.dart' show ChatListWidget;
 export '/pages/chat/friends_list/friends_list_widget.dart' show FriendsListWidget;
 export '/pages/chat/chat_search/chat_search_widget.dart' show ChatSearchWidget;
-export '/pages/chat/chat_detail/chat_detail_widget.dart' show ChatDetailWidget;
+export '/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart' show ChatDetailWidgetV2;

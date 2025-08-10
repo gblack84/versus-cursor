@@ -280,10 +280,10 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, params) => NotificationsListWidget(),
         ).toRoute(appStateNotifier),
         AppRoute(
-          name: ChatDetailWidget.routeName,
-          path: ChatDetailWidget.routePath,
+          name: ChatDetailWidgetV2.routeName,
+          path: ChatDetailWidgetV2.routePath,
           requireAuth: true,
-          builder: (context, params) => ChatDetailWidget(
+          builder: (context, params) => ChatDetailWidgetV2(
             chatDocument: params.state.extra != null
                 ? (params.state.extra as Map<String, dynamic>)['chatDocument'] as ChatsModel?
                 : null,

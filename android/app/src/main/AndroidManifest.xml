@@ -7,7 +7,9 @@
 
     <!-- 안드로이드 12 이하를 위한 기존 권한 -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
+        android:maxSdkVersion="32"
+        tools:replace="android:maxSdkVersion"/>
     
     <!-- 안드로이드 13(API 33) 이상을 위한 세분화된 미디어 권한 -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
@@ -18,7 +20,8 @@
         android:label="versus-space"
         tools:replace="android:label"
         android:icon="@mipmap/ic_launcher"
-        android:requestLegacyExternalStorage="true">
+        android:requestLegacyExternalStorage="true"
+        android:enableOnBackInvokedCallback="true">
 
         <activity
             android:name=".MainActivity"

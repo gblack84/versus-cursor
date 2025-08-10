@@ -34,7 +34,7 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace "com.mycompany.versusspace"
     compileSdkVersion 35
-    ndkVersion "25.1.8937393"  // NDK 버전 명시
+    ndkVersion "26.1.10909125"  // NDK 버전 업데이트
     
 
     compileOptions {

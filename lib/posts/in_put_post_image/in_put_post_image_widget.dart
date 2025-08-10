@@ -53,6 +53,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   late InPutPostImageModel _model;
   Timer? _layoutUpdateTimer;
   bool _isUpdatingLayout = false;
+  AppState? _appState;  // AppState 참조 저장
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
   
@@ -114,6 +115,13 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     ));
 
     // 초기 빌드 후 실행될 작업이 있으면 여기에 추가
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // AppState를 저장하여 dispose에서 사용
+    _appState = context.read<AppState>();
   }
 
   /// 텍스트 컨트롤러 초기화
@@ -1194,13 +1202,13 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
   @override
   void dispose() {
     // 페이지 나갈 때 업로드된 이미지 정리
-    // AppState를 try-catch로 안전하게 가져오기
-    try {
-      final appState = context.read<AppState>();
-      _cleanupUploadedImagesWithAppState(appState);
-    } catch (e) {
-      // context가 더 이상 유효하지 않은 경우 - 이미 정리되었을 가능성이 높음
-      DebugHelper.error('dispose에서 AppState 접근 실패 - 이미 정리됨', error: e);
+    // didChangeDependencies에서 저장한 AppState 사용
+    if (_appState != null && mounted) {
+      try {
+        _cleanupUploadedImagesWithAppState(_appState!);
+      } catch (e) {
+        DebugHelper.error('dispose에서 이미지 정리 중 에러', error: e);
+      }
     }
     
     _model.scrollController?.removeListener(_scrollListener);

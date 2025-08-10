@@ -15,10 +15,12 @@ const { validatePostContentWithGemini } = require('./functions/https/validatePos
 const { testCreateAIChatMessage } = require('./functions/https/testCreateAIChatMessage');
 const { migrateAIChatRooms } = require('./functions/https/migrateAIChatRooms');
 const { migrateVoteData } = require('./functions/https/migrateVoteData');
+const { markMessagesAsSeen } = require('./functions/https/markMessagesAsSeen');
 
 // Firestore 함수
 const { onPostCreatedSendNotifications } = require('./functions/firestore/onPostCreatedSendNotifications');
 const { onPostVoteUpdate } = require('./functions/firestore/onPostVoteUpdate');
+const { onMessageCreated } = require('./functions/firestore/onMessageCreated');
 
 // Scheduled 함수
 const { flushThrottleQueue } = require('./functions/scheduled/flushThrottleQueue');
@@ -40,10 +42,12 @@ module.exports = {
   testCreateAIChatMessage,
   migrateAIChatRooms,
   migrateVoteData,
+  markMessagesAsSeen,
   
   // Firestore
   onPostCreatedSendNotifications,
   onPostVoteUpdate,
+  onMessageCreated,
   
   // Scheduled
   flushThrottleQueue,

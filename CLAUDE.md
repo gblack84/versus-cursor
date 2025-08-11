@@ -1138,3 +1138,24 @@ if (model.isVideoSelectedA) {
   - 이미지 품질 차이 (발신자/수신자)
   - 위젯 재사용으로 인한 레이아웃 깨짐
 - **커밋**: efbcea78, 6a4331a6, 84e165b4
+
+### 2025-08-11: flutter_chat_ui v2 스크롤 점프 문제 해결
+- **작업 내용**:
+  - flutter_chat_ui v2의 기본 Regular List 모드 문제 발견
+  - ChatAnimatedListReversed 적용으로 해결
+  - 두 파일 수정:
+    - chat_detail_v2/chat_detail_widget_v2.dart
+    - ai_chat_v2/ai_chat_page_v2.dart
+- **문제 원인**:
+  - flutter_chat_ui v2 기본값이 Regular List (스크롤 0.0 = 상단)
+  - 채팅방 진입 시 오래된 메시지가 먼저 표시됨
+  - 이후 최신 메시지로 자동 스크롤 (점프 현상)
+- **해결 방법**:
+  - ChatAnimatedListReversed 사용 (스크롤 0.0 = 하단)
+  - builders에 chatAnimatedListBuilder 추가
+  - 불필요한 _scrolledOnce 플래그 제거
+- **결과**:
+  - 채팅방 진입 시 즉시 최신 메시지 표시
+  - 스크롤 점프 현상 완전 제거
+  - 키보드 애니메이션 개선
+- **커밋**: 147e5df3

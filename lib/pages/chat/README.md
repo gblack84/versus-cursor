@@ -188,6 +188,34 @@ flutter test test/chat/
 flutter test integration_test/chat/
 ```
 
+## Known Issues & Solutions
+
+### 스크롤 점프 문제 (flutter_chat_ui v2.9.0)
+flutter_chat_ui v2는 기본적으로 **Regular List** 모드를 사용하여 채팅방 진입 시 오래된 메시지가 먼저 표시되는 문제가 있습니다.
+
+**문제 증상**:
+- 채팅방 진입 시 오래된 메시지가 먼저 보임
+- 이후 최신 메시지로 자동 스크롤 (점프 현상)
+- 사용자 경험 저하
+
+**해결 방법**: `ChatAnimatedListReversed` 사용
+```dart
+Chat(
+  builders: Builders(
+    chatAnimatedListBuilder: (context, itemBuilder) {
+      return ChatAnimatedListReversed(
+        itemBuilder: itemBuilder,
+      );
+    },
+    // ... other builders
+  ),
+)
+```
+
+**적용 파일**:
+- `chat_detail_v2/chat_detail_widget_v2.dart`
+- `ai_chat_v2/ai_chat_page_v2.dart`
+
 ## Future Improvements
 
 - [ ] 메시지 암호화 (E2E)

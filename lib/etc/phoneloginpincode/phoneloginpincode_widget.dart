@@ -312,7 +312,7 @@ class _PhoneloginpincodeWidgetState extends State<PhoneloginpincodeWidget> {
                     extra: <String, dynamic>{
                       kTransitionInfoKey: TransitionInfo(
                         hasTransition: true,
-                        transitionType: PageTransitionType.bottomToTop,
+                        
                       ),
                     },
                   );

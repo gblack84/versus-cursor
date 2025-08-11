@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '/backend/schema/util/firestore_util.dart';
 import '/backend/schema/util/schema_util.dart';
@@ -86,6 +87,16 @@ class ChatsModel extends FirestoreRecord {
   String get phoneNumber => _phoneNumber ?? '';
   bool hasPhoneNumber() => _phoneNumber != null;
 
+  // "lastReadTimestamps" field.
+  Map<String, DateTime>? _lastReadTimestamps;
+  Map<String, DateTime> get lastReadTimestamps => _lastReadTimestamps ?? const {};
+  bool hasLastReadTimestamps() => _lastReadTimestamps != null;
+  
+  // Helper method to get specific user's last read timestamp
+  DateTime? getLastReadFor(String userId) {
+    return _lastReadTimestamps?[userId];
+  }
+
   void _initializeFields() {
     _chatId = snapshotData['chat_id'] as String?;
     _chatType = snapshotData['chat_type'] as String?;
@@ -105,6 +116,20 @@ class ChatsModel extends FirestoreRecord {
     _uid = snapshotData['uid'] as String?;
     _createdTime = snapshotData['created_time'] as DateTime?;
     _phoneNumber = snapshotData['phone_number'] as String?;
+    
+    // Parse lastReadTimestamps map
+    final lastReadData = snapshotData['lastReadTimestamps'] as Map<String, dynamic>?;
+    if (lastReadData != null) {
+      _lastReadTimestamps = lastReadData.map((key, value) {
+        if (value is Timestamp) {
+          return MapEntry(key, value.toDate());
+        } else if (value is DateTime) {
+          return MapEntry(key, value);
+        } else {
+          return MapEntry(key, DateTime.now());
+        }
+      });
+    }
   }
 
   static CollectionReference get collection =>

@@ -27,14 +27,12 @@ exports.markMessagesAsSeen = functions.https.onCall(async (data, context) => {
   try {
     const db = admin.firestore();
     
-    // Get all messages in the chat that:
-    // 1. Are not sent by the current user
-    // 2. Don't have seen_at timestamp yet
+    // Get all messages in the chat that don't have seen_at timestamp yet
+    // We'll filter sender_id in memory for better performance
     const messagesQuery = await db
       .collection('chats')
       .doc(chatId)
       .collection('messages')
-      .where('sender_id', '!=', userId)
       .where('seen_at', '==', null)
       .get();
     
@@ -43,20 +41,26 @@ exports.markMessagesAsSeen = functions.https.onCall(async (data, context) => {
       return { success: true, count: 0 };
     }
     
-    // Batch update for better performance
+    // Filter messages not sent by current user and batch update
     const batch = db.batch();
     const seenTimestamp = admin.firestore.FieldValue.serverTimestamp();
     let updateCount = 0;
     
     messagesQuery.docs.forEach((doc) => {
-      batch.update(doc.ref, {
-        seen_at: seenTimestamp
-      });
-      updateCount++;
+      const messageData = doc.data();
+      // Only update messages not sent by the current user
+      if (messageData.sender_id && messageData.sender_id !== userId) {
+        batch.update(doc.ref, {
+          seen_at: seenTimestamp
+        });
+        updateCount++;
+      }
     });
     
-    // Commit the batch
-    await batch.commit();
+    // Only commit if there are updates to make
+    if (updateCount > 0) {
+      await batch.commit();
+    }
     
     console.log(`Marked ${updateCount} messages as seen in chat ${chatId} for user ${userId}`);
     

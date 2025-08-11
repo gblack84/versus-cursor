@@ -63,12 +63,18 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   @override
   void initState() {
     super.initState();
+    // MediaQuery 접근은 didChangeDependencies에서 처리
+  }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     
-    // 전역 캐시에서 BoxSizes 확인
-    final cacheKey = widget.messageId ?? widget.postId;
+    // 여기서는 MediaQuery 안전하게 접근 가능
+    final screenWidth = MediaQuery.sizeOf(context).width.toInt();
+    final cacheKey = '${widget.messageId ?? widget.postId}_$screenWidth';
     if (_globalBoxSizesCache.containsKey(cacheKey)) {
       _cachedBoxSizes = _globalBoxSizesCache[cacheKey];
-      debugPrint('[VoteCardMessage] 캐시에서 BoxSizes 로드: $cacheKey');
     }
   }
   
@@ -141,15 +147,6 @@ class _VoteCardMessageState extends State<VoteCardMessage>
 
   @override
   Widget build(BuildContext context) {
-    // 디버깅 로그 추가
-    print('=== VoteCardMessage Debug ===');
-    print('cardStatus: ${widget.cardStatus}');
-    print('voteResults: ${widget.voteResults}');
-    print('currentUserName: ${widget.currentUserName}');
-    print('messageType: ${widget.messageType}');
-    print('shouldShowResult: ${shouldShowResult()}');
-    print('=============================');
-    
     final statusInfo = getStatusInfo();
     // vote_request 타입일 때 상태 텍스트를 '대기중'으로 오버라이드
     if (widget.messageType == 'vote_request' && widget.cardStatus == 'voting_request') {
@@ -409,14 +406,15 @@ class _VoteCardMessageState extends State<VoteCardMessage>
         hasImageB: widget.effectiveImageUrlsB.isNotEmpty,
       );
       
-      // 전역 캐시에 저장
-      final cacheKey = widget.messageId ?? widget.postId;
+      // 전역 캐시에 저장 - 화면 너비 포함
+      final screenWidth = MediaQuery.sizeOf(context).width.toInt();
+      final cacheKey = '${widget.messageId ?? widget.postId}_$screenWidth';
       _globalBoxSizesCache[cacheKey] = _cachedBoxSizes!;
       
-      debugPrint('[VoteCardMessage] 박스 크기 계산 완료:');
-      debugPrint('  - 레이아웃: ${layoutType.name}');
-      debugPrint('  - 통일 높이: ${_cachedBoxSizes!.unifiedHeight.toStringAsFixed(1)}px');
-      debugPrint('  - 캐시 키: $cacheKey');
+      // LRU 캐시 관리 - 최대 100개 유지
+      if (_globalBoxSizesCache.length > 100) {
+        _globalBoxSizesCache.remove(_globalBoxSizesCache.keys.first);
+      }
     }
     
     // 단일 이미지 모드 체크 (B가 이미지 없이 텍스트만 있을 때)
@@ -823,31 +821,26 @@ class _VoteCardMessageState extends State<VoteCardMessage>
       return _cachedLayoutType!;
     }
     
-    // 디버깅: aspectRatio 값 확인 (한 번만 출력)
-    debugPrint('[VoteCardMessage] 레이아웃 타입 계산');
-    debugPrint('  - aspectRatioA: ${widget.aspectRatioA}');
-    debugPrint('  - aspectRatioB: ${widget.aspectRatioB}');
-    
     final hasImageA = widget.optionAImage != null || (widget.optionAImages?.isNotEmpty ?? false);
     final hasImageB = widget.optionBImage != null || (widget.optionBImages?.isNotEmpty ?? false);
-    debugPrint('  - 이미지 A: $hasImageA');
-    debugPrint('  - 이미지 B: $hasImageB');
     
-    // aspectRatio가 없지만 이미지는 있는 경우 (fallback)
-    if (widget.aspectRatioA == null && widget.aspectRatioB == null) {
+    // aspectRatio가 없거나 기본값(1.0)인 경우 fallback 로직 사용
+    // 1.0은 종종 기본값으로 설정되므로 실제 정사각형이 아닐 수 있음
+    final bool isAspectRatioMissing = 
+        (widget.aspectRatioA == null || widget.aspectRatioA == 1.0) && 
+        (widget.aspectRatioB == null || widget.aspectRatioB == 1.0);
+    
+    if (isAspectRatioMissing) {
       if (hasImageA && hasImageB) {
         // 이미지가 둘 다 있으면 가로 배치 (기본값)
-        debugPrint('  → aspectRatio null이지만 이미지 있음, fallback으로 horizontal 반환');
         _cachedLayoutType = LayoutType.horizontal;
         return _cachedLayoutType!;
       } else if (hasImageA || hasImageB) {
         // 이미지가 하나만 있으면 single
-        debugPrint('  → 이미지 하나만 있음, single 반환');
         _cachedLayoutType = LayoutType.single;
         return _cachedLayoutType!;
       } else {
         // 이미지가 없으면 가로 레이아웃
-        debugPrint('  → 이미지 없음, 기본값 horizontal 반환');
         _cachedLayoutType = LayoutType.horizontal;
         return _cachedLayoutType!;
       }
@@ -859,7 +852,6 @@ class _VoteCardMessageState extends State<VoteCardMessage>
       widget.aspectRatioB,
     );
     
-    debugPrint('  → 레이아웃 결정: ${layout.name}');
     _cachedLayoutType = layout;
     return _cachedLayoutType!;
   }

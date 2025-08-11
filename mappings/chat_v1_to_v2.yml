@@ -1,0 +1,184 @@
+# Chat System V1 to V2 Migration Mapping
+# Generated: 2025-08-10
+# Purpose: Document migration patterns from legacy chat to flutter_chat_ui v2.9.0
+
+version: "2.0"
+migration_status: "95% complete"
+
+# File Structure Mapping
+file_structure:
+  legacy:
+    chat_detail: "/lib/pages/chat/chat_detail/"
+    utils: "/lib/utils/chat_message_converter.dart"
+    components: "/lib/components/chat/"
+  v2:
+    chat_detail: "/lib/pages/chat/chat_detail_v2/"
+    services: "/lib/pages/chat/services/"
+    components: "/lib/components/chat/"
+
+# Component Mappings
+components:
+  chat_detail:
+    legacy: "ChatDetailWidget"
+    v2: "ChatDetailWidgetV2"
+    changes:
+      - "Custom ListView → flutter_chat_ui Chat widget"
+      - "Manual scroll → InMemoryChatController with ScrollToMessageMixin"
+      - "Custom message building → core.CustomMessage with metadata"
+  
+  message_converter:
+    legacy: "chat_message_converter.dart"
+    v2: "ChatDetailMigrationService"
+    methods:
+      - "fromFirestore() → convertFirestoreToCore()"
+      - "toFirestore() → convertCoreToFirestore()"
+  
+  vote_message:
+    legacy: "VoteRequestMessage"
+    v2: "VoteCardMessage"
+    unified: true
+    features:
+      - "Global BoxSizes cache (_globalBoxSizesCache)"
+      - "Multi-image support (imageUrlsA/B arrays)"
+      - "Smart layout system (aspectRatio parameters)"
+      - "Search highlighting support"
+
+# Model Mappings
+models:
+  messages:
+    legacy: "MessagesRecord"
+    v2: "MessagesModel"
+    fields_added:
+      - "vote_option_a_images[]"
+      - "vote_option_b_images[]"
+      - "card_status"
+      - "vote_end_time"
+      - "user_votes"
+  
+  chats:
+    legacy: "ChatsRecord"
+    v2: "ChatsModel"
+    fields_normalized:
+      - "chats_record → chats (collection name)"
+
+# API Mappings
+api_changes:
+  chat_controller:
+    legacy_methods:
+      - "scrollToBottom()"
+      - "loadMessages()"
+      - "sendMessage()"
+    v2_methods:
+      - "scrollToMessage(messageId)"
+      - "setMessages(messages)"
+      - "insertMessage(message)"
+      - "searchMessages(query)"
+  
+  message_types:
+    text:
+      legacy: "{'type': 'text', 'content': String}"
+      v2: "core.TextMessage"
+    image:
+      legacy: "{'type': 'image', 'imageUrl': String}"
+      v2: "core.ImageMessage"
+    custom:
+      legacy: "{'type': 'vote_request', ...data}"
+      v2: "core.CustomMessage with metadata"
+
+# Critical Issues & Fixes
+critical_issues:
+  - issue: "Chat bubble alignment not working"
+    location: "chat_detail_widget_v2.dart"
+    fix: |
+      // In _buildCustomMessage method:
+      return Container(
+        alignment: isSentByMe 
+          ? Alignment.centerRight 
+          : Alignment.centerLeft,
+        child: VoteCardMessage(...),
+      );
+  
+  - issue: "Search functionality disconnected"
+    location: "chat_detail_widget_v2.dart"
+    fix: |
+      // Add search UI with counter and navigation
+      // Connect to controller.searchMessages()
+      // Implement KakaoTalk-style "1/3" display
+  
+  - issue: "Missing aspectRatio parameters"
+    location: "VoteCardMessage instantiation"
+    fix: |
+      aspectRatioA: metadata['aspectRatioA'] ?? 1.0,
+      aspectRatioB: metadata['aspectRatioB'] ?? 1.0,
+
+# Performance Improvements
+performance:
+  v1_issues:
+    - "Scroll jump on message height changes"
+    - "Widget rebuilds on every scroll"
+    - "No message caching"
+  
+  v2_solutions:
+    - "Global BoxSizes cache prevents recalculation"
+    - "ValueKey(message.id) prevents widget reuse"
+    - "InMemoryChatController with efficient updates"
+    - "UnifiedImageCacheService with dynamic sizing"
+
+# Testing Checklist
+testing:
+  functionality:
+    - [ ] Text messages send/receive
+    - [ ] Image messages upload/display
+    - [ ] Video messages (if implemented)
+    - [ ] Vote card messages display correctly
+    - [ ] Search works with highlighting
+    - [ ] Scroll to message on search
+    - [ ] Chat bubble alignment (left/right)
+    - [ ] Multi-image vote cards
+    - [ ] Real-time message updates
+  
+  performance:
+    - [ ] No scroll jumping
+    - [ ] Smooth scrolling with 100+ messages
+    - [ ] Image loading optimization
+    - [ ] Memory usage under control
+  
+  edge_cases:
+    - [ ] Empty chat state
+    - [ ] AI chat vs regular chat
+    - [ ] Message deletion
+    - [ ] Network disconnection
+    - [ ] Large images/videos
+
+# Migration Commands
+migration_steps:
+  1_backup: "git branch backup-before-v2-migration"
+  2_update_imports: |
+    # Replace old imports
+    find . -type f -name "*.dart" -exec sed -i '' \
+      's|chat_detail/chat_detail_widget|chat_detail_v2/chat_detail_widget_v2|g' {} \;
+  3_update_routes: |
+    # Update navigation routes
+    ChatDetailWidget → ChatDetailWidgetV2
+  4_test: "flutter test test/chat/"
+  5_verify: "Run app and test all chat features"
+
+# Rollback Plan
+rollback:
+  if_issues:
+    - "git checkout backup-before-v2-migration"
+    - "Revert pubspec.yaml flutter_chat_ui version"
+    - "Restore legacy chat_detail folder"
+  
+  partial_rollback:
+    - "Keep v2 for new chats"
+    - "Use legacy for existing chats"
+    - "Gradual migration approach"
+
+# Notes
+notes:
+  - "Global BoxSizes cache significantly improves scroll performance"
+  - "AspectRatio widget conflicts with Positioned.fill were resolved"
+  - "Search implementation should use InMemoryChatController.searchMessages()"
+  - "AI chat detection uses chatName == 'AI 피클' pattern"
+  - "File size calculation now async for media messages"

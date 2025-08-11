@@ -17,6 +17,26 @@ Versus Space는 사용자들이 A vs B 형식의 비교 질문을 만들고, 투
 
 ## 📢 최근 주요 업데이트
 
+### 🚀 2025-08-10: Chat System v2 마이그레이션 완료
+- **flutter_chat_ui v2.9.0 업그레이드**:
+  - 레거시 `flutter_chat_types`에서 `flutter_chat_core`로 완전 이전
+  - ChatDetailWidget → ChatDetailWidgetV2 전환
+  - AIChatPage → AIChatPageV2 업그레이드
+- **메시지 상태 관리 시스템**:
+  - ChatMessageLifecycleService 구현 및 연결
+  - 실시간 읽음 상태 업데이트 (Firebase Firestore 연동)
+  - 카카오톡 스타일 읽음 표시 (받은 메시지에 표시)
+  - AM/PM 시간 형식 지원
+- **새로운 Firebase Functions**:
+  - `markMessagesAsSeen`: 채팅방 입장 시 메시지 읽음 처리
+  - `onMessageCreated`: 새 메시지 생성 시 실시간 처리
+- **마이그레이션 완료**:
+  - v2 마이그레이션 100% 완료
+  - 호환성 레이어 제거 (더 이상 필요 없음)
+- **Breaking Changes**:
+  - ChatDetailWidget 제거 (ChatDetailWidgetV2 사용)
+  - MessageAdapter 제거 (ChatDetailMigrationService 사용)
+
 ### 🔧 2025-08-08: 스크롤 버그 수정 및 이미지 캐싱 시스템 통합
 - **이미지 캐싱 통합**:
   - UnifiedImageCacheService 구현 (400-1600px 동적 캐시)

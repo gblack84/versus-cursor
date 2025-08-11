@@ -209,8 +209,6 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                       extra: <String, dynamic>{
                                         kTransitionInfoKey: TransitionInfo(
                                           hasTransition: true,
-                                          transitionType:
-                                              PageTransitionType.fade,
                                           duration: Duration(milliseconds: 500),
                                         ),
                                       },
@@ -539,8 +537,6 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                       extra: <String, dynamic>{
                                         kTransitionInfoKey: TransitionInfo(
                                           hasTransition: true,
-                                          transitionType:
-                                              PageTransitionType.bottomToTop,
                                           duration: Duration(milliseconds: 500),
                                         ),
                                       },

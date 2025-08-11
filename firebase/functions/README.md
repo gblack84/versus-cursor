@@ -17,6 +17,15 @@ firebase/functions/
 
 ## 주요 변경사항
 
+### 2025-08-10: 채팅 메시지 상태 관리 시스템 구현
+- **새로운 Functions 추가**
+  - `markMessagesAsSeen`: HTTP 함수 - 채팅방 입장 시 메시지 읽음 처리
+  - `onMessageCreated`: Firestore 트리거 - 새 메시지 생성 시 실시간 처리
+- **메시지 라이프사이클 관리**
+  - 메시지 상태: sent → delivered → seen
+  - 배치 업데이트로 성능 최적화
+  - 실시간 상태 동기화
+
 ### 2025-08-06: v2.0.0 시스템 통합 및 로깅 최적화
 - **로깅 시스템 전면 개편**
   - 모든 console.log를 표준화된 로깅 함수로 전환
@@ -87,6 +96,58 @@ firebase/functions/
   - Google Cloud Vision API
   - Perspective API
   - Gemini AI
+
+## 활성 Functions 목록
+
+### HTTP Functions
+1. **checkImageContent** - 이미지 콘텐츠 검증
+2. **validatePostContentWithGemini** - Gemini AI를 통한 콘텐츠 검증
+3. **markMessagesAsSeen** - 채팅 메시지 읽음 처리 ⭐ NEW
+4. **testCreateAIChatMessage** - AI 채팅 테스트
+5. **migrateAIChatRooms** - AI 채팅방 마이그레이션
+6. **migrateVoteData** - 투표 데이터 마이그레이션
+
+### Firestore Triggers
+1. **onUserDeleted** - 사용자 삭제 시 데이터 정리
+2. **moderateImage** - 이미지 업로드 시 자동 검열
+3. **onPostCreatedSendNotifications** - 게시물 생성 시 알림 전송
+4. **onPostVoteUpdate** - 투표 업데이트 감지 및 완료 처리
+5. **onMessageCreated** - 메시지 생성 시 처리 ⭐ NEW
+
+### Scheduled Functions
+1. **flushThrottleQueue** - 매 1분마다 실행, 투표 타이머 체크
+
+## Chat Message Lifecycle Functions
+
+### markMessagesAsSeen (HTTP)
+**엔드포인트**: `/markMessagesAsSeen`
+
+**목적**: 사용자가 채팅방에 입장할 때 읽지 않은 메시지를 모두 읽음 처리
+
+**요청 예시**:
+```json
+{
+  "chatId": "chat_id",
+  "userId": "user_id"
+}
+```
+
+**처리 과정**:
+1. 해당 채팅방의 모든 메시지 조회
+2. 상대방이 보낸 읽지 않은 메시지 필터링
+3. 배치 업데이트로 `seen_at` 타임스탬프 추가
+4. 실시간으로 상대방에게 읽음 상태 반영
+
+### onMessageCreated (Firestore Trigger)
+**트리거 경로**: `chats/{chatId}/messages/{messageId}`
+
+**목적**: 새 메시지가 생성될 때 자동으로 처리
+
+**처리 내용**:
+1. 메시지 메타데이터 검증
+2. 푸시 알림 준비 (향후 구현)
+3. 실시간 상태 업데이트
+4. 통계 데이터 수집
 
 ## 환경 변수
 

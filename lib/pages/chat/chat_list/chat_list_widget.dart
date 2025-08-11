@@ -138,8 +138,7 @@ class _ChatListWidgetState extends State<ChatListWidget> {
           extra: <String, dynamic>{
             'chatDocument': chat,
             kTransitionInfoKey: TransitionInfo(
-              hasTransition: true,
-              transitionType: PageTransitionType.rightToLeft,
+              hasTransition: false,  // 애니메이션 제거로 스크롤 점프 문제 해결
             ),
           },
         );

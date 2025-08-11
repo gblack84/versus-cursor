@@ -5,6 +5,9 @@ import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 /// Extends InMemoryChatController which already includes ScrollToMessageMixin
 class ChatDetailControllerV2 extends core.InMemoryChatController {
   
+  // Pagination callback
+  Function()? onReachTop;
+  
   ChatDetailControllerV2() : super();
   
   /// Load initial messages

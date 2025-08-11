@@ -475,27 +475,24 @@ class AppRoute {
           final child = page;
 
           final transitionInfo = state.transitionInfo;
-          return transitionInfo.hasTransition
-              ? CustomTransitionPage(
-                  key: state.pageKey,
-                  child: child,
-                  transitionDuration: transitionInfo.duration,
-                  transitionsBuilder:
-                      (context, animation, secondaryAnimation, child) =>
-                          PageTransition(
-                    type: transitionInfo.transitionType,
-                    duration: transitionInfo.duration,
-                    reverseDuration: transitionInfo.duration,
-                    alignment: transitionInfo.alignment,
-                    child: child,
-                  ).buildTransitions(
-                    context,
-                    animation,
-                    secondaryAnimation,
-                    child,
-                  ),
-                )
-              : MaterialPage(key: state.pageKey, child: child);
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: child,
+            transitionDuration: transitionInfo.hasTransition 
+                ? transitionInfo.duration 
+                : Duration.zero,  // 애니메이션 없이 즉시 전환
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              if (!transitionInfo.hasTransition) {
+                return child;  // 애니메이션 없이 즉시 표시
+              }
+              // 페이드 전환 효과 (hasTransition: true일 때만)
+              return FadeTransition(
+                opacity: animation,
+                child: child,
+              );
+            },
+          );
         },
         routes: routes,
       );
@@ -504,15 +501,11 @@ class AppRoute {
 class TransitionInfo {
   const TransitionInfo({
     required this.hasTransition,
-    this.transitionType = PageTransitionType.fade,
     this.duration = const Duration(milliseconds: 300),
-    this.alignment,
   });
 
   final bool hasTransition;
-  final PageTransitionType transitionType;
   final Duration duration;
-  final Alignment? alignment;
 
   static TransitionInfo appDefault() => TransitionInfo(hasTransition: false);
 }

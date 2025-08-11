@@ -148,14 +148,16 @@ service cloud.firestore {
         // AI 채팅방인 경우 (chatId에 'ai_assistant' 포함)
         (chatId.matches('.*ai_assistant.*') && 
          request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['last_message_content', 'last_message_at', 'last_message_sent_by', 'participantIds']))
+           .hasOnly(['last_message_content', 'last_message_at', 'last_message_sent_by', 
+                     'participantIds', 'lastReadTimestamps']))
         ||
         // 일반 채팅방인 경우
         (request.auth.uid in resource.data.users && 
          request.resource.data.diff(resource.data).affectedKeys()
            .hasOnly(['last_message', 'last_message_time', 'last_message_sent_by', 
                      // Flutter 코드에서 사용하는 필드명도 허용
-                     'last_message_content', 'last_message_at', 'lastMessageContent', 'lastMessageAt']))
+                     'last_message_content', 'last_message_at', 'lastMessageContent', 'lastMessageAt',
+                     'lastReadTimestamps']))
       );
       allow delete: if false;
     }

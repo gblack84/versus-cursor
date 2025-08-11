@@ -43,6 +43,16 @@
       ]
     },
     {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "last_active_time",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "notifications",
       "queryScope": "COLLECTION",
       "fields": [
@@ -149,19 +159,11 @@
       ]
     },
     {
-      "collectionGroup": "posts",
+      "collectionGroup": "messages",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "user",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "targetAudience",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "created_time",
+          "fieldPath": "time_stamp",
           "order": "DESCENDING"
         }
       ]
@@ -176,6 +178,20 @@
         },
         {
           "fieldPath": "message_type",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "sender_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "seen_at",
           "order": "ASCENDING"
         }
       ]

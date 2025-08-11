@@ -120,6 +120,7 @@ class ChatDetailMigrationService {
     metadata['optionBImages'] = messageData['vote_option_b_images'];
     
     // MessagesModel에서 직접 aspectRatio 가져오기 (이제 파싱됨)
+    // 중요: 기본값을 설정하지 않고 null을 유지하여 fallback 로직이 작동하도록 함
     metadata['aspectRatioA'] = message.voteAspectRatioA ?? 
         (messageData['vote_aspect_ratio_a'] as num?)?.toDouble() ?? 
         (messageData['vote_option_a_aspect_ratio'] as num?)?.toDouble();

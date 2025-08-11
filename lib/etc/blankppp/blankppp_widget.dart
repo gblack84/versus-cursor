@@ -421,7 +421,7 @@ class _BlankpppWidgetState extends State<BlankpppWidget>
                                   extra: <String, dynamic>{
                                     kTransitionInfoKey: TransitionInfo(
                                       hasTransition: true,
-                                      transitionType: PageTransitionType.fade,
+                                      
                                     ),
                                   },
                                 );

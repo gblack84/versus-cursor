@@ -91,7 +91,7 @@ class _PhonelogeinpincodeWidgetState extends State<PhonelogeinpincodeWidget> {
               extra: <String, dynamic>{
                 kTransitionInfoKey: TransitionInfo(
                   hasTransition: true,
-                  transitionType: PageTransitionType.fade,
+                  
                 ),
               },
             );
@@ -695,7 +695,7 @@ Enter the 6-digit code sent t... */
                               extra: <String, dynamic>{
                                 kTransitionInfoKey: TransitionInfo(
                                   hasTransition: true,
-                                  transitionType: PageTransitionType.fade,
+                                  
                                   duration: Duration(milliseconds: 500),
                                 ),
                               },

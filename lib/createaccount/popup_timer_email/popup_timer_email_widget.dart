@@ -139,7 +139,7 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                               extra: <String, dynamic>{
                                 kTransitionInfoKey: TransitionInfo(
                                   hasTransition: true,
-                                  transitionType: PageTransitionType.fade,
+                                  
                                   duration: Duration(milliseconds: 500),
                                 ),
                               },
@@ -376,7 +376,7 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                                   extra: <String, dynamic>{
                                     kTransitionInfoKey: TransitionInfo(
                                       hasTransition: true,
-                                      transitionType: PageTransitionType.fade,
+                                      
                                       duration: Duration(milliseconds: 500),
                                     ),
                                   },

@@ -3,6 +3,7 @@ import '/core/app_utils.dart';
 import '/components/notifications/notification_badge_provider.dart';
 import '/backend/backend.dart';
 import '/design_system/design_system.dart';
+import '/services/cache/unified_cache_service.dart';
 
 class HomePageWidget extends StatefulWidget {
   const HomePageWidget({super.key});
@@ -16,6 +17,21 @@ class HomePageWidget extends StatefulWidget {
 
 class _HomePageWidgetState extends State<HomePageWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // 백그라운드에서 인기 게시물 프리로드
+    Future.microtask(() async {
+      try {
+        await UnifiedCacheService.instance.preloadPopularPosts();
+        debugPrint('[HomePage] Popular posts preloaded successfully');
+      } catch (e) {
+        debugPrint('[HomePage] Failed to preload popular posts: $e');
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

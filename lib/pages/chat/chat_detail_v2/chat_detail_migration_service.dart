@@ -11,7 +11,16 @@ class ChatDetailMigrationService {
     Map<String, dynamic>? messageData,
     Map<String, UsersModel> usersMap,
   ) async {
-    final senderId = message.senderId.isNotEmpty ? message.senderId : 'unknown';
+    var senderId = message.senderId.isNotEmpty ? message.senderId : 'unknown';
+    
+    // AI 채팅방에서 투표 메시지인 경우 senderId를 확인하고 수정
+    // receiver_id가 현재 사용자인 투표 요청은 AI가 보낸 것
+    if (messageData != null && messageData['receiver_id'] != null) {
+      // 투표 요청 메시지이고, 발신자가 비어있거나 알 수 없는 경우 AI로 설정
+      if (senderId == 'unknown' || senderId.isEmpty) {
+        senderId = 'ai_assistant';
+      }
+    }
     
     // Handle vote messages
     if (messageData != null) {

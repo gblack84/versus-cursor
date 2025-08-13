@@ -1,24 +1,25 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import 'package:uuid/uuid.dart';
-import 'package:wechat_assets_picker/wechat_assets_picker.dart';
-import 'package:wechat_camera_picker/wechat_camera_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:bot_toast/bot_toast.dart';
 import '/core/app_utils.dart';
 import '/design_system/design_system.dart';
 import '/backend/backend.dart';
 import '/auth/firebase_auth/auth_util.dart';
-import '/components/chat/vote_card_message.dart';
 import '/pages/chat/services/chat_message_lifecycle_service.dart';
-import '/pages/chat/services/chat_file_size_service.dart';
-import '/services/unified_image_cache_service.dart';
+import '/pages/chat/services/chat_media_upload_service.dart';
+import '/pages/chat/services/chat_initialization_service.dart';
+import '/pages/chat/services/chat_scroll_service.dart';
+import '/pages/chat/services/chat_animation_service.dart';
+import '/services/user_cache_service.dart';
 import 'chat_detail_migration_service.dart';
 import 'chat_detail_controller_v2.dart';
+import 'components/chat_message_builder.dart';
+import 'components/chat_detail_app_bar.dart';
+import 'components/chat_detail_fab.dart';
+import 'components/chat_detail_loading_widgets.dart';
 
 /// Chat Detail Widget using flutter_chat_ui v2
 /// 
@@ -46,18 +47,14 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
   
   // Services
   final _lifecycleService = ChatMessageLifecycleService();
-  final _fileSizeService = ChatFileSizeService();
-  
-  // Animation controllers
-  late AnimationController _fabAnimationController;
-  late Animation<double> _fabBounceAnimation;
-  late AnimationController _fabScaleController;
-  late Animation<double> _fabScaleAnimation;
+  final _userCacheService = UserCacheService.instance;
+  late ChatInitializationService _initService;
+  late ChatScrollService _scrollService;
+  late ChatAnimationService _animationService;
   
   // User management
   core.User? _currentUser;
   UsersModel? _currentUserRecord;
-  final Map<String, core.User> _usersCache = {};
   bool _isLoadingUsers = true;
   
   // Media upload - prepared for future implementation
@@ -80,8 +77,8 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
   Map<String, MessageDeliveryStatus> _messageStatuses = {};
   
   // Pagination
-  static const int _initialMessageLimit = 50;
-  static const int _messagePageSize = 30;
+  static const int _initialMessageLimit = 30;
+  static const int _messagePageSize = 20;
   bool _hasMoreMessages = true;
   bool _isLoadingMore = false;
   bool _skipInitialSnapshot = true;  // 스트림의 첫 스냅샷 스킵
@@ -96,8 +93,8 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
   bool _isNearBottom = false;  // 초기값 false - 스크롤 후 true로 변경
   DocumentSnapshot? _anchorDocument;
   DocumentSnapshot? _lastLoadedDocument;  // 마지막 로드된 문서 참조 (커서용)
-  DateTime? _lastLoadedTimestamp;  // 마지막 로드된 메시지의 타임스탬프
-  ScrollController? _scrollController;
+  // DateTime? _lastLoadedTimestamp;  // 서비스로 이동됨
+  // Scroll controller is now managed by ChatScrollService
   
   // AI chat detection
   bool get isAiChat => 
@@ -109,30 +106,13 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
     super.initState();
     _chatController = ChatDetailControllerV2();
     
-    // Initialize animation controllers
-    _fabAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-    _fabBounceAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.2,
-    ).animate(CurvedAnimation(
-      parent: _fabAnimationController,
-      curve: Curves.elasticOut,
-    ));
+    // Initialize services
+    _initService = ChatInitializationService();
+    _scrollService = ChatScrollService(_chatController);
+    _animationService = ChatAnimationService();
     
-    _fabScaleController = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
-    _fabScaleAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fabScaleController,
-      curve: Curves.easeInOut,
-    ));
+    // Initialize animations
+    _animationService.initializeAnimations(this);
     
     _bootstrap();  // Changed from _initializeChat to _bootstrap
   }
@@ -147,175 +127,58 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
     _searchController.dispose();
     _searchFocusNode.dispose();
     _chatController.dispose();
-    _scrollController?.dispose();
-    _fabAnimationController.dispose();
-    _fabScaleController.dispose();
+    _scrollService.dispose();
+    _animationService.dispose();
     super.dispose();
   }
 
   Future<void> _bootstrap() async {
-    // 1. Load user info
-    await _loadUserInfo();
+    // 서비스를 통한 초기화
+    final result = await _initService.bootstrap(
+      chatDocument: widget.chatDocument,
+      initialMessageLimit: _initialMessageLimit,
+    );
     
-    // 3. Load initial messages with get() - not stream
-    if (widget.chatDocument == null) {
-      setState(() {
-        _isInitialLoading = false;
-        _bootstrapped = true;
-      });
-      return;
-    }
+    // 결과 저장
+    _currentUser = result.currentUser;
+    _currentUserRecord = result.currentUserRecord;
+    _anchorDocument = result.anchorDocument;
+    _lastLoadedDocument = result.lastLoadedDocument;
+    // _lastLoadedTimestamp는 서비스에서 관리
     
-    Query<Map<String, dynamic>> initialQuery = widget.chatDocument!.reference
-        .collection('messages')
-        .orderBy('time_stamp', descending: false);
-    
-    // Load latest messages
-    debugPrint('[Chat Detail] Loading initial messages...');
-    final initialSnapshot = await initialQuery.limitToLast(_initialMessageLimit).get();
-      
-    if (initialSnapshot.docs.isEmpty) {
-      debugPrint('[Chat Detail] No initial messages found');
-      setState(() {
-        _isInitialLoading = false;
-        _bootstrapped = true;
-        _isLoadingUsers = false;
-      });
-      return;
-    }
-    
-    debugPrint('[Chat Detail] Loaded ${initialSnapshot.docs.length} initial messages');
-    debugPrint('[Chat Detail] First doc ID: ${initialSnapshot.docs.first.id}');
-    debugPrint('[Chat Detail] Last doc ID: ${initialSnapshot.docs.last.id}');
-    
-    // Convert messages
-    final messages = <core.Message>[];
-    for (final doc in initialSnapshot.docs) {
-      final message = await _convertDocToMessage(doc);
-      messages.add(message);
-      debugPrint('[Chat Detail] Converted message: ${message.id}');
-    }
-    
-    // Add date headers and set messages - only once
-    // Flutter Chat UI v2 expects messages in chronological order (oldest first)
-    if (!_initialMessagesSet) {
-      final messagesWithHeaders = _addDateHeaders(messages);
+    // 메시지 설정
+    if (result.messages.isNotEmpty && !_initialMessagesSet) {
+      final messagesWithHeaders = _addDateHeaders(result.messages);
       _chatController.setMessages(messagesWithHeaders);
       _initialMessagesSet = true;
     }
     
-    _anchorDocument = initialSnapshot.docs.last;
-    _lastLoadedDocument = initialSnapshot.docs.last;  // 커서 저장
+    // 스크롤 상태 초기화
+    _scrollService.updateScrollState(atBottom: true, nearBottom: true);
+    _isAtBottom = true;
+    _isNearBottom = true;
     
-    // 마지막 메시지의 타임스탬프 저장
-    final lastDoc = initialSnapshot.docs.last;
-    final lastTimestamp = lastDoc.data();
-    if (lastTimestamp['time_stamp'] != null) {
-      _lastLoadedTimestamp = (lastTimestamp['time_stamp'] as Timestamp).toDate();
-      debugPrint('[Chat Detail] Last loaded timestamp: $_lastLoadedTimestamp');
-    }
+    _bootstrapped = true;
     
-    // 4. Set initial loading complete
+    // UI 업데이트
     setState(() {
       _isInitialLoading = false;
       _isLoadingUsers = false;
     });
     
-    // 5. Reversed List 사용으로 자동으로 최신 메시지가 하단에 표시됨
-    // 초기 스크롤 불필요
-    _isAtBottom = true;  // Enable auto-scroll for new messages
-    _isNearBottom = true;
-    
-    
-    // 7. Update last read timestamp
-    await _updateLastReadAt();
-    
-    // 8. Bootstrap complete, start incremental stream with a small delay
-    _bootstrapped = true;
-    Future.delayed(const Duration(milliseconds: 100), () {
-      _startIncrementalStream();
-    });
-    
-    // 8. Start listening to message status changes
+    // 스트림 시작
     if (widget.chatDocument != null) {
+      _startIncrementalStream();
       _listenToMessageStatuses();
     }
-    
-    // 9. Mark messages as seen
-    await _markMessagesAsSeen();
-    
-    // 11. Mark messages as seen
-    if (_currentUser != null && widget.chatDocument != null) {
-      await _lifecycleService.markMessagesAsSeen(
-        chatId: widget.chatDocument!.reference.id,
-        currentUserId: _currentUser!.id,
-      );
-    }
   }
-  
-  Future<void> _loadUserInfo() async {
-    // Initialize current user - more robust error handling
-    try {
-      // Always try to fetch from Users collection for consistency
-      if (currentUserUid.isNotEmpty) {
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUserUid)
-            .get();
-            
-        if (userDoc.exists) {
-          final userData = userDoc.data()!;
-          _currentUserRecord = UsersModel.fromSnapshot(userDoc);
-          
-          // Use multiple fallbacks for display name
-          final displayName = userData['display_name'] ?? 
-                             userData['handle'] ?? 
-                             userData['email']?.split('@')[0] ?? 
-                             '사용자';
-          
-          _currentUser = core.User(
-            id: currentUserUid,
-            name: displayName.toString().isNotEmpty ? displayName.toString() : '사용자',
-            imageSource: userData['photo_url'],
-          );
-          
-          _usersCache[_currentUser!.id] = _currentUser!;
-        } else {
-          _createDefaultUser();
-        }
-      } else {
-        _createDefaultUser();
-      }
-    } catch (e) {
-      debugPrint('Error loading user: $e');
-      _createDefaultUser();
-    }
-    
-    // Load chat participants
-    if (widget.chatDocument != null) {
-      await _loadChatParticipants();
-    }
-  }
-  
-  
   
   Future<void> _updateLastReadAt() async {
     if (widget.chatDocument == null || _currentUser == null) return;
     
-    final lifecycleService = ChatMessageLifecycleService();
-    await lifecycleService.updateLastReadAt(
+    await _lifecycleService.updateLastReadAt(
       chatId: widget.chatDocument!.reference.id,
       userId: _currentUser!.id,
-    );
-  }
-  
-  Future<void> _markMessagesAsSeen() async {
-    if (widget.chatDocument == null || _currentUser == null) return;
-    
-    final lifecycleService = ChatMessageLifecycleService();
-    await lifecycleService.markMessagesAsSeen(
-      chatId: widget.chatDocument!.reference.id,
-      currentUserId: _currentUser!.id,
     );
   }
   
@@ -328,38 +191,6 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
       messageData,
       {},
     );
-  }
-  
-  void _createDefaultUser() {
-    _currentUser = core.User(
-      id: currentUserUid.isNotEmpty ? currentUserUid : 'anonymous',
-      name: '사용자',
-    );
-    _usersCache[_currentUser!.id] = _currentUser!;
-    // 기본 UserRecord는 null로 유지 (displayName이 없어도 '사용자'로 표시됨)
-  }
-  
-  Future<void> _loadChatParticipants() async {
-    final participantIds = widget.chatDocument!.participantIds;
-    
-    for (final userId in participantIds) {
-      if (userId.isEmpty) continue;
-      
-      try {
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .get();
-            
-        if (userDoc.exists) {
-          final userModel = UsersModel.fromSnapshot(userDoc);
-          final coreUser = ChatDetailMigrationService.convertUsersModelToCore(userModel);
-          _usersCache[userId] = coreUser;
-        }
-      } catch (e) {
-        debugPrint('Error loading user $userId: $e');
-      }
-    }
   }
   
   void _startIncrementalStream() {
@@ -435,14 +266,12 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
         // Show FAB and animate if not at bottom and not from current user
         if (!_isAtBottom && message.authorId != _currentUser?.id) {
           // Trigger FAB animation
-          if (!_fabScaleController.isAnimating && _fabScaleController.value == 0) {
-            _fabScaleController.forward();
+          if (!_animationService.fabScaleController.isAnimating && _animationService.fabScaleController.value == 0) {
+            _animationService.showFab();
           }
           
           // Bounce animation for new message
-          _fabAnimationController.forward().then((_) {
-            _fabAnimationController.reverse();
-          });
+          _animationService.playFabBounce();
           
           // Haptic feedback for new message
           HapticFeedback.lightImpact();
@@ -483,10 +312,6 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
     });
     
     try {
-      // Save current top message as anchor for scroll position preservation
-      final anchorMessageId = _chatController.messages.isNotEmpty 
-          ? _chatController.messages.first.id 
-          : null;
       
       // Load older messages
       Query query = widget.chatDocument!.reference
@@ -513,12 +338,9 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
       // Update anchor for next pagination
       _anchorDocument = snapshot.docs.first;
       
-      // Convert older messages
-      final olderMessages = <core.Message>[];
-      for (final doc in snapshot.docs) {
-        final message = await _convertDocToMessage(doc);
-        olderMessages.add(message);
-      }
+      // Convert older messages in parallel
+      final messageFutures = snapshot.docs.map((doc) => _convertDocToMessage(doc));
+      final olderMessages = await Future.wait(messageFutures);
       
       // Merge with existing messages
       // Chat UI v2 expects chronological order (oldest first)
@@ -528,13 +350,6 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
       // Update with date headers
       final messagesWithHeaders = _addDateHeaders(olderMessages);
       _chatController.setMessages(messagesWithHeaders);
-      
-      // Restore scroll position to anchor message
-      if (anchorMessageId != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _chatController.scrollToMessage(anchorMessageId);
-        });
-      }
     } catch (e) {
       debugPrint('Error loading more messages: $e');
     } finally {
@@ -628,8 +443,9 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
   /// Resolve user from ID
   Future<core.User?> _resolveUser(String userId) async {
     // Check cache first
-    if (_usersCache.containsKey(userId)) {
-      return _usersCache[userId];
+    final cachedUser = await _userCacheService.getUser(userId);
+    if (cachedUser != null) {
+      return cachedUser;
     }
     
     // Special case for AI assistant
@@ -639,7 +455,7 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
         name: 'AI 피클',
         imageSource: 'https://picsum.photos/seed/ai_assistant/200',
       );
-      _usersCache[userId] = aiUser;
+      _userCacheService.updateUser(aiUser);
       return aiUser;
     }
     
@@ -653,7 +469,7 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
       if (userDoc.exists) {
         final userModel = UsersModel.fromSnapshot(userDoc);
         final coreUser = ChatDetailMigrationService.convertUsersModelToCore(userModel);
-        _usersCache[userId] = coreUser;
+        _userCacheService.updateUser(coreUser);
         return coreUser;
       }
     } catch (e) {
@@ -688,45 +504,16 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
     });
   }
   
-  /// Handle sending a media message with file size calculation
-  Future<void> _handleSendMediaMessage({
-    required String mediaUrl,
-    required String mediaType,
-    String? localPath,
-  }) async {
+  /// Handle sending a media message
+  void _handleSendMediaMessage(String mediaUrl, String mediaType, String? localPath) async {
     if (widget.chatDocument == null) return;
     
-    final messageId = const Uuid().v4();
-    
-    // Calculate file size
-    int fileSize = 0;
-    if (localPath != null) {
-      fileSize = await _fileSizeService.getLocalFileSize(localPath);
-    } else if (mediaUrl.isNotEmpty) {
-      fileSize = await _fileSizeService.calculateMediaSize(mediaUrl);
-    }
-    
-    // Create message in Firestore with media fields
-    await MessagesModel.createDoc(widget.chatDocument!.reference)
-        .set(createMessagesModelData(
-      messageId: messageId,
-      content: '',
-      senderId: currentUserUid,
-      timeStamp: getCurrentTimestamp(),
+    await ChatMediaUploadService.sendMediaMessage(
+      chatDocument: widget.chatDocument!,
+      mediaUrl: mediaUrl,
       mediaType: mediaType,
-      imageUrl: mediaType == 'image' ? mediaUrl : '',
-      videoUrl: mediaType == 'video' ? mediaUrl : '',
-      mediaSize: fileSize,
-    ));
-    
-    // Update chat metadata
-    await widget.chatDocument!.reference.update({
-      ...createChatsModelData(
-        lastMessageContent: mediaType == 'image' ? '📷 사진' : '📹 비디오',
-        lastMessageAt: getCurrentTimestamp(),
-      ),
-      'participantIds': FieldValue.arrayUnion([currentUserUid]),
-    });
+      localPath: localPath,
+    );
   }
   
   /// Handle attachment button press
@@ -805,114 +592,21 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
   }
   
   Future<void> _pickMediaFromGallery() async {
-    try {
-      // Pick assets using wechat_assets_picker
-      final List<AssetEntity>? selectedAssets = await AssetPicker.pickAssets(
-        context,
-        pickerConfig: AssetPickerConfig(
-          maxAssets: 10,
-          requestType: RequestType.common,
-          specialPickerType: SpecialPickerType.noPreview,
-          pickerTheme: ThemeData(
-            brightness: Brightness.dark,
-            primaryColor: VersusColors.primary,
-            scaffoldBackgroundColor: Colors.black,
-            appBarTheme: const AppBarTheme(
-              backgroundColor: Colors.black,
-            ),
-          ),
-        ),
-      );
-
-      if (selectedAssets != null && selectedAssets.isNotEmpty) {
-        // Show loading indicator
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(VersusColors.primary),
-            ),
-          ),
-        );
-        
-        for (final asset in selectedAssets) {
-          await _uploadAndSendAsset(asset);
-        }
-        
-        Navigator.of(context).pop(); // Hide loading
-      }
-    } catch (e) {
-      debugPrint('Error picking media from gallery: $e');
-      BotToast.showText(text: '갤러리에서 미디어를 선택하는 중 오류가 발생했습니다.');
-    }
+    await ChatMediaUploadService.pickMediaFromGallery(
+      context: context,
+      chatDocument: widget.chatDocument!,
+      onMediaUploaded: _handleSendMediaMessage,
+    );
   }
   
   Future<void> _pickMediaFromCamera() async {
-    try {
-      // Pick from camera using wechat_camera_picker
-      final AssetEntity? pickedAsset = await CameraPicker.pickFromCamera(
-        context,
-        pickerConfig: const CameraPickerConfig(
-          enableRecording: true,
-          maximumRecordingDuration: Duration(seconds: 60),
-        ),
-      );
-
-      if (pickedAsset != null) {
-        // Show loading indicator
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(VersusColors.primary),
-            ),
-          ),
-        );
-        await _uploadAndSendAsset(pickedAsset);
-        Navigator.of(context).pop(); // Hide loading
-      }
-    } catch (e) {
-      debugPrint('Error picking media from camera: $e');
-      BotToast.showText(text: '카메라에서 미디어를 촬영하는 중 오류가 발생했습니다.');
-    }
+    await ChatMediaUploadService.pickMediaFromCamera(
+      context: context,
+      chatDocument: widget.chatDocument!,
+      onMediaUploaded: _handleSendMediaMessage,
+    );
   }
 
-  /// Upload asset to Firebase Storage and send as message
-  Future<void> _uploadAndSendAsset(AssetEntity asset) async {
-    try {
-      // Get file from asset
-      final File? file = await asset.file;
-      if (file == null) return;
-
-      // Determine media type
-      final bool isVideo = asset.type == AssetType.video;
-      final String mediaType = isVideo ? 'video' : 'image';
-      
-      // Generate unique filename
-      final String fileName = '${const Uuid().v4()}.${file.path.split('.').last}';
-      final String storagePath = 'chat_media/${widget.chatDocument!.reference.id}/$fileName';
-      
-      // Upload to Firebase Storage
-      final Reference storageRef = FirebaseStorage.instance.ref().child(storagePath);
-      final UploadTask uploadTask = storageRef.putFile(file);
-      
-      // Get download URL
-      final TaskSnapshot snapshot = await uploadTask;
-      final String downloadUrl = await snapshot.ref.getDownloadURL();
-      
-      // Send media message
-      await _handleSendMediaMessage(
-        mediaUrl: downloadUrl,
-        mediaType: mediaType,
-        localPath: file.path,
-      );
-    } catch (e) {
-      debugPrint('Error uploading asset: $e');
-      BotToast.showText(text: '미디어 업로드 중 오류가 발생했습니다.');
-    }
-  }
   
   /// Build custom message widget (for VoteCardMessage)
   Widget _buildCustomMessage(
@@ -922,155 +616,21 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
     required bool isSentByMe,
     core.MessageGroupStatus? groupStatus,
   }) {
-    final metadata = message.metadata ?? {};
-    
-    // Check if this is a vote message
-    if (metadata['type'] == 'vote_request' || metadata['type'] == 'vote_created') {
-      // 디버그 로그
-      print('Vote message metadata:');
-      print('  cardStatus: ${metadata['cardStatus']}');
-      print('  voteResults: ${metadata['voteResults']}');
-      
-      // Preload images for vote message
-      final List<String> imageUrlsA = metadata['optionAImages'] != null 
-          ? List<String>.from(metadata['optionAImages']) 
-          : (metadata['optionAImage'] != null ? [metadata['optionAImage'] as String] : <String>[]);
-      final List<String> imageUrlsB = metadata['optionBImages'] != null 
-          ? List<String>.from(metadata['optionBImages']) 
-          : (metadata['optionBImage'] != null ? [metadata['optionBImage'] as String] : <String>[]);
-      
-      // Preload images using UnifiedImageCacheService
-      if (imageUrlsA.isNotEmpty || imageUrlsB.isNotEmpty) {
-        UnifiedImageCacheService.instance.preloadVoteMessageImages(
-          context,
-          imageUrlsA: imageUrlsA,
-          imageUrlsB: imageUrlsB,
-        );
-      }
-      
-      // Get message status for read indicators
-      final messageStatus = _getMessageStatus(message.id);
-      
-      // Build the vote card with bubble wrapper
-      // Wrap with KeyedSubtree to preserve scroll position during rebuilds
-      final voteCard = KeyedSubtree(
-        key: ValueKey(message.id),
-        child: VoteCardMessage(
-          postId: metadata['postId'] ?? '',
-          title: metadata['title'] ?? '',
-          description: metadata['description'],
-          optionAText: metadata['optionAText'] ?? '',
-          optionBText: metadata['optionBText'] ?? '',
-          optionAImage: metadata['optionAImage'],
-          optionBImage: metadata['optionBImage'],
-          optionAImages: metadata['optionAImages'] != null 
-              ? List<String>.from(metadata['optionAImages']) 
-              : null,
-          optionBImages: metadata['optionBImages'] != null 
-              ? List<String>.from(metadata['optionBImages']) 
-              : null,
-          aspectRatioA: metadata['aspectRatioA'] != null 
-              ? (metadata['aspectRatioA'] is double 
-                  ? metadata['aspectRatioA'] 
-                  : double.tryParse(metadata['aspectRatioA'].toString()))
-              : null,  // null 유지하여 fallback 로직 활성화
-          aspectRatioB: metadata['aspectRatioB'] != null 
-              ? (metadata['aspectRatioB'] is double 
-                  ? metadata['aspectRatioB'] 
-                  : double.tryParse(metadata['aspectRatioB'].toString()))
-              : null,  // null 유지하여 fallback 로직 활성화
-          cardStatus: metadata['cardStatus'] ?? 'voting_request',  // Firebase의 card_status 사용
-          voteEndTime: metadata['voteEndTime'] != null 
-              ? (metadata['voteEndTime'] is DateTime 
-                  ? metadata['voteEndTime'] 
-                  : metadata['voteEndTime'].toDate())
-              : null,
-          userVotes: metadata['userVotes'],
-          voteResults: metadata['voteResults'],  // 이미 올바른 형식으로 변환됨
-          isMe: isSentByMe,
-          messageType: metadata['type'] ?? 'vote_request',
-          messageId: message.id,
-          chatId: widget.chatDocument?.reference.id,
-          currentUserName: _currentUserRecord?.displayName ?? '사용자',
-          senderDisplayName: metadata['authorName'] ?? '사용자',  // 작성자 이름 추가
-          senderProfileImageUrl: metadata['authorPhotoUrl'],  // 작성자 프로필 이미지 추가
-          showSenderProfile: true,  // 프로필 표시 활성화
-          searchQuery: _isSearching ? _searchQuery : null,
-          timestamp: message.createdAt,  // 타임스탬프 추가
-        ),
-      );
-      
-      // Wrap with bubble container including time and status
-      return Container(
-        alignment: isSentByMe ? Alignment.centerRight : Alignment.centerLeft,
-        padding: EdgeInsets.only(
-          left: isSentByMe ? 50 : 16,
-          right: isSentByMe ? 16 : 50,
-          bottom: 4,
-        ),
-        child: Column(
-          crossAxisAlignment: isSentByMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-          children: [
-            Container(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.75,
-              ),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: VersusColors.backgroundSecondary,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(18),
-                  topRight: const Radius.circular(18),
-                  bottomLeft: Radius.circular(isSentByMe ? 18 : 4),
-                  bottomRight: Radius.circular(isSentByMe ? 4 : 18),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 5,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: voteCard,
-            ),
-            // Time and status row
-            Padding(
-              padding: const EdgeInsets.only(top: 2, left: 8, right: 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 받은 메시지에 읽음 상태 표시
-                  if (!isSentByMe) ...[
-                    _buildStatusIcon(messageStatus),
-                    const SizedBox(width: 4),
-                  ],
-                  // Timestamp
-                  if (message.createdAt != null)
-                    Text(
-                      _formatMessageTime(message.createdAt!),
-                      style: VersusTextStyles.labelSmall.copyWith(
-                        fontSize: 10,
-                        color: VersusColors.textSecondary.withValues(alpha: 0.6),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-    
-    // Default for unknown custom messages
-    return Container(
-      padding: const EdgeInsets.all(VersusSpacing.md),
-      child: Text(
-        'Custom message: ${metadata['type'] ?? 'unknown'}',
-        style: VersusTextStyles.bodyMedium,
-      ),
+    // Delegate to ChatMessageBuilder
+    return ChatMessageBuilder.buildCustomMessage(
+      context,
+      message,
+      index,
+      isSentByMe: isSentByMe,
+      groupStatus: groupStatus,
+      chatDocument: widget.chatDocument,
+      currentUserRecord: _currentUserRecord,
+      searchQuery: _searchQuery,
+      isSearching: _isSearching,
+      messageStatus: _messageStatuses[message.id],
     );
   }
+  
   
   /// Build system message (date headers and unread divider)
   Widget _buildSystemMessage(
@@ -1316,133 +876,6 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
     );
   }
   
-  /// Get message delivery status
-  MessageDeliveryStatus _getMessageStatus(String messageId) {
-    // 실시간 상태 맵에서 조회
-    if (_messageStatuses.containsKey(messageId)) {
-      return _messageStatuses[messageId]!;
-    }
-    // 기본값은 sent
-    return MessageDeliveryStatus.sent;
-  }
-  
-  /// Build status icon based on delivery status
-  Widget _buildStatusIcon(MessageDeliveryStatus status) {
-    IconData icon;
-    Color color;
-    
-    switch (status) {
-      case MessageDeliveryStatus.sent:
-        icon = Icons.check;
-        color = VersusColors.textSecondary.withValues(alpha: 0.5);
-        break;
-      case MessageDeliveryStatus.delivered:
-        icon = Icons.done_all;
-        color = VersusColors.textSecondary.withValues(alpha: 0.5);
-        break;
-      case MessageDeliveryStatus.seen:
-        icon = Icons.done_all;
-        color = VersusColors.primary;
-        break;
-      case MessageDeliveryStatus.unknown:
-        icon = Icons.access_time;
-        color = VersusColors.textSecondary.withValues(alpha: 0.3);
-        break;
-    }
-    
-    return Icon(
-      icon,
-      size: 14,
-      color: color,
-    );
-  }
-  
-  /// Build loading indicator for initial load
-  Widget _buildLoadingIndicator() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(
-              VersusColors.primary,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '메시지를 불러오는 중...',
-            style: VersusTextStyles.bodyMedium.copyWith(
-              color: VersusColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  /// Build loading indicator for pagination
-  Widget _buildLoadingMoreIndicator() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Center(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  VersusColors.primary,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              '이전 메시지 불러오는 중...',
-              style: TextStyle(
-                color: VersusColors.textSecondary,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-  
-  /// Format message time
-  String _formatMessageTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
-    
-    // 항상 시간을 표시 (AM/PM 형식)
-    final hour = time.hour;
-    final minute = time.minute.toString().padLeft(2, '0');
-    final period = hour >= 12 ? '오후' : '오전';
-    final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-    
-    // 오늘이면 시간만
-    if (difference.inDays == 0 && 
-        now.day == time.day && 
-        now.month == time.month && 
-        now.year == time.year) {
-      return '$period $displayHour:$minute';
-    } 
-    // 어제면 "어제" + 시간
-    else if (difference.inDays == 1 && 
-             now.day - 1 == time.day && 
-             now.month == time.month && 
-             now.year == time.year) {
-      return '어제 $period $displayHour:$minute';
-    }
-    // 그 외는 날짜 + 시간
-    else {
-      return '${time.month}/${time.day} $period $displayHour:$minute';
-    }
-  }
-  
   /// Build chat theme
   core.ChatTheme _buildChatTheme() {
     return core.ChatTheme.light().copyWith(
@@ -1464,91 +897,32 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
   @override
   Widget build(BuildContext context) {
     if (_isLoadingUsers) {
-      return Scaffold(
-        backgroundColor: VersusColors.backgroundPrimary,
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return ChatDetailLoadingWidgets.buildUserLoadingScreen();
     }
     
     return Scaffold(
       key: scaffoldKey,
       backgroundColor: VersusColors.backgroundPrimary,
+      appBar: ChatDetailAppBar(
+        chatDocument: widget.chatDocument,
+        isAiChat: isAiChat,
+        isSearching: _isSearching,
+        onSearchToggle: () {
+          setState(() {
+            _isSearching = !_isSearching;
+            if (_isSearching) {
+              _searchFocusNode.requestFocus();
+            }
+          });
+        },
+        onBack: () => context.pop(),
+      ),
       body: Column(
         children: [
-          // AppBar
-          Container(
-            color: VersusColors.backgroundSecondary,
-            child: SafeArea(
-              bottom: false,
-              child: Container(
-                height: 35.0,
-                padding: const EdgeInsets.only(top: 5.0, bottom: 10.0),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: VersusColors.textPrimary,
-                      width: 1.0,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    // Back button
-                    GestureDetector(
-                      onTap: () => context.pop(),
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 16.0),
-                        child: Icon(
-                          Icons.arrow_back_rounded,
-                          color: VersusColors.textPrimary,
-                          size: 20.0,
-                        ),
-                      ),
-                    ),
-                    // Title
-                    Padding(
-                      padding: const EdgeInsets.only(left: 10.0),
-                      child: Text(
-                        widget.chatDocument?.chatName ?? '채팅',
-                        style: TextStyle(
-                          color: VersusColors.textPrimary,
-                          fontSize: 18.0,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    // Search button (only for AI chat)
-                    if (isAiChat)
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _isSearching = !_isSearching;
-                            if (_isSearching) {
-                              _searchFocusNode.requestFocus();
-                            }
-                          });
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 16.0),
-                          child: Icon(
-                            _isSearching ? Icons.close : Icons.search,
-                            color: VersusColors.textPrimary,
-                            size: 20.0,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ),
           // Chat content
           Expanded(
             child: _isInitialLoading 
-              ? _buildLoadingIndicator()
+              ? ChatDetailLoadingWidgets.buildLoadingIndicator()
               : Stack(
                   children: [
                     NotificationListener<ScrollNotification>(
@@ -1578,7 +952,7 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
                               
                               // Hide FAB when at bottom
                               if (isAtBottom) {
-                                _fabScaleController.reverse();
+                                _animationService.hideFab();
                               }
                             });
                           }
@@ -1604,39 +978,8 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
                           : null,
                       customMessageBuilder: _buildCustomMessage,
                       systemMessageBuilder: _buildSystemMessage,
-                      emptyChatListBuilder: (context) => Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          size: 64,
-                          color: VersusColors.textSecondary,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          isAiChat 
-                              ? 'AI 피클과 대화를 시작해보세요'
-                              : '메시지를 보내서 대화를 시작하세요',
-                          style: VersusTextStyles.headingMedium.copyWith(
-                            color: VersusColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          isAiChat
-                              ? '질문을 입력하면 AI가 답변해드립니다'
-                              : '첫 메시지를 보내보세요',
-                          style: VersusTextStyles.bodyMedium.copyWith(
-                            color: VersusColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                      emptyChatListBuilder: (context) => 
+                        ChatDetailLoadingWidgets.buildEmptyChatList(isAiChat),
                       ),
                     ),
                     ),
@@ -1646,46 +989,17 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
                         top: 50,
                         left: 0,
                         right: 0,
-                        child: _buildLoadingMoreIndicator(),
+                        child: ChatDetailLoadingWidgets.buildLoadingMoreIndicator(),
                       ),
                     // FAB for new messages when not at bottom
-                    AnimatedPositioned(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                      bottom: _isAtBottom ? -100 : 16,
-                      right: 16,
-                      child: AnimatedBuilder(
-                        animation: Listenable.merge([
-                          _fabScaleAnimation,
-                          _fabBounceAnimation,
-                        ]),
-                        builder: (context, child) {
-                          return Transform.scale(
-                            scale: _fabScaleAnimation.value * _fabBounceAnimation.value,
-                            child: FloatingActionButton.extended(
-                              onPressed: () {
-                                // Scroll to bottom
-                                _scrollToBottom();
-                                _fabScaleController.reverse();
-                              },
-                              backgroundColor: VersusColors.primary,
-                              icon: const Icon(
-                                Icons.arrow_downward,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                              label: const Text(
-                                '아래로',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                    ChatDetailFAB(
+                      isAtBottom: _isAtBottom,
+                      scaleAnimation: _animationService.fabScaleAnimation,
+                      bounceAnimation: _animationService.fabBounceAnimation,
+                      onPressed: () {
+                        _scrollToBottom();
+                        _animationService.hideFab();
+                      },
                     ),
                   ],
                 ),
@@ -1697,13 +1011,9 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
   
   /// Scroll to bottom of chat
   void _scrollToBottom() {
-    if (_chatController.messages.isNotEmpty) {
-      // flutter_chat_ui v2에서는 최신 메시지가 마지막
-      final lastMessageId = _chatController.messages.last.id;
-      _chatController.scrollToMessage(lastMessageId);
-      setState(() {
-        _isAtBottom = true;
-      });
-    }
+    _scrollService.scrollToBottom();
+    setState(() {
+      _isAtBottom = _scrollService.isAtBottom;
+    });
   }
 }

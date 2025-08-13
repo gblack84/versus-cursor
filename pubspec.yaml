@@ -159,6 +159,10 @@ dependencies:
   flutter_chat_core: ^2.8.0
   flutter_ai_toolkit: ^0.6.0
   scroll_to_index: ^3.0.1
+  
+  # Local database for caching
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
 
 dependency_overrides:
   http: ^1.4.0

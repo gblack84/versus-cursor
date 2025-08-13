@@ -40,6 +40,7 @@ class VoteCardMessage extends BaseVoteMessage {
     super.currentUserName,
     super.senderProfileImageUrl,
     super.senderDisplayName,
+    super.senderId,
     super.showSenderProfile,
     this.searchQuery,
   });
@@ -245,7 +246,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   }
   
   Widget _buildProfileHeader(Map<String, dynamic> statusInfo) {
-    // isMe에 따라 표시할 이름과 프로필 결정
+    // isMe에 따라 표시할 이름과 프로필 결정 (발신자 정보 표시)
     final displayName = widget.isMe 
         ? (widget.currentUserName ?? '나')
         : (widget.senderDisplayName ?? '알 수 없는 사용자');

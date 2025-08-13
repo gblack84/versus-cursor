@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
@@ -9,6 +10,8 @@ import '/backend/backend.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/components/chat/vote_card_message.dart';
 import '/pages/chat/services/chat_message_lifecycle_service.dart';
+import '/pages/chat/services/chat_message_service.dart';
+import '/services/user_cache_service.dart';
 import 'ai_chat_controller.dart';
 
 /// AI Chat Page using flutter_chat_ui v2
@@ -34,8 +37,8 @@ class _AIChatPageV2State extends State<AIChatPageV2>
   late final AIChatController _chatController;
   late final String _currentUserId;
   
-  // User cache for resolveUser
-  final Map<String, core.User> _usersCache = {};
+  // User cache service
+  final UserCacheService _userCacheService = UserCacheService.instance;
   
   // Search state
   String _searchQuery = '';
@@ -138,10 +141,8 @@ class _AIChatPageV2State extends State<AIChatPageV2>
       // 초기 스크롤 불필요
       _isNearBottom = true;  // 자동 스크롤 활성화
       
-      // 3. Start incremental stream with a small delay to ensure proper initialization
-      Future.delayed(const Duration(milliseconds: 100), () {
-        _startIncrementalStream();
-      });
+      // 3. Start incremental stream immediately
+      _startIncrementalStream();
       
       // 4. Mark messages as seen
       if (widget.aiChatId != null) {
@@ -161,7 +162,9 @@ class _AIChatPageV2State extends State<AIChatPageV2>
   Future<void> _loadInitialMessages() async {
     if (widget.aiChatId == null) return;
     
-    debugPrint('[AI Chat] Loading initial messages...');
+    if (kDebugMode) {
+      debugPrint('[AI Chat] Loading initial messages...');
+    }
     
     try {
       final query = await FirebaseFirestore.instance
@@ -173,9 +176,11 @@ class _AIChatPageV2State extends State<AIChatPageV2>
           .get();
       
       if (query.docs.isNotEmpty) {
-        debugPrint('[AI Chat] Loaded ${query.docs.length} initial messages');
-        debugPrint('[AI Chat] First doc ID: ${query.docs.first.id}');
-        debugPrint('[AI Chat] Last doc ID: ${query.docs.last.id}');
+        if (kDebugMode) {
+          debugPrint('[AI Chat] Loaded ${query.docs.length} initial messages');
+          debugPrint('[AI Chat] First doc ID: ${query.docs.first.id}');
+          debugPrint('[AI Chat] Last doc ID: ${query.docs.last.id}');
+        }
         
         _lastDocument = query.docs.first;  // 가장 오래된 문서 (페이지네이션용)
         _hasMoreMessages = query.docs.length >= 30;
@@ -186,7 +191,9 @@ class _AIChatPageV2State extends State<AIChatPageV2>
         _messageCache.clear();
         for (final message in messages) {
           _messageCache[message.id] = message;
-          debugPrint('[AI Chat] Cached message: ${message.id}');
+          if (kDebugMode) {
+            debugPrint('[AI Chat] Cached message: ${message.id}');
+          }
         }
         
         // 모든 문서 ID를 저장 (스트림에서 중복 체크용)
@@ -197,7 +204,9 @@ class _AIChatPageV2State extends State<AIChatPageV2>
         final lastTimestamp = lastDoc.data();
         if (lastTimestamp['time_stamp'] != null) {
           _lastLoadedTimestamp = (lastTimestamp['time_stamp'] as Timestamp).toDate();
-          debugPrint('[AI Chat] Last loaded timestamp: $_lastLoadedTimestamp');
+          if (kDebugMode) {
+            debugPrint('[AI Chat] Last loaded timestamp: $_lastLoadedTimestamp');
+          }
         }
         
         // Set messages only once
@@ -339,83 +348,15 @@ class _AIChatPageV2State extends State<AIChatPageV2>
   /// Convert Firestore documents to messages
   Future<List<core.Message>> _convertDocumentsToMessages(
       List<QueryDocumentSnapshot> docs) async {
-    final messages = <core.Message>[];
-    
-    for (final doc in docs) {
-      final message = await _convertDocumentToMessage(doc);
-      if (message != null) {
-        messages.add(message);
-      }
-    }
-    
-    return messages;
+    // Use ChatMessageService for conversion
+    return await ChatMessageService.convertDocumentsToMessages(docs);
   }
   
   /// Convert single Firestore document to message
   Future<core.Message?> _convertDocumentToMessage(
       DocumentSnapshot doc) async {
-    try {
-      final data = doc.data() as Map<String, dynamic>;
-      final messageId = doc.id;
-      final senderId = data['sender_id'] ?? data['user_id'] ?? '';
-      final content = data['content'] ?? data['text'] ?? '';
-      final timestamp = data['time_stamp'] as Timestamp?;
-      final messageType = data['message_type'] ?? 'text';
-      
-      // Skip if essential data is missing
-      if (senderId.isEmpty || timestamp == null) {
-        return null;
-      }
-      
-      final createdAt = timestamp.toDate();
-      
-      // Handle different message types
-      if (messageType == 'vote_request' || messageType == 'vote_created') {
-        // Create custom message for vote cards
-        return core.CustomMessage(
-          id: messageId,
-          authorId: senderId,
-          createdAt: createdAt,
-          metadata: {
-            'type': messageType,
-            'postId': data['post_id'],
-            'title': data['vote_title'],
-            'description': data['vote_description'],
-            'optionAText': data['vote_option_a_text'],
-            'optionBText': data['vote_option_b_text'],
-            'optionAImage': data['vote_option_a_image'],
-            'optionBImage': data['vote_option_b_image'],
-            'optionAImages': data['vote_option_a_images'],
-            'optionBImages': data['vote_option_b_images'],
-            'aspectRatioA': data['vote_option_a_aspect_ratio'],
-            'aspectRatioB': data['vote_option_b_aspect_ratio'],
-            'cardStatus': data['card_status'],
-            'voteEndTime': data['vote_end_time'],
-            'userVotes': data['user_votes'],
-            'voteResults': data['vote_results'],
-          },
-        );
-      } else if (messageType == 'system') {
-        // System message for unread divider
-        return core.SystemMessage(
-          id: messageId,
-          text: content,
-          createdAt: createdAt,
-          authorId: 'system',
-        );
-      } else {
-        // Regular text message
-        return core.TextMessage(
-          id: messageId,
-          authorId: senderId,
-          text: content,
-          createdAt: createdAt,
-        );
-      }
-    } catch (e) {
-      print('Error converting document to message: $e');
-      return null;
-    }
+    // Use ChatMessageService for conversion
+    return await ChatMessageService.convertDocumentToMessage(doc);
   }
   
   /// Scroll event handler
@@ -539,8 +480,9 @@ class _AIChatPageV2State extends State<AIChatPageV2>
   /// Resolve user from ID
   Future<core.User?> _resolveUser(String userId) async {
     // Check cache first
-    if (_usersCache.containsKey(userId)) {
-      return _usersCache[userId];
+    final cachedUser = await _userCacheService.getUser(userId);
+    if (cachedUser != null) {
+      return cachedUser;
     }
     
     // Special case for AI assistant
@@ -550,7 +492,7 @@ class _AIChatPageV2State extends State<AIChatPageV2>
         name: AIChatController.aiUserName,
         imageSource: 'https://picsum.photos/seed/ai_assistant/200',
       );
-      _usersCache[userId] = aiUser;
+      _userCacheService.updateUser(aiUser);
       return aiUser;
     }
     
@@ -575,7 +517,7 @@ class _AIChatPageV2State extends State<AIChatPageV2>
             name: displayName.toString().isNotEmpty ? displayName.toString() : 'User',
             imageSource: userData['photo_url'] ?? currentUserPhoto,
           );
-          _usersCache[userId] = currentUser;
+          _userCacheService.updateUser(currentUser);
           return currentUser;
         }
       } catch (e) {
@@ -588,7 +530,7 @@ class _AIChatPageV2State extends State<AIChatPageV2>
         name: currentUserDisplayName.isNotEmpty ? currentUserDisplayName : 'User',
         imageSource: currentUserPhoto,
       );
-      _usersCache[userId] = currentUser;
+      _userCacheService.updateUser(currentUser);
       return currentUser;
     }
     
@@ -606,7 +548,7 @@ class _AIChatPageV2State extends State<AIChatPageV2>
           name: userData['display_name'] ?? 'User',
           imageSource: userData['photo_url'],
         );
-        _usersCache[userId] = user;
+        _userCacheService.updateUser(user);
         return user;
       }
     } catch (e) {
@@ -813,6 +755,7 @@ class _AIChatPageV2State extends State<AIChatPageV2>
       backgroundColor: VersusColors.backgroundPrimary,
       appBar: AppBar(
         backgroundColor: VersusColors.backgroundSecondary,
+        toolbarHeight: 56.0,  // Android 표준 높이로 조정
         title: Row(
           children: [
             CircleAvatar(

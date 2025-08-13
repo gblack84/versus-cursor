@@ -278,6 +278,113 @@ class MessagesModel extends FirestoreRecord {
 
   DocumentReference get parentReference => reference.parent.parent!;
 
+  // JSON serialization methods for caching
+  Map<String, dynamic> toJson() {
+    return {
+      'message_id': _messageId,
+      'sender_id': _senderId,
+      'content': _content,
+      'attachment_url': _attachmentUrl,
+      'attachment_type': _attachmentType,
+      'time_stamp': _timeStamp?.millisecondsSinceEpoch,
+      'is_read': _isRead,
+      'media_type': _mediaType,
+      'image_url': _imageUrl,
+      'video_url': _videoUrl,
+      'thumbnail_url': _thumbnailUrl,
+      'media_size': _mediaSize,
+      'media_width': _mediaWidth,
+      'media_height': _mediaHeight,
+      'delivered_at': _deliveredAt?.millisecondsSinceEpoch,
+      'seen_at': _seenAt?.millisecondsSinceEpoch,
+      'message_type': _messageType,
+      'receiver_id': _receiverId,
+      'vote_post_id': _votePostId,
+      'vote_title': _voteTitle,
+      'vote_description': _voteDescription,
+      'vote_option_a_text': _voteOptionAText,
+      'vote_option_b_text': _voteOptionBText,
+      'vote_option_a_image': _voteOptionAImage,
+      'vote_option_b_image': _voteOptionBImage,
+      'vote_option_a_images': _voteOptionAImages,
+      'vote_option_b_images': _voteOptionBImages,
+      'vote_status': _voteStatus,
+      'vote_end_time': _voteEndTime?.millisecondsSinceEpoch,
+      'card_status': _cardStatus,
+      'vote_results': _voteResults,
+      'user_votes': _userVotes,
+      'vote_aspect_ratio_a': _voteAspectRatioA,
+      'vote_aspect_ratio_b': _voteAspectRatioB,
+      'vote_results_a': _voteResultsA,
+      'vote_results_b': _voteResultsB,
+      'vote_percent_a': _votePercentA,
+      'vote_percent_b': _votePercentB,
+      'metadata': _metadata,
+    };
+  }
+
+  factory MessagesModel.fromJson(Map<String, dynamic> json) {
+    final model = MessagesModel._(
+      FirebaseFirestore.instance.doc('temp/temp'), // Temporary reference for cache
+      {},
+    );
+    
+    // Set all fields from JSON
+    model._messageId = json['message_id'] as String?;
+    model._senderId = json['sender_id'] as String?;
+    model._content = json['content'] as String?;
+    model._attachmentUrl = json['attachment_url'] as String?;
+    model._attachmentType = json['attachment_type'] as String?;
+    model._timeStamp = json['time_stamp'] != null 
+        ? DateTime.fromMillisecondsSinceEpoch(json['time_stamp'] as int)
+        : null;
+    model._isRead = json['is_read'] as bool?;
+    model._mediaType = json['media_type'] as String?;
+    model._imageUrl = json['image_url'] as String?;
+    model._videoUrl = json['video_url'] as String?;
+    model._thumbnailUrl = json['thumbnail_url'] as String?;
+    model._mediaSize = json['media_size'] as int?;
+    model._mediaWidth = json['media_width'] as double?;
+    model._mediaHeight = json['media_height'] as double?;
+    model._deliveredAt = json['delivered_at'] != null
+        ? DateTime.fromMillisecondsSinceEpoch(json['delivered_at'] as int)
+        : null;
+    model._seenAt = json['seen_at'] != null
+        ? DateTime.fromMillisecondsSinceEpoch(json['seen_at'] as int)
+        : null;
+    model._messageType = json['message_type'] as String?;
+    model._receiverId = json['receiver_id'] as String?;
+    model._votePostId = json['vote_post_id'] as String?;
+    model._voteTitle = json['vote_title'] as String?;
+    model._voteDescription = json['vote_description'] as String?;
+    model._voteOptionAText = json['vote_option_a_text'] as String?;
+    model._voteOptionBText = json['vote_option_b_text'] as String?;
+    model._voteOptionAImage = json['vote_option_a_image'] as String?;
+    model._voteOptionBImage = json['vote_option_b_image'] as String?;
+    model._voteOptionAImages = (json['vote_option_a_images'] as List<dynamic>?)
+        ?.map((e) => e as String)
+        .toList();
+    model._voteOptionBImages = (json['vote_option_b_images'] as List<dynamic>?)
+        ?.map((e) => e as String)
+        .toList();
+    model._voteStatus = json['vote_status'] as String?;
+    model._voteEndTime = json['vote_end_time'] != null
+        ? DateTime.fromMillisecondsSinceEpoch(json['vote_end_time'] as int)
+        : null;
+    model._cardStatus = json['card_status'] as String?;
+    model._voteResults = json['vote_results'] as Map<String, dynamic>?;
+    model._userVotes = json['user_votes'] as Map<String, dynamic>?;
+    model._voteAspectRatioA = json['vote_aspect_ratio_a'] as double?;
+    model._voteAspectRatioB = json['vote_aspect_ratio_b'] as double?;
+    model._voteResultsA = json['vote_results_a'] as int?;
+    model._voteResultsB = json['vote_results_b'] as int?;
+    model._votePercentA = json['vote_percent_a'] as double?;
+    model._votePercentB = json['vote_percent_b'] as double?;
+    model._metadata = json['metadata'] as Map<String, dynamic>?;
+    
+    return model;
+  }
+
   void _initializeFields() {
     _messageId = snapshotData['message_id'] as String?;
     _senderId = snapshotData['sender_id'] as String?;

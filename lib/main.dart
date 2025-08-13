@@ -14,6 +14,7 @@ import 'core/app_theme.dart';
 import 'core/app_utils.dart';
 import 'services/notification_service.dart';
 import 'services/global_notification_manager.dart';
+import 'services/cache/unified_cache_service.dart';
 import 'providers/navigation_provider.dart';
 
 void main() async {
@@ -22,6 +23,25 @@ void main() async {
   usePathUrlStrategy();
 
   await initFirebase();
+  
+  // Firestore 오프라인 캐시 활성화 - 앱 성능 대폭 개선
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,  // 무제한 캐시
+  );
+  
+  // UnifiedCacheService 초기화 - 3-Layer 캐싱
+  await UnifiedCacheService.initialize();
+  
+  // 백그라운드에서 최근 채팅 프리로드 (UI 차단 없음)
+  Future.microtask(() async {
+    try {
+      await UnifiedCacheService.instance.preloadRecentChats();
+      debugPrint('[Main] Recent chats preloaded successfully');
+    } catch (e) {
+      debugPrint('[Main] Failed to preload recent chats: $e');
+    }
+  });
 
   await AppTheme.initialize();
 

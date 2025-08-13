@@ -734,6 +734,18 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "hive",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/hive-2.2.3",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "hive_flutter",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/hive_flutter-1.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "html",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/html-0.15.6",
       "packageUri": "lib/",

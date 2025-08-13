@@ -22,6 +22,20 @@ class ChatFileSizeService {
       return 0;
     }
   }
+  
+  /// Check if file size is within acceptable limits (10MB)
+  Future<bool> checkFileSize(File file, {int maxSizeInBytes = 10485760}) async {
+    try {
+      if (await file.exists()) {
+        final size = await file.length();
+        return size <= maxSizeInBytes;
+      }
+      return false;
+    } catch (e) {
+      print('Error checking file size: $e');
+      return false;
+    }
+  }
 
   /// Get file size from Firebase Storage URL
   Future<int> getStorageFileSize(String url) async {

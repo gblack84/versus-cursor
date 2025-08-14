@@ -42,7 +42,7 @@ async function createVoteRequestMessage(userId, postId, postData) {
     message_id: messageId,
     sender_id: AI_ASSISTANT_ID,
     receiver_id: userId,
-    content: `${postData.authorName || '누군가'}님이 당신의 의견을 듣고 싶어해요!`,
+    // content 필드 제거 - AI 채팅방은 투표 카드만 표시
     time_stamp: now,
     is_read: false,
     
@@ -88,11 +88,14 @@ async function createVoteRequestMessage(userId, postId, postData) {
   const chatRef = admin.firestore().collection('chats').doc(chatId);
   const chatDoc = await chatRef.get();
   
+  // 채팅 목록 표시용 메시지 생성
+  const listMessage = `[투표] ${postData.questionTitle || postData.question_title || '새로운 투표'}`;
+  
   if (!chatDoc.exists) {
     await chatRef.set({
       user_a: AI_ASSISTANT_ID,
       user_b: userId,
-      last_message_content: messageData.content,
+      last_message_content: listMessage,
       last_message_at: now,
       last_message_sent_by: AI_ASSISTANT_ID,
       users: [AI_ASSISTANT_ID, userId],
@@ -103,7 +106,7 @@ async function createVoteRequestMessage(userId, postId, postData) {
   } else {
     // 마지막 메시지 업데이트
     await chatRef.update({
-      last_message_content: messageData.content,
+      last_message_content: listMessage,
       last_message_at: now,
       last_message_sent_by: AI_ASSISTANT_ID
     });
@@ -140,7 +143,7 @@ async function createVoteCreatedMessage(userId, postId, postData) {
     message_id: messageId,
     sender_id: userId,
     receiver_id: AI_ASSISTANT_ID,
-    content: '새로운 질문을 만들었어요! AI의 의견을 들어볼까요?',
+    // content 필드 제거 - AI 채팅방은 투표 카드만 표시
     time_stamp: now,
     is_read: false,
     
@@ -186,11 +189,14 @@ async function createVoteCreatedMessage(userId, postId, postData) {
   const chatRef = admin.firestore().collection('chats').doc(chatId);
   const chatDoc = await chatRef.get();
   
+  // 채팅 목록 표시용 메시지 생성
+  const listMessage = `[투표] ${postData.questionTitle || postData.question_title || '새로운 투표'}`;
+  
   if (!chatDoc.exists) {
     await chatRef.set({
       user_a: AI_ASSISTANT_ID,
       user_b: userId,
-      last_message_content: messageData.content,
+      last_message_content: listMessage,
       last_message_at: now,
       last_message_sent_by: AI_ASSISTANT_ID,
       users: [AI_ASSISTANT_ID, userId],
@@ -201,7 +207,7 @@ async function createVoteCreatedMessage(userId, postId, postData) {
   } else {
     // 마지막 메시지 업데이트
     await chatRef.update({
-      last_message_content: messageData.content,
+      last_message_content: listMessage,
       last_message_at: now,
       last_message_sent_by: AI_ASSISTANT_ID
     });

@@ -1,46 +1,174 @@
-# Chat System v2 Architecture
+# Versus Space 채팅 시스템 아키텍처
 
-## Overview
+## 📋 목차
+- [개요](#개요)
+- [시스템 구조](#시스템-구조)
+- [핵심 컴포넌트](#핵심-컴포넌트)
+- [채팅방 생성 플로우](#채팅방-생성-플로우)
+- [검색 기능](#검색-기능)
+- [미래 계획](#미래-계획)
 
-Versus Space 채팅 시스템은 flutter_chat_ui v2.9.0 기반으로 구축되었으며, Firebase Firestore를 백엔드로 사용합니다. v2 마이그레이션을 통해 더 나은 성능, 실시간 상태 관리, 향상된 UX를 제공합니다.
+## 개요
+
+Versus Space의 채팅 시스템은 **투표 중심의 소셜 커뮤니케이션**을 위해 설계되었습니다.
+현재는 투표 요청을 통해 채팅이 시작되며, 향후 일반 메시징과 AI 어시스턴트 기능이 추가될 예정입니다.
+
+## 시스템 구조
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    채팅 시스템 아키텍처                     │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ┌─────────────────┐         ┌──────────────────────┐  │
+│  │  ChatListWidget │ ────────▶│ ChatDetailWidgetV2   │  │
+│  │  (채팅 목록)     │         │  (현재 사용 중)        │  │
+│  └─────────────────┘         │                      │  │
+│                              │  - 일반 채팅 처리        │  │
+│                              │  - AI 투표 카드 표시    │  │
+│                              │  - 검색 (AI만)         │  │
+│                              └──────────────────────┘  │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │              AIChatPageV2 (미래 기능)              │   │
+│  │                                                 │   │
+│  │  ⚠️ 현재 미사용 - 향후 AI 어시스턴트용             │   │
+│  │  - 앱 사용법 안내                                │   │
+│  │  - 실시간 AI 대화                               │   │
+│  │  - Gemini AI 통합                              │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
 
 ## Directory Structure
 
 ```
 lib/pages/chat/
-├── ai_chat_v2/           # AI 채팅 (피클봇) 구현
-├── chat_detail_v2/       # 일반 채팅 상세 화면
+├── ai_chat_v2/           # AI 어시스턴트 (미래 기능)
+├── chat_detail_v2/       # 모든 채팅 처리 (현재 사용)
 ├── chat_list/            # 채팅 목록 화면
-├── chat_search/          # 채팅 검색 기능
+├── chat_search/          # 친구 검색 (채팅 시작 미구현)
 ├── friends_list/         # 친구 목록
 ├── services/             # 채팅 관련 서비스 레이어
 ├── MIGRATION_STATUS.md   # 마이그레이션 진행 상태
 └── MIGRATION_COMPLETE.md # 마이그레이션 완료 체크리스트
 ```
 
-## Core Components
+## 핵심 컴포넌트
 
-### 1. ChatDetailWidgetV2
+### 1. ChatDetailWidgetV2 ✅ (현재 활성)
 **위치**: `chat_detail_v2/chat_detail_widget_v2.dart`
 
-주요 기능:
+**용도**: 
+- ✅ 모든 채팅방 처리 (일반 + AI 투표)
+- ✅ 투표 카드 메시지 표시 및 상호작용
+- ✅ AI 채팅 감지 및 검색 기능 활성화
+
+**AI 채팅 감지 로직**:
+```dart
+bool get isAiChat => 
+  widget.chatDocument?.chatName == 'AI 피클' ||
+  (widget.chatDocument?.reference.id.startsWith('ai_assistant_') ?? false);
+```
+
+**주요 기능**:
 - flutter_chat_ui v2.9.0 Chat 위젯 통합
 - 실시간 메시지 동기화 (Firestore)
 - 메시지 상태 관리 (sent, delivered, seen)
 - 커스텀 메시지 타입 지원 (VoteCardMessage)
-- 미디어 업로드 (이미지, 비디오)
+- 검색 기능 (AI 채팅에서만)
 - 날짜별 구분선 표시
 
-### 2. AIChatPageV2
+### 2. AIChatPageV2 ⏳ (미래 기능)
 **위치**: `ai_chat_v2/ai_chat_page_v2.dart`
 
-주요 기능:
-- AI 피클봇과의 대화
-- 검색 기능 통합
-- 투표 카드 생성 및 공유
-- 메시지 하이라이팅
+**상태**: 
+- ⚠️ **현재 미사용** - 라우팅에 등록되지 않음
+- 📅 **향후 활성화 예정** - AI 어시스턴트 기능용
 
-### 3. ChatMessageLifecycleService
+**계획된 기능**:
+- AI 어시스턴트와 실시간 대화
+- 앱 사용법 및 기능 안내
+- 설정 도움말
+- ChatGPT 스타일 스트리밍 응답
+
+**준비 상태**:
+```dart
+// Gemini AI 통합 코드 준비 완료
+// API 키만 설정하면 사용 가능
+_chatController.initializeAI('YOUR_GEMINI_API_KEY');
+```
+
+### 3. ChatListWidget
+**위치**: `chat_list/chat_list_widget.dart`
+
+**기능**:
+- 사용자의 채팅방 목록 표시
+- AI 채팅방 구분 표시 (보라색 아이콘)
+- 새 채팅 시작 버튼 (⚠️ 미구현 - "준비 중입니다")
+
+### 4. NotificationService
+**위치**: `/lib/services/notification_service.dart`
+
+**역할**: 
+- **채팅방 자동 생성 담당**
+- 투표 요청 시 채팅방 생성
+- 투표 카드 메시지 생성
+
+## 채팅방 생성 플로우
+
+### 현재 구현된 방식 (투표 중심)
+```
+1. 사용자가 투표 생성
+    ↓
+2. 타겟 사용자 선택
+    ↓
+3. NotificationService.createVoteRequestChatMessage() 호출
+    ↓
+4. 채팅방 자동 생성 (ID: participantIds.sort().join('_'))
+    ↓
+5. 투표 카드 메시지 추가
+    ↓
+6. 채팅 시작
+```
+
+### 채팅방 ID 생성 규칙
+```dart
+// 일반 채팅방
+final participantIds = [senderId, recipientId]..sort();
+final chatId = participantIds.join('_');
+// 예: "user1_user2"
+
+// AI 채팅방
+final aiChatId = 'ai_assistant_${userId}';
+// 예: "ai_assistant_abc123"
+```
+
+## 검색 기능
+
+### 현재 상태
+- ✅ **AI 채팅에서만 활성화**
+- ❌ 일반 채팅에서는 비활성화
+
+### 검색 UI 위치
+```
+ChatDetailAppBar (AppBar의 검색 아이콘)
+    ↓ (AI 채팅인 경우만)
+_buildAISearchInput() (검색 입력창)
+    ↓
+검색 결과 네비게이션 (1/3 형태)
+```
+
+### 검색 가능 내용
+- 텍스트 메시지
+- 투표 카드 제목
+- 투표 카드 설명
+- 투표 옵션 텍스트
+
+## 서비스 레이어
+
+### ChatMessageLifecycleService
 **위치**: `services/chat_message_lifecycle_service.dart`
 
 주요 기능:
@@ -232,19 +360,45 @@ Chat(
 - `chat_detail_v2/chat_detail_widget_v2.dart`
 - `ai_chat_v2/ai_chat_page_v2.dart`
 
-## Future Improvements
+## 미래 계획
 
+### Phase 1: 일반 메시징 (계획)
+- [ ] 친구에게 직접 메시지 시작
+- [ ] 채팅방 생성 UI
+- [ ] 그룹 채팅
+
+### Phase 2: AI 어시스턴트 (준비됨)
+- [ ] AIChatPageV2 활성화
+- [ ] Gemini AI API 키 설정
+- [ ] 앱 내 도움말 시스템
+
+### Phase 3: 고급 기능
 - [ ] 메시지 암호화 (E2E)
 - [ ] 오프라인 메시지 큐
-- [ ] 메시지 검색 기능
 - [ ] 음성 메시지 지원
 - [ ] 메시지 반응 (이모지)
 - [ ] 답장 기능
 - [ ] 메시지 편집/삭제
 
+## 주의사항
+
+⚠️ **ChatDetailWidgetV2**와 **AIChatPageV2**는 서로 다른 용도입니다:
+- ChatDetailWidgetV2: 현재 모든 채팅 처리 (일반 + 투표)
+- AIChatPageV2: 미래 AI 어시스턴트 전용
+
+⚠️ 현재 채팅방은 **투표 요청을 통해서만** 생성됩니다.
+
+⚠️ 검색 기능은 **AI 채팅방에서만** 사용 가능합니다.
+
 ## Related Documentation
 
+- [System Architecture](../../../ARCHITECTURE.md) - 전체 시스템 아키텍처
+- [ChatDetailWidgetV2 Guide](chat_detail_v2/README.md)
+- [AIChatPageV2 Guide](ai_chat_v2/README.md)
 - [Services Layer](services/README.md)
 - [Migration Guide](MIGRATION_STATUS.md)
 - [Firebase Functions](../../../firebase/functions/README.md)
-- ~~Compatibility Layer~~ (Removed - migration complete)
+
+---
+
+최종 업데이트: 2025-08-13

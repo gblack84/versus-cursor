@@ -326,7 +326,7 @@ class MessagesModel extends FirestoreRecord {
   factory MessagesModel.fromJson(Map<String, dynamic> json) {
     final model = MessagesModel._(
       FirebaseFirestore.instance.doc('temp/temp'), // Temporary reference for cache
-      {},
+      json,  // Use actual json data as snapshotData instead of empty Map
     );
     
     // Set all fields from JSON

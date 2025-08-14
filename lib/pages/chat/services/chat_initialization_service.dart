@@ -129,6 +129,7 @@ class ChatInitializationService {
             model,
             messageData,
             {},
+            isAiChat: chatId.startsWith('ai_assistant_'),
           );
         });
         final messages = await Future.wait(messageFutures);
@@ -171,7 +172,7 @@ class ChatInitializationService {
     }
     
     // 병렬로 메시지 변환
-    final messageFutures = initialSnapshot.docs.map((doc) => _convertDocToMessage(doc));
+    final messageFutures = initialSnapshot.docs.map((doc) => _convertDocToMessage(doc, chatId: chatId));
     final messages = await Future.wait(messageFutures);
     
     if (kDebugMode) {
@@ -244,7 +245,7 @@ class ChatInitializationService {
   }
   
   /// Firestore 문서를 Core 메시지로 변환
-  Future<core.Message> _convertDocToMessage(DocumentSnapshot doc) async {
+  Future<core.Message> _convertDocToMessage(DocumentSnapshot doc, {String? chatId}) async {
     final messageModel = MessagesModel.fromSnapshot(doc);
     final messageData = doc.data() as Map<String, dynamic>?;
     
@@ -252,6 +253,7 @@ class ChatInitializationService {
       messageModel,
       messageData,
       {},
+      isAiChat: chatId?.startsWith('ai_assistant_') ?? false,
     );
   }
   

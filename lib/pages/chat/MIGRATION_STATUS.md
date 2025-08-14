@@ -5,13 +5,18 @@ Migration from flutter_chat_ui v1.6.15 to v2.9.0 with flutter_chat_core integrat
 
 ## Migration Phases
 
-### ✅ Phase 1: AI Chat v2 (100% Complete)
+### ✅ Phase 1: AI Chat v2 (100% Complete - 미래 기능)
 **Location**: `/lib/pages/chat/ai_chat_v2/`
+
+**⚠️ 중요**: **이 기능은 향후 AI 어시스턴트용으로 준비된 코드입니다**
+- 현재 라우팅에 등록되지 않음 (의도적)
+- ChatDetailWidgetV2와 완전히 다른 용도
+- Gemini AI와 대화하는 별도 기능
 
 **Files Created**:
 - `ai_chat_controller.dart` - AI chat controller with streaming
 - `message_adapter.dart` - Message type conversion
-- `ai_chat_page_v2.dart` - Complete AI chat implementation
+- `ai_chat_page_v2.dart` - AI assistant chat implementation
 - `README.md` - Documentation
 
 **Features**:
@@ -21,15 +26,20 @@ Migration from flutter_chat_ui v1.6.15 to v2.9.0 with flutter_chat_core integrat
 - ✅ Search functionality
 - ✅ ScrollToMessage support
 
-**Status**: Ready for testing (needs Gemini API key configuration)
+**Status**: 코드 준비 완료, 라우팅 미등록 (의도적)
 
 ---
 
-### ✅ Phase 2: General Chat v2 (100% Complete)
+### ✅ Phase 2: General Chat v2 (100% Complete - 현재 사용 중)
 **Location**: `/lib/pages/chat/chat_detail_v2/`
 
+**✅ 현재 활성**: **모든 채팅 처리 (일반 + AI 투표 카드)**
+- 현재 라우팅에 등록되어 실제 사용 중
+- 투표 카드 메시지 표시 및 상호작용
+- AI 채팅방 검색 기능 포함
+
 **Files Created**:
-- `chat_detail_widget_v2.dart` - General chat v2 implementation
+- `chat_detail_widget_v2.dart` - All chat implementation
 - `chat_detail_controller_v2.dart` - Controller with ScrollToMessageMixin
 - `chat_detail_migration_service.dart` - Firestore to core.Message conversion
 - `README.md` - Documentation
@@ -38,14 +48,14 @@ Migration from flutter_chat_ui v1.6.15 to v2.9.0 with flutter_chat_core integrat
 - ✅ Message sending/receiving
 - ✅ Firestore real-time sync
 - ✅ User resolution system
-- ✅ VoteCardMessage rendering
+- ✅ VoteCardMessage rendering (투표 카드)
 - ✅ ScrollToMessage support
-- ✅ Search for AI chat
+- ✅ Search for AI chat (AI 채팅에서만)
 - ✅ Gallery picker (wechat_assets_picker)
 - ✅ Camera picker (wechat_camera_picker)
 - ✅ File attachments (Firebase Storage upload)
 
-**Status**: Fully complete with all features implemented
+**Status**: 현재 라우팅에 등록되어 사용 중
 
 ---
 

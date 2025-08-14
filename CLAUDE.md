@@ -1234,7 +1234,7 @@ if (model.isVideoSelectedA) {
   - chat_detail_v2/chat_detail_widget_v2.dart
   - ai_chat_v2/ai_chat_page_v2.dart
 
-### 2025-08-13: 3-Layer 캐싱 시스템 구현 (커밋 전)
+### 2025-08-13: 3-Layer 캐싱 시스템 구현 (커밋 완료: a9778d5d)
 - **작업 내용**:
   - **UnifiedCacheService 구현**:
     - 3-Layer 캐싱 아키텍처 (Memory → Hive → Firestore)
@@ -1283,3 +1283,15 @@ if (model.isVideoSelectedA) {
   - lib/backend/schema/messages_model.dart (시리얼라이제이션)
   - lib/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart
   - lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart
+- **커밋**: a9778d5d
+
+### 2025-08-13: Android AppBar 텍스트 잘림 문제 수정 
+- **문제 원인**: Android의 Noto Sans CJK 폰트가 iOS보다 큰 line height 가짐
+- **해결 방법**:
+  - ChatDetailAppBar 높이: 35px → 45px
+  - AI 채팅 AppBar: toolbarHeight 56px 설정
+  - 패딩 조정: top 8px, bottom 8px
+- **영향받은 파일**:
+  - lib/pages/chat/chat_detail_v2/components/chat_detail_app_bar.dart
+  - lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart
+- **커밋**: a9778d5d (채팅 성능 최적화에 포함)

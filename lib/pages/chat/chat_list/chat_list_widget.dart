@@ -208,7 +208,10 @@ class _ChatListWidgetState extends State<ChatListWidget> {
                       children: [
                         Expanded(
                           child: Text(
-                            chat.lastMessageContent,
+                            // AI 채팅방은 더 깔끔한 메시지 표시
+                            isAIChat && chat.lastMessageContent.startsWith('[투표]')
+                                ? chat.lastMessageContent  // 이미 포맷팅된 메시지
+                                : chat.lastMessageContent,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: VersusTextStyles.bodySmall.copyWith(

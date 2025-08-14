@@ -1,10 +1,20 @@
-# Chat Detail v2 Migration
+# Chat Detail v2 - 모든 채팅 처리 컴포넌트
 
-## Overview
+## 🎯 용도
 
-This is the Phase 2 implementation of the flutter_chat_ui v2.9.0 migration for general chat functionality.
+**ChatDetailWidgetV2**는 Versus Space의 **모든 채팅 기능을 처리**하는 핵심 컴포넌트입니다.
 
-## Status: ✅ Phase 2 Completed
+### 현재 담당 기능:
+1. ✅ **일반 채팅**: 사용자 간 1:1 메시지
+2. ✅ **투표 카드**: AI가 생성한 투표 요청 표시 및 상호작용
+3. ✅ **검색 기능**: AI 채팅방에서만 활성화
+
+### ⚠️ 주의사항
+이 컴포넌트는 **AIChatPageV2와 다른 용도**입니다:
+- **ChatDetailWidgetV2**: 현재 사용 중, 모든 채팅 처리
+- **AIChatPageV2**: 미래 기능, AI 어시스턴트 전용 (미사용)
+
+## Status: ✅ 현재 활성 사용 중
 
 ### Completed Components:
 1. **ChatDetailWidgetV2** - Full v2 implementation with proper builders
@@ -28,6 +38,19 @@ ChatDetailMigrationService (Conversion layer)
   VoteCardMessage (Custom messages)
 ```
 
+## AI 채팅 감지 로직
+
+```dart
+bool get isAiChat => 
+  widget.chatDocument?.chatName == 'AI 피클' ||
+  (widget.chatDocument?.reference.id.startsWith('ai_assistant_') ?? false);
+```
+
+AI 채팅으로 감지되면:
+- AppBar에 검색 아이콘 표시
+- 검색 기능 활성화
+- AI 관련 UI 표시
+
 ## Key Features Implemented
 
 ### ✅ Core Chat Functionality
@@ -42,14 +65,15 @@ ChatDetailMigrationService (Conversion layer)
 - `core.Message` types (text, image, video, custom)
 - ScrollToMessageMixin integration
 
-### ✅ Search Support
-- Search functionality for AI chat
+### ✅ Search Support (AI Chat Only)
+- **AI 채팅에서만 활성화**
 - Search query highlighting in messages
-- Search input composer
+- Search navigation (1/3 형태)
+- `_buildAISearchInput()` 메서드로 구현
 
 ### ✅ Media Support Structure
 - Media selection bottom sheet
-- Placeholder methods for gallery/camera (TODO)
+- Gallery/camera pickers implemented
 - ChatMediaUploadService integration
 
 ## Usage

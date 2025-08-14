@@ -80,23 +80,77 @@ sequenceDiagram
     FS-->>App: 실시간 업데이트
 ```
 
-### 3. AI 채팅 시스템 플로우
+### 3. 채팅 시스템 아키텍처
+
+#### 컴포넌트 구조 및 역할 분담
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    채팅 시스템 구조                        │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ┌─────────────────┐         ┌──────────────────────┐  │
+│  │  ChatListWidget │ ────────▶│ ChatDetailWidgetV2   │  │
+│  │  (채팅 목록)     │         │  (✅ 현재 사용 중)     │  │
+│  └─────────────────┘         │                      │  │
+│                              │  - 일반 채팅 처리        │  │
+│                              │  - AI 투표 카드 표시    │  │
+│                              │  - 검색 (AI만)         │  │
+│                              └──────────────────────┘  │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │              AIChatPageV2 (미래 기능)              │   │
+│  │                                                 │   │
+│  │  ⚠️ 현재 미사용 - 향후 AI 어시스턴트용             │   │
+│  │  - 앱 사용법 안내                                │   │
+│  │  - 실시간 AI 대화                               │   │
+│  │  - Gemini AI 통합                              │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### ⚠️ 중요 구분 사항
+
+| 컴포넌트 | 상태 | 용도 | 경로 |
+|----------|------|------|------|
+| **ChatDetailWidgetV2** | ✅ 현재 사용 중 | 모든 채팅 처리 (일반 + 투표 카드) | `/lib/pages/chat/chat_detail_v2/` |
+| **AIChatPageV2** | ⚠️ 미사용 | 미래 AI 어시스턴트 전용 | `/lib/pages/chat/ai_chat_v2/` |
+
+#### AI 채팅 감지 로직
+```dart
+// ChatDetailWidgetV2에서 AI 채팅 감지
+bool get isAiChat => 
+  widget.chatDocument?.chatName == 'AI 피클' ||
+  (widget.chatDocument?.reference.id.startsWith('ai_assistant_') ?? false);
+
+// AI 채팅인 경우만 검색 기능 활성화
+if (isAiChat) {
+  // AppBar에 검색 아이콘 표시
+  // 검색 기능 활성화
+}
+```
+
+#### 채팅방 생성 플로우 (현재: 투표 중심)
 
 ```mermaid
 sequenceDiagram
     participant User as 사용자
     participant App as Flutter App
+    participant NS as NotificationService
     participant FS as Firestore
-    participant AI as AI Assistant
     
-    App->>FS: AI 채팅방 확인
-    FS-->>App: 채팅방 데이터
-    User->>App: 메시지 전송
-    App->>FS: 메시지 저장
-    Note over AI: AI 피클
-    AI->>FS: 투표 카드 생성
-    FS-->>App: 실시간 메시지
+    User->>App: 투표 생성
+    App->>App: 타겟 사용자 선택
+    App->>NS: createVoteRequestChatMessage()
+    NS->>FS: 채팅방 생성 (ID: user1_user2)
+    NS->>FS: 투표 카드 메시지 추가
+    NS->>FS: 알림 생성
+    FS-->>App: 실시간 업데이트
+    Note over App: ChatDetailWidgetV2에서 처리
 ```
+
+**참고**: 현재 친구에게 직접 메시지를 보내는 기능은 구현되지 않았습니다. 모든 채팅은 투표 요청을 통해서만 시작됩니다.
 
 ### 4. 스마트 레이아웃 데이터 플로우 (v1.3.0)
 
@@ -201,6 +255,37 @@ match /chats/{chatId}/messages/{message} {
 - **콜드 스타트 최소화**: 함수 분리 및 메모리 최적화
 - **타임아웃 설정**: 함수별 적절한 타임아웃 설정
 - **리전 설정**: asia-northeast3 (서울) 사용
+
+### 4. 채팅 시스템 최적화 (v3.0.0)
+
+#### 3-Layer 캐싱 아키텍처
+```
+┌─────────────────────────────────────────┐
+│         UnifiedCacheService             │
+├─────────────────────────────────────────┤
+│  L1: SimpleMemoryCache                  │
+│      - 100개 제한, 5분 TTL              │
+│      - <10ms 응답                       │
+│                ▼                        │
+│  L2: Hive Local DB                      │
+│      - 영구 로컬 저장소                  │
+│      - 10-30ms 응답                     │
+│                ▼                        │
+│  L3: Firestore Offline Cache            │
+│      - 무제한 크기                       │
+│      - 50-100ms 응답                    │
+└─────────────────────────────────────────┘
+```
+
+#### 병렬 로딩 최적화
+- **사용자 정보**: Future.wait()로 병렬 로드
+- **메시지 변환**: 30-50개 메시지 동시 처리
+- **채팅방 진입**: 500ms → 200ms (60% 개선)
+
+#### flutter_chat_ui v2 스크롤 문제 해결
+- **문제**: Regular List 모드로 인한 스크롤 점프
+- **해결**: ChatAnimatedListReversed 적용
+- **결과**: 즉시 최신 메시지 표시
 
 ## 📱 클라이언트 아키텍처
 

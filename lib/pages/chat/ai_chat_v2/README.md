@@ -1,8 +1,25 @@
-# AI Chat v2 Implementation
+# AI Chat v2 - 미래 AI 어시스턴트 기능
+
+## ⚠️ 현재 상태: 미사용
+
+**이 컴포넌트는 현재 사용되지 않습니다!**
+- 라우팅에 등록되지 않음
+- 향후 AI 어시스턴트 기능용으로 준비됨
+- ChatDetailWidgetV2와 다른 용도
+
+## 🎯 계획된 용도
+
+**AIChatPageV2**는 미래에 **AI 어시스턴트와의 대화**를 위한 전용 페이지입니다.
+
+### 계획된 기능:
+1. 📱 **앱 사용법 안내**: AI가 앱 기능 설명
+2. ⚙️ **설정 도움말**: 사용자 설정 가이드
+3. 💬 **일반 대화**: ChatGPT 스타일 실시간 대화
+4. 🎓 **학습 기능**: 사용자 패턴 학습 및 추천
 
 ## Overview
 
-This is the new AI chat implementation using flutter_chat_ui v2.9.0 with flutter_chat_core. It provides:
+This is the future AI assistant implementation using flutter_chat_ui v2.9.0 with flutter_chat_core. It provides:
 
 - ✅ **AI Streaming Support**: Real-time streaming of AI responses using TextStreamMessage
 - ✅ **ScrollToMessage**: Native support for scrolling to specific messages
@@ -23,12 +40,13 @@ This is the new AI chat implementation using flutter_chat_ui v2.9.0 with flutter
 - Search functionality
 - User resolution system
 
-## Usage
+## Usage (Future - 현재 미사용)
 
-To use the new AI chat page:
+향후 AI 어시스턴트 기능이 활성화되면:
 
 ```dart
-// Navigate to the new AI chat page
+// 현재는 사용하지 않음!
+// 향후 활성화 시:
 Navigator.push(
   context,
   MaterialPageRoute(
@@ -82,8 +100,15 @@ The current implementation can be tested by:
 2. Adding a navigation route to `AIChatPageV2`
 3. Configuring the Gemini API key
 
+## ⚠️ 주의사항
+
+**이 컴포넌트는 ChatDetailWidgetV2와 완전히 다른 용도입니다:**
+- **ChatDetailWidgetV2**: 현재 모든 채팅 처리 (투표 카드 포함)
+- **AIChatPageV2**: 미래 AI 어시스턴트 전용 (아직 미사용)
+
 ## Known Issues
 
+- 현재 라우팅에 등록되지 않음 (의도적)
 - API key configuration needs to be moved to environment variables
 - Message persistence to Firestore not yet implemented
 - Attachment handling not implemented

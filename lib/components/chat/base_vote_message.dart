@@ -390,8 +390,8 @@ mixin BaseVoteMessageStateMixin<T extends BaseVoteMessage> on State<T> {
     return Text(
       formatTime(widget.timestamp!),
       style: VersusTextStyles.labelSmall.copyWith(
-        fontSize: 11,
-        color: VersusColors.textSecondary.withValues(alpha: 0.8),
+        fontSize: 12,  // 11 → 12로 크기 증가
+        color: VersusColors.textPrimary,  // 훨씬 진한 색상으로 변경
       ),
     );
   }

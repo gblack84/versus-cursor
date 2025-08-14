@@ -9,8 +9,9 @@ class ChatDetailMigrationService {
   static Future<core.Message> convertFirestoreToCore(
     MessagesModel message,
     Map<String, dynamic>? messageData,
-    Map<String, UsersModel> usersMap,
-  ) async {
+    Map<String, UsersModel> usersMap, {
+    bool isAiChat = false,
+  }) async {
     var senderId = message.senderId.isNotEmpty ? message.senderId : 'unknown';
     
     // AI 채팅방에서 투표 메시지인 경우 senderId를 확인하고 수정
@@ -22,12 +23,17 @@ class ChatDetailMigrationService {
       }
     }
     
-    // Handle vote messages
+    // Handle vote messages - 최우선 처리
     if (messageData != null) {
       final isVoteRequest = messageData['receiver_id'] != null;
       final isVoteCreated = messageData['vote_option_a_text'] != null;
+      final hasVotePostId = messageData['vote_post_id'] != null;
+      final messageType = messageData['message_type'];
       
-      if (isVoteRequest || isVoteCreated) {
+      // 투표 관련 메시지는 무조건 투표 카드로 처리
+      // content 필드가 있어도 투표 카드로 표시
+      if (isVoteRequest || isVoteCreated || hasVotePostId || 
+          messageType == 'vote_request' || messageType == 'vote_created') {
         // Create custom message for vote
         return core.Message.custom(
           id: message.messageId.isNotEmpty ? message.messageId : DateTime.now().millisecondsSinceEpoch.toString(),
@@ -40,8 +46,9 @@ class ChatDetailMigrationService {
       }
     }
     
-    // Handle text messages
-    if (message.content.isNotEmpty) {
+    // Handle text messages - 투표 메시지가 아닌 경우에만 텍스트로 처리
+    // AI 채팅방에서는 content 필드를 완전히 무시
+    if (!isAiChat && message.content.isNotEmpty) {
       return core.Message.text(
         id: message.messageId.isNotEmpty ? message.messageId : DateTime.now().millisecondsSinceEpoch.toString(),
         authorId: senderId,

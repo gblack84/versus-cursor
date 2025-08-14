@@ -1,3 +1,21 @@
+/// ═══════════════════════════════════════════════════════════════════════════
+/// ChatDetailWidgetV2 - 현재 사용 중인 모든 채팅 처리 컴포넌트
+/// ═══════════════════════════════════════════════════════════════════════════
+/// 
+/// 🎯 역할: Versus Space의 모든 채팅 기능을 처리하는 핵심 컴포넌트
+/// 
+/// ✅ 담당 기능:
+///   - 일반 채팅: 사용자 간 1:1 메시지
+///   - 투표 카드: AI가 생성한 투표 요청 표시 및 상호작용
+///   - 검색 기능: AI 채팅방에서만 활성화 (chatName == 'AI 피클')
+/// 
+/// ⚠️ 주의: AIChatPageV2와 다른 용도입니다!
+///   - ChatDetailWidgetV2: 현재 사용 중, 모든 채팅 처리
+///   - AIChatPageV2: 미래 AI 어시스턴트 전용 (현재 미사용)
+/// 
+/// 📦 Dependencies: flutter_chat_ui v2.9.0, flutter_chat_core v2.8.0
+/// ═══════════════════════════════════════════════════════════════════════════
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -190,6 +208,7 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
       messageModel,
       messageData,
       {},
+      isAiChat: isAiChat,
     );
   }
   
@@ -964,7 +983,7 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
                     resolveUser: _resolveUser,
                     chatController: _chatController,
                     theme: _buildChatTheme(),
-                    timeFormat: DateFormat('HH:mm'), // 시간만 표시 (15:30 형식)
+                    timeFormat: DateFormat('h:mm a'), // AM/PM 형식 (3:30 PM)
                     onMessageSend: isAiChat ? null : _handleSendPressed,
                     onAttachmentTap: isAiChat ? null : _handleAttachmentPressed,
                     builders: core.Builders(

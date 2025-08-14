@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
+import 'package:intl/intl.dart';
 import '/design_system/design_system.dart';
 import '/backend/backend.dart';
 import '/components/chat/vote_card_message.dart';
@@ -136,8 +137,8 @@ class ChatMessageBuilder {
                           Text(
                             formatMessageTime(message.createdAt!),
                             style: VersusTextStyles.labelSmall.copyWith(
-                              fontSize: 10,
-                              color: VersusColors.textSecondary.withValues(alpha: 0.6),
+                              fontSize: 12,  // 10 → 12로 크기 증가
+                              color: VersusColors.textPrimary,  // 진한 색상으로 변경
                             ),
                           ),
                       ],
@@ -273,21 +274,9 @@ class ChatMessageBuilder {
   
   /// 메시지 시간 포맷팅
   static String formatMessageTime(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-    
-    if (difference.inMinutes < 1) {
-      return '방금';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}분 전';
-    } else if (difference.inDays < 1) {
-      return '${difference.inHours}시간 전';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}일 전';
-    } else {
-      // Format as date
-      return '${timestamp.month}/${timestamp.day}';
-    }
+    // AM/PM 형식으로 고정 시간 표시
+    return DateFormat('h:mm a').format(timestamp);
+    // 예: "3:30 PM", "9:45 AM"
   }
 }
 

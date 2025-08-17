@@ -66,19 +66,7 @@ class ChatDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
               const Spacer(),
-              // Search button (only for AI chat)
-              if (isAiChat)
-                GestureDetector(
-                  onTap: onSearchToggle,
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 16.0),
-                    child: Icon(
-                      isSearching ? Icons.close : Icons.search,
-                      color: VersusColors.textPrimary,
-                      size: 20.0,
-                    ),
-                  ),
-                ),
+              // Search button removed - now search is always shown in composer for AI chat
             ],
           ),
         ),

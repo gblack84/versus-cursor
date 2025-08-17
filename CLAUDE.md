@@ -1295,3 +1295,32 @@ if (model.isVideoSelectedA) {
   - lib/pages/chat/chat_detail_v2/components/chat_detail_app_bar.dart
   - lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart
 - **커밋**: a9778d5d (채팅 성능 최적화에 포함)
+
+### 2025-08-14: AI 채팅방 검색 UI 대규모 개선
+- **작업 내용**:
+  - **검색창 위치 변경**:
+    - 상단 AppBar → 하단 고정 위치 (카카오톡 스타일)
+    - Column 레이아웃으로 Chat와 검색창 분리
+    - MediaQuery.padding.bottom으로 안전 영역 확보
+  - **메시지 입력창 숨기기**:
+    - AI 채팅방에서 composerBuilder 사용하여 입력창 제거
+    - `composerBuilder: (context) => SizedBox.shrink()` 구현
+  - **검색창 UI 개선**:
+    - TextField에 `textAlignVertical: TextAlignVertical.center` 추가
+    - `InputDecoration.collapsed()` 사용으로 불필요한 패딩 제거
+    - 검색 아이콘과 텍스트 간 8px 패딩 추가
+    - 44px 고정 높이의 둥근 검색창 디자인
+  - **입력 제한 설정**:
+    - `maxLength: 20` - 최대 20자 제한
+    - `buildCounter: ... => null` - 글자 수 카운터 숨기기
+    - `autocorrect: false` - 자동수정 비활성화
+    - `enableSuggestions: false` - 키보드 제안 비활성화
+    - `textInputAction: TextInputAction.search` - 키보드에 검색 버튼
+    - `_performSearch`에 `trim()` 처리 추가
+  - **검색 하이라이트 버그 수정**:
+    - `_isSearching` 플래그 제대로 설정
+    - onChanged 핸들러에서 검색 상태 관리
+    - Clear 버튼 클릭 시 하이라이트 제거
+- **영향받은 파일**:
+  - lib/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart
+  - lib/pages/chat/chat_detail_v2/README.md (문서 업데이트)

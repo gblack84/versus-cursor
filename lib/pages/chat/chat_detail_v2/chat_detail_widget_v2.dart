@@ -9,6 +9,12 @@
 ///   - 투표 카드: AI가 생성한 투표 요청 표시 및 상호작용
 ///   - 검색 기능: AI 채팅방에서만 활성화 (chatName == 'AI 피클')
 /// 
+/// 📱 AI 채팅방 검색 UI (2025-08-14 업데이트):
+///   - 검색창 위치: 하단 배치 (카카오톡 스타일)
+///   - 메시지 입력창: AI 채팅방에서 숨김 처리
+///   - 입력 제한: 최대 20자, 자동수정 비활성화
+///   - UI 개선: 텍스트 수직 중앙 정렬, 아이콘 패딩 최적화
+/// 
 /// ⚠️ 주의: AIChatPageV2와 다른 용도입니다!
 ///   - ChatDetailWidgetV2: 현재 사용 중, 모든 채팅 처리
 ///   - AIChatPageV2: 미래 AI 어시스턴트 전용 (현재 미사용)
@@ -735,10 +741,14 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
   
   /// Perform search and highlight results
   void _performSearch(String query) {
-    if (query.isEmpty) return;
+    // Trim whitespace from query
+    final trimmedQuery = query.trim();
+    if (trimmedQuery.isEmpty) return;
     
     setState(() {
-      _searchResults = _chatController.searchMessages(query);
+      _isSearching = true;  // Enable search highlighting
+      _searchQuery = trimmedQuery;  // Update search query with trimmed value
+      _searchResults = _chatController.searchMessages(trimmedQuery);
       _currentSearchIndex = 0;
       
       if (_searchResults.isNotEmpty) {
@@ -766,132 +776,157 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
     });
   }
   
-  /// Build AI search input with KakaoTalk-style navigation
+  /// Build AI search input for bottom placement
   Widget _buildAISearchInput() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: VersusColors.backgroundSecondary,
-      child: Row(
-        children: [
-          // Search field
-          Expanded(
-            child: Container(
-              height: 40,
-              decoration: BoxDecoration(
-                color: VersusColors.backgroundPrimary,
-                borderRadius: BorderRadius.circular(20),
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 12,
+        bottom: MediaQuery.of(context).padding.bottom + 12,
+      ),
+      decoration: BoxDecoration(
+        color: VersusColors.backgroundSecondary,
+        border: Border(
+          top: BorderSide(
+            color: VersusColors.textPrimary.withValues(alpha: 0.2),
+            width: 1.0,
+          ),
+        ),
+      ),
+        child: Container(
+          height: 44,
+          decoration: BoxDecoration(
+            color: VersusColors.backgroundPrimary,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: VersusColors.textPrimary.withValues(alpha: 0.1),
+              width: 1.0,
+            ),
+          ),
+          child: Row(
+            children: [
+              // Search icon
+              Padding(
+                padding: const EdgeInsets.only(left: 14, right: 8),
+                child: Icon(
+                  Icons.search,
+                  color: VersusColors.primary,
+                  size: 22,
+                ),
               ),
-              child: Row(
-                children: [
-                  // Search icon
-                  Padding(
-                    padding: const EdgeInsets.only(left: 12),
-                    child: Icon(
-                      Icons.search,
+              // Text field
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  focusNode: _searchFocusNode,
+                  textAlign: TextAlign.left,  // Left align text
+                  textAlignVertical: TextAlignVertical.center,  // Vertically center text
+                  maxLength: 20,  // 최대 20자 제한
+                  buildCounter: (context, {required currentLength, required isFocused, required maxLength}) => null,  // 카운터 숨기기
+                  textInputAction: TextInputAction.search,  // 키보드에 검색 버튼 표시
+                  autocorrect: false,  // 자동 수정 비활성화
+                  enableSuggestions: false,  // 제안 비활성화
+                  decoration: InputDecoration.collapsed(
+                    hintText: '검색...',
+                    hintStyle: VersusTextStyles.bodyMedium.copyWith(
                       color: VersusColors.textSecondary,
+                    ),
+                  ),
+                  onSubmitted: _performSearch,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                      _isSearching = value.isNotEmpty;  // Enable highlighting when text exists
+                    });
+                    if (value.isEmpty) {
+                      setState(() {
+                        _searchResults = [];
+                        _currentSearchIndex = 0;
+                        _isSearching = false;  // Disable highlighting when empty
+                      });
+                    }
+                  },
+                  style: VersusTextStyles.bodyMedium.copyWith(
+                    color: VersusColors.textPrimary,
+                  ),
+                ),
+              ),
+              // Search result counter
+              if (_searchResults.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: VersusColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${_currentSearchIndex + 1}/${_searchResults.length}',
+                      style: VersusTextStyles.bodySmall.copyWith(
+                        color: VersusColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              // Navigation arrows
+              if (_searchResults.isNotEmpty) ...[
+                // Previous button
+                InkWell(
+                  onTap: () => _navigateToSearchResult(false),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.keyboard_arrow_up,
+                      color: VersusColors.primary,
                       size: 20,
                     ),
                   ),
-                  // Text field
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      focusNode: _searchFocusNode,
-                      onSubmitted: _performSearch,
-                      onChanged: (value) {
-                        setState(() {
-                          _searchQuery = value;
-                        });
-                        if (value.isEmpty) {
-                          setState(() {
-                            _searchResults = [];
-                            _currentSearchIndex = 0;
-                          });
-                        }
-                      },
-                      style: VersusTextStyles.bodyMedium,
-                      decoration: InputDecoration(
-                        hintText: '검색',
-                        hintStyle: VersusTextStyles.bodyMedium.copyWith(
-                          color: VersusColors.textSecondary,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                      ),
+                ),
+                // Next button
+                InkWell(
+                  onTap: () => _navigateToSearchResult(true),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.keyboard_arrow_down,
+                      color: VersusColors.primary,
+                      size: 20,
                     ),
                   ),
-                  // Search result counter
-                  if (_searchResults.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(
-                        '${_currentSearchIndex + 1}/${_searchResults.length}',
-                        style: VersusTextStyles.bodySmall.copyWith(
-                          color: VersusColors.textSecondary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                ),
+                const SizedBox(width: 4),
+              ],
+              // Clear button when there's text
+              if (_searchQuery.isNotEmpty)
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      _searchQuery = '';
+                      _searchResults = [];
+                      _currentSearchIndex = 0;
+                      _isSearching = false;  // Disable highlighting when cleared
+                      _searchController.clear();
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.clear,
+                      color: VersusColors.textSecondary,
+                      size: 18,
                     ),
-                  // Navigation arrows
-                  if (_searchResults.isNotEmpty) ...[
-                    // Previous button
-                    IconButton(
-                      icon: Icon(
-                        Icons.arrow_upward,
-                        color: VersusColors.textSecondary,
-                        size: 18,
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 32,
-                        minHeight: 32,
-                      ),
-                      onPressed: () => _navigateToSearchResult(false),
-                    ),
-                    // Next button
-                    IconButton(
-                      icon: Icon(
-                        Icons.arrow_downward,
-                        color: VersusColors.textSecondary,
-                        size: 18,
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 32,
-                        minHeight: 32,
-                      ),
-                      onPressed: () => _navigateToSearchResult(true),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+                  ),
+                ),
+              const SizedBox(width: 8),
+            ],
           ),
-          // Close button
-          const SizedBox(width: 8),
-          IconButton(
-            icon: Icon(
-              Icons.close,
-              color: VersusColors.textPrimary,
-              size: 20,
-            ),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(
-              minWidth: 32,
-              minHeight: 32,
-            ),
-            onPressed: () {
-              setState(() {
-                _isSearching = false;
-                _searchQuery = '';
-                _searchResults = [];
-                _currentSearchIndex = 0;
-                _searchController.clear();
-              });
-            },
-          ),
-        ],
-      ),
+        ),
     );
   }
   
@@ -987,14 +1022,15 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
                     onMessageSend: isAiChat ? null : _handleSendPressed,
                     onAttachmentTap: isAiChat ? null : _handleAttachmentPressed,
                     builders: core.Builders(
+                      // Hide input field completely for AI chat
+                      composerBuilder: isAiChat 
+                          ? (context) => const SizedBox.shrink()
+                          : null,
                       chatAnimatedListBuilder: (context, itemBuilder) {
                         return ChatAnimatedListReversed(
                           itemBuilder: itemBuilder,
                         );
                       },
-                      composerBuilder: isAiChat && _isSearching
-                          ? (context) => _buildAISearchInput()
-                          : null,
                       customMessageBuilder: _buildCustomMessage,
                       systemMessageBuilder: _buildSystemMessage,
                       emptyChatListBuilder: (context) => 
@@ -1023,6 +1059,8 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
                   ],
                 ),
               ),
+          // AI 채팅방일 때 하단에 검색창 표시
+          if (isAiChat) _buildAISearchInput(),
         ],
       ),
     );

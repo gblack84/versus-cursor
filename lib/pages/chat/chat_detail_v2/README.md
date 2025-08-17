@@ -71,6 +71,25 @@ AI 채팅으로 감지되면:
 - Search navigation (1/3 형태)
 - `_buildAISearchInput()` 메서드로 구현
 
+#### 🆕 AI 채팅방 검색 UI 개선 (2025-08-14)
+- **검색창 위치 변경**: 상단 → 하단 (카카오톡 스타일)
+  - 채팅 화면 하단에 고정 배치
+  - MediaQuery.padding.bottom으로 안전 영역 확보
+- **메시지 입력창 숨기기**: 
+  - AI 채팅방에서 `composerBuilder: (context) => SizedBox.shrink()` 사용
+  - 검색 전용 UI 구현
+- **검색창 UI 개선**:
+  - `textAlignVertical: TextAlignVertical.center` - 텍스트 수직 중앙 정렬
+  - `InputDecoration.collapsed()` - 불필요한 패딩 제거
+  - 검색 아이콘과 텍스트 간 8px 패딩
+  - 44px 고정 높이의 둥근 검색창
+- **입력 제한 설정**:
+  - `maxLength: 20` - 최대 20자 제한
+  - `autocorrect: false` - 자동수정 비활성화
+  - `enableSuggestions: false` - 제안 비활성화
+  - `textInputAction: TextInputAction.search` - 키보드에 검색 버튼
+  - `trim()` 처리로 앞뒤 공백 자동 제거
+
 ### ✅ Media Support Structure
 - Media selection bottom sheet
 - Gallery/camera pickers implemented

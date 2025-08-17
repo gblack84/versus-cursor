@@ -23,6 +23,7 @@
 /// ═══════════════════════════════════════════════════════════════════════════
 
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
@@ -229,9 +230,16 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
         .orderBy('time_stamp', descending: false);
     
     // 커서 기반 필터링 - 초기 로드된 메시지 이후만 스트리밍
+    // 문서가 있으면 문서 기반, 없으면 타임스탬프 기반 커서 사용
     if (_lastLoadedDocument != null) {
       query = query.startAfterDocument(_lastLoadedDocument!);
       debugPrint('[Chat Detail Stream] Starting stream after document: ${_lastLoadedDocument!.id}');
+    } else if (_initService.lastLoadedTimestamp != null) {
+      // 캐시에서 로드한 경우 타임스탬프 기반 커서 사용
+      query = query.where('time_stamp', isGreaterThan: Timestamp.fromDate(_initService.lastLoadedTimestamp!));
+      debugPrint('[Chat Detail Stream] Starting stream after timestamp: ${_initService.lastLoadedTimestamp}');
+      // 타임스탬프 커서 사용 시 초기 스냅샷 스킵하지 않음 (새 메시지만 오기 때문)
+      _skipInitialSnapshot = false;
     } else {
       debugPrint('[Chat Detail Stream] Starting stream without cursor - will skip initial snapshot');
     }
@@ -279,6 +287,7 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
   
   Future<void> _processDocumentChange(DocumentChange change) async {
     final message = await _convertDocToMessage(change.doc);
+    final chatId = widget.chatDocument?.reference.id;
     
     switch (change.type) {
       case DocumentChangeType.added:
@@ -287,6 +296,20 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
         
         // 새 메시지를 마지막 문서로 업데이트
         _lastLoadedDocument = change.doc;
+        
+        // 캐시에도 추가 (실시간 동기화)
+        if (chatId != null) {
+          try {
+            final messageModel = MessagesModel.fromSnapshot(change.doc);
+            await _initService.addMessageToCache(chatId, messageModel);
+            
+            if (kDebugMode) {
+              debugPrint('[Chat Detail] Added message to cache: ${message.id}');
+            }
+          } catch (e) {
+            debugPrint('[Chat Detail] Failed to add message to cache: $e');
+          }
+        }
         
         // Show FAB and animate if not at bottom and not from current user
         if (!_isAtBottom && message.authorId != _currentUser?.id) {
@@ -317,6 +340,20 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
         final oldMessage = _chatController.messages
             .firstWhere((m) => m.id == message.id, orElse: () => message);
         _chatController.updateMessage(oldMessage, message);
+        
+        // 캐시에서도 업데이트
+        if (chatId != null) {
+          try {
+            final messageModel = MessagesModel.fromSnapshot(change.doc);
+            await _initService.updateMessageInCache(chatId, messageModel);
+            
+            if (kDebugMode) {
+              debugPrint('[Chat Detail] Updated message in cache: ${message.id}');
+            }
+          } catch (e) {
+            debugPrint('[Chat Detail] Failed to update message in cache: $e');
+          }
+        }
         break;
         
       case DocumentChangeType.removed:
@@ -324,6 +361,19 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
         final toRemove = _chatController.messages
             .firstWhere((m) => m.id == message.id, orElse: () => message);
         _chatController.removeMessage(toRemove);
+        
+        // 캐시에서도 제거
+        if (chatId != null) {
+          try {
+            await _initService.removeMessageFromCache(chatId, message.id);
+            
+            if (kDebugMode) {
+              debugPrint('[Chat Detail] Removed message from cache: ${message.id}');
+            }
+          } catch (e) {
+            debugPrint('[Chat Detail] Failed to remove message from cache: $e');
+          }
+        }
         break;
     }
   }

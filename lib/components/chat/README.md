@@ -88,15 +88,45 @@ final result = await ChatMediaUploadService.uploadChatVideo(
 );
 ```
 
-#### VoteCardMessage (v2.0.0 통합)
+#### VoteCardMessage (v2.1.0 - 2025-08-17 업데이트)
 투표 카드 메시지 - 통합된 A vs B 투표 UI 컴포넌트
 
 **주요 기능**:
 - 전역 BoxSizes 캐시로 스크롤 성능 최적화
 - 스마트 레이아웃 시스템 (horizontal/vertical/single)
 - 멀티이미지 지원 (PageView)
-- 실시간 투표 상태 업데이트
+- 실시간 투표 상태 업데이트 (Firebase StreamBuilder 통합)
 - UnifiedImageCacheService 통합
+- VoteTimerService와 연동된 동기화된 타이머
+
+**실시간 동기화 (2025-08-17 추가)**:
+```dart
+// Firebase 실시간 스트림 자동 설정
+Stream<PostsModel>? _postStream;
+
+@override
+void initState() {
+  super.initState();
+  // posts 문서 실시간 감시
+  if (widget.postId.isNotEmpty) {
+    _postStream = PostsModel.getDocument(
+      FirebaseFirestore.instance.collection('posts').doc(widget.postId)
+    );
+  }
+}
+
+// StreamBuilder로 실시간 업데이트
+StreamBuilder<PostsModel>(
+  stream: _postStream,
+  builder: (context, snapshot) {
+    // 실시간 데이터 우선, fallback으로 기존 metadata 사용
+    final cardStatus = snapshot.hasData 
+        ? snapshot.data!.voteStatus 
+        : widget.cardStatus;
+    // UI 렌더링...
+  },
+);
+```
 
 ```dart
 VoteCardMessage(

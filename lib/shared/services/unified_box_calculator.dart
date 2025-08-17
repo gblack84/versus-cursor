@@ -309,13 +309,13 @@ class UnifiedBoxCalculator {
     // 1. 박스 간격
     const double spacing = 8.0;
     
-    // 2. 박스 너비 계산 - 다이얼로그 너비의 95% 사용
+    // 2. 박스 너비 계산 - 다이얼로그 너비를 최대한 활용
     double boxWidth;
     if (layoutType == LayoutType.single) {
       boxWidth = dialogWidth * 0.95;  // 단일: 95%
     } else if (layoutType == LayoutType.horizontal) {
-      // 가로 배치: 간격 빼고 절반씩
-      final availableWidth = dialogWidth * 0.95 - spacing;
+      // 가로 배치: 양쪽 여백과 간격을 고려하여 계산
+      final availableWidth = dialogWidth - spacing - 16;  // 양쪽 8px 여백
       boxWidth = availableWidth / 2;
     } else {
       // 세로 배치: 95%

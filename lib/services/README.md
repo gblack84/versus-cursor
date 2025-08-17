@@ -23,7 +23,8 @@ services/
 ├── cloud_image_moderation_service.dart # Cloud Vision API
 ├── image_moderation_service.dart # 이미지 검열 (레거시)
 ├── storage_service.dart        # Firebase Storage 관리
-└── unified_image_cache_service.dart # 통합 이미지 캐싱 서비스
+├── unified_image_cache_service.dart # 통합 이미지 캐싱 서비스
+└── vote_timer_service.dart     # 투표 타이머 동기화 서비스
 ```
 
 ## 주요 서비스
@@ -250,7 +251,62 @@ if (result.allRejected) {
 }
 ```
 
-### 7. Storage Service
+### 7. VoteTimerService (2025-08-17 추가)
+
+**투표 타이머 동기화 서비스**
+
+싱글톤 패턴으로 구현된 투표 타이머 관리 서비스입니다. 모든 투표 카드가 동일한 남은 시간을 표시하도록 postId별로 단일 Timer를 관리합니다.
+
+#### 주요 기능
+- postId별 단일 Timer 인스턴스 관리
+- Firebase 서버 시간 동기화
+- StreamController를 통한 브로드캐스트
+- 자동 메모리 정리 메커니즘
+- 네트워크 지연 보정
+
+#### 서버 시간 동기화
+```dart
+// 서버 시간 동기화 (5분 캐싱)
+await VoteTimerService.instance.syncServerTime();
+
+// 동기화된 현재 시간 가져오기
+final syncedNow = VoteTimerService.instance.synchronizedNow;
+```
+
+#### 사용 방법
+```dart
+// 싱글톤 인스턴스
+final timerService = VoteTimerService.instance;
+
+// 남은 시간 스트림 구독
+final stream = timerService.getRemainingTimeStream(
+  postId, 
+  voteEndTime,
+);
+
+// StreamBuilder에서 사용
+StreamBuilder<Duration>(
+  stream: stream,
+  builder: (context, snapshot) {
+    if (snapshot.hasData) {
+      final remaining = snapshot.data!;
+      return Text('${remaining.inMinutes}분 ${remaining.inSeconds % 60}초');
+    }
+    return Text('로딩중...');
+  },
+);
+
+// 타이머 중지
+timerService.stopTimer(postId);
+```
+
+#### 성능 최적화
+- Timer 인스턴스: N개 → 1개로 감소
+- 메모리 사용량: O(n) → O(1)
+- 모든 기기에서 동일한 시간 표시
+- 위젯 재생성 시에도 시간 일관성 유지
+
+### 8. Storage Service
 
 **Firebase Storage 파일 관리 서비스**
 

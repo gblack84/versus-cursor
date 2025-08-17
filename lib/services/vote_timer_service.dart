@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// 투표 타이머 동기화 서비스
 /// 
 /// 모든 투표 카드 위젯이 동일한 남은 시간을 표시하도록
 /// postId별로 단일 Timer를 관리하는 싱글톤 서비스
+/// 서버 시간 동기화를 통해 모든 기기에서 동일한 시간 표시
 class VoteTimerService extends ChangeNotifier {
   // 싱글톤 인스턴스
   static final VoteTimerService _instance = VoteTimerService._internal();
@@ -23,11 +25,88 @@ class VoteTimerService extends ChangeNotifier {
   // 활성 리스너 수 추적 (메모리 관리용)
   final Map<String, int> _listenerCounts = {};
   
+  // 서버 시간 동기화를 위한 오프셋
+  Duration? _serverTimeOffset;
+  DateTime? _lastSyncTime;
+  bool _isSyncing = false;
+  
+  /// 서버 시간과 동기화
+  /// 
+  /// Firebase 서버 시간과 로컬 시간의 차이를 계산하여
+  /// 모든 기기에서 동일한 시간을 사용하도록 함
+  Future<void> syncServerTime() async {
+    // 이미 동기화 중이거나 최근에 동기화했으면 스킵
+    if (_isSyncing) return;
+    if (_lastSyncTime != null && 
+        DateTime.now().difference(_lastSyncTime!).inMinutes < 5) {
+      return;
+    }
+    
+    _isSyncing = true;
+    
+    try {
+      // 로컬 시간 기록
+      final localTimeBefore = DateTime.now();
+      
+      // 서버에 타임스탬프 요청
+      final docRef = await FirebaseFirestore.instance
+          .collection('time_sync')
+          .add({
+            'timestamp': FieldValue.serverTimestamp(),
+            'local_time': localTimeBefore.toIso8601String(),
+          });
+      
+      // 서버 시간 받기
+      final doc = await docRef.get();
+      final serverTimestamp = doc.data()?['timestamp'] as Timestamp?;
+      
+      if (serverTimestamp != null) {
+        final localTimeAfter = DateTime.now();
+        final serverTime = serverTimestamp.toDate();
+        
+        // 네트워크 왕복 시간의 절반을 보정
+        final networkLatency = localTimeAfter.difference(localTimeBefore);
+        final estimatedServerTime = serverTime.add(Duration(milliseconds: networkLatency.inMilliseconds ~/ 2));
+        
+        // 오프셋 계산 (서버 시간 - 로컬 시간)
+        _serverTimeOffset = estimatedServerTime.difference(localTimeAfter);
+        _lastSyncTime = DateTime.now();
+        
+        if (kDebugMode) {
+          print('[VoteTimerService] Server time synced. Offset: ${_serverTimeOffset?.inSeconds} seconds');
+        }
+        
+        // 문서 정리
+        await docRef.delete();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('[VoteTimerService] Failed to sync server time: $e');
+      }
+    } finally {
+      _isSyncing = false;
+    }
+  }
+  
+  /// 동기화된 현재 시간 가져오기
+  /// 
+  /// 서버 시간 오프셋이 있으면 적용하고, 없으면 로컬 시간 사용
+  DateTime get synchronizedNow {
+    final now = DateTime.now();
+    if (_serverTimeOffset != null) {
+      return now.add(_serverTimeOffset!);
+    }
+    return now;
+  }
+  
   /// 특정 투표의 남은 시간 Stream 가져오기
   /// 
   /// 이미 존재하는 Stream이 있으면 재사용하고,
   /// 없으면 새로 생성하여 반환
   Stream<Duration> getRemainingTimeStream(String postId, DateTime voteEndTime) {
+    // 서버 시간 동기화 시도 (비동기로 실행)
+    syncServerTime();
+    
     // 이미 Stream이 존재하면 재사용
     if (_streamControllers.containsKey(postId)) {
       _incrementListenerCount(postId);
@@ -55,8 +134,8 @@ class VoteTimerService extends ChangeNotifier {
     );
     _streamControllers[postId] = controller;
     
-    // 초기 남은 시간 계산
-    final now = DateTime.now();
+    // 초기 남은 시간 계산 (동기화된 시간 사용)
+    final now = synchronizedNow;
     final initialRemaining = voteEndTime.difference(now);
     
     // 이미 만료된 경우
@@ -73,7 +152,8 @@ class VoteTimerService extends ChangeNotifier {
     
     // 1초마다 업데이트하는 Timer 생성
     final timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      final now = DateTime.now();
+      // 동기화된 시간 사용
+      final now = synchronizedNow;
       final remaining = voteEndTime.difference(now);
       
       if (remaining.isNegative || remaining.inSeconds <= 0) {
@@ -98,6 +178,7 @@ class VoteTimerService extends ChangeNotifier {
     if (kDebugMode) {
       print('[VoteTimerService] Timer created for postId: $postId');
       print('[VoteTimerService] Initial remaining time: ${initialRemaining.inSeconds} seconds');
+      print('[VoteTimerService] Using synchronized time (offset: ${_serverTimeOffset?.inSeconds ?? 0} seconds)');
     }
   }
   

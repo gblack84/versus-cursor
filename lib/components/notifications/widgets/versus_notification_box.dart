@@ -165,6 +165,7 @@ class VersusNotificationBox extends StatelessWidget {
         height: safeHeight,
         decoration: _buildBoxDecoration(),
         child: Stack(
+          clipBehavior: Clip.none,  // 오버레이 요소가 잘리지 않도록 설정
           children: [
             // 배경 이미지 또는 그라데이션
             _buildBackground(),
@@ -827,8 +828,11 @@ class VersusNotificationBoxBuilder {
     bool enableImageTap = true,
   }) {
     // 투표용 크기 계산
+    // UnifiedBoxCalculator가 내부적으로 패딩과 간격을 처리함
+    final dialogTotalWidth = MediaQuery.of(context).size.width * 0.92;
+    
     final votingSizes = UnifiedBoxCalculator.calculateForNotificationDialog(
-      dialogWidth: MediaQuery.of(context).size.width * 0.92,
+      dialogWidth: dialogTotalWidth,  // 전체 다이얼로그 너비 전달
       layoutType: sizeData.layoutType,
       aspectRatioA: sizeData.aspectRatioA,
       aspectRatioB: sizeData.aspectRatioB,
@@ -838,9 +842,12 @@ class VersusNotificationBoxBuilder {
     
     // 레이아웃에 따른 배치
     if (votingSizes.layoutType == LayoutType.horizontal) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+      return FittedBox(
+        fit: BoxFit.scaleDown,  // 화면 크기에 맞춰 자동 조정
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,  // 최소 크기 사용
+          children: [
           buildFromSizeData(
             context: context,
             sizeData: sizeData,
@@ -889,6 +896,7 @@ class VersusNotificationBoxBuilder {
             enableImageTap: enableImageTap,
           ),
         ],
+        ),
       );
     } else {
       return Column(

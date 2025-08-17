@@ -1348,3 +1348,34 @@ if (model.isVideoSelectedA) {
 - **영향받은 파일**:
   - lib/services/vote_timer_service.dart (신규 생성)
   - lib/components/chat/base_vote_message.dart (수정)
+- **커밋**: d7537732
+
+### 2025-08-17: 투표 시스템 실시간 동기화 및 레이아웃 UX 개선 (추가 작업)
+- **투표 타이머 서버 동기화 강화**:
+  - Firebase `time_sync` 컬렉션 활용한 서버 시간 동기화
+  - `syncServerTime()` 메서드: 네트워크 지연 보정 알고리즘 구현
+  - `synchronizedNow` getter: 동기화된 현재 시간 제공
+  - 5분 캐싱으로 불필요한 동기화 요청 방지
+  - 모든 기기에서 완벽히 동일한 타이머 표시 보장
+- **투표 카드 실시간 업데이트 구현**:
+  - `StreamBuilder<PostsModel>` 패턴 적용
+  - posts 컬렉션 실시간 감시로 즉각적인 상태 반영
+  - 투표 완료/진행중 상태 동적 전환
+  - Firebase 스트림을 통한 투표 수(votesA/votesB) 실시간 반영
+- **채팅 초기화 서비스 개선**:
+  - 성능 최적화 및 초기화 로직 개선
+  - 에러 핸들링 강화
+  - 메시지 로딩 시간 단축
+- **레이아웃 시스템 UX 개선**:
+  - `initState()` B박스 자동 숨김 로직 제거 (line 88-92)
+  - `_performLayoutUpdate()` B박스 자동 숨김 로직 제거 (line 183-189)
+  - 페이지 진입 시 A/B 박스 모두 표시 (`absellected = false` 기본값)
+  - B박스 표시 시 세로형 이미지 자동 감지 및 레이아웃 전환
+  - `toggleBoxVisibility()`에 `updateLayout()` 호출 추가
+  - 세로형 이미지(비율 < 1.0) 감지 시 자동으로 세로 배치 전환
+- **영향받은 파일**:
+  - lib/services/vote_timer_service.dart (서버 동기화 추가)
+  - lib/components/chat/vote_card_message.dart (실시간 스트림 통합)
+  - lib/pages/chat/services/chat_initialization_service.dart (초기화 개선)
+  - lib/posts/in_put_post_image/in_put_post_image_widget.dart (레이아웃 UX)
+  - lib/posts/in_put_post_image/helpers/media_box_callbacks.dart (토글 로직)

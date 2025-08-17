@@ -84,13 +84,9 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       // 초기 상태 설정
       _lastImageCount = appState.tempImageFilesA.length + appState.tempImageFilesB.length;
       
-      // B박스가 비어있으면 자동으로 단일 이미지 모드로 설정
-      if (appState.tempImageFilesB.isEmpty && appState.uploadImageB.isEmpty) {
-        setState(() {
-          _model.absellected = true;
-        });
-        DebugHelper.logLayout('[Debug] 초기화: B박스 비어있음 - 단일 이미지 모드 활성화');
-      }
+      // B박스 자동 숨김 로직 제거 - 사용자 요청에 따라 A/B 모두 표시
+      // 이제 페이지 진입 시 A/B 박스가 모두 표시됩니다 (absellected = false 유지)
+      DebugHelper.logLayout('[Debug] 초기화: A/B 박스 모두 표시 (absellected = false)');
       
       // 초기 레이아웃 설정은 _performLayoutUpdate를 직접 호출
       if (_lastImageCount > 0) {
@@ -179,13 +175,20 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
     try {
       final appState = Provider.of<AppState>(context, listen: false);
       
-      // B박스가 비어있으면 자동으로 단일 이미지 모드로 설정
-      if (appState.tempImageFilesB.isEmpty && appState.uploadImageB.isEmpty) {
-        if (!_model.absellected) {
+      // B박스가 방금 표시된 경우 세로형 이미지 감지 및 레이아웃 자동 변경
+      if (!_model.absellected && appState.tempImageFilesB.isEmpty && 
+          appState.uploadImageAspectRatioA.isNotEmpty) {
+        // A박스 이미지 비율로 레이아웃 결정
+        final ratioA = RatioCalculator.getRatio(appState.uploadImageAspectRatioA, box: 'A');
+        
+        // 세로형 이미지면 세로 배치로 자동 변경
+        if (ratioA < 1.0) {
           setState(() {
-            _model.absellected = true;
+            _model.currentLayout = LayoutType.vertical;
+            _model.isRatioVertical = false;  // 세로 배치(위/아래)
+            _model.isRatioHorizontal = true;
           });
-          DebugHelper.logLayout('[Debug] 레이아웃 업데이트: B박스 비어있음 - 단일 이미지 모드 활성화');
+          DebugHelper.logLayout('[Debug] B박스 추가 - 세로형 이미지 감지, 세로 배치로 변경');
         }
       }
     

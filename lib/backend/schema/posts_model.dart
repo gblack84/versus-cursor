@@ -282,6 +282,51 @@ class PostsModel extends FirestoreRecord {
   String get voteCancelledReason => _voteCancelledReason ?? '';
   bool hasVoteCancelledReason() => _voteCancelledReason != null;
 
+  // "notificationsSent" field.
+  bool? _notificationsSent;
+  bool get notificationsSent => _notificationsSent ?? false;
+  bool hasNotificationsSent() => _notificationsSent != null;
+
+  // "notificationsSentAt" field.
+  DateTime? _notificationsSentAt;
+  DateTime? get notificationsSentAt => _notificationsSentAt;
+  bool hasNotificationsSentAt() => _notificationsSentAt != null;
+
+  // "display_votes_a" field.
+  int? _displayVotesA;
+  int get displayVotesA => _displayVotesA ?? 0;
+  bool hasDisplayVotesA() => _displayVotesA != null;
+
+  // "display_votes_b" field.
+  int? _displayVotesB;
+  int get displayVotesB => _displayVotesB ?? 0;
+  bool hasDisplayVotesB() => _displayVotesB != null;
+
+  // "display_percent_a" field.
+  int? _displayPercentA;
+  int get displayPercentA => _displayPercentA ?? 0;
+  bool hasDisplayPercentA() => _displayPercentA != null;
+
+  // "display_percent_b" field.
+  int? _displayPercentB;
+  int get displayPercentB => _displayPercentB ?? 0;
+  bool hasDisplayPercentB() => _displayPercentB != null;
+
+  // "actual_votes_a" field.
+  int? _actualVotesA;
+  int get actualVotesA => _actualVotesA ?? 0;
+  bool hasActualVotesA() => _actualVotesA != null;
+
+  // "actual_votes_b" field.
+  int? _actualVotesB;
+  int get actualVotesB => _actualVotesB ?? 0;
+  bool hasActualVotesB() => _actualVotesB != null;
+
+  // "actual_total_votes" field.
+  int? _actualTotalVotes;
+  int get actualTotalVotes => _actualTotalVotes ?? 0;
+  bool hasActualTotalVotes() => _actualTotalVotes != null;
+
   void _initializeFields() {
     _userid = snapshotData['userid'] as String?;
     _content = snapshotData['content'] as String?;
@@ -339,6 +384,17 @@ class PostsModel extends FirestoreRecord {
     _voteCompletedAt = snapshotData['vote_completed_at'] as DateTime?;
     _voteCancelledAt = snapshotData['vote_cancelled_at'] as DateTime?;
     _voteCancelledReason = snapshotData['vote_cancelled_reason'] as String?;
+    
+    // Initialize notification and display fields
+    _notificationsSent = snapshotData['notificationsSent'] as bool?;
+    _notificationsSentAt = snapshotData['notificationsSentAt'] as DateTime?;
+    _displayVotesA = castToType<int>(snapshotData['display_votes_a']);
+    _displayVotesB = castToType<int>(snapshotData['display_votes_b']);
+    _displayPercentA = castToType<int>(snapshotData['display_percent_a']);
+    _displayPercentB = castToType<int>(snapshotData['display_percent_b']);
+    _actualVotesA = castToType<int>(snapshotData['actual_votes_a']);
+    _actualVotesB = castToType<int>(snapshotData['actual_votes_b']);
+    _actualTotalVotes = castToType<int>(snapshotData['actual_total_votes']);
   }
 
   static CollectionReference get collection =>
@@ -425,6 +481,15 @@ Map<String, dynamic> createPostsModelData({
   DateTime? voteCompletedAt,
   DateTime? voteCancelledAt,
   String? voteCancelledReason,
+  bool? notificationsSent,
+  DateTime? notificationsSentAt,
+  int? displayVotesA,
+  int? displayVotesB,
+  int? displayPercentA,
+  int? displayPercentB,
+  int? actualVotesA,
+  int? actualVotesB,
+  int? actualTotalVotes,
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
@@ -478,6 +543,15 @@ Map<String, dynamic> createPostsModelData({
       'vote_completed_at': voteCompletedAt,
       'vote_cancelled_at': voteCancelledAt,
       'vote_cancelled_reason': voteCancelledReason,
+      'notificationsSent': notificationsSent,
+      'notificationsSentAt': notificationsSentAt,
+      'display_votes_a': displayVotesA,
+      'display_votes_b': displayVotesB,
+      'display_percent_a': displayPercentA,
+      'display_percent_b': displayPercentB,
+      'actual_votes_a': actualVotesA,
+      'actual_votes_b': actualVotesB,
+      'actual_total_votes': actualTotalVotes,
     }.withoutNulls,
   );
 
@@ -542,7 +616,16 @@ class PostsModelDocumentEquality implements Equality<PostsModel> {
         e1?.voteTimeout == e2?.voteTimeout &&
         e1?.voteCompletedAt == e2?.voteCompletedAt &&
         e1?.voteCancelledAt == e2?.voteCancelledAt &&
-        e1?.voteCancelledReason == e2?.voteCancelledReason;
+        e1?.voteCancelledReason == e2?.voteCancelledReason &&
+        e1?.notificationsSent == e2?.notificationsSent &&
+        e1?.notificationsSentAt == e2?.notificationsSentAt &&
+        e1?.displayVotesA == e2?.displayVotesA &&
+        e1?.displayVotesB == e2?.displayVotesB &&
+        e1?.displayPercentA == e2?.displayPercentA &&
+        e1?.displayPercentB == e2?.displayPercentB &&
+        e1?.actualVotesA == e2?.actualVotesA &&
+        e1?.actualVotesB == e2?.actualVotesB &&
+        e1?.actualTotalVotes == e2?.actualTotalVotes;
   }
 
   @override
@@ -599,7 +682,16 @@ class PostsModelDocumentEquality implements Equality<PostsModel> {
         e?.voteTimeout,
         e?.voteCompletedAt,
         e?.voteCancelledAt,
-        e?.voteCancelledReason
+        e?.voteCancelledReason,
+        e?.notificationsSent,
+        e?.notificationsSentAt,
+        e?.displayVotesA,
+        e?.displayVotesB,
+        e?.displayPercentA,
+        e?.displayPercentB,
+        e?.actualVotesA,
+        e?.actualVotesB,
+        e?.actualTotalVotes
       ]);
 
   @override

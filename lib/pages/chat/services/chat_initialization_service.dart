@@ -134,13 +134,18 @@ class ChatInitializationService {
         });
         final messages = await Future.wait(messageFutures);
         
-        // 문서 정보는 캐시된 메시지에서 설정할 수 없으므로 null로 유지
-        anchorDocument = null;
-        lastLoadedDocument = null;
+        // 중요: 캐시에서 로드할 때도 타임스탬프 정보 보존
+        // 이를 통해 스트림이 올바른 지점부터 시작할 수 있음
+        anchorDocument = null;  // 문서는 없지만
+        lastLoadedDocument = null;  // 이것도 null이지만
         
-        // 마지막 메시지 타임스탬프 저장
+        // 마지막 메시지 타임스탬프는 반드시 저장 (스트림 커서로 사용)
         if (cachedMessages.isNotEmpty) {
           lastLoadedTimestamp = cachedMessages.last.timeStamp;
+          
+          if (kDebugMode) {
+            debugPrint('[Chat Init] Cache loaded - Last timestamp for stream cursor: $lastLoadedTimestamp');
+          }
         }
         
         return messages;
@@ -242,6 +247,68 @@ class ChatInitializationService {
       chatId: chatDocument.reference.id,
       userId: currentUser!.id,
     );
+  }
+  
+  /// 캐시에 메시지 추가
+  Future<void> addMessageToCache(String chatId, MessagesModel message) async {
+    try {
+      final cachedMessages = await _cacheService.getChatMessages(chatId);
+      
+      // 중복 체크
+      if (cachedMessages.any((m) => m.reference.id == message.reference.id)) {
+        return;
+      }
+      
+      // 새 메시지 추가
+      cachedMessages.add(message);
+      
+      // 시간순 정렬
+      cachedMessages.sort((a, b) {
+        final aTime = a.timeStamp;
+        final bTime = b.timeStamp;
+        if (aTime == null || bTime == null) return 0;
+        return aTime.compareTo(bTime);
+      });
+      
+      // 캐시 업데이트
+      await _cacheService.setChatMessages(chatId, cachedMessages);
+    } catch (e) {
+      debugPrint('[Chat Init] Failed to add message to cache: $e');
+    }
+  }
+  
+  /// 캐시에서 메시지 업데이트
+  Future<void> updateMessageInCache(String chatId, MessagesModel updatedMessage) async {
+    try {
+      final cachedMessages = await _cacheService.getChatMessages(chatId);
+      
+      // 메시지 찾아서 업데이트
+      final index = cachedMessages.indexWhere(
+        (m) => m.reference.id == updatedMessage.reference.id
+      );
+      
+      if (index != -1) {
+        cachedMessages[index] = updatedMessage;
+        await _cacheService.setChatMessages(chatId, cachedMessages);
+      }
+    } catch (e) {
+      debugPrint('[Chat Init] Failed to update message in cache: $e');
+    }
+  }
+  
+  /// 캐시에서 메시지 제거
+  Future<void> removeMessageFromCache(String chatId, String messageId) async {
+    try {
+      final cachedMessages = await _cacheService.getChatMessages(chatId);
+      
+      // 메시지 제거
+      cachedMessages.removeWhere((m) => m.reference.id == messageId);
+      
+      // 캐시 업데이트
+      await _cacheService.setChatMessages(chatId, cachedMessages);
+    } catch (e) {
+      debugPrint('[Chat Init] Failed to remove message from cache: $e');
+    }
   }
   
   /// Firestore 문서를 Core 메시지로 변환

@@ -30,6 +30,11 @@ class MediaBoxCallbacks {
     setState(() {
       model.absellected = false;
     });
+    // 레이아웃 재계산 트리거
+    updateLayout();
+    
+    // 디버그 로그
+    print('[MediaBoxCallbacks] B박스 표시 - 레이아웃 재계산 실행');
   }
 
   /// 이미지 추가 처리

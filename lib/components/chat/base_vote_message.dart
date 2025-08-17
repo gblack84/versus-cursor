@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '/design_system/design_system.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/services/vote_status_service.dart';
+import '/services/vote_timer_service.dart';
 import '/utils/vote_message_helper.dart';
 
 /// 투표 메시지의 공통 로직을 담은 추상 클래스
@@ -122,56 +123,63 @@ abstract class BaseVoteMessage extends StatefulWidget {
 
 /// 투표 메시지 상태 관리를 위한 mixin
 mixin BaseVoteMessageStateMixin<T extends BaseVoteMessage> on State<T> {
-  Timer? _timer;
+  // VoteTimerService를 통한 중앙 집중식 Timer 관리
+  final VoteTimerService _timerService = VoteTimerService();
+  StreamSubscription<Duration>? _timerSubscription;
   Duration _remainingTime = Duration.zero;
 
   @override
   void initState() {
     super.initState();
-    _startTimer();
+    _initializeTimer();
+  }
+
+  @override
+  void didUpdateWidget(T oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // postId나 voteEndTime이 변경되면 타이머 재구독
+    if (oldWidget.postId != widget.postId ||
+        oldWidget.voteEndTime != widget.voteEndTime ||
+        oldWidget.cardStatus != widget.cardStatus) {
+      _timerSubscription?.cancel();
+      _initializeTimer();
+    }
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _timerSubscription?.cancel();
     super.dispose();
   }
 
-  void _startTimer() {
-    if (widget.voteEndTime != null && 
-        (widget.cardStatus == 'voting_request' || widget.cardStatus == 'in_progress')) {
-      _updateRemainingTime();
-      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-        _updateRemainingTime();
-      });
-    }
-  }
-
-  void _updateRemainingTime() {
-    final now = DateTime.now();
-    final endTime = widget.voteEndTime;
+  void _initializeTimer() {
+    if (widget.voteEndTime == null) return;
     
-    if (endTime != null && endTime.isAfter(now)) {
-      final newRemainingTime = endTime.difference(now);
-      
-      // 표시되는 시간이 실제로 변경될 때만 setState 호출
-      // 초 단위가 아닌 분:초 형식으로 표시되므로, 실제 표시가 바뀔 때만 업데이트
-      final oldFormatted = formatRemainingTime();
-      _remainingTime = newRemainingTime;
-      final newFormatted = formatRemainingTime();
-      
-      if (oldFormatted != newFormatted) {
-        setState(() {
-          _remainingTime = newRemainingTime;
-        });
+    // 투표가 진행중이거나 요청 상태인 경우에만 타이머 구독
+    if (widget.cardStatus == 'voting_request' || widget.cardStatus == 'in_progress') {
+      // 캐시된 값이 있으면 즉시 표시 (깜빡임 방지)
+      final cachedTime = _timerService.getCachedRemainingTime(widget.postId);
+      if (cachedTime != null) {
+        _remainingTime = cachedTime;
       }
-    } else {
-      _timer?.cancel();
-      if (_remainingTime.inSeconds > 0) {
-        setState(() {
-          _remainingTime = Duration.zero;
-        });
-      }
+      
+      // Stream 구독하여 실시간 업데이트
+      _timerSubscription = _timerService
+          .getRemainingTimeStream(widget.postId, widget.voteEndTime!)
+          .listen((duration) {
+            if (mounted) {
+              // 표시되는 시간이 실제로 변경될 때만 setState 호출
+              final oldFormatted = formatRemainingTime();
+              _remainingTime = duration;
+              final newFormatted = formatRemainingTime();
+              
+              if (oldFormatted != newFormatted) {
+                setState(() {
+                  _remainingTime = duration;
+                });
+              }
+            }
+          });
     }
   }
 

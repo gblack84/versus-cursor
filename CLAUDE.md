@@ -1324,3 +1324,27 @@ if (model.isVideoSelectedA) {
 - **영향받은 파일**:
   - lib/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart
   - lib/pages/chat/chat_detail_v2/README.md (문서 업데이트)
+
+### 2025-08-17: 투표 타이머 동기화 시스템 구현
+- **문제점**:
+  - 동일한 투표 카드가 다른 남은 시간 표시 (9분 18초 vs 7분 41초)
+  - 각 VoteCardMessage 위젯이 독립적인 Timer 인스턴스 생성
+  - 위젯 재생성 시(스크롤, 네비게이션) 새 Timer 시작으로 시간 불일치
+- **해결 방법**:
+  - **VoteTimerService 구현** (싱글톤 패턴):
+    - postId별 단일 Timer 인스턴스 관리
+    - StreamController를 통한 브로드캐스트 방식
+    - 자동 메모리 정리 메커니즘
+    - 캐시된 남은 시간 즉시 표시 (깜빡임 방지)
+  - **BaseVoteMessageStateMixin 리팩토링**:
+    - 개별 Timer 제거, VoteTimerService Stream 구독
+    - didUpdateWidget에서 postId/voteEndTime 변경 감지
+    - dispose()에서 Stream 구독 해제
+- **성능 개선**:
+  - Timer 인스턴스: N개 → 1개로 감소
+  - 메모리 사용량: O(n) → O(1)
+  - 모든 투표 카드가 동일한 남은 시간 표시
+  - 위젯 재생성 시에도 시간 일관성 유지
+- **영향받은 파일**:
+  - lib/services/vote_timer_service.dart (신규 생성)
+  - lib/components/chat/base_vote_message.dart (수정)

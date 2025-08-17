@@ -329,15 +329,38 @@ class MessagesModel extends FirestoreRecord {
       json,  // Use actual json data as snapshotData instead of empty Map
     );
     
+    // Helper function to safely parse DateTime from various formats
+    DateTime? parseDateTime(dynamic value) {
+      if (value == null) return null;
+      
+      try {
+        if (value is int) {
+          // Milliseconds since epoch
+          return DateTime.fromMillisecondsSinceEpoch(value);
+        } else if (value is Timestamp) {
+          // Firebase Timestamp
+          return value.toDate();
+        } else if (value is String) {
+          // ISO 8601 string
+          return DateTime.tryParse(value);
+        } else if (value is DateTime) {
+          // Already a DateTime
+          return value;
+        }
+      } catch (e) {
+        // Log error but don't crash
+        print('Error parsing DateTime from value: $value, type: ${value.runtimeType}');
+      }
+      return null;
+    }
+    
     // Set all fields from JSON
     model._messageId = json['message_id'] as String?;
     model._senderId = json['sender_id'] as String?;
     model._content = json['content'] as String?;
     model._attachmentUrl = json['attachment_url'] as String?;
     model._attachmentType = json['attachment_type'] as String?;
-    model._timeStamp = json['time_stamp'] != null 
-        ? DateTime.fromMillisecondsSinceEpoch(json['time_stamp'] as int)
-        : null;
+    model._timeStamp = parseDateTime(json['time_stamp']);
     model._isRead = json['is_read'] as bool?;
     model._mediaType = json['media_type'] as String?;
     model._imageUrl = json['image_url'] as String?;
@@ -346,12 +369,8 @@ class MessagesModel extends FirestoreRecord {
     model._mediaSize = json['media_size'] as int?;
     model._mediaWidth = json['media_width'] as double?;
     model._mediaHeight = json['media_height'] as double?;
-    model._deliveredAt = json['delivered_at'] != null
-        ? DateTime.fromMillisecondsSinceEpoch(json['delivered_at'] as int)
-        : null;
-    model._seenAt = json['seen_at'] != null
-        ? DateTime.fromMillisecondsSinceEpoch(json['seen_at'] as int)
-        : null;
+    model._deliveredAt = parseDateTime(json['delivered_at']);
+    model._seenAt = parseDateTime(json['seen_at']);
     model._messageType = json['message_type'] as String?;
     model._receiverId = json['receiver_id'] as String?;
     model._votePostId = json['vote_post_id'] as String?;
@@ -368,9 +387,7 @@ class MessagesModel extends FirestoreRecord {
         ?.map((e) => e as String)
         .toList();
     model._voteStatus = json['vote_status'] as String?;
-    model._voteEndTime = json['vote_end_time'] != null
-        ? DateTime.fromMillisecondsSinceEpoch(json['vote_end_time'] as int)
-        : null;
+    model._voteEndTime = parseDateTime(json['vote_end_time']);
     model._cardStatus = json['card_status'] as String?;
     model._voteResults = json['vote_results'] as Map<String, dynamic>?;
     model._userVotes = json['user_votes'] as Map<String, dynamic>?;

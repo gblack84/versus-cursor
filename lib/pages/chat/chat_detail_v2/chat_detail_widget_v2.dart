@@ -108,6 +108,9 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
   bool _isLoadingMore = false;
   bool _skipInitialSnapshot = true;  // 스트림의 첫 스냅샷 스킵
   
+  // Debounce timer for scroll events to prevent frame drops
+  Timer? _scrollDebounceTimer;
+  
   // Initial loading state
   bool _isInitialLoading = true;
   
@@ -147,6 +150,7 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
     // Update last read timestamp when leaving chat
     _updateLastReadAt();
     
+    _scrollDebounceTimer?.cancel();
     _messageSubscription?.cancel();
     _messageStatusSubscription?.cancel();
     _searchController.dispose();
@@ -417,13 +421,32 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
       final messageFutures = snapshot.docs.map((doc) => _convertDocToMessage(doc));
       final olderMessages = await Future.wait(messageFutures);
       
+      // Get existing message IDs to prevent duplicates
+      final existingIds = _chatController.messages
+          .where((m) => m.id.isNotEmpty)
+          .map((m) => m.id)
+          .toSet();
+      
+      // Filter out duplicate messages
+      final uniqueOlderMessages = olderMessages
+          .where((msg) => msg.id.isNotEmpty && !existingIds.contains(msg.id))
+          .toList();
+      
+      // If all messages were duplicates, we've reached the end
+      if (uniqueOlderMessages.isEmpty) {
+        setState(() {
+          _hasMoreMessages = false;
+        });
+        return;
+      }
+      
       // Merge with existing messages
       // Chat UI v2 expects chronological order (oldest first)
       final currentMessages = _chatController.messages.toList();
-      olderMessages.addAll(currentMessages);  // Add newer messages after older ones
+      uniqueOlderMessages.addAll(currentMessages);  // Add newer messages after older ones
       
       // Update with date headers
-      final messagesWithHeaders = _addDateHeaders(olderMessages);
+      final messagesWithHeaders = _addDateHeaders(uniqueOlderMessages);
       _chatController.setMessages(messagesWithHeaders);
     } catch (e) {
       debugPrint('Error loading more messages: $e');
@@ -1033,13 +1056,17 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
                       onNotification: (notification) {
                         // Check if we've scrolled to the top (to load more messages)
                         if (notification is ScrollUpdateNotification) {
-                          // Check if we're near the top
-                          if (notification.metrics.pixels <= 100 &&
-                              notification.metrics.pixels > 0 &&
-                              !_isLoadingMore &&
-                              _hasMoreMessages) {
-                            _loadMoreMessages();
-                          }
+                          // Debounce scroll events to prevent excessive calls and frame drops
+                          _scrollDebounceTimer?.cancel();
+                          _scrollDebounceTimer = Timer(const Duration(milliseconds: 100), () {
+                            // Check if we're near the top
+                            if (notification.metrics.pixels <= 100 &&
+                                notification.metrics.pixels > 0 &&
+                                !_isLoadingMore &&
+                                _hasMoreMessages) {
+                              _loadMoreMessages();
+                            }
+                          });
                           
                           // Check if we're at bottom (within 24px tolerance)
                           final isAtBottom = notification.metrics.pixels >= 

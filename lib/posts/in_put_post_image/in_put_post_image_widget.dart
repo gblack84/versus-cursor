@@ -1204,20 +1204,27 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
   @override
   void dispose() {
-    // 페이지 나갈 때 업로드된 이미지 정리
-    // didChangeDependencies에서 저장한 AppState 사용
-    if (_appState != null && mounted) {
-      try {
-        _cleanupUploadedImagesWithAppState(_appState!);
-      } catch (e) {
-        DebugHelper.error('dispose에서 이미지 정리 중 에러', error: e);
-      }
-    }
-    
+    // 리스너와 타이머 먼저 정리
     _model.scrollController?.removeListener(_scrollListener);
-    _model.dispose();
     _layoutUpdateTimer?.cancel();
     
+    // 페이지 나갈 때 업로드된 이미지 정리
+    // Future.microtask를 사용하여 dispose 완료 후 실행
+    if (_appState != null) {
+      final appStateCopy = _appState;
+      // dispose 후에도 안전하게 실행되도록 Future로 예약
+      Future.microtask(() async {
+        try {
+          if (appStateCopy != null) {
+            await _cleanupUploadedImagesWithAppState(appStateCopy);
+          }
+        } catch (e) {
+          DebugHelper.error('dispose 후 이미지 정리 중 에러', error: e);
+        }
+      });
+    }
+    
+    _model.dispose();
     super.dispose();
   }
 
@@ -1416,11 +1423,17 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       DebugHelper.log('[_cleanupUploadedImagesWithAppState] 삭제할 이미지가 없습니다');
     }
     
-    // AppState 정리 (URL만, 로컬 파일은 유지)
-    appState.update(() {
+    // AppState 정리 - setState 없이 직접 수정
+    // 이미 dispose 후이므로 update() 메서드는 setState를 호출하지 않음
+    try {
+      // 직접 clear하여 setState 호출 방지
       appState.uploadImageA.clear();
       appState.uploadImageB.clear();
-    });
+      // update 메서드 호출 제거하여 setState 방지
+    } catch (e) {
+      // 이미 dispose된 경우 무시
+      DebugHelper.log('[_cleanupUploadedImagesWithAppState] AppState 정리 스킵 (already disposed)');
+    }
     
     DebugHelper.log('[_cleanupUploadedImagesWithAppState] 완료');
   }

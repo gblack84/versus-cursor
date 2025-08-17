@@ -16,6 +16,11 @@ services/
 │   ├── image_moderation/
 │   ├── models/
 │   └── constants/
+├── cache/                      # 3-Layer 캐싱 시스템
+│   ├── unified_cache_service.dart      # 통합 캐시 관리
+│   ├── simple_memory_cache.dart        # L1 메모리 캐시
+│   ├── cache_statistics.dart           # 캐시 통계 및 모니터링
+│   └── preload_strategy.dart           # 사전 로딩 전략
 ├── notification_service.dart    # 실시간 알림 처리
 ├── global_notification_manager.dart # 글로벌 알림 매니저 (새로운 파일)
 ├── target_audience_service.dart # 타겟 오디언스 관리
@@ -24,6 +29,7 @@ services/
 ├── image_moderation_service.dart # 이미지 검열 (레거시)
 ├── storage_service.dart        # Firebase Storage 관리
 ├── unified_image_cache_service.dart # 통합 이미지 캐싱 서비스
+├── user_cache_service.dart     # 사용자 데이터 캐싱
 └── vote_timer_service.dart     # 투표 타이머 동기화 서비스
 ```
 
@@ -386,7 +392,82 @@ void initState() {
 // - 닫기(X): 알림 읽음 처리
 ```
 
-### 5. UnifiedImageCacheService
+### 5. Cache Services (3-Layer 캐싱 시스템)
+
+**고성능 다계층 캐싱 아키텍처**
+
+#### 5.1 UnifiedCacheService
+
+**3-Layer 캐싱 시스템의 핵심 오케스트레이터**
+
+##### 아키텍처
+- **L1 Memory Cache**: SimpleMemoryCache (LRU, 100개 제한, 5분 TTL)
+- **L2 Local Storage**: Hive 영구 저장소 
+- **L3 Remote Cache**: Firestore 오프라인 캐시
+
+##### 주요 기능
+```dart
+// 싱글톤 인스턴스
+final cache = UnifiedCacheService.instance;
+
+// 데이터 저장 (자동으로 모든 레이어에 저장)
+await cache.set('key', data);
+
+// 데이터 조회 (L1 → L2 → L3 → Network 순서)
+final data = await cache.get('key');
+
+// 캐시 무효화
+await cache.invalidate('key');
+
+// 통계 조회
+final stats = cache.getStatistics();
+print('L1 히트율: ${stats.l1HitRate}%');
+```
+
+##### 성능 지표
+- **L1 히트**: <1ms
+- **L2 히트**: 10-30ms  
+- **L3 히트**: 50-100ms
+- **네트워크**: 300-500ms
+
+#### 5.2 PreloadStrategy
+
+**캐시 워밍 및 사전 로딩 전략**
+
+##### 주요 기능
+- 최근 채팅 10개 사전 로드
+- 홈 피드 게시물 20개 사전 캐싱
+- 사용자 프로필 일괄 로드
+- 이미지 프리페칭
+
+##### 사용 방법
+```dart
+// 앱 시작 시 프리로드
+await PreloadStrategy().preloadRecentChats(userId);
+await PreloadStrategy().preloadHomeFeedPosts();
+
+// 프리로드 상태 확인
+final stats = PreloadStrategy().getPreloadStats();
+print('캐시된 채팅: ${stats['preloaded_chats']}개');
+```
+
+##### Firestore 인덱스 에러 처리 (2025-08-17)
+3단계 폴백 쿼리 전략:
+1. 복합 인덱스 쿼리 시도
+2. 실패 시 단순 where 조건
+3. 최종 폴백으로 limit만 사용
+
+#### 5.3 CacheStatistics
+
+**캐시 성능 모니터링**
+
+##### 추적 지표
+- 레이어별 히트/미스 카운트
+- 평균 응답 시간
+- Firestore 읽기 비용 절약
+- 캐시 크기 및 메모리 사용량
+
+### 6. UnifiedImageCacheService
 
 **통합 이미지 캐싱 서비스**
 

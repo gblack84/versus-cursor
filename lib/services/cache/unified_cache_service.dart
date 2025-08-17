@@ -215,19 +215,46 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
     try {
       final hiveCached = await _localCache.get(cacheKey);
       if (hiveCached != null && hiveCached is List) {
-        final messages = hiveCached
-            .map((e) => MessagesModel.fromJson(Map<String, dynamic>.from(e as Map)))
-            .toList();
-        _memoryCache.set(cacheKey, messages, ttl: const Duration(minutes: 5));
-        stopwatch.stop();
-        CacheStatistics.instance.recordL2Hit(responseTimeMs: stopwatch.elapsedMilliseconds);
-        _logDebug('Chat messages from HIVE: $chatId (${stopwatch.elapsedMilliseconds}ms)');
-        // 백그라운드에서 동기화
-        _syncChatMessagesInBackground(chatId);
-        return messages;
+        // 캐시 데이터 무결성 검증 및 복구
+        final validMessages = <MessagesModel>[];
+        bool hasCorruptedData = false;
+        
+        for (final item in hiveCached) {
+          try {
+            if (item is Map) {
+              final message = MessagesModel.fromJson(Map<String, dynamic>.from(item));
+              validMessages.add(message);
+            }
+          } catch (e) {
+            // 손상된 데이터 발견
+            hasCorruptedData = true;
+            _logDebug('Corrupted message data found in cache: $e');
+          }
+        }
+        
+        // 손상된 데이터가 있으면 Hive 캐시 제거
+        if (hasCorruptedData) {
+          _logDebug('Removing corrupted cache entry for: $cacheKey');
+          await _localCache.delete(cacheKey);
+          // Firestore에서 다시 로드하도록 진행
+        } else if (validMessages.isNotEmpty) {
+          // 유효한 메시지들만 반환
+          _memoryCache.set(cacheKey, validMessages, ttl: const Duration(minutes: 5));
+          stopwatch.stop();
+          CacheStatistics.instance.recordL2Hit(responseTimeMs: stopwatch.elapsedMilliseconds);
+          _logDebug('Chat messages from HIVE: $chatId (${stopwatch.elapsedMilliseconds}ms)');
+          // 백그라운드에서 동기화
+          _syncChatMessagesInBackground(chatId);
+          return validMessages;
+        }
       }
     } catch (e) {
       _logDebug('Hive read error for chat messages: $e');
+      // 캐시 데이터가 완전히 손상된 경우 삭제
+      try {
+        await _localCache.delete(cacheKey);
+        _logDebug('Removed corrupted cache entry: $cacheKey');
+      } catch (_) {}
     }
     
     // L3: Firestore (오프라인 캐시 우선)

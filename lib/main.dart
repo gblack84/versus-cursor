@@ -15,6 +15,7 @@ import 'core/app_utils.dart';
 import 'services/notification_service.dart';
 import 'services/global_notification_manager.dart';
 import 'services/cache/unified_cache_service.dart';
+import 'services/cache/preload_strategy.dart';
 import 'providers/navigation_provider.dart';
 
 void main() async {
@@ -32,16 +33,6 @@ void main() async {
   
   // UnifiedCacheService 초기화 - 3-Layer 캐싱
   await UnifiedCacheService.initialize();
-  
-  // 백그라운드에서 최근 채팅 프리로드 (UI 차단 없음)
-  Future.microtask(() async {
-    try {
-      await UnifiedCacheService.instance.preloadRecentChats();
-      debugPrint('[Main] Recent chats preloaded successfully');
-    } catch (e) {
-      debugPrint('[Main] Failed to preload recent chats: $e');
-    }
-  });
 
   await AppTheme.initialize();
 
@@ -125,6 +116,23 @@ class _MyAppState extends State<MyApp> {
                 'lastActive': FieldValue.serverTimestamp(),
               });
             debugPrint('[Main] 알림 서비스 시작 및 lastActive 업데이트: ${user.uid}');
+            
+            // Preload recent chats for better cache performance
+            // UI 렌더링이 완료된 후 시작하도록 지연시킴
+            Future.delayed(const Duration(milliseconds: 500), () async {
+              try {
+                if (user.uid != null) {
+                  // 프리로드를 순차적으로 수행하여 메인 스레드 부하 감소
+                  await PreloadStrategy().preloadRecentChats(user.uid!);
+                  // 추가 지연을 주어 UI 반응성 유지
+                  await Future.delayed(const Duration(milliseconds: 100));
+                  await PreloadStrategy().preloadHomeFeedPosts();
+                  debugPrint('[Main] 프리로드 완료');
+                }
+              } catch (e) {
+                debugPrint('[Main] 프리로드 실패: $e');
+              }
+            });
           } catch (e) {
             debugPrint('[Main] lastActive 업데이트 실패: $e');
           }

@@ -66,7 +66,101 @@ enum MessageDeliveryStatus {
 }
 ```
 
-### 2. ChatFileSizeService
+### 2. ChatInitializationService
+
+**파일**: `chat_initialization_service.dart`
+
+**목적**: 채팅방 초기화 및 설정 관리
+
+**주요 기능**:
+- 채팅방 데이터 초기 로드
+- 참여자 정보 캐싱
+- 메시지 스트림 설정
+- 캐시 데이터 프리로드
+
+**사용 예시**:
+```dart
+final initService = ChatInitializationService();
+await initService.initializeChat(
+  chatId: 'chat_123',
+  userId: 'user_456',
+);
+```
+
+### 3. ChatMessageService
+
+**파일**: `chat_message_service.dart`  
+
+**목적**: 메시지 처리 및 변환 서비스
+
+**주요 기능**:
+- Firestore ↔ flutter_chat_ui 메시지 변환
+- 메시지 타입별 처리 로직
+- 투표 카드 메시지 특별 처리
+- 메시지 정렬 및 필터링
+
+**메시지 변환**:
+```dart
+// Firestore → flutter_chat_ui
+final uiMessage = ChatMessageService.convertToUIMessage(firestoreDoc);
+
+// flutter_chat_ui → Firestore
+final firestoreData = ChatMessageService.convertToFirestore(uiMessage);
+```
+
+### 4. ChatScrollService
+
+**파일**: `chat_scroll_service.dart`
+
+**목적**: 채팅 스크롤 동작 관리
+
+**주요 기능**:
+- 스크롤 위치 추적
+- 새 메시지 도착 시 자동 스크롤
+- 스크롤 투 바텀 기능
+- 무한 스크롤 페이지네이션
+
+**스크롤 제어**:
+```dart
+final scrollService = ChatScrollService();
+scrollService.scrollToBottom();
+scrollService.scrollToMessage(messageId);
+```
+
+### 5. ChatAnimationService
+
+**파일**: `chat_animation_service.dart`
+
+**목적**: 채팅 UI 애니메이션 처리
+
+**주요 기능**:
+- 메시지 진입 애니메이션
+- 타이핑 인디케이터 애니메이션
+- 읽음 상태 전환 애니메이션
+- 투표 카드 펼치기/접기 애니메이션
+
+### 6. ChatMediaUploadService
+
+**파일**: `chat_media_upload_service.dart`
+
+**목적**: 미디어 파일 업로드 관리
+
+**주요 기능**:
+- 이미지/비디오 압축
+- Firebase Storage 업로드
+- 썸네일 생성
+- 업로드 진행률 추적
+
+**업로드 플로우**:
+```dart
+final uploadService = ChatMediaUploadService();
+final urls = await uploadService.uploadMedia(
+  file: imageFile,
+  onProgress: (progress) => print('$progress%'),
+);
+```
+
+### 7. ChatFileSizeService
 
 **파일**: `chat_file_size_service.dart`
 

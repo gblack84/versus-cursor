@@ -122,27 +122,40 @@ abstract class BaseVoteMessage extends StatefulWidget {
 }
 
 /// 투표 메시지 상태 관리를 위한 mixin
+/// VoteStateCoordinator를 사용하는 경우 타이머 관리 기능은 사용하지 않음
+/// @deprecated 타이머 관련 코드는 VoteStateCoordinator 사용 시 불필요
+/// TODO: Phase 1에서 타이머 관련 코드 제거 예정 (REFACTORING_PLAN.md 참조)
 mixin BaseVoteMessageStateMixin<T extends BaseVoteMessage> on State<T> {
-  // VoteTimerService를 통한 중앙 집중식 Timer 관리
+  // VoteTimerService를 통한 중앙 집중식 Timer 관리 (레거시 지원용)
+  // @deprecated VoteStateCoordinator 사용 시 불필요
   final VoteTimerService _timerService = VoteTimerService();
   StreamSubscription<Duration>? _timerSubscription;
   Duration _remainingTime = Duration.zero;
+  
+  // VoteStateCoordinator 사용 여부를 결정하는 플래그 (오버라이드 가능)
+  bool get useVoteStateCoordinator => false;
 
   @override
   void initState() {
     super.initState();
-    _initializeTimer();
+    // VoteStateCoordinator를 사용하지 않는 경우에만 타이머 초기화
+    if (!useVoteStateCoordinator) {
+      _initializeTimer();
+    }
   }
 
   @override
   void didUpdateWidget(T oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // postId나 voteEndTime이 변경되면 타이머 재구독
-    if (oldWidget.postId != widget.postId ||
-        oldWidget.voteEndTime != widget.voteEndTime ||
-        oldWidget.cardStatus != widget.cardStatus) {
-      _timerSubscription?.cancel();
-      _initializeTimer();
+    // VoteStateCoordinator를 사용하지 않는 경우에만 타이머 재구독
+    if (!useVoteStateCoordinator) {
+      // postId나 voteEndTime이 변경되면 타이머 재구독
+      if (oldWidget.postId != widget.postId ||
+          oldWidget.voteEndTime != widget.voteEndTime ||
+          oldWidget.cardStatus != widget.cardStatus) {
+        _timerSubscription?.cancel();
+        _initializeTimer();
+      }
     }
   }
 
@@ -152,6 +165,8 @@ mixin BaseVoteMessageStateMixin<T extends BaseVoteMessage> on State<T> {
     super.dispose();
   }
 
+  /// @deprecated VoteStateCoordinator 사용 시 불필요
+  /// TODO: Phase 1에서 제거 예정 (REFACTORING_PLAN.md 참조)
   void _initializeTimer() {
     if (widget.voteEndTime == null) return;
     
@@ -184,6 +199,8 @@ mixin BaseVoteMessageStateMixin<T extends BaseVoteMessage> on State<T> {
   }
 
   /// 남은 시간 포맷팅
+  /// @deprecated VoteStateCoordinator 사용 시 불필요
+  /// TODO: Phase 1에서 제거 예정
   String formatRemainingTime() {
     if (_remainingTime.inSeconds <= 0) {
       return '투표 종료';
@@ -195,6 +212,8 @@ mixin BaseVoteMessageStateMixin<T extends BaseVoteMessage> on State<T> {
   }
 
   /// 시간 표시 여부
+  /// @deprecated VoteStateCoordinator 사용 시 불필요
+  /// TODO: Phase 1에서 제거 예정 (REFACTORING_PLAN.md 참조)
   bool shouldShowTimer() {
     return (widget.cardStatus == 'voting_request' || 
             widget.cardStatus == 'in_progress') &&
@@ -229,6 +248,8 @@ mixin BaseVoteMessageStateMixin<T extends BaseVoteMessage> on State<T> {
   }
 
   /// 투표 상태 정보 가져오기
+  /// @deprecated VoteCardMessage에 자체 구현이 있음
+  /// TODO: Phase 3에서 제거 예정 (REFACTORING_PLAN.md 참조)
   Map<String, dynamic> getStatusInfo() {
     final statusInfo = <String, dynamic>{};
     
@@ -327,6 +348,8 @@ mixin BaseVoteMessageStateMixin<T extends BaseVoteMessage> on State<T> {
   }
 
   /// 상태 배지 위젯 빌드
+  /// @deprecated VoteCardMessage에 자체 구현이 있음
+  /// TODO: Phase 3에서 제거 예정 (REFACTORING_PLAN.md 참조)
   Widget buildStatusBadge(Map<String, dynamic> statusInfo) {
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -360,6 +383,8 @@ mixin BaseVoteMessageStateMixin<T extends BaseVoteMessage> on State<T> {
   }
 
   /// 타이머 위젯 빌드
+  /// @deprecated VoteStateCoordinator 사용 시 불필요
+  /// TODO: Phase 1에서 제거 예정 (REFACTORING_PLAN.md 참조)
   Widget buildTimer() {
     return Container(
       padding: const EdgeInsets.symmetric(

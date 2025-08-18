@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
-import '/backend/schema/posts_model.dart';
 import '/design_system/design_system.dart';
 import '/components/notifications/voting_notification_dialog.dart';
 import '/utils/responsive_breakpoints.dart';
 import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
 import '/shared/services/unified_box_calculator.dart';
 import '/services/unified_image_cache_service.dart';
+import '/services/vote_state_coordinator.dart';
+import '/models/vote_state.dart';
 import 'base_vote_message.dart';
 
 /// AI 피클 채팅에서 사용되는 투표 카드 메시지 위젯
@@ -63,20 +63,25 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   LayoutType? _cachedLayoutType;
   BoxSizes? _cachedBoxSizes;
   
-  // Firebase 실시간 스트림
-  Stream<PostsModel>? _postStream;
+  // 통합 투표 상태 스트림
+  late Stream<VoteStateData> _voteStateStream;
+  
+  // VoteStateCoordinator 사용
+  @override
+  bool get useVoteStateCoordinator => true;
 
   @override
   void initState() {
     super.initState();
     // MediaQuery 접근은 didChangeDependencies에서 처리
     
-    // posts 문서 실시간 스트림 초기화
-    if (widget.postId.isNotEmpty) {
-      _postStream = PostsModel.getDocument(
-        FirebaseFirestore.instance.collection('posts').doc(widget.postId)
-      );
-    }
+    // 통합 상태 스트림 초기화
+    _voteStateStream = VoteStateCoordinator.instance.getVoteStateStream(
+      postId: widget.postId,
+      voteEndTime: widget.voteEndTime,
+      initialStatus: widget.cardStatus,
+      userVotes: widget.userVotes,
+    );
   }
   
   @override
@@ -95,15 +100,20 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   void didUpdateWidget(VoteCardMessage oldWidget) {
     super.didUpdateWidget(oldWidget);
     
-    // postId가 변경되면 스트림 재생성
-    if (oldWidget.postId != widget.postId) {
-      if (widget.postId.isNotEmpty) {
-        _postStream = PostsModel.getDocument(
-          FirebaseFirestore.instance.collection('posts').doc(widget.postId)
-        );
-      } else {
-        _postStream = null;
-      }
+    // postId가 변경되거나 주요 속성이 변경되면 스트림 재생성
+    if (oldWidget.postId != widget.postId ||
+        oldWidget.voteEndTime != widget.voteEndTime ||
+        oldWidget.cardStatus != widget.cardStatus) {
+      // 이전 상태 정리
+      VoteStateCoordinator.instance.dispose(oldWidget.postId);
+      
+      // 새 스트림 생성
+      _voteStateStream = VoteStateCoordinator.instance.getVoteStateStream(
+        postId: widget.postId,
+        voteEndTime: widget.voteEndTime,
+        initialStatus: widget.cardStatus,
+        userVotes: widget.userVotes,
+      );
     }
     
     // aspectRatio가 변경되면 캐시 무효화
@@ -118,22 +128,40 @@ class _VoteCardMessageState extends State<VoteCardMessage>
 
   @override
   void dispose() {
+    // 통합 상태 스트림 정리
+    VoteStateCoordinator.instance.dispose(widget.postId);
     super.dispose();
   }
   
-  // 상태별 정보 가져오기 메서드
-  Map<String, dynamic> _getStatusInfoForStatus(String status) {
+  // VoteState enum을 문자열로 변환
+  String _mapStateToString(VoteState state) {
+    switch (state) {
+      case VoteState.votingRequest:
+        return 'voting_request';
+      case VoteState.completed:
+        return 'completed';
+      case VoteState.expired:
+        return 'expired';
+      case VoteState.notParticipated:
+        return 'not_participated';
+      case VoteState.inProgress:
+        return 'in_progress';
+    }
+  }
+  
+  // VoteState enum에 따른 상태 정보 가져오기
+  Map<String, dynamic> _getStatusInfoForState(VoteState state, bool hasUserVoted) {
     final statusInfo = <String, dynamic>{};
     
-    switch (status) {
-      case 'voting_request':
+    switch (state) {
+      case VoteState.votingRequest:
         statusInfo['text'] = '피클요청';
         statusInfo['color'] = VersusColors.primary;
         statusInfo['icon'] = Icons.how_to_vote;
         break;
-      case 'in_progress':
+      case VoteState.inProgress:
         // 사용자가 투표했는지 확인
-        if (widget.hasCurrentUserVoted) {
+        if (hasUserVoted) {
           statusInfo['text'] = 'Pick 완료!(진행중)';
           statusInfo['color'] = Colors.blue;
           statusInfo['icon'] = Icons.check_circle_outline;
@@ -143,24 +171,26 @@ class _VoteCardMessageState extends State<VoteCardMessage>
           statusInfo['icon'] = Icons.timer;
         }
         break;
-      case 'completed':
+      case VoteState.completed:
         statusInfo['text'] = '완료';
         statusInfo['color'] = VersusColors.success;
         statusInfo['icon'] = Icons.check_circle;
         break;
-      case 'not_participated':
+      case VoteState.expired:
+        statusInfo['text'] = '만료';
+        statusInfo['color'] = VersusColors.textSecondary;
+        statusInfo['icon'] = Icons.timer_off;
+        break;
+      case VoteState.notParticipated:
         statusInfo['text'] = '미참여';
         statusInfo['color'] = VersusColors.textSecondary;
         statusInfo['icon'] = Icons.block;
         break;
-      default:
-        statusInfo['text'] = '알 수 없음';
-        statusInfo['color'] = VersusColors.textSecondary;
-        statusInfo['icon'] = Icons.help_outline;
     }
     
     return statusInfo;
   }
+  
   
   // 검색어 하이라이팅 헬퍼 메서드
   Widget _highlightText(String text, TextStyle baseStyle) {
@@ -213,66 +243,69 @@ class _VoteCardMessageState extends State<VoteCardMessage>
 
   @override
   Widget build(BuildContext context) {
-    // 스트림이 없으면 기존 방식 사용
-    if (_postStream == null) {
-      debugPrint('[VoteCard] Stream이 없음 - 기존 방식 사용');
-      return _buildVoteCard(
-        cardStatus: widget.cardStatus,
-        voteEndTime: widget.voteEndTime,
-        voteCompleted: false,
-      );
-    }
-    
-    // StreamBuilder로 실시간 데이터 감시
-    return StreamBuilder<PostsModel>(
-      stream: _postStream,
+    // 통합 상태 스트림 사용
+    return StreamBuilder<VoteStateData>(
+      stream: _voteStateStream,
       builder: (context, snapshot) {
-        // 실시간 데이터가 있으면 사용, 없으면 기존 metadata 사용
-        final hasRealtimeData = snapshot.hasData;
-        
-        if (hasRealtimeData) {
-          debugPrint('[VoteCard] 실시간 데이터 수신 - postId: ${widget.postId}');
-          debugPrint('  - voteStatus: ${snapshot.data!.voteStatus}');
-          debugPrint('  - voteCompleted: ${snapshot.data!.voteCompleted}');
-          debugPrint('  - votesA: ${snapshot.data!.votesA}');
-          debugPrint('  - votesB: ${snapshot.data!.votesB}');
+        // 에러 처리
+        if (snapshot.hasError) {
+          debugPrint('[VoteCard] Stream 에러: ${snapshot.error}');
+          // 에러 시 기본 상태로 폴백
+          return _buildUnifiedVoteCard(
+            VoteStateData(
+              state: _mapInitialStatus(widget.cardStatus),
+              voteEndTime: widget.voteEndTime,
+            ),
+          );
         }
         
-        // 실시간 데이터 또는 기존 데이터 선택
-        final cardStatus = hasRealtimeData 
-            ? (snapshot.data!.voteStatus.isNotEmpty 
-                ? snapshot.data!.voteStatus 
-                : (snapshot.data!.voteCompleted ? 'completed' : 'in_progress'))
-            : widget.cardStatus;
-            
-        final voteEndTime = hasRealtimeData
-            ? snapshot.data!.voteEndTime
-            : widget.voteEndTime;
-            
-        final voteCompleted = hasRealtimeData
-            ? snapshot.data!.voteCompleted
-            : (widget.cardStatus == 'completed');
-        
-        return _buildVoteCard(
-          cardStatus: cardStatus,
-          voteEndTime: voteEndTime,
-          voteCompleted: voteCompleted,
+        // 데이터 확인
+        final stateData = snapshot.data ?? VoteStateData(
+          state: _mapInitialStatus(widget.cardStatus),
+          voteEndTime: widget.voteEndTime,
         );
-      }
+        
+        // 디버그 로그
+        if (snapshot.hasData) {
+          debugPrint('[VoteCard] 통합 상태 수신 - postId: ${widget.postId}');
+          debugPrint('  - state: ${stateData.state}');
+          debugPrint('  - remainingTime: ${stateData.remainingTime}');
+          debugPrint('  - isTimerExpired: ${stateData.isTimerExpired}');
+          debugPrint('  - hasUserVoted: ${stateData.hasUserVoted}');
+        }
+        
+        return _buildUnifiedVoteCard(stateData);
+      },
     );
   }
   
-  Widget _buildVoteCard({
-    required String cardStatus,
-    DateTime? voteEndTime,
-    required bool voteCompleted,
-  }) {
-    // 기존 cardStatus를 실시간 데이터로 오버라이드
-    final effectiveStatus = voteCompleted ? 'completed' : cardStatus;
+  // 초기 상태를 VoteState enum으로 변환
+  VoteState _mapInitialStatus(String status) {
+    switch (status) {
+      case 'voting_request':
+        return VoteState.votingRequest;
+      case 'completed':
+        return VoteState.completed;
+      case 'expired':
+        return VoteState.expired;
+      case 'not_participated':
+        return VoteState.notParticipated;
+      case 'in_progress':
+        return VoteState.inProgress;
+      default:
+        return VoteState.inProgress;
+    }
+  }
+  
+  Widget _buildUnifiedVoteCard(VoteStateData stateData) {
+    // VoteState enum을 문자열로 변환 (기존 메서드 호환성 유지)
+    final effectiveStatus = _mapStateToString(stateData.state);
     
-    final statusInfo = _getStatusInfoForStatus(effectiveStatus);
+    // 상태 정보 가져오기 (사용자 투표 여부 반영)
+    final statusInfo = _getStatusInfoForState(stateData.state, stateData.hasUserVoted);
+    
     // vote_request 타입일 때 상태 텍스트를 '대기중'으로 오버라이드
-    if (widget.messageType == 'vote_request' && effectiveStatus == 'voting_request') {
+    if (widget.messageType == 'vote_request' && stateData.state == VoteState.votingRequest) {
       statusInfo['text'] = '대기중';
     }
     
@@ -324,9 +357,9 @@ class _VoteCardMessageState extends State<VoteCardMessage>
                   ],
                   const SizedBox(height: VersusSpacing.sm),
                   _buildSmartLayout(),
-                  if (_shouldShowTimer(effectiveStatus, voteEndTime)) ...[
+                  if (_shouldShowTimer(effectiveStatus, stateData.voteEndTime)) ...[
                     const SizedBox(height: VersusSpacing.sm),
-                    _buildTimer(voteEndTime),
+                    _buildTimer(stateData),
                   ],
                   if (_shouldShowAction(effectiveStatus)) ...[
                     const SizedBox(height: VersusSpacing.sm),
@@ -1021,10 +1054,53 @@ class _VoteCardMessageState extends State<VoteCardMessage>
     return status == 'completed';
   }
   
-  // 타이머 위젯 빌드 (BaseVoteMessageStateMixin의 타이머 사용)
-  Widget _buildTimer(DateTime? endTime) {
-    // BaseVoteMessageStateMixin의 buildTimer 메서드 사용
-    return buildTimer();
+  // 타이머 위젯 빌드 (통합 상태의 남은 시간 사용)
+  Widget _buildTimer(VoteStateData stateData) {
+    // 이미 계산된 남은 시간 사용
+    if (stateData.remainingTime != null && stateData.remainingTime!.inSeconds > 0) {
+      final duration = stateData.remainingTime!;
+      final minutes = duration.inMinutes;
+      final seconds = duration.inSeconds % 60;
+      final remainingText = '${minutes}분 ${seconds}초 남음';
+      
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.timer,
+            size: 16,
+            color: VersusColors.primary,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            remainingText,
+            style: VersusTextStyles.bodySmall.copyWith(
+              color: VersusColors.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      );
+    }
+    
+    // 타이머 만료
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.timer_off,
+          size: 16,
+          color: VersusColors.textSecondary,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '투표 종료',
+          style: VersusTextStyles.bodySmall.copyWith(
+            color: VersusColors.textSecondary,
+          ),
+        ),
+      ],
+    );
   }
   
   Widget _buildActionButton(String status) {

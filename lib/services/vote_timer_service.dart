@@ -115,6 +115,17 @@ class VoteTimerService extends ChangeNotifier {
     
     // 새 Stream 생성
     _createTimerStream(postId, voteEndTime);
+    
+    // cleanup으로 인해 controller가 제거된 경우 체크
+    // (이미 만료된 투표의 경우 _createTimerStream에서 즉시 cleanup 호출)
+    if (!_streamControllers.containsKey(postId)) {
+      // 만료된 투표에 대해 즉시 Duration.zero 스트림 반환
+      if (kDebugMode) {
+        print('[VoteTimerService] Vote already expired for postId: $postId, returning zero duration stream');
+      }
+      return Stream.value(Duration.zero);
+    }
+    
     _incrementListenerCount(postId);
     return _streamControllers[postId]!.stream;
   }

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 /// 투표 메시지 관련 헬퍼 클래스
 class VoteMessageHelper {
   /// 레거시 데이터를 새 구조로 변환
+  /// @deprecated 마이그레이션 완료로 불필요
+  /// TODO: Phase 2에서 제거 예정 (REFACTORING_PLAN.md 참조)
   static Map<String, dynamic> migrateVoteData(Map<String, dynamic> data) {
     // user_votes가 없으면 기존 필드에서 생성
     if (data['user_votes'] == null) {
@@ -23,6 +25,8 @@ class VoteMessageHelper {
   }
   
   /// 투표 카드 타입 결정
+  /// @deprecated 사용처 없음
+  /// TODO: Phase 2에서 제거 예정 (REFACTORING_PLAN.md 참조)
   static String getCardType({
     required String messageType,
     required String? cardStatus,
@@ -38,6 +42,8 @@ class VoteMessageHelper {
   }
   
   /// 투표 메시지 메타데이터 병합
+  /// @deprecated 사용처 없음
+  /// TODO: Phase 2에서 제거 예정 (REFACTORING_PLAN.md 참조)
   static Map<String, dynamic> mergeVoteMetadata(
     Map<String, dynamic> messageData,
     Map<String, dynamic>? existingMetadata,

@@ -471,6 +471,8 @@ class GlobalNotificationManager {
   /// 실제 투표 처리
   /// 
   /// 클라이언트에서 직접 처리합니다.
+  /// @deprecated VoteStatusService.submitVote()와 중복
+  /// TODO: Phase 4에서 VoteStatusService.submitVote() 호출로 대체 예정 (REFACTORING_PLAN.md 참조)
   Future<void> _submitVote(String postId, String selectedOption) async {
     try {
       // currentUserReference 사용 (채팅에서 투표할 때와 동일)

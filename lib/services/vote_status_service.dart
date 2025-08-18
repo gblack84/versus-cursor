@@ -8,6 +8,8 @@ class VoteStatusService {
   static const Duration _cacheDuration = Duration(seconds: 1);
   
   /// 사용자의 개인 투표 상태 계산
+  /// @deprecated VoteStateCoordinator로 대체됨
+  /// TODO: Phase 5에서 제거 예정 (REFACTORING_PLAN.md 참조)
   static String getUserVoteStatus({
     required Map<String, dynamic>? userVotes,
     required String userId,
@@ -59,6 +61,8 @@ class VoteStatusService {
   }
   
   /// 오래된 캐시 항목 정리
+  /// @deprecated getUserVoteStatus와 함께 제거 예정
+  /// TODO: Phase 5에서 제거 예정 (REFACTORING_PLAN.md 참조)
   static void _cleanupCache() {
     final now = DateTime.now();
     _statusCache.removeWhere((key, value) => 

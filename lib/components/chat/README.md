@@ -1,4 +1,18 @@
-# 채팅 시스템 아키텍처
+# Chat Components Documentation
+
+## 최종 업데이트: 2025-08-18
+
+## ⚠️ 리팩토링 진행 상황
+
+### 현재 상태
+- **BaseVoteMessage**: 레거시 타이머 코드 제거 예정 ⚠️
+- **VoteCardMessage**: VoteStateCoordinator 사용 (최신) ✅
+- ~~**VoteRequestMessage**~~: 제거됨 (2025-08-06) ❌
+
+### 예정된 변경사항
+- Phase 1: BaseVoteMessageStateMixin 타이머 코드 제거
+- Phase 3: 중복된 shouldShow* 메서드 통합
+- 상세 계획: [REFACTORING_PLAN.md](../../REFACTORING_PLAN.md) 참조
 
 ## 개요
 
@@ -7,7 +21,7 @@ Versus Space 채팅 시스템은 `flutter_chat_ui`를 기반으로 구축된 현
 ## 기술 스택
 
 ### Flutter 패키지
-- **flutter_chat_ui**: ^1.6.15 - 프로페셔널한 채팅 UI
+- **flutter_chat_ui**: ^2.9.0 - 프로페셔널한 채팅 UI (v2로 업그레이드됨)
 - **flutter_chat_types**: ^3.6.2 - 타입 정의
 - **flutter_link_previewer**: ^3.2.2 - 링크 미리보기
 - **wechat_assets_picker**: ^9.5.1 - 갤러리 선택

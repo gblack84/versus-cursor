@@ -10,6 +10,7 @@ import '/components/notifications/models/versus_box_size_data.dart';
 import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
 import '/core/nav/nav.dart';
 import 'notification_service.dart';
+import 'vote_status_service.dart';
 import '/posts/in_put_post_image/utils/debug_helper.dart';
 
 /// 글로벌 알림 관리자
@@ -468,151 +469,22 @@ class GlobalNotificationManager {
     };
   }
   
-  /// 실제 투표 처리
-  /// 
-  /// 클라이언트에서 직접 처리합니다.
-  /// @deprecated VoteStatusService.submitVote()와 중복
-  /// TODO: Phase 4에서 VoteStatusService.submitVote() 호출로 대체 예정 (REFACTORING_PLAN.md 참조)
+  /// 실제 투표 처리 - VoteStatusService 사용
   Future<void> _submitVote(String postId, String selectedOption) async {
     try {
-      // currentUserReference 사용 (채팅에서 투표할 때와 동일)
-      if (currentUserReference == null) {
-        DebugHelper.warning('currentUserReference가 null', tag: 'GlobalNotificationManager');
-        return;
-      }
-      
-      // 사용자 문서 존재 확인
-      final userDoc = await currentUserReference!.get();
-      if (!userDoc.exists) {
-        DebugHelper.warning('사용자 문서가 존재하지 않음', tag: 'GlobalNotificationManager');
-        return;
-      }
-      
-      DebugHelper.logOnce(
-        'vote_submit_${postId}_$currentUserUid',
-        '투표 시도: postId=${DebugHelper.maskSensitive(postId)}, option=$selectedOption',
-        tag: 'GlobalNotificationManager',
-        level: LogLevel.DEBUG
+      // VoteStatusService.submitVote 호출
+      await VoteStatusService.submitVote(
+        postId: postId,
+        userId: currentUserUid,
+        choice: selectedOption,
+        messageId: null,  // 알림에서는 메시지 ID가 없음
+        chatId: null,     // 알림에서는 채팅 ID가 없음
+        onError: (error) {
+          DebugHelper.warning('투표 처리 실패: $error', tag: 'GlobalNotificationManager');
+        },
       );
       
-      // 모든 작업을 하나의 트랜잭션으로 처리
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        final postRef = FirebaseFirestore.instance
-            .collection('posts')
-            .doc(postId);
-        
-        // 1. posts 문서 읽기
-        final postDoc = await transaction.get(postRef);
-        if (!postDoc.exists) {
-          throw Exception('게시물을 찾을 수 없습니다');
-        }
-        
-        final currentData = postDoc.data() as Map<String, dynamic>;
-        final voteCountField = selectedOption == 'A' ? 'vote_count_a' : 'vote_count_b';
-        final votedUsersField = selectedOption == 'A' ? 'votedUserIDsA' : 'votedUserIDsB';
-        final currentCount = (currentData[voteCountField] ?? 0) as int;
-        final currentVotedUsersA = List<String>.from(currentData['votedUserIDsA'] ?? []);
-        final currentVotedUsersB = List<String>.from(currentData['votedUserIDsB'] ?? []);
-        
-        // 2. 중복 투표 확인 (양쪽 모두 확인)
-        if (currentVotedUsersA.contains(currentUserUid) || currentVotedUsersB.contains(currentUserUid)) {
-          DebugHelper.info('이미 투표한 사용자', tag: 'GlobalNotificationManager');
-          throw Exception('이미 투표한 사용자입니다');
-        }
-        
-        // 3. votes 서브컬렉션에 투표 문서 생성
-        final voteRef = postRef.collection('votes').doc();
-        final voteData = {
-          'user': currentUserReference,  // currentUserReference 사용
-          'option': selectedOption,
-          'created_at': FieldValue.serverTimestamp(),
-          'from_chat': false,  // 알림 기반 투표는 채팅이 아님
-        };
-        
-        transaction.set(voteRef, voteData);
-        
-        // 4. posts 문서 업데이트
-        final currentVotedUsers = selectedOption == 'A' ? currentVotedUsersA : currentVotedUsersB;
-        currentVotedUsers.add(currentUserUid);
-        
-        final updateData = {
-          voteCountField: currentCount + 1,
-          votedUsersField: currentVotedUsers,
-          'total_votes': (currentData['total_votes'] ?? 0) + 1,
-          'last_vote_at': FieldValue.serverTimestamp(),
-        };
-        
-        transaction.update(postRef, updateData);
-      });
-      
-      DebugHelper.logOnce(
-        'vote_complete_${postId}_$currentUserUid',
-        '투표 저장 완료',
-        tag: 'GlobalNotificationManager',
-        level: LogLevel.INFO
-      );
-      
-      // 5. AI 채팅 메시지 업데이트 (트랜잭션 외부에서 처리)
-      try {
-        // posts 문서를 다시 읽어서 작성자 ID 가져오기
-        final postDoc = await FirebaseFirestore.instance
-            .collection('posts')
-            .doc(postId)
-            .get();
-        
-        if (postDoc.exists) {
-          final postData = postDoc.data() as Map<String, dynamic>;
-          final authorId = postData['user_id'] ?? postData['userId'] ?? postData['author_id'];
-          
-          if (authorId != null) {
-            // AI 채팅 ID 계산
-            final aiChatId = 'ai_assistant_$authorId';
-            DebugHelper.logOnce(
-              'ai_chat_update_$postId',
-              'AI 채팅 메시지 업데이트 시도: chatId=$aiChatId',
-              tag: 'GlobalNotificationManager',
-              level: LogLevel.DEBUG
-            );
-            
-            // AI 채팅에서 해당 postId의 메시지 찾기
-            final aiMessageQuery = await FirebaseFirestore.instance
-                .collection('chats')
-                .doc(aiChatId)
-                .collection('messages')
-                .where('vote_post_id', isEqualTo: postId)
-                .limit(1)
-                .get();
-            
-            if (aiMessageQuery.docs.isNotEmpty) {
-              final messageDoc = aiMessageQuery.docs.first;
-              final messageData = messageDoc.data();
-              
-              // 개별 사용자의 투표 정보를 저장할 맵 가져오기 또는 생성
-              final currentUserVotes = Map<String, dynamic>.from(
-                messageData['user_votes'] ?? {}
-              );
-              
-              // 현재 사용자의 투표 정보 추가
-              currentUserVotes[currentUserUid] = {
-                'option': selectedOption,
-                'voted_at': FieldValue.serverTimestamp(),
-              };
-              
-              // 메시지 문서 업데이트
-              await messageDoc.reference.update({
-                'user_votes': currentUserVotes,
-                'vote_status': 'participated',
-                'last_vote_update': FieldValue.serverTimestamp(),
-              });
-            } else {
-              // AI 채팅에서 해당 postId의 메시지를 찾을 수 없음
-            }
-          }
-        }
-      } catch (e) {
-        DebugHelper.warning('AI 채팅 메시지 업데이트 실패: $e', tag: 'GlobalNotificationManager');
-        // AI 채팅 업데이트 실패는 무시하고 계속 진행
-      }
+      DebugHelper.info('투표 처리 완료: postId=$postId, option=$selectedOption', tag: 'GlobalNotificationManager');
     } catch (e) {
       DebugHelper.error('투표 저장 실패', error: e, tag: 'GlobalNotificationManager');
       // 에러는 무시하고 계속 진행 (UX 우선)

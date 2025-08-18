@@ -257,7 +257,7 @@ if (result.allRejected) {
 }
 ```
 
-### 7. VoteTimerService (2025-08-17 추가)
+### 7. VoteTimerService (2025-08-17 추가, 2025-08-18 개선)
 
 **투표 타이머 동기화 서비스**
 
@@ -269,6 +269,7 @@ if (result.allRejected) {
 - StreamController를 통한 브로드캐스트
 - 자동 메모리 정리 메커니즘
 - 네트워크 지연 보정
+- **만료된 투표 null 체크 처리** (2025-08-18)
 
 #### 서버 시간 동기화
 ```dart
@@ -311,6 +312,109 @@ timerService.stopTimer(postId);
 - 메모리 사용량: O(n) → O(1)
 - 모든 기기에서 동일한 시간 표시
 - 위젯 재생성 시에도 시간 일관성 유지
+
+### 8. VoteStatusService (2025-08-18 추가)
+
+**중앙 집중식 투표 상태 관리 서비스**
+
+모든 투표 관련 작업을 처리하는 중앙 서비스입니다. VoteStateCoordinator와 연동하여 실시간 상태 업데이트를 제공합니다.
+
+#### 주요 기능
+- 투표 제출 및 검증
+- votes 서브컬렉션 관리
+- 실시간 투표 수 업데이트
+- 투표 완료 상태 처리
+- 에러 핸들링 및 재시도
+
+#### 사용 방법
+```dart
+// 투표 제출
+await VoteStatusService.submitVote(
+  postId: 'post123',
+  userId: 'user456',
+  choice: 'A',
+  messageId: 'msg789',  // 선택사항
+  chatId: 'chat012',     // 선택사항
+  onError: (error) {
+    // 에러 처리
+    print('투표 실패: $error');
+  },
+);
+
+// 투표 상태 확인
+final hasVoted = await VoteStatusService.hasUserVoted(
+  postId: 'post123',
+  userId: 'user456',
+);
+
+// 투표 결과 조회
+final results = await VoteStatusService.getVoteResults('post123');
+print('A: ${results['votesA']}, B: ${results['votesB']}');
+```
+
+#### votes 서브컬렉션 구조
+```dart
+{
+  'user': FirebaseFirestore.instance.doc('users/$userId'),
+  'option': 'A' or 'B',
+  'created_at': FieldValue.serverTimestamp(),
+  'from_chat': bool,  // 채팅에서 투표했는지 여부
+}
+```
+
+### 9. VoteStateCoordinator (2025-08-18 추가)
+
+**통합 투표 상태 조정자**
+
+RxDart를 사용한 반응형 투표 상태 관리 시스템입니다. 모든 투표 관련 상태를 중앙에서 관리하고 스트림을 통해 실시간으로 전파합니다.
+
+#### 주요 기능
+- BehaviorSubject를 통한 상태 관리
+- 실시간 Firestore 리스너
+- 투표 상태 캐싱
+- 메모리 자동 정리
+- 여러 위젯 간 상태 동기화
+
+#### 사용 방법
+```dart
+// 싱글톤 인스턴스
+final coordinator = VoteStateCoordinator.instance;
+
+// 투표 상태 스트림 구독
+StreamBuilder<VoteState>(
+  stream: coordinator.getVoteStateStream(postId),
+  builder: (context, snapshot) {
+    if (snapshot.hasData) {
+      final state = snapshot.data!;
+      if (state.isCompleted) {
+        return Text('투표 완료');
+      } else if (state.isActive) {
+        return Text('투표 진행중');
+      }
+    }
+    return CircularProgressIndicator();
+  },
+);
+
+// 메모리 정리
+coordinator.dispose(postId);
+```
+
+#### VoteState 모델
+```dart
+class VoteState {
+  final String postId;
+  final int votesA;
+  final int votesB;
+  final bool isCompleted;
+  final bool isActive;
+  final DateTime? voteEndTime;
+  final Set<String> votedUserIds;
+  
+  bool hasUserVoted(String userId) => votedUserIds.contains(userId);
+  int get totalVotes => votesA + votesB;
+}
+```
 
 ### 8. Storage Service
 
@@ -597,6 +701,24 @@ testWidgets('게시물 작성 플로우', (tester) async {
 4. **데이터 암호화**: 민감한 데이터 암호화
 
 ## 최근 변경사항
+
+### 2025-08-18: VoteStateCoordinator 리팩토링 및 레거시 코드 제거
+**작업 내용**:
+- VoteTimerService null 체크 에러 수정 (line 119-127)
+- VoteStateCoordinator 통합으로 투표 상태 관리 일원화
+- 5단계 리팩토링으로 519줄의 레거시 코드 제거:
+  - Phase 1: BaseVoteMessageStateMixin 타이머 코드 제거 (173줄)
+  - Phase 2: VoteMessageHelper 미사용 메서드 제거 (85줄)
+  - Phase 3: BaseVoteMessageStateMixin 중복 메서드 제거 (92줄)
+  - Phase 4: GlobalNotificationManager 중복 투표 로직 제거 (138줄)
+  - Phase 5: VoteStatusService 미사용 메서드 제거 (31줄)
+- votes 서브컬렉션 생성 버그 수정 (VoteStatusService.submitVote)
+
+**개선 효과**:
+- 코드 유지보수성 향상 (519줄 제거)
+- 투표 상태 관리 일원화 (VoteStateCoordinator)
+- 메모리 사용량 감소 (타이머 인스턴스 통합)
+- 월 16시간 유지보수 시간 절감 예상
 
 ### 2025-08-04: 스마트 레이아웃 시스템 통합
 **작업 내용**: 

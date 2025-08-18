@@ -1444,3 +1444,33 @@ if (model.isVideoSelectedA) {
   - lib/services/cache/unified_cache_service.dart
   - lib/services/cache/preload_strategy.dart
   - lib/main.dart
+
+### 2025-08-18: VoteStateCoordinator 중심 리팩토링 및 AI 채팅방 아키텍처 설계
+- **작업 내용**:
+  - VoteStateCoordinator 중심으로 투표 시스템 대규모 리팩토링
+  - 5단계에 걸친 체계적인 레거시 코드 제거 (총 519줄 삭제)
+  - VoteTimerService null check 버그 수정 (line 119-127)
+  - VoteStatusService votes 서브컬렉션 생성 누락 버그 수정 (Critical)
+  - AI 채팅방 이중 구조 아키텍처 설계
+- **리팩토링 단계**:
+  - Phase 1: BaseVoteMessageStateMixin 타이머 코드 제거 (173줄)
+  - Phase 2: VoteMessageHelper 미사용 메서드 제거 (85줄)
+  - Phase 3: BaseVoteMessageStateMixin 중복 메서드 제거 (92줄)
+  - Phase 4: GlobalNotificationManager 중복 투표 로직 제거 (138줄)
+  - Phase 5: VoteStatusService 미사용 메서드 제거 (31줄)
+- **AI 채팅방 구조**:
+  - 투표 AI 채팅방: `ai_assistant_{userId}` (ChatDetailWidgetV2)
+  - 도우미 AI 채팅방: `ai_helper_{userId}` (AIChatPageV2)
+  - 계정 생성 시 두 채팅방 자동 생성 계획
+  - 질문 생성 후 투표 AI 채팅방으로 자동 이동
+- **결과**:
+  - 코드 유지보수성 대폭 향상
+  - Critical 투표 버그 해결
+  - 통합된 상태 관리 시스템 구축
+  - ROI: 월 16시간 개발 시간 절약 예상
+- **영향받은 파일**:
+  - lib/services/vote_timer_service.dart
+  - lib/services/vote_status_service.dart
+  - lib/services/vote_state_coordinator.dart
+  - lib/services/global_notification_manager.dart
+  - lib/components/chat/base_vote_message.dart

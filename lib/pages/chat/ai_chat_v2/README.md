@@ -17,6 +17,28 @@
 3. 💬 **일반 대화**: ChatGPT 스타일 실시간 대화
 4. 🎓 **학습 기능**: 사용자 패턴 학습 및 추천
 
+## 📋 계획된 아키텍처 (2025-08-18)
+
+### 듀얼 AI 채팅방 시스템
+**계정 생성 시 자동으로 2개의 AI 채팅방 생성:**
+
+1. **투표 AI 채팅방** (`ai_assistant_userId`)
+   - 용도: 투표 카드 생성 및 관리
+   - 처리: ChatDetailWidgetV2 (현재 사용 중)
+   - Firebase Functions: onMessageCreated로 투표 카드 생성
+   - 채팅방 ID 형식: `ai_assistant_userId`
+
+2. **도우미 AI 채팅방** (`ai_helper_userId`) 
+   - 용도: 앱 사용법, 일반 대화, 도움말
+   - 처리: AIChatPageV2 (미래 기능)
+   - Gemini AI 직접 연동
+   - 채팅방 ID 형식: `ai_helper_userId`
+
+### 채팅 목록 표시
+- 채팅 목록 최상단에 2개 AI 채팅방 고정
+- 순서: 1. AI 피클 (투표), 2. AI 도우미
+- 아이콘으로 구분 (투표: 투표 아이콘, 도우미: 로봇 아이콘)
+
 ## Overview
 
 This is the future AI assistant implementation using flutter_chat_ui v2.9.0 with flutter_chat_core. It provides:
@@ -105,6 +127,18 @@ The current implementation can be tested by:
 **이 컴포넌트는 ChatDetailWidgetV2와 완전히 다른 용도입니다:**
 - **ChatDetailWidgetV2**: 현재 모든 채팅 처리 (투표 카드 포함)
 - **AIChatPageV2**: 미래 AI 어시스턴트 전용 (아직 미사용)
+
+## Recent Updates
+
+### 2025-08-18: 듀얼 AI 채팅방 아키텍처 설계
+- 투표 AI와 도우미 AI 분리 설계
+- 계정 생성 시 자동 생성 계획
+- 채팅 목록 고정 표시 계획
+
+### 2025-08-18: VoteStateCoordinator 통합 준비
+- VoteCardMessage 렌더링 코드 업데이트
+- 레거시 타이머 코드 제거
+- StreamBuilder 패턴 적용
 
 ## Known Issues
 

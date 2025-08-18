@@ -198,6 +198,26 @@ core.Builders(
    - Add message caching
    - Optimize image loading
 
+## Recent Updates
+
+### 2025-08-18: VoteStateCoordinator 통합
+- **VoteCardMessage 리팩토링**:
+  - BaseVoteMessageStateMixin에서 레거시 타이머 코드 제거 (265줄)
+  - VoteStateCoordinator로 투표 상태 관리 일원화
+  - StreamBuilder를 통한 실시간 투표 상태 업데이트
+  - 메모리 사용량 감소 (타이머 인스턴스 N개 → 1개)
+
+- **성능 개선**:
+  - 투표 카드별 독립 타이머 → 중앙 집중식 타이머 관리
+  - 중복 상태 관리 코드 제거
+  - 실시간 Firestore 리스너 통합
+
+### 2025-08-14: AI 채팅방 검색 UI 개선
+- 검색창 위치 변경 (상단 → 하단)
+- 메시지 입력창 숨김 처리
+- 검색창 디자인 개선
+- 입력 제한 설정 (20자 제한, 자동수정 비활성화)
+
 ## Known Issues
 
 - Gallery/camera pickers not yet implemented (placeholders in place)

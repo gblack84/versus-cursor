@@ -3,71 +3,6 @@ import '/posts/in_put_post_image/utils/debug_helper.dart';
 
 /// 투표 상태 관리를 위한 중앙 서비스
 class VoteStatusService {
-  // 캐시를 위한 변수들
-  static final Map<String, _CachedVoteStatus> _statusCache = {};
-  static const Duration _cacheDuration = Duration(seconds: 1);
-  
-  /// 사용자의 개인 투표 상태 계산
-  /// @deprecated VoteStateCoordinator로 대체됨
-  /// TODO: Phase 5에서 제거 예정 (REFACTORING_PLAN.md 참조)
-  static String getUserVoteStatus({
-    required Map<String, dynamic>? userVotes,
-    required String userId,
-    required String? cardStatus,
-    DateTime? voteEndTime,
-  }) {
-    // 캐시 키 생성
-    final cacheKey = '$userId-$cardStatus-${userVotes?.keys.join(",")}';
-    final now = DateTime.now();
-    
-    // 캐시된 값이 있고 유효한 경우 반환
-    final cached = _statusCache[cacheKey];
-    if (cached != null && now.difference(cached.timestamp) < _cacheDuration) {
-      return cached.status;
-    }
-    
-    // 디버그 모드에서만 로그 출력 (캐시 미스 시에만)
-    DebugHelper.logVote('캐시 미스 - 새로 계산: userId=$userId, cardStatus=$cardStatus');
-    
-    // 1. 전체 투표 상태 먼저 확인
-    String status;
-    
-    if (cardStatus == 'completed') {
-      status = 'completed';
-    } else if (cardStatus == 'voting_request') {
-      status = 'voting_request';
-    } else if (cardStatus == 'expired') {
-      status = 'expired';
-    } else if (cardStatus == 'in_progress') {
-      // 2. 진행중 상태에서 개인 투표 여부 확인
-      final hasVoted = userVotes?.containsKey(userId) ?? false;
-      status = hasVoted ? 'in_progress' : 'pending';
-    } else if (voteEndTime != null && DateTime.now().isAfter(voteEndTime)) {
-      // 3. 시간 만료 확인
-      status = 'not_participated';
-    } else {
-      status = 'pending';
-    }
-    
-    // 캐시에 저장
-    _statusCache[cacheKey] = _CachedVoteStatus(status: status, timestamp: now);
-    
-    // 주기적으로 오래된 캐시 정리
-    if (_statusCache.length > 100) {
-      _cleanupCache();
-    }
-    
-    return status;
-  }
-  
-  /// 오래된 캐시 항목 정리
-  /// @deprecated getUserVoteStatus와 함께 제거 예정
-  /// TODO: Phase 5에서 제거 예정 (REFACTORING_PLAN.md 참조)
-  static void _cleanupCache() {
-    final now = DateTime.now();
-    _statusCache.removeWhere((key, value) => 
-      now.difference(value.timestamp) > _cacheDuration * 2);
-  }
   
   /// 투표 제출 (통합)
   static Future<void> submitVote({
@@ -110,6 +45,15 @@ class VoteStatusService {
         };
         
         transaction.update(postRef, updates);
+        
+        // 1.5 votes 서브컬렉션에 투표 문서 생성
+        final voteRef = postRef.collection('votes').doc();
+        transaction.set(voteRef, {
+          'user': FirebaseFirestore.instance.doc('users/$userId'),
+          'option': choice,
+          'created_at': FieldValue.serverTimestamp(),
+          'from_chat': messageId != null && chatId != null,
+        });
         
         // 2. Messages 업데이트 (있는 경우)
         if (messageId != null && chatId != null) {
@@ -217,52 +161,4 @@ class VoteStatusService {
       return false;
     }
   }
-  
-  /// 투표 상태 색상 가져오기
-  static Color getStatusColor(String status) {
-    switch (status) {
-      case 'completed':
-        return Colors.green;
-      case 'voting_request':
-        return Colors.red;
-      case 'expired':
-        return Colors.grey;
-      case 'not_participated':
-        return Colors.grey;
-      case 'in_progress':
-        return Colors.blue;
-      default:
-        return Colors.grey;
-    }
-  }
-  
-  /// 투표 상태 텍스트 가져오기
-  static String getStatusText(String status, {bool hasUserVoted = false}) {
-    switch (status) {
-      case 'completed':
-        return '완료';
-      case 'voting_request':
-        return '대기중';
-      case 'expired':
-        return '만료';
-      case 'not_participated':
-        return '미참여';
-      case 'in_progress':
-        // 진행중 상태에서 사용자가 투표했는지 확인
-        if (hasUserVoted) {
-          return '투표완료(진행중)';
-        }
-        return '진행중';
-      default:
-        return '대기중';
-    }
-  }
-}
-
-/// 캐시된 투표 상태를 저장하는 클래스
-class _CachedVoteStatus {
-  final String status;
-  final DateTime timestamp;
-  
-  _CachedVoteStatus({required this.status, required this.timestamp});
 }

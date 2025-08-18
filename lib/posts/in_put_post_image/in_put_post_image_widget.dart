@@ -959,7 +959,7 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       aspectRatioA: (appState.tempImageFilesA.isEmpty && appState.tempImageFilesB.isEmpty) ? null : aspectRatioA,
       aspectRatioB: (appState.tempImageFilesA.isEmpty && appState.tempImageFilesB.isEmpty) ? null : aspectRatioB,
       hasImageA: appState.tempImageFilesA.isNotEmpty,
-      hasImageB: appState.tempImageFilesB.isNotEmpty,
+      hasImageB: !_model.absellected, // B박스가 표시되면 항상 true로 설정하여 두 박스 모드로 계산
     );
     final unifiedSize = Size(sizes.boxWidth, sizes.unifiedHeight);
     

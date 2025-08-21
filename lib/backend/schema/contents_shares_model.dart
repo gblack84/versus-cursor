@@ -40,11 +40,11 @@ class ContentsSharesModel extends FirestoreRecord {
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
-          ? parent.collection('contents_shares')
+          ? parent.collection('contentsShares')
           : FirebaseFirestore.instance.collectionGroup('contents_shares');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
-      parent.collection('contents_shares').doc(id);
+      parent.collection('contentsShares').doc(id);
 
   static Stream<ContentsSharesModel> getDocument(DocumentReference ref) =>
       ref.snapshots().map((s) => ContentsSharesModel.fromSnapshot(s));

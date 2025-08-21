@@ -24,7 +24,7 @@ async function logAIOperation(operation, details) {
 
     // Firestore에 로그 저장
     await admin.firestore()
-      .collection('ai_operation_logs')
+      .collection('aiOperationLogs')
       .add(logData);
 
     // 콘솔 로그
@@ -65,7 +65,7 @@ async function logAIUsage(operation, usage) {
     };
 
     await admin.firestore()
-      .collection('ai_usage_logs')
+      .collection('aiUsageLogs')
       .add(usageData);
 
   } catch (error) {
@@ -130,7 +130,7 @@ class PerformanceTracker {
 async function trackExperiment(experimentName, variant, userId, outcome) {
   try {
     await admin.firestore()
-      .collection('ai_experiments')
+      .collection('aiExperiments')
       .add({
         experiment: experimentName,
         variant,
@@ -152,7 +152,7 @@ async function trackExperiment(experimentName, variant, userId, outcome) {
 async function trackRecommendationOutcome(postId, userId, action) {
   try {
     await admin.firestore()
-      .collection('recommendation_outcomes')
+      .collection('recommendationOutcomes')
       .add({
         postId,
         userId,
@@ -178,7 +178,7 @@ async function generateDailyUsageReport() {
 
     // 오늘의 AI 사용량 로그 조회
     const snapshot = await admin.firestore()
-      .collection('ai_usage_logs')
+      .collection('aiUsageLogs')
       .where('timestamp', '>=', today)
       .where('timestamp', '<', tomorrow)
       .get();
@@ -206,7 +206,7 @@ async function generateDailyUsageReport() {
 
     // 리포트 저장
     await admin.firestore()
-      .collection('ai_daily_reports')
+      .collection('aiDailyReports')
       .doc(today.toISOString().split('T')[0])
       .set({
         date: today,
@@ -236,7 +236,7 @@ async function getRealtimeMetrics() {
     oneHourAgo.setHours(oneHourAgo.getHours() - 1);
     
     const perfSnapshot = await admin.firestore()
-      .collection('ai_operation_logs')
+      .collection('aiOperationLogs')
       .where('timestamp', '>', oneHourAgo)
       .get();
 

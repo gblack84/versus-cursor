@@ -59,11 +59,11 @@ class GroupMessagesModel extends FirestoreRecord {
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
-          ? parent.collection('group_messages')
+          ? parent.collection('groupMessages')
           : FirebaseFirestore.instance.collectionGroup('group_messages');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
-      parent.collection('group_messages').doc(id);
+      parent.collection('groupMessages').doc(id);
 
   static Stream<GroupMessagesModel> getDocument(DocumentReference ref) =>
       ref.snapshots().map((s) => GroupMessagesModel.fromSnapshot(s));

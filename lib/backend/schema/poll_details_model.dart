@@ -83,11 +83,11 @@ class PollDetailsModel extends FirestoreRecord {
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
-          ? parent.collection('poll_details')
+          ? parent.collection('pollDetails')
           : FirebaseFirestore.instance.collectionGroup('poll_details');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
-      parent.collection('poll_details').doc(id);
+      parent.collection('pollDetails').doc(id);
 
   static Stream<PollDetailsModel> getDocument(DocumentReference ref) =>
       ref.snapshots().map((s) => PollDetailsModel.fromSnapshot(s));

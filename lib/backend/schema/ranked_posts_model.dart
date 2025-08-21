@@ -88,11 +88,11 @@ class RankedPostsModel extends FirestoreRecord {
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
-          ? parent.collection('ranked_posts')
+          ? parent.collection('rankedPosts')
           : FirebaseFirestore.instance.collectionGroup('ranked_posts');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
-      parent.collection('ranked_posts').doc(id);
+      parent.collection('rankedPosts').doc(id);
 
   static Stream<RankedPostsModel> getDocument(DocumentReference ref) =>
       ref.snapshots().map((s) => RankedPostsModel.fromSnapshot(s));

@@ -58,11 +58,11 @@ class ContentCommentsModel extends FirestoreRecord {
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
-          ? parent.collection('content_comments')
+          ? parent.collection('contentComments')
           : FirebaseFirestore.instance.collectionGroup('content_comments');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
-      parent.collection('content_comments').doc(id);
+      parent.collection('contentComments').doc(id);
 
   static Stream<ContentCommentsModel> getDocument(DocumentReference ref) =>
       ref.snapshots().map((s) => ContentCommentsModel.fromSnapshot(s));

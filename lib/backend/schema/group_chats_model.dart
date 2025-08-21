@@ -86,7 +86,7 @@ class GroupChatsModel extends FirestoreRecord {
   }
 
   static CollectionReference get collection =>
-      FirebaseFirestore.instance.collection('group_chats');
+      FirebaseFirestore.instance.collection('groupChats');
 
   static Stream<GroupChatsModel> getDocument(DocumentReference ref) =>
       ref.snapshots().map((s) => GroupChatsModel.fromSnapshot(s));

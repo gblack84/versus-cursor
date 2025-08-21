@@ -45,7 +45,7 @@ class JopsCategoryModel extends FirestoreRecord {
   }
 
   static CollectionReference get collection =>
-      FirebaseFirestore.instance.collection('jops_category');
+      FirebaseFirestore.instance.collection('jopsCategory');
 
   static Stream<JopsCategoryModel> getDocument(DocumentReference ref) =>
       ref.snapshots().map((s) => JopsCategoryModel.fromSnapshot(s));

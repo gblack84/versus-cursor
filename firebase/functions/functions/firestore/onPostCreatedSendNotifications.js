@@ -123,7 +123,7 @@ exports.onPostCreatedSendNotifications = functions
       logger.error('알림 전송 중 오류', error);
       
       // 오류 로깅
-      await admin.firestore().collection('notification_errors').add({
+      await admin.firestore().collection('notificationErrors').add({
         postId,
         error: error.message,
         stack: error.stack,

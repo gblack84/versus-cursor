@@ -31,7 +31,7 @@ class JopsNameModel extends FirestoreRecord {
   }
 
   static CollectionReference get collection =>
-      FirebaseFirestore.instance.collection('jops_name');
+      FirebaseFirestore.instance.collection('jopsName');
 
   static Stream<JopsNameModel> getDocument(DocumentReference ref) =>
       ref.snapshots().map((s) => JopsNameModel.fromSnapshot(s));

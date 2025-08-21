@@ -34,11 +34,11 @@ class ContentsLikesModel extends FirestoreRecord {
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
-          ? parent.collection('contents_likes')
+          ? parent.collection('contentsLikes')
           : FirebaseFirestore.instance.collectionGroup('contents_likes');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
-      parent.collection('contents_likes').doc(id);
+      parent.collection('contentsLikes').doc(id);
 
   static Stream<ContentsLikesModel> getDocument(DocumentReference ref) =>
       ref.snapshots().map((s) => ContentsLikesModel.fromSnapshot(s));

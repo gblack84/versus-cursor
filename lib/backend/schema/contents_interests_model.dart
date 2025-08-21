@@ -34,11 +34,11 @@ class ContentsInterestsModel extends FirestoreRecord {
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
-          ? parent.collection('contents_interests')
+          ? parent.collection('contentsInterests')
           : FirebaseFirestore.instance.collectionGroup('contents_interests');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
-      parent.collection('contents_interests').doc(id);
+      parent.collection('contentsInterests').doc(id);
 
   static Stream<ContentsInterestsModel> getDocument(DocumentReference ref) =>
       ref.snapshots().map((s) => ContentsInterestsModel.fromSnapshot(s));

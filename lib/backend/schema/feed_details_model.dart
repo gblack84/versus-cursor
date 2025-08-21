@@ -34,11 +34,11 @@ class FeedDetailsModel extends FirestoreRecord {
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
-          ? parent.collection('feed_details')
+          ? parent.collection('feedDetails')
           : FirebaseFirestore.instance.collectionGroup('feed_details');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
-      parent.collection('feed_details').doc(id);
+      parent.collection('feedDetails').doc(id);
 
   static Stream<FeedDetailsModel> getDocument(DocumentReference ref) =>
       ref.snapshots().map((s) => FeedDetailsModel.fromSnapshot(s));

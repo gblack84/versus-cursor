@@ -34,7 +34,7 @@ async function getUserPostingHistory(userId) {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
     const rejectedSnapshot = await db
-      .collection('content_validations')
+      .collection('contentValidations')
       .where('userId', '==', userId)
       .where('geminiResult.isValid', '==', false)
       .where('timestamp', '>=', thirtyDaysAgo)

@@ -69,7 +69,7 @@ class PremiumUsersModel extends FirestoreRecord {
   }
 
   static CollectionReference get collection =>
-      FirebaseFirestore.instance.collection('premium_users');
+      FirebaseFirestore.instance.collection('premiumUsers');
 
   static Stream<PremiumUsersModel> getDocument(DocumentReference ref) =>
       ref.snapshots().map((s) => PremiumUsersModel.fromSnapshot(s));

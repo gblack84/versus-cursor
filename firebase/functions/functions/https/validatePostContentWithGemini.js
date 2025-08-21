@@ -113,7 +113,7 @@ exports.validatePostContentWithGemini = functions
         
         // 타임아웃 통계 기록
         try {
-          await admin.firestore().collection('validation_errors').add({
+          await admin.firestore().collection('validationErrors').add({
             type: 'timeout',
             userId: userId || context.auth.uid,
             timestamp: admin.firestore.FieldValue.serverTimestamp(),
@@ -144,7 +144,7 @@ exports.validatePostContentWithGemini = functions
 async function logValidationResult(data, sessionId, documentId, logger) {
   try {
     const db = admin.firestore();
-    const collection = db.collection('content_validations');
+    const collection = db.collection('contentValidations');
     let finalDocId = documentId;
     
     if (documentId) {

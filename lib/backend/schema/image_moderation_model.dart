@@ -125,7 +125,7 @@ class ImageModerationModel extends FirestoreRecord {
   }
 
   static CollectionReference get collection =>
-      FirebaseFirestore.instance.collection('image_moderation');
+      FirebaseFirestore.instance.collection('imageModeration');
 
   static Stream<ImageModerationModel> getDocument(DocumentReference ref) =>
       ref.snapshots().map((s) => ImageModerationModel.fromSnapshot(s));

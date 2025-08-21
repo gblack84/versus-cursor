@@ -58,11 +58,11 @@ class FriendsListModel extends FirestoreRecord {
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
-          ? parent.collection('friends_list')
+          ? parent.collection('friendsList')
           : FirebaseFirestore.instance.collectionGroup('friends_list');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
-      parent.collection('friends_list').doc(id);
+      parent.collection('friendsList').doc(id);
 
   static Stream<FriendsListModel> getDocument(DocumentReference ref) =>
       ref.snapshots().map((s) => FriendsListModel.fromSnapshot(s));

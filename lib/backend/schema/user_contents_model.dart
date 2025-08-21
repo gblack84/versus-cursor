@@ -68,7 +68,7 @@ class UserContentsModel extends FirestoreRecord {
   }
 
   static CollectionReference get collection =>
-      FirebaseFirestore.instance.collection('user_contents');
+      FirebaseFirestore.instance.collection('userContents');
 
   static Stream<UserContentsModel> getDocument(DocumentReference ref) =>
       ref.snapshots().map((s) => UserContentsModel.fromSnapshot(s));

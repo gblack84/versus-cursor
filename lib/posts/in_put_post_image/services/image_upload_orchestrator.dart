@@ -559,7 +559,7 @@ class ImageUploadOrchestrator {
         
         // poll_details 서브컬렉션 업데이트
         final pollDetailsQuery = await postRef
-            .collection('poll_details')
+            .collection('pollDetails')
             .limit(1)
             .get();
             

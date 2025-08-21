@@ -626,7 +626,7 @@ class _AIChatPageV2State extends State<AIChatPageV2>
           optionBImages: metadata['optionBImages'],
           aspectRatioA: metadata['aspectRatioA'],
           aspectRatioB: metadata['aspectRatioB'],
-          cardStatus: metadata['cardStatus'] ?? 'voting_request',
+          cardStatus: metadata['cardStatus'] ?? 'votingRequest',
           voteEndTime: metadata['voteEndTime'] != null 
               ? (metadata['voteEndTime'] is DateTime 
                   ? metadata['voteEndTime'] 

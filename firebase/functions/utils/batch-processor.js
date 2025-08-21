@@ -187,7 +187,7 @@ async function batchUpdateVoteResults(postId, participants) {
       .doc(chatId)
       .collection('messages')
       .where('vote_post_id', '==', postId)
-      .where('message_type', 'in', ['vote_request', 'vote_created'])
+      .where('messageType', 'in', ['voteRequest', 'voteCreated'])
       .get()
       .then(snapshot => {
         const batch = db.batch();

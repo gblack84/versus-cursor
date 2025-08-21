@@ -65,13 +65,13 @@ class ChatConstants {
   
   static const String messageTypeText = 'text';
   static const String messageTypeImage = 'image';
-  static const String messageTypeVoteRequest = 'vote_request';
-  static const String messageTypeVoteCreated = 'vote_created';
+  static const String messageTypeVoteRequest = 'voteRequest';
+  static const String messageTypeVoteCreated = 'voteCreated';
   static const String messageTypeSystem = 'system';
   
   // ==================== 투표 상태 ====================
   
-  static const String cardStatusVotingRequest = 'voting_request';
+  static const String cardStatusVotingRequest = 'votingRequest';
   static const String cardStatusVoting = 'voting';
   static const String cardStatusCompleted = 'completed';
   

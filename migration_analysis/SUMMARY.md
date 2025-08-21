@@ -1,5 +1,5 @@
 # Snake Case Migration Analysis Report
-Generated: Thu Aug 21 21:04:48 KST 2025
+Generated: Thu Aug 21 21:42:29 KST 2025
 
 ## 📊 Statistics
 
@@ -16,12 +16,12 @@ Generated: Thu Aug 21 21:04:48 KST 2025
 - **app_utils** → appUutils (116 occurrences)
 - **app_theme** → appUtheme (52 occurrences)
 - **firebase_auth** → firebaseUauth (49 occurrences)
-- **user_id** → userUid (46 occurrences)
+- **user_id** → userUid (43 occurrences)
 - **firestore_util** → firestoreUutil (42 occurrences)
 - **auth_util** → authUutil (35 occurrences)
 - **google_fonts** → googleUfonts (33 occurrences)
-- **created_at** → createdUat (33 occurrences)
 - **design_system** → designUsystem (29 occurrences)
+- **created_at** → createdUat (29 occurrences)
 
 ## 📁 Output Files
 

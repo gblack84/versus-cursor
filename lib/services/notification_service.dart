@@ -181,7 +181,7 @@ class NotificationService {
         'content': '',
         'time_stamp': FieldValue.serverTimestamp(),
         'is_read': false,
-        'message_type': 'vote_request',
+        'messageType': 'voteRequest',
         'vote_post_id': postId,
         'vote_title': post.questionTitle,
         'vote_description': post.description,

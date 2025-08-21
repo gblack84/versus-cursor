@@ -74,7 +74,7 @@ async function createNotificationsForUsers(users, postId, postData) {
       // 기본 필드
       notificationId: notificationRef.id,
       userId: user.id,
-      type: 'voting_request',
+      type: 'votingRequest',
       sourceId: postId,
       
       // 콘텐츠 - Flutter 스키마에 맞춰 JSON 문자열로 저장

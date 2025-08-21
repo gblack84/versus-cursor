@@ -40,11 +40,11 @@ class ChatHistoryModel extends FirestoreRecord {
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
-          ? parent.collection('Chat_history')
-          : FirebaseFirestore.instance.collectionGroup('Chat_history');
+          ? parent.collection('chatHistory')
+          : FirebaseFirestore.instance.collectionGroup('chatHistory');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
-      parent.collection('Chat_history').doc(id);
+      parent.collection('chatHistory').doc(id);
 
   static Stream<ChatHistoryModel> getDocument(DocumentReference ref) =>
       ref.snapshots().map((s) => ChatHistoryModel.fromSnapshot(s));

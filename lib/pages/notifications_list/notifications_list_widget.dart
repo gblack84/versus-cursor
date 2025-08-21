@@ -153,7 +153,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  notification.type == 'voting_request' 
+                                  notification.type == 'votingRequest' 
                                       ? '투표 요청' 
                                       : '알림',
                                   style: AppTheme.of(context).bodyLarge.override(

@@ -24,13 +24,6 @@ firebase/functions/utils/batch-processor.js:205:          user_id: userId,
 firebase/functions/utils/batch-processor.js:206:          type: 'vote_result',
 firebase/functions/utils/batch-processor.js:207:          source_id: postId,
 firebase/functions/utils/batch-processor.js:210:          created_at: admin.firestore.FieldValue.serverTimestamp(),
-firebase/functions/ai/monitoring.js:27:      .collection('ai_operation_logs')
-firebase/functions/ai/monitoring.js:68:      .collection('ai_usage_logs')
-firebase/functions/ai/monitoring.js:133:      .collection('ai_experiments')
-firebase/functions/ai/monitoring.js:155:      .collection('recommendation_outcomes')
-firebase/functions/ai/monitoring.js:181:      .collection('ai_usage_logs')
-firebase/functions/ai/monitoring.js:209:      .collection('ai_daily_reports')
-firebase/functions/ai/monitoring.js:239:      .collection('ai_operation_logs')
 firebase/functions/ai/contentModeration.js:155:      .where('user_info.user_ref', '==', admin.firestore().doc(`users/${userId}`))
 firebase/functions/ai/contentModeration.js:163:        questionTitle: data.question_title || '',
 firebase/functions/ai/contentModeration.js:211:      console.error('[Content Moderation] 환경 변수를 확인하세요: GOOGLE_GENAI_API_KEY, google.genai_api_key, gemini.api_key');
@@ -38,7 +31,6 @@ firebase/functions/ai/cache.js:111:    postData.questionTitle || postData.questi
 firebase/functions/ai/cache.js:112:    postData.optionA || postData.option_a || '',
 firebase/functions/ai/cache.js:113:    postData.optionB || postData.option_b || '',
 firebase/functions/ai/userHistoryAnalyzer.js:15:  // 필요한 인덱스: content_validations 컬렉션
-firebase/functions/ai/userHistoryAnalyzer.js:37:      .collection('content_validations')
 firebase/functions/ai/userHistoryAnalyzer.js:46:      .where('user_ref', '==', db.doc(`users/${userId}`))
 firebase/functions/ai/userHistoryAnalyzer.js:47:      .where('reported_count', '>', 0)
 firebase/functions/ai/config.js:7:                            functions.config().google?.genai_api_key || 
@@ -94,9 +86,7 @@ firebase/functions/functions/https/migrateVoteData.js:95:                  migra
 firebase/functions/functions/https/migrateVoteData.js:96:                  migration_version: '1.0'
 firebase/functions/functions/https/migrateVoteData.js:121:                status: 'would_migrate'
 firebase/functions/functions/https/validatePostContentWithGemini.js:45:      if (!process.env.GOOGLE_GENAI_API_KEY && !functions.config().google?.genai_api_key) {
-firebase/functions/functions/https/validatePostContentWithGemini.js:116:          await admin.firestore().collection('validation_errors').add({
 firebase/functions/functions/https/validatePostContentWithGemini.js:135:        error: 'validation_failed',
-firebase/functions/functions/https/validatePostContentWithGemini.js:147:    const collection = db.collection('content_validations');
 firebase/functions/functions/https/markMessagesAsSeen.js:30:    // Get all messages in the chat that don't have seen_at timestamp yet
 firebase/functions/functions/https/markMessagesAsSeen.js:31:    // We'll filter sender_id in memory for better performance
 firebase/functions/functions/https/markMessagesAsSeen.js:36:      .where('seen_at', '==', null)
@@ -120,7 +110,6 @@ firebase/functions/functions/firestore/onMessageCreated.js:23:        delivered_
 firebase/functions/functions/firestore/onMessageCreated.js:26:      console.log(`Set delivered_at for message ${messageId} in chat ${chatId}`);
 firebase/functions/functions/firestore/onMessageCreated.js:29:      console.error(`Error setting delivered_at for message ${messageId}:`, error);
 firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:51:      // PostsModel은 snake_case로 필드를 저장함
-firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:126:      await admin.firestore().collection('notification_errors').add({
 firebase/functions/functions/scheduled/flushThrottleQueue.js:189:              .where('type', '==', 'voting_request')
 firebase/functions/notifications/targetMatcher.js:47:          .where('last_active_time', '>', oneWeekAgo)
 firebase/functions/notifications/targetMatcher.js:48:          .orderBy('last_active_time', 'desc')

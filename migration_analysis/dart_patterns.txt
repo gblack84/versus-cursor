@@ -12,7 +12,6 @@ lib/backend/schema/user_contents_model.dart:61:    _contentType = snapshotData['
 lib/backend/schema/user_contents_model.dart:62:    _createdAt = snapshotData['created_at'] as DateTime?;
 lib/backend/schema/user_contents_model.dart:66:    _isPremium = snapshotData['is_premium'] as bool?;
 lib/backend/schema/user_contents_model.dart:67:    _participantCount = castToType<int>(snapshotData['participant_count']);
-lib/backend/schema/user_contents_model.dart:71:      FirebaseFirestore.instance.collection('user_contents');
 lib/backend/schema/user_contents_model.dart:115:      'user_id': userId,
 lib/backend/schema/user_contents_model.dart:116:      'content_type': contentType,
 lib/backend/schema/user_contents_model.dart:117:      'created_at': createdAt,
@@ -34,9 +33,7 @@ lib/backend/schema/contents_interests_model.dart:18:  // "user_id" field.
 lib/backend/schema/contents_interests_model.dart:23:  // "created_at" field.
 lib/backend/schema/contents_interests_model.dart:31:    _userId = snapshotData['user_id'] as String?;
 lib/backend/schema/contents_interests_model.dart:32:    _createdAt = snapshotData['created_at'] as DateTime?;
-lib/backend/schema/contents_interests_model.dart:37:          ? parent.collection('contents_interests')
 lib/backend/schema/contents_interests_model.dart:38:          : FirebaseFirestore.instance.collectionGroup('contents_interests');
-lib/backend/schema/contents_interests_model.dart:41:      parent.collection('contents_interests').doc(id);
 lib/backend/schema/contents_interests_model.dart:81:      'user_id': userId,
 lib/backend/schema/contents_interests_model.dart:82:      'created_at': createdAt,
 lib/backend/schema/votecounts_model.dart:5:import '/backend/schema/util/firestore_util.dart';
@@ -101,9 +98,7 @@ lib/backend/schema/ranked_posts_model.dart:83:    _commentCount = castToType<int
 lib/backend/schema/ranked_posts_model.dart:84:    _interestCount = castToType<int>(snapshotData['interest_count']);
 lib/backend/schema/ranked_posts_model.dart:85:    _shareCount = castToType<int>(snapshotData['share_count']);
 lib/backend/schema/ranked_posts_model.dart:86:    _contentType = snapshotData['content_type'] as String?;
-lib/backend/schema/ranked_posts_model.dart:91:          ? parent.collection('ranked_posts')
 lib/backend/schema/ranked_posts_model.dart:92:          : FirebaseFirestore.instance.collectionGroup('ranked_posts');
-lib/backend/schema/ranked_posts_model.dart:95:      parent.collection('ranked_posts').doc(id);
 lib/backend/schema/ranked_posts_model.dart:143:      'post_id': postId,
 lib/backend/schema/ranked_posts_model.dart:148:      'view_count': viewCount,
 lib/backend/schema/ranked_posts_model.dart:149:      'like_count': likeCount,
@@ -119,9 +114,7 @@ lib/backend/schema/friends_list_model.dart:43:  // "last_interaction" field.
 lib/backend/schema/friends_list_model.dart:51:    _friendsId = snapshotData['friends_id'] as String?;
 lib/backend/schema/friends_list_model.dart:55:    _isBlocked = snapshotData['is_blocked'] as bool?;
 lib/backend/schema/friends_list_model.dart:56:    _lastInteraction = snapshotData['last_interaction'] as DateTime?;
-lib/backend/schema/friends_list_model.dart:61:          ? parent.collection('friends_list')
 lib/backend/schema/friends_list_model.dart:62:          : FirebaseFirestore.instance.collectionGroup('friends_list');
-lib/backend/schema/friends_list_model.dart:65:      parent.collection('friends_list').doc(id);
 lib/backend/schema/friends_list_model.dart:108:      'friends_id': friendsId,
 lib/backend/schema/friends_list_model.dart:112:      'is_blocked': isBlocked,
 lib/backend/schema/friends_list_model.dart:113:      'last_interaction': lastInteraction,
@@ -173,7 +166,6 @@ lib/backend/schema/jops_name_model.dart:5:import '/backend/schema/util/firestore
 lib/backend/schema/jops_name_model.dart:8:import '/core/app_utils.dart';
 lib/backend/schema/jops_name_model.dart:23:  // "category_ref" field.
 lib/backend/schema/jops_name_model.dart:30:    _categoryRef = snapshotData['category_ref'] as String?;
-lib/backend/schema/jops_name_model.dart:34:      FirebaseFirestore.instance.collection('jops_name');
 lib/backend/schema/jops_name_model.dart:74:      'category_ref': categoryRef,
 lib/backend/schema/jops_category_model.dart:3:import '/backend/algolia/algolia_manager.dart';
 lib/backend/schema/jops_category_model.dart:6:import '/backend/schema/util/firestore_util.dart';
@@ -187,7 +179,6 @@ lib/backend/schema/jops_category_model.dart:41:    _jopName = snapshotData['jop_
 lib/backend/schema/jops_category_model.dart:42:    _categoryRefA = snapshotData['category_ref_A'] as String?;
 lib/backend/schema/jops_category_model.dart:43:    _categoryRefB = snapshotData['category_ref_B'] as String?;
 lib/backend/schema/jops_category_model.dart:44:    _searchTags = getDataList(snapshotData['search_tags']);
-lib/backend/schema/jops_category_model.dart:48:      FirebaseFirestore.instance.collection('jops_category');
 lib/backend/schema/jops_category_model.dart:71:          'jop_name': snapshot.data['jop_name'],
 lib/backend/schema/jops_category_model.dart:72:          'category_ref_A': snapshot.data['category_ref_A'],
 lib/backend/schema/jops_category_model.dart:73:          'category_ref_B': snapshot.data['category_ref_B'],
@@ -216,7 +207,6 @@ lib/backend/schema/premium_users_model.dart:64:    _premiumStartDate = snapshotD
 lib/backend/schema/premium_users_model.dart:65:    _availableFeatures = getDataList(snapshotData['available_features']);
 lib/backend/schema/premium_users_model.dart:66:    _pointsBalance = castToType<int>(snapshotData['points_balance']);
 lib/backend/schema/premium_users_model.dart:68:        snapshotData['last_used_premium_feature'] as DateTime?;
-lib/backend/schema/premium_users_model.dart:72:      FirebaseFirestore.instance.collection('premium_users');
 lib/backend/schema/premium_users_model.dart:116:      'user_id': userId,
 lib/backend/schema/premium_users_model.dart:117:      'is_premium': isPremium,
 lib/backend/schema/premium_users_model.dart:118:      'premium_end_date': premiumEndDate,
@@ -232,9 +222,7 @@ lib/backend/schema/contents_likes_model.dart:18:  // "user_id" field.
 lib/backend/schema/contents_likes_model.dart:23:  // "created_at" field.
 lib/backend/schema/contents_likes_model.dart:31:    _userId = snapshotData['user_id'] as String?;
 lib/backend/schema/contents_likes_model.dart:32:    _createdAt = snapshotData['created_at'] as DateTime?;
-lib/backend/schema/contents_likes_model.dart:37:          ? parent.collection('contents_likes')
 lib/backend/schema/contents_likes_model.dart:38:          : FirebaseFirestore.instance.collectionGroup('contents_likes');
-lib/backend/schema/contents_likes_model.dart:41:      parent.collection('contents_likes').doc(id);
 lib/backend/schema/contents_likes_model.dart:80:      'user_id': userId,
 lib/backend/schema/contents_likes_model.dart:81:      'created_at': createdAt,
 lib/backend/schema/poll_details_model.dart:5:import '/backend/schema/util/firestore_util.dart';
@@ -256,9 +244,7 @@ lib/backend/schema/poll_details_model.dart:78:    _option1MediaUrls = getDataLis
 lib/backend/schema/poll_details_model.dart:79:    _option2MediaUrls = getDataList(snapshotData['option_2_media_urls']);
 lib/backend/schema/poll_details_model.dart:80:    _option1MediaType = snapshotData['option_1_media_type'] as String?;
 lib/backend/schema/poll_details_model.dart:81:    _option2MediaType = snapshotData['option_2_media_type'] as String?;
-lib/backend/schema/poll_details_model.dart:86:          ? parent.collection('poll_details')
 lib/backend/schema/poll_details_model.dart:87:          : FirebaseFirestore.instance.collectionGroup('poll_details');
-lib/backend/schema/poll_details_model.dart:90:      parent.collection('poll_details').doc(id);
 lib/backend/schema/poll_details_model.dart:137:      'option_1_media_url': option1MediaUrl,
 lib/backend/schema/poll_details_model.dart:138:      'option_2_media_url': option2MediaUrl,
 lib/backend/schema/poll_details_model.dart:139:      'result_time': resultTime,
@@ -381,9 +367,7 @@ lib/backend/schema/content_comments_model.dart:52:    _userId = snapshotData['us
 lib/backend/schema/content_comments_model.dart:54:    _createdAt = snapshotData['created_at'] as DateTime?;
 lib/backend/schema/content_comments_model.dart:55:    _isPremium = snapshotData['is_premium'] as bool?;
 lib/backend/schema/content_comments_model.dart:56:    _likesCount = castToType<int>(snapshotData['likes_count']);
-lib/backend/schema/content_comments_model.dart:61:          ? parent.collection('content_comments')
 lib/backend/schema/content_comments_model.dart:62:          : FirebaseFirestore.instance.collectionGroup('content_comments');
-lib/backend/schema/content_comments_model.dart:65:      parent.collection('content_comments').doc(id);
 lib/backend/schema/content_comments_model.dart:108:      'comment_id': commentId,
 lib/backend/schema/content_comments_model.dart:109:      'user_id': userId,
 lib/backend/schema/content_comments_model.dart:111:      'created_at': createdAt,
@@ -419,9 +403,7 @@ lib/backend/schema/feed_details_model.dart:5:import '/backend/schema/util/firest
 lib/backend/schema/feed_details_model.dart:8:import '/core/app_utils.dart';
 lib/backend/schema/feed_details_model.dart:18:  // "media_url" field.
 lib/backend/schema/feed_details_model.dart:31:    _mediaUrl = snapshotData['media_url'] as String?;
-lib/backend/schema/feed_details_model.dart:37:          ? parent.collection('feed_details')
 lib/backend/schema/feed_details_model.dart:38:          : FirebaseFirestore.instance.collectionGroup('feed_details');
-lib/backend/schema/feed_details_model.dart:41:      parent.collection('feed_details').doc(id);
 lib/backend/schema/feed_details_model.dart:80:      'media_url': mediaUrl,
 lib/backend/schema/likes_model.dart:5:import '/backend/schema/util/firestore_util.dart';
 lib/backend/schema/likes_model.dart:8:import '/core/app_utils.dart';
@@ -451,9 +433,7 @@ lib/backend/schema/contents_shares_model.dart:28:  // "shared_id" field.
 lib/backend/schema/contents_shares_model.dart:36:    _userId = snapshotData['user_id'] as String?;
 lib/backend/schema/contents_shares_model.dart:37:    _shearedToUserId = snapshotData['sheared_to_user_id'] as String?;
 lib/backend/schema/contents_shares_model.dart:38:    _sharedId = snapshotData['shared_id'] as DateTime?;
-lib/backend/schema/contents_shares_model.dart:43:          ? parent.collection('contents_shares')
 lib/backend/schema/contents_shares_model.dart:44:          : FirebaseFirestore.instance.collectionGroup('contents_shares');
-lib/backend/schema/contents_shares_model.dart:47:      parent.collection('contents_shares').doc(id);
 lib/backend/schema/contents_shares_model.dart:87:      'user_id': userId,
 lib/backend/schema/contents_shares_model.dart:88:      'sheared_to_user_id': shearedToUserId,
 lib/backend/schema/contents_shares_model.dart:89:      'shared_id': sharedId,
@@ -472,9 +452,7 @@ lib/backend/schema/group_messages_model.dart:54:    _gContent = snapshotData['g_
 lib/backend/schema/group_messages_model.dart:55:    _gTimeStamp = snapshotData['g_time_stamp'] as DateTime?;
 lib/backend/schema/group_messages_model.dart:56:    _gAttachmentUrl = snapshotData['g_attachment_url'] as String?;
 lib/backend/schema/group_messages_model.dart:57:    _gIsReadBy = getDataList(snapshotData['g_is_read_by']);
-lib/backend/schema/group_messages_model.dart:62:          ? parent.collection('group_messages')
 lib/backend/schema/group_messages_model.dart:63:          : FirebaseFirestore.instance.collectionGroup('group_messages');
-lib/backend/schema/group_messages_model.dart:66:      parent.collection('group_messages').doc(id);
 lib/backend/schema/group_messages_model.dart:108:      'g_message_id': gMessageId,
 lib/backend/schema/group_messages_model.dart:109:      'g_sender_id': gSenderId,
 lib/backend/schema/group_messages_model.dart:110:      'g_content': gContent,
@@ -510,7 +488,6 @@ lib/backend/schema/comments_model.dart:135:      'report_count': reportCount,
 lib/backend/schema/comments_model.dart:136:      'is_blocked': isBlocked,
 lib/backend/schema/comments_model.dart:137:      'premium_required': premiumRequired,
 lib/backend/schema/image_moderation_model.dart:6:import '/core/app_utils.dart';
-lib/backend/schema/image_moderation_model.dart:128:      FirebaseFirestore.instance.collection('image_moderation');
 lib/backend/schema/group_chats_model.dart:5:import '/backend/schema/util/firestore_util.dart';
 lib/backend/schema/group_chats_model.dart:6:import '/backend/schema/util/schema_util.dart';
 lib/backend/schema/group_chats_model.dart:9:import '/core/app_utils.dart';
@@ -532,7 +509,6 @@ lib/backend/schema/group_chats_model.dart:81:    _updateAt = snapshotData['updat
 lib/backend/schema/group_chats_model.dart:83:    _groupImageUrl = snapshotData['group_image_url'] as String?;
 lib/backend/schema/group_chats_model.dart:84:    _pendingUserIds = getDataList(snapshotData['pending_user_ids']);
 lib/backend/schema/group_chats_model.dart:85:    _chatType = snapshotData['chat_type'] as String?;
-lib/backend/schema/group_chats_model.dart:89:      FirebaseFirestore.instance.collection('group_chats');
 lib/backend/schema/group_chats_model.dart:135:      'group_chat_id': groupChatId,
 lib/backend/schema/group_chats_model.dart:136:      'creator_id': creatorId,
 lib/backend/schema/group_chats_model.dart:137:      'group_name': groupName,

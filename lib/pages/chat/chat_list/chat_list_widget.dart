@@ -128,7 +128,7 @@ class _ChatListWidgetState extends State<ChatListWidget> {
   Widget _buildChatItem(ChatsModel chat) {
     // AI 채팅방인지 확인
     final isAIChat = chat.participantIds.contains('ai_assistant') || 
-                     chat.chatType == 'ai_chat';
+                     chat.chatType == 'aiChat';
     
     return InkWell(
       onTap: () {

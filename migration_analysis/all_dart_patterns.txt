@@ -179,7 +179,6 @@ lib/posts/in_put_post_image/services/image_upload_orchestrator.dart:11:import '.
 lib/posts/in_put_post_image/services/image_upload_orchestrator.dart:551:      final pollOptionField = box == 'A' ? 'option_1_media_urls' : 'option_2_media_urls';
 lib/posts/in_put_post_image/services/image_upload_orchestrator.dart:555:        // posts_record 업데이트
 lib/posts/in_put_post_image/services/image_upload_orchestrator.dart:560:        // poll_details 서브컬렉션 업데이트
-lib/posts/in_put_post_image/services/image_upload_orchestrator.dart:562:            .collection('poll_details')
 lib/posts/in_put_post_image/services/media_upload_service.dart:1:import 'dart:typed_data';
 lib/posts/in_put_post_image/services/media_upload_service.dart:3:import 'package:firebase_storage/firebase_storage.dart';
 lib/posts/in_put_post_image/services/media_upload_service.dart:4:import 'package:firebase_auth/firebase_auth.dart';
@@ -617,7 +616,6 @@ lib/backend/schema/user_contents_model.dart:61:    _contentType = snapshotData['
 lib/backend/schema/user_contents_model.dart:62:    _createdAt = snapshotData['created_at'] as DateTime?;
 lib/backend/schema/user_contents_model.dart:66:    _isPremium = snapshotData['is_premium'] as bool?;
 lib/backend/schema/user_contents_model.dart:67:    _participantCount = castToType<int>(snapshotData['participant_count']);
-lib/backend/schema/user_contents_model.dart:71:      FirebaseFirestore.instance.collection('user_contents');
 lib/backend/schema/user_contents_model.dart:115:      'user_id': userId,
 lib/backend/schema/user_contents_model.dart:116:      'content_type': contentType,
 lib/backend/schema/user_contents_model.dart:117:      'created_at': createdAt,
@@ -639,9 +637,7 @@ lib/backend/schema/contents_interests_model.dart:18:  // "user_id" field.
 lib/backend/schema/contents_interests_model.dart:23:  // "created_at" field.
 lib/backend/schema/contents_interests_model.dart:31:    _userId = snapshotData['user_id'] as String?;
 lib/backend/schema/contents_interests_model.dart:32:    _createdAt = snapshotData['created_at'] as DateTime?;
-lib/backend/schema/contents_interests_model.dart:37:          ? parent.collection('contents_interests')
 lib/backend/schema/contents_interests_model.dart:38:          : FirebaseFirestore.instance.collectionGroup('contents_interests');
-lib/backend/schema/contents_interests_model.dart:41:      parent.collection('contents_interests').doc(id);
 lib/backend/schema/contents_interests_model.dart:81:      'user_id': userId,
 lib/backend/schema/contents_interests_model.dart:82:      'created_at': createdAt,
 lib/backend/schema/votecounts_model.dart:5:import '/backend/schema/util/firestore_util.dart';
@@ -706,9 +702,7 @@ lib/backend/schema/ranked_posts_model.dart:83:    _commentCount = castToType<int
 lib/backend/schema/ranked_posts_model.dart:84:    _interestCount = castToType<int>(snapshotData['interest_count']);
 lib/backend/schema/ranked_posts_model.dart:85:    _shareCount = castToType<int>(snapshotData['share_count']);
 lib/backend/schema/ranked_posts_model.dart:86:    _contentType = snapshotData['content_type'] as String?;
-lib/backend/schema/ranked_posts_model.dart:91:          ? parent.collection('ranked_posts')
 lib/backend/schema/ranked_posts_model.dart:92:          : FirebaseFirestore.instance.collectionGroup('ranked_posts');
-lib/backend/schema/ranked_posts_model.dart:95:      parent.collection('ranked_posts').doc(id);
 lib/backend/schema/ranked_posts_model.dart:143:      'post_id': postId,
 lib/backend/schema/ranked_posts_model.dart:148:      'view_count': viewCount,
 lib/backend/schema/ranked_posts_model.dart:149:      'like_count': likeCount,
@@ -724,9 +718,7 @@ lib/backend/schema/friends_list_model.dart:43:  // "last_interaction" field.
 lib/backend/schema/friends_list_model.dart:51:    _friendsId = snapshotData['friends_id'] as String?;
 lib/backend/schema/friends_list_model.dart:55:    _isBlocked = snapshotData['is_blocked'] as bool?;
 lib/backend/schema/friends_list_model.dart:56:    _lastInteraction = snapshotData['last_interaction'] as DateTime?;
-lib/backend/schema/friends_list_model.dart:61:          ? parent.collection('friends_list')
 lib/backend/schema/friends_list_model.dart:62:          : FirebaseFirestore.instance.collectionGroup('friends_list');
-lib/backend/schema/friends_list_model.dart:65:      parent.collection('friends_list').doc(id);
 lib/backend/schema/friends_list_model.dart:108:      'friends_id': friendsId,
 lib/backend/schema/friends_list_model.dart:112:      'is_blocked': isBlocked,
 lib/backend/schema/friends_list_model.dart:113:      'last_interaction': lastInteraction,
@@ -778,7 +770,6 @@ lib/backend/schema/jops_name_model.dart:5:import '/backend/schema/util/firestore
 lib/backend/schema/jops_name_model.dart:8:import '/core/app_utils.dart';
 lib/backend/schema/jops_name_model.dart:23:  // "category_ref" field.
 lib/backend/schema/jops_name_model.dart:30:    _categoryRef = snapshotData['category_ref'] as String?;
-lib/backend/schema/jops_name_model.dart:34:      FirebaseFirestore.instance.collection('jops_name');
 lib/backend/schema/jops_name_model.dart:74:      'category_ref': categoryRef,
 lib/backend/schema/jops_category_model.dart:3:import '/backend/algolia/algolia_manager.dart';
 lib/backend/schema/jops_category_model.dart:6:import '/backend/schema/util/firestore_util.dart';
@@ -792,7 +783,6 @@ lib/backend/schema/jops_category_model.dart:41:    _jopName = snapshotData['jop_
 lib/backend/schema/jops_category_model.dart:42:    _categoryRefA = snapshotData['category_ref_A'] as String?;
 lib/backend/schema/jops_category_model.dart:43:    _categoryRefB = snapshotData['category_ref_B'] as String?;
 lib/backend/schema/jops_category_model.dart:44:    _searchTags = getDataList(snapshotData['search_tags']);
-lib/backend/schema/jops_category_model.dart:48:      FirebaseFirestore.instance.collection('jops_category');
 lib/backend/schema/jops_category_model.dart:71:          'jop_name': snapshot.data['jop_name'],
 lib/backend/schema/jops_category_model.dart:72:          'category_ref_A': snapshot.data['category_ref_A'],
 lib/backend/schema/jops_category_model.dart:73:          'category_ref_B': snapshot.data['category_ref_B'],
@@ -821,7 +811,6 @@ lib/backend/schema/premium_users_model.dart:64:    _premiumStartDate = snapshotD
 lib/backend/schema/premium_users_model.dart:65:    _availableFeatures = getDataList(snapshotData['available_features']);
 lib/backend/schema/premium_users_model.dart:66:    _pointsBalance = castToType<int>(snapshotData['points_balance']);
 lib/backend/schema/premium_users_model.dart:68:        snapshotData['last_used_premium_feature'] as DateTime?;
-lib/backend/schema/premium_users_model.dart:72:      FirebaseFirestore.instance.collection('premium_users');
 lib/backend/schema/premium_users_model.dart:116:      'user_id': userId,
 lib/backend/schema/premium_users_model.dart:117:      'is_premium': isPremium,
 lib/backend/schema/premium_users_model.dart:118:      'premium_end_date': premiumEndDate,
@@ -837,9 +826,7 @@ lib/backend/schema/contents_likes_model.dart:18:  // "user_id" field.
 lib/backend/schema/contents_likes_model.dart:23:  // "created_at" field.
 lib/backend/schema/contents_likes_model.dart:31:    _userId = snapshotData['user_id'] as String?;
 lib/backend/schema/contents_likes_model.dart:32:    _createdAt = snapshotData['created_at'] as DateTime?;
-lib/backend/schema/contents_likes_model.dart:37:          ? parent.collection('contents_likes')
 lib/backend/schema/contents_likes_model.dart:38:          : FirebaseFirestore.instance.collectionGroup('contents_likes');
-lib/backend/schema/contents_likes_model.dart:41:      parent.collection('contents_likes').doc(id);
 lib/backend/schema/contents_likes_model.dart:80:      'user_id': userId,
 lib/backend/schema/contents_likes_model.dart:81:      'created_at': createdAt,
 lib/backend/schema/poll_details_model.dart:5:import '/backend/schema/util/firestore_util.dart';
@@ -861,9 +848,7 @@ lib/backend/schema/poll_details_model.dart:78:    _option1MediaUrls = getDataLis
 lib/backend/schema/poll_details_model.dart:79:    _option2MediaUrls = getDataList(snapshotData['option_2_media_urls']);
 lib/backend/schema/poll_details_model.dart:80:    _option1MediaType = snapshotData['option_1_media_type'] as String?;
 lib/backend/schema/poll_details_model.dart:81:    _option2MediaType = snapshotData['option_2_media_type'] as String?;
-lib/backend/schema/poll_details_model.dart:86:          ? parent.collection('poll_details')
 lib/backend/schema/poll_details_model.dart:87:          : FirebaseFirestore.instance.collectionGroup('poll_details');
-lib/backend/schema/poll_details_model.dart:90:      parent.collection('poll_details').doc(id);
 lib/backend/schema/poll_details_model.dart:137:      'option_1_media_url': option1MediaUrl,
 lib/backend/schema/poll_details_model.dart:138:      'option_2_media_url': option2MediaUrl,
 lib/backend/schema/poll_details_model.dart:139:      'result_time': resultTime,
@@ -986,9 +971,7 @@ lib/backend/schema/content_comments_model.dart:52:    _userId = snapshotData['us
 lib/backend/schema/content_comments_model.dart:54:    _createdAt = snapshotData['created_at'] as DateTime?;
 lib/backend/schema/content_comments_model.dart:55:    _isPremium = snapshotData['is_premium'] as bool?;
 lib/backend/schema/content_comments_model.dart:56:    _likesCount = castToType<int>(snapshotData['likes_count']);
-lib/backend/schema/content_comments_model.dart:61:          ? parent.collection('content_comments')
 lib/backend/schema/content_comments_model.dart:62:          : FirebaseFirestore.instance.collectionGroup('content_comments');
-lib/backend/schema/content_comments_model.dart:65:      parent.collection('content_comments').doc(id);
 lib/backend/schema/content_comments_model.dart:108:      'comment_id': commentId,
 lib/backend/schema/content_comments_model.dart:109:      'user_id': userId,
 lib/backend/schema/content_comments_model.dart:111:      'created_at': createdAt,
@@ -1024,9 +1007,7 @@ lib/backend/schema/feed_details_model.dart:5:import '/backend/schema/util/firest
 lib/backend/schema/feed_details_model.dart:8:import '/core/app_utils.dart';
 lib/backend/schema/feed_details_model.dart:18:  // "media_url" field.
 lib/backend/schema/feed_details_model.dart:31:    _mediaUrl = snapshotData['media_url'] as String?;
-lib/backend/schema/feed_details_model.dart:37:          ? parent.collection('feed_details')
 lib/backend/schema/feed_details_model.dart:38:          : FirebaseFirestore.instance.collectionGroup('feed_details');
-lib/backend/schema/feed_details_model.dart:41:      parent.collection('feed_details').doc(id);
 lib/backend/schema/feed_details_model.dart:80:      'media_url': mediaUrl,
 lib/backend/schema/likes_model.dart:5:import '/backend/schema/util/firestore_util.dart';
 lib/backend/schema/likes_model.dart:8:import '/core/app_utils.dart';
@@ -1056,9 +1037,7 @@ lib/backend/schema/contents_shares_model.dart:28:  // "shared_id" field.
 lib/backend/schema/contents_shares_model.dart:36:    _userId = snapshotData['user_id'] as String?;
 lib/backend/schema/contents_shares_model.dart:37:    _shearedToUserId = snapshotData['sheared_to_user_id'] as String?;
 lib/backend/schema/contents_shares_model.dart:38:    _sharedId = snapshotData['shared_id'] as DateTime?;
-lib/backend/schema/contents_shares_model.dart:43:          ? parent.collection('contents_shares')
 lib/backend/schema/contents_shares_model.dart:44:          : FirebaseFirestore.instance.collectionGroup('contents_shares');
-lib/backend/schema/contents_shares_model.dart:47:      parent.collection('contents_shares').doc(id);
 lib/backend/schema/contents_shares_model.dart:87:      'user_id': userId,
 lib/backend/schema/contents_shares_model.dart:88:      'sheared_to_user_id': shearedToUserId,
 lib/backend/schema/contents_shares_model.dart:89:      'shared_id': sharedId,
@@ -1077,9 +1056,7 @@ lib/backend/schema/group_messages_model.dart:54:    _gContent = snapshotData['g_
 lib/backend/schema/group_messages_model.dart:55:    _gTimeStamp = snapshotData['g_time_stamp'] as DateTime?;
 lib/backend/schema/group_messages_model.dart:56:    _gAttachmentUrl = snapshotData['g_attachment_url'] as String?;
 lib/backend/schema/group_messages_model.dart:57:    _gIsReadBy = getDataList(snapshotData['g_is_read_by']);
-lib/backend/schema/group_messages_model.dart:62:          ? parent.collection('group_messages')
 lib/backend/schema/group_messages_model.dart:63:          : FirebaseFirestore.instance.collectionGroup('group_messages');
-lib/backend/schema/group_messages_model.dart:66:      parent.collection('group_messages').doc(id);
 lib/backend/schema/group_messages_model.dart:108:      'g_message_id': gMessageId,
 lib/backend/schema/group_messages_model.dart:109:      'g_sender_id': gSenderId,
 lib/backend/schema/group_messages_model.dart:110:      'g_content': gContent,
@@ -1115,7 +1092,6 @@ lib/backend/schema/comments_model.dart:135:      'report_count': reportCount,
 lib/backend/schema/comments_model.dart:136:      'is_blocked': isBlocked,
 lib/backend/schema/comments_model.dart:137:      'premium_required': premiumRequired,
 lib/backend/schema/image_moderation_model.dart:6:import '/core/app_utils.dart';
-lib/backend/schema/image_moderation_model.dart:128:      FirebaseFirestore.instance.collection('image_moderation');
 lib/backend/schema/group_chats_model.dart:5:import '/backend/schema/util/firestore_util.dart';
 lib/backend/schema/group_chats_model.dart:6:import '/backend/schema/util/schema_util.dart';
 lib/backend/schema/group_chats_model.dart:9:import '/core/app_utils.dart';
@@ -1137,7 +1113,6 @@ lib/backend/schema/group_chats_model.dart:81:    _updateAt = snapshotData['updat
 lib/backend/schema/group_chats_model.dart:83:    _groupImageUrl = snapshotData['group_image_url'] as String?;
 lib/backend/schema/group_chats_model.dart:84:    _pendingUserIds = getDataList(snapshotData['pending_user_ids']);
 lib/backend/schema/group_chats_model.dart:85:    _chatType = snapshotData['chat_type'] as String?;
-lib/backend/schema/group_chats_model.dart:89:      FirebaseFirestore.instance.collection('group_chats');
 lib/backend/schema/group_chats_model.dart:135:      'group_chat_id': groupChatId,
 lib/backend/schema/group_chats_model.dart:136:      'creator_id': creatorId,
 lib/backend/schema/group_chats_model.dart:137:      'group_name': groupName,
@@ -1212,14 +1187,14 @@ lib/backend/api_requests/api_manager.dart:16:import 'get_streamed_response.dart'
 lib/shared/services/unified_box_calculator.dart:3:import '../constants/layout_constants.dart';
 lib/shared/services/unified_box_calculator.dart:4:import '../../posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
 lib/models/notification_model.dart:1:import 'package:cloud_firestore/cloud_firestore.dart';
-lib/models/notification_model.dart:39:      userId: data['user_id'] ?? '',
+lib/models/notification_model.dart:39:      userId: (data['userId'] ?? data['user_id']) ?? '',
 lib/models/notification_model.dart:40:      type: data['type'] ?? 'voting_request',
-lib/models/notification_model.dart:41:      sourceId: data['source_id'] ?? '',
-lib/models/notification_model.dart:43:      createdAt: (data['created_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
-lib/models/notification_model.dart:45:      targetAudience: data['target_audience'] ?? '',
-lib/models/notification_model.dart:46:      expiryTime: (data['expiry_time'] as Timestamp?)?.toDate() ?? DateTime.now(),
-lib/models/notification_model.dart:47:      interactionType: data['interaction_type'] ?? 'vote',
-lib/models/notification_model.dart:49:      readAt: (data['read_at'] as Timestamp?)?.toDate(),
+lib/models/notification_model.dart:41:      sourceId: (data['sourceId'] ?? data['source_id']) ?? '',
+lib/models/notification_model.dart:43:      createdAt: ((data['createdAt'] ?? data['created_at']) as Timestamp?)?.toDate() ?? DateTime.now(),
+lib/models/notification_model.dart:45:      targetAudience: (data['targetAudience'] ?? data['target_audience']) ?? '',
+lib/models/notification_model.dart:46:      expiryTime: ((data['expiryTime'] ?? data['expiry_time']) as Timestamp?)?.toDate() ?? DateTime.now(),
+lib/models/notification_model.dart:47:      interactionType: (data['interactionType'] ?? data['interaction_type']) ?? 'vote',
+lib/models/notification_model.dart:49:      readAt: ((data['readAt'] ?? data['read_at']) as Timestamp?)?.toDate(),
 lib/main.dart:4:import 'package:bot_toast/bot_toast.dart';
 lib/main.dart:6:import 'package:flutter_localizations/flutter_localizations.dart';
 lib/main.dart:7:import 'package:flutter_web_plugins/url_strategy.dart';
@@ -1473,7 +1448,6 @@ lib/pages/chat/chat_list/chat_list_widget.dart:5:import '/design_system/design_s
 lib/pages/chat/chat_list/chat_list_widget.dart:6:import '/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart';
 lib/pages/chat/chat_list/chat_list_widget.dart:11:  static String routeName = 'chat_list';
 lib/pages/chat/chat_list/chat_list_widget.dart:38:              Icons.add_comment_outlined,
-lib/pages/chat/chat_list/chat_list_widget.dart:59:                .orderBy('last_message_at', descending: true),
 lib/pages/chat/chat_list/chat_list_widget.dart:104:            Icons.chat_bubble_outline,
 lib/pages/chat/chat_list/chat_list_widget.dart:130:    final isAIChat = chat.participantIds.contains('ai_assistant') || 
 lib/pages/chat/chat_list/chat_list_widget.dart:131:                     chat.chatType == 'ai_chat';
@@ -1487,14 +1461,11 @@ lib/pages/chat/friends_list/friends_list_widget.dart:2:import '/auth/firebase_au
 lib/pages/chat/friends_list/friends_list_widget.dart:4:import '/design_system/design_system.dart';
 lib/pages/chat/friends_list/friends_list_widget.dart:9:  static String routeName = 'friends_list';
 lib/pages/chat/friends_list/friends_list_widget.dart:36:              Icons.person_add_outlined,
-lib/pages/chat/friends_list/friends_list_widget.dart:60:                      .orderBy('last_interaction', descending: true),
 lib/pages/chat/friends_list/friends_list_widget.dart:105:            Icons.lock_outline,
 lib/pages/chat/friends_list/friends_list_widget.dart:127:            Icons.people_outline,
 lib/pages/chat/chat_search/chat_search_widget.dart:2:import '/auth/firebase_auth/auth_util.dart';
 lib/pages/chat/chat_search/chat_search_widget.dart:4:import '/design_system/design_system.dart';
 lib/pages/chat/chat_search/chat_search_widget.dart:9:  static String routeName = 'chat_search';
-lib/pages/chat/chat_search/chat_search_widget.dart:108:            .orderBy('total_a_points', descending: true)
-lib/pages/chat/chat_search/chat_search_widget.dart:152:            .orderBy('display_name'),
 lib/pages/chat/chat_search/chat_search_widget.dart:180:                  Icons.search_off,
 lib/pages/chat/chat_search/chat_search_widget.dart:214:            Icons.lock_outline,
 lib/pages/chat/chat_search/chat_search_widget.dart:236:            Icons.person_search,
@@ -1591,7 +1562,6 @@ lib/pages/chat/services/chat_message_service.dart:111:    final imageUrl = data[
 lib/pages/chat/services/chat_message_service.dart:155:    return type == 'vote_request' || type == 'vote_created';
 lib/pages/chat/services/chat_message_lifecycle_service.dart:1:import 'package:cloud_firestore/cloud_firestore.dart';
 lib/pages/chat/services/chat_message_lifecycle_service.dart:19:      // We'll filter sender_id in memory for better performance
-lib/pages/chat/services/chat_message_lifecycle_service.dart:24:          .where('seen_at', isNull: true)
 lib/pages/chat/services/chat_message_lifecycle_service.dart:39:            'seen_at': seenTimestamp,
 lib/pages/chat/services/chat_message_lifecycle_service.dart:67:        'delivered_at': FieldValue.serverTimestamp(),
 lib/pages/chat/services/chat_message_lifecycle_service.dart:93:      if (data['seen_at'] != null) {
@@ -1713,8 +1683,6 @@ lib/pages/notifications_list/notifications_list_widget.dart:3:import '/auth/fire
 lib/pages/notifications_list/notifications_list_widget.dart:5:import '/core/app_theme.dart';
 lib/pages/notifications_list/notifications_list_widget.dart:6:import '/core/app_utils.dart';
 lib/pages/notifications_list/notifications_list_widget.dart:11:  static String routeName = 'notifications_list';
-lib/pages/notifications_list/notifications_list_widget.dart:46:                .where('user_id', isEqualTo: currentUserUid)
-lib/pages/notifications_list/notifications_list_widget.dart:47:                .orderBy('created_at', descending: true),
 lib/pages/notifications_list/notifications_list_widget.dart:75:                        Icons.notifications_none,
 lib/pages/notifications_list/notifications_list_widget.dart:109:                          'read_at': FieldValue.serverTimestamp(),
 lib/pages/notifications_list/notifications_list_widget.dart:145:                              Icons.how_to_vote,
@@ -1823,18 +1791,12 @@ lib/services/user_cache_service.dart:180:    final displayName = userData['displ
 lib/services/image_moderation_service.dart:3:import 'dart:typed_data';
 lib/services/image_moderation_service.dart:4:import 'package:cloud_functions/cloud_functions.dart';
 lib/services/vote_timer_service.dart:3:import 'package:cloud_firestore/cloud_firestore.dart';
-lib/services/vote_timer_service.dart:53:          .collection('time_sync')
 lib/services/vote_timer_service.dart:56:            'local_time': localTimeBefore.toIso8601String(),
 lib/services/cache/preload_strategy.dart:1:import 'package:cloud_firestore/cloud_firestore.dart';
 lib/services/cache/preload_strategy.dart:3:import 'unified_cache_service.dart';
 lib/services/cache/preload_strategy.dart:4:import '../../backend/schema/messages_model.dart';
-lib/services/cache/preload_strategy.dart:39:            .where('participant_ids', arrayContains: userId)
-lib/services/cache/preload_strategy.dart:40:            .orderBy('last_message_at', descending: true)
 lib/services/cache/preload_strategy.dart:49:        // 대체 쿼리: participant_ids 조건만 사용
-lib/services/cache/preload_strategy.dart:53:              .where('participant_ids', arrayContains: userId)
-lib/services/cache/preload_strategy.dart:125:          .orderBy('time_stamp', descending: true)
 lib/services/cache/preload_strategy.dart:137:      final cacheKey = 'chat_messages_$chatId';
-lib/services/cache/preload_strategy.dart:202:          .orderBy('created_at', descending: true)
 lib/services/cache/preload_strategy.dart:209:      final cacheKey = 'home_feed_posts';
 lib/services/cache/preload_strategy.dart:232:      'preloading_chats': _preloadingChats.length,
 lib/services/cache/preload_strategy.dart:233:      'preloaded_chats': _preloadedChats.length,
@@ -1853,12 +1815,6 @@ lib/services/cache/unified_cache_service.dart:2:import 'package:hive_flutter/hiv
 lib/services/cache/unified_cache_service.dart:4:import 'simple_memory_cache.dart';
 lib/services/cache/unified_cache_service.dart:5:import 'cache_statistics.dart';
 lib/services/cache/unified_cache_service.dart:74:    _localCache = await Hive.openBox('unified_cache');
-lib/services/cache/unified_cache_service.dart:267:          .orderBy('time_stamp', descending: false)
-lib/services/cache/unified_cache_service.dart:294:          .orderBy('time_stamp', descending: false)
-lib/services/cache/unified_cache_service.dart:333:            .orderBy('time_stamp', descending: false)
-lib/services/cache/unified_cache_service.dart:367:          .orderBy('post_created_date', descending: true)
-lib/services/cache/unified_cache_service.dart:381:          .orderBy('post_created_date', descending: true)
-lib/services/cache/unified_cache_service.dart:445:          .orderBy('last_message_at', descending: true)
 lib/services/vote_state_coordinator.dart:3:import 'package:cloud_firestore/cloud_firestore.dart';
 lib/services/vote_state_coordinator.dart:4:import '/services/vote_timer_service.dart';
 lib/services/vote_state_coordinator.dart:5:import '/models/vote_state.dart';
@@ -1908,8 +1864,6 @@ lib/services/vote_status_service.dart:72:                'voted_at': FieldValue.
 lib/services/vote_status_service.dart:74:              'last_vote_update': FieldValue.serverTimestamp(),
 lib/services/vote_status_service.dart:124:      final authorId = postData['user_id'] ?? postData['userId'] ?? postData['author_id'];
 lib/services/vote_status_service.dart:131:      final aiChatId = 'ai_assistant_$authorId';
-lib/services/vote_status_service.dart:135:          .where('vote_post_id', isEqualTo: postId)
-lib/services/vote_status_service.dart:136:          .where('message_type', isEqualTo: 'vote_request')
 lib/services/vote_status_service.dart:145:      // user_votes 업데이트
 lib/services/vote_status_service.dart:148:        'user_votes.$userId': {
 lib/services/vote_status_service.dart:150:          'voted_at': FieldValue.serverTimestamp(),
@@ -1917,18 +1871,8 @@ lib/services/vote_status_service.dart:152:        'last_vote_update': FieldValue
 lib/services/notification_service.dart:4:import '/posts/in_put_post_image/utils/debug_helper.dart';
 lib/services/notification_service.dart:36:      'notif_query_$userId',
 lib/services/notification_service.dart:37:      '알림 쿼리 시작: userId=${DebugHelper.maskSensitive(userId)}, type=voting_request',
-lib/services/notification_service.dart:44:        .where('user_id', isEqualTo: userId)
-lib/services/notification_service.dart:45:        .where('type', isEqualTo: 'voting_request')
-lib/services/notification_service.dart:47:        .where('expiry_time', isGreaterThan: Timestamp.now())
-lib/services/notification_service.dart:48:        .orderBy('expiry_time', descending: false) // 만료 임박한 것부터
-lib/services/notification_service.dart:49:        .orderBy('created_at', descending: true)   // 최신 것부터
 lib/services/notification_service.dart:76:          'notif_doc_${change.doc.id}',
 lib/services/notification_service.dart:93:          'notif_parse_error_${doc.id}',
-lib/services/notification_service.dart:111:        .where('user_id', isEqualTo: userId)
-lib/services/notification_service.dart:112:        .where('type', isEqualTo: 'voting_request')
-lib/services/notification_service.dart:114:        .where('expiry_time', isGreaterThan: Timestamp.now())
-lib/services/notification_service.dart:115:        .orderBy('expiry_time', descending: false)
-lib/services/notification_service.dart:116:        .orderBy('created_at', descending: true)
 lib/services/notification_service.dart:164:          'created_at': FieldValue.serverTimestamp(),
 lib/services/notification_service.dart:165:          'chat_name': '채팅',
 lib/services/notification_service.dart:179:        'message_id': messageId,
@@ -1949,8 +1893,6 @@ lib/services/notification_service.dart:194:        'vote_aspect_ratio_a': option
 lib/services/notification_service.dart:195:        'vote_aspect_ratio_b': optionBData['aspectRatio'],
 lib/services/notification_service.dart:196:        'vote_status': 'pending',
 lib/services/notification_service.dart:222:      final aiChatId = 'ai_assistant_${userId}';
-lib/services/notification_service.dart:229:          .where('vote_post_id', isEqualTo: postId)
-lib/services/notification_service.dart:230:          .where('message_type', isEqualTo: 'vote_request')
 lib/services/notification_service.dart:241:          'card_status': status,
 lib/services/notification_service.dart:242:          'updated_at': FieldValue.serverTimestamp(),
 lib/services/unified_image_cache_service.dart:2:import 'package:cached_network_image/cached_network_image.dart';
@@ -1959,7 +1901,6 @@ lib/services/target_audience_service.dart:1:import 'package:cloud_firestore/clou
 lib/services/target_audience_service.dart:2:import '/posts/in_put_post_image/models/target_audience_model.dart';
 lib/services/target_audience_service.dart:31:      // 관심사 (interest_record의 document IDs)
 lib/services/target_audience_service.dart:108:  /// posts_record에 투표를 생성할 때 targetAudience 필드를 추가합니다.
-lib/services/target_audience_service.dart:193:          .orderBy('created_time', descending: true)
 lib/services/storage_service.dart:1:import 'package:firebase_storage/firebase_storage.dart';
 lib/services/storage_service.dart:2:import '/posts/in_put_post_image/utils/debug_helper.dart';
 lib/services/storage_service.dart:19:      // 경로 파싱 (예: users/uid/posts/images/timestamp_box_type.jpg)
@@ -1981,7 +1922,4 @@ lib/services/chat_media_upload_service.dart:78:      final videoFileName = 'chat
 lib/services/chat_media_upload_service.dart:79:      final videoStoragePath = 'chat_media/$chatId/$messageId/$videoFileName';
 lib/services/chat_media_upload_service.dart:90:        final thumbnailFileName = 'video_thumbnail_$timestamp.jpg';
 lib/services/chat_media_upload_service.dart:91:        final thumbnailStoragePath = 'chat_media/$chatId/$messageId/$thumbnailFileName';
-lib/services/cloud_image_moderation_service.dart:14:          .collection('image_moderation')
-lib/services/cloud_image_moderation_service.dart:43:            .collection('image_moderation')
-lib/services/cloud_image_moderation_service.dart:75:        .collection('image_moderation')
 lib/widgets/highlighted_text_field.dart:2:import '/services/perspective_api_service.dart';

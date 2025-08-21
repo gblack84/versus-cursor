@@ -8,13 +8,13 @@ class VoteMessageHelper {
     switch (status) {
       case 'completed':
         return Icons.check_circle;
-      case 'voting_request':
+      case 'votingRequest':
         return Icons.how_to_vote;
       case 'expired':
         return Icons.block;
-      case 'not_participated':
+      case 'notParticipated':
         return Icons.block;
-      case 'in_progress':
+      case 'inProgress':
         return Icons.timer;
       default:
         return Icons.help;

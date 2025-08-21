@@ -26,7 +26,7 @@ class ChatMessageBuilder {
     final metadata = message.metadata ?? {};
     
     // Check if this is a vote message
-    if (metadata['type'] == 'vote_request' || metadata['type'] == 'vote_created') {
+    if (metadata['type'] == 'voteRequest' || metadata['type'] == 'voteCreated') {
       // Build vote card
       final voteCard = KeyedSubtree(
         key: ValueKey(message.id),
@@ -42,7 +42,7 @@ class ChatMessageBuilder {
           optionBImages: (metadata['optionBImages'] as List<dynamic>?)?.cast<String>(),
           aspectRatioA: metadata['aspectRatioA'],
           aspectRatioB: metadata['aspectRatioB'],
-          cardStatus: metadata['cardStatus'] ?? 'voting_request',
+          cardStatus: metadata['cardStatus'] ?? 'votingRequest',
           voteEndTime: metadata['voteEndTime'] != null 
               ? (metadata['voteEndTime'] is DateTime 
                   ? metadata['voteEndTime'] 
@@ -51,7 +51,7 @@ class ChatMessageBuilder {
           userVotes: metadata['userVotes'],
           voteResults: metadata['voteResults'],
           isMe: isSentByMe,
-          messageType: metadata['type'] ?? 'vote_request',
+          messageType: metadata['type'] ?? 'voteRequest',
           messageId: message.id,
           chatId: chatDocument?.reference.id,
           currentUserName: currentUserRecord?.displayName ?? '사용자',

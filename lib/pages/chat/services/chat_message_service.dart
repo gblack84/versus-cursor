@@ -37,8 +37,8 @@ class ChatMessageService {
 
       // 메시지 타입별 처리
       switch (messageType) {
-        case 'vote_request':
-        case 'vote_created':
+        case 'voteRequest':
+        case 'voteCreated':
           return _createVoteMessage(messageId, senderId, createdAt, data, messageType);
         
         case 'system':
@@ -152,7 +152,7 @@ class ChatMessageService {
   static bool isVoteMessage(core.Message message) {
     if (message is! core.CustomMessage) return false;
     final type = message.metadata?['type'] as String?;
-    return type == 'vote_request' || type == 'vote_created';
+    return type == 'voteRequest' || type == 'voteCreated';
   }
 
   static bool isSystemMessage(core.Message message) {

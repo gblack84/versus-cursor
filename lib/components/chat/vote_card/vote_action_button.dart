@@ -25,7 +25,7 @@ class VoteActionButton extends StatelessWidget {
       buttonText = '투표 현황 보기';
     } else {
       // 남이 만든 투표
-      buttonText = cardStatus == 'voting_request' ? '투표하기' : '투표 현황 보기';
+      buttonText = cardStatus == 'votingRequest' ? '투표하기' : '투표 현황 보기';
     }
     
     return SizedBox(

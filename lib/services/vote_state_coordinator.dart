@@ -187,7 +187,7 @@ class VoteStateCoordinator {
     
     // 3. 초기 상태 사용
     return VoteStateData(
-      state: _mapStatusToState(initialStatus ?? 'in_progress'),
+      state: _mapStatusToState(initialStatus ?? 'inProgress'),
       remainingTime: remainingTime,
       voteEndTime: voteEndTime,
       hasUserVoted: hasUserVoted,
@@ -224,15 +224,15 @@ class VoteStateCoordinator {
   /// 문자열 상태를 Enum으로 변환
   VoteState _mapStatusToState(String? status) {
     switch (status) {
-      case 'voting_request':
+      case 'votingRequest':
         return VoteState.votingRequest;
       case 'completed':
         return VoteState.completed;
       case 'expired':
         return VoteState.expired;
-      case 'not_participated':
+      case 'notParticipated':
         return VoteState.notParticipated;
-      case 'in_progress':
+      case 'inProgress':
       default:
         return VoteState.inProgress;
     }

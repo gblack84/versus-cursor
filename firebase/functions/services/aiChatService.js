@@ -39,46 +39,46 @@ async function createVoteRequestMessage(userId, postId, postData) {
   
   const messageData = {
     // 기본 메시지 정보
-    message_id: messageId,
-    sender_id: AI_ASSISTANT_ID,
-    receiver_id: userId,
+    messageId: messageId,
+    senderId: AI_ASSISTANT_ID,
+    receiverId: userId,
     // content 필드 제거 - AI 채팅방은 투표 카드만 표시
-    time_stamp: now,
-    is_read: false,
+    timeStamp: now,
+    isRead: false,
     
     // 투표 메시지 정보
-    message_type: 'vote_request',
-    vote_post_id: postId,
-    vote_title: postData.questionTitle || postData.question_title || '',
-    vote_option_a_text: postData.optionA || postData.option_a || '',
-    vote_option_b_text: postData.optionB || postData.option_b || '',
-    vote_option_a_image: postData.imageUrlA || postData.image_url_a || null,
-    vote_option_b_image: postData.imageUrlB || postData.image_url_b || null,
+    messageType: 'voteRequest',
+    votePostId: postId,
+    voteTitle: postData.questionTitle || '',
+    voteOptionAText: postData.optionA || '',
+    voteOptionBText: postData.optionB || '',
+    voteOptionAImage: postData.imageUrlA || null,
+    voteOptionBImage: postData.imageUrlB || null,
     
     // 멀티이미지 지원
-    vote_option_a_images: postData.imageUrlsA || postData.image_urls_a || null,
-    vote_option_b_images: postData.imageUrlsB || postData.image_urls_b || null,
+    voteOptionAImages: postData.imageUrlsA || null,
+    voteOptionBImages: postData.imageUrlsB || null,
     
     // 스마트 레이아웃을 위한 aspectRatio 추가 - 올바른 필드명 사용
-    vote_aspect_ratio_a: postData.optionA?.aspectRatio || postData.aspectRatioA || null,
-    vote_aspect_ratio_b: postData.optionB?.aspectRatio || postData.aspectRatioB || null,
+    voteAspectRatioA: postData.optionA?.aspectRatio || postData.aspectRatioA || null,
+    voteAspectRatioB: postData.optionB?.aspectRatio || postData.aspectRatioB || null,
     
     // 전체 설명
-    vote_description: postData.description || '',
+    voteDescription: postData.description || '',
     
     // 카드 상태
-    card_status: 'voting_request', // 초기 상태: 대기중
-    vote_end_time: admin.firestore.Timestamp.fromDate(
+    cardStatus: 'votingRequest', // 초기 상태: 대기중
+    voteEndTime: admin.firestore.Timestamp.fromDate(
       new Date(Date.now() + 10 * 60 * 1000) // 10분 후
     ),
     
     // 개별 사용자의 투표 정보를 저장할 필드 초기화
-    user_votes: {},
+    userVotes: {},
     
     // 메타데이터에 실제 작성자 정보 포함
     metadata: {
-      authorName: postData.displayName || postData.display_name || '익명',
-      authorPhotoUrl: postData.photoUrl || postData.photo_url || null,
+      authorName: postData.displayName || '익명',
+      authorPhotoUrl: postData.photoUrl || null,
       creatorId: postData.uid || null,
       postId: postId
     }
@@ -89,26 +89,26 @@ async function createVoteRequestMessage(userId, postId, postData) {
   const chatDoc = await chatRef.get();
   
   // 채팅 목록 표시용 메시지 생성
-  const listMessage = `[투표] ${postData.questionTitle || postData.question_title || '새로운 투표'}`;
+  const listMessage = `[투표] ${postData.questionTitle || '새로운 투표'}`;
   
   if (!chatDoc.exists) {
     await chatRef.set({
-      user_a: AI_ASSISTANT_ID,
-      user_b: userId,
-      last_message_content: listMessage,
-      last_message_at: now,
-      last_message_sent_by: AI_ASSISTANT_ID,
+      userA: AI_ASSISTANT_ID,
+      userB: userId,
+      lastMessageContent: listMessage,
+      lastMessageAt: now,
+      lastMessageSentBy: AI_ASSISTANT_ID,
       users: [AI_ASSISTANT_ID, userId],
       participantIds: [AI_ASSISTANT_ID, userId],  // Flutter 호환성을 위해 추가
-      chat_name: 'AI 피클',  // AI 채팅방 이름
-      chat_type: 'ai_chat'  // 채팅 타입 명시
+      chatName: 'AI 피클',  // AI 채팅방 이름
+      chatType: 'aiChat'  // 채팅 타입 명시
     });
   } else {
     // 마지막 메시지 업데이트
     await chatRef.update({
-      last_message_content: listMessage,
-      last_message_at: now,
-      last_message_sent_by: AI_ASSISTANT_ID
+      lastMessageContent: listMessage,
+      lastMessageAt: now,
+      lastMessageSentBy: AI_ASSISTANT_ID
     });
   }
   
@@ -140,46 +140,46 @@ async function createVoteCreatedMessage(userId, postId, postData) {
   
   const messageData = {
     // 기본 메시지 정보
-    message_id: messageId,
-    sender_id: userId,
-    receiver_id: AI_ASSISTANT_ID,
+    messageId: messageId,
+    senderId: userId,
+    receiverId: AI_ASSISTANT_ID,
     // content 필드 제거 - AI 채팅방은 투표 카드만 표시
-    time_stamp: now,
-    is_read: false,
+    timeStamp: now,
+    isRead: false,
     
     // 투표 메시지 정보
-    message_type: 'vote_created',
-    vote_post_id: postId,
-    vote_title: postData.questionTitle || postData.question_title || '',
-    vote_option_a_text: postData.optionA || postData.option_a || '',
-    vote_option_b_text: postData.optionB || postData.option_b || '',
-    vote_option_a_image: postData.imageUrlA || postData.image_url_a || null,
-    vote_option_b_image: postData.imageUrlB || postData.image_url_b || null,
+    messageType: 'voteCreated',
+    votePostId: postId,
+    voteTitle: postData.questionTitle || '',
+    voteOptionAText: postData.optionA || '',
+    voteOptionBText: postData.optionB || '',
+    voteOptionAImage: postData.imageUrlA || null,
+    voteOptionBImage: postData.imageUrlB || null,
     
     // 멀티이미지 지원
-    vote_option_a_images: postData.imageUrlsA || postData.image_urls_a || null,
-    vote_option_b_images: postData.imageUrlsB || postData.image_urls_b || null,
+    voteOptionAImages: postData.imageUrlsA || null,
+    voteOptionBImages: postData.imageUrlsB || null,
     
     // 스마트 레이아웃을 위한 aspectRatio 추가 - 올바른 필드명 사용
-    vote_aspect_ratio_a: postData.optionA?.aspectRatio || postData.aspectRatioA || null,
-    vote_aspect_ratio_b: postData.optionB?.aspectRatio || postData.aspectRatioB || null,
+    voteAspectRatioA: postData.optionA?.aspectRatio || postData.aspectRatioA || null,
+    voteAspectRatioB: postData.optionB?.aspectRatio || postData.aspectRatioB || null,
     
     // 전체 설명
-    vote_description: postData.description || '',
+    voteDescription: postData.description || '',
     
     // 카드 상태
-    cardStatus: 'in_progress', // 작성자는 진행중 상태로 시작
-    vote_end_time: admin.firestore.Timestamp.fromDate(
+    cardStatus: 'inProgress', // 작성자는 진행중 상태로 시작
+    voteEndTime: admin.firestore.Timestamp.fromDate(
       new Date(Date.now() + 10 * 60 * 1000) // 10분 후
     ),
     
     // 개별 사용자의 투표 정보를 저장할 필드 초기화
-    user_votes: {},
+    userVotes: {},
     
     // 메타데이터에 실제 작성자 정보 포함
     metadata: {
-      authorName: postData.displayName || postData.display_name || '익명',
-      authorPhotoUrl: postData.photoUrl || postData.photo_url || null,
+      authorName: postData.displayName || '익명',
+      authorPhotoUrl: postData.photoUrl || null,
       creatorId: postData.uid || null,
       postId: postId
     }
@@ -190,26 +190,26 @@ async function createVoteCreatedMessage(userId, postId, postData) {
   const chatDoc = await chatRef.get();
   
   // 채팅 목록 표시용 메시지 생성
-  const listMessage = `[투표] ${postData.questionTitle || postData.question_title || '새로운 투표'}`;
+  const listMessage = `[투표] ${postData.questionTitle || '새로운 투표'}`;
   
   if (!chatDoc.exists) {
     await chatRef.set({
-      user_a: AI_ASSISTANT_ID,
-      user_b: userId,
-      last_message_content: listMessage,
-      last_message_at: now,
-      last_message_sent_by: AI_ASSISTANT_ID,
+      userA: AI_ASSISTANT_ID,
+      userB: userId,
+      lastMessageContent: listMessage,
+      lastMessageAt: now,
+      lastMessageSentBy: AI_ASSISTANT_ID,
       users: [AI_ASSISTANT_ID, userId],
       participantIds: [AI_ASSISTANT_ID, userId],  // Flutter 호환성을 위해 추가
-      chat_name: 'AI 피클',  // AI 채팅방 이름
-      chat_type: 'ai_chat'  // 채팅 타입 명시
+      chatName: 'AI 피클',  // AI 채팅방 이름
+      chatType: 'aiChat'  // 채팅 타입 명시
     });
   } else {
     // 마지막 메시지 업데이트
     await chatRef.update({
-      last_message_content: listMessage,
-      last_message_at: now,
-      last_message_sent_by: AI_ASSISTANT_ID
+      lastMessageContent: listMessage,
+      lastMessageAt: now,
+      lastMessageSentBy: AI_ASSISTANT_ID
     });
   }
   
@@ -261,7 +261,7 @@ async function updateVoteParticipation(userId, postId, choice) {
     .doc(chatId)
     .collection('messages')
     .where('vote_post_id', '==', postId)
-    .where('message_type', '==', 'vote_request')
+    .where('messageType', '==', 'voteRequest')
     .get();
   
   if (!messagesSnapshot.empty) {
@@ -275,8 +275,8 @@ async function updateVoteParticipation(userId, postId, choice) {
       voted_at: admin.firestore.Timestamp.now()
     };
     
-    await updateCardStatus(userId, messageDoc.id, 'in_progress', {
-      user_votes: userVotes,
+    await updateCardStatus(userId, messageDoc.id, 'inProgress', {
+      userVotes: userVotes,
       last_vote_update: admin.firestore.Timestamp.now()
     });
   }
@@ -316,7 +316,7 @@ async function createVoteResultMessage(userId, postId, voteResults) {
     .doc(chatId)
     .collection('messages')
     .where('vote_post_id', '==', postId)
-    .where('message_type', 'in', ['vote_request', 'vote_created'])
+    .where('messageType', 'in', ['voteRequest', 'voteCreated'])
     .get();
   
   // 투표 결과 업데이트 시작
@@ -327,7 +327,7 @@ async function createVoteResultMessage(userId, postId, voteResults) {
     let finalStatus;
     const updateData = {
       card_status: '',
-      vote_completed_at: admin.firestore.Timestamp.now(),
+      voteCompletedAt: admin.firestore.Timestamp.now(),
       // 투표 결과 정보 추가
       vote_results_a: voteResults.displayVotesA || voteResults.votesA,
       vote_results_b: voteResults.displayVotesB || voteResults.votesB,
@@ -351,11 +351,11 @@ async function createVoteResultMessage(userId, postId, voteResults) {
     }
     
     // 작성자 메시지는 투표 완료 시 항상 'completed'
-    if (data.message_type === 'vote_created') {
+    if (data.messageType === 'voteCreated') {
       finalStatus = 'completed';
     } else {
       // 일반 투표 요청 메시지는 실제 투표 여부에 따라 상태 결정
-      finalStatus = userVoted ? 'completed' : 'not_participated';
+      finalStatus = userVoted ? 'completed' : 'notParticipated';
     }
     
     updateData.card_status = finalStatus;

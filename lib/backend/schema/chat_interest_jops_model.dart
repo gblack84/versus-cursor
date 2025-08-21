@@ -46,11 +46,11 @@ class ChatInterestJopsModel extends FirestoreRecord {
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
-          ? parent.collection('Chat_interest_jops')
-          : FirebaseFirestore.instance.collectionGroup('Chat_interest_jops');
+          ? parent.collection('chatInterestJops')
+          : FirebaseFirestore.instance.collectionGroup('chatInterestJops');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
-      parent.collection('Chat_interest_jops').doc(id);
+      parent.collection('chatInterestJops').doc(id);
 
   static Stream<ChatInterestJopsModel> getDocument(DocumentReference ref) =>
       ref.snapshots().map((s) => ChatInterestJopsModel.fromSnapshot(s));

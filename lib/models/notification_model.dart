@@ -37,7 +37,7 @@ class VotingNotification {
     return VotingNotification(
       notificationId: doc.id,
       userId: (data['userId'] ?? data['user_id']) ?? '',
-      type: data['type'] ?? 'voting_request',
+      type: data['type'] ?? 'votingRequest',
       sourceId: (data['sourceId'] ?? data['source_id']) ?? '',
       content: NotificationContent.fromMap(data['content'] ?? {}),
       createdAt: ((data['createdAt'] ?? data['created_at']) as Timestamp?)?.toDate() ?? DateTime.now(),

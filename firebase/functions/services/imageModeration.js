@@ -211,7 +211,7 @@ async function moderateStorageImage(object) {
       
       // Firestore에 먼저 기록
       await admin.firestore()
-        .collection("image_moderation")
+        .collection("imageModeration")
         .doc(moderationId)
         .set(moderationData, { merge: true });
       
@@ -225,7 +225,7 @@ async function moderateStorageImage(object) {
     
     // Firestore에 검열 결과 저장
     await admin.firestore()
-      .collection("image_moderation")
+      .collection("imageModeration")
       .doc(moderationId)
       .set(moderationData, { merge: true });
     
@@ -243,7 +243,7 @@ async function moderateStorageImage(object) {
     const moderationId = `${userId}_${sessionId}_${box}`;
     
     await admin.firestore()
-      .collection("image_moderation")
+      .collection("imageModeration")
       .doc(moderationId)
       .set({
         imageUrl: `gs://${object.bucket}/${filePath}`,

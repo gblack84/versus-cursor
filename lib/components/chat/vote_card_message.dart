@@ -137,15 +137,15 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   String _mapStateToString(VoteState state) {
     switch (state) {
       case VoteState.votingRequest:
-        return 'voting_request';
+        return 'votingRequest';
       case VoteState.completed:
         return 'completed';
       case VoteState.expired:
         return 'expired';
       case VoteState.notParticipated:
-        return 'not_participated';
+        return 'notParticipated';
       case VoteState.inProgress:
-        return 'in_progress';
+        return 'inProgress';
     }
   }
   
@@ -282,15 +282,15 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   // 초기 상태를 VoteState enum으로 변환
   VoteState _mapInitialStatus(String status) {
     switch (status) {
-      case 'voting_request':
+      case 'votingRequest':
         return VoteState.votingRequest;
       case 'completed':
         return VoteState.completed;
       case 'expired':
         return VoteState.expired;
-      case 'not_participated':
+      case 'notParticipated':
         return VoteState.notParticipated;
-      case 'in_progress':
+      case 'inProgress':
         return VoteState.inProgress;
       default:
         return VoteState.inProgress;
@@ -305,7 +305,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
     final statusInfo = _getStatusInfoForState(stateData.state, stateData.hasUserVoted);
     
     // vote_request 타입일 때 상태 텍스트를 '대기중'으로 오버라이드
-    if (widget.messageType == 'vote_request' && stateData.state == VoteState.votingRequest) {
+    if (widget.messageType == 'voteRequest' && stateData.state == VoteState.votingRequest) {
       statusInfo['text'] = '대기중';
     }
     
@@ -1040,13 +1040,13 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   
   // 타이머 표시 여부 판단
   bool _shouldShowTimer(String status, DateTime? endTime) {
-    return (status == 'voting_request' || status == 'in_progress') && 
+    return (status == 'votingRequest' || status == 'inProgress') && 
            endTime != null;
   }
   
   // 액션 버튼 표시 여부 판단
   bool _shouldShowAction(String status) {
-    return status == 'voting_request' || status == 'in_progress';
+    return status == 'votingRequest' || status == 'inProgress';
   }
   
   // 결과 표시 여부 판단
@@ -1111,7 +1111,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
       buttonText = '투표 현황 보기';
     } else {
       // 남이 만든 투표
-      buttonText = status == 'voting_request' ? '투표하기' : '투표 현황 보기';
+      buttonText = status == 'votingRequest' ? '투표하기' : '투표 현황 보기';
     }
     
     return SizedBox(
@@ -1185,7 +1185,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
       _isVoting = true;
     });
     
-    if (widget.cardStatus == 'voting_request') {
+    if (widget.cardStatus == 'votingRequest') {
       _showVotingDialog();
     } else {
       // 게시물 페이지로 이동
@@ -1212,7 +1212,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
       _isVoting = true;
     });
     
-    if (widget.cardStatus == 'voting_request') {
+    if (widget.cardStatus == 'votingRequest') {
       _showVotingDialog();
     } else {
       context.pushNamed(

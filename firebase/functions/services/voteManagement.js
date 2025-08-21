@@ -24,7 +24,7 @@ async function processVoteCompletion(postId, voteResults) {
       // 알림 문서 조회
       db.collection('notifications')
         .where('source_id', '==', postId)
-        .where('type', '==', 'voting_request')
+        .where('type', '==', 'votingRequest')
         .get()
     ]);
     
@@ -51,7 +51,7 @@ async function processVoteCompletion(postId, voteResults) {
         .doc(chatId)
         .collection('messages')
         .where('vote_post_id', '==', postId)
-        .where('message_type', 'in', ['vote_request', 'vote_created'])
+        .where('messageType', 'in', ['voteRequest', 'voteCreated'])
         .get()
         .then(snapshot => {
           const updates = [];

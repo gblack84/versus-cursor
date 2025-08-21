@@ -146,7 +146,7 @@ class ChatDetailMigrationService {
     
     // cardStatus는 Firebase에서 받은 값 사용 (completed 포함)
     metadata['cardStatus'] = messageData['cardStatus'] ?? 
-      (isVoteRequest ? 'voting_request' : 'in_progress');
+      (isVoteRequest ? 'votingRequest' : 'inProgress');
     
     // 투표 종료 시간
     metadata['voteEndTime'] = messageData['voteEndTime'] != null

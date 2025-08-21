@@ -56,7 +56,7 @@ async function migrateMessages() {
       
       // 각 채팅방의 메시지 가져오기
       let messagesQuery = db.collection('chats').doc(chatId).collection('messages')
-        .where('message_type', 'in', ['vote_request', 'vote_created']);
+        .where('messageType', 'in', ['voteRequest', 'voteCreated']);
       
       if (limit) {
         messagesQuery = messagesQuery.limit(limit);
@@ -140,7 +140,7 @@ async function validateMigration() {
     const messagesSnapshot = await db.collection('chats')
       .doc(chatDoc.id)
       .collection('messages')
-      .where('message_type', 'in', ['vote_request', 'vote_created'])
+      .where('messageType', 'in', ['voteRequest', 'voteCreated'])
       .get();
     
     messagesSnapshot.forEach(doc => {

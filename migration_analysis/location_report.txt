@@ -105,19 +105,6 @@ lib/posts/in_put_post_image/components/simple_character_count.dart:2:import 'pac
 lib/posts/in_put_post_image/helpers/input_field_builder.dart:2:import 'package:google_fonts/google_fonts.dart';
 lib/core/upload_data.dart:6:import 'package:google_fonts/google_fonts.dart';
 
-## Field: created_at → createdUat
-### Locations:
-firebase/functions/utils/batch-processor.js:210:          created_at: admin.firestore.FieldValue.serverTimestamp(),
-firebase/firestore.indexes.backup.json:76:          "fieldPath": "created_at",
-firebase/firestore.indexes.backup.json:102:          "fieldPath": "created_at",
-lib/backend/schema/user_contents_model.dart:29:  // "created_at" field.
-lib/backend/schema/user_contents_model.dart:62:    _createdAt = snapshotData['created_at'] as DateTime?;
-lib/backend/schema/user_contents_model.dart:117:      'created_at': createdAt,
-lib/backend/schema/contents_interests_model.dart:23:  // "created_at" field.
-lib/backend/schema/contents_interests_model.dart:32:    _createdAt = snapshotData['created_at'] as DateTime?;
-lib/backend/schema/contents_interests_model.dart:82:      'created_at': createdAt,
-lib/backend/schema/notifications_model.dart:128:    _createdAt = (snapshotData['createdAt'] ?? snapshotData['created_at']) as DateTime?;
-
 ## Field: design_system → designUsystem
 ### Locations:
 lib/design_system/components/versus_components.dart:7:/// import 'package:versus_space/design_system/components/versus_components.dart';
@@ -131,18 +118,18 @@ lib/components/chat/vote_card/vote_card_header.dart:3:import '/design_system/des
 lib/components/chat/vote_card/vote_action_button.dart:2:import '/design_system/design_system.dart';
 lib/components/navigation/main_navigation_shell.dart:4:import '/design_system/design_system.dart';
 
-## Field: voting_request → votingUrequest
+## Field: created_at → createdUat
 ### Locations:
-firebase/functions/functions/scheduled/flushThrottleQueue.js:189:              .where('type', '==', 'voting_request')
-firebase/functions/notifications/notificationCreator.js:77:      type: 'voting_request',
-firebase/functions/services/voteManagement.js:27:        .where('type', '==', 'voting_request')
-firebase/functions/services/aiChatService.js:70:    card_status: 'voting_request', // 초기 상태: 대기중
-lib/utils/vote_message_helper.dart:11:      case 'voting_request':
-lib/models/notification_model.dart:40:      type: data['type'] ?? 'voting_request',
-lib/components/chat/vote_card_message.dart:16:/// 4가지 상태를 지원: voting_request, in_progress, completed, not_participated
-lib/components/chat/vote_card_message.dart:140:        return 'voting_request';
-lib/components/chat/vote_card_message.dart:285:      case 'voting_request':
-lib/components/chat/vote_card_message.dart:1043:    return (status == 'voting_request' || status == 'in_progress') && 
+firebase/functions/utils/batch-processor.js:210:          created_at: admin.firestore.FieldValue.serverTimestamp(),
+firebase/firestore.indexes.backup.json:76:          "fieldPath": "created_at",
+firebase/firestore.indexes.backup.json:102:          "fieldPath": "created_at",
+lib/backend/schema/user_contents_model.dart:29:  // "created_at" field.
+lib/backend/schema/user_contents_model.dart:62:    _createdAt = snapshotData['created_at'] as DateTime?;
+lib/backend/schema/user_contents_model.dart:117:      'created_at': createdAt,
+lib/backend/schema/contents_interests_model.dart:23:  // "created_at" field.
+lib/backend/schema/contents_interests_model.dart:32:    _createdAt = snapshotData['created_at'] as DateTime?;
+lib/backend/schema/contents_interests_model.dart:82:      'created_at': createdAt,
+lib/backend/schema/notifications_model.dart:128:    _createdAt = (snapshotData['createdAt'] ?? snapshotData['created_at']) as DateTime?;
 
 ## Field: user_votes → userUvotes
 ### Locations:
@@ -157,18 +144,18 @@ firebase/functions/functions/https/migrateVoteData.js:80:            // 기존 �
 firebase/functions/functions/https/migrateVoteData.js:94:                  user_votes: userVotes,
 firebase/functions/services/aiChatService.js:76:    user_votes: {},
 
-## Field: vote_request → voteUrequest
+## Field: voting_request → votingUrequest
 ### Locations:
-firebase/functions/utils/realtime-throttle.js:125:            .where('message_type', 'in', ['vote_request', 'vote_created'])
-firebase/functions/utils/batch-processor.js:190:      .where('message_type', 'in', ['vote_request', 'vote_created'])
-firebase/functions/scripts/migrate-vote-data.js:59:        .where('message_type', 'in', ['vote_request', 'vote_created']);
-firebase/functions/scripts/migrate-vote-data.js:143:      .where('message_type', 'in', ['vote_request', 'vote_created'])
-firebase/functions/functions/https/migrateVoteData.js:56:          .where('message_type', 'in', ['vote_request', 'vote_created']);
-firebase/functions/services/voteManagement.js:54:        .where('message_type', 'in', ['vote_request', 'vote_created'])
-firebase/functions/services/aiChatService.js:50:    message_type: 'vote_request',
-firebase/functions/services/aiChatService.js:264:    .where('message_type', '==', 'vote_request')
-firebase/functions/services/aiChatService.js:319:    .where('message_type', 'in', ['vote_request', 'vote_created'])
-lib/components/chat/vote_card_message.dart:307:    // vote_request 타입일 때 상태 텍스트를 '대기중'으로 오버라이드
+firebase/functions/functions/scheduled/flushThrottleQueue.js:189:              .where('type', '==', 'voting_request')
+firebase/functions/notifications/notificationCreator.js:77:      type: 'voting_request',
+firebase/functions/services/voteManagement.js:27:        .where('type', '==', 'voting_request')
+firebase/functions/services/aiChatService.js:70:    card_status: 'voting_request', // 초기 상태: 대기중
+lib/utils/vote_message_helper.dart:11:      case 'voting_request':
+lib/models/notification_model.dart:40:      type: data['type'] ?? 'voting_request',
+lib/components/chat/vote_card_message.dart:16:/// 4가지 상태를 지원: voting_request, in_progress, completed, not_participated
+lib/components/chat/vote_card_message.dart:140:        return 'voting_request';
+lib/components/chat/vote_card_message.dart:285:      case 'voting_request':
+lib/components/chat/vote_card_message.dart:1043:    return (status == 'voting_request' || status == 'in_progress') && 
 
 ## Field: ai_assistant → aiUassistant
 ### Locations:
@@ -183,7 +170,7 @@ lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:514:        imageSource: 'https:/
 lib/pages/chat/chat_list/chat_list_widget.dart:130:    final isAIChat = chat.participantIds.contains('ai_assistant') || 
 lib/pages/chat/constants/chat_constants.dart:80:  static const String aiUserId = 'ai_assistant';
 
-## Field: message_type → messageUtype
+## Field: vote_request → voteUrequest
 ### Locations:
 firebase/functions/utils/realtime-throttle.js:125:            .where('message_type', 'in', ['vote_request', 'vote_created'])
 firebase/functions/utils/batch-processor.js:190:      .where('message_type', 'in', ['vote_request', 'vote_created'])
@@ -192,9 +179,9 @@ firebase/functions/scripts/migrate-vote-data.js:143:      .where('message_type',
 firebase/functions/functions/https/migrateVoteData.js:56:          .where('message_type', 'in', ['vote_request', 'vote_created']);
 firebase/functions/services/voteManagement.js:54:        .where('message_type', 'in', ['vote_request', 'vote_created'])
 firebase/functions/services/aiChatService.js:50:    message_type: 'vote_request',
-firebase/functions/services/aiChatService.js:151:    message_type: 'vote_created',
 firebase/functions/services/aiChatService.js:264:    .where('message_type', '==', 'vote_request')
 firebase/functions/services/aiChatService.js:319:    .where('message_type', 'in', ['vote_request', 'vote_created'])
+lib/components/chat/vote_card_message.dart:307:    // vote_request 타입일 때 상태 텍스트를 '대기중'으로 오버라이드
 
 ## Field: schema_util → schemaUutil
 ### Locations:
@@ -235,18 +222,18 @@ lib/createaccount/phoneauth/phone_creat_account/phone_creat_account_widget.dart:
 lib/createaccount/create_account/create_account_widget.dart:5:import '/core/app_widgets.dart';
 lib/pages/user_info_input/user_info_input_widget.dart:6:import '/core/app_widgets.dart';
 
-## Field: display_name → displayUname
+## Field: message_type → messageUtype
 ### Locations:
-firebase/functions/notifications/targetMatcher.js:142:      displayName: user.display_name || user.displayName || '익명',
-firebase/functions/notifications/notificationCreator.js:177:            authorName: postData.displayName || postData.display_name || '익명',
-firebase/functions/services/aiChatService.js:80:      authorName: postData.displayName || postData.display_name || '익명',
-firebase/functions/services/aiChatService.js:181:      authorName: postData.displayName || postData.display_name || '익명',
-lib/backend/schema/posts_model.dart:154:  // "display_name" field.
-lib/backend/schema/posts_model.dart:360:    _displayName = snapshotData['display_name'] as String?;
-lib/backend/schema/posts_model.dart:520:      'display_name': displayName,
-lib/backend/schema/users_model.dart:245:    _displayName = (snapshotData['displayName'] ?? snapshotData['display_name']) as String?;
-lib/backend/schema/chats_model.dart:115:    _displayName = (snapshotData['displayName'] ?? snapshotData['display_name']) as String?;
-lib/pages/chat/chat_search/chat_search_widget.dart:152:            .orderBy('display_name'),
+firebase/functions/utils/realtime-throttle.js:125:            .where('message_type', 'in', ['vote_request', 'vote_created'])
+firebase/functions/utils/batch-processor.js:190:      .where('message_type', 'in', ['vote_request', 'vote_created'])
+firebase/functions/scripts/migrate-vote-data.js:59:        .where('message_type', 'in', ['vote_request', 'vote_created']);
+firebase/functions/scripts/migrate-vote-data.js:143:      .where('message_type', 'in', ['vote_request', 'vote_created'])
+firebase/functions/functions/https/migrateVoteData.js:56:          .where('message_type', 'in', ['vote_request', 'vote_created']);
+firebase/functions/services/voteManagement.js:54:        .where('message_type', 'in', ['vote_request', 'vote_created'])
+firebase/functions/services/aiChatService.js:50:    message_type: 'vote_request',
+firebase/functions/services/aiChatService.js:151:    message_type: 'vote_created',
+firebase/functions/services/aiChatService.js:264:    .where('message_type', '==', 'vote_request')
+firebase/functions/services/aiChatService.js:319:    .where('message_type', 'in', ['vote_request', 'vote_created'])
 
 ## Field: sender_id → senderUid
 ### Locations:
@@ -260,4 +247,17 @@ firebase/functions/functions/https/markMessagesAsSeen.js:31:    // We'll filter 
 firebase/functions/functions/https/markMessagesAsSeen.js:52:      if (messageData.sender_id && messageData.sender_id !== userId) {
 firebase/functions/services/aiChatService.js:43:    sender_id: AI_ASSISTANT_ID,
 firebase/functions/services/aiChatService.js:144:    sender_id: userId,
+
+## Field: display_name → displayUname
+### Locations:
+firebase/functions/notifications/targetMatcher.js:142:      displayName: user.display_name || user.displayName || '익명',
+firebase/functions/notifications/notificationCreator.js:177:            authorName: postData.displayName || postData.display_name || '익명',
+firebase/functions/services/aiChatService.js:80:      authorName: postData.displayName || postData.display_name || '익명',
+firebase/functions/services/aiChatService.js:181:      authorName: postData.displayName || postData.display_name || '익명',
+lib/backend/schema/posts_model.dart:154:  // "display_name" field.
+lib/backend/schema/posts_model.dart:360:    _displayName = snapshotData['display_name'] as String?;
+lib/backend/schema/posts_model.dart:520:      'display_name': displayName,
+lib/backend/schema/users_model.dart:245:    _displayName = (snapshotData['displayName'] ?? snapshotData['display_name']) as String?;
+lib/backend/schema/chats_model.dart:115:    _displayName = (snapshotData['displayName'] ?? snapshotData['display_name']) as String?;
+lib/login/login_page/login_page_widget.dart:572:                                                    'display_name': '관리자',
 

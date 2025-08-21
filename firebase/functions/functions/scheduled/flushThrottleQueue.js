@@ -186,7 +186,7 @@ exports.flushThrottleQueue = functions
             // 3. 모든 참여자에게 AI 채팅 결과 메시지 업데이트
             const notificationsSnapshot = await db.collection('notifications')
               .where('sourceId', '==', postId)
-              .where('type', '==', 'voting_request')
+              .where('type', '==', 'votingRequest')
               .get();
             
             const participantIds = new Set();

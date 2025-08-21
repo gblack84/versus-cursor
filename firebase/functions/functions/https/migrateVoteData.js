@@ -53,7 +53,7 @@ exports.migrateVoteData = functions
           .collection('chats')
           .doc(chatId)
           .collection('messages')
-          .where('message_type', 'in', ['vote_request', 'vote_created']);
+          .where('messageType', 'in', ['voteRequest', 'voteCreated']);
         
         if (limit) {
           messagesQuery = messagesQuery.limit(limit);

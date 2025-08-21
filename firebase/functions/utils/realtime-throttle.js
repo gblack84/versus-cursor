@@ -122,14 +122,14 @@ class RealtimeThrottle {
             .doc(chatId)
             .collection('messages')
             .where('vote_post_id', '==', postId)
-            .where('message_type', 'in', ['vote_request', 'vote_created'])
+            .where('messageType', 'in', ['voteRequest', 'voteCreated'])
             .limit(1)
             .get();
           
           if (!messageQuery.empty) {
             const messageDoc = messageQuery.docs[0];
             batch.update(messageDoc.ref, {
-              card_status: update.status === 'active' ? 'in_progress' : update.status,
+              cardStatus: update.status === 'active' ? 'inProgress' : update.status,
               voted_option: update.votedOption,
               updated_at: admin.firestore.FieldValue.serverTimestamp()
             });

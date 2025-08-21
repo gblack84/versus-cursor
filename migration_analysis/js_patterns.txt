@@ -1,0 +1,295 @@
+[1;33mScanning: firebase/functions (js files)[0m
+firebase/functions/config/logger.js:135:      'password', 'token', 'secret', 'api_key', 'apiKey',
+firebase/functions/config/logger.js:136:      'auth', 'authorization', 'credit_card', 'creditCard',
+firebase/functions/config/logger.js:137:      'ssn', 'social_security', 'email', 'phone', 'phoneNumber',
+firebase/functions/config/logger.js:138:      'uid', 'userId', 'user_id'
+firebase/functions/config/apiClients.js:14:const PERSPECTIVE_API_KEY = process.env.PERSPECTIVE_API_KEY || functions.config().perspective?.api_key;
+firebase/functions/config/apiClients.js:15:const GEMINI_API_KEY = process.env.GEMINI_API_KEY || functions.config().gemini?.api_key;
+firebase/functions/utils/realtime-throttle.js:85:        vote_count_a: admin.firestore.FieldValue.increment(voteCountA),
+firebase/functions/utils/realtime-throttle.js:86:        vote_count_b: admin.firestore.FieldValue.increment(voteCountB),
+firebase/functions/utils/realtime-throttle.js:88:        last_vote_at: admin.firestore.FieldValue.serverTimestamp()
+firebase/functions/utils/realtime-throttle.js:112:        const aiAssistantId = 'ai_assistant';
+firebase/functions/utils/realtime-throttle.js:124:            .where('vote_post_id', '==', postId)
+firebase/functions/utils/realtime-throttle.js:125:            .where('message_type', 'in', ['vote_request', 'vote_created'])
+firebase/functions/utils/realtime-throttle.js:132:              card_status: update.status === 'active' ? 'in_progress' : update.status,
+firebase/functions/utils/realtime-throttle.js:133:              voted_option: update.votedOption,
+firebase/functions/utils/realtime-throttle.js:134:              updated_at: admin.firestore.FieldValue.serverTimestamp()
+firebase/functions/utils/realtime-throttle.js:163:        case 'message_status':
+firebase/functions/utils/realtime-throttle.js:235:    type: 'message_status',
+firebase/functions/utils/batch-processor.js:176:  const aiAssistantId = 'ai_assistant';
+firebase/functions/utils/batch-processor.js:189:      .where('vote_post_id', '==', postId)
+firebase/functions/utils/batch-processor.js:190:      .where('message_type', 'in', ['vote_request', 'vote_created'])
+firebase/functions/utils/batch-processor.js:198:            updated_at: admin.firestore.FieldValue.serverTimestamp()
+firebase/functions/utils/batch-processor.js:205:          user_id: userId,
+firebase/functions/utils/batch-processor.js:206:          type: 'vote_result',
+firebase/functions/utils/batch-processor.js:207:          source_id: postId,
+firebase/functions/utils/batch-processor.js:210:          created_at: admin.firestore.FieldValue.serverTimestamp(),
+firebase/functions/ai/monitoring.js:27:      .collection('ai_operation_logs')
+firebase/functions/ai/monitoring.js:68:      .collection('ai_usage_logs')
+firebase/functions/ai/monitoring.js:133:      .collection('ai_experiments')
+firebase/functions/ai/monitoring.js:155:      .collection('recommendation_outcomes')
+firebase/functions/ai/monitoring.js:181:      .collection('ai_usage_logs')
+firebase/functions/ai/monitoring.js:209:      .collection('ai_daily_reports')
+firebase/functions/ai/monitoring.js:239:      .collection('ai_operation_logs')
+firebase/functions/ai/contentModeration.js:155:      .where('user_info.user_ref', '==', admin.firestore().doc(`users/${userId}`))
+firebase/functions/ai/contentModeration.js:163:        questionTitle: data.question_title || '',
+firebase/functions/ai/contentModeration.js:211:      console.error('[Content Moderation] 환경 변수를 확인하세요: GOOGLE_GENAI_API_KEY, google.genai_api_key, gemini.api_key');
+firebase/functions/ai/cache.js:111:    postData.questionTitle || postData.question_title || '',
+firebase/functions/ai/cache.js:112:    postData.optionA || postData.option_a || '',
+firebase/functions/ai/cache.js:113:    postData.optionB || postData.option_b || '',
+firebase/functions/ai/userHistoryAnalyzer.js:15:  // 필요한 인덱스: content_validations 컬렉션
+firebase/functions/ai/userHistoryAnalyzer.js:37:      .collection('content_validations')
+firebase/functions/ai/userHistoryAnalyzer.js:46:      .where('user_ref', '==', db.doc(`users/${userId}`))
+firebase/functions/ai/userHistoryAnalyzer.js:47:      .where('reported_count', '>', 0)
+firebase/functions/ai/config.js:7:                            functions.config().google?.genai_api_key || 
+firebase/functions/ai/config.js:8:                            functions.config().gemini?.api_key;
+firebase/functions/ai/config.js:12:  console.error('[AI Config] 환경 변수를 확인하세요: GOOGLE_GENAI_API_KEY, google.genai_api_key, gemini.api_key');
+firebase/functions/ai/config.js:40:    // timeout은 Gemini API generation_config에서 지원하지 않음
+firebase/functions/ai/config.js:47:    // timeout은 Gemini API generation_config에서 지원하지 않음
+firebase/functions/ai/userRecommendation.js:24:- 질문: ${postData.questionTitle || postData.question_title || ''}
+firebase/functions/ai/userRecommendation.js:26:- A 옵션: ${postData.optionA || postData.option_a || ''}
+firebase/functions/ai/userRecommendation.js:27:- B 옵션: ${postData.optionB || postData.option_b || ''}
+firebase/functions/ai/userRecommendation.js:133:            가입일: ${user.created_time ? new Date(user.created_time._seconds * 1000).toISOString() : '알수없음'}
+firebase/functions/ai/userRecommendation.js:217:      "userId": "user_id",
+firebase/functions/scripts/migrate-vote-data.js:3: * 기존 개별 필드를 user_votes Map 구조로 변환
+firebase/functions/scripts/migrate-vote-data.js:59:        .where('message_type', 'in', ['vote_request', 'vote_created']);
+firebase/functions/scripts/migrate-vote-data.js:72:        // 이미 user_votes가 있고 데이터가 있으면 스킵
+firebase/functions/scripts/migrate-vote-data.js:73:        if (messageData.user_votes && Object.keys(messageData.user_votes).length > 0) {
+firebase/functions/scripts/migrate-vote-data.js:80:        if (messageData.user_voted === true && messageData.sender_id) {
+firebase/functions/scripts/migrate-vote-data.js:83:          // 기존 데이터를 user_votes Map으로 변환
+firebase/functions/scripts/migrate-vote-data.js:84:          userVotes[messageData.sender_id] = {
+firebase/functions/scripts/migrate-vote-data.js:85:            option: messageData.vote_choice || '',
+firebase/functions/scripts/migrate-vote-data.js:86:            voted_at: messageData.vote_participated_at || admin.firestore.Timestamp.now()
+firebase/functions/scripts/migrate-vote-data.js:90:          console.log(`     - sender_id: ${messageData.sender_id}`);
+firebase/functions/scripts/migrate-vote-data.js:91:          console.log(`     - vote_choice: ${messageData.vote_choice}`);
+firebase/functions/scripts/migrate-vote-data.js:92:          console.log(`     - user_votes: ${JSON.stringify(userVotes)}`);
+firebase/functions/scripts/migrate-vote-data.js:97:                user_votes: userVotes,
+firebase/functions/scripts/migrate-vote-data.js:99:                migrated_at: admin.firestore.Timestamp.now(),
+firebase/functions/scripts/migrate-vote-data.js:100:                migration_version: '1.0'
+firebase/functions/scripts/migrate-vote-data.js:143:      .where('message_type', 'in', ['vote_request', 'vote_created'])
+firebase/functions/scripts/migrate-vote-data.js:148:      const hasOldFormat = data.user_voted !== undefined;
+firebase/functions/scripts/migrate-vote-data.js:149:      const hasNewFormat = data.user_votes !== undefined && Object.keys(data.user_votes).length > 0;
+firebase/functions/functions/https/testCreateAIChatMessage.js:47:        optionATitle = postData.optionA || postData.option_a || '';
+firebase/functions/functions/https/testCreateAIChatMessage.js:54:        optionBTitle = postData.optionB || postData.option_b || '';
+firebase/functions/functions/https/testCreateAIChatMessage.js:59:        authorName: postData.authorName || postData.author_name || '익명',
+firebase/functions/functions/https/testCreateAIChatMessage.js:60:        questionTitle: postData.question_title || postData.questionTitle,
+firebase/functions/functions/https/testCreateAIChatMessage.js:63:        imageUrlA: imageUrlsA.length > 0 ? imageUrlsA[0] : (postData.image_url_a || postData.imageUrlA),
+firebase/functions/functions/https/testCreateAIChatMessage.js:64:        imageUrlB: imageUrlsB.length > 0 ? imageUrlsB[0] : (postData.image_url_b || postData.imageUrlB),
+firebase/functions/functions/https/testCreateAIChatMessage.js:65:        imageUrlsA: imageUrlsA.length > 0 ? imageUrlsA : (postData.image_urls_a || postData.imageUrlsA || []),
+firebase/functions/functions/https/testCreateAIChatMessage.js:66:        imageUrlsB: imageUrlsB.length > 0 ? imageUrlsB : (postData.image_urls_b || postData.imageUrlsB || []),
+firebase/functions/functions/https/testCreateAIChatMessage.js:85:        chatId: `ai_assistant_${userId}`
+firebase/functions/functions/https/migrateVoteData.js:47:        if (!chatId.includes('ai_assistant')) {
+firebase/functions/functions/https/migrateVoteData.js:56:          .where('message_type', 'in', ['vote_request', 'vote_created']);
+firebase/functions/functions/https/migrateVoteData.js:69:          // 이미 user_votes가 있고 데이터가 있으면 스킵
+firebase/functions/functions/https/migrateVoteData.js:70:          if (messageData.user_votes && Object.keys(messageData.user_votes).length > 0) {
+firebase/functions/functions/https/migrateVoteData.js:77:          if (messageData.user_voted === true && messageData.sender_id) {
+firebase/functions/functions/https/migrateVoteData.js:80:            // 기존 데이터를 user_votes Map으로 변환
+firebase/functions/functions/https/migrateVoteData.js:81:            userVotes[messageData.sender_id] = {
+firebase/functions/functions/https/migrateVoteData.js:82:              option: messageData.vote_choice || '',
+firebase/functions/functions/https/migrateVoteData.js:83:              voted_at: messageData.vote_participated_at || admin.firestore.Timestamp.now()
+firebase/functions/functions/https/migrateVoteData.js:87:              sender_id: messageData.sender_id,
+firebase/functions/functions/https/migrateVoteData.js:88:              vote_choice: messageData.vote_choice
+firebase/functions/functions/https/migrateVoteData.js:94:                  user_votes: userVotes,
+firebase/functions/functions/https/migrateVoteData.js:95:                  migrated_at: admin.firestore.Timestamp.now(),
+firebase/functions/functions/https/migrateVoteData.js:96:                  migration_version: '1.0'
+firebase/functions/functions/https/migrateVoteData.js:121:                status: 'would_migrate'
+firebase/functions/functions/https/validatePostContentWithGemini.js:45:      if (!process.env.GOOGLE_GENAI_API_KEY && !functions.config().google?.genai_api_key) {
+firebase/functions/functions/https/validatePostContentWithGemini.js:116:          await admin.firestore().collection('validation_errors').add({
+firebase/functions/functions/https/validatePostContentWithGemini.js:135:        error: 'validation_failed',
+firebase/functions/functions/https/validatePostContentWithGemini.js:147:    const collection = db.collection('content_validations');
+firebase/functions/functions/https/markMessagesAsSeen.js:30:    // Get all messages in the chat that don't have seen_at timestamp yet
+firebase/functions/functions/https/markMessagesAsSeen.js:31:    // We'll filter sender_id in memory for better performance
+firebase/functions/functions/https/markMessagesAsSeen.js:36:      .where('seen_at', '==', null)
+firebase/functions/functions/https/markMessagesAsSeen.js:52:      if (messageData.sender_id && messageData.sender_id !== userId) {
+firebase/functions/functions/https/markMessagesAsSeen.js:54:          seen_at: seenTimestamp
+firebase/functions/functions/https/migrateAIChatRooms.js:10:const AI_ASSISTANT_ID = 'ai_assistant';
+firebase/functions/functions/https/migrateAIChatRooms.js:14: * 기존: 대소문자가 섞인 ID (예: AacklMhqMxV8B1JgEAjG7aocxvg1_ai_assistant)
+firebase/functions/functions/https/migrateAIChatRooms.js:15: * 신규: ai_assistant_userId 형식
+firebase/functions/functions/https/migrateAIChatRooms.js:23:      // AI 채팅방 찾기 (ai_assistant가 participant인 모든 채팅방)
+firebase/functions/functions/https/migrateAIChatRooms.js:101:              migrated_from: currentChatId,
+firebase/functions/functions/https/migrateAIChatRooms.js:102:              migrated_at: admin.firestore.Timestamp.now()
+firebase/functions/functions/https/migrateAIChatRooms.js:113:              migrated_to: newChatId,
+firebase/functions/functions/https/migrateAIChatRooms.js:114:              migrated_at: admin.firestore.Timestamp.now(),
+firebase/functions/functions/https/migrateAIChatRooms.js:115:              is_migrated: true
+firebase/functions/functions/firestore/onMessageCreated.js:6: * Automatically sets delivered_at timestamp
+firebase/functions/functions/firestore/onMessageCreated.js:14:    // If delivered_at already exists, skip
+firebase/functions/functions/firestore/onMessageCreated.js:15:    if (messageData.delivered_at) {
+firebase/functions/functions/firestore/onMessageCreated.js:16:      console.log(`Message ${messageId} already has delivered_at`);
+firebase/functions/functions/firestore/onMessageCreated.js:21:      // Update the message with delivered_at timestamp
+firebase/functions/functions/firestore/onMessageCreated.js:23:        delivered_at: admin.firestore.FieldValue.serverTimestamp()
+firebase/functions/functions/firestore/onMessageCreated.js:26:      console.log(`Set delivered_at for message ${messageId} in chat ${chatId}`);
+firebase/functions/functions/firestore/onMessageCreated.js:29:      console.error(`Error setting delivered_at for message ${messageId}:`, error);
+firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:51:      // PostsModel은 snake_case로 필드를 저장함
+firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:53:        vote_start_time: admin.firestore.Timestamp.fromDate(voteStartTime),
+firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:54:        vote_end_time: admin.firestore.Timestamp.fromDate(voteEndTime),
+firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:55:        vote_completed: false
+firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:72:          optionATitle = postData.optionA || postData.option_a || '';
+firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:80:          optionBTitle = postData.optionB || postData.option_b || '';
+firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:85:          authorName: postData.displayName || postData.display_name || '익명',
+firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:86:          authorPhotoUrl: postData.photoUrl || postData.photo_url || null,
+firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:88:          questionTitle: postData.question_title || postData.questionTitle,
+firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:91:          imageUrlA: imageUrlsA.length > 0 ? imageUrlsA[0] : (postData.image_url_a || postData.imageUrlA),
+firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:92:          imageUrlB: imageUrlsB.length > 0 ? imageUrlsB[0] : (postData.image_url_b || postData.imageUrlB),
+firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:93:          imageUrlsA: imageUrlsA.length > 0 ? imageUrlsA : (postData.image_urls_a || postData.imageUrlsA || []),
+firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:94:          imageUrlsB: imageUrlsB.length > 0 ? imageUrlsB : (postData.image_urls_b || postData.imageUrlsB || []),
+firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:126:      await admin.firestore().collection('notification_errors').add({
+firebase/functions/functions/scheduled/flushThrottleQueue.js:65:        .where('vote_completed', '==', false)
+firebase/functions/functions/scheduled/flushThrottleQueue.js:81:        const voteEndTime = parseTimestamp(data.vote_end_time);
+firebase/functions/functions/scheduled/flushThrottleQueue.js:99:          const voteEndTime = parseTimestamp(data.vote_end_time);
+firebase/functions/functions/scheduled/flushThrottleQueue.js:103:            voteEndTimeRaw: logger.maskData(data.vote_end_time),
+firebase/functions/functions/scheduled/flushThrottleQueue.js:122:          const actualVotesA = postData.votedUserIDsA?.length || postData.votes_a || postData.vote_count_a || 0;
+firebase/functions/functions/scheduled/flushThrottleQueue.js:123:          const actualVotesB = postData.votedUserIDsB?.length || postData.votes_b || postData.vote_count_b || 0;
+firebase/functions/functions/scheduled/flushThrottleQueue.js:128:            A: postData.moderation?.expected_ratio_a || 0.5,
+firebase/functions/functions/scheduled/flushThrottleQueue.js:129:            B: postData.moderation?.expected_ratio_b || 0.5
+firebase/functions/functions/scheduled/flushThrottleQueue.js:157:            questionTitle: postData.question_title || postData.questionTitle,
+firebase/functions/functions/scheduled/flushThrottleQueue.js:158:            optionA: postData.option_a || postData.optionA?.title || 'A',
+firebase/functions/functions/scheduled/flushThrottleQueue.js:159:            optionB: postData.option_b || postData.optionB?.title || 'B',
+firebase/functions/functions/scheduled/flushThrottleQueue.js:161:            creatorName: postData.authorName || postData.author_name || '알 수 없음',
+firebase/functions/functions/scheduled/flushThrottleQueue.js:170:              vote_completed: true,
+firebase/functions/functions/scheduled/flushThrottleQueue.js:171:              vote_completed_at: admin.firestore.FieldValue.serverTimestamp(),
+firebase/functions/functions/scheduled/flushThrottleQueue.js:173:              display_votes_a: displayVotes.A,
+firebase/functions/functions/scheduled/flushThrottleQueue.js:174:              display_votes_b: displayVotes.B,
+firebase/functions/functions/scheduled/flushThrottleQueue.js:175:              display_percent_a: percentA,
+firebase/functions/functions/scheduled/flushThrottleQueue.js:176:              display_percent_b: percentB,
+firebase/functions/functions/scheduled/flushThrottleQueue.js:178:              actual_votes_a: actualVotesA,
+firebase/functions/functions/scheduled/flushThrottleQueue.js:179:              actual_votes_b: actualVotesB,
+firebase/functions/functions/scheduled/flushThrottleQueue.js:180:              actual_total_votes: actualTotal
+firebase/functions/functions/scheduled/flushThrottleQueue.js:188:              .where('source_id', '==', postId)
+firebase/functions/functions/scheduled/flushThrottleQueue.js:189:              .where('type', '==', 'voting_request')
+firebase/functions/functions/scheduled/flushThrottleQueue.js:194:              const userId = doc.data().user_id;
+firebase/functions/notifications/targetMatcher.js:47:          .where('last_active_time', '>', oneWeekAgo)
+firebase/functions/notifications/targetMatcher.js:48:          .orderBy('last_active_time', 'desc')
+firebase/functions/notifications/targetMatcher.js:52:        console.log(`last_active_time 쿼리 결과: ${snapshot2.size}명`);
+firebase/functions/notifications/targetMatcher.js:142:      displayName: user.display_name || user.displayName || '익명',
+firebase/functions/notifications/targetMatcher.js:144:      lastActive: user.lastActive || user.last_active_time,
+firebase/functions/notifications/notificationCreator.js:75:      notification_id: notificationRef.id,
+firebase/functions/notifications/notificationCreator.js:76:      user_id: user.id,
+firebase/functions/notifications/notificationCreator.js:77:      type: 'voting_request',
+firebase/functions/notifications/notificationCreator.js:78:      source_id: postId,
+firebase/functions/notifications/notificationCreator.js:85:          questionTitle: postData.questionTitle || postData.question_title || '',
+firebase/functions/notifications/notificationCreator.js:89:            : (postData.optionA || postData.option_a || ''),
+firebase/functions/notifications/notificationCreator.js:92:            : (postData.optionB || postData.option_b || ''),
+firebase/functions/notifications/notificationCreator.js:94:          imageUrlA: postData.optionA?.mediaUrls?.[0] || postData.imageUrlA || postData.image_url_a || null,
+firebase/functions/notifications/notificationCreator.js:95:          imageUrlB: postData.optionB?.mediaUrls?.[0] || postData.imageUrlB || postData.image_url_b || null,
+firebase/functions/notifications/notificationCreator.js:97:          imageUrlsA: postData.optionA?.mediaUrls || postData.imageUrlsA || postData.image_urls_a || null,
+firebase/functions/notifications/notificationCreator.js:98:          imageUrlsB: postData.optionB?.mediaUrls || postData.imageUrlsB || postData.image_urls_b || null,
+firebase/functions/notifications/notificationCreator.js:100:          authorName: postData.displayName || postData.display_name || '익명',
+firebase/functions/notifications/notificationCreator.js:101:          authorPhotoUrl: postData.photoUrl || postData.photo_url || null,
+firebase/functions/notifications/notificationCreator.js:112:      created_at: now,
+firebase/functions/notifications/notificationCreator.js:114:      target_audience: [postData.targetAudience.type], // Flutter 스키마에 맞춰 배열로 저장
+firebase/functions/notifications/notificationCreator.js:115:      expiry_time: expiryTime,
+firebase/functions/notifications/notificationCreator.js:116:      interaction_type: 'vote',
+firebase/functions/notifications/notificationCreator.js:164:            optionATitle = postData.optionA || postData.option_a || '';
+firebase/functions/notifications/notificationCreator.js:172:            optionBTitle = postData.optionB || postData.option_b || '';
+firebase/functions/notifications/notificationCreator.js:177:            authorName: postData.displayName || postData.display_name || '익명',
+firebase/functions/notifications/notificationCreator.js:178:            authorPhotoUrl: postData.photoUrl || postData.photo_url || null,
+firebase/functions/notifications/notificationCreator.js:180:            questionTitle: postData.question_title || postData.questionTitle,
+firebase/functions/notifications/notificationCreator.js:183:            imageUrlA: imageUrlsA.length > 0 ? imageUrlsA[0] : (postData.image_url_a || postData.imageUrlA),
+firebase/functions/notifications/notificationCreator.js:184:            imageUrlB: imageUrlsB.length > 0 ? imageUrlsB[0] : (postData.image_url_b || postData.imageUrlB),
+firebase/functions/notifications/notificationCreator.js:185:            imageUrlsA: imageUrlsA.length > 0 ? imageUrlsA : (postData.image_urls_a || postData.imageUrlsA || []),
+firebase/functions/notifications/notificationCreator.js:186:            imageUrlsB: imageUrlsB.length > 0 ? imageUrlsB : (postData.image_urls_b || postData.imageUrlB || []),
+firebase/functions/services/voteManagement.js:26:        .where('source_id', '==', postId)
+firebase/functions/services/voteManagement.js:27:        .where('type', '==', 'voting_request')
+firebase/functions/services/voteManagement.js:37:      const userId = doc.data().user_id;
+firebase/functions/services/voteManagement.js:42:    const aiAssistantId = 'ai_assistant';
+firebase/functions/services/voteManagement.js:53:        .where('vote_post_id', '==', postId)
+firebase/functions/services/voteManagement.js:54:        .where('message_type', 'in', ['vote_request', 'vote_created'])
+firebase/functions/services/voteManagement.js:89:      type: 'vote_result',
+firebase/functions/services/aiChatService.js:15:const AI_ASSISTANT_ID = 'ai_assistant';
+firebase/functions/services/aiChatService.js:24:  // AI 채팅방은 항상 'ai_assistant_userId' 형식으로 고정
+firebase/functions/services/aiChatService.js:42:    message_id: messageId,
+firebase/functions/services/aiChatService.js:43:    sender_id: AI_ASSISTANT_ID,
+firebase/functions/services/aiChatService.js:44:    receiver_id: userId,
+firebase/functions/services/aiChatService.js:46:    time_stamp: now,
+firebase/functions/services/aiChatService.js:47:    is_read: false,
+firebase/functions/services/aiChatService.js:50:    message_type: 'vote_request',
+firebase/functions/services/aiChatService.js:51:    vote_post_id: postId,
+firebase/functions/services/aiChatService.js:52:    vote_title: postData.questionTitle || postData.question_title || '',
+firebase/functions/services/aiChatService.js:53:    vote_option_a_text: postData.optionA || postData.option_a || '',
+firebase/functions/services/aiChatService.js:54:    vote_option_b_text: postData.optionB || postData.option_b || '',
+firebase/functions/services/aiChatService.js:55:    vote_option_a_image: postData.imageUrlA || postData.image_url_a || null,
+firebase/functions/services/aiChatService.js:56:    vote_option_b_image: postData.imageUrlB || postData.image_url_b || null,
+firebase/functions/services/aiChatService.js:59:    vote_option_a_images: postData.imageUrlsA || postData.image_urls_a || null,
+firebase/functions/services/aiChatService.js:60:    vote_option_b_images: postData.imageUrlsB || postData.image_urls_b || null,
+firebase/functions/services/aiChatService.js:63:    vote_aspect_ratio_a: postData.optionA?.aspectRatio || postData.aspectRatioA || null,
+firebase/functions/services/aiChatService.js:64:    vote_aspect_ratio_b: postData.optionB?.aspectRatio || postData.aspectRatioB || null,
+firebase/functions/services/aiChatService.js:67:    vote_description: postData.description || '',
+firebase/functions/services/aiChatService.js:70:    card_status: 'voting_request', // 초기 상태: 대기중
+firebase/functions/services/aiChatService.js:71:    vote_end_time: admin.firestore.Timestamp.fromDate(
+firebase/functions/services/aiChatService.js:76:    user_votes: {},
+firebase/functions/services/aiChatService.js:80:      authorName: postData.displayName || postData.display_name || '익명',
+firebase/functions/services/aiChatService.js:81:      authorPhotoUrl: postData.photoUrl || postData.photo_url || null,
+firebase/functions/services/aiChatService.js:92:  const listMessage = `[투표] ${postData.questionTitle || postData.question_title || '새로운 투표'}`;
+firebase/functions/services/aiChatService.js:96:      user_a: AI_ASSISTANT_ID,
+firebase/functions/services/aiChatService.js:97:      user_b: userId,
+firebase/functions/services/aiChatService.js:98:      last_message_content: listMessage,
+firebase/functions/services/aiChatService.js:99:      last_message_at: now,
+firebase/functions/services/aiChatService.js:100:      last_message_sent_by: AI_ASSISTANT_ID,
+firebase/functions/services/aiChatService.js:103:      chat_name: 'AI 피클',  // AI 채팅방 이름
+firebase/functions/services/aiChatService.js:104:      chat_type: 'ai_chat'  // 채팅 타입 명시
+firebase/functions/services/aiChatService.js:109:      last_message_content: listMessage,
+firebase/functions/services/aiChatService.js:110:      last_message_at: now,
+firebase/functions/services/aiChatService.js:111:      last_message_sent_by: AI_ASSISTANT_ID
+firebase/functions/services/aiChatService.js:143:    message_id: messageId,
+firebase/functions/services/aiChatService.js:144:    sender_id: userId,
+firebase/functions/services/aiChatService.js:145:    receiver_id: AI_ASSISTANT_ID,
+firebase/functions/services/aiChatService.js:147:    time_stamp: now,
+firebase/functions/services/aiChatService.js:148:    is_read: false,
+firebase/functions/services/aiChatService.js:151:    message_type: 'vote_created',
+firebase/functions/services/aiChatService.js:152:    vote_post_id: postId,
+firebase/functions/services/aiChatService.js:153:    vote_title: postData.questionTitle || postData.question_title || '',
+firebase/functions/services/aiChatService.js:154:    vote_option_a_text: postData.optionA || postData.option_a || '',
+firebase/functions/services/aiChatService.js:155:    vote_option_b_text: postData.optionB || postData.option_b || '',
+firebase/functions/services/aiChatService.js:156:    vote_option_a_image: postData.imageUrlA || postData.image_url_a || null,
+firebase/functions/services/aiChatService.js:157:    vote_option_b_image: postData.imageUrlB || postData.image_url_b || null,
+firebase/functions/services/aiChatService.js:160:    vote_option_a_images: postData.imageUrlsA || postData.image_urls_a || null,
+firebase/functions/services/aiChatService.js:161:    vote_option_b_images: postData.imageUrlsB || postData.image_urls_b || null,
+firebase/functions/services/aiChatService.js:164:    vote_aspect_ratio_a: postData.optionA?.aspectRatio || postData.aspectRatioA || null,
+firebase/functions/services/aiChatService.js:165:    vote_aspect_ratio_b: postData.optionB?.aspectRatio || postData.aspectRatioB || null,
+firebase/functions/services/aiChatService.js:168:    vote_description: postData.description || '',
+firebase/functions/services/aiChatService.js:171:    card_status: 'in_progress', // 작성자는 진홉중 상태로 시작
+firebase/functions/services/aiChatService.js:172:    vote_end_time: admin.firestore.Timestamp.fromDate(
+firebase/functions/services/aiChatService.js:177:    user_votes: {},
+firebase/functions/services/aiChatService.js:181:      authorName: postData.displayName || postData.display_name || '익명',
+firebase/functions/services/aiChatService.js:182:      authorPhotoUrl: postData.photoUrl || postData.photo_url || null,
+firebase/functions/services/aiChatService.js:193:  const listMessage = `[투표] ${postData.questionTitle || postData.question_title || '새로운 투표'}`;
+firebase/functions/services/aiChatService.js:197:      user_a: AI_ASSISTANT_ID,
+firebase/functions/services/aiChatService.js:198:      user_b: userId,
+firebase/functions/services/aiChatService.js:199:      last_message_content: listMessage,
+firebase/functions/services/aiChatService.js:200:      last_message_at: now,
+firebase/functions/services/aiChatService.js:201:      last_message_sent_by: AI_ASSISTANT_ID,
+firebase/functions/services/aiChatService.js:204:      chat_name: 'AI 피클',  // AI 채팅방 이름
+firebase/functions/services/aiChatService.js:205:      chat_type: 'ai_chat'  // 채팅 타입 명시
+firebase/functions/services/aiChatService.js:210:      last_message_content: listMessage,
+firebase/functions/services/aiChatService.js:211:      last_message_at: now,
+firebase/functions/services/aiChatService.js:212:      last_message_sent_by: AI_ASSISTANT_ID
+firebase/functions/services/aiChatService.js:240:    card_status: newStatus,
+firebase/functions/services/aiChatService.js:263:    .where('vote_post_id', '==', postId)
+firebase/functions/services/aiChatService.js:264:    .where('message_type', '==', 'vote_request')
+firebase/functions/services/aiChatService.js:271:    // user_votes Map 업데이트
+firebase/functions/services/aiChatService.js:272:    const userVotes = messageData.user_votes || {};
+firebase/functions/services/aiChatService.js:275:      voted_at: admin.firestore.Timestamp.now()
+firebase/functions/services/aiChatService.js:278:    await updateCardStatus(userId, messageDoc.id, 'in_progress', {
+firebase/functions/services/aiChatService.js:279:      user_votes: userVotes,
+firebase/functions/services/aiChatService.js:280:      last_vote_update: admin.firestore.Timestamp.now()
+firebase/functions/services/aiChatService.js:318:    .where('vote_post_id', '==', postId)
+firebase/functions/services/aiChatService.js:319:    .where('message_type', 'in', ['vote_request', 'vote_created'])
+firebase/functions/services/aiChatService.js:329:      card_status: '',
+firebase/functions/services/aiChatService.js:330:      vote_completed_at: admin.firestore.Timestamp.now(),
+firebase/functions/services/aiChatService.js:332:      vote_results_a: voteResults.displayVotesA || voteResults.votesA,
+firebase/functions/services/aiChatService.js:333:      vote_results_b: voteResults.displayVotesB || voteResults.votesB,
+firebase/functions/services/aiChatService.js:334:      vote_winner: voteResults.displayVotesA > voteResults.displayVotesB ? 'A' : 
+firebase/functions/services/aiChatService.js:336:      vote_percent_a: voteResults.percentA,
+firebase/functions/services/aiChatService.js:337:      vote_percent_b: voteResults.percentB
+firebase/functions/services/aiChatService.js:340:    // 실제로 투표했다면 user_votes에 추가
+firebase/functions/services/aiChatService.js:342:      const currentUserVotes = data.user_votes || {};
+firebase/functions/services/aiChatService.js:343:      // 이미 있는 user_votes 유지하면서 현재 사용자 추가
+firebase/functions/services/aiChatService.js:344:      updateData.user_votes = {
+firebase/functions/services/aiChatService.js:348:          voted_at: admin.firestore.Timestamp.now()
+firebase/functions/services/aiChatService.js:354:    if (data.message_type === 'vote_created') {
+firebase/functions/services/aiChatService.js:358:      finalStatus = userVoted ? 'completed' : 'not_participated';
+firebase/functions/services/aiChatService.js:361:    updateData.card_status = finalStatus;
+firebase/functions/services/imageModeration.js:214:        .collection("image_moderation")
+firebase/functions/services/imageModeration.js:228:      .collection("image_moderation")
+firebase/functions/services/imageModeration.js:246:      .collection("image_moderation")
+firebase/functions/services/textModeration.js:10:const PERSPECTIVE_API_KEY = process.env.PERSPECTIVE_API_KEY || functions.config().perspective?.api_key;

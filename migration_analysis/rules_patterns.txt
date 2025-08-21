@@ -1,0 +1,53 @@
+1:rules_version = '2';
+19:    match /time_sync/{document} {
+36:          .hasOnly(['votedUserIDsA', 'votedUserIDsB', 'votes_a', 'votes_b', 'vote_count_a', 'vote_count_b', 
+37:                    'total_votes', 'last_vote_at', 'timer_started_at', 'timer_expiry_at', 'vote_request_status',
+40:                    // Firebase Functions가 사용하는 snake_case 필드
+41:                    'vote_start_time', 'vote_end_time', 'vote_status', 'vote_completed',
+42:                    'vote_completed_at', 'vote_cancelled_at', 'vote_cancelled_reason',
+46:                    'display_votes_a', 'display_votes_b', 'display_percent_a', 'display_percent_b',
+48:                    'actual_votes_a', 'actual_votes_b', 'actual_total_votes'])
+69:    match /posts/{parent}/poll_details/{document} {
+76:    match /{path=**}/poll_details/{document} {
+84:        && request.resource.data.keys().hasAll(['user', 'option', 'created_at'])
+85:        && request.resource.data.keys().hasOnly(['user', 'option', 'created_at', 'from_chat']);
+167:        // AI 채팅방인 경우 (chatId에 'ai_assistant' 포함)
+168:        (chatId.matches('.*ai_assistant.*') && 
+170:           .hasOnly(['last_message_content', 'last_message_at', 'last_message_sent_by', 
+176:           .hasOnly(['last_message', 'last_message_time', 'last_message_sent_by', 
+178:                     'last_message_content', 'last_message_at', 'lastMessageContent', 'lastMessageAt',
+184:    match /chats/{parent}/friends_list/{document} {
+191:    match /{path=**}/friends_list/{document} {
+200:        // AI 채팅방인 경우 (parent에 'ai_assistant' 포함)
+201:        (parent.matches('.*ai_assistant.*') && 
+203:           .hasOnly(['is_read', 'vote_status', 'card_status', 'user_voted', 'vote_choice', 
+204:                     'vote_participated_at', 'vote_results', 'vote_end_time',
+206:                     'user_votes', 'last_vote_update']))
+211:           .hasOnly(['is_read', 'vote_status', 'card_status', 'user_voted', 'vote_choice', 
+212:                     'vote_participated_at', 'vote_results',
+214:                     'user_votes', 'last_vote_update']))
+224:    match /group_chats/{document} {
+231:    match /group_chats/{parent}/group_messages/{document} {
+238:    match /{path=**}/group_messages/{document} {
+250:    match /rankings/{parent}/ranked_posts/{document} {
+257:    match /{path=**}/ranked_posts/{document} {
+273:        && request.auth.uid == resource.data.user_id
+275:          .hasOnly(['read', 'read_at']);
+298:    match /user_contents/{document} {
+305:    match /user_contents/{parent}/poll_details/{document} {
+312:    match /{path=**}/poll_details/{document} {
+317:    match /user_contents/{parent}/feed_details/{document} {
+324:    match /{path=**}/feed_details/{document} {
+329:    match /user_contents/{parent}/content_comments/{document} {
+336:    match /{path=**}/content_comments/{document} {
+341:    match /user_contents/{parent}/contents_likes/{document} {
+348:    match /{path=**}/contents_likes/{document} {
+353:    match /user_contents/{parent}/contents_interests/{document} {
+360:    match /{path=**}/contents_interests/{document} {
+365:    match /user_contents/{parent}/contents_shares/{document} {
+372:    match /{path=**}/contents_shares/{document} {
+384:    match /premium_users/{document} {
+410:    match /jops_name/{document} {
+417:    match /jops_category/{document} {
+424:    match /users/{parent}/Chat_interest_jops/{document} {
+431:    match /users/{parent}/Chat_history/{document} {

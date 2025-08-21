@@ -1,0 +1,263 @@
+# Detailed Field Location Report
+# ==============================
+
+## Field: node_modules → nodeUmodules
+### Locations:
+firebase/functions/package-lock.json:36:    "node_modules/@anthropic-ai/sdk": {
+firebase/functions/package-lock.json:52:    "node_modules/@babel/code-frame": {
+firebase/functions/package-lock.json:67:    "node_modules/@babel/helper-string-parser": {
+firebase/functions/package-lock.json:77:    "node_modules/@babel/helper-validator-identifier": {
+firebase/functions/package-lock.json:87:    "node_modules/@babel/parser": {
+firebase/functions/package-lock.json:103:    "node_modules/@babel/types": {
+firebase/functions/package-lock.json:117:    "node_modules/@braintree/wrap-promise": {
+firebase/functions/package-lock.json:123:    "node_modules/@cfworker/json-schema": {
+firebase/functions/package-lock.json:129:    "node_modules/@fastify/busboy": {
+firebase/functions/package-lock.json:141:    "node_modules/@firebase/app-types": {
+
+## Field: app_utils → appUutils
+### Locations:
+lib/testpage_select/testpage_select_widget.dart:2:import '/core/app_utils.dart';
+lib/testpage_select/testpage_select_model.dart:1:import '/core/app_utils.dart';
+lib/posts/in_put_post_image/in_put_post_image_widget.dart:4:import '/core/app_utils.dart';
+lib/posts/in_put_post_image/in_put_post_image_model.dart:1:import '/core/app_utils.dart';
+lib/core/app_web_view.dart:12:import 'app_utils.dart';
+lib/core/upload_data.dart:13:import 'app_utils.dart';
+lib/core/app_choice_chips.dart:6:import '/core/app_utils.dart';
+lib/core/app_video_player.dart:9:import '/core/app_utils.dart' show routeObserver;
+lib/core/nav/nav.dart:9:import '/core/app_utils.dart';
+lib/etc/tags_labels/tags_labels_model.dart:1:import '/core/app_utils.dart';
+
+## Field: user_id → userUid
+### Locations:
+firebase/firestore.rules:273:        && request.auth.uid == resource.data.user_id
+firebase/functions/config/logger.js:138:      'uid', 'userId', 'user_id'
+firebase/functions/utils/batch-processor.js:205:          user_id: userId,
+firebase/functions/ai/userRecommendation.js:217:      "userId": "user_id",
+firebase/functions/functions/scheduled/flushThrottleQueue.js:194:              const userId = doc.data().user_id;
+firebase/functions/notifications/notificationCreator.js:76:      user_id: user.id,
+firebase/functions/services/voteManagement.js:37:      const userId = doc.data().user_id;
+firebase/firestore.indexes.backup.json:60:          "fieldPath": "user_id",
+firebase/firestore.indexes.backup.json:94:          "fieldPath": "user_id",
+firebase/firestore.indexes.backup.json:120:          "fieldPath": "user_id",
+
+## Field: app_theme → appUtheme
+### Locations:
+lib/testpage_select/testpage_select_widget.dart:1:import '/core/app_theme.dart';
+lib/posts/in_put_post_image/in_put_post_image_widget.dart:3:import '/core/app_theme.dart';
+lib/posts/in_put_post_image/components/warning_message.dart:2:import '/core/app_theme.dart';
+lib/posts/in_put_post_image/components/media_selection_box_single.dart:6:import '/core/app_theme.dart';
+lib/posts/in_put_post_image/components/simple_validated_field.dart:4:import '/core/app_theme.dart';
+lib/posts/in_put_post_image/components/next_button.dart:3:import '/core/app_theme.dart';
+lib/posts/in_put_post_image/components/media_selection_box_multi.dart:4:import '/core/app_theme.dart';
+lib/posts/in_put_post_image/components/character_count_display.dart:3:import '/core/app_theme.dart';
+lib/posts/in_put_post_image/components/base_media_selection_box.dart:5:import '/core/app_theme.dart';
+lib/posts/in_put_post_image/components/simple_character_count.dart:3:import '/core/app_theme.dart';
+
+## Field: firebase_auth → firebaseUauth
+### Locations:
+lib/posts/in_put_post_image/in_put_post_image_widget.dart:13:import '/auth/firebase_auth/auth_util.dart';
+lib/posts/in_put_post_image/services/media_upload_service.dart:4:import 'package:firebase_auth/firebase_auth.dart';
+lib/posts/in_put_post_image/services/validation_service.dart:5:import '/auth/firebase_auth/auth_util.dart';
+lib/core/upload_data.dart:11:import '../auth/firebase_auth/auth_util.dart';
+lib/auth/firebase_auth/anonymous_auth.dart:1:import 'package:firebase_auth/firebase_auth.dart';
+lib/auth/firebase_auth/apple_auth.dart:5:import 'package:firebase_auth/firebase_auth.dart';
+lib/auth/firebase_auth/auth_util.dart:3:import 'package:firebase_auth/firebase_auth.dart';
+lib/auth/firebase_auth/github_auth.dart:1:import 'package:firebase_auth/firebase_auth.dart';
+lib/auth/firebase_auth/jwt_token_auth.dart:1:import 'package:firebase_auth/firebase_auth.dart';
+lib/auth/firebase_auth/email_auth.dart:1:import 'package:firebase_auth/firebase_auth.dart';
+
+## Field: firestore_util → firestoreUutil
+### Locations:
+lib/backend/backend.dart:6:import 'schema/util/firestore_util.dart';
+lib/backend/backend.dart:52:export 'schema/util/firestore_util.dart';
+lib/backend/schema/user_contents_model.dart:5:import '/backend/schema/util/firestore_util.dart';
+lib/backend/schema/weights_model.dart:5:import '/backend/schema/util/firestore_util.dart';
+lib/backend/schema/contents_interests_model.dart:5:import '/backend/schema/util/firestore_util.dart';
+lib/backend/schema/votecounts_model.dart:5:import '/backend/schema/util/firestore_util.dart';
+lib/backend/schema/transactions_model.dart:5:import '/backend/schema/util/firestore_util.dart';
+lib/backend/schema/notifications_model.dart:6:import '/backend/schema/util/firestore_util.dart';
+lib/backend/schema/rankings_model.dart:5:import '/backend/schema/util/firestore_util.dart';
+lib/backend/schema/ranked_posts_model.dart:5:import '/backend/schema/util/firestore_util.dart';
+
+## Field: created_at → createdUat
+### Locations:
+firebase/firestore.rules:84:        && request.resource.data.keys().hasAll(['user', 'option', 'created_at'])
+firebase/firestore.rules:85:        && request.resource.data.keys().hasOnly(['user', 'option', 'created_at', 'from_chat']);
+firebase/functions/utils/batch-processor.js:210:          created_at: admin.firestore.FieldValue.serverTimestamp(),
+firebase/functions/notifications/notificationCreator.js:112:      created_at: now,
+firebase/firestore.indexes.backup.json:76:          "fieldPath": "created_at",
+firebase/firestore.indexes.backup.json:102:          "fieldPath": "created_at",
+firebase/firestore.indexes.json:66:          "fieldPath": "created_at",
+firebase/firestore.indexes.json:92:          "fieldPath": "created_at",
+lib/backend/schema/user_contents_model.dart:29:  // "created_at" field.
+lib/backend/schema/user_contents_model.dart:62:    _createdAt = snapshotData['created_at'] as DateTime?;
+
+## Field: user_votes → userUvotes
+### Locations:
+firebase/firestore.rules:206:                     'user_votes', 'last_vote_update']))
+firebase/firestore.rules:214:                     'user_votes', 'last_vote_update']))
+firebase/functions/scripts/migrate-vote-data.js:3: * 기존 개별 필드를 user_votes Map 구조로 변환
+firebase/functions/scripts/migrate-vote-data.js:73:        if (messageData.user_votes && Object.keys(messageData.user_votes).length > 0) {
+firebase/functions/scripts/migrate-vote-data.js:83:          // 기존 데이터를 user_votes Map으로 변환
+firebase/functions/scripts/migrate-vote-data.js:92:          console.log(`     - user_votes: ${JSON.stringify(userVotes)}`);
+firebase/functions/scripts/migrate-vote-data.js:97:                user_votes: userVotes,
+firebase/functions/scripts/migrate-vote-data.js:149:      const hasNewFormat = data.user_votes !== undefined && Object.keys(data.user_votes).length > 0;
+firebase/functions/functions/https/migrateVoteData.js:70:          if (messageData.user_votes && Object.keys(messageData.user_votes).length > 0) {
+firebase/functions/functions/https/migrateVoteData.js:80:            // 기존 데이터를 user_votes Map으로 변환
+
+## Field: auth_util → authUutil
+### Locations:
+lib/posts/in_put_post_image/in_put_post_image_widget.dart:13:import '/auth/firebase_auth/auth_util.dart';
+lib/posts/in_put_post_image/services/validation_service.dart:5:import '/auth/firebase_auth/auth_util.dart';
+lib/core/upload_data.dart:11:import '../auth/firebase_auth/auth_util.dart';
+lib/etc/phoneloginpincode/phoneloginpincode_widget.dart:1:import '/auth/firebase_auth/auth_util.dart';
+lib/etc/blankppp/blankppp_widget.dart:1:import '/auth/firebase_auth/auth_util.dart';
+lib/backend/backend.dart:3:import '../auth/firebase_auth/auth_util.dart';
+lib/main.dart:9:import 'auth/firebase_auth/auth_util.dart';
+lib/components/chat/base_vote_message.dart:3:import '/auth/firebase_auth/auth_util.dart';
+lib/components/notifications/notification_badge_provider.dart:3:import '/auth/firebase_auth/auth_util.dart';
+lib/actions/actions.dart:1:import '/auth/firebase_auth/auth_util.dart';
+
+## Field: google_fonts → googleUfonts
+### Locations:
+lib/testpage_select/testpage_select_widget.dart:8:import 'package:google_fonts/google_fonts.dart';
+lib/posts/in_put_post_image/in_put_post_image_widget.dart:8:import 'package:google_fonts/google_fonts.dart';
+lib/posts/in_put_post_image/components/media_selection_box_single.dart:4:import 'package:google_fonts/google_fonts.dart';
+lib/posts/in_put_post_image/components/simple_validated_field.dart:2:import 'package:google_fonts/google_fonts.dart';
+lib/posts/in_put_post_image/components/next_button.dart:2:import 'package:google_fonts/google_fonts.dart';
+lib/posts/in_put_post_image/components/character_count_display.dart:2:import 'package:google_fonts/google_fonts.dart';
+lib/posts/in_put_post_image/components/base_media_selection_box.dart:3:import 'package:google_fonts/google_fonts.dart';
+lib/posts/in_put_post_image/components/simple_character_count.dart:2:import 'package:google_fonts/google_fonts.dart';
+lib/posts/in_put_post_image/helpers/input_field_builder.dart:2:import 'package:google_fonts/google_fonts.dart';
+lib/core/upload_data.dart:6:import 'package:google_fonts/google_fonts.dart';
+
+## Field: design_system → designUsystem
+### Locations:
+lib/design_system/components/versus_components.dart:7:/// import 'package:versus_space/design_system/components/versus_components.dart';
+lib/design_system/tokens/versus_tokens.dart:7:/// import 'package:versus_space/design_system/tokens/versus_tokens.dart';
+lib/design_system/design_system.dart:7:/// import 'package:versus_space/design_system/design_system.dart';
+lib/components/chat/base_vote_message.dart:2:import '/design_system/design_system.dart';
+lib/components/chat/vote_card_message.dart:5:import '/design_system/design_system.dart';
+lib/components/chat/vote_card/vote_option_box.dart:3:import '/design_system/design_system.dart';
+lib/components/chat/vote_card/vote_result_display.dart:2:import '/design_system/design_system.dart';
+lib/components/chat/vote_card/vote_card_header.dart:3:import '/design_system/design_system.dart';
+lib/components/chat/vote_card/vote_action_button.dart:2:import '/design_system/design_system.dart';
+lib/components/navigation/main_navigation_shell.dart:4:import '/design_system/design_system.dart';
+
+## Field: time_stamp → timeUstamp
+### Locations:
+firebase/functions/services/aiChatService.js:46:    time_stamp: now,
+firebase/functions/services/aiChatService.js:147:    time_stamp: now,
+firebase/firestore.indexes.backup.json:166:          "fieldPath": "time_stamp",
+lib/backend/schema/messages_model.dart:44:  // "time_stamp" field.
+lib/backend/schema/messages_model.dart:289:      'time_stamp': _timeStamp?.millisecondsSinceEpoch,
+lib/backend/schema/messages_model.dart:363:    model._timeStamp = parseDateTime(json['time_stamp']);
+lib/backend/schema/messages_model.dart:411:    _timeStamp = snapshotData['time_stamp'] as DateTime?;
+lib/backend/schema/messages_model.dart:551:      'time_stamp': timeStamp,
+lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:195:          .orderBy('time_stamp', descending: false)
+lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:226:        if (lastTimestamp['time_stamp'] != null) {
+
+## Field: display_name → displayUname
+### Locations:
+firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:85:          authorName: postData.displayName || postData.display_name || '익명',
+firebase/functions/notifications/targetMatcher.js:142:      displayName: user.display_name || user.displayName || '익명',
+firebase/functions/notifications/notificationCreator.js:100:          authorName: postData.displayName || postData.display_name || '익명',
+firebase/functions/notifications/notificationCreator.js:177:            authorName: postData.displayName || postData.display_name || '익명',
+firebase/functions/services/aiChatService.js:80:      authorName: postData.displayName || postData.display_name || '익명',
+firebase/functions/services/aiChatService.js:181:      authorName: postData.displayName || postData.display_name || '익명',
+lib/backend/schema/posts_model.dart:154:  // "display_name" field.
+lib/backend/schema/posts_model.dart:360:    _displayName = snapshotData['display_name'] as String?;
+lib/backend/schema/posts_model.dart:520:      'display_name': displayName,
+lib/backend/schema/users_model.dart:59:  // "display_name" field.
+
+## Field: voting_request → votingUrequest
+### Locations:
+firebase/functions/functions/scheduled/flushThrottleQueue.js:189:              .where('type', '==', 'voting_request')
+firebase/functions/notifications/notificationCreator.js:77:      type: 'voting_request',
+firebase/functions/services/voteManagement.js:27:        .where('type', '==', 'voting_request')
+firebase/functions/services/aiChatService.js:70:    card_status: 'voting_request', // 초기 상태: 대기중
+lib/utils/vote_message_helper.dart:11:      case 'voting_request':
+lib/models/notification_model.dart:40:      type: data['type'] ?? 'voting_request',
+lib/components/chat/vote_card_message.dart:16:/// 4가지 상태를 지원: voting_request, in_progress, completed, not_participated
+lib/components/chat/vote_card_message.dart:140:        return 'voting_request';
+lib/components/chat/vote_card_message.dart:285:      case 'voting_request':
+lib/components/chat/vote_card_message.dart:1043:    return (status == 'voting_request' || status == 'in_progress') && 
+
+## Field: vote_request → voteUrequest
+### Locations:
+firebase/functions/utils/realtime-throttle.js:125:            .where('message_type', 'in', ['vote_request', 'vote_created'])
+firebase/functions/utils/batch-processor.js:190:      .where('message_type', 'in', ['vote_request', 'vote_created'])
+firebase/functions/scripts/migrate-vote-data.js:59:        .where('message_type', 'in', ['vote_request', 'vote_created']);
+firebase/functions/scripts/migrate-vote-data.js:143:      .where('message_type', 'in', ['vote_request', 'vote_created'])
+firebase/functions/functions/https/migrateVoteData.js:56:          .where('message_type', 'in', ['vote_request', 'vote_created']);
+firebase/functions/services/voteManagement.js:54:        .where('message_type', 'in', ['vote_request', 'vote_created'])
+firebase/functions/services/aiChatService.js:50:    message_type: 'vote_request',
+firebase/functions/services/aiChatService.js:264:    .where('message_type', '==', 'vote_request')
+firebase/functions/services/aiChatService.js:319:    .where('message_type', 'in', ['vote_request', 'vote_created'])
+lib/components/chat/vote_card_message.dart:307:    // vote_request 타입일 때 상태 텍스트를 '대기중'으로 오버라이드
+
+## Field: vote_end_time → voteUendUtime
+### Locations:
+firebase/firestore.rules:41:                    'vote_start_time', 'vote_end_time', 'vote_status', 'vote_completed',
+firebase/firestore.rules:204:                     'vote_participated_at', 'vote_results', 'vote_end_time',
+firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:54:        vote_end_time: admin.firestore.Timestamp.fromDate(voteEndTime),
+firebase/functions/functions/scheduled/flushThrottleQueue.js:81:        const voteEndTime = parseTimestamp(data.vote_end_time);
+firebase/functions/functions/scheduled/flushThrottleQueue.js:99:          const voteEndTime = parseTimestamp(data.vote_end_time);
+firebase/functions/functions/scheduled/flushThrottleQueue.js:103:            voteEndTimeRaw: logger.maskData(data.vote_end_time),
+firebase/functions/services/aiChatService.js:71:    vote_end_time: admin.firestore.Timestamp.fromDate(
+firebase/functions/services/aiChatService.js:172:    vote_end_time: admin.firestore.Timestamp.fromDate(
+firebase/firestore.indexes.backup.json:152:          "fieldPath": "vote_end_time",
+firebase/firestore.indexes.json:142:          "fieldPath": "vote_end_time",
+
+## Field: message_type → messageUtype
+### Locations:
+firebase/functions/utils/realtime-throttle.js:125:            .where('message_type', 'in', ['vote_request', 'vote_created'])
+firebase/functions/utils/batch-processor.js:190:      .where('message_type', 'in', ['vote_request', 'vote_created'])
+firebase/functions/scripts/migrate-vote-data.js:59:        .where('message_type', 'in', ['vote_request', 'vote_created']);
+firebase/functions/scripts/migrate-vote-data.js:143:      .where('message_type', 'in', ['vote_request', 'vote_created'])
+firebase/functions/functions/https/migrateVoteData.js:56:          .where('message_type', 'in', ['vote_request', 'vote_created']);
+firebase/functions/services/voteManagement.js:54:        .where('message_type', 'in', ['vote_request', 'vote_created'])
+firebase/functions/services/aiChatService.js:50:    message_type: 'vote_request',
+firebase/functions/services/aiChatService.js:151:    message_type: 'vote_created',
+firebase/functions/services/aiChatService.js:264:    .where('message_type', '==', 'vote_request')
+firebase/functions/services/aiChatService.js:319:    .where('message_type', 'in', ['vote_request', 'vote_created'])
+
+## Field: ai_assistant → aiUassistant
+### Locations:
+firebase/firestore.rules:167:        // AI 채팅방인 경우 (chatId에 'ai_assistant' 포함)
+firebase/firestore.rules:168:        (chatId.matches('.*ai_assistant.*') && 
+firebase/firestore.rules:200:        // AI 채팅방인 경우 (parent에 'ai_assistant' 포함)
+firebase/firestore.rules:201:        (parent.matches('.*ai_assistant.*') && 
+firebase/functions/utils/realtime-throttle.js:112:        const aiAssistantId = 'ai_assistant';
+firebase/functions/utils/batch-processor.js:176:  const aiAssistantId = 'ai_assistant';
+firebase/functions/functions/https/migrateVoteData.js:47:        if (!chatId.includes('ai_assistant')) {
+firebase/functions/functions/https/migrateAIChatRooms.js:10:const AI_ASSISTANT_ID = 'ai_assistant';
+firebase/functions/services/voteManagement.js:42:    const aiAssistantId = 'ai_assistant';
+firebase/functions/services/aiChatService.js:15:const AI_ASSISTANT_ID = 'ai_assistant';
+
+## Field: sender_id → senderUid
+### Locations:
+firebase/functions/scripts/migrate-vote-data.js:80:        if (messageData.user_voted === true && messageData.sender_id) {
+firebase/functions/scripts/migrate-vote-data.js:84:          userVotes[messageData.sender_id] = {
+firebase/functions/scripts/migrate-vote-data.js:90:          console.log(`     - sender_id: ${messageData.sender_id}`);
+firebase/functions/functions/https/migrateVoteData.js:77:          if (messageData.user_voted === true && messageData.sender_id) {
+firebase/functions/functions/https/migrateVoteData.js:81:            userVotes[messageData.sender_id] = {
+firebase/functions/functions/https/migrateVoteData.js:87:              sender_id: messageData.sender_id,
+firebase/functions/functions/https/markMessagesAsSeen.js:31:    // We'll filter sender_id in memory for better performance
+firebase/functions/functions/https/markMessagesAsSeen.js:52:      if (messageData.sender_id && messageData.sender_id !== userId) {
+firebase/functions/services/aiChatService.js:43:    sender_id: AI_ASSISTANT_ID,
+firebase/functions/services/aiChatService.js:144:    sender_id: userId,
+
+## Field: vote_post_id → voteUpostUid
+### Locations:
+firebase/functions/utils/realtime-throttle.js:124:            .where('vote_post_id', '==', postId)
+firebase/functions/utils/batch-processor.js:189:      .where('vote_post_id', '==', postId)
+firebase/functions/services/voteManagement.js:53:        .where('vote_post_id', '==', postId)
+firebase/functions/services/aiChatService.js:51:    vote_post_id: postId,
+firebase/functions/services/aiChatService.js:152:    vote_post_id: postId,
+firebase/functions/services/aiChatService.js:263:    .where('vote_post_id', '==', postId)
+firebase/functions/services/aiChatService.js:318:    .where('vote_post_id', '==', postId)
+firebase/firestore.indexes.backup.json:176:          "fieldPath": "vote_post_id",
+firebase/firestore.indexes.json:174:          "fieldPath": "vote_post_id",
+lib/backend/schema/messages_model.dart:105:  // "vote_post_id" field.
+

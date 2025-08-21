@@ -50,9 +50,9 @@ exports.onPostCreatedSendNotifications = functions
       // 게시물에 타이머 정보 업데이트
       // PostsModel은 snake_case로 필드를 저장함
       await snap.ref.update({
-        vote_start_time: admin.firestore.Timestamp.fromDate(voteStartTime),
-        vote_end_time: admin.firestore.Timestamp.fromDate(voteEndTime),
-        vote_completed: false
+        voteStartTime: admin.firestore.Timestamp.fromDate(voteStartTime),
+        voteEndTime: admin.firestore.Timestamp.fromDate(voteEndTime),
+        voteCompleted: false
       });
       
       // 작성자에게 AI 채팅 메시지 생성
@@ -69,7 +69,7 @@ exports.onPostCreatedSendNotifications = functions
           optionATitle = postData.optionA.title || '';
           imageUrlsA = postData.optionA.mediaUrls || [];
         } else {
-          optionATitle = postData.optionA || postData.option_a || '';
+          optionATitle = postData.optionA || postData.optionA || '';
         }
         
         // optionB 처리
@@ -77,21 +77,21 @@ exports.onPostCreatedSendNotifications = functions
           optionBTitle = postData.optionB.title || '';
           imageUrlsB = postData.optionB.mediaUrls || [];
         } else {
-          optionBTitle = postData.optionB || postData.option_b || '';
+          optionBTitle = postData.optionB || postData.optionB || '';
         }
         
         await createVoteCreatedMessage(creatorId, postId, {
           ...postData,
-          authorName: postData.displayName || postData.display_name || '익명',
-          authorPhotoUrl: postData.photoUrl || postData.photo_url || null,
+          authorName: postData.displayName || postData.displayName || '익명',
+          authorPhotoUrl: postData.photoUrl || postData.photoUrl || null,
           creatorId: creatorId,
-          questionTitle: postData.question_title || postData.questionTitle,
+          questionTitle: postData.questionTitle || postData.questionTitle,
           optionA: optionATitle,
           optionB: optionBTitle,
-          imageUrlA: imageUrlsA.length > 0 ? imageUrlsA[0] : (postData.image_url_a || postData.imageUrlA),
-          imageUrlB: imageUrlsB.length > 0 ? imageUrlsB[0] : (postData.image_url_b || postData.imageUrlB),
-          imageUrlsA: imageUrlsA.length > 0 ? imageUrlsA : (postData.image_urls_a || postData.imageUrlsA || []),
-          imageUrlsB: imageUrlsB.length > 0 ? imageUrlsB : (postData.image_urls_b || postData.imageUrlsB || []),
+          imageUrlA: imageUrlsA.length > 0 ? imageUrlsA[0] : (postData.imageUrlA || postData.imageUrlA),
+          imageUrlB: imageUrlsB.length > 0 ? imageUrlsB[0] : (postData.imageUrlB || postData.imageUrlB),
+          imageUrlsA: imageUrlsA.length > 0 ? imageUrlsA : (postData.imageUrlsA || postData.imageUrlsA || []),
+          imageUrlsB: imageUrlsB.length > 0 ? imageUrlsB : (postData.imageUrlsB || postData.imageUrlsB || []),
           description: postData.description || '',
           // 스마트 레이아웃 정보 전달
           aspectRatioA: postData.optionA?.aspectRatio || null,

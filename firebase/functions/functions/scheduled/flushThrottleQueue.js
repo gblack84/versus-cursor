@@ -62,7 +62,7 @@ exports.flushThrottleQueue = functions
       // 10분 타이머가 만료된 투표 찾기
       // 먼저 모든 active 투표를 가져온 후 JavaScript에서 필터링
       const activeVotesSnapshot = await db.collection('posts')
-        .where('vote_completed', '==', false)
+        .where('voteCompleted', '==', false)
         .limit(100) // 더 많은 문서 가져오기
         .get();
       
@@ -78,7 +78,7 @@ exports.flushThrottleQueue = functions
       const expiredVotes = [];
       activeVotesSnapshot.forEach(doc => {
         const data = doc.data();
-        const voteEndTime = parseTimestamp(data.vote_end_time);
+        const voteEndTime = parseTimestamp(data.voteEndTime);
         
         if (voteEndTime && voteEndTime.toMillis() <= now.toMillis()) {
           expiredVotes.push(doc);
@@ -96,11 +96,11 @@ exports.flushThrottleQueue = functions
         logger.debug('========== 디버그: Active 투표 상태 ==========');
         activeVotesSnapshot.forEach(doc => {
           const data = doc.data();
-          const voteEndTime = parseTimestamp(data.vote_end_time);
+          const voteEndTime = parseTimestamp(data.voteEndTime);
           const remainingMinutes = voteEndTime ? Math.round((voteEndTime.toMillis() - now.toMillis()) / 1000 / 60) : null;
           
           logger.debug(`Post ${doc.id}`, {
-            voteEndTimeRaw: logger.maskData(data.vote_end_time),
+            voteEndTimeRaw: logger.maskData(data.voteEndTime),
             voteEndTimeParsed: voteEndTime ? voteEndTime.toDate().toISOString() : 'null',
             remainingTime: remainingMinutes ? `${remainingMinutes}분` : 'N/A'
           });
@@ -119,14 +119,14 @@ exports.flushThrottleQueue = functions
           const postData = doc.data();
           
           // 실제 투표 수 계산
-          const actualVotesA = postData.votedUserIDsA?.length || postData.votes_a || postData.vote_count_a || 0;
-          const actualVotesB = postData.votedUserIDsB?.length || postData.votes_b || postData.vote_count_b || 0;
+          const actualVotesA = postData.votedUserIDsA?.length || postData.votesA || postData.voteCountA || 0;
+          const actualVotesB = postData.votedUserIDsB?.length || postData.votesB || postData.voteCountB || 0;
           const actualTotal = actualVotesA + actualVotesB;
           
           // AI 예상 비율 읽기 (Flutter가 저장한 위치에서)
           const expectedRatio = {
-            A: postData.moderation?.expected_ratio_a || 0.5,
-            B: postData.moderation?.expected_ratio_b || 0.5
+            A: postData.moderation?.expectedRatioA || 0.5,
+            B: postData.moderation?.expectedRatioB || 0.5
           };
           
           logger.debug(`AI 예상 비율 - A: ${expectedRatio.A}, B: ${expectedRatio.B}`);
@@ -154,11 +154,11 @@ exports.flushThrottleQueue = functions
             percentA,
             percentB,
             winner: displayVotes.A > displayVotes.B ? 'A' : displayVotes.B > displayVotes.A ? 'B' : 'draw',
-            questionTitle: postData.question_title || postData.questionTitle,
-            optionA: postData.option_a || postData.optionA?.title || 'A',
-            optionB: postData.option_b || postData.optionB?.title || 'B',
+            questionTitle: postData.questionTitle || postData.questionTitle,
+            optionA: postData.optionA?.title || postData.optionA || 'A',
+            optionB: postData.optionB?.title || postData.optionB || 'B',
             creatorId: postData.uid || postData.userid,
-            creatorName: postData.authorName || postData.author_name || '알 수 없음',
+            creatorName: postData.authorName || postData.authorName || '알 수 없음',
             isTimeout: false, // 10분 타이머 정상 종료
             displayVotesA: displayVotes.A, // AI 채팅 메시지용
             displayVotesB: displayVotes.B  // AI 채팅 메시지용
@@ -167,17 +167,17 @@ exports.flushThrottleQueue = functions
           try {
             // 1. 게시물 상태 업데이트
             await doc.ref.update({
-              vote_completed: true,
-              vote_completed_at: admin.firestore.FieldValue.serverTimestamp(),
+              voteCompleted: true,
+              voteCompletedAt: admin.firestore.FieldValue.serverTimestamp(),
               // 표시용 투표 수 (증폭된 수)
-              display_votes_a: displayVotes.A,
-              display_votes_b: displayVotes.B,
-              display_percent_a: percentA,
-              display_percent_b: percentB,
+              displayVotesA: displayVotes.A,
+              displayVotesB: displayVotes.B,
+              displayPercentA: percentA,
+              displayPercentB: percentB,
               // 실제 투표 수 (내부 데이터)
-              actual_votes_a: actualVotesA,
-              actual_votes_b: actualVotesB,
-              actual_total_votes: actualTotal
+              actualVotesA: actualVotesA,
+              actualVotesB: actualVotesB,
+              actualTotalVotes: actualTotal
             });
             
             // 2. 투표 완료 처리 (알림 생성 등)
@@ -185,13 +185,13 @@ exports.flushThrottleQueue = functions
             
             // 3. 모든 참여자에게 AI 채팅 결과 메시지 업데이트
             const notificationsSnapshot = await db.collection('notifications')
-              .where('source_id', '==', postId)
+              .where('sourceId', '==', postId)
               .where('type', '==', 'voting_request')
               .get();
             
             const participantIds = new Set();
             notificationsSnapshot.forEach(doc => {
-              const userId = doc.data().user_id;
+              const userId = doc.data().userId;
               if (userId) participantIds.add(userId);
             });
             

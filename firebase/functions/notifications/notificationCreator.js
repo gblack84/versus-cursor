@@ -72,33 +72,33 @@ async function createNotificationsForUsers(users, postId, postData) {
     
     const notificationData = {
       // 기본 필드
-      notification_id: notificationRef.id,
-      user_id: user.id,
+      notificationId: notificationRef.id,
+      userId: user.id,
       type: 'voting_request',
-      source_id: postId,
+      sourceId: postId,
       
       // 콘텐츠 - Flutter 스키마에 맞춰 JSON 문자열로 저장
       content: JSON.stringify({
         title: '새로운 투표가 도착했어요!',
         message: generateTargetReason(postData.targetAudience, user),
         postData: {
-          questionTitle: postData.questionTitle || postData.question_title || '',
+          questionTitle: postData.questionTitle || postData.questionTitle || '',
           // optionA/optionB가 Map 구조인지 확인하고 처리
           optionA: typeof postData.optionA === 'object' && postData.optionA !== null 
             ? (postData.optionA.title || '') 
-            : (postData.optionA || postData.option_a || ''),
+            : (postData.optionA || postData.optionA || ''),
           optionB: typeof postData.optionB === 'object' && postData.optionB !== null 
             ? (postData.optionB.title || '') 
-            : (postData.optionB || postData.option_b || ''),
+            : (postData.optionB || postData.optionB || ''),
           // 이미지 URL 처리 (멀티이미지 우선)
-          imageUrlA: postData.optionA?.mediaUrls?.[0] || postData.imageUrlA || postData.image_url_a || null,
-          imageUrlB: postData.optionB?.mediaUrls?.[0] || postData.imageUrlB || postData.image_url_b || null,
+          imageUrlA: postData.optionA?.mediaUrls?.[0] || postData.imageUrlA || postData.imageUrlA || null,
+          imageUrlB: postData.optionB?.mediaUrls?.[0] || postData.imageUrlB || postData.imageUrlB || null,
           // 멀티이미지 지원 추가
-          imageUrlsA: postData.optionA?.mediaUrls || postData.imageUrlsA || postData.image_urls_a || null,
-          imageUrlsB: postData.optionB?.mediaUrls || postData.imageUrlsB || postData.image_urls_b || null,
+          imageUrlsA: postData.optionA?.mediaUrls || postData.imageUrlsA || postData.imageUrlsA || null,
+          imageUrlsB: postData.optionB?.mediaUrls || postData.imageUrlsB || postData.imageUrlsB || null,
           description: postData.description || null,
-          authorName: postData.displayName || postData.display_name || '익명',
-          authorPhotoUrl: postData.photoUrl || postData.photo_url || null,
+          authorName: postData.displayName || postData.displayName || '익명',
+          authorPhotoUrl: postData.photoUrl || postData.photoUrl || null,
           creatorId: postData.uid || null,
           category: postData.category || null,
           // 스마트 레이아웃을 위한 aspectRatio 및 layoutType 추가
@@ -109,11 +109,11 @@ async function createNotificationsForUsers(users, postId, postData) {
       }),
       
       // 메타데이터
-      created_at: now,
+      createdAt: now,
       read: false,
-      target_audience: [postData.targetAudience.type], // Flutter 스키마에 맞춰 배열로 저장
-      expiry_time: expiryTime,
-      interaction_type: 'vote',
+      targetAudience: [postData.targetAudience.type], // Flutter 스키마에 맞춰 배열로 저장
+      expiryTime: expiryTime,
+      interactionType: 'vote',
       
       // targetReason 필드 제거 (Flutter 스키마에 없음)
     };

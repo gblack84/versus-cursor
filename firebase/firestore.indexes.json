@@ -47,7 +47,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "user_id",
+          "fieldPath": "userId",
           "order": "ASCENDING"
         },
         {
@@ -59,11 +59,11 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "expiry_time",
+          "fieldPath": "expiryTime",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "created_at",
+          "fieldPath": "createdAt",
           "order": "DESCENDING"
         }
       ]
@@ -81,15 +81,15 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "user_id",
+          "fieldPath": "userId",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "expiry_time",
+          "fieldPath": "expiryTime",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "created_at",
+          "fieldPath": "createdAt",
           "order": "DESCENDING"
         }
       ]
@@ -107,11 +107,11 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "user_id",
+          "fieldPath": "userId",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "expiry_time",
+          "fieldPath": "expiryTime",
           "order": "ASCENDING"
         }
       ]
@@ -125,7 +125,7 @@
           "arrayConfig": "CONTAINS"
         },
         {
-          "fieldPath": "last_message_at",
+          "fieldPath": "lastMessageAt",
           "order": "DESCENDING"
         }
       ]
@@ -135,15 +135,15 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "vote_status",
+          "fieldPath": "voteStatus",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "vote_end_time",
+          "fieldPath": "voteEndTime",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "vote_completed",
+          "fieldPath": "voteCompleted",
           "order": "ASCENDING"
         }
       ]
@@ -161,7 +161,7 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "created_time",
+          "fieldPath": "createdTime",
           "order": "DESCENDING"
         }
       ]
@@ -171,17 +171,17 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "vote_post_id",
+          "fieldPath": "votePostId",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "message_type",
+          "fieldPath": "messageType",
           "order": "ASCENDING"
         }
       ]
     },
     {
-      "collectionGroup": "friends_list",
+      "collectionGroup": "friendsList",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -189,7 +189,7 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "last_interaction",
+          "fieldPath": "lastInteraction",
           "order": "ASCENDING"
         }
       ]

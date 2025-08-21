@@ -16,7 +16,7 @@ service cloud.firestore {
     }
 
     // 서버 시간 동기화를 위한 임시 컬렉션
-    match /time_sync/{document} {
+    match /timeSync/{document} {
       // 인증된 사용자만 생성 가능
       allow create: if request.auth != null;
       // 본인이 생성한 문서만 읽기 가능
@@ -33,19 +33,17 @@ service cloud.firestore {
       allow update: if request.auth != null && (
         // 투표 필드와 타이머 관련 필드 업데이트 허용
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['votedUserIDsA', 'votedUserIDsB', 'votes_a', 'votes_b', 'vote_count_a', 'vote_count_b', 
-                    'total_votes', 'last_vote_at', 'timer_started_at', 'timer_expiry_at', 'vote_request_status',
-                    // AI 채팅 투표 관련 추가 필드 (camelCase)
+          .hasOnly(['votedUserIDsA', 'votedUserIDsB', 'votesA', 'votesB', 'voteCountA', 'voteCountB', 
+                    'totalVotes', 'lastVoteAt', 'timerStartedAt', 'timerExpiryAt', 'voteRequestStatus',
+                    // AI 채팅 투표 관련 필드
                     'voteStartTime', 'voteEndTime', 'voteStatus', 'voteCompleted',
-                    // Firebase Functions가 사용하는 snake_case 필드
-                    'vote_start_time', 'vote_end_time', 'vote_status', 'vote_completed',
-                    'vote_completed_at', 'vote_cancelled_at', 'vote_cancelled_reason',
+                    'voteCompletedAt', 'voteCancelledAt', 'voteCancelledReason',
                     // 알림 관련 필드
                     'notificationsSent', 'notificationsSentAt',
                     // 표시용 투표 수 (증폭된 수)
-                    'display_votes_a', 'display_votes_b', 'display_percent_a', 'display_percent_b',
+                    'displayVotesA', 'displayVotesB', 'displayPercentA', 'displayPercentB',
                     // 실제 투표 수
-                    'actual_votes_a', 'actual_votes_b', 'actual_total_votes'])
+                    'actualVotesA', 'actualVotesB', 'actualTotalVotes'])
         // 중복 투표 방지 (필드가 존재하는 경우에만 확인)
         && (
           (!('votedUserIDsA' in resource.data) || !(request.auth.uid in resource.data.votedUserIDsA))
@@ -66,14 +64,14 @@ service cloud.firestore {
       allow read: if true;
     }
 
-    match /posts/{parent}/poll_details/{document} {
+    match /posts/{parent}/pollDetails/{document} {
       allow create: if true;
       allow read: if true;
       allow write: if false;
       allow delete: if false;
     }
 
-    match /{path=**}/poll_details/{document} {
+    match /{path=**}/pollDetails/{document} {
       allow read: if true;
     }
 
@@ -81,8 +79,8 @@ service cloud.firestore {
       allow create: if request.auth != null 
         && request.auth.uid != null
         && request.resource.data.user == /databases/$(database)/documents/users/$(request.auth.uid)
-        && request.resource.data.keys().hasAll(['user', 'option', 'created_at'])
-        && request.resource.data.keys().hasOnly(['user', 'option', 'created_at', 'from_chat']);
+        && request.resource.data.keys().hasAll(['user', 'option', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['user', 'option', 'createdAt', 'fromChat']);
       allow read: if true;
       allow write: if false;
       allow delete: if false;
@@ -164,31 +162,31 @@ service cloud.firestore {
       allow create: if true;
       allow read: if true;
       allow update: if request.auth != null && (
-        // AI 채팅방인 경우 (chatId에 'ai_assistant' 포함)
-        (chatId.matches('.*ai_assistant.*') && 
+        // AI 채팅방인 경우 (chatId에 'aiAssistant' 포함)
+        (chatId.matches('.*aiAssistant.*') && 
          request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['last_message_content', 'last_message_at', 'last_message_sent_by', 
+           .hasOnly(['lastMessageContent', 'lastMessageAt', 'lastMessageSentBy', 
                      'participantIds', 'lastReadTimestamps']))
         ||
         // 일반 채팅방인 경우
         (request.auth.uid in resource.data.users && 
          request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['last_message', 'last_message_time', 'last_message_sent_by', 
-                     // Flutter 코드에서 사용하는 필드명도 허용
-                     'last_message_content', 'last_message_at', 'lastMessageContent', 'lastMessageAt',
+           .hasOnly(['lastMessage', 'lastMessageTime', 'lastMessageSentBy', 
+                     // 추가 필드명
+                     'lastMessageContent', 'lastMessageAt',
                      'lastReadTimestamps']))
       );
       allow delete: if false;
     }
 
-    match /chats/{parent}/friends_list/{document} {
+    match /chats/{parent}/friendsList/{document} {
       allow create: if true;
       allow read: if true;
       allow write: if false;
       allow delete: if false;
     }
 
-    match /{path=**}/friends_list/{document} {
+    match /{path=**}/friendsList/{document} {
       allow read: if true;
     }
 
@@ -197,21 +195,21 @@ service cloud.firestore {
       allow create: if true;
       allow read: if true;
       allow update: if request.auth != null && (
-        // AI 채팅방인 경우 (parent에 'ai_assistant' 포함)
-        (parent.matches('.*ai_assistant.*') && 
+        // AI 채팅방인 경우 (parent에 'aiAssistant' 포함)
+        (parent.matches('.*aiAssistant.*') && 
          request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['is_read', 'vote_status', 'card_status', 'user_voted', 'vote_choice', 
-                     'vote_participated_at', 'vote_results', 'vote_end_time',
+           .hasOnly(['isRead', 'voteStatus', 'cardStatus', 'userVoted', 'voteChoice', 
+                     'voteParticipatedAt', 'voteResults', 'voteEndTime',
                      // 개별 사용자 투표 상태 추적 필드 추가
-                     'user_votes', 'last_vote_update']))
+                     'userVotes', 'lastVoteUpdate']))
         ||
         // 일반 채팅방인 경우
         (request.auth.uid in get(/databases/$(database)/documents/chats/$(parent)).data.users && 
          request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['is_read', 'vote_status', 'card_status', 'user_voted', 'vote_choice', 
-                     'vote_participated_at', 'vote_results',
+           .hasOnly(['isRead', 'voteStatus', 'cardStatus', 'userVoted', 'voteChoice', 
+                     'voteParticipatedAt', 'voteResults',
                      // 개별 사용자 투표 상태 추적 필드 추가
-                     'user_votes', 'last_vote_update']))
+                     'userVotes', 'lastVoteUpdate']))
       );
       allow delete: if false;
     }
@@ -221,21 +219,21 @@ service cloud.firestore {
     }
 
 
-    match /group_chats/{document} {
+    match /groupChats/{document} {
       allow create: if true;
       allow read: if true;
       allow write: if false;
       allow delete: if false;
     }
 
-    match /group_chats/{parent}/group_messages/{document} {
+    match /groupChats/{parent}/groupMessages/{document} {
       allow create: if true;
       allow read: if true;
       allow write: if false;
       allow delete: if false;
     }
 
-    match /{path=**}/group_messages/{document} {
+    match /{path=**}/groupMessages/{document} {
       allow read: if true;
     }
 
@@ -247,14 +245,14 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    match /rankings/{parent}/ranked_posts/{document} {
+    match /rankings/{parent}/rankedPosts/{document} {
       allow create: if true;
       allow read: if true;
       allow write: if false;
       allow delete: if false;
     }
 
-    match /{path=**}/ranked_posts/{document} {
+    match /{path=**}/rankedPosts/{document} {
       allow read: if true;
     }
 
@@ -270,9 +268,9 @@ service cloud.firestore {
       allow create: if true;
       allow read: if true;
       allow update: if request.auth != null 
-        && request.auth.uid == resource.data.user_id
+        && request.auth.uid == resource.data.userId
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['read', 'read_at']);
+          .hasOnly(['read', 'readAt']);
       allow delete: if false;
     }
 
@@ -295,81 +293,81 @@ service cloud.firestore {
     }
 
 
-    match /user_contents/{document} {
+    match /userContents/{document} {
       allow create: if true;
       allow read: if true;
       allow write: if false;
       allow delete: if false;
     }
 
-    match /user_contents/{parent}/poll_details/{document} {
+    match /userContents/{parent}/pollDetails/{document} {
       allow create: if true;
       allow read: if true;
       allow write: if false;
       allow delete: if false;
     }
 
-    match /{path=**}/poll_details/{document} {
+    match /{path=**}/pollDetails/{document} {
       allow read: if true;
     }
 
 
-    match /user_contents/{parent}/feed_details/{document} {
+    match /userContents/{parent}/feedDetails/{document} {
       allow create: if true;
       allow read: if true;
       allow write: if false;
       allow delete: if false;
     }
 
-    match /{path=**}/feed_details/{document} {
+    match /{path=**}/feedDetails/{document} {
       allow read: if true;
     }
 
 
-    match /user_contents/{parent}/content_comments/{document} {
+    match /userContents/{parent}/contentComments/{document} {
       allow create: if true;
       allow read: if true;
       allow write: if false;
       allow delete: if false;
     }
 
-    match /{path=**}/content_comments/{document} {
+    match /{path=**}/contentComments/{document} {
       allow read: if true;
     }
 
 
-    match /user_contents/{parent}/contents_likes/{document} {
+    match /userContents/{parent}/contentsLikes/{document} {
       allow create: if true;
       allow read: if true;
       allow write: if false;
       allow delete: if false;
     }
 
-    match /{path=**}/contents_likes/{document} {
+    match /{path=**}/contentsLikes/{document} {
       allow read: if true;
     }
 
 
-    match /user_contents/{parent}/contents_interests/{document} {
+    match /userContents/{parent}/contentsInterests/{document} {
       allow create: if true;
       allow read: if true;
       allow write: if false;
       allow delete: if false;
     }
 
-    match /{path=**}/contents_interests/{document} {
+    match /{path=**}/contentsInterests/{document} {
       allow read: if true;
     }
 
 
-    match /user_contents/{parent}/contents_shares/{document} {
+    match /userContents/{parent}/contentsShares/{document} {
       allow create: if true;
       allow read: if true;
       allow write: if false;
       allow delete: if false;
     }
 
-    match /{path=**}/contents_shares/{document} {
+    match /{path=**}/contentsShares/{document} {
       allow read: if true;
     }
 
@@ -381,7 +379,7 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    match /premium_users/{document} {
+    match /premiumUsers/{document} {
       allow create: if true;
       allow read: if true;
       allow write: if false;
@@ -407,28 +405,28 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    match /jops_name/{document} {
+    match /jopsName/{document} {
       allow create: if true;
       allow read: if true;
       allow write: if false;
       allow delete: if false;
     }
 
-    match /jops_category/{document} {
+    match /jopsCategory/{document} {
       allow create: if true;
       allow read: if true;
       allow write: if false;
       allow delete: if false;
     }
 
-    match /users/{parent}/Chat_interest_jops/{document} {
+    match /users/{parent}/chatInterestJops/{document} {
       allow create: if request.auth.uid == parent;
       allow read: if request.auth.uid == parent;
       allow write: if request.auth.uid == parent;
       allow delete: if request.auth.uid == parent;
     }
 
-    match /users/{parent}/Chat_history/{document} {
+    match /users/{parent}/chatHistory/{document} {
       allow create: if request.auth.uid == parent;
       allow read: if request.auth.uid == parent;
       allow write: if request.auth.uid == parent;

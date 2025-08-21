@@ -56,22 +56,22 @@ class UsersModel extends FirestoreRecord {
   List<String> get expertise => _expertise ?? const [];
   bool hasExpertise() => _expertise != null;
 
-  // "display_name" field.
+  // "displayName" field.
   String? _displayName;
   String get displayName => _displayName ?? '';
   bool hasDisplayName() => _displayName != null;
 
-  // "created_time" field.
+  // "createdTime" field.
   DateTime? _createdTime;
   DateTime? get createdTime => _createdTime;
   bool hasCreatedTime() => _createdTime != null;
 
-  // "photo_url" field.
+  // "photoUrl" field.
   String? _photoUrl;
   String get photoUrl => _photoUrl ?? '';
   bool hasPhotoUrl() => _photoUrl != null;
 
-  // "phone_number" field.
+  // "phoneNumber" field.
   String? _phoneNumber;
   String get phoneNumber => _phoneNumber ?? '';
   bool hasPhoneNumber() => _phoneNumber != null;
@@ -87,52 +87,52 @@ class UsersModel extends FirestoreRecord {
   @Deprecated('Use hasIsPremiumUser instead')
   bool hasIsPrmiumUser() => hasIsPremiumUser();
 
-  // "anonymous_posts_count" field.
+  // "anonymousPostsCount" field.
   int? _anonymousPostsCount;
   int get anonymousPostsCount => _anonymousPostsCount ?? 0;
   bool hasAnonymousPostsCount() => _anonymousPostsCount != null;
 
-  // "anonymous_comments_count" field.
+  // "anonymousCommentsCount" field.
   int? _anonymousCommentsCount;
   int get anonymousCommentsCount => _anonymousCommentsCount ?? 0;
   bool hasAnonymousCommentsCount() => _anonymousCommentsCount != null;
 
-  // "current_rank" field.
+  // "currentRank" field.
   String? _currentRank;
   String get currentRank => _currentRank ?? '';
   bool hasCurrentRank() => _currentRank != null;
 
-  // "current_title" field.
+  // "currentTitle" field.
   String? _currentTitle;
   String get currentTitle => _currentTitle ?? '';
   bool hasCurrentTitle() => _currentTitle != null;
 
-  // "rank_change_date" field.
+  // "rankChangeDate" field.
   DateTime? _rankChangeDate;
   DateTime? get rankChangeDate => _rankChangeDate;
   bool hasRankChangeDate() => _rankChangeDate != null;
 
-  // "title_change_date" field.
+  // "titleChangeDate" field.
   DateTime? _titleChangeDate;
   DateTime? get titleChangeDate => _titleChangeDate;
   bool hasTitleChangeDate() => _titleChangeDate != null;
 
-  // "is_rank_eligible" field.
+  // "isRankEligible" field.
   bool? _isRankEligible;
   bool get isRankEligible => _isRankEligible ?? false;
   bool hasIsRankEligible() => _isRankEligible != null;
 
-  // "rank_evaluation_count" field.
+  // "rankEvaluationCount" field.
   int? _rankEvaluationCount;
   int get rankEvaluationCount => _rankEvaluationCount ?? 0;
   bool hasRankEvaluationCount() => _rankEvaluationCount != null;
 
-  // "rank_history" field.
+  // "rankHistory" field.
   List<String>? _rankHistory;
   List<String> get rankHistory => _rankHistory ?? const [];
   bool hasRankHistory() => _rankHistory != null;
 
-  // "title_history" field.
+  // "titleHistory" field.
   List<String>? _titleHistory;
   List<String> get titleHistory => _titleHistory ?? const [];
   bool hasTitleHistory() => _titleHistory != null;
@@ -167,22 +167,22 @@ class UsersModel extends FirestoreRecord {
   @Deprecated('Use hasFriends instead')
   bool hasFrinds() => hasFriends();
 
-  // "active_chats" field.
+  // "activeChats" field.
   List<String>? _activeChats;
   List<String> get activeChats => _activeChats ?? const [];
   bool hasActiveChats() => _activeChats != null;
 
-  // "group_chats" field.
+  // "groupChats" field.
   List<String>? _groupChats;
   List<String> get groupChats => _groupChats ?? const [];
   bool hasGroupChats() => _groupChats != null;
 
-  // "total_a_points" field.
+  // "totalAPoints" field.
   int? _totalAPoints;
   int get totalAPoints => _totalAPoints ?? 0;
   bool hasTotalAPoints() => _totalAPoints != null;
 
-  // "total_q_points" field.
+  // "totalQPoints" field.
   int? _totalQPoints;
   int get totalQPoints => _totalQPoints ?? 0;
   bool hasTotalQPoints() => _totalQPoints != null;
@@ -192,7 +192,7 @@ class UsersModel extends FirestoreRecord {
   String get shortDescription => _shortDescription ?? '';
   bool hasShortDescription() => _shortDescription != null;
 
-  // "last_active_time" field.
+  // "lastActiveTime" field.
   DateTime? _lastActiveTime;
   DateTime? get lastActiveTime => _lastActiveTime;
   bool hasLastActiveTime() => _lastActiveTime != null;
@@ -212,7 +212,7 @@ class UsersModel extends FirestoreRecord {
   String get gender => _gender ?? '';
   bool hasGender() => _gender != null;
 
-  // "date_of_birth" field.
+  // "dateOfBirth" field.
   DateTime? _dateOfBirth;
   DateTime? get dateOfBirth => _dateOfBirth;
   bool hasDateOfBirth() => _dateOfBirth != null;
@@ -233,6 +233,7 @@ class UsersModel extends FirestoreRecord {
   bool hasSubscription() => _subscription != null;
 
   void _initializeFields() {
+    // Support both snake_case (legacy) and camelCase (new) field names
     _uid = snapshotData['uid'] as String?;
     _email = snapshotData['email'] as String?;
     _location = snapshotData['location'] as LatLng?;
@@ -241,24 +242,24 @@ class UsersModel extends FirestoreRecord {
     _lastActive = snapshotData['lastActive'] as DateTime?;
     _interests = getDataList(snapshotData['interests']);
     _expertise = getDataList(snapshotData['expertise']);
-    _displayName = snapshotData['display_name'] as String?;
-    _createdTime = snapshotData['created_time'] as DateTime?;
-    _photoUrl = snapshotData['photo_url'] as String?;
-    _phoneNumber = snapshotData['phone_number'] as String?;
-    _isPremiumUser = snapshotData['is_premium_user'] as bool? ?? snapshotData['is_prmium_user'] as bool?;
+    _displayName = (snapshotData['displayName'] ?? snapshotData['display_name']) as String?;
+    _createdTime = (snapshotData['createdTime'] ?? snapshotData['created_time']) as DateTime?;
+    _photoUrl = (snapshotData['photoUrl'] ?? snapshotData['photo_url']) as String?;
+    _phoneNumber = (snapshotData['phoneNumber'] ?? snapshotData['phone_number']) as String?;
+    _isPremiumUser = (snapshotData['isPremiumUser'] ?? snapshotData['is_premium_user']) as bool? ?? snapshotData['is_prmium_user'] as bool?;
     _anonymousPostsCount =
-        castToType<int>(snapshotData['anonymous_posts_count']);
+        castToType<int>((snapshotData['anonymousPostsCount'] ?? snapshotData['anonymous_posts_count']));
     _anonymousCommentsCount =
-        castToType<int>(snapshotData['anonymous_comments_count']);
-    _currentRank = snapshotData['current_rank'] as String?;
-    _currentTitle = snapshotData['current_title'] as String?;
-    _rankChangeDate = snapshotData['rank_change_date'] as DateTime?;
-    _titleChangeDate = snapshotData['title_change_date'] as DateTime?;
-    _isRankEligible = snapshotData['is_rank_eligible'] as bool?;
+        castToType<int>((snapshotData['anonymousCommentsCount'] ?? snapshotData['anonymous_comments_count']));
+    _currentRank = (snapshotData['currentRank'] ?? snapshotData['current_rank']) as String?;
+    _currentTitle = (snapshotData['currentTitle'] ?? snapshotData['current_title']) as String?;
+    _rankChangeDate = (snapshotData['rankChangeDate'] ?? snapshotData['rank_change_date']) as DateTime?;
+    _titleChangeDate = (snapshotData['titleChangeDate'] ?? snapshotData['title_change_date']) as DateTime?;
+    _isRankEligible = (snapshotData['isRankEligible'] ?? snapshotData['is_rank_eligible']) as bool?;
     _rankEvaluationCount =
-        castToType<int>(snapshotData['rank_evaluation_count']);
-    _rankHistory = getDataList(snapshotData['rank_history']);
-    _titleHistory = getDataList(snapshotData['title_history']);
+        castToType<int>((snapshotData['rankEvaluationCount'] ?? snapshotData['rank_evaluation_count']));
+    _rankHistory = getDataList((snapshotData['rankHistory'] ?? snapshotData['rank_history']));
+    _titleHistory = getDataList((snapshotData['titleHistory'] ?? snapshotData['title_history']));
     _receiveRankUpdateNotifications =
         snapshotData['receive_Rank_Update_Notifications'] as bool?;
     _receiveTitleUpdateNotifications =
@@ -266,16 +267,16 @@ class UsersModel extends FirestoreRecord {
     _anonymousQuestionCount =
         castToType<int>(snapshotData['anonymous_Question_Count']);
     _friends = getDataList(snapshotData['friends'] ?? snapshotData['frinds']);
-    _activeChats = getDataList(snapshotData['active_chats']);
-    _groupChats = getDataList(snapshotData['group_chats']);
-    _totalAPoints = castToType<int>(snapshotData['total_a_points']);
-    _totalQPoints = castToType<int>(snapshotData['total_q_points']);
+    _activeChats = getDataList((snapshotData['activeChats'] ?? snapshotData['active_chats']));
+    _groupChats = getDataList((snapshotData['groupChats'] ?? snapshotData['group_chats']));
+    _totalAPoints = castToType<int>((snapshotData['totalAPoints'] ?? snapshotData['total_a_points']));
+    _totalQPoints = castToType<int>((snapshotData['totalQPoints'] ?? snapshotData['total_q_points']));
     _shortDescription = snapshotData['shortDescription'] as String?;
-    _lastActiveTime = snapshotData['last_active_time'] as DateTime?;
+    _lastActiveTime = (snapshotData['lastActiveTime'] ?? snapshotData['last_active_time']) as DateTime?;
     _role = snapshotData['role'] as String?;
     _title = snapshotData['title'] as String?;
     _gender = snapshotData['gender'] as String?;
-    _dateOfBirth = snapshotData['date_of_birth'] as DateTime?;
+    _dateOfBirth = (snapshotData['dateOfBirth'] ?? snapshotData['date_of_birth']) as DateTime?;
     _language = snapshotData['Language'] as String?;
     _stats = snapshotData['stats'] as Map<String, dynamic>?;
     _subscription = snapshotData['subscription'] as Map<String, dynamic>?;
@@ -357,30 +358,30 @@ Map<String, dynamic> createUsersModelData({
       'points_A': pointsA,
       'points_Q': pointsQ,
       'lastActive': lastActive,
-      'display_name': displayName,
-      'created_time': createdTime,
-      'photo_url': photoUrl,
-      'phone_number': phoneNumber,
-      'is_premium_user': isPremiumUser,
-      'anonymous_posts_count': anonymousPostsCount,
-      'anonymous_comments_count': anonymousCommentsCount,
-      'current_rank': currentRank,
-      'current_title': currentTitle,
-      'rank_change_date': rankChangeDate,
-      'title_change_date': titleChangeDate,
-      'is_rank_eligible': isRankEligible,
-      'rank_evaluation_count': rankEvaluationCount,
+      'displayName': displayName,
+      'createdTime': createdTime,
+      'photoUrl': photoUrl,
+      'phoneNumber': phoneNumber,
+      'isPremiumUser': isPremiumUser,
+      'anonymousPostsCount': anonymousPostsCount,
+      'anonymousCommentsCount': anonymousCommentsCount,
+      'currentRank': currentRank,
+      'currentTitle': currentTitle,
+      'rankChangeDate': rankChangeDate,
+      'titleChangeDate': titleChangeDate,
+      'isRankEligible': isRankEligible,
+      'rankEvaluationCount': rankEvaluationCount,
       'receive_Rank_Update_Notifications': receiveRankUpdateNotifications,
       'receive_Title_Update_Notifications': receiveTitleUpdateNotifications,
       'anonymous_Question_Count': anonymousQuestionCount,
-      'total_a_points': totalAPoints,
-      'total_q_points': totalQPoints,
+      'totalAPoints': totalAPoints,
+      'totalQPoints': totalQPoints,
       'shortDescription': shortDescription,
-      'last_active_time': lastActiveTime,
+      'lastActiveTime': lastActiveTime,
       'role': role,
       'title': title,
       'gender': gender,
-      'date_of_birth': dateOfBirth,
+      'dateOfBirth': dateOfBirth,
       'Language': language,
       'stats': stats,
       'subscription': subscription,

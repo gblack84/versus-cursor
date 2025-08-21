@@ -17,12 +17,12 @@ class NotificationsModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "notification_id" field.
+  // "notificationId" field.
   String? _notificationId;
   String get notificationId => _notificationId ?? '';
   bool hasNotificationId() => _notificationId != null;
 
-  // "user_id" field.
+  // "userId" field.
   String? _userId;
   String get userId => _userId ?? '';
   bool hasUserId() => _userId != null;
@@ -32,7 +32,7 @@ class NotificationsModel extends FirestoreRecord {
   String get type => _type ?? '';
   bool hasType() => _type != null;
 
-  // "source_id" field.
+  // "sourceId" field.
   String? _sourceId;
   String get sourceId => _sourceId ?? '';
   bool hasSourceId() => _sourceId != null;
@@ -42,7 +42,7 @@ class NotificationsModel extends FirestoreRecord {
   String get content => _content ?? '';
   bool hasContent() => _content != null;
 
-  // "created_at" field.
+  // "createdAt" field.
   DateTime? _createdAt;
   DateTime? get createdAt => _createdAt;
   bool hasCreatedAt() => _createdAt != null;
@@ -52,12 +52,12 @@ class NotificationsModel extends FirestoreRecord {
   bool get read => _read ?? false;
   bool hasRead() => _read != null;
 
-  // "target_audience" field.
+  // "targetAudience" field.
   List<String>? _targetAudience;
   List<String> get targetAudience => _targetAudience ?? const [];
   bool hasTargetAudience() => _targetAudience != null;
 
-  // "expiry_time" field.
+  // "expiryTime" field.
   DateTime? _expiryTime;
   DateTime? get expiryTime => _expiryTime;
   bool hasExpiryTime() => _expiryTime != null;
@@ -67,7 +67,7 @@ class NotificationsModel extends FirestoreRecord {
   LatLng? get location => _location;
   bool hasLocation() => _location != null;
 
-  // "interaction_type" field.
+  // "interactionType" field.
   String? _interactionType;
   String get interactionType => _interactionType ?? '';
   bool hasInteractionType() => _interactionType != null;
@@ -78,7 +78,7 @@ class NotificationsModel extends FirestoreRecord {
   String get status => _status ?? '';
   bool hasStatus() => _status != null;
 
-  // "completed_at" field.
+  // "completedAt" field.
   DateTime? _completedAt;
   DateTime? get completedAt => _completedAt;
   bool hasCompletedAt() => _completedAt != null;
@@ -93,12 +93,12 @@ class NotificationsModel extends FirestoreRecord {
   String get message => _message ?? '';
   bool hasMessage() => _message != null;
 
-  // "image_url" field.
+  // "imageUrl" field.
   String? _imageUrl;
   String get imageUrl => _imageUrl ?? '';
   bool hasImageUrl() => _imageUrl != null;
 
-  // "action_url" field.
+  // "actionUrl" field.
   String? _actionUrl;
   String get actionUrl => _actionUrl ?? '';
   bool hasActionUrl() => _actionUrl != null;
@@ -108,7 +108,7 @@ class NotificationsModel extends FirestoreRecord {
   String get priority => _priority ?? 'normal';
   bool hasPriority() => _priority != null;
 
-  // "source_type" field.
+  // "sourceType" field.
   String? _sourceType;
   String get sourceType => _sourceType ?? '';
   bool hasSourceType() => _sourceType != null;
@@ -119,27 +119,28 @@ class NotificationsModel extends FirestoreRecord {
   bool hasPostData() => _postData != null;
 
   void _initializeFields() {
-    _notificationId = snapshotData['notification_id'] as String?;
-    _userId = snapshotData['user_id'] as String?;
+    // Support both snake_case (legacy) and camelCase (new) field names
+    _notificationId = (snapshotData['notificationId'] ?? snapshotData['notification_id']) as String?;
+    _userId = (snapshotData['userId'] ?? snapshotData['user_id']) as String?;
     _type = snapshotData['type'] as String?;
-    _sourceId = snapshotData['source_id'] as String?;
+    _sourceId = (snapshotData['sourceId'] ?? snapshotData['source_id']) as String?;
     _content = snapshotData['content'] as String?;
-    _createdAt = snapshotData['created_at'] as DateTime?;
+    _createdAt = (snapshotData['createdAt'] ?? snapshotData['created_at']) as DateTime?;
     _read = snapshotData['read'] as bool?;
-    _targetAudience = getDataList(snapshotData['target_audience']);
-    _expiryTime = snapshotData['expiry_time'] as DateTime?;
+    _targetAudience = getDataList(snapshotData['targetAudience'] ?? snapshotData['target_audience']);
+    _expiryTime = (snapshotData['expiryTime'] ?? snapshotData['expiry_time']) as DateTime?;
     _location = snapshotData['location'] as LatLng?;
-    _interactionType = snapshotData['interaction_type'] as String?;
+    _interactionType = (snapshotData['interactionType'] ?? snapshotData['interaction_type']) as String?;
     
-    // Initialize extended fields
+    // Initialize extended fields (already has fallback support)
     _status = snapshotData['status'] as String?;
-    _completedAt = snapshotData['completedAt'] as DateTime? ?? snapshotData['completed_at'] as DateTime?;
+    _completedAt = (snapshotData['completedAt'] ?? snapshotData['completed_at']) as DateTime?;
     _title = snapshotData['title'] as String?;
     _message = snapshotData['message'] as String?;
-    _imageUrl = snapshotData['imageUrl'] as String? ?? snapshotData['image_url'] as String?;
-    _actionUrl = snapshotData['actionUrl'] as String? ?? snapshotData['action_url'] as String?;
+    _imageUrl = (snapshotData['imageUrl'] ?? snapshotData['image_url']) as String?;
+    _actionUrl = (snapshotData['actionUrl'] ?? snapshotData['action_url']) as String?;
     _priority = snapshotData['priority'] as String?;
-    _sourceType = snapshotData['sourceType'] as String? ?? snapshotData['source_type'] as String?;
+    _sourceType = (snapshotData['sourceType'] ?? snapshotData['source_type']) as String?;
     
     // Parse JSON content if present
     if (_content != null) {
@@ -211,24 +212,24 @@ Map<String, dynamic> createNotificationsModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'notification_id': notificationId,
-      'user_id': userId,
+      'notificationId': notificationId,
+      'userId': userId,
       'type': type,
-      'source_id': sourceId,
+      'sourceId': sourceId,
       'content': content,
-      'created_at': createdAt,
+      'createdAt': createdAt,
       'read': read,
-      'expiry_time': expiryTime,
+      'expiryTime': expiryTime,
       'location': location,
-      'interaction_type': interactionType,
+      'interactionType': interactionType,
       'status': status,
-      'completed_at': completedAt,
+      'completedAt': completedAt,
       'title': title,
       'message': message,
-      'image_url': imageUrl,
-      'action_url': actionUrl,
+      'imageUrl': imageUrl,
+      'actionUrl': actionUrl,
       'priority': priority,
-      'source_type': sourceType,
+      'sourceType': sourceType,
     }.withoutNulls,
   );
 

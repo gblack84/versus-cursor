@@ -217,12 +217,12 @@ class PostsModel extends FirestoreRecord {
   bool hasDescription() => _description != null;
 
   // NEW: Vote system fields
-  // "vote_start_time" field.
+  // "voteStartTime" field.
   DateTime? _voteStartTime;
   DateTime? get voteStartTime => _voteStartTime;
   bool hasVoteStartTime() => _voteStartTime != null;
 
-  // "vote_end_time" field.
+  // "voteEndTime" field.
   DateTime? _voteEndTime;
   DateTime? get voteEndTime => _voteEndTime;
   bool hasVoteEndTime() => _voteEndTime != null;
@@ -247,12 +247,12 @@ class PostsModel extends FirestoreRecord {
   int get votesB => _votesB ?? 0;
   bool hasVotesB() => _votesB != null;
 
-  // "voted_user_ids_a" field.
+  // "votedUserIdsA" field.
   List<String>? _votedUserIdsA;
   List<String> get votedUserIdsA => _votedUserIdsA ?? const [];
   bool hasVotedUserIdsA() => _votedUserIdsA != null;
 
-  // "voted_user_ids_b" field.
+  // "votedUserIdsB" field.
   List<String>? _votedUserIdsB;
   List<String> get votedUserIdsB => _votedUserIdsB ?? const [];
   bool hasVotedUserIdsB() => _votedUserIdsB != null;
@@ -267,17 +267,17 @@ class PostsModel extends FirestoreRecord {
   bool get voteTimeout => _voteTimeout ?? false;
   bool hasVoteTimeout() => _voteTimeout != null;
 
-  // "vote_completed_at" field.
+  // "voteCompletedAt" field.
   DateTime? _voteCompletedAt;
   DateTime? get voteCompletedAt => _voteCompletedAt;
   bool hasVoteCompletedAt() => _voteCompletedAt != null;
 
-  // "vote_cancelled_at" field.
+  // "voteCancelledAt" field.
   DateTime? _voteCancelledAt;
   DateTime? get voteCancelledAt => _voteCancelledAt;
   bool hasVoteCancelledAt() => _voteCancelledAt != null;
 
-  // "vote_cancelled_reason" field.
+  // "voteCancelledReason" field.
   String? _voteCancelledReason;
   String get voteCancelledReason => _voteCancelledReason ?? '';
   bool hasVoteCancelledReason() => _voteCancelledReason != null;
@@ -292,37 +292,37 @@ class PostsModel extends FirestoreRecord {
   DateTime? get notificationsSentAt => _notificationsSentAt;
   bool hasNotificationsSentAt() => _notificationsSentAt != null;
 
-  // "display_votes_a" field.
+  // "displayVotesA" field.
   int? _displayVotesA;
   int get displayVotesA => _displayVotesA ?? 0;
   bool hasDisplayVotesA() => _displayVotesA != null;
 
-  // "display_votes_b" field.
+  // "displayVotesB" field.
   int? _displayVotesB;
   int get displayVotesB => _displayVotesB ?? 0;
   bool hasDisplayVotesB() => _displayVotesB != null;
 
-  // "display_percent_a" field.
+  // "displayPercentA" field.
   int? _displayPercentA;
   int get displayPercentA => _displayPercentA ?? 0;
   bool hasDisplayPercentA() => _displayPercentA != null;
 
-  // "display_percent_b" field.
+  // "displayPercentB" field.
   int? _displayPercentB;
   int get displayPercentB => _displayPercentB ?? 0;
   bool hasDisplayPercentB() => _displayPercentB != null;
 
-  // "actual_votes_a" field.
+  // "actualVotesA" field.
   int? _actualVotesA;
   int get actualVotesA => _actualVotesA ?? 0;
   bool hasActualVotesA() => _actualVotesA != null;
 
-  // "actual_votes_b" field.
+  // "actualVotesB" field.
   int? _actualVotesB;
   int get actualVotesB => _actualVotesB ?? 0;
   bool hasActualVotesB() => _actualVotesB != null;
 
-  // "actual_total_votes" field.
+  // "actualTotalVotes" field.
   int? _actualTotalVotes;
   int get actualTotalVotes => _actualTotalVotes ?? 0;
   bool hasActualTotalVotes() => _actualTotalVotes != null;
@@ -372,29 +372,29 @@ class PostsModel extends FirestoreRecord {
     _description = snapshotData['description'] as String?;
     
     // Initialize vote system fields with backwards compatibility
-    _voteStartTime = snapshotData['vote_start_time'] as DateTime? ?? snapshotData['voteStartTime'] as DateTime?;
-    _voteEndTime = snapshotData['vote_end_time'] as DateTime? ?? snapshotData['voteEndTime'] as DateTime?;
-    _voteStatus = snapshotData['vote_status'] as String? ?? snapshotData['voteStatus'] as String?;
-    _votesA = castToType<int>(snapshotData['votes_a'] ?? snapshotData['vote_count_a']);
-    _votesB = castToType<int>(snapshotData['votes_b'] ?? snapshotData['vote_count_b']);
-    _votedUserIdsA = getDataList(snapshotData['voted_user_ids_a'] ?? snapshotData['votedUserIDsA']);
-    _votedUserIdsB = getDataList(snapshotData['voted_user_ids_b'] ?? snapshotData['votedUserIDsB']);
-    _totalVotes = castToType<int>(snapshotData['total_votes']);
-    _voteTimeout = snapshotData['vote_timeout'] as bool?;
-    _voteCompletedAt = snapshotData['vote_completed_at'] as DateTime?;
-    _voteCancelledAt = snapshotData['vote_cancelled_at'] as DateTime?;
-    _voteCancelledReason = snapshotData['vote_cancelled_reason'] as String?;
+    _voteStartTime = snapshotData['voteStartTime'] as DateTime?;
+    _voteEndTime = snapshotData['voteEndTime'] as DateTime?;
+    _voteStatus = snapshotData['voteStatus'] as String?;
+    _votesA = castToType<int>(snapshotData['votesA'] ?? snapshotData['voteCountA']);
+    _votesB = castToType<int>(snapshotData['votesB'] ?? snapshotData['voteCountB']);
+    _votedUserIdsA = getDataList(snapshotData['votedUserIdsA'] ?? snapshotData['votedUserIDsA']);
+    _votedUserIdsB = getDataList(snapshotData['votedUserIdsB'] ?? snapshotData['votedUserIDsB']);
+    _totalVotes = castToType<int>(snapshotData['totalVotes']);
+    _voteTimeout = snapshotData['voteTimeout'] as bool?;
+    _voteCompletedAt = snapshotData['voteCompletedAt'] as DateTime?;
+    _voteCancelledAt = snapshotData['voteCancelledAt'] as DateTime?;
+    _voteCancelledReason = snapshotData['voteCancelledReason'] as String?;
     
     // Initialize notification and display fields
     _notificationsSent = snapshotData['notificationsSent'] as bool?;
     _notificationsSentAt = snapshotData['notificationsSentAt'] as DateTime?;
-    _displayVotesA = castToType<int>(snapshotData['display_votes_a']);
-    _displayVotesB = castToType<int>(snapshotData['display_votes_b']);
-    _displayPercentA = castToType<int>(snapshotData['display_percent_a']);
-    _displayPercentB = castToType<int>(snapshotData['display_percent_b']);
-    _actualVotesA = castToType<int>(snapshotData['actual_votes_a']);
-    _actualVotesB = castToType<int>(snapshotData['actual_votes_b']);
-    _actualTotalVotes = castToType<int>(snapshotData['actual_total_votes']);
+    _displayVotesA = castToType<int>(snapshotData['displayVotesA']);
+    _displayVotesB = castToType<int>(snapshotData['displayVotesB']);
+    _displayPercentA = castToType<int>(snapshotData['displayPercentA']);
+    _displayPercentB = castToType<int>(snapshotData['displayPercentB']);
+    _actualVotesA = castToType<int>(snapshotData['actualVotesA']);
+    _actualVotesB = castToType<int>(snapshotData['actualVotesB']);
+    _actualTotalVotes = castToType<int>(snapshotData['actualTotalVotes']);
   }
 
   static CollectionReference get collection =>
@@ -530,28 +530,28 @@ Map<String, dynamic> createPostsModelData({
       'moderation': moderation,
       'targetAudience': targetAudience,
       'description': description,
-      'vote_start_time': voteStartTime,
-      'vote_end_time': voteEndTime,
-      'vote_status': voteStatus,
-      'vote_completed': voteCompleted,
-      'votes_a': votesA,
-      'votes_b': votesB,
-      'voted_user_ids_a': votedUserIdsA,
-      'voted_user_ids_b': votedUserIdsB,
-      'total_votes': totalVotes,
-      'vote_timeout': voteTimeout,
-      'vote_completed_at': voteCompletedAt,
-      'vote_cancelled_at': voteCancelledAt,
-      'vote_cancelled_reason': voteCancelledReason,
+      'voteStartTime': voteStartTime,
+      'voteEndTime': voteEndTime,
+      'voteStatus': voteStatus,
+      'voteCompleted': voteCompleted,
+      'votesA': votesA,
+      'votesB': votesB,
+      'votedUserIdsA': votedUserIdsA,
+      'votedUserIdsB': votedUserIdsB,
+      'totalVotes': totalVotes,
+      'voteTimeout': voteTimeout,
+      'voteCompletedAt': voteCompletedAt,
+      'voteCancelledAt': voteCancelledAt,
+      'voteCancelledReason': voteCancelledReason,
       'notificationsSent': notificationsSent,
       'notificationsSentAt': notificationsSentAt,
-      'display_votes_a': displayVotesA,
-      'display_votes_b': displayVotesB,
-      'display_percent_a': displayPercentA,
-      'display_percent_b': displayPercentB,
-      'actual_votes_a': actualVotesA,
-      'actual_votes_b': actualVotesB,
-      'actual_total_votes': actualTotalVotes,
+      'displayVotesA': displayVotesA,
+      'displayVotesB': displayVotesB,
+      'displayPercentA': displayPercentA,
+      'displayPercentB': displayPercentB,
+      'actualVotesA': actualVotesA,
+      'actualVotesB': actualVotesB,
+      'actualTotalVotes': actualTotalVotes,
     }.withoutNulls,
   );
 

@@ -16,12 +16,12 @@ class MessagesModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "message_id" field.
+  // "messageId" field.
   String? _messageId;
   String get messageId => _messageId ?? '';
   bool hasMessageId() => _messageId != null;
 
-  // "sender_id" field.
+  // "senderId" field.
   String? _senderId;
   String get senderId => _senderId ?? '';
   bool hasSenderId() => _senderId != null;
@@ -31,22 +31,22 @@ class MessagesModel extends FirestoreRecord {
   String get content => _content ?? '';
   bool hasContent() => _content != null;
 
-  // "attachment_url" field.
+  // "attachmentUrl" field.
   String? _attachmentUrl;
   String get attachmentUrl => _attachmentUrl ?? '';
   bool hasAttachmentUrl() => _attachmentUrl != null;
 
-  // "attachment_type" field.
+  // "attachmentType" field.
   String? _attachmentType;
   String get attachmentType => _attachmentType ?? '';
   bool hasAttachmentType() => _attachmentType != null;
 
-  // "time_stamp" field.
+  // "timeStamp" field.
   DateTime? _timeStamp;
   DateTime? get timeStamp => _timeStamp;
   bool hasTimeStamp() => _timeStamp != null;
 
-  // "is_read" field.
+  // "isRead" field.
   bool? _isRead;
   bool get isRead => _isRead ?? false;
   bool hasIsRead() => _isRead != null;
@@ -102,99 +102,99 @@ class MessagesModel extends FirestoreRecord {
   bool hasMessageType() => _messageType != null;
 
   // Vote request fields
-  // "vote_post_id" field.
+  // "votePostId" field.
   String? _votePostId;
   String get votePostId => _votePostId ?? '';
   bool hasVotePostId() => _votePostId != null;
 
-  // "vote_title" field.
+  // "voteTitle" field.
   String? _voteTitle;
   String get voteTitle => _voteTitle ?? '';
   bool hasVoteTitle() => _voteTitle != null;
 
-  // "vote_description" field.
+  // "voteDescription" field.
   String? _voteDescription;
   String get voteDescription => _voteDescription ?? '';
   bool hasVoteDescription() => _voteDescription != null;
 
-  // "vote_option_a_text" field.
+  // "voteOptionAText" field.
   String? _voteOptionAText;
   String get voteOptionAText => _voteOptionAText ?? '';
   bool hasVoteOptionAText() => _voteOptionAText != null;
 
-  // "vote_option_b_text" field.
+  // "voteOptionBText" field.
   String? _voteOptionBText;
   String get voteOptionBText => _voteOptionBText ?? '';
   bool hasVoteOptionBText() => _voteOptionBText != null;
 
-  // "vote_option_a_image" field.
+  // "voteOptionAImage" field.
   String? _voteOptionAImage;
   String get voteOptionAImage => _voteOptionAImage ?? '';
   bool hasVoteOptionAImage() => _voteOptionAImage != null;
 
-  // "vote_option_b_image" field.
+  // "voteOptionBImage" field.
   String? _voteOptionBImage;
   String get voteOptionBImage => _voteOptionBImage ?? '';
   bool hasVoteOptionBImage() => _voteOptionBImage != null;
 
-  // "vote_status" field.
+  // "voteStatus" field.
   String? _voteStatus;
   String get voteStatus => _voteStatus ?? 'pending';
   bool hasVoteStatus() => _voteStatus != null;
 
   // NEW: Missing vote-related fields
-  // "receiver_id" field.
+  // "receiverId" field.
   String? _receiverId;
   String get receiverId => _receiverId ?? '';
   bool hasReceiverId() => _receiverId != null;
 
-  // "vote_option_a_images" field.
+  // "voteOptionAImages" field.
   List<String>? _voteOptionAImages;
   List<String> get voteOptionAImages => _voteOptionAImages ?? const [];
   bool hasVoteOptionAImages() => _voteOptionAImages != null;
 
-  // "vote_option_b_images" field.
+  // "voteOptionBImages" field.
   List<String>? _voteOptionBImages;
   List<String> get voteOptionBImages => _voteOptionBImages ?? const [];
   bool hasVoteOptionBImages() => _voteOptionBImages != null;
 
-  // "card_status" field.
+  // "cardStatus" field.
   String? _cardStatus;
   String get cardStatus => _cardStatus ?? '';
   bool hasCardStatus() => _cardStatus != null;
 
-  // "vote_end_time" field.
+  // "voteEndTime" field.
   DateTime? _voteEndTime;
   DateTime? get voteEndTime => _voteEndTime;
   bool hasVoteEndTime() => _voteEndTime != null;
 
-  // "user_voted" field.
+  // "userVoted" field.
   @deprecated
   bool? _userVoted;
   @deprecated
   bool get userVoted => _userVoted ?? false;
   bool hasUserVoted() => _userVotes != null && _userVotes!.isNotEmpty;
 
-  // "vote_choice" field.
+  // "voteChoice" field.
   @deprecated
   String? _voteChoice;
   @deprecated
   String get voteChoice => _voteChoice ?? '';
   bool hasVoteChoice() => _userVotes != null && _userVotes!.isNotEmpty;
 
-  // "vote_results" field.
+  // "voteResults" field.
   Map<String, dynamic>? _voteResults;
   Map<String, dynamic> get voteResults => _voteResults ?? const {};
   bool hasVoteResults() => _voteResults != null;
 
-  // "vote_participated_at" field.
+  // "voteParticipatedAt" field.
   @deprecated
   DateTime? _voteParticipatedAt;
   @deprecated
   DateTime? get voteParticipatedAt => _voteParticipatedAt;
   bool hasVoteParticipatedAt() => _userVotes != null && _userVotes!.isNotEmpty;
 
-  // "user_votes" field - 개별 사용자의 투표 정보를 추적하는 핵심 필드
+  // "userVotes" field - 개별 사용자의 투표 정보를 추적하는 핵심 필드
   Map<String, dynamic>? _userVotes;
   Map<String, dynamic> get userVotes => _userVotes ?? const {};
   bool hasUserVotes() => _userVotes != null;
@@ -221,7 +221,8 @@ class MessagesModel extends FirestoreRecord {
   /// 특정 사용자의 투표 시간 가져오기
   DateTime? getUserVoteTime(String userId) {
     final vote = getUserVote(userId);
-    return vote?['voted_at'] as DateTime?;
+    // Support both snake_case and camelCase for backwards compatibility
+    return (vote?['votedAt'] ?? vote?['voted_at']) as DateTime?;
   }
 
   // 기존 코드 호환성을 위한 getter (현재 사용자 기준)
@@ -241,32 +242,32 @@ class MessagesModel extends FirestoreRecord {
     return getUserVoteTime(userId);
   }
 
-  // \"vote_aspect_ratio_a\" field.
+  // "voteAspectRatioA" field.
   double? _voteAspectRatioA;
   double? get voteAspectRatioA => _voteAspectRatioA;
   bool hasVoteAspectRatioA() => _voteAspectRatioA != null;
 
-  // \"vote_aspect_ratio_b\" field.
+  // "voteAspectRatioB" field.
   double? _voteAspectRatioB;
   double? get voteAspectRatioB => _voteAspectRatioB;
   bool hasVoteAspectRatioB() => _voteAspectRatioB != null;
 
-  // \"vote_results_a\" field.
+  // "voteResultsA" field.
   int? _voteResultsA;
   int get voteResultsA => _voteResultsA ?? 0;
   bool hasVoteResultsA() => _voteResultsA != null;
 
-  // \"vote_results_b\" field.
+  // "voteResultsB" field.
   int? _voteResultsB;
   int get voteResultsB => _voteResultsB ?? 0;
   bool hasVoteResultsB() => _voteResultsB != null;
 
-  // \"vote_percent_a\" field.
+  // "votePercentA" field.
   double? _votePercentA;
   double get votePercentA => _votePercentA ?? 0.0;
   bool hasVotePercentA() => _votePercentA != null;
 
-  // \"vote_percent_b\" field.
+  // "votePercentB" field.
   double? _votePercentB;
   double get votePercentB => _votePercentB ?? 0.0;
   bool hasVotePercentB() => _votePercentB != null;
@@ -281,44 +282,44 @@ class MessagesModel extends FirestoreRecord {
   // JSON serialization methods for caching
   Map<String, dynamic> toJson() {
     return {
-      'message_id': _messageId,
-      'sender_id': _senderId,
+      'messageId': _messageId,
+      'senderId': _senderId,
       'content': _content,
-      'attachment_url': _attachmentUrl,
-      'attachment_type': _attachmentType,
-      'time_stamp': _timeStamp?.millisecondsSinceEpoch,
-      'is_read': _isRead,
-      'media_type': _mediaType,
-      'image_url': _imageUrl,
-      'video_url': _videoUrl,
-      'thumbnail_url': _thumbnailUrl,
-      'media_size': _mediaSize,
-      'media_width': _mediaWidth,
-      'media_height': _mediaHeight,
-      'delivered_at': _deliveredAt?.millisecondsSinceEpoch,
-      'seen_at': _seenAt?.millisecondsSinceEpoch,
-      'message_type': _messageType,
-      'receiver_id': _receiverId,
-      'vote_post_id': _votePostId,
-      'vote_title': _voteTitle,
-      'vote_description': _voteDescription,
-      'vote_option_a_text': _voteOptionAText,
-      'vote_option_b_text': _voteOptionBText,
-      'vote_option_a_image': _voteOptionAImage,
-      'vote_option_b_image': _voteOptionBImage,
-      'vote_option_a_images': _voteOptionAImages,
-      'vote_option_b_images': _voteOptionBImages,
-      'vote_status': _voteStatus,
-      'vote_end_time': _voteEndTime?.millisecondsSinceEpoch,
-      'card_status': _cardStatus,
-      'vote_results': _voteResults,
-      'user_votes': _userVotes,
-      'vote_aspect_ratio_a': _voteAspectRatioA,
-      'vote_aspect_ratio_b': _voteAspectRatioB,
-      'vote_results_a': _voteResultsA,
-      'vote_results_b': _voteResultsB,
-      'vote_percent_a': _votePercentA,
-      'vote_percent_b': _votePercentB,
+      'attachmentUrl': _attachmentUrl,
+      'attachmentType': _attachmentType,
+      'timeStamp': _timeStamp?.millisecondsSinceEpoch,
+      'isRead': _isRead,
+      'mediaType': _mediaType,
+      'imageUrl': _imageUrl,
+      'videoUrl': _videoUrl,
+      'thumbnailUrl': _thumbnailUrl,
+      'mediaSize': _mediaSize,
+      'mediaWidth': _mediaWidth,
+      'mediaHeight': _mediaHeight,
+      'deliveredAt': _deliveredAt?.millisecondsSinceEpoch,
+      'seenAt': _seenAt?.millisecondsSinceEpoch,
+      'messageType': _messageType,
+      'receiverId': _receiverId,
+      'votePostId': _votePostId,
+      'voteTitle': _voteTitle,
+      'voteDescription': _voteDescription,
+      'voteOptionAText': _voteOptionAText,
+      'voteOptionBText': _voteOptionBText,
+      'voteOptionAImage': _voteOptionAImage,
+      'voteOptionBImage': _voteOptionBImage,
+      'voteOptionAImages': _voteOptionAImages,
+      'voteOptionBImages': _voteOptionBImages,
+      'voteStatus': _voteStatus,
+      'voteEndTime': _voteEndTime?.millisecondsSinceEpoch,
+      'cardStatus': _cardStatus,
+      'voteResults': _voteResults,
+      'userVotes': _userVotes,
+      'voteAspectRatioA': _voteAspectRatioA,
+      'voteAspectRatioB': _voteAspectRatioB,
+      'voteResultsA': _voteResultsA,
+      'voteResultsB': _voteResultsB,
+      'votePercentA': _votePercentA,
+      'votePercentB': _votePercentB,
       'metadata': _metadata,
     };
   }
@@ -354,108 +355,109 @@ class MessagesModel extends FirestoreRecord {
       return null;
     }
     
-    // Set all fields from JSON
-    model._messageId = json['message_id'] as String?;
-    model._senderId = json['sender_id'] as String?;
+    // Set all fields from JSON (supporting both snake_case and camelCase for backwards compatibility)
+    model._messageId = (json['messageId'] ?? json['message_id']) as String?;
+    model._senderId = (json['senderId'] ?? json['sender_id']) as String?;
     model._content = json['content'] as String?;
-    model._attachmentUrl = json['attachment_url'] as String?;
-    model._attachmentType = json['attachment_type'] as String?;
-    model._timeStamp = parseDateTime(json['time_stamp']);
-    model._isRead = json['is_read'] as bool?;
-    model._mediaType = json['media_type'] as String?;
-    model._imageUrl = json['image_url'] as String?;
-    model._videoUrl = json['video_url'] as String?;
-    model._thumbnailUrl = json['thumbnail_url'] as String?;
-    model._mediaSize = json['media_size'] as int?;
-    model._mediaWidth = json['media_width'] as double?;
-    model._mediaHeight = json['media_height'] as double?;
-    model._deliveredAt = parseDateTime(json['delivered_at']);
-    model._seenAt = parseDateTime(json['seen_at']);
-    model._messageType = json['message_type'] as String?;
-    model._receiverId = json['receiver_id'] as String?;
-    model._votePostId = json['vote_post_id'] as String?;
-    model._voteTitle = json['vote_title'] as String?;
-    model._voteDescription = json['vote_description'] as String?;
-    model._voteOptionAText = json['vote_option_a_text'] as String?;
-    model._voteOptionBText = json['vote_option_b_text'] as String?;
-    model._voteOptionAImage = json['vote_option_a_image'] as String?;
-    model._voteOptionBImage = json['vote_option_b_image'] as String?;
-    model._voteOptionAImages = (json['vote_option_a_images'] as List<dynamic>?)
+    model._attachmentUrl = (json['attachmentUrl'] ?? json['attachment_url']) as String?;
+    model._attachmentType = (json['attachmentType'] ?? json['attachment_type']) as String?;
+    model._timeStamp = parseDateTime(json['timeStamp'] ?? json['time_stamp']);
+    model._isRead = (json['isRead'] ?? json['is_read']) as bool?;
+    model._mediaType = (json['mediaType'] ?? json['media_type']) as String?;
+    model._imageUrl = (json['imageUrl'] ?? json['image_url']) as String?;
+    model._videoUrl = (json['videoUrl'] ?? json['video_url']) as String?;
+    model._thumbnailUrl = (json['thumbnailUrl'] ?? json['thumbnail_url']) as String?;
+    model._mediaSize = (json['mediaSize'] ?? json['media_size']) as int?;
+    model._mediaWidth = (json['mediaWidth'] ?? json['media_width']) as double?;
+    model._mediaHeight = (json['mediaHeight'] ?? json['media_height']) as double?;
+    model._deliveredAt = parseDateTime(json['deliveredAt'] ?? json['delivered_at']);
+    model._seenAt = parseDateTime(json['seenAt'] ?? json['seen_at']);
+    model._messageType = (json['messageType'] ?? json['message_type']) as String?;
+    model._receiverId = (json['receiverId'] ?? json['receiver_id']) as String?;
+    model._votePostId = (json['votePostId'] ?? json['vote_post_id']) as String?;
+    model._voteTitle = (json['voteTitle'] ?? json['vote_title']) as String?;
+    model._voteDescription = (json['voteDescription'] ?? json['vote_description']) as String?;
+    model._voteOptionAText = (json['voteOptionAText'] ?? json['vote_option_a_text']) as String?;
+    model._voteOptionBText = (json['voteOptionBText'] ?? json['vote_option_b_text']) as String?;
+    model._voteOptionAImage = (json['voteOptionAImage'] ?? json['vote_option_a_image']) as String?;
+    model._voteOptionBImage = (json['voteOptionBImage'] ?? json['vote_option_b_image']) as String?;
+    model._voteOptionAImages = ((json['voteOptionAImages'] ?? json['vote_option_a_images']) as List<dynamic>?)
         ?.map((e) => e as String)
         .toList();
-    model._voteOptionBImages = (json['vote_option_b_images'] as List<dynamic>?)
+    model._voteOptionBImages = ((json['voteOptionBImages'] ?? json['vote_option_b_images']) as List<dynamic>?)
         ?.map((e) => e as String)
         .toList();
-    model._voteStatus = json['vote_status'] as String?;
-    model._voteEndTime = parseDateTime(json['vote_end_time']);
-    model._cardStatus = json['card_status'] as String?;
-    model._voteResults = json['vote_results'] as Map<String, dynamic>?;
-    model._userVotes = json['user_votes'] as Map<String, dynamic>?;
-    model._voteAspectRatioA = json['vote_aspect_ratio_a'] as double?;
-    model._voteAspectRatioB = json['vote_aspect_ratio_b'] as double?;
-    model._voteResultsA = json['vote_results_a'] as int?;
-    model._voteResultsB = json['vote_results_b'] as int?;
-    model._votePercentA = json['vote_percent_a'] as double?;
-    model._votePercentB = json['vote_percent_b'] as double?;
+    model._voteStatus = (json['voteStatus'] ?? json['vote_status']) as String?;
+    model._voteEndTime = parseDateTime(json['voteEndTime'] ?? json['vote_end_time']);
+    model._cardStatus = (json['cardStatus'] ?? json['card_status']) as String?;
+    model._voteResults = (json['voteResults'] ?? json['vote_results']) as Map<String, dynamic>?;
+    model._userVotes = (json['userVotes'] ?? json['user_votes']) as Map<String, dynamic>?;
+    model._voteAspectRatioA = (json['voteAspectRatioA'] ?? json['vote_aspect_ratio_a']) as double?;
+    model._voteAspectRatioB = (json['voteAspectRatioB'] ?? json['vote_aspect_ratio_b']) as double?;
+    model._voteResultsA = (json['voteResultsA'] ?? json['vote_results_a']) as int?;
+    model._voteResultsB = (json['voteResultsB'] ?? json['vote_results_b']) as int?;
+    model._votePercentA = (json['votePercentA'] ?? json['vote_percent_a']) as double?;
+    model._votePercentB = (json['votePercentB'] ?? json['vote_percent_b']) as double?;
     model._metadata = json['metadata'] as Map<String, dynamic>?;
     
     return model;
   }
 
   void _initializeFields() {
-    _messageId = snapshotData['message_id'] as String?;
-    _senderId = snapshotData['sender_id'] as String?;
+    // Support both snake_case (legacy) and camelCase (new) field names
+    _messageId = (snapshotData['messageId'] ?? snapshotData['message_id']) as String?;
+    _senderId = (snapshotData['senderId'] ?? snapshotData['sender_id']) as String?;
     _content = snapshotData['content'] as String?;
-    _attachmentUrl = snapshotData['attachment_url'] as String?;
-    _attachmentType = snapshotData['attachment_type'] as String?;
-    _timeStamp = snapshotData['time_stamp'] as DateTime?;
-    _isRead = snapshotData['is_read'] as bool?;
+    _attachmentUrl = (snapshotData['attachmentUrl'] ?? snapshotData['attachment_url']) as String?;
+    _attachmentType = (snapshotData['attachmentType'] ?? snapshotData['attachment_type']) as String?;
+    _timeStamp = (snapshotData['timeStamp'] ?? snapshotData['time_stamp']) as DateTime?;
+    _isRead = (snapshotData['isRead'] ?? snapshotData['is_read']) as bool?;
     
     // Media fields
-    _mediaType = snapshotData['media_type'] as String?;
-    _imageUrl = snapshotData['image_url'] as String?;
-    _videoUrl = snapshotData['video_url'] as String?;
-    _thumbnailUrl = snapshotData['thumbnail_url'] as String?;
-    _mediaSize = castToType<int>(snapshotData['media_size']);
-    _mediaWidth = castToType<double>(snapshotData['media_width']);
-    _mediaHeight = castToType<double>(snapshotData['media_height']);
+    _mediaType = (snapshotData['mediaType'] ?? snapshotData['media_type']) as String?;
+    _imageUrl = (snapshotData['imageUrl'] ?? snapshotData['image_url']) as String?;
+    _videoUrl = (snapshotData['videoUrl'] ?? snapshotData['video_url']) as String?;
+    _thumbnailUrl = (snapshotData['thumbnailUrl'] ?? snapshotData['thumbnail_url']) as String?;
+    _mediaSize = castToType<int>(snapshotData['mediaSize'] ?? snapshotData['media_size']);
+    _mediaWidth = castToType<double>(snapshotData['mediaWidth'] ?? snapshotData['media_width']);
+    _mediaHeight = castToType<double>(snapshotData['mediaHeight'] ?? snapshotData['media_height']);
     
     // Message lifecycle fields
-    _deliveredAt = snapshotData['delivered_at'] as DateTime?;
-    _seenAt = snapshotData['seen_at'] as DateTime?;
+    _deliveredAt = (snapshotData['deliveredAt'] ?? snapshotData['delivered_at']) as DateTime?;
+    _seenAt = (snapshotData['seenAt'] ?? snapshotData['seen_at']) as DateTime?;
     
     // Message type
-    _messageType = snapshotData['message_type'] as String?;
+    _messageType = (snapshotData['messageType'] ?? snapshotData['message_type']) as String?;
     
     // Vote request fields
-    _votePostId = snapshotData['vote_post_id'] as String?;
-    _voteTitle = snapshotData['vote_title'] as String?;
-    _voteDescription = snapshotData['vote_description'] as String?;
-    _voteOptionAText = snapshotData['vote_option_a_text'] as String?;
-    _voteOptionBText = snapshotData['vote_option_b_text'] as String?;
-    _voteOptionAImage = snapshotData['vote_option_a_image'] as String?;
-    _voteOptionBImage = snapshotData['vote_option_b_image'] as String?;
-    _voteStatus = snapshotData['vote_status'] as String?;
+    _votePostId = (snapshotData['votePostId'] ?? snapshotData['vote_post_id']) as String?;
+    _voteTitle = (snapshotData['voteTitle'] ?? snapshotData['vote_title']) as String?;
+    _voteDescription = (snapshotData['voteDescription'] ?? snapshotData['vote_description']) as String?;
+    _voteOptionAText = (snapshotData['voteOptionAText'] ?? snapshotData['vote_option_a_text']) as String?;
+    _voteOptionBText = (snapshotData['voteOptionBText'] ?? snapshotData['vote_option_b_text']) as String?;
+    _voteOptionAImage = (snapshotData['voteOptionAImage'] ?? snapshotData['vote_option_a_image']) as String?;
+    _voteOptionBImage = (snapshotData['voteOptionBImage'] ?? snapshotData['vote_option_b_image']) as String?;
+    _voteStatus = (snapshotData['voteStatus'] ?? snapshotData['vote_status']) as String?;
     
     // Initialize new vote-related fields
-    _receiverId = snapshotData['receiver_id'] as String?;
-    _voteOptionAImages = getDataList(snapshotData['vote_option_a_images']);
-    _voteOptionBImages = getDataList(snapshotData['vote_option_b_images']);
-    _cardStatus = snapshotData['card_status'] as String?;
-    _voteEndTime = snapshotData['vote_end_time'] as DateTime?;
-    // _userVoted = snapshotData['user_voted'] as bool?;  // deprecated - use user_votes instead
-    // _voteChoice = snapshotData['vote_choice'] as String?;  // deprecated - use user_votes instead
-    _voteResults = snapshotData['vote_results'] as Map<String, dynamic>?;
-    // _voteParticipatedAt = snapshotData['vote_participated_at'] as DateTime?;  // deprecated - use user_votes instead
-    _userVotes = snapshotData['user_votes'] as Map<String, dynamic>?;
+    _receiverId = (snapshotData['receiverId'] ?? snapshotData['receiver_id']) as String?;
+    _voteOptionAImages = getDataList(snapshotData['voteOptionAImages'] ?? snapshotData['vote_option_a_images']);
+    _voteOptionBImages = getDataList(snapshotData['voteOptionBImages'] ?? snapshotData['vote_option_b_images']);
+    _cardStatus = (snapshotData['cardStatus'] ?? snapshotData['card_status']) as String?;
+    _voteEndTime = (snapshotData['voteEndTime'] ?? snapshotData['vote_end_time']) as DateTime?;
+    // _userVoted = snapshotData['user_voted'] as bool?;  // deprecated - use userVotes instead
+    // _voteChoice = snapshotData['vote_choice'] as String?;  // deprecated - use userVotes instead
+    _voteResults = (snapshotData['voteResults'] ?? snapshotData['vote_results']) as Map<String, dynamic>?;
+    // _voteParticipatedAt = snapshotData['vote_participated_at'] as DateTime?;  // deprecated - use userVotes instead
+    _userVotes = (snapshotData['userVotes'] ?? snapshotData['user_votes']) as Map<String, dynamic>?;
     
     // AspectRatio and vote results fields
-    _voteAspectRatioA = castToType<double>(snapshotData['vote_aspect_ratio_a']);
-    _voteAspectRatioB = castToType<double>(snapshotData['vote_aspect_ratio_b']);
-    _voteResultsA = castToType<int>(snapshotData['vote_results_a']);
-    _voteResultsB = castToType<int>(snapshotData['vote_results_b']);
-    _votePercentA = castToType<double>(snapshotData['vote_percent_a']);
-    _votePercentB = castToType<double>(snapshotData['vote_percent_b']);
+    _voteAspectRatioA = castToType<double>(snapshotData['voteAspectRatioA'] ?? snapshotData['vote_aspect_ratio_a']);
+    _voteAspectRatioB = castToType<double>(snapshotData['voteAspectRatioB'] ?? snapshotData['vote_aspect_ratio_b']);
+    _voteResultsA = castToType<int>(snapshotData['voteResultsA'] ?? snapshotData['vote_results_a']);
+    _voteResultsB = castToType<int>(snapshotData['voteResultsB'] ?? snapshotData['vote_results_b']);
+    _votePercentA = castToType<double>(snapshotData['votePercentA'] ?? snapshotData['vote_percent_a']);
+    _votePercentB = castToType<double>(snapshotData['votePercentB'] ?? snapshotData['vote_percent_b']);
     
     _metadata = snapshotData['metadata'] as Map<String, dynamic>?;
   }
@@ -543,45 +545,45 @@ Map<String, dynamic> createMessagesModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'message_id': messageId,
-      'sender_id': senderId,
+      'messageId': messageId,
+      'senderId': senderId,
       'content': content,
-      'attachment_url': attachmentUrl,
-      'attachment_type': attachmentType,
-      'time_stamp': timeStamp,
-      'is_read': isRead,
-      'media_type': mediaType,
-      'image_url': imageUrl,
-      'video_url': videoUrl,
-      'thumbnail_url': thumbnailUrl,
-      'media_size': mediaSize,
-      'media_width': mediaWidth,
-      'media_height': mediaHeight,
-      'message_type': messageType,
-      'vote_post_id': votePostId,
-      'vote_title': voteTitle,
-      'vote_description': voteDescription,
-      'vote_option_a_text': voteOptionAText,
-      'vote_option_b_text': voteOptionBText,
-      'vote_option_a_image': voteOptionAImage,
-      'vote_option_b_image': voteOptionBImage,
-      'vote_status': voteStatus,
-      'receiver_id': receiverId,
-      'vote_option_a_images': voteOptionAImages,
-      'vote_option_b_images': voteOptionBImages,
-      'card_status': cardStatus,
-      'vote_end_time': voteEndTime,
-      'user_voted': userVoted,
-      'vote_choice': voteChoice,
-      'vote_results': voteResults,
-      'vote_participated_at': voteParticipatedAt,
-      'user_votes': userVotes,
-      'vote_aspect_ratio_a': voteAspectRatioA,
-      'vote_aspect_ratio_b': voteAspectRatioB,
-      'vote_results_a': voteResultsA,
-      'vote_results_b': voteResultsB,
-      'vote_percent_a': votePercentA,
-      'vote_percent_b': votePercentB,
+      'attachmentUrl': attachmentUrl,
+      'attachmentType': attachmentType,
+      'timeStamp': timeStamp,
+      'isRead': isRead,
+      'mediaType': mediaType,
+      'imageUrl': imageUrl,
+      'videoUrl': videoUrl,
+      'thumbnailUrl': thumbnailUrl,
+      'mediaSize': mediaSize,
+      'mediaWidth': mediaWidth,
+      'mediaHeight': mediaHeight,
+      'messageType': messageType,
+      'votePostId': votePostId,
+      'voteTitle': voteTitle,
+      'voteDescription': voteDescription,
+      'voteOptionAText': voteOptionAText,
+      'voteOptionBText': voteOptionBText,
+      'voteOptionAImage': voteOptionAImage,
+      'voteOptionBImage': voteOptionBImage,
+      'voteStatus': voteStatus,
+      'receiverId': receiverId,
+      'voteOptionAImages': voteOptionAImages,
+      'voteOptionBImages': voteOptionBImages,
+      'cardStatus': cardStatus,
+      'voteEndTime': voteEndTime,
+      'userVoted': userVoted,  // deprecated but kept for backwards compatibility
+      'voteChoice': voteChoice,  // deprecated but kept for backwards compatibility
+      'voteResults': voteResults,
+      'voteParticipatedAt': voteParticipatedAt,  // deprecated but kept for backwards compatibility
+      'userVotes': userVotes,
+      'voteAspectRatioA': voteAspectRatioA,
+      'voteAspectRatioB': voteAspectRatioB,
+      'voteResultsA': voteResultsA,
+      'voteResultsB': voteResultsB,
+      'votePercentA': votePercentA,
+      'votePercentB': votePercentB,
       'metadata': metadata,
     }.withoutNulls,
   );

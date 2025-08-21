@@ -17,12 +17,12 @@ class ChatsModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "chat_id" field.
+  // "chatId" field.
   String? _chatId;
   String get chatId => _chatId ?? '';
   bool hasChatId() => _chatId != null;
 
-  // "chat_type" field.
+  // "chatType" field.
   String? _chatType;
   String get chatType => _chatType ?? '';
   bool hasChatType() => _chatType != null;
@@ -32,27 +32,27 @@ class ChatsModel extends FirestoreRecord {
   List<String> get participantIds => _participantIds ?? const [];
   bool hasParticipantIds() => _participantIds != null;
 
-  // "chat_name" field.
+  // "chatName" field.
   String? _chatName;
   String get chatName => _chatName ?? '';
   bool hasChatName() => _chatName != null;
 
-  // "last_message_content" field.
+  // "lastMessageContent" field.
   String? _lastMessageContent;
   String get lastMessageContent => _lastMessageContent ?? '';
   bool hasLastMessageContent() => _lastMessageContent != null;
 
-  // "last_message_at" field.
+  // "lastMessageAt" field.
   DateTime? _lastMessageAt;
   DateTime? get lastMessageAt => _lastMessageAt;
   bool hasLastMessageAt() => _lastMessageAt != null;
 
-  // "is_read" field.
+  // "isRead" field.
   bool? _isRead;
   bool get isRead => _isRead ?? false;
   bool hasIsRead() => _isRead != null;
 
-  // "created_at" field.
+  // "createdAt" field.
   DateTime? _createdAt;
   DateTime? get createdAt => _createdAt;
   bool hasCreatedAt() => _createdAt != null;
@@ -62,12 +62,12 @@ class ChatsModel extends FirestoreRecord {
   String get email => _email ?? '';
   bool hasEmail() => _email != null;
 
-  // "display_name" field.
+  // "displayName" field.
   String? _displayName;
   String get displayName => _displayName ?? '';
   bool hasDisplayName() => _displayName != null;
 
-  // "photo_url" field.
+  // "photoUrl" field.
   String? _photoUrl;
   String get photoUrl => _photoUrl ?? '';
   bool hasPhotoUrl() => _photoUrl != null;
@@ -77,12 +77,12 @@ class ChatsModel extends FirestoreRecord {
   String get uid => _uid ?? '';
   bool hasUid() => _uid != null;
 
-  // "created_time" field.
+  // "createdTime" field.
   DateTime? _createdTime;
   DateTime? get createdTime => _createdTime;
   bool hasCreatedTime() => _createdTime != null;
 
-  // "phone_number" field.
+  // "phoneNumber" field.
   String? _phoneNumber;
   String get phoneNumber => _phoneNumber ?? '';
   bool hasPhoneNumber() => _phoneNumber != null;
@@ -98,24 +98,25 @@ class ChatsModel extends FirestoreRecord {
   }
 
   void _initializeFields() {
-    _chatId = snapshotData['chat_id'] as String?;
-    _chatType = snapshotData['chat_type'] as String?;
+    // Support both snake_case (legacy) and camelCase (new) field names
+    _chatId = (snapshotData['chatId'] ?? snapshotData['chat_id']) as String?;
+    _chatType = (snapshotData['chatType'] ?? snapshotData['chat_type']) as String?;
     _participantIds = getDataList(snapshotData['participantIds']);
-    // 이전 필드명 호환성 유지
+    // 이전 필드명 호환성 유지 (오타 수정)
     if (_participantIds == null || _participantIds!.isEmpty) {
       _participantIds = getDataList(snapshotData['participantlds']);
     }
-    _chatName = snapshotData['chat_name'] as String?;
-    _lastMessageContent = snapshotData['last_message_content'] as String?;
-    _lastMessageAt = snapshotData['last_message_at'] as DateTime?;
-    _isRead = snapshotData['is_read'] as bool?;
-    _createdAt = snapshotData['created_at'] as DateTime?;
+    _chatName = (snapshotData['chatName'] ?? snapshotData['chat_name']) as String?;
+    _lastMessageContent = (snapshotData['lastMessageContent'] ?? snapshotData['last_message_content']) as String?;
+    _lastMessageAt = (snapshotData['lastMessageAt'] ?? snapshotData['last_message_at']) as DateTime?;
+    _isRead = (snapshotData['isRead'] ?? snapshotData['is_read']) as bool?;
+    _createdAt = (snapshotData['createdAt'] ?? snapshotData['created_at']) as DateTime?;
     _email = snapshotData['email'] as String?;
-    _displayName = snapshotData['display_name'] as String?;
-    _photoUrl = snapshotData['photo_url'] as String?;
+    _displayName = (snapshotData['displayName'] ?? snapshotData['display_name']) as String?;
+    _photoUrl = (snapshotData['photoUrl'] ?? snapshotData['photo_url']) as String?;
     _uid = snapshotData['uid'] as String?;
-    _createdTime = snapshotData['created_time'] as DateTime?;
-    _phoneNumber = snapshotData['phone_number'] as String?;
+    _createdTime = (snapshotData['createdTime'] ?? snapshotData['created_time']) as DateTime?;
+    _phoneNumber = (snapshotData['phoneNumber'] ?? snapshotData['phone_number']) as String?;
     
     // Parse lastReadTimestamps map
     final lastReadData = snapshotData['lastReadTimestamps'] as Map<String, dynamic>?;
@@ -182,19 +183,19 @@ Map<String, dynamic> createChatsModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'chat_id': chatId,
-      'chat_type': chatType,
-      'chat_name': chatName,
-      'last_message_content': lastMessageContent,
-      'last_message_at': lastMessageAt,
-      'is_read': isRead,
-      'created_at': createdAt,
+      'chatId': chatId,
+      'chatType': chatType,
+      'chatName': chatName,
+      'lastMessageContent': lastMessageContent,
+      'lastMessageAt': lastMessageAt,
+      'isRead': isRead,
+      'createdAt': createdAt,
       'email': email,
-      'display_name': displayName,
-      'photo_url': photoUrl,
+      'displayName': displayName,
+      'photoUrl': photoUrl,
       'uid': uid,
-      'created_time': createdTime,
-      'phone_number': phoneNumber,
+      'createdTime': createdTime,
+      'phoneNumber': phoneNumber,
     }.withoutNulls,
   );
 

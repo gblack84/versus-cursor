@@ -231,7 +231,7 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
     
     Query query = widget.chatDocument!.reference
         .collection('messages')
-        .orderBy('time_stamp', descending: false);
+        .orderBy('timeStamp', descending: false);
     
     // 커서 기반 필터링 - 초기 로드된 메시지 이후만 스트리밍
     // 문서가 있으면 문서 기반, 없으면 타임스탬프 기반 커서 사용
@@ -240,7 +240,7 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
       debugPrint('[Chat Detail Stream] Starting stream after document: ${_lastLoadedDocument!.id}');
     } else if (_initService.lastLoadedTimestamp != null) {
       // 캐시에서 로드한 경우 타임스탬프 기반 커서 사용
-      query = query.where('time_stamp', isGreaterThan: Timestamp.fromDate(_initService.lastLoadedTimestamp!));
+      query = query.where('timeStamp', isGreaterThan: Timestamp.fromDate(_initService.lastLoadedTimestamp!));
       debugPrint('[Chat Detail Stream] Starting stream after timestamp: ${_initService.lastLoadedTimestamp}');
       // 타임스탬프 커서 사용 시 초기 스냅샷 스킵하지 않음 (새 메시지만 오기 때문)
       _skipInitialSnapshot = false;
@@ -395,13 +395,13 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
       // Load older messages
       Query query = widget.chatDocument!.reference
           .collection('messages')
-          .orderBy('time_stamp', descending: false)
+          .orderBy('timeStamp', descending: false)
           .limit(_messagePageSize);
       
       if (_anchorDocument != null) {
         // Load messages before the anchor document
         query = query.endBefore([
-          (_anchorDocument!.data() as Map<String, dynamic>)['time_stamp']
+          (_anchorDocument!.data() as Map<String, dynamic>)['timeStamp']
         ]);
       }
       

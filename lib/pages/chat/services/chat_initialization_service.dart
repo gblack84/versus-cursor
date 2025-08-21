@@ -83,7 +83,7 @@ class ChatInitializationService {
           currentUserRecord = UsersModel.fromSnapshot(userDoc);
           
           // 다중 fallback으로 표시 이름 결정
-          final displayName = userData['display_name'] ?? 
+          final displayName = userData['displayName'] ?? 
                              userData['handle'] ?? 
                              userData['email']?.split('@')[0] ?? 
                              '사용자';
@@ -91,7 +91,7 @@ class ChatInitializationService {
           currentUser = core.User(
             id: currentUserUid,
             name: displayName.toString().isNotEmpty ? displayName.toString() : '사용자',
-            imageSource: userData['photo_url'],
+            imageSource: userData['photoUrl'],
           );
           
           _userCacheService.updateUser(currentUser!);
@@ -157,7 +157,7 @@ class ChatInitializationService {
     // 캐시 미스 시 Firestore에서 로드
     Query<Map<String, dynamic>> initialQuery = chatDocument.reference
         .collection('messages')
-        .orderBy('time_stamp', descending: false);
+        .orderBy('timeStamp', descending: false);
     
     if (kDebugMode) {
       debugPrint('[Chat Init] Loading initial messages from Firestore...');
@@ -191,8 +191,8 @@ class ChatInitializationService {
     // 마지막 메시지 타임스탬프 저장
     final lastDoc = initialSnapshot.docs.last;
     final lastTimestamp = lastDoc.data();
-    if (lastTimestamp['time_stamp'] != null) {
-      lastLoadedTimestamp = (lastTimestamp['time_stamp'] as Timestamp).toDate();
+    if (lastTimestamp['timeStamp'] != null) {
+      lastLoadedTimestamp = (lastTimestamp['timeStamp'] as Timestamp).toDate();
       if (kDebugMode) {
         debugPrint('[Chat Init] Last loaded timestamp: $lastLoadedTimestamp');
       }

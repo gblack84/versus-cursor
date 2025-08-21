@@ -41,10 +41,10 @@ class NotificationService {
     
     _notificationListener = FirebaseFirestore.instance
         .collection('notifications')
-        .where('user_id', isEqualTo: userId)
+        .where('userId', isEqualTo: userId)
         .where('type', isEqualTo: 'voting_request')
         .where('read', isEqualTo: false)
-        .where('expiry_time', isGreaterThan: Timestamp.now())
+        .where('expiryTime', isGreaterThan: Timestamp.now())
         .orderBy('expiry_time', descending: false) // 만료 임박한 것부터
         .orderBy('created_at', descending: true)   // 최신 것부터
         .snapshots()
@@ -108,10 +108,10 @@ class NotificationService {
   Stream<int> getUnreadNotificationCount(String userId) {
     return FirebaseFirestore.instance
         .collection('notifications')
-        .where('user_id', isEqualTo: userId)
+        .where('userId', isEqualTo: userId)
         .where('type', isEqualTo: 'voting_request')
         .where('read', isEqualTo: false)
-        .where('expiry_time', isGreaterThan: Timestamp.now())
+        .where('expiryTime', isGreaterThan: Timestamp.now())
         .orderBy('expiry_time', descending: false)
         .orderBy('created_at', descending: true)
         .snapshots()
@@ -226,8 +226,8 @@ class NotificationService {
           .collection('chats')
           .doc(aiChatId)
           .collection('messages')
-          .where('vote_post_id', isEqualTo: postId)
-          .where('message_type', isEqualTo: 'vote_request')
+          .where('votePostId', isEqualTo: postId)
+          .where('messageType', isEqualTo: 'vote_request')
           .get();
       
       if (messagesSnapshot.docs.isEmpty) {

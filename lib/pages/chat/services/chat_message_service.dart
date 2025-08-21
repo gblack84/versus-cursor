@@ -23,10 +23,10 @@ class ChatMessageService {
     try {
       final data = doc.data() as Map<String, dynamic>;
       final messageId = doc.id;
-      final senderId = data['sender_id'] ?? data['user_id'] ?? '';
+      final senderId = data['senderId'] ?? data['userId'] ?? '';
       final content = data['content'] ?? data['text'] ?? '';
-      final timestamp = data['time_stamp'] as Timestamp?;
-      final messageType = data['message_type'] ?? 'text';
+      final timestamp = data['timeStamp'] as Timestamp?;
+      final messageType = data['messageType'] ?? 'text';
 
       // 필수 데이터가 없으면 null 반환
       if (senderId.isEmpty || timestamp == null) {
@@ -81,22 +81,22 @@ class ChatMessageService {
       createdAt: createdAt,
       metadata: {
         'type': messageType,
-        'postId': data['post_id'],
-        'title': data['vote_title'],
-        'description': data['vote_description'],
-        'optionAText': data['vote_option_a_text'],
-        'optionBText': data['vote_option_b_text'],
-        'optionAImage': data['vote_option_a_image'],
-        'optionBImage': data['vote_option_b_image'],
-        'optionAImages': data['vote_option_a_images'],
-        'optionBImages': data['vote_option_b_images'],
-        'aspectRatioA': data['vote_option_a_aspect_ratio'],
-        'aspectRatioB': data['vote_option_b_aspect_ratio'],
-        'cardStatus': data['card_status'],
-        'voteEndTime': data['vote_end_time'],
-        'userVotes': data['user_votes'],
-        'voteResults': data['vote_results'],
-        'receiverId': data['receiver_id'],
+        'postId': data['postId'],
+        'title': data['voteTitle'],
+        'description': data['voteDescription'],
+        'optionAText': data['voteOptionAText'],
+        'optionBText': data['voteOptionBText'],
+        'optionAImage': data['voteOptionAImage'],
+        'optionBImage': data['voteOptionBImage'],
+        'optionAImages': data['voteOptionAImages'],
+        'optionBImages': data['voteOptionBImages'],
+        'aspectRatioA': data['voteOptionAAspectRatio'],
+        'aspectRatioB': data['voteOptionBAspectRatio'],
+        'cardStatus': data['cardStatus'],
+        'voteEndTime': data['voteEndTime'],
+        'userVotes': data['userVotes'],
+        'voteResults': data['voteResults'],
+        'receiverId': data['receiverId'],
       },
     );
   }

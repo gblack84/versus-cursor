@@ -56,7 +56,7 @@ class _ChatListWidgetState extends State<ChatListWidget> {
           stream: queryChatsModel(
             queryBuilder: (chatsRecord) => chatsRecord
                 .where('participantIds', arrayContains: currentUserUid)
-                .orderBy('last_message_at', descending: true),
+                .orderBy('lastMessageAt', descending: true),
           ),
           builder: (context, snapshot) {
             // 로딩 중

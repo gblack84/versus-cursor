@@ -132,8 +132,8 @@ class VoteStatusService {
       final messagesQuery = await FirebaseFirestore.instance
           .collection('chats').doc(aiChatId)
           .collection('messages')
-          .where('vote_post_id', isEqualTo: postId)
-          .where('message_type', isEqualTo: 'vote_request')
+          .where('votePostId', isEqualTo: postId)
+          .where('messageType', isEqualTo: 'vote_request')
           .limit(1)
           .get();
       

@@ -666,38 +666,18 @@ lib/backend/schema/transactions_model.dart:113:      'creates_at': createsAt,
 lib/backend/schema/notifications_model.dart:6:import '/backend/schema/util/firestore_util.dart';
 lib/backend/schema/notifications_model.dart:7:import '/backend/schema/util/schema_util.dart';
 lib/backend/schema/notifications_model.dart:10:import '/core/app_utils.dart';
-lib/backend/schema/notifications_model.dart:20:  // "notification_id" field.
-lib/backend/schema/notifications_model.dart:25:  // "user_id" field.
-lib/backend/schema/notifications_model.dart:35:  // "source_id" field.
-lib/backend/schema/notifications_model.dart:45:  // "created_at" field.
-lib/backend/schema/notifications_model.dart:55:  // "target_audience" field.
-lib/backend/schema/notifications_model.dart:60:  // "expiry_time" field.
-lib/backend/schema/notifications_model.dart:70:  // "interaction_type" field.
-lib/backend/schema/notifications_model.dart:81:  // "completed_at" field.
-lib/backend/schema/notifications_model.dart:96:  // "image_url" field.
-lib/backend/schema/notifications_model.dart:101:  // "action_url" field.
-lib/backend/schema/notifications_model.dart:111:  // "source_type" field.
-lib/backend/schema/notifications_model.dart:122:    _notificationId = snapshotData['notification_id'] as String?;
-lib/backend/schema/notifications_model.dart:123:    _userId = snapshotData['user_id'] as String?;
-lib/backend/schema/notifications_model.dart:125:    _sourceId = snapshotData['source_id'] as String?;
-lib/backend/schema/notifications_model.dart:127:    _createdAt = snapshotData['created_at'] as DateTime?;
-lib/backend/schema/notifications_model.dart:129:    _targetAudience = getDataList(snapshotData['target_audience']);
-lib/backend/schema/notifications_model.dart:130:    _expiryTime = snapshotData['expiry_time'] as DateTime?;
-lib/backend/schema/notifications_model.dart:132:    _interactionType = snapshotData['interaction_type'] as String?;
-lib/backend/schema/notifications_model.dart:136:    _completedAt = snapshotData['completedAt'] as DateTime? ?? snapshotData['completed_at'] as DateTime?;
-lib/backend/schema/notifications_model.dart:139:    _imageUrl = snapshotData['imageUrl'] as String? ?? snapshotData['image_url'] as String?;
-lib/backend/schema/notifications_model.dart:140:    _actionUrl = snapshotData['actionUrl'] as String? ?? snapshotData['action_url'] as String?;
-lib/backend/schema/notifications_model.dart:142:    _sourceType = snapshotData['sourceType'] as String? ?? snapshotData['source_type'] as String?;
-lib/backend/schema/notifications_model.dart:214:      'notification_id': notificationId,
-lib/backend/schema/notifications_model.dart:215:      'user_id': userId,
-lib/backend/schema/notifications_model.dart:217:      'source_id': sourceId,
-lib/backend/schema/notifications_model.dart:219:      'created_at': createdAt,
-lib/backend/schema/notifications_model.dart:221:      'expiry_time': expiryTime,
-lib/backend/schema/notifications_model.dart:223:      'interaction_type': interactionType,
-lib/backend/schema/notifications_model.dart:225:      'completed_at': completedAt,
-lib/backend/schema/notifications_model.dart:228:      'image_url': imageUrl,
-lib/backend/schema/notifications_model.dart:229:      'action_url': actionUrl,
-lib/backend/schema/notifications_model.dart:231:      'source_type': sourceType,
+lib/backend/schema/notifications_model.dart:122:    // Support both snake_case (legacy) and camelCase (new) field names
+lib/backend/schema/notifications_model.dart:123:    _notificationId = (snapshotData['notificationId'] ?? snapshotData['notification_id']) as String?;
+lib/backend/schema/notifications_model.dart:124:    _userId = (snapshotData['userId'] ?? snapshotData['user_id']) as String?;
+lib/backend/schema/notifications_model.dart:126:    _sourceId = (snapshotData['sourceId'] ?? snapshotData['source_id']) as String?;
+lib/backend/schema/notifications_model.dart:128:    _createdAt = (snapshotData['createdAt'] ?? snapshotData['created_at']) as DateTime?;
+lib/backend/schema/notifications_model.dart:130:    _targetAudience = getDataList(snapshotData['targetAudience'] ?? snapshotData['target_audience']);
+lib/backend/schema/notifications_model.dart:131:    _expiryTime = (snapshotData['expiryTime'] ?? snapshotData['expiry_time']) as DateTime?;
+lib/backend/schema/notifications_model.dart:133:    _interactionType = (snapshotData['interactionType'] ?? snapshotData['interaction_type']) as String?;
+lib/backend/schema/notifications_model.dart:137:    _completedAt = (snapshotData['completedAt'] ?? snapshotData['completed_at']) as DateTime?;
+lib/backend/schema/notifications_model.dart:140:    _imageUrl = (snapshotData['imageUrl'] ?? snapshotData['image_url']) as String?;
+lib/backend/schema/notifications_model.dart:141:    _actionUrl = (snapshotData['actionUrl'] ?? snapshotData['action_url']) as String?;
+lib/backend/schema/notifications_model.dart:143:    _sourceType = (snapshotData['sourceType'] ?? snapshotData['source_type']) as String?;
 lib/backend/schema/rankings_model.dart:5:import '/backend/schema/util/firestore_util.dart';
 lib/backend/schema/rankings_model.dart:8:import '/core/app_utils.dart';
 lib/backend/schema/rankings_model.dart:18:  // "raking_id" field.
@@ -770,74 +750,21 @@ lib/backend/schema/posts_model.dart:154:  // "display_name" field.
 lib/backend/schema/posts_model.dart:159:  // "photo_url" field.
 lib/backend/schema/posts_model.dart:169:  // "created_time" field.
 lib/backend/schema/posts_model.dart:174:  // "phone_number" field.
-lib/backend/schema/posts_model.dart:220:  // "vote_start_time" field.
-lib/backend/schema/posts_model.dart:225:  // "vote_end_time" field.
 lib/backend/schema/posts_model.dart:230:  // "vote_status" field.
 lib/backend/schema/posts_model.dart:235:  // "vote_completed" field.
 lib/backend/schema/posts_model.dart:240:  // "votes_a" field.
 lib/backend/schema/posts_model.dart:245:  // "votes_b" field.
-lib/backend/schema/posts_model.dart:250:  // "voted_user_ids_a" field.
-lib/backend/schema/posts_model.dart:255:  // "voted_user_ids_b" field.
 lib/backend/schema/posts_model.dart:260:  // "total_votes" field.
 lib/backend/schema/posts_model.dart:265:  // "vote_timeout" field.
-lib/backend/schema/posts_model.dart:270:  // "vote_completed_at" field.
-lib/backend/schema/posts_model.dart:275:  // "vote_cancelled_at" field.
-lib/backend/schema/posts_model.dart:280:  // "vote_cancelled_reason" field.
-lib/backend/schema/posts_model.dart:295:  // "display_votes_a" field.
-lib/backend/schema/posts_model.dart:300:  // "display_votes_b" field.
-lib/backend/schema/posts_model.dart:305:  // "display_percent_a" field.
-lib/backend/schema/posts_model.dart:310:  // "display_percent_b" field.
-lib/backend/schema/posts_model.dart:315:  // "actual_votes_a" field.
-lib/backend/schema/posts_model.dart:320:  // "actual_votes_b" field.
-lib/backend/schema/posts_model.dart:325:  // "actual_total_votes" field.
 lib/backend/schema/posts_model.dart:350:    _voteCompleted = snapshotData['vote_completed'] as bool? ?? snapshotData['voteCompleted'] as bool?;
 lib/backend/schema/posts_model.dart:360:    _displayName = snapshotData['display_name'] as String?;
 lib/backend/schema/posts_model.dart:361:    _photoUrl = snapshotData['photo_url'] as String?;
 lib/backend/schema/posts_model.dart:363:    _createdTime = snapshotData['created_time'] as DateTime?;
 lib/backend/schema/posts_model.dart:364:    _phoneNumber = snapshotData['phone_number'] as String?;
-lib/backend/schema/posts_model.dart:375:    _voteStartTime = snapshotData['vote_start_time'] as DateTime? ?? snapshotData['voteStartTime'] as DateTime?;
-lib/backend/schema/posts_model.dart:376:    _voteEndTime = snapshotData['vote_end_time'] as DateTime? ?? snapshotData['voteEndTime'] as DateTime?;
-lib/backend/schema/posts_model.dart:377:    _voteStatus = snapshotData['vote_status'] as String? ?? snapshotData['voteStatus'] as String?;
-lib/backend/schema/posts_model.dart:378:    _votesA = castToType<int>(snapshotData['votes_a'] ?? snapshotData['vote_count_a']);
-lib/backend/schema/posts_model.dart:379:    _votesB = castToType<int>(snapshotData['votes_b'] ?? snapshotData['vote_count_b']);
-lib/backend/schema/posts_model.dart:380:    _votedUserIdsA = getDataList(snapshotData['voted_user_ids_a'] ?? snapshotData['votedUserIDsA']);
-lib/backend/schema/posts_model.dart:381:    _votedUserIdsB = getDataList(snapshotData['voted_user_ids_b'] ?? snapshotData['votedUserIDsB']);
-lib/backend/schema/posts_model.dart:382:    _totalVotes = castToType<int>(snapshotData['total_votes']);
-lib/backend/schema/posts_model.dart:383:    _voteTimeout = snapshotData['vote_timeout'] as bool?;
-lib/backend/schema/posts_model.dart:384:    _voteCompletedAt = snapshotData['vote_completed_at'] as DateTime?;
-lib/backend/schema/posts_model.dart:385:    _voteCancelledAt = snapshotData['vote_cancelled_at'] as DateTime?;
-lib/backend/schema/posts_model.dart:386:    _voteCancelledReason = snapshotData['vote_cancelled_reason'] as String?;
-lib/backend/schema/posts_model.dart:391:    _displayVotesA = castToType<int>(snapshotData['display_votes_a']);
-lib/backend/schema/posts_model.dart:392:    _displayVotesB = castToType<int>(snapshotData['display_votes_b']);
-lib/backend/schema/posts_model.dart:393:    _displayPercentA = castToType<int>(snapshotData['display_percent_a']);
-lib/backend/schema/posts_model.dart:394:    _displayPercentB = castToType<int>(snapshotData['display_percent_b']);
-lib/backend/schema/posts_model.dart:395:    _actualVotesA = castToType<int>(snapshotData['actual_votes_a']);
-lib/backend/schema/posts_model.dart:396:    _actualVotesB = castToType<int>(snapshotData['actual_votes_b']);
-lib/backend/schema/posts_model.dart:397:    _actualTotalVotes = castToType<int>(snapshotData['actual_total_votes']);
 lib/backend/schema/posts_model.dart:520:      'display_name': displayName,
 lib/backend/schema/posts_model.dart:521:      'photo_url': photoUrl,
 lib/backend/schema/posts_model.dart:523:      'created_time': createdTime,
 lib/backend/schema/posts_model.dart:524:      'phone_number': phoneNumber,
-lib/backend/schema/posts_model.dart:533:      'vote_start_time': voteStartTime,
-lib/backend/schema/posts_model.dart:534:      'vote_end_time': voteEndTime,
-lib/backend/schema/posts_model.dart:535:      'vote_status': voteStatus,
-lib/backend/schema/posts_model.dart:536:      'vote_completed': voteCompleted,
-lib/backend/schema/posts_model.dart:537:      'votes_a': votesA,
-lib/backend/schema/posts_model.dart:538:      'votes_b': votesB,
-lib/backend/schema/posts_model.dart:539:      'voted_user_ids_a': votedUserIdsA,
-lib/backend/schema/posts_model.dart:540:      'voted_user_ids_b': votedUserIdsB,
-lib/backend/schema/posts_model.dart:541:      'total_votes': totalVotes,
-lib/backend/schema/posts_model.dart:542:      'vote_timeout': voteTimeout,
-lib/backend/schema/posts_model.dart:543:      'vote_completed_at': voteCompletedAt,
-lib/backend/schema/posts_model.dart:544:      'vote_cancelled_at': voteCancelledAt,
-lib/backend/schema/posts_model.dart:545:      'vote_cancelled_reason': voteCancelledReason,
-lib/backend/schema/posts_model.dart:548:      'display_votes_a': displayVotesA,
-lib/backend/schema/posts_model.dart:549:      'display_votes_b': displayVotesB,
-lib/backend/schema/posts_model.dart:550:      'display_percent_a': displayPercentA,
-lib/backend/schema/posts_model.dart:551:      'display_percent_b': displayPercentB,
-lib/backend/schema/posts_model.dart:552:      'actual_votes_a': actualVotesA,
-lib/backend/schema/posts_model.dart:553:      'actual_votes_b': actualVotesB,
-lib/backend/schema/posts_model.dart:554:      'actual_total_votes': actualTotalVotes,
 lib/backend/schema/vote_expansion_requests_model.dart:5:import '/backend/schema/util/firestore_util.dart';
 lib/backend/schema/vote_expansion_requests_model.dart:8:import '/core/app_utils.dart';
 lib/backend/schema/client_model.dart:5:import '/backend/schema/util/firestore_util.dart';
@@ -946,12 +873,6 @@ lib/backend/schema/poll_details_model.dart:142:      'option_2_media_type': opti
 lib/backend/schema/messages_model.dart:5:import '/backend/schema/util/firestore_util.dart';
 lib/backend/schema/messages_model.dart:6:import '/backend/schema/util/schema_util.dart';
 lib/backend/schema/messages_model.dart:9:import '/core/app_utils.dart';
-lib/backend/schema/messages_model.dart:19:  // "message_id" field.
-lib/backend/schema/messages_model.dart:24:  // "sender_id" field.
-lib/backend/schema/messages_model.dart:34:  // "attachment_url" field.
-lib/backend/schema/messages_model.dart:39:  // "attachment_type" field.
-lib/backend/schema/messages_model.dart:44:  // "time_stamp" field.
-lib/backend/schema/messages_model.dart:49:  // "is_read" field.
 lib/backend/schema/messages_model.dart:54:  // "media_type" field.
 lib/backend/schema/messages_model.dart:59:  // "image_url" field.
 lib/backend/schema/messages_model.dart:64:  // "video_url" field.
@@ -962,183 +883,87 @@ lib/backend/schema/messages_model.dart:84:  // "media_height" field.
 lib/backend/schema/messages_model.dart:89:  // "delivered_at" field - When message was delivered to server
 lib/backend/schema/messages_model.dart:94:  // "seen_at" field - When message was seen by recipient
 lib/backend/schema/messages_model.dart:99:  // "message_type" field.
-lib/backend/schema/messages_model.dart:105:  // "vote_post_id" field.
-lib/backend/schema/messages_model.dart:110:  // "vote_title" field.
-lib/backend/schema/messages_model.dart:115:  // "vote_description" field.
-lib/backend/schema/messages_model.dart:120:  // "vote_option_a_text" field.
-lib/backend/schema/messages_model.dart:125:  // "vote_option_b_text" field.
-lib/backend/schema/messages_model.dart:130:  // "vote_option_a_image" field.
-lib/backend/schema/messages_model.dart:135:  // "vote_option_b_image" field.
-lib/backend/schema/messages_model.dart:140:  // "vote_status" field.
-lib/backend/schema/messages_model.dart:146:  // "receiver_id" field.
-lib/backend/schema/messages_model.dart:151:  // "vote_option_a_images" field.
-lib/backend/schema/messages_model.dart:156:  // "vote_option_b_images" field.
-lib/backend/schema/messages_model.dart:161:  // "card_status" field.
-lib/backend/schema/messages_model.dart:166:  // "vote_end_time" field.
-lib/backend/schema/messages_model.dart:171:  // "user_voted" field.
-lib/backend/schema/messages_model.dart:178:  // "vote_choice" field.
-lib/backend/schema/messages_model.dart:185:  // "vote_results" field.
-lib/backend/schema/messages_model.dart:190:  // "vote_participated_at" field.
-lib/backend/schema/messages_model.dart:197:  // "user_votes" field - 개별 사용자의 투표 정보를 추적하는 핵심 필드
-lib/backend/schema/messages_model.dart:224:    return vote?['voted_at'] as DateTime?;
-lib/backend/schema/messages_model.dart:244:  // \"vote_aspect_ratio_a\" field.
-lib/backend/schema/messages_model.dart:249:  // \"vote_aspect_ratio_b\" field.
-lib/backend/schema/messages_model.dart:254:  // \"vote_results_a\" field.
-lib/backend/schema/messages_model.dart:259:  // \"vote_results_b\" field.
-lib/backend/schema/messages_model.dart:264:  // \"vote_percent_a\" field.
-lib/backend/schema/messages_model.dart:269:  // \"vote_percent_b\" field.
-lib/backend/schema/messages_model.dart:284:      'message_id': _messageId,
-lib/backend/schema/messages_model.dart:285:      'sender_id': _senderId,
-lib/backend/schema/messages_model.dart:287:      'attachment_url': _attachmentUrl,
-lib/backend/schema/messages_model.dart:288:      'attachment_type': _attachmentType,
-lib/backend/schema/messages_model.dart:289:      'time_stamp': _timeStamp?.millisecondsSinceEpoch,
-lib/backend/schema/messages_model.dart:290:      'is_read': _isRead,
-lib/backend/schema/messages_model.dart:291:      'media_type': _mediaType,
-lib/backend/schema/messages_model.dart:292:      'image_url': _imageUrl,
-lib/backend/schema/messages_model.dart:293:      'video_url': _videoUrl,
-lib/backend/schema/messages_model.dart:294:      'thumbnail_url': _thumbnailUrl,
-lib/backend/schema/messages_model.dart:295:      'media_size': _mediaSize,
-lib/backend/schema/messages_model.dart:296:      'media_width': _mediaWidth,
-lib/backend/schema/messages_model.dart:297:      'media_height': _mediaHeight,
-lib/backend/schema/messages_model.dart:298:      'delivered_at': _deliveredAt?.millisecondsSinceEpoch,
-lib/backend/schema/messages_model.dart:299:      'seen_at': _seenAt?.millisecondsSinceEpoch,
-lib/backend/schema/messages_model.dart:300:      'message_type': _messageType,
-lib/backend/schema/messages_model.dart:301:      'receiver_id': _receiverId,
-lib/backend/schema/messages_model.dart:302:      'vote_post_id': _votePostId,
-lib/backend/schema/messages_model.dart:303:      'vote_title': _voteTitle,
-lib/backend/schema/messages_model.dart:304:      'vote_description': _voteDescription,
-lib/backend/schema/messages_model.dart:305:      'vote_option_a_text': _voteOptionAText,
-lib/backend/schema/messages_model.dart:306:      'vote_option_b_text': _voteOptionBText,
-lib/backend/schema/messages_model.dart:307:      'vote_option_a_image': _voteOptionAImage,
-lib/backend/schema/messages_model.dart:308:      'vote_option_b_image': _voteOptionBImage,
-lib/backend/schema/messages_model.dart:309:      'vote_option_a_images': _voteOptionAImages,
-lib/backend/schema/messages_model.dart:310:      'vote_option_b_images': _voteOptionBImages,
-lib/backend/schema/messages_model.dart:311:      'vote_status': _voteStatus,
-lib/backend/schema/messages_model.dart:312:      'vote_end_time': _voteEndTime?.millisecondsSinceEpoch,
-lib/backend/schema/messages_model.dart:313:      'card_status': _cardStatus,
-lib/backend/schema/messages_model.dart:314:      'vote_results': _voteResults,
-lib/backend/schema/messages_model.dart:315:      'user_votes': _userVotes,
-lib/backend/schema/messages_model.dart:316:      'vote_aspect_ratio_a': _voteAspectRatioA,
-lib/backend/schema/messages_model.dart:317:      'vote_aspect_ratio_b': _voteAspectRatioB,
-lib/backend/schema/messages_model.dart:318:      'vote_results_a': _voteResultsA,
-lib/backend/schema/messages_model.dart:319:      'vote_results_b': _voteResultsB,
-lib/backend/schema/messages_model.dart:320:      'vote_percent_a': _votePercentA,
-lib/backend/schema/messages_model.dart:321:      'vote_percent_b': _votePercentB,
-lib/backend/schema/messages_model.dart:358:    model._messageId = json['message_id'] as String?;
-lib/backend/schema/messages_model.dart:359:    model._senderId = json['sender_id'] as String?;
-lib/backend/schema/messages_model.dart:361:    model._attachmentUrl = json['attachment_url'] as String?;
-lib/backend/schema/messages_model.dart:362:    model._attachmentType = json['attachment_type'] as String?;
-lib/backend/schema/messages_model.dart:363:    model._timeStamp = parseDateTime(json['time_stamp']);
-lib/backend/schema/messages_model.dart:364:    model._isRead = json['is_read'] as bool?;
-lib/backend/schema/messages_model.dart:365:    model._mediaType = json['media_type'] as String?;
-lib/backend/schema/messages_model.dart:366:    model._imageUrl = json['image_url'] as String?;
-lib/backend/schema/messages_model.dart:367:    model._videoUrl = json['video_url'] as String?;
-lib/backend/schema/messages_model.dart:368:    model._thumbnailUrl = json['thumbnail_url'] as String?;
-lib/backend/schema/messages_model.dart:369:    model._mediaSize = json['media_size'] as int?;
-lib/backend/schema/messages_model.dart:370:    model._mediaWidth = json['media_width'] as double?;
-lib/backend/schema/messages_model.dart:371:    model._mediaHeight = json['media_height'] as double?;
-lib/backend/schema/messages_model.dart:372:    model._deliveredAt = parseDateTime(json['delivered_at']);
-lib/backend/schema/messages_model.dart:373:    model._seenAt = parseDateTime(json['seen_at']);
-lib/backend/schema/messages_model.dart:374:    model._messageType = json['message_type'] as String?;
-lib/backend/schema/messages_model.dart:375:    model._receiverId = json['receiver_id'] as String?;
-lib/backend/schema/messages_model.dart:376:    model._votePostId = json['vote_post_id'] as String?;
-lib/backend/schema/messages_model.dart:377:    model._voteTitle = json['vote_title'] as String?;
-lib/backend/schema/messages_model.dart:378:    model._voteDescription = json['vote_description'] as String?;
-lib/backend/schema/messages_model.dart:379:    model._voteOptionAText = json['vote_option_a_text'] as String?;
-lib/backend/schema/messages_model.dart:380:    model._voteOptionBText = json['vote_option_b_text'] as String?;
-lib/backend/schema/messages_model.dart:381:    model._voteOptionAImage = json['vote_option_a_image'] as String?;
-lib/backend/schema/messages_model.dart:382:    model._voteOptionBImage = json['vote_option_b_image'] as String?;
-lib/backend/schema/messages_model.dart:383:    model._voteOptionAImages = (json['vote_option_a_images'] as List<dynamic>?)
-lib/backend/schema/messages_model.dart:386:    model._voteOptionBImages = (json['vote_option_b_images'] as List<dynamic>?)
-lib/backend/schema/messages_model.dart:389:    model._voteStatus = json['vote_status'] as String?;
-lib/backend/schema/messages_model.dart:390:    model._voteEndTime = parseDateTime(json['vote_end_time']);
-lib/backend/schema/messages_model.dart:391:    model._cardStatus = json['card_status'] as String?;
-lib/backend/schema/messages_model.dart:392:    model._voteResults = json['vote_results'] as Map<String, dynamic>?;
-lib/backend/schema/messages_model.dart:393:    model._userVotes = json['user_votes'] as Map<String, dynamic>?;
-lib/backend/schema/messages_model.dart:394:    model._voteAspectRatioA = json['vote_aspect_ratio_a'] as double?;
-lib/backend/schema/messages_model.dart:395:    model._voteAspectRatioB = json['vote_aspect_ratio_b'] as double?;
-lib/backend/schema/messages_model.dart:396:    model._voteResultsA = json['vote_results_a'] as int?;
-lib/backend/schema/messages_model.dart:397:    model._voteResultsB = json['vote_results_b'] as int?;
-lib/backend/schema/messages_model.dart:398:    model._votePercentA = json['vote_percent_a'] as double?;
-lib/backend/schema/messages_model.dart:399:    model._votePercentB = json['vote_percent_b'] as double?;
-lib/backend/schema/messages_model.dart:406:    _messageId = snapshotData['message_id'] as String?;
-lib/backend/schema/messages_model.dart:407:    _senderId = snapshotData['sender_id'] as String?;
-lib/backend/schema/messages_model.dart:409:    _attachmentUrl = snapshotData['attachment_url'] as String?;
-lib/backend/schema/messages_model.dart:410:    _attachmentType = snapshotData['attachment_type'] as String?;
-lib/backend/schema/messages_model.dart:411:    _timeStamp = snapshotData['time_stamp'] as DateTime?;
-lib/backend/schema/messages_model.dart:412:    _isRead = snapshotData['is_read'] as bool?;
-lib/backend/schema/messages_model.dart:415:    _mediaType = snapshotData['media_type'] as String?;
-lib/backend/schema/messages_model.dart:416:    _imageUrl = snapshotData['image_url'] as String?;
-lib/backend/schema/messages_model.dart:417:    _videoUrl = snapshotData['video_url'] as String?;
-lib/backend/schema/messages_model.dart:418:    _thumbnailUrl = snapshotData['thumbnail_url'] as String?;
-lib/backend/schema/messages_model.dart:419:    _mediaSize = castToType<int>(snapshotData['media_size']);
-lib/backend/schema/messages_model.dart:420:    _mediaWidth = castToType<double>(snapshotData['media_width']);
-lib/backend/schema/messages_model.dart:421:    _mediaHeight = castToType<double>(snapshotData['media_height']);
-lib/backend/schema/messages_model.dart:424:    _deliveredAt = snapshotData['delivered_at'] as DateTime?;
-lib/backend/schema/messages_model.dart:425:    _seenAt = snapshotData['seen_at'] as DateTime?;
-lib/backend/schema/messages_model.dart:428:    _messageType = snapshotData['message_type'] as String?;
-lib/backend/schema/messages_model.dart:431:    _votePostId = snapshotData['vote_post_id'] as String?;
-lib/backend/schema/messages_model.dart:432:    _voteTitle = snapshotData['vote_title'] as String?;
-lib/backend/schema/messages_model.dart:433:    _voteDescription = snapshotData['vote_description'] as String?;
-lib/backend/schema/messages_model.dart:434:    _voteOptionAText = snapshotData['vote_option_a_text'] as String?;
-lib/backend/schema/messages_model.dart:435:    _voteOptionBText = snapshotData['vote_option_b_text'] as String?;
-lib/backend/schema/messages_model.dart:436:    _voteOptionAImage = snapshotData['vote_option_a_image'] as String?;
-lib/backend/schema/messages_model.dart:437:    _voteOptionBImage = snapshotData['vote_option_b_image'] as String?;
-lib/backend/schema/messages_model.dart:438:    _voteStatus = snapshotData['vote_status'] as String?;
-lib/backend/schema/messages_model.dart:441:    _receiverId = snapshotData['receiver_id'] as String?;
-lib/backend/schema/messages_model.dart:442:    _voteOptionAImages = getDataList(snapshotData['vote_option_a_images']);
-lib/backend/schema/messages_model.dart:443:    _voteOptionBImages = getDataList(snapshotData['vote_option_b_images']);
-lib/backend/schema/messages_model.dart:444:    _cardStatus = snapshotData['card_status'] as String?;
-lib/backend/schema/messages_model.dart:445:    _voteEndTime = snapshotData['vote_end_time'] as DateTime?;
-lib/backend/schema/messages_model.dart:446:    // _userVoted = snapshotData['user_voted'] as bool?;  // deprecated - use user_votes instead
-lib/backend/schema/messages_model.dart:447:    // _voteChoice = snapshotData['vote_choice'] as String?;  // deprecated - use user_votes instead
-lib/backend/schema/messages_model.dart:448:    _voteResults = snapshotData['vote_results'] as Map<String, dynamic>?;
-lib/backend/schema/messages_model.dart:449:    // _voteParticipatedAt = snapshotData['vote_participated_at'] as DateTime?;  // deprecated - use user_votes instead
-lib/backend/schema/messages_model.dart:450:    _userVotes = snapshotData['user_votes'] as Map<String, dynamic>?;
-lib/backend/schema/messages_model.dart:453:    _voteAspectRatioA = castToType<double>(snapshotData['vote_aspect_ratio_a']);
-lib/backend/schema/messages_model.dart:454:    _voteAspectRatioB = castToType<double>(snapshotData['vote_aspect_ratio_b']);
-lib/backend/schema/messages_model.dart:455:    _voteResultsA = castToType<int>(snapshotData['vote_results_a']);
-lib/backend/schema/messages_model.dart:456:    _voteResultsB = castToType<int>(snapshotData['vote_results_b']);
-lib/backend/schema/messages_model.dart:457:    _votePercentA = castToType<double>(snapshotData['vote_percent_a']);
-lib/backend/schema/messages_model.dart:458:    _votePercentB = castToType<double>(snapshotData['vote_percent_b']);
-lib/backend/schema/messages_model.dart:546:      'message_id': messageId,
-lib/backend/schema/messages_model.dart:547:      'sender_id': senderId,
-lib/backend/schema/messages_model.dart:549:      'attachment_url': attachmentUrl,
-lib/backend/schema/messages_model.dart:550:      'attachment_type': attachmentType,
-lib/backend/schema/messages_model.dart:551:      'time_stamp': timeStamp,
-lib/backend/schema/messages_model.dart:552:      'is_read': isRead,
-lib/backend/schema/messages_model.dart:553:      'media_type': mediaType,
-lib/backend/schema/messages_model.dart:554:      'image_url': imageUrl,
-lib/backend/schema/messages_model.dart:555:      'video_url': videoUrl,
-lib/backend/schema/messages_model.dart:556:      'thumbnail_url': thumbnailUrl,
-lib/backend/schema/messages_model.dart:557:      'media_size': mediaSize,
-lib/backend/schema/messages_model.dart:558:      'media_width': mediaWidth,
-lib/backend/schema/messages_model.dart:559:      'media_height': mediaHeight,
-lib/backend/schema/messages_model.dart:560:      'message_type': messageType,
-lib/backend/schema/messages_model.dart:561:      'vote_post_id': votePostId,
-lib/backend/schema/messages_model.dart:562:      'vote_title': voteTitle,
-lib/backend/schema/messages_model.dart:563:      'vote_description': voteDescription,
-lib/backend/schema/messages_model.dart:564:      'vote_option_a_text': voteOptionAText,
-lib/backend/schema/messages_model.dart:565:      'vote_option_b_text': voteOptionBText,
-lib/backend/schema/messages_model.dart:566:      'vote_option_a_image': voteOptionAImage,
-lib/backend/schema/messages_model.dart:567:      'vote_option_b_image': voteOptionBImage,
-lib/backend/schema/messages_model.dart:568:      'vote_status': voteStatus,
-lib/backend/schema/messages_model.dart:569:      'receiver_id': receiverId,
-lib/backend/schema/messages_model.dart:570:      'vote_option_a_images': voteOptionAImages,
-lib/backend/schema/messages_model.dart:571:      'vote_option_b_images': voteOptionBImages,
-lib/backend/schema/messages_model.dart:572:      'card_status': cardStatus,
-lib/backend/schema/messages_model.dart:573:      'vote_end_time': voteEndTime,
-lib/backend/schema/messages_model.dart:574:      'user_voted': userVoted,
-lib/backend/schema/messages_model.dart:575:      'vote_choice': voteChoice,
-lib/backend/schema/messages_model.dart:576:      'vote_results': voteResults,
-lib/backend/schema/messages_model.dart:577:      'vote_participated_at': voteParticipatedAt,
-lib/backend/schema/messages_model.dart:578:      'user_votes': userVotes,
-lib/backend/schema/messages_model.dart:579:      'vote_aspect_ratio_a': voteAspectRatioA,
-lib/backend/schema/messages_model.dart:580:      'vote_aspect_ratio_b': voteAspectRatioB,
-lib/backend/schema/messages_model.dart:581:      'vote_results_a': voteResultsA,
-lib/backend/schema/messages_model.dart:582:      'vote_results_b': voteResultsB,
-lib/backend/schema/messages_model.dart:583:      'vote_percent_a': votePercentA,
-lib/backend/schema/messages_model.dart:584:      'vote_percent_b': votePercentB,
+lib/backend/schema/messages_model.dart:224:    // Support both snake_case and camelCase for backwards compatibility
+lib/backend/schema/messages_model.dart:225:    return (vote?['votedAt'] ?? vote?['voted_at']) as DateTime?;
+lib/backend/schema/messages_model.dart:358:    // Set all fields from JSON (supporting both snake_case and camelCase for backwards compatibility)
+lib/backend/schema/messages_model.dart:359:    model._messageId = (json['messageId'] ?? json['message_id']) as String?;
+lib/backend/schema/messages_model.dart:360:    model._senderId = (json['senderId'] ?? json['sender_id']) as String?;
+lib/backend/schema/messages_model.dart:362:    model._attachmentUrl = (json['attachmentUrl'] ?? json['attachment_url']) as String?;
+lib/backend/schema/messages_model.dart:363:    model._attachmentType = (json['attachmentType'] ?? json['attachment_type']) as String?;
+lib/backend/schema/messages_model.dart:364:    model._timeStamp = parseDateTime(json['timeStamp'] ?? json['time_stamp']);
+lib/backend/schema/messages_model.dart:365:    model._isRead = (json['isRead'] ?? json['is_read']) as bool?;
+lib/backend/schema/messages_model.dart:366:    model._mediaType = (json['mediaType'] ?? json['media_type']) as String?;
+lib/backend/schema/messages_model.dart:367:    model._imageUrl = (json['imageUrl'] ?? json['image_url']) as String?;
+lib/backend/schema/messages_model.dart:368:    model._videoUrl = (json['videoUrl'] ?? json['video_url']) as String?;
+lib/backend/schema/messages_model.dart:369:    model._thumbnailUrl = (json['thumbnailUrl'] ?? json['thumbnail_url']) as String?;
+lib/backend/schema/messages_model.dart:370:    model._mediaSize = (json['mediaSize'] ?? json['media_size']) as int?;
+lib/backend/schema/messages_model.dart:371:    model._mediaWidth = (json['mediaWidth'] ?? json['media_width']) as double?;
+lib/backend/schema/messages_model.dart:372:    model._mediaHeight = (json['mediaHeight'] ?? json['media_height']) as double?;
+lib/backend/schema/messages_model.dart:373:    model._deliveredAt = parseDateTime(json['deliveredAt'] ?? json['delivered_at']);
+lib/backend/schema/messages_model.dart:374:    model._seenAt = parseDateTime(json['seenAt'] ?? json['seen_at']);
+lib/backend/schema/messages_model.dart:375:    model._messageType = (json['messageType'] ?? json['message_type']) as String?;
+lib/backend/schema/messages_model.dart:376:    model._receiverId = (json['receiverId'] ?? json['receiver_id']) as String?;
+lib/backend/schema/messages_model.dart:377:    model._votePostId = (json['votePostId'] ?? json['vote_post_id']) as String?;
+lib/backend/schema/messages_model.dart:378:    model._voteTitle = (json['voteTitle'] ?? json['vote_title']) as String?;
+lib/backend/schema/messages_model.dart:379:    model._voteDescription = (json['voteDescription'] ?? json['vote_description']) as String?;
+lib/backend/schema/messages_model.dart:380:    model._voteOptionAText = (json['voteOptionAText'] ?? json['vote_option_a_text']) as String?;
+lib/backend/schema/messages_model.dart:381:    model._voteOptionBText = (json['voteOptionBText'] ?? json['vote_option_b_text']) as String?;
+lib/backend/schema/messages_model.dart:382:    model._voteOptionAImage = (json['voteOptionAImage'] ?? json['vote_option_a_image']) as String?;
+lib/backend/schema/messages_model.dart:383:    model._voteOptionBImage = (json['voteOptionBImage'] ?? json['vote_option_b_image']) as String?;
+lib/backend/schema/messages_model.dart:384:    model._voteOptionAImages = ((json['voteOptionAImages'] ?? json['vote_option_a_images']) as List<dynamic>?)
+lib/backend/schema/messages_model.dart:387:    model._voteOptionBImages = ((json['voteOptionBImages'] ?? json['vote_option_b_images']) as List<dynamic>?)
+lib/backend/schema/messages_model.dart:390:    model._voteStatus = (json['voteStatus'] ?? json['vote_status']) as String?;
+lib/backend/schema/messages_model.dart:391:    model._voteEndTime = parseDateTime(json['voteEndTime'] ?? json['vote_end_time']);
+lib/backend/schema/messages_model.dart:392:    model._cardStatus = (json['cardStatus'] ?? json['card_status']) as String?;
+lib/backend/schema/messages_model.dart:393:    model._voteResults = (json['voteResults'] ?? json['vote_results']) as Map<String, dynamic>?;
+lib/backend/schema/messages_model.dart:394:    model._userVotes = (json['userVotes'] ?? json['user_votes']) as Map<String, dynamic>?;
+lib/backend/schema/messages_model.dart:395:    model._voteAspectRatioA = (json['voteAspectRatioA'] ?? json['vote_aspect_ratio_a']) as double?;
+lib/backend/schema/messages_model.dart:396:    model._voteAspectRatioB = (json['voteAspectRatioB'] ?? json['vote_aspect_ratio_b']) as double?;
+lib/backend/schema/messages_model.dart:397:    model._voteResultsA = (json['voteResultsA'] ?? json['vote_results_a']) as int?;
+lib/backend/schema/messages_model.dart:398:    model._voteResultsB = (json['voteResultsB'] ?? json['vote_results_b']) as int?;
+lib/backend/schema/messages_model.dart:399:    model._votePercentA = (json['votePercentA'] ?? json['vote_percent_a']) as double?;
+lib/backend/schema/messages_model.dart:400:    model._votePercentB = (json['votePercentB'] ?? json['vote_percent_b']) as double?;
+lib/backend/schema/messages_model.dart:407:    // Support both snake_case (legacy) and camelCase (new) field names
+lib/backend/schema/messages_model.dart:408:    _messageId = (snapshotData['messageId'] ?? snapshotData['message_id']) as String?;
+lib/backend/schema/messages_model.dart:409:    _senderId = (snapshotData['senderId'] ?? snapshotData['sender_id']) as String?;
+lib/backend/schema/messages_model.dart:411:    _attachmentUrl = (snapshotData['attachmentUrl'] ?? snapshotData['attachment_url']) as String?;
+lib/backend/schema/messages_model.dart:412:    _attachmentType = (snapshotData['attachmentType'] ?? snapshotData['attachment_type']) as String?;
+lib/backend/schema/messages_model.dart:413:    _timeStamp = (snapshotData['timeStamp'] ?? snapshotData['time_stamp']) as DateTime?;
+lib/backend/schema/messages_model.dart:414:    _isRead = (snapshotData['isRead'] ?? snapshotData['is_read']) as bool?;
+lib/backend/schema/messages_model.dart:417:    _mediaType = (snapshotData['mediaType'] ?? snapshotData['media_type']) as String?;
+lib/backend/schema/messages_model.dart:418:    _imageUrl = (snapshotData['imageUrl'] ?? snapshotData['image_url']) as String?;
+lib/backend/schema/messages_model.dart:419:    _videoUrl = (snapshotData['videoUrl'] ?? snapshotData['video_url']) as String?;
+lib/backend/schema/messages_model.dart:420:    _thumbnailUrl = (snapshotData['thumbnailUrl'] ?? snapshotData['thumbnail_url']) as String?;
+lib/backend/schema/messages_model.dart:421:    _mediaSize = castToType<int>(snapshotData['mediaSize'] ?? snapshotData['media_size']);
+lib/backend/schema/messages_model.dart:422:    _mediaWidth = castToType<double>(snapshotData['mediaWidth'] ?? snapshotData['media_width']);
+lib/backend/schema/messages_model.dart:423:    _mediaHeight = castToType<double>(snapshotData['mediaHeight'] ?? snapshotData['media_height']);
+lib/backend/schema/messages_model.dart:426:    _deliveredAt = (snapshotData['deliveredAt'] ?? snapshotData['delivered_at']) as DateTime?;
+lib/backend/schema/messages_model.dart:427:    _seenAt = (snapshotData['seenAt'] ?? snapshotData['seen_at']) as DateTime?;
+lib/backend/schema/messages_model.dart:430:    _messageType = (snapshotData['messageType'] ?? snapshotData['message_type']) as String?;
+lib/backend/schema/messages_model.dart:433:    _votePostId = (snapshotData['votePostId'] ?? snapshotData['vote_post_id']) as String?;
+lib/backend/schema/messages_model.dart:434:    _voteTitle = (snapshotData['voteTitle'] ?? snapshotData['vote_title']) as String?;
+lib/backend/schema/messages_model.dart:435:    _voteDescription = (snapshotData['voteDescription'] ?? snapshotData['vote_description']) as String?;
+lib/backend/schema/messages_model.dart:436:    _voteOptionAText = (snapshotData['voteOptionAText'] ?? snapshotData['vote_option_a_text']) as String?;
+lib/backend/schema/messages_model.dart:437:    _voteOptionBText = (snapshotData['voteOptionBText'] ?? snapshotData['vote_option_b_text']) as String?;
+lib/backend/schema/messages_model.dart:438:    _voteOptionAImage = (snapshotData['voteOptionAImage'] ?? snapshotData['vote_option_a_image']) as String?;
+lib/backend/schema/messages_model.dart:439:    _voteOptionBImage = (snapshotData['voteOptionBImage'] ?? snapshotData['vote_option_b_image']) as String?;
+lib/backend/schema/messages_model.dart:440:    _voteStatus = (snapshotData['voteStatus'] ?? snapshotData['vote_status']) as String?;
+lib/backend/schema/messages_model.dart:443:    _receiverId = (snapshotData['receiverId'] ?? snapshotData['receiver_id']) as String?;
+lib/backend/schema/messages_model.dart:444:    _voteOptionAImages = getDataList(snapshotData['voteOptionAImages'] ?? snapshotData['vote_option_a_images']);
+lib/backend/schema/messages_model.dart:445:    _voteOptionBImages = getDataList(snapshotData['voteOptionBImages'] ?? snapshotData['vote_option_b_images']);
+lib/backend/schema/messages_model.dart:446:    _cardStatus = (snapshotData['cardStatus'] ?? snapshotData['card_status']) as String?;
+lib/backend/schema/messages_model.dart:447:    _voteEndTime = (snapshotData['voteEndTime'] ?? snapshotData['vote_end_time']) as DateTime?;
+lib/backend/schema/messages_model.dart:448:    // _userVoted = snapshotData['user_voted'] as bool?;  // deprecated - use userVotes instead
+lib/backend/schema/messages_model.dart:449:    // _voteChoice = snapshotData['vote_choice'] as String?;  // deprecated - use userVotes instead
+lib/backend/schema/messages_model.dart:450:    _voteResults = (snapshotData['voteResults'] ?? snapshotData['vote_results']) as Map<String, dynamic>?;
+lib/backend/schema/messages_model.dart:451:    // _voteParticipatedAt = snapshotData['vote_participated_at'] as DateTime?;  // deprecated - use userVotes instead
+lib/backend/schema/messages_model.dart:452:    _userVotes = (snapshotData['userVotes'] ?? snapshotData['user_votes']) as Map<String, dynamic>?;
+lib/backend/schema/messages_model.dart:455:    _voteAspectRatioA = castToType<double>(snapshotData['voteAspectRatioA'] ?? snapshotData['vote_aspect_ratio_a']);
+lib/backend/schema/messages_model.dart:456:    _voteAspectRatioB = castToType<double>(snapshotData['voteAspectRatioB'] ?? snapshotData['vote_aspect_ratio_b']);
+lib/backend/schema/messages_model.dart:457:    _voteResultsA = castToType<int>(snapshotData['voteResultsA'] ?? snapshotData['vote_results_a']);
+lib/backend/schema/messages_model.dart:458:    _voteResultsB = castToType<int>(snapshotData['voteResultsB'] ?? snapshotData['vote_results_b']);
+lib/backend/schema/messages_model.dart:459:    _votePercentA = castToType<double>(snapshotData['votePercentA'] ?? snapshotData['vote_percent_a']);
+lib/backend/schema/messages_model.dart:460:    _votePercentB = castToType<double>(snapshotData['votePercentB'] ?? snapshotData['vote_percent_b']);
 lib/backend/schema/notification_model.dart:5:import '/backend/schema/util/firestore_util.dart';
 lib/backend/schema/notification_model.dart:6:import '/backend/schema/util/schema_util.dart';
 lib/backend/schema/notification_model.dart:9:import '/core/app_utils.dart';
@@ -1172,65 +997,29 @@ lib/backend/schema/content_comments_model.dart:113:      'likes_count': likesCou
 lib/backend/schema/users_model.dart:5:import '/backend/schema/util/firestore_util.dart';
 lib/backend/schema/users_model.dart:6:import '/backend/schema/util/schema_util.dart';
 lib/backend/schema/users_model.dart:9:import '/core/app_utils.dart';
-lib/backend/schema/users_model.dart:59:  // "display_name" field.
-lib/backend/schema/users_model.dart:64:  // "created_time" field.
-lib/backend/schema/users_model.dart:69:  // "photo_url" field.
-lib/backend/schema/users_model.dart:74:  // "phone_number" field.
 lib/backend/schema/users_model.dart:79:  // "is_premium_user" field (Fixed typo: prmium -> premium)
-lib/backend/schema/users_model.dart:90:  // "anonymous_posts_count" field.
-lib/backend/schema/users_model.dart:95:  // "anonymous_comments_count" field.
-lib/backend/schema/users_model.dart:100:  // "current_rank" field.
-lib/backend/schema/users_model.dart:105:  // "current_title" field.
-lib/backend/schema/users_model.dart:110:  // "rank_change_date" field.
-lib/backend/schema/users_model.dart:115:  // "title_change_date" field.
-lib/backend/schema/users_model.dart:120:  // "is_rank_eligible" field.
-lib/backend/schema/users_model.dart:125:  // "rank_evaluation_count" field.
-lib/backend/schema/users_model.dart:130:  // "rank_history" field.
-lib/backend/schema/users_model.dart:135:  // "title_history" field.
-lib/backend/schema/users_model.dart:170:  // "active_chats" field.
-lib/backend/schema/users_model.dart:175:  // "group_chats" field.
-lib/backend/schema/users_model.dart:180:  // "total_a_points" field.
-lib/backend/schema/users_model.dart:185:  // "total_q_points" field.
-lib/backend/schema/users_model.dart:195:  // "last_active_time" field.
-lib/backend/schema/users_model.dart:215:  // "date_of_birth" field.
-lib/backend/schema/users_model.dart:244:    _displayName = snapshotData['display_name'] as String?;
-lib/backend/schema/users_model.dart:245:    _createdTime = snapshotData['created_time'] as DateTime?;
-lib/backend/schema/users_model.dart:246:    _photoUrl = snapshotData['photo_url'] as String?;
-lib/backend/schema/users_model.dart:247:    _phoneNumber = snapshotData['phone_number'] as String?;
-lib/backend/schema/users_model.dart:248:    _isPremiumUser = snapshotData['is_premium_user'] as bool? ?? snapshotData['is_prmium_user'] as bool?;
-lib/backend/schema/users_model.dart:250:        castToType<int>(snapshotData['anonymous_posts_count']);
-lib/backend/schema/users_model.dart:252:        castToType<int>(snapshotData['anonymous_comments_count']);
-lib/backend/schema/users_model.dart:253:    _currentRank = snapshotData['current_rank'] as String?;
-lib/backend/schema/users_model.dart:254:    _currentTitle = snapshotData['current_title'] as String?;
-lib/backend/schema/users_model.dart:255:    _rankChangeDate = snapshotData['rank_change_date'] as DateTime?;
-lib/backend/schema/users_model.dart:256:    _titleChangeDate = snapshotData['title_change_date'] as DateTime?;
-lib/backend/schema/users_model.dart:257:    _isRankEligible = snapshotData['is_rank_eligible'] as bool?;
-lib/backend/schema/users_model.dart:259:        castToType<int>(snapshotData['rank_evaluation_count']);
-lib/backend/schema/users_model.dart:260:    _rankHistory = getDataList(snapshotData['rank_history']);
-lib/backend/schema/users_model.dart:261:    _titleHistory = getDataList(snapshotData['title_history']);
-lib/backend/schema/users_model.dart:269:    _activeChats = getDataList(snapshotData['active_chats']);
-lib/backend/schema/users_model.dart:270:    _groupChats = getDataList(snapshotData['group_chats']);
-lib/backend/schema/users_model.dart:271:    _totalAPoints = castToType<int>(snapshotData['total_a_points']);
-lib/backend/schema/users_model.dart:272:    _totalQPoints = castToType<int>(snapshotData['total_q_points']);
-lib/backend/schema/users_model.dart:274:    _lastActiveTime = snapshotData['last_active_time'] as DateTime?;
-lib/backend/schema/users_model.dart:278:    _dateOfBirth = snapshotData['date_of_birth'] as DateTime?;
-lib/backend/schema/users_model.dart:360:      'display_name': displayName,
-lib/backend/schema/users_model.dart:361:      'created_time': createdTime,
-lib/backend/schema/users_model.dart:362:      'photo_url': photoUrl,
-lib/backend/schema/users_model.dart:363:      'phone_number': phoneNumber,
-lib/backend/schema/users_model.dart:364:      'is_premium_user': isPremiumUser,
-lib/backend/schema/users_model.dart:365:      'anonymous_posts_count': anonymousPostsCount,
-lib/backend/schema/users_model.dart:366:      'anonymous_comments_count': anonymousCommentsCount,
-lib/backend/schema/users_model.dart:367:      'current_rank': currentRank,
-lib/backend/schema/users_model.dart:368:      'current_title': currentTitle,
-lib/backend/schema/users_model.dart:369:      'rank_change_date': rankChangeDate,
-lib/backend/schema/users_model.dart:370:      'title_change_date': titleChangeDate,
-lib/backend/schema/users_model.dart:371:      'is_rank_eligible': isRankEligible,
-lib/backend/schema/users_model.dart:372:      'rank_evaluation_count': rankEvaluationCount,
-lib/backend/schema/users_model.dart:376:      'total_a_points': totalAPoints,
-lib/backend/schema/users_model.dart:377:      'total_q_points': totalQPoints,
-lib/backend/schema/users_model.dart:379:      'last_active_time': lastActiveTime,
-lib/backend/schema/users_model.dart:383:      'date_of_birth': dateOfBirth,
+lib/backend/schema/users_model.dart:236:    // Support both snake_case (legacy) and camelCase (new) field names
+lib/backend/schema/users_model.dart:245:    _displayName = (snapshotData['displayName'] ?? snapshotData['display_name']) as String?;
+lib/backend/schema/users_model.dart:246:    _createdTime = (snapshotData['createdTime'] ?? snapshotData['created_time']) as DateTime?;
+lib/backend/schema/users_model.dart:247:    _photoUrl = (snapshotData['photoUrl'] ?? snapshotData['photo_url']) as String?;
+lib/backend/schema/users_model.dart:248:    _phoneNumber = (snapshotData['phoneNumber'] ?? snapshotData['phone_number']) as String?;
+lib/backend/schema/users_model.dart:249:    _isPremiumUser = (snapshotData['isPremiumUser'] ?? snapshotData['is_premium_user']) as bool? ?? snapshotData['is_prmium_user'] as bool?;
+lib/backend/schema/users_model.dart:251:        castToType<int>((snapshotData['anonymousPostsCount'] ?? snapshotData['anonymous_posts_count']));
+lib/backend/schema/users_model.dart:253:        castToType<int>((snapshotData['anonymousCommentsCount'] ?? snapshotData['anonymous_comments_count']));
+lib/backend/schema/users_model.dart:254:    _currentRank = (snapshotData['currentRank'] ?? snapshotData['current_rank']) as String?;
+lib/backend/schema/users_model.dart:255:    _currentTitle = (snapshotData['currentTitle'] ?? snapshotData['current_title']) as String?;
+lib/backend/schema/users_model.dart:256:    _rankChangeDate = (snapshotData['rankChangeDate'] ?? snapshotData['rank_change_date']) as DateTime?;
+lib/backend/schema/users_model.dart:257:    _titleChangeDate = (snapshotData['titleChangeDate'] ?? snapshotData['title_change_date']) as DateTime?;
+lib/backend/schema/users_model.dart:258:    _isRankEligible = (snapshotData['isRankEligible'] ?? snapshotData['is_rank_eligible']) as bool?;
+lib/backend/schema/users_model.dart:260:        castToType<int>((snapshotData['rankEvaluationCount'] ?? snapshotData['rank_evaluation_count']));
+lib/backend/schema/users_model.dart:261:    _rankHistory = getDataList((snapshotData['rankHistory'] ?? snapshotData['rank_history']));
+lib/backend/schema/users_model.dart:262:    _titleHistory = getDataList((snapshotData['titleHistory'] ?? snapshotData['title_history']));
+lib/backend/schema/users_model.dart:270:    _activeChats = getDataList((snapshotData['activeChats'] ?? snapshotData['active_chats']));
+lib/backend/schema/users_model.dart:271:    _groupChats = getDataList((snapshotData['groupChats'] ?? snapshotData['group_chats']));
+lib/backend/schema/users_model.dart:272:    _totalAPoints = castToType<int>((snapshotData['totalAPoints'] ?? snapshotData['total_a_points']));
+lib/backend/schema/users_model.dart:273:    _totalQPoints = castToType<int>((snapshotData['totalQPoints'] ?? snapshotData['total_q_points']));
+lib/backend/schema/users_model.dart:275:    _lastActiveTime = (snapshotData['lastActiveTime'] ?? snapshotData['last_active_time']) as DateTime?;
+lib/backend/schema/users_model.dart:279:    _dateOfBirth = (snapshotData['dateOfBirth'] ?? snapshotData['date_of_birth']) as DateTime?;
 lib/backend/schema/feed_details_model.dart:5:import '/backend/schema/util/firestore_util.dart';
 lib/backend/schema/feed_details_model.dart:8:import '/core/app_utils.dart';
 lib/backend/schema/feed_details_model.dart:18:  // "media_url" field.
@@ -1391,39 +1180,18 @@ lib/backend/schema/chats_model.dart:4:import 'package:cloud_firestore/cloud_fire
 lib/backend/schema/chats_model.dart:6:import '/backend/schema/util/firestore_util.dart';
 lib/backend/schema/chats_model.dart:7:import '/backend/schema/util/schema_util.dart';
 lib/backend/schema/chats_model.dart:10:import '/core/app_utils.dart';
-lib/backend/schema/chats_model.dart:20:  // "chat_id" field.
-lib/backend/schema/chats_model.dart:25:  // "chat_type" field.
-lib/backend/schema/chats_model.dart:35:  // "chat_name" field.
-lib/backend/schema/chats_model.dart:40:  // "last_message_content" field.
-lib/backend/schema/chats_model.dart:45:  // "last_message_at" field.
-lib/backend/schema/chats_model.dart:50:  // "is_read" field.
-lib/backend/schema/chats_model.dart:55:  // "created_at" field.
-lib/backend/schema/chats_model.dart:65:  // "display_name" field.
-lib/backend/schema/chats_model.dart:70:  // "photo_url" field.
-lib/backend/schema/chats_model.dart:80:  // "created_time" field.
-lib/backend/schema/chats_model.dart:85:  // "phone_number" field.
-lib/backend/schema/chats_model.dart:101:    _chatId = snapshotData['chat_id'] as String?;
-lib/backend/schema/chats_model.dart:102:    _chatType = snapshotData['chat_type'] as String?;
-lib/backend/schema/chats_model.dart:108:    _chatName = snapshotData['chat_name'] as String?;
-lib/backend/schema/chats_model.dart:109:    _lastMessageContent = snapshotData['last_message_content'] as String?;
-lib/backend/schema/chats_model.dart:110:    _lastMessageAt = snapshotData['last_message_at'] as DateTime?;
-lib/backend/schema/chats_model.dart:111:    _isRead = snapshotData['is_read'] as bool?;
-lib/backend/schema/chats_model.dart:112:    _createdAt = snapshotData['created_at'] as DateTime?;
-lib/backend/schema/chats_model.dart:114:    _displayName = snapshotData['display_name'] as String?;
-lib/backend/schema/chats_model.dart:115:    _photoUrl = snapshotData['photo_url'] as String?;
-lib/backend/schema/chats_model.dart:117:    _createdTime = snapshotData['created_time'] as DateTime?;
-lib/backend/schema/chats_model.dart:118:    _phoneNumber = snapshotData['phone_number'] as String?;
-lib/backend/schema/chats_model.dart:185:      'chat_id': chatId,
-lib/backend/schema/chats_model.dart:186:      'chat_type': chatType,
-lib/backend/schema/chats_model.dart:187:      'chat_name': chatName,
-lib/backend/schema/chats_model.dart:188:      'last_message_content': lastMessageContent,
-lib/backend/schema/chats_model.dart:189:      'last_message_at': lastMessageAt,
-lib/backend/schema/chats_model.dart:190:      'is_read': isRead,
-lib/backend/schema/chats_model.dart:191:      'created_at': createdAt,
-lib/backend/schema/chats_model.dart:193:      'display_name': displayName,
-lib/backend/schema/chats_model.dart:194:      'photo_url': photoUrl,
-lib/backend/schema/chats_model.dart:196:      'created_time': createdTime,
-lib/backend/schema/chats_model.dart:197:      'phone_number': phoneNumber,
+lib/backend/schema/chats_model.dart:101:    // Support both snake_case (legacy) and camelCase (new) field names
+lib/backend/schema/chats_model.dart:102:    _chatId = (snapshotData['chatId'] ?? snapshotData['chat_id']) as String?;
+lib/backend/schema/chats_model.dart:103:    _chatType = (snapshotData['chatType'] ?? snapshotData['chat_type']) as String?;
+lib/backend/schema/chats_model.dart:109:    _chatName = (snapshotData['chatName'] ?? snapshotData['chat_name']) as String?;
+lib/backend/schema/chats_model.dart:110:    _lastMessageContent = (snapshotData['lastMessageContent'] ?? snapshotData['last_message_content']) as String?;
+lib/backend/schema/chats_model.dart:111:    _lastMessageAt = (snapshotData['lastMessageAt'] ?? snapshotData['last_message_at']) as DateTime?;
+lib/backend/schema/chats_model.dart:112:    _isRead = (snapshotData['isRead'] ?? snapshotData['is_read']) as bool?;
+lib/backend/schema/chats_model.dart:113:    _createdAt = (snapshotData['createdAt'] ?? snapshotData['created_at']) as DateTime?;
+lib/backend/schema/chats_model.dart:115:    _displayName = (snapshotData['displayName'] ?? snapshotData['display_name']) as String?;
+lib/backend/schema/chats_model.dart:116:    _photoUrl = (snapshotData['photoUrl'] ?? snapshotData['photo_url']) as String?;
+lib/backend/schema/chats_model.dart:118:    _createdTime = (snapshotData['createdTime'] ?? snapshotData['created_time']) as DateTime?;
+lib/backend/schema/chats_model.dart:119:    _phoneNumber = (snapshotData['phoneNumber'] ?? snapshotData['phone_number']) as String?;
 lib/backend/algolia/serialization_util.dart:4:import '../../core/nav/serialization_util.dart';
 lib/backend/firebase/firebase_config.dart:1:import 'package:firebase_core/firebase_core.dart';
 lib/backend/firebase_storage/storage.dart:1:import 'dart:typed_data';
@@ -1693,20 +1461,8 @@ lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:35:import '/services/user_cache_s
 lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:36:import 'ai_chat_controller.dart';
 lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:38:/// AI Chat Page using flutter_chat_ui v2
 lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:40:/// This is the new AI chat page that uses flutter_chat_ui v2.9.0
-lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:195:          .orderBy('time_stamp', descending: false)
-lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:226:        if (lastTimestamp['time_stamp'] != null) {
-lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:227:          _lastLoadedTimestamp = (lastTimestamp['time_stamp'] as Timestamp).toDate();
-lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:263:        .orderBy('time_stamp', descending: false);
-lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:427:          .orderBy('time_stamp', descending: false)
-lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:428:          .endBefore([_lastDocument!['time_stamp']])
 lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:514:        imageSource: 'https://picsum.photos/seed/ai_assistant/200',
-lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:531:          final displayName = userData['display_name'] ?? 
-lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:539:            imageSource: userData['photo_url'] ?? currentUserPhoto,
-lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:569:          name: userData['display_name'] ?? 'User',
-lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:570:          imageSource: userData['photo_url'],
-lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:613:    if (metadata['type'] == 'vote_request' || metadata['type'] == 'vote_created') {
 lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:629:          cardStatus: metadata['cardStatus'] ?? 'voting_request',
-lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:638:          messageType: metadata['type'] ?? 'vote_request',
 lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:859:                          Icons.chat_bubble_outline,
 lib/pages/chat/ai_chat_v2/ai_chat_page_v2.dart:923:                        Icons.arrow_downward,
 lib/pages/chat/chat_list/chat_list_model.dart:1:import '/core/app_utils.dart';
@@ -1744,56 +1500,19 @@ lib/pages/chat/chat_search/chat_search_widget.dart:214:            Icons.lock_ou
 lib/pages/chat/chat_search/chat_search_widget.dart:236:            Icons.person_search,
 lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:1:import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:3:import '/pages/chat/services/chat_file_size_service.dart';
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:18:    // receiver_id가 현재 사용자인 투표 요청은 AI가 보낸 것
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:19:    if (messageData != null && messageData['receiver_id'] != null) {
 lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:22:        senderId = 'ai_assistant';
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:28:      final isVoteRequest = messageData['receiver_id'] != null;
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:29:      final isVoteCreated = messageData['vote_option_a_text'] != null;
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:30:      final hasVotePostId = messageData['vote_post_id'] != null;
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:31:      final messageType = messageData['message_type'];
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:36:          messageType == 'vote_request' || messageType == 'vote_created') {
 lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:62:    // Handle media messages if media_url field exists in message data
 lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:63:    final mediaUrl = messageData?['media_url'] as String?;
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:116:    print('card_status: ${messageData['card_status']}');
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:117:    print('vote_results_a: ${messageData['vote_results_a']}');
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:118:    print('vote_results_b: ${messageData['vote_results_b']}');
 lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:119:    print('vote_percent_a: ${messageData['vote_percent_a']}');
 lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:120:    print('vote_percent_b: ${messageData['vote_percent_b']}');
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:121:    print('user_votes: ${messageData['user_votes']}');
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:127:    metadata['type'] = isVoteRequest ? 'vote_request' : 'vote_created';
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:128:    metadata['postId'] = messageData['post_id'] ?? messageData['vote_post_id'] ?? '';
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:129:    metadata['title'] = messageData['vote_title'] ?? '';
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:130:    metadata['description'] = messageData['vote_description'];
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:131:    metadata['optionAText'] = messageData['vote_option_a_text'] ?? '';
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:132:    metadata['optionBText'] = messageData['vote_option_b_text'] ?? '';
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:133:    metadata['optionAImage'] = messageData['vote_option_a_image'];
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:134:    metadata['optionBImage'] = messageData['vote_option_b_image'];
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:135:    metadata['optionAImages'] = messageData['vote_option_a_images'];
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:136:    metadata['optionBImages'] = messageData['vote_option_b_images'];
 lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:141:        (messageData['vote_aspect_ratio_a'] as num?)?.toDouble() ?? 
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:142:        (messageData['vote_option_a_aspect_ratio'] as num?)?.toDouble();
 lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:144:        (messageData['vote_aspect_ratio_b'] as num?)?.toDouble() ?? 
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:145:        (messageData['vote_option_b_aspect_ratio'] as num?)?.toDouble();
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:147:    // card_status는 Firebase에서 받은 값 사용 (completed 포함)
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:148:    metadata['cardStatus'] = messageData['card_status'] ?? 
 lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:149:      (isVoteRequest ? 'voting_request' : 'in_progress');
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:152:    metadata['voteEndTime'] = messageData['vote_end_time'] != null
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:153:        ? (messageData['vote_end_time'] is DateTime
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:154:            ? messageData['vote_end_time']
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:155:            : messageData['vote_end_time'].toDate())
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:158:    // user_votes
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:159:    metadata['userVotes'] = messageData['user_votes'];
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:163:    if (messageData['vote_results_a'] != null || 
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:164:        messageData['vote_results_b'] != null) {
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:166:        'votesA': messageData['vote_results_a'] ?? 0,
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:167:        'votesB': messageData['vote_results_b'] ?? 0,
 lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:168:        'percentageA': (messageData['vote_percent_a'] as num?)?.toDouble() ?? 0.0,
 lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:169:        'percentageB': (messageData['vote_percent_b'] as num?)?.toDouble() ?? 0.0,
 lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:181:      metadata['authorName'] = metadataMap['authorName'] ?? metadataMap['author_name'];
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:182:      metadata['authorPhotoUrl'] = metadataMap['authorPhotoUrl'] ?? metadataMap['author_photo_url'];
 lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:183:      metadata['creatorId'] = metadataMap['creatorId'] ?? metadataMap['creator_id'];
 lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:188:      metadata['authorName'] = messageData['author_name'];
-lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:189:      metadata['authorPhotoUrl'] = messageData['author_photo_url'];
 lib/pages/chat/chat_detail_v2/chat_detail_migration_service.dart:190:      metadata['creatorId'] = messageData['creator_id'];
 lib/pages/chat/chat_detail_v2/components/chat_message_builder.dart:2:import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 lib/pages/chat/chat_detail_v2/components/chat_message_builder.dart:4:import '/design_system/design_system.dart';
@@ -1851,10 +1570,6 @@ lib/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart:47:import 'components/c
 lib/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart:49:/// Chat Detail Widget using flutter_chat_ui v2
 lib/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart:51:/// This is the properly migrated chat detail page that uses flutter_chat_ui v2.9.0
 lib/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart:130:    (widget.chatDocument?.reference.id.startsWith('ai_assistant_') ?? false);
-lib/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart:234:        .orderBy('time_stamp', descending: false);
-lib/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart:243:      query = query.where('time_stamp', isGreaterThan: Timestamp.fromDate(_initService.lastLoadedTimestamp!));
-lib/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart:398:          .orderBy('time_stamp', descending: false)
-lib/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart:404:          (_anchorDocument!.data() as Map<String, dynamic>)['time_stamp']
 lib/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart:550:    if (userId == 'ai_assistant') {
 lib/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart:552:        id: 'ai_assistant',
 lib/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart:554:        imageSource: 'https://picsum.photos/seed/ai_assistant/200',
@@ -1870,54 +1585,26 @@ lib/pages/chat/services/chat_message_service.dart:2:import 'package:flutter_chat
 lib/pages/chat/services/chat_message_service.dart:6:/// chat_detail_widget_v2와 ai_chat_page_v2에서 중복되던 
 lib/pages/chat/services/chat_message_service.dart:13:  /// Firestore 문서를 flutter_chat_ui의 Message 객체로 변환
 lib/pages/chat/services/chat_message_service.dart:18:  /// - vote_request/vote_created: 투표 카드 메시지
-lib/pages/chat/services/chat_message_service.dart:26:      final senderId = data['sender_id'] ?? data['user_id'] ?? '';
-lib/pages/chat/services/chat_message_service.dart:28:      final timestamp = data['time_stamp'] as Timestamp?;
-lib/pages/chat/services/chat_message_service.dart:29:      final messageType = data['message_type'] ?? 'text';
 lib/pages/chat/services/chat_message_service.dart:40:        case 'vote_request':
 lib/pages/chat/services/chat_message_service.dart:41:        case 'vote_created':
-lib/pages/chat/services/chat_message_service.dart:84:        'postId': data['post_id'],
-lib/pages/chat/services/chat_message_service.dart:85:        'title': data['vote_title'],
-lib/pages/chat/services/chat_message_service.dart:86:        'description': data['vote_description'],
-lib/pages/chat/services/chat_message_service.dart:87:        'optionAText': data['vote_option_a_text'],
-lib/pages/chat/services/chat_message_service.dart:88:        'optionBText': data['vote_option_b_text'],
-lib/pages/chat/services/chat_message_service.dart:89:        'optionAImage': data['vote_option_a_image'],
-lib/pages/chat/services/chat_message_service.dart:90:        'optionBImage': data['vote_option_b_image'],
-lib/pages/chat/services/chat_message_service.dart:91:        'optionAImages': data['vote_option_a_images'],
-lib/pages/chat/services/chat_message_service.dart:92:        'optionBImages': data['vote_option_b_images'],
-lib/pages/chat/services/chat_message_service.dart:93:        'aspectRatioA': data['vote_option_a_aspect_ratio'],
-lib/pages/chat/services/chat_message_service.dart:94:        'aspectRatioB': data['vote_option_b_aspect_ratio'],
-lib/pages/chat/services/chat_message_service.dart:95:        'cardStatus': data['card_status'],
-lib/pages/chat/services/chat_message_service.dart:96:        'voteEndTime': data['vote_end_time'],
-lib/pages/chat/services/chat_message_service.dart:97:        'userVotes': data['user_votes'],
-lib/pages/chat/services/chat_message_service.dart:98:        'voteResults': data['vote_results'],
-lib/pages/chat/services/chat_message_service.dart:99:        'receiverId': data['receiver_id'],
 lib/pages/chat/services/chat_message_service.dart:111:    final imageUrl = data['image_url'] ?? data['image'] ?? '';
 lib/pages/chat/services/chat_message_service.dart:155:    return type == 'vote_request' || type == 'vote_created';
 lib/pages/chat/services/chat_message_lifecycle_service.dart:1:import 'package:cloud_firestore/cloud_firestore.dart';
 lib/pages/chat/services/chat_message_lifecycle_service.dart:19:      // We'll filter sender_id in memory for better performance
 lib/pages/chat/services/chat_message_lifecycle_service.dart:24:          .where('seen_at', isNull: true)
-lib/pages/chat/services/chat_message_lifecycle_service.dart:37:        if (data['sender_id'] != null && data['sender_id'] != currentUserId) {
 lib/pages/chat/services/chat_message_lifecycle_service.dart:39:            'seen_at': seenTimestamp,
 lib/pages/chat/services/chat_message_lifecycle_service.dart:67:        'delivered_at': FieldValue.serverTimestamp(),
 lib/pages/chat/services/chat_message_lifecycle_service.dart:93:      if (data['seen_at'] != null) {
 lib/pages/chat/services/chat_message_lifecycle_service.dart:95:      } else if (data['delivered_at'] != null) {
 lib/pages/chat/services/chat_message_lifecycle_service.dart:127:        if (data['seen_at'] != null) {
 lib/pages/chat/services/chat_message_lifecycle_service.dart:129:        } else if (data['delivered_at'] != null) {
-lib/pages/chat/services/chat_message_lifecycle_service.dart:211:            .where('sender_id', isNotEqualTo: userId)
-lib/pages/chat/services/chat_message_lifecycle_service.dart:223:          .where('time_stamp', isGreaterThan: Timestamp.fromDate(lastReadAt))
-lib/pages/chat/services/chat_message_lifecycle_service.dart:229:        return data['sender_id'] != userId;
 lib/pages/chat/services/chat_initialization_service.dart:2:import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 lib/pages/chat/services/chat_initialization_service.dart:4:import '/auth/firebase_auth/auth_util.dart';
 lib/pages/chat/services/chat_initialization_service.dart:5:import '/services/user_cache_service.dart';
 lib/pages/chat/services/chat_initialization_service.dart:6:import '/services/cache/unified_cache_service.dart';
 lib/pages/chat/services/chat_initialization_service.dart:7:import '../chat_detail_v2/chat_detail_migration_service.dart';
 lib/pages/chat/services/chat_initialization_service.dart:8:import 'chat_message_lifecycle_service.dart';
-lib/pages/chat/services/chat_initialization_service.dart:86:          final displayName = userData['display_name'] ?? 
-lib/pages/chat/services/chat_initialization_service.dart:94:            imageSource: userData['photo_url'],
 lib/pages/chat/services/chat_initialization_service.dart:132:            isAiChat: chatId.startsWith('ai_assistant_'),
-lib/pages/chat/services/chat_initialization_service.dart:160:        .orderBy('time_stamp', descending: false);
-lib/pages/chat/services/chat_initialization_service.dart:194:    if (lastTimestamp['time_stamp'] != null) {
-lib/pages/chat/services/chat_initialization_service.dart:195:      lastLoadedTimestamp = (lastTimestamp['time_stamp'] as Timestamp).toDate();
 lib/pages/chat/services/chat_initialization_service.dart:323:      isAiChat: chatId?.startsWith('ai_assistant_') ?? false,
 lib/pages/chat/services/chat_file_size_service.dart:2:import 'package:firebase_storage/firebase_storage.dart';
 lib/pages/chat/services/chat_media_upload_service.dart:3:import 'package:wechat_assets_picker/wechat_assets_picker.dart';

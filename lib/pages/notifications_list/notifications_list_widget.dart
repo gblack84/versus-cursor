@@ -43,8 +43,8 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
         child: StreamBuilder<List<NotificationsModel>>(
           stream: queryNotificationsModel(
             queryBuilder: (notificationsRecord) => notificationsRecord
-                .where('user_id', isEqualTo: currentUserUid)
-                .orderBy('created_at', descending: true),
+                .where('userId', isEqualTo: currentUserUid)
+                .orderBy('createdAt', descending: true),
           ),
           builder: (context, snapshot) {
             // 로딩 중

@@ -36,7 +36,7 @@ class PreloadStrategy {
       try {
         recentChatsQuery = await FirebaseFirestore.instance
             .collection('chats')
-            .where('participant_ids', arrayContains: userId)
+            .where('participantIds', arrayContains: userId)
             .orderBy('last_message_at', descending: true)
             .limit(preloadChatCount)
             .get();
@@ -50,7 +50,7 @@ class PreloadStrategy {
         try {
           recentChatsQuery = await FirebaseFirestore.instance
               .collection('chats')
-              .where('participant_ids', arrayContains: userId)
+              .where('participantIds', arrayContains: userId)
               .limit(preloadChatCount)
               .get();
         } catch (fallbackError) {

@@ -1,5 +1,5 @@
 # Snake Case Migration Analysis Report
-Generated: Thu Aug 21 16:18:42 KST 2025
+Generated: Thu Aug 21 21:04:48 KST 2025
 
 ## 📊 Statistics
 
@@ -8,20 +8,20 @@ Generated: Thu Aug 21 16:18:42 KST 2025
 | Total unique snake_case fields |      765 |
 | JavaScript files affected |     8001 |
 | Dart files affected |      272 |
-| Configuration files affected |      315 |
+| Configuration files affected |      314 |
 
 ## 🔝 Top 10 Most Frequent Fields
 
 - **node_modules** → nodeUmodules (606 occurrences)
 - **app_utils** → appUutils (116 occurrences)
-- **user_id** → userUid (55 occurrences)
 - **app_theme** → appUtheme (52 occurrences)
 - **firebase_auth** → firebaseUauth (49 occurrences)
+- **user_id** → userUid (46 occurrences)
 - **firestore_util** → firestoreUutil (42 occurrences)
-- **created_at** → createdUat (42 occurrences)
-- **user_votes** → userUvotes (35 occurrences)
 - **auth_util** → authUutil (35 occurrences)
 - **google_fonts** → googleUfonts (33 occurrences)
+- **created_at** → createdUat (33 occurrences)
+- **design_system** → designUsystem (29 occurrences)
 
 ## 📁 Output Files
 

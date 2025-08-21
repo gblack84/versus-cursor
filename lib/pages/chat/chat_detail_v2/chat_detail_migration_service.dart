@@ -15,8 +15,8 @@ class ChatDetailMigrationService {
     var senderId = message.senderId.isNotEmpty ? message.senderId : 'unknown';
     
     // AI 채팅방에서 투표 메시지인 경우 senderId를 확인하고 수정
-    // receiver_id가 현재 사용자인 투표 요청은 AI가 보낸 것
-    if (messageData != null && messageData['receiver_id'] != null) {
+    // receiverId가 현재 사용자인 투표 요청은 AI가 보낸 것
+    if (messageData != null && messageData['receiverId'] != null) {
       // 투표 요청 메시지이고, 발신자가 비어있거나 알 수 없는 경우 AI로 설정
       if (senderId == 'unknown' || senderId.isEmpty) {
         senderId = 'ai_assistant';
@@ -25,15 +25,15 @@ class ChatDetailMigrationService {
     
     // Handle vote messages - 최우선 처리
     if (messageData != null) {
-      final isVoteRequest = messageData['receiver_id'] != null;
-      final isVoteCreated = messageData['vote_option_a_text'] != null;
-      final hasVotePostId = messageData['vote_post_id'] != null;
-      final messageType = messageData['message_type'];
+      final isVoteRequest = messageData['receiverId'] != null;
+      final isVoteCreated = messageData['voteOptionAText'] != null;
+      final hasVotePostId = messageData['votePostId'] != null;
+      final messageType = messageData['messageType'];
       
       // 투표 관련 메시지는 무조건 투표 카드로 처리
       // content 필드가 있어도 투표 카드로 표시
       if (isVoteRequest || isVoteCreated || hasVotePostId || 
-          messageType == 'vote_request' || messageType == 'vote_created') {
+          messageType == 'voteRequest' || messageType == 'voteCreated') {
         // Create custom message for vote
         return core.Message.custom(
           id: message.messageId.isNotEmpty ? message.messageId : DateTime.now().millisecondsSinceEpoch.toString(),
@@ -113,58 +113,58 @@ class ChatDetailMigrationService {
     // 디버깅 로그
     print('=== Building Vote Metadata ===');
     print('Raw messageData keys: ${messageData.keys.toList()}');
-    print('card_status: ${messageData['card_status']}');
-    print('vote_results_a: ${messageData['vote_results_a']}');
-    print('vote_results_b: ${messageData['vote_results_b']}');
+    print('cardStatus: ${messageData['cardStatus']}');
+    print('voteResultsA: ${messageData['voteResultsA']}');
+    print('voteResultsB: ${messageData['voteResultsB']}');
     print('vote_percent_a: ${messageData['vote_percent_a']}');
     print('vote_percent_b: ${messageData['vote_percent_b']}');
-    print('user_votes: ${messageData['user_votes']}');
+    print('userVotes: ${messageData['userVotes']}');
     print('==============================');
     
     final metadata = <String, dynamic>{};
     
     // 공통 필드 처리
-    metadata['type'] = isVoteRequest ? 'vote_request' : 'vote_created';
-    metadata['postId'] = messageData['post_id'] ?? messageData['vote_post_id'] ?? '';
-    metadata['title'] = messageData['vote_title'] ?? '';
-    metadata['description'] = messageData['vote_description'];
-    metadata['optionAText'] = messageData['vote_option_a_text'] ?? '';
-    metadata['optionBText'] = messageData['vote_option_b_text'] ?? '';
-    metadata['optionAImage'] = messageData['vote_option_a_image'];
-    metadata['optionBImage'] = messageData['vote_option_b_image'];
-    metadata['optionAImages'] = messageData['vote_option_a_images'];
-    metadata['optionBImages'] = messageData['vote_option_b_images'];
+    metadata['type'] = isVoteRequest ? 'voteRequest' : 'voteCreated';
+    metadata['postId'] = messageData['postId'] ?? messageData['votePostId'] ?? '';
+    metadata['title'] = messageData['voteTitle'] ?? '';
+    metadata['description'] = messageData['voteDescription'];
+    metadata['optionAText'] = messageData['voteOptionAText'] ?? '';
+    metadata['optionBText'] = messageData['voteOptionBText'] ?? '';
+    metadata['optionAImage'] = messageData['voteOptionAImage'];
+    metadata['optionBImage'] = messageData['voteOptionBImage'];
+    metadata['optionAImages'] = messageData['voteOptionAImages'];
+    metadata['optionBImages'] = messageData['voteOptionBImages'];
     
     // MessagesModel에서 직접 aspectRatio 가져오기 (이제 파싱됨)
     // 중요: 기본값을 설정하지 않고 null을 유지하여 fallback 로직이 작동하도록 함
     metadata['aspectRatioA'] = message.voteAspectRatioA ?? 
         (messageData['vote_aspect_ratio_a'] as num?)?.toDouble() ?? 
-        (messageData['vote_option_a_aspect_ratio'] as num?)?.toDouble();
+        (messageData['voteOptionAAspectRatio'] as num?)?.toDouble();
     metadata['aspectRatioB'] = message.voteAspectRatioB ?? 
         (messageData['vote_aspect_ratio_b'] as num?)?.toDouble() ?? 
-        (messageData['vote_option_b_aspect_ratio'] as num?)?.toDouble();
+        (messageData['voteOptionBAspectRatio'] as num?)?.toDouble();
     
-    // card_status는 Firebase에서 받은 값 사용 (completed 포함)
-    metadata['cardStatus'] = messageData['card_status'] ?? 
+    // cardStatus는 Firebase에서 받은 값 사용 (completed 포함)
+    metadata['cardStatus'] = messageData['cardStatus'] ?? 
       (isVoteRequest ? 'voting_request' : 'in_progress');
     
     // 투표 종료 시간
-    metadata['voteEndTime'] = messageData['vote_end_time'] != null
-        ? (messageData['vote_end_time'] is DateTime
-            ? messageData['vote_end_time']
-            : messageData['vote_end_time'].toDate())
+    metadata['voteEndTime'] = messageData['voteEndTime'] != null
+        ? (messageData['voteEndTime'] is DateTime
+            ? messageData['voteEndTime']
+            : messageData['voteEndTime'].toDate())
         : null;
     
-    // user_votes
-    metadata['userVotes'] = messageData['user_votes'];
+    // userVotes
+    metadata['userVotes'] = messageData['userVotes'];
     
     // 투표 결과가 있으면 항상 추가 (두 타입 모두)
     // Firebase Functions가 설정하는 정확한 필드명 사용
-    if (messageData['vote_results_a'] != null || 
-        messageData['vote_results_b'] != null) {
+    if (messageData['voteResultsA'] != null || 
+        messageData['voteResultsB'] != null) {
       metadata['voteResults'] = {
-        'votesA': messageData['vote_results_a'] ?? 0,
-        'votesB': messageData['vote_results_b'] ?? 0,
+        'votesA': messageData['voteResultsA'] ?? 0,
+        'votesB': messageData['voteResultsB'] ?? 0,
         'percentageA': (messageData['vote_percent_a'] as num?)?.toDouble() ?? 0.0,
         'percentageB': (messageData['vote_percent_b'] as num?)?.toDouble() ?? 0.0,
       };
@@ -179,14 +179,14 @@ class ChatDetailMigrationService {
     if (messageData['metadata'] is Map) {
       final metadataMap = messageData['metadata'] as Map<String, dynamic>;
       metadata['authorName'] = metadataMap['authorName'] ?? metadataMap['author_name'];
-      metadata['authorPhotoUrl'] = metadataMap['authorPhotoUrl'] ?? metadataMap['author_photo_url'];
+      metadata['authorPhotoUrl'] = metadataMap['authorPhotoUrl'] ?? metadataMap['authorPhotoUrl'];
       metadata['creatorId'] = metadataMap['creatorId'] ?? metadataMap['creator_id'];
     }
     
     // metadata 필드에 없으면 직접 필드에서 가져오기
     if (metadata['authorName'] == null) {
       metadata['authorName'] = messageData['author_name'];
-      metadata['authorPhotoUrl'] = messageData['author_photo_url'];
+      metadata['authorPhotoUrl'] = messageData['authorPhotoUrl'];
       metadata['creatorId'] = messageData['creator_id'];
     }
     

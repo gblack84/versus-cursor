@@ -36,17 +36,17 @@ class VotingNotification {
     
     return VotingNotification(
       notificationId: doc.id,
-      userId: data['user_id'] ?? '',
+      userId: (data['userId'] ?? data['user_id']) ?? '',
       type: data['type'] ?? 'voting_request',
-      sourceId: data['source_id'] ?? '',
+      sourceId: (data['sourceId'] ?? data['source_id']) ?? '',
       content: NotificationContent.fromMap(data['content'] ?? {}),
-      createdAt: (data['created_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: ((data['createdAt'] ?? data['created_at']) as Timestamp?)?.toDate() ?? DateTime.now(),
       read: data['read'] ?? false,
-      targetAudience: data['target_audience'] ?? '',
-      expiryTime: (data['expiry_time'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      interactionType: data['interaction_type'] ?? 'vote',
+      targetAudience: (data['targetAudience'] ?? data['target_audience']) ?? '',
+      expiryTime: ((data['expiryTime'] ?? data['expiry_time']) as Timestamp?)?.toDate() ?? DateTime.now(),
+      interactionType: (data['interactionType'] ?? data['interaction_type']) ?? 'vote',
       targetReason: data['targetReason'] ?? '',
-      readAt: (data['read_at'] as Timestamp?)?.toDate(),
+      readAt: ((data['readAt'] ?? data['read_at']) as Timestamp?)?.toDate(),
     );
   }
 

@@ -21,7 +21,7 @@ class ChatMessageLifecycleService {
           .collection('chats')
           .doc(chatId)
           .collection('messages')
-          .where('seen_at', isNull: true)
+          .where('seenAt', isNull: true)
           .get();
 
       if (messagesQuery.docs.isEmpty) return;
@@ -34,7 +34,7 @@ class ChatMessageLifecycleService {
       for (final doc in messagesQuery.docs) {
         final data = doc.data();
         // Only update messages not sent by the current user
-        if (data['sender_id'] != null && data['sender_id'] != currentUserId) {
+        if (data['senderId'] != null && data['senderId'] != currentUserId) {
           batch.update(doc.reference, {
             'seen_at': seenTimestamp,
           });
@@ -208,7 +208,7 @@ class ChatMessageLifecycleService {
             .collection('chats')
             .doc(chatId)
             .collection('messages')
-            .where('sender_id', isNotEqualTo: userId)
+            .where('senderId', isNotEqualTo: userId)
             .count()
             .get();
         
@@ -220,13 +220,13 @@ class ChatMessageLifecycleService {
           .collection('chats')
           .doc(chatId)
           .collection('messages')
-          .where('time_stamp', isGreaterThan: Timestamp.fromDate(lastReadAt))
+          .where('timeStamp', isGreaterThan: Timestamp.fromDate(lastReadAt))
           .get();
       
       // Filter out messages from current user in client
       final unreadCount = query.docs.where((doc) {
         final data = doc.data();
-        return data['sender_id'] != userId;
+        return data['senderId'] != userId;
       }).length;
       
       return unreadCount;

@@ -105,7 +105,7 @@ class _ChatSearchWidgetState extends State<ChatSearchWidget> {
         queryBuilder: (usersRecord) => usersRecord
             .where('uid', isNotEqualTo: currentUserUid)
             .orderBy('uid')
-            .orderBy('total_a_points', descending: true)
+            .orderBy('totalAPoints', descending: true)
             .limit(20),
       ),
       builder: (context, snapshot) {
@@ -149,7 +149,7 @@ class _ChatSearchWidgetState extends State<ChatSearchWidget> {
         queryBuilder: (usersRecord) => usersRecord
             .where('uid', isNotEqualTo: currentUserUid)
             .orderBy('uid')
-            .orderBy('display_name'),
+            .orderBy('displayName'),
       ),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {

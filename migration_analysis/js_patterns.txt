@@ -120,65 +120,14 @@ firebase/functions/functions/firestore/onMessageCreated.js:23:        delivered_
 firebase/functions/functions/firestore/onMessageCreated.js:26:      console.log(`Set delivered_at for message ${messageId} in chat ${chatId}`);
 firebase/functions/functions/firestore/onMessageCreated.js:29:      console.error(`Error setting delivered_at for message ${messageId}:`, error);
 firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:51:      // PostsModel은 snake_case로 필드를 저장함
-firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:53:        vote_start_time: admin.firestore.Timestamp.fromDate(voteStartTime),
-firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:54:        vote_end_time: admin.firestore.Timestamp.fromDate(voteEndTime),
-firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:55:        vote_completed: false
-firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:72:          optionATitle = postData.optionA || postData.option_a || '';
-firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:80:          optionBTitle = postData.optionB || postData.option_b || '';
-firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:85:          authorName: postData.displayName || postData.display_name || '익명',
-firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:86:          authorPhotoUrl: postData.photoUrl || postData.photo_url || null,
-firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:88:          questionTitle: postData.question_title || postData.questionTitle,
-firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:91:          imageUrlA: imageUrlsA.length > 0 ? imageUrlsA[0] : (postData.image_url_a || postData.imageUrlA),
-firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:92:          imageUrlB: imageUrlsB.length > 0 ? imageUrlsB[0] : (postData.image_url_b || postData.imageUrlB),
-firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:93:          imageUrlsA: imageUrlsA.length > 0 ? imageUrlsA : (postData.image_urls_a || postData.imageUrlsA || []),
-firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:94:          imageUrlsB: imageUrlsB.length > 0 ? imageUrlsB : (postData.image_urls_b || postData.imageUrlsB || []),
 firebase/functions/functions/firestore/onPostCreatedSendNotifications.js:126:      await admin.firestore().collection('notification_errors').add({
-firebase/functions/functions/scheduled/flushThrottleQueue.js:65:        .where('vote_completed', '==', false)
-firebase/functions/functions/scheduled/flushThrottleQueue.js:81:        const voteEndTime = parseTimestamp(data.vote_end_time);
-firebase/functions/functions/scheduled/flushThrottleQueue.js:99:          const voteEndTime = parseTimestamp(data.vote_end_time);
-firebase/functions/functions/scheduled/flushThrottleQueue.js:103:            voteEndTimeRaw: logger.maskData(data.vote_end_time),
-firebase/functions/functions/scheduled/flushThrottleQueue.js:122:          const actualVotesA = postData.votedUserIDsA?.length || postData.votes_a || postData.vote_count_a || 0;
-firebase/functions/functions/scheduled/flushThrottleQueue.js:123:          const actualVotesB = postData.votedUserIDsB?.length || postData.votes_b || postData.vote_count_b || 0;
-firebase/functions/functions/scheduled/flushThrottleQueue.js:128:            A: postData.moderation?.expected_ratio_a || 0.5,
-firebase/functions/functions/scheduled/flushThrottleQueue.js:129:            B: postData.moderation?.expected_ratio_b || 0.5
-firebase/functions/functions/scheduled/flushThrottleQueue.js:157:            questionTitle: postData.question_title || postData.questionTitle,
-firebase/functions/functions/scheduled/flushThrottleQueue.js:158:            optionA: postData.option_a || postData.optionA?.title || 'A',
-firebase/functions/functions/scheduled/flushThrottleQueue.js:159:            optionB: postData.option_b || postData.optionB?.title || 'B',
-firebase/functions/functions/scheduled/flushThrottleQueue.js:161:            creatorName: postData.authorName || postData.author_name || '알 수 없음',
-firebase/functions/functions/scheduled/flushThrottleQueue.js:170:              vote_completed: true,
-firebase/functions/functions/scheduled/flushThrottleQueue.js:171:              vote_completed_at: admin.firestore.FieldValue.serverTimestamp(),
-firebase/functions/functions/scheduled/flushThrottleQueue.js:173:              display_votes_a: displayVotes.A,
-firebase/functions/functions/scheduled/flushThrottleQueue.js:174:              display_votes_b: displayVotes.B,
-firebase/functions/functions/scheduled/flushThrottleQueue.js:175:              display_percent_a: percentA,
-firebase/functions/functions/scheduled/flushThrottleQueue.js:176:              display_percent_b: percentB,
-firebase/functions/functions/scheduled/flushThrottleQueue.js:178:              actual_votes_a: actualVotesA,
-firebase/functions/functions/scheduled/flushThrottleQueue.js:179:              actual_votes_b: actualVotesB,
-firebase/functions/functions/scheduled/flushThrottleQueue.js:180:              actual_total_votes: actualTotal
-firebase/functions/functions/scheduled/flushThrottleQueue.js:188:              .where('source_id', '==', postId)
 firebase/functions/functions/scheduled/flushThrottleQueue.js:189:              .where('type', '==', 'voting_request')
-firebase/functions/functions/scheduled/flushThrottleQueue.js:194:              const userId = doc.data().user_id;
 firebase/functions/notifications/targetMatcher.js:47:          .where('last_active_time', '>', oneWeekAgo)
 firebase/functions/notifications/targetMatcher.js:48:          .orderBy('last_active_time', 'desc')
 firebase/functions/notifications/targetMatcher.js:52:        console.log(`last_active_time 쿼리 결과: ${snapshot2.size}명`);
 firebase/functions/notifications/targetMatcher.js:142:      displayName: user.display_name || user.displayName || '익명',
 firebase/functions/notifications/targetMatcher.js:144:      lastActive: user.lastActive || user.last_active_time,
-firebase/functions/notifications/notificationCreator.js:75:      notification_id: notificationRef.id,
-firebase/functions/notifications/notificationCreator.js:76:      user_id: user.id,
 firebase/functions/notifications/notificationCreator.js:77:      type: 'voting_request',
-firebase/functions/notifications/notificationCreator.js:78:      source_id: postId,
-firebase/functions/notifications/notificationCreator.js:85:          questionTitle: postData.questionTitle || postData.question_title || '',
-firebase/functions/notifications/notificationCreator.js:89:            : (postData.optionA || postData.option_a || ''),
-firebase/functions/notifications/notificationCreator.js:92:            : (postData.optionB || postData.option_b || ''),
-firebase/functions/notifications/notificationCreator.js:94:          imageUrlA: postData.optionA?.mediaUrls?.[0] || postData.imageUrlA || postData.image_url_a || null,
-firebase/functions/notifications/notificationCreator.js:95:          imageUrlB: postData.optionB?.mediaUrls?.[0] || postData.imageUrlB || postData.image_url_b || null,
-firebase/functions/notifications/notificationCreator.js:97:          imageUrlsA: postData.optionA?.mediaUrls || postData.imageUrlsA || postData.image_urls_a || null,
-firebase/functions/notifications/notificationCreator.js:98:          imageUrlsB: postData.optionB?.mediaUrls || postData.imageUrlsB || postData.image_urls_b || null,
-firebase/functions/notifications/notificationCreator.js:100:          authorName: postData.displayName || postData.display_name || '익명',
-firebase/functions/notifications/notificationCreator.js:101:          authorPhotoUrl: postData.photoUrl || postData.photo_url || null,
-firebase/functions/notifications/notificationCreator.js:112:      created_at: now,
-firebase/functions/notifications/notificationCreator.js:114:      target_audience: [postData.targetAudience.type], // Flutter 스키마에 맞춰 배열로 저장
-firebase/functions/notifications/notificationCreator.js:115:      expiry_time: expiryTime,
-firebase/functions/notifications/notificationCreator.js:116:      interaction_type: 'vote',
 firebase/functions/notifications/notificationCreator.js:164:            optionATitle = postData.optionA || postData.option_a || '';
 firebase/functions/notifications/notificationCreator.js:172:            optionBTitle = postData.optionB || postData.option_b || '';
 firebase/functions/notifications/notificationCreator.js:177:            authorName: postData.displayName || postData.display_name || '익명',
@@ -247,7 +196,7 @@ firebase/functions/services/aiChatService.js:161:    vote_option_b_images: postD
 firebase/functions/services/aiChatService.js:164:    vote_aspect_ratio_a: postData.optionA?.aspectRatio || postData.aspectRatioA || null,
 firebase/functions/services/aiChatService.js:165:    vote_aspect_ratio_b: postData.optionB?.aspectRatio || postData.aspectRatioB || null,
 firebase/functions/services/aiChatService.js:168:    vote_description: postData.description || '',
-firebase/functions/services/aiChatService.js:171:    card_status: 'in_progress', // 작성자는 진홉중 상태로 시작
+firebase/functions/services/aiChatService.js:171:    cardStatus: 'in_progress', // 작성자는 진행중 상태로 시작
 firebase/functions/services/aiChatService.js:172:    vote_end_time: admin.firestore.Timestamp.fromDate(
 firebase/functions/services/aiChatService.js:177:    user_votes: {},
 firebase/functions/services/aiChatService.js:181:      authorName: postData.displayName || postData.display_name || '익명',

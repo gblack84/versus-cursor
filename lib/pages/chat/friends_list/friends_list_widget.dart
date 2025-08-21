@@ -57,7 +57,7 @@ class _FriendsListWidgetState extends State<FriendsListWidget> {
                   parent: currentUserReference,
                   queryBuilder: (friendsListRecord) => friendsListRecord
                       .where('follower', isEqualTo: true)
-                      .orderBy('last_interaction', descending: true),
+                      .orderBy('lastInteraction', descending: true),
                 ),
                 builder: (context, snapshot) {
                   // 로딩 중

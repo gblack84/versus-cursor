@@ -192,7 +192,7 @@ class _AIChatPageV2State extends State<AIChatPageV2>
           .collection('chats')
           .doc(widget.aiChatId)
           .collection('messages')
-          .orderBy('time_stamp', descending: false)
+          .orderBy('timeStamp', descending: false)
           .limitToLast(30)
           .get();
       
@@ -223,8 +223,8 @@ class _AIChatPageV2State extends State<AIChatPageV2>
         // 마지막 메시지의 타임스탬프 저장
         final lastDoc = query.docs.last;
         final lastTimestamp = lastDoc.data();
-        if (lastTimestamp['time_stamp'] != null) {
-          _lastLoadedTimestamp = (lastTimestamp['time_stamp'] as Timestamp).toDate();
+        if (lastTimestamp['timeStamp'] != null) {
+          _lastLoadedTimestamp = (lastTimestamp['timeStamp'] as Timestamp).toDate();
           if (kDebugMode) {
             debugPrint('[AI Chat] Last loaded timestamp: $_lastLoadedTimestamp');
           }
@@ -260,7 +260,7 @@ class _AIChatPageV2State extends State<AIChatPageV2>
         .collection('chats')
         .doc(widget.aiChatId)
         .collection('messages')
-        .orderBy('time_stamp', descending: false);
+        .orderBy('timeStamp', descending: false);
     
     // 커서 기반 필터링 - 초기 로드된 메시지 이후만 스트리밍
     if (_lastLoadedDocument != null) {
@@ -424,8 +424,8 @@ class _AIChatPageV2State extends State<AIChatPageV2>
           .collection('chats')
           .doc(widget.aiChatId)
           .collection('messages')
-          .orderBy('time_stamp', descending: false)
-          .endBefore([_lastDocument!['time_stamp']])
+          .orderBy('timeStamp', descending: false)
+          .endBefore([_lastDocument!['timeStamp']])
           .limitToLast(20)
           .get();
       
@@ -528,7 +528,7 @@ class _AIChatPageV2State extends State<AIChatPageV2>
         if (userDoc.exists) {
           final userData = userDoc.data()!;
           // Use multiple fallbacks for display name
-          final displayName = userData['display_name'] ?? 
+          final displayName = userData['displayName'] ?? 
                              userData['handle'] ?? 
                              userData['email']?.split('@')[0] ?? 
                              'User';
@@ -536,7 +536,7 @@ class _AIChatPageV2State extends State<AIChatPageV2>
           final currentUser = core.User(
             id: _currentUserId,
             name: displayName.toString().isNotEmpty ? displayName.toString() : 'User',
-            imageSource: userData['photo_url'] ?? currentUserPhoto,
+            imageSource: userData['photoUrl'] ?? currentUserPhoto,
           );
           _userCacheService.updateUser(currentUser);
           return currentUser;
@@ -566,8 +566,8 @@ class _AIChatPageV2State extends State<AIChatPageV2>
         final userData = userDoc.data()!;
         final user = core.User(
           id: userId,
-          name: userData['display_name'] ?? 'User',
-          imageSource: userData['photo_url'],
+          name: userData['displayName'] ?? 'User',
+          imageSource: userData['photoUrl'],
         );
         _userCacheService.updateUser(user);
         return user;
@@ -610,7 +610,7 @@ class _AIChatPageV2State extends State<AIChatPageV2>
     final metadata = message.metadata ?? {};
     
     // Check if this is a vote message
-    if (metadata['type'] == 'vote_request' || metadata['type'] == 'vote_created') {
+    if (metadata['type'] == 'voteRequest' || metadata['type'] == 'voteCreated') {
       // Wrap with KeyedSubtree to preserve scroll position during rebuilds
       return KeyedSubtree(
         key: ValueKey(message.id),
@@ -635,7 +635,7 @@ class _AIChatPageV2State extends State<AIChatPageV2>
           userVotes: metadata['userVotes'],
           voteResults: metadata['voteResults'],
           isMe: isSentByMe,
-          messageType: metadata['type'] ?? 'vote_request',
+          messageType: metadata['type'] ?? 'voteRequest',
           messageId: message.id,
           chatId: widget.aiChatId,
           currentUserName: currentUserDisplayName,

@@ -42,11 +42,11 @@ class NotificationService {
     _notificationListener = FirebaseFirestore.instance
         .collection('notifications')
         .where('userId', isEqualTo: userId)
-        .where('type', isEqualTo: 'voting_request')
+        .where('type', isEqualTo: 'votingRequest')
         .where('read', isEqualTo: false)
         .where('expiryTime', isGreaterThan: Timestamp.now())
-        .orderBy('expiry_time', descending: false) // 만료 임박한 것부터
-        .orderBy('created_at', descending: true)   // 최신 것부터
+        .orderBy('expiryTime', descending: false) // 만료 임박한 것부터
+        .orderBy('createdAt', descending: true)   // 최신 것부터
         .snapshots()
         .listen(
           _handleNotificationChanges,
@@ -109,11 +109,11 @@ class NotificationService {
     return FirebaseFirestore.instance
         .collection('notifications')
         .where('userId', isEqualTo: userId)
-        .where('type', isEqualTo: 'voting_request')
+        .where('type', isEqualTo: 'votingRequest')
         .where('read', isEqualTo: false)
         .where('expiryTime', isGreaterThan: Timestamp.now())
-        .orderBy('expiry_time', descending: false)
-        .orderBy('created_at', descending: true)
+        .orderBy('expiryTime', descending: false)
+        .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs.length);
   }
@@ -227,7 +227,7 @@ class NotificationService {
           .doc(aiChatId)
           .collection('messages')
           .where('votePostId', isEqualTo: postId)
-          .where('messageType', isEqualTo: 'vote_request')
+          .where('messageType', isEqualTo: 'voteRequest')
           .get();
       
       if (messagesSnapshot.docs.isEmpty) {

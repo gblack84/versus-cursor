@@ -264,7 +264,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           .collection('chats')
           .doc(chatId)
           .collection('messages')
-          .orderBy('time_stamp', descending: false)
+          .orderBy('timeStamp', descending: false)
           .limitToLast(30)
           .get(const GetOptions(source: Source.cache));
       
@@ -291,7 +291,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           .collection('chats')
           .doc(chatId)
           .collection('messages')
-          .orderBy('time_stamp', descending: false)
+          .orderBy('timeStamp', descending: false)
           .limitToLast(30)
           .get();
       
@@ -330,7 +330,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
             .collection('chats')
             .doc(chatId)
             .collection('messages')
-            .orderBy('time_stamp', descending: false)
+            .orderBy('timeStamp', descending: false)
             .limitToLast(30)
             .get();
         
@@ -364,7 +364,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       // 캐시 우선
       final snapshot = await _firestore
           .collection('posts')
-          .orderBy('post_created_date', descending: true)
+          .orderBy('postCreatedDate', descending: true)
           .limit(limit)
           .get(const GetOptions(source: Source.cache));
       
@@ -378,7 +378,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       // 서버에서 가져오기
       final snapshot = await _firestore
           .collection('posts')
-          .orderBy('post_created_date', descending: true)
+          .orderBy('postCreatedDate', descending: true)
           .limit(limit)
           .get();
       
@@ -442,7 +442,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       // 최근 채팅방 목록 가져오기
       final chatsSnapshot = await _firestore
           .collection('chats')
-          .orderBy('last_message_at', descending: true)
+          .orderBy('lastMessageAt', descending: true)
           .limit(5)
           .get();
       

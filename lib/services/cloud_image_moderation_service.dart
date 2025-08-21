@@ -11,7 +11,7 @@ class CloudImageModerationService {
     try {
       final moderationId = filePath.replaceAll(RegExp(r'[/.]'), '_');
       final doc = await FirebaseFirestore.instance
-          .collection('image_moderation')
+          .collection('imageModeration')
           .doc(moderationId)
           .get();
       
@@ -40,7 +40,7 @@ class CloudImageModerationService {
     while (DateTime.now().isBefore(endTime)) {
       try {
         final doc = await FirebaseFirestore.instance
-            .collection('image_moderation')
+            .collection('imageModeration')
             .doc(moderationId)
             .get();
         
@@ -72,7 +72,7 @@ class CloudImageModerationService {
     final moderationId = filePath.replaceAll(RegExp(r'[/.]'), '_');
     
     return FirebaseFirestore.instance
-        .collection('image_moderation')
+        .collection('imageModeration')
         .doc(moderationId)
         .snapshots()
         .map((snapshot) {

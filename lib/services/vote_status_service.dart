@@ -133,7 +133,7 @@ class VoteStatusService {
           .collection('chats').doc(aiChatId)
           .collection('messages')
           .where('votePostId', isEqualTo: postId)
-          .where('messageType', isEqualTo: 'vote_request')
+          .where('messageType', isEqualTo: 'voteRequest')
           .limit(1)
           .get();
       

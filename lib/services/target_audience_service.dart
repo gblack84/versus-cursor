@@ -190,7 +190,7 @@ class TargetAudienceService {
           .where('user', isEqualTo: userId)
           .where('targetAudience', isNotEqualTo: null)
           .orderBy('targetAudience')
-          .orderBy('created_time', descending: true)
+          .orderBy('createdTime', descending: true)
           .limit(100)
           .get();
 

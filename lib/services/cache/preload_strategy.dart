@@ -37,7 +37,7 @@ class PreloadStrategy {
         recentChatsQuery = await FirebaseFirestore.instance
             .collection('chats')
             .where('participantIds', arrayContains: userId)
-            .orderBy('last_message_at', descending: true)
+            .orderBy('lastMessageAt', descending: true)
             .limit(preloadChatCount)
             .get();
       } catch (indexError) {
@@ -122,7 +122,7 @@ class PreloadStrategy {
           .collection('chats')
           .doc(chatId)
           .collection('messages')
-          .orderBy('time_stamp', descending: true)
+          .orderBy('timeStamp', descending: true)
           .limit(preloadMessageCount)
           .get();
       
@@ -199,7 +199,7 @@ class PreloadStrategy {
       // Get recent popular posts
       final postsQuery = await FirebaseFirestore.instance
           .collection('posts')
-          .orderBy('created_at', descending: true)
+          .orderBy('createdAt', descending: true)
           .limit(20)
           .get();
       

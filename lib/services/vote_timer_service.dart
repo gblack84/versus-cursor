@@ -50,7 +50,7 @@ class VoteTimerService extends ChangeNotifier {
       
       // 서버에 타임스탬프 요청
       final docRef = await FirebaseFirestore.instance
-          .collection('time_sync')
+          .collection('timeSync')
           .add({
             'timestamp': FieldValue.serverTimestamp(),
             'local_time': localTimeBefore.toIso8601String(),

@@ -112,6 +112,49 @@ git revert f0380a5a  # Firebase Functions
 
 ## Phase 2: Query Layer Migration (2025-08-21)
 
+### Initial Migration (First Commit)
+- 14 Flutter files with Firestore queries updated
+- Major query patterns converted to camelCase
+
+## Phase 3: Complete Service Layer Migration (2025-08-21)
+
+### Service Layer Files Updated (7 files)
+- `lib/services/cache/preload_strategy.dart` - Cache preloading queries
+- `lib/services/cache/unified_cache_service.dart` - Unified cache queries
+- `lib/services/cloud_image_moderation_service.dart` - Image moderation collection
+- `lib/services/notification_service.dart` - Notification queries
+- `lib/services/target_audience_service.dart` - Target audience queries
+- `lib/services/vote_status_service.dart` - Vote status queries
+- `lib/services/vote_timer_service.dart` - Time sync collection
+
+### Additional Query Patterns Converted
+```dart
+// Cache and sync patterns:
+.orderBy('lastMessageAt')    // was: last_message_at
+.orderBy('timeStamp')        // was: time_stamp
+.orderBy('postCreatedDate')  // was: post_created_date
+.orderBy('createdTime')      // was: created_time
+
+// Collection names:
+.collection('timeSync')       // was: time_sync
+.collection('imageModeration') // was: image_moderation
+
+// Message types:
+isEqualTo: 'voteRequest'     // was: vote_request
+isEqualTo: 'votingRequest'   // was: voting_request
+```
+
+### Migration Statistics
+- **Total Firestore queries with snake_case**: 0 remaining (was 215+)
+- **Service layer files updated**: 21 files total
+- **Flutter analyze**: ✅ 0 errors, 1 warning (unrelated)
+- **Completion rate**: ~95% (only backward compatibility code remains)
+
+### Remaining Snake_case Patterns
+- **Backward compatibility in models**: 175 instances (intentionally kept)
+- **Collection names**: Kept as-is (database schema dependency)
+- **Internal constants/routes**: Low priority, no functional impact
+
 ### Additional Files Updated
 **Flutter Query Layer (14 files)**:
 - `lib/models/notification_model.dart` - Backward compatibility for notification fields

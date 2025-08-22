@@ -39,9 +39,9 @@ class VoteStatusService {
         // 투표 필드 업데이트
         final updates = <String, dynamic>{
           'votedUserIDs${choice}': FieldValue.arrayUnion([userId]),
-          'votes_${choice.toLowerCase()}': FieldValue.increment(1),
-          'total_votes': FieldValue.increment(1),
-          'last_vote_at': FieldValue.serverTimestamp(),
+          'votes${choice}': FieldValue.increment(1),
+          'totalVotes': FieldValue.increment(1),
+          'lastVoteAt': FieldValue.serverTimestamp(),
         };
         
         transaction.update(postRef, updates);
@@ -51,8 +51,8 @@ class VoteStatusService {
         transaction.set(voteRef, {
           'user': FirebaseFirestore.instance.doc('users/$userId'),
           'option': choice,
-          'created_at': FieldValue.serverTimestamp(),
-          'from_chat': messageId != null && chatId != null,
+          'createdAt': FieldValue.serverTimestamp(),
+          'fromChat': messageId != null && chatId != null,
         });
         
         // 2. Messages 업데이트 (있는 경우)
@@ -64,14 +64,14 @@ class VoteStatusService {
           final messageDoc = await transaction.get(messageRef);
           
           if (messageDoc.exists) {
-            DebugHelper.logVote('메시지 user_votes 업데이트: messageId=$messageId, choice=$choice');
+            DebugHelper.logVote('메시지 userVotes 업데이트: messageId=$messageId, choice=$choice');
             
             transaction.update(messageRef, {
-              'user_votes.$userId': {
+              'userVotes.$userId': {
                 'option': choice,
-                'voted_at': FieldValue.serverTimestamp(),
+                'votedAt': FieldValue.serverTimestamp(),
               },
-              'last_vote_update': FieldValue.serverTimestamp(),
+              'lastVoteUpdate': FieldValue.serverTimestamp(),
             });
           } else {
             DebugHelper.logVote('메시지 문서를 찾을 수 없음: messageId=$messageId', level: LogLevel.WARNING);
@@ -121,7 +121,7 @@ class VoteStatusService {
       }
       
       final postData = postDoc.data() as Map<String, dynamic>;
-      final authorId = postData['user_id'] ?? postData['userId'] ?? postData['author_id'];
+      final authorId = postData['userId'] ?? postData['authorId'];
       if (authorId == null) {
         DebugHelper.logVote('AI 채팅 업데이트 스킵: 작성자 ID 없음');
         return false;
@@ -142,14 +142,14 @@ class VoteStatusService {
         return false;
       }
       
-      // user_votes 업데이트
+      // userVotes 업데이트
       final messageDoc = messagesQuery.docs.first;
       await messageDoc.reference.update({
-        'user_votes.$userId': {
+        'userVotes.$userId': {
           'option': choice,
-          'voted_at': FieldValue.serverTimestamp(),
+          'votedAt': FieldValue.serverTimestamp(),
         },
-        'last_vote_update': FieldValue.serverTimestamp(),
+        'lastVoteUpdate': FieldValue.serverTimestamp(),
       });
       
       DebugHelper.logVote('AI 채팅 메시지 업데이트 성공');

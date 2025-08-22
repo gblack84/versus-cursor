@@ -67,16 +67,16 @@ class CommentsModel extends FirestoreRecord {
   bool hasPremiumRequired() => _premiumRequired != null;
 
   void _initializeFields() {
-    _postId = snapshotData['post_id'] as String?;
-    _userId = snapshotData['user_id'] as String?;
+    _postId = snapshotData['postId'] as String?;
+    _userId = snapshotData['userId'] as String?;
     _content = snapshotData['content'] as String?;
-    _createdAt = snapshotData['created_at'] as DateTime?;
-    _parentCommentId = snapshotData['parent_comment_id'] as String?;
-    _isAnonymous = snapshotData['is_anonymous'] as bool?;
-    _reportCount = castToType<int>(snapshotData['report_count']);
-    _reportedBy = getDataList(snapshotData['reported_by']);
-    _isBlocked = snapshotData['is_blocked'] as bool?;
-    _premiumRequired = snapshotData['premium_required'] as bool?;
+    _createdAt = snapshotData['createdAt'] as DateTime?;
+    _parentCommentId = snapshotData['parentCommentId'] as String?;
+    _isAnonymous = snapshotData['isAnonymous'] as bool?;
+    _reportCount = castToType<int>(snapshotData['reportCount']);
+    _reportedBy = getDataList(snapshotData['reportedBy']);
+    _isBlocked = snapshotData['isBlocked'] as bool?;
+    _premiumRequired = snapshotData['premiumRequired'] as bool?;
   }
 
   static CollectionReference get collection =>
@@ -126,15 +126,15 @@ Map<String, dynamic> createCommentsModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'post_id': postId,
-      'user_id': userId,
+      'postId': postId,
+      'userId': userId,
       'content': content,
-      'created_at': createdAt,
-      'parent_comment_id': parentCommentId,
-      'is_anonymous': isAnonymous,
-      'report_count': reportCount,
-      'is_blocked': isBlocked,
-      'premium_required': premiumRequired,
+      'createdAt': createdAt,
+      'parentCommentId': parentCommentId,
+      'isAnonymous': isAnonymous,
+      'reportCount': reportCount,
+      'isBlocked': isBlocked,
+      'premiumRequired': premiumRequired,
     }.withoutNulls,
   );
 

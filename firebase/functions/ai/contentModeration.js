@@ -152,7 +152,7 @@ async function getUserHistory(userId, admin) {
     // TODO: Firestore 복합 인덱스 생성 후 orderBy 다시 추가
     const userPostsSnapshot = await admin.firestore()
       .collection('posts')
-      .where('user_info.user_ref', '==', admin.firestore().doc(`users/${userId}`))
+      .where('userInfo.userRef', '==', admin.firestore().doc(`users/${userId}`))
       .limit(5)
       .get();
 
@@ -160,9 +160,9 @@ async function getUserHistory(userId, admin) {
     userPostsSnapshot.forEach(doc => {
       const data = doc.data();
       history.push({
-        questionTitle: data.question_title || '',
-        titleA: data.title_A || '',
-        titleB: data.title_B || '',
+        questionTitle: data.questionTitle || '',
+        titleA: data.titleA || '',
+        titleB: data.titleB || '',
         timestamp: data.timestamp
       });
     });

@@ -16,32 +16,32 @@ class GroupMessagesModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "g_message_id" field.
+  // "gMessageId" field.
   String? _gMessageId;
   String get gMessageId => _gMessageId ?? '';
   bool hasGMessageId() => _gMessageId != null;
 
-  // "g_sender_id" field.
+  // "gSenderId" field.
   String? _gSenderId;
   String get gSenderId => _gSenderId ?? '';
   bool hasGSenderId() => _gSenderId != null;
 
-  // "g_content" field.
+  // "gContent" field.
   String? _gContent;
   String get gContent => _gContent ?? '';
   bool hasGContent() => _gContent != null;
 
-  // "g_time_stamp" field.
+  // "gTimeStamp" field.
   DateTime? _gTimeStamp;
   DateTime? get gTimeStamp => _gTimeStamp;
   bool hasGTimeStamp() => _gTimeStamp != null;
 
-  // "g_attachment_url" field.
+  // "gAttachmentUrl" field.
   String? _gAttachmentUrl;
   String get gAttachmentUrl => _gAttachmentUrl ?? '';
   bool hasGAttachmentUrl() => _gAttachmentUrl != null;
 
-  // "g_is_read_by" field.
+  // "gIsReadBy" field.
   List<String>? _gIsReadBy;
   List<String> get gIsReadBy => _gIsReadBy ?? const [];
   bool hasGIsReadBy() => _gIsReadBy != null;
@@ -49,18 +49,18 @@ class GroupMessagesModel extends FirestoreRecord {
   DocumentReference get parentReference => reference.parent.parent!;
 
   void _initializeFields() {
-    _gMessageId = snapshotData['g_message_id'] as String?;
-    _gSenderId = snapshotData['g_sender_id'] as String?;
-    _gContent = snapshotData['g_content'] as String?;
-    _gTimeStamp = snapshotData['g_time_stamp'] as DateTime?;
-    _gAttachmentUrl = snapshotData['g_attachment_url'] as String?;
-    _gIsReadBy = getDataList(snapshotData['g_is_read_by']);
+    _gMessageId = snapshotData['gMessageId'] as String?;
+    _gSenderId = snapshotData['gSenderId'] as String?;
+    _gContent = snapshotData['gContent'] as String?;
+    _gTimeStamp = snapshotData['gTimeStamp'] as DateTime?;
+    _gAttachmentUrl = snapshotData['gAttachmentUrl'] as String?;
+    _gIsReadBy = getDataList(snapshotData['gIsReadBy']);
   }
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
           ? parent.collection('groupMessages')
-          : FirebaseFirestore.instance.collectionGroup('group_messages');
+          : FirebaseFirestore.instance.collectionGroup('groupMessages');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
       parent.collection('groupMessages').doc(id);
@@ -105,11 +105,11 @@ Map<String, dynamic> createGroupMessagesModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'g_message_id': gMessageId,
-      'g_sender_id': gSenderId,
-      'g_content': gContent,
-      'g_time_stamp': gTimeStamp,
-      'g_attachment_url': gAttachmentUrl,
+      'gMessageId': gMessageId,
+      'gSenderId': gSenderId,
+      'gContent': gContent,
+      'gTimeStamp': gTimeStamp,
+      'gAttachmentUrl': gAttachmentUrl,
     }.withoutNulls,
   );
 

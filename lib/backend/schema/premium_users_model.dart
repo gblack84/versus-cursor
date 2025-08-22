@@ -16,56 +16,56 @@ class PremiumUsersModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "user_id" field.
+  // "userId" field.
   String? _userId;
   String get userId => _userId ?? '';
   bool hasUserId() => _userId != null;
 
-  // "is_premium" field.
+  // "isPremium" field.
   bool? _isPremium;
   bool get isPremium => _isPremium ?? false;
   bool hasIsPremium() => _isPremium != null;
 
-  // "premium_end_date" field.
+  // "premiumEndDate" field.
   DateTime? _premiumEndDate;
   DateTime? get premiumEndDate => _premiumEndDate;
   bool hasPremiumEndDate() => _premiumEndDate != null;
 
-  // "premium_level" field.
+  // "premiumLevel" field.
   String? _premiumLevel;
   String get premiumLevel => _premiumLevel ?? '';
   bool hasPremiumLevel() => _premiumLevel != null;
 
-  // "premium_start_date" field.
+  // "premiumStartDate" field.
   DateTime? _premiumStartDate;
   DateTime? get premiumStartDate => _premiumStartDate;
   bool hasPremiumStartDate() => _premiumStartDate != null;
 
-  // "available_features" field.
+  // "availableFeatures" field.
   List<String>? _availableFeatures;
   List<String> get availableFeatures => _availableFeatures ?? const [];
   bool hasAvailableFeatures() => _availableFeatures != null;
 
-  // "points_balance" field.
+  // "pointsBalance" field.
   int? _pointsBalance;
   int get pointsBalance => _pointsBalance ?? 0;
   bool hasPointsBalance() => _pointsBalance != null;
 
-  // "last_used_premium_feature" field.
+  // "lastUsedPremiumFeature" field.
   DateTime? _lastUsedPremiumFeature;
   DateTime? get lastUsedPremiumFeature => _lastUsedPremiumFeature;
   bool hasLastUsedPremiumFeature() => _lastUsedPremiumFeature != null;
 
   void _initializeFields() {
-    _userId = snapshotData['user_id'] as String?;
-    _isPremium = snapshotData['is_premium'] as bool?;
-    _premiumEndDate = snapshotData['premium_end_date'] as DateTime?;
-    _premiumLevel = snapshotData['premium_level'] as String?;
-    _premiumStartDate = snapshotData['premium_start_date'] as DateTime?;
-    _availableFeatures = getDataList(snapshotData['available_features']);
-    _pointsBalance = castToType<int>(snapshotData['points_balance']);
+    _userId = snapshotData['userId'] as String?;
+    _isPremium = snapshotData['isPremium'] as bool?;
+    _premiumEndDate = snapshotData['premiumEndDate'] as DateTime?;
+    _premiumLevel = snapshotData['premiumLevel'] as String?;
+    _premiumStartDate = snapshotData['premiumStartDate'] as DateTime?;
+    _availableFeatures = getDataList(snapshotData['availableFeatures']);
+    _pointsBalance = castToType<int>(snapshotData['pointsBalance']);
     _lastUsedPremiumFeature =
-        snapshotData['last_used_premium_feature'] as DateTime?;
+        snapshotData['lastUsedPremiumFeature'] as DateTime?;
   }
 
   static CollectionReference get collection =>
@@ -113,13 +113,13 @@ Map<String, dynamic> createPremiumUsersModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'user_id': userId,
-      'is_premium': isPremium,
-      'premium_end_date': premiumEndDate,
-      'premium_level': premiumLevel,
-      'premium_start_date': premiumStartDate,
-      'points_balance': pointsBalance,
-      'last_used_premium_feature': lastUsedPremiumFeature,
+      'userId': userId,
+      'isPremium': isPremium,
+      'premiumEndDate': premiumEndDate,
+      'premiumLevel': premiumLevel,
+      'premiumStartDate': premiumStartDate,
+      'pointsBalance': pointsBalance,
+      'lastUsedPremiumFeature': lastUsedPremiumFeature,
     }.withoutNulls,
   );
 

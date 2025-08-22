@@ -17,31 +17,31 @@ class JopsCategoryModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "jop_name" field.
+  // "jopName" field.
   String? _jopName;
   String get jopName => _jopName ?? '';
   bool hasJopName() => _jopName != null;
 
-  // "category_ref_A" field.
+  // "categoryRefA" field.
   String? _categoryRefA;
   String get categoryRefA => _categoryRefA ?? '';
   bool hasCategoryRefA() => _categoryRefA != null;
 
-  // "category_ref_B" field.
+  // "categoryRefB" field.
   String? _categoryRefB;
   String get categoryRefB => _categoryRefB ?? '';
   bool hasCategoryRefB() => _categoryRefB != null;
 
-  // "search_tags" field.
+  // "searchTags" field.
   List<String>? _searchTags;
   List<String> get searchTags => _searchTags ?? const [];
   bool hasSearchTags() => _searchTags != null;
 
   void _initializeFields() {
-    _jopName = snapshotData['jop_name'] as String?;
-    _categoryRefA = snapshotData['category_ref_A'] as String?;
-    _categoryRefB = snapshotData['category_ref_B'] as String?;
-    _searchTags = getDataList(snapshotData['search_tags']);
+    _jopName = snapshotData['jopName'] as String?;
+    _categoryRefA = snapshotData['categoryRefA'] as String?;
+    _categoryRefB = snapshotData['categoryRefB'] as String?;
+    _searchTags = getDataList(snapshotData['searchTags']);
   }
 
   static CollectionReference get collection =>
@@ -68,11 +68,11 @@ class JopsCategoryModel extends FirestoreRecord {
   static JopsCategoryModel fromAlgolia(AlgoliaObjectSnapshot snapshot) =>
       JopsCategoryModel.getDocumentFromData(
         {
-          'jop_name': snapshot.data['jop_name'],
-          'category_ref_A': snapshot.data['category_ref_A'],
-          'category_ref_B': snapshot.data['category_ref_B'],
+          'jopName': snapshot.data['jopName'],
+          'categoryRefA': snapshot.data['categoryRefA'],
+          'categoryRefB': snapshot.data['categoryRefB'],
           'search_tags': safeGet(
-            () => snapshot.data['search_tags'].toList(),
+            () => snapshot.data['searchTags'].toList(),
           ),
         },
         JopsCategoryModel.collection.doc(snapshot.objectID),
@@ -87,7 +87,7 @@ class JopsCategoryModel extends FirestoreRecord {
   }) =>
       AppAlgoliaManager.instance
           .algoliaQuery(
-            index: 'jops_category',
+            index: 'jopsCategory',
             term: term,
             maxResults: maxResults,
             location: location,
@@ -116,9 +116,9 @@ Map<String, dynamic> createJopsCategoryModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'jop_name': jopName,
-      'category_ref_A': categoryRefA,
-      'category_ref_B': categoryRefB,
+      'jopName': jopName,
+      'categoryRefA': categoryRefA,
+      'categoryRefB': categoryRefB,
     }.withoutNulls,
   );
 

@@ -16,31 +16,31 @@ class InterestModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "interest_id" field.
+  // "interestId" field.
   String? _interestId;
   String get interestId => _interestId ?? '';
   bool hasInterestId() => _interestId != null;
 
-  // "name_interest" field.
+  // "nameInterest" field.
   String? _nameInterest;
   String get nameInterest => _nameInterest ?? '';
   bool hasNameInterest() => _nameInterest != null;
 
-  // "user_ids" field.
+  // "userIds" field.
   List<String>? _userIds;
   List<String> get userIds => _userIds ?? const [];
   bool hasUserIds() => _userIds != null;
 
-  // "sub_categories" field.
+  // "subCategories" field.
   List<String>? _subCategories;
   List<String> get subCategories => _subCategories ?? const [];
   bool hasSubCategories() => _subCategories != null;
 
   void _initializeFields() {
-    _interestId = snapshotData['interest_id'] as String?;
-    _nameInterest = snapshotData['name_interest'] as String?;
-    _userIds = getDataList(snapshotData['user_ids']);
-    _subCategories = getDataList(snapshotData['sub_categories']);
+    _interestId = snapshotData['interestId'] as String?;
+    _nameInterest = snapshotData['nameInterest'] as String?;
+    _userIds = getDataList(snapshotData['userIds']);
+    _subCategories = getDataList(snapshotData['subCategories']);
   }
 
   static CollectionReference get collection =>
@@ -83,8 +83,8 @@ Map<String, dynamic> createInterestModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'interest_id': interestId,
-      'name_interest': nameInterest,
+      'interestId': interestId,
+      'nameInterest': nameInterest,
     }.withoutNulls,
   );
 

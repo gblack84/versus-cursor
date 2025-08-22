@@ -15,7 +15,7 @@ class FriendsListModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "friends_id" field.
+  // "friendsId" field.
   String? _friendsId;
   String get friendsId => _friendsId ?? '';
   bool hasFriendsId() => _friendsId != null;
@@ -35,12 +35,12 @@ class FriendsListModel extends FirestoreRecord {
   bool get follower => _follower ?? false;
   bool hasFollower() => _follower != null;
 
-  // "is_blocked" field.
+  // "isBlocked" field.
   bool? _isBlocked;
   bool get isBlocked => _isBlocked ?? false;
   bool hasIsBlocked() => _isBlocked != null;
 
-  // "last_interaction" field.
+  // "lastInteraction" field.
   DateTime? _lastInteraction;
   DateTime? get lastInteraction => _lastInteraction;
   bool hasLastInteraction() => _lastInteraction != null;
@@ -48,18 +48,18 @@ class FriendsListModel extends FirestoreRecord {
   DocumentReference get parentReference => reference.parent.parent!;
 
   void _initializeFields() {
-    _friendsId = snapshotData['friends_id'] as String?;
+    _friendsId = snapshotData['friendsId'] as String?;
     _status = snapshotData['status'] as String?;
     _following = snapshotData['following'] as bool?;
     _follower = snapshotData['follower'] as bool?;
-    _isBlocked = snapshotData['is_blocked'] as bool?;
-    _lastInteraction = snapshotData['last_interaction'] as DateTime?;
+    _isBlocked = snapshotData['isBlocked'] as bool?;
+    _lastInteraction = snapshotData['lastInteraction'] as DateTime?;
   }
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
           ? parent.collection('friendsList')
-          : FirebaseFirestore.instance.collectionGroup('friends_list');
+          : FirebaseFirestore.instance.collectionGroup('friendsList');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
       parent.collection('friendsList').doc(id);
@@ -105,12 +105,12 @@ Map<String, dynamic> createFriendsListModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'friends_id': friendsId,
+      'friendsId': friendsId,
       'status': status,
       'following': following,
       'follower': follower,
-      'is_blocked': isBlocked,
-      'last_interaction': lastInteraction,
+      'isBlocked': isBlocked,
+      'lastInteraction': lastInteraction,
     }.withoutNulls,
   );
 

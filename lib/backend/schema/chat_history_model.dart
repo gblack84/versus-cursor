@@ -15,7 +15,7 @@ class ChatHistoryModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "Rol_chat" field.
+  // "rolChat" field.
   String? _rolChat;
   String get rolChat => _rolChat ?? '';
   bool hasRolChat() => _rolChat != null;
@@ -25,7 +25,7 @@ class ChatHistoryModel extends FirestoreRecord {
   String get content => _content ?? '';
   bool hasContent() => _content != null;
 
-  // "Time_Stamp" field.
+  // "timeStamp" field.
   DateTime? _timeStamp;
   DateTime? get timeStamp => _timeStamp;
   bool hasTimeStamp() => _timeStamp != null;
@@ -33,9 +33,9 @@ class ChatHistoryModel extends FirestoreRecord {
   DocumentReference get parentReference => reference.parent.parent!;
 
   void _initializeFields() {
-    _rolChat = snapshotData['Rol_chat'] as String?;
+    _rolChat = snapshotData['rolChat'] as String?;
     _content = snapshotData['content'] as String?;
-    _timeStamp = snapshotData['Time_Stamp'] as DateTime?;
+    _timeStamp = snapshotData['timeStamp'] as DateTime?;
   }
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
@@ -84,9 +84,9 @@ Map<String, dynamic> createChatHistoryModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'Rol_chat': rolChat,
+      'rolChat': rolChat,
       'content': content,
-      'Time_Stamp': timeStamp,
+      'timeStamp': timeStamp,
     }.withoutNulls,
   );
 

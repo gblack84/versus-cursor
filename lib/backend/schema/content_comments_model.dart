@@ -15,12 +15,12 @@ class ContentCommentsModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "comment_id" field.
+  // "commentId" field.
   String? _commentId;
   String get commentId => _commentId ?? '';
   bool hasCommentId() => _commentId != null;
 
-  // "user_id" field.
+  // "userId" field.
   String? _userId;
   String get userId => _userId ?? '';
   bool hasUserId() => _userId != null;
@@ -30,17 +30,17 @@ class ContentCommentsModel extends FirestoreRecord {
   String get text => _text ?? '';
   bool hasText() => _text != null;
 
-  // "created_at" field.
+  // "createdAt" field.
   DateTime? _createdAt;
   DateTime? get createdAt => _createdAt;
   bool hasCreatedAt() => _createdAt != null;
 
-  // "is_premium" field.
+  // "isPremium" field.
   bool? _isPremium;
   bool get isPremium => _isPremium ?? false;
   bool hasIsPremium() => _isPremium != null;
 
-  // "likes_count" field.
+  // "likesCount" field.
   int? _likesCount;
   int get likesCount => _likesCount ?? 0;
   bool hasLikesCount() => _likesCount != null;
@@ -48,18 +48,18 @@ class ContentCommentsModel extends FirestoreRecord {
   DocumentReference get parentReference => reference.parent.parent!;
 
   void _initializeFields() {
-    _commentId = snapshotData['comment_id'] as String?;
-    _userId = snapshotData['user_id'] as String?;
+    _commentId = snapshotData['commentId'] as String?;
+    _userId = snapshotData['userId'] as String?;
     _text = snapshotData['text'] as String?;
-    _createdAt = snapshotData['created_at'] as DateTime?;
-    _isPremium = snapshotData['is_premium'] as bool?;
-    _likesCount = castToType<int>(snapshotData['likes_count']);
+    _createdAt = snapshotData['createdAt'] as DateTime?;
+    _isPremium = snapshotData['isPremium'] as bool?;
+    _likesCount = castToType<int>(snapshotData['likesCount']);
   }
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
           ? parent.collection('contentComments')
-          : FirebaseFirestore.instance.collectionGroup('content_comments');
+          : FirebaseFirestore.instance.collectionGroup('contentComments');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
       parent.collection('contentComments').doc(id);
@@ -105,12 +105,12 @@ Map<String, dynamic> createContentCommentsModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'comment_id': commentId,
-      'user_id': userId,
+      'commentId': commentId,
+      'userId': userId,
       'text': text,
-      'created_at': createdAt,
-      'is_premium': isPremium,
-      'likes_count': likesCount,
+      'createdAt': createdAt,
+      'isPremium': isPremium,
+      'likesCount': likesCount,
     }.withoutNulls,
   );
 

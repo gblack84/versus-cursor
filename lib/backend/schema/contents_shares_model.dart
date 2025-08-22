@@ -15,17 +15,17 @@ class ContentsSharesModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "user_id" field.
+  // "userId" field.
   String? _userId;
   String get userId => _userId ?? '';
   bool hasUserId() => _userId != null;
 
-  // "sheared_to_user_id" field.
+  // "shearedToUserId" field.
   String? _shearedToUserId;
   String get shearedToUserId => _shearedToUserId ?? '';
   bool hasShearedToUserId() => _shearedToUserId != null;
 
-  // "shared_id" field.
+  // "sharedId" field.
   DateTime? _sharedId;
   DateTime? get sharedId => _sharedId;
   bool hasSharedId() => _sharedId != null;
@@ -33,15 +33,15 @@ class ContentsSharesModel extends FirestoreRecord {
   DocumentReference get parentReference => reference.parent.parent!;
 
   void _initializeFields() {
-    _userId = snapshotData['user_id'] as String?;
-    _shearedToUserId = snapshotData['sheared_to_user_id'] as String?;
-    _sharedId = snapshotData['shared_id'] as DateTime?;
+    _userId = snapshotData['userId'] as String?;
+    _shearedToUserId = snapshotData['shearedToUserId'] as String?;
+    _sharedId = snapshotData['sharedId'] as DateTime?;
   }
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
           ? parent.collection('contentsShares')
-          : FirebaseFirestore.instance.collectionGroup('contents_shares');
+          : FirebaseFirestore.instance.collectionGroup('contentsShares');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
       parent.collection('contentsShares').doc(id);
@@ -84,9 +84,9 @@ Map<String, dynamic> createContentsSharesModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'user_id': userId,
-      'sheared_to_user_id': shearedToUserId,
-      'shared_id': sharedId,
+      'userId': userId,
+      'shearedToUserId': shearedToUserId,
+      'sharedId': sharedId,
     }.withoutNulls,
   );
 

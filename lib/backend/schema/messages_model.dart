@@ -221,8 +221,7 @@ class MessagesModel extends FirestoreRecord {
   /// 특정 사용자의 투표 시간 가져오기
   DateTime? getUserVoteTime(String userId) {
     final vote = getUserVote(userId);
-    // Support both snake_case and camelCase for backwards compatibility
-    return (vote?['votedAt'] ?? vote?['voted_at']) as DateTime?;
+    return vote?['votedAt'] as DateTime?;
   }
 
   // 기존 코드 호환성을 위한 getter (현재 사용자 기준)
@@ -355,101 +354,97 @@ class MessagesModel extends FirestoreRecord {
       return null;
     }
     
-    // Set all fields from JSON (supporting both snake_case and camelCase for backwards compatibility)
-    model._messageId = (json['messageId'] ?? json['message_id']) as String?;
-    model._senderId = (json['senderId'] ?? json['sender_id']) as String?;
+    // Set all fields from JSON
+    model._messageId = json['messageId'] as String?;
+    model._senderId = json['senderId'] as String?;
     model._content = json['content'] as String?;
-    model._attachmentUrl = (json['attachmentUrl'] ?? json['attachment_url']) as String?;
-    model._attachmentType = (json['attachmentType'] ?? json['attachment_type']) as String?;
-    model._timeStamp = parseDateTime(json['timeStamp'] ?? json['time_stamp']);
-    model._isRead = (json['isRead'] ?? json['is_read']) as bool?;
-    model._mediaType = (json['mediaType'] ?? json['media_type']) as String?;
-    model._imageUrl = (json['imageUrl'] ?? json['image_url']) as String?;
-    model._videoUrl = (json['videoUrl'] ?? json['video_url']) as String?;
-    model._thumbnailUrl = (json['thumbnailUrl'] ?? json['thumbnail_url']) as String?;
-    model._mediaSize = (json['mediaSize'] ?? json['media_size']) as int?;
-    model._mediaWidth = (json['mediaWidth'] ?? json['media_width']) as double?;
-    model._mediaHeight = (json['mediaHeight'] ?? json['media_height']) as double?;
-    model._deliveredAt = parseDateTime(json['deliveredAt'] ?? json['delivered_at']);
-    model._seenAt = parseDateTime(json['seenAt'] ?? json['seen_at']);
-    model._messageType = (json['messageType'] ?? json['message_type']) as String?;
-    model._receiverId = (json['receiverId'] ?? json['receiver_id']) as String?;
-    model._votePostId = (json['votePostId'] ?? json['vote_post_id']) as String?;
-    model._voteTitle = (json['voteTitle'] ?? json['vote_title']) as String?;
-    model._voteDescription = (json['voteDescription'] ?? json['vote_description']) as String?;
-    model._voteOptionAText = (json['voteOptionAText'] ?? json['vote_option_a_text']) as String?;
-    model._voteOptionBText = (json['voteOptionBText'] ?? json['vote_option_b_text']) as String?;
-    model._voteOptionAImage = (json['voteOptionAImage'] ?? json['vote_option_a_image']) as String?;
-    model._voteOptionBImage = (json['voteOptionBImage'] ?? json['vote_option_b_image']) as String?;
-    model._voteOptionAImages = ((json['voteOptionAImages'] ?? json['vote_option_a_images']) as List<dynamic>?)
+    model._attachmentUrl = json['attachmentUrl'] as String?;
+    model._attachmentType = json['attachmentType'] as String?;
+    model._timeStamp = parseDateTime(json['timeStamp']);
+    model._isRead = json['isRead'] as bool?;
+    model._mediaType = json['mediaType'] as String?;
+    model._imageUrl = json['imageUrl'] as String?;
+    model._videoUrl = json['videoUrl'] as String?;
+    model._thumbnailUrl = json['thumbnailUrl'] as String?;
+    model._mediaSize = json['mediaSize'] as int?;
+    model._mediaWidth = json['mediaWidth'] as double?;
+    model._mediaHeight = json['mediaHeight'] as double?;
+    model._deliveredAt = parseDateTime(json['deliveredAt']);
+    model._seenAt = parseDateTime(json['seenAt']);
+    model._messageType = json['messageType'] as String?;
+    model._receiverId = json['receiverId'] as String?;
+    model._votePostId = json['votePostId'] as String?;
+    model._voteTitle = json['voteTitle'] as String?;
+    model._voteDescription = json['voteDescription'] as String?;
+    model._voteOptionAText = json['voteOptionAText'] as String?;
+    model._voteOptionBText = json['voteOptionBText'] as String?;
+    model._voteOptionAImage = json['voteOptionAImage'] as String?;
+    model._voteOptionBImage = json['voteOptionBImage'] as String?;
+    model._voteOptionAImages = (json['voteOptionAImages'] as List<dynamic>?)
         ?.map((e) => e as String)
         .toList();
-    model._voteOptionBImages = ((json['voteOptionBImages'] ?? json['vote_option_b_images']) as List<dynamic>?)
+    model._voteOptionBImages = (json['voteOptionBImages'] as List<dynamic>?)
         ?.map((e) => e as String)
         .toList();
-    model._voteStatus = (json['voteStatus'] ?? json['vote_status']) as String?;
-    model._voteEndTime = parseDateTime(json['voteEndTime'] ?? json['vote_end_time']);
-    model._cardStatus = (json['cardStatus'] ?? json['card_status']) as String?;
-    model._voteResults = (json['voteResults'] ?? json['vote_results']) as Map<String, dynamic>?;
-    model._userVotes = (json['userVotes'] ?? json['user_votes']) as Map<String, dynamic>?;
-    model._voteAspectRatioA = (json['voteAspectRatioA'] ?? json['vote_aspect_ratio_a']) as double?;
-    model._voteAspectRatioB = (json['voteAspectRatioB'] ?? json['vote_aspect_ratio_b']) as double?;
-    model._voteResultsA = (json['voteResultsA'] ?? json['vote_results_a']) as int?;
-    model._voteResultsB = (json['voteResultsB'] ?? json['vote_results_b']) as int?;
-    model._votePercentA = (json['votePercentA'] ?? json['vote_percent_a']) as double?;
-    model._votePercentB = (json['votePercentB'] ?? json['vote_percent_b']) as double?;
+    model._voteStatus = json['voteStatus'] as String?;
+    model._voteEndTime = parseDateTime(json['voteEndTime']);
+    model._cardStatus = json['cardStatus'] as String?;
+    model._voteResults = json['voteResults'] as Map<String, dynamic>?;
+    model._userVotes = json['userVotes'] as Map<String, dynamic>?;
+    model._voteAspectRatioA = json['voteAspectRatioA'] as double?;
+    model._voteAspectRatioB = json['voteAspectRatioB'] as double?;
+    model._voteResultsA = json['voteResultsA'] as int?;
+    model._voteResultsB = json['voteResultsB'] as int?;
+    model._votePercentA = json['votePercentA'] as double?;
+    model._votePercentB = json['votePercentB'] as double?;
     model._metadata = json['metadata'] as Map<String, dynamic>?;
     
     return model;
   }
 
   void _initializeFields() {
-    // Support both snake_case (legacy) and camelCase (new) field names
-    _messageId = (snapshotData['messageId'] ?? snapshotData['message_id']) as String?;
-    _senderId = (snapshotData['senderId'] ?? snapshotData['sender_id']) as String?;
+    _messageId = snapshotData['messageId'] as String?;
+    _senderId = snapshotData['senderId'] as String?;
     _content = snapshotData['content'] as String?;
-    _attachmentUrl = (snapshotData['attachmentUrl'] ?? snapshotData['attachment_url']) as String?;
-    _attachmentType = (snapshotData['attachmentType'] ?? snapshotData['attachment_type']) as String?;
-    _timeStamp = (snapshotData['timeStamp'] ?? snapshotData['time_stamp']) as DateTime?;
-    _isRead = (snapshotData['isRead'] ?? snapshotData['is_read']) as bool?;
+    _attachmentUrl = snapshotData['attachmentUrl'] as String?;
+    _attachmentType = snapshotData['attachmentType'] as String?;
+    _timeStamp = snapshotData['timeStamp'] as DateTime?;
+    _isRead = snapshotData['isRead'] as bool?;
     
     // Media fields
-    _mediaType = (snapshotData['mediaType'] ?? snapshotData['media_type']) as String?;
-    _imageUrl = (snapshotData['imageUrl'] ?? snapshotData['image_url']) as String?;
-    _videoUrl = (snapshotData['videoUrl'] ?? snapshotData['video_url']) as String?;
-    _thumbnailUrl = (snapshotData['thumbnailUrl'] ?? snapshotData['thumbnail_url']) as String?;
-    _mediaSize = castToType<int>(snapshotData['mediaSize'] ?? snapshotData['media_size']);
-    _mediaWidth = castToType<double>(snapshotData['mediaWidth'] ?? snapshotData['media_width']);
-    _mediaHeight = castToType<double>(snapshotData['mediaHeight'] ?? snapshotData['media_height']);
+    _mediaType = snapshotData['mediaType'] as String?;
+    _imageUrl = snapshotData['imageUrl'] as String?;
+    _videoUrl = snapshotData['videoUrl'] as String?;
+    _thumbnailUrl = snapshotData['thumbnailUrl'] as String?;
+    _mediaSize = castToType<int>(snapshotData['mediaSize']);
+    _mediaWidth = castToType<double>(snapshotData['mediaWidth']);
+    _mediaHeight = castToType<double>(snapshotData['mediaHeight']);
     
     // Message lifecycle fields
-    _deliveredAt = (snapshotData['deliveredAt'] ?? snapshotData['delivered_at']) as DateTime?;
-    _seenAt = (snapshotData['seenAt'] ?? snapshotData['seen_at']) as DateTime?;
+    _deliveredAt = snapshotData['deliveredAt'] as DateTime?;
+    _seenAt = snapshotData['seenAt'] as DateTime?;
     
     // Message type
-    _messageType = (snapshotData['messageType'] ?? snapshotData['message_type']) as String?;
+    _messageType = snapshotData['messageType'] as String?;
     
     // Vote request fields
-    _votePostId = (snapshotData['votePostId'] ?? snapshotData['vote_post_id']) as String?;
-    _voteTitle = (snapshotData['voteTitle'] ?? snapshotData['vote_title']) as String?;
-    _voteDescription = (snapshotData['voteDescription'] ?? snapshotData['vote_description']) as String?;
-    _voteOptionAText = (snapshotData['voteOptionAText'] ?? snapshotData['vote_option_a_text']) as String?;
-    _voteOptionBText = (snapshotData['voteOptionBText'] ?? snapshotData['vote_option_b_text']) as String?;
-    _voteOptionAImage = (snapshotData['voteOptionAImage'] ?? snapshotData['vote_option_a_image']) as String?;
-    _voteOptionBImage = (snapshotData['voteOptionBImage'] ?? snapshotData['vote_option_b_image']) as String?;
-    _voteStatus = (snapshotData['voteStatus'] ?? snapshotData['vote_status']) as String?;
+    _votePostId = snapshotData['votePostId'] as String?;
+    _voteTitle = snapshotData['voteTitle'] as String?;
+    _voteDescription = snapshotData['voteDescription'] as String?;
+    _voteOptionAText = snapshotData['voteOptionAText'] as String?;
+    _voteOptionBText = snapshotData['voteOptionBText'] as String?;
+    _voteOptionAImage = snapshotData['voteOptionAImage'] as String?;
+    _voteOptionBImage = snapshotData['voteOptionBImage'] as String?;
+    _voteStatus = snapshotData['voteStatus'] as String?;
     
     // Initialize new vote-related fields
-    _receiverId = (snapshotData['receiverId'] ?? snapshotData['receiver_id']) as String?;
-    _voteOptionAImages = getDataList(snapshotData['voteOptionAImages'] ?? snapshotData['vote_option_a_images']);
-    _voteOptionBImages = getDataList(snapshotData['voteOptionBImages'] ?? snapshotData['vote_option_b_images']);
-    _cardStatus = (snapshotData['cardStatus'] ?? snapshotData['card_status']) as String?;
-    _voteEndTime = (snapshotData['voteEndTime'] ?? snapshotData['vote_end_time']) as DateTime?;
-    // _userVoted = snapshotData['user_voted'] as bool?;  // deprecated - use userVotes instead
-    // _voteChoice = snapshotData['vote_choice'] as String?;  // deprecated - use userVotes instead
-    _voteResults = (snapshotData['voteResults'] ?? snapshotData['vote_results']) as Map<String, dynamic>?;
-    // _voteParticipatedAt = snapshotData['vote_participated_at'] as DateTime?;  // deprecated - use userVotes instead
-    _userVotes = (snapshotData['userVotes'] ?? snapshotData['user_votes']) as Map<String, dynamic>?;
+    _receiverId = snapshotData['receiverId'] as String?;
+    _voteOptionAImages = getDataList(snapshotData['voteOptionAImages']);
+    _voteOptionBImages = getDataList(snapshotData['voteOptionBImages']);
+    _cardStatus = snapshotData['cardStatus'] as String?;
+    _voteEndTime = snapshotData['voteEndTime'] as DateTime?;
+    _voteResults = snapshotData['voteResults'] as Map<String, dynamic>?;
+    _userVotes = snapshotData['userVotes'] as Map<String, dynamic>?;
     
     // AspectRatio and vote results fields
     _voteAspectRatioA = castToType<double>(snapshotData['voteAspectRatioA'] ?? snapshotData['vote_aspect_ratio_a']);

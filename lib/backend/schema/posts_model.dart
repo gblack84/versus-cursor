@@ -347,7 +347,7 @@ class PostsModel extends FirestoreRecord {
     _currentCommentCount = castToType<int>(snapshotData['currentCommentCount']);
     _isVotingComplete = snapshotData['isVotingComplete'] as bool?;
     // Support both field names for backwards compatibility
-    _voteCompleted = snapshotData['vote_completed'] as bool? ?? snapshotData['voteCompleted'] as bool?;
+    _voteCompleted = snapshotData['voteCompleted'] as bool?;
     _expansionPointsUsed = castToType<int>(snapshotData['expansionPointsUsed']);
     _expandedUserCount = castToType<int>(snapshotData['expandedUserCount']);
     _expansionStatus = snapshotData['expansionStatus'] as String?;
@@ -357,11 +357,11 @@ class PostsModel extends FirestoreRecord {
     _reportedBy = getDataList(snapshotData['reportedBy']);
     _premiumRequired = snapshotData['premiumRequired'] as bool?;
     _email = snapshotData['email'] as String?;
-    _displayName = snapshotData['display_name'] as String?;
-    _photoUrl = snapshotData['photo_url'] as String?;
+    _displayName = snapshotData['displayName'] as String?;
+    _photoUrl = snapshotData['photoUrl'] as String?;
     _uid = snapshotData['uid'] as String?;
-    _createdTime = snapshotData['created_time'] as DateTime?;
-    _phoneNumber = snapshotData['phone_number'] as String?;
+    _createdTime = snapshotData['createdTime'] as DateTime?;
+    _phoneNumber = snapshotData['phoneNumber'] as String?;
     _questionTitle = snapshotData['questionTitle'] as String?;
     _creatorInfo = snapshotData['creatorInfo'] as Map<String, dynamic>?;
     _optionA = snapshotData['optionA'] as Map<String, dynamic>?;
@@ -517,11 +517,11 @@ Map<String, dynamic> createPostsModelData({
       'reportCount': reportCount,
       'premiumRequired': premiumRequired,
       'email': email,
-      'display_name': displayName,
-      'photo_url': photoUrl,
+      'displayName': displayName,
+      'photoUrl': photoUrl,
       'uid': uid,
-      'created_time': createdTime,
-      'phone_number': phoneNumber,
+      'createdTime': createdTime,
+      'phoneNumber': phoneNumber,
       'questionTitle': questionTitle,
       'creatorInfo': creatorInfo,
       'optionA': optionA,

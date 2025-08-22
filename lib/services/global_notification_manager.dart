@@ -241,7 +241,7 @@ class GlobalNotificationManager {
         final postData = postDoc.data() as Map<String, dynamic>;
         
         // 실제 게시물 데이터 사용
-        question = postData['questionTitle'] ?? postData['question_title'] ?? '';
+        question = postData['questionTitle'] ?? '';
         
         // description 추출
         description = postData['description'] ?? postData['descriptionA'] ?? postData['descriptionB'] ?? '';
@@ -256,7 +256,7 @@ class GlobalNotificationManager {
             imageUrlA = mediaList.first; // 기존 호환성
           }
         } else {
-          optionA = postData['option_a'] ?? postData['text_a'] ?? '';
+          optionA = postData['optionA'] ?? postData['textA'] ?? '';
         }
         
         if (postData['optionB'] is Map) {
@@ -268,11 +268,11 @@ class GlobalNotificationManager {
             imageUrlB = mediaList.first; // 기존 호환성
           }
         } else {
-          optionB = postData['option_b'] ?? postData['text_b'] ?? '';
+          optionB = postData['optionB'] ?? postData['textB'] ?? '';
         }
         
         // 작성자 이름 추출
-        authorName = postData['authorName'] ?? postData['author_name'] ?? postData['author_display_name'] ?? '익명';
+        authorName = postData['authorName'] ?? postData['authorDisplayName'] ?? '익명';
       }
       
       DebugHelper.logOnce(
@@ -401,7 +401,7 @@ class GlobalNotificationManager {
     try {
       await notification.reference.update({
         'read': true,
-        'read_at': FieldValue.serverTimestamp(),
+        'readAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
       DebugHelper.warning('읽음 처리 실패', tag: 'GlobalNotificationManager');

@@ -237,7 +237,7 @@ async function updateCardStatus(userId, messageId, newStatus, additionalData = {
     .doc(messageId);
   
   const updateData = {
-    card_status: newStatus,
+    cardStatus: newStatus,
     ...additionalData
   };
   
@@ -260,7 +260,7 @@ async function updateVoteParticipation(userId, postId, choice) {
     .collection('chats')
     .doc(chatId)
     .collection('messages')
-    .where('vote_post_id', '==', postId)
+    .where('votePostId', '==', postId)
     .where('messageType', '==', 'voteRequest')
     .get();
   
@@ -268,16 +268,16 @@ async function updateVoteParticipation(userId, postId, choice) {
     const messageDoc = messagesSnapshot.docs[0];
     const messageData = messageDoc.data();
     
-    // user_votes Map 업데이트
-    const userVotes = messageData.user_votes || {};
+    // userVotes Map 업데이트
+    const userVotes = messageData.userVotes || {};
     userVotes[userId] = {
       option: choice,
-      voted_at: admin.firestore.Timestamp.now()
+      votedAt: admin.firestore.Timestamp.now()
     };
     
     await updateCardStatus(userId, messageDoc.id, 'inProgress', {
       userVotes: userVotes,
-      last_vote_update: admin.firestore.Timestamp.now()
+      lastVoteUpdate: admin.firestore.Timestamp.now()
     });
   }
 }
@@ -315,7 +315,7 @@ async function createVoteResultMessage(userId, postId, voteResults) {
     .collection('chats')
     .doc(chatId)
     .collection('messages')
-    .where('vote_post_id', '==', postId)
+    .where('votePostId', '==', postId)
     .where('messageType', 'in', ['voteRequest', 'voteCreated'])
     .get();
   
@@ -326,26 +326,26 @@ async function createVoteResultMessage(userId, postId, voteResults) {
     const data = doc.data();
     let finalStatus;
     const updateData = {
-      card_status: '',
+      cardStatus: '',
       voteCompletedAt: admin.firestore.Timestamp.now(),
       // 투표 결과 정보 추가
-      vote_results_a: voteResults.displayVotesA || voteResults.votesA,
-      vote_results_b: voteResults.displayVotesB || voteResults.votesB,
-      vote_winner: voteResults.displayVotesA > voteResults.displayVotesB ? 'A' : 
+      voteResultsA: voteResults.displayVotesA || voteResults.votesA,
+      voteResultsB: voteResults.displayVotesB || voteResults.votesB,
+      voteWinner: voteResults.displayVotesA > voteResults.displayVotesB ? 'A' : 
                    voteResults.displayVotesB > voteResults.displayVotesA ? 'B' : 'draw',
-      vote_percent_a: voteResults.percentA,
-      vote_percent_b: voteResults.percentB
+      votePercentA: voteResults.percentA,
+      votePercentB: voteResults.percentB
     };
     
-    // 실제로 투표했다면 user_votes에 추가
+    // 실제로 투표했다면 userVotes에 추가
     if (userVoted && userChoice) {
-      const currentUserVotes = data.user_votes || {};
-      // 이미 있는 user_votes 유지하면서 현재 사용자 추가
-      updateData.user_votes = {
+      const currentUserVotes = data.userVotes || {};
+      // 이미 있는 userVotes 유지하면서 현재 사용자 추가
+      updateData.userVotes = {
         ...currentUserVotes,
         [userId]: {
           option: userChoice,
-          voted_at: admin.firestore.Timestamp.now()
+          votedAt: admin.firestore.Timestamp.now()
         }
       };
     }
@@ -358,7 +358,7 @@ async function createVoteResultMessage(userId, postId, voteResults) {
       finalStatus = userVoted ? 'completed' : 'notParticipated';
     }
     
-    updateData.card_status = finalStatus;
+    updateData.cardStatus = finalStatus;
     
     updatePromises.push(doc.ref.update(updateData));
   });

@@ -106,7 +106,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
                       if (!notification.read) {
                         await notification.reference.update({
                           'read': true,
-                          'read_at': FieldValue.serverTimestamp(),
+                          'readAt': FieldValue.serverTimestamp(),
                         });
                       }
                       

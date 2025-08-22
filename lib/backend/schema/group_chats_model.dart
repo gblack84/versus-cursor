@@ -72,17 +72,17 @@ class GroupChatsModel extends FirestoreRecord {
   bool hasChatType() => _chatType != null;
 
   void _initializeFields() {
-    _groupChatId = snapshotData['group_chat_id'] as String?;
-    _creatorId = snapshotData['creator_id'] as String?;
+    _groupChatId = snapshotData['groupChatId'] as String?;
+    _creatorId = snapshotData['creatorId'] as String?;
     _participantIds = getDataList(snapshotData['participantIds']);
-    _groupName = snapshotData['group_name'] as String?;
-    _postId = snapshotData['post_id'] as String?;
-    _createdAt = snapshotData['created_at'] as DateTime?;
-    _updateAt = snapshotData['update_at'] as DateTime?;
+    _groupName = snapshotData['groupName'] as String?;
+    _postId = snapshotData['postId'] as String?;
+    _createdAt = snapshotData['createdAt'] as DateTime?;
+    _updateAt = snapshotData['updateAt'] as DateTime?;
     _location = snapshotData['location'] as LatLng?;
-    _groupImageUrl = snapshotData['group_image_url'] as String?;
-    _pendingUserIds = getDataList(snapshotData['pending_user_ids']);
-    _chatType = snapshotData['chat_type'] as String?;
+    _groupImageUrl = snapshotData['groupImageUrl'] as String?;
+    _pendingUserIds = getDataList(snapshotData['pendingUserIds']);
+    _chatType = snapshotData['chatType'] as String?;
   }
 
   static CollectionReference get collection =>
@@ -132,15 +132,15 @@ Map<String, dynamic> createGroupChatsModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'group_chat_id': groupChatId,
-      'creator_id': creatorId,
-      'group_name': groupName,
-      'post_id': postId,
-      'created_at': createdAt,
-      'update_at': updateAt,
+      'groupChatId': groupChatId,
+      'creatorId': creatorId,
+      'groupName': groupName,
+      'postId': postId,
+      'createdAt': createdAt,
+      'updateAt': updateAt,
       'location': location,
-      'group_image_url': groupImageUrl,
-      'chat_type': chatType,
+      'groupImageUrl': groupImageUrl,
+      'chatType': chatType,
     }.withoutNulls,
   );
 

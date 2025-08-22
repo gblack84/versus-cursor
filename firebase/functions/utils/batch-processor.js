@@ -186,7 +186,7 @@ async function batchUpdateVoteResults(postId, participants) {
       .collection('chats')
       .doc(chatId)
       .collection('messages')
-      .where('vote_post_id', '==', postId)
+      .where('votePostId', '==', postId)
       .where('messageType', 'in', ['voteRequest', 'voteCreated'])
       .get()
       .then(snapshot => {
@@ -195,19 +195,19 @@ async function batchUpdateVoteResults(postId, participants) {
         snapshot.forEach(doc => {
           // 상태 업데이트는 aiChatService.createVoteResultMessage에서 처리
           batch.update(doc.ref, {
-            updated_at: admin.firestore.FieldValue.serverTimestamp()
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
           });
         });
         
         // 알림 생성
         const notificationRef = db.collection('notifications').doc();
         batch.set(notificationRef, {
-          user_id: userId,
-          type: 'vote_result',
-          source_id: postId,
+          userId: userId,
+          type: 'voteResult',
+          sourceId: postId,
           title: '투표 결과가 도착했습니다!',
           body: '참여하신 투표의 결과를 확인해보세요.',
-          created_at: admin.firestore.FieldValue.serverTimestamp(),
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
           read: false
         });
         

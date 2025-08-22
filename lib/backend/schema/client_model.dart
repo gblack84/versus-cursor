@@ -20,14 +20,14 @@ class ClientModel extends FirestoreRecord {
   String get uid => _uid ?? '';
   bool hasUid() => _uid != null;
 
-  // "versus_image" field.
+  // "versusImage" field.
   String? _versusImage;
   String get versusImage => _versusImage ?? '';
   bool hasVersusImage() => _versusImage != null;
 
   void _initializeFields() {
     _uid = snapshotData['uid'] as String?;
-    _versusImage = snapshotData['versus_image'] as String?;
+    _versusImage = snapshotData['versusImage'] as String?;
   }
 
   static CollectionReference get collection =>
@@ -70,7 +70,7 @@ Map<String, dynamic> createClientModelData({
   final firestoreData = mapToFirestore(
     <String, dynamic>{
       'uid': uid,
-      'versus_image': versusImage,
+      'versusImage': versusImage,
     }.withoutNulls,
   );
 

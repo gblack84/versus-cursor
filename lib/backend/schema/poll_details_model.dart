@@ -16,52 +16,52 @@ class PollDetailsModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "option_1" field.
+  // "option1" field.
   String? _option1;
   String get option1 => _option1 ?? '';
   bool hasOption1() => _option1 != null;
 
-  // "option_2" field.
+  // "option2" field.
   String? _option2;
   String get option2 => _option2 ?? '';
   bool hasOption2() => _option2 != null;
 
-  // "option_1_media_url" field.
+  // "option1MediaUrl" field.
   String? _option1MediaUrl;
   String get option1MediaUrl => _option1MediaUrl ?? '';
   bool hasOption1MediaUrl() => _option1MediaUrl != null;
 
-  // "option_2_media_url" field.
+  // "option2MediaUrl" field.
   String? _option2MediaUrl;
   String get option2MediaUrl => _option2MediaUrl ?? '';
   bool hasOption2MediaUrl() => _option2MediaUrl != null;
 
-  // "result_time" field.
+  // "resultTime" field.
   int? _resultTime;
   int get resultTime => _resultTime ?? 0;
   bool hasResultTime() => _resultTime != null;
 
-  // "target_audience" field.
+  // "targetAudience" field.
   String? _targetAudience;
   String get targetAudience => _targetAudience ?? '';
   bool hasTargetAudience() => _targetAudience != null;
 
-  // "option_1_media_urls" field.
+  // "option1MediaUrls" field.
   List<String>? _option1MediaUrls;
   List<String> get option1MediaUrls => _option1MediaUrls ?? const [];
   bool hasOption1MediaUrls() => _option1MediaUrls != null;
 
-  // "option_2_media_urls" field.
+  // "option2MediaUrls" field.
   List<String>? _option2MediaUrls;
   List<String> get option2MediaUrls => _option2MediaUrls ?? const [];
   bool hasOption2MediaUrls() => _option2MediaUrls != null;
 
-  // "option_1_media_type" field.
+  // "option1MediaType" field.
   String? _option1MediaType;
   String get option1MediaType => _option1MediaType ?? '';
   bool hasOption1MediaType() => _option1MediaType != null;
 
-  // "option_2_media_type" field.
+  // "option2MediaType" field.
   String? _option2MediaType;
   String get option2MediaType => _option2MediaType ?? '';
   bool hasOption2MediaType() => _option2MediaType != null;
@@ -69,22 +69,22 @@ class PollDetailsModel extends FirestoreRecord {
   DocumentReference get parentReference => reference.parent.parent!;
 
   void _initializeFields() {
-    _option1 = snapshotData['option_1'] as String?;
-    _option2 = snapshotData['option_2'] as String?;
-    _option1MediaUrl = snapshotData['option_1_media_url'] as String?;
-    _option2MediaUrl = snapshotData['option_2_media_url'] as String?;
-    _resultTime = castToType<int>(snapshotData['result_time']);
-    _targetAudience = snapshotData['target_audience'] as String?;
-    _option1MediaUrls = getDataList(snapshotData['option_1_media_urls']);
-    _option2MediaUrls = getDataList(snapshotData['option_2_media_urls']);
-    _option1MediaType = snapshotData['option_1_media_type'] as String?;
-    _option2MediaType = snapshotData['option_2_media_type'] as String?;
+    _option1 = snapshotData['option1'] as String?;
+    _option2 = snapshotData['option2'] as String?;
+    _option1MediaUrl = snapshotData['option1MediaUrl'] as String?;
+    _option2MediaUrl = snapshotData['option2MediaUrl'] as String?;
+    _resultTime = castToType<int>(snapshotData['resultTime']);
+    _targetAudience = snapshotData['targetAudience'] as String?;
+    _option1MediaUrls = getDataList(snapshotData['option1MediaUrls']);
+    _option2MediaUrls = getDataList(snapshotData['option2MediaUrls']);
+    _option1MediaType = snapshotData['option1MediaType'] as String?;
+    _option2MediaType = snapshotData['option2MediaType'] as String?;
   }
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
           ? parent.collection('pollDetails')
-          : FirebaseFirestore.instance.collectionGroup('poll_details');
+          : FirebaseFirestore.instance.collectionGroup('pollDetails');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
       parent.collection('pollDetails').doc(id);
@@ -132,14 +132,14 @@ Map<String, dynamic> createPollDetailsModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'option_1': option1,
-      'option_2': option2,
-      'option_1_media_url': option1MediaUrl,
-      'option_2_media_url': option2MediaUrl,
-      'result_time': resultTime,
-      'target_audience': targetAudience,
-      'option_1_media_type': option1MediaType,
-      'option_2_media_type': option2MediaType,
+      'option1': option1,
+      'option2': option2,
+      'option1MediaUrl': option1MediaUrl,
+      'option2MediaUrl': option2MediaUrl,
+      'resultTime': resultTime,
+      'targetAudience': targetAudience,
+      'option1MediaType': option1MediaType,
+      'option2MediaType': option2MediaType,
     }.withoutNulls,
   );
 

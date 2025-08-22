@@ -44,12 +44,12 @@ async function getActiveUsers(targetCount, oneWeekAgo, filters = {}) {
     if (usersMap.size < targetCount * 0.8) {
       try {
         let legacyQuery = admin.firestore().collection('users')
-          .where('last_active_time', '>', oneWeekAgo)
-          .orderBy('last_active_time', 'desc')
+          .where('lastActiveTime', '>', oneWeekAgo)
+          .orderBy('lastActiveTime', 'desc')
           .limit(targetCount);
         
         const snapshot2 = await legacyQuery.get();
-        console.log(`last_active_time 쿼리 결과: ${snapshot2.size}명`);
+        console.log(`lastActiveTime 쿼리 결과: ${snapshot2.size}명`);
         
         snapshot2.forEach(doc => {
           if (!usersMap.has(doc.id)) {

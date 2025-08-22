@@ -15,12 +15,12 @@ class ContentsInterestsModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "user_id" field.
+  // "userId" field.
   String? _userId;
   String get userId => _userId ?? '';
   bool hasUserId() => _userId != null;
 
-  // "created_at" field.
+  // "createdAt" field.
   DateTime? _createdAt;
   DateTime? get createdAt => _createdAt;
   bool hasCreatedAt() => _createdAt != null;
@@ -28,14 +28,14 @@ class ContentsInterestsModel extends FirestoreRecord {
   DocumentReference get parentReference => reference.parent.parent!;
 
   void _initializeFields() {
-    _userId = snapshotData['user_id'] as String?;
-    _createdAt = snapshotData['created_at'] as DateTime?;
+    _userId = snapshotData['userId'] as String?;
+    _createdAt = snapshotData['createdAt'] as DateTime?;
   }
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
           ? parent.collection('contentsInterests')
-          : FirebaseFirestore.instance.collectionGroup('contents_interests');
+          : FirebaseFirestore.instance.collectionGroup('contentsInterests');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
       parent.collection('contentsInterests').doc(id);
@@ -78,8 +78,8 @@ Map<String, dynamic> createContentsInterestsModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'user_id': userId,
-      'created_at': createdAt,
+      'userId': userId,
+      'createdAt': createdAt,
     }.withoutNulls,
   );
 

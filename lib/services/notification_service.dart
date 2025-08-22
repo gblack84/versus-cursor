@@ -161,8 +161,8 @@ class NotificationService {
           'participantIds': participantIds,
           'lastMessageContent': '투표 요청을 보냈습니다',
           'lastMessageAt': FieldValue.serverTimestamp(),
-          'created_at': FieldValue.serverTimestamp(),
-          'chat_name': '채팅',
+          'createdAt': FieldValue.serverTimestamp(),
+          'chatName': '채팅',
         });
         
         // 새 채팅방 생성 - 로그 제거
@@ -176,24 +176,24 @@ class NotificationService {
       final optionBData = post.optionB;
       
       await chatRef.collection('messages').add({
-        'message_id': messageId,
-        'sender_id': senderId,
+        'messageId': messageId,
+        'senderId': senderId,
         'content': '',
-        'time_stamp': FieldValue.serverTimestamp(),
-        'is_read': false,
+        'timeStamp': FieldValue.serverTimestamp(),
+        'isRead': false,
         'messageType': 'voteRequest',
-        'vote_post_id': postId,
-        'vote_title': post.questionTitle,
-        'vote_description': post.description,
-        'vote_option_a_text': optionAData['text'] ?? '',
-        'vote_option_b_text': optionBData['text'] ?? '',
-        'vote_option_a_image': optionAData['imageUrl'] ?? '',
-        'vote_option_b_image': optionBData['imageUrl'] ?? '',
-        'vote_option_a_images': optionAData['imageUrls'],
-        'vote_option_b_images': optionBData['imageUrls'],
-        'vote_aspect_ratio_a': optionAData['aspectRatio'],
-        'vote_aspect_ratio_b': optionBData['aspectRatio'],
-        'vote_status': 'pending',
+        'votePostId': postId,
+        'voteTitle': post.questionTitle,
+        'voteDescription': post.description,
+        'voteOptionAText': optionAData['text'] ?? '',
+        'voteOptionBText': optionBData['text'] ?? '',
+        'voteOptionAImage': optionAData['imageUrl'] ?? '',
+        'voteOptionBImage': optionBData['imageUrl'] ?? '',
+        'voteOptionAImages': optionAData['imageUrls'],
+        'voteOptionBImages': optionBData['imageUrls'],
+        'voteAspectRatioA': optionAData['aspectRatio'],
+        'voteAspectRatioB': optionBData['aspectRatio'],
+        'voteStatus': 'pending',
       });
       
       // 3. 채팅방 마지막 메시지 업데이트
@@ -238,8 +238,8 @@ class NotificationService {
       // 메시지 상태 업데이트
       for (final doc in messagesSnapshot.docs) {
         await doc.reference.update({
-          'card_status': status,
-          'updated_at': FieldValue.serverTimestamp(),
+          'cardStatus': status,
+          'updatedAt': FieldValue.serverTimestamp(),
         });
         // 메시지 상태 업데이트 완료 - 로그 제거
       }

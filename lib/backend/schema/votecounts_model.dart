@@ -15,12 +15,12 @@ class VotecountsModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "option_1" field.
+  // "option1" field.
   int? _option1;
   int get option1 => _option1 ?? 0;
   bool hasOption1() => _option1 != null;
 
-  // "option_2" field.
+  // "option2" field.
   int? _option2;
   int get option2 => _option2 ?? 0;
   bool hasOption2() => _option2 != null;
@@ -28,8 +28,8 @@ class VotecountsModel extends FirestoreRecord {
   DocumentReference get parentReference => reference.parent.parent!;
 
   void _initializeFields() {
-    _option1 = castToType<int>(snapshotData['option_1']);
-    _option2 = castToType<int>(snapshotData['option_2']);
+    _option1 = castToType<int>(snapshotData['option1']);
+    _option2 = castToType<int>(snapshotData['option2']);
   }
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
@@ -77,8 +77,8 @@ Map<String, dynamic> createVotecountsModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'option_1': option1,
-      'option_2': option2,
+      'option1': option1,
+      'option2': option2,
     }.withoutNulls,
   );
 

@@ -82,10 +82,10 @@ class RealtimeThrottle {
       
       const postRef = db.collection('posts').doc(postId);
       batch.update(postRef, {
-        vote_count_a: admin.firestore.FieldValue.increment(voteCountA),
-        vote_count_b: admin.firestore.FieldValue.increment(voteCountB),
+        voteCountA: admin.firestore.FieldValue.increment(voteCountA),
+        voteCountB: admin.firestore.FieldValue.increment(voteCountB),
         voters: admin.firestore.FieldValue.arrayUnion(...voters),
-        last_vote_at: admin.firestore.FieldValue.serverTimestamp()
+        lastVoteAt: admin.firestore.FieldValue.serverTimestamp()
       });
     }
     
@@ -121,7 +121,7 @@ class RealtimeThrottle {
             .collection('chats')
             .doc(chatId)
             .collection('messages')
-            .where('vote_post_id', '==', postId)
+            .where('votePostId', '==', postId)
             .where('messageType', 'in', ['voteRequest', 'voteCreated'])
             .limit(1)
             .get();
@@ -130,8 +130,8 @@ class RealtimeThrottle {
             const messageDoc = messageQuery.docs[0];
             batch.update(messageDoc.ref, {
               cardStatus: update.status === 'active' ? 'inProgress' : update.status,
-              voted_option: update.votedOption,
-              updated_at: admin.firestore.FieldValue.serverTimestamp()
+              votedOption: update.votedOption,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
           }
         }
@@ -160,7 +160,7 @@ class RealtimeThrottle {
         case 'vote':
           grouped.votes.push(update);
           break;
-        case 'message_status':
+        case 'messageStatus':
           grouped.messageUpdates.push(update);
           break;
         case 'progress':
@@ -232,7 +232,7 @@ function queueVoteUpdate(postId, userId, option) {
 function queueMessageStatusUpdate(postId, messageId, userId, status, votedOption) {
   const throttle = getThrottle();
   throttle.queueUpdate(postId, {
-    type: 'message_status',
+    type: 'messageStatus',
     messageId,
     userId,
     status,

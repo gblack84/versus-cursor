@@ -20,14 +20,14 @@ class JopsNameModel extends FirestoreRecord {
   String get name => _name ?? '';
   bool hasName() => _name != null;
 
-  // "category_ref" field.
+  // "categoryRef" field.
   String? _categoryRef;
   String get categoryRef => _categoryRef ?? '';
   bool hasCategoryRef() => _categoryRef != null;
 
   void _initializeFields() {
     _name = snapshotData['name'] as String?;
-    _categoryRef = snapshotData['category_ref'] as String?;
+    _categoryRef = snapshotData['categoryRef'] as String?;
   }
 
   static CollectionReference get collection =>
@@ -71,7 +71,7 @@ Map<String, dynamic> createJopsNameModelData({
   final firestoreData = mapToFirestore(
     <String, dynamic>{
       'name': name,
-      'category_ref': categoryRef,
+      'categoryRef': categoryRef,
     }.withoutNulls,
   );
 

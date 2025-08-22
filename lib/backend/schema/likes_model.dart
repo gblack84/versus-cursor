@@ -15,7 +15,7 @@ class LikesModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "user_id" field.
+  // "userId" field.
   String? _userId;
   String get userId => _userId ?? '';
   bool hasUserId() => _userId != null;
@@ -28,7 +28,7 @@ class LikesModel extends FirestoreRecord {
   DocumentReference get parentReference => reference.parent.parent!;
 
   void _initializeFields() {
-    _userId = snapshotData['user_id'] as String?;
+    _userId = snapshotData['userId'] as String?;
     _status = snapshotData['status'] as bool?;
   }
 
@@ -76,7 +76,7 @@ Map<String, dynamic> createLikesModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'user_id': userId,
+      'userId': userId,
       'status': status,
     }.withoutNulls,
   );

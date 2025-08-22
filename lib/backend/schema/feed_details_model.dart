@@ -15,7 +15,7 @@ class FeedDetailsModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "media_url" field.
+  // "mediaUrl" field.
   String? _mediaUrl;
   String get mediaUrl => _mediaUrl ?? '';
   bool hasMediaUrl() => _mediaUrl != null;
@@ -28,14 +28,14 @@ class FeedDetailsModel extends FirestoreRecord {
   DocumentReference get parentReference => reference.parent.parent!;
 
   void _initializeFields() {
-    _mediaUrl = snapshotData['media_url'] as String?;
+    _mediaUrl = snapshotData['mediaUrl'] as String?;
     _text = snapshotData['text'] as String?;
   }
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
           ? parent.collection('feedDetails')
-          : FirebaseFirestore.instance.collectionGroup('feed_details');
+          : FirebaseFirestore.instance.collectionGroup('feedDetails');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
       parent.collection('feedDetails').doc(id);
@@ -77,7 +77,7 @@ Map<String, dynamic> createFeedDetailsModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'media_url': mediaUrl,
+      'mediaUrl': mediaUrl,
       'text': text,
     }.withoutNulls,
   );

@@ -15,7 +15,7 @@ class RankingsModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "raking_id" field.
+  // "rankingId" field.
   String? _rakingId;
   String get rakingId => _rakingId ?? '';
   bool hasRakingId() => _rakingId != null;
@@ -31,7 +31,7 @@ class RankingsModel extends FirestoreRecord {
   bool hasDate() => _date != null;
 
   void _initializeFields() {
-    _rakingId = snapshotData['raking_id'] as String?;
+    _rakingId = snapshotData['rakingId'] as String?;
     _type = snapshotData['type'] as String?;
     _date = snapshotData['date'] as DateTime?;
   }
@@ -77,7 +77,7 @@ Map<String, dynamic> createRankingsModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'raking_id': rakingId,
+      'rakingId': rakingId,
       'type': type,
       'date': date,
     }.withoutNulls,

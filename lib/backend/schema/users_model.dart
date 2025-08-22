@@ -31,12 +31,12 @@ class UsersModel extends FirestoreRecord {
   LatLng? get location => _location;
   bool hasLocation() => _location != null;
 
-  // "points_A" field.
+  // "pointsA" field.
   int? _pointsA;
   int get pointsA => _pointsA ?? 0;
   bool hasPointsA() => _pointsA != null;
 
-  // "points_Q" field.
+  // "pointsQ" field.
   int? _pointsQ;
   int get pointsQ => _pointsQ ?? 0;
   bool hasPointsQ() => _pointsQ != null;
@@ -237,46 +237,40 @@ class UsersModel extends FirestoreRecord {
     _uid = snapshotData['uid'] as String?;
     _email = snapshotData['email'] as String?;
     _location = snapshotData['location'] as LatLng?;
-    _pointsA = castToType<int>(snapshotData['points_A']);
-    _pointsQ = castToType<int>(snapshotData['points_Q']);
+    _pointsA = castToType<int>(snapshotData['pointsA']);
+    _pointsQ = castToType<int>(snapshotData['pointsQ']);
     _lastActive = snapshotData['lastActive'] as DateTime?;
     _interests = getDataList(snapshotData['interests']);
     _expertise = getDataList(snapshotData['expertise']);
-    _displayName = (snapshotData['displayName'] ?? snapshotData['display_name']) as String?;
-    _createdTime = (snapshotData['createdTime'] ?? snapshotData['created_time']) as DateTime?;
-    _photoUrl = (snapshotData['photoUrl'] ?? snapshotData['photo_url']) as String?;
-    _phoneNumber = (snapshotData['phoneNumber'] ?? snapshotData['phone_number']) as String?;
-    _isPremiumUser = (snapshotData['isPremiumUser'] ?? snapshotData['is_premium_user']) as bool? ?? snapshotData['is_prmium_user'] as bool?;
-    _anonymousPostsCount =
-        castToType<int>((snapshotData['anonymousPostsCount'] ?? snapshotData['anonymous_posts_count']));
-    _anonymousCommentsCount =
-        castToType<int>((snapshotData['anonymousCommentsCount'] ?? snapshotData['anonymous_comments_count']));
-    _currentRank = (snapshotData['currentRank'] ?? snapshotData['current_rank']) as String?;
-    _currentTitle = (snapshotData['currentTitle'] ?? snapshotData['current_title']) as String?;
-    _rankChangeDate = (snapshotData['rankChangeDate'] ?? snapshotData['rank_change_date']) as DateTime?;
-    _titleChangeDate = (snapshotData['titleChangeDate'] ?? snapshotData['title_change_date']) as DateTime?;
-    _isRankEligible = (snapshotData['isRankEligible'] ?? snapshotData['is_rank_eligible']) as bool?;
-    _rankEvaluationCount =
-        castToType<int>((snapshotData['rankEvaluationCount'] ?? snapshotData['rank_evaluation_count']));
-    _rankHistory = getDataList((snapshotData['rankHistory'] ?? snapshotData['rank_history']));
-    _titleHistory = getDataList((snapshotData['titleHistory'] ?? snapshotData['title_history']));
-    _receiveRankUpdateNotifications =
-        snapshotData['receive_Rank_Update_Notifications'] as bool?;
-    _receiveTitleUpdateNotifications =
-        snapshotData['receive_Title_Update_Notifications'] as bool?;
-    _anonymousQuestionCount =
-        castToType<int>(snapshotData['anonymous_Question_Count']);
-    _friends = getDataList(snapshotData['friends'] ?? snapshotData['frinds']);
-    _activeChats = getDataList((snapshotData['activeChats'] ?? snapshotData['active_chats']));
-    _groupChats = getDataList((snapshotData['groupChats'] ?? snapshotData['group_chats']));
-    _totalAPoints = castToType<int>((snapshotData['totalAPoints'] ?? snapshotData['total_a_points']));
-    _totalQPoints = castToType<int>((snapshotData['totalQPoints'] ?? snapshotData['total_q_points']));
+    _displayName = snapshotData['displayName'] as String?;
+    _createdTime = snapshotData['createdTime'] as DateTime?;
+    _photoUrl = snapshotData['photoUrl'] as String?;
+    _phoneNumber = snapshotData['phoneNumber'] as String?;
+    _isPremiumUser = snapshotData['isPremiumUser'] as bool?;
+    _anonymousPostsCount = castToType<int>(snapshotData['anonymousPostsCount']);
+    _anonymousCommentsCount = castToType<int>(snapshotData['anonymousCommentsCount']);
+    _currentRank = snapshotData['currentRank'] as String?;
+    _currentTitle = snapshotData['currentTitle'] as String?;
+    _rankChangeDate = snapshotData['rankChangeDate'] as DateTime?;
+    _titleChangeDate = snapshotData['titleChangeDate'] as DateTime?;
+    _isRankEligible = snapshotData['isRankEligible'] as bool?;
+    _rankEvaluationCount = castToType<int>(snapshotData['rankEvaluationCount']);
+    _rankHistory = getDataList(snapshotData['rankHistory']);
+    _titleHistory = getDataList(snapshotData['titleHistory']);
+    _receiveRankUpdateNotifications = snapshotData['receiveRankUpdateNotifications'] as bool?;
+    _receiveTitleUpdateNotifications = snapshotData['receiveTitleUpdateNotifications'] as bool?;
+    _anonymousQuestionCount = castToType<int>(snapshotData['anonymousQuestionCount']);
+    _friends = getDataList(snapshotData['friends']);
+    _activeChats = getDataList(snapshotData['activeChats']);
+    _groupChats = getDataList(snapshotData['groupChats']);
+    _totalAPoints = castToType<int>(snapshotData['totalAPoints']);
+    _totalQPoints = castToType<int>(snapshotData['totalQPoints']);
     _shortDescription = snapshotData['shortDescription'] as String?;
-    _lastActiveTime = (snapshotData['lastActiveTime'] ?? snapshotData['last_active_time']) as DateTime?;
+    _lastActiveTime = snapshotData['lastActiveTime'] as DateTime?;
     _role = snapshotData['role'] as String?;
     _title = snapshotData['title'] as String?;
     _gender = snapshotData['gender'] as String?;
-    _dateOfBirth = (snapshotData['dateOfBirth'] ?? snapshotData['date_of_birth']) as DateTime?;
+    _dateOfBirth = snapshotData['dateOfBirth'] as DateTime?;
     _language = snapshotData['Language'] as String?;
     _stats = snapshotData['stats'] as Map<String, dynamic>?;
     _subscription = snapshotData['subscription'] as Map<String, dynamic>?;
@@ -355,8 +349,8 @@ Map<String, dynamic> createUsersModelData({
       'uid': uid,
       'email': email,
       'location': location,
-      'points_A': pointsA,
-      'points_Q': pointsQ,
+      'pointsA': pointsA,
+      'pointsQ': pointsQ,
       'lastActive': lastActive,
       'displayName': displayName,
       'createdTime': createdTime,
@@ -371,9 +365,9 @@ Map<String, dynamic> createUsersModelData({
       'titleChangeDate': titleChangeDate,
       'isRankEligible': isRankEligible,
       'rankEvaluationCount': rankEvaluationCount,
-      'receive_Rank_Update_Notifications': receiveRankUpdateNotifications,
-      'receive_Title_Update_Notifications': receiveTitleUpdateNotifications,
-      'anonymous_Question_Count': anonymousQuestionCount,
+      'receiveRankUpdateNotifications': receiveRankUpdateNotifications,
+      'receiveTitleUpdateNotifications': receiveTitleUpdateNotifications,
+      'anonymousQuestionCount': anonymousQuestionCount,
       'totalAPoints': totalAPoints,
       'totalQPoints': totalQPoints,
       'shortDescription': shortDescription,
@@ -382,7 +376,7 @@ Map<String, dynamic> createUsersModelData({
       'title': title,
       'gender': gender,
       'dateOfBirth': dateOfBirth,
-      'Language': language,
+      'language': language,
       'stats': stats,
       'subscription': subscription,
     }.withoutNulls,

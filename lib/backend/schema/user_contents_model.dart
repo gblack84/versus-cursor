@@ -16,17 +16,17 @@ class UserContentsModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "user_id" field.
+  // "userId" field.
   String? _userId;
   String get userId => _userId ?? '';
   bool hasUserId() => _userId != null;
 
-  // "content_type" field.
+  // "contentType" field.
   String? _contentType;
   String get contentType => _contentType ?? '';
   bool hasContentType() => _contentType != null;
 
-  // "created_at" field.
+  // "createdAt" field.
   DateTime? _createdAt;
   DateTime? get createdAt => _createdAt;
   bool hasCreatedAt() => _createdAt != null;
@@ -46,25 +46,25 @@ class UserContentsModel extends FirestoreRecord {
   List<String> get tags => _tags ?? const [];
   bool hasTags() => _tags != null;
 
-  // "is_premium" field.
+  // "isPremium" field.
   bool? _isPremium;
   bool get isPremium => _isPremium ?? false;
   bool hasIsPremium() => _isPremium != null;
 
-  // "participant_count" field.
+  // "participantCount" field.
   int? _participantCount;
   int get participantCount => _participantCount ?? 0;
   bool hasParticipantCount() => _participantCount != null;
 
   void _initializeFields() {
-    _userId = snapshotData['user_id'] as String?;
-    _contentType = snapshotData['content_type'] as String?;
-    _createdAt = snapshotData['created_at'] as DateTime?;
+    _userId = snapshotData['userId'] as String?;
+    _contentType = snapshotData['contentType'] as String?;
+    _createdAt = snapshotData['createdAt'] as DateTime?;
     _visibillity = snapshotData['visibillity'] as String?;
     _location = snapshotData['location'] as LatLng?;
     _tags = getDataList(snapshotData['tags']);
-    _isPremium = snapshotData['is_premium'] as bool?;
-    _participantCount = castToType<int>(snapshotData['participant_count']);
+    _isPremium = snapshotData['isPremium'] as bool?;
+    _participantCount = castToType<int>(snapshotData['participantCount']);
   }
 
   static CollectionReference get collection =>
@@ -112,13 +112,13 @@ Map<String, dynamic> createUserContentsModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'user_id': userId,
-      'content_type': contentType,
-      'created_at': createdAt,
+      'userId': userId,
+      'contentType': contentType,
+      'createdAt': createdAt,
       'visibillity': visibillity,
       'location': location,
-      'is_premium': isPremium,
-      'participant_count': participantCount,
+      'isPremium': isPremium,
+      'participantCount': participantCount,
     }.withoutNulls,
   );
 

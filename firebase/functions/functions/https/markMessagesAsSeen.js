@@ -33,7 +33,7 @@ exports.markMessagesAsSeen = functions.https.onCall(async (data, context) => {
       .collection('chats')
       .doc(chatId)
       .collection('messages')
-      .where('seen_at', '==', null)
+      .where('seenAt', '==', null)
       .get();
     
     if (messagesQuery.empty) {
@@ -49,9 +49,9 @@ exports.markMessagesAsSeen = functions.https.onCall(async (data, context) => {
     messagesQuery.docs.forEach((doc) => {
       const messageData = doc.data();
       // Only update messages not sent by the current user
-      if (messageData.sender_id && messageData.sender_id !== userId) {
+      if (messageData.senderId && messageData.senderId !== userId) {
         batch.update(doc.ref, {
-          seen_at: seenTimestamp
+          seenAt: seenTimestamp
         });
         updateCount++;
       }

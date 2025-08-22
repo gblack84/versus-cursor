@@ -23,7 +23,7 @@ async function processVoteCompletion(postId, voteResults) {
     const [notificationsSnapshot] = await Promise.all([
       // 알림 문서 조회
       db.collection('notifications')
-        .where('source_id', '==', postId)
+        .where('sourceId', '==', postId)
         .where('type', '==', 'votingRequest')
         .get()
     ]);
@@ -34,7 +34,7 @@ async function processVoteCompletion(postId, voteResults) {
     // 2. 참여자 목록 수집
     const participantIds = new Set();
     notificationsSnapshot.forEach(doc => {
-      const userId = doc.data().user_id;
+      const userId = doc.data().userId;
       if (userId) participantIds.add(userId);
     });
     
@@ -50,7 +50,7 @@ async function processVoteCompletion(postId, voteResults) {
       const messagesPromise = db.collection('chats')
         .doc(chatId)
         .collection('messages')
-        .where('vote_post_id', '==', postId)
+        .where('votePostId', '==', postId)
         .where('messageType', 'in', ['voteRequest', 'voteCreated'])
         .get()
         .then(snapshot => {
@@ -86,7 +86,7 @@ async function processVoteCompletion(postId, voteResults) {
     
     // 결과 알림 생성 작업
     const resultNotificationData = {
-      type: 'vote_result',
+      type: 'voteResult',
       sourceId: postId,
       sourceType: 'post',
       title: '투표 결과가 도착했습니다!',

@@ -15,7 +15,7 @@ class RankedPostsModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "post_id" field.
+  // "postId" field.
   String? _postId;
   String get postId => _postId ?? '';
   bool hasPostId() => _postId != null;
@@ -40,32 +40,32 @@ class RankedPostsModel extends FirestoreRecord {
   String get title => _title ?? '';
   bool hasTitle() => _title != null;
 
-  // "view_count" field.
+  // "viewCount" field.
   int? _viewCount;
   int get viewCount => _viewCount ?? 0;
   bool hasViewCount() => _viewCount != null;
 
-  // "like_count" field.
+  // "likeCount" field.
   int? _likeCount;
   int get likeCount => _likeCount ?? 0;
   bool hasLikeCount() => _likeCount != null;
 
-  // "comment_count" field.
+  // "commentCount" field.
   int? _commentCount;
   int get commentCount => _commentCount ?? 0;
   bool hasCommentCount() => _commentCount != null;
 
-  // "interest_count" field.
+  // "interestCount" field.
   int? _interestCount;
   int get interestCount => _interestCount ?? 0;
   bool hasInterestCount() => _interestCount != null;
 
-  // "share_count" field.
+  // "shareCount" field.
   int? _shareCount;
   int get shareCount => _shareCount ?? 0;
   bool hasShareCount() => _shareCount != null;
 
-  // "content_type" field.
+  // "contentType" field.
   String? _contentType;
   String get contentType => _contentType ?? '';
   bool hasContentType() => _contentType != null;
@@ -73,23 +73,23 @@ class RankedPostsModel extends FirestoreRecord {
   DocumentReference get parentReference => reference.parent.parent!;
 
   void _initializeFields() {
-    _postId = snapshotData['post_id'] as String?;
+    _postId = snapshotData['postId'] as String?;
     _score = castToType<int>(snapshotData['score']);
     _rank = castToType<int>(snapshotData['rank']);
     _category = snapshotData['category'] as String?;
     _title = snapshotData['title'] as String?;
-    _viewCount = castToType<int>(snapshotData['view_count']);
-    _likeCount = castToType<int>(snapshotData['like_count']);
-    _commentCount = castToType<int>(snapshotData['comment_count']);
-    _interestCount = castToType<int>(snapshotData['interest_count']);
-    _shareCount = castToType<int>(snapshotData['share_count']);
-    _contentType = snapshotData['content_type'] as String?;
+    _viewCount = castToType<int>(snapshotData['viewCount']);
+    _likeCount = castToType<int>(snapshotData['likeCount']);
+    _commentCount = castToType<int>(snapshotData['commentCount']);
+    _interestCount = castToType<int>(snapshotData['interestCount']);
+    _shareCount = castToType<int>(snapshotData['shareCount']);
+    _contentType = snapshotData['contentType'] as String?;
   }
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
           ? parent.collection('rankedPosts')
-          : FirebaseFirestore.instance.collectionGroup('ranked_posts');
+          : FirebaseFirestore.instance.collectionGroup('rankedPosts');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
       parent.collection('rankedPosts').doc(id);
@@ -140,17 +140,17 @@ Map<String, dynamic> createRankedPostsModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'post_id': postId,
+      'postId': postId,
       'score': score,
       'rank': rank,
       'category': category,
       'title': title,
-      'view_count': viewCount,
-      'like_count': likeCount,
-      'comment_count': commentCount,
-      'interest_count': interestCount,
-      'share_count': shareCount,
-      'content_type': contentType,
+      'viewCount': viewCount,
+      'likeCount': likeCount,
+      'commentCount': commentCount,
+      'interestCount': interestCount,
+      'shareCount': shareCount,
+      'contentType': contentType,
     }.withoutNulls,
   );
 

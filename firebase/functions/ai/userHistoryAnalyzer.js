@@ -43,8 +43,8 @@ async function getUserPostingHistory(userId) {
     // 신고된 포스트 수 (posts에서)
     const reportedSnapshot = await db
       .collection('posts')
-      .where('user_ref', '==', db.doc(`users/${userId}`))
-      .where('reported_count', '>', 0)
+      .where('userRef', '==', db.doc(`users/${userId}`))
+      .where('reportedCount', '>', 0)
       .get();
     
     return {

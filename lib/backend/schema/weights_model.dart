@@ -15,12 +15,12 @@ class WeightsModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "name_interest" field.
+  // "nameInterest" field.
   String? _nameInterest;
   String get nameInterest => _nameInterest ?? '';
   bool hasNameInterest() => _nameInterest != null;
 
-  // "score_interest" field.
+  // "scoreInterest" field.
   int? _scoreInterest;
   int get scoreInterest => _scoreInterest ?? 0;
   bool hasScoreInterest() => _scoreInterest != null;
@@ -28,8 +28,8 @@ class WeightsModel extends FirestoreRecord {
   DocumentReference get parentReference => reference.parent.parent!;
 
   void _initializeFields() {
-    _nameInterest = snapshotData['name_interest'] as String?;
-    _scoreInterest = castToType<int>(snapshotData['score_interest']);
+    _nameInterest = snapshotData['nameInterest'] as String?;
+    _scoreInterest = castToType<int>(snapshotData['scoreInterest']);
   }
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
@@ -77,8 +77,8 @@ Map<String, dynamic> createWeightsModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'name_interest': nameInterest,
-      'score_interest': scoreInterest,
+      'nameInterest': nameInterest,
+      'scoreInterest': scoreInterest,
     }.withoutNulls,
   );
 

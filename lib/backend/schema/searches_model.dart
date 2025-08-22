@@ -15,12 +15,12 @@ class SearchesModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "search_id" field.
+  // "searchId" field.
   String? _searchId;
   String get searchId => _searchId ?? '';
   bool hasSearchId() => _searchId != null;
 
-  // "user_id" field.
+  // "userId" field.
   String? _userId;
   String get userId => _userId ?? '';
   bool hasUserId() => _userId != null;
@@ -36,8 +36,8 @@ class SearchesModel extends FirestoreRecord {
   bool hasDate() => _date != null;
 
   void _initializeFields() {
-    _searchId = snapshotData['search_id'] as String?;
-    _userId = snapshotData['user_id'] as String?;
+    _searchId = snapshotData['searchId'] as String?;
+    _userId = snapshotData['userId'] as String?;
     _query = snapshotData['query'] as String?;
     _date = snapshotData['date'] as DateTime?;
   }
@@ -84,8 +84,8 @@ Map<String, dynamic> createSearchesModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'search_id': searchId,
-      'user_id': userId,
+      'searchId': searchId,
+      'userId': userId,
       'query': query,
       'date': date,
     }.withoutNulls,

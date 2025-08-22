@@ -15,37 +15,37 @@ class PointModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "user_id" field.
+  // "userId" field.
   String? _userId;
   String get userId => _userId ?? '';
   bool hasUserId() => _userId != null;
 
-  // "a_points_balance" field.
+  // "aPointsBalance" field.
   int? _aPointsBalance;
   int get aPointsBalance => _aPointsBalance ?? 0;
   bool hasAPointsBalance() => _aPointsBalance != null;
 
-  // "q_points_balance" field.
+  // "qPointsBalance" field.
   int? _qPointsBalance;
   int get qPointsBalance => _qPointsBalance ?? 0;
   bool hasQPointsBalance() => _qPointsBalance != null;
 
-  // "created_at" field.
+  // "createdAt" field.
   DateTime? _createdAt;
   DateTime? get createdAt => _createdAt;
   bool hasCreatedAt() => _createdAt != null;
 
-  // "update_at" field.
+  // "updateAt" field.
   DateTime? _updateAt;
   DateTime? get updateAt => _updateAt;
   bool hasUpdateAt() => _updateAt != null;
 
   void _initializeFields() {
-    _userId = snapshotData['user_id'] as String?;
-    _aPointsBalance = castToType<int>(snapshotData['a_points_balance']);
-    _qPointsBalance = castToType<int>(snapshotData['q_points_balance']);
-    _createdAt = snapshotData['created_at'] as DateTime?;
-    _updateAt = snapshotData['update_at'] as DateTime?;
+    _userId = snapshotData['userId'] as String?;
+    _aPointsBalance = castToType<int>(snapshotData['aPointsBalance']);
+    _qPointsBalance = castToType<int>(snapshotData['qPointsBalance']);
+    _createdAt = snapshotData['createdAt'] as DateTime?;
+    _updateAt = snapshotData['updateAt'] as DateTime?;
   }
 
   static CollectionReference get collection =>
@@ -90,11 +90,11 @@ Map<String, dynamic> createPointModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'user_id': userId,
-      'a_points_balance': aPointsBalance,
-      'q_points_balance': qPointsBalance,
-      'created_at': createdAt,
-      'update_at': updateAt,
+      'userId': userId,
+      'aPointsBalance': aPointsBalance,
+      'qPointsBalance': qPointsBalance,
+      'createdAt': createdAt,
+      'updateAt': updateAt,
     }.withoutNulls,
   );
 

@@ -15,22 +15,22 @@ class ChatInterestJopsModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "Category_A" field.
+  // "categoryA" field.
   String? _categoryA;
   String get categoryA => _categoryA ?? '';
   bool hasCategoryA() => _categoryA != null;
 
-  // "Category_B" field.
+  // "categoryB" field.
   String? _categoryB;
   String get categoryB => _categoryB ?? '';
   bool hasCategoryB() => _categoryB != null;
 
-  // "Category_C" field.
+  // "categoryC" field.
   String? _categoryC;
   String get categoryC => _categoryC ?? '';
   bool hasCategoryC() => _categoryC != null;
 
-  // "Time_Stamp" field.
+  // "timeStamp" field.
   DateTime? _timeStamp;
   DateTime? get timeStamp => _timeStamp;
   bool hasTimeStamp() => _timeStamp != null;
@@ -38,10 +38,10 @@ class ChatInterestJopsModel extends FirestoreRecord {
   DocumentReference get parentReference => reference.parent.parent!;
 
   void _initializeFields() {
-    _categoryA = snapshotData['Category_A'] as String?;
-    _categoryB = snapshotData['Category_B'] as String?;
-    _categoryC = snapshotData['Category_C'] as String?;
-    _timeStamp = snapshotData['Time_Stamp'] as DateTime?;
+    _categoryA = snapshotData['categoryA'] as String?;
+    _categoryB = snapshotData['categoryB'] as String?;
+    _categoryC = snapshotData['categoryC'] as String?;
+    _timeStamp = snapshotData['timeStamp'] as DateTime?;
   }
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
@@ -92,10 +92,10 @@ Map<String, dynamic> createChatInterestJopsModelData({
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'Category_A': categoryA,
-      'Category_B': categoryB,
-      'Category_C': categoryC,
-      'Time_Stamp': timeStamp,
+      'categoryA': categoryA,
+      'categoryB': categoryB,
+      'categoryC': categoryC,
+      'timeStamp': timeStamp,
     }.withoutNulls,
   );
 

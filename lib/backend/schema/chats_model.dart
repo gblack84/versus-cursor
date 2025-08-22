@@ -98,25 +98,24 @@ class ChatsModel extends FirestoreRecord {
   }
 
   void _initializeFields() {
-    // Support both snake_case (legacy) and camelCase (new) field names
-    _chatId = (snapshotData['chatId'] ?? snapshotData['chat_id']) as String?;
-    _chatType = (snapshotData['chatType'] ?? snapshotData['chat_type']) as String?;
+    _chatId = snapshotData['chatId'] as String?;
+    _chatType = snapshotData['chatType'] as String?;
     _participantIds = getDataList(snapshotData['participantIds']);
     // 이전 필드명 호환성 유지 (오타 수정)
     if (_participantIds == null || _participantIds!.isEmpty) {
       _participantIds = getDataList(snapshotData['participantlds']);
     }
-    _chatName = (snapshotData['chatName'] ?? snapshotData['chat_name']) as String?;
-    _lastMessageContent = (snapshotData['lastMessageContent'] ?? snapshotData['last_message_content']) as String?;
-    _lastMessageAt = (snapshotData['lastMessageAt'] ?? snapshotData['last_message_at']) as DateTime?;
-    _isRead = (snapshotData['isRead'] ?? snapshotData['is_read']) as bool?;
-    _createdAt = (snapshotData['createdAt'] ?? snapshotData['created_at']) as DateTime?;
+    _chatName = snapshotData['chatName'] as String?;
+    _lastMessageContent = snapshotData['lastMessageContent'] as String?;
+    _lastMessageAt = snapshotData['lastMessageAt'] as DateTime?;
+    _isRead = snapshotData['isRead'] as bool?;
+    _createdAt = snapshotData['createdAt'] as DateTime?;
     _email = snapshotData['email'] as String?;
-    _displayName = (snapshotData['displayName'] ?? snapshotData['display_name']) as String?;
-    _photoUrl = (snapshotData['photoUrl'] ?? snapshotData['photo_url']) as String?;
+    _displayName = snapshotData['displayName'] as String?;
+    _photoUrl = snapshotData['photoUrl'] as String?;
     _uid = snapshotData['uid'] as String?;
-    _createdTime = (snapshotData['createdTime'] ?? snapshotData['created_time']) as DateTime?;
-    _phoneNumber = (snapshotData['phoneNumber'] ?? snapshotData['phone_number']) as String?;
+    _createdTime = snapshotData['createdTime'] as DateTime?;
+    _phoneNumber = snapshotData['phoneNumber'] as String?;
     
     // Parse lastReadTimestamps map
     final lastReadData = snapshotData['lastReadTimestamps'] as Map<String, dynamic>?;

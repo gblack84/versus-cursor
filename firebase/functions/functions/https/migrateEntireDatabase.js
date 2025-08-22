@@ -134,6 +134,16 @@ const FIELD_MAPPINGS = {
   'last_updated': 'lastUpdated',
   'moderated_at': 'moderatedAt',
   
+  // Poll details fields
+  'option_1': 'option1',
+  'option_2': 'option2',
+  'option_1_media_type': 'option1MediaType',
+  'option_2_media_type': 'option2MediaType',
+  'option_1_media_url': 'option1MediaUrl',
+  'option_2_media_url': 'option2MediaUrl',
+  'result_time': 'resultTime',
+  'target_audience': 'targetAudience',
+  
   // Additional fields
   'test_mode_status': 'testModeStatus',
   'test_mode_user_choice': 'testModeUserChoice',
@@ -194,6 +204,27 @@ const FIELD_MAPPINGS = {
   'media_size': 'mediaSizwe',
   'media_duration': 'mediaDuration',
   'thumbnail_url': 'thumbnailUrl',
+  'vote_end_time': 'voteEndTime',
+  'user_votes': 'userVotes',
+  'voted_at': 'votedAt',
+  'last_vote_update': 'lastVoteUpdate',
+  'vote_completed_at': 'voteCompletedAt',
+  'vote_aspect_ratio_a': 'voteAspectRatioA',
+  'vote_aspect_ratio_b': 'voteAspectRatioB',
+  'vote_results_a': 'voteResultsA',
+  'vote_results_b': 'voteResultsB',
+  'vote_winner': 'voteWinner',
+  'vote_percent_a': 'votePercentA',
+  'vote_percent_b': 'votePercentB',
+  'delivered_at': 'deliveredAt',
+  'sender_name': 'senderName',
+  'is_ai': 'isAi',
+  'is_welcome_message': 'isWelcomeMessage',
+  'migration_created': 'migrationCreated',
+  'vote_participated_at': 'voteParticipatedAt',
+  'user_voted': 'userVoted',
+  'migrated_at': 'migratedAt',
+  'migration_version': 'migrationVersion',
   
   // Comments subcollection fields
   'comment_text': 'commentText',
@@ -320,7 +351,22 @@ const FIELD_MAPPINGS = {
   'interaction_type': 'interactionType',
   'notification_id': 'notificationId',
   'source_id': 'sourceId',
-  'local_time': 'localTime'
+  'local_time': 'localTime',
+  
+  // Additional fields found in model files
+  'name_interest': 'nameInterest',
+  'score_interest': 'scoreInterest',
+  'interest_id': 'interestId',
+  'sub_categories': 'subCategories',
+  'search_id': 'searchId',
+  'shared_id': 'sharedId',
+  'g_content': 'gContent',
+  'raking_id': 'rakingId',
+  'update_at': 'updateAt',
+  'pending_user_ids': 'pendingUserIds',
+  'creator_id': 'creatorId',
+  'group_chat_id': 'groupChatId',
+  'group_image_url': 'groupImageUrl'
 };
 
 // userId를 snake_case에서 camelCase로 변환하는 헬퍼 함수

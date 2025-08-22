@@ -77,7 +77,7 @@ class UserCacheService {
         final user = core.User(
           id: userId,
           name: _extractDisplayName(userData),
-          imageSource: userData['photo_url'],
+          imageSource: userData['photoUrl'],
           metadata: {
             'handle': userData['handle'],
             'email': userData['email'],
@@ -147,7 +147,7 @@ class UserCacheService {
         final currentUser = core.User(
           id: userId,
           name: _extractDisplayName(userData),
-          imageSource: userData['photo_url'] ?? currentUserPhoto,
+          imageSource: userData['photoUrl'] ?? currentUserPhoto,
           metadata: {
             'handle': userData['handle'],
             'email': userData['email'] ?? currentUserEmail,
@@ -177,7 +177,7 @@ class UserCacheService {
   /// 표시 이름 추출 헬퍼
   String _extractDisplayName(Map<String, dynamic> userData) {
     // 여러 필드에서 표시 이름 추출 시도
-    final displayName = userData['display_name'] ?? 
+    final displayName = userData['displayName'] ??
                        userData['handle'] ?? 
                        userData['email']?.split('@')[0] ?? 
                        'User';

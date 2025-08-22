@@ -158,9 +158,8 @@ class VoteStateCoordinator {
     
     // 2. Firebase 데이터 확인
     if (firebaseData != null) {
-      // vote_completed 필드 확인
-      if (firebaseData['vote_completed'] == true || 
-          firebaseData['voteCompleted'] == true) {
+      // voteCompleted 필드 확인
+      if (firebaseData['voteCompleted'] == true) {
         return VoteStateData(
           state: VoteState.completed,
           remainingTime: Duration.zero,
@@ -171,10 +170,8 @@ class VoteStateCoordinator {
         );
       }
       
-      // vote_status 또는 voteStatus 필드 확인
-      final voteStatus = firebaseData['vote_status'] ?? 
-                        firebaseData['voteStatus'] ?? 
-                        initialStatus;
+      // voteStatus 필드 확인
+      final voteStatus = firebaseData['voteStatus'] ?? initialStatus;
       
       return VoteStateData(
         state: _mapStatusToState(voteStatus),
@@ -200,21 +197,21 @@ class VoteStateCoordinator {
     if (data == null) return {};
     
     return {
-      'votesA': data['display_votes_a'] ?? data['votes_a'] ?? data['votesA'] ?? 0,
-      'votesB': data['display_votes_b'] ?? data['votes_b'] ?? data['votesB'] ?? 0,
-      'actualVotesA': data['actual_votes_a'] ?? data['votes_a'] ?? 0,
-      'actualVotesB': data['actual_votes_b'] ?? data['votes_b'] ?? 0,
-      'percentA': data['display_percent_a'] ?? data['percentA'] ?? 0,
-      'percentB': data['display_percent_b'] ?? data['percentB'] ?? 0,
-      'totalVotes': data['total_votes'] ?? data['totalVotes'] ?? 0,
+      'votesA': data['votesA'] ?? 0,
+      'votesB': data['votesB'] ?? 0,
+      'actualVotesA': data['votesA'] ?? 0,
+      'actualVotesB': data['votesB'] ?? 0,
+      'percentA': data['percentA'] ?? 0,
+      'percentB': data['percentB'] ?? 0,
+      'totalVotes': data['totalVotes'] ?? 0,
       'winner': data['winner'] ?? _calculateWinner(data),
     };
   }
   
   /// 승자 계산
   String _calculateWinner(Map<String, dynamic> data) {
-    final votesA = data['display_votes_a'] ?? data['votes_a'] ?? 0;
-    final votesB = data['display_votes_b'] ?? data['votes_b'] ?? 0;
+    final votesA = data['votesA'] ?? 0;
+    final votesB = data['votesB'] ?? 0;
     
     if (votesA > votesB) return 'A';
     if (votesB > votesA) return 'B';

@@ -15,22 +15,22 @@ class TransactionsModel extends FirestoreRecord {
     _initializeFields();
   }
 
-  // "transaction_id" field.
+  // "transactionId" field.
   String? _transactionId;
   String get transactionId => _transactionId ?? '';
   bool hasTransactionId() => _transactionId != null;
 
-  // "transaction_type" field.
+  // "transactionType" field.
   String? _transactionType;
   String get transactionType => _transactionType ?? '';
   bool hasTransactionType() => _transactionType != null;
 
-  // "points_type" field.
+  // "pointsType" field.
   String? _pointsType;
   String get pointsType => _pointsType ?? '';
   bool hasPointsType() => _pointsType != null;
 
-  // "points_amount" field.
+  // "pointsAmount" field.
   int? _pointsAmount;
   int get pointsAmount => _pointsAmount ?? 0;
   bool hasPointsAmount() => _pointsAmount != null;
@@ -40,20 +40,20 @@ class TransactionsModel extends FirestoreRecord {
   String get source => _source ?? '';
   bool hasSource() => _source != null;
 
-  // "creates_at" field.
-  String? _createsAt;
-  String get createsAt => _createsAt ?? '';
-  bool hasCreatesAt() => _createsAt != null;
+  // "createdAt" field.
+  String? _createdAt;
+  String get createdAt => _createdAt ?? '';
+  bool hasCreatedAt() => _createdAt != null;
 
   DocumentReference get parentReference => reference.parent.parent!;
 
   void _initializeFields() {
-    _transactionId = snapshotData['transaction_id'] as String?;
-    _transactionType = snapshotData['transaction_type'] as String?;
-    _pointsType = snapshotData['points_type'] as String?;
-    _pointsAmount = castToType<int>(snapshotData['points_amount']);
+    _transactionId = snapshotData['transactionId'] as String?;
+    _transactionType = snapshotData['transactionType'] as String?;
+    _pointsType = snapshotData['pointsType'] as String?;
+    _pointsAmount = castToType<int>(snapshotData['pointsAmount']);
     _source = snapshotData['source'] as String?;
-    _createsAt = snapshotData['creates_at'] as String?;
+    _createdAt = snapshotData['createdAt'] as String?;
   }
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
@@ -101,16 +101,16 @@ Map<String, dynamic> createTransactionsModelData({
   String? pointsType,
   int? pointsAmount,
   String? source,
-  String? createsAt,
+  String? createdAt,
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
-      'transaction_id': transactionId,
-      'transaction_type': transactionType,
-      'points_type': pointsType,
-      'points_amount': pointsAmount,
+      'transactionId': transactionId,
+      'transactionType': transactionType,
+      'pointsType': pointsType,
+      'pointsAmount': pointsAmount,
       'source': source,
-      'creates_at': createsAt,
+      'createdAt': createdAt,
     }.withoutNulls,
   );
 
@@ -128,7 +128,7 @@ class TransactionsModelDocumentEquality
         e1?.pointsType == e2?.pointsType &&
         e1?.pointsAmount == e2?.pointsAmount &&
         e1?.source == e2?.source &&
-        e1?.createsAt == e2?.createsAt;
+        e1?.createdAt == e2?.createdAt;
   }
 
   @override
@@ -138,7 +138,7 @@ class TransactionsModelDocumentEquality
         e?.pointsType,
         e?.pointsAmount,
         e?.source,
-        e?.createsAt
+        e?.createdAt
       ]);
 
   @override

@@ -53,7 +53,7 @@ class VoteTimerService extends ChangeNotifier {
           .collection('timeSync')
           .add({
             'timestamp': FieldValue.serverTimestamp(),
-            'local_time': localTimeBefore.toIso8601String(),
+            'localTime': localTimeBefore.toIso8601String(),
           });
       
       // 서버 시간 받기

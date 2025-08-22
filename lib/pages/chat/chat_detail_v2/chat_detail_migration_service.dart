@@ -60,7 +60,7 @@ class ChatDetailMigrationService {
     }
     
     // Handle media messages if media_url field exists in message data
-    final mediaUrl = messageData?['media_url'] as String?;
+    final mediaUrl = messageData?['mediaUrl'] as String?;
     if (mediaUrl != null && mediaUrl.isNotEmpty) {
       final isVideo = mediaUrl.contains('.mp4') || 
                      mediaUrl.contains('.mov');
@@ -178,16 +178,16 @@ class ChatDetailMigrationService {
     // metadata 필드를 먼저 확인하고, 없으면 직접 필드에서 가져오기
     if (messageData['metadata'] is Map) {
       final metadataMap = messageData['metadata'] as Map<String, dynamic>;
-      metadata['authorName'] = metadataMap['authorName'] ?? metadataMap['author_name'];
+      metadata['authorName'] = metadataMap['authorName'];
       metadata['authorPhotoUrl'] = metadataMap['authorPhotoUrl'] ?? metadataMap['authorPhotoUrl'];
-      metadata['creatorId'] = metadataMap['creatorId'] ?? metadataMap['creator_id'];
+      metadata['creatorId'] = metadataMap['creatorId'];
     }
     
     // metadata 필드에 없으면 직접 필드에서 가져오기
     if (metadata['authorName'] == null) {
-      metadata['authorName'] = messageData['author_name'];
+      metadata['authorName'] = messageData['authorName'];
       metadata['authorPhotoUrl'] = messageData['authorPhotoUrl'];
-      metadata['creatorId'] = messageData['creator_id'];
+      metadata['creatorId'] = messageData['creatorId'];
     }
     
     return metadata;

@@ -229,9 +229,9 @@ class PreloadStrategy {
   /// Get preload statistics
   Map<String, dynamic> getPreloadStats() {
     return {
-      'preloading_chats': _preloadingChats.length,
-      'preloaded_chats': _preloadedChats.length,
-      'total_cached': _preloadedChats.length,
+      'preloadingChats': _preloadingChats.length,
+      'preloadedChats': _preloadedChats.length,
+      'totalCached': _preloadedChats.length,
     };
   }
 }

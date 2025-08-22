@@ -119,28 +119,28 @@ class NotificationsModel extends FirestoreRecord {
   bool hasPostData() => _postData != null;
 
   void _initializeFields() {
-    // Support both snake_case (legacy) and camelCase (new) field names
-    _notificationId = (snapshotData['notificationId'] ?? snapshotData['notification_id']) as String?;
-    _userId = (snapshotData['userId'] ?? snapshotData['user_id']) as String?;
+    // Initialize fields from Firestore snapshot
+    _notificationId = snapshotData['notificationId'] as String?;
+    _userId = snapshotData['userId'] as String?;
     _type = snapshotData['type'] as String?;
-    _sourceId = (snapshotData['sourceId'] ?? snapshotData['source_id']) as String?;
+    _sourceId = snapshotData['sourceId'] as String?;
     _content = snapshotData['content'] as String?;
-    _createdAt = (snapshotData['createdAt'] ?? snapshotData['created_at']) as DateTime?;
+    _createdAt = snapshotData['createdAt'] as DateTime?;
     _read = snapshotData['read'] as bool?;
-    _targetAudience = getDataList(snapshotData['targetAudience'] ?? snapshotData['target_audience']);
-    _expiryTime = (snapshotData['expiryTime'] ?? snapshotData['expiry_time']) as DateTime?;
+    _targetAudience = getDataList(snapshotData['targetAudience']);
+    _expiryTime = snapshotData['expiryTime'] as DateTime?;
     _location = snapshotData['location'] as LatLng?;
-    _interactionType = (snapshotData['interactionType'] ?? snapshotData['interaction_type']) as String?;
+    _interactionType = snapshotData['interactionType'] as String?;
     
     // Initialize extended fields (already has fallback support)
     _status = snapshotData['status'] as String?;
-    _completedAt = (snapshotData['completedAt'] ?? snapshotData['completed_at']) as DateTime?;
+    _completedAt = snapshotData['completedAt'] as DateTime?;
     _title = snapshotData['title'] as String?;
     _message = snapshotData['message'] as String?;
-    _imageUrl = (snapshotData['imageUrl'] ?? snapshotData['image_url']) as String?;
-    _actionUrl = (snapshotData['actionUrl'] ?? snapshotData['action_url']) as String?;
+    _imageUrl = snapshotData['imageUrl'] as String?;
+    _actionUrl = snapshotData['actionUrl'] as String?;
     _priority = snapshotData['priority'] as String?;
-    _sourceType = (snapshotData['sourceType'] ?? snapshotData['source_type']) as String?;
+    _sourceType = snapshotData['sourceType'] as String?;
     
     // Parse JSON content if present
     if (_content != null) {

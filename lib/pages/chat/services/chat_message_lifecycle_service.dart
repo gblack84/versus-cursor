@@ -36,7 +36,7 @@ class ChatMessageLifecycleService {
         // Only update messages not sent by the current user
         if (data['senderId'] != null && data['senderId'] != currentUserId) {
           batch.update(doc.reference, {
-            'seen_at': seenTimestamp,
+            'seenAt': seenTimestamp,
           });
           updateCount++;
         }
@@ -64,7 +64,7 @@ class ChatMessageLifecycleService {
           .collection('messages')
           .doc(messageId)
           .update({
-        'delivered_at': FieldValue.serverTimestamp(),
+        'deliveredAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
       print('Error marking message as delivered: $e');
@@ -90,9 +90,9 @@ class ChatMessageLifecycleService {
 
       final data = doc.data()!;
       
-      if (data['seen_at'] != null) {
+      if (data['seenAt'] != null) {
         return MessageDeliveryStatus.seen;
-      } else if (data['delivered_at'] != null) {
+      } else if (data['deliveredAt'] != null) {
         return MessageDeliveryStatus.delivered;
       } else {
         return MessageDeliveryStatus.sent;
@@ -124,9 +124,9 @@ class ChatMessageLifecycleService {
         final data = doc.data() as Map<String, dynamic>;
         MessageDeliveryStatus status;
         
-        if (data['seen_at'] != null) {
+        if (data['seenAt'] != null) {
           status = MessageDeliveryStatus.seen;
-        } else if (data['delivered_at'] != null) {
+        } else if (data['deliveredAt'] != null) {
           status = MessageDeliveryStatus.delivered;
         } else {
           status = MessageDeliveryStatus.sent;

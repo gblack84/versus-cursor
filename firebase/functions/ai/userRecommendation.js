@@ -214,7 +214,7 @@ ${JSON.stringify(userSummaries, null, 2)}
 {
   "rankings": [
     {
-      "userId": "user_id",
+      "userId": "userId",
       "score": 85,
       "reasons": ["관심사 일치", "활발한 활동"]
     },

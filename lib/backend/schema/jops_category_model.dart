@@ -71,7 +71,7 @@ class JopsCategoryModel extends FirestoreRecord {
           'jopName': snapshot.data['jopName'],
           'categoryRefA': snapshot.data['categoryRefA'],
           'categoryRefB': snapshot.data['categoryRefB'],
-          'search_tags': safeGet(
+          'searchTags': safeGet(
             () => snapshot.data['searchTags'].toList(),
           ),
         },

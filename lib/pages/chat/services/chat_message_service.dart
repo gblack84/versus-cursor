@@ -108,7 +108,7 @@ class ChatMessageService {
     DateTime createdAt,
     Map<String, dynamic> data,
   ) {
-    final imageUrl = data['image_url'] ?? data['image'] ?? '';
+    final imageUrl = data['imageUrl'] ?? data['image'] ?? '';
     final metadata = <String, dynamic>{};
     
     // 이미지 메타데이터 추가

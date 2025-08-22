@@ -241,7 +241,7 @@ curl -X POST https://asia-northeast3-versus-space-1lwwiw.cloudfunctions.net/test
    - `checkVoteTimeouts` (매 시간): 백업 체크
 5. **완료 처리**: `voteStatus = 'completed'`, AI 채팅 메시지 업데이트
 
-### 투표 관련 필드 설명
+### 투표 관련 필드 설명 (camelCase 마이그레이션 완료 ✅)
 ```javascript
 {
   // 시간 관리
@@ -250,12 +250,12 @@ curl -X POST https://asia-northeast3-versus-space-1lwwiw.cloudfunctions.net/test
   voteStatus: String,            // 'active' | 'completed' | 'expired'
   voteCompleted: Boolean,        // 완료 여부
   
-  // 투표 데이터
-  votes_a: Number,               // A 옵션 투표 수
-  votes_b: Number,               // B 옵션 투표 수
-  total_votes: Number,           // 전체 투표 수
-  votedUserIDsA: Array,          // A 투표자 ID 목록
-  votedUserIDsB: Array,          // B 투표자 ID 목록
+  // 투표 데이터 (camelCase)
+  votesA: Number,                // A 옵션 투표 수 ✅ (이전: votes_a)
+  votesB: Number,                // B 옵션 투표 수 ✅ (이전: votes_b)
+  totalVotes: Number,            // 전체 투표 수 ✅ (이전: total_votes)
+  votedUserIdsA: Array,          // A 투표자 ID 목록 ✅ (이전: votedUserIDsA)
+  votedUserIdsB: Array,          // B 투표자 ID 목록 ✅ (이전: votedUserIDsB)
   
   // 알림 관리
   notificationsSent: Boolean,    // 알림 발송 여부

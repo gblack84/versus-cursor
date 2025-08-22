@@ -444,6 +444,27 @@ flutter analyze
 - Follow Flutter/Dart naming conventions
 - Maintain consistent file structure
 
+### Naming Conventions
+프로젝트는 다음 네이밍 컨벤션을 따릅니다:
+
+#### CamelCase 사용
+- **Firestore 필드**: 모든 데이터베이스 필드는 camelCase 사용 (`userName`, `createdAt`, `votesA`)
+- **라우트명**: GoRouter 경로는 camelCase 사용 (`testpageSelect`, `chatDetail`)
+- **변수/함수**: Dart 코드의 변수와 함수는 camelCase (`getUserData()`, `isLoggedIn`)
+
+#### Snake_case 유지 (표준 컨벤션)
+- **파일명**: Dart/Flutter 표준에 따라 snake_case 사용 (`home_page_widget.dart`)
+- **Storage 경로**: Firebase Storage URL은 snake_case 유지 (`user_uploads/post_images/`)
+- **특수 ID**: 시스템 식별자는 snake_case 허용 (`ai_assistant_$userId`)
+
+상세 가이드는 [NAMING_CONVENTION.md](./NAMING_CONVENTION.md) 참조
+
+#### Migration History
+- **2025-08-21**: snake_case → camelCase 마이그레이션 100% 완료
+- 모든 backward compatibility 코드 제거
+- 768개 Firestore 필드 변환 완료
+- 커밋: d7c53da6
+
 ### Version Control
 - Regular commits with FlutterFlow sync
 - Use meaningful commit messages

@@ -27,45 +27,45 @@
 A vs B 형식의 게시물 정보를 저장합니다.
 
 **주요 필드:**
-- `userid`: 작성자 ID
+- `userId`: 작성자 ID (camelCase ✅)
 - `questionTitle`: 질문 제목
 - `optionA`: A 옵션 정보 (Map 구조)
 - `optionB`: B 옵션 정보 (Map 구조)
 - `description`: 설명
 - `targetAudience`: 타겟 오디언스 설정
 
-**투표 시스템 필드 (2025-08-03 추가):**
-- `vote_start_time`: 투표 시작 시간
-- `vote_end_time`: 투표 종료 시간 (10분 타이머)
-- `vote_status`: 투표 상태 (active/completed/timeout)
-- `vote_completed`: 투표 완료 여부
-- `votes_a`: A 옵션 투표수
-- `votes_b`: B 옵션 투표수
-- `voted_user_ids_a[]`: A에 투표한 사용자 ID 목록
-- `voted_user_ids_b[]`: B에 투표한 사용자 ID 목록
-- `total_votes`: 총 투표수
+**투표 시스템 필드 (camelCase 마이그레이션 완료):**
+- `voteStartTime`: 투표 시작 시간 (이전: vote_start_time)
+- `voteEndTime`: 투표 종료 시간 (이전: vote_end_time)
+- `voteStatus`: 투표 상태 (이전: vote_status)
+- `voteCompleted`: 투표 완료 여부 (이전: vote_completed)
+- `votesA`: A 옵션 투표수 (이전: votes_a)
+- `votesB`: B 옵션 투표수 (이전: votes_b)
+- `votedUserIdsA[]`: A에 투표한 사용자 ID 목록 (이전: voted_user_ids_a)
+- `votedUserIdsB[]`: B에 투표한 사용자 ID 목록 (이전: voted_user_ids_b)
+- `totalVotes`: 총 투표수 (이전: total_votes)
 
 #### 3. **messages** (MessagesModel)
 채팅 메시지 정보를 저장합니다. (chats 컬렉션의 서브컬렉션)
 
-**기본 메시지 필드:**
-- `message_id`: 메시지 고유 ID
-- `sender_id`: 발신자 ID
-- `receiver_id`: 수신자 ID
+**기본 메시지 필드 (camelCase):**
+- `messageId`: 메시지 고유 ID (이전: message_id)
+- `senderId`: 발신자 ID (이전: sender_id)
+- `receiverId`: 수신자 ID (이전: receiver_id)
 - `content`: 메시지 내용
-- `time_stamp`: 전송 시간
-- `message_type`: 메시지 타입 (text/image/video/vote_request)
+- `timeStamp`: 전송 시간 (이전: time_stamp)
+- `messageType`: 메시지 타입 (이전: message_type)
 
-**투표 카드 필드 (2025-08-03 추가):**
-- `vote_post_id`: 관련 게시물 ID
-- `vote_option_a_images[]`: A 옵션 이미지 배열 (멀티이미지 지원)
-- `vote_option_b_images[]`: B 옵션 이미지 배열 (멀티이미지 지원)
-- `card_status`: 카드 상태 (voting_request/in_progress/completed)
-- `vote_end_time`: 투표 종료 시간
-- `user_voted`: 사용자 투표 여부
-- `vote_choice`: 사용자 선택 (A/B)
-- `vote_results`: 투표 결과 (Map)
-- `vote_participated_at`: 투표 참여 시간
+**투표 카드 필드 (camelCase):**
+- `votePostId`: 관련 게시물 ID (이전: vote_post_id)
+- `voteOptionAImages[]`: A 옵션 이미지 배열 (이전: vote_option_a_images)
+- `voteOptionBImages[]`: B 옵션 이미지 배열 (이전: vote_option_b_images)
+- `cardStatus`: 카드 상태 (이전: card_status)
+- `voteEndTime`: 투표 종료 시간 (이전: vote_end_time)
+- `userVoted`: 사용자 투표 여부 (이전: user_voted)
+- `voteChoice`: 사용자 선택 (이전: vote_choice)
+- `voteResults`: 투표 결과 (이전: vote_results)
+- `voteParticipatedAt`: 투표 참여 시간 (이전: vote_participated_at)
 
 #### 4. **notifications** (NotificationsModel)
 알림 정보를 저장합니다.
@@ -118,10 +118,11 @@ A vs B 형식의 게시물 정보를 저장합니다.
 
 모든 필드는 Firebase Functions와 완벽하게 동기화되어 있습니다:
 
-### 필드명 규칙
-- Flutter: 주로 camelCase 사용
-- Firebase Functions: snake_case와 camelCase 혼용
-- 호환성: 양쪽 모두 지원 (예: `vote_start_time`과 `voteStartTime` 모두 인식)
+### 필드명 규칙 (2025-08-21 업데이트)
+- **Flutter**: 100% camelCase 사용 ✅
+- **Firebase Functions**: 100% camelCase 사용 ✅
+- **마이그레이션 완료**: 모든 snake_case 필드가 camelCase로 변환됨
+- **Backward Compatibility**: 완전 제거 (커밋: d7c53da6)
 
 ### Backward Compatibility
 오타 수정 시 이전 필드명도 유지:

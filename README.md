@@ -269,10 +269,18 @@ versus-space/
 - `feature/*`: 기능 개발 브랜치
 - `hotfix/*`: 긴급 수정 브랜치
 
+### 네이밍 컨벤션
+본 프로젝트는 명확한 네이밍 컨벤션을 따릅니다:
+- **데이터 필드**: camelCase (`userName`, `createdAt`, `votesA`)
+- **파일명**: snake_case (`user_service.dart`, `home_page_widget.dart`)
+- **라우트명**: camelCase (`testpageSelect`, `chatDetail`)
+- 상세 규칙: [NAMING_CONVENTION.md](./NAMING_CONVENTION.md)
+
 ### 코드 스타일
 - Dart: `flutter analyze` 통과 필수
 - JavaScript: ESLint 설정 준수
 - 커밋 메시지: Conventional Commits 형식
+- 네이밍: [NAMING_CONVENTION.md](./NAMING_CONVENTION.md) 준수
 
 ### 테스트
 ```bash

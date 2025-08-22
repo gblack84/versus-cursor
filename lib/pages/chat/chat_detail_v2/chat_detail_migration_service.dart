@@ -116,8 +116,8 @@ class ChatDetailMigrationService {
     print('cardStatus: ${messageData['cardStatus']}');
     print('voteResultsA: ${messageData['voteResultsA']}');
     print('voteResultsB: ${messageData['voteResultsB']}');
-    print('vote_percent_a: ${messageData['vote_percent_a']}');
-    print('vote_percent_b: ${messageData['vote_percent_b']}');
+    print('votePercentA: ${messageData['votePercentA']}');
+    print('votePercentB: ${messageData['votePercentB']}');
     print('userVotes: ${messageData['userVotes']}');
     print('==============================');
     
@@ -138,10 +138,10 @@ class ChatDetailMigrationService {
     // MessagesModel에서 직접 aspectRatio 가져오기 (이제 파싱됨)
     // 중요: 기본값을 설정하지 않고 null을 유지하여 fallback 로직이 작동하도록 함
     metadata['aspectRatioA'] = message.voteAspectRatioA ?? 
-        (messageData['vote_aspect_ratio_a'] as num?)?.toDouble() ?? 
+        (messageData['voteAspectRatioA'] as num?)?.toDouble() ?? 
         (messageData['voteOptionAAspectRatio'] as num?)?.toDouble();
     metadata['aspectRatioB'] = message.voteAspectRatioB ?? 
-        (messageData['vote_aspect_ratio_b'] as num?)?.toDouble() ?? 
+        (messageData['voteAspectRatioB'] as num?)?.toDouble() ?? 
         (messageData['voteOptionBAspectRatio'] as num?)?.toDouble();
     
     // cardStatus는 Firebase에서 받은 값 사용 (completed 포함)
@@ -165,8 +165,8 @@ class ChatDetailMigrationService {
       metadata['voteResults'] = {
         'votesA': messageData['voteResultsA'] ?? 0,
         'votesB': messageData['voteResultsB'] ?? 0,
-        'percentageA': (messageData['vote_percent_a'] as num?)?.toDouble() ?? 0.0,
-        'percentageB': (messageData['vote_percent_b'] as num?)?.toDouble() ?? 0.0,
+        'percentageA': (messageData['votePercentA'] as num?)?.toDouble() ?? 0.0,
+        'percentageB': (messageData['votePercentB'] as num?)?.toDouble() ?? 0.0,
       };
       
       print('✅ voteResults created: ${metadata['voteResults']}');

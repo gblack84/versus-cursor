@@ -8,7 +8,7 @@ import '/core/app_utils.dart';
 class NotificationsListWidget extends StatefulWidget {
   const NotificationsListWidget({Key? key}) : super(key: key);
 
-  static String routeName = 'notifications_list';
+  static String routeName = 'notificationsList';
   static String routePath = '/notifications';
 
   @override

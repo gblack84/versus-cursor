@@ -447,12 +447,12 @@ class MessagesModel extends FirestoreRecord {
     _userVotes = snapshotData['userVotes'] as Map<String, dynamic>?;
     
     // AspectRatio and vote results fields
-    _voteAspectRatioA = castToType<double>(snapshotData['voteAspectRatioA'] ?? snapshotData['vote_aspect_ratio_a']);
-    _voteAspectRatioB = castToType<double>(snapshotData['voteAspectRatioB'] ?? snapshotData['vote_aspect_ratio_b']);
-    _voteResultsA = castToType<int>(snapshotData['voteResultsA'] ?? snapshotData['vote_results_a']);
-    _voteResultsB = castToType<int>(snapshotData['voteResultsB'] ?? snapshotData['vote_results_b']);
-    _votePercentA = castToType<double>(snapshotData['votePercentA'] ?? snapshotData['vote_percent_a']);
-    _votePercentB = castToType<double>(snapshotData['votePercentB'] ?? snapshotData['vote_percent_b']);
+    _voteAspectRatioA = castToType<double>(snapshotData['voteAspectRatioA']);
+    _voteAspectRatioB = castToType<double>(snapshotData['voteAspectRatioB']);
+    _voteResultsA = castToType<int>(snapshotData['voteResultsA']);
+    _voteResultsB = castToType<int>(snapshotData['voteResultsB']);
+    _votePercentA = castToType<double>(snapshotData['votePercentA']);
+    _votePercentB = castToType<double>(snapshotData['votePercentB']);
     
     _metadata = snapshotData['metadata'] as Map<String, dynamic>?;
   }

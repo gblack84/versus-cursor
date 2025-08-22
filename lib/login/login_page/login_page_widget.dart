@@ -569,8 +569,8 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   // 사용자 문서 생성
                                                   final usersCreateData = {
                                                     'email': 'admin@versus.test',
-                                                    'display_name': '관리자',
-                                                    'created_time': FieldValue.serverTimestamp(),
+                                                    'displayName': '관리자',
+                                                    'createdTime': FieldValue.serverTimestamp(),
                                                     'role': 'admin',
                                                     'uid': user.uid,
                                                   };
@@ -670,8 +670,8 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   // 사용자 문서 생성
                                                   final usersCreateData = {
                                                     'email': testEmail,
-                                                    'display_name': '테스터 (아이폰 16 프로)',
-                                                    'created_time': FieldValue.serverTimestamp(),
+                                                    'displayName': '테스터 (아이폰 16 프로)',
+                                                    'createdTime': FieldValue.serverTimestamp(),
                                                     'role': 'tester',
                                                     'platform': 'ios',  // 플랫폼 정보 저장
                                                     'uid': user.uid,
@@ -779,8 +779,8 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   // 사용자 문서 생성
                                                   final usersCreateData = {
                                                     'email': testEmail,
-                                                    'display_name': '테스터 (Android)',
-                                                    'created_time': FieldValue.serverTimestamp(),
+                                                    'displayName': '테스터 (Android)',
+                                                    'createdTime': FieldValue.serverTimestamp(),
                                                     'role': 'tester',
                                                     'platform': 'android',
                                                     'uid': user.uid,
@@ -882,8 +882,8 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   // 사용자 문서 생성
                                                   final usersCreateData = {
                                                     'email': testEmail,
-                                                    'display_name': '테스터 (macOS)',
-                                                    'created_time': FieldValue.serverTimestamp(),
+                                                    'displayName': '테스터 (macOS)',
+                                                    'createdTime': FieldValue.serverTimestamp(),
                                                     'role': 'tester',
                                                     'platform': 'macos',
                                                     'uid': user.uid,
@@ -985,8 +985,8 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                   // 사용자 문서 생성
                                                   final usersCreateData = {
                                                     'email': testEmail,
-                                                    'display_name': '테스터 (웹앱)',
-                                                    'created_time': FieldValue.serverTimestamp(),
+                                                    'displayName': '테스터 (웹앱)',
+                                                    'createdTime': FieldValue.serverTimestamp(),
                                                     'role': 'tester',
                                                     'platform': 'web',
                                                     'uid': user.uid,

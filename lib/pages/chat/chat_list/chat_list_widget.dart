@@ -8,7 +8,7 @@ import '/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart';
 class ChatListWidget extends StatefulWidget {
   const ChatListWidget({Key? key}) : super(key: key);
 
-  static String routeName = 'chat_list';
+  static String routeName = 'chatList';
   static String routePath = '/chat/list';
 
   @override

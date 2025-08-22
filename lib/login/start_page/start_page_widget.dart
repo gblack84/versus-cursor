@@ -16,7 +16,7 @@ export 'start_page_model.dart';
 class StartPageWidget extends StatefulWidget {
   const StartPageWidget({super.key});
 
-  static String routeName = 'start_page';
+  static String routeName = 'startPage';
   static String routePath = '/startPage';
 
   @override

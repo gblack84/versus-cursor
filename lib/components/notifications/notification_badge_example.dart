@@ -18,7 +18,7 @@ class NotificationBadgeExamples extends StatelessWidget {
           // 예제 1: AppBar에서 사용
           NotificationAppBarAction(
             onPressed: () {
-              context.pushNamed('notifications_list');
+              context.pushNamed('notificationsList');
             },
           ),
         ],
@@ -90,7 +90,7 @@ class NotificationBadgeExamples extends StatelessWidget {
               builder: (context, count) {
                 return ElevatedButton.icon(
                   onPressed: () {
-                    context.pushNamed('notifications_list');
+                    context.pushNamed('notificationsList');
                   },
                   icon: NotificationBadge(
                     count: count,

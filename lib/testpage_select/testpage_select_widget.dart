@@ -12,7 +12,7 @@ export 'testpage_select_model.dart';
 class TestpageSelectWidget extends StatefulWidget {
   const TestpageSelectWidget({super.key});
 
-  static String routeName = 'testpage_select';
+  static String routeName = 'testpageSelect';
   static String routePath = '/testpageSelect';
 
   @override
@@ -92,7 +92,7 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
           actions: [
             NotificationAppBarAction(
               onPressed: () {
-                context.pushNamed('notifications_list');
+                context.pushNamed('notificationsList');
               },
             ),
             ClipRRect(

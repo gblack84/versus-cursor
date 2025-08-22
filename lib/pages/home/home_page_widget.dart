@@ -8,7 +8,7 @@ import '/services/cache/unified_cache_service.dart';
 class HomePageWidget extends StatefulWidget {
   const HomePageWidget({super.key});
 
-  static String routeName = 'home_page';
+  static String routeName = 'homePage';
   static String routePath = '/home';
 
   @override
@@ -48,7 +48,7 @@ class _HomePageWidgetState extends State<HomePageWidget> {
         actions: [
           NotificationAppBarAction(
             onPressed: () {
-              context.pushNamed('notifications_list');
+              context.pushNamed('notificationsList');
             },
           ),
         ],

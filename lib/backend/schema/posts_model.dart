@@ -371,14 +371,14 @@ class PostsModel extends FirestoreRecord {
     _targetAudience = snapshotData['targetAudience'] as Map<String, dynamic>?;
     _description = snapshotData['description'] as String?;
     
-    // Initialize vote system fields with backwards compatibility
+    // Initialize vote system fields
     _voteStartTime = snapshotData['voteStartTime'] as DateTime?;
     _voteEndTime = snapshotData['voteEndTime'] as DateTime?;
     _voteStatus = snapshotData['voteStatus'] as String?;
-    _votesA = castToType<int>(snapshotData['votesA'] ?? snapshotData['voteCountA']);
-    _votesB = castToType<int>(snapshotData['votesB'] ?? snapshotData['voteCountB']);
-    _votedUserIdsA = getDataList(snapshotData['votedUserIdsA'] ?? snapshotData['votedUserIDsA']);
-    _votedUserIdsB = getDataList(snapshotData['votedUserIdsB'] ?? snapshotData['votedUserIDsB']);
+    _votesA = castToType<int>(snapshotData['votesA']);
+    _votesB = castToType<int>(snapshotData['votesB']);
+    _votedUserIdsA = getDataList(snapshotData['votedUserIdsA']);
+    _votedUserIdsB = getDataList(snapshotData['votedUserIdsB']);
     _totalVotes = castToType<int>(snapshotData['totalVotes']);
     _voteTimeout = snapshotData['voteTimeout'] as bool?;
     _voteCompletedAt = snapshotData['voteCompletedAt'] as DateTime?;

@@ -361,11 +361,59 @@ const FIELD_MAPPINGS = {
   'customer_id': 'customerId',
   'merchant_id': 'merchantId',
   'vendor_id': 'vendorId',
-  'partner_id': 'partnerId'
+  'partner_id': 'partnerId',
+  
+  // New unmapped fields from debug
+  // Posts collection
+  'test_mode_status': 'testModeStatus',
+  'test_mode_user_choice': 'testModeUserChoice',
+  'test_mode_user_voted_at': 'testModeUserVotedAt',
+  
+  // Notifications collection
+  'action_url': 'actionUrl',
+  
+  // Users collection  
+  'vote_ai_chat_id': 'voteAiChatId',
+  'ai_chats_created_at': 'aiChatsCreatedAt',
+  'helper_ai_chat_id': 'helperAiChatId',
+  'ai_chats_created': 'aiChatsCreated',
+  
+  // Chats collection
+  'user_a': 'userA',
+  'user_b': 'userB',
+  'last_message_sent_by': 'lastMessageSentBy',
+  'last_message_time': 'lastMessageTime',
+  'last_message_content': 'lastMessageContent',
+  'sort_priority': 'sortPriority',
+  'chat_name': 'chatName',
+  'participant_names': 'participantNames',
+  'message_count': 'messageCount',
+  'last_read_timestamps': 'lastReadTimestamps',
+  'ai_assistant': 'aiAssistant',
+  'ai_helper': 'aiHelper'
 };
 
+// userId를 snake_case에서 camelCase로 변환하는 헬퍼 함수
+function convertUserId(userId) {
+  // 특별한 ID들은 그대로 유지
+  if (userId === 'ai_assistant' || userId === 'ai_helper') {
+    return userId;
+  }
+  
+  // snake_case userId를 camelCase로 변환
+  // 예: 4j_qif7_f5i5dh_ba3_hrs4r_mv_w_ax_rx2 → 4jQif7F5i5dhBa3Hrs4rMvWAxRx2
+  if (userId && userId.includes('_')) {
+    return userId.split('_').map((part, index) => {
+      if (index === 0) return part;
+      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+    }).join('');
+  }
+  
+  return userId;
+}
+
 // 변환 함수
-function convertFieldNames(data) {
+function convertFieldNames(data, parentKey = '') {
   if (!data || typeof data !== 'object') {
     return data;
   }
@@ -374,7 +422,14 @@ function convertFieldNames(data) {
   let hasChanges = false;
   
   for (const [key, value] of Object.entries(data)) {
-    const newKey = FIELD_MAPPINGS[key] || key;
+    let newKey = FIELD_MAPPINGS[key] || key;
+    
+    // 특별한 경우: participantNames나 unreadCount 내부의 동적 userId 키들
+    if ((parentKey === 'participantNames' || parentKey === 'participant_names' || 
+         parentKey === 'unreadCount' || parentKey === 'lastReadTimestamps') && 
+        key.includes('_') && !['ai_assistant', 'ai_helper', 'aiAssistant', 'aiHelper'].includes(key)) {
+      newKey = convertUserId(key);
+    }
     
     if (newKey !== key) {
       hasChanges = true;
@@ -383,8 +438,13 @@ function convertFieldNames(data) {
     // 중첩된 객체 처리
     if (value && typeof value === 'object' && !Array.isArray(value) && 
         !(value instanceof Date) && !(value._seconds !== undefined)) {
-      const result = convertFieldNames(value);
-      converted[newKey] = result.data || result;
+      const result = convertFieldNames(value, newKey);
+      if (result && typeof result === 'object' && 'data' in result) {
+        converted[newKey] = result.data;
+        if (result.hasChanges) hasChanges = true;
+      } else {
+        converted[newKey] = result;
+      }
     } else {
       converted[newKey] = value;
     }

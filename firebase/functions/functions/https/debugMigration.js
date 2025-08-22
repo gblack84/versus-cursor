@@ -360,7 +360,36 @@ const FIELD_MAPPINGS = {
   'customer_id': 'customerId',
   'merchant_id': 'merchantId',
   'vendor_id': 'vendorId',
-  'partner_id': 'partnerId'
+  'partner_id': 'partnerId',
+  
+  // New unmapped fields from debug
+  // Posts collection
+  'test_mode_status': 'testModeStatus',
+  'test_mode_user_choice': 'testModeUserChoice',
+  'test_mode_user_voted_at': 'testModeUserVotedAt',
+  
+  // Notifications collection
+  'action_url': 'actionUrl',
+  
+  // Users collection  
+  'vote_ai_chat_id': 'voteAiChatId',
+  'ai_chats_created_at': 'aiChatsCreatedAt',
+  'helper_ai_chat_id': 'helperAiChatId',
+  'ai_chats_created': 'aiChatsCreated',
+  
+  // Chats collection
+  'user_a': 'userA',
+  'user_b': 'userB',
+  'last_message_sent_by': 'lastMessageSentBy',
+  'last_message_time': 'lastMessageTime',
+  'last_message_content': 'lastMessageContent',
+  'sort_priority': 'sortPriority',
+  'chat_name': 'chatName',
+  'participant_names': 'participantNames',
+  'message_count': 'messageCount',
+  'last_read_timestamps': 'lastReadTimestamps',
+  'ai_assistant': 'aiAssistant',
+  'ai_helper': 'aiHelper'
 };
 
 // 디버깅용 필드 검사 함수

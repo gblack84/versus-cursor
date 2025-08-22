@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Flutter Multi-Device Runner for Versus Space
-# This script runs the Flutter app on multiple devices simultaneously using tmux
+# Flutter Multi-Device Runner v3 - Using tmux layout for reliable pane creation
+# This script runs Flutter app on all connected devices
 
 # Colors for output
 RED='\033[0;31m'
@@ -30,116 +30,112 @@ print_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-# Check if tmux is installed
-if ! command -v tmux &> /dev/null; then
-    print_error "tmux is not installed. Please install it first."
-    exit 1
-fi
-
-# Check if flutter is installed
-if ! command -v flutter &> /dev/null; then
-    print_error "flutter is not installed. Please install it first."
-    exit 1
-fi
-
 # Navigate to project directory
 cd "$PROJECT_DIR" || exit 1
 
-print_info "Getting available devices..."
-
-# Get device information using flutter devices
-DEVICE_OUTPUT=$(flutter devices 2>/dev/null | grep "•")
-DEVICE_COUNT=$(echo "$DEVICE_OUTPUT" | grep -c "•" || echo "0")
-
-if [ "$DEVICE_COUNT" -eq 0 ]; then
-    print_error "No devices found. Please connect devices or start emulators/simulators."
-    exit 1
-fi
-
-print_info "Found $DEVICE_COUNT device(s):"
-echo "$DEVICE_OUTPUT"
-
-# Extract device IDs from the output
-# Device ID is the second field after splitting by •
-DEVICES=$(echo "$DEVICE_OUTPUT" | while read line; do
-    # Split by • and get the second field (device ID)
-    device_id=$(echo "$line" | awk -F'•' '{print $2}' | xargs | awk '{print $1}')
-    echo "$device_id"
-done)
-
-print_info "Extracted device IDs:"
-echo "$DEVICES"
-
-# Create or attach to tmux session
+# Session name
 SESSION_NAME="versus-flutter"
 
 # Kill existing session if it exists
 tmux kill-session -t $SESSION_NAME 2>/dev/null
 
-# Create new session
-print_info "Creating new tmux session: $SESSION_NAME"
-tmux new-session -d -s $SESSION_NAME -n "devices" -c "$PROJECT_DIR"
+print_info "Checking for Flutter devices..."
 
-# Counter for pane creation
-PANE_COUNT=0
+# Create arrays to store device info
+declare -a DEVICE_IDS
+declare -a DEVICE_NAMES
+DEVICE_COUNT=0
 
-# Create panes for each device
-PANE_COUNT=0
-while IFS= read -r DEVICE_ID; do
-    if [ -n "$DEVICE_ID" ]; then
-        PANE_COUNT=$((PANE_COUNT + 1))
+# Parse flutter devices output line by line
+while IFS= read -r line; do
+    if [[ $line == *"•"* ]]; then
+        # Extract device ID (second field when split by •)
+        device_id=$(echo "$line" | awk -F'•' '{print $2}' | xargs | awk '{print $1}')
+        # Extract device name (first field when split by •)
+        device_name=$(echo "$line" | awk -F'•' '{print $1}' | xargs)
         
-        # Get device name from the output
-        DEVICE_NAME=$(echo "$DEVICE_OUTPUT" | grep "$DEVICE_ID" | awk -F'•' '{print $1}' | xargs)
+        # macOS 디바이스는 건너뛰기
+        if [[ $device_name == *"macOS"* ]] || [[ $device_name == *"Mac"* ]]; then
+            continue
+        fi
         
-        print_info "Setting up pane for device: $DEVICE_NAME ($DEVICE_ID)"
-        
-        if [ $PANE_COUNT -eq 1 ]; then
-            # Use the first pane
-            tmux send-keys -t $SESSION_NAME:devices.0 "echo 'Device: $DEVICE_NAME'" C-m
-            tmux send-keys -t $SESSION_NAME:devices.0 "flutter run -d $DEVICE_ID" C-m
-        elif [ $PANE_COUNT -eq 2 ]; then
-            # Split horizontally for second device
-            tmux split-window -h -t $SESSION_NAME:devices -c "$PROJECT_DIR"
-            tmux send-keys -t $SESSION_NAME:devices.1 "echo 'Device: $DEVICE_NAME'" C-m
-            tmux send-keys -t $SESSION_NAME:devices.1 "flutter run -d $DEVICE_ID" C-m
-        elif [ $PANE_COUNT -eq 3 ]; then
-            # Split vertically for third device
-            tmux split-window -v -t $SESSION_NAME:devices.0 -c "$PROJECT_DIR"
-            tmux send-keys -t $SESSION_NAME:devices.2 "echo 'Device: $DEVICE_NAME'" C-m
-            tmux send-keys -t $SESSION_NAME:devices.2 "flutter run -d $DEVICE_ID" C-m
-        elif [ $PANE_COUNT -eq 4 ]; then
-            # Split the second pane vertically for fourth device
-            tmux split-window -v -t $SESSION_NAME:devices.1 -c "$PROJECT_DIR"
-            tmux send-keys -t $SESSION_NAME:devices.3 "echo 'Device: $DEVICE_NAME'" C-m
-            tmux send-keys -t $SESSION_NAME:devices.3 "flutter run -d $DEVICE_ID" C-m
-        else
-            # For more than 4 devices, create new windows
-            WINDOW_NUM=$((PANE_COUNT / 4))
-            tmux new-window -t $SESSION_NAME -n "devices-$WINDOW_NUM" -c "$PROJECT_DIR"
-            tmux send-keys -t $SESSION_NAME:devices-$WINDOW_NUM "echo 'Device: $DEVICE_NAME' && flutter run -d $DEVICE_ID" C-m
+        if [ -n "$device_id" ]; then
+            DEVICE_IDS[$DEVICE_COUNT]="$device_id"
+            DEVICE_NAMES[$DEVICE_COUNT]="$device_name"
+            DEVICE_COUNT=$((DEVICE_COUNT + 1))
+            print_info "Found device: $device_name (ID: $device_id)"
         fi
     fi
-done <<< "$DEVICES"
+done < <(flutter devices 2>/dev/null)
 
-# Select even layout for better view
-tmux select-layout -t $SESSION_NAME:devices tiled
+if [ $DEVICE_COUNT -eq 0 ]; then
+    print_error "No devices found. Please connect devices or start emulators/simulators."
+    exit 1
+fi
 
-# Create a control window
+print_success "Found $DEVICE_COUNT device(s)"
+
+# Create new tmux session with first device
+print_info "Creating tmux session: $SESSION_NAME"
+device_id="${DEVICE_IDS[0]}"
+device_name="${DEVICE_NAMES[0]}"
+
+# Create session with first device
+tmux new-session -d -s $SESSION_NAME -n "devices" -c "$PROJECT_DIR" \
+    "echo '=== Device: $device_name ===' && echo 'ID: $device_id' && echo 'Starting Flutter...' && flutter run -d $device_id"
+
+# Add remaining devices by splitting windows
+for ((i=1; i<$DEVICE_COUNT; i++)); do
+    device_id="${DEVICE_IDS[$i]}"
+    device_name="${DEVICE_NAMES[$i]}"
+    
+    print_info "Setting up device $((i+1)): $device_name"
+    
+    # Always split from the session target, not specific pane
+    tmux split-window -t $SESSION_NAME:devices -c "$PROJECT_DIR" \
+        "echo '=== Device: $device_name ===' && echo 'ID: $device_id' && echo 'Starting Flutter...' && flutter run -d $device_id"
+done
+
+# Apply tiled layout to arrange all panes evenly
+if [ $DEVICE_COUNT -gt 1 ]; then
+    tmux select-layout -t $SESSION_NAME:devices tiled
+fi
+
+# Create control window
 tmux new-window -t $SESSION_NAME -n "control" -c "$PROJECT_DIR"
-tmux send-keys -t $SESSION_NAME:control "echo 'Control Window - Use this for git, editing, etc.'" C-m
+tmux send-keys -t $SESSION_NAME:control "echo 'Control Window'" C-m
 tmux send-keys -t $SESSION_NAME:control "echo ''" C-m
-tmux send-keys -t $SESSION_NAME:control "echo 'Hot Reload: Press \"r\" in any flutter run pane'" C-m
-tmux send-keys -t $SESSION_NAME:control "echo 'Hot Restart: Press \"R\" in any flutter run pane'" C-m
-tmux send-keys -t $SESSION_NAME:control "echo 'Quit: Press \"q\" in any flutter run pane'" C-m
+tmux send-keys -t $SESSION_NAME:control "echo 'Flutter commands (use in device panes):'" C-m
+tmux send-keys -t $SESSION_NAME:control "echo '  r - Hot Reload'" C-m
+tmux send-keys -t $SESSION_NAME:control "echo '  R - Hot Restart'" C-m
+tmux send-keys -t $SESSION_NAME:control "echo '  q - Quit app'" C-m
+tmux send-keys -t $SESSION_NAME:control "echo ''" C-m
+tmux send-keys -t $SESSION_NAME:control "echo 'Running on $DEVICE_COUNT devices:'" C-m
 
-# Go back to first window
+for i in "${!DEVICE_NAMES[@]}"; do
+    tmux send-keys -t $SESSION_NAME:control "echo '  $((i+1)). ${DEVICE_NAMES[$i]} (${DEVICE_IDS[$i]})'" C-m
+done
+
+tmux send-keys -t $SESSION_NAME:control "echo ''" C-m
+tmux send-keys -t $SESSION_NAME:control "echo 'tmux shortcuts:'" C-m
+tmux send-keys -t $SESSION_NAME:control "echo '  Ctrl+a → arrow keys: Navigate panes'" C-m
+tmux send-keys -t $SESSION_NAME:control "echo '  Ctrl+a → 0/1: Switch windows'" C-m
+tmux send-keys -t $SESSION_NAME:control "echo '  Ctrl+a → d: Detach session'" C-m
+
+# Go back to devices window
 tmux select-window -t $SESSION_NAME:devices
 
-# Attach to session
-print_success "All devices are launching. Attaching to tmux session..."
-print_info "Use Ctrl+a followed by arrow keys to navigate between panes"
-print_info "Use Ctrl+a followed by 0/1/2... to switch windows"
-print_info "Use Ctrl+a followed by d to detach from session"
+# Success message
+print_success "All $DEVICE_COUNT devices are starting up!"
+echo ""
+echo "Layout: $DEVICE_COUNT panes in tiled arrangement"
+echo ""
+print_info "Navigation:"
+print_info "  Alt + Arrow keys: Quick pane navigation"
+print_info "  Ctrl+a → Arrow keys: Navigate between panes"
+print_info "  Ctrl+a → 0: Devices window"
+print_info "  Ctrl+a → 1: Control window"
+print_info "  Ctrl+a → d: Detach from session"
 
+# Attach to session
 tmux attach-session -t $SESSION_NAME

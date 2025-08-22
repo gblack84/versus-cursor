@@ -1,0 +1,22 @@
+total 232
+drwxr-xr-x@  4 g_black  staff    128 Aug 20 13:56 __pycache__
+drwxr-xr-x@ 21 g_black  staff    672 Aug 22 17:08 .
+drwxr-xr-x@ 44 g_black  staff   1408 Aug 22 17:19 ..
+-rw-r--r--@  1 g_black  staff  10194 Aug 21 16:21 analyze_migration.js
+drwxr-xr-x@  3 g_black  staff     96 Aug 13 18:10 archive
+-rwxr-xr-x@  1 g_black  staff   2543 Aug 22 17:07 check_naming.sh
+-rwxr-xr-x@  1 g_black  staff    945 Aug 13 18:10 fix_deprecated_withopacity.sh
+-rwxr-xr-x@  1 g_black  staff   1434 Aug 13 18:10 fix_incomplete_schema.sh
+-rwxr-xr-x@  1 g_black  staff   5741 Aug 13 18:10 flutter_multi_device_v2.sh
+-rwxr-xr-x@  1 g_black  staff   4770 Aug 13 18:10 flutter_multi_device_v3.sh
+-rwxr-xr-x@  1 g_black  staff   5166 Aug 13 18:10 flutter_multi_device.sh
+-rw-r--r--@  1 g_black  staff   9346 Aug 21 16:15 generate_mappings.js
+-rwxr-xr-x@  1 g_black  staff   2821 Aug 13 18:10 remove_unused_imports.sh
+-rw-r--r--@  1 g_black  staff     37 Aug 20 14:52 scan_output.log
+-rwxr-xr-x@  1 g_black  staff   7313 Aug 21 16:18 scan_snake_case.sh
+-rwxr-xr-x@  1 g_black  staff   4862 Aug 22 17:08 sync_docs.sh
+-rwxr-xr-x@  1 g_black  staff   2365 Aug 13 18:10 test_devices.sh
+-rwxr-xr-x@  1 g_black  staff   4217 Aug 13 18:10 tmux_flutter_session.sh
+-rwxr-xr-x@  1 g_black  staff   2799 Aug 21 16:57 update_flutter_models.sh
+-rw-r--r--@  1 g_black  staff   4265 Aug 21 17:01 update_users_model.py
+-rwxr-xr-x@  1 g_black  staff   4351 Aug 22 17:07 validate_docs.sh

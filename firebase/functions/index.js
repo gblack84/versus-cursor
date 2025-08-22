@@ -18,6 +18,8 @@ const { migrateVoteData } = require('./functions/https/migrateVoteData');
 const { migrateSnakeToCamel } = require('./functions/https/migrateSnakeToCamel');
 const { debugMigration } = require('./functions/https/debugMigration');
 const { markMessagesAsSeen } = require('./functions/https/markMessagesAsSeen');
+const { fullDatabaseScan } = require('./functions/https/fullDatabaseScan');
+const { migrateEntireDatabase } = require('./functions/https/migrateEntireDatabase');
 
 // Firestore 함수
 const { onPostCreatedSendNotifications } = require('./functions/firestore/onPostCreatedSendNotifications');
@@ -47,6 +49,8 @@ module.exports = {
   migrateSnakeToCamel,
   debugMigration,
   markMessagesAsSeen,
+  fullDatabaseScan,
+  migrateEntireDatabase,
   
   // Firestore
   onPostCreatedSendNotifications,

@@ -389,7 +389,21 @@ const FIELD_MAPPINGS = {
   'message_count': 'messageCount',
   'last_read_timestamps': 'lastReadTimestamps',
   'ai_assistant': 'aiAssistant',
-  'ai_helper': 'aiHelper'
+  'ai_helper': 'aiHelper',
+  
+  // Image moderation collection fields
+  'detected_text': 'detectedText',
+  'original_metadata': 'originalMetadata',
+  'uploaded_at': 'uploadedAt',
+  'uploaded_by': 'uploadedBy',
+  'firebase_storage_download_tokens': 'firebaseStorageDownloadTokens',
+  'safe_search_results': 'safeSearchResults',
+  'dominant_colors': 'dominantColors',
+  'file_path': 'filePath',
+  'download_url': 'downloadUrl',
+  'moderation_status': 'moderationStatus',
+  'last_updated': 'lastUpdated',
+  'moderated_at': 'moderatedAt'
 };
 
 // 디버깅용 필드 검사 함수

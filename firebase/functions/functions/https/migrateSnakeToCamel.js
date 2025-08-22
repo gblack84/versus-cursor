@@ -390,7 +390,21 @@ const FIELD_MAPPINGS = {
   'message_count': 'messageCount',
   'last_read_timestamps': 'lastReadTimestamps',
   'ai_assistant': 'aiAssistant',
-  'ai_helper': 'aiHelper'
+  'ai_helper': 'aiHelper',
+  
+  // Image moderation collection fields
+  'detected_text': 'detectedText',
+  'original_metadata': 'originalMetadata',
+  'uploaded_at': 'uploadedAt',
+  'uploaded_by': 'uploadedBy',
+  'firebase_storage_download_tokens': 'firebaseStorageDownloadTokens',
+  'safe_search_results': 'safeSearchResults',
+  'dominant_colors': 'dominantColors',
+  'file_path': 'filePath',
+  'download_url': 'downloadUrl',
+  'moderation_status': 'moderationStatus',
+  'last_updated': 'lastUpdated',
+  'moderated_at': 'moderatedAt'
 };
 
 // userId를 snake_case에서 camelCase로 변환하는 헬퍼 함수
@@ -566,7 +580,8 @@ exports.migrateSnakeToCamel = functions
         'premium_users',
         'characters',
         'encodings',
-        'imageModeration'
+        'imageModeration',
+        'image_moderation'
       ];
       
       const stats = {

@@ -15,6 +15,8 @@ const { validatePostContentWithGemini } = require('./functions/https/validatePos
 const { testCreateAIChatMessage } = require('./functions/https/testCreateAIChatMessage');
 const { migrateAIChatRooms } = require('./functions/https/migrateAIChatRooms');
 const { migrateVoteData } = require('./functions/https/migrateVoteData');
+const { migrateSnakeToCamel } = require('./functions/https/migrateSnakeToCamel');
+const { debugMigration } = require('./functions/https/debugMigration');
 const { markMessagesAsSeen } = require('./functions/https/markMessagesAsSeen');
 
 // Firestore 함수
@@ -42,6 +44,8 @@ module.exports = {
   testCreateAIChatMessage,
   migrateAIChatRooms,
   migrateVoteData,
+  migrateSnakeToCamel,
+  debugMigration,
   markMessagesAsSeen,
   
   // Firestore

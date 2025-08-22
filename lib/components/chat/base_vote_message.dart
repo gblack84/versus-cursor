@@ -77,7 +77,7 @@ abstract class BaseVoteMessage extends StatefulWidget {
   DateTime? get currentUserVoteTime {
     if (userVotes == null) return null;
     final vote = userVotes![currentUserUid] as Map<String, dynamic>?;
-    return vote?['voted_at'] as DateTime?;
+    return vote?['votedAt'] as DateTime?;
   }
 
   /// A박스의 이미지 URL 리스트 반환

@@ -180,7 +180,7 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, params) => TestpageSelectWidget(),
         ).toRoute(appStateNotifier),
         AppRoute(
-          name: 'dev_page',
+          name: 'devPage',
           path: '/dev',
           builder: (context, params) => TestpageSelectWidget(),
         ).toRoute(appStateNotifier),

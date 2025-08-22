@@ -21,10 +21,10 @@ async function analyzePostContent(postData) {
 다음 투표 게시물을 분석하여 JSON 형식으로 응답해주세요:
 
 투표 정보:
-- 질문: ${postData.questionTitle || postData.question_title || ''}
+- 질문: ${postData.questionTitle || ''}
 - 설명: ${postData.description || ''}
-- A 옵션: ${postData.optionA || postData.option_a || ''}
-- B 옵션: ${postData.optionB || postData.option_b || ''}
+- A 옵션: ${postData.optionA || ''}
+- B 옵션: ${postData.optionB || ''}
 - 카테고리: ${postData.category || '미분류'}
 
 분석 항목:
@@ -130,7 +130,7 @@ async function generateUserEmbeddings(users) {
             연령대: ${user.ageGroup || '미지정'}
             성별: ${user.gender || '미지정'}
             활동성: ${user.votingFrequency || 0}회/월
-            가입일: ${user.created_time ? new Date(user.created_time._seconds * 1000).toISOString() : '알수없음'}
+            가입일: ${user.createdTime ? new Date(user.createdTime._seconds * 1000).toISOString() : '알수없음'}
           `;
           
           try {

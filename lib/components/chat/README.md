@@ -1,332 +1,210 @@
-# Chat Components Documentation
+# Chat Components - 채팅 시스템 투표 메시지 컴포넌트
 
-## 최종 업데이트: 2025-08-18
+Versus Space 앱의 채팅 시스템에서 사용되는 투표 메시지 관련 UI 컴포넌트 모음입니다.
 
-## ⚠️ 리팩토링 진행 상황
+## 📋 개요
 
-### 현재 상태
-- **BaseVoteMessage**: 레거시 타이머 코드 제거 예정 ⚠️
-- **VoteCardMessage**: VoteStateCoordinator 사용 (최신) ✅
-- ~~**VoteRequestMessage**~~: 제거됨 (2025-08-06) ❌
+이 디렉토리는 채팅 내에서 A vs B 투표 카드 메시지를 표시하고 관리하는 핵심 컴포넌트들을 포함합니다. `flutter_chat_ui` 기반 채팅 시스템과 통합되어 실시간 투표 기능을 제공하며, Firebase와 연동하여 투표 상태를 동기화합니다.
 
-### 예정된 변경사항
-- Phase 1: BaseVoteMessageStateMixin 타이머 코드 제거
-- Phase 3: 중복된 shouldShow* 메서드 통합
-- 상세 계획: [REFACTORING_PLAN.md](../../REFACTORING_PLAN.md) 참조
+### 주요 특징
+- **실시간 투표 시스템**: Firebase와 연동된 실시간 투표 상태 동기화
+- **통합 상태 관리**: VoteStateCoordinator를 통한 중앙 집중식 상태 관리
+- **스마트 레이아웃**: AspectRatioAnalyzer 기반 동적 레이아웃 결정
+- **멀티이미지 지원**: 옵션당 여러 이미지 표시 (PageView)
+- **성능 최적화**: 전역 BoxSizes 캐시로 스크롤 성능 향상
+- **디자인 시스템 통합**: VersusColors, VersusSpacing, VersusTextStyles 일관된 사용
 
-## 개요
+## 🎯 네이밍 컨벤션
 
-Versus Space 채팅 시스템은 `flutter_chat_ui`를 기반으로 구축된 현대적인 메시징 시스템입니다. 텍스트, 이미지, 비디오, 그리고 A vs B 투표 메시지를 지원합니다.
+### 파일명
+- **Dart 파일**: snake_case (`base_vote_message.dart`, `vote_card_message.dart`)
+- **디렉토리**: snake_case (`vote_card/`)
+- **README**: 대문자 확장자 (`README.md`)
 
-## 기술 스택
+### 코드 내 명명 규칙
+- **클래스명**: PascalCase (`BaseVoteMessage`, `VoteCardMessage`)
+- **변수/메서드**: camelCase (`postId`, `cardStatus`, `submitVote()`)
+- **상수**: camelCase 또는 SCREAMING_SNAKE_CASE
+- **Mixin**: PascalCase with Mixin suffix (`BaseVoteMessageStateMixin`)
 
-### Flutter 패키지
-- **flutter_chat_ui**: ^2.9.0 - 프로페셔널한 채팅 UI (v2로 업그레이드됨)
-- **flutter_chat_types**: ^3.6.2 - 타입 정의
-- **flutter_link_previewer**: ^3.2.2 - 링크 미리보기
-- **wechat_assets_picker**: ^9.5.1 - 갤러리 선택
-- **wechat_camera_picker**: ^5.0.1 - 카메라 촬영
-- **flutter_image_compress**: ^2.3.0 - 이미지 압축
-- **video_thumbnail**: ^0.5.3 - 비디오 썸네일
+참조: [NAMING_CONVENTION.md](../../../NAMING_CONVENTION.md)
 
-### Firebase 백엔드
-- **Firestore**: 메시지 저장 및 실시간 동기화
-- **Firebase Storage**: 미디어 파일 저장
-- **Cloud Functions**: 투표 메시지 생성
+## 🔧 주요 구성요소
 
-## 아키텍처
+### 1. BaseVoteMessage (추상 클래스)
+**파일**: `base_vote_message.dart`  
+**용도**: 모든 투표 메시지 컴포넌트의 기반 클래스
 
-### 1. 메시지 타입
+#### 주요 속성
+| 속성 | 타입 | 설명 |
+|------|------|------|
+| `postId` | String | 투표 게시물 ID |
+| `title` | String | 투표 제목/질문 |
+| `description` | String? | 투표 설명 |
+| `optionAText` | String | A 옵션 텍스트 |
+| `optionBText` | String | B 옵션 텍스트 |
+| `optionAImage` | String? | A 옵션 단일 이미지 |
+| `optionBImage` | String? | B 옵션 단일 이미지 |
+| `optionAImages` | List<String>? | A 옵션 멀티이미지 |
+| `optionBImages` | List<String>? | B 옵션 멀티이미지 |
+| `aspectRatioA` | double? | A 옵션 이미지 비율 |
+| `aspectRatioB` | double? | B 옵션 이미지 비율 |
+| `cardStatus` | String | 투표 상태 |
+| `voteEndTime` | DateTime? | 투표 종료 시간 |
+| `userVotes` | Map<String, dynamic>? | 사용자별 투표 기록 |
+| `isMe` | bool | 내가 만든 투표인지 여부 |
 
+#### 주요 getter 메서드
 ```dart
-// Firestore messages_record 필드
-{
-  'id': String,
-  'chat_ref': DocumentReference,
-  'sender_ref': DocumentReference,
-  'content': String,
-  'sent_time': Timestamp,
-  'is_read': bool,
-  'messageType': String, // 'text', 'image', 'video', 'vote_request'
-  
-  // 미디어 메시지 필드
-  'mediaType': String?,
-  'imageUrl': String?,
-  'videoUrl': String?,
-  'thumbnailUrl': String?,
-  'mediaSize': int?,
-  'mediaWidth': int?,
-  'mediaHeight': int?,
-  
-  // 투표 메시지 필드
-  'votePostId': String?,
-  'voteTitle': String?,
-  'voteDescription': String?,
-  'voteOptionA': String?,
-  'voteOptionB': String?,
-  'voteImageA': String?,
-  'voteImageB': String?,
-  'voteStatus': String?, // 'pending', 'completed', 'expired'
+// 현재 사용자가 투표했는지 확인
+bool get hasCurrentUserVoted
+
+// 현재 사용자의 투표 선택
+String? get currentUserChoice
+
+// 현재 사용자의 투표 시간
+DateTime? get currentUserVoteTime
+
+// 효과적인 이미지 URL 리스트
+List<String> get effectiveImageUrlsA
+List<String> get effectiveImageUrlsB
+```
+
+### 2. BaseVoteMessageStateMixin
+**파일**: `base_vote_message.dart`  
+**용도**: 투표 메시지 상태 관리를 위한 공통 mixin
+
+#### 주요 기능
+- **투표 제출**: `submitVote(String option)` - VoteStatusService와 연동
+- **시간 포맷팅**: `formatTime(DateTime time)` - 상대적 시간 표시
+- **타임스탬프 표시**: `buildTimestamp()` - 메시지 시간 위젯
+
+#### 사용 예시
+```dart
+class _VoteCardMessageState extends State<VoteCardMessage> 
+    with BaseVoteMessageStateMixin<VoteCardMessage> {
+  // BaseVoteMessageStateMixin의 기능 자동 상속
+  // submitVote(), formatTime(), buildTimestamp() 사용 가능
 }
 ```
 
-### 2. 주요 컴포넌트
+### 3. VoteCardMessage
+**파일**: `vote_card_message.dart`  
+**용도**: AI 채팅에서 사용되는 메인 투표 카드 메시지 위젯
 
-#### ChatMessageConverter
-메시지 변환 유틸리티 - Firestore 메시지를 flutter_chat_types로 변환
+#### 상태 관리
+- **4가지 투표 상태 지원**:
+  - `votingRequest`: 투표 요청 (투표 가능)
+  - `inProgress`: 투표 진행중
+  - `completed`: 투표 완료
+  - `notParticipated`: 미참여
 
+#### 주요 기능
 ```dart
-// 사용 예시
-final chatMessage = ChatMessageConverter.fromFirestore(
-  firestoreMessage,
-  currentUser,
-);
-```
+// VoteStateCoordinator 통합
+Stream<VoteStateData> _voteStateStream = 
+  VoteStateCoordinator.instance.getVoteStateStream(
+    postId: widget.postId,
+    voteEndTime: widget.voteEndTime,
+    initialStatus: widget.cardStatus,
+    userVotes: widget.userVotes,
+  );
 
-#### ChatMediaUploadService
-미디어 업로드 서비스 - 이미지/비디오 압축 및 업로드
+// 전역 BoxSizes 캐시 (스크롤 성능 최적화)
+static final Map<String, BoxSizes> _globalBoxSizesCache = {};
 
-```dart
-// 이미지 업로드
-final result = await ChatMediaUploadService.uploadChatImage(
-  chatId: chatId,
-  messageId: messageId,
-  imageFile: file,
-);
-
-// 비디오 업로드
-final result = await ChatMediaUploadService.uploadChatVideo(
-  chatId: chatId,
-  messageId: messageId,
-  videoFile: file,
-);
-```
-
-#### VoteCardMessage (v2.1.0 - 2025-08-17 업데이트)
-투표 카드 메시지 - 통합된 A vs B 투표 UI 컴포넌트
-
-**주요 기능**:
-- 전역 BoxSizes 캐시로 스크롤 성능 최적화
-- 스마트 레이아웃 시스템 (horizontal/vertical/single)
-- 멀티이미지 지원 (PageView)
-- 실시간 투표 상태 업데이트 (Firebase StreamBuilder 통합)
-- UnifiedImageCacheService 통합
-- VoteTimerService와 연동된 동기화된 타이머
-
-**실시간 동기화 (2025-08-17 추가)**:
-```dart
-// Firebase 실시간 스트림 자동 설정
-Stream<PostsModel>? _postStream;
-
-@override
-void initState() {
-  super.initState();
-  // posts 문서 실시간 감시
-  if (widget.postId.isNotEmpty) {
-    _postStream = PostsModel.getDocument(
-      FirebaseFirestore.instance.collection('posts').doc(widget.postId)
-    );
-  }
+// 레이아웃 타입 결정
+LayoutType _calculateLayoutType() {
+  return AspectRatioAnalyzer.determineLayoutType(
+    aspectRatioA: widget.aspectRatioA,
+    aspectRatioB: widget.aspectRatioB,
+    hasImagesA: widget.effectiveImageUrlsA.isNotEmpty,
+    hasImagesB: widget.effectiveImageUrlsB.isNotEmpty,
+  );
 }
-
-// StreamBuilder로 실시간 업데이트
-StreamBuilder<PostsModel>(
-  stream: _postStream,
-  builder: (context, snapshot) {
-    // 실시간 데이터 우선, fallback으로 기존 metadata 사용
-    final cardStatus = snapshot.hasData 
-        ? snapshot.data!.voteStatus 
-        : widget.cardStatus;
-    // UI 렌더링...
-  },
-);
 ```
 
+#### UI 구성
+- **헤더**: 프로필, 발신자 정보, 상태 배지
+- **투표 질문**: 제목과 설명 표시
+- **옵션 박스**: A/B 옵션 이미지와 텍스트
+- **타이머**: 실시간 남은 시간 표시 (진행중일 때)
+- **액션 버튼**: 투표하기/결과 보기
+- **투표 결과**: 완료 시 결과 표시
+
+### 4. vote_card/ 하위 디렉토리
+**경로**: `/lib/components/chat/vote_card/`  
+**용도**: 투표 카드를 구성하는 개별 UI 컴포넌트
+
+#### 포함된 컴포넌트
+- **VoteActionButton**: 투표 참여/결과 보기 버튼
+- **VoteCardHeader**: 투표 카드 헤더 (프로필, 상태)
+- **VoteOptionBox**: A/B 옵션 박스 표시
+- **VoteResultDisplay**: 투표 완료 메시지
+
+상세 문서: [vote_card/README.md](./vote_card/README.md)
+
+## 💡 사용 예시
+
+### 기본 사용법
 ```dart
+import 'package:versus_space/components/chat/vote_card_message.dart';
+
+// 투표 카드 메시지 생성
 VoteCardMessage(
-  key: ValueKey(message.id),  // Widget 재사용 방지
-  postId: postId,
-  messageId: message.id,
-  authorId: authorId,
-  questionTitle: title,
-  description: description,
-  titleA: optionA,
-  titleB: optionB,
-  imageUrlA: imageA,       // 단일 이미지
-  imageUrlB: imageB,
-  imageUrlsA: imagesA,     // 멀티이미지
-  imageUrlsB: imagesB,
-  aspectRatioA: 1.5,       // 스마트 레이아웃용
-  aspectRatioB: 0.75,
-  layoutType: 'horizontal',
-  voteStatus: status,
-  voteEndTime: endTime,
-  votesA: votesA,
-  votesB: votesB,
-  userVotes: userVotes,    // Map<String, String>
-  isMe: isMe,
-  timestamp: timestamp,
-  currentUserName: userName,
-  onTap: () => navigateToVoting(postId),
+  key: ValueKey(messageId),  // Widget 재사용 방지
+  postId: 'post123',
+  title: '커피 vs 차',
+  description: '아침에 뭘 마실까요?',
+  optionAText: '커피',
+  optionBText: '차',
+  optionAImage: 'https://coffee.jpg',
+  optionBImage: 'https://tea.jpg',
+  aspectRatioA: 1.5,
+  aspectRatioB: 1.5,
+  cardStatus: 'votingRequest',
+  voteEndTime: DateTime.now().add(Duration(minutes: 10)),
+  isMe: false,
+  messageType: 'voteCard',
+  currentUserName: '홍길동',
 )
 ```
 
-#### BaseVoteMessage
-투표 메시지의 기본 클래스 - 공통 기능 제공
-
+### 멀티이미지 지원
 ```dart
-abstract class BaseVoteMessage extends StatefulWidget {
-  final String postId;
-  final String? messageId;
-  final String questionTitle;
-  final String? description;
-  final String titleA;
-  final String titleB;
-  // ... 기타 공통 속성
-}
+VoteCardMessage(
+  // ... 기본 속성
+  optionAImages: [
+    'https://image1.jpg',
+    'https://image2.jpg',
+    'https://image3.jpg',
+  ],
+  optionBImages: [
+    'https://image4.jpg',
+    'https://image5.jpg',
+  ],
+  // 멀티이미지 사용 시 단일 이미지 URL은 무시됨
+)
 ```
 
-**참고**: 전역 캐시 시스템 (`_globalBoxSizesCache`)은 VoteCardMessage 클래스에 구현되어 있습니다.
-
-### 3. 채팅 플로우
-
-#### 텍스트 메시지
-1. 사용자가 메시지 입력
-2. `messages_record`에 저장
-3. 실시간 리스너로 상대방에게 전달
-
-#### 이미지/비디오 메시지
-1. 미디어 선택 (갤러리/카메라)
-2. 파일 압축 및 썸네일 생성
-3. Firebase Storage 업로드
-4. URL과 함께 메시지 저장
-5. 상대방에게 실시간 전달
-
-#### 투표 메시지
-1. 투표 알림 전송 시 자동 생성
-2. Cloud Functions에서 채팅방 찾기/생성
-3. 투표 메시지 타입으로 저장
-4. 채팅 목록과 알림 오버레이에 동시 표시
-
-## 구현 세부사항
-
-### 1. 채팅 화면 초기화
-
+### flutter_chat_ui 통합
 ```dart
-class ChatDetailWidget extends StatefulWidget {
-  final ChatsRecord chatRecord;
-  final DocumentReference otherUserRef;
-  
-  @override
-  _ChatDetailWidgetState createState() => _ChatDetailWidgetState();
-}
-
-class _ChatDetailWidgetState extends State<ChatDetailWidget> {
-  late types.User _user;
-  late types.User _otherUser;
-  
-  @override
-  void initState() {
-    super.initState();
-    _initializeUsers();
-  }
-  
-  void _initializeUsers() {
-    _user = types.User(
-      id: currentUserReference!.id,
-      firstName: currentUserDisplayName,
-      imageUrl: currentUserPhoto,
-    );
-    
-    // 상대방 정보 로드
-    _loadOtherUser();
-  }
-}
-```
-
-### 2. 메시지 스트림 구성
-
-```dart
-Widget _buildMessagesList() {
-  return StreamBuilder<List<MessagesRecord>>(
-    stream: queryMessagesRecord(
-      parent: widget.chatRecord.reference,
-      queryBuilder: (q) => q.orderBy('sent_time', descending: true),
-    ),
-    builder: (context, snapshot) {
-      if (!snapshot.hasData) {
-        return Center(child: CircularProgressIndicator());
-      }
-      
-      final messages = snapshot.data!
-          .map((msg) => ChatMessageConverter.fromFirestore(msg, currentUserReference!))
-          .toList();
-      
-      return Chat(
-        messages: messages,
-        onSendPressed: _handleSendPressed,
-        user: _user,
-        theme: _getChatTheme(),
-        onAttachmentPressed: _handleAttachmentPressed,
-        customMessageBuilder: _customMessageBuilder,
-        l10n: _getKoreanL10n(),
-      );
-    },
-  );
-}
-```
-
-### 3. 미디어 첨부 처리
-
-```dart
-void _handleAttachmentPressed() async {
-  showModalBottomSheet(
-    context: context,
-    builder: (context) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: Icon(Icons.photo),
-            title: Text('갤러리에서 사진 선택'),
-            onTap: () => _pickImage(ImageSource.gallery),
-          ),
-          ListTile(
-            leading: Icon(Icons.camera),
-            title: Text('카메라로 사진 촬영'),
-            onTap: () => _pickImage(ImageSource.camera),
-          ),
-          ListTile(
-            leading: Icon(Icons.videocam),
-            title: Text('비디오 선택'),
-            onTap: () => _pickVideo(),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-```
-
-### 4. 커스텀 메시지 렌더링
-
-```dart
-Widget _customMessageBuilder(types.CustomMessage message, {required int messageWidth}) {
+// ChatDetailWidget에서 커스텀 메시지 빌더
+Widget _customMessageBuilder(types.CustomMessage message) {
   final metadata = message.metadata ?? {};
   
-  if (metadata['type'] == 'vote_request') {
-    return VoteRequestMessage(
+  if (metadata['type'] == 'voteCard') {
+    return VoteCardMessage(
       postId: metadata['postId'] ?? '',
       title: metadata['title'] ?? '',
-      description: metadata['description'] ?? '',
       optionAText: metadata['optionA'] ?? '',
       optionBText: metadata['optionB'] ?? '',
-      optionAImage: metadata['imageA'],
-      optionBImage: metadata['imageB'],
-      voteStatus: metadata['status'] ?? 'pending',
-      isMe: message.author.id == currentUserReference?.id,
-      timestamp: DateTime.fromMillisecondsSinceEpoch(message.createdAt ?? 0),
-      onTap: () => _navigateToVotingPage(metadata['postId']),
+      cardStatus: metadata['status'] ?? 'votingRequest',
+      voteEndTime: metadata['endTime'] != null 
+        ? DateTime.parse(metadata['endTime']) 
+        : null,
+      isMe: message.author.id == currentUserUid,
+      messageType: 'voteCard',
     );
   }
   
@@ -334,237 +212,203 @@ Widget _customMessageBuilder(types.CustomMessage message, {required int messageW
 }
 ```
 
-## Firebase Functions 통합
+## 🔄 상태 관리 시스템
 
-### 투표 메시지 생성 함수
-
-```javascript
-async function createVoteRequestChatMessage(senderId, recipientId, postId, postData) {
-  const db = admin.firestore();
-  
-  // 1. 채팅방 찾기 또는 생성
-  let chatRef = await findOrCreateChat(senderId, recipientId);
-  
-  // 2. 투표 메시지 생성
-  const messageData = {
-    chat_ref: chatRef,
-    sender_ref: db.doc(`users_record/${senderId}`),
-    content: `📊 ${postData.question || '투표 요청'}`,
-    sent_time: admin.firestore.FieldValue.serverTimestamp(),
-    is_read: false,
-    messageType: 'vote_request',
-    
-    // 투표 관련 필드
-    votePostId: postId,
-    voteTitle: postData.question || '',
-    voteDescription: postData.description || '',
-    voteOptionA: postData.title_a || '',
-    voteOptionB: postData.title_b || '',
-    voteImageA: postData.imagea?.length > 0 ? postData.imagea[0] : null,
-    voteImageB: postData.imageb?.length > 0 ? postData.imageb[0] : null,
-    voteStatus: 'pending',
-  };
-  
-  await chatRef.collection('messages').add(messageData);
-  
-  // 3. 채팅방 마지막 메시지 업데이트
-  await chatRef.update({
-    last_message: messageData.content,
-    last_message_time: admin.firestore.FieldValue.serverTimestamp(),
-  });
-}
-```
-
-## 스타일링 및 테마
-
-### 채팅 테마 설정
-
+### VoteStateCoordinator 통합
 ```dart
-DarkChatTheme _getChatTheme() {
-  return DarkChatTheme(
-    backgroundColor: Colors.black,
-    inputBackgroundColor: const Color(0xFF1C1C1E),
-    inputTextColor: Colors.white,
-    inputTextStyle: VersusTextStyles.bodyMedium,
-    messageBorderRadius: 20,
-    primaryColor: VersusColors.primary,
-    receivedMessageBodyTextStyle: VersusTextStyles.bodyMedium.copyWith(
-      color: Colors.white,
-    ),
-    sentMessageBodyTextStyle: VersusTextStyles.bodyMedium.copyWith(
-      color: Colors.white,
-    ),
-    userAvatarNameColors: [
-      VersusColors.primary,
-      VersusColors.secondary,
-    ],
-  );
-}
-```
+// 통합 상태 스트림 생성
+final voteStateStream = VoteStateCoordinator.instance.getVoteStateStream(
+  postId: postId,
+  voteEndTime: endTime,
+  initialStatus: status,
+  userVotes: votes,
+);
 
-### 한국어 지원
-
-```dart
-ChatL10nKo _getKoreanL10n() {
-  return const ChatL10nKo(
-    attachmentButtonAccessibilityLabel: '미디어 전송',
-    emptyChatPlaceholder: '아직 메시지가 없습니다',
-    fileButtonAccessibilityLabel: '파일',
-    inputPlaceholder: '메시지를 입력하세요...',
-    sendButtonAccessibilityLabel: '전송',
-    unreadMessagesLabel: '읽지 않은 메시지',
-  );
-}
-```
-
-## 성능 최적화
-
-### 1. 이미지 압축
-- 업로드 전 이미지를 800px로 리사이즈
-- JPEG 품질 85%로 압축
-- 평균 70% 파일 크기 감소
-
-### 2. 비디오 처리
-- 자동 썸네일 생성
-- 프로그레시브 다운로드 지원
-- 스트리밍 재생 가능
-
-### 3. 메시지 페이징
-- 초기 50개 메시지 로드
-- 스크롤 시 추가 로드
-- 메모리 효율적 관리
-
-### 4. VoteCardMessage 캐싱 시스템 (v2.0.0)
-전역 캐시로 스크롤 점프 문제 완전 해결
-
-```dart
-class _VoteCardMessageState extends State<VoteCardMessage> {
-  // 전역 캐시 - 앱 실행 중 유지
-  static final Map<String, BoxSizes> _globalBoxSizesCache = {};
-  
-  @override
-  void initState() {
-    super.initState();
-    // 캐시에서 로드
-    final cacheKey = widget.messageId ?? widget.postId;
-    if (_globalBoxSizesCache.containsKey(cacheKey)) {
-      _cachedBoxSizes = _globalBoxSizesCache[cacheKey];
+// StreamBuilder로 실시간 업데이트
+StreamBuilder<VoteStateData>(
+  stream: voteStateStream,
+  builder: (context, snapshot) {
+    if (snapshot.hasData) {
+      final state = snapshot.data!;
+      // state.voteState: 현재 투표 상태
+      // state.remainingTime: 남은 시간
+      // state.userVotes: 사용자 투표 데이터
+      // state.voteResults: 투표 결과
     }
-  }
-  
-  void _calculateBoxSizes() {
-    // 계산 후 캐시에 저장
-    final cacheKey = widget.messageId ?? widget.postId;
-    _globalBoxSizesCache[cacheKey] = _cachedBoxSizes!;
-  }
+    return buildUI();
+  },
+)
+```
+
+### 투표 제출 프로세스
+```dart
+// BaseVoteMessageStateMixin의 submitVote 메서드
+Future<void> submitVote(String option) async {
+  await VoteStatusService.submitVote(
+    postId: widget.postId,
+    userId: currentUserUid,
+    choice: option,
+    messageId: widget.messageId,
+    chatId: widget.chatId,
+    onError: (error) {
+      // 에러 처리
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error)),
+      );
+    },
+  );
 }
 ```
 
-### 5. UnifiedImageCacheService 통합
-동적 이미지 캐싱으로 메모리 최적화
+## ⚡ 성능 최적화
 
+### 전역 BoxSizes 캐시
 ```dart
-// 박스 크기에 맞춰 동적 캐시 계산
+// 메시지별 박스 크기 캐싱으로 스크롤 성능 최적화
+static final Map<String, BoxSizes> _globalBoxSizesCache = {};
+
+// 캐시 키 생성 (메시지ID + 화면 너비)
+final cacheKey = '${widget.messageId ?? widget.postId}_$screenWidth';
+
+// 캐시에서 로드
+if (_globalBoxSizesCache.containsKey(cacheKey)) {
+  _cachedBoxSizes = _globalBoxSizesCache[cacheKey];
+}
+
+// 계산 후 캐시에 저장
+_globalBoxSizesCache[cacheKey] = calculatedBoxSizes;
+```
+
+### UnifiedImageCacheService 통합
+```dart
+// 동적 이미지 캐시 크기 계산
 final cacheWidth = UnifiedImageCacheService.calculateForBox(
   context,
   boxWidth: boxSize.width,
   isHorizontal: layoutType == LayoutType.horizontal,
 );
 
-// CachedNetworkImage 적용
+// CachedNetworkImage 최적화
 CachedNetworkImage(
   imageUrl: imageUrl,
-  memCacheWidth: cacheWidth,
-  fit: BoxFit.cover,
+  memCacheWidth: cacheWidth,  // 400-1600px 동적 조정
+  maxWidthDiskCache: UnifiedImageCacheService.MAX_CACHE_WIDTH,
+  fadeInDuration: const Duration(milliseconds: 200),
 )
 ```
 
-## 최근 업데이트 (v2.0.0)
+### Widget 재사용 방지
+```dart
+// ValueKey로 flutter_chat_ui의 widget 재사용 방지
+VoteCardMessage(
+  key: ValueKey(message.id),  // 필수!
+  // ... 기타 속성
+)
+```
 
-### 2025-08-08: 스크롤 버그 수정 및 성능 최적화
-- **VoteCardMessage 전역 캐시 시스템**:
-  - BoxSizes 계산 결과를 전역 Map에 캐싱
-  - messageId/postId 기반 고유 키 사용
-  - 동일 메시지 재계산 방지로 스크롤 점프 해결
-- **Widget 재사용 방지**:
-  - VoteCardMessage에 ValueKey 추가
-  - flutter_chat_ui의 widget 재사용으로 인한 레이아웃 버그 해결
-- **UnifiedBoxCalculator 개선**:
-  - 동적 기본값 사용 (boxWidth/1.5 instead of 300px)
-  - aspectRatio가 null일 때도 일관된 계산
-- **이미지 캐싱 통합**:
-  - UnifiedImageCacheService 전면 적용
-  - 400-1600px 동적 memCacheWidth 계산
-  - 메모리 사용량 최적화
+## 🎨 디자인 시스템
 
-### 2025-08-06: 시스템 통합
-- **컬렉션 이름 정규화**: `messages_record` → `messages`, `chats_record` → `chats`
-- **AI 채팅 ID 형식 통일**: `ai_assistant_userId` 형식으로 표준화
-- **투표 카드 메시지 개선**: 
-  - 멀티이미지 지원 (`vote_option_a_images[]`, `vote_option_b_images[]`)
-  - 실시간 상태 업데이트 (`card_status`, `vote_end_time`)
-  - 개별 투표 추적 (`user_votes` Map)
-  - VoteRequestMessage와 VoteCardMessage 통합
+### 색상 체계
+- **옵션 A**: `Color(0xFFFF6B6B)` - 빨강 계열
+- **옵션 B**: `Color(0xFF4ECDC4)` - 청록 계열
+- **진행중**: `Colors.blue` - 파란색
+- **완료**: `Colors.green` - 초록색
+- **만료**: `Colors.grey` - 회색
 
-## 향후 개선사항
+### 타이포그래피
+- **제목**: `VersusTextStyles.titleMedium`
+- **설명**: `VersusTextStyles.bodyMedium`
+- **옵션 텍스트**: `VersusTextStyles.bodySmall`
+- **버튼**: `VersusTextStyles.buttonMedium`
+- **라벨**: `VersusTextStyles.labelSmall`
 
-1. **읽음 확인 기능**
-   - 메시지별 읽음 상태 표시
-   - 실시간 읽음 확인 업데이트
+### 간격 시스템
+- `VersusSpacing.xs`: 4px
+- `VersusSpacing.sm`: 8px
+- `VersusSpacing.md`: 16px
+- `VersusSpacing.lg`: 24px
 
-2. **타이핑 인디케이터**
-   - 상대방 입력 중 표시
-   - 실시간 상태 동기화
+## 🔗 관련 파일
 
-3. **메시지 반응**
-   - 이모지 리액션
-   - 답장 기능
+### 서비스
+- `/lib/services/vote_state_coordinator.dart` - 통합 투표 상태 관리
+- `/lib/services/vote_timer_service.dart` - 투표 타이머 동기화
+- `/lib/services/vote_status_service.dart` - 투표 제출 및 상태 관리
+- `/lib/services/unified_image_cache_service.dart` - 이미지 캐싱
 
-4. **음성 메시지**
-   - 음성 녹음 및 전송
-   - 재생 컨트롤
+### 유틸리티
+- `/lib/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart` - 레이아웃 분석
+- `/lib/shared/services/unified_box_calculator.dart` - 박스 크기 계산
+- `/lib/utils/responsive_breakpoints.dart` - 반응형 브레이크포인트
 
-5. **메시지 검색**
-   - 채팅 내 검색
-   - 미디어 필터링
+### 상위 페이지
+- `/lib/pages/chat/chat_detail_v2/` - 채팅 상세 화면
+- `/lib/pages/chat/ai_chat_v2/` - AI 채팅 화면
 
-## 트러블슈팅
+### 알림 시스템
+- `/lib/components/notifications/voting_notification_dialog.dart` - 투표 알림 다이얼로그
 
-### 일반적인 문제
+## 📊 아키텍처 다이어그램
 
-1. **이미지가 표시되지 않음**
-   - Firebase Storage 권한 확인
-   - 이미지 URL 유효성 검증
-   - 네트워크 연결 상태 확인
+```
+VoteCardMessage
+    ├── BaseVoteMessage (추상 클래스)
+    │   └── BaseVoteMessageStateMixin
+    │       └── VoteStatusService (투표 제출)
+    ├── VoteStateCoordinator (상태 관리)
+    │   ├── VoteTimerService (타이머)
+    │   ├── VoteStatusService (상태)
+    │   └── Firebase Firestore (실시간)
+    ├── vote_card/ (UI 컴포넌트)
+    │   ├── VoteActionButton
+    │   ├── VoteCardHeader  
+    │   ├── VoteOptionBox
+    │   └── VoteResultDisplay
+    └── 최적화 시스템
+        ├── Global BoxSizes Cache
+        ├── UnifiedImageCacheService
+        └── AspectRatioAnalyzer
+```
 
-2. **메시지 순서 문제**
-   - Firestore 타임스탬프 동기화
-   - 클라이언트 시간 오프셋 보정
+## 🐛 문제 해결
 
-3. **채팅방 로딩 지연**
-   - 인덱스 최적화
-   - 초기 로드 메시지 수 조정
+### 스크롤 점프 문제 (해결됨)
+```dart
+// 문제: 스크롤 시 메시지 높이 변동
+// 원인: Widget 재사용 및 박스 크기 재계산
 
-4. **스크롤 점프/버그 (해결됨 v2.0.0)**
-   - **증상**: 스크롤 위로 갔다가 내릴 때 튕기는 현상
-   - **원인**: 
-     - AspectRatio + Positioned.fill 레이아웃 충돌
-     - VoteCardMessage 높이 재계산으로 인한 변동
-     - flutter_chat_ui의 widget 재사용
-   - **해결책**:
-     - 전역 BoxSizes 캐시 구현
-     - ValueKey로 widget 재사용 방지
-     - UnifiedBoxCalculator 동적 기본값 사용
-     - AspectRatio 제거, SizedBox.expand 사용
+// 해결책:
+1. ValueKey(message.id) 추가로 widget 재사용 방지
+2. 전역 BoxSizes 캐시로 재계산 방지
+3. UnifiedBoxCalculator 동적 기본값 사용
+```
 
-5. **VoteCardMessage 높이 불일치**
-   - **증상**: 같은 메시지가 다른 높이로 표시
-   - **원인**: aspectRatio null일 때 고정값 300px 사용
-   - **해결책**: boxWidth/1.5 동적 계산
+### 타이머 동기화 문제 (해결됨)
+```dart
+// 문제: 같은 투표가 다른 남은 시간 표시
+// 원인: 각 위젯이 독립적인 Timer 인스턴스 생성
+
+// 해결책:
+VoteStateCoordinator 통합으로 중앙 집중식 타이머 관리
+```
+
+### 이미지 로딩 성능
+```dart
+// 문제: 고해상도 이미지로 인한 메모리 과다 사용
+
+// 해결책:
+UnifiedImageCacheService로 동적 캐시 크기 조정 (400-1600px)
+```
+
+## 📝 변경 이력
+
+- **2025-08-22**: 문서 전체 개정 및 상세 설명 추가
+- **2025-08-18**: VoteStateCoordinator 중심 리팩토링
+- **2025-08-17**: 투표 타이머 동기화 시스템 구현
+- **2025-08-08**: 전역 BoxSizes 캐시 시스템 구현
+- **2025-08-06**: VoteRequestMessage 제거 및 VoteCardMessage 통합
+- **2025-07-26**: 초기 채팅 투표 시스템 구현
 
 ---
 
-**작성일**: 2025-07-26  
-**최종 업데이트**: 2025-08-08  
-**버전**: 2.0  
-**작성자**: SuperClaude Framework  
+*이 문서는 `/lib/components/chat` 디렉토리의 채팅 투표 메시지 컴포넌트를 설명합니다.*

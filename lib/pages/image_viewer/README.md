@@ -1,6 +1,11 @@
 # Image Viewer Module
 
 ## 개요 (Overview)
+
+## 🎯 네이밍 컨벤션
+- **파일명**: snake_case (Dart 표준)
+- **필드명**: camelCase
+- 참조: [NAMING_CONVENTION.md](../../NAMING_CONVENTION.md)
 이미지 뷰어는 사용자가 이미지를 전체 화면으로 보고 상호작용할 수 있는 독립적인 페이지입니다. 주로 In Put Post Image 모듈에서 이미지 미리보기를 위해 사용됩니다.
 
 ## 파일 구조

@@ -21,7 +21,7 @@
 
 #### messages 서브컬렉션
 - AI 채팅방 메시지 업데이트 권한 추가
-- `vote_end_time` 필드 업데이트 허용
+- `voteEndTime` 필드 업데이트 허용
 
 ## 배포 방법
 

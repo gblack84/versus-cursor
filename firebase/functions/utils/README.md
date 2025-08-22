@@ -347,8 +347,8 @@ function createMockPost(overrides = {}) {
     optionA: { title: 'A 옵션', imageUrl: 'https://example.com/a.jpg' },
     optionB: { title: 'B 옵션', imageUrl: 'https://example.com/b.jpg' },
     createdAt: new Date(),
-    votes_a: 0,
-    votes_b: 0,
+    votesA: 0,
+    votesB: 0,
     ...overrides
   };
 }

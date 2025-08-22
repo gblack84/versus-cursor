@@ -1,6 +1,11 @@
 # Thumbnail Selection Module
 
 ## 개요 (Overview)
+
+## 🎯 네이밍 컨벤션
+- **파일명**: snake_case (Dart 표준)
+- **필드명**: camelCase
+- 참조: [NAMING_CONVENTION.md](../../NAMING_CONVENTION.md)
 썸네일 선택 모듈은 멀티 이미지 중에서 대표 이미지(썸네일)를 선택하는 독립적인 페이지입니다. 사용자가 여러 이미지 중 게시물을 대표할 메인 이미지를 선택할 수 있게 합니다.
 
 ## 파일 구조

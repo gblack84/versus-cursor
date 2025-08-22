@@ -1,6 +1,11 @@
 # AI Moderation System
 
 ## 개요
+
+## 🎯 네이밍 컨벤션
+- **파일명**: snake_case (Dart 표준)
+- **필드명**: camelCase
+- 참조: [NAMING_CONVENTION.md](../../NAMING_CONVENTION.md)
 통합 AI 검열 시스템으로 텍스트와 이미지 콘텐츠의 안전성과 적절성을 검증합니다.
 
 ## 구조

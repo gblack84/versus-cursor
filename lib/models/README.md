@@ -49,7 +49,7 @@ factory NotificationModel.fromFirestore(
   final data = doc.data()!;
   return NotificationModel.fromJson({
     ...data,
-    'notification_id': doc.id,
+    'notificationId': doc.id,
   });
 }
 ```
@@ -103,7 +103,7 @@ bool get isExpired {
 StreamBuilder<QuerySnapshot>(
   stream: FirebaseFirestore.instance
     .collection('notifications')
-    .where('user_id', isEqualTo: userId)
+    .where('userId', isEqualTo: userId)
     .where('read', isEqualTo: false)
     .snapshots(),
   builder: (context, snapshot) {
@@ -158,8 +158,8 @@ await FirebaseFirestore.instance
 ```dart
 // JSON 직렬화
 Map<String, dynamic> toJson() => {
-  'notification_id': notificationId,
-  'user_id': userId,
+  'notificationId': notificationId,
+  'userId': userId,
   'type': type,
   // ...
 };
@@ -167,8 +167,8 @@ Map<String, dynamic> toJson() => {
 // JSON 역직렬화
 factory NotificationModel.fromJson(Map<String, dynamic> json) {
   return NotificationModel(
-    notificationId: json['notification_id'] as String,
-    userId: json['user_id'] as String,
+    notificationId: json['notificationId'] as String,
+    userId: json['userId'] as String,
     type: json['type'] as String,
     // ...
   );
@@ -184,7 +184,7 @@ NotificationModel → toJson() → Firestore Document
 ```
 
 ### 필드 매핑 규칙
-- Firestore: snake_case (예: `user_id`)
+- Firestore: camelCase (예: `userId`)
 - Dart Model: camelCase (예: `userId`)
 - 자동 변환 처리
 

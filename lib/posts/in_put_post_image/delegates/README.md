@@ -1,6 +1,11 @@
 # Delegates Directory
 
 ## 개요 (Overview)
+
+## 🎯 네이밍 컨벤션
+- **파일명**: snake_case (Dart 표준)
+- **필드명**: camelCase
+- 참조: [NAMING_CONVENTION.md](../../NAMING_CONVENTION.md)
 이 디렉토리는 wechat_assets_picker의 커스터마이징을 위한 델리게이트 클래스들을 포함합니다. 주로 UI 커스터마이징과 한국어 지원을 담당합니다.
 
 ## 파일 설명 (File Descriptions)

@@ -108,7 +108,7 @@ firebase functions:log | grep "투표"
    - `displayVotesA/B`
 
 2. ai_chats 컬렉션
-   - messages 서브컬렉션의 card_status
+   - messages 서브컬렉션의 cardStatus
 
 ## 성능 메트릭
 

@@ -1,6 +1,11 @@
 # Widgets Directory
 
 ## 개요 (Overview)
+
+## 🎯 네이밍 컨벤션
+- **파일명**: snake_case (Dart 표준)
+- **필드명**: camelCase
+- 참조: [NAMING_CONVENTION.md](../../NAMING_CONVENTION.md)
 이 디렉토리는 복잡한 기능을 수행하는 복합 위젯들을 포함합니다. 주로 전체 화면이나 모달, 플로우를 담당하는 위젯들입니다.
 
 ## 파일 설명 (File Descriptions)

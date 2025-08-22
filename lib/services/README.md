@@ -66,9 +66,9 @@ NotificationOverlay.hide();
 #### 알림 데이터 구조
 ```dart
 {
-  'notification_id': String,
-  'user_id': String,
-  'type': 'voting_request',
+  'notificationId': String,
+  'userId': String,
+  'type': 'votingRequest',
   'content': {
     'title': String,
     'message': String,

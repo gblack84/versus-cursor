@@ -53,8 +53,8 @@ example.doSomething();
 ```
 
 ## 🔗 관련 문서
-- [관련 문서 1](../path/to/doc.md)
-- [관련 문서 2](../path/to/doc.md)
+- [프로젝트 가이드](../../CLAUDE.md)
+- [네이밍 컨벤션](../../NAMING_CONVENTION.md)
 
 ## ⚠️ 주의사항
 - 주의할 점 1

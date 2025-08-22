@@ -10,6 +10,11 @@
 
 ## 개요
 
+## 🎯 네이밍 컨벤션
+- **파일명**: snake_case (Dart 표준)
+- **필드명**: camelCase
+- 참조: [NAMING_CONVENTION.md](../../NAMING_CONVENTION.md)
+
 Versus Space의 채팅 시스템은 **투표 중심의 소셜 커뮤니케이션**을 위해 설계되었습니다.
 현재는 투표 요청을 통해 채팅이 시작되며, 향후 일반 메시징과 AI 어시스턴트 기능이 추가될 예정입니다.
 
@@ -237,22 +242,22 @@ core.Message.text(
 ```json
 {
   "participantIds": ["user1", "user2"],
-  "last_message": "Hello",
-  "last_message_at": "Timestamp",
-  "last_message_sender": "user1"
+  "lastMessage": "Hello",
+  "lastMessageAt": "Timestamp",
+  "lastMessageSender": "user1"
 }
 ```
 
 #### `chats/{chatId}/messages`
 ```json
 {
-  "id": "message_id",
-  "sender_id": "user_id",
+  "id": "messageId",
+  "senderId": "userId",
   "text": "Message content",
   "type": "text|image|video|custom",
-  "created_at": "Timestamp",
-  "delivered_at": "Timestamp",
-  "seen_at": "Timestamp",
+  "createdAt": "Timestamp",
+  "deliveredAt": "Timestamp",
+  "seenAt": "Timestamp",
   "metadata": {}
 }
 ```
@@ -263,8 +268,8 @@ core.Message.text(
 {
   "collectionGroup": "messages",
   "fields": [
-    { "fieldPath": "sender_id", "order": "ASCENDING" },
-    { "fieldPath": "seen_at", "order": "ASCENDING" }
+    { "fieldPath": "senderId", "order": "ASCENDING" },
+    { "fieldPath": "seenAt", "order": "ASCENDING" }
   ]
 }
 ```

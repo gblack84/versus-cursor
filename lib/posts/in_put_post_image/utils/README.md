@@ -1,6 +1,11 @@
 # Utils Directory
 
 ## 개요 (Overview)
+
+## 🎯 네이밍 컨벤션
+- **파일명**: snake_case (Dart 표준)
+- **필드명**: camelCase
+- 참조: [NAMING_CONVENTION.md](../../NAMING_CONVENTION.md)
 이 디렉토리는 공통으로 사용되는 유틸리티 함수와 도구들을 포함합니다. 특정 도메인에 속하지 않는 범용적인 기능들이 위치합니다.
 
 ## 파일 설명 (File Descriptions)

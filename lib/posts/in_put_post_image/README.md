@@ -1,6 +1,11 @@
 # In Put Post Image Module
 
 ## 개요 (Overview)
+
+## 🎯 네이밍 컨벤션
+- **파일명**: snake_case (Dart 표준)
+- **필드명**: camelCase
+- 참조: [NAMING_CONVENTION.md](../../NAMING_CONVENTION.md)
 이 모듈은 Versus Space 앱의 핵심 기능인 이미지 기반 A/B 콘텐츠 생성을 담당합니다. 사용자가 두 개의 이미지(A vs B)를 선택, 편집, 업로드하고 텍스트 설명을 추가하여 게시물을 작성할 수 있습니다.
 
 ## 주요 기능 (Key Features)

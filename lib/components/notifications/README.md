@@ -1,122 +1,277 @@
-# 투표 알림 사이즈 바인딩 시스템
+# 📢 알림 시스템 (Notification System)
 
-질문 작성 페이지와 투표 알림 간 일관된 크기 바인딩을 제공하는 시스템입니다.
+> Versus Space 앱의 통합 알림 시스템으로, 일반 알림과 투표 알림을 모두 지원합니다.
 
-## 🎯 핵심 기능
+## 📋 개요
 
-### 1. 사이즈 데이터 캡처
-질문 작성 페이지에서 생성된 A/B 박스의 크기 정보를 캡처하여 저장합니다.
+알림 시스템은 사용자에게 실시간 정보를 전달하고 상호작용을 유도하는 핵심 컴포넌트입니다. 일반 알림, 투표 요청 알림, 알림 뱃지 등 다양한 형태의 알림을 제공합니다.
 
-### 2. 스마트 레이아웃 변환
-투표 알림에 적합하도록 레이아웃을 자동 변환합니다:
-- 세로 배치 → 가로 배치 (공간 절약)
-- 단일 이미지 → A + 빈 B박스
-- 화면 크기별 최적화
-- **박스 크기 통일**: 가로/세로 배치 시 평균 크기 사용으로 일관성 확보
+### 주요 특징
+- 🔔 **일반 알림**: 슬라이드 애니메이션과 자동 사라짐 기능
+- 🗳️ **투표 알림**: A/B 선택형 인터랙티브 알림
+- 🔴 **알림 뱃지**: 읽지 않은 알림 개수 실시간 표시
+- 📱 **멀티이미지 지원**: 각 옵션에 여러 이미지 표시 가능
+- 🎨 **스마트 레이아웃**: 이미지 비율에 따른 자동 레이아웃
+- ⚡ **실시간 동기화**: Firebase와 연동된 실시간 업데이트
 
-### 3. 적응형 크기 조정
-다양한 화면 크기에서 일관된 사용자 경험을 제공합니다:
-- 큰 화면 (>400px): 90% 스케일링
-- 중간 화면 (350-400px): 80% 스케일링  
-- 작은 화면 (<350px): 70% 스케일링
-
-### 4. 멀티이미지 지원 (v1.1.0 추가, v1.2.0 개선)
-- 각 박스에 여러 개의 이미지 표시 가능
-- PageView를 통한 이미지 탐색 (위아래 스와이프)
-- 이미지 뷰어로 전체화면 보기 지원
-- **v1.2.0 개선사항**:
-  - 단일 이미지 모드 지원 (B박스가 텍스트만 있을 때)
-  - 단일 모드에서 A/B 타이틀 모두 표시
-  - 좌우 스와이프 자동 비활성화
-  - 멀티이미지 카운트 정확도 개선
-
-### 5. 향상된 UX (새로운 기능)
-- **모달 다이얼로그 전환**: 검은색 반투명 배경으로 몰입도 향상
-- **92% 화면 너비 사용**: 적절한 여백으로 가독성 개선
-- **30초 자동 닫기 제거**: 사용자가 직접 선택할 때까지 대기
-- **배경 터치 방지**: 실수로 닫히지 않도록 보호
-
-### 6. 스마트 레이아웃 시스템 (v1.3.0 추가)
-- **AspectRatio 기반 자동 레이아웃**: 이미지 비율에 따라 최적의 레이아웃 자동 결정
-- **데이터 전달 체인**: 질문 작성 → Firestore → NotificationService → VotingNotificationDialog
-- **VersusBoxSizeData 자동 생성**: aspectRatio 정보로 자동 크기 계산
-- **layoutType 지원**: horizontal, vertical, single 레이아웃 타입 자동 전달
-
-## 📁 파일 구조
+## 🏗️ 아키텍처
 
 ```
 lib/components/notifications/
-├── models/
-│   └── versus_box_size_data.dart          # 사이즈 데이터 모델
-├── services/                              # (현재 비어있음 - 향후 서비스 추가 예정)
-├── widgets/
-│   ├── versus_notification_box.dart       # 투표 박스 컴포넌트
-│   └── notification_image_viewer.dart     # 멀티이미지 뷰어 (새로운 파일)
-├── constants/
-│   └── voting_notification_constraints.dart # 크기 제약 조건
-├── utils/
-│   └── adaptive_text_size.dart            # 적응형 텍스트 크기
-├── voting_notification_dialog.dart        # 투표 알림 다이얼로그 (모달 UI 업데이트)
-├── notification_overlay.dart              # 알림 오버레이 (showDialog 사용)
-└── README.md                              # 이 문서
+│
+├── 📱 메인 컴포넌트
+│   ├── in_app_notification_dialog.dart      # 일반 알림 다이얼로그
+│   ├── notification_overlay.dart            # 통합 알림 오버레이 시스템
+│   ├── voting_notification_dialog.dart      # 투표 알림 다이얼로그
+│   └── voting_overlay.dart                  # 투표 전용 오버레이 (레거시)
+│
+├── 🔴 뱃지 시스템
+│   ├── notification_badge.dart              # 알림 뱃지 UI 컴포넌트
+│   ├── notification_badge_provider.dart     # Firebase 연동 실시간 제공자
+│   └── notification_badge_example.dart      # 사용 예제 모음
+│
+└── 📁 하위 모듈
+    ├── constants/                            # 상수 및 제약 조건
+    │   └── voting_notification_constraints.dart
+    ├── models/                               # 데이터 모델
+    │   └── versus_box_size_data.dart
+    ├── utils/                                # 유틸리티
+    │   └── adaptive_text_size.dart
+    └── widgets/                              # UI 위젯
+        ├── notification_image_viewer.dart
+        └── versus_notification_box.dart
 ```
 
-## 🚀 사용법
+## 네이밍 컨벤션
 
-### 1. 기본 사용법
+### 파일명
+- ✅ **snake_case 사용**: `notification_badge.dart`, `voting_overlay.dart`
+- ✅ **기능별 접미사**: `_dialog`, `_overlay`, `_provider`, `_example`
+
+### 클래스명
+- ✅ **PascalCase 사용**: `NotificationBadge`, `VotingNotificationDialog`
+- ✅ **Widget 접미사 생략**: 모든 UI 컴포넌트는 기본적으로 위젯
+
+### 필드 및 메서드
+- ✅ **camelCase 사용**: `showVoting()`, `hasVoted`, `votePercentageA`
+- ✅ **private 필드**: `_currentEntry`, `_autoCloseTimer`
+- ✅ **boolean 접두사**: `hasVoted`, `showResults`, `enableImageTap`
+
+## 주요 구성요소
+
+### 1. NotificationOverlay (통합 알림 시스템)
+
+**역할**: 모든 알림 표시를 관리하는 중앙 시스템
 
 ```dart
-// 투표 알림 표시 (스마트 레이아웃 자동 적용)
-NotificationOverlay.showVoting(
+class NotificationOverlay {
+  // 일반 알림 표시
+  static void show(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required VoidCallback onTap,
+    String buttonText = '참여하기',
+  })
+
+  // 투표 알림 표시 (스마트 레이아웃 지원)
+  static void showVoting(
+    BuildContext context, {
+    required String question,
+    required String optionA,
+    required String optionB,
+    String? imageUrlA,
+    String? imageUrlB,
+    List<String>? imageUrlsA,       // 멀티이미지
+    List<String>? imageUrlsB,       // 멀티이미지
+    double? aspectRatioA,            // 스마트 레이아웃
+    double? aspectRatioB,            // 스마트 레이아웃
+    String? layoutType,              // horizontal/vertical/single
+    required Function(String) onVote,
+    // ... 추가 옵션들
+  })
+
+  // 알림 숨기기
+  static void hide()
+}
+```
+
+**특징**:
+- 싱글톤 패턴으로 중복 알림 방지
+- 모달 다이얼로그 사용 (92% 화면 너비)
+- 검은색 반투명 배경으로 몰입도 향상
+- 배경 터치 방지 (barrierDismissible: false)
+
+### 2. InAppNotificationDialog (일반 알림)
+
+**역할**: 앱 내 일반 알림 표시
+
+```dart
+class InAppNotificationDialog extends StatefulWidget {
+  final String title;
+  final String message;
+  final String buttonText;
+  final VoidCallback onTap;
+  final VoidCallback? onDismiss;
+}
+```
+
+**특징**:
+- 슬라이드 + 페이드 애니메이션
+- 5초 자동 사라짐
+- 그라디언트 배경
+- 아이콘 + 텍스트 + 버튼 구성
+
+### 3. VotingNotificationDialog (투표 알림)
+
+**역할**: A/B 선택형 투표 알림
+
+```dart
+class VotingNotificationDialog extends StatefulWidget {
+  // 기본 정보
+  final String question;
+  final String optionA;
+  final String optionB;
+  
+  // 이미지 (싱글/멀티)
+  final String? imageUrlA;
+  final String? imageUrlB;
+  final List<String>? imageUrlsA;
+  final List<String>? imageUrlsB;
+  
+  // 스마트 레이아웃
+  final double? aspectRatioA;
+  final double? aspectRatioB;
+  final VersusBoxSizeData? sizeData;
+  
+  // 투표 결과
+  final bool showResults;
+  final double? votePercentageA;
+  final double? votePercentageB;
+  
+  // 콜백
+  final Function(String option) onVote;
+  final Function(bool hasVoted)? onDismiss;
+}
+```
+
+**특징**:
+- 10분 자동 닫기 타이머
+- 멀티이미지 지원 (PageView)
+- 스마트 레이아웃 시스템
+- 투표 결과 실시간 표시
+- 프로필 이미지 + Pikle 아이콘
+
+### 4. NotificationBadge (알림 뱃지)
+
+**역할**: 읽지 않은 알림 개수 표시
+
+```dart
+class NotificationBadge extends StatelessWidget {
+  final Widget child;
+  final int count;
+  final Color? badgeColor;
+  final Color? textColor;
+  final double? size;
+  final bool showZero;
+}
+```
+
+**특징**:
+- 99+ 표시 (100개 이상)
+- 커스터마이징 가능한 색상/크기
+- Stack 기반 오버레이
+- 0개일 때 자동 숨김
+
+### 5. NotificationBadgeProvider (실시간 제공자)
+
+**역할**: Firebase와 연동된 실시간 알림 개수 관리
+
+```dart
+class NotificationBadgeProvider extends StatelessWidget {
+  final Widget Function(BuildContext context, int count) builder;
+}
+```
+
+**특징**:
+- NotificationService와 연동
+- StreamBuilder 기반 실시간 업데이트
+- 로그인 상태 자동 체크
+- Provider 패턴 사용
+
+## 💻 사용 예시
+
+### 1. 일반 알림 표시
+
+```dart
+// 기본 알림
+NotificationOverlay.show(
   context,
-  question: '어떤 옵션이 더 좋나요?',
-  optionA: '옵션 A',
-  optionB: '옵션 B',
-  imageUrlA: 'https://example.com/image_a.jpg',
-  imageUrlB: 'https://example.com/image_b.jpg',
-  aspectRatioA: 1.5,  // 이미지 비율 정보
-  aspectRatioB: 0.75, // 이미지 비율 정보
-  layoutType: 'horizontal', // 레이아웃 타입
-  onVote: (option) {
-    print('투표: $option');
+  title: '새로운 메시지',
+  message: '친구가 메시지를 보냈습니다',
+  onTap: () {
+    // 메시지 페이지로 이동
+    context.pushNamed('messages');
   },
+);
+
+// 커스텀 버튼 텍스트
+NotificationOverlay.show(
+  context,
+  title: '이벤트 알림',
+  message: '새로운 이벤트가 시작되었습니다',
+  buttonText: '지금 참여',
+  onTap: () => joinEvent(),
 );
 ```
 
-### 1-1. 멀티이미지 사용법 (새로운 기능)
+### 2. 투표 알림 표시
 
 ```dart
-// 멀티이미지 투표 알림 표시
+// 기본 투표 알림
+NotificationOverlay.showVoting(
+  context,
+  question: '어떤 디자인이 더 좋나요?',
+  optionA: '모던한 스타일',
+  optionB: '클래식한 스타일',
+  imageUrlA: 'https://example.com/modern.jpg',
+  imageUrlB: 'https://example.com/classic.jpg',
+  onVote: (option) {
+    print('선택: $option');
+    // 투표 처리
+  },
+);
+
+// 멀티이미지 + 스마트 레이아웃
 NotificationOverlay.showVoting(
   context,
   question: '어떤 스타일이 더 좋나요?',
   optionA: '스타일 A',
   optionB: '스타일 B',
-  imageUrlsA: [ // 👈 멀티이미지 A
-    'https://example.com/style_a_1.jpg',
-    'https://example.com/style_a_2.jpg',
-    'https://example.com/style_a_3.jpg',
+  imageUrlsA: [
+    'https://example.com/a1.jpg',
+    'https://example.com/a2.jpg',
+    'https://example.com/a3.jpg',
   ],
-  imageUrlsB: [ // 👈 멀티이미지 B
-    'https://example.com/style_b_1.jpg',
-    'https://example.com/style_b_2.jpg',
+  imageUrlsB: [
+    'https://example.com/b1.jpg',
+    'https://example.com/b2.jpg',
   ],
-  sizeData: sizeData,
-  onVote: (option) {
-    print('투표: $option');
+  aspectRatioA: 1.5,  // 가로형
+  aspectRatioB: 0.75, // 세로형
+  layoutType: 'vertical', // 세로 배치
+  authorName: '홍길동',
+  onVote: (option) async {
+    await submitVote(option);
   },
 );
-```
 
-### 2. 투표 결과 표시
-
-```dart
+// 투표 결과 표시
 NotificationOverlay.showVoting(
   context,
-  question: '투표 결과',
+  question: '투표가 완료되었습니다',
   optionA: '옵션 A',
   optionB: '옵션 B',
-  sizeData: sizeData,
   showResults: true,
   votePercentageA: 0.65,
   votePercentageB: 0.35,
@@ -126,332 +281,336 @@ NotificationOverlay.showVoting(
 );
 ```
 
-### 3. 커스텀 레이아웃
+### 3. 알림 뱃지 사용
 
 ```dart
-Widget customVotingLayout = VersusNotificationBoxBuilder.buildBoxPair(
-  context: context,
-  sizeData: sizeData,
-  titleA: '옵션 A',
-  titleB: '옵션 B',
-  imageUrlA: imageUrlA,
-  imageUrlB: imageUrlB,
-  onTapA: () => vote('A'),
-  onTapB: () => vote('B'),
+// 기본 사용
+NotificationBadge(
+  count: 5,
+  child: Icon(Icons.notifications),
+);
+
+// AppBar에서 사용
+AppBar(
+  title: Text('Versus Space'),
+  actions: [
+    NotificationAppBarAction(
+      onPressed: () {
+        context.pushNamed('notificationsList');
+      },
+    ),
+  ],
+);
+
+// 실시간 업데이트
+NotificationBadgeProvider(
+  builder: (context, count) {
+    return IconButton(
+      icon: NotificationBadge(
+        count: count,
+        child: Icon(Icons.notifications),
+      ),
+      onPressed: () => openNotifications(),
+    );
+  },
+);
+
+// BottomNavigationBar에서 사용
+NotificationBadgeProvider(
+  builder: (context, count) {
+    return BottomNavigationBar(
+      items: [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home),
+          label: '홈',
+        ),
+        BottomNavigationBarItem(
+          icon: NotificationBadge(
+            count: count,
+            child: Icon(Icons.notifications),
+          ),
+          label: '알림',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person),
+          label: '프로필',
+        ),
+      ],
+    );
+  },
 );
 ```
 
-## 🔧 고급 설정
+## 🎨 커스터마이징
 
-### 디버그 모드
+### 알림 스타일 커스터마이징
 
 ```dart
+// 커스텀 뱃지 색상
+NotificationBadge(
+  count: 10,
+  badgeColor: Colors.green,
+  textColor: Colors.white,
+  size: 20.0,
+  child: Icon(Icons.email),
+);
+
+// 디버그 모드 활성화
 NotificationOverlay.showVoting(
   context,
-  // ... 기본 파라미터들
+  // ... 기본 파라미터
   showDebugInfo: true, // 박스 크기 정보 표시
 );
 ```
 
-### 커스텀 애니메이션
+### 애니메이션 커스터마이징
 
 ```dart
-class MyWidget extends StatefulWidget {
-  @override
-  State<MyWidget> createState() => _MyWidgetState();
+// InAppNotificationDialog 애니메이션 수정
+// in_app_notification_dialog.dart 파일에서:
+_controller = AnimationController(
+  duration: const Duration(milliseconds: 500), // 애니메이션 시간
+  vsync: this,
+);
+
+// 자동 사라짐 시간 변경
+Future.delayed(const Duration(seconds: 5), () { // 5초 → 원하는 시간
+  if (mounted) _dismiss();
+});
+```
+
+## 🔧 고급 기능
+
+### 1. 멀티이미지 뷰어
+
+```dart
+// NotificationImageViewer 직접 사용
+NotificationImageViewer.show(
+  context,
+  question: '질문',
+  optionA: '옵션 A',
+  optionB: '옵션 B',
+  imageUrlsA: imageListA,
+  imageUrlsB: imageListB,
+  initialBox: 'A',
+  initialIndex: 0,
+);
+```
+
+### 2. 스마트 레이아웃 시스템
+
+```dart
+// AspectRatio 기반 자동 레이아웃
+// 이미지 비율 분석 → 최적 레이아웃 결정
+if (aspectRatioA > 1.0 && aspectRatioB > 1.0) {
+  // 둘 다 가로형 → 세로 배치
+  layoutType = LayoutType.vertical;
+} else if (aspectRatioA < 1.0 && aspectRatioB < 1.0) {
+  // 둘 다 세로형 → 가로 배치
+  layoutType = LayoutType.horizontal;
 }
+```
 
-class _MyWidgetState extends State<MyWidget> with TickerProviderStateMixin {
-  late AnimationController _animationController;
+### 3. 사이즈 데이터 바인딩
 
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: Duration(milliseconds: 300),
-      vsync: this,
-    );
-  }
+```dart
+// 질문 작성 시 크기 캡처
+final sizeData = VersusBoxSizeCalculator.captureCurrentSizes(
+  context, 
+  appState, 
+  model
+);
 
-  Widget build(BuildContext context) {
-    return VersusNotificationBox(
-      boxType: 'A',
-      boxSize: Size(150, 150),
-      title: '옵션 A',
-      animationController: _animationController,
-    );
-  }
-}
+// 알림 표시 시 동일 크기 적용
+NotificationOverlay.showVoting(
+  context,
+  sizeData: sizeData,
+  // ... 기타 파라미터
+);
+```
+
+## 🐛 트러블슈팅
+
+### 자주 발생하는 문제
+
+#### 1. 알림이 표시되지 않음
+```dart
+// 원인: BuildContext가 올바르지 않음
+// 해결: Navigator context 사용
+final navigatorContext = Navigator.of(context).context;
+NotificationOverlay.show(navigatorContext, ...);
+```
+
+#### 2. 뱃지 개수가 업데이트되지 않음
+```dart
+// 원인: NotificationService가 초기화되지 않음
+// 해결: main.dart에서 Provider 설정 확인
+runApp(
+  MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (_) => NotificationService()),
+    ],
+    child: MyApp(),
+  ),
+);
+```
+
+#### 3. 투표 알림 레이아웃이 깨짐
+```dart
+// 원인: aspectRatio 정보가 전달되지 않음
+// 해결: Firestore 저장 시 aspectRatio 포함
+await FirebaseFirestore.instance.collection('posts').add({
+  'optionA': {
+    'title': titleA,
+    'imageUrl': imageUrlA,
+    'aspectRatio': aspectRatioA, // 필수
+  },
+  'optionB': {
+    'title': titleB,
+    'imageUrl': imageUrlB,
+    'aspectRatio': aspectRatioB, // 필수
+  },
+  'layoutType': layoutType, // 필수
+});
+```
+
+#### 4. 멀티이미지가 표시되지 않음
+```dart
+// 원인: imageUrls 파라미터 누락
+// 해결: effectiveImageUrls 사용
+imageUrls: widget.effectiveImageUrlsA, // imageUrlsA ?? [imageUrlA]
 ```
 
 ## 📊 성능 최적화
 
 ### 1. 이미지 캐싱
-- `CachedNetworkImage` 사용
-- 동적 메모리 캐시 크기 계산
-- Progressive loading 지원
-
-### 2. 크기 계산 최적화
-- 한 번 계산된 크기는 재사용
-- 화면 회전 시 자동 재계산
-- 불필요한 리빌드 방지
-
-### 3. 레이아웃 최적화
-- 컨테이너 크기 기반 적응형 텍스트
-- 화면 크기별 스케일링
-- 메모리 효율적인 위젯 구조
-
-## 🎨 커스터마이징
-
-### 1. 색상 및 스타일
-
 ```dart
-// voting_notification_constraints.dart에서 수정
-static const double cardBorderRadius = 20.0;
-static const double boxBorderRadius = 16.0;
-static const Color primaryColor = Color(0xFF6366F1);
+// CachedNetworkImage 사용
+CachedNetworkImage(
+  imageUrl: imageUrl,
+  memCacheWidth: 800, // 메모리 캐시 크기 제한
+  placeholder: (context, url) => CircularProgressIndicator(),
+  errorWidget: (context, url, error) => Icon(Icons.error),
+);
 ```
 
-### 2. 애니메이션
-
+### 2. 메모리 관리
 ```dart
-// 슬라이드 애니메이션 지속시간
-static const Duration slideAnimationDuration = Duration(milliseconds: 500);
-
-// 자동 사라짐 시간
-static const Duration autoHideDuration = Duration(seconds: 30);
-```
-
-### 3. 크기 제약 조건
-
-```dart
-// 박스 크기 제한
-static const double maxBoxHeight = 160.0;
-static const double minBoxHeight = 80.0;
-
-// 텍스트 크기 제한 (v1.2.0에서 조정됨)
-static const double maxTextSize = 20.0;    // 16.0 → 20.0
-static const double minTextSize = 10.0;    // 유지
-static const double defaultTextSize = 14.0; // 12.0 → 18.0 → 14.0
-```
-
-## 🧪 테스트
-
-### 단위 테스트 예제
-
-```dart
-void main() {
-  group('VersusBoxSizeCalculator', () {
-    testWidgets('사이즈 데이터 캡처 테스트', (WidgetTester tester) async {
-      // 테스트 위젯 빌드
-      await tester.pumpWidget(MyTestWidget());
-      
-      // 사이즈 데이터 캡처
-      final sizeData = VersusBoxSizeCalculator.captureCurrentSizes(
-        tester.element(find.byType(MyTestWidget)),
-        mockAppState,
-        mockModel,
-      );
-      
-      // 검증
-      expect(sizeData, isNotNull);
-      expect(sizeData!.layoutType, LayoutType.horizontal);
-    });
-  });
+// 타이머와 컨트롤러 정리
+@override
+void dispose() {
+  _autoCloseTimer?.cancel();
+  _controller.dispose();
+  super.dispose();
 }
+```
+
+### 3. 스트림 최적화
+```dart
+// 불필요한 리빌드 방지
+StreamBuilder<int>(
+  stream: notificationService.getUnreadNotificationCount(userId),
+  initialData: 0, // 초기값 설정
+  builder: (context, snapshot) {
+    if (!snapshot.hasData) return SizedBox.shrink();
+    return NotificationBadge(count: snapshot.data!);
+  },
+);
+```
+
+## 🧪 테스팅
+
+### 단위 테스트
+```dart
+testWidgets('NotificationBadge 표시 테스트', (tester) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      home: NotificationBadge(
+        count: 5,
+        child: Icon(Icons.notifications),
+      ),
+    ),
+  );
+  
+  expect(find.text('5'), findsOneWidget);
+  expect(find.byIcon(Icons.notifications), findsOneWidget);
+});
 ```
 
 ### 통합 테스트
-
 ```dart
-import 'examples/voting_system_example.dart';
-
-void main() {
-  testWidgets('전체 투표 플로우 테스트', (WidgetTester tester) async {
-    await tester.pumpWidget(CompleteVotingFlowExample());
-    
-    // 1. 사이즈 데이터 캡처
-    await tester.tap(find.text('사이즈 데이터 캡처'));
-    await tester.pump();
-    
-    // 2. 투표 알림 표시
-    await tester.tap(find.text('사이즈 바인딩 투표'));
-    await tester.pump();
-    
-    // 3. 투표 실행
-    await tester.tap(find.text('A 선택'));
-    await tester.pump();
-    
-    // 검증
-    expect(find.text('투표 완료!'), findsOneWidget);
-  });
-}
-```
-
-## 🐛 트러블슈팅
-
-### 자주 발생하는 문제들
-
-#### 1. 사이즈 데이터가 null로 반환됨
-```dart
-// 원인: 이미지가 업로드되지 않았거나 AppState가 초기화되지 않음
-// 해결: 이미지 업로드 상태 확인
-if (appState.uploadImageA.isEmpty && appState.uploadImageB.isEmpty) {
-  print('이미지가 없습니다');
-}
-```
-
-#### 2. 투표 박스 크기가 너무 작음
-```dart
-// 원인: 화면 크기가 매우 작거나 스케일링 팩터 과도
-// 해결: 최소 크기 제약 조건 확인
-final constrainedSize = VotingNotificationConstraints.constrainBoxSize(size, 1.0);
-```
-
-#### 3. 레이아웃이 예상과 다름
-```dart
-// 원인: 레이아웃 변환 규칙 적용됨 (세로→가로 등)
-// 해결: 디버그 모드로 변환 과정 확인
-VotingSystemExample.showDebugVoting(context);
-```
-
-### 6. 알림에서 레이아웃이 다르게 표시됨 (v1.3.0)
-```dart
-// 원인: aspectRatio 또는 layoutType 정보가 전달되지 않음
-// 해결 1: Firestore에 layoutType 저장 확인
-'layoutType': layoutType,  // 'horizontal', 'vertical', 'single'
-
-// 해결 2: NotificationService에서 aspectRatio 추출 확인
-final optionAData = postData['optionA'] as Map<String, dynamic>?;
-final aspectRatioA = optionAData?['aspectRatio'];
-
-// 해결 3: NotificationOverlay에 파라미터 전달 확인
-NotificationOverlay.showVoting(
-  aspectRatioA: aspectRatioA,
-  aspectRatioB: aspectRatioB,
-  layoutType: layoutType,
-);
-```
-
-#### 4. 텍스트가 잘림
-```dart
-// 원인: 적응형 텍스트 크기가 너무 작게 계산됨
-// 해결: 커스텀 텍스트 크기 지정
-VersusNotificationBox(
-  customTextSize: 14.0, // 고정 크기 사용
-  // ...
-)
-```
-
-#### 5. 단일 이미지 모드에서 멀티이미지가 표시되지 않음 (v1.2.0)
-```dart
-// 원인: B박스 타이틀이 비어있어 단일 모드로 잘못 인식됨
-// 해결: NotificationImageViewer.show 호출 시 올바른 타이틀 전달 확인
-optionA: boxType == 'A' ? title : (otherOptionTitle ?? ''),
-optionB: boxType == 'A' ? (otherOptionTitle ?? '') : title,
-```
-
-### 디버그 도구
-
-#### 1. 사이즈 정보 출력
-```dart
-print('사이즈 데이터: $sizeData');
-print('투표용 크기: ${votingSizes.shortDescription}');
-print('성능 정보: ${votingSizes.performanceInfo}');
-```
-
-#### 2. 레이아웃 변환 정보
-```dart
-LayoutSynchronizer.printConversionInfo(
-  originalData: sizeData,
-  targetConfig: votingLayout,
-  containerWidth: containerWidth,
-);
-```
-
-#### 3. 제약 조건 확인
-```dart
-VotingNotificationConstraints.printConstraints(screenWidth);
-```
-
-#### 4. 멀티이미지 디버그 (v1.2.0 추가)
-```dart
-// NotificationImageViewer 초기화 시 자동 출력되는 로그
-// - 이미지 URL 개수
-// - 타이틀 정보
-// - 박스별 이미지 개수
-// - 초기 인덱스 및 박스 타입
+testWidgets('투표 알림 플로우 테스트', (tester) async {
+  await tester.pumpWidget(MyApp());
+  
+  // 알림 표시
+  NotificationOverlay.showVoting(
+    tester.element(find.byType(MyApp)),
+    question: '테스트 질문',
+    optionA: 'A',
+    optionB: 'B',
+    onVote: (option) => selectedOption = option,
+  );
+  await tester.pump();
+  
+  // A 선택
+  await tester.tap(find.text('A 선택'));
+  await tester.pump();
+  
+  expect(selectedOption, 'A');
+});
 ```
 
 ## 📈 성능 지표
 
 ### 목표 성능
-- **응답 시간**: <100ms (크기 계산)
-- **메모리 사용량**: <10MB 추가
-- **토큰 절약**: 30-50% (압축 모드)
-- **정확도**: 95%+ (크기 일관성)
+- **알림 표시 시간**: <100ms
+- **애니메이션 프레임**: 60fps 유지
+- **메모리 사용량**: <5MB (이미지 제외)
+- **Firebase 동기화**: <500ms
 
-### 모니터링 방법
+### 모니터링
 ```dart
 // 성능 측정
 final stopwatch = Stopwatch()..start();
-final sizeData = VersusBoxSizeCalculator.captureCurrentSizes(context, appState, model);
-stopwatch.stop();
-print('캡처 시간: ${stopwatch.elapsedMilliseconds}ms');
+NotificationOverlay.show(context, ...);
+print('알림 표시 시간: ${stopwatch.elapsedMilliseconds}ms');
 
-// 메모리 사용량 확인 (개발 모드)
+// 메모리 사용량
 if (kDebugMode) {
-  print('메모리 사용량: ${ProcessInfo.currentRss / 1024 / 1024:.1f}MB');
+  final usage = ProcessInfo.currentRss / 1024 / 1024;
+  print('메모리 사용량: ${usage.toStringAsFixed(1)}MB');
 }
 ```
 
-## 🔄 업그레이드 가이드
+## 변경 이력
 
-### v1.0 → v2.0 (호환성 유지)
-기존 코드는 그대로 작동하며, 새로운 기능을 점진적으로 적용할 수 있습니다.
+### v2.0.0 (2025-08-22)
+- 전체 알림 시스템 통합 문서화
+- 메인 디렉토리 아키텍처 문서 작성
+- 하위 모듈 통합 및 연계 설명
 
-```dart
-// 기존 방식 (계속 지원됨)
-NotificationOverlay.show(context, title: '알림', message: '메시지', onTap: () {});
+### v1.3.0 (2025-08-04)
+- 스마트 레이아웃 시스템 통합
+- AspectRatio 데이터 전달 체인 구축
+- 레이아웃 타입 자동 결정
 
-// 새로운 방식 (권장)
-NotificationOverlay.showVoting(context, question: '질문', optionA: 'A', optionB: 'B', onVote: (option) {});
-```
+### v1.2.0 (2025-07-25)
+- 단일 이미지 모드 개선
+- 멀티이미지 뷰어 수정
+- 텍스트 크기 조정
 
-## 🤝 기여하기
+### v1.1.0 (2025-07-23)
+- 멀티이미지 지원
+- 박스 크기 평균화
+- 모달 UI 개선
 
-### 개발 환경 설정
-1. Flutter SDK 3.0.0+ 설치
-2. 프로젝트 클론 및 의존성 설치
-3. 예제 앱 실행하여 테스트
-
-### 코드 스타일
-- Dart 공식 스타일 가이드 준수
-- 주석 및 문서화 필수
-- 단위 테스트 작성
-
-### 기여 방법
-1. 이슈 생성 또는 기존 이슈 확인
-2. 피처 브랜치 생성
-3. 구현 및 테스트
-4. Pull Request 생성
-
-## 📄 라이선스
-
-이 프로젝트는 MIT 라이선스를 따릅니다.
-
-## 🙏 감사의 글
-
-- Flutter 팀의 훌륭한 프레임워크
-- 커뮤니티의 피드백과 기여
-- 사용자들의 소중한 의견
+### v1.0.0 (2025-07-20)
+- 초기 릴리스
+- 기본 알림 시스템 구현
+- 투표 알림 기능
 
 ---
 
-**버전**: 1.3.0  
-**최종 업데이트**: 2025-08-04  
-**작성자**: SuperClaude Framework
-**변경사항**: 
-- v1.1.0 (2025-07-23): 멀티이미지 지원, 박스 크기 평균화, 모달 UI 개선
-- v1.2.0 (2025-07-25): 단일 이미지 모드 개선, 멀티이미지 뷰어 수정, 텍스트 크기 조정
-- v1.3.0 (2025-08-04): 스마트 레이아웃 시스템 통합, aspectRatio 데이터 전달 체인 구축
+**문서 버전**: 2.0.0  
+**최종 업데이트**: 2025-08-22  
+**관리**: Versus Space 개발팀

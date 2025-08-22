@@ -175,7 +175,7 @@ versus-space/
 │   ├── providers/               # 상태 관리 프로바이더
 │   ├── components/              # 재사용 가능한 UI 컴포넌트
 │   │   ├── chat/                # 채팅 관련 컴포넌트
-│   │   │   └── vote_request_message.dart  # 투표 요청 메시지 UI
+│   │   │   └── vote_card_message.dart  # 투표 카드 메시지 UI (통합 컴포넌트)
 │   │   └── notifications/       # 알림 관련 컴포넌트
 │   ├── utils/                   # 유틸리티 함수
 │   │   └── chat_message_converter.dart  # 채팅 메시지 변환
@@ -321,13 +321,12 @@ npm test
 
 1. **Firestore에서 사용자 role 설정**
    ```javascript
-   // users_record 컬렉션
+   // users 컬렉션
    {
-     uid: "user_id",
+     uid: "userId",
      email: "admin@versus.test",
      role: "admin",  // 또는 "tester"
    }
-   ```
 
 2. **테스트 모드 활성화**
    - 관리자 또는 테스터 계정으로 로그인
@@ -452,14 +451,14 @@ users (사용자)
 └── role (admin/tester/user)
 
 posts (게시물)
-├── vote_* fields (투표 시스템)
+├── vote* fields (투표 시스템: voteStartTime, voteEndTime, votesA, votesB 등)
 ├── targetAudience (타겟 설정)
 └── optionA/B (선택지 정보)
 
 messages (채팅 - chats의 서브컬렉션)
-├── message_type (text/image/vote_request)
-├── vote_* fields (투표 카드)
-└── card_status (상태 추적)
+├── messageType (text/image/voteRequest)
+├── vote* fields (투표 카드: voteOptionA, voteOptionB 등)
+└── cardStatus (상태 추적)
 
 notifications (알림)
 ├── type (voting_request 등)
@@ -468,7 +467,7 @@ notifications (알림)
 ```
 
 ### 중요 시스템 규칙
-1. **컬렉션 이름**: 모든 `_record` 접미사 제거됨 (2025-07-31)
+1. **컬렉션 이름**: 모든 컬렉션은 접미사 없이 사용 (예: users, posts, notifications)
 2. **필드 동기화**: Firebase Functions와 Flutter 모델 완전 일치
 3. **실시간 동기화**: 모든 변경사항은 실시간으로 반영
 4. **AI 통합**: Genkit 프레임워크로 통합 관리

@@ -201,7 +201,7 @@ notifications
 
 1. **Firestore Listeners**
    - 채팅 메시지: `chats/{chatId}/messages`
-   - 알림: `notifications` where `user_id == currentUser`
+   - 알림: `notifications` where `userId == currentUser`
    - 투표 상태: `posts/{postId}` 
 
 2. **State Management**

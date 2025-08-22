@@ -127,8 +127,8 @@ firebase/functions/
 **요청 예시**:
 ```json
 {
-  "chatId": "chat_id",
-  "userId": "user_id"
+  "chatId": "chatId",
+  "userId": "userId"
 }
 ```
 

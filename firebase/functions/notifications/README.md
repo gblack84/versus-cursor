@@ -85,10 +85,10 @@ const matchedUsers = await matchTargetUsers(
 
 ```javascript
 {
-  notification_id: 'unique_id',
-  user_id: 'target_user_id',
-  type: 'voting_request',
-  source_id: 'post_id',
+  notificationId: 'unique_id',
+  userId: 'targetUserId',
+  type: 'votingRequest',
+  sourceId: 'post_id',
   
   content: {
     title: '새로운 투표가 도착했어요!',
@@ -168,7 +168,7 @@ class NotificationService {
   void startListening(String userId) {
     FirebaseFirestore.instance
       .collection('notifications')
-      .where('user_id', isEqualTo: userId)
+      .where('userId', isEqualTo: userId)
       .where('type', isEqualTo: 'voting_request')
       .where('read', isEqualTo: false)
       .snapshots()

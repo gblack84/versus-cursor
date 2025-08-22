@@ -46,14 +46,14 @@ final firestoreData = ChatMessageConverter.toFirestore(
 **투표 메시지 구조:**
 ```dart
 {
-  'message_type': 'vote_request',
-  'vote_post_id': 'post123',
-  'vote_option_a_title': 'A 옵션',
-  'vote_option_b_title': 'B 옵션',
-  'vote_option_a_images': ['url1', 'url2'],
-  'vote_option_b_images': ['url3', 'url4'],
-  'card_status': 'voting_request',
-  'vote_end_time': Timestamp,
+  'messageType': 'voteRequest',
+  'votePostId': 'post123',
+  'voteOptionATitle': 'A 옵션',
+  'voteOptionBTitle': 'B 옵션',
+  'voteOptionAImages': ['url1', 'url2'],
+  'voteOptionBImages': ['url3', 'url4'],
+  'cardStatus': 'votingRequest',
+  'voteEndTime': Timestamp,
 }
 ```
 

@@ -135,7 +135,7 @@ class Logger {
       'password', 'token', 'secret', 'api_key', 'apiKey',
       'auth', 'authorization', 'credit_card', 'creditCard',
       'ssn', 'social_security', 'email', 'phone', 'phoneNumber',
-      'uid', 'userId', 'user_id'
+      'uid', 'userId'
     ];
     
     const lowerFieldName = fieldName.toLowerCase();

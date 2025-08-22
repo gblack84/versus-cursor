@@ -1,6 +1,11 @@
 # Pro Image Editor Module
 
 ## 개요 (Overview)
+
+## 🎯 네이밍 컨벤션
+- **파일명**: snake_case (Dart 표준)
+- **필드명**: camelCase
+- 참조: [NAMING_CONVENTION.md](../../NAMING_CONVENTION.md)
 ProImageEditor는 Flutter용 고급 이미지 편집 라이브러리를 래핑하고 커스터마이징한 모듈입니다. Versus Space 앱의 디자인과 요구사항에 맞춰 설정되어 있으며, In Put Post Image 모듈과 긴밀하게 통합됩니다.
 
 ## 파일 구조

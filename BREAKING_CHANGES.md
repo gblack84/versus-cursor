@@ -263,7 +263,7 @@ import '/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart';
 
 ## 📚 Resources
 
-- [Migration Guide](MIGRATION_GUIDE.md)
+- [Migration Summary](MIGRATION_SUMMARY.md)
 - [Chat Architecture](lib/pages/chat/README.md)
 - ~~Compatibility Layer~~ (Removed - migration complete)
 - [Firebase Functions](firebase/functions/README.md)

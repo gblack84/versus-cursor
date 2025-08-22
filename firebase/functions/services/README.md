@@ -40,17 +40,17 @@ async function createVoteCreatedMessage(userId, postId, postData) {
 // 투표 결과 업데이트 (투표 완료 시)
 async function updateVoteResultMessages(postId, voteResults) {
   // 모든 참여자의 AI 채팅 메시지 업데이트
-  // card_status: 'completed'로 변경
+  // cardStatus: 'completed'로 변경
   // 최종 투표 결과 표시
 }
 ```
 
 #### 메시지 필드
-- `message_type`: 'vote_request' | 'vote_created' | 'vote_result'
-- `card_status`: 'voting_request' | 'in_progress' | 'completed'
-- `vote_option_a_images[]`: A 옵션 이미지 배열
-- `vote_option_b_images[]`: B 옵션 이미지 배열
-- `vote_end_time`: 10분 타이머 종료 시간
+- `messageType`: 'voteRequest' | 'voteCreated' | 'voteResult'
+- `cardStatus`: 'votingRequest' | 'inProgress' | 'completed'
+- `voteOptionAImages[]`: A 옵션 이미지 배열
+- `voteOptionBImages[]`: B 옵션 이미지 배열
+- `voteEndTime`: 10분 타이머 종료 시간
 
 ### 2. **Vote Management Service** (`voteManagement.js`)
 투표 완료 처리 및 상태 업데이트를 담당합니다.

@@ -2,6 +2,11 @@
 
 ## 개요
 
+## 🎯 네이밍 컨벤션
+- **파일명**: snake_case (Dart 표준)
+- **필드명**: camelCase
+- 참조: [NAMING_CONVENTION.md](../../NAMING_CONVENTION.md)
+
 홈 페이지는 Versus Space 앱의 메인 피드 화면으로, 사용자들이 작성한 A vs B 형식의 투표 게시물들을 볼 수 있는 중심 페이지입니다.
 
 ## 주요 기능

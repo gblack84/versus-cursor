@@ -1,6 +1,11 @@
 # Models Directory
 
 ## 개요 (Overview)
+
+## 🎯 네이밍 컨벤션
+- **파일명**: snake_case (Dart 표준)
+- **필드명**: camelCase
+- 참조: [NAMING_CONVENTION.md](../../NAMING_CONVENTION.md)
 이 디렉토리는 데이터 모델과 상태 관리 클래스들을 포함합니다. 주로 특정 기능이나 페이지의 상태를 관리하는 모델들이 위치합니다.
 
 ## 파일 설명 (File Descriptions)

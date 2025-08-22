@@ -1091,10 +1091,10 @@ if (model.isVideoSelectedA) {
 
 ### 2025-08-03: Firebase Functions와 Flutter 모델 간 필드 불일치 완전 해결
 - **작업 내용**:
-  - Posts Model: 13개 투표 관련 필드 추가 (vote_start_time, vote_end_time, votes_a, votes_b 등)
-  - Messages Model: 9개 투표 카드 필드 추가 (receiver_id, vote_option_a_images[], card_status 등)
+  - Posts Model: 13개 투표 관련 필드 추가 (voteStartTime, voteEndTime, votesA, votesB 등)
+  - Messages Model: 9개 투표 카드 필드 추가 (receiverId, voteOptionAImages[], cardStatus 등)
   - Notifications Model: 9개 필드 추가 + JSON 파싱 로직 구현
-  - Users Model: 오타 수정 (frinds → friends, is_prmium_user → is_premium_user)
+  - Users Model: 오타 수정 (frinds → friends, isPremiumUser)
   - 모든 모델에서 backward compatibility 유지 (@Deprecated 어노테이션 사용)
 - **해결된 기능**:
   - 투표 시스템 완전 작동: 타이머, 상태 추적, 완료 처리
@@ -1163,8 +1163,8 @@ if (model.isVideoSelectedA) {
 ### 2025-08-06: 투표 메시지 컴포넌트 통합 및 UI/UX 개선
 - **작업 내용**:
   - VoteRequestMessage 컴포넌트 완전 제거:
-    - vote_request_message.dart (935줄)
-    - vote_request_message_skeleton.dart (126줄)
+    - vote_request_message.dart (935줄) - VoteCardMessage로 통합
+    - vote_request_message_skeleton.dart (126줄) - 제거
     - 모든 기능을 VoteCardMessage로 통합
   - UI/UX 개선:
     - expand/collapse 기능 제거

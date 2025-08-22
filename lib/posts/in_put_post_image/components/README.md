@@ -1,6 +1,11 @@
 # Components Directory
 
 ## 개요 (Overview)
+
+## 🎯 네이밍 컨벤션
+- **파일명**: snake_case (Dart 표준)
+- **필드명**: camelCase
+- 참조: [NAMING_CONVENTION.md](../../NAMING_CONVENTION.md)
 이 디렉토리는 In Put Post Image 모듈에서 사용되는 재사용 가능한 UI 컴포넌트들을 포함합니다. 각 컴포넌트는 독립적으로 작동하며 명확한 책임을 가지고 있습니다.
 
 ## 파일 설명 (File Descriptions)

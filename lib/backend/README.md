@@ -1,436 +1,475 @@
-# Backend Integration
+# Backend Module - 백엔드 통합 레이어
 
-Versus Space 앱의 백엔드 통합 레이어입니다. Firebase 및 외부 서비스와의 모든 통신을 관리합니다.
+Versus Space 앱의 모든 백엔드 서비스와 데이터 관리를 담당하는 핵심 모듈입니다.
 
-## 📋 디렉토리 구조
+## 📋 개요
+
+이 모듈은 Firebase 생태계(Firestore, Storage, Authentication)와 외부 서비스(Algolia, API)의 통합을 관리합니다. 모든 데이터 모델, 저장소, 검색, API 통신을 중앙에서 조율하여 일관된 백엔드 인터페이스를 제공합니다.
+
+### 핵심 특징
+- **Firebase 완전 통합**: Auth, Firestore, Storage, Functions
+- **43개 데이터 모델**: 완전한 타입 안전성과 null safety
+- **실시간 동기화**: Firestore 실시간 리스너와 스트림
+- **고급 검색**: Algolia 통합으로 빠른 전문 검색
+- **외부 API 통합**: HTTP 클라이언트와 다양한 API 지원
+- **오프라인 지원**: Firestore 캐싱과 오프라인 지속성
+
+## 🎯 네이밍 컨벤션
+
+### 파일명
+- **모든 파일**: snake_case (`api_calls.dart`, `firebase_config.dart`)
+- **디렉토리**: snake_case (`firebase_storage`, `api_requests`)
+
+### 코드 컨벤션
+- **Firestore 필드**: camelCase (`userId`, `createdAt`, `voteStatus`)
+- **Dart 변수/메서드**: camelCase (`getUserData()`, `isLoggedIn`)
+- **클래스**: PascalCase (`ApiManager`, `UsersModel`)
+- **상수**: UPPER_SNAKE_CASE 또는 camelCase
+
+참조: [NAMING_CONVENTION.md](../../NAMING_CONVENTION.md)
+
+## 📂 디렉토리 구조
 
 ```
-backend/
-├── schema/                 # Firestore 데이터 모델
-│   ├── users_model.dart
-│   ├── posts_model.dart
-│   ├── messages_model.dart
-│   ├── notifications_model.dart
-│   ├── chats_model.dart
-│   └── util/              # 스키마 유틸리티
-├── firebase/              # Firebase 설정 및 초기화
-│   ├── firebase_config.dart
-│   └── firebase.dart
-├── firebase_storage/      # Firebase Storage 관리
-│   └── storage.dart
-├── algolia/              # Algolia 검색 통합
-│   └── algolia_manager.dart
-├── api_requests/         # 외부 API 호출
-│   └── api_calls.dart
-└── query/               # Firestore 쿼리 헬퍼
-    └── query_util.dart
+lib/backend/
+├── README.md                    # 이 문서
+├── backend.dart                 # 백엔드 모듈 export
+├── algolia/                     # Algolia 검색 엔진 ✅
+│   ├── algolia_manager.dart    # 검색 매니저
+│   ├── serializers.dart        # 데이터 직렬화
+│   └── README.md               # 244줄 문서
+├── api_requests/                # HTTP API 클라이언트 ✅
+│   ├── api_calls.dart          # API 호출 정의
+│   ├── api_manager.dart        # HTTP 클라이언트
+│   ├── api_requests_util.dart  # 유틸리티
+│   └── README.md               # 382줄 문서
+├── firebase/                    # Firebase 초기화 ✅
+│   ├── firebase_config.dart    # 설정 및 초기화
+│   └── README.md               # 250줄 문서
+├── firebase_storage/            # Firebase Storage ✅
+│   ├── storage.dart            # 파일 업로드/다운로드
+│   └── README.md               # 257줄 문서
+├── push_notifications/          # 푸시 알림
+│   └── push_notifications_handler.dart
+├── query/                       # Firestore 쿼리 유틸
+│   └── query_util.dart         # 쿼리 헬퍼
+├── schema/                      # Firestore 데이터 모델 ✅
+│   ├── [43개 모델 파일]        # 데이터 모델들
+│   ├── index.dart              # Export 파일
+│   ├── util/                   # 유틸리티 ✅
+│   │   ├── firestore_util.dart # Firestore 변환
+│   │   ├── schema_util.dart    # 스키마 유틸
+│   │   └── README.md           # 404줄 문서
+│   └── README.md               # 435줄 문서
+└── supabase/                    # Supabase (미사용)
+    └── supabase.dart
 ```
 
-## 주요 컴포넌트
+## 🔧 주요 구성요소
 
-### 1. Schema (데이터 모델)
+### 1. Schema - Firestore 데이터 모델 (✅ 완전 문서화)
 
-Firestore 컬렉션과 1:1 매핑되는 데이터 모델들입니다.
+**43개 모델**이 Firestore 컬렉션과 1:1 매핑되어 완벽한 타입 안전성을 제공합니다.
 
-#### 핵심 모델
-- **UsersModel**: 사용자 프로필 및 설정
-- **PostsModel**: A vs B 게시물 (투표 시스템 포함)
-- **MessagesModel**: 채팅 메시지 (투표 카드 지원)
-- **NotificationsModel**: 알림 (JSON 파싱 지원)
-- **ChatsModel**: 채팅방 정보
+#### 핵심 모델 카테고리
+- **사용자**: `UsersModel`, `CharactersModel`, `FriendsListModel`, `PremiumUsersModel`
+- **콘텐츠**: `PostsModel`, `CommentsModel`, `UserContentsModel`, `LikesModel`
+- **채팅**: `ChatsModel`, `MessagesModel`, `GroupChatsModel`
+- **투표**: `VotesModel`, `VotecountsModel`, `VoteExpansionRequestsModel`
+- **알림**: `NotificationsModel`, `NotificationModel`
+- **미디어**: `ImagesModel`, `VideoModel`, `EncodingsModel`
 
-자세한 내용은 [schema/README.md](./schema/README.md) 참조
-
-### 2. Firebase 통합 (/firebase)
-
-#### 초기화
+#### 모델 아키텍처
 ```dart
-// firebase_config.dart
+// 모든 모델이 상속하는 기반 클래스
+abstract class FirestoreRecord {
+  FirestoreRecord(this.reference, this.snapshotData);
+  final DocumentReference reference;
+  Map<String, dynamic> snapshotData;
+}
+
+// 사용 예시
+final user = await UsersModel.getDocumentOnce(userRef);
+print('User: ${user.displayName}, Points: ${user.pointsA}');
+```
+
+📖 **상세 문서**: [schema/README.md](./schema/README.md) (435줄)
+
+### 2. Firebase 초기화 (✅ 완전 문서화)
+
+Firebase 서비스 초기화와 플랫폼별 설정을 관리합니다.
+
+#### 지원 서비스
+- **Authentication**: 7가지 인증 방식
+- **Firestore**: 실시간 데이터베이스
+- **Storage**: 파일 저장소
+- **Functions**: 서버리스 함수 (12개 배포)
+- **Performance**: 성능 모니터링
+
+#### 초기화 코드
+```dart
+import 'firebase/firebase_config.dart';
+
+// 앱 시작 시 호출
 await initFirebase();
 ```
 
-#### 설정 내용
-- **프로젝트 ID**: versus-space-1lwwiw
-- **지원 플랫폼**: iOS, Android, Web, macOS
-- **서비스**: Auth, Firestore, Storage, Functions, Performance
+📖 **상세 문서**: [firebase/README.md](./firebase/README.md) (250줄)
 
-#### 보안 규칙
-```javascript
-// Firestore Rules 예시
-match /posts/{post} {
-  allow read: if true;
-  allow create: if request.auth != null;
-  allow update: if request.auth.uid == resource.data.userid;
-  allow delete: if false;
-}
-```
+### 3. Firebase Storage (✅ 완전 문서화)
 
-### 3. Firebase Storage (/firebase_storage)
+파일 업로드, 다운로드, 관리를 담당합니다.
 
-파일 업로드 및 관리를 담당합니다.
-
+#### 주요 기능
 ```dart
-// 이미지 업로드
-final downloadUrl = await uploadData(
-  'posts/images/${timestamp}_${uid}.jpg',
-  imageBytes,
+// 파일 업로드
+String? downloadUrl = await uploadData(
+  'posts/images/${timestamp}.jpg',
+  imageBytes
 );
 
-// 파일 삭제
-await deleteData(downloadUrl);
-
-// 메타데이터 설정
-await uploadDataWithMetadata(
-  path: 'videos/${filename}',
-  data: videoBytes,
-  metadata: {
-    'userId': currentUser.uid,
-    'uploadTime': DateTime.now().toIso8601String(),
-  },
-);
+// MIME 타입 자동 감지
+// 지원: 이미지(jpg,png,gif,webp), 비디오(mp4,mov,avi), 문서(pdf,doc)
 ```
 
-**저장소 구조:**
+#### 저장소 구조
 ```
-/posts
-  /images         # 게시물 이미지
-  /videos         # 게시물 비디오
-/users
-  /profiles       # 프로필 사진
-  /characters     # 캐릭터 이미지
-/chat
-  /images         # 채팅 이미지
-  /videos         # 채팅 비디오
+/users/{userId}/         # 사용자 콘텐츠
+  profile/              # 프로필 이미지
+  uploads/              # 사용자 업로드
+/posts/                 # 게시물 미디어
+  images/              # 이미지
+  videos/              # 비디오
+  thumbnails/          # 썸네일
 ```
 
-### 4. Algolia 검색 (/algolia)
+📖 **상세 문서**: [firebase_storage/README.md](./firebase_storage/README.md) (257줄)
 
-고급 검색 기능을 제공합니다.
+### 4. Algolia 검색 (✅ 완전 문서화)
 
+고급 검색 기능과 위치 기반 검색을 제공합니다.
+
+#### 검색 유형
+- **텍스트 검색**: 키워드 기반 전문 검색
+- **위치 기반 검색**: 좌표와 반경 설정
+- **하이브리드 검색**: 텍스트 + 위치 조합
+
+#### 사용 예시
 ```dart
-// 검색 매니저 초기화
-AlgoliaManager.instance.init(
-  appId: 'YOUR_APP_ID',
-  searchApiKey: 'YOUR_SEARCH_KEY',
-);
-
-// 게시물 검색
+// 텍스트 검색
 final results = await AlgoliaManager.instance.search(
-  index: 'posts',
+  'posts',
   query: '커피',
-  filters: 'category:음식',
-  hitsPerPage: 20,
+  searchType: SearchType.query,
+  maxResults: 20,
 );
 
-// 사용자 검색
-final users = await AlgoliaManager.instance.searchUsers(
-  query: '홍길동',
-  filters: 'interests:게임',
+// 위치 기반 검색
+final nearbyPosts = await AlgoliaManager.instance.search(
+  'posts',
+  location: LatLng(37.5665, 126.9780),
+  searchRadiusInMiles: 5,
+  searchType: SearchType.geo,
 );
 ```
 
-**인덱스 구조:**
-- `posts`: 게시물 검색
-- `users`: 사용자 검색
-- `comments`: 댓글 검색
+📖 **상세 문서**: [algolia/README.md](./algolia/README.md) (244줄)
 
-### 5. API 요청 (/api_requests)
+### 5. API Requests (✅ 완전 문서화)
 
-외부 API와의 통신을 관리합니다.
+외부 API와의 통신을 관리하는 HTTP 클라이언트입니다.
 
+#### 지원 기능
+- **모든 HTTP 메서드**: GET, POST, PUT, PATCH, DELETE
+- **다양한 바디 타입**: JSON, Form, Multipart, Text
+- **인증**: Bearer 토큰, API 키
+- **캐싱**: 응답 캐싱 메커니즘
+
+#### 통합된 API
 ```dart
-// API 호출 예시
-final response = await ApiCallManager.instance.makeApiCall(
-  callName: 'CheckContent',
+// Perspective API - 텍스트 검열
+final toxicity = await ApiCallManager.makeApiCall(
+  callName: 'CheckToxicity',
   apiUrl: 'https://api.perspective.com/v1/comments:analyze',
   callType: ApiCallType.POST,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  params: {
-    'text': userInput,
-    'requestedAttributes': {
-      'TOXICITY': {},
-      'PROFANITY': {},
-    },
-  },
-  returnBody: true,
+  // ...
+);
+
+// 비디오 인코딩 서비스
+final encodingUrl = await EncoderGroup.getUploadUrlCall(
+  filename: 'video.mp4',
+  userToken: authToken,
 );
 ```
 
-**통합된 API:**
-- Perspective API (텍스트 검열)
-- Google Cloud Vision (이미지 검열)
-- Gemini AI (콘텐츠 검증)
+📖 **상세 문서**: [api_requests/README.md](./api_requests/README.md) (382줄)
 
-### 6. 쿼리 유틸리티 (/query)
+### 6. Query 유틸리티
 
 Firestore 쿼리를 위한 헬퍼 함수들입니다.
 
+#### 주요 기능
 ```dart
-// 페이지네이션 쿼리
-Query<Map<String, dynamic>> pageQuery = FirebaseFirestore.instance
-  .collection('posts')
-  .orderBy('created_at', descending: true)
-  .limit(20);
+// 페이지네이션
+Query<Map<String, dynamic>> paginatedQuery(
+  Query query,
+  {DocumentSnapshot? lastDoc, int limit = 20}
+) {
+  if (lastDoc != null) {
+    return query.startAfterDocument(lastDoc).limit(limit);
+  }
+  return query.limit(limit);
+}
 
-// 다음 페이지
-pageQuery = pageQuery.startAfterDocument(lastDocument);
-
-// 복합 쿼리
-final query = FirebaseFirestore.instance
-  .collection('posts')
-  .where('category', isEqualTo: 'sports')
-  .where('vote_count', isGreaterThan: 100)
-  .orderBy('vote_count', descending: true)
-  .limit(10);
+// 실시간 스트림
+Stream<List<T>> queryCollection<T>(
+  Query query,
+  T Function(DocumentSnapshot) fromSnapshot,
+) {
+  return query.snapshots().map((snapshot) =>
+    snapshot.docs.map(fromSnapshot).toList()
+  );
+}
 ```
 
-## 실시간 업데이트
+### 7. Push Notifications
 
-### StreamBuilder 패턴
+FCM을 통한 푸시 알림 처리를 담당합니다.
+
+#### 기능
+- 토큰 관리
+- 알림 권한 요청
+- 포그라운드/백그라운드 처리
+- 딥링크 라우팅
+
+## 🚀 사용 예시
+
+### 데이터 읽기/쓰기
 ```dart
-StreamBuilder<List<PostsModel>>(
-  stream: queryPostsRecord(
-    queryBuilder: (postsRecord) => postsRecord
-      .where('userid', isEqualTo: currentUserUid)
-      .orderBy('created_at', descending: true),
-    limit: 20,
-  ),
-  builder: (context, snapshot) {
-    if (!snapshot.hasData) {
-      return CircularProgressIndicator();
-    }
-    
-    final posts = snapshot.data!;
-    return ListView.builder(
-      itemCount: posts.length,
-      itemBuilder: (context, index) {
-        final post = posts[index];
-        return PostCard(post: post);
-      },
-    );
-  },
-)
+// 사용자 프로필 읽기
+final user = await UsersModel.getDocumentOnce(
+  FirebaseFirestore.instance.doc('users/$userId')
+);
+
+// 게시물 생성
+final postData = createPostsModelData(
+  userId: currentUserUid,
+  questionTitle: '커피 vs 차',
+  optionA: {'text': '커피', 'imageUrl': coffeeUrl},
+  optionB: {'text': '차', 'imageUrl': teaUrl},
+  voteStartTime: DateTime.now(),
+  voteEndTime: DateTime.now().add(Duration(minutes: 10)),
+);
+
+await FirebaseFirestore.instance
+  .collection('posts')
+  .add(postData);
 ```
 
-### 실시간 리스너
+### 실시간 업데이트
 ```dart
-// 채팅 메시지 리스너
-StreamSubscription? _messageSubscription;
-
-void startListeningToMessages(String chatId) {
-  _messageSubscription = FirebaseFirestore.instance
+// 채팅 메시지 스트림
+StreamBuilder<List<MessagesModel>>(
+  stream: FirebaseFirestore.instance
     .collection('chats')
     .doc(chatId)
     .collection('messages')
-    .orderBy('time_stamp', descending: true)
+    .orderBy('timeStamp', descending: true)
     .snapshots()
-    .listen((snapshot) {
-      for (var change in snapshot.docChanges) {
-        if (change.type == DocumentChangeType.added) {
-          // 새 메시지 처리
-          handleNewMessage(change.doc);
-        }
-      }
-    });
-}
-
-// 정리
-void dispose() {
-  _messageSubscription?.cancel();
-}
+    .map((snapshot) => snapshot.docs
+      .map((doc) => MessagesModel.fromDocument(doc))
+      .toList()),
+  builder: (context, snapshot) {
+    if (!snapshot.hasData) return LoadingIndicator();
+    
+    final messages = snapshot.data!;
+    return MessageList(messages: messages);
+  },
+);
 ```
 
-## 트랜잭션 처리
-
-### 원자적 업데이트
+### 트랜잭션 처리
 ```dart
-// 투표 처리 트랜잭션
-Future<void> voteOnPost(String postId, String choice) async {
+// 원자적 투표 처리
+Future<void> voteOnPost(String postId, VoteChoice choice) async {
   await FirebaseFirestore.instance.runTransaction((transaction) async {
     final postRef = FirebaseFirestore.instance
       .collection('posts')
       .doc(postId);
     
     final postDoc = await transaction.get(postRef);
-    final postData = postDoc.data()!;
+    if (!postDoc.exists) throw Exception('Post not found');
     
-    // 중복 투표 확인
-    final votedUsersA = List<String>.from(postData['voted_user_ids_a'] ?? []);
-    final votedUsersB = List<String>.from(postData['voted_user_ids_b'] ?? []);
+    final post = PostsModel.fromDocument(postDoc);
     
-    if (votedUsersA.contains(currentUserUid) || 
-        votedUsersB.contains(currentUserUid)) {
-      throw Exception('이미 투표했습니다');
+    // 중복 투표 검증
+    if (post.votedUserIdsA.contains(currentUserUid) ||
+        post.votedUserIdsB.contains(currentUserUid)) {
+      throw Exception('Already voted');
     }
     
     // 투표 업데이트
-    if (choice == 'A') {
-      transaction.update(postRef, {
-        'votes_a': FieldValue.increment(1),
-        'voted_user_ids_a': FieldValue.arrayUnion([currentUserUid]),
-        'total_votes': FieldValue.increment(1),
-      });
-    } else {
-      transaction.update(postRef, {
-        'votes_b': FieldValue.increment(1),
-        'voted_user_ids_b': FieldValue.arrayUnion([currentUserUid]),
-        'total_votes': FieldValue.increment(1),
-      });
-    }
+    final field = choice == VoteChoice.A ? 'votesA' : 'votesB';
+    final userField = choice == VoteChoice.A 
+      ? 'votedUserIdsA' : 'votedUserIdsB';
+    
+    transaction.update(postRef, {
+      field: FieldValue.increment(1),
+      userField: FieldValue.arrayUnion([currentUserUid]),
+      'totalVotes': FieldValue.increment(1),
+    });
   });
 }
 ```
 
-## 오프라인 지원
+## 📊 데이터 플로우
 
-### 캐싱 설정
-```dart
-// Firestore 오프라인 지속성 활성화
-FirebaseFirestore.instance.settings = Settings(
-  persistenceEnabled: true,
-  cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-);
+### 읽기 플로우
+```
+Firestore Document
+    ↓
+DocumentSnapshot
+    ↓
+mapFromFirestore() [util]
+    ↓
+Model Instance
+    ↓
+UI Component
 ```
 
-### 네트워크 상태 처리
-```dart
-// 네트워크 상태 감지
-StreamBuilder<ConnectivityResult>(
-  stream: Connectivity().onConnectivityChanged,
-  builder: (context, snapshot) {
-    if (snapshot.data == ConnectivityResult.none) {
-      return OfflineBanner();
-    }
-    return Container();
-  },
-)
+### 쓰기 플로우
+```
+User Input
+    ↓
+Validation
+    ↓
+createModelData()
+    ↓
+mapToFirestore() [util]
+    ↓
+Firestore Document
 ```
 
-## 성능 최적화
+### 검색 플로우
+```
+Search Query
+    ↓
+AlgoliaManager
+    ↓
+Algolia Index
+    ↓
+Result Serialization
+    ↓
+Model Instances
+```
 
-### 1. 쿼리 최적화
-- 필요한 필드만 선택
-- 적절한 인덱스 생성
-- 페이지네이션 사용
+## ⚡ 성능 최적화
 
-### 2. 캐싱 전략
-- 이미지 캐싱 (CachedNetworkImage)
-- 데이터 캐싱 (SharedPreferences)
-- 메모리 캐싱 (Provider)
+### 쿼리 최적화
+- **인덱스 활용**: 복합 인덱스로 쿼리 성능 향상
+- **페이지네이션**: 대량 데이터 점진적 로드
+- **필드 선택**: 필요한 필드만 가져오기
 
-### 3. 배치 처리
+### 캐싱 전략
+- **Firestore 오프라인 캐시**: 자동 오프라인 지원
+- **이미지 캐싱**: CachedNetworkImage 사용
+- **API 응답 캐싱**: 메모리 캐시로 중복 요청 방지
+
+### 배치 처리
 ```dart
-// 배치 쓰기
+// 여러 문서 동시 업데이트
 final batch = FirebaseFirestore.instance.batch();
 
-for (var item in items) {
-  final docRef = FirebaseFirestore.instance
-    .collection('items')
-    .doc();
-  batch.set(docRef, item.toJson());
-}
+items.forEach((item) {
+  final docRef = collection.doc(item.id);
+  batch.update(docRef, item.toJson());
+});
 
 await batch.commit();
 ```
 
-## 에러 처리
+## 🔒 보안 고려사항
+
+### Firestore 보안 규칙
+```javascript
+// 읽기: 모든 사용자
+// 쓰기: 인증된 사용자만
+match /posts/{post} {
+  allow read: if true;
+  allow create: if request.auth != null;
+  allow update: if request.auth.uid == resource.data.userId;
+  allow delete: if false;
+}
+```
+
+### Storage 보안 규칙
+```javascript
+// 사용자별 저장소 격리
+match /users/{userId}/{allPaths=**} {
+  allow read: if request.auth != null;
+  allow write: if request.auth.uid == userId;
+}
+```
+
+### API 키 관리
+- 환경 변수 사용
+- 키 로테이션
+- 최소 권한 원칙
+
+## 🐛 문제 해결
 
 ### 일반적인 에러
+
+#### Permission Denied
 ```dart
+// 권한 오류 처리
 try {
-  await someFirestoreOperation();
+  await firestoreOperation();
 } on FirebaseException catch (e) {
-  switch (e.code) {
-    case 'permission-denied':
-      showToast('권한이 없습니다');
-      break;
-    case 'unavailable':
-      showToast('서버에 연결할 수 없습니다');
-      break;
-    default:
-      showToast('오류가 발생했습니다');
+  if (e.code == 'permission-denied') {
+    showError('권한이 없습니다. 로그인을 확인해주세요.');
   }
 }
 ```
 
-## 마이그레이션 노트
-
-### 2025-07-31: 컬렉션 이름 정규화
-- 모든 `_record` 접미사 제거
-- 예: `users_record` → `users`
-- Flutter와 Firebase Functions 통일
-
-### 2025-08-03: 필드 동기화
-- 37개 필드 추가/수정
-- 투표 시스템 필드 완성
-- 멀티이미지 지원 추가
-
-## 최근 문제 해결 (2025-08-03)
-
-### AI 채팅 메시지 표시 문제
-**문제**: Firebase Functions에서 AI 채팅 메시지를 생성하지만 Flutter 앱에 표시되지 않음
-
-**원인 분석**:
-1. Firebase Functions 로그 확인 결과 메시지는 정상 생성됨
-2. 채팅방 ID: `ai_assistant_userId` 형식으로 생성
-3. Flutter 쿼리가 AI 채팅방을 제대로 가져오지 못함
-
-**해결 방법**:
+#### 네트워크 오류
 ```dart
-// AI 채팅방 쿼리 수정
-Stream<List<ChatsModel>> getAIChats() {
-  return FirebaseFirestore.instance
-    .collection('chats')
-    .where('participantIds', arrayContains: currentUser.uid)
-    .where('chat_type', isEqualTo: 'ai_chat')
-    .snapshots()
-    .map((snapshot) => snapshot.docs
-        .map((doc) => ChatsModel.fromDocument(doc))
-        .toList());
+// 오프라인 상태 처리
+if (snapshot.hasError && !snapshot.hasData) {
+  return OfflineWidget();
 }
 ```
 
-### 투표 권한 오류
-**문제**: `[cloud_firestore/permission-denied]` 투표 시 권한 오류 발생
-
-**해결**: Firebase Security Rules 수정
-```javascript
-// 이전 (오류 발생)
-&& !(request.auth.uid in resource.data.votedUserIDsA)
-&& !(request.auth.uid in resource.data.votedUserIDsB)
-
-// 수정 후 (필드 존재 여부 확인)
-&& (
-  (!('votedUserIDsA' in resource.data) || !(request.auth.uid in resource.data.votedUserIDsA))
-  && (!('votedUserIDsB' in resource.data) || !(request.auth.uid in resource.data.votedUserIDsB))
-)
+#### 타입 캐스팅 오류
+```dart
+// 안전한 타입 변환
+final value = castToType<int>(data['field']) ?? 0;
 ```
 
-### 테스트 함수 추가
-AI 채팅 메시지 수동 생성을 위한 테스트 함수 배포:
-```bash
-# 사용 예시
-curl -X POST https://asia-northeast3-versus-space-1lwwiw.cloudfunctions.net/testCreateAIChatMessage \
-  -H "Content-Type: application/json" \
-  -d '{
-    "userId": "사용자ID",
-    "postId": "게시물ID",
-    "messageType": "request" // 또는 "created"
-  }'
-```
+## 🔗 관련 문서
 
-## 향후 개선 사항
+### 하위 모듈 문서
+- [Schema 모듈 (435줄)](./schema/README.md) - Firestore 데이터 모델
+- [Schema Util (404줄)](./schema/util/README.md) - 데이터 변환 유틸리티
+- [Firebase 초기화 (250줄)](./firebase/README.md) - Firebase 설정
+- [Firebase Storage (257줄)](./firebase_storage/README.md) - 파일 저장소
+- [Algolia 검색 (244줄)](./algolia/README.md) - 검색 엔진
+- [API Requests (382줄)](./api_requests/README.md) - HTTP 클라이언트
 
-1. **GraphQL 통합**
-   - 효율적인 데이터 페칭
-   - 실시간 구독
+### 프로젝트 문서
+- [전체 프로젝트 구조](../../README.md)
+- [네이밍 컨벤션](../../NAMING_CONVENTION.md)
+- [아키텍처](../../ARCHITECTURE.md)
 
-2. **캐싱 레이어**
-   - Redis 통합
-   - 응답 시간 개선
+## 📝 변경 이력
 
-3. **분석 통합**
-   - Firebase Analytics
-   - 커스텀 이벤트 추적
+- **2025-08-22**: 문서 전면 개정, 6개 하위 모듈 통합 문서화
+- **2025-08-21**: snake_case → camelCase 완전 마이그레이션
+- **2025-08-03**: 필드 동기화, 투표 시스템 통합
+- **2025-07-31**: 컬렉션명 정규화 (_record 제거)
+- **초기**: Backend 모듈 구현
+
+---
+
+*이 문서는 `/lib/backend` 디렉토리의 백엔드 통합 레이어를 설명합니다.*
+*총 2,372줄의 하위 문서를 통합하여 작성되었습니다.*

@@ -136,8 +136,8 @@ FirebaseFirestore.instance
     .add(data);
 
 // 로그 태그
-logger.info('vote_request_sent', data);     // ✅ snake_case 태그
-logger.error('notification_failed', error);  // ✅ snake_case 태그
+logger.info('voteRequestSent', data);       // ✅ camelCase 태그
+logger.error('notificationFailed', error);   // ✅ camelCase 태그
 ```
 
 ### 4. 외부 API 필드
@@ -188,5 +188,5 @@ final requestBody = {
 ## 🔗 관련 문서
 
 - [CLAUDE.md](./CLAUDE.md) - 프로젝트 전체 가이드
-- [MIGRATION_REPORT.md](./MIGRATION_REPORT.md) - 마이그레이션 상세 보고서
+- [MIGRATION_SUMMARY.md](./MIGRATION_SUMMARY.md) - 마이그레이션 상세 보고서
 - [Dart Style Guide](https://dart.dev/guides/language/effective-dart/style) - Dart 공식 스타일 가이드

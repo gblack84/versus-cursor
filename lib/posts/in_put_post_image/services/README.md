@@ -1,6 +1,11 @@
 # Services Directory
 
 ## 개요 (Overview)
+
+## 🎯 네이밍 컨벤션
+- **파일명**: snake_case (Dart 표준)
+- **필드명**: camelCase
+- 참조: [NAMING_CONVENTION.md](../../NAMING_CONVENTION.md)
 이 디렉토리는 비즈니스 로직과 외부 서비스 통합을 담당하는 서비스 클래스들을 포함합니다. 주로 이미지 업로드, 콘텐츠 검열, Firebase 통합 등을 처리합니다.
 
 ## 파일 설명 (File Descriptions)

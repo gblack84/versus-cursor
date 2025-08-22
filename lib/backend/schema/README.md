@@ -1,209 +1,435 @@
-# Flutter Backend Schema Documentation
+# Schema Module - Firestore Data Models
 
-이 디렉토리는 Versus Space 앱의 Firestore 데이터 모델을 정의합니다. 모든 모델은 Firebase Functions와 완벽하게 동기화되어 있습니다.
+Versus Space 앱의 Firestore 데이터 모델을 정의하고 관리하는 핵심 모듈입니다.
 
-## 📋 데이터 모델 개요
+## 📋 개요
 
-### 핵심 컬렉션
+이 디렉토리는 Versus Space 애플리케이션의 모든 Firestore 데이터 모델을 포함합니다. 각 모델은 Firestore 문서와 Flutter 객체 간의 양방향 데이터 변환을 처리하며, 타입 안전성과 null safety를 보장합니다.
 
-#### 1. **users** (UsersModel)
-사용자 프로필 및 설정 정보를 저장합니다.
+### 핵심 특징
+- **43개 데이터 모델**: 완전한 앱 기능을 위한 포괄적인 모델 세트
+- **FirestoreRecord 상속**: 모든 모델이 공통 기반 클래스 상속
+- **타입 안전성**: 강력한 타입 체크와 null safety 지원
+- **자동 직렬화**: Firestore ↔ Flutter 자동 변환
+- **Backward Compatibility**: 레거시 필드명 지원
 
-**주요 필드:**
-- `uid`: 사용자 고유 ID
-- `email`: 이메일 주소
-- `display_name`: 표시 이름
-- `photo_url`: 프로필 사진 URL
-- `points_A`: 답변 포인트
-- `points_Q`: 질문 포인트
-- `interests[]`: 관심사 목록
-- `expertise[]`: 전문 분야 목록
-- `friends[]`: 친구 목록 (이전 `frinds` 오타 수정됨)
-- `isPremiumUser`: 프리미엄 사용자 여부 (이전 `is_prmium_user` 오타 수정됨)
-- `role`: 사용자 역할 (admin/tester/user)
-- `lastActive`: 마지막 활동 시간
+## 🎯 네이밍 컨벤션
 
-#### 2. **posts** (PostsModel) 
-A vs B 형식의 게시물 정보를 저장합니다.
+### 파일명
+- **모델 파일**: snake_case (`users_model.dart`, `posts_model.dart`)
+- **유틸리티**: snake_case (`firestore_util.dart`, `schema_util.dart`)
+- **인덱스**: snake_case (`index.dart`)
 
-**주요 필드:**
-- `userId`: 작성자 ID (camelCase ✅)
-- `questionTitle`: 질문 제목
-- `optionA`: A 옵션 정보 (Map 구조)
-- `optionB`: B 옵션 정보 (Map 구조)
-- `description`: 설명
-- `targetAudience`: 타겟 오디언스 설정
+### 필드명 (2025-08-21 완전 마이그레이션)
+- **Firestore 필드**: camelCase (`userId`, `createdAt`, `voteStartTime`)
+- **Dart 변수**: camelCase (`displayName`, `photoUrl`, `lastActive`)
+- **메서드**: camelCase (`hasUserId()`, `getDocumentOnce()`)
+- **클래스**: PascalCase (`UsersModel`, `PostsModel`)
 
-**투표 시스템 필드 (camelCase 마이그레이션 완료):**
-- `voteStartTime`: 투표 시작 시간 (이전: vote_start_time)
-- `voteEndTime`: 투표 종료 시간 (이전: vote_end_time)
-- `voteStatus`: 투표 상태 (이전: vote_status)
-- `voteCompleted`: 투표 완료 여부 (이전: vote_completed)
-- `votesA`: A 옵션 투표수 (이전: votes_a)
-- `votesB`: B 옵션 투표수 (이전: votes_b)
-- `votedUserIdsA[]`: A에 투표한 사용자 ID 목록 (이전: voted_user_ids_a)
-- `votedUserIdsB[]`: B에 투표한 사용자 ID 목록 (이전: voted_user_ids_b)
-- `totalVotes`: 총 투표수 (이전: total_votes)
+참조: [NAMING_CONVENTION.md](../../../NAMING_CONVENTION.md)
 
-#### 3. **messages** (MessagesModel)
-채팅 메시지 정보를 저장합니다. (chats 컬렉션의 서브컬렉션)
+## 📂 디렉토리 구조
 
-**기본 메시지 필드 (camelCase):**
-- `messageId`: 메시지 고유 ID (이전: message_id)
-- `senderId`: 발신자 ID (이전: sender_id)
-- `receiverId`: 수신자 ID (이전: receiver_id)
-- `content`: 메시지 내용
-- `timeStamp`: 전송 시간 (이전: time_stamp)
-- `messageType`: 메시지 타입 (이전: message_type)
-
-**투표 카드 필드 (camelCase):**
-- `votePostId`: 관련 게시물 ID (이전: vote_post_id)
-- `voteOptionAImages[]`: A 옵션 이미지 배열 (이전: vote_option_a_images)
-- `voteOptionBImages[]`: B 옵션 이미지 배열 (이전: vote_option_b_images)
-- `cardStatus`: 카드 상태 (이전: card_status)
-- `voteEndTime`: 투표 종료 시간 (이전: vote_end_time)
-- `userVoted`: 사용자 투표 여부 (이전: user_voted)
-- `voteChoice`: 사용자 선택 (이전: vote_choice)
-- `voteResults`: 투표 결과 (이전: vote_results)
-- `voteParticipatedAt`: 투표 참여 시간 (이전: vote_participated_at)
-
-#### 4. **notifications** (NotificationsModel)
-알림 정보를 저장합니다.
-
-**필드 (2025-08-03 확장):**
-- `notification_id`: 알림 고유 ID
-- `user_id`: 대상 사용자 ID
-- `type`: 알림 타입
-- `source_id`: 소스 ID (게시물 등)
-- `content`: 알림 내용 (JSON 형식)
-- `status`: 상태 (pending/completed)
-- `completed_at`: 완료 시간
-- `title`: 알림 제목
-- `message`: 알림 메시지
-- `image_url`: 이미지 URL
-- `action_url`: 액션 URL
-- `priority`: 우선순위
-- `source_type`: 소스 타입
-
-**JSON 파싱**: `content` 필드가 JSON인 경우 자동으로 `postData` Map으로 파싱됩니다.
-
-#### 5. **chats** (ChatsModel)
-채팅방 정보를 저장합니다.
-
-**필드:**
-- `user_a`, `user_b`: 참여자 ID
-- `participantIds[]`: 참여자 ID 목록
-- `last_message_content`: 마지막 메시지 내용
-- `last_message_at`: 마지막 메시지 시간
-- `chat_type`: 채팅 타입 (ai_chat/direct/group)
-
-### 보조 컬렉션
-
-- **comments**: 게시물 댓글
-- **likes**: 좋아요 정보
-- **dislikes**: 싫어요 정보
-- **characters**: 사용자 아바타/캐릭터
-- **encodings**: 비디오 인코딩 상태
-- **friends_list**: 친구 관계
-- **group_chats**: 그룹 채팅
-- **interest**: 관심사 카테고리
-- **jops_category**, **jops_name**: 직업 카테고리
-- **point**: 포인트 거래 내역
-- **premium_users**: 프리미엄 구독 정보
-- **rankings**: 순위표
-- **searches**: 검색 기록
-- **user_contents**: 사용자 콘텐츠
-
-## 🔄 Firebase Functions와의 동기화
-
-모든 필드는 Firebase Functions와 완벽하게 동기화되어 있습니다:
-
-### 필드명 규칙 (2025-08-21 업데이트)
-- **Flutter**: 100% camelCase 사용 ✅
-- **Firebase Functions**: 100% camelCase 사용 ✅
-- **마이그레이션 완료**: 모든 snake_case 필드가 camelCase로 변환됨
-- **Backward Compatibility**: 완전 제거 (커밋: d7c53da6)
-
-### Backward Compatibility
-오타 수정 시 이전 필드명도 유지:
-```dart
-// Users Model 예시
-@Deprecated('Use friends instead')
-List<String> get frinds => friends;
-
-@Deprecated('Use isPremiumUser instead')
-bool get isPrmiumUser => isPremiumUser;
+```
+lib/backend/schema/
+├── README.md                    # 이 문서
+├── index.dart                   # 공통 export와 의존성
+├── util/                        # 유틸리티 모듈
+│   ├── firestore_util.dart     # Firestore 변환 유틸리티
+│   ├── schema_util.dart        # 스키마 타입 변환
+│   └── README.md               # 유틸리티 문서
+└── [43개 모델 파일]            # 데이터 모델들
 ```
 
-## 📝 모델 사용 예시
+## 🔧 주요 구성요소
+
+### 1. 모델 아키텍처
+
+#### FirestoreRecord 기반 클래스
+모든 모델이 상속하는 추상 기반 클래스:
+
+```dart
+abstract class FirestoreRecord {
+  FirestoreRecord(this.reference, this.snapshotData);
+  
+  final DocumentReference reference;
+  Map<String, dynamic> snapshotData;
+  
+  // 공통 메서드들
+  static Stream<T> getDocument<T>(DocumentReference ref);
+  static Future<T?> getDocumentOnce<T>(DocumentReference ref);
+}
+```
+
+#### 모델 구조 패턴
+```dart
+class ExampleModel extends FirestoreRecord {
+  ExampleModel._(
+    DocumentReference reference,
+    Map<String, dynamic> data,
+  ) : super(reference, data) {
+    _initializeFields();
+  }
+  
+  // 필드 정의
+  String? _fieldName;
+  String get fieldName => _fieldName ?? '';
+  bool hasFieldName() => _fieldName != null;
+  
+  // 초기화 메서드
+  void _initializeFields() {
+    _fieldName = castToType<String>(snapshotData['fieldName']);
+  }
+  
+  // 팩토리 메서드
+  static ExampleModel getDocumentFromData(
+    Map<String, dynamic> data,
+    DocumentReference reference,
+  ) => ExampleModel._(reference, data);
+}
+```
+
+### 2. 핵심 모델 카테고리
+
+#### 사용자 관련 모델
+| 모델명 | 용도 | 주요 필드 |
+|--------|------|-----------|
+| `UsersModel` | 사용자 프로필 | uid, email, displayName, pointsA/Q, interests |
+| `CharactersModel` | 아바타 정보 | characterId, userId, avatarUrl |
+| `FriendsListModel` | 친구 관계 | userId, friendId, status, createdAt |
+| `PremiumUsersModel` | 프리미엄 구독 | userId, subscriptionType, expiresAt |
+
+#### 콘텐츠 관련 모델
+| 모델명 | 용도 | 주요 필드 |
+|--------|------|-----------|
+| `PostsModel` | 게시물 | userId, questionTitle, optionA/B, votes, voteStatus |
+| `CommentsModel` | 댓글 | postId, userId, content, likes, dislikes |
+| `UserContentsModel` | 사용자 콘텐츠 | userId, contentType, polls, feeds |
+| `LikesModel` | 좋아요 | userId, postId, timestamp |
+| `DislikesModel` | 싫어요 | userId, postId, timestamp |
+
+#### 채팅 관련 모델
+| 모델명 | 용도 | 주요 필드 |
+|--------|------|-----------|
+| `ChatsModel` | 채팅방 | participantIds, lastMessage, chatType |
+| `MessagesModel` | 메시지 | senderId, content, messageType, voteCard |
+| `GroupChatsModel` | 그룹 채팅 | groupName, memberIds, adminId |
+| `GroupMessagesModel` | 그룹 메시지 | groupId, senderId, content |
+
+#### 투표 관련 모델
+| 모델명 | 용도 | 주요 필드 |
+|--------|------|-----------|
+| `VotesModel` | 투표 정보 | postId, userId, choice, votedAt |
+| `VotecountsModel` | 투표 집계 | postId, votesA, votesB, totalVotes |
+| `VoteExpansionRequestsModel` | 투표 확장 요청 | postId, requesterId, reason |
+
+#### 알림 관련 모델
+| 모델명 | 용도 | 주요 필드 |
+|--------|------|-----------|
+| `NotificationsModel` | 알림 | userId, type, content, status, priority |
+| `NotificationModel` | 개별 알림 설정 | userId, pushEnabled, emailEnabled |
+
+#### 미디어 관련 모델
+| 모델명 | 용도 | 주요 필드 |
+|--------|------|-----------|
+| `ImagesModel` | 이미지 메타데이터 | imageUrl, thumbnailUrl, dimensions |
+| `VideoModel` | 비디오 메타데이터 | videoUrl, duration, thumbnail |
+| `EncodingsModel` | 인코딩 상태 | videoId, status, progress, formats |
+| `ImageModerationModel` | 이미지 검열 | imageUrl, status, moderationResults |
+
+#### 분류 및 검색 모델
+| 모델명 | 용도 | 주요 필드 |
+|--------|------|-----------|
+| `InterestModel` | 관심사 카테고리 | name, weight, category |
+| `JopsCategoryModel` | 직업 카테고리 | categoryName, parentId |
+| `JopsNameModel` | 직업명 | jobName, categoryId, description |
+| `SearchesModel` | 검색 기록 | userId, query, timestamp, results |
+
+#### 기타 모델
+| 모델명 | 용도 | 주요 필드 |
+|--------|------|-----------|
+| `PointModel` | 포인트 거래 | userId, amount, type, description |
+| `RankingsModel` | 순위표 | userId, rank, score, category |
+| `RankedPostsModel` | 인기 게시물 | postId, rank, score, period |
+| `TransactionsModel` | 거래 내역 | userId, amount, type, status |
+| `SettingsModel` | 앱 설정 | userId, preferences, theme |
+| `ClientModel` | 클라이언트 정보 | clientId, platform, version |
+
+### 3. Util 서브모듈
+
+#### firestore_util.dart
+Firestore와 Flutter 간 데이터 변환 핵심 유틸리티:
+- `mapFromFirestore()`: Firestore → Flutter 변환
+- `mapToFirestore()`: Flutter → Firestore 변환
+- `mergeNestedFields()`: 점 표기법 필드 처리
+- GeoPoint ↔ LatLng 변환 Extension
+
+#### schema_util.dart
+스키마 타입 변환과 구조체 빌더:
+- `convertAlgoliaStruct()`: Algolia 검색 결과 변환
+- `getStructList()`: 구조체 리스트 변환
+- `getSchemaColor()`: 색상 값 처리
+- `getDataList()`: 제네릭 리스트 변환
+
+## 🚀 사용 예시
+
+### 모델 생성 및 초기화
+```dart
+// 새 사용자 생성
+final userData = createUsersModelData(
+  uid: 'user123',
+  email: 'user@example.com',
+  displayName: 'John Doe',
+  interests: ['Flutter', 'Firebase'],
+  pointsA: 100,
+  pointsQ: 50,
+);
+
+// Firestore에 저장
+await FirebaseFirestore.instance
+    .collection('users')
+    .doc('user123')
+    .set(userData);
+```
 
 ### 데이터 읽기
 ```dart
-// 사용자 정보 가져오기
-final userDoc = await UsersModel.getDocumentOnce(userRef);
-final displayName = userDoc.displayName;
+// 단일 문서 읽기
+final userDoc = await UsersModel.getDocumentOnce(
+  FirebaseFirestore.instance.doc('users/user123')
+);
 
-// 게시물 스트림
-final postsStream = PostsModel.getDocument(postRef);
+if (userDoc != null) {
+  print('User: ${userDoc.displayName}');
+  print('Points: A=${userDoc.pointsA}, Q=${userDoc.pointsQ}');
+}
+
+// 실시간 스트림
+final userStream = UsersModel.getDocument(
+  FirebaseFirestore.instance.doc('users/user123')
+);
+
+userStream.listen((user) {
+  if (user != null) {
+    print('Updated: ${user.displayName}');
+  }
+});
 ```
 
-### 데이터 생성
+### 컬렉션 쿼리
 ```dart
-// 새 게시물 생성
+// 활성 사용자 조회
+final activeUsers = await FirebaseFirestore.instance
+    .collection('users')
+    .where('lastActive', isGreaterThan: DateTime.now().subtract(Duration(days: 7)))
+    .get();
+
+final users = activeUsers.docs
+    .map((doc) => UsersModel.getDocumentFromData(
+        doc.data(),
+        doc.reference,
+    ))
+    .toList();
+```
+
+### 투표 시스템 사용
+```dart
+// 투표 게시물 생성
 final postData = createPostsModelData(
-  userid: currentUserUid,
+  userId: currentUserUid,
   questionTitle: '커피 vs 차',
+  optionA: {'text': '커피', 'imageUrl': 'coffee.jpg'},
+  optionB: {'text': '차', 'imageUrl': 'tea.jpg'},
   voteStartTime: DateTime.now(),
   voteEndTime: DateTime.now().add(Duration(minutes: 10)),
   voteStatus: 'active',
+  votesA: 0,
+  votesB: 0,
+);
+
+// 투표하기
+await FirebaseFirestore.instance
+    .collection('posts')
+    .doc(postId)
+    .update({
+  'votesA': FieldValue.increment(1),
+  'votedUserIdsA': FieldValue.arrayUnion([currentUserUid]),
+});
+```
+
+### 채팅 메시지 처리
+```dart
+// 메시지 생성
+final messageData = createMessagesModelData(
+  senderId: currentUserUid,
+  content: 'Hello!',
+  messageType: 'text',
+  timeStamp: DateTime.now(),
+);
+
+// 투표 카드 메시지
+final voteCardData = createMessagesModelData(
+  senderId: 'ai_assistant',
+  messageType: 'vote_card',
+  votePostId: postId,
+  voteOptionAImages: ['imageA1.jpg', 'imageA2.jpg'],
+  voteOptionBImages: ['imageB1.jpg'],
+  voteEndTime: DateTime.now().add(Duration(minutes: 10)),
+  cardStatus: 'active',
 );
 ```
 
-## 🚀 최근 업데이트
+## 📊 데이터 플로우
 
-### 2025-08-03: 필드 불일치 완전 해결
-- 총 37개 필드 추가/수정
-- 투표 시스템 완전 지원
-- 멀티이미지 지원
-- AI 채팅 통합
-- JSON 파싱 로직 추가
+### 읽기 플로우
+```
+Firestore Document
+    ↓
+DocumentSnapshot
+    ↓
+Map<String, dynamic> (raw data)
+    ↓
+mapFromFirestore() [유틸리티]
+    ↓
+Model._initializeFields()
+    ↓
+Model Instance (타입 안전)
+```
 
-## 🔍 주의사항
+### 쓰기 플로우
+```
+Flutter Data
+    ↓
+createModelData() helper
+    ↓
+Map<String, dynamic>
+    ↓
+mapToFirestore() [유틸리티]
+    ↓
+Firestore Document
+```
 
-1. **필드 추가 시**: Firebase Functions와 Flutter 모두 업데이트 필요
-2. **컬렉션명**: 모든 `_record` 접미사가 제거됨 (2025-07-31)
-3. **타입 안전성**: castToType 사용으로 타입 변환 안전성 확보
-4. **서브컬렉션**: messages는 chats의 서브컬렉션으로만 존재
+## ⚡ 성능 최적화
 
-## 🐛 최근 해결된 이슈 (2025-08-03)
-
-### 1. AI 채팅 메시지 생성 문제
-**증상**: 게시물 생성 시 AI 채팅 메시지가 생성되지 않음
-
-**원인**: 
-- Firebase Functions는 정상 작동하나 Flutter에서 표시 안 됨
-- 채팅방 ID가 `ai_assistant_userId` 형식으로 생성
-
-**해결**:
+### 쿼리 최적화
 ```dart
-// ChatsModel 쿼리 수정 필요
-.where('participantIds', arrayContains: currentUserId)
-.where('chat_type', isEqualTo: 'ai_chat')
+// 인덱스 활용
+FirebaseFirestore.instance
+    .collection('posts')
+    .where('voteStatus', isEqualTo: 'active')
+    .where('createdAt', isGreaterThan: yesterday)
+    .orderBy('createdAt', descending: true)
+    .limit(20);
 ```
 
-### 2. 투표 권한 오류
-**증상**: 투표 시 permission-denied 오류
-
-**원인**: votedUserIDsA/B 필드가 없는 경우 보안 규칙 실패
-
-**해결**: Firebase Security Rules에서 필드 존재 여부 확인 추가
-```javascript
-(!('votedUserIDsA' in resource.data) || !(request.auth.uid in resource.data.votedUserIDsA))
+### 캐싱 전략
+```dart
+// DocumentSnapshot 캐싱
+class UserCache {
+  static final Map<String, UsersModel> _cache = {};
+  
+  static Future<UsersModel?> getUser(String userId) async {
+    if (_cache.containsKey(userId)) {
+      return _cache[userId];
+    }
+    
+    final user = await UsersModel.getDocumentOnce(
+      FirebaseFirestore.instance.doc('users/$userId')
+    );
+    
+    if (user != null) {
+      _cache[userId] = user;
+    }
+    return user;
+  }
+}
 ```
 
-### 3. 필드명 불일치
-**증상**: Firebase Functions와 Flutter 간 필드명 불일치
+## 🔒 보안 고려사항
 
-**해결**: 
-- 양방향 호환성 지원 (snake_case와 camelCase)
-- Deprecated 어노테이션으로 이전 필드명 유지
+### 필드 검증
+```dart
+// 입력 검증
+void validateUserInput(Map<String, dynamic> data) {
+  // 필수 필드 확인
+  assert(data['userId'] != null, 'userId is required');
+  assert(data['email'] != null, 'email is required');
+  
+  // 타입 검증
+  assert(data['pointsA'] is int, 'pointsA must be integer');
+  assert(data['interests'] is List, 'interests must be array');
+  
+  // 범위 검증
+  assert(data['pointsA'] >= 0, 'pointsA cannot be negative');
+}
+```
+
+### 민감 정보 처리
+```dart
+// 민감 정보 필터링
+Map<String, dynamic> sanitizeUserData(Map<String, dynamic> data) {
+  final sanitized = Map<String, dynamic>.from(data);
+  
+  // 민감 필드 제거
+  sanitized.remove('phoneNumber');
+  sanitized.remove('email');
+  
+  return sanitized;
+}
+```
+
+## 🐛 문제 해결
+
+### 일반적인 에러
+
+#### 1. 타입 캐스팅 에러
+```dart
+// 문제
+final age = snapshotData['age'] as int; // 실패할 수 있음
+
+// 해결
+final age = castToType<int>(snapshotData['age']) ?? 0;
+```
+
+#### 2. Null Reference 에러
+```dart
+// 문제
+String name = userDoc.displayName; // null일 수 있음
+
+// 해결
+String name = userDoc.hasDisplayName() ? userDoc.displayName : 'Unknown';
+```
+
+#### 3. 필드명 불일치
+```dart
+// Backward compatibility 활용
+// 이전: snake_case
+final oldField = data['user_name'];
+
+// 현재: camelCase
+final newField = data['userName'];
+
+// 모델에서 처리
+String get userName => _userName ?? _user_name ?? '';
+```
+
+## 🔗 관련 문서
+
+- [Util 모듈 상세](./util/README.md)
+- [Backend 모듈](../README.md)
+- [Firebase 초기화](../firebase/README.md)
+- [API 요청](../api_requests/README.md)
+- [Algolia 검색](../algolia/README.md)
+- [Firebase Storage](../firebase_storage/README.md)
+
+## 📝 변경 이력
+
+- **2025-08-22**: 문서 전면 개정 및 상세 설명 추가
+- **2025-08-21**: snake_case → camelCase 완전 마이그레이션
+- **2025-08-03**: 필드 불일치 해결, 투표 시스템 통합
+- **2025-07-31**: 컬렉션명 정규화 (_record 제거)
+- **초기**: Firestore 데이터 모델 구현
+
+---
+
+*이 문서는 `/lib/backend/schema` 디렉토리의 Firestore 데이터 모델을 설명합니다.*

@@ -2,6 +2,11 @@
 
 ## 개요
 
+## 🎯 네이밍 컨벤션
+- **파일명**: snake_case (Dart 표준)
+- **필드명**: camelCase
+- 참조: [NAMING_CONVENTION.md](../../NAMING_CONVENTION.md)
+
 Provider 패턴을 사용한 상태 관리 디렉토리입니다. 현재 NavigationProvider가 구현되어 있으며, 앱의 네비게이션 상태를 중앙에서 관리합니다.
 
 ## NavigationProvider

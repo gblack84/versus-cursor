@@ -1,6 +1,11 @@
 # lib/ - Flutter 애플리케이션 메인 디렉토리
 
 ## 개요
+
+## 🎯 네이밍 컨벤션
+- **파일명**: snake_case (Dart 표준)
+- **필드명**: camelCase
+- 참조: [NAMING_CONVENTION.md](../../NAMING_CONVENTION.md)
 이 디렉토리는 Versus Space Flutter 애플리케이션의 핵심 코드를 포함합니다. FlutterFlow에서 네이티브 Flutter로 완전히 마이그레이션된 코드베이스입니다.
 
 ## 디렉토리 구조
@@ -25,15 +30,15 @@
 
 ### Firebase 모델 필드 불일치 해결
 - **Posts Model**: 13개 투표 관련 필드 추가
-  - `vote_start_time`, `vote_end_time` - 투표 시간 관리
-  - `votes_a`, `votes_b` - 각 옵션의 투표 수
-  - `votedUserIDsA`, `votedUserIDsB` - 투표자 ID 추적
-  - `total_votes`, `vote_status` - 투표 상태 관리
+  - `voteStartTime`, `voteEndTime` - 투표 시간 관리
+  - `votesA`, `votesB` - 각 옵션의 투표 수
+  - `votedUserIdsA`, `votedUserIdsB` - 투표자 ID 추적
+  - `totalVotes`, `voteStatus` - 투표 상태 관리
 
 - **Messages Model**: 9개 투표 카드 필드 추가
-  - `receiver_id` - 메시지 수신자
-  - `vote_option_a_images[]`, `vote_option_b_images[]` - 멀티이미지 지원
-  - `card_status` - 카드 상태 (voting_request, in_progress, completed)
+  - `receiverId` - 메시지 수신자
+  - `voteOptionAImages[]`, `voteOptionBImages[]` - 멀티이미지 지원
+  - `cardStatus` - 카드 상태 (votingRequest, inProgress, completed)
 
 - **Notifications Model**: 9개 필드 추가
   - JSON 파싱 로직 구현

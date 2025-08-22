@@ -1,6 +1,11 @@
 # Constants Directory
 
 ## 개요 (Overview)
+
+## 🎯 네이밍 컨벤션
+- **파일명**: snake_case (Dart 표준)
+- **필드명**: camelCase
+- 참조: [NAMING_CONVENTION.md](../../NAMING_CONVENTION.md)
 이 디렉토리는 In Put Post Image 모듈에서 사용되는 모든 상수들을 중앙 집중식으로 관리합니다. 하드코딩된 값들을 제거하고 유지보수성을 높이기 위해 체계적으로 분리되어 있습니다.
 
 ## 파일 설명 (File Descriptions)

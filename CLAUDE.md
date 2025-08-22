@@ -1495,3 +1495,16 @@ if (model.isVideoSelectedA) {
   - lib/services/vote_state_coordinator.dart
   - lib/services/global_notification_manager.dart
   - lib/components/chat/base_vote_message.dart
+
+### 2025-08-21: Snake_case → CamelCase 마이그레이션 100% 완료
+- **작업 내용**:
+  - 768개 필드명 snake_case → camelCase 완전 변환
+  - Firebase Functions 12개 모든 필드 통일
+  - Firestore Rules & Indexes 업데이트 완료
+  - Flutter 모델 backward compatibility 제거
+- **네이밍 컨벤션 확립**:
+  - **CamelCase 사용**: Firestore 필드, 라우트명, 변수/함수
+  - **Snake_case 유지**: 파일명(Dart 표준), Storage 경로, 특수 ID
+  - 참조: [NAMING_CONVENTION.md](./NAMING_CONVENTION.md)
+- **최종 커밋**: `d7c53da6`
+- **결과**: 100% 통일된 네이밍으로 동기화 문제 완전 해결

@@ -65,7 +65,7 @@ StreamBuilder<UsersRecord>(
 ### 로그아웃 처리
 ```dart
 await authManager.signOut();
-context.goNamed('start_page');
+context.goNamed('startPage');
 ```
 
 ## 헬퍼 메서드

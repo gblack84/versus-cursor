@@ -220,7 +220,7 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                           size: VersusButtonSize.large,
                           onPressed: () async {
                             await authManager.signOut();
-                            context.goNamed('start_page');
+                            context.goNamed('startPage');
                           },
                         ),
                       ],

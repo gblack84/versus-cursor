@@ -1,160 +1,376 @@
-# Shared Services Documentation
+# 📦 Shared Services 디렉토리
+> Versus Space 애플리케이션 전반에서 공유되는 핵심 서비스 레이어
 
-공유 서비스 레이어 - 애플리케이션 전반에서 사용되는 핵심 서비스들
+## 🎯 개요
 
-## 📋 개요
+이 디렉토리는 앱의 여러 컴포넌트에서 공통으로 사용되는 중앙 집중식 서비스들을 포함합니다. 스마트 레이아웃 시스템의 핵심 계산 로직을 담당하며, 질문 작성, 알림 다이얼로그, 메시지 카드 등 모든 A/B 박스 UI에서 일관된 크기와 비율을 보장합니다.
 
-이 디렉토리는 Versus Space 앱의 여러 컴포넌트에서 공유하는 핵심 서비스들을 포함합니다.
+### 주요 특징
+- **통합 박스 계산**: 모든 컴포넌트에서 일관된 박스 크기 계산
+- **AspectRatio 기반**: 이미지 비율을 고려한 동적 크기 조정
+- **컨테이너별 최적화**: 메시지/알림/질문별 맞춤 크기 제한
+- **반응형 디자인**: 화면 크기와 레이아웃에 따른 자동 조정
 
-## 📁 파일 구조
+## 📐 네이밍 컨벤션
 
-```
-shared/services/
-├── unified_box_calculator.dart  # 통합 박스 크기 계산 서비스
-└── README.md                   # 문서
-```
-
-## 🎯 UnifiedBoxCalculator
-
-**통합 박스 크기 계산 서비스**
-
-모든 A/B 박스 레이아웃의 크기를 일관되게 계산하는 중앙 집중식 서비스입니다.
-
-### 핵심 기능
-
-- **통일된 크기 시스템**: 메시지 카드, 알림 다이얼로그, 질문 작성 페이지에서 일관된 크기
-- **레이아웃 타입 지원**: horizontal, vertical, single
-- **AspectRatio 기반 계산**: 이미지 비율을 고려한 동적 크기 조정
-- **반응형 디자인**: 화면 크기에 따른 자동 조정
-
-### 사용 방법
-
-#### 메시지 카드용 계산
 ```dart
-final boxSizes = UnifiedBoxCalculator.calculateForMessageCard(
-  bubbleWidth: 344.0,
-  layoutType: LayoutType.horizontal,
-  aspectRatioA: 1.5,
-  aspectRatioB: 1.5,
-  hasImageA: true,
-  hasImageB: true,
-);
+// 파일명: snake_case (Dart 표준)
+unified_box_calculator.dart
 
-print('박스 A 크기: ${boxSizes.sizeA}');
-print('박스 B 크기: ${boxSizes.sizeB}');
-print('통일 높이: ${boxSizes.unifiedHeight}');
+// 클래스명: PascalCase
+class UnifiedBoxCalculator
+class BoxSizes
+
+// 메서드명: lowerCamelCase
+static BoxSizes calculate()
+static BoxSizes calculateForMessageCard()
+
+// 변수명: lowerCamelCase
+final double unifiedHeight;
+final LayoutType layoutType;
 ```
 
-#### 알림 다이얼로그용 계산
+- 참조: [NAMING_CONVENTION.md](../../../NAMING_CONVENTION.md)
+
+## 🏗️ 아키텍처
+
+### 서비스 계층 구조
+```mermaid
+graph TD
+    A[UnifiedBoxCalculator] --> B[메시지 카드]
+    A --> C[알림 다이얼로그]
+    A --> D[질문 작성 페이지]
+    
+    B --> B1[VoteCardMessage]
+    B --> B2[BaseVoteMessage]
+    
+    C --> C1[VotingNotificationDialog]
+    C --> C2[NotificationOverlay]
+    
+    D --> D1[InPutPostImageWidget]
+    D --> D2[MediaSelectionBox]
+    
+    A --> E[LayoutConstants]
+    A --> F[AspectRatioAnalyzer]
+```
+
+### 계산 플로우
+```mermaid
+sequenceDiagram
+    participant Component
+    participant Calculator
+    participant Constants
+    participant Result
+    
+    Component->>Calculator: calculate(width, layoutType, aspectRatio)
+    Calculator->>Constants: getMaxHeight(), getMinHeight()
+    Constants-->>Calculator: 컨테이너별 제한값
+    Calculator->>Calculator: 박스 너비 계산
+    Calculator->>Calculator: AspectRatio 기반 높이 계산
+    Calculator->>Calculator: 통일 높이 결정 (평균)
+    Calculator->>Result: BoxSizes 객체
+    Result-->>Component: 크기 정보 반환
+```
+
+## 🔧 주요 구성요소
+
+### 1. UnifiedBoxCalculator 클래스
+모든 A/B 박스 레이아웃의 크기를 중앙에서 관리하는 핵심 서비스
+
+#### 핵심 계산 원칙
 ```dart
-final boxSizes = UnifiedBoxCalculator.calculateForNotificationDialog(
-  dialogWidth: MediaQuery.of(context).size.width * 0.92,
-  layoutType: LayoutType.vertical,
-  aspectRatioA: 1.3,
-  aspectRatioB: 1.7,
-  hasImageA: true,
-  hasImageB: true,
-);
+// 1. 너비는 컨테이너가 허용하는 최대값 사용
+// 2. 높이는 aspectRatio 기반으로 계산 후 평균값 사용
+// 3. 각 컨테이너별 고유 제한값 존중
 ```
 
-#### 질문 작성 페이지용 계산
+#### 주요 메서드
+
+##### calculate() - 범용 계산 메서드
 ```dart
-final boxSizes = UnifiedBoxCalculator.calculateForQuestion(
-  containerWidth: MediaQuery.of(context).size.width,
-  layoutType: LayoutType.horizontal,
-  aspectRatioA: aspectRatioA,
-  aspectRatioB: aspectRatioB,
-  hasImageA: true,
-  hasImageB: false,
-);
+static BoxSizes calculate({
+  required double containerWidth,      // 컨테이너 너비
+  double? containerHeight,             // 컨테이너 높이 (선택)
+  required String containerType,       // 'message', 'notification', 'question'
+  required LayoutType layoutType,      // horizontal, vertical, single
+  double? aspectRatioA,               // A 박스 이미지 비율
+  double? aspectRatioB,               // B 박스 이미지 비율
+  bool hasImageA = true,              // A 박스 이미지 유무
+  bool hasImageB = true,              // B 박스 이미지 유무
+})
 ```
 
-### BoxSizes 데이터 구조
+##### calculateForMessageCard() - 메시지 카드 전용
+```dart
+static BoxSizes calculateForMessageCard({
+  required double bubbleWidth,        // 채팅 버블 너비
+  required LayoutType layoutType,     // 레이아웃 타입
+  double? aspectRatioA,
+  double? aspectRatioB,
+  bool hasImageA = true,
+  bool hasImageB = true,
+})
+```
+
+##### calculateForNotificationDialog() - 알림 다이얼로그 전용
+```dart
+static BoxSizes calculateForNotificationDialog({
+  required double dialogWidth,        // 다이얼로그 너비
+  required LayoutType layoutType,
+  double? aspectRatioA,
+  double? aspectRatioB,
+  bool hasImageA = true,
+  bool hasImageB = true,
+})
+```
+
+##### calculateForQuestion() - 질문 작성 페이지 전용
+```dart
+static BoxSizes calculateForQuestion({
+  required double containerWidth,     // 컨테이너 너비
+  required LayoutType layoutType,
+  double? aspectRatioA,
+  double? aspectRatioB,
+  bool hasImageA = true,
+  bool hasImageB = true,
+})
+```
+
+### 2. BoxSizes 클래스
+박스 크기 계산 결과를 담는 데이터 모델
 
 ```dart
 class BoxSizes {
-  final Size sizeA;           // A박스 크기
-  final Size sizeB;           // B박스 크기
-  final LayoutType layoutType; // 레이아웃 타입
-  final String containerType;  // 컨테이너 타입
-  final double spacing;        // 박스 간 간격
-  final double unifiedHeight;  // 통일된 높이
-  final double boxWidth;       // 박스 너비
+  final Size sizeA;              // A 박스 크기 (너비 x 높이)
+  final Size sizeB;              // B 박스 크기 (너비 x 높이)
+  final LayoutType layoutType;   // 레이아웃 타입
+  final String containerType;    // 컨테이너 타입
+  final double spacing;          // 박스 간 간격
+  final double unifiedHeight;    // 통일된 높이
+  final double boxWidth;         // 개별 박스 너비
+  
+  // 헬퍼 메서드
+  bool get isHorizontal;        // 가로 배치 여부
+  bool get isVertical;          // 세로 배치 여부  
+  bool get isSingle;            // 단일 이미지 여부
+  Size get containerSize;       // 전체 컨테이너 크기
+  bool get hasUnifiedSize;      // 두 박스 크기 동일 여부
 }
 ```
 
-### 레이아웃 타입
+## 💻 사용 예시
 
-- **horizontal**: 가로 배치 (A | B)
-- **vertical**: 세로 배치 (A 위, B 아래)
-- **single**: 단일 이미지 모드
+### 메시지 카드에서 사용
+```dart
+import 'package:versus_space/shared/services/unified_box_calculator.dart';
 
-### 크기 제한
+// 채팅 메시지 카드 크기 계산
+final boxSizes = UnifiedBoxCalculator.calculateForMessageCard(
+  bubbleWidth: 344.0,
+  layoutType: LayoutType.horizontal,
+  aspectRatioA: 1.5,  // 가로가 세로의 1.5배
+  aspectRatioB: 1.3,
+  hasImageA: true,
+  hasImageB: true,
+);
 
-#### 메시지 카드
-- **최대 높이**: 400px
-- **최소 높이**: 100px (vertical), 200px (horizontal/single)
-- **기본 높이**: boxWidth / 1.5 (aspectRatio가 없을 때)
+// 계산된 크기 사용
+Container(
+  width: boxSizes.sizeA.width,
+  height: boxSizes.sizeA.height,
+  child: Image.network(imageUrlA),
+);
+```
 
-#### 알림 다이얼로그
-- **최대 높이**: 500px (single), 400px (horizontal), 350px (vertical)
-- **최소 높이**: 150px
-- **다이얼로그 너비**: 화면의 92%
+### 알림 다이얼로그에서 사용
+```dart
+// 다이얼로그 내부 박스 크기 계산
+final dialogWidth = MediaQuery.of(context).size.width * 0.92;
 
-#### 질문 작성
-- **최대 높이**: 500px
-- **최소 높이**: 200px
-- **컨테이너 패딩**: 20px
+final boxSizes = UnifiedBoxCalculator.calculateForNotificationDialog(
+  dialogWidth: dialogWidth,
+  layoutType: LayoutType.vertical,
+  aspectRatioA: aspectRatioFromPost,
+  aspectRatioB: aspectRatioFromPost,
+);
 
-### 계산 로직
+// 세로 배치 다이얼로그 구성
+Column(
+  children: [
+    Container(
+      width: boxSizes.sizeA.width,
+      height: boxSizes.sizeA.height,
+      child: OptionAContent(),
+    ),
+    SizedBox(height: boxSizes.spacing),
+    Container(
+      width: boxSizes.sizeB.width,
+      height: boxSizes.sizeB.height,
+      child: OptionBContent(),
+    ),
+  ],
+);
+```
 
-1. **컨테이너 타입 결정**: message, notification, question
-2. **박스 너비 계산**: 컨테이너 너비와 레이아웃에 따라 결정
-3. **높이 제한 설정**: 컨테이너 타입별 최대/최소 높이
-4. **AspectRatio 기반 높이 계산**: `height = width / aspectRatio`
-5. **통일 높이 결정**: 
-   - single: 해당 이미지 높이
-   - 둘 다 있음: 평균 높이
-   - 하나만 있음: 해당 높이
-6. **제한 적용**: min/max 높이로 클램핑
+### 질문 작성 페이지에서 사용
+```dart
+// 이미지 선택 후 박스 크기 업데이트
+void updateBoxSizes() {
+  final boxSizes = UnifiedBoxCalculator.calculateForQuestion(
+    containerWidth: MediaQuery.of(context).size.width,
+    layoutType: currentLayoutType,
+    aspectRatioA: uploadedImageAspectRatioA,
+    aspectRatioB: uploadedImageAspectRatioB,
+    hasImageA: imageUrlA != null,
+    hasImageB: imageUrlB != null,
+  );
+  
+  setState(() {
+    boxAHeight = boxSizes.sizeA.height;
+    boxBHeight = boxSizes.sizeB.height;
+  });
+}
+```
 
-### 동적 기본값
+## 📊 크기 제한 사양
 
-AspectRatio가 null일 때:
-- **이전**: 고정값 300px 사용 (문제 발생)
-- **현재**: `boxWidth / 1.5` 동적 계산 (안정적)
+### 메시지 카드 (VoteCardMessage)
+| 레이아웃 | 최대 높이 | 최소 높이 | 박스 너비 |
+|---------|-----------|-----------|-----------|
+| **단일** | 400px | 100px | 버블의 80% |
+| **가로** | 400px | 200px | (버블-간격)의 49.5% |
+| **세로** | 171px (각) | 100px | 버블의 95% |
+| **세로 전체** | 350px | - | - |
 
-### 성능 최적화
+### 알림 다이얼로그
+| 레이아웃 | 최대 높이 | 최소 높이 | 박스 너비 |
+|---------|-----------|-----------|-----------|
+| **단일** | 500px | 150px | 다이얼로그의 95% |
+| **가로** | 400px | 150px | (다이얼로그-간격-여백)/2 |
+| **세로** | 171px (각) | 100px | 다이얼로그의 95% |
+| **세로 전체** | 350px | - | - |
 
-- **캐싱 권장**: 계산 결과를 컴포넌트에서 캐싱
-- **재계산 최소화**: aspectRatio 변경 시에만 재계산
-- **디버그 모드**: 개발 환경에서만 로그 출력
+### 질문 작성 페이지
+| 레이아웃 | 최대 높이 | 최소 높이 | 박스 너비 |
+|---------|-----------|-----------|-----------|
+| **단일** | 600px | 150px | 컨테이너의 95% |
+| **가로** | 500px | 150px | (컨테이너-간격)의 49.5% |
+| **세로** | 400px | 120px | 컨테이너의 95% |
 
-### 통합 사례
+## 🎨 레이아웃 타입
 
-1. **VoteCardMessage**: 전역 BoxSizes 캐시와 함께 사용
-2. **VotingNotificationDialog**: VersusBoxSizeData와 연동
-3. **InPutPostImageWidget**: 실시간 레이아웃 업데이트
+### LayoutType 열거형
+```dart
+enum LayoutType {
+  horizontal,  // 가로 배치 (A | B)
+  vertical,    // 세로 배치 (A 위, B 아래)
+  single,      // 단일 이미지
+}
+```
 
-## 🔧 유지보수
+### 레이아웃 결정 로직
+1. **단일 이미지**: B박스 숨김 또는 이미지 하나만 있음
+2. **가로 배치**: 기본값 또는 가로형 이미지들
+3. **세로 배치**: 세로형 이미지들 또는 사용자 선택
 
-### 새로운 컨테이너 타입 추가
+## 🔄 통합 포인트
 
-1. `LayoutConstants`에 새 타입 상수 추가
-2. `calculate` 메서드에 타입별 로직 추가
-3. 편의 메서드 생성 (예: `calculateForNewType`)
+### 1. 메시지 카드 시스템
+- `/lib/components/chat/vote_card_message.dart` - 전역 BoxSizes 캐시
+- `/lib/components/chat/base_vote_message.dart` - 기본 메시지 레이아웃
 
-### 크기 제한 조정
+### 2. 알림 시스템
+- `/lib/components/notifications/widgets/voting_notification_dialog.dart`
+- `/lib/components/notifications/notification_overlay.dart`
 
-`calculate` 메서드 내 제한값 수정:
-- maxHeight, minHeight 조정
-- 기본 비율 변경 (현재 1.5)
+### 3. 질문 작성 시스템
+- `/lib/posts/in_put_post_image/in_put_post_image_widget.dart`
+- `/lib/posts/in_put_post_image/components/media_selection_box.dart`
 
-### 디버그 정보
+### 4. 상수 시스템
+- `/lib/shared/constants/layout_constants.dart` - 크기 제한값
+- `/lib/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart` - 비율 분석
 
-개발 모드에서 자동으로 출력:
-- 버블/다이얼로그 너비
-- 레이아웃 타입
-- 박스 너비
-- 계산된 높이
-- 통일 높이
+## 📈 성능 최적화
+
+### 캐싱 전략
+```dart
+// VoteCardMessage에서 전역 캐시 사용
+static final Map<String, BoxSizes> _boxSizesCache = {};
+
+// 캐시 키 생성
+final cacheKey = '${message.id}_${layoutType.name}';
+
+// 캐시 확인 및 저장
+if (!_boxSizesCache.containsKey(cacheKey)) {
+  _boxSizesCache[cacheKey] = UnifiedBoxCalculator.calculateForMessageCard(...);
+}
+```
+
+### 재계산 최소화
+- AspectRatio 변경 시에만 재계산
+- 레이아웃 타입 변경 시에만 재계산
+- 이미지 추가/삭제 시에만 재계산
+
+### 디버그 모드
+```dart
+// 개발 환경에서만 로그 출력
+if (!kReleaseMode) {
+  print('[UnifiedBoxCalculator] 계산 결과:');
+  print('  통일 높이: ${unifiedHeight}px');
+}
+```
+
+## 🔍 디버깅
+
+### 일반적인 문제 해결
+
+#### 1. 박스 크기 불일치
+- **원인**: AspectRatio null 또는 0
+- **해결**: 기본값 사용 (boxWidth / 1.5)
+
+#### 2. 세로 배치 넘침
+- **원인**: 전체 높이가 컨테이너 초과
+- **해결**: 자동 스케일링 적용 (88% 사용)
+
+#### 3. 스크롤 점프
+- **원인**: 동적 높이 변경
+- **해결**: BoxSizes 캐싱 사용
+
+### 디버그 출력 예시
+```
+[UnifiedBoxCalculator] 메시지 카드 계산:
+  버블 너비: 344.0px
+  레이아웃: horizontal
+  박스 너비: 168.0px
+  최대 높이: 400.0px
+  계산된 높이 A: 112.0px
+  계산된 높이 B: 129.2px
+  통일 높이: 120.6px
+```
+
+## 📝 변경 이력
+
+- **2025-08-23**: 한국어 문서 작성
+  - UnifiedBoxCalculator 상세 문서화
+  - BoxSizes 데이터 구조 설명
+  - 사용 예시 및 통합 포인트 추가
+  - 성능 최적화 가이드라인 작성
+
+## 🚀 향후 계획
+
+1. **동적 스케일링 개선**
+   - 태블릿 화면 대응
+   - 가로/세로 모드 전환 최적화
+
+2. **캐싱 시스템 고도화**
+   - LRU 캐시 구현
+   - 메모리 관리 개선
+
+3. **애니메이션 지원**
+   - 크기 변경 애니메이션
+   - 레이아웃 전환 효과
+
+4. **성능 모니터링**
+   - 계산 시간 측정
+   - 캐시 히트율 추적

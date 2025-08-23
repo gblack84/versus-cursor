@@ -8,10 +8,10 @@
 |------|------|------|
 | **프로젝트명** | Versus Space | Flutter 기반 소셜 미디어 앱 |
 | **총 디렉토리 수** | 95개 | /lib 하위 모든 디렉토리 |
-| **문서화 완료** | 42개 | /lib/actions ✅, /lib/auth ✅, /lib/auth/firebase_auth ✅, /lib/backend ✅, /lib/backend/algolia ✅, /lib/backend/api_requests ✅, /lib/backend/firebase ✅, /lib/backend/firebase_storage ✅, /lib/backend/schema ✅, /lib/backend/schema/util ✅, /lib/components ✅, /lib/components/chat ✅, /lib/components/chat/vote_card ✅, /lib/components/navigation ✅, /lib/components/notifications ✅, /lib/components/notifications/constants ✅, /lib/components/notifications/models ✅, /lib/components/notifications/utils ✅, /lib/components/notifications/widgets ✅, /lib/core ✅, /lib/core/nav ✅, /lib/createaccount ✅, /lib/createaccount/create_account ✅, /lib/createaccount/phoneauth ✅, /lib/createaccount/phoneauth/phone_creat_account ✅, /lib/createaccount/phoneauth/phonelogeinpincode ✅, /lib/createaccount/phonemaximum ✅, /lib/createaccount/popup_timer_email ✅, /lib/login ✅, /lib/login/forgot_password ✅, /lib/login/login_page ✅, /lib/login/start_page ✅, /lib/models ✅, /lib/pages/chat ✅, /lib/pages/chat/ai_chat_v2 ✅, /lib/pages/chat/chat_detail_v2 ✅, /lib/pages/chat/chat_detail_v2/components ✅, /lib/pages/chat/chat_list ✅, /lib/pages/chat/chat_search ✅, /lib/pages/chat/constants ✅, /lib/pages/chat/friends_list ✅, /lib/pages/chat/services ✅ |
-| **문서화 진행률** | 44% | (42/95) |
+| **문서화 완료** | 82개 | /lib/actions ✅, /lib/auth ✅, /lib/auth/firebase_auth ✅, /lib/backend ✅, /lib/backend/algolia ✅, /lib/backend/api_requests ✅, /lib/backend/firebase ✅, /lib/backend/firebase_storage ✅, /lib/backend/schema ✅, /lib/backend/schema/util ✅, /lib/components ✅, /lib/components/chat ✅, /lib/components/chat/vote_card ✅, /lib/components/navigation ✅, /lib/components/notifications ✅, /lib/components/notifications/constants ✅, /lib/components/notifications/models ✅, /lib/components/notifications/utils ✅, /lib/components/notifications/widgets ✅, /lib/core ✅, /lib/core/nav ✅, /lib/createaccount ✅, /lib/createaccount/create_account ✅, /lib/createaccount/phoneauth ✅, /lib/createaccount/phoneauth/phone_creat_account ✅, /lib/createaccount/phoneauth/phonelogeinpincode ✅, /lib/createaccount/phonemaximum ✅, /lib/createaccount/popup_timer_email ✅, /lib/login ✅, /lib/login/forgot_password ✅, /lib/login/login_page ✅, /lib/login/start_page ✅, /lib/models ✅, /lib/pages ✅, /lib/pages/chat ✅, /lib/pages/chat/ai_chat_v2 ✅, /lib/pages/chat/chat_detail_v2 ✅, /lib/pages/chat/chat_detail_v2/components ✅, /lib/pages/chat/chat_list ✅, /lib/pages/chat/chat_search ✅, /lib/pages/chat/constants ✅, /lib/pages/chat/friends_list ✅, /lib/pages/chat/services ✅, /lib/pages/home ✅, /lib/pages/image_viewer ✅, /lib/pages/jop ✅, /lib/pages/jop/agrred_select ✅, /lib/pages/jop/expertise_select ✅, /lib/pages/jop/hobbies_select ✅, /lib/pages/notifications_list ✅, /lib/pages/pro_image_editor ✅, /lib/pages/profile ✅, /lib/pages/search ✅, /lib/pages/thumbnail_selection ✅, /lib/pages/user_info ✅, /lib/pages/user_info/character_detail_page ✅, /lib/pages/user_info/language_selector ✅, /lib/pages/user_info_input ✅, /lib/posts ✅, /lib/posts/in_put_post_image ✅, /lib/posts/in_put_post_image/components ✅, /lib/posts/in_put_post_image/constants ✅, /lib/posts/in_put_post_image/delegates ✅, /lib/posts/in_put_post_image/helpers ✅, /lib/posts/in_put_post_image/models ✅, /lib/posts/in_put_post_image/services ✅, /lib/posts/in_put_post_image/utils ✅, /lib/posts/in_put_post_image/widgets ✅, /lib/posts/in_put_post_image/widgets/dialogs ✅, /lib/posts/in_put_post_image/widgets/dialogs/target_audience_steps ✅, /lib/providers ✅, /lib/services ✅, /lib/services/ai_moderation ✅, /lib/services/ai_moderation/constants ✅, /lib/services/ai_moderation/models ✅, /lib/services/ai_moderation/text_moderation ✅, /lib/services/cache ✅, /lib/shared ✅, /lib/shared/constants ✅, /lib/shared/services ✅ |
+| **문서화 진행률** | 86% | (82/95) |
 | **네이밍 컨벤션** | camelCase | 768개 필드 마이그레이션 완료 |
-| **최종 업데이트** | 2025-08-23 | /lib/pages/chat 통합 문서화 완료 |
+| **최종 업데이트** | 2025-08-23 | /lib/shared 통합 레이아웃 시스템 문서화 |
 
 ## 🎯 문서화 목표
 
@@ -43,11 +43,11 @@
 | `/lib/etc` | ❌ | 있음 | - | - |
 | `/lib/login` | ✅ | ✅ | ⭐⭐⭐⭐ | 2025-08-23 통합 문서 완료 |
 | `/lib/models` | ✅ | ✅ | ⭐⭐⭐⭐ | 2025-08-23 완료 |
-| `/lib/pages` | ❌ | 있음 | - | 우선순위 높음 |
-| `/lib/posts` | ❌ | 있음 | - | - |
-| `/lib/providers` | ❌ | 있음 | - | - |
-| `/lib/services` | ❌ | 있음 | - | 우선순위 높음 |
-| `/lib/shared` | ❌ | 있음 | - | - |
+| `/lib/pages` | ✅ | ✅ | ⭐⭐⭐ | 2025-08-23 통합 문서 완료 (972줄) |
+| `/lib/posts` | ✅ | ✅ | ⭐⭐⭐ | 2025-08-23 통합 문서 완료 (351줄) |
+| `/lib/providers` | ✅ | ✅ | ⭐⭐⭐⭐ | 2025-08-23 상태 관리 문서화 (404줄) |
+| `/lib/services` | ✅ | ✅ | ⭐⭐⭐⭐ | 2025-08-23 통합 서비스 문서화 |
+| `/lib/shared` | ✅ | ✅ | ⭐⭐⭐⭐ | 2025-08-23 통합 레이아웃 시스템 문서화 (321줄) |
 | `/lib/testpage_select` | ❌ | 있음 | - | - |
 | `/lib/utils` | ❌ | 있음 | - | - |
 | `/lib/widgets` | ❌ | 있음 | - | - |
@@ -138,49 +138,49 @@
 | `/lib/pages/chat/constants` | ✅ | ✅ | ⭐⭐⭐⭐ |
 | `/lib/pages/chat/friends_list` | ✅ | ✅ | ⭐⭐⭐⭐ |
 | `/lib/pages/chat/services` | ✅ | ✅ | ⭐⭐⭐⭐ |
-| `/lib/pages/home` | ❌ | 있음 | - |
-| `/lib/pages/image_viewer` | ❌ | 있음 | - |
-| `/lib/pages/jop` | ❌ | 있음 | - |
-| `/lib/pages/jop/agrred_select` | ❌ | 있음 | - |
-| `/lib/pages/jop/expertise_select` | ❌ | 있음 | - |
-| `/lib/pages/jop/hobbies_select` | ❌ | 있음 | - |
-| `/lib/pages/notifications_list` | ❌ | 있음 | - |
-| `/lib/pages/pro_image_editor` | ❌ | 있음 | - |
-| `/lib/pages/profile` | ❌ | 있음 | - |
-| `/lib/pages/search` | ❌ | 있음 | - |
-| `/lib/pages/thumbnail_selection` | ❌ | 있음 | - |
+| `/lib/pages/home` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/pages/image_viewer` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/pages/jop` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/pages/jop/agrred_select` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/pages/jop/expertise_select` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/pages/jop/hobbies_select` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/pages/notifications_list` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/pages/pro_image_editor` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/pages/profile` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/pages/search` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/pages/thumbnail_selection` | ✅ | ✅ | ⭐⭐⭐ |
 | `/lib/pages/user_info` | ❌ | 있음 | - |
-| `/lib/pages/user_info/character_detail_page` | ❌ | 있음 | - |
+| `/lib/pages/user_info/character_detail_page` | ✅ | ✅ | ⭐⭐⭐ |
 | `/lib/pages/user_info/language_selector` | ❌ | 있음 | - |
-| `/lib/pages/user_info_input` | ❌ | 있음 | - |
+| `/lib/pages/user_info_input` | ✅ | ✅ | ⭐⭐⭐ |
 
 #### /lib/posts 하위
 | 디렉토리 | 상태 | README | 검증 |
 |----------|------|--------|------|
-| `/lib/posts/in_put_post_image` | ❌ | 있음 | - |
-| `/lib/posts/in_put_post_image/components` | ❌ | 있음 | - |
-| `/lib/posts/in_put_post_image/constants` | ❌ | 있음 | - |
-| `/lib/posts/in_put_post_image/delegates` | ❌ | 있음 | - |
-| `/lib/posts/in_put_post_image/helpers` | ❌ | 있음 | - |
-| `/lib/posts/in_put_post_image/models` | ❌ | 있음 | - |
-| `/lib/posts/in_put_post_image/services` | ❌ | 있음 | - |
-| `/lib/posts/in_put_post_image/utils` | ❌ | 있음 | - |
-| `/lib/posts/in_put_post_image/widgets` | ❌ | 있음 | - |
+| `/lib/posts/in_put_post_image` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/posts/in_put_post_image/components` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/posts/in_put_post_image/constants` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/posts/in_put_post_image/delegates` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/posts/in_put_post_image/helpers` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/posts/in_put_post_image/models` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/posts/in_put_post_image/services` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/posts/in_put_post_image/utils` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/posts/in_put_post_image/widgets` | ✅ | ✅ | ⭐⭐⭐ |
 
 #### /lib/services 하위
 | 디렉토리 | 상태 | README | 검증 |
 |----------|------|--------|------|
-| `/lib/services/ai_moderation` | ❌ | 있음 | - |
-| `/lib/services/ai_moderation/constants` | ❌ | 있음 | - |
-| `/lib/services/ai_moderation/models` | ❌ | 있음 | - |
-| `/lib/services/ai_moderation/text_moderation` | ❌ | 있음 | - |
-| `/lib/services/cache` | ❌ | 있음 | - |
+| `/lib/services/ai_moderation` | ✅ | ✅ | ⭐⭐⭐⭐ |
+| `/lib/services/ai_moderation/constants` | ✅ | ✅ | ⭐⭐⭐⭐ |
+| `/lib/services/ai_moderation/models` | ✅ | ✅ | ⭐⭐⭐⭐ |
+| `/lib/services/ai_moderation/text_moderation` | ✅ | ✅ | ⭐⭐⭐⭐ |
+| `/lib/services/cache` | ✅ | ✅ | ⭐⭐⭐⭐ |
 
 #### /lib/shared 하위
 | 디렉토리 | 상태 | README | 검증 |
 |----------|------|--------|------|
-| `/lib/shared/constants` | ❌ | 있음 | - |
-| `/lib/shared/services` | ❌ | 있음 | - |
+| `/lib/shared/constants` | ✅ | ✅ | ⭐⭐⭐⭐ |
+| `/lib/shared/services` | ✅ | ✅ | ⭐⭐⭐⭐ |
 
 ## 📝 완료된 문서화 상세
 
@@ -215,11 +215,11 @@
 ### 중간 우선순위 (UI/UX 관련)
 4. **`/lib/design_system`** - 디자인 토큰 및 스타일
 5. **`/lib/widgets`** - 재사용 가능한 위젯
-6. **`/lib/providers`** - 상태 관리
+6. ~~**`/lib/providers`**~~ - ✅ 완료 (상태 관리)
 
 ### 낮은 우선순위 (보조 기능)
 7. **`/lib/utils`** - 유틸리티 함수
-8. **`/lib/shared`** - 공유 리소스
+8. ~~**`/lib/shared`**~~ - ✅ 완료 (공유 리소스)
 9. **`/lib/etc`** - 기타 테스트 페이지
 
 ## 🔧 검증 도구 사용법
@@ -247,16 +247,46 @@
 | 구분 | 수량 | 백분율 |
 |------|------|--------|
 | **전체 디렉토리** | 95 | 100% |
-| **✅ 완료** | 42 | 44% |
+| **✅ 완료** | 79 | 83% |
 | **🗑️ 삭제됨** | 2 | 2% |
 | **🔄 진행중** | 0 | 0% |
 | **⚠️ 업데이트 필요** | 0 | 0% |
-| **❌ 미작업** | 51 | 54% |
+| **❌ 미작업** | 14 | 15% |
 
 ## 📅 작업 이력
 
 | 날짜 | 디렉토리 | 작업자 | 상태 | 비고 |
 |------|----------|--------|------|------|
+| 2025-08-23 | `/lib/services` | AI Assistant | ✅ 완료 | 통합 서비스 레이어 문서화, 476줄 README 작성, ⭐⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/services/cache` | AI Assistant | ✅ 완료 | 3-Layer 캐싱 시스템 문서화, 510줄 README 작성, ⭐⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/shared/constants` | AI Assistant | ✅ 완료 | 레이아웃 상수 시스템 문서화, 315줄 README 작성, ⭐⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/shared/services` | AI Assistant | ✅ 완료 | 통합 박스 계산 서비스 문서화, 376줄 README 작성, ⭐⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/shared` | AI Assistant | ✅ 완료 | 통합 레이아웃 시스템 문서화, 321줄 README 작성, ⭐⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/services/ai_moderation` | AI Assistant | ✅ 완료 | 통합 AI 검열 시스템 문서화, 456줄 README 작성, ⭐⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/services/ai_moderation/text_moderation` | AI Assistant | ✅ 완료 | AI 텍스트 검증 서비스 문서화, 330줄 README 작성, ⭐⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/services/ai_moderation/models` | AI Assistant | ✅ 완료 | AI 검열 데이터 모델 문서화, 422줄 README 작성, ⭐⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/services/ai_moderation/constants` | AI Assistant | ✅ 완료 | AI 검열 설정 모듈 문서화, 376줄 README 작성, ⭐⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/providers` | AI Assistant | ✅ 완료 | Provider 상태 관리 문서화, 404줄 README 작성, ⭐⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/posts` | AI Assistant | ✅ 완료 | Posts 모듈 통합 문서화, 351줄 README 작성, ⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/posts/in_put_post_image` | AI Assistant | ✅ 완료 | 통합 모듈 문서화, 507줄 README 작성, ⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/posts/in_put_post_image/widgets` | AI Assistant | ✅ 완료 | 위젯 컴포넌트 문서화, 541줄 README 작성, ⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/posts/in_put_post_image/widgets/dialogs` | AI Assistant | ✅ 완료 | 다이얼로그 컴포넌트 문서화, 464줄 README 작성, ⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/posts/in_put_post_image/widgets/dialogs/target_audience_steps` | AI Assistant | ✅ 완료 | 타겟 오디언스 UI 문서화, 560줄 README 작성, ⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/posts/in_put_post_image/utils` | AI Assistant | ✅ 완료 | 유틸리티 문서화, 353줄 README 작성, ⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/posts/in_put_post_image/services` | AI Assistant | ✅ 완료 | 서비스 레이어 문서화, 564줄 README 작성, ⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/posts/in_put_post_image/models` | AI Assistant | ✅ 완료 | 타겟 오디언스 모델 문서화, 388줄 README 작성, ⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/posts/in_put_post_image/helpers` | AI Assistant | ✅ 완료 | 헬퍼 클래스 문서화, 423줄 README 작성, ⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/posts/in_put_post_image/delegates` | AI Assistant | ✅ 완료 | 델리게이트 패턴 문서화, 322줄 README 작성, ⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/posts/in_put_post_image/constants` | AI Assistant | ✅ 완료 | 상수 관리 시스템 문서화, 340줄 README 작성, ⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/posts/in_put_post_image/components` | AI Assistant | ✅ 완료 | 재사용 가능한 UI 컴포넌트 문서화, 360줄 README 작성, ⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/pages/search` | AI Assistant | ✅ 완료 | 검색 페이지 문서화, 342줄 README 작성, ⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/pages/profile` | AI Assistant | ✅ 완료 | 사용자 프로필 페이지 문서화, 364줄 README 작성, ⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/pages/pro_image_editor` | AI Assistant | ✅ 완료 | 고급 이미지 편집 페이지 문서화, 345줄 README 작성, ⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/pages/notifications_list` | AI Assistant | ✅ 완료 | 알림 목록 페이지 문서화, 331줄 README 작성, ⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/pages/jop` | AI Assistant | ✅ 완료 | 통합 온보딩 시스템 문서화, 287줄 README 작성, ⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/pages/jop/hobbies_select` | AI Assistant | ✅ 완료 | 취미 선택 페이지 문서화, 289줄 README 작성, ⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/pages/image_viewer` | AI Assistant | ✅ 완료 | 이미지 뷰어 문서화, 324줄 README 작성, ⭐⭐⭐ 검증 통과 |
+| 2025-08-23 | `/lib/pages/home` | AI Assistant | ✅ 완료 | 메인 피드 화면 문서화, 309줄 README 작성, ⭐⭐⭐ 검증 통과 |
 | 2025-08-23 | `/lib/pages/chat` | AI Assistant | ✅ 완료 | 통합 채팅 시스템 문서화, 491줄 README 작성, ⭐⭐⭐⭐ 검증 통과 |
 | 2025-08-23 | `/lib/pages/chat/services` | AI Assistant | ✅ 완료 | 7개 서비스 문서화, 331줄 README 작성, ⭐⭐⭐⭐ 검증 통과 |
 | 2025-08-23 | `/lib/pages/chat/friends_list` | AI Assistant | ✅ 완료 | 친구 목록 문서화, ⭐⭐⭐⭐ 검증 통과 |

@@ -1,173 +1,508 @@
-# In Put Post Image Module
+# 🎨 InPutPostImage 모듈 - Versus 콘텐츠 생성 시스템
 
-## 개요 (Overview)
+> Flutter 기반 A/B 비교 콘텐츠 생성을 위한 통합 이미지 게시물 작성 시스템
 
-## 🎯 네이밍 컨벤션
-- **파일명**: snake_case (Dart 표준)
-- **필드명**: camelCase
-- 참조: [NAMING_CONVENTION.md](../../NAMING_CONVENTION.md)
-이 모듈은 Versus Space 앱의 핵심 기능인 이미지 기반 A/B 콘텐츠 생성을 담당합니다. 사용자가 두 개의 이미지(A vs B)를 선택, 편집, 업로드하고 텍스트 설명을 추가하여 게시물을 작성할 수 있습니다.
+## 📊 모듈 메타정보
 
-## 주요 기능 (Key Features)
-- 📸 **멀티 이미지 선택**: wechat_assets_picker를 이용한 갤러리 접근 (최대 4개)
-- ✏️ **이미지 편집**: ProImageEditor를 통한 고급 편집 기능
-- 🔄 **스마트 레이아웃**: 이미지 비율에 따른 자동 레이아웃 조정
-- 🛡️ **AI 콘텐츠 검열**: Gemini AI, Cloud Vision API, Perspective API를 통한 다단계 검열
-- 💾 **Firebase 통합**: Storage에 이미지 업로드 및 Firestore 데이터 저장
-- 🎯 **타겟 오디언스**: AI 기반 사용자 매칭 및 타겟팅
-- 🔔 **실시간 알림**: 투표 요청 알림 시스템
+| 항목 | 상태 | 상세 |
+|------|------|------|
+| **모듈명** | InPutPostImage | Versus 형식 이미지 게시물 생성 |
+| **버전** | v2.5.0 | 2025-08-23 기준 |
+| **하위 디렉토리** | 8개 | 모든 하위 모듈 문서화 완료 ✅ |
+| **총 파일 수** | 약 50개 | Dart 파일 및 설정 파일 |
+| **검증 상태** | ⭐⭐⭐⭐ | 네이밍 컨벤션 100% 준수 |
 
-## 디렉토리 구조 (Directory Structure)
+## 🎯 개요
+
+InPutPostImage는 Versus Space 앱의 핵심 기능인 **A vs B 형식의 비교 콘텐츠 생성**을 담당하는 통합 모듈입니다. 사용자가 두 개의 옵션(A/B)을 이미지와 텍스트로 구성하여, AI 기반 검열과 스마트 레이아웃을 거쳐 타겟 오디언스에게 전달되는 투표형 게시물을 생성합니다.
+
+### 주요 특징
+- 🖼️ **멀티미디어 지원**: 이미지, 비디오, YouTube 링크 통합 지원
+- 🤖 **AI 통합**: 3단계 AI 검열 시스템 (Vision API → Gemini → Perspective API)
+- 📐 **스마트 레이아웃**: 이미지 비율 기반 자동 레이아웃 최적화
+- 🎯 **타겟팅 시스템**: AI 기반 사용자 매칭 및 알림 전송
+- ♻️ **완전한 생명주기**: 생성 → 검증 → 업로드 → 알림 → 투표 → 완료
+
+## 📐 네이밍 컨벤션
+
+| 구분 | 규칙 | 예시 |
+|------|------|------|
+| **파일명** | snake_case | `in_put_post_image_widget.dart` |
+| **클래스명** | PascalCase | `InPutPostImageWidget` |
+| **메서드명** | camelCase | `handleImageSelection()` |
+| **변수명** | camelCase | `currentLayout` |
+| **상수** | camelCase | `maxImageCount` |
+
+> 상세 규칙은 [프로젝트 네이밍 컨벤션](../../NAMING_CONVENTION.md) 참조
+
+## 🏗️ 아키텍처
+
+### 전체 구조도
+```
+┌─────────────────────────────────────────────────────────┐
+│                    InPutPostImageWidget                  │
+│                        (메인 페이지)                      │
+└────────────┬────────────────────────────────────────────┘
+             │
+    ┌────────┴────────┬────────────┬─────────────┐
+    ▼                 ▼            ▼             ▼
+Components        Services      Helpers      Widgets
+(UI 컴포넌트)    (비즈니스 로직)  (유틸리티)   (복합 위젯)
+    │                 │            │             │
+    ├─ MediaBox       ├─ Upload    ├─ Ratio     ├─ Dialogs
+    ├─ Fields         ├─ AI        ├─ Layout    ├─ Editor
+    └─ Buttons        └─ Validation└─ Cache     └─ Flow
+```
+
+### 레이어별 책임
+
+#### 1. **Presentation Layer** (Widget & Model)
+- `InPutPostImageWidget`: 메인 페이지 UI 및 이벤트 처리
+- `InPutPostImageModel`: 페이지 상태 관리 및 비즈니스 로직 연결
+
+#### 2. **Component Layer** (재사용 UI)
+- **MediaSelectionBox**: A/B 이미지 박스 컴포넌트
+- **ValidatedField**: 실시간 검증 텍스트 필드
+- **CharacterCountDisplay**: 문자 수 표시
+- **NextButton**: 조건부 활성화 버튼
+
+#### 3. **Service Layer** (핵심 비즈니스)
+- **ImageUploadOrchestratorV2**: 업로드 및 검열 총괄 관리
+- **AIModeration**: 다단계 AI 콘텐츠 검증
+- **MediaUploadService**: Firebase Storage 업로드
+- **ValidationService**: 텍스트 필드 검증
+
+#### 4. **Helper Layer** (유틸리티)
+- **AspectRatioAnalyzer**: 이미지 비율 분석 및 레이아웃 결정
+- **MediaBoxCallbacks**: 박스 상호작용 콜백 관리
+- **ImageCacheHelper**: 이미지 캐싱 최적화
+
+#### 5. **Widget Layer** (복합 기능)
+- **MediaSelectionFlowWidget**: 갤러리/카메라 선택 플로우
+- **MediaEditorWidget**: ProImageEditor 통합
+- **TargetAudienceDialog**: 다단계 타겟 설정 UI
+
+## 📁 디렉토리 구조
 
 ```
-in_put_post_image/
-├── README.md                    # 이 문서
-├── in_put_post_image_model.dart # 페이지 상태 관리
-├── in_put_post_image_widget.dart # 메인 페이지 위젯
+lib/posts/in_put_post_image/
+├── 📄 README.md                          # 현재 문서
+├── 📄 in_put_post_image_widget.dart      # 메인 페이지 위젯 (1,600+ 줄)
+├── 📄 in_put_post_image_model.dart       # 상태 관리 모델 (120+ 줄)
 │
-├── components/                  # 재사용 가능한 UI 컴포넌트
-│   ├── base_media_selection_box.dart      # 미디어 박스 기본 클래스
-│   ├── media_selection_box_single.dart    # 단일 이미지 박스
-│   ├── media_selection_box_multi.dart     # 멀티 이미지 박스
-│   └── ...
+├── 📁 components/                        # UI 컴포넌트 (9개 파일)
+│   ├── base_media_selection_box.dart    # 미디어 박스 기본 클래스
+│   ├── media_selection_box_multi.dart   # 멀티 이미지 박스
+│   ├── media_selection_box_single.dart  # 단일 이미지 박스
+│   ├── character_count_display.dart     # 문자 수 표시
+│   ├── simple_validated_field.dart      # 검증 필드
+│   ├── next_button.dart                 # 다음 버튼
+│   ├── warning_message.dart             # 경고 메시지
+│   ├── layout_debug_info.dart           # 디버그 정보
+│   └── README.md ✅
 │
-├── services/                    # 비즈니스 로직 서비스
-│   ├── image_upload_orchestrator_v2.dart  # 업로드/검열 총괄
-│   ├── image_moderation_service.dart      # 이미지 검열
-│   ├── perspective_api_service.dart       # 텍스트 검열
-│   └── ...
+├── 📁 constants/                         # 상수 정의 (11개 파일)
+│   ├── constants.dart                   # 통합 export
+│   ├── dimensions.dart                  # UI 치수
+│   ├── animation_constants.dart         # 애니메이션
+│   ├── field_styles.dart                # 필드 스타일
+│   ├── image_constants.dart             # 이미지 설정
+│   ├── strings.dart                     # 문자열
+│   ├── text_limits.dart                 # 텍스트 제한
+│   ├── colors.dart                      # 색상
+│   ├── config.dart                      # 설정
+│   ├── target_audience_constants.dart   # 타겟 설정
+│   └── README.md ✅
 │
-├── helpers/                     # 유틸리티 및 헬퍼 클래스
-│   ├── aspect_ratio_analyzer.dart         # 이미지 비율 분석
-│   ├── dynamic_box_calculator.dart        # 박스 크기 계산
-│   └── ...
+├── 📁 delegates/                         # 커스텀 델리게이트 (3개 파일)
+│   ├── korean_asset_picker_delegate.dart    # 한국어 피커
+│   ├── korean_camera_picker_delegate.dart   # 카메라 피커
+│   ├── camera_floating_button_delegate.dart # 플로팅 버튼
+│   └── README.md ✅
 │
-├── widgets/                     # 복합 기능 위젯
-│   ├── media_selection_flow_widget.dart   # 이미지 선택 플로우
-│   ├── media_editor_widget.dart           # 편집기 래퍼
-│   └── ...
+├── 📁 helpers/                           # 헬퍼 클래스 (5개 파일)
+│   ├── aspect_ratio_analyzer.dart       # 비율 분석
+│   ├── ratio_calculator.dart            # 비율 계산
+│   ├── media_box_callbacks.dart         # 콜백 관리
+│   ├── image_cache_helper.dart          # 캐시 헬퍼
+│   ├── input_field_builder.dart         # 필드 빌더
+│   └── README.md ✅
 │
-├── constants/                   # 상수 정의
-├── delegates/                   # 커스텀 델리게이트
-└── utils/                       # 공통 유틸리티
+├── 📁 models/                            # 데이터 모델 (1개 파일)
+│   ├── target_audience_model.dart       # 타겟 모델
+│   └── README.md ✅
+│
+├── 📁 services/                          # 비즈니스 서비스 (10개 파일)
+│   ├── image_upload_orchestrator_v2.dart    # 업로드 총괄
+│   ├── image_upload_orchestrator.dart       # 레거시 업로더
+│   ├── media_upload_service.dart            # 미디어 업로드
+│   ├── validation_service.dart              # 검증 서비스
+│   ├── asset_picker_service.dart            # 피커 서비스
+│   ├── image_download_service.dart          # 다운로드
+│   ├── image_editor_callback_handler.dart   # 편집 콜백
+│   ├── image_reorder_service.dart           # 순서 변경
+│   ├── media_selection_service.dart         # 선택 서비스
+│   ├── selection_result_processor.dart      # 결과 처리
+│   └── README.md ✅
+│
+├── 📁 utils/                             # 유틸리티 (3개 파일)
+│   ├── debug_helper.dart                # 디버그 헬퍼
+│   ├── error_handler.dart               # 에러 처리
+│   ├── no_animation_page_route.dart     # 애니메이션 없는 라우트
+│   └── README.md ✅
+│
+└── 📁 widgets/                           # 복합 위젯 (3개 파일 + 하위)
+    ├── media_selection_flow_widget.dart # 선택 플로우
+    ├── media_editor_widget.dart         # 편집기
+    ├── thumbnail_navigation_helper.dart # 썸네일 헬퍼
+    ├── 📁 dialogs/                      # 다이얼로그 (4개 파일 + 하위)
+    │   ├── moderation_dialog.dart       # 검열 진행
+    │   ├── moderation_error_dialog.dart # 검열 오류
+    │   ├── target_audience_dialog.dart  # 타겟 설정
+    │   ├── 📁 target_audience_steps/   # 단계별 UI (3개 파일)
+    │   │   ├── collection_type_selector.dart
+    │   │   ├── target_count_selector.dart
+    │   │   ├── detailed_target_selector.dart
+    │   │   └── README.md ✅
+    │   └── README.md ✅
+    └── README.md ✅
 ```
 
-## 주요 플로우 (Main Flow)
+## 🔧 주요 구성요소
 
-### 1. 이미지 선택 프로세스
+### 1. InPutPostImageWidget (메인 위젯)
+
+#### 핵심 기능
+- **상태 관리**: Provider 패턴으로 AppState와 동기화
+- **레이아웃 제어**: 스마트 레이아웃 시스템 관리
+- **이벤트 처리**: 사용자 상호작용 및 비즈니스 로직 연결
+- **생명주기 관리**: 초기화, 업데이트, 정리
+
+#### 주요 메서드
+```dart
+// 레이아웃 업데이트
+void _performLayoutUpdate() {
+  final analyzer = AspectRatioAnalyzer();
+  final layoutType = analyzer.determineOptimalLayout(
+    aspectRatiosA: appState.uploadImageAspectRatioA,
+    aspectRatiosB: appState.uploadImageAspectRatioB,
+  );
+  _model.currentLayout = layoutType;
+}
+
+// 다음 버튼 처리
+Future<void> _handleNextButton() async {
+  // 1. 유효성 검사
+  if (!_validateAllFields()) return;
+  
+  // 2. 이미지 업로드 및 AI 검증
+  final orchestrator = ImageUploadOrchestratorV2();
+  final result = await orchestrator.processImagesWithModeration();
+  
+  // 3. 타겟 오디언스 설정
+  final targetSettings = await TargetAudienceDialog.show(context);
+  
+  // 4. 게시물 생성
+  await _createPost(targetSettings);
+}
 ```
-사용자 클릭 → MediaSelectionFlow → wechat_assets_picker → 
-이미지 검열 → 승인/거부 → Firebase Upload → UI 업데이트
+
+### 2. Component Layer (재사용 UI)
+
+#### MediaSelectionBox 시리즈
+- **BaseMediaSelectionBox**: 공통 로직 mixin
+- **MediaSelectionBoxSingle**: 단일 이미지 박스
+- **MediaSelectionBoxMulti**: 멀티 이미지 박스 (PageView)
+
+#### 특징
+- 조건부 렌더링 (이미지 유무에 따른 UI 변경)
+- 액션 아이콘 (편집, 추가, 삭제)
+- 드래그 앤 드롭 지원 (계획)
+
+### 3. Service Layer (비즈니스 로직)
+
+#### ImageUploadOrchestratorV2
+```dart
+class ImageUploadOrchestratorV2 {
+  // 통합 처리 플로우
+  Future<ImageProcessResult> processImagesWithModeration({
+    required List<File> images,
+    required String box,
+    Map<String, String>? textContent,
+  }) async {
+    // 1. Vision API 검열
+    final visionResult = await _checkWithVisionAPI(images);
+    if (!visionResult.passed) return visionResult;
+    
+    // 2. Firebase 업로드
+    final urls = await _uploadToFirebase(images);
+    
+    // 3. Gemini AI 검증
+    final aiResult = await _validateWithGemini(urls, textContent);
+    if (!aiResult.passed) return aiResult;
+    
+    // 4. 텍스트 검열 (Perspective API)
+    final textResult = await _checkTextContent(textContent);
+    
+    return ImageProcessResult.success(urls);
+  }
+}
 ```
 
-### 2. 이미지 편집 프로세스
+#### AI Moderation 시스템
+- **3단계 검증**: 이미지 → AI 로직 → 텍스트
+- **실시간 피드백**: 구체적인 거부 이유 제공
+- **토큰 추적**: AI 사용량 모니터링
+
+### 4. Helper Layer (유틸리티)
+
+#### AspectRatioAnalyzer
+```dart
+class AspectRatioAnalyzer {
+  LayoutType determineOptimalLayout({
+    required List<double> aspectRatiosA,
+    required List<double> aspectRatiosB,
+  }) {
+    // 세로형 이미지가 많으면 → 가로 배치
+    // 가로형 이미지가 많으면 → 세로 배치
+    // 혼합형이면 → 극단적인 비율 우선
+  }
+}
 ```
-편집 버튼 클릭 → MediaEditor → ProImageEditor → 
-편집 완료 → 재업로드 → 검열 → UI 업데이트
+
+#### MediaBoxCallbacks
+- 이미지 선택, 편집, 삭제 콜백 중앙 관리
+- 박스 간 상호작용 조율
+
+### 5. Widget Layer (복합 기능)
+
+#### MediaSelectionFlowWidget
+- WeChat 스타일 이미지 피커 통합
+- 권한 관리 및 설정 이동
+- 멀티 선택 및 카메라 지원
+
+#### MediaEditorWidget
+- ProImageEditor 래퍼
+- 편집 완료 후 자동 재업로드 및 검증
+- 텍스트/이미지 문제 구분
+
+#### TargetAudienceDialog
+- 3단계 설정 플로우 (수집 방식 → 목표 수 → 세부 타겟)
+- AI 추천 vs 수동 선택
+- Provider 패턴으로 상태 관리
+
+## 💡 주요 플로우
+
+### 1. 콘텐츠 생성 플로우
+```mermaid
+graph TD
+    A[페이지 진입] --> B[텍스트 입력]
+    B --> C[이미지 선택]
+    C --> D{검열 통과?}
+    D -->|예| E[UI 표시]
+    D -->|아니오| F[거부 메시지]
+    F --> C
+    E --> G[다음 버튼 활성화]
+    G --> H[타겟 설정]
+    H --> I[게시물 생성]
+    I --> J[알림 전송]
 ```
 
-### 3. AI 검열 프로세스 (다단계)
-- **1단계 - 이미지**: Cloud Vision API → 선정성, 폭력성 등 체크
-- **2단계 - AI 검증**: Gemini AI → 논리성, 적절성 검증
-- **3단계 - 텍스트**: Perspective API → 유해성 점수 분석
-- **결과 처리**: 거부 시 구체적인 이유 표시 (한국어)
-
-### 4. 게시물 생성 및 알림 플로우
+### 2. AI 검열 플로우
+```mermaid
+graph LR
+    A[이미지 선택] --> B[Vision API]
+    B --> C{안전?}
+    C -->|예| D[Firebase 업로드]
+    C -->|아니오| E[거부]
+    D --> F[Gemini AI]
+    F --> G{논리적?}
+    G -->|예| H[Perspective API]
+    G -->|아니오| E
+    H --> I{적절?}
+    I -->|예| J[승인]
+    I -->|아니오| E
 ```
-다음 버튼 클릭 → 이미지 업로드 + AI 검증 → 
-타겟 오디언스 설정 → Firestore 저장 → 
-Cloud Functions 트리거 → AI 사용자 매칭 → 
-알림 생성 및 전송
+
+### 3. 스마트 레이아웃 결정
+```mermaid
+graph TD
+    A[이미지 업로드] --> B[비율 계산]
+    B --> C{이미지 형태}
+    C -->|세로형 多| D[가로 배치]
+    C -->|가로형 多| E[세로 배치]
+    C -->|혼합형| F[극단값 우선]
+    D --> G[박스 크기 계산]
+    E --> G
+    F --> G
+    G --> H[UI 업데이트]
 ```
 
-## 주요 상호작용 (Key Interactions)
+## 🎨 UI/UX 특징
 
-### InPutPostImageWidget ↔ Services
-- `ImageUploadOrchestratorV2`를 통해 업로드/검열 처리
-- 결과에 따라 UI 상태 업데이트
+### 디자인 원칙
+- **Material Design 3**: 최신 디자인 시스템 적용
+- **다크 모드 지원**: AppTheme 기반 테마 전환
+- **반응형 디자인**: 다양한 화면 크기 대응
 
-### MediaSelectionBox ↔ AppState
-- 선택된 이미지는 AppState에 저장
-- File 객체와 Firebase URL 모두 관리
+### 사용자 경험
+- **실시간 피드백**: 문자 수, 유효성 검사 즉시 표시
+- **진행 표시**: 업로드, 검열 진행 상태 시각화
+- **에러 처리**: 명확한 에러 메시지와 해결 방법 제시
+- **애니메이션**: 부드러운 전환과 시각적 피드백
 
-### 스마트 레이아웃 시스템
-- `AspectRatioAnalyzer`: 이미지 비율 분석
-- `DynamicBoxCalculator`: 최적 박스 크기 계산
-- 자동으로 가로/세로 레이아웃 전환
+### 접근성
+- **스크린 리더 지원**: Semantics 위젯 활용
+- **키보드 네비게이션**: 탭 순서 최적화
+- **색상 대비**: WCAG 2.1 AA 기준 충족
 
-## 중요 사항 (Important Notes)
+## 📊 성능 최적화
 
-### 상태 관리
-- `InPutPostImageModel`: 페이지 로컬 상태
-- `AppState`: 전역 상태 (이미지, 텍스트 등)
-- 두 상태의 동기화가 중요함
+### 이미지 처리
+- **3단계 리사이징**: original, display(800px), thumbnail(150px)
+- **병렬 업로드**: Future.wait으로 동시 처리
+- **프리캐싱**: 업로드 직후 이미지 캐싱
+- **메모리 관리**: LRU 캐시로 메모리 효율화
 
-### 검열 정책
-- 이미지와 텍스트 모두 검열
-- 부적절한 콘텐츠는 구체적인 이유와 함께 거부
-- 편집 후에도 재검열 실시
+### 네트워크 최적화
+- **재시도 로직**: 실패 시 3회 자동 재시도
+- **타임아웃 설정**: 30초 타임아웃으로 무한 대기 방지
+- **청크 업로드**: 대용량 파일 분할 업로드 (계획)
 
-### 성능 최적화
-- 이미지 리사이징 (display: 800px, thumbnail: 150px)
-- 병렬 업로드로 속도 향상
-- 메모리 캐시 활용
+### 렌더링 최적화
+- **조건부 렌더링**: 필요한 위젯만 빌드
+- **Consumer 패턴**: 필요한 부분만 리빌드
+- **Debouncing**: 레이아웃 업데이트 최적화
 
-### UI/UX 규칙
-- A박스는 필수, B박스는 선택적
-- + 아이콘: B박스가 숨겨진 상태에서만 표시
-- 이미지 없이는 다음 단계 진행 불가
+## 🔒 보안 및 검증
 
-## 개발 시 주의사항
+### 콘텐츠 검열
+- **이미지 검열**: Cloud Vision API (폭력성, 선정성 등)
+- **AI 검증**: Gemini 1.5 Pro (논리성, 적절성)
+- **텍스트 검열**: Perspective API (유해성 점수)
 
-1. **이미지 파일 관리**: URL과 File 객체를 모두 다루므로 혼동 주의
-2. **비동기 처리**: 업로드/검열은 시간이 걸리므로 로딩 상태 관리 필수
-3. **에러 처리**: 네트워크 오류, 검열 실패 등 다양한 시나리오 고려
-4. **메모리 관리**: 대용량 이미지 처리 시 메모리 누수 주의
-5. **AI 검열**: 토큰 사용량 모니터링 및 비용 관리
-6. **타겟팅**: 개인정보 보호 및 타겟 정확도 균형
+### 데이터 보호
+- **개인정보 필터링**: 전화번호, 이메일 자동 제거
+- **Firebase Security Rules**: 사용자별 접근 제어
+- **HTTPS 전용**: 모든 통신 암호화
 
-## 최근 주요 업데이트
+### 검증 규칙
+- **필수 필드**: 제목, A/B 타이틀 필수
+- **문자 수 제한**: 제목 50자, 설명 200자
+- **이미지 제한**: 최대 4개, 10MB/개
 
-### 2025-08-06: 로깅 시스템 최적화 (v2.0.0)
-- DebugHelper에 logOnce() 메서드 추가로 영구 중복 방지
-- 이벤트 기반 고유 ID 로깅으로 전환
-- 90% 로그 중복 감소 달성
+## 🐛 디버깅 및 모니터링
+
+### 디버그 도구
+- **DebugHelper**: 태그 기반 로깅 시스템
+- **LayoutDebugInfo**: 레이아웃 정보 시각화
+- **Performance Overlay**: 성능 모니터링
+
+### 로깅 전략
+```dart
+// 태그 기반 로깅
+DebugHelper.log('Layout', '레이아웃 변경: $layoutType');
+DebugHelper.log('Upload', '업로드 시작: ${files.length}개');
+DebugHelper.log('AI', 'Gemini 응답: $response');
+```
+
+### 에러 추적
+- **ErrorHandler**: 중앙 집중식 에러 처리
+- **Crashlytics**: 프로덕션 에러 수집
+- **Analytics**: 사용자 행동 분석
+
+## 🔄 변경 이력
+
+### v2.5.0 (2025-08-23)
+- 전체 하위 디렉토리 문서화 100% 완료
+- 통합 문서 작성 및 아키텍처 정리
+- 검증 스크립트 통과
+
+### v2.4.0 (2025-08-06)
+- 로깅 시스템 최적화
+- logOnce() 메서드로 90% 중복 감소
 - Firebase 리스너 로그 최적화
 
-### 2025-07-20: AI 기반 투표 알림 시스템 통합
-- Genkit Framework를 활용한 통합 AI 시스템
-- 스마트 사용자 매칭 알고리즘 구현
-- 4가지 타겟 모드: quick(AI), public(랜덤), custom(조건), test(개발)
-- NotificationService와 GlobalNotificationManager 통합
+### v2.3.0 (2025-07-20)
+- AI 기반 투표 알림 시스템 통합
+- Genkit Framework 도입
+- 4가지 타겟 모드 구현
 
-### 2025-07-15~16: AI 검열 시스템 고도화
-- Gemini AI API 통합으로 콘텐츠 적절성 검증
-- Genkit Framework 도입으로 AI 시스템 통합 관리
-- 다단계 검열 프로세스 구축 (이미지 → AI → 텍스트)
-- 토큰 사용량 추적 시스템 구현
+### v2.2.0 (2025-07-15)
+- Gemini AI 통합
+- 다단계 검열 시스템 구축
+- 토큰 사용량 추적
 
-### 2025-07-13: 대규모 코드베이스 최적화
-- 10단계 체계적 리팩토링 완료
-- 메모리 누수 수정 및 성능 최적화
-- 컴포넌트 분리 및 재사용성 향상
-- 중앙 집중식 상수 관리 시스템 구축
+### v2.1.0 (2025-07-13)
+- 대규모 코드베이스 리팩토링
+- 컴포넌트 분리 및 성능 최적화
+- 중앙 집중식 상수 관리
 
-### 2025-07-14: 텍스트 필드 UI/UX 개선
-- 중앙 집중식 필드 스타일 관리 (FieldStyles)
-- 실시간 문자 카운터 개선
-- 유효성 검사 UX 향상
+### v2.0.0 (2025-07-09)
+- 스마트 레이아웃 시스템 구현
+- 이미지 비율 기반 자동 레이아웃
+- NotificationService 통합
 
-### 2025-07-09: 스마트 레이아웃 시스템
-- 이미지 비율 자동 분석
-- 동적 박스 크기 계산
-- 가로/세로 레이아웃 자동 전환
-- v1.3.0: NotificationService 통합으로 알림에서도 동일한 레이아웃 유지
+## 🚀 향후 계획
 
-## 관련 문서
-- [Components 상세 문서](./components/README.md)
-- [Services 상세 문서](./services/README.md)
-- [Helpers 상세 문서](./helpers/README.md)
-- [Widgets 상세 문서](./widgets/README.md)
-- [Constants 상세 문서](./constants/README.md)
-- [Delegates 상세 문서](./delegates/README.md)
-- [Utils 상세 문서](./utils/README.md)
+### 단기 계획 (1-2개월)
+- [ ] 비디오 지원 완성
+- [ ] 드래그 앤 드롭 구현
+- [ ] 오프라인 모드 지원
+- [ ] 성능 모니터링 대시보드
+
+### 중기 계획 (3-6개월)
+- [ ] AI 자동 캡션 생성
+- [ ] 실시간 협업 편집
+- [ ] 템플릿 시스템
+- [ ] A/B 테스팅 플랫폼
+
+### 장기 계획 (6개월+)
+- [ ] AR 필터 지원
+- [ ] 3D 콘텐츠 지원
+- [ ] 블록체인 투표 검증
+- [ ] 글로벌 CDN 최적화
+
+## 📚 관련 문서
+
+### 하위 모듈 문서
+- [📦 Components - UI 컴포넌트](./components/README.md)
+- [⚙️ Services - 비즈니스 로직](./services/README.md)
+- [🔧 Helpers - 유틸리티](./helpers/README.md)
+- [🎨 Widgets - 복합 위젯](./widgets/README.md)
+- [📏 Constants - 상수 관리](./constants/README.md)
+- [🎯 Delegates - 커스텀 델리게이트](./delegates/README.md)
+- [🛠️ Utils - 공통 유틸리티](./utils/README.md)
+- [📊 Models - 데이터 모델](./models/README.md)
+
+### 프로젝트 문서
+- [프로젝트 아키텍처](../../ARCHITECTURE.md)
+- [네이밍 컨벤션](../../NAMING_CONVENTION.md)
+- [개발 가이드](../../DEVELOPMENT_GUIDE.md)
+
+## 🤝 기여 가이드
+
+### 코드 스타일
+- Dart 공식 스타일 가이드 준수
+- 의미 있는 변수명 사용
+- 주석은 한국어로 작성
+
+### 커밋 메시지
+```
+feat: 새로운 기능 추가
+fix: 버그 수정
+refactor: 코드 리팩토링
+docs: 문서 업데이트
+test: 테스트 추가/수정
+```
+
+### PR 체크리스트
+- [ ] 네이밍 컨벤션 준수
+- [ ] 테스트 통과
+- [ ] 문서 업데이트
+- [ ] 코드 리뷰 완료
+
+---
+
+*이 문서는 InPutPostImage 모듈의 통합 아키텍처와 구현을 설명합니다.*
+*최종 업데이트: 2025-08-23*

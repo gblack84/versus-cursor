@@ -1,91 +1,41 @@
 # Versus Space 시스템 아키텍처
 
-> 최종 업데이트: 2025-08-24 | 버전: 2.1.0
+## 🏗️ 전체 시스템 구조
 
-## 🏗️ 전체 시스템 구조 (활성화 상태 포함)
-
-```mermaid
-graph TB
-    subgraph "클라이언트"
-        A["✅ Flutter App<br/>(Active)"]
-        B["📋 Web App<br/>(Planned)"]
-    end
-    
-    subgraph "캐싱 레이어 (3-Layer)"
-        M["✅ Memory Cache<br/>(LRU, 100 items)"]
-        N["✅ Hive Local DB<br/>(Persistent)"]
-        O["✅ Firestore Offline<br/>(Unlimited)"]
-    end
-    
-    subgraph "Firebase 생태계"
-        C["✅ Firebase Auth<br/>(Active)"]
-        D["✅ Firestore Database<br/>(Active)"]
-        E["✅ Firebase Storage<br/>(Active)"]
-        F["✅ Firebase Functions<br/>(Active - 11 deployed)"]
-        G["📋 Firebase Hosting<br/>(Planned)"]
-    end
-    
-    subgraph "외부 AI 서비스"
-        H["✅ Google Cloud Vision API<br/>(Active)"]
-        I["✅ Perspective API<br/>(Active)"]
-        J["✅ Gemini AI<br/>(Active)"]
-        K["✅ Genkit Framework<br/>(Active)"]
-    end
-    
-    subgraph "검색 엔진"
-        L["✅ Algolia Search<br/>(Active)"]
-    end
-    
-    A --> M
-    M --> N
-    N --> O
-    O --> D
-    
-    A --> C
-    A --> E
-    A --> F
-    B --> C
-    B --> D
-    B --> E
-    B --> F
-    
-    F --> H
-    F --> I
-    F --> J
-    F --> K
-    
-    D --> L
-    
-    style A fill:#e8f5e8
-    style B fill:#e3f2fd
-    style C fill:#e8f5e8
-    style D fill:#e8f5e8
-    style E fill:#e8f5e8
-    style F fill:#e8f5e8
-    style G fill:#e3f2fd
-    style H fill:#e8f5e8
-    style I fill:#e8f5e8
-    style J fill:#e8f5e8
-    style K fill:#e8f5e8
-    style L fill:#e8f5e8
-    style M fill:#e8f5e8
-    style N fill:#e8f5e8
-    style O fill:#e8f5e8
 ```
-
-### 🎯 상태 아이콘 의미
-- **✅ Active**: 완전히 구현되고 현재 사용 중
-- **🚧 Development**: 부분적으로 구현되거나 개발 중
-- **❌ Inactive**: 구현되었지만 현재 비활성화
-- **📋 Planned**: 계획되었지만 아직 구현되지 않음
-
-### 📊 현재 프로젝트 상태 요약
-- **활성화된 서비스**: 14개 (Firebase + AI + 캐싱 시스템)
-- **계획 중인 서비스**: 2개 (Web App, Firebase Hosting)
-- **배포된 Cloud Functions**: 11개 (1개 미배포: checkVoteTimeouts)
-- **통합된 AI 서비스**: 4개 (Vision, Perspective, Gemini, Genkit)
-- **사용 중인 Firestore 컬렉션**: 36개
-- **캐싱 시스템**: 3-Layer (Memory → Hive → Firestore)
+┌─────────────────────────────────────────────────────────────────────┐
+│                           Flutter App                                │
+│  ┌─────────────┐  ┌──────────────┐  ┌────────────────┐             │
+│  │   UI Layer  │  │ State Mgmt   │  │  Services      │             │
+│  │  - Pages    │  │ - Provider   │  │  - AI Mod      │             │
+│  │  - Widgets  │  │ - AppState   │  │  - Notif       │             │
+│  │  - Design   │  │ - Navigation │  │  - Chat        │             │
+│  │  - Smart    │  │              │  │  - Layout      │             │
+│  │    Layout   │  │              │  │                │             │
+│  └─────────────┘  └──────────────┘  └────────────────┘             │
+└─────────────────────────────┬───────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      Firebase Backend                                │
+│  ┌─────────────┐  ┌──────────────┐  ┌────────────────┐             │
+│  │  Firestore  │  │   Storage    │  │ Cloud Functions│             │
+│  │  - Users    │  │  - Images    │  │  - Triggers    │             │
+│  │  - Posts    │  │  - Videos    │  │  - Scheduled   │             │
+│  │  - Messages │  │  - Thumbnails│  │  - HTTPS       │             │
+│  └─────────────┘  └──────────────┘  └────────────────┘             │
+└─────────────────────────────┬───────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      External Services                               │
+│  ┌─────────────┐  ┌──────────────┐  ┌────────────────┐             │
+│  │  Gemini AI  │  │ Vision API   │  │ Perspective   │             │
+│  │  - Content  │  │  - Image     │  │  - Text       │             │
+│  │  - Matching │  │  - Safety    │  │  - Toxicity   │             │
+│  └─────────────┘  └──────────────┘  └────────────────┘             │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ## 🔄 주요 시스템 플로우
 
@@ -228,65 +178,6 @@ sequenceDiagram
 
 ## 🗂️ 데이터 흐름
 
-### Firestore 데이터 모델 ERD
-
-```mermaid
-erDiagram
-    USERS ||--o{ POSTS : creates
-    USERS ||--o{ COMMENTS : writes
-    USERS ||--o{ LIKES : gives
-    USERS ||--o{ DISLIKES : gives
-    USERS ||--o{ CHATS : participates
-    USERS ||--o{ FRIENDS_LIST : has
-    USERS ||--o{ CHARACTERS : owns
-    USERS ||--o{ NOTIFICATIONS : receives
-    
-    POSTS ||--o{ COMMENTS : has
-    POSTS ||--o{ LIKES : receives
-    POSTS ||--o{ DISLIKES : receives
-    POSTS ||--o{ RANKINGS : appears_in
-    
-    POSTS {
-        string id PK
-        string questionTitle
-        string optionATitles  
-        string optionBTitles
-        string description
-        timestamp createdAt
-        string userId FK
-        boolean isAnonymous
-        list imageUrlsA
-        list imageUrlsB
-    }
-    
-    USERS {
-        string uid PK
-        string displayName
-        string email
-        string profilePicture
-        int pointsA
-        int pointsQ
-        timestamp createdTime
-        list interests
-    }
-    
-    CHATS {
-        string id PK
-        list participantIds
-        timestamp lastMessageAt
-        string lastMessage
-    }
-    
-    MESSAGES {
-        string id PK
-        string chatRef FK
-        string senderId FK
-        string content
-        timestamp sentTime
-        boolean isRead
-    }
-```
-
 ### Firestore 컬렉션 관계
 
 ```
@@ -407,13 +298,11 @@ lib/
 │   └── firebase/    # Firebase 설정
 ├── services/        # 비즈니스 로직
 │   ├── ai_moderation/
-│   ├── cache/       # 3-Layer 캐싱
 │   ├── notification_service.dart
-│   └── vote_timer_service.dart
+│   └── chat_service.dart
 ├── pages/          # UI 페이지
 ├── components/     # 재사용 컴포넌트
 ├── providers/      # 상태 관리
-├── etc/           # FlutterFlow 레거시 테스트
 └── utils/         # 유틸리티
 ```
 
@@ -483,16 +372,6 @@ firebase functions:config:set \
   perspective.api_key="KEY"
 ```
 
-## 📌 배포된 Firebase Functions (11개)
-
-### 트리거별 분류
-- **Auth 트리거** (1개): onUserDeleted
-- **Firestore 트리거** (2개): onPostCreatedSendNotifications, onPostVoteUpdate
-- **Storage 트리거** (1개): moderateImage
-- **HTTPS API** (6개): checkImageContent, validatePostContentWithGemini, getUserPostingHistory, testCreateAIChatMessage, migrateAIChatRooms, migrateVoteData
-- **Scheduled** (1개): flushThrottleQueue (매 1분)
-- **미배포** (1개): checkVoteTimeouts (매시간 - 구현됨, 배포 예정)
-
 ## 📈 확장성 고려사항
 
 ### 현재 지원
@@ -504,10 +383,3 @@ firebase functions:config:set \
 - 샤딩을 통한 데이터베이스 확장
 - CDN을 통한 미디어 전송 최적화
 - 마이크로서비스 아키텍처 전환 고려
-
-## 🔗 관련 문서
-- [프로젝트 개요](./README.md)
-- [기술 상세](./CLAUDE.md)
-- [변경 이력](./CHANGELOG.md)
-- [문서화 인덱스](./index_document.md)
-- [네이밍 컨벤션](./docs/guides/NAMING_CONVENTION.md)

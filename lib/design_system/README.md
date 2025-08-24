@@ -1,30 +1,127 @@
-# Versus Space Design System
+# 🎨 Versus Space Design System
+> 일관된 사용자 경험을 위한 통합 디자인 시스템
 
-Versus Space 앱의 통합 디자인 시스템입니다. 일관된 UI/UX를 위해 토큰 기반 디자인 시스템을 구축했습니다.
+## 🎯 개요
 
-## 📋 개요
+Versus Space Design System은 애플리케이션 전반에서 일관된 UI/UX를 제공하기 위한 포괄적인 디자인 시스템입니다. 2025-07-25에 도입되어 앱 전반의 시각적 일관성과 개발 효율성을 향상시킵니다. 디자인 토큰, UI 컴포넌트, 유틸리티 함수를 체계적으로 구조화하여 개발 효율성과 유지보수성을 극대화합니다.
 
-이 디자인 시스템은 2025-07-25에 도입되어 앱 전반의 시각적 일관성과 개발 효율성을 향상시킵니다. 기존 AppTheme과 호환되면서도 더 체계적인 디자인 토큰과 컴포넌트를 제공합니다.
+### 핵심 가치
+- **일관성**: 모든 화면에서 통일된 디자인 언어 사용
+- **효율성**: 재사용 가능한 컴포넌트로 개발 시간 단축
+- **확장성**: 새로운 요구사항에 유연하게 대응
+- **접근성**: 모든 사용자를 위한 포용적 디자인
+- **성능**: 최적화된 컴포넌트로 빠른 렌더링
 
-## 📁 구조
+## 📐 네이밍 컨벤션
+
+```dart
+// 파일명: snake_case (Dart 표준)
+design_system.dart
+versus_colors.dart
+icon_style_manager.dart
+
+// 클래스명: PascalCase
+class VersusColors
+class VersusButton
+class IconStyleManager
+
+// 메서드명: lowerCamelCase
+VersusButton.primary()
+IconStyleManager.initialize()
+
+// 상수/변수명: lowerCamelCase
+static const Color primary
+final double screenPadding
+```
+
+- 참조: [NAMING_CONVENTION.md](../../NAMING_CONVENTION.md)
+
+## 🏗️ 시스템 아키텍처
+
+### 전체 구조
+```mermaid
+graph TB
+    subgraph "Design System"
+        A[design_system.dart<br/>Main Entry Point]
+        
+        A --> B[Components<br/>UI 컴포넌트]
+        A --> C[Tokens<br/>디자인 토큰]
+        A --> D[Utils<br/>유틸리티]
+    end
+    
+    subgraph "Components Layer"
+        B --> B1[VersusButton]
+        B --> B2[VersusDialog]
+        B --> B3[VersusTextField]
+        B --> B4[VersusIcon]
+    end
+    
+    subgraph "Tokens Layer"
+        C --> C1[VersusColors]
+        C --> C2[VersusSpacing]
+        C --> C3[VersusRadius]
+        C --> C4[VersusTextStyles]
+        C --> C5[VersusIcons]
+    end
+    
+    subgraph "Utils Layer"
+        D --> D1[IconStyleManager]
+        D --> D2[ThemeManager<br/>향후 구현]
+        D --> D3[ResponsiveHelper<br/>향후 구현]
+    end
+```
+
+### 레이어별 역할
+
+#### 1. **Components Layer** (UI 컴포넌트)
+재사용 가능한 UI 컴포넌트들의 집합입니다.
+- **VersusButton**: 다양한 스타일의 버튼 컴포넌트
+- **VersusDialog**: 경고, 확인, 정보 표시용 다이얼로그
+- **VersusTextField**: 입력 필드와 유효성 검사
+- **VersusIcon**: 플랫폼별 아이콘 표시
+
+#### 2. **Tokens Layer** (디자인 토큰)
+디자인 시스템의 기본 값들을 정의합니다.
+- **VersusColors**: 색상 팔레트
+- **VersusSpacing**: 간격 시스템 (4px 그리드)
+- **VersusRadius**: 둥근 모서리 값
+- **VersusTextStyles**: 타이포그래피 시스템
+- **VersusIcons**: 아이콘 데이터 및 스타일
+
+#### 3. **Utils Layer** (유틸리티)
+디자인 시스템을 지원하는 헬퍼 함수들입니다.
+- **IconStyleManager**: 플랫폼별 아이콘 스타일 관리
+- **ThemeManager**: 다크모드/라이트모드 전환 (예정)
+- **ResponsiveHelper**: 반응형 디자인 지원 (예정)
+
+## 📦 디렉토리 구조
 
 ```
-design_system/
-├── tokens/               # 디자인 토큰 (색상, 간격, 글꼴 등)
-│   ├── versus_colors.dart      # 색상 시스템
-│   ├── versus_spacing.dart     # 간격 시스템 (4px 기반)
-│   ├── versus_text_styles.dart # 타이포그래피
-│   ├── versus_radius.dart      # 모서리 둥글기
-│   ├── versus_icons.dart       # 아이콘 세트
-│   └── versus_tokens.dart      # 모든 토큰 export
-├── components/           # 재사용 가능한 UI 컴포넌트
-│   ├── versus_button.dart      # 표준 버튼 컴포넌트
+lib/design_system/
+├── README.md                    # 현재 문서
+├── design_system.dart           # 메인 진입점 (barrel export)
+│
+├── components/                  # UI 컴포넌트 레이어
+│   ├── README.md               # 컴포넌트 상세 문서
+│   ├── versus_components.dart  # 컴포넌트 barrel export
+│   ├── versus_button.dart      # 버튼 컴포넌트
 │   ├── versus_dialog.dart      # 다이얼로그 컴포넌트
-│   ├── versus_text_field.dart  # 입력 필드 컴포넌트
-│   └── versus_icon.dart        # 아이콘 래퍼
-├── utils/               # 유틸리티
-│   └── icon_style_manager.dart # 아이콘 스타일 관리
-└── design_system.dart   # 메인 export 파일
+│   ├── versus_text_field.dart  # 텍스트 필드 컴포넌트
+│   └── versus_icon.dart        # 아이콘 컴포넌트
+│
+├── tokens/                      # 디자인 토큰 레이어
+│   ├── README.md               # 토큰 상세 문서
+│   ├── versus_tokens.dart      # 토큰 barrel export
+│   ├── versus_colors.dart      # 색상 시스템
+│   ├── versus_spacing.dart     # 간격 시스템
+│   ├── versus_radius.dart      # 둥근 모서리
+│   ├── versus_text_styles.dart # 타이포그래피
+│   ├── versus_icons.dart       # 아이콘 정의
+│   └── versus_icon_data.dart   # 아이콘 데이터 구조
+│
+└── utils/                       # 유틸리티 레이어
+    ├── README.md               # 유틸리티 상세 문서
+    └── icon_style_manager.dart # 아이콘 스타일 관리자
 ```
 
 ## 🎨 디자인 토큰
@@ -258,101 +355,262 @@ VersusIcon(
 )
 ```
 
-## 🚀 사용 가이드
+## 💻 사용 방법
 
-### 1. Import
+### 전체 디자인 시스템 import
 
 ```dart
-// 전체 디자인 시스템
 import 'package:versus_space/design_system/design_system.dart';
 
-// 토큰만 import
+// 모든 토큰과 컴포넌트에 접근 가능
+class MyWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: VersusSpacing.paddingMD,
+      decoration: BoxDecoration(
+        color: VersusColors.primary,
+        borderRadius: VersusRadius.radiusMedium,
+      ),
+      child: Column(
+        children: [
+          Text(
+            'Versus Space',
+            style: VersusTextStyles.headingLarge,
+          ),
+          VersusSpacing.gapMD,
+          VersusButton.primary(
+            text: '시작하기',
+            onPressed: () {},
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+### 개별 레이어 import
+
+```dart
+// 토큰만 필요한 경우
 import 'package:versus_space/design_system/tokens/versus_tokens.dart';
 
-// 특정 컴포넌트만 import
+// 컴포넌트만 필요한 경우
+import 'package:versus_space/design_system/components/versus_components.dart';
+
+// 특정 컴포넌트만 필요한 경우
 import 'package:versus_space/design_system/components/versus_button.dart';
 ```
 
-### 2. 마이그레이션 예시
+## 🔄 마이그레이션 가이드
 
+### 기존 코드에서 디자인 시스템으로
+
+#### Step 1: Import 변경
 ```dart
-// Before (기존 코드)
-Container(
-  padding: EdgeInsetsDirectional.fromSTEB(20.0, 16.0, 20.0, 16.0),
-  decoration: BoxDecoration(
-    color: Color(0xFFFAF9F6),
-    borderRadius: BorderRadius.circular(16.0),
-    border: Border.all(color: Colors.black),
+// Before
+import 'package:versus_space/core/app_theme.dart';
+
+// After
+import 'package:versus_space/design_system/design_system.dart';
+```
+
+#### Step 2: 색상 변경
+```dart
+// Before
+AppTheme.primaryColor
+Color(0xFFD95B5B)
+
+// After
+VersusColors.primary
+```
+
+#### Step 3: 간격 변경
+```dart
+// Before
+EdgeInsets.all(16.0)
+EdgeInsetsDirectional.fromSTEB(20, 16, 20, 16)
+
+// After
+VersusSpacing.paddingMD
+VersusSpacing.fromSTEB(20, 16, 20, 16)
+```
+
+#### Step 4: 컴포넌트 교체
+```dart
+// Before
+ElevatedButton(
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Color(0xFFD95B5B),
   ),
-  child: Text(
-    'Hello World',
-    style: GoogleFonts.plusJakartaSans(
-      fontSize: 14,
-      fontWeight: FontWeight.w500,
-    ),
-  ),
+  child: Text('확인'),
+  onPressed: () {},
 )
 
-// After (디자인 시스템 적용)
-Container(
-  padding: VersusSpacing.cardInternal,
-  decoration: BoxDecoration(
-    color: VersusColors.backgroundPrimary,
-    borderRadius: VersusRadius.radiusMedium,
-    border: Border.all(color: VersusColors.borderColor),
-  ),
-  child: Text(
-    'Hello World',
-    style: VersusTextStyles.bodyMedium,
-  ),
+// After
+VersusButton.primary(
+  text: '확인',
+  onPressed: () {},
 )
 ```
 
-### 3. 베스트 프랙티스
+## 🎯 베스트 프랙티스
 
-1. **일관성 유지**: 항상 디자인 토큰 사용
-2. **하드코딩 금지**: 색상, 간격, 폰트 크기 직접 입력 지양
-3. **컴포넌트 우선**: 가능한 경우 표준 컴포넌트 사용
-4. **점진적 마이그레이션**: 새 기능부터 디자인 시스템 적용
+### 1. 일관된 토큰 사용
+```dart
+// ❌ 하드코딩된 값
+Container(
+  padding: EdgeInsets.all(16.0),
+  color: Color(0xFFD95B5B),
+)
 
-## 📐 기존 코드와의 호환성
+// ✅ 디자인 토큰 사용
+Container(
+  padding: VersusSpacing.paddingMD,
+  color: VersusColors.primary,
+)
+```
 
-### AppTheme과의 관계
-- 디자인 시스템은 AppTheme을 보완하며, 함께 사용 가능
-- 새로운 기능은 디자인 시스템 우선 사용
-- 기존 코드는 점진적으로 마이그레이션
+### 2. 컴포넌트 재사용
+```dart
+// ❌ 커스텀 버튼 생성
+ElevatedButton(
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Color(0xFFD95B5B),
+    padding: EdgeInsets.all(16),
+  ),
+  child: Text('확인'),
+  onPressed: () {},
+)
 
-### FlutterFlow 마이그레이션
-- FlutterFlow에서 네이티브 Flutter로 전환 후 도입
-- 기존 스타일 패턴을 분석하여 토큰화
-- STEB 패턴 등 기존 코드와 호환
+// ✅ VersusButton 사용
+VersusButton.primary(
+  text: '확인',
+  onPressed: () {},
+)
+```
 
-## 🎯 장점
+### 3. 플랫폼 고려
+```dart
+// ❌ 단일 아이콘 사용
+Icon(Icons.home)
 
-1. **일관성**: 모든 UI 요소가 동일한 디자인 언어 사용
-2. **유지보수성**: 중앙 집중식 스타일 관리
-3. **개발 속도**: 재사용 가능한 컴포넌트로 빠른 개발
-4. **확장성**: 새로운 토큰과 컴포넌트 쉽게 추가
-5. **다크 모드 준비**: 색상 토큰으로 테마 전환 용이
+// ✅ 플랫폼별 아이콘
+VersusIcon(VersusIcons.home)
+```
 
-## 🔮 향후 계획
 
-1. **추가 컴포넌트**
-   - VersusCard - 카드 컴포넌트
-   - VersusChip - 칩/태그 컴포넌트
-   - VersusAvatar - 아바타 컴포넌트
-   - VersusBottomSheet - 바텀시트 컴포넌트
+## 📊 성능 최적화
 
-2. **테마 시스템**
-   - 다크 모드 지원
-   - 사용자 정의 테마
-   - 동적 테마 전환
+### 1. Tree Shaking
+디자인 시스템은 tree shaking을 지원하여 사용하지 않는 컴포넌트는 빌드에서 제외됩니다.
 
-3. **애니메이션**
-   - 표준 전환 애니메이션
-   - 마이크로 인터랙션
+### 2. Const 생성자
+모든 토큰은 compile-time 상수로 정의되어 있어 성능에 영향을 주지 않습니다.
 
-4. **접근성**
-   - 시맨틱 레이블
-   - 고대비 모드
-   - 큰 글꼴 지원
+### 3. 메모이제이션
+IconStyleManager는 플랫폼 정보를 캐싱하여 반복적인 플랫폼 체크를 방지합니다.
+
+## 🔍 디버깅
+
+### 디자인 토큰 확인
+```dart
+if (!kReleaseMode) {
+  print('Primary Color: ${VersusColors.primary}');
+  print('Current Icon Style: ${IconStyleManager.getCurrentStyle()}');
+  print('Screen Padding: ${VersusSpacing.screenPadding}');
+}
+```
+
+### 컴포넌트 상태 확인
+```dart
+// VersusButton 상태 로깅
+VersusButton.primary(
+  text: 'Debug',
+  onPressed: () {
+    print('Button pressed');
+  },
+  isLoading: true,  // 로딩 상태 테스트
+)
+```
+
+## 📝 변경 이력
+
+### 2025-08-24
+- 디자인 시스템 전체 구조 문서화
+- 3개 레이어 (Components, Tokens, Utils) 통합 문서 작성
+- 사용 가이드 및 베스트 프랙티스 추가
+- 마이그레이션 가이드 작성
+
+### 2025-08-22
+- 초기 디자인 시스템 구축
+- Components, Tokens, Utils 디렉토리 생성
+- 기본 컴포넌트 및 토큰 구현
+
+### 2025-07-25
+- 디자인 시스템 도입
+- AppTheme과 호환성 유지하며 새로운 토큰 시스템 구축
+
+## 🚀 향후 계획
+
+### Phase 1: 기본 기능 완성 (현재)
+- ✅ 색상 시스템
+- ✅ 간격 시스템
+- ✅ 타이포그래피
+- ✅ 기본 컴포넌트
+- ✅ 아이콘 관리
+
+### Phase 2: 고급 기능 (계획)
+- ⏳ ThemeManager (다크모드 지원)
+- ⏳ ResponsiveHelper (반응형 디자인)
+- ⏳ AnimationManager (애니메이션 프리셋)
+- ⏳ ColorSchemeGenerator (동적 테마)
+- ⏳ VersusCard (카드 컴포넌트)
+- ⏳ VersusChip (칩/태그 컴포넌트)
+- ⏳ VersusAvatar (아바타 컴포넌트)
+- ⏳ VersusBottomSheet (바텀시트 컴포넌트)
+
+### Phase 3: 확장 기능 (향후)
+- 📅 접근성 향상 도구
+- 📅 디자인 토큰 검사 도구
+- 📅 컴포넌트 플레이그라운드
+- 📅 자동 문서 생성
+
+## 🤝 기여 가이드
+
+### 새 컴포넌트 추가
+1. `/components` 디렉토리에 파일 생성
+2. VersusComponents barrel에 export 추가
+3. README 문서 업데이트
+4. 사용 예제 작성
+
+### 새 토큰 추가
+1. 적절한 토큰 파일에 상수 추가
+2. VersusTokens barrel에 export 확인
+3. 문서에 사용법 추가
+
+### 코드 리뷰 체크리스트
+- [ ] 네이밍 컨벤션 준수
+- [ ] 디자인 토큰 사용
+- [ ] 문서 업데이트
+- [ ] 테스트 작성
+- [ ] 접근성 고려
+
+## 📚 참고 자료
+
+### 내부 문서
+- [컴포넌트 상세 문서](./components/README.md)
+- [토큰 상세 문서](./tokens/README.md)
+- [유틸리티 상세 문서](./utils/README.md)
+- [프로젝트 네이밍 컨벤션](../../NAMING_CONVENTION.md)
+
+### 외부 리소스
+- [Material Design 3](https://m3.material.io/)
+- [Flutter 위젯 카탈로그](https://docs.flutter.dev/development/ui/widgets)
+- [Dart 스타일 가이드](https://dart.dev/guides/language/effective-dart/style)
+
+---
+
+*이 문서는 Versus Space Design System v1.0.0 기준으로 작성되었습니다.*
+*최종 업데이트: 2025-08-24*

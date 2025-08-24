@@ -1,0 +1,72 @@
+# 🤖 Versus Space AI 빠른 참조 규칙
+
+## 📋 작업 체크리스트
+
+### ✅ 시작 전
+- [ ] 관련 기존 코드 검색 (`grep -r`)
+- [ ] 유사 패턴 확인 (chat_detail_v2, home_page 등)
+- [ ] 네이밍 컨벤션 확인
+
+### ✅ 코딩 중
+- [ ] **파일명**: snake_case (`user_service.dart`)
+- [ ] **필드/변수**: camelCase (`userId`, `createdAt`)
+- [ ] **클래스**: PascalCase (`UserService`)
+- [ ] **라우트**: camelCase (`chatDetail`)
+- [ ] **캐싱 적용**: UnifiedCacheService 사용
+- [ ] **디자인 토큰**: VersusColors, VersusSpacing 사용
+
+### ✅ 완료 후
+- [ ] README.md 업데이트
+- [ ] `./scripts/check_naming.sh` 실행
+- [ ] `./scripts/validate_docs.sh` 실행
+- [ ] CLAUDE.md Migration History 추가
+
+## 🚀 빠른 명령어
+
+```bash
+# 네이밍 검사
+./scripts/check_naming.sh
+
+# 문서 검증
+./scripts/validate_docs.sh
+
+# 문서 동기화
+./scripts/sync_docs.sh update
+```
+
+## 📁 디렉토리 구조
+
+```
+/lib/pages/[feature]/        # 새 페이지
+/lib/services/               # 서비스
+/lib/components/[name]/      # 컴포넌트
+/lib/backend/schema/         # 모델
+```
+
+## 💾 캐싱 패턴
+
+```dart
+final _cache = UnifiedCacheService();
+await _cache.get('key_$id', () => fetchData());
+```
+
+## 🎨 UI 패턴
+
+```dart
+color: VersusColors.primary
+padding: EdgeInsets.all(VersusSpacing.md)
+style: VersusTextStyles.headlineMedium
+```
+
+## ⚠️ 중요 규칙
+
+1. **기존 패턴 우선** - 새로 만들지 말고 찾아서 재사용
+2. **문서화 필수** - 디렉토리마다 README.md
+3. **테스트 가능성** - 테스트 불가능하면 구현 재고려
+4. **성능 고려** - 캐싱, 이미지 최적화 필수
+
+## 📖 참조
+
+- 전체 규칙: `DEVELOPMENT_RULES.md`
+- 네이밍: `docs/guides/NAMING_CONVENTION.md`
+- 아키텍처: `ARCHITECTURE.md`

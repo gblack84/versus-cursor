@@ -10,13 +10,9 @@
 /
 ├── README.md                 # 프로젝트 소개 및 시작 가이드
 ├── CLAUDE.md                 # 프로젝트 상세 기술 문서
-├── NAMING_CONVENTION.md      # 네이밍 컨벤션 표준
-├── MIGRATION_SUMMARY.md      # 마이그레이션 요약 (100% 완료)
 ├── ARCHITECTURE.md           # 시스템 아키텍처
 ├── CHANGELOG.md              # 변경 이력
-├── BREAKING_CHANGES.md       # 주요 변경사항
-├── TECHNICAL_DEBT.md         # 기술 부채 추적
-└── REFACTORING_PLAN.md       # 리팩토링 계획
+└── CLAUDE.md                 # 프로젝트 상세 기술 문서
 ```
 
 ### 디렉토리별 README
@@ -62,7 +58,7 @@ cp docs/README_TEMPLATE.md lib/new_feature/README.md
 ### 필수 섹션
 모든 README는 다음 섹션을 포함해야 합니다:
 1. **개요** - 목적과 기능 설명
-2. **네이밍 컨벤션** - NAMING_CONVENTION.md 참조
+2. **네이밍 컨벤션** - docs/guides/NAMING_CONVENTION.md 참조
 3. **주요 구성요소** - 파일 및 클래스 목록
 4. **사용 예시** - 코드 샘플
 5. **변경 이력** - 주요 업데이트 날짜
@@ -78,7 +74,7 @@ cp docs/README_TEMPLATE.md lib/new_feature/README.md
 ### 1. 코드 변경 시
 - 관련 README 업데이트
 - CHANGELOG.md에 변경사항 기록
-- Breaking change인 경우 BREAKING_CHANGES.md 업데이트
+- Breaking change인 경우 CHANGELOG.md에 Breaking Changes 섹션 추가
 
 ### 2. 새 기능 추가 시
 1. 해당 디렉토리에 README.md 생성
@@ -86,8 +82,8 @@ cp docs/README_TEMPLATE.md lib/new_feature/README.md
 3. 상위 README에 링크 추가
 
 ### 3. 리팩토링 시
-1. REFACTORING_PLAN.md 업데이트
-2. 완료 후 TECHNICAL_DEBT.md 업데이트
+1. 리팩토링 계획 수립
+2. 완료 후 문서 업데이트
 3. 영향받는 모든 README 수정
 
 ## 🚀 CI/CD 통합
@@ -174,7 +170,7 @@ jobs:
 
 ### 분기별
 - 문서 구조 전체 검토
-- TECHNICAL_DEBT.md 업데이트
+- 기술 부채 발생 시 문서화
 - 아카이브 정리
 
 ## 🆘 문제 해결
@@ -186,14 +182,14 @@ jobs:
 
 ### 네이밍 컨벤션 위반 시
 1. `./scripts/check_naming.sh`로 위반 사항 확인
-2. NAMING_CONVENTION.md 참조하여 수정
+2. docs/guides/NAMING_CONVENTION.md 참조하여 수정
 3. 관련 문서 업데이트
 
 ## 📞 지원
 
 문서 관련 질문이나 개선 제안은 다음을 참조:
 - 기술 문서: [CLAUDE.md](../CLAUDE.md)
-- 네이밍 표준: [NAMING_CONVENTION.md](../NAMING_CONVENTION.md)
+- 네이밍 표준: [NAMING_CONVENTION.md](./guides/NAMING_CONVENTION.md)
 - 아키텍처: [ARCHITECTURE.md](../ARCHITECTURE.md)
 
 ---

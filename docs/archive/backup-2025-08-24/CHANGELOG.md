@@ -4,25 +4,6 @@
 
 이 프로젝트는 [Semantic Versioning](https://semver.org/)을 따릅니다.
 
-## [2.1.0] - 2025-08-10
-
-### 🚨 Breaking Changes: Chat System v2 Migration
-
-#### Critical Widget Removals
-- **ChatDetailWidget** 제거 → `ChatDetailWidgetV2` 사용
-- **Original AIChatPage** 제거 → `AIChatPageV2` 사용
-- **MessageAdapter** 제거 → `ChatDetailMigrationService` 사용
-
-#### Package Dependencies 변경
-- ❌ 제거: `flutter_chat_types: ^3.6.2`
-- ✅ 추가: `flutter_chat_ui: ^2.9.0`, `flutter_chat_core: ^2.8.0`
-
-#### 새로운 Firebase Functions
-- `markMessagesAsSeen` - 메시지 읽음 처리
-- `onMessageCreated` - 새 메시지 처리
-
-자세한 마이그레이션 가이드는 [Chat Migration Guide](lib/pages/chat/README.md) 참조
-
 ## [2.1.0] - 2025-08-06
 
 ### ✨ 투표 메시지 컴포넌트 통합 및 UI/UX 개선

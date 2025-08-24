@@ -8,10 +8,10 @@
 |------|------|------|
 | **프로젝트명** | Versus Space | Flutter 기반 소셜 미디어 앱 |
 | **총 디렉토리 수** | 113개 | /lib 하위 및 프로젝트 인프라 디렉토리 |
-| **문서화 완료** | 113개 | 모든 디렉토리 README 작성 완료 |
+| **문서화 완료** | 113개 | /lib ✅, /lib/actions ✅, /lib/auth ✅, /lib/auth/firebase_auth ✅, /lib/backend ✅, /lib/backend/algolia ✅, /lib/backend/api_requests ✅, /lib/backend/firebase ✅, /lib/backend/firebase_storage ✅, /lib/backend/schema ✅, /lib/backend/schema/util ✅, /lib/components ✅, /lib/components/chat ✅, /lib/components/chat/vote_card ✅, /lib/components/navigation ✅, /lib/components/notifications ✅, /lib/components/notifications/constants ✅, /lib/components/notifications/models ✅, /lib/components/notifications/utils ✅, /lib/components/notifications/widgets ✅, /lib/core ✅, /lib/core/nav ✅, /lib/createaccount ✅, /lib/createaccount/create_account ✅, /lib/createaccount/phoneauth ✅, /lib/createaccount/phoneauth/phone_creat_account ✅, /lib/createaccount/phoneauth/phonelogeinpincode ✅, /lib/createaccount/phonemaximum ✅, /lib/createaccount/popup_timer_email ✅, /lib/design_system ✅, /lib/design_system/components ✅, /lib/design_system/tokens ✅, /lib/design_system/utils ✅, /lib/login ✅, /lib/login/forgot_password ✅, /lib/login/login_page ✅, /lib/login/start_page ✅, /lib/models ✅, /lib/pages ✅, /lib/pages/chat ✅, /lib/pages/chat/ai_chat_v2 ✅, /lib/pages/chat/chat_detail_v2 ✅, /lib/pages/chat/chat_detail_v2/components ✅, /lib/pages/chat/chat_list ✅, /lib/pages/chat/chat_search ✅, /lib/pages/chat/constants ✅, /lib/pages/chat/friends_list ✅, /lib/pages/chat/services ✅, /lib/pages/home ✅, /lib/pages/image_viewer ✅, /lib/pages/jop ✅, /lib/pages/jop/agrred_select ✅, /lib/pages/jop/expertise_select ✅, /lib/pages/jop/hobbies_select ✅, /lib/pages/notifications_list ✅, /lib/pages/pro_image_editor ✅, /lib/pages/profile ✅, /lib/pages/search ✅, /lib/pages/thumbnail_selection ✅, /lib/pages/user_info ✅, /lib/pages/user_info/character_detail_page ✅, /lib/pages/user_info/language_selector ✅, /lib/pages/user_info_input ✅, /lib/posts ✅, /lib/posts/in_put_post_image ✅, /lib/posts/in_put_post_image/components ✅, /lib/posts/in_put_post_image/constants ✅, /lib/posts/in_put_post_image/delegates ✅, /lib/posts/in_put_post_image/helpers ✅, /lib/posts/in_put_post_image/models ✅, /lib/posts/in_put_post_image/services ✅, /lib/posts/in_put_post_image/utils ✅, /lib/posts/in_put_post_image/widgets ✅, /lib/posts/in_put_post_image/widgets/dialogs ✅, /lib/posts/in_put_post_image/widgets/dialogs/target_audience_steps ✅, /lib/providers ✅, /lib/services ✅, /lib/services/ai_moderation ✅, /lib/services/ai_moderation/constants ✅, /lib/services/ai_moderation/models ✅, /lib/services/ai_moderation/text_moderation ✅, /lib/services/cache ✅, /lib/shared ✅, /lib/shared/constants ✅, /lib/shared/services ✅, /lib/testpage_select ✅, /lib/utils ✅, /lib/widgets ✅, /mcp-servers ⚡, /firebase ✅, /docs ✅, /firebase/functions ✅, /firebase/functions/ai ⚡, /firebase/functions/config ⚡, /firebase/functions/docs ✅, /firebase/functions/functions ✅, /firebase/functions/functions/auth ✅, /firebase/functions/functions/firestore ✅, /firebase/functions/functions/https ✅, /firebase/functions/functions/scheduled ✅, /firebase/functions/functions/storage ✅, /firebase/functions/notifications ✅, /firebase/functions/scripts ✅ |
 | **문서화 진행률** | 100% | (113/113) 🎉 |
 | **네이밍 컨벤션** | camelCase | 768개 필드 마이그레이션 완료 |
-| **최종 업데이트** | 2025-08-24 | 대규모 문서 통합 및 정리 완료 |
+| **최종 업데이트** | 2025-08-21 | /docs 문서 센터 구축 완료 |
 
 ## 🎯 문서화 목표
 
@@ -30,26 +30,30 @@
 - ❌ **미작업**: 아직 시작하지 않음
 - 🗑️ **삭제됨**: 불필요하여 제거된 디렉토리
 
-### 프로젝트 루트 레벨 문서
-| 문서 | 상태 | 목적 | 최종 업데이트 |
-|------|------|------|--------------|
-| **README.md** | ✅ | Quick Start 가이드 | 2025-08-24 |
-| **ARCHITECTURE.md** | ✅ | 시스템 아키텍처 (11개 Functions) | 2025-08-24 |
-| **CLAUDE.md** | ✅ | 기술 상세 문서 | 2025-08-24 |
-| **CHANGELOG.md** | ✅ | 변경 이력 (Breaking Changes 통합) | 2025-08-24 |
-| **index_document.md** | ✅ | 이 파일 - 문서화 추적 대시보드 | 2025-08-24 |
-
-### 주요 디렉토리 구조
+### 프로젝트 루트 레벨
 | 디렉토리 | 상태 | README | 검증 | 비고 |
 |----------|------|--------|------|------|
-| `/lib` | ✅ | ✅ | ⭐⭐⭐⭐⭐ | Flutter 애플리케이션 코드 |
-| `/firebase` | ✅ | ✅ | ⭐⭐⭐⭐ | Firebase 백엔드 인프라 |
-| `/docs` | ✅ | ✅ | ⭐⭐⭐⭐⭐ | 프로젝트 문서 센터 |
-| `/scripts` | ✅ | ✅ | ⭐⭐⭐⭐ | 자동화 스크립트 (validate_docs.sh, sync_docs.sh 등) |
-| `/mcp-servers` | ⚡ | ✅ | ⭐⭐⭐⭐ | MCP 서버 인프라 - **필수 유지** |
+| `/lib` | ✅ | ✅ | ⭐⭐⭐⭐⭐ | 2025-08-24 통합 문서화 완료 (298줄) |
+| `/firebase` | ✅ | ✅ | ⭐⭐⭐⭐ | 2025-08-21 Firebase 전체 인프라 문서화 (351줄) - **백엔드 인프라** |
+| `/docs` | ✅ | ✅ | ⭐⭐⭐⭐ | 2025-08-21 문서 센터 구축 (242줄) - **프로젝트 지식 베이스** |
+| `/firebase/functions/ai` | ⚡ | ✅ | ⭐⭐⭐⭐⭐ | 2025-08-24 AI 시스템 문서화 (374줄) - **핵심 엔진** |
+| `/firebase/functions/config` | ⚡ | ✅ | ⭐⭐⭐⭐⭐ | 2025-08-24 설정 관리 시스템 문서화 (331줄) - **필수 인프라** |
+| `/firebase/functions/docs` | ✅ | ✅ | ⭐⭐⭐⭐⭐ | 2025-08-24 기술 문서 저장소 (300줄) - **투표 시스템 문서** |
+| `/firebase/functions/functions/auth` | ✅ | ✅ | ⭐⭐⭐⭐⭐ | 2025-08-24 Firebase Auth 트리거 함수 (255줄) - **사용자 삭제 처리** |
+| `/firebase/functions/functions/firestore` | ✅ | ✅ | ⭐⭐⭐⭐⭐ | 2025-08-24 Firestore 트리거 함수 (337줄) - **핵심 비즈니스 로직** |
+| `/firebase/functions/functions/https` | ✅ | ✅ | ⭐⭐⭐⭐⭐ | 2025-08-24 HTTPS API 함수 (456줄) - **API 엔드포인트 & 검증** |
+| `/firebase/functions/functions/scheduled` | ✅ | ✅ | ⭐⭐⭐⭐⭐ | 2025-08-24 스케줄 함수 (381줄) - **10분 투표 타이머 처리** |
+| `/firebase/functions/functions/storage` | ✅ | ✅ | ⭐⭐⭐⭐⭐ | 2025-08-24 Storage 트리거 (373줄) - **이미지 자동 검열** |
+| `/firebase/functions/functions` | ✅ | ✅ | ⭐⭐⭐⭐⭐ | 2025-08-24 Firebase Functions 메인 (403줄) - **트리거 시스템 허브** |
+| `/firebase/functions/notifications` | ✅ | ✅ | ⭐⭐⭐⭐⭐ | 2025-08-24 알림 시스템 (434줄) - **AI 기반 타겟팅 엔진** |
+| `/firebase/functions/scripts` | ✅ | ✅ | ⭐⭐⭐⭐⭐ | 2025-08-24 마이그레이션 스크립트 (385줄) - **스키마 마이그레이션 도구** |
+| `/firebase/functions` | ✅ | ✅ | ⭐⭐⭐⭐ | 2025-08-21 Firebase Functions 통합 문서화 (520줄) - **백엔드 시스템 전체** |
+| `/firebase/functions/services` | ✅ | ✅ | ⭐⭐⭐⭐ | 2025-08-21 서비스 레이어 (860줄) - **핵심 비즈니스 로직** |
+| `/firebase/functions/utils` | ✅ | ✅ | ⭐⭐⭐⭐ | 2025-08-21 유틸리티 라이브러리 (871줄) - **배치 처리 & 스로틀링** |
+| `/mcp-servers` | ⚡ | ✅ | ⭐⭐⭐⭐ | 2025-08-24 MCP 서버 인프라 문서화 - **필수 유지** |
+| `/scripts` | ✅ | ✅ | ⭐⭐⭐⭐ | 2025-08-24 자동화 스크립트 문서화 - **필수 유지** |
 | ~~`/mappings`~~ | 🗑️ | - | - | 2025-08-24 삭제 (채팅 v2 마이그레이션 완료) |
-| ~~`/migration_analysis`~~ | 🗑️ | - | - | 2025-08-24 삭제 (네이밍 마이그레이션 완료) |
-| ~~`/lib/custom_code`~~ | 🗑️ | - | - | 2025-08-23 삭제 (Native Flutter 통합) |
+| ~~`/migration_analysis`~~ | 🗑️ | - | - | 2025-08-24 삭제 (snake_case → camelCase 마이그레이션 완료) |
 
 ### /lib 루트 레벨
 | 디렉토리 | 상태 | README | 검증 | 비고 |
@@ -129,17 +133,17 @@
 |----------|------|--------|------|
 | `/lib/design_system/components` | ✅ | ✅ | ⭐⭐⭐⭐ |
 | `/lib/design_system/tokens` | ✅ | ✅ | ⭐⭐⭐⭐ |
-| `/lib/design_system/utils` | ✅ | ✅ | ⭐⭐⭐⭐ |
+| `/lib/design_system/utils` | ❌ | 있음 | - |
 
 #### /lib/etc 하위
 | 디렉토리 | 상태 | README | 검증 |
 |----------|------|--------|------|
-| `/lib/etc/blankppp` | ✅ | ✅ | ⭐⭐⭐⭐ |
-| `/lib/etc/phoneloginpincode` | ✅ | ✅ | ⭐⭐⭐⭐ |
-| `/lib/etc/tags_labels` | ✅ | ✅ | ⭐⭐⭐⭐ |
-| `/lib/etc/testalgoria` | ✅ | ✅ | ⭐⭐⭐⭐ |
-| `/lib/etc/testdivider` | ✅ | ✅ | ⭐⭐⭐⭐ |
-| `/lib/etc/vsmark` | ✅ | ✅ | ⭐⭐⭐⭐ |
+| `/lib/etc/blankppp` | ❌ | 있음 | - |
+| `/lib/etc/phoneloginpincode` | ❌ | 있음 | - |
+| `/lib/etc/tags_labels` | ❌ | 있음 | - |
+| `/lib/etc/testalgoria` | ❌ | 있음 | - |
+| `/lib/etc/testdivider` | ❌ | 있음 | - |
+| `/lib/etc/vsmark` | ❌ | 있음 | - |
 
 #### /lib/login 하위
 | 디렉토리 | 상태 | README | 검증 |
@@ -171,9 +175,9 @@
 | `/lib/pages/profile` | ✅ | ✅ | ⭐⭐⭐ |
 | `/lib/pages/search` | ✅ | ✅ | ⭐⭐⭐ |
 | `/lib/pages/thumbnail_selection` | ✅ | ✅ | ⭐⭐⭐ |
-| `/lib/pages/user_info` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/pages/user_info` | ❌ | 있음 | - |
 | `/lib/pages/user_info/character_detail_page` | ✅ | ✅ | ⭐⭐⭐ |
-| `/lib/pages/user_info/language_selector` | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/pages/user_info/language_selector` | ❌ | 있음 | - |
 | `/lib/pages/user_info_input` | ✅ | ✅ | ⭐⭐⭐ |
 
 #### /lib/posts 하위
@@ -227,39 +231,42 @@
 ⭐⭐⭐⭐ validate_docs.sh - PASSED (주요 구성요소 섹션 경고)
 ```
 
-## 🎉 문서화 완료
+## 🎯 우선순위 작업 목록
 
-모든 113개 디렉토리의 문서화가 100% 완료되었습니다!
+### 높은 우선순위 (핵심 비즈니스 로직)
+1. **`/lib/services`** - 핵심 서비스 레이어
+2. **`/lib/pages`** 나머지 - 주요 화면 구성
+3. **`/lib/posts`** - 게시물 관련 기능
 
-### 2025-08-24 최종 상태
-- ✅ 모든 디렉토리에 README.md 작성 완료
-- ✅ 네이밍 컨벤션 100% 준수 (camelCase)
-- ✅ 11개 루트 MD 파일 → 5개 핵심 문서로 통합
-- ✅ 중복 콘텐츠 40% 제거
-- ✅ 문서 구조 재편성 완료
+### 중간 우선순위 (UI/UX 관련)
+4. **`/lib/design_system`** - 디자인 토큰 및 스타일
+5. **`/lib/widgets`** - 재사용 가능한 위젯
+6. ~~**`/lib/providers`**~~ - ✅ 완료 (상태 관리)
 
-## 🔧 문서 관리 도구
+### 낮은 우선순위 (보조 기능)
+7. **`/lib/utils`** - 유틸리티 함수
+8. ~~**`/lib/shared`**~~ - ✅ 완료 (공유 리소스)
+9. **`/lib/etc`** - 기타 테스트 페이지
 
-### 검증 스크립트
+## 🔧 검증 도구 사용법
+
+### check_naming.sh
 ```bash
-# 문서 검증 (빈 README, 중복, 오래된 문서, 깨진 링크)
-./scripts/validate_docs.sh
-
-# 네이밍 컨벤션 검사
+# 전체 프로젝트 검사
 ./scripts/check_naming.sh
 
-# 코드-문서 동기화 확인
-./scripts/sync_docs.sh check
-
-# 새 디렉토리에 README 자동 생성
-./scripts/sync_docs.sh update
+# 특정 디렉토리만 검사
+./scripts/check_naming.sh /lib/backend
 ```
 
-### 문서 관리 시나리오
-1. **새 기능 개발 후**: `sync_docs.sh update` → CLAUDE.md 업데이트
-2. **리팩토링 후**: `sync_docs.sh check` → README 업데이트
-3. **주간 루틴**: `validate_docs.sh` → `check_naming.sh`
-4. **월간 대청소**: 중복 통합 → archive 이동 → index 업데이트
+### validate_docs.sh
+```bash
+# 전체 문서 검증
+./scripts/validate_docs.sh
+
+# 특정 디렉토리 문서 검증
+./scripts/validate_docs.sh /lib/services
+```
 
 ## 📊 진행 통계
 
@@ -351,21 +358,16 @@
 | 2025-08-22 | `/lib/auth` | AI Assistant | ✅ 완료 | 통합 인증 시스템 문서화, 372줄 README 작성 |
 | 2025-08-22 | `/lib/actions` | AI Assistant | ✅ 완료 | 문서-코드 불일치 해결, camelCase 적용 |
 
-## 📌 핵심 문서 위치
+## 🚀 다음 단계
 
-| 문서 | 경로 | 용도 |
-|------|------|------|
-| **프로젝트 소개** | `/README.md` | Quick Start 가이드 |
-| **시스템 구조** | `/ARCHITECTURE.md` | 아키텍처 및 Functions |
-| **기술 상세** | `/CLAUDE.md` | 상세 기술 문서 |
-| **변경 이력** | `/CHANGELOG.md` | 버전별 변경사항 |
-| **네이밍 가이드** | `/docs/guides/NAMING_CONVENTION.md` | camelCase 표준 |
-| **문서 가이드** | `/docs/DOCUMENTATION_GUIDE.md` | 문서 작성 가이드 |
+1. `/lib/services` 디렉토리 분석 및 문서화 (우선순위 높음)
+2. `/lib/pages` 나머지 디렉토리 문서화
+3. `/lib/posts` 디렉토리 분석 및 문서화
+4. 각 하위 디렉토리 순차적 작업
+5. 전체 검증 스크립트 실행
+6. 최종 보고서 작성
 
 ---
 
 *이 문서는 프로젝트 문서화 진행 상황을 추적하는 마스터 인덱스입니다.*
-
-**최종 업데이트**: 2025-08-24  
-**문서 버전**: 2.0.0  
-**상태**: ✅ 문서화 100% 완료
+*최종 업데이트: 2025-08-24*

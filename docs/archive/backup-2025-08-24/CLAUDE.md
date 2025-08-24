@@ -1,7 +1,5 @@
 # Versus Space - FlutterFlow Project
 
-> 최종 업데이트: 2025-08-24 | 버전: 2.1.0
-
 ## Project Overview
 
 **Versus Space** is a Flutter mobile application built using FlutterFlow, a visual development platform for Flutter apps. This is a social media/content sharing platform that focuses on creating "versus" style content comparisons (A vs B format) with multimedia support, allowing users to create polls, share opinions, and engage in comparative discussions.
@@ -48,7 +46,9 @@
 │   │   ├── chat/                # Chat UI components
 │   │   │   └── vote_card/       # Vote card message components
 │   │   └── notifications/       # Notification UI components
-│   ├── etc/                    # FlutterFlow 레거시 테스트 코드
+│   ├── custom_code/             # Custom Flutter code
+│   │   ├── actions/             # Custom actions
+│   │   └── widgets/             # Custom widgets
 │   ├── design_system/           # Design tokens and components (new)
 │   ├── models/                  # Data models (new)
 │   ├── pages/                   # Application screens/pages
@@ -212,7 +212,7 @@ algolia: ^1.1.1
 - **Services**: Authentication, Firestore, Storage, Functions, Hosting
 - **Web API Key**: Configured for web deployment
 - **Platform Support**: iOS, Android, Web with proper configuration files
-- **Cloud Functions** (11개 배포됨, 1개 미배포: checkVoteTimeouts): 
+- **Cloud Functions** (11개 배포됨): 
   - onUserDeleted - Clean up user data
   - checkImageContent - Image moderation trigger (HTTPS)
   - moderateImage - Vision API integration (Storage trigger)
@@ -269,15 +269,24 @@ targetSdkVersion: 34 (Android 14)
 - **개발/유지보수 효율적**
 - **적절한 성능 보장**
 
-### Custom Code Integration
+### Custom Code
 
-**Note**: custom_code 디렉토리는 Native Flutter 마이그레이션 후 삭제됨 (2025-08-23)
-모든 커스텀 코드는 각 기능별 디렉토리로 통합됨:
+**Custom Actions:**
+- `get_video_path.dart` - Video selection from camera/gallery using ImagePicker
 
-- **Image/Video Processing**: `/lib/pages/pro_image_editor/`, `/lib/posts/in_put_post_image/`
-- **AI Moderation**: `/lib/services/ai_moderation/`
-- **Custom Widgets**: `/lib/widgets/`, `/lib/components/`
-- **Utilities**: `/lib/utils/`
+**Custom Widgets:**
+- `advanced_image_editor.dart` - ProImageEditor integration with Firebase Storage upload
+- `new_video_trimmer_page.dart` - Video trimming with timeline selection
+- `highlighted_text_field.dart` - Custom text field with highlighting
+
+**Services & Utils:**
+- `perspective_api_service.dart` - Content moderation using Google's Perspective API
+- `content_filter.dart` - Content filtering utilities
+
+**Custom Functions:**
+- Date formatting and parsing
+- Age verification (13+ requirement)
+- Video aspect ratio calculations
 
 ## Development Workflow
 
@@ -448,7 +457,7 @@ flutter analyze
 - **Storage 경로**: Firebase Storage URL은 snake_case 유지 (`user_uploads/post_images/`)
 - **특수 ID**: 시스템 식별자는 snake_case 허용 (`ai_assistant_$userId`)
 
-상세 가이드는 [NAMING_CONVENTION.md](./docs/guides/NAMING_CONVENTION.md) 참조
+상세 가이드는 [NAMING_CONVENTION.md](./NAMING_CONVENTION.md) 참조
 
 #### Migration History
 - **2025-08-21**: snake_case → camelCase 마이그레이션 100% 완료
@@ -1496,28 +1505,6 @@ if (model.isVideoSelectedA) {
 - **네이밍 컨벤션 확립**:
   - **CamelCase 사용**: Firestore 필드, 라우트명, 변수/함수
   - **Snake_case 유지**: 파일명(Dart 표준), Storage 경로, 특수 ID
-  - 참조: [NAMING_CONVENTION.md](./docs/guides/NAMING_CONVENTION.md)
+  - 참조: [NAMING_CONVENTION.md](./NAMING_CONVENTION.md)
 - **최종 커밋**: `d7c53da6`
 - **결과**: 100% 통일된 네이밍으로 동기화 문제 완전 해결
-
-### 2025-08-24: 대규모 문서 통합 및 정리
-- **작업 내용**:
-  - 11개 루트 MD 파일 → 5개 핵심 문서로 통합
-  - 중복 콘텐츠 40% 제거
-  - 문서 구조 재편성 및 아카이브 생성
-- **디렉토리 정리**:
-  - `/mappings` 삭제 (채팅 v2 마이그레이션 완료)
-  - `/migration_analysis` 삭제 (네이밍 마이그레이션 완료)
-  - `/lib/custom_code` 삭제 (Native Flutter 통합 완료)
-- **문서 이동**:
-  - `NAMING_CONVENTION.md` → `/docs/guides/`
-  - 완료된 문서들 → `/docs/archive/history/`
-- **결과**: 깔끔한 프로젝트 구조 및 효율적인 문서 관리 체계 확립
-
-## 🔗 관련 문서
-
-- [프로젝트 개요](./README.md)
-- [시스템 아키텍처](./ARCHITECTURE.md)
-- [변경 이력](./CHANGELOG.md)
-- [문서화 인덱스](./index_document.md)
-- [네이밍 컨벤션](./docs/guides/NAMING_CONVENTION.md)

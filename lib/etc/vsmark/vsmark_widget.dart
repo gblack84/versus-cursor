@@ -1,5 +1,4 @@
 import '/core_exports.dart';
-import '/core_exports.dart';
 import 'package:flutter/material.dart';
 import 'vsmark_model.dart';
 export 'vsmark_model.dart';

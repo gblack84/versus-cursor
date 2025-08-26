@@ -1,6 +1,4 @@
 import '/core_exports.dart';
-import '/core_exports.dart';
-import '/core_exports.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'language_selector_model.dart';

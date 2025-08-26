@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '/core_exports.dart';
-import '/core_exports.dart';
 import 'image_viewer_model.dart';
 export 'image_viewer_model.dart';
 

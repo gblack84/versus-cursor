@@ -1,5 +1,4 @@
 import '/core_exports.dart';
-import '/core_exports.dart';
 import 'package:styled_divider/styled_divider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';

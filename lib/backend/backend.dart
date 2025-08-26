@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../auth/firebase_auth/auth_util.dart';
 
-import '../core/app_utils.dart';
+import '../core_exports.dart';
 import 'schema/util/firestore_util.dart';
 
 import 'schema/users_model.dart';

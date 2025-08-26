@@ -3,6 +3,27 @@
 > Feature-First Architecture 마이그레이션 중 발생할 수 있는 위험과 해결 방법
 > 작성일: 2025-08-26
 
+## 🚫 마이그레이션 Phase별 제한사항
+
+### Phase 1: 파일 이동만
+- ✅ 허용: 파일 위치 변경
+- ✅ 허용: 디렉토리 구조 생성
+- ❌ 금지: 파일명 변경
+- ❌ 금지: 클래스명 변경
+- ❌ 금지: Import 경로 외 코드 수정
+- ❌ 금지: 함수명 변경
+- ❌ 금지: 변수명 변경
+
+### Phase 2: 리팩토링 (이동 완료 후)
+- ✅ 허용: Import 경로 정리
+- ✅ 허용: 네이밍 컨벤션 적용
+- ✅ 허용: 구조 개선
+- ✅ 허용: 코드 최적화
+- ✅ 허용: 테스트 추가
+
+### ⚠️ 중요 원칙
+**"Move First, Refactor Later"** - 이동 먼저, 리팩토링은 나중에
+
 ## 🚨 주요 위험 요소
 
 ### 1. 순환 의존성 (Circular Dependencies)
@@ -129,8 +150,11 @@ class PostModel {
 # Feature별 브랜치 생성
 git checkout -b feature/[name]-migration
 
-# 백업 브랜치 생성
-git branch backup/before-[name]-migration
+# 백업 브랜치 생성 (필수!)
+git branch backup/before-[name]-migration HEAD
+
+# 실패한 시도 브랜치 보관 (문제 발생 시)
+git branch backup/[name]-failed-attempt HEAD
 
 # 안전한 머지
 git merge --no-ff --no-commit feature/[name]-migration
@@ -222,12 +246,16 @@ go_criteria:
   dependencies:
     - 이전 Phase 완료
     - 의존 Feature 준비
-    - 백업 브랜치 생성
+    - 백업 브랜치 생성 확인 (필수!)
   
   resources:
     - 담당자 배정
     - 예상 시간 확보
     - 롤백 계획 수립
+  
+  phase_rules:
+    - Phase 1: 파일 이동만
+    - Phase 2: 리팩토링 (별도 커밋)
 ```
 
 ### Phase 완료 확인

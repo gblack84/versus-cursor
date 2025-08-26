@@ -1,6 +1,6 @@
 import '/etc/vsmark/vsmark_widget.dart';
-import '/core/app_timer.dart';
-import '/core/app_utils.dart';
+import '/core_exports.dart';
+import '/core_exports.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'popup_timer_email_widget.dart' show PopupTimerEmailWidget;
 import 'package:flutter/material.dart';

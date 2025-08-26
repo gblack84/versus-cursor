@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '/core/app_theme.dart';
+import '/core_exports.dart';
 import '../utils/debug_helper.dart';
 import '/services/unified_image_cache_service.dart';
 

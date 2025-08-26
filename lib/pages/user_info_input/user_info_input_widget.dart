@@ -1,10 +1,10 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
-import '/core/app_choice_chips.dart';
-import '/core/app_theme.dart';
-import '/core/app_utils.dart';
-import '/core/app_widgets.dart';
-import '/core/form_field_controller.dart';
+import '/core_exports.dart';
+import '/core_exports.dart';
+import '/core_exports.dart';
+import '/core_exports.dart';
+import '/core_exports.dart';
 import '/pages/user_info/character_detail_page/character_detail_page_widget.dart';
 import '/pages/user_info/language_selector/language_selector_widget.dart';
 import '/index.dart';

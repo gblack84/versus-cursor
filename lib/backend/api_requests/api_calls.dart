@@ -1,5 +1,5 @@
 
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 import 'api_manager.dart';
 
 export 'api_manager.dart' show ApiCallResponse;

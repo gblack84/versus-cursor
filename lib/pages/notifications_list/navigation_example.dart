@@ -1,7 +1,7 @@
 // Example of how to navigate to the NotificationsListWidget
 
 import 'package:flutter/material.dart';
-import '/core/nav/nav.dart';
+import '/core_exports.dart';
 import '/pages/notifications_list/notifications_list_widget.dart';
 
 class NavigationExample {

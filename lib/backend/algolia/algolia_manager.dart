@@ -4,6 +4,7 @@ import 'package:algolia/algolia.dart';
 import 'package:equatable/equatable.dart';
 
 import '/backend/backend.dart';
+import '/core_exports.dart';
 
 export 'package:algolia/algolia.dart';
 

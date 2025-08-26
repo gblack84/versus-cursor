@@ -1,6 +1,4 @@
-import '/core/app_theme.dart';
-import '/core/app_utils.dart';
-import '/core/app_widgets.dart';
+import '/core_exports.dart';
 import '/index.dart';
 import '/components/notifications/voting_overlay.dart';
 import '/components/notifications/notification_badge_provider.dart';

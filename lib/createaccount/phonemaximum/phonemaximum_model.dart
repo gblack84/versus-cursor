@@ -1,5 +1,5 @@
 import '/etc/vsmark/vsmark_widget.dart';
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 import 'phonemaximum_widget.dart' show PhonemaximumWidget;
 import 'package:flutter/material.dart';
 

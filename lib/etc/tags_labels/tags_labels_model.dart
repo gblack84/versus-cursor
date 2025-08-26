@@ -1,4 +1,4 @@
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 import 'tags_labels_widget.dart' show TagsLabelsWidget;
 import 'package:flutter/material.dart';
 

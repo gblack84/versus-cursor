@@ -1,7 +1,6 @@
 // upload_choice_bottom_sheet_widget.dart 임시 제거 - 새로운 업로드 위젯 구현 필요
 import 'dart:async';
-import '/core/app_theme.dart';
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 import '/utils/content_filter.dart';
 import '/pages/image_viewer/image_viewer_page.dart';
 import 'package:flutter/material.dart';

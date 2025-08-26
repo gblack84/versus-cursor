@@ -5,7 +5,7 @@ import '../constants/field_styles.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/app_state.dart';
 import 'package:provider/provider.dart';
-import '/core/app_theme.dart';
+import '/core_exports.dart';
 
 class ValidationService {
   /// 필수 필드가 비어있는지 확인

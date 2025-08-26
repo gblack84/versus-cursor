@@ -1,4 +1,4 @@
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 import '/index.dart';
 import 'phone_creat_account_widget.dart' show PhoneCreatAccountWidget;
 import 'package:flutter/material.dart';

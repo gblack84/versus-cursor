@@ -1,8 +1,5 @@
 import '/etc/vsmark/vsmark_widget.dart';
-import '/core/app_icon_button.dart';
-import '/core/app_theme.dart';
-import '/core/app_utils.dart';
-import '/core/app_widgets.dart';
+import '/core_exports.dart';
 // import '/posts/in_put_text/in_put_text_widget.dart'; // 삭제된 파일
 // import '/index.dart'; // 사용하지 않는 import 제거
 import 'package:flutter/material.dart';

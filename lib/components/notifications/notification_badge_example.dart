@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '/core/app_utils.dart';
+import '/core_exports.dart';
+// Previous: /core/app_utils.dart';
 import 'notification_badge.dart';
 import 'notification_badge_provider.dart';
 

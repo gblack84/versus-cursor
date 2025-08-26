@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '/app_state.dart';
-import '/core/app_theme.dart';
+import '/core_exports.dart';
 import 'media_upload_service.dart';
 
 /// 이미지 에디터 콜백 처리를 담당하는 클래스

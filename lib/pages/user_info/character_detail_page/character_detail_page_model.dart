@@ -1,4 +1,4 @@
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 import 'character_detail_page_widget.dart' show CharacterDetailPageWidget;
 import 'package:flutter/material.dart';
 

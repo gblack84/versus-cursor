@@ -1,4 +1,4 @@
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 import '/index.dart';
 import 'hobbies_select_widget.dart' show HobbiesSelectWidget;
 import 'package:flutter/material.dart';

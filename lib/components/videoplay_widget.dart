@@ -1,6 +1,9 @@
-import '/core/app_theme.dart';
-import '/core/app_utils.dart';
-import '/core/app_video_player.dart';
+import '/core_exports.dart';
+// Previous: /core/app_theme.dart';
+import '/core_exports.dart';
+// Previous: /core/app_utils.dart';
+import '/core_exports.dart';
+// Previous: /core/app_video_player.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'videoplay_model.dart';

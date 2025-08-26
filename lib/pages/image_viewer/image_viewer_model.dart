@@ -1,4 +1,4 @@
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 import 'package:flutter/material.dart';
 
 class ImageViewerModel extends AppModel {

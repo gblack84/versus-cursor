@@ -1,4 +1,4 @@
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 import '/index.dart';
 import 'testpage_select_widget.dart' show TestpageSelectWidget;
 import 'package:flutter/material.dart';

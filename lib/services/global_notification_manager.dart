@@ -8,7 +8,7 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/components/notifications/voting_notification_dialog.dart';
 import '/components/notifications/models/versus_box_size_data.dart';
 import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
-import '/core/nav/nav.dart';
+import '/core_exports.dart';
 import 'notification_service.dart';
 import 'vote_status_service.dart';
 import '/posts/in_put_post_image/utils/debug_helper.dart';

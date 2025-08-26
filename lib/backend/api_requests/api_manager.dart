@@ -11,7 +11,7 @@ import 'package:equatable/equatable.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:mime_type/mime_type.dart';
 
-import '/core/uploaded_file.dart';
+import '/core_exports.dart';
 
 import 'get_streamed_response.dart';
 

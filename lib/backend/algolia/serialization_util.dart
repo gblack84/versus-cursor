@@ -1,7 +1,7 @@
 
 import '/backend/backend.dart';
 
-import '../../core/nav/serialization_util.dart';
+import '/app/router/navigation/serialization_util.dart';
 
 dynamic convertAlgoliaParam<T>(
   dynamic data,

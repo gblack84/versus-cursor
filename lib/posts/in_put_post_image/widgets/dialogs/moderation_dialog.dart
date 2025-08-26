@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '/core/app_theme.dart';
+import '/core_exports.dart';
 
 /// 이미지 검열 중 표시되는 다이얼로그
 class ModerationDialog extends StatelessWidget {

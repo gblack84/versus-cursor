@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
-import '/core/app_theme.dart';
+import '/core_exports.dart';
 
 /// Asset Picker 관련 로직을 담당하는 서비스
 class AssetPickerService {

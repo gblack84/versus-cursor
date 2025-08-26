@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '/core/app_theme.dart';
+import '/core_exports.dart';
 
 class ThumbnailSelectionPage extends StatefulWidget {
   const ThumbnailSelectionPage({

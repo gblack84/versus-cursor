@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:wechat_camera_picker/wechat_camera_picker.dart';
-import '/core/app_theme.dart';
+import '/core_exports.dart';
 import '../delegates/korean_asset_picker_delegate.dart';
 import '../delegates/korean_camera_picker_delegate.dart';
 

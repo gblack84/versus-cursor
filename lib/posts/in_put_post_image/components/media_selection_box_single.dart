@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '/core/app_theme.dart';
+import '/core_exports.dart';
 
 class MediaSelectionBox extends StatelessWidget {
   final String label; // 'A' or 'B'

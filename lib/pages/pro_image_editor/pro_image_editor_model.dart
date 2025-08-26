@@ -1,4 +1,4 @@
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 import 'pro_image_editor_page.dart' show ProImageEditorPage;
 import 'package:flutter/material.dart';
 

@@ -7,7 +7,7 @@ import '/backend/schema/util/firestore_util.dart';
 import '/backend/schema/util/schema_util.dart';
 
 import 'index.dart';
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 
 class NotificationsModel extends FirestoreRecord {
   NotificationsModel._(

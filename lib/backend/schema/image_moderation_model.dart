@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 
 import '/backend/backend.dart';
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 
 class ImageModerationModel extends FirestoreRecord {
   ImageModerationModel._(

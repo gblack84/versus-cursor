@@ -1,6 +1,6 @@
 import '/backend/backend.dart';
-import '/core/app_utils.dart';
-import '/core/form_field_controller.dart';
+import '/core_exports.dart';
+import '/core_exports.dart';
 import '/pages/user_info/language_selector/language_selector_widget.dart';
 import '/index.dart';
 import 'user_info_input_widget.dart' show UserInfoInputWidget;

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:from_css_color/from_css_color.dart';
 import '/backend/algolia/serialization_util.dart';
 
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 
 export 'package:collection/collection.dart' show ListEquality;
 export 'package:flutter/material.dart' show Color, Colors;

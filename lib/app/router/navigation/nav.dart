@@ -6,7 +6,7 @@ import 'package:bot_toast/bot_toast.dart';
 
 import '/auth/base_auth_user_provider.dart';
 
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 
 import '/backend/backend.dart';
 import '/index.dart';

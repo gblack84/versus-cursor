@@ -1,5 +1,5 @@
 import '/etc/vsmark/vsmark_widget.dart';
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 import '/index.dart';
 import 'start_page_widget.dart' show StartPageWidget;
 import 'package:flutter/material.dart';

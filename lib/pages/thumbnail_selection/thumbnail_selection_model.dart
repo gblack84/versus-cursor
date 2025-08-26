@@ -1,4 +1,4 @@
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 import 'thumbnail_selection_page.dart' show ThumbnailSelectionPage;
 import 'package:flutter/material.dart';
 

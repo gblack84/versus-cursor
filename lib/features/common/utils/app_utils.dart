@@ -10,13 +10,13 @@ import 'package:json_path/json_path.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:url_launcher/url_launcher.dart';
 
-import '../main.dart';
+import '/main.dart';
 
-export 'lat_lng.dart';
-export 'place.dart';
-export 'uploaded_file.dart';
-export '../app_state.dart';
-export 'app_model.dart';
+export '/app/models/lat_lng.dart';
+export '/app/models/place.dart';
+export '/features/common/domain/models/uploaded_file.dart';
+export '/app_state.dart';
+export '/features/common/domain/models/app_model.dart';
 export 'dart:math' show min, max;
 export 'dart:typed_data' show Uint8List;
 export 'dart:convert' show jsonEncode, jsonDecode;
@@ -24,8 +24,8 @@ export 'package:intl/intl.dart';
 export 'package:cloud_firestore/cloud_firestore.dart'
     show DocumentReference, FirebaseFirestore;
 export 'package:page_transition/page_transition.dart';
-export 'app_localizations.dart';
-export 'nav/nav.dart';
+export '/features/common/localization/app_localizations.dart';
+export '/app/router/navigation/nav.dart';
 
 final RouteObserver<ModalRoute> routeObserver = RouteObserver<ModalRoute>();
 

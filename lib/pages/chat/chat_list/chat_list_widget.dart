@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 import '/design_system/design_system.dart';
 import '/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart';
 

@@ -1,4 +1,4 @@
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 import 'chat_list_widget.dart' show ChatListWidget;
 import 'package:flutter/material.dart';
 

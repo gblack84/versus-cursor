@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
-import '/core/app_theme.dart';
+import '/core_exports.dart';
 import '../utils/debug_helper.dart';
 import '/services/unified_image_cache_service.dart';
 

@@ -1,5 +1,5 @@
 import '/backend/backend.dart';
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 import 'testalgoria_widget.dart' show TestalgoriaWidget;
 import 'package:flutter/material.dart';
 

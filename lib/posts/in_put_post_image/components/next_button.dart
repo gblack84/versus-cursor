@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '/core/app_theme.dart';
+import '/core_exports.dart';
 
 class NextButton extends StatelessWidget {
   final bool showButton;

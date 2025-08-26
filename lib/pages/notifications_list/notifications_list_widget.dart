@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
-import '/core/app_theme.dart';
-import '/core/app_utils.dart';
+import '/core_exports.dart';
+import '/core_exports.dart';
 
 class NotificationsListWidget extends StatefulWidget {
   const NotificationsListWidget({Key? key}) : super(key: key);

@@ -1,8 +1,8 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/createaccount/popup_timer_email/popup_timer_email_widget.dart';
-import '/core/app_theme.dart';
-import '/core/app_utils.dart';
-import '/core/app_widgets.dart';
+import '/core_exports.dart';
+import '/core_exports.dart';
+import '/core_exports.dart';
 import '/index.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';

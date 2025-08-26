@@ -1,4 +1,4 @@
-import '/core/app_utils.dart';
+import '/core_exports.dart';
 import 'testdivider_widget.dart' show TestdividerWidget;
 import 'package:flutter/material.dart';
 

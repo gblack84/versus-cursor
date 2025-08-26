@@ -1,5 +1,6 @@
 import '/etc/vsmark/vsmark_widget.dart';
-import '/core/app_utils.dart';
+import '/core_exports.dart';
+// Previous: /core/app_utils.dart';
 import 'alertempty_widget.dart' show AlertemptyWidget;
 import 'package:flutter/material.dart';
 

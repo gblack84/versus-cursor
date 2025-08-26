@@ -1,4 +1,4 @@
-import 'form_field_controller.dart';
+import '/features/common/domain/models/form_field_controller.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';

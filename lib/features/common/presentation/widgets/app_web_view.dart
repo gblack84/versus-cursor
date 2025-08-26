@@ -9,7 +9,7 @@ import 'package:webviewx_plus/webviewx_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:file_picker/file_picker.dart';
 
-import 'app_utils.dart';
+import '/core_exports.dart';
 
 class AppWebView extends StatefulWidget {
   const AppWebView({

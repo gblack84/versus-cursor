@@ -3,7 +3,6 @@ import '/services/ai_moderation/ai_moderation_service.dart';
 import '/services/ai_moderation/models/moderation_result.dart' as ai;
 import '../constants/field_styles.dart';
 import '/auth/firebase_auth/auth_util.dart';
-import '/app/state/app_state.dart';
 import 'package:provider/provider.dart';
 import '/core_exports.dart';
 

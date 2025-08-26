@@ -8,7 +8,6 @@ import 'services/cache/unified_cache_service.dart';
 import 'services/notification_service.dart';
 import '/app/state/providers/navigation_provider.dart';
 import 'core_exports.dart';
-import 'app/state/app_state.dart';
 import 'app/app.dart';
 
 void main() async {

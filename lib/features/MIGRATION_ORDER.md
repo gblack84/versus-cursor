@@ -21,7 +21,7 @@
 | **Common** | 48개+ | 7시간 | 1 | ✅ **완료** | Core (일부) |
 | **App** | 15개+ | 8시간 10분 | 2 | ✅ **완료** | Core (일부), Common |
 | **Auth** | 30개 | 7시간 10분 | 3 | ⬜ 대기 | Core, Common, App |
-| **Search** | 7개 | 3시간 25분 | 4 | 🔴 **진행중** | Common |
+| **Search** | 7개 | 3시간 25분 | 4 | ✅ **완료** | Common |
 | **Notifications** | 20개+ | 5시간 | 5 | ⬜ 대기 | Common |
 | **Profile** | 40개+ | 7시간 | 6 | ⬜ 대기 | Common, Auth |
 | **Posts** | 77개 | 11시간 | 7 | 📁 **구조만 생성** | Common, Auth |

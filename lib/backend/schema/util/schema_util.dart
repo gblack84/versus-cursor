@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:from_css_color/from_css_color.dart';
-import '/backend/algolia/serialization_util.dart';
+import '/features/search/data/services/serialization_util.dart';
 
 import '/core_exports.dart';
 

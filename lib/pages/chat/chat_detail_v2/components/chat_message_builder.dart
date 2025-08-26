@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import 'package:intl/intl.dart';
-import '/design_system/design_system.dart';
+import '/features/common/presentation/design_system/design_system.dart';
 import '/backend/backend.dart';
 import '/components/chat/vote_card_message.dart';
 import '/pages/chat/services/chat_message_lifecycle_service.dart';

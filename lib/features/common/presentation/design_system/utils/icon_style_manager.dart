@@ -1,6 +1,6 @@
 import 'dart:io';
-import '../tokens/versus_icon_data.dart';
-import '../tokens/versus_icons.dart';
+import '/features/common/presentation/design_system/tokens/versus_icon_data.dart';
+import '/features/common/presentation/design_system/tokens/versus_icons.dart';
 
 /// 아이콘 스타일 관리자
 /// 

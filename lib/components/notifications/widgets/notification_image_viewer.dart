@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '/design_system/design_system.dart';
+import '/features/common/presentation/design_system/design_system.dart';
 
 /// 알림 이미지 전체화면 뷰어
 /// 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '/design_system/design_system.dart';
+import '/features/common/presentation/design_system/design_system.dart';
 
 class InAppNotificationDialog extends StatefulWidget {
   final String title;

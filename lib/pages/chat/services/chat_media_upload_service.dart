@@ -5,7 +5,7 @@ import 'package:wechat_camera_picker/wechat_camera_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:uuid/uuid.dart';
-import '/design_system/design_system.dart';
+import '/features/common/presentation/design_system/design_system.dart';
 import '/backend/backend.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/core_exports.dart';

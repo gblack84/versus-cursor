@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '/design_system/design_system.dart';
+import '/features/common/presentation/design_system/design_system.dart';
 
 /// 투표 카드 메시지의 헤더 컴포넌트
 /// 

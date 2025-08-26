@@ -30,7 +30,7 @@ import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import 'package:uuid/uuid.dart';
 import '/core_exports.dart';
-import '/design_system/design_system.dart';
+import '/features/common/presentation/design_system/design_system.dart';
 import '/backend/backend.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/pages/chat/services/chat_message_lifecycle_service.dart';

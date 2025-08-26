@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import '../constants/layout_constants.dart';
-import '../../posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
+import '/features/common/domain/models/layout_constants.dart';
+import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
 
 /// 통합 박스 계산 서비스
 /// 

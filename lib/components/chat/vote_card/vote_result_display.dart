@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '/design_system/design_system.dart';
+import '/features/common/presentation/design_system/design_system.dart';
 
 /// 투표 카드의 결과 표시 컴포넌트
 /// 

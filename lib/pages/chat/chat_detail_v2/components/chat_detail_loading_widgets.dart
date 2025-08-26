@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '/design_system/design_system.dart';
+import '/features/common/presentation/design_system/design_system.dart';
 
 /// 채팅 상세 페이지의 로딩 관련 위젯 모음
 class ChatDetailLoadingWidgets {

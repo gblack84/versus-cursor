@@ -1,7 +1,7 @@
 import '/etc/vsmark/vsmark_widget.dart';
 import '/core_exports.dart';
 // Previous: /core/app_utils.dart';
-import 'alertempty_widget.dart' show AlertemptyWidget;
+import '/features/common/presentation/widgets/alertempty_widget.dart' show AlertemptyWidget;
 import 'package:flutter/material.dart';
 
 class AlertemptyModel extends AppModel<AlertemptyWidget> {

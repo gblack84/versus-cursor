@@ -5,7 +5,7 @@ import 'package:wechat_camera_picker/wechat_camera_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:uuid/uuid.dart';
-import '/design_system/design_system.dart';
+import '/features/common/presentation/design_system/design_system.dart';
 import '/pages/chat/services/chat_file_size_service.dart';
 
 /// 채팅 미디어 피커 컴포넌트

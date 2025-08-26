@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '/design_system/design_system.dart';
+import '/features/common/presentation/design_system/design_system.dart';
 import '/services/unified_image_cache_service.dart';
 
 /// 투표 카드의 옵션 박스 컴포넌트

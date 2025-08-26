@@ -5,8 +5,8 @@ import '/core_exports.dart';
 // Previous: /core/app_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'editviedo_model.dart';
-export 'editviedo_model.dart';
+import '/features/common/domain/models/editviedo_model.dart';
+export '/features/common/domain/models/editviedo_model.dart';
 
 class EditviedoWidget extends StatefulWidget {
   const EditviedoWidget({super.key});

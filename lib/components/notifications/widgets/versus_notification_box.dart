@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '/design_system/design_system.dart';
+import '/features/common/presentation/design_system/design_system.dart';
 import '../models/versus_box_size_data.dart';
-import '/shared/services/unified_box_calculator.dart';
+import '/features/common/data/services/unified_box_calculator.dart';
 import '/services/unified_image_cache_service.dart';
 import '../constants/voting_notification_constraints.dart';
 import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';

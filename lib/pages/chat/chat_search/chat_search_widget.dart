@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
-import '/design_system/design_system.dart';
+import '/features/common/presentation/design_system/design_system.dart';
 
 class ChatSearchWidget extends StatefulWidget {
   const ChatSearchWidget({Key? key}) : super(key: key);

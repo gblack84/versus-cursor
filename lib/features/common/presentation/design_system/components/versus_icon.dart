@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../tokens/versus_icons.dart';
-import '../tokens/versus_icon_data.dart';
+import '/features/common/presentation/design_system/tokens/versus_icons.dart';
+import '/features/common/presentation/design_system/tokens/versus_icon_data.dart';
 
 /// VersusIcons를 자동으로 현재 스타일에 맞게 표시하는 위젯
 class VersusIcon extends StatelessWidget {

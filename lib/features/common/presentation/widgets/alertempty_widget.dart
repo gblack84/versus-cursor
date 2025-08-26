@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:webviewx_plus/webviewx_plus.dart';
-import 'alertempty_model.dart';
-export 'alertempty_model.dart';
+import '/features/common/domain/models/alertempty_model.dart';
+export '/features/common/domain/models/alertempty_model.dart';
 
 class AlertemptyWidget extends StatefulWidget {
   const AlertemptyWidget({super.key});

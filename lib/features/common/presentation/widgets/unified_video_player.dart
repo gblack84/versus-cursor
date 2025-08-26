@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../core_exports.dart';
+import '/core_exports.dart';
 import 'youtube_player_widget.dart';
 
 /// A unified video player that automatically selects the appropriate player

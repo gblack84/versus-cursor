@@ -4,8 +4,8 @@ import '/core_exports.dart';
 // Previous: /core/app_video_player.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'videoplay_model.dart';
-export 'videoplay_model.dart';
+import '/features/common/domain/models/videoplay_model.dart';
+export '/features/common/domain/models/videoplay_model.dart';
 
 class VideoplayWidget extends StatefulWidget {
   const VideoplayWidget({

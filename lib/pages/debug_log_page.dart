@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '/utils/app_logger.dart';
+import '/features/common/data/services/app_logger.dart';
 
 /// 디버그 로그를 보여주는 페이지
 class DebugLogPage extends StatelessWidget {

@@ -3,14 +3,14 @@ import '/core_exports.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'testalgoria_model.dart';
-export 'testalgoria_model.dart';
+import 'algolia_test_model.dart';
+export 'algolia_test_model.dart';
 
 class TestalgoriaWidget extends StatefulWidget {
   const TestalgoriaWidget({super.key});
-
-  static String routeName = 'testalgoria';
-  static String routePath = '/testalgoria';
+  
+  static const String routeName = 'testalgoria';
+  static const String routePath = '/testalgoria';
 
   @override
   State<TestalgoriaWidget> createState() => _TestalgoriaWidgetState();

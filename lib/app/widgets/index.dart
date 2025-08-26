@@ -9,7 +9,7 @@ export '/pages/user_info_input/user_info_input_widget.dart'
 export '/testpage_select/testpage_select_widget.dart' show TestpageSelectWidget;
 export '/pages/jop/expertise_select/expertise_select_widget.dart'
     show ExpertiseSelectWidget;
-export '/etc/testalgoria/testalgoria_widget.dart' show TestalgoriaWidget;
+export '/features/search/test/widget_test/algolia_test_widget.dart' show TestalgoriaWidget;
 export '/pages/jop/hobbies_select/hobbies_select_widget.dart'
     show HobbiesSelectWidget;
 export '/pages/jop/agrred_select/agrred_select_widget.dart'
@@ -30,9 +30,9 @@ export '/pages/image_viewer/image_viewer_page.dart'
 export '/pages/notifications_list/notifications_list_widget.dart'
     show NotificationsListWidget;
 export '/pages/home/home_page_widget.dart' show HomePageWidget;
-export '/features/search/presentation/screens/search_page/search_page_widget.dart'; show SearchPageWidget;
+export '/features/search/presentation/screens/search_page/search_page_widget.dart' show SearchPageWidget;
 export '/pages/profile/profile_page_widget.dart' show ProfilePageWidget;
 export '/pages/chat/chat_list/chat_list_widget.dart' show ChatListWidget;
 export '/pages/chat/friends_list/friends_list_widget.dart' show FriendsListWidget;
-export '/features/search/presentation/screens/chat_search/chat_search_widget.dart'; show ChatSearchWidget;
+export '/features/search/presentation/screens/chat_search/chat_search_widget.dart' show ChatSearchWidget;
 export '/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart' show ChatDetailWidgetV2;

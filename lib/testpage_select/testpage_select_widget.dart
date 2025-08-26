@@ -502,7 +502,7 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                   AppButtonWidget(
                                     onPressed: () async {
                                       context.pushNamed(
-                                          TestalgoriaWidget.routeName);
+                                          'testalgoria');
                                     },
                                     text: AppLocalizations.of(context).getText(
                                       '4ffxgxck' /* testalgolia

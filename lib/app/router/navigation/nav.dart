@@ -192,7 +192,7 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
         AppRoute(
           name: TestalgoriaWidget.routeName,
           path: TestalgoriaWidget.routePath,
-          builder: (context, params) => TestalgoriaWidget(),
+          builder: (context, params) => const TestalgoriaWidget(),
         ).toRoute(appStateNotifier),
         AppRoute(
           name: HobbiesSelectWidget.routeName,

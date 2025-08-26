@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
-import '/app_state.dart';
+import '/app/state/app_state.dart';
 import '/core_exports.dart';
 import 'media_upload_service.dart';
 

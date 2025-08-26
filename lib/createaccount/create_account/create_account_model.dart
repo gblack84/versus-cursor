@@ -1,5 +1,5 @@
 import '/core_exports.dart';
-import '/index.dart';
+import '/app/widgets/index.dart';
 import 'create_account_widget.dart' show CreateAccountWidget;
 import 'package:flutter/material.dart';
 

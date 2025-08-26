@@ -1,5 +1,5 @@
 import '/core_exports.dart';
-import '/index.dart';
+import '/app/widgets/index.dart';
 import 'agrred_select_widget.dart' show AgrredSelectWidget;
 import 'package:flutter/material.dart';
 

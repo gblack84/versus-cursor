@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:bot_toast/bot_toast.dart';
-import '/app_state.dart';
+import '/app/state/app_state.dart';
 import '/services/image_moderation_service.dart';
 import '../in_put_post_image_model.dart';
 

@@ -9,7 +9,7 @@ import '/auth/base_auth_user_provider.dart';
 import '/core_exports.dart';
 
 import '/backend/backend.dart';
-import '/index.dart';
+import '/app/widgets/index.dart';
 import '/components/navigation/main_navigation_shell.dart';
 
 export 'package:go_router/go_router.dart';

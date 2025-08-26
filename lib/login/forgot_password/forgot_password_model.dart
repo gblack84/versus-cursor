@@ -1,5 +1,5 @@
 import '/core_exports.dart';
-import '/index.dart';
+import '/app/widgets/index.dart';
 import 'forgot_password_widget.dart' show ForgotPasswordWidget;
 import 'package:flutter/material.dart';
 

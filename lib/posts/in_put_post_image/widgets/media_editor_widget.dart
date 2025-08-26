@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:path_provider/path_provider.dart';
-import '/app_state.dart';
+import '/app/state/app_state.dart';
 import '../services/image_upload_orchestrator_v2.dart';
 import '../in_put_post_image_model.dart';
 import '/services/image_moderation_service.dart';

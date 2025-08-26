@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '/app_state.dart';
+import '/app/state/app_state.dart';
 import '../helpers/aspect_ratio_analyzer.dart';
 
 class LayoutDebugInfo extends StatelessWidget {

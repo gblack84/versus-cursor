@@ -4,7 +4,7 @@ import 'package:collection/collection.dart';
 
 import '/backend/schema/util/firestore_util.dart';
 
-import 'index.dart';
+import '/app/widgets/index.dart';
 import '/core_exports.dart';
 
 class ContentsLikesModel extends FirestoreRecord {

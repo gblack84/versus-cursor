@@ -1,5 +1,5 @@
 import '/core_exports.dart';
-import '/index.dart';
+import '/app/widgets/index.dart';
 import 'login_page_widget.dart' show LoginPageWidget;
 import 'package:flutter/material.dart';
 

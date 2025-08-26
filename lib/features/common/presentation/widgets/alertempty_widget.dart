@@ -1,7 +1,7 @@
 import '/etc/vsmark/vsmark_widget.dart';
 import '/core_exports.dart';
 // import '/posts/in_put_text/in_put_text_widget.dart'; // 삭제된 파일
-// import '/index.dart'; // 사용하지 않는 import 제거
+// import '/app/widgets/index.dart'; // 사용하지 않는 import 제거
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';

@@ -1,7 +1,7 @@
 import '/backend/backend.dart';
 import '/core_exports.dart';
 import '/pages/user_info/language_selector/language_selector_widget.dart';
-import '/index.dart';
+import '/app/widgets/index.dart';
 import 'user_info_input_widget.dart' show UserInfoInputWidget;
 import 'package:flutter/material.dart';
 

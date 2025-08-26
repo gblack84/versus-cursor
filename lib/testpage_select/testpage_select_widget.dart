@@ -1,5 +1,5 @@
 import '/core_exports.dart';
-import '/index.dart';
+import '/app/widgets/index.dart';
 import '/components/notifications/voting_overlay.dart';
 import '/components/notifications/notification_badge_provider.dart';
 import 'package:flutter/material.dart';

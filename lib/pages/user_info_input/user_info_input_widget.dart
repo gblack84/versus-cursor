@@ -3,7 +3,7 @@ import '/backend/backend.dart';
 import '/core_exports.dart';
 import '/pages/user_info/character_detail_page/character_detail_page_widget.dart';
 import '/pages/user_info/language_selector/language_selector_widget.dart';
-import '/index.dart';
+import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';

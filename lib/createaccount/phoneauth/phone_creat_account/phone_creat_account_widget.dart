@@ -1,6 +1,6 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/core_exports.dart';
-import '/index.dart';
+import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';

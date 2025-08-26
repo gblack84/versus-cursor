@@ -1,5 +1,5 @@
 import '/core_exports.dart';
-import '/index.dart';
+import '/app/widgets/index.dart';
 import 'expertise_select_widget.dart' show ExpertiseSelectWidget;
 import 'package:flutter/material.dart';
 

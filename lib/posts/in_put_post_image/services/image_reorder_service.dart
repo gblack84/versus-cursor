@@ -1,5 +1,5 @@
 import 'dart:io';
-import '/app_state.dart';
+import '/app/state/app_state.dart';
 
 /// 이미지 순서 재정렬 서비스
 class ImageReorderService {

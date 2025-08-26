@@ -1,5 +1,5 @@
 import '/core_exports.dart';
-import '/index.dart';
+import '/app/widgets/index.dart';
 import 'blankppp_widget.dart' show BlankpppWidget;
 import 'package:flutter/material.dart';
 

@@ -1,5 +1,5 @@
 import '/core_exports.dart';
-import '/index.dart';
+import '/app/widgets/index.dart';
 import 'testpage_select_widget.dart' show TestpageSelectWidget;
 import 'package:flutter/material.dart';
 

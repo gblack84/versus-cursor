@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '/features/common/presentation/design_system/design_system.dart';
-import '/providers/navigation_provider.dart' as nav;
+import '/app/state/providers/navigation_provider.dart' as nav;
 
 /// 메인 네비게이션 쉘
 /// 바텀 네비게이션 바와 페이지들을 관리하는 위젯

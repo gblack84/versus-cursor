@@ -5,7 +5,7 @@ import 'package:collection/collection.dart';
 import '/backend/schema/util/firestore_util.dart';
 import '/backend/schema/util/schema_util.dart';
 
-import 'index.dart';
+import '/app/widgets/index.dart';
 import '/core_exports.dart';
 
 class PremiumUsersModel extends FirestoreRecord {

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 
 import '/backend/algolia/algolia_manager.dart';

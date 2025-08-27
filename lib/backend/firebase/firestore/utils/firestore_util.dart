@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '/backend/schema/util/schema_util.dart';
+import 'schema_util.dart';
 import '/core_exports.dart';
 
 typedef RecordBuilder<T> = T Function(DocumentSnapshot snapshot);

@@ -3,12 +3,12 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 
-import '/backend/schema/util/firestore_util.dart';
+import '/backend/firebase/firestore/utils/firestore_util.dart';
 
 import '/core_exports.dart';
 
-class ContentsLikesModel extends FirestoreRecord {
-  ContentsLikesModel._(
+class ContentsInterestsModel extends FirestoreRecord {
+  ContentsInterestsModel._(
     DocumentReference reference,
     Map<String, dynamic> data,
   ) : super(reference, data) {
@@ -34,44 +34,45 @@ class ContentsLikesModel extends FirestoreRecord {
 
   static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
       parent != null
-          ? parent.collection('contentsLikes')
-          : FirebaseFirestore.instance.collectionGroup('contentsLikes');
+          ? parent.collection('contentsInterests')
+          : FirebaseFirestore.instance.collectionGroup('contentsInterests');
 
   static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
-      parent.collection('contentsLikes').doc(id);
+      parent.collection('contentsInterests').doc(id);
 
-  static Stream<ContentsLikesModel> getDocument(DocumentReference ref) =>
-      ref.snapshots().map((s) => ContentsLikesModel.fromSnapshot(s));
+  static Stream<ContentsInterestsModel> getDocument(DocumentReference ref) =>
+      ref.snapshots().map((s) => ContentsInterestsModel.fromSnapshot(s));
 
-  static Future<ContentsLikesModel> getDocumentOnce(DocumentReference ref) =>
-      ref.get().then((s) => ContentsLikesModel.fromSnapshot(s));
+  static Future<ContentsInterestsModel> getDocumentOnce(
+          DocumentReference ref) =>
+      ref.get().then((s) => ContentsInterestsModel.fromSnapshot(s));
 
-  static ContentsLikesModel fromSnapshot(DocumentSnapshot snapshot) =>
-      ContentsLikesModel._(
+  static ContentsInterestsModel fromSnapshot(DocumentSnapshot snapshot) =>
+      ContentsInterestsModel._(
         snapshot.reference,
         mapFromFirestore(snapshot.data() as Map<String, dynamic>),
       );
 
-  static ContentsLikesModel getDocumentFromData(
+  static ContentsInterestsModel getDocumentFromData(
     Map<String, dynamic> data,
     DocumentReference reference,
   ) =>
-      ContentsLikesModel._(reference, mapFromFirestore(data));
+      ContentsInterestsModel._(reference, mapFromFirestore(data));
 
   @override
   String toString() =>
-      'ContentsLikesModel(reference: ${reference.path}, data: $snapshotData)';
+      'ContentsInterestsModel(reference: ${reference.path}, data: $snapshotData)';
 
   @override
   int get hashCode => reference.path.hashCode;
 
   @override
   bool operator ==(other) =>
-      other is ContentsLikesModel &&
+      other is ContentsInterestsModel &&
       reference.path.hashCode == other.reference.path.hashCode;
 }
 
-Map<String, dynamic> createContentsLikesModelData({
+Map<String, dynamic> createContentsInterestsModelData({
   String? userId,
   DateTime? createdAt,
 }) {
@@ -85,19 +86,19 @@ Map<String, dynamic> createContentsLikesModelData({
   return firestoreData;
 }
 
-class ContentsLikesModelDocumentEquality
-    implements Equality<ContentsLikesModel> {
-  const ContentsLikesModelDocumentEquality();
+class ContentsInterestsModelDocumentEquality
+    implements Equality<ContentsInterestsModel> {
+  const ContentsInterestsModelDocumentEquality();
 
   @override
-  bool equals(ContentsLikesModel? e1, ContentsLikesModel? e2) {
+  bool equals(ContentsInterestsModel? e1, ContentsInterestsModel? e2) {
     return e1?.userId == e2?.userId && e1?.createdAt == e2?.createdAt;
   }
 
   @override
-  int hash(ContentsLikesModel? e) =>
+  int hash(ContentsInterestsModel? e) =>
       const ListEquality().hash([e?.userId, e?.createdAt]);
 
   @override
-  bool isValidKey(Object? o) => o is ContentsLikesModel;
+  bool isValidKey(Object? o) => o is ContentsInterestsModel;
 }

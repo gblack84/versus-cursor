@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import '/backend/backend.dart';
 import '/features/auth/data/services/auth_util.dart';
-import '/services/user_cache_service.dart';
+import '/features/profile/data/services/user_cache_service.dart';
 import '/services/cache/unified_cache_service.dart';
 import '../chat_detail_v2/chat_detail_migration_service.dart';
 import 'chat_message_lifecycle_service.dart';

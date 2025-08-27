@@ -32,7 +32,7 @@ import '/features/auth/data/services/auth_util.dart';
 import '/components/chat/vote_card_message.dart';
 import '/pages/chat/services/chat_message_lifecycle_service.dart';
 import '/pages/chat/services/chat_message_service.dart';
-import '/services/user_cache_service.dart';
+import '/features/profile/data/services/user_cache_service.dart';
 import 'ai_chat_controller.dart';
 
 /// AI Chat Page using flutter_chat_ui v2

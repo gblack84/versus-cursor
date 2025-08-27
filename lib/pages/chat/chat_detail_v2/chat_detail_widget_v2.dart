@@ -38,7 +38,7 @@ import '/pages/chat/services/chat_media_upload_service.dart';
 import '/pages/chat/services/chat_initialization_service.dart';
 import '/pages/chat/services/chat_scroll_service.dart';
 import '/pages/chat/services/chat_animation_service.dart';
-import '/services/user_cache_service.dart';
+import '/features/profile/data/services/user_cache_service.dart';
 import 'chat_detail_migration_service.dart';
 import 'chat_detail_controller_v2.dart';
 import 'components/chat_message_builder.dart';

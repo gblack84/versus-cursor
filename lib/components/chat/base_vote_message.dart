@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '/features/common/presentation/design_system/design_system.dart';
-import '/auth/firebase_auth/auth_util.dart';
+import '/features/auth/data/services/auth_util.dart';
 import '/services/vote_status_service.dart';
 
 /// 투표 메시지의 공통 로직을 담은 추상 클래스

@@ -1,4 +1,4 @@
-import '/auth/firebase_auth/auth_util.dart';
+import '/features/auth/data/services/auth_util.dart';
 import '/etc/vsmark/vsmark_widget.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';

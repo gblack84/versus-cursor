@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 import '/backend/backend.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'utils/no_animation_page_route.dart';
-import '/auth/firebase_auth/auth_util.dart';
+import '/features/auth/data/services/auth_util.dart';
 import 'in_put_post_image_model.dart';
 export 'in_put_post_image_model.dart';
 import 'helpers/aspect_ratio_analyzer.dart';

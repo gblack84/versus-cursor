@@ -1,7 +1,7 @@
 // upload_choice_bottom_sheet_widget.dart 임시 제거 - 새로운 업로드 위젯 구현 필요
 import 'dart:async';
 import '/core_exports.dart';
-import '/features/common/data/services/content_filter.dart';
+import '/services/content/content_filter.dart';
 import '/features/posts/presentation/screens/viewer/image_viewer_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -13,7 +13,7 @@ import '/features/auth/data/services/auth_util.dart';
 import 'in_put_post_image_model.dart';
 export 'in_put_post_image_model.dart';
 import '/features/posts/domain/usecases/media/aspect_ratio_analyzer.dart';
-import '/features/common/data/services/unified_box_calculator.dart';
+import '/services/ui/unified_box_calculator.dart';
 import '/features/posts/presentation/widgets/components/media_box_callbacks.dart';
 import '/features/posts/domain/usecases/media/ratio_calculator.dart';
 import '/features/posts/presentation/widgets/components/media_selection_box_multi.dart';

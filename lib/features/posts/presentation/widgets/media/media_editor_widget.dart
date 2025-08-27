@@ -10,7 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import '/app/state/app_state.dart';
 import '/features/posts/data/services/media/image_upload_orchestrator_v2.dart';
 import '/features/posts/presentation/screens/create_post/in_put_post_image_model.dart';
-import '/services/image_moderation_service.dart';
+import '/services/moderation/image_moderation_service.dart';
 
 /// 이미지 에디터 페이지 위젯
 class MediaEditorWidget extends StatefulWidget {

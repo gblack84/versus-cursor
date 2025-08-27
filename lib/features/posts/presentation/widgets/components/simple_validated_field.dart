@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:easy_debounce/easy_debounce.dart';
 import '/core_exports.dart';
-import '/services/perspective_api_service.dart';
-import '/features/common/presentation/widgets/highlighted_text_field.dart';
-import '/features/common/data/services/content_filter.dart';
+import '/services/moderation/perspective_api_service.dart';
+import '/core/widgets/highlighted_text_field.dart';
+import '/services/content/content_filter.dart';
 import '/features/posts/domain/constants/field_styles.dart';
 
 /// 통합된 입력 필드 위젯

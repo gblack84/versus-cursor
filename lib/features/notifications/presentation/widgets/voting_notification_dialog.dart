@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '/features/common/presentation/design_system/design_system.dart';
+import '/core/design_system/design_system.dart';
 import '/features/notifications/presentation/models/versus_box_size_data.dart';
-import '/features/common/data/services/unified_box_calculator.dart';
+import '/services/ui/unified_box_calculator.dart';
 import 'versus_notification_box.dart';
 import '/features/notifications/presentation/constants/voting_notification_constraints.dart';
 import '/features/posts/domain/usecases/media/aspect_ratio_analyzer.dart';

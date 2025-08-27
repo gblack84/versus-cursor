@@ -26,7 +26,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
-import '/features/common/presentation/design_system/design_system.dart';
+import '/core/design_system/design_system.dart';
 import '/backend/backend.dart';
 import '/features/auth/data/services/auth_util.dart';
 import '/features/posts/presentation/widgets/vote/vote_card_message.dart';

@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '/backend/schema/util/firestore_util.dart';
-import '/backend/schema/util/schema_util.dart';
+import '/backend/firebase/firestore/utils/firestore_util.dart';
+import '/backend/firebase/firestore/utils/schema_util.dart';
 
 import '/core_exports.dart';
 

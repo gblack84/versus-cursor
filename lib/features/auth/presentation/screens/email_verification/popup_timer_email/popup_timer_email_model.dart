@@ -1,4 +1,4 @@
-import '/features/common/presentation/widgets/pickle_mark/pickle_mark_widget.dart';
+import '/core/widgets/pickle_mark/pickle_mark_widget.dart';
 import '/core_exports.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'popup_timer_email_widget.dart' show PopupTimerEmailWidget;

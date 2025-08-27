@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
-import '/features/common/presentation/design_system/design_system.dart';
+import '/core/design_system/design_system.dart';
 
 /// 채팅 검색 바 컴포넌트
 /// 

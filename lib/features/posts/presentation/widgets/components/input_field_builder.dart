@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '/core_exports.dart';
-import '/services/perspective_api_service.dart';
+import '/services/moderation/perspective_api_service.dart';
 import '../components/simple_validated_field.dart';
 import '/features/posts/presentation/screens/create_post/in_put_post_image_model.dart';
 import '/features/posts/domain/constants/field_styles.dart';

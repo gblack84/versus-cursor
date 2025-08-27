@@ -16,37 +16,37 @@
 // - Remaining in Core: 0 (ready for removal)
 // ============================================
 
-// ===== FROM COMMON FEATURE =====
+// ===== FROM CORE =====
 
-// Theme & Styling (common/presentation/theme)
-export 'features/common/presentation/theme/app_theme.dart';
+// Theme & Styling
+export 'core/theme/app_theme.dart';
 
-// Animations (common/presentation/animations)
-export 'features/common/presentation/animations/app_animations.dart';
+// Animations
+export 'core/animations/app_animations.dart';
 
-// Widgets (common/presentation/widgets)
-export 'features/common/presentation/widgets/app_widgets.dart';
-export 'features/common/presentation/widgets/app_choice_chips.dart';
-export 'features/common/presentation/widgets/app_icon_button.dart';
-export 'features/common/presentation/widgets/app_media_display.dart';
-export 'features/common/presentation/widgets/app_toggle_icon.dart';
-export 'features/common/presentation/widgets/app_video_player.dart';
-export 'features/common/presentation/widgets/app_web_view.dart';
+// Widgets
+export 'core/widgets/app_widgets.dart';
+export 'core/widgets/app_choice_chips.dart';
+export 'core/widgets/app_icon_button.dart';
+export 'core/widgets/app_media_display.dart';
+export 'core/widgets/app_toggle_icon.dart';
+export 'core/widgets/app_video_player.dart';
+export 'core/widgets/app_web_view.dart';
 
-// Localization (common/localization)
-export 'features/common/localization/app_language_selector.dart';
-export 'features/common/localization/app_localizations.dart';
+// Localization
+export 'core/localization/app_language_selector.dart';
+export 'core/localization/app_localizations.dart';
 
-// Utilities (common/utils)
-export 'features/common/utils/app_utils.dart';
-export 'features/common/utils/app_timer.dart';
-export 'features/common/utils/custom_functions.dart';
+// Utilities
+export 'core/utils/app_utils.dart';
+export 'core/utils/app_timer.dart';
+export 'core/utils/custom_functions.dart';
 
-// Domain Models (common/domain/models)
-export 'features/common/domain/models/app_model.dart';
-export 'features/common/domain/models/uploaded_file.dart';
-export 'features/common/domain/models/upload_data.dart';
-export 'features/common/domain/models/form_field_controller.dart';
+// Models
+export 'core/models/app_model.dart';
+export 'core/models/uploaded_file.dart';
+export 'core/models/upload_data.dart';
+export 'core/models/form_field_controller.dart';
 
 // ===== FROM APP FEATURE =====
 

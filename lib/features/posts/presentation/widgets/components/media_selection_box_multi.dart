@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import '/core_exports.dart';
 import '/features/posts/presentation/utils/debug_helper.dart';
-import '/services/unified_image_cache_service.dart';
+import '/services/image/unified_image_cache_service.dart';
 
 class MediaSelectionBoxMulti extends StatefulWidget {
   final String label; // 'A' or 'B'

@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '/core_exports.dart';
 import '/features/posts/presentation/utils/debug_helper.dart';
-import '/services/unified_image_cache_service.dart';
+import '/services/image/unified_image_cache_service.dart';
 
 /// MediaSelectionBox의 기본 추상 클래스
 abstract class BaseMediaSelectionBox extends StatefulWidget {

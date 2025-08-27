@@ -1,6 +1,6 @@
 import '/features/auth/data/services/auth_util.dart';
 import '/backend/backend.dart';
-import '/backend/firebase_storage/storage.dart';
+import '/backend/firebase/storage/storage.dart';
 import '/core_exports.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';

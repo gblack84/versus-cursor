@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '/core_exports.dart';
 import '/features/notifications/presentation/providers/notification_badge_provider.dart';
 import '/backend/backend.dart';
-import '/features/common/presentation/design_system/design_system.dart';
+import '/core/design_system/design_system.dart';
 import '/services/cache/unified_cache_service.dart';
 
 class HomePageWidget extends StatefulWidget {

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '/core_exports.dart';
 import '/backend/backend.dart';
 import '/features/auth/data/services/auth_util.dart';
-import '/features/common/presentation/design_system/design_system.dart';
+import '/core/design_system/design_system.dart';
 
 class ProfilePageWidget extends StatefulWidget {
   const ProfilePageWidget({super.key});

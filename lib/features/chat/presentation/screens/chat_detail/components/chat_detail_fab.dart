@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '/features/common/presentation/design_system/design_system.dart';
+import '/core/design_system/design_system.dart';
 
 /// 채팅 상세 페이지의 Floating Action Button 컴포넌트
 class ChatDetailFAB extends StatelessWidget {

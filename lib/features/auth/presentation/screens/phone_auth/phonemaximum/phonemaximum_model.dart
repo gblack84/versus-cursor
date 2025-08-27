@@ -1,4 +1,4 @@
-import '/features/common/presentation/widgets/pickle_mark/pickle_mark_widget.dart';
+import '/core/widgets/pickle_mark/pickle_mark_widget.dart';
 import '/core_exports.dart';
 import 'phonemaximum_widget.dart' show PhonemaximumWidget;
 import 'package:flutter/material.dart';

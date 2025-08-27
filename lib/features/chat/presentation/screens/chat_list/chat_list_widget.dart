@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '/features/auth/data/services/auth_util.dart';
 import '/backend/backend.dart';
 import '/core_exports.dart';
-import '/features/common/presentation/design_system/design_system.dart';
+import '/core/design_system/design_system.dart';
 import '/features/chat/presentation/screens/chat_detail/chat_detail_widget_v2.dart';
 
 class ChatListWidget extends StatefulWidget {

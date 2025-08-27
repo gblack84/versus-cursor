@@ -1,5 +1,5 @@
 import '/core_exports.dart';
-import '/services/perspective_api_service.dart';
+import '/services/moderation/perspective_api_service.dart';
 import 'in_put_post_image_widget.dart' show InPutPostImageWidget;
 import 'package:flutter/material.dart';
 import '/features/posts/domain/usecases/media/aspect_ratio_analyzer.dart';

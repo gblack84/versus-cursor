@@ -4,8 +4,8 @@ import 'dart:async';
 import '/features/search/data/services/algolia_manager.dart';
 import 'package:collection/collection.dart';
 
-import '/backend/schema/util/firestore_util.dart';
-import '/backend/schema/util/schema_util.dart';
+import '/backend/firebase/firestore/utils/firestore_util.dart';
+import '/backend/firebase/firestore/utils/schema_util.dart';
 
 import '/core_exports.dart';
 

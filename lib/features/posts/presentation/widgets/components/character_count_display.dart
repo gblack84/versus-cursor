@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '/core_exports.dart';
-import '/services/perspective_api_service.dart';
+import '/services/moderation/perspective_api_service.dart';
 
 class CharacterCountDisplay extends StatefulWidget {
   final TextEditingController? controller;

@@ -1,4 +1,4 @@
-import '/features/common/presentation/widgets/pickle_mark/pickle_mark_widget.dart';
+import '/core/widgets/pickle_mark/pickle_mark_widget.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
 import 'start_page_widget.dart' show StartPageWidget;

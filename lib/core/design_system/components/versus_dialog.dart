@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '/features/common/presentation/design_system/tokens/versus_tokens.dart';
+import '/core/design_system/tokens/versus_tokens.dart';
 
 /// Versus Space 표준 다이얼로그 컴포넌트
 /// 

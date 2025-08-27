@@ -1,7 +1,7 @@
-import '/features/common/presentation/widgets/pickle_mark/pickle_mark_widget.dart';
+import '/core/widgets/pickle_mark/pickle_mark_widget.dart';
 import '/core_exports.dart';
 // Previous: /core/app_utils.dart';
-import '/features/common/presentation/widgets/alertempty_widget.dart' show AlertemptyWidget;
+import '/core/widgets/alertempty_widget.dart' show AlertemptyWidget;
 import 'package:flutter/material.dart';
 
 class AlertemptyModel extends AppModel<AlertemptyWidget> {

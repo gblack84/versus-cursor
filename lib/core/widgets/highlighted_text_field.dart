@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '/services/perspective_api_service.dart';
+import '/services/moderation/perspective_api_service.dart';
 
 /// 독성 단어를 빨간색으로 하이라이팅하는 커스텀 텍스트 필드
 class HighlightedTextField extends StatefulWidget {

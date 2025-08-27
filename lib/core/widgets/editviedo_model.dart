@@ -1,6 +1,6 @@
 import '/core_exports.dart';
 // Previous: /core/app_utils.dart';
-import '/features/common/presentation/widgets/editviedo_widget.dart' show EditviedoWidget;
+import '/core/widgets/editviedo_widget.dart' show EditviedoWidget;
 import 'package:flutter/material.dart';
 
 class EditviedoModel extends AppModel<EditviedoWidget> {

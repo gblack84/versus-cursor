@@ -14,9 +14,9 @@ import '/app/app.dart';
 
 export '/app/models/lat_lng.dart';
 export '/app/models/place.dart';
-export '/features/common/domain/models/uploaded_file.dart';
+export '/core/models/uploaded_file.dart';
 export '/app/state/app_state.dart';
-export '/features/common/domain/models/app_model.dart';
+export '/core/models/app_model.dart';
 export 'dart:math' show min, max;
 export 'dart:typed_data' show Uint8List;
 export 'dart:convert' show jsonEncode, jsonDecode;
@@ -24,7 +24,7 @@ export 'package:intl/intl.dart';
 export 'package:cloud_firestore/cloud_firestore.dart'
     show DocumentReference, FirebaseFirestore;
 export 'package:page_transition/page_transition.dart';
-export '/features/common/localization/app_localizations.dart';
+export '/core/localization/app_localizations.dart';
 export '/app/router/navigation/nav.dart';
 
 final RouteObserver<ModalRoute> routeObserver = RouteObserver<ModalRoute>();

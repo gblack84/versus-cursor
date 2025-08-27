@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '/features/common/presentation/design_system/tokens/versus_tokens.dart';
+import '/core/design_system/tokens/versus_tokens.dart';
 
 /// Versus Space 표준 텍스트 필드 컴포넌트
 /// 

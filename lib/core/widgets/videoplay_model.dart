@@ -1,6 +1,6 @@
 import '/core_exports.dart';
 // Previous: /core/app_utils.dart';
-import '/features/common/presentation/widgets/videoplay_widget.dart' show VideoplayWidget;
+import '/core/widgets/videoplay_widget.dart' show VideoplayWidget;
 import 'package:flutter/material.dart';
 
 class VideoplayModel extends AppModel<VideoplayWidget> {

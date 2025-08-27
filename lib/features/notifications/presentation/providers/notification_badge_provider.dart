@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/auth/firebase_auth/auth_util.dart';
-import '/services/notification_service.dart';
-import 'notification_badge.dart';
+import '/features/notifications/data/services/notification_service.dart';
+import '/features/notifications/presentation/widgets/notification_badge.dart';
 
 /// NotificationService와 연결된 알림 뱃지 제공자
 /// 

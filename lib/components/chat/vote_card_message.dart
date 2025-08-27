@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '/features/common/presentation/design_system/design_system.dart';
-import '/components/notifications/voting_notification_dialog.dart';
+import '/features/notifications/presentation/widgets/voting_notification_dialog.dart';
 import '/features/common/data/services/responsive_breakpoints.dart';
 import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
 import '/features/common/data/services/unified_box_calculator.dart';

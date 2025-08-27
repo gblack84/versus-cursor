@@ -7,8 +7,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '/core_exports.dart';
 import '/auth/firebase_auth/firebase_user_provider.dart';
 import '/auth/firebase_auth/auth_util.dart';
-import '/services/notification_service.dart';
-import '/services/global_notification_manager.dart';
+import '/features/notifications/data/services/notification_service.dart';
+import '/features/notifications/data/services/global_notification_manager.dart';
 import '/services/cache/preload_strategy.dart';
 
 class VersusApp extends StatefulWidget {

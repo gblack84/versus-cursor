@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
+import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
 
 /// 질문 작성 페이지에서 생성된 A/B 박스 사이즈 데이터
 /// 

@@ -27,7 +27,7 @@ export '/pages/pro_image_editor/pro_image_editor_page.dart'
     show ProImageEditorPage;
 export '/pages/image_viewer/image_viewer_page.dart'
     show ImageViewerPage;
-export '/pages/notifications_list/notifications_list_widget.dart'
+export '/features/notifications/presentation/screens/notifications_list/notifications_list_widget.dart'
     show NotificationsListWidget;
 export '/pages/home/home_page_widget.dart' show HomePageWidget;
 export '/features/search/presentation/screens/search_page/search_page_widget.dart' show SearchPageWidget;

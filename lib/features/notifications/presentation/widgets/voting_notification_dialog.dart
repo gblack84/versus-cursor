@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '/features/common/presentation/design_system/design_system.dart';
-import 'models/versus_box_size_data.dart';
+import '/features/notifications/presentation/models/versus_box_size_data.dart';
 import '/features/common/data/services/unified_box_calculator.dart';
-import 'widgets/versus_notification_box.dart';
-import 'constants/voting_notification_constraints.dart';
+import 'versus_notification_box.dart';
+import '/features/notifications/presentation/constants/voting_notification_constraints.dart';
 import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
 
 class VotingNotificationDialog extends StatefulWidget {

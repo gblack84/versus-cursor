@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'in_app_notification_dialog.dart';
 import 'voting_notification_dialog.dart';
-import 'models/versus_box_size_data.dart';
+import '/features/notifications/presentation/models/versus_box_size_data.dart';
 
 class NotificationOverlay {
   static OverlayEntry? _currentEntry;

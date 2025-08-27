@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '/core_exports.dart';
 // Previous: /core/app_utils.dart';
 import 'notification_badge.dart';
-import 'notification_badge_provider.dart';
+import '/features/notifications/presentation/providers/notification_badge_provider.dart';
 
 /// 알림 뱃지 사용 예제 모음
 /// 

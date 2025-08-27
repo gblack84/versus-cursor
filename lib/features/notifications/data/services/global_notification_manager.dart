@@ -4,12 +4,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '/backend/backend.dart';
 import '/auth/firebase_auth/auth_util.dart';
-import '/components/notifications/voting_notification_dialog.dart';
-import '/components/notifications/models/versus_box_size_data.dart';
+import '/features/notifications/presentation/widgets/voting_notification_dialog.dart';
+import '/features/notifications/presentation/models/versus_box_size_data.dart';
 import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
 import '/core_exports.dart';
 import 'notification_service.dart';
-import 'vote_status_service.dart';
+import '/services/vote_status_service.dart';
 import '/posts/in_put_post_image/utils/debug_helper.dart';
 
 /// 글로벌 알림 관리자

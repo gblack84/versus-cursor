@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '/core_exports.dart';
-import '/pages/notifications_list/notifications_list_widget.dart';
+import 'notifications_list_widget.dart';
 
 class NavigationExample {
   // Navigate to notifications list (replacement - removes current route)

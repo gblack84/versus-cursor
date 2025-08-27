@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '/services/perspective_api_service.dart';
 import 'models/moderation_result.dart';
-import 'constants/moderation_config.dart';
+import '/features/posts/data/services/moderation/constants/moderation_config.dart';
 import 'text_moderation/gemini_service.dart';
 import '/features/common/presentation/design_system/design_system.dart';
 

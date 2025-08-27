@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/core_exports.dart';
 import '/features/posts/domain/models/target_audience_model.dart';
-import '../../constants/target_audience_constants.dart';
+import '/features/posts/domain/constants/target_audience_constants.dart';
 import 'target_audience_steps/collection_type_selector.dart';
 import 'target_audience_steps/target_count_selector.dart';
 import 'target_audience_steps/detailed_target_selector.dart';

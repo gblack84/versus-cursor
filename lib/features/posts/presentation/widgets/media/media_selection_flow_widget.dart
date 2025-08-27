@@ -8,11 +8,11 @@ import 'package:bot_toast/bot_toast.dart';
 import '/core_exports.dart';
 import '/features/posts/presentation/delegates/korean_asset_picker_delegate.dart';
 import '/features/posts/presentation/delegates/korean_camera_picker_delegate.dart';
-import '../services/image_download_service.dart';
-import '/pages/thumbnail_selection/thumbnail_selection_page.dart';
-import '../delegates/camera_floating_button_delegate.dart';
+import '/features/posts/data/services/media/image_download_service.dart';
+import '/features/posts/presentation/screens/thumbnail/thumbnail_selection_page.dart';
+import '/features/posts/presentation/delegates/camera_floating_button_delegate.dart';
 import 'media_editor_widget.dart';
-import '../utils/no_animation_page_route.dart';
+import '/features/posts/presentation/utils/no_animation_page_route.dart';
 import '/features/posts/presentation/screens/create_post/in_put_post_image_model.dart';
 
 /// 미디어 선택부터 편집까지 하나의 플로우로 처리하는 위젯

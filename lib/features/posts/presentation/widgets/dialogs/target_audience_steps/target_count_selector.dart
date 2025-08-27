@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/core_exports.dart';
 import '/features/posts/domain/models/target_audience_model.dart';
-import '../../../constants/target_audience_constants.dart';
+import '/features/posts/domain/constants/target_audience_constants.dart';
 
 /// Step 2: 목표 응답 수 설정
 class TargetCountSelector extends StatelessWidget {

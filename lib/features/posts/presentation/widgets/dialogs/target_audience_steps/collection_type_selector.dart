@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/core_exports.dart';
 import '/features/posts/domain/models/target_audience_model.dart';
-import '../../../constants/target_audience_constants.dart';
+import '/features/posts/domain/constants/target_audience_constants.dart';
 
 /// Step 1: 수집 방식 선택
 class CollectionTypeSelector extends StatefulWidget {

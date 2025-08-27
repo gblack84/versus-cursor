@@ -4,7 +4,7 @@ import '/core_exports.dart';
 import '/services/perspective_api_service.dart';
 import '../components/simple_validated_field.dart';
 import '/features/posts/presentation/screens/create_post/in_put_post_image_model.dart';
-import '../constants/field_styles.dart';
+import '/features/posts/domain/constants/field_styles.dart';
 
 /// 입력 필드 빌더 헬퍼
 class InputFieldBuilder {

@@ -4,15 +4,15 @@ export '/features/auth/presentation/screens/signup/create_account/create_account
     show CreateAccountWidget;
 export '/features/auth/presentation/screens/forgot_password/forgot_password/forgot_password_widget.dart'
     show ForgotPasswordWidget;
-export '/pages/user_info_input/user_info_input_widget.dart'
+export '/features/profile/presentation/screens/user_info_input/user_info_input_widget.dart'
     show UserInfoInputWidget;
 export '/testpage_select/testpage_select_widget.dart' show TestpageSelectWidget;
-export '/pages/jop/expertise_select/expertise_select_widget.dart'
+export '/features/profile/presentation/screens/onboarding/interest_selection/expertise_select/expertise_select_widget.dart'
     show ExpertiseSelectWidget;
 export '/features/search/test/widget_test/algolia_test_widget.dart' show TestalgoriaWidget;
-export '/pages/jop/hobbies_select/hobbies_select_widget.dart'
+export '/features/profile/presentation/screens/onboarding/interest_selection/hobbies_select/hobbies_select_widget.dart'
     show HobbiesSelectWidget;
-export '/pages/jop/agrred_select/agrred_select_widget.dart'
+export '/features/profile/presentation/screens/onboarding/interest_selection/agreed_select/agrred_select_widget.dart'
     show AgrredSelectWidget;
 export '/features/auth/presentation/screens/start/start_page/start_page_widget.dart' show StartPageWidget;
 export '/etc/testdivider/testdivider_widget.dart' show TestdividerWidget;
@@ -31,7 +31,7 @@ export '/features/notifications/presentation/screens/notifications_list/notifica
     show NotificationsListWidget;
 export '/pages/home/home_page_widget.dart' show HomePageWidget;
 export '/features/search/presentation/screens/search_page/search_page_widget.dart' show SearchPageWidget;
-export '/pages/profile/profile_page_widget.dart' show ProfilePageWidget;
+export '/features/profile/presentation/screens/profile_main/profile_page_widget.dart' show ProfilePageWidget;
 export '/pages/chat/chat_list/chat_list_widget.dart' show ChatListWidget;
 export '/pages/chat/friends_list/friends_list_widget.dart' show FriendsListWidget;
 export '/features/search/presentation/screens/chat_search/chat_search_widget.dart' show ChatSearchWidget;

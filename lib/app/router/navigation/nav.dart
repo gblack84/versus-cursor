@@ -10,7 +10,7 @@ import '/core_exports.dart';
 
 import '/backend/backend.dart';
 import '/app/widgets/index.dart';
-import '/components/navigation/main_navigation_shell.dart';
+import '/app/widgets/navigation/main_navigation_shell.dart';
 
 export 'package:go_router/go_router.dart';
 export 'serialization_util.dart';
@@ -210,11 +210,6 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, params) => StartPageWidget(),
         ).toRoute(appStateNotifier),
         AppRoute(
-          name: TestdividerWidget.routeName,
-          path: TestdividerWidget.routePath,
-          builder: (context, params) => TestdividerWidget(),
-        ).toRoute(appStateNotifier),
-        AppRoute(
           name: PhoneCreatAccountWidget.routeName,
           path: PhoneCreatAccountWidget.routePath,
           builder: (context, params) => PhoneCreatAccountWidget(
@@ -233,11 +228,6 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
               ParamType.String,
             ),
           ),
-        ).toRoute(appStateNotifier),
-        AppRoute(
-          name: BlankpppWidget.routeName,
-          path: BlankpppWidget.routePath,
-          builder: (context, params) => BlankpppWidget(),
         ).toRoute(appStateNotifier),
         AppRoute(
           name: ProImageEditorPage.routeName,

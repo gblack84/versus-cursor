@@ -1,4 +1,4 @@
-import '/etc/vsmark/vsmark_widget.dart';
+import '/features/common/presentation/widgets/pickle_mark/pickle_mark_widget.dart';
 import '/core_exports.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'popup_timer_email_widget.dart' show PopupTimerEmailWidget;
@@ -13,8 +13,8 @@ class PopupTimerEmailModel extends AppModel<PopupTimerEmailWidget> {
 
   ///  State fields for stateful widgets in this component.
 
-  // Model for vsmark component.
-  late VsmarkModel vsmarkModel;
+  // Model for pickle mark component.
+  late PickleMarkModel pickleMarkModel;
   // State field(s) for Timer widget.
   final timerInitialTimeMs = 180000;
   int timerMilliseconds = 180000;
@@ -28,12 +28,12 @@ class PopupTimerEmailModel extends AppModel<PopupTimerEmailWidget> {
 
   @override
   void initState(BuildContext context) {
-    vsmarkModel = createModel(context, () => VsmarkModel());
+    pickleMarkModel = createModel(context, () => PickleMarkModel());
   }
 
   @override
   void dispose() {
-    vsmarkModel.dispose();
+    pickleMarkModel.dispose();
     timerController.dispose();
   }
 }

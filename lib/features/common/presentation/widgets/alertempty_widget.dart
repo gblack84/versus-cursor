@@ -1,4 +1,4 @@
-import '/etc/vsmark/vsmark_widget.dart';
+import '/features/common/presentation/widgets/pickle_mark/pickle_mark_widget.dart';
 import '/core_exports.dart';
 // import '/posts/in_put_text/in_put_text_widget.dart'; // 삭제된 파일
 // import '/app/widgets/index.dart'; // 사용하지 않는 import 제거
@@ -67,9 +67,9 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
                   color: AppTheme.of(context).secondaryBackground,
                 ),
                 child: wrapWithModel(
-                  model: _model.vsmarkModel,
+                  model: _model.pickleMarkModel,
                   updateCallback: () => setState(() {}),
-                  child: VsmarkWidget(),
+                  child: PickleMarkWidget(),
                 ),
               ),
             ),

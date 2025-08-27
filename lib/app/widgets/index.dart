@@ -15,12 +15,10 @@ export '/features/profile/presentation/screens/onboarding/interest_selection/hob
 export '/features/profile/presentation/screens/onboarding/interest_selection/agreed_select/agrred_select_widget.dart'
     show AgrredSelectWidget;
 export '/features/auth/presentation/screens/start/start_page/start_page_widget.dart' show StartPageWidget;
-export '/etc/testdivider/testdivider_widget.dart' show TestdividerWidget;
 export '/features/auth/presentation/screens/phone_auth/phone_creat_account/phone_creat_account_widget.dart'
     show PhoneCreatAccountWidget;
 export '/features/auth/presentation/screens/phone_auth/phonelogeinpincode_widget.dart'
     show PhonelogeinpincodeWidget;
-export '/etc/blankppp/blankppp_widget.dart' show BlankpppWidget;
 export '/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart'
     show InPutPostImageWidget;
 export '/features/posts/presentation/screens/editor/pro_image_editor_page.dart'

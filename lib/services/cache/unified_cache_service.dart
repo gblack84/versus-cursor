@@ -71,7 +71,25 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
     
     // Hive 초기화
     await Hive.initFlutter();
-    _localCache = await Hive.openBox('unified_cache');
+    
+    // Hive 박스 열기 - 손상된 경우 자동 재생성
+    try {
+      _localCache = await Hive.openBox('unified_cache');
+      _logDebug('Hive cache opened successfully');
+    } catch (e) {
+      // 손상된 캐시 제거 후 재생성
+      _logDebug('Hive cache corrupted, resetting: $e');
+      try {
+        await Hive.deleteBoxFromDisk('unified_cache');
+        _logDebug('Corrupted Hive cache deleted');
+      } catch (deleteError) {
+        _logDebug('Failed to delete corrupted cache: $deleteError');
+      }
+      
+      // 새로운 박스 생성
+      _localCache = await Hive.openBox('unified_cache');
+      _logDebug('New Hive cache created');
+    }
     
     _logDebug('UnifiedCacheService initialized with Hive');
   }

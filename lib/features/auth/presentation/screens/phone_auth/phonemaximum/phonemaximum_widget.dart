@@ -1,4 +1,4 @@
-import '/etc/vsmark/vsmark_widget.dart';
+import '/features/common/presentation/widgets/pickle_mark/pickle_mark_widget.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
@@ -66,9 +66,9 @@ class _PhonemaximumWidgetState extends State<PhonemaximumWidget> {
                     color: AppTheme.of(context).secondaryBackground,
                   ),
                   child: wrapWithModel(
-                    model: _model.vsmarkModel,
+                    model: _model.pickleMarkModel,
                     updateCallback: () => setState(() {}),
-                    child: VsmarkWidget(),
+                    child: PickleMarkWidget(),
                   ),
                 ),
               ),

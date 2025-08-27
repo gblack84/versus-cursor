@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:bot_toast/bot_toast.dart';
 import '/app/state/app_state.dart';
-import '/services/image_moderation_service.dart';
+import '/services/moderation/image_moderation_service.dart';
 import '/features/posts/presentation/screens/create_post/in_put_post_image_model.dart';
 
 /// 이미지 처리 프로세스를 조율하는 서비스 클래스 (File 기반)

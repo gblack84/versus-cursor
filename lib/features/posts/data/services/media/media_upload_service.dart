@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image/image.dart' as img;
-import '/services/cloud_image_moderation_service.dart';
+import '/services/moderation/cloud_image_moderation_service.dart';
 import '/features/posts/data/services/storage/storage_service.dart';
 import '/features/posts/presentation/utils/debug_helper.dart';
 import '/features/posts/domain/constants/image_constants.dart';

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'backend/firebase/firebase_config.dart';
+import '/backend/firebase/config/firebase_config.dart';
 import 'services/cache/unified_cache_service.dart';
 import 'features/notifications/data/services/notification_service.dart';
 import '/app/state/providers/navigation_provider.dart';

@@ -34,7 +34,6 @@ import '/features/common/presentation/design_system/design_system.dart';
 import '/backend/backend.dart';
 import '/features/auth/data/services/auth_util.dart';
 import '/features/chat/data/services/chat_message_lifecycle_service.dart';
-import '/features/chat/data/services/chat_media_upload_service.dart';
 import '/features/chat/data/services/chat_initialization_service.dart';
 import '/features/chat/data/services/chat_scroll_service.dart';
 import '/features/chat/data/services/chat_animation_service.dart';
@@ -697,9 +696,6 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
       context,
       onMediaSelected: (url, type) {
         // type이 'image' 또는 'video'로 옴
-        final isImage = type == 'image';
-        final fileExtension = isImage ? 'jpg' : 'mp4';
-        final fileName = 'media_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
         _handleSendMediaMessage(url, type, null);
       },
     );
@@ -710,9 +706,6 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
       context,
       onMediaSelected: (url, type) {
         // type이 'image' 또는 'video'로 옴
-        final isImage = type == 'image';
-        final fileExtension = isImage ? 'jpg' : 'mp4';
-        final fileName = 'media_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
         _handleSendMediaMessage(url, type, null);
       },
     );

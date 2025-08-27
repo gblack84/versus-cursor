@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'unified_cache_service.dart';
-import '../../backend/schema/messages_model.dart';
+import '/features/chat/domain/models/messages_model.dart';
 
 /// Preload strategy for improving cache hit rates
 /// 

@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import '/backend/backend.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'firebase_auth_manager.dart';
-import 'base_auth_user_provider.dart';
 
 export 'firebase_auth_manager.dart';
 export 'base_auth_user_provider.dart';

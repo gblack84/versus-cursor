@@ -9,7 +9,7 @@ import '/features/posts/domain/usecases/media/aspect_ratio_analyzer.dart';
 import '/features/common/data/services/unified_box_calculator.dart';
 import '/services/unified_image_cache_service.dart';
 import '/features/posts/data/services/vote/vote_state_coordinator.dart';
-import '/models/vote_state.dart';
+import '/features/voting/domain/models/vote_state.dart';
 import 'base_vote_message.dart';
 
 /// AI 피클 채팅에서 사용되는 투표 카드 메시지 위젯
@@ -67,7 +67,6 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   late Stream<VoteStateData> _voteStateStream;
   
   // VoteStateCoordinator 사용
-  @override
   bool get useVoteStateCoordinator => true;
 
   @override

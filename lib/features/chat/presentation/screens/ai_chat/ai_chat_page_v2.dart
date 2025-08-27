@@ -30,8 +30,8 @@ import '/features/common/presentation/design_system/design_system.dart';
 import '/backend/backend.dart';
 import '/features/auth/data/services/auth_util.dart';
 import '/features/posts/presentation/widgets/vote/vote_card_message.dart';
-import '/pages/chat/services/chat_message_lifecycle_service.dart';
-import '/pages/chat/services/chat_message_service.dart';
+import '/features/chat/data/services/chat_message_lifecycle_service.dart';
+import '/features/chat/data/services/chat_message_service.dart';
 import '/features/profile/data/services/user_cache_service.dart';
 import 'ai_chat_controller.dart';
 

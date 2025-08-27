@@ -33,18 +33,19 @@ import '/core_exports.dart';
 import '/features/common/presentation/design_system/design_system.dart';
 import '/backend/backend.dart';
 import '/features/auth/data/services/auth_util.dart';
-import '/pages/chat/services/chat_message_lifecycle_service.dart';
-import '/pages/chat/services/chat_media_upload_service.dart';
-import '/pages/chat/services/chat_initialization_service.dart';
-import '/pages/chat/services/chat_scroll_service.dart';
-import '/pages/chat/services/chat_animation_service.dart';
+import '/features/chat/data/services/chat_message_lifecycle_service.dart';
+import '/features/chat/data/services/chat_media_upload_service.dart';
+import '/features/chat/data/services/chat_initialization_service.dart';
+import '/features/chat/data/services/chat_scroll_service.dart';
+import '/features/chat/data/services/chat_animation_service.dart';
 import '/features/profile/data/services/user_cache_service.dart';
-import 'chat_detail_migration_service.dart';
+import '/features/chat/data/services/chat_detail_migration_service.dart';
 import 'chat_detail_controller_v2.dart';
 import 'components/chat_message_builder.dart';
 import 'components/chat_detail_app_bar.dart';
 import 'components/chat_detail_fab.dart';
 import 'components/chat_detail_loading_widgets.dart';
+import 'components/chat_media_picker.dart';
 
 /// Chat Detail Widget using flutter_chat_ui v2
 /// 
@@ -606,12 +607,14 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
   void _handleSendMediaMessage(String mediaUrl, String mediaType, String? localPath) async {
     if (widget.chatDocument == null) return;
     
-    await ChatMediaUploadService.sendMediaMessage(
+    // sendMediaMessage 로직 직접 구현 또는 다른 서비스 사용
+    // TODO: implement sendMediaMessage logic
+    /*await ChatMediaPicker.sendMediaMessage(
       chatDocument: widget.chatDocument!,
       mediaUrl: mediaUrl,
       mediaType: mediaType,
       localPath: localPath,
-    );
+    );*/
   }
   
   /// Handle attachment button press
@@ -690,18 +693,28 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
   }
   
   Future<void> _pickMediaFromGallery() async {
-    await ChatMediaUploadService.pickMediaFromGallery(
-      context: context,
-      chatDocument: widget.chatDocument!,
-      onMediaUploaded: _handleSendMediaMessage,
+    await ChatMediaPicker.pickMediaFromGallery(
+      context,
+      onMediaSelected: (url, type) {
+        // type이 'image' 또는 'video'로 옴
+        final isImage = type == 'image';
+        final fileExtension = isImage ? 'jpg' : 'mp4';
+        final fileName = 'media_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+        _handleSendMediaMessage(url, type, null);
+      },
     );
   }
   
   Future<void> _pickMediaFromCamera() async {
-    await ChatMediaUploadService.pickMediaFromCamera(
-      context: context,
-      chatDocument: widget.chatDocument!,
-      onMediaUploaded: _handleSendMediaMessage,
+    await ChatMediaPicker.pickMediaFromCamera(
+      context,
+      onMediaSelected: (url, type) {
+        // type이 'image' 또는 'video'로 옴
+        final isImage = type == 'image';
+        final fileExtension = isImage ? 'jpg' : 'mp4';
+        final fileName = 'media_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+        _handleSendMediaMessage(url, type, null);
+      },
     );
   }
 

@@ -1,6 +1,6 @@
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import '/backend/backend.dart';
-import '/pages/chat/services/chat_file_size_service.dart';
+import '/features/chat/data/services/chat_file_size_service.dart';
 
 /// Service to handle migration of ChatDetailWidget to v2
 class ChatDetailMigrationService {

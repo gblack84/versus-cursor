@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../chat_detail_v2/chat_detail_controller_v2.dart';
+import '/features/chat/presentation/screens/chat_detail/chat_detail_controller_v2.dart';
 
 /// 채팅 스크롤 관리 서비스
 /// 스크롤 상태 추적 및 스크롤 동작 제어

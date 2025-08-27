@@ -4,7 +4,7 @@ import '/backend/backend.dart';
 import '/features/auth/data/services/auth_util.dart';
 import '/features/profile/data/services/user_cache_service.dart';
 import '/services/cache/unified_cache_service.dart';
-import '../chat_detail_v2/chat_detail_migration_service.dart';
+import 'chat_detail_migration_service.dart';
 import 'chat_message_lifecycle_service.dart';
 
 /// 채팅 초기화 서비스

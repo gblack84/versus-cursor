@@ -3,7 +3,7 @@ import '/features/auth/data/services/auth_util.dart';
 import '/backend/backend.dart';
 import '/core_exports.dart';
 import '/features/common/presentation/design_system/design_system.dart';
-import '/pages/chat/chat_detail_v2/chat_detail_widget_v2.dart';
+import '/features/chat/presentation/screens/chat_detail/chat_detail_widget_v2.dart';
 
 class ChatListWidget extends StatefulWidget {
   const ChatListWidget({Key? key}) : super(key: key);

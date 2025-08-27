@@ -5,7 +5,7 @@ import '../models/versus_box_size_data.dart';
 import '/features/common/data/services/unified_box_calculator.dart';
 import '/services/unified_image_cache_service.dart';
 import '../constants/voting_notification_constraints.dart';
-import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';
+import '/features/posts/domain/usecases/media/aspect_ratio_analyzer.dart';
 import 'notification_image_viewer.dart';
 
 /// 투표 알림에서 사용되는 A/B 박스 컴포넌트

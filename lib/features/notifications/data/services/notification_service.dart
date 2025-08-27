@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:uuid/uuid.dart';
 import '/backend/backend.dart';
-import '/posts/in_put_post_image/utils/debug_helper.dart';
+import '/features/posts/presentation/utils/debug_helper.dart';
 
 /// 실시간 투표 알림을 관리하는 서비스
 /// 

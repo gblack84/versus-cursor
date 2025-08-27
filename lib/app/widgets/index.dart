@@ -21,15 +21,15 @@ export '/features/auth/presentation/screens/phone_auth/phone_creat_account/phone
 export '/features/auth/presentation/screens/phone_auth/phonelogeinpincode_widget.dart'
     show PhonelogeinpincodeWidget;
 export '/etc/blankppp/blankppp_widget.dart' show BlankpppWidget;
-export '/posts/in_put_post_image/in_put_post_image_widget.dart'
+export '/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart'
     show InPutPostImageWidget;
-export '/pages/pro_image_editor/pro_image_editor_page.dart'
+export '/features/posts/presentation/screens/editor/pro_image_editor_page.dart'
     show ProImageEditorPage;
-export '/pages/image_viewer/image_viewer_page.dart'
+export '/features/posts/presentation/screens/viewer/image_viewer_page.dart'
     show ImageViewerPage;
 export '/features/notifications/presentation/screens/notifications_list/notifications_list_widget.dart'
     show NotificationsListWidget;
-export '/pages/home/home_page_widget.dart' show HomePageWidget;
+export '/features/posts/presentation/screens/feed/home_page_widget.dart' show HomePageWidget;
 export '/features/search/presentation/screens/search_page/search_page_widget.dart' show SearchPageWidget;
 export '/features/profile/presentation/screens/profile_main/profile_page_widget.dart' show ProfilePageWidget;
 export '/pages/chat/chat_list/chat_list_widget.dart' show ChatListWidget;

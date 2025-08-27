@@ -25,11 +25,11 @@
 | **Auth** | 30개 | 7시간 10분 | 3 | ✅ **완료** | Core, Common, App |
 | **Search** | 7개 | 3시간 25분 | 4 | ✅ **완료** | Common |
 | **Notifications** | 20개+ | 5시간 | 5 | ✅ **완료** | Common |
-| **Profile** | 40개+ | 7시간 | 6 | ⬜ 대기 | Common, Auth |
+| **Profile** | 40개+ | 7시간 | 6 | ✅ **완료** | Common, Auth |
 | **Posts** | 77개 | 11시간 | 7 | 📁 **구조만 생성** | Common, Auth |
 | **Chat** | 56개 | 8시간 | 8 | ⬜ 대기 | Core, Common, App, Auth, Profile |
 | **Voting** | 16개 | 7시간 30분 | 9 | 📁 **구조만 생성** | Common, Posts, Notifications |
-| **총계** | **329개+** | **67시간 25분** | - | **67% 완료** | - |
+| **총계** | **329개+** | **67시간 25분** | - | **78% 완료** | - |
 
 ### 📌 실제 현재 상황
 - **Core**: ✅ 완료 (폴더 삭제됨)
@@ -37,9 +37,11 @@
 - **App**: ✅ 완료 (완전 마이그레이션)
 - **Search**: ✅ 완료 (완전 마이그레이션)
 - **Notifications**: ✅ 완료 (완전 마이그레이션)
+- **Auth**: ✅ 완료 (완전 마이그레이션)
+- **Profile**: ✅ 완료 (완전 마이그레이션)
 - **Posts**: `/lib/posts/`에 실제 코드 존재, `/lib/features/posts/`는 빈 구조만
 - **Voting**: `/lib/features/voting/`에 빈 구조만 생성
-- **Profile, Chat**: 구조만 생성됨
+- **Chat**: 구조만 생성됨
 
 ## 🔄 권장 마이그레이션 순서
 
@@ -499,9 +501,16 @@ git checkout backup/before-[feature]-migration
 *이 문서는 Feature-First Architecture 전체 마이그레이션 순서 가이드입니다.*
 *작성일: 2025-08-25*
 *수정일: 2025-08-26*
-*전체 진행률: **67%** (Core, Common, App, Search, Notifications, Auth 완료)*
+*전체 진행률: **78%** (Core, Common, App, Search, Notifications, Auth, Profile 완료)*
 
 ## 📌 중요 변경사항
+
+### 2025-08-27 수정사항 (v5 - Profile 완료)
+1. **Profile 마이그레이션 완료**: 25개 파일 성공적으로 이동
+2. **진행률 업데이트**: 78% 완료 (7개 Feature 완료)
+3. **Services/Models/Screens 모두 이동**: Feature-First 구조로 재배치
+4. **Import 경로 업데이트**: Profile 관련 모든 import 경로 수정
+5. **빌드 에러 감소**: 139개 → 55개로 감소
 
 ### 2025-08-27 수정사항 (v4 - Auth 완료)
 1. **Auth 마이그레이션 완료**: 30개 파일 성공적으로 이동

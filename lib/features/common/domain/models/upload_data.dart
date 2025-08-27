@@ -8,7 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mime_type/mime_type.dart';
 import 'package:video_player/video_player.dart';
 
-import '/auth/firebase_auth/auth_util.dart';
+import '/features/auth/data/services/auth_util.dart';
 import '/core_exports.dart';
 
 const allowedFormats = {'image/png', 'image/jpeg', 'video/mp4', 'image/gif'};

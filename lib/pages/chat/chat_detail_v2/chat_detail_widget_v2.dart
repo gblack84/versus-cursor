@@ -32,7 +32,7 @@ import 'package:uuid/uuid.dart';
 import '/core_exports.dart';
 import '/features/common/presentation/design_system/design_system.dart';
 import '/backend/backend.dart';
-import '/auth/firebase_auth/auth_util.dart';
+import '/features/auth/data/services/auth_util.dart';
 import '/pages/chat/services/chat_message_lifecycle_service.dart';
 import '/pages/chat/services/chat_media_upload_service.dart';
 import '/pages/chat/services/chat_initialization_service.dart';

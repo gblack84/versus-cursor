@@ -3,7 +3,7 @@ import 'package:rxdart/rxdart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/services/vote_timer_service.dart';
 import '/models/vote_state.dart';
-import '/auth/firebase_auth/auth_util.dart';
+import '/features/auth/data/services/auth_util.dart';
 
 /// 투표 상태 통합 관리 서비스
 /// 

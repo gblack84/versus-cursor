@@ -1,9 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:rxdart/rxdart.dart';
 
-import '../base_auth_user_provider.dart';
+import 'base_auth_user_provider.dart';
 
-export '../base_auth_user_provider.dart';
+export 'base_auth_user_provider.dart';
 
 class VersusSpaceFirebaseUser extends BaseAuthUser {
   VersusSpaceFirebaseUser(this.user);

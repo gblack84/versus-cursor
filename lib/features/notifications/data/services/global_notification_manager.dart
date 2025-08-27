@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '/backend/backend.dart';
-import '/auth/firebase_auth/auth_util.dart';
+import '/features/auth/data/services/auth_util.dart';
 import '/features/notifications/presentation/widgets/voting_notification_dialog.dart';
 import '/features/notifications/presentation/models/versus_box_size_data.dart';
 import '/posts/in_put_post_image/helpers/aspect_ratio_analyzer.dart';

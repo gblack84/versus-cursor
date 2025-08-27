@@ -49,9 +49,9 @@ import '/core/utils/app_utils.dart';
 |----------|--------|------|----------|
 | **`/lib/auth/`** (11개) | | | |
 | └─ | auth_manager.dart | 인증 관리자 | data/services/ |
-| └─ | base_auth_user_provider.dart | 기본 인증 프로바이더 | presentation/providers/ |
+| └─ | base_auth_user_provider.dart | 기본 인증 프로바이더 | data/services/ |
 | └─ firebase_auth/ | firebase_auth_manager.dart | Firebase 인증 관리 | data/services/ |
-| └─ | firebase_user_provider.dart | Firebase 사용자 프로바이더 | presentation/providers/ |
+| └─ | firebase_user_provider.dart | Firebase 사용자 프로바이더 | data/services/ |
 | └─ | auth_util.dart | 인증 유틸리티 | data/services/ |
 | └─ | email_auth.dart | 이메일 인증 | data/services/ |
 | └─ | google_auth.dart | Google OAuth | data/services/ |

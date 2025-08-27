@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '/auth/firebase_auth/auth_util.dart';
+import '/features/auth/data/services/auth_util.dart';
 import '/backend/backend.dart';
 import '/features/common/presentation/design_system/design_system.dart';
 

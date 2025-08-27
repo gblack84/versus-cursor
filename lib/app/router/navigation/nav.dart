@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bot_toast/bot_toast.dart';
 
-import '/features/auth/presentation/providers/base_auth_user_provider.dart';
+import '/features/auth/data/services/base_auth_user_provider.dart';
 
 import '/core_exports.dart';
 

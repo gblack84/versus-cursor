@@ -7,7 +7,7 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:uuid/uuid.dart';
 import '/features/common/presentation/design_system/design_system.dart';
 import '/backend/backend.dart';
-import '/auth/firebase_auth/auth_util.dart';
+import '/features/auth/data/services/auth_util.dart';
 import '/core_exports.dart';
 import 'chat_file_size_service.dart';
 

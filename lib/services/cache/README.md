@@ -1,139 +1,37 @@
-# 🚀 Cache Service - 3-Layer 고성능 캐싱 시스템
+# 📋 Cache Service 레이어
 
-> Versus Space의 앱 성능을 극적으로 향상시키는 다층 캐싱 아키텍처
+> 애플리케이션 전역 3-Layer 캐싱 시스템  
+> 최종 업데이트: 2025-08-28 | 버전: 2.0.0
 
-## 📊 모듈 메타정보
+## 📋 개요
 
-| 항목 | 상태 | 상세 |
-|------|------|------|
-| **모듈명** | Cache Service | 통합 캐싱 시스템 |
-| **버전** | v2.0.0 | 2025-08-23 기준 |
-| **파일 수** | 4개 | 핵심 캐시 서비스 파일 |
-| **주요 클래스** | 4개 | UnifiedCacheService 외 |
-| **의존성** | Hive, Firestore | 로컬 DB 및 원격 캐시 |
+Cache Service는 Versus Space 애플리케이션의 전역 캐싱 시스템을 담당하는 서비스 레이어입니다.
+Memory(L1) → Hive(L2) → Firestore(L3)의 3단계 캐싱 아키텍처로 데이터 접근 속도를 극적으로 개선합니다.
 
-## 🎯 개요
+## 🏗️ 현재 디렉토리 구조
 
-Cache Service는 Versus Space 앱의 성능을 획기적으로 개선하는 **3-Layer 캐싱 시스템**입니다. 메모리(L1), 로컬 DB(L2), Firestore 오프라인 캐시(L3)를 계층적으로 구성하여 데이터 접근 시간을 300-500ms에서 **10ms 미만**으로 단축시킵니다. 실시간 채팅, 피드, 사용자 프로필 등 빈번하게 접근하는 데이터를 지능적으로 캐싱하여 사용자 경험을 크게 향상시킵니다.
-
-### 핵심 특징
-- ⚡ **초고속 응답**: L1 캐시 히트 시 <10ms 응답
-- 📱 **오프라인 지원**: 네트워크 없이도 앱 사용 가능
-- 💰 **비용 절감**: Firestore 읽기 요청 60-80% 감소
-- 🔄 **자동 동기화**: 백그라운드 동기화 및 무효화
-
-## 📐 네이밍 컨벤션
-
-| 구분 | 규칙 | 예시 |
-|------|------|------|
-| **파일명** | snake_case | `unified_cache_service.dart` |
-| **클래스명** | PascalCase | `UnifiedCacheService` |
-| **메서드명** | camelCase | `getChatMessages()` |
-| **필드명** | camelCase | `_memoryCache`, `hitRate` |
-| **상수** | lowerCamelCase/UPPER | `maxCacheSize`, `defaultTTL` |
-
-> 상세 규칙은 [프로젝트 네이밍 컨벤션](../../../NAMING_CONVENTION.md) 참조
-
-## 🏗️ 아키텍처
-
-### 3-Layer 캐싱 구조
 ```
-┌─────────────────────────────────────────┐
-│           Application Layer             │
-└────────────┬────────────────────────────┘
-             │
-┌────────────▼────────────────────────────┐
-│      UnifiedCacheService (Facade)       │
-│  ┌────────────────────────────────────┐ │
-│  │   Domain-Specific Methods         │ │
-│  │  • getChatMessages()               │ │
-│  │  • getFeedPosts()                  │ │
-│  │  • getUserProfile()                │ │
-│  └────────────────────────────────────┘ │
-└────────────┬────────────────────────────┘
-             │
-┌────────────▼────────────────────────────┐
-│         L1: Memory Cache                │
-│     SimpleMemoryCache (LRU)             │
-│     • Size: 100 items                   │
-│     • TTL: 5 minutes                    │
-│     • Response: <10ms                   │
-└────────────┬────────────────────────────┘
-             │ MISS
-┌────────────▼────────────────────────────┐
-│         L2: Local DB (Hive)             │
-│     Persistent Local Storage             │
-│     • Size: Unlimited                   │
-│     • TTL: Session-based                │
-│     • Response: 10-30ms                 │
-└────────────┬────────────────────────────┘
-             │ MISS
-┌────────────▼────────────────────────────┐
-│    L3: Firestore Offline Cache          │
-│     Firebase SDK Cache                  │
-│     • Size: 100MB default               │
-│     • TTL: Automatic                    │
-│     • Response: 50-100ms                │
-└────────────┬────────────────────────────┘
-             │ MISS
-┌────────────▼────────────────────────────┐
-│         Network (Firestore)             │
-│     • Response: 300-500ms               │
-└─────────────────────────────────────────┘
+lib/services/cache/
+├── unified_cache_service.dart    # 523줄 - 통합 캐시 서비스 (싱글톤)
+├── simple_memory_cache.dart      # 160줄 - L1 메모리 캐시 (LRU)
+├── cache_statistics.dart         # 168줄 - 캐시 통계 및 모니터링
+└── preload_strategy.dart         # 237줄 - 프리로딩 전략
 ```
 
-### 데이터 플로우
-```mermaid
-sequenceDiagram
-    participant App
-    participant UCS as UnifiedCacheService
-    participant L1 as Memory Cache
-    participant L2 as Hive DB
-    participant L3 as Firestore Cache
-    participant Net as Network
-    
-    App->>UCS: get("chat_messages_123")
-    UCS->>L1: Check memory
-    alt L1 Hit
-        L1-->>UCS: Return data (<10ms)
-    else L1 Miss
-        UCS->>L2: Check Hive
-        alt L2 Hit
-            L2-->>UCS: Return data (10-30ms)
-            UCS->>L1: Promote to L1
-        else L2 Miss
-            UCS->>L3: Check Firestore cache
-            alt L3 Hit
-                L3-->>UCS: Return data (50-100ms)
-                UCS->>L2: Save to L2
-                UCS->>L1: Save to L1
-            else L3 Miss
-                UCS->>Net: Fetch from network
-                Net-->>UCS: Return data (300-500ms)
-                UCS->>L3: Update L3
-                UCS->>L2: Save to L2
-                UCS->>L1: Save to L1
-            end
-        end
-    end
-    UCS-->>App: Return data
-```
+## 🔍 현재 코드 분석
 
-## 🔧 주요 구성요소
+### unified_cache_service.dart (523줄)
 
-### 1. UnifiedCacheService (통합 캐시 서비스)
+#### 핵심 구성요소
 
-전체 캐싱 시스템의 진입점이자 파사드 패턴 구현체입니다.
-
-#### 핵심 인터페이스
+**1. UnifiedCacheService 추상 클래스**
 ```dart
 abstract class UnifiedCacheService {
+  static late UnifiedCacheService _instance;  // 싱글톤
+  
   // 기본 캐시 연산
   Future<T?> get<T>(String key, {CacheLayer? layer});
   Future<void> set<T>(String key, T value, {Duration? ttl, CacheLayer? layer});
-  Future<void> remove(String key, {CacheLayer? layer});
-  Future<void> invalidate(String pattern, {CacheLayer? layer});
-  Future<void> clear({CacheLayer? layer});
   
   // 도메인 특화 메서드
   Future<List<MessagesModel>> getChatMessages(String chatId);
@@ -142,336 +40,324 @@ abstract class UnifiedCacheService {
 }
 ```
 
-#### 캐시 레이어 선택
+**2. CacheLayer Enum**
 ```dart
 enum CacheLayer {
-  memory,    // L1만 사용
-  local,     // L2만 사용
-  remote,    // L3만 사용
-  all,       // 모든 레이어 (기본값)
+  memory,    // L1: 메모리 캐시
+  local,     // L2: 로컬 DB (Hive)
+  remote,    // L3: Firestore
+  all,       // 모든 레이어
 }
 ```
 
-### 2. SimpleMemoryCache (L1 메모리 캐시)
+**3. UnifiedCacheServiceImpl 구현**
+- 3-Layer 캐시 조회 로직
+- 캐시 히트 시 상위 레이어로 승격
+- 패턴 기반 무효화
+- 도메인별 최적화
 
-LRU(Least Recently Used) 정책을 사용하는 인메모리 캐시입니다.
+#### 주요 특징
 
-#### 특징
-- **용량 제한**: 최대 100개 항목
-- **TTL**: 기본 5분 (설정 가능)
-- **제거 정책**: LRU - 가장 오래 사용하지 않은 항목 제거
-- **응답 시간**: <10ms
+1. **계층적 캐시 조회**: L1 → L2 → L3 → Network
+2. **자동 승격**: 하위 레이어 히트 시 상위 레이어로 복사
+3. **TTL 관리**: 데이터 타입별 다른 TTL 적용
+4. **배치 처리**: 여러 메시지/포스트 한번에 저장
+5. **무결성 검증**: 손상된 캐시 엔트리 자동 감지/제거
 
-#### 구현 상세
+### simple_memory_cache.dart (160줄)
+
+#### 핵심 구성요소
+
+**1. SimpleMemoryCache 클래스**
 ```dart
 class SimpleMemoryCache {
   static const int maxCacheSize = 100;
   static const Duration defaultTTL = Duration(minutes: 5);
   
-  // LRU 제거 알고리즘
-  void _evictLRU() {
-    CacheEntry? oldest;
-    String? oldestKey;
-    
-    _cache.forEach((key, entry) {
-      if (oldest == null || entry.lastAccessed.isBefore(oldest!.lastAccessed)) {
-        oldest = entry;
-        oldestKey = key;
-      }
-    });
-    
-    if (oldestKey != null) {
-      _cache.remove(oldestKey);
-    }
-  }
+  final Map<String, CacheEntry> _cache = {};
+  
+  T? get<T>(String key) { }
+  void set<T>(String key, T value, {Duration? ttl}) { }
+  void _evictLRU() { }  // LRU 알고리즘
 }
 ```
 
-### 3. CacheStatistics (캐시 통계)
+**2. CacheEntry 클래스**
+```dart
+class CacheEntry {
+  final dynamic data;
+  final DateTime createdAt;
+  DateTime lastAccessed;
+  final Duration ttl;
+}
+```
 
-캐시 성능을 실시간으로 모니터링하고 분석합니다.
+#### 주요 특징
 
-#### 추적 메트릭
+1. **LRU 정책**: 100개 제한, 가장 오래 사용 안 한 항목 제거
+2. **TTL 지원**: 항목별 만료 시간 설정
+3. **접근 시간 추적**: 히트 시마다 lastAccessed 업데이트
+4. **메모리 효율**: 작은 데이터만 저장 (이미지 제외)
+
+### cache_statistics.dart (168줄)
+
+#### 핵심 구성요소
+
+**1. CacheStatistics 싱글톤**
 ```dart
 class CacheStatistics {
-  // 히트율 통계
-  double get overallHitRate;     // 전체 캐시 히트율
-  double get l1HitRate;           // L1 메모리 히트율
-  double get l2HitRate;           // L2 Hive 히트율
-  double get l3HitRate;           // L3 Firestore 히트율
+  int _l1Hits = 0;
+  int _l2Hits = 0;
+  int _l3Hits = 0;
+  int _networkFetches = 0;
   
-  // 성능 지표
-  double get averageResponseTime; // 평균 응답 시간
-  int get p95ResponseTime;        // 95 백분위 응답 시간
-  
-  // 비용 절감
-  int get firestoreSavedReads;    // 절약된 Firestore 읽기
-  double get estimatedCostSavings; // 예상 비용 절감액
+  double get overallHitRate { }
+  double get l1HitRate { }
+  int get firestoreSavedReads { }
+  double get estimatedCostSavings { }
 }
 ```
 
-### 4. PreloadStrategy (프리로드 전략)
+#### 주요 특징
 
-지능적인 프리로딩으로 캐시 히트율을 극대화합니다.
+1. **레이어별 통계**: L1/L2/L3 개별 히트율
+2. **응답 시간 추적**: 평균, P95, P99
+3. **비용 계산**: Firestore 읽기 절감액 추정
+4. **실시간 모니터링**: 디버그 모드 리포트
 
-#### 프리로드 전략
+### preload_strategy.dart (237줄)
+
+#### 핵심 구성요소
+
+**1. PreloadStrategy 클래스**
 ```dart
 class PreloadStrategy {
-  // 최근 채팅 프리로드
-  Future<void> preloadRecentChats(String userId) {
+  static Future<void> preloadRecentChats(String? userId) async {
     // 최근 10개 채팅
     // 각 채팅당 15개 메시지
-    // 병렬 처리로 빠른 로딩
+    // 병렬 처리
   }
   
-  // 인기 포스트 프리로드
-  Future<void> preloadPopularPosts() {
+  static Future<void> preloadPopularPosts() async {
     // 최신 20개 포스트
     // 이미지 메타데이터 포함
   }
-  
-  // 사용자 프로필 프리로드
-  Future<void> preloadUserProfiles(List<String> userIds) {
-    // 배치 처리로 효율성 증대
-  }
 }
 ```
 
-## 💡 핵심 기능
+#### 주요 특징
 
-### 1. 계층적 캐시 조회
+1. **지능형 프리로딩**: 사용 패턴 기반
+2. **병렬 처리**: Future.wait로 동시 로드
+3. **우선순위**: 최근 > 인기 > 일반
+4. **백그라운드**: UI 차단 없이 실행
+
+## 💡 주요 기능
+
+### 1. 3-Layer 캐싱 아키텍처
+
+```
+요청 → L1 Memory (< 10ms)
+     ↓ MISS
+     → L2 Hive (10-30ms)  
+     ↓ MISS
+     → L3 Firestore Cache (50-100ms)
+     ↓ MISS
+     → Network (300-500ms)
+```
+
+### 2. 도메인별 최적화
 
 ```dart
-// 캐시 조회 로직
-Future<T?> get<T>(String key) async {
-  // L1 체크
-  final memoryResult = _memoryCache.get<T>(key);
-  if (memoryResult != null) {
-    _stats.recordL1Hit();
-    return memoryResult;
-  }
-  
-  // L2 체크
-  final localResult = await _localCache.get(key);
-  if (localResult != null) {
-    _memoryCache.set(key, localResult);  // L1로 승격
-    _stats.recordL2Hit();
-    return localResult as T;
-  }
-  
-  // L3/Network
-  // Firestore SDK가 자동으로 오프라인 캐시 처리
-  final networkResult = await _fetchFromNetwork(key);
-  if (networkResult != null) {
-    await _saveToAllLayers(key, networkResult);
-  }
-  return networkResult;
-}
+// 채팅 메시지 - 짧은 TTL (5분)
+getChatMessages(chatId)
+
+// 피드 포스트 - 중간 TTL (10분)  
+getFeedPosts(limit: 30)
+
+// 사용자 프로필 - 긴 TTL (1시간)
+getUserProfile(userId)
 ```
 
-### 2. 캐시 무효화 전략
+### 3. 무효화 전략
 
 ```dart
 // 패턴 기반 무효화
-await cache.invalidate('chat_messages_*');  // 모든 채팅 메시지 무효화
-await cache.invalidate('user_profile_123'); // 특정 사용자 프로필 무효화
+invalidate('chat_messages_*')  // 모든 채팅
+invalidate('user_profile_123') // 특정 유저
 
-// 레이어별 무효화
-await cache.clear(layer: CacheLayer.memory);  // L1만 클리어
-await cache.clear(layer: CacheLayer.all);     // 전체 캐시 클리어
+// 레이어별 클리어
+clear(layer: CacheLayer.memory)
+clear(layer: CacheLayer.all)
 ```
 
-### 3. 자동 프리로딩
+## 🔄 사용 시나리오
 
+### 1. 채팅방 진입
 ```dart
-// 앱 시작 시
-void main() async {
-  await UnifiedCacheService.initialize();
-  
-  // 백그라운드 프리로딩
-  UnifiedCacheService.instance.preloadRecentChats();
-  UnifiedCacheService.instance.preloadPopularPosts();
-}
+// 1. 채팅 메시지 캐시 확인
+final messages = await cache.getChatMessages(chatId);
 
-// 홈 화면 진입 시
-class HomePageWidget extends StatefulWidget {
-  @override
-  void initState() {
-    super.initState();
-    // 피드 포스트 프리로드
-    _preloadFeedPosts();
-  }
-}
+// 2. 백그라운드 동기화
+_syncInBackground(chatId);
+
+// 3. 관련 데이터 프리로드
+await preloadParticipantProfiles(chatId);
 ```
 
-## 🚀 사용 예시
-
-### 기본 사용법
+### 2. 홈 피드 로드
 ```dart
-// 캐시 서비스 초기화
-await UnifiedCacheService.initialize();
-final cache = UnifiedCacheService.instance;
+// 1. 캐시된 포스트 즉시 표시
+final cachedPosts = await cache.getFeedPosts();
 
-// 데이터 저장
-await cache.set('user_123', userData, ttl: Duration(hours: 1));
+// 2. 새 포스트 확인
+final newPosts = await checkForNewPosts();
 
-// 데이터 조회
-final user = await cache.get<UsersModel>('user_123');
-
-// 데이터 삭제
-await cache.remove('user_123');
+// 3. 캐시 업데이트
+await cache.setFeedPosts([...newPosts, ...cachedPosts]);
 ```
 
-### 도메인별 사용
+### 3. 프로필 조회
 ```dart
-// 채팅 메시지 캐싱
-final messages = await cache.getChatMessages('chat_abc');
-await cache.setChatMessages('chat_abc', newMessages);
+// 1. 메모리 캐시 확인 (즉시)
+final profile = await cache.getUserProfile(userId);
 
-// 피드 포스트 캐싱
-final posts = await cache.getFeedPosts(limit: 30);
-await cache.setFeedPosts(posts);
-
-// 사용자 프로필 캐싱
-final profile = await cache.getUserProfile('user_456');
-await cache.setUserProfile('user_456', profile);
-```
-
-### 캐시 통계 확인
-```dart
-final stats = CacheStatistics.instance;
-
-print('캐시 히트율: ${stats.overallHitRate}%');
-print('평균 응답 시간: ${stats.averageResponseTime}ms');
-print('절약된 읽기: ${stats.firestoreSavedReads}');
-print('예상 절감액: \$${stats.estimatedCostSavings}');
-
-// 상세 보고서
-stats.printReport();
-```
-
-## 📊 성능 메트릭
-
-### 응답 시간 비교
-| 시나리오 | 캐시 없음 | 캐시 있음 | 개선율 |
-|---------|----------|----------|--------|
-| **채팅 메시지 로드** | 300-500ms | <10ms | 97% |
-| **피드 포스트** | 400-600ms | 10-30ms | 95% |
-| **사용자 프로필** | 200-300ms | <10ms | 96% |
-| **이미지 메타데이터** | 150-200ms | <10ms | 94% |
-
-### 캐시 히트율 목표
-| 레이어 | 현재 | 목표 | 전략 |
-|--------|------|------|------|
-| **L1 Memory** | 40% | 60% | LRU 최적화 |
-| **L2 Hive** | 20% | 30% | 프리로딩 확대 |
-| **L3 Firestore** | 20% | 10% | 로컬 캐시 강화 |
-| **Network** | 20% | 0% | 오프라인 우선 |
-
-## 🔄 캐시 정책
-
-### TTL(Time To Live) 설정
-```dart
-// 데이터 타입별 TTL
-static const Map<String, Duration> ttlPolicy = {
-  'chat_messages': Duration(minutes: 5),
-  'feed_posts': Duration(minutes: 10),
-  'user_profile': Duration(hours: 1),
-  'static_data': Duration(days: 1),
-};
-```
-
-### 제거 정책
-- **메모리 캐시**: LRU (Least Recently Used)
-- **로컬 DB**: 세션 기반 + 수동 무효화
-- **Firestore 캐시**: SDK 자동 관리
-
-### 동기화 전략
-- **실시간 데이터**: 5분마다 갱신
-- **프로필 데이터**: 1시간마다 갱신
-- **정적 데이터**: 하루 1회 갱신
-
-## 🐛 디버깅
-
-### 로그 레벨
-```dart
-// 디버그 모드에서만 로그 출력
-void _logDebug(String message) {
-  if (kDebugMode) {
-    print('[Cache] $message');
-  }
+// 2. 친구인 경우 더 긴 캐싱
+if (isFriend(userId)) {
+  cache.set(key, profile, ttl: Duration(hours: 6));
 }
 ```
 
-### 캐시 상태 확인
-```dart
-// 캐시 크기 확인
-print('Memory cache size: ${cache.memorySize}');
-print('Local cache size: ${await cache.localSize}');
+## 🚨 현재 문제점
 
-// 캐시 내용 덤프 (디버그용)
-if (kDebugMode) {
-  cache.dumpCache();
-}
+### 1. Feature 의존성 역방향
+- **문제**: UnifiedCacheService가 MessagesModel, PostsModel 직접 import
+- **영향**: Services → Backend/Features 역방향 의존성 발생
+- **해결**: 제네릭 타입 사용, Feature별 캐시 전략 인터페이스
+
+### 2. 싱글톤 패턴 하드코딩
+- **문제**: static 싱글톤으로 테스트 어려움
+- **영향**: 단위 테스트 시 Mock 주입 불가
+- **해결**: DI(Dependency Injection) 패턴 적용 필요
+
+### 3. 캐시 전략 하드코딩
+- **문제**: TTL, 크기 제한 등이 코드에 하드코딩
+- **영향**: Feature별 최적화 어려움
+- **해결**: 전략 패턴으로 Feature별 설정 주입
+
+### 4. 모니터링 부족
+- **문제**: 실시간 성능 모니터링 미흡
+- **영향**: 최적화 기회 놓침
+- **해결**: 실시간 대시보드, ML 기반 예측
+
+## 📊 메트릭스
+
+### 현재 성능
+- 캐시 히트율: 60-80%
+- L1 응답: <10ms
+- L2 응답: 10-30ms  
+- L3 응답: 50-100ms
+- Network: 300-500ms
+- Firestore 읽기 절감: 60-80%
+
+### 개선 목표
+- 전체 히트율: 85% 이상
+- L1 히트율: 60% 이상
+- 평균 응답: 15ms 이하
+- 메모리 사용: 30MB 이하
+
+## 🔗 연관 시스템
+
+### 사용처 (Features)
+- **chat**: 메시지 캐싱, 채팅방 목록
+- **posts**: 피드 캐싱, 이미지 메타데이터
+- **profile**: 사용자 정보, 아바타 이미지
+- **voting**: 투표 데이터, 실시간 결과
+- **notifications**: 알림 목록, 읽음 상태
+
+### 의존성 (Services/Backend)
+- `hive_flutter`: L2 로컬 DB
+- `cloud_firestore`: L3 원격 캐시
+- `/backend/schema`: 데이터 모델 (문제: 역방향 의존성)
+
+### 통합 대상
+- **DI System**: GetIt 통합 예정
+- **Performance Monitor**: 실시간 모니터링
+- **Analytics**: 사용 패턴 분석
+
+## 🎯 Services Layer 유지 필요성
+
+### 왜 Services Layer에 있어야 하는가?
+
+1. **전역 서비스**: 모든 Feature에서 공통으로 사용
+2. **인프라 성격**: 데이터 접근 최적화는 인프라 레벨
+3. **Feature 독립성**: Feature는 캐싱 구현을 몰라야 함
+4. **성능 최적화**: 중앙 집중식 캐시 관리가 효율적
+
+### Feature-First Architecture 준수
+
+```
+✅ 올바른 의존성:
+Features (chat, posts, profile...)
+    ↓ 사용
+Services (cache, logger, image...)
+    ↓ 사용
+Backend (firebase, models...)
+
+❌ 현재 문제:
+Services
+    ↓ import (역방향!)
+Backend/schema (MessagesModel, PostsModel...)
 ```
 
-## 📈 최적화 팁
+## 📝 다음 단계
 
-### 1. 키 네이밍 전략
-```dart
-// 좋은 예: 구조화된 키
-'chat_messages_${chatId}'
-'user_profile_${userId}'
-'feed_posts_${timestamp}'
+1. **역방향 의존성 해결**
+   - 제네릭 타입으로 변경
+   - Feature별 Adapter 패턴
+   - 인터페이스 정의
 
-// 나쁜 예: 비구조화된 키
-'data1'
-'temp_cache'
-```
+2. **DI 패턴 적용**
+   - GetIt 통합
+   - 싱글톤 제거
+   - 테스트 가능성 향상
 
-### 2. 프리로딩 타이밍
-```dart
-// 최적: 사용자 행동 예측
-// 채팅 목록 진입 → 최근 채팅 프리로드
-// 홈 화면 진입 → 피드 프리로드
-// 프로필 탭 → 친구 목록 프리로드
-```
+3. **Feature별 최적화**
+   - 캐시 전략 인터페이스
+   - Feature별 설정 주입
+   - 동적 TTL 관리
 
-### 3. 메모리 관리
-```dart
-// 큰 데이터는 L2/L3에만 저장
-if (dataSize > 1024 * 10) {  // 10KB 이상
-  await cache.set(key, data, layer: CacheLayer.local);
-} else {
-  await cache.set(key, data);  // 모든 레이어
-}
-```
+4. **모니터링 강화**
+   - 실시간 대시보드
+   - ML 기반 예측
+   - 자동 최적화
 
-## 🚧 향후 계획
+## 🔄 버전 이력
 
-### 단기 (1-2개월)
-- [ ] 압축 알고리즘 적용 (30% 용량 절감)
-- [ ] 캐시 워밍업 스케줄러
-- [ ] 네트워크 상태별 전략 변경
+### v2.0.0 (2025-08-28)
+- Services Layer 구조 명확화
+- 역방향 의존성 문제 식별
+- Feature-First 원칙 재정립
 
-### 중기 (3-6개월)
-- [ ] 머신러닝 기반 프리로드 예측
-- [ ] 분산 캐시 동기화
-- [ ] 캐시 분석 대시보드
+### v1.0.0 (2025-08-13)
+- 3-Layer 캐싱 시스템 구현
+- 60-80% 성능 개선 달성
+- 프리로딩 전략 구현
 
-### 장기 (6개월+)
-- [ ] CDN 통합
-- [ ] Edge 캐싱
-- [ ] P2P 캐시 공유
+## ⚠️ 주의사항
 
-## 📝 변경 이력
+1. **Services Layer 유지**: Feature로 이동하지 말 것
+2. **역방향 의존성 금지**: Backend 모델 직접 import 금지
+3. **메모리 관리**: 큰 데이터는 L2/L3만 사용
+4. **캐시 무효화**: 데이터 변경 시 반드시 무효화
 
-- **2025-08-23**: 통합 문서 작성 완료
-- **2025-08-13**: 3-Layer 캐싱 시스템 구현
-- **2025-08-10**: PreloadStrategy 추가
-- **2025-08-05**: 초기 SimpleMemoryCache 구현
+## 📚 참고 자료
+
+- [Feature-First Architecture](/FEATURE_ARCHITECTURE.md)
+- [Clean Architecture in Services](/GLOBAL_LAYERS.md)
+- [Flutter Caching Best Practices](https://flutter.dev/docs/cookbook/persistence)
 
 ---
 
 *이 문서는 Versus Space Cache Service의 구조와 사용법을 설명합니다.*
-*최종 업데이트: 2025-08-23*
+*Services Layer는 전역 서비스로 유지되어야 합니다.*

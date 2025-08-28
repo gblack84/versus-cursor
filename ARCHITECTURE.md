@@ -1,6 +1,114 @@
 # Versus Space 시스템 아키텍처
 
-> 최종 업데이트: 2025-08-24 | 버전: 2.1.0
+> 최종 업데이트: 2025-08-27 | 버전: 3.0.0
+
+## 🏛️ Feature-First + Clean Architecture
+
+프로젝트는 **Feature-First Architecture**와 **Clean Architecture** 원칙을 결합하여 구성되었습니다.
+
+### 아키텍처 원칙
+1. **기능별 모듈화**: 각 Feature는 독립적으로 개발/테스트 가능
+2. **레이어 분리**: Data, Domain, Presentation 레이어 명확히 구분
+3. **의존성 규칙**: 
+   - Features → Core/Backend/Services (✅ 허용)
+   - Core/Backend/Services → Features (❌ 금지)
+4. **전역 레이어**: 모든 Feature가 공유하는 공통 요소
+
+### 📁 애플리케이션 구조
+
+```mermaid
+graph TB
+    subgraph "Flutter Application"
+        subgraph "Feature Modules"
+            Auth[Auth Feature]
+            Chat[Chat Feature]
+            Posts[Posts Feature]
+            Profile[Profile Feature]
+            Search[Search Feature]
+            Voting[Voting Feature]
+            Notifications[Notifications Feature]
+        end
+        
+        subgraph "Global Layers"
+            Core[Core Layer]
+            Backend[Backend Layer]
+            Services[Services Layer]
+            App[App Layer]
+        end
+        
+        Auth --> Core
+        Auth --> Backend
+        Auth --> Services
+        
+        Chat --> Core
+        Chat --> Backend
+        Chat --> Services
+        
+        Posts --> Core
+        Posts --> Backend
+        Posts --> Services
+        
+        Profile --> Core
+        Profile --> Backend
+        Profile --> Services
+        
+        Search --> Core
+        Search --> Backend
+        Search --> Services
+        
+        Voting --> Core
+        Voting --> Backend
+        Voting --> Services
+        
+        Notifications --> Core
+        Notifications --> Backend
+        Notifications --> Services
+        
+        App --> Auth
+        App --> Chat
+        App --> Posts
+        App --> Profile
+        App --> Search
+        App --> Voting
+        App --> Notifications
+    end
+    
+    style Auth fill:#ffd4e5
+    style Chat fill:#d4e5ff
+    style Posts fill:#e5ffd4
+    style Profile fill:#ffe5d4
+    style Search fill:#f4d4ff
+    style Voting fill:#d4fff4
+    style Notifications fill:#ffd4d4
+    
+    style Core fill:#e8f5e8
+    style Backend fill:#e8f5e8
+    style Services fill:#e8f5e8
+    style App fill:#e8f5e8
+```
+
+### 각 레이어의 역할
+
+#### 🎯 Feature Modules (`/lib/features/`)
+- **목적**: 비즈니스 기능별 독립 모듈
+- **구조**: Clean Architecture (Data, Domain, Presentation)
+- **특징**: 자체 완결적, 테스트 가능, 재사용 가능
+
+#### 🔧 Core Layer (`/lib/core/`)
+- **목적**: 전역 공통 UI 요소 및 유틸리티
+- **포함**: 디자인 시스템, 테마, 위젯, 애니메이션, 다국어
+
+#### 🗄️ Backend Layer (`/lib/backend/`)
+- **목적**: 데이터 저장소 및 외부 서비스 통합
+- **포함**: Firebase, API, 데이터 모델, Repository
+
+#### 🛠️ Services Layer (`/lib/services/`)
+- **목적**: 애플리케이션 전역 서비스
+- **포함**: 캐싱, 로깅, 모더레이션, 유효성 검증
+
+#### 🚀 App Layer (`/lib/app/`)
+- **목적**: 애플리케이션 설정 및 진입점
+- **포함**: 라우팅, 전역 상태, DI 컨테이너
 
 ## 🏗️ 전체 시스템 구조 (활성화 상태 포함)
 

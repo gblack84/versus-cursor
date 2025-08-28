@@ -31,48 +31,70 @@
 /Users/g_black/versus-cursor/
 ├── lib/                          # Main Flutter application code
 │   ├── main.dart                 # Application entry point
-│   ├── app_state.dart           # Global application state management
-│   ├── index.dart               # Widget exports
-│   ├── auth/                    # Authentication modules
-│   ├── backend/                 # Firebase backend integration
-│   │   ├── firebase/            # Firebase configuration
-│   │   ├── schema/              # Firestore data models (with serialization)
-│   │   ├── algolia/             # Algolia search integration
-│   │   └── api_requests/        # API call management
-│   ├── core/                    # Core utilities (이전 flutter_flow)
-│   │   ├── nav/                 # Navigation logic
-│   │   ├── app_theme.dart       # 테마 설정 (이전 flutter_flow_theme.dart)
-│   │   ├── app_utils.dart       # 유틸리티 함수 (이전 flutter_flow_util.dart)
-│   │   └── internationalization.dart  # i18n support
-│   ├── components/              # Reusable UI components
-│   │   ├── chat/                # Chat UI components
-│   │   │   └── vote_card/       # Vote card message components
-│   │   └── notifications/       # Notification UI components
-│   ├── etc/                    # FlutterFlow 레거시 테스트 코드
-│   ├── design_system/           # Design tokens and components (new)
-│   ├── models/                  # Data models (new)
-│   ├── pages/                   # Application screens/pages
-│   │   ├── chat/                # Chat-related pages
-│   │   │   ├── chat_detail_v2/  # Modern chat UI with flutter_chat_ui v2
-│   │   │   ├── ai_chat_v2/      # AI chat interface
-│   │   │   ├── services/        # Chat-specific services
-│   │   │   └── constants/       # Chat constants
-│   │   └── home/                # Home page with feed
-│   ├── providers/               # State management providers (new)
-│   ├── login/                   # Authentication screens
-│   ├── createaccount/           # Account creation flow
-│   ├── posts/                   # Post-related features (오타 수정: pots → posts)
-│   ├── services/                # Business logic services
-│   │   ├── ai_moderation/      # AI content moderation (enhanced)
-│   │   ├── cache/               # 3-Layer caching system (new)
+│   ├── index.dart                # Widget exports
+│   ├── core_exports.dart         # Core layer exports
+│   │
+│   ├── features/                 # 🎯 Feature-First Architecture 모듈
+│   │   ├── auth/                # 인증 Feature
+│   │   │   ├── data/            # 데이터 레이어
+│   │   │   ├── domain/          # 도메인 레이어
+│   │   │   └── presentation/    # 프레젠테이션 레이어
+│   │   ├── chat/                # 채팅 Feature
+│   │   │   ├── data/
+│   │   │   ├── domain/
+│   │   │   └── presentation/
+│   │   ├── posts/               # 게시물 Feature
+│   │   │   ├── data/
+│   │   │   ├── domain/
+│   │   │   └── presentation/
+│   │   ├── profile/             # 프로필 Feature
+│   │   │   ├── data/
+│   │   │   ├── domain/
+│   │   │   └── presentation/
+│   │   ├── voting/              # 투표 Feature
+│   │   │   ├── data/
+│   │   │   ├── domain/
+│   │   │   └── presentation/
+│   │   ├── notifications/       # 알림 Feature
+│   │   │   ├── data/
+│   │   │   ├── domain/
+│   │   │   └── presentation/
+│   │   └── search/              # 검색 Feature
+│   │       ├── data/
+│   │       ├── domain/
+│   │       └── presentation/
+│   │
+│   ├── core/                    # 🔧 전역 공통 요소
+│   │   ├── design_system/       # 디자인 시스템 (컴포넌트, 토큰)
+│   │   ├── theme/               # 앱 테마 설정
+│   │   ├── localization/        # 다국어 지원
+│   │   ├── utils/               # 유틸리티 함수
+│   │   ├── widgets/             # 공통 위젯
+│   │   └── nav/                 # 네비게이션 로직
+│   │
+│   ├── backend/                 # 🗄️ 전역 백엔드 레이어
+│   │   ├── firebase/            # Firebase 설정 및 유틸리티
+│   │   ├── models/              # 데이터 모델 (Firestore 스키마)
+│   │   ├── api/                 # 외부 API 통합 (Algolia 등)
+│   │   └── repositories/        # 데이터 접근 추상화
+│   │
+│   ├── services/                # 🛠️ 전역 서비스 레이어
+│   │   ├── cache/               # 3-Layer 캐싱 시스템
 │   │   │   ├── unified_cache_service.dart    # Main cache orchestrator
 │   │   │   ├── simple_memory_cache.dart      # L1 memory cache
 │   │   │   └── cache_statistics.dart         # Performance monitoring
+│   │   ├── moderation/          # 콘텐츠 검열 서비스
+│   │   ├── logger/              # 로깅 서비스
+│   │   ├── validators/          # 유효성 검증
 │   │   ├── notification_service.dart
 │   │   ├── target_audience_service.dart
 │   │   └── user_cache_service.dart
-│   ├── utils/                   # Utility functions
-│   └── widgets/                 # Custom widgets
+│   │
+│   └── app/                     # 🚀 앱 설정 및 진입점
+│       ├── router/              # 라우팅 설정
+│       ├── state/               # 전역 상태 관리
+│       ├── di/                  # 의존성 주입
+│       └── app.dart             # 앱 진입점
 ├── assets/                      # Static assets
 │   ├── fonts/                   # SourGummy font family
 │   ├── images/                  # Image assets
@@ -88,6 +110,25 @@
 ├── ios/                         # iOS-specific configuration
 ├── web/                         # Web-specific configuration
 └── macos/                       # macOS-specific configuration
+```
+
+### Feature 내부 구조 (Clean Architecture)
+```
+features/[feature_name]/
+├── data/                      # 데이터 레이어
+│   ├── datasources/          # 원격/로컬 데이터 소스
+│   ├── repositories/         # Repository 구현체
+│   └── services/             # Feature 전용 서비스
+│
+├── domain/                    # 도메인 레이어 (비즈니스 로직)
+│   ├── models/               # 도메인 모델
+│   ├── usecases/             # 유스케이스 (비즈니스 규칙)
+│   └── repositories/         # Repository 인터페이스
+│
+└── presentation/              # 프레젠테이션 레이어 (UI)
+    ├── screens/              # 화면 위젯
+    ├── widgets/              # UI 컴포넌트
+    └── providers/            # 상태 관리
 ```
 
 ## Key Features & Functionality

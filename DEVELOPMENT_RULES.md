@@ -1,7 +1,7 @@
 # 📐 Versus Space 통합 개발 규칙
 
-> AI 작업 지시를 위한 핵심 개발 가이드라인  
-> 최종 업데이트: 2025-08-24 | 버전: 1.0.0
+> Feature-First Architecture 기반 개발 가이드라인  
+> 최종 업데이트: 2025-08-27 | 버전: 2.0.0
 
 ## 🎯 핵심 원칙 (Core Principles)
 
@@ -10,6 +10,12 @@
 2. **문서화 필수** - Code without docs is incomplete  
 3. **테스트 가능성** - If you can't test it, don't build it
 4. **성능 최적화** - Performance matters from day one
+
+### Feature-First Architecture 원칙
+1. **기능별 모듈화** - 각 Feature는 독립적인 모듈로 구성
+2. **Clean Architecture** - Data, Domain, Presentation 레이어 분리
+3. **전역 레이어 활용** - Core, Backend, Services는 모든 Feature가 공유
+4. **의존성 방향** - Features는 전역 레이어에만 의존 (역방향 금지)
 
 ## 📝 코드 작성 규칙 (Coding Standards)
 
@@ -55,26 +61,36 @@ const int MAX_RETRY_COUNT = 3;  // ✅ SCREAMING_SNAKE_CASE
 
 ## 📁 파일 및 디렉토리 규칙
 
-### 디렉토리 구조
+### Feature-First 디렉토리 구조
 ```
-새 기능 추가 시:
-/lib/pages/[feature_name]/
-  ├── [feature_name]_widget.dart    # 메인 위젯
-  ├── [feature_name]_model.dart     # 상태 관리
-  └── README.md                      # 필수 문서
+새 Feature 추가 시:
+/lib/features/[feature_name]/
+  ├── data/                          # 데이터 레이어
+  │   ├── datasources/               # 원격/로컬 데이터 소스
+  │   ├── repositories/              # Repository 구현체
+  │   └── services/                  # Feature 전용 서비스
+  ├── domain/                        # 도메인 레이어
+  │   ├── models/                   # 도메인 모델
+  │   ├── usecases/                 # 비즈니스 로직
+  │   └── repositories/              # Repository 인터페이스
+  ├── presentation/                  # 프레젠테이션 레이어
+  │   ├── screens/                   # 화면 위젯
+  │   ├── widgets/                   # UI 컴포넌트
+  │   └── providers/                 # 상태 관리
+  └── README.md                      # Feature 문서
 
-새 서비스 추가 시:
-/lib/services/
+전역 서비스 추가 시:
+/lib/services/                      # 전역 서비스
   └── [service_name]_service.dart   # 서비스 로직
 
-새 컴포넌트 추가 시:
-/lib/components/[component_name]/
-  ├── [component_name]_widget.dart  # 위젯 구현
-  └── README.md                      # 컴포넌트 문서
+전역 컴포넌트 추가 시:
+/lib/core/widgets/                  # 전역 UI 컴포넌트
+  └── [component_name].dart         # 위젯 구현
 
-새 모델 추가 시:
-/lib/backend/schema/
-  └── [model_name]_model.dart       # Firestore 모델
+전역 모델 추가 시:
+/lib/backend/models/                # Firestore 모델
+  └── [category]/                   # 카테고리별 분류
+      └── [model_name]_model.dart   # 모델 정의
 ```
 
 ## 🔄 개발 프로세스

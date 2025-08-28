@@ -1,10 +1,26 @@
-# 📦 Services 디렉토리
+# 🎯 Services Layer 상세 문서
 
-> Versus Space 애플리케이션의 핵심 비즈니스 로직과 서비스 레이어
+> 애플리케이션 전역 인프라 서비스 레이어  
+> 최종 업데이트: 2025-08-28 | 버전: 3.0.0
 
-## 🎯 개요
+## 📋 개요
 
-`/lib/services` 디렉토리는 Versus Space 앱의 비즈니스 로직과 외부 서비스 통합을 담당하는 핵심 서비스 레이어입니다. AI 기반 콘텐츠 검열, 3-Layer 캐싱 시스템, 실시간 알림, 투표 시스템 등 앱의 주요 기능을 구현합니다.
+Services Layer는 Versus Space 애플리케이션의 전역 인프라 서비스를 제공합니다.
+모든 Feature에서 공통으로 사용하는 횡단 관심사(cross-cutting concerns)를 관리하며, 
+캐싱, 콘텐츠 검열, 이미지 처리, 로깅, UI 유틸리티 등의 핵심 서비스를 제공합니다.
+
+## 🚀 마이그레이션 현황
+
+**통합 마이그레이션 문서가 작성되었습니다**: [MIGRATION_SERVICE_ORDER_RULES.md](./MIGRATION_SERVICE_ORDER_RULES.md)
+
+### 마이그레이션 문서 구조
+- **통합 규칙 문서**: `MIGRATION_SERVICE_ORDER_RULES.md` - 전체 실행 순서와 규칙
+- **Cache**: `cache/MIGRATION_Part3.md` - 3-Layer 캐싱 시스템 개선 (80% 구현)
+- **Content**: `content/MIGRATION_Part3.md` - 콘텐츠 처리 서비스 구축 (0% 구현)
+- **Image**: `image/MIGRATION_Part3.md` - 이미지 처리 통합 (0% 구현)
+- **Logger**: `logger/MIGRATION_Part3.md` - 로깅 시스템 구현 (0% 구현)
+- **Moderation**: `moderation/MIGRATION_Part3.md` - AI 콘텐츠 검열 개선 (70% 구현)
+- **UI**: `ui/MIGRATION_Part3.md` - 반응형 UI 유틸리티 개선 (60% 구현)
 
 ## 📐 네이밍 컨벤션
 

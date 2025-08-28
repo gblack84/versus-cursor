@@ -58,19 +58,74 @@ firebase functions:config:set \
 
 ## 📁 프로젝트 구조
 
+### Feature-First Architecture
+프로젝트는 **Feature-First Architecture**와 **Clean Architecture** 원칙을 따릅니다.
+
 ```
 versus-space/
-├── lib/                    # Flutter 애플리케이션
-│   ├── main.dart          # 앱 진입점
-│   ├── pages/             # UI 페이지
-│   ├── services/          # 비즈니스 로직
-│   ├── components/        # 재사용 컴포넌트
-│   └── backend/           # Firebase 통합
-├── firebase/              # Backend 인프라
-│   ├── functions/         # Cloud Functions (12개 배포)
-│   ├── firestore.rules    # 보안 규칙
-│   └── storage.rules      # 스토리지 규칙
-└── docs/                  # 프로젝트 문서
+├── lib/
+│   ├── main.dart              # 애플리케이션 진입점
+│   │
+│   ├── features/              # 🎯 기능별 모듈 (Clean Architecture)
+│   │   ├── auth/              # 인증 기능
+│   │   ├── chat/              # 채팅 기능
+│   │   ├── posts/             # 게시물 기능
+│   │   ├── profile/           # 프로필 기능
+│   │   ├── search/            # 검색 기능
+│   │   ├── voting/            # 투표 기능
+│   │   └── notifications/     # 알림 기능
+│   │
+│   ├── core/                  # 🔧 전역 공통 요소
+│   │   ├── design_system/     # 디자인 시스템 (컴포넌트, 토큰)
+│   │   ├── theme/             # 앱 테마 설정
+│   │   ├── localization/      # 다국어 지원
+│   │   ├── utils/             # 유틸리티 함수
+│   │   └── widgets/           # 공통 위젯
+│   │
+│   ├── backend/               # 🗄️ 전역 백엔드 레이어
+│   │   ├── firebase/          # Firebase 설정 및 유틸리티
+│   │   ├── models/            # 데이터 모델 (Firestore 스키마)
+│   │   ├── api/               # 외부 API 통합 (Algolia 등)
+│   │   └── repositories/      # 데이터 접근 추상화
+│   │
+│   ├── services/              # 🛠️ 전역 서비스 레이어
+│   │   ├── cache/             # 3-Layer 캐싱 시스템
+│   │   ├── moderation/        # 콘텐츠 검열 서비스
+│   │   ├── logger/            # 로깅 서비스
+│   │   └── validators/        # 유효성 검증
+│   │
+│   └── app/                   # 🚀 앱 설정 및 진입점
+│       ├── router/            # 라우팅 설정
+│       ├── state/             # 전역 상태 관리
+│       └── di/                # 의존성 주입
+│
+├── firebase/                  # ☁️ Backend 인프라
+│   ├── functions/             # Cloud Functions (12개 배포)
+│   ├── firestore.rules        # Firestore 보안 규칙
+│   └── storage.rules          # Storage 보안 규칙
+│
+└── docs/                      # 📚 프로젝트 문서
+    ├── guides/                # 개발 가이드
+    └── archive/               # 아카이브된 문서
+```
+
+### 각 Feature의 내부 구조 (Clean Architecture)
+```
+features/[feature_name]/
+├── data/                      # 데이터 레이어
+│   ├── datasources/          # 원격/로컬 데이터 소스
+│   ├── repositories/         # Repository 구현체
+│   └── services/             # Feature 전용 서비스
+│
+├── domain/                    # 도메인 레이어 (비즈니스 로직)
+│   ├── models/               # 도메인 모델
+│   ├── usecases/             # 유스케이스 (비즈니스 규칙)
+│   └── repositories/         # Repository 인터페이스
+│
+└── presentation/              # 프레젠테이션 레이어 (UI)
+    ├── screens/              # 화면 위젯
+    ├── widgets/              # UI 컴포넌트
+    └── providers/            # 상태 관리
 ```
 
 ## 📚 Documentation

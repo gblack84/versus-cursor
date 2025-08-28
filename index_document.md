@@ -1,17 +1,23 @@
 # 📚 Versus Space 프로젝트 통합 문서화 인덱스
 
 > 전체 프로젝트 문서화 진행 상황을 추적하고 관리하는 중앙 대시보드
+> 버전: 2.18.0 | 최종 업데이트: 2025-08-28
 
 ## 📊 프로젝트 메타정보
 
 | 항목 | 상태 | 상세 |
 |------|------|------|
 | **프로젝트명** | Versus Space | Flutter 기반 소셜 미디어 앱 |
-| **총 디렉토리 수** | 113개 | /lib 하위 및 프로젝트 인프라 디렉토리 |
-| **문서화 완료** | 113개 | 모든 디렉토리 README 작성 완료 |
-| **문서화 진행률** | 100% | (113/113) 🎉 |
+| **아키텍처** | Feature-First + Clean | 7개 Feature 모듈 + 4개 전역 레이어 |
+| **총 디렉토리 수** | 121개 | /lib 하위 및 프로젝트 인프라 디렉토리 |
+| **문서화 완료** | 121개 | 모든 디렉토리 README 작성 완료 |
+| **통합 문서** | 3개 | Backend, Services 레이어 통합 규칙 문서 작성 완료 |
+| **마이그레이션 문서** | 33개 | App 전체 + Core + Backend + Services 모두 포함 |
+| **테스트 문서** | 33개 | App 전체 + Core + Backend + Services 모두 포함 |
+| **문서화 진행률** | 100% | (121/121) 🎉 |
 | **네이밍 컨벤션** | camelCase | 768개 필드 마이그레이션 완료 |
-| **최종 업데이트** | 2025-08-24 | 대규모 문서 통합 및 정리 완료 |
+| **DI 시스템** | GetIt (계획) | 의존성 주입 시스템 구현 예정 |
+| **최종 업데이트** | 2025-08-28 | Services 레이어 통합 문서 작성 완료 |
 
 ## 🎯 문서화 목표
 
@@ -24,25 +30,50 @@
 
 ### 범례
 - ✅ **완료**: 문서화 완료 및 검증 통과
+- 📋 **마이그레이션 계획**: MIGRATION_Part3.md 및 TEST.md 작성 완료
+- ⏳ **계획 예정**: 마이그레이션 문서 작성 예정
 - ⚡ **필수 인프라**: 핵심 기능 제공 (절대 삭제 금지)
 - 🔄 **진행중**: 현재 작업 중
 - ⚠️ **업데이트 필요**: snake_case → camelCase 변환 필요
 - ❌ **미작업**: 아직 시작하지 않음
 - 🗑️ **삭제됨**: 불필요하여 제거된 디렉토리
+- ⭐⭐ **낮은 구현율**: 계획 대비 구현 20% 이하
 
 ### 프로젝트 루트 레벨 문서
 | 문서 | 상태 | 목적 | 최종 업데이트 |
 |------|------|------|--------------|
-| **README.md** | ✅ | Quick Start 가이드 | 2025-08-24 |
-| **ARCHITECTURE.md** | ✅ | 시스템 아키텍처 (11개 Functions) | 2025-08-24 |
-| **CLAUDE.md** | ✅ | 기술 상세 문서 | 2025-08-24 |
-| **CHANGELOG.md** | ✅ | 변경 이력 (Breaking Changes 통합) | 2025-08-24 |
-| **index_document.md** | ✅ | 이 파일 - 문서화 추적 대시보드 | 2025-08-24 |
+| **README.md** | ✅ | Quick Start 가이드 | 2025-08-27 |
+| **ARCHITECTURE.md** | ✅ | 시스템 아키텍처 v3.0.0 | 2025-08-27 |
+| **CLAUDE.md** | ✅ | 기술 상세 문서 (Feature-First 구조) | 2025-08-27 |
+| **CHANGELOG.md** | ✅ | 변경 이력 v3.0.0 릴리즈 | 2025-08-27 |
+| **DEVELOPMENT_RULES.md** | ✅ | 개발 규칙 v2.0.0 | 2025-08-27 |
+| **FEATURE_ARCHITECTURE.md** | ✅ | Feature-First 아키텍처 가이드 | 2025-08-27 |
+| **GLOBAL_LAYERS.md** | ✅ | 전역 레이어 상세 문서 | 2025-08-27 |
+| **index_document.md** | ✅ | 이 파일 - 문서화 추적 대시보드 | 2025-08-27 |
+
+### 🏗️ Feature-First Architecture 모듈
+| Feature | 상태 | README | Clean Architecture | 비고 |
+|---------|------|--------|-------------------|------|
+| `/lib/features/auth` | ✅ | ✅ | ✅ Data/Domain/Presentation | 인증 시스템 |
+| `/lib/features/chat` | ✅ | ✅ | ✅ Data/Domain/Presentation | 채팅 시스템 |
+| `/lib/features/posts` | ✅ | ✅ | ✅ Data/Domain/Presentation | 게시물 관리 |
+| `/lib/features/profile` | ✅ | ✅ | ✅ Data/Domain/Presentation | 사용자 프로필 |
+| `/lib/features/voting` | ✅ | ✅ | ✅ Data/Domain/Presentation | 투표 시스템 |
+| `/lib/features/notifications` | ✅ | ✅ | ✅ Data/Domain/Presentation | 알림 시스템 |
+| `/lib/features/search` | ✅ | ✅ | ✅ Data/Domain/Presentation | 검색 기능 |
+
+### 🌐 전역 레이어 (Global Layers)
+| 레이어 | 상태 | README | MIGRATION | TEST | 목적 | 비고 |
+|--------|------|--------|-----------|------|------|------|
+| `/lib/core` | ✅ | ✅ | 📋 | 📋 | 디자인 시스템, 테마, 유틸리티 | 모든 Feature 공유 |
+| `/lib/backend` | ✅ | ✅ | 📋 | 📋 | Firebase, API, 모델 | 데이터 인프라 (Algolia, API, Firebase, Models 완전 문서화) |
+| `/lib/services` | ✅ | ✅ | 📋 | 📋 | 캐싱, 검열, 로깅, 알림 | 비즈니스 서비스 |
+| `/lib/app` | ✅ | ✅ | ✅ | ✅ | 라우팅, DI(계획), 앱 진입점 | 최상위 설정 |
 
 ### 주요 디렉토리 구조
 | 디렉토리 | 상태 | README | 검증 | 비고 |
 |----------|------|--------|------|------|
-| `/lib` | ✅ | ✅ | ⭐⭐⭐⭐⭐ | Flutter 애플리케이션 코드 |
+| `/lib` | ✅ | ✅ | ⭐⭐⭐⭐⭐ | Feature-First Architecture 구조 |
 | `/firebase` | ✅ | ✅ | ⭐⭐⭐⭐ | Firebase 백엔드 인프라 |
 | `/docs` | ✅ | ✅ | ⭐⭐⭐⭐⭐ | 프로젝트 문서 센터 |
 | `/scripts` | ✅ | ✅ | ⭐⭐⭐⭐ | 자동화 스크립트 (validate_docs.sh, sync_docs.sh 등) |
@@ -50,6 +81,16 @@
 | ~~`/mappings`~~ | 🗑️ | - | - | 2025-08-24 삭제 (채팅 v2 마이그레이션 완료) |
 | ~~`/migration_analysis`~~ | 🗑️ | - | - | 2025-08-24 삭제 (네이밍 마이그레이션 완료) |
 | ~~`/lib/custom_code`~~ | 🗑️ | - | - | 2025-08-23 삭제 (Native Flutter 통합) |
+
+### 📦 /lib/app 하위 디렉토리
+| 디렉토리 | 상태 | README | 구현 상태 | 비고 |
+|----------|------|--------|-----------|------|
+| `/lib/app` | ✅ | ✅ | ⚠️ 리팩토링 필요 | AppState 분리, 라우팅 모듈화 필요 |
+| `/lib/app/di` | ✅ | ✅ | ❌ 미구현 | DI 시스템 계획 + MIGRATION_Part3.md |
+| `/lib/app/router` | ✅ | ✅ | ⚠️ 리팩토링 필요 | nav.dart 542줄 분리 필요 + MIGRATION_Part3.md |
+| `/lib/app/state` | ✅ | ✅ | ⚠️ 리팩토링 필요 | app_state.dart 555줄 분리 필요 + MIGRATION_Part3.md |
+| `/lib/app/models` | ✅ | ✅ | 🔴 미사용 | LatLng, AppPlace - Location Feature로 이동 또는 삭제 필요 |
+| `/lib/app/widgets` | ✅ | ✅ | ⚠️ 리팩토링 필요 | index.dart 제거, debug 도구 이동 필요 + MIGRATION_Part3.md |
 
 ### /lib 루트 레벨
 | 디렉토리 | 상태 | README | 검증 | 비고 |
@@ -82,14 +123,16 @@
 | `/lib/auth/firebase_auth` | ✅ | ✅ | ✅ |
 
 #### /lib/backend 하위
-| 디렉토리 | 상태 | README | 검증 |
-|----------|------|--------|------|
-| `/lib/backend/algolia` | ✅ | ✅ | ✅ |
-| `/lib/backend/api_requests` | ✅ | ✅ | ✅ |
-| `/lib/backend/firebase` | ✅ | ✅ | ✅ |
-| `/lib/backend/firebase_storage` | ✅ | ✅ | ✅ |
-| `/lib/backend/schema` | ✅ | ✅ | ✅ |
-| `/lib/backend/schema/util` | ✅ | ✅ | ✅ |
+| 디렉토리 | 상태 | README | MIGRATION | TEST | 검증 |
+|----------|------|--------|-----------|------|------|
+| `/lib/backend/algolia` | ✅ | ✅ | ✅ | ✅ | ⭐⭐ |
+| `/lib/backend/api` | ✅ | ✅ | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/backend/api_requests` | ✅ | ✅ | - | - | ✅ |
+| `/lib/backend/firebase` | ✅ | ✅ | ✅ | ✅ | ⭐⭐⭐⭐ |
+| `/lib/backend/firebase_storage` | ✅ | ✅ | - | - | ✅ |
+| `/lib/backend/models` | ✅ | ✅ | ✅ | ✅ | ⭐⭐⭐⭐ |
+| `/lib/backend/schema` | ✅ | ✅ | - | - | ✅ |
+| `/lib/backend/schema/util` | ✅ | ✅ | - | - | ✅ |
 
 #### /lib/components 하위
 | 디렉토리 | 상태 | README | 검증 |
@@ -104,9 +147,18 @@
 | `/lib/components/notifications/widgets` | ✅ | ✅ | ✅ |
 
 #### /lib/core 하위
-| 디렉토리 | 상태 | README | 검증 |
-|----------|------|--------|------|
-| `/lib/core/nav` | ✅ | ✅ | ✅ |
+| 디렉토리 | 상태 | README | MIGRATION | TEST | 검증 |
+|----------|------|--------|-----------|------|------|
+| `/lib/core/nav` | ✅ | ✅ | - | - | ✅ |
+| `/lib/core/actions` | ✅ | ✅ | ✅ | ✅ | ⭐⭐ |
+| `/lib/core/animations` | ✅ | ✅ | ✅ | ✅ | ⭐⭐⭐ |
+| `/lib/core/constants` | ✅ | ✅ | ✅ | ✅ | ⭐⭐⭐⭐ |
+| `/lib/core/design_system` | ✅ | ✅ | ✅ | ✅ | ⭐⭐⭐⭐⭐ |
+| `/lib/core/localization` | ✅ | ✅ | ✅ | ✅ | ⭐⭐⭐⭐⭐ |
+| `/lib/core/models` | ✅ | ✅ | ✅ | ✅ | ⭐⭐⭐⭐⭐ |
+| `/lib/core/theme` | ✅ | ✅ | ✅ | ✅ | ⭐⭐⭐⭐⭐ |
+| `/lib/core/utils` | ✅ | ✅ | ✅ | ✅ | ⭐⭐⭐⭐⭐ |
+| `/lib/core/widgets` | ✅ | ✅ | ✅ | ✅ | ⭐⭐⭐⭐⭐ |
 
 #### /lib/createaccount 하위
 | 디렉토리 | 상태 | README | 검증 |
@@ -190,13 +242,14 @@
 | `/lib/posts/in_put_post_image/widgets` | ✅ | ✅ | ⭐⭐⭐ |
 
 #### /lib/services 하위
-| 디렉토리 | 상태 | README | 검증 |
-|----------|------|--------|------|
-| `/lib/services/ai_moderation` | ✅ | ✅ | ⭐⭐⭐⭐ |
-| `/lib/services/ai_moderation/constants` | ✅ | ✅ | ⭐⭐⭐⭐ |
-| `/lib/services/ai_moderation/models` | ✅ | ✅ | ⭐⭐⭐⭐ |
-| `/lib/services/ai_moderation/text_moderation` | ✅ | ✅ | ⭐⭐⭐⭐ |
-| `/lib/services/cache` | ✅ | ✅ | ⭐⭐⭐⭐ |
+| 디렉토리 | 상태 | README | MIGRATION | TEST | 검증 |
+|----------|------|--------|-----------|------|------|
+| `/lib/services/ai_moderation` | ✅ | ✅ | - | - | ⭐⭐⭐⭐ |
+| `/lib/services/ai_moderation/constants` | ✅ | ✅ | - | - | ⭐⭐⭐⭐ |
+| `/lib/services/ai_moderation/models` | ✅ | ✅ | - | - | ⭐⭐⭐⭐ |
+| `/lib/services/ai_moderation/text_moderation` | ✅ | ✅ | - | - | ⭐⭐⭐⭐ |
+| `/lib/services/cache` | ✅ | ✅ | ✅ | ✅ | ⭐⭐⭐⭐ |
+| `/lib/services/logger` | ✅ | ✅ | ✅ | ✅ | ⭐⭐⭐⭐ |
 
 #### /lib/shared 하위
 | 디렉토리 | 상태 | README | 검증 |
@@ -229,7 +282,13 @@
 
 ## 🎉 문서화 완료
 
-모든 113개 디렉토리의 문서화가 100% 완료되었습니다!
+모든 120개 디렉토리의 문서화가 100% 완료되었습니다!
+
+### Core Actions 레이어 특별 현황
+- **구현율**: 11% (1/9 액션만 구현)
+- **문제점**: Core→Features 역방향 의존성
+- **필요 작업**: 8개 액션 구현, 인터페이스 분리, DI 통합
+- **예상 기간**: 1주일 집중 개발
 
 ### 2025-08-24 최종 상태
 - ✅ 모든 디렉토리에 README.md 작성 완료
@@ -265,18 +324,38 @@
 
 | 구분 | 수량 | 백분율 |
 |------|------|--------|
-| **전체 디렉토리** | 113 | 100% |
-| **✅ 완료** | 113 | 100% |
-| **⚡ 필수 인프라** | 3 | 2.7% |
-| **🗑️ 삭제됨** | 2 | 1.8% |
+| **전체 디렉토리** | 120 | 100% |
+| **✅ 완료** | 120 | 100% |
+| **📋 마이그레이션 문서** | 11 | 9.2% |
+| **⚡ 필수 인프라** | 3 | 2.5% |
+| **🗑️ 삭제됨** | 2 | 1.7% |
 | **🔄 진행중** | 0 | 0% |
 | **⚠️ 업데이트 필요** | 0 | 0% |
 | **❌ 미작업** | 0 | 0% |
+| **⭐⭐ 낮은 구현율** | 1 | 0.8% |
 
 ## 📅 작업 이력
 
 | 날짜 | 디렉토리 | 작업자 | 상태 | 비고 |
 |------|----------|--------|------|------|
+| 2025-08-28 | `/lib/services` | AI Assistant | ✅ 완료 | **Services 레이어 통합 문서 작성 완료**: README.md 전역 인프라 서비스 통합 문서, MIGRATION_SERVICE_ORDER_RULES.md 4주 통합 마이그레이션 규칙 (Phase 1 긴급: API 키 보안), TEST.md 85% 목표 통합 테스트 전략. 백엔드 통합 문서 형식에 따라 Services 레이어 전체 통합 문서 3개 작성 완료 |
+| 2025-08-28 | `/lib/services/image` | AI Assistant | ✅ 완료 | Services Image 레이어 포괄적 문서화 완료: README.md 통합 이미지 캐싱 서비스 분석 (261줄, UnifiedImageCacheService 싱글톤), MIGRATION_Part3.md 2주 마이그레이션 계획 (Feature-First Media 모듈 구축, 네트워크 최적화, AI 기반 프리로드), TEST.md 90% 목표 커버리지 테스트 전략. 주요 개선: 3-Layer 캐싱 아키텍처, 우선순위 기반 캐싱, Progressive Loading, 네트워크 상태별 최적화 |
+| 2025-08-28 | `/lib/services/content` | AI Assistant | ✅ 완료 | Services Content 레이어 포괄적 문서화 완료: README.md 콘텐츠 필터링 시스템 분석 (180줄, FilterResult/ContentFilter), MIGRATION_Part3.md 2주 마이그레이션 계획 (통합 검열 Feature 구축, AI 기반 고도화, 다국어 지원), TEST.md 90% 목표 커버리지 테스트 전략. 주요 개선: Perspective API/Gemini AI 통합 계획, 이미지/비디오 검열 통합, 실시간 정책 업데이트, 컨텍스트 기반 분석 |
+| 2025-08-28 | `/lib/backend/models` | AI Assistant | ✅ 완료 | Backend Models 레이어 포괄적 문서화 완료: README.md 데이터 모델 분석 (17개 모델 파일, users/posts/messages 주요 모델), MIGRATION_Part3.md 5일 마이그레이션 계획 (Feature별 모델 분리, 단일 책임 원칙 적용, Repository 패턴 구현), TEST.md 80% 목표 커버리지 테스트 전략. 주요 개선: PostsModel 60개 필드를 Post/Vote/PostStats로 분리, Map<String,dynamic> → 타입 안전한 Value Objects, Feature-First 구조 적용 |
+| 2025-08-28 | `/lib/backend/firebase` | AI Assistant | ✅ 완료 | Backend Firebase 레이어 포괄적 문서화 완료: README.md Firebase 인프라 분석 (264줄 코드), MIGRATION_Part3.md 5일 마이그레이션 계획 (환경 변수, DI 패턴, 서비스 추상화), TEST.md 80% 목표 커버리지 테스트 전략. 주요 개선: API 키 환경 변수화, 역방향 의존성 해결, Firebase Emulator 테스트 환경 |
+| 2025-08-28 | `/lib/backend/api` | AI Assistant | ✅ 완료 | Backend API 레이어 포괄적 문서화 완료: README.md API 통합 시스템 분석 (싱글톤 패턴, 캐싱, EncoderGroup, SearchAlgoliaCall), MIGRATION_Part3.md 5일 마이그레이션 계획 (Dio 클라이언트 전환, DI 패턴 적용, 인터셉터 구현), TEST.md 85% 목표 커버리지 테스트 전략. 주요 개선: 싱글톤 제거, API 키 환경 변수화, Feature DataSource 분리 |
+| 2025-08-28 | `/lib/backend/repositories` | AI Assistant | ✅ 완료 | Backend Repositories 레이어 포괄적 문서화 완료: README.md Repository 패턴 설계 분석 (4개 파일 모두 TODO 상태), MIGRATION_Part3.md 2주 구현 계획 (UserRepository, PostRepository, ChatRepository, MediaRepository), TEST.md 85% 목표 커버리지 테스트 전략. 주요 개선: Repository 패턴 구현, 의존성 역전 원칙 적용, 3-Layer 캐싱 통합, Feature별 Repository 분리 |
+| 2025-08-28 | `/lib/core/utils` | AI Assistant | ✅ 완료 | Core Utils 레이어 포괄적 문서화 완료: README.md 유틸리티 시스템 분석 (633줄 코드), MIGRATION_Part3.md 5일 마이그레이션 계획 (도메인별 분리, DI 패턴 적용), TEST.md 95% 목표 커버리지 테스트 전략. 주요 개선: app_utils.dart 497줄을 도메인별 분리, export 문 제거, 타이머 시스템 Feature로 이동 |
+| 2025-08-28 | `/lib/core/localization` | AI Assistant | ✅ 완료 | Core Localization 레이어 포괄적 문서화 완료: README.md 다국어 지원 시스템 분석 (1,889줄), MIGRATION_Part3.md 2주 마이그레이션 계획 (JSON 기반 번역 시스템, 타입 안전 번역 키), TEST.md 95% 목표 커버리지 테스트 전략. 주요 개선: JSON 기반 번역 시스템 구축, UI 컴포넌트 shared로 이동, 독일어 번역 완성 계획 |
+| 2025-08-28 | `/lib/core/design_system` | AI Assistant | ✅ 완료 | Core Design System 레이어 포괄적 문서화 완료: README.md 디자인 토큰 및 컴포넌트 분석 (1,717줄), MIGRATION_Part3.md 2주 마이그레이션 계획 (Theme Extension 전환, 컴포넌트 shared 이동, Material 3 통합), TEST.md 95% 목표 커버리지 테스트 전략. 주요 개선: 토큰 시스템 Theme Extension 전환, 컴포넌트 shared/widgets로 이동, 테마 시스템 구현 |
+| 2025-08-28 | `/lib/core/constants` | AI Assistant | ✅ 완료 | Core Constants 레이어 포괄적 문서화 완료: README.md 레이아웃 상수 시스템 분석 (214줄), MIGRATION_Part3.md 1주 마이그레이션 계획 (타입 안전성 강화, Design System 통합), TEST.md 90% 목표 커버리지 테스트 전략. 주요 개선: ContainerType enum 도입, 디렉토리 구조화, Feature별 상수 확장 |
+| 2025-08-28 | `/lib/core/animations` | AI Assistant | ✅ 완료 | Core Animations 레이어 포괄적 문서화 완료: README.md 113줄 파일 분석, 애니메이션 프리셋 시스템 설계, MIGRATION_Part3.md 1주 마이그레이션 계획 (효과 라이브러리 확장, 성능 최적화), TEST.md 85% 목표 커버리지 테스트 전략. 주요 개선: 20개+ 효과 추가, 컨트롤러 풀 구현, 접근성 지원 |
+| 2025-08-28 | `/lib/core/actions` | AI Assistant | ✅ 완료 | Core Actions 레이어 포괄적 문서화 완료: README.md 298줄 (현재 구현 11% 분석), MIGRATION_Part3.md 1주 마이그레이션 계획, TEST.md 83% 목표 커버리지 테스트 전략. 주요 문제: Core→Features 역방향 의존성, 8개 액션 미구현, 에러 처리 부재 |
+| 2025-08-28 | `/lib/app/widgets` | AI Assistant | ✅ 완료 | App Widgets 레이어 분석 및 Feature-First 리팩토링 가이드 작성, index.dart feature 의존성 제거 계획, debug 도구 이동 계획, MIGRATION_Part3.md 2일 마이그레이션 계획 |
+| 2025-08-28 | `/lib/app/state` | AI Assistant | ✅ 완료 | App State 시스템 분석 및 Feature-First 리팩토링 가이드 작성, app_state.dart 555줄을 5개 Provider로 분리 계획, MIGRATION_Part3.md 2주 점진적 마이그레이션 계획 |
+| 2025-08-28 | `/lib/app/router` | AI Assistant | ✅ 완료 | Router 시스템 분석 및 Feature-First 리팩토링 가이드 작성, nav.dart 542줄 분리 계획, serialization_util.dart 270줄 분석 추가, MIGRATION_Part3.md 6단계 마이그레이션 계획 |
+| 2025-08-27 | `/lib/app/models` | AI Assistant | ✅ 완료 | 미사용 위치 모델 분석, Location Feature 마이그레이션 계획, MIGRATION_Part3.md 작성 |
+| 2025-08-27 | `/lib/app/di` | AI Assistant | ✅ 완료 | DI 시스템 구현 계획 수립, GetIt 기반 5단계 마이그레이션 계획, MIGRATION_Part3.md 작성 |
 | 2025-08-24 | `/firebase/functions/scripts` | AI Assistant | ✅ 완료 | 마이그레이션 스크립트 문서화, 385줄 README 작성, ⭐⭐⭐⭐⭐ 검증 통과 - **스키마 마이그레이션 도구** |
 | 2025-08-24 | `/firebase/functions/functions/firestore` | AI Assistant | ✅ 완료 | Firestore 트리거 함수 문서화, 337줄 README 작성, ⭐⭐⭐⭐⭐ 검증 통과 - **핵심 비즈니스 로직** |
 | 2025-08-24 | `/firebase/functions/functions/auth` | AI Assistant | ✅ 완료 | Firebase Auth 트리거 함수 문서화, 255줄 README 작성, ⭐⭐⭐⭐⭐ 검증 통과 - **사용자 삭제 처리** |
@@ -300,6 +379,9 @@
 | 2025-08-24 | `/lib/etc/tags_labels` | AI Assistant | ✅ 완료 | 태그/라벨 UI 테스트 문서화, 102줄 README 작성, ⭐⭐⭐⭐ 검증 통과 |
 | 2025-08-24 | `/lib/etc/vsmark` | AI Assistant | ✅ 완료 | VS 브랜드 마크 문서화, 105줄 README 작성, ⭐⭐⭐⭐ 검증 통과 |
 | 2025-08-23 | `/lib/services` | AI Assistant | ✅ 완료 | 통합 서비스 레이어 문서화, 476줄 README 작성, ⭐⭐⭐⭐ 검증 통과 |
+| 2025-08-28 | `/lib/services/logger` | AI Assistant | ✅ 완료 | Services Logger 레이어 포괄적 문서화 완료: README.md 로깅 시스템 분석 (305줄, AppLogger 메모리 캐시, FileLogger 파일 저장), MIGRATION_Part3.md 3단계 마이그레이션 계획 (Services Layer 유지하며 Clean Architecture 적용, 통합 LoggingService 구축), TEST.md 90% 목표 커버리지 테스트 전략. 주요 개선: 로그 레벨 시스템, 카테고리별 필터링, 배치 처리, 원격 로깅 통합 계획 |
+| 2025-08-28 | `/lib/services/moderation` | AI Assistant | ✅ 완료 | Services Moderation 레이어 포괄적 문서화 완료: README.md 콘텐츠 검열 시스템 분석 (609줄 코드, Perspective API/Cloud Vision API/Firestore 통합), MIGRATION_Part3.md 2주 마이그레이션 계획 (Phase 1 긴급: API 키 보안, DI 패턴 적용, Clean Architecture 유지), TEST.md 90% 목표 커버리지 테스트 전략. 주요 개선: 하드코딩된 API 키 환경 변수화, 정적 메서드 제거, 캐싱 시스템 구축, 병렬 처리 최적화 |
+| 2025-08-28 | `/lib/services/ui` | AI Assistant | ✅ 완료 | Services UI 레이어 포괄적 문서화 완료: README.md 반응형 UI 서비스 분석 (721줄 코드, ResponsiveBreakpoints/UnifiedBoxCalculator), MIGRATION_Part3.md 4주 마이그레이션 계획 (Phase 1 긴급: 역방향 의존성 제거, DI 패턴 적용, 캐싱 구현), TEST.md 90% 목표 커버리지 테스트 전략. 주요 개선: AspectRatioAnalyzer 의존성 제거, MediaQuery 캐싱, 빌더 패턴 구현, 설정 기반 브레이크포인트 시스템 |
 | 2025-08-23 | `/lib/services/cache` | AI Assistant | ✅ 완료 | 3-Layer 캐싱 시스템 문서화, 510줄 README 작성, ⭐⭐⭐⭐ 검증 통과 |
 | 2025-08-23 | `/lib/shared/constants` | AI Assistant | ✅ 완료 | 레이아웃 상수 시스템 문서화, 315줄 README 작성, ⭐⭐⭐⭐ 검증 통과 |
 | 2025-08-23 | `/lib/shared/services` | AI Assistant | ✅ 완료 | 통합 박스 계산 서비스 문서화, 376줄 README 작성, ⭐⭐⭐⭐ 검증 통과 |
@@ -350,6 +432,7 @@
 | 2025-08-22 | `/lib/backend` | AI Assistant | ✅ 완료 | 백엔드 통합 레이어 문서화, 475줄 README 작성 |
 | 2025-08-22 | `/lib/auth` | AI Assistant | ✅ 완료 | 통합 인증 시스템 문서화, 372줄 README 작성 |
 | 2025-08-22 | `/lib/actions` | AI Assistant | ✅ 완료 | 문서-코드 불일치 해결, camelCase 적용 |
+| 2025-08-28 | `/lib/core/models` | AI Assistant | ✅ 완료 | 포괄적 문서화, MIGRATION_Part3.md 및 TEST.md 작성 |
 
 ## 📌 핵심 문서 위치
 
@@ -366,6 +449,6 @@
 
 *이 문서는 프로젝트 문서화 진행 상황을 추적하는 마스터 인덱스입니다.*
 
-**최종 업데이트**: 2025-08-24  
-**문서 버전**: 2.0.0  
-**상태**: ✅ 문서화 100% 완료
+**최종 업데이트**: 2025-08-28  
+**문서 버전**: 2.18.0  
+**상태**: ✅ 문서화 100% 완료 + 마이그레이션 계획 진행중

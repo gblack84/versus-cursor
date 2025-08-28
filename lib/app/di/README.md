@@ -1,330 +1,300 @@
-# 💉 DI (Dependency Injection) - 의존성 주입
+# 📦 App DI (Dependency Injection) 레이어
 
-> GetIt을 활용한 서비스 로케이터 패턴 구현
+> Feature-First Architecture의 의존성 주입 시스템  
+> 최종 업데이트: 2025-08-27 | 버전: 1.0.0
 
-## 개요
+## 📋 개요
 
-앱 전체의 의존성을 관리하고 주입하는 중앙 시스템입니다. GetIt 서비스 로케이터를 사용하여 싱글톤, 팩토리, Lazy 싱글톤 패턴을 구현합니다.
+DI 레이어는 Versus Space 애플리케이션의 전체 의존성 관리를 담당합니다.
+GetIt 서비스 로케이터 패턴을 사용하여 Feature-First Architecture에 맞는 의존성 주입을 구현합니다.
 
-## 구조
+## 🏗️ 현재 디렉토리 구조
 
 ```
-di/
-├── di.dart                  # GetIt 초기화
-├── modules/                 # 모듈별 설정
-│   ├── app_module.dart     # 앱 전역 모듈
-│   ├── network_module.dart # 네트워크 모듈
-│   ├── storage_module.dart # 스토리지 모듈
-│   └── service_module.dart # 서비스 모듈
-└── README.md
+lib/app/di/
+├── README.md              # 현재 문서 (계획 단계)
+└── (구현 예정 파일들)
+    ├── injection.dart     # DI 초기화 및 설정
+    ├── injection.config.dart  # 자동 생성 설정 (injectable)
+    └── modules/          # 모듈별 의존성 정의
+        ├── app_module.dart
+        ├── firebase_module.dart  
+        ├── cache_module.dart
+        └── feature_modules.dart
 ```
 
-## 주요 기능
+## 🔍 현재 상태 분석
 
-### 1. DI 초기화 (di.dart)
+### 현재 상황
+- ❌ DI 시스템 미구현 상태
+- ❌ 의존성이 직접 import로 관리됨
+- ❌ 테스트 시 Mock 주입 어려움
+- ❌ 싱글톤 패턴이 각 서비스마다 개별 구현
 
-**역할**: GetIt 인스턴스 초기화 및 전체 모듈 구성
+### Feature-First Architecture에서 DI의 역할
+- ✅ Feature 간 의존성 관리
+- ✅ 전역 서비스의 일관된 접근
+- ✅ 테스트 가능한 코드 구조
+- ✅ 의존성 그래프 명확화
 
-**주요 기능**:
-- GetIt 인스턴스 생성 및 관리
-- 환경 설정 등록 (AppConfig)
-- 모듈별 의존성 순차적 등록
-- Feature 모듈 통합
-- 초기화 완료 대기
-- 의존성 정리 (reset)
+## 🛠️ 구현 계획
 
-**모듈 등록 순서**:
-1. AppModule - 앱 전역 설정
-2. NetworkModule - 네트워크 관련
-3. StorageModule - 저장소 관련
-4. ServiceModule - 비즈니스 서비스
-5. Feature Modules - 기능별 모듈
+### Phase 1: 기본 DI 설정 (1주)
 
-### 2. 앱 모듈 (modules/app_module.dart)
-
-**역할**: 앱 전역 의존성 관리
-
-**등록 컴포넌트**:
-- **AppState**: 앱 상태 관리 (LazySingleton)
-- **GoRouter**: 네비게이션 라우터 (LazySingleton)
-- **ThemeData**: 라이트/다크 테마 (Factory with instanceName)
-- **AppLocalizations**: 다국어 지원 (LazySingleton)
-
-### 3. 네트워크 모듈 (modules/network_module.dart)
-
-**역할**: 네트워크 및 외부 서비스 의존성 관리
-
-**등록 컴포넌트**:
-- **Dio**: HTTP 클라이언트
-  - BaseURL 설정
-  - Timeout 설정 (30초)
-  - Interceptors: Auth, Log, Retry
-- **Firebase Services**:
-  - FirebaseAuth: 인증
-  - FirebaseFirestore: 데이터베이스
-  - FirebaseStorage: 파일 저장소
-  - FirebaseMessaging: 푸시 알림
-- **Algolia**: 검색 엔진
-  - Application ID 설정
-  - API Key 설정
-
-### 4. 스토리지 모듈 (modules/storage_module.dart)
-
-**역할**: 로컬 스토리지 및 캐싱 시스템 관리
-
-**등록 컴포넌트**:
-- **SharedPreferences**: 간단한 키-값 저장소 (Singleton)
-- **Hive Boxes**:
-  - cache: 일반 캐시 박스
-  - users: UserModel 전용 박스
-  - messages: MessagesModel 전용 박스
-- **캐시 서비스**:
-  - UnifiedCacheService: 통합 캐시 서비스
-  - SimpleMemoryCache: 메모리 캐시 (maxSize: 100)
-
-### 5. 서비스 모듈 (modules/service_module.dart)
-
-**역할**: 비즈니스 서비스 의존성 관리
-
-**등록 서비스**:
-- **AuthService**: 인증 서비스 (LazySingleton)
-- **NotificationService**: 알림 서비스 (LazySingleton)
-- **VoteStateCoordinator**: 투표 상태 관리 (LazySingleton)
-- **ChatService**: 채팅 서비스 (Factory)
-- **SearchService**: 검색 서비스 (LazySingleton)
-- **MediaUploadService**: 미디어 업로드 (Factory)
-
-## 사용 방법
-
-### 1. 의존성 주입
-
-**초기화 위치**: main.dart의 main() 함수
-- WidgetsFlutterBinding 초기화 후
-- configureDependencies() 호출
-- 앱 실행 전 완료 필수
-
-### 2. 의존성 사용
-
-**접근 방법**:
-- 직접 접근: `getIt<ServiceType>()`
-- 인스턴스 이름 지정: `getIt<Type>(instanceName: 'name')`
-- Widget에서 사용: 필드로 저장
-- Provider에서 사용: 생성자나 필드로 주입
-
-### 3. 테스트에서 Mock 주입
-
-**테스트 설정**:
-- setUpAll()에서 Mock 등록
-- tearDownAll()에서 reset() 호출
-- 실제 서비스 대신 Mock 객체 사용
-
-## 패턴 및 전략
-
-### 1. 등록 타입
-
-- **Singleton**: 앱 생명주기 동안 단일 인스턴스
-- **LazySingleton**: 처음 요청 시 생성되는 싱글톤
-- **Factory**: 매번 새 인스턴스 생성
-- **LazySingletonAsync**: 비동기 초기화가 필요한 싱글톤
-
-### 2. 인스턴스 이름
-
-같은 타입의 다른 인스턴스를 구분하기 위한 명명 전략:
-- 테마: 'light', 'dark'
-- 환경: 'dev', 'prod'
-- 용도: 'cache', 'persistent'
-
-### 3. 의존성 체인
-
-의존성 관계가 있는 서비스들의 등록 순서:
-- 의존 대상이 먼저 등록되어야 함
-- 순환 의존성 방지 필요
-- 체인 깊이 최소화 권장
-
-### 4. 순환 의존성 방지 패턴
-
-#### 문제 상황 예시
-```dart
-// ❌ 순환 의존성 (Circular Dependency)
-class ServiceA {
-  final ServiceB serviceB;
-  ServiceA(this.serviceB);
-}
-
-class ServiceB {
-  final ServiceA serviceA;
-  ServiceB(this.serviceA);
-}
-```
-
-#### 해결 방법 1: 인터페이스 추상화
-```dart
-// ✅ 인터페이스를 통한 의존성 역전
-abstract class IServiceA {
-  void doSomething();
-}
-
-abstract class IServiceB {
-  void doOther();
-}
-
-class ServiceA implements IServiceA {
-  final IServiceB serviceB;
-  ServiceA(this.serviceB);
-}
-
-class ServiceB implements IServiceB {
-  // ServiceA가 필요하면 Factory 패턴 사용
-  void useServiceA() {
-    final serviceA = getIt<IServiceA>();
-    serviceA.doSomething();
-  }
-}
-```
-
-#### 해결 방법 2: Provider 패턴
-```dart
-// ✅ Provider를 통한 느슨한 결합
-class ServiceA {
-  void doSomething() {
-    // ServiceB가 필요한 시점에만 가져옴
-    final serviceB = getIt<ServiceB>();
-    serviceB.doOther();
-  }
-}
-
-class ServiceB {
-  void doOther() {
-    // ServiceA가 필요한 시점에만 가져옴
-    final serviceA = getIt<ServiceA>();
-    serviceA.doSomething();
-  }
-}
-```
-
-#### 해결 방법 3: 이벤트 버스 패턴
-```dart
-// ✅ EventBus를 통한 통신
-class ServiceA {
-  final EventBus eventBus;
+#### 1. GetIt 및 Injectable 패키지 설정
+```yaml
+# pubspec.yaml
+dependencies:
+  get_it: ^7.6.0
+  injectable: ^2.3.2
   
-  ServiceA(this.eventBus) {
-    eventBus.on<ServiceBEvent>().listen((event) {
-      // ServiceB의 이벤트 처리
-    });
-  }
-  
-  void doSomething() {
-    eventBus.fire(ServiceAEvent());
-  }
+dev_dependencies:
+  injectable_generator: ^2.4.1
+  build_runner: ^2.4.6
+```
+
+#### 2. injection.dart - DI 컨테이너 초기화
+```dart
+// lib/app/di/injection.dart
+import 'package:get_it/get_it.dart';
+import 'package:injectable/injectable.dart';
+import 'injection.config.dart';
+
+final GetIt getIt = GetIt.instance;
+
+@InjectableInit()
+Future<void> configureDependencies({
+  String? environment,
+}) async {
+  await getIt.init(environment: environment);
 }
 
-class ServiceB {
-  final EventBus eventBus;
-  
-  ServiceB(this.eventBus) {
-    eventBus.on<ServiceAEvent>().listen((event) {
-      // ServiceA의 이벤트 처리
-    });
-  }
+// 환경 정의
+abstract class Environment {
+  static const dev = 'dev';
+  static const prod = 'prod';
+  static const test = 'test';
 }
 ```
 
-#### 해결 방법 4: 중재자 패턴 (Mediator)
+### Phase 2: 모듈 정의 (3일)
+
+#### 1. Firebase 모듈
 ```dart
-// ✅ 중재자를 통한 간접 통신
-class ServiceCoordinator {
-  late ServiceA serviceA;
-  late ServiceB serviceB;
+// lib/app/di/modules/firebase_module.dart
+@module
+abstract class FirebaseModule {
+  @lazySingleton
+  FirebaseAuth get auth => FirebaseAuth.instance;
   
-  void initialize() {
-    serviceA = ServiceA(this);
-    serviceB = ServiceB(this);
-  }
+  @lazySingleton
+  FirebaseFirestore get firestore => FirebaseFirestore.instance;
   
-  void handleServiceARequest() {
-    serviceB.doOther();
-  }
-  
-  void handleServiceBRequest() {
-    serviceA.doSomething();
-  }
+  @lazySingleton
+  FirebaseStorage get storage => FirebaseStorage.instance;
 }
 ```
 
-#### 순환 의존성 감지 도구
+#### 2. 캐시 모듈
 ```dart
-// dependency_validator.dart
-class DependencyValidator {
-  static void checkCircularDependencies() {
-    final dependencies = <String, Set<String>>{};
+// lib/app/di/modules/cache_module.dart
+@module
+abstract class CacheModule {
+  @preResolve
+  Future<SharedPreferences> get prefs => SharedPreferences.getInstance();
+  
+  @lazySingleton
+  UnifiedCacheService cacheService() => UnifiedCacheService();
+  
+  @singleton
+  SimpleMemoryCache memoryCache() => SimpleMemoryCache(maxSize: 100);
+}
+```
+
+#### 3. Feature 모듈 통합
+```dart
+// lib/app/di/modules/feature_modules.dart
+@module
+abstract class FeatureModules {
+  // Auth Feature
+  @lazySingleton
+  AuthRepository authRepository(FirebaseAuth auth) => 
+    AuthRepositoryImpl(auth);
     
-    // GetIt에 등록된 모든 서비스 검사
-    for (final registration in getIt.allReadyTypes()) {
-      final typeName = registration.toString();
-      final deps = _extractDependencies(registration);
-      dependencies[typeName] = deps;
-    }
-    
-    // DFS로 순환 참조 검사
-    for (final entry in dependencies.entries) {
-      if (_hasCircularDependency(
-        entry.key, 
-        dependencies, 
-        <String>{},
-      )) {
-        throw CircularDependencyError(
-          'Circular dependency detected: ${entry.key}',
-        );
-      }
-    }
-  }
+  @lazySingleton
+  AuthService authService(AuthRepository repo) => 
+    AuthService(repo);
   
-  static bool _hasCircularDependency(
-    String current,
-    Map<String, Set<String>> graph,
-    Set<String> visited,
-  ) {
-    if (visited.contains(current)) {
-      return true; // 순환 참조 발견
-    }
+  // Posts Feature  
+  @factory
+  PostsRepository postsRepository(FirebaseFirestore firestore) =>
+    PostsRepositoryImpl(firestore);
     
-    visited.add(current);
-    
-    for (final dep in graph[current] ?? <String>{}) {
-      if (_hasCircularDependency(dep, graph, visited)) {
-        return true;
-      }
-    }
-    
-    visited.remove(current);
-    return false;
+  // Chat Feature
+  @factory
+  ChatService chatService(
+    FirebaseFirestore firestore,
+    UnifiedCacheService cache,
+  ) => ChatService(firestore, cache);
+}
+```
+
+### Phase 3: Feature 통합 (1주)
+
+#### 각 Feature에서 DI 사용
+```dart
+// lib/features/auth/presentation/screens/login_screen.dart
+class LoginScreen extends StatelessWidget {
+  final authService = getIt<AuthService>();
+  
+  @override
+  Widget build(BuildContext context) {
+    // authService 사용
   }
 }
 ```
 
-#### 베스트 프랙티스
-1. **단방향 의존성**: 상위 레이어는 하위 레이어만 의존
-2. **인터페이스 분리**: 구체 클래스 대신 추상 인터페이스 의존
-3. **Factory 패턴**: 직접 주입 대신 필요 시점 생성
-4. **도메인 중심 설계**: 비즈니스 로직을 도메인 레이어로 분리
-5. **의존성 검증**: CI/CD에서 순환 의존성 자동 검사
+#### Provider와 통합
+```dart
+// lib/features/posts/presentation/providers/posts_provider.dart
+class PostsProvider extends ChangeNotifier {
+  final PostsRepository _repository;
+  
+  PostsProvider() : _repository = getIt<PostsRepository>();
+  
+  // 또는 생성자 주입
+  PostsProvider(this._repository);
+}
+```
 
-## 마이그레이션 체크리스트
+### Phase 4: 테스트 설정 (3일)
 
-- [ ] 기존 싱글톤 패턴을 GetIt으로 변경
-- [ ] Provider 생성자에서 GetIt 사용
-- [ ] 전역 변수를 DI로 관리
-- [ ] 테스트 코드에 Mock 주입 설정
-- [ ] 순환 의존성 확인
+#### Mock 설정
+```dart
+// test/helpers/test_injection.dart
+@module
+abstract class TestModule {
+  @test
+  @lazySingleton
+  AuthService mockAuthService() => MockAuthService();
+  
+  @test
+  @lazySingleton
+  PostsRepository mockPostsRepository() => MockPostsRepository();
+}
 
-## 주의사항
+void setupTestDependencies() {
+  configureDependencies(environment: Environment.test);
+}
+```
 
-1. **순환 의존성**: A → B → A 같은 순환 참조 방지
-2. **초기화 순서**: 의존성이 있는 서비스는 의존 대상이 먼저 등록되어야 함
-3. **메모리 관리**: Singleton은 앱 종료까지 메모리에 유지됨
-4. **테스트 격리**: 테스트 간 DI 컨테이너 초기화 필수
+## 🎯 마이그레이션 전략
+
+### 1단계: 전역 서비스 마이그레이션
+| 서비스 | 현재 위치 | DI 등록 타입 | 우선순위 |
+|--------|----------|-------------|----------|
+| UnifiedCacheService | /services/cache | @lazySingleton | 높음 |
+| AuthUtil | /features/auth/data/services | @lazySingleton | 높음 |
+| NotificationService | /features/notifications | @lazySingleton | 중간 |
+| VoteStateCoordinator | /services | @lazySingleton | 중간 |
+
+### 2단계: Repository 패턴 도입
+```dart
+// 현재: 직접 Firestore 접근
+FirebaseFirestore.instance
+  .collection('posts')
+  .doc(postId)
+  .get();
+
+// 개선: Repository 통한 접근
+final postsRepo = getIt<PostsRepository>();
+postsRepo.getPost(postId);
+```
+
+### 3단계: Feature 별 점진적 적용
+1. Auth Feature - 인증 관련 서비스
+2. Posts Feature - 게시물 관련 서비스
+3. Chat Feature - 채팅 서비스
+4. 나머지 Feature 순차 적용
+
+## 📊 구현 우선순위
+
+### Critical (즉시 구현)
+- [ ] GetIt 기본 설정
+- [ ] Firebase 서비스 등록
+- [ ] 캐시 서비스 등록
+
+### High (1주 내)
+- [ ] Auth 관련 서비스
+- [ ] AppState DI 통합
+- [ ] 테스트 Mock 설정
+
+### Medium (2주 내)
+- [ ] 모든 Repository 등록
+- [ ] Feature 서비스 통합
+- [ ] Provider 생성자 주입
+
+### Low (추후)
+- [ ] 자동 생성 코드 최적화
+- [ ] 순환 의존성 검증 도구
+- [ ] DI 그래프 시각화
+
+## 📝 사용 가이드
+
+### 서비스 등록하기
+```dart
+@injectable
+class MyService {
+  // 자동으로 DI에 등록됨
+}
+
+// 또는 수동 등록
+getIt.registerSingleton<MyService>(MyService());
+```
+
+### 서비스 사용하기
+```dart
+// 직접 접근
+final myService = getIt<MyService>();
+
+// Widget에서 사용
+class MyWidget extends StatelessWidget {
+  final service = getIt<MyService>();
+}
+
+// Provider에서 사용  
+class MyProvider extends ChangeNotifier {
+  final MyService _service;
+  
+  MyProvider() : _service = getIt<MyService>();
+}
+```
+
+### 테스트에서 Mock 사용
+```dart
+setUp(() {
+  getIt.registerSingleton<MyService>(MockMyService());
+});
+
+tearDown(() {
+  getIt.reset();
+});
+```
+
+## ⚠️ 주의사항
+
+1. **순환 의존성**: 서비스 간 순환 참조 주의
+2. **메모리 관리**: Singleton은 앱 종료까지 유지
+3. **초기화 순서**: 의존 관계에 따른 등록 순서
+4. **테스트 격리**: 테스트마다 DI 초기화
+
+## 📚 참고 자료
+
+- [GetIt Documentation](https://pub.dev/packages/get_it)
+- [Injectable Documentation](https://pub.dev/packages/injectable)
+- [Feature-First Architecture Guide](/FEATURE_ARCHITECTURE.md)
 
 ---
 
-*의존성 주입 시스템 문서 - Feature-First Architecture*
+*이 문서는 DI 레이어의 구현 계획과 가이드를 담고 있습니다.*
+*실제 구현은 Phase별로 진행 예정입니다.*

@@ -155,11 +155,17 @@ class TransitionInfo {
 **지원 타입**:
 - 기본 타입: int, double, String, bool
 - 날짜/시간: DateTime, DateTimeRange
-- 위치: LatLng, AppPlace
+- ~~위치: LatLng, AppPlace~~ ❌ **미사용 - 제거 필요**
 - 색상: Color
 - 파일: AppUploadedFile
 - Firebase: DocumentReference, Document
 - JSON 객체
+
+**문제점**:
+- ❌ **미사용 코드**: AppPlace와 LatLng 타입 처리 (line 16-24, 73-78, 111-144)
+- ❌ **임시 import**: `/core_exports.dart` 사용 (line 6)
+- ⚠️ **책임 과다**: 270줄에 13가지 타입 처리
+- ⚠️ **Feature 의존성**: app/models의 미사용 모델에 의존
 
 **직렬화 함수**:
 ```dart
@@ -189,6 +195,23 @@ String dateTimeRangeToString(DateTimeRange dateTimeRange) {
   // 예: "1625097600000|1625184000000"
 }
 ```
+
+#### 리팩토링 필요 사항
+
+**분리 계획**:
+```
+serialization/
+├── base_serializer.dart      # 기본 타입 (int, double, String, bool, DateTime, JSON)
+├── firebase_serializer.dart  # Firebase 타입 (DocumentReference, Document)
+├── file_serializer.dart     # 파일 타입 (AppUploadedFile) 
+├── ui_serializer.dart       # UI 타입 (Color, DateTimeRange)
+└── param_type.dart          # 타입 enum 정의
+```
+
+**제거할 코드**:
+- `placeToString()`, `placeFromString()` - AppPlace 미사용
+- `latLngFromString()` - LatLng 미사용
+- ParamType.LatLng, ParamType.AppPlace enum 값
 
 ## 사용 예시
 

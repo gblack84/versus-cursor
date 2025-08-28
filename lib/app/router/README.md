@@ -1,259 +1,254 @@
-# 📍 Router - 라우팅 시스템
+# 🚦 App Router 레이어
 
-> GoRouter 기반 선언적 라우팅 시스템
+> Feature-First Architecture의 라우팅 및 네비게이션 시스템  
+> 최종 업데이트: 2025-08-27 | 버전: 2.0.0
 
-## 개요
+## 📋 개요
 
-앱의 모든 네비게이션과 라우팅을 관리하는 중앙 시스템입니다. GoRouter를 사용하여 선언적이고 타입 안전한 라우팅을 구현합니다.
+App Router는 Versus Space 애플리케이션의 모든 네비게이션과 라우팅을 관리합니다.
+GoRouter를 사용한 선언적 라우팅 시스템으로 인증, 딥링크, 파라미터 직렬화를 지원합니다.
 
-## 구조
+## 🏗️ 현재 디렉토리 구조
 
 ```
-router/
-├── router.dart              # GoRouter 메인 설정
-├── routes.dart              # 라우트 경로 상수
-├── route_params.dart        # 파라미터 직렬화
-├── guards/                  # 라우트 가드
-│   ├── auth_guard.dart     # 인증 체크
-│   └── permission_guard.dart # 권한 체크
-└── README.md
+lib/app/router/
+├── README.md              # 현재 문서
+└── navigation/           # 실제 구현 코드 (❗ 잘못된 위치)
+    ├── nav.dart          # 542줄 - GoRouter 설정 및 라우트 정의
+    ├── serialization_util.dart  # 270줄 - 파라미터 직렬화
+    └── README.md         # 상세 문서
 ```
 
-## 주요 기능
+## 🔍 현재 코드 분석
 
-### 1. GoRouter 설정 (router.dart)
+### 1. 디렉토리 구조 문제점
+- ❌ **이상적인 구조(README)와 실제 구조 불일치**
+- ❌ **모든 구현이 navigation 하위 디렉토리에 존재**
+- ❌ **router.dart, routes.dart, guards/ 등 핵심 파일 없음**
 
-**역할**: 앱의 라우팅 시스템 초기화 및 설정
+### 2. navigation/nav.dart 분석
 
-**주요 구성**:
-- **initialLocation**: 앱 시작 시 기본 위치
-- **refreshListenable**: 라우트 갱신 트리거 (authStateNotifier)
-- **redirect**: 라우트 접근 제어 로직
-- **routes**: 전체 라우트 트리 정의
-  - ShellRoute: 네비게이션 셸 유지
-  - authRoutes: 인증 관련 라우트
-  - featureRoutes: 기능별 라우트
-- **errorBuilder**: 404 등 에러 페이지
-
-### 2. 라우트 정의 (routes.dart)
-
-**역할**: 앱의 모든 라우트 경로 상수 관리
-
-**라우트 카테고리**:
-- **인증 라우트**:
-  - splash: '/' - 스플래시 화면
-  - login: '/login' - 로그인
-  - signup: '/signup' - 회원가입
-  - forgotPassword: '/forgot-password' - 비밀번호 찾기
-
-- **메인 라우트** (ShellRoute 내부):
-  - home: '/home' - 홈 화면
-  - profile: '/profile' - 프로필
-  - chat: '/chat' - 채팅 목록
-  - notifications: '/notifications' - 알림
-
-- **Feature 라우트**:
-  - createPost: '/create-post' - 게시물 작성
-  - postDetail: '/post/:id' - 게시물 상세
-  - chatDetail: '/chat/:id' - 채팅 상세
-  - userProfile: '/user/:userId' - 사용자 프로필
-
-- **설정 라우트**:
-  - settings: '/settings' - 설정 메인
-  - privacy: '/settings/privacy' - 개인정보 설정
-  - account: '/settings/account' - 계정 설정
-
-### 3. 파라미터 직렬화 (route_params.dart)
-
-**역할**: 라우트 파라미터 타입 변환 및 직렬화
-
-**지원 타입**:
-- **기본 타입**: int, double, String, bool
-- **날짜/시간**: DateTime (millisecondsSinceEpoch 변환)
-- **위치**: LatLng (위도,경도 문자열 변환)
-- **Firestore**: DocumentReference (path 변환)
-- **복합 데이터**: JSON (jsonEncode/jsonDecode)
-
-**주요 메서드**:
-- `serializeParam()`: 파라미터를 문자열로 변환
-- `deserializeParam()`: 문자열을 원래 타입으로 복원
-
-### 4. 인증 가드 (guards/auth_guard.dart)
-
-**역할**: 라우트 접근 시 인증 상태 검증
-
-**검증 로직**:
-- 비로그인 상태 + 보호된 라우트 → 로그인 페이지로 리다이렉트
-- 로그인 상태 + 인증 라우트 → 홈 페이지로 리다이렉트
-- 정상 상태 → null 반환 (진행 허용)
-
-**보호된 라우트**: 인증이 필요한 모든 라우트
-**인증 라우트**: login, signup, forgotPassword 등
-
-### 5. 권한 가드 (guards/permission_guard.dart)
-
-**역할**: 사용자 권한에 따른 라우트 접근 제어
-
-**권한 체크**:
-- **관리자 전용** ('/admin'): role이 'admin'인 사용자만 접근
-- **프리미엄 전용** ('/premium'): isPremium이 true인 사용자만 접근
-- **권한 부족 시**: 홈 또는 구독 페이지로 리다이렉트
-
-## 도메인 인터페이스 의존성 패턴
-
-### Feature 라우트 격리 전략
-
-라우터는 Feature의 구체 구현이 아닌 도메인 인터페이스만 의존하여 Feature 간 결합도를 최소화합니다.
-
-#### 1. 라우트 인터페이스 정의
+#### 핵심 컴포넌트
 ```dart
-// features/common/domain/interfaces/route_handler.dart
-abstract class IRouteHandler {
-  String get routeName;
-  String get routePath;
-  Widget buildPage(GoRouterState state);
-  bool canAccess(User? user);
+// 현재 구조 (모든 것이 한 파일에)
+- AppStateNotifier     // 인증 상태 관리
+- createRouter()       // GoRouter 생성
+- AppRoute class       // 라우트 래퍼
+- NavigationExtensions // 네비게이션 헬퍼
+- TransitionInfo       // 전환 효과
+```
+
+#### 문제점
+- ❌ **단일 파일에 542줄**: 너무 많은 책임
+- ❌ **라우트가 하드코딩**: Feature 의존성 직접 import
+- ❌ **인증 로직 혼재**: AppStateNotifier가 너무 많은 역할
+- ❌ **Feature 결합**: 각 Feature 페이지 직접 import
+
+#### 현재 라우트 구조
+```dart
+GoRouter(
+  routes: [
+    // 루트 라우트
+    GoRoute(path: '/', ...),
+    
+    // ShellRoute - 하단 네비게이션 유지
+    ShellRoute(
+      builder: MainNavigationShell,
+      routes: [
+        // 7개 메인 페이지
+        HomePageWidget,
+        SearchPageWidget,
+        ProfilePageWidget,
+        InPutPostImageWidget,
+        ChatListWidget,
+        FriendsListWidget,
+        ChatSearchWidget,
+      ],
+    ),
+    
+    // 20개+ 일반 라우트
+    LoginPageWidget,
+    CreateAccountWidget,
+    // ... 등등
+  ],
+)
+```
+
+### 3. navigation/serialization_util.dart 분석
+
+#### 지원 타입
+- ✅ 기본 타입: int, double, String, bool
+- ✅ DateTime, DateTimeRange
+- ❌ LatLng, AppPlace (미사용 - 제거 필요)
+- ✅ Color, AppUploadedFile
+- ✅ DocumentReference, FirestoreRecord
+- ✅ JSON
+
+#### 문제점
+- ❌ **미사용 모델 의존성**: AppPlace, LatLng는 실제로 사용 안 됨
+- ❌ **임시 import**: `/core_exports.dart` 사용 (Temporary 주석 있음)
+- ⚠️ **타입 안전성 부족**: ParamType enum 관리 필요
+- ⚠️ **단일 파일 과부하**: 270줄에 13가지 타입 처리
+- ⚠️ **책임 혼재**: 직렬화, 역직렬화, Firebase 로직 혼합
+
+## ⚠️ 현재 문제점 종합
+
+### 1. 구조적 문제
+- **잘못된 디렉토리 구조**: navigation 하위에 모든 구현
+- **단일 파일 과부하**: nav.dart에 너무 많은 책임
+- **모듈화 부족**: guards, routes, config 등 분리 필요
+
+### 2. Feature-First Architecture 위반
+- **직접 의존성**: Feature 페이지들을 직접 import
+- **중앙집중식**: 모든 라우트가 한 곳에 정의
+- **Feature 독립성 부족**: Feature별 라우트 관리 불가
+
+### 3. 유지보수성 문제
+- **확장성 부족**: 새 Feature 추가 시 nav.dart 수정 필요
+- **테스트 어려움**: 모든 것이 결합되어 있음
+- **재사용성 부족**: Feature별 라우트 재사용 불가
+
+## 🛠️ Feature-First Architecture 개선 방안
+
+### 이상적인 구조
+```
+lib/app/router/
+├── router.dart           # GoRouter 인스턴스
+├── routes.dart           # 라우트 경로 상수
+├── route_params.dart     # 파라미터 관리
+├── guards/              # 라우트 가드
+│   ├── auth_guard.dart
+│   └── permission_guard.dart
+├── transitions/         # 전환 효과
+│   └── app_transitions.dart
+├── config/             # 라우터 설정
+│   └── router_config.dart
+└── serialization/      # 직렬화 시스템
+    ├── base_serializer.dart    # 기본 타입
+    ├── firebase_serializer.dart # Firebase 타입
+    └── param_type.dart         # 타입 정의
+```
+
+### Feature 라우트 분리
+```dart
+// features/auth/presentation/routes/auth_routes.dart
+class AuthRoutes {
+  static const login = '/login';
+  static const signup = '/signup';
+  
+  static List<GoRoute> routes = [
+    GoRoute(
+      path: login,
+      builder: (context, state) => LoginScreen(),
+    ),
+    // ...
+  ];
 }
-```
 
-#### 2. Feature별 라우트 구현
-```dart
-// features/posts/presentation/routes/post_routes.dart
-class PostRouteHandler implements IRouteHandler {
-  @override
-  String get routeName => 'post_detail';
-  
-  @override
-  String get routePath => '/post/:id';
-  
-  @override
-  Widget buildPage(GoRouterState state) {
-    final postId = state.pathParameters['id'];
-    // DI로 필요한 의존성 해결
-    final repository = getIt<IPostRepository>();
-    return PostDetailPage(postId: postId);
-  }
-  
-  @override
-  bool canAccess(User? user) => true; // 공개 콘텐츠
-}
-```
-
-#### 3. 라우터 통합
-```dart
 // app/router/router.dart
 class AppRouter {
-  final List<IRouteHandler> featureRoutes = [
-    // DI에서 Feature 라우트 핸들러 가져오기
-    getIt<IRouteHandler>(instanceName: 'posts'),
-    getIt<IRouteHandler>(instanceName: 'chat'),
-    getIt<IRouteHandler>(instanceName: 'profile'),
-  ];
-  
-  GoRouter buildRouter() {
+  static GoRouter create() {
     return GoRouter(
       routes: [
-        // Feature 라우트 동적 생성
-        ...featureRoutes.map((handler) => GoRoute(
-          name: handler.routeName,
-          path: handler.routePath,
-          builder: (context, state) => handler.buildPage(state),
-          redirect: (context, state) {
-            final user = getIt<AuthService>().currentUser;
-            return handler.canAccess(user) ? null : '/login';
-          },
-        )),
+        ...AuthRoutes.routes,
+        ...PostsRoutes.routes,
+        ...ChatRoutes.routes,
+        // Feature별 라우트 통합
       ],
     );
   }
 }
 ```
 
-#### 4. Feature 모듈 등록
+## 📊 현재 사용 통계
+
+### 라우트 수
+- **총 라우트**: 30개+
+- **ShellRoute 내부**: 7개
+- **인증 필요**: 10개+
+- **파라미터 필요**: 15개+
+
+### 파일 크기
+| 파일 | 줄 수 | 크기 | 문제 |
+|------|-------|------|------|
+| nav.dart | 542줄 | 22KB | 너무 큼 - 5개 파일로 분리 필요 |
+| serialization_util.dart | 270줄 | 10KB | 미사용 코드 제거 및 분리 필요 |
+
+### 의존성 분석
+- **직접 import Feature 수**: 7개+
+- **순환 의존성 위험**: High
+- **결합도**: 매우 높음
+
+## 🎯 액션 플랜
+
+### Phase 1: 파일 분리 (1일)
+1. nav.dart를 기능별로 분리
+   - router.dart: GoRouter 인스턴스
+   - auth_state.dart: AppStateNotifier
+   - route_config.dart: 라우트 설정
+   - navigation_extensions.dart: 확장 메서드
+
+### Phase 2: Feature 라우트 분리 (3일)
+1. 각 Feature에 routes 디렉토리 생성
+2. Feature별 라우트 정의 이동
+3. 중앙 라우터에서 통합
+
+### Phase 3: Guard 시스템 구축 (2일)
+1. AuthGuard 클래스 생성
+2. PermissionGuard 구현
+3. RouteGuard 인터페이스 정의
+
+### Phase 4: DI 통합 (2일)
+1. Router를 DI에 등록
+2. Feature 라우트 자동 발견
+3. 동적 라우트 등록
+
+## 📝 사용 가이드
+
+### 현재 사용 방법
 ```dart
-// features/posts/di/post_module.dart
-class PostModule {
-  static void register() {
-    // 라우트 핸들러 등록
-    getIt.registerSingleton<IRouteHandler>(
-      PostRouteHandler(),
-      instanceName: 'posts',
-    );
-    
-    // Feature 내부 의존성 등록
-    getIt.registerLazySingleton<IPostRepository>(
-      () => PostRepository(),
-    );
-  }
+// 페이지 이동
+context.goNamed(HomePageWidget.routeName);
+
+// 파라미터와 함께
+context.pushNamed(
+  ChatDetailWidgetV2.routeName,
+  extra: {'chatDocument': chatModel},
+);
+
+// 인증 체크 후 이동
+context.goNamedAuth(
+  UserInfoInputWidget.routeName,
+  mounted,
+);
+```
+
+### 개선 후 사용 방법
+```dart
+// Feature 라우트 사용
+context.go(PostsRoutes.create);
+context.push(ChatRoutes.detail(chatId));
+
+// Guard 자동 적용
+@RequireAuth()
+class UserProfileRoute extends AppRoute {
+  // ...
 }
 ```
 
-### 장점
+## ⚠️ 주의사항
 
-1. **낮은 결합도**: 라우터는 Feature 구체 구현을 모름
-2. **Feature 독립성**: 각 Feature가 자체 라우트 관리
-3. **테스트 용이성**: Mock 라우트 핸들러 주입 가능
-4. **동적 라우트**: Feature 활성/비활성화 쉬움
-5. **순환 의존성 방지**: 인터페이스를 통한 의존성 역전
+1. **즉시 수정 필요**: 파일이 너무 크고 복잡함
+2. **Feature 의존성 제거**: 직접 import 금지
+3. **점진적 마이그레이션**: 기능 유지하며 리팩토링
 
-## 사용 방법
+## 📚 참고 자료
 
-### 1. 네비게이션
-
-**이동 방식**:
-- `context.go()`: 스택 교체 (뒤로가기 불가)
-- `context.push()`: 스택에 추가 (뒤로가기 가능)
-- `context.pop()`: 이전 화면으로
-- `context.replace()`: 현재 라우트 교체
-
-### 2. 파라미터 전달
-
-**전달 방식**:
-- **Path 파라미터**: URL 경로에 포함 ('/user/${userId}')
-- **Query 파라미터**: URL 쿼리 문자열 (?tab=posts&sort=recent)
-- **Extra 데이터**: 복잡한 객체 전달 (직렬화 불필요)
-
-### 3. 딥링크 처리
-
-**딥링크 설정**:
-- initialLocation에 딥링크 경로 설정
-- 커스텀 스킴 처리 (versusspace://)
-- 딥링크 파싱 로직 구현
-
-### 4. Feature 라우트 통합
-
-**Feature 라우트 추가 방법**:
-```dart
-// 1. Feature 모듈 등록 (main.dart)
-await PostModule.register();
-await ChatModule.register();
-await ProfileModule.register();
-
-// 2. 라우터 빌드
-final router = AppRouter().buildRouter();
-
-// 3. MaterialApp.router에 적용
-MaterialApp.router(
-  routerConfig: router,
-)
-```
-
-## 마이그레이션 체크리스트
-
-- [ ] 기존 Navigator.push 코드를 context.go로 변경
-- [ ] MaterialPageRoute를 GoRoute로 변경
-- [ ] 라우트 이름을 AppRoutes 상수로 통일
-- [ ] 파라미터 전달 방식 통일
-- [ ] 라우트 가드 적용
-- [ ] 딥링크 테스트
-
-## 주의사항
-
-1. **ShellRoute 사용**: 하단 네비게이션 바가 유지되어야 하는 화면은 ShellRoute 내부에 정의
-2. **파라미터 타입**: 복잡한 객체는 Extra로 전달, 단순 값은 Path/Query 파라미터 사용
-3. **뒤로가기 처리**: GoRouter의 pop은 Navigator.pop과 동일하게 동작
-4. **리다이렉트 성능**: redirect 콜백은 자주 호출되므로 가볍게 유지
+- [Feature-First Architecture Guide](/FEATURE_ARCHITECTURE.md)
+- [GoRouter Documentation](https://pub.dev/packages/go_router)
+- [Navigation README](./navigation/README.md) - 상세 구현 문서
 
 ---
 
-*라우팅 시스템 문서 - Feature-First Architecture*
+*이 문서는 App Router 레이어의 현재 상태와 개선 방안을 담고 있습니다.*
+*즉시 구조 개선이 필요한 상태입니다.*

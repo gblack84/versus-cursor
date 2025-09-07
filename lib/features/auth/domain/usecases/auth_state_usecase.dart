@@ -11,6 +11,6 @@ class AuthStateUseCase {
   
   /// 인증 상태 스트림 감시
   Stream<AuthUser?> call() {
-    return _authRepository.watchAuthState();
+    return _authRepository.authStateChanges;
   }
 }

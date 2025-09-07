@@ -5,229 +5,197 @@ import 'package:collection/collection.dart';
 
 import '/backend/firebase/firestore/utils/firestore_util.dart';
 import '/backend/firebase/firestore/utils/schema_util.dart';
-
 import '/core_exports.dart';
 
-class UsersModel extends FirestoreRecord {
-  UsersModel._(
+/// UserProfile domain model for the profile feature
+/// Represents a user's profile information and system state
+class UserProfile extends FirestoreRecord {
+  UserProfile._(
     DocumentReference reference,
     Map<String, dynamic> data,
   ) : super(reference, data) {
     _initializeFields();
   }
 
-  // "uid" field.
+  // Core Identity Fields
   String? _uid;
   String get uid => _uid ?? '';
   bool hasUid() => _uid != null;
 
-  // "email" field.
   String? _email;
   String get email => _email ?? '';
   bool hasEmail() => _email != null;
 
-  // "location" field.
-  LatLng? _location;
-  LatLng? get location => _location;
-  bool hasLocation() => _location != null;
-
-  // "pointsA" field.
-  int? _pointsA;
-  int get pointsA => _pointsA ?? 0;
-  bool hasPointsA() => _pointsA != null;
-
-  // "pointsQ" field.
-  int? _pointsQ;
-  int get pointsQ => _pointsQ ?? 0;
-  bool hasPointsQ() => _pointsQ != null;
-
-  // "lastActive" field.
-  DateTime? _lastActive;
-  DateTime? get lastActive => _lastActive;
-  bool hasLastActive() => _lastActive != null;
-
-  // "interests" field.
-  List<String>? _interests;
-  List<String> get interests => _interests ?? const [];
-  bool hasInterests() => _interests != null;
-
-  // "expertise" field.
-  List<String>? _expertise;
-  List<String> get expertise => _expertise ?? const [];
-  bool hasExpertise() => _expertise != null;
-
-  // "displayName" field.
   String? _displayName;
   String get displayName => _displayName ?? '';
   bool hasDisplayName() => _displayName != null;
 
-  // "createdTime" field.
-  DateTime? _createdTime;
-  DateTime? get createdTime => _createdTime;
-  bool hasCreatedTime() => _createdTime != null;
-
-  // "photoUrl" field.
   String? _photoUrl;
   String get photoUrl => _photoUrl ?? '';
   bool hasPhotoUrl() => _photoUrl != null;
 
-  // "phoneNumber" field.
   String? _phoneNumber;
   String get phoneNumber => _phoneNumber ?? '';
   bool hasPhoneNumber() => _phoneNumber != null;
 
-  // "is_premium_user" field (Fixed typo: prmium -> premium)
+  // Profile Information
+  LatLng? _location;
+  LatLng? get location => _location;
+  bool hasLocation() => _location != null;
+
+  String? _shortDescription;
+  String get shortDescription => _shortDescription ?? '';
+  bool hasShortDescription() => _shortDescription != null;
+
+  String? _gender;
+  String get gender => _gender ?? '';
+  bool hasGender() => _gender != null;
+
+  DateTime? _dateOfBirth;
+  DateTime? get dateOfBirth => _dateOfBirth;
+  bool hasDateOfBirth() => _dateOfBirth != null;
+
+  String? _language;
+  String get language => _language ?? '';
+  bool hasLanguage() => _language != null;
+
+  // System Timestamps
+  DateTime? _createdTime;
+  DateTime? get createdTime => _createdTime;
+  bool hasCreatedTime() => _createdTime != null;
+
+  DateTime? _lastActive;
+  DateTime? get lastActive => _lastActive;
+  bool hasLastActive() => _lastActive != null;
+
+  DateTime? _lastActiveTime;
+  DateTime? get lastActiveTime => _lastActiveTime;
+  bool hasLastActiveTime() => _lastActiveTime != null;
+
+  // Points System
+  int? _pointsA;
+  int get pointsA => _pointsA ?? 0;
+  bool hasPointsA() => _pointsA != null;
+
+  int? _pointsQ;
+  int get pointsQ => _pointsQ ?? 0;
+  bool hasPointsQ() => _pointsQ != null;
+
+  int? _totalAPoints;
+  int get totalAPoints => _totalAPoints ?? 0;
+  bool hasTotalAPoints() => _totalAPoints != null;
+
+  int? _totalQPoints;
+  int get totalQPoints => _totalQPoints ?? 0;
+  bool hasTotalQPoints() => _totalQPoints != null;
+
+  // Interests and Expertise
+  List<String>? _interests;
+  List<String> get interests => _interests ?? const [];
+  bool hasInterests() => _interests != null;
+
+  List<String>? _expertise;
+  List<String> get expertise => _expertise ?? const [];
+  bool hasExpertise() => _expertise != null;
+
+  // Premium Status
   bool? _isPremiumUser;
   bool get isPremiumUser => _isPremiumUser ?? false;
   bool hasIsPremiumUser() => _isPremiumUser != null;
-  
+
   // Deprecated: kept for backwards compatibility
   @Deprecated('Use isPremiumUser instead')
   bool get isPrmiumUser => isPremiumUser;
   @Deprecated('Use hasIsPremiumUser instead')
   bool hasIsPrmiumUser() => hasIsPremiumUser();
 
-  // "anonymousPostsCount" field.
+  // Anonymous Activity Counters
   int? _anonymousPostsCount;
   int get anonymousPostsCount => _anonymousPostsCount ?? 0;
   bool hasAnonymousPostsCount() => _anonymousPostsCount != null;
 
-  // "anonymousCommentsCount" field.
   int? _anonymousCommentsCount;
   int get anonymousCommentsCount => _anonymousCommentsCount ?? 0;
   bool hasAnonymousCommentsCount() => _anonymousCommentsCount != null;
 
-  // "currentRank" field.
-  String? _currentRank;
-  String get currentRank => _currentRank ?? '';
-  bool hasCurrentRank() => _currentRank != null;
-
-  // "currentTitle" field.
-  String? _currentTitle;
-  String get currentTitle => _currentTitle ?? '';
-  bool hasCurrentTitle() => _currentTitle != null;
-
-  // "rankChangeDate" field.
-  DateTime? _rankChangeDate;
-  DateTime? get rankChangeDate => _rankChangeDate;
-  bool hasRankChangeDate() => _rankChangeDate != null;
-
-  // "titleChangeDate" field.
-  DateTime? _titleChangeDate;
-  DateTime? get titleChangeDate => _titleChangeDate;
-  bool hasTitleChangeDate() => _titleChangeDate != null;
-
-  // "isRankEligible" field.
-  bool? _isRankEligible;
-  bool get isRankEligible => _isRankEligible ?? false;
-  bool hasIsRankEligible() => _isRankEligible != null;
-
-  // "rankEvaluationCount" field.
-  int? _rankEvaluationCount;
-  int get rankEvaluationCount => _rankEvaluationCount ?? 0;
-  bool hasRankEvaluationCount() => _rankEvaluationCount != null;
-
-  // "rankHistory" field.
-  List<String>? _rankHistory;
-  List<String> get rankHistory => _rankHistory ?? const [];
-  bool hasRankHistory() => _rankHistory != null;
-
-  // "titleHistory" field.
-  List<String>? _titleHistory;
-  List<String> get titleHistory => _titleHistory ?? const [];
-  bool hasTitleHistory() => _titleHistory != null;
-
-  // "receive_Rank_Update_Notifications" field.
-  bool? _receiveRankUpdateNotifications;
-  bool get receiveRankUpdateNotifications =>
-      _receiveRankUpdateNotifications ?? false;
-  bool hasReceiveRankUpdateNotifications() =>
-      _receiveRankUpdateNotifications != null;
-
-  // "receive_Title_Update_Notifications" field.
-  bool? _receiveTitleUpdateNotifications;
-  bool get receiveTitleUpdateNotifications =>
-      _receiveTitleUpdateNotifications ?? false;
-  bool hasReceiveTitleUpdateNotifications() =>
-      _receiveTitleUpdateNotifications != null;
-
-  // "anonymous_Question_Count" field.
   int? _anonymousQuestionCount;
   int get anonymousQuestionCount => _anonymousQuestionCount ?? 0;
   bool hasAnonymousQuestionCount() => _anonymousQuestionCount != null;
 
-  // "friends" field (Fixed typo: frinds -> friends)
+  // Ranking System
+  String? _currentRank;
+  String get currentRank => _currentRank ?? '';
+  bool hasCurrentRank() => _currentRank != null;
+
+  String? _currentTitle;
+  String get currentTitle => _currentTitle ?? '';
+  bool hasCurrentTitle() => _currentTitle != null;
+
+  DateTime? _rankChangeDate;
+  DateTime? get rankChangeDate => _rankChangeDate;
+  bool hasRankChangeDate() => _rankChangeDate != null;
+
+  DateTime? _titleChangeDate;
+  DateTime? get titleChangeDate => _titleChangeDate;
+  bool hasTitleChangeDate() => _titleChangeDate != null;
+
+  bool? _isRankEligible;
+  bool get isRankEligible => _isRankEligible ?? false;
+  bool hasIsRankEligible() => _isRankEligible != null;
+
+  int? _rankEvaluationCount;
+  int get rankEvaluationCount => _rankEvaluationCount ?? 0;
+  bool hasRankEvaluationCount() => _rankEvaluationCount != null;
+
+  List<String>? _rankHistory;
+  List<String> get rankHistory => _rankHistory ?? const [];
+  bool hasRankHistory() => _rankHistory != null;
+
+  List<String>? _titleHistory;
+  List<String> get titleHistory => _titleHistory ?? const [];
+  bool hasTitleHistory() => _titleHistory != null;
+
+  // Notification Settings
+  bool? _receiveRankUpdateNotifications;
+  bool get receiveRankUpdateNotifications => _receiveRankUpdateNotifications ?? false;
+  bool hasReceiveRankUpdateNotifications() => _receiveRankUpdateNotifications != null;
+
+  bool? _receiveTitleUpdateNotifications;
+  bool get receiveTitleUpdateNotifications => _receiveTitleUpdateNotifications ?? false;
+  bool hasReceiveTitleUpdateNotifications() => _receiveTitleUpdateNotifications != null;
+
+  // Social Connections
   List<String>? _friends;
   List<String> get friends => _friends ?? const [];
   bool hasFriends() => _friends != null;
-  
+
   // Deprecated: kept for backwards compatibility
   @Deprecated('Use friends instead')
   List<String> get frinds => friends;
   @Deprecated('Use hasFriends instead')
   bool hasFrinds() => hasFriends();
 
-  // "activeChats" field.
   List<String>? _activeChats;
   List<String> get activeChats => _activeChats ?? const [];
   bool hasActiveChats() => _activeChats != null;
 
-  // "groupChats" field.
   List<String>? _groupChats;
   List<String> get groupChats => _groupChats ?? const [];
   bool hasGroupChats() => _groupChats != null;
 
-  // "totalAPoints" field.
-  int? _totalAPoints;
-  int get totalAPoints => _totalAPoints ?? 0;
-  bool hasTotalAPoints() => _totalAPoints != null;
-
-  // "totalQPoints" field.
-  int? _totalQPoints;
-  int get totalQPoints => _totalQPoints ?? 0;
-  bool hasTotalQPoints() => _totalQPoints != null;
-
-  // "shortDescription" field.
-  String? _shortDescription;
-  String get shortDescription => _shortDescription ?? '';
-  bool hasShortDescription() => _shortDescription != null;
-
-  // "lastActiveTime" field.
-  DateTime? _lastActiveTime;
-  DateTime? get lastActiveTime => _lastActiveTime;
-  bool hasLastActiveTime() => _lastActiveTime != null;
-
-  // "role" field.
+  // System Fields
   String? _role;
   String get role => _role ?? '';
   bool hasRole() => _role != null;
 
-  // "title" field.
   String? _title;
   String get title => _title ?? '';
   bool hasTitle() => _title != null;
 
-  // "gender" field.
-  String? _gender;
-  String get gender => _gender ?? '';
-  bool hasGender() => _gender != null;
-
-  // "dateOfBirth" field.
-  DateTime? _dateOfBirth;
-  DateTime? get dateOfBirth => _dateOfBirth;
-  bool hasDateOfBirth() => _dateOfBirth != null;
-
-  // "Language" field.
-  String? _language;
-  String get language => _language ?? '';
-  bool hasLanguage() => _language != null;
-
-  // "stats" field.
   Map<String, dynamic>? _stats;
   Map<String, dynamic> get stats => _stats ?? const {};
   bool hasStats() => _stats != null;
 
-  // "subscription" field.
   Map<String, dynamic>? _subscription;
   Map<String, dynamic> get subscription => _subscription ?? const {};
   bool hasSubscription() => _subscription != null;
@@ -279,37 +247,38 @@ class UsersModel extends FirestoreRecord {
   static CollectionReference get collection =>
       FirebaseFirestore.instance.collection('users');
 
-  static Stream<UsersModel> getDocument(DocumentReference ref) =>
-      ref.snapshots().map((s) => UsersModel.fromSnapshot(s));
+  static Stream<UserProfile> getDocument(DocumentReference ref) =>
+      ref.snapshots().map((s) => UserProfile.fromSnapshot(s));
 
-  static Future<UsersModel> getDocumentOnce(DocumentReference ref) =>
-      ref.get().then((s) => UsersModel.fromSnapshot(s));
+  static Future<UserProfile> getDocumentOnce(DocumentReference ref) =>
+      ref.get().then((s) => UserProfile.fromSnapshot(s));
 
-  static UsersModel fromSnapshot(DocumentSnapshot snapshot) => UsersModel._(
+  static UserProfile fromSnapshot(DocumentSnapshot snapshot) => UserProfile._(
         snapshot.reference,
         mapFromFirestore(snapshot.data() as Map<String, dynamic>),
       );
 
-  static UsersModel getDocumentFromData(
+  static UserProfile getDocumentFromData(
     Map<String, dynamic> data,
     DocumentReference reference,
   ) =>
-      UsersModel._(reference, mapFromFirestore(data));
+      UserProfile._(reference, mapFromFirestore(data));
 
   @override
   String toString() =>
-      'UsersModel(reference: ${reference.path}, data: $snapshotData)';
+      'UserProfile(reference: ${reference.path}, data: $snapshotData)';
 
   @override
   int get hashCode => reference.path.hashCode;
 
   @override
   bool operator ==(other) =>
-      other is UsersModel &&
+      other is UserProfile &&
       reference.path.hashCode == other.reference.path.hashCode;
 }
 
-Map<String, dynamic> createUsersModelData({
+/// Factory function to create UserProfile data for Firestore
+Map<String, dynamic> createUserProfileData({
   String? uid,
   String? email,
   LatLng? location,
@@ -385,11 +354,12 @@ Map<String, dynamic> createUsersModelData({
   return firestoreData;
 }
 
-class UsersModelDocumentEquality implements Equality<UsersModel> {
-  const UsersModelDocumentEquality();
+/// Document equality implementation for UserProfile
+class UserProfileDocumentEquality implements Equality<UserProfile> {
+  const UserProfileDocumentEquality();
 
   @override
-  bool equals(UsersModel? e1, UsersModel? e2) {
+  bool equals(UserProfile? e1, UserProfile? e2) {
     const listEquality = ListEquality();
     return e1?.uid == e2?.uid &&
         e1?.email == e2?.email &&
@@ -414,10 +384,8 @@ class UsersModelDocumentEquality implements Equality<UsersModel> {
         e1?.rankEvaluationCount == e2?.rankEvaluationCount &&
         listEquality.equals(e1?.rankHistory, e2?.rankHistory) &&
         listEquality.equals(e1?.titleHistory, e2?.titleHistory) &&
-        e1?.receiveRankUpdateNotifications ==
-            e2?.receiveRankUpdateNotifications &&
-        e1?.receiveTitleUpdateNotifications ==
-            e2?.receiveTitleUpdateNotifications &&
+        e1?.receiveRankUpdateNotifications == e2?.receiveRankUpdateNotifications &&
+        e1?.receiveTitleUpdateNotifications == e2?.receiveTitleUpdateNotifications &&
         e1?.anonymousQuestionCount == e2?.anonymousQuestionCount &&
         listEquality.equals(e1?.friends, e2?.friends) &&
         listEquality.equals(e1?.activeChats, e2?.activeChats) &&
@@ -436,7 +404,7 @@ class UsersModelDocumentEquality implements Equality<UsersModel> {
   }
 
   @override
-  int hash(UsersModel? e) => const ListEquality().hash([
+  int hash(UserProfile? e) => const ListEquality().hash([
         e?.uid,
         e?.email,
         e?.location,
@@ -480,5 +448,78 @@ class UsersModelDocumentEquality implements Equality<UsersModel> {
       ]);
 
   @override
-  bool isValidKey(Object? o) => o is UsersModel;
+  bool isValidKey(Object? o) => o is UserProfile;
 }
+
+// Backward compatibility aliases
+typedef UsersModel = UserProfile;
+typedef UsersModelDocumentEquality = UserProfileDocumentEquality;
+Map<String, dynamic> createUsersModelData({
+  String? uid,
+  String? email,
+  LatLng? location,
+  int? pointsA,
+  int? pointsQ,
+  DateTime? lastActive,
+  String? displayName,
+  DateTime? createdTime,
+  String? photoUrl,
+  String? phoneNumber,
+  bool? isPremiumUser,
+  int? anonymousPostsCount,
+  int? anonymousCommentsCount,
+  String? currentRank,
+  String? currentTitle,
+  DateTime? rankChangeDate,
+  DateTime? titleChangeDate,
+  bool? isRankEligible,
+  int? rankEvaluationCount,
+  bool? receiveRankUpdateNotifications,
+  bool? receiveTitleUpdateNotifications,
+  int? anonymousQuestionCount,
+  int? totalAPoints,
+  int? totalQPoints,
+  String? shortDescription,
+  DateTime? lastActiveTime,
+  String? role,
+  String? title,
+  String? gender,
+  DateTime? dateOfBirth,
+  String? language,
+  Map<String, dynamic>? stats,
+  Map<String, dynamic>? subscription,
+}) => createUserProfileData(
+  uid: uid,
+  email: email,
+  location: location,
+  pointsA: pointsA,
+  pointsQ: pointsQ,
+  lastActive: lastActive,
+  displayName: displayName,
+  createdTime: createdTime,
+  photoUrl: photoUrl,
+  phoneNumber: phoneNumber,
+  isPremiumUser: isPremiumUser,
+  anonymousPostsCount: anonymousPostsCount,
+  anonymousCommentsCount: anonymousCommentsCount,
+  currentRank: currentRank,
+  currentTitle: currentTitle,
+  rankChangeDate: rankChangeDate,
+  titleChangeDate: titleChangeDate,
+  isRankEligible: isRankEligible,
+  rankEvaluationCount: rankEvaluationCount,
+  receiveRankUpdateNotifications: receiveRankUpdateNotifications,
+  receiveTitleUpdateNotifications: receiveTitleUpdateNotifications,
+  anonymousQuestionCount: anonymousQuestionCount,
+  totalAPoints: totalAPoints,
+  totalQPoints: totalQPoints,
+  shortDescription: shortDescription,
+  lastActiveTime: lastActiveTime,
+  role: role,
+  title: title,
+  gender: gender,
+  dateOfBirth: dateOfBirth,
+  language: language,
+  stats: stats,
+  subscription: subscription,
+);

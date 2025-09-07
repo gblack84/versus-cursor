@@ -5,7 +5,7 @@ import '/features/auth/data/services/auth_util.dart';
 import '../core_exports.dart';
 import 'firebase/firestore/utils/firestore_util.dart';
 
-import 'models/user/users_model.dart';
+import '/features/profile/domain/models/user_profile.dart';
 import '/features/notifications/domain/models/notification_model.dart';
 import 'models/user/settings_model.dart';
 import 'models/post/posts_model.dart';
@@ -13,29 +13,25 @@ import 'models/media/images_model.dart';
 import '/features/voting/domain/models/votecounts_model.dart';
 import 'models/media/video_model.dart';
 import '/features/voting/domain/models/vote_expansion_requests_model.dart';
-import '/features/posts/domain/models/comments_model.dart';
-import '/features/posts/domain/models/likes_model.dart';
-import '/features/posts/domain/models/dislikes_model.dart';
+import 'models/post/backend_post_models.dart';
 import '/features/chat/domain/models/chats_model.dart';
 import '/features/profile/domain/models/friends_list_model.dart';
 import 'models/chat/messages_model.dart';
 import '/features/chat/domain/models/group_chats_model.dart';
 import '/features/chat/domain/models/group_messages_model.dart';
 import '/features/voting/domain/models/rankings_model.dart';
-import '/features/posts/domain/models/ranked_posts_model.dart';
+import 'models/post/ranked_posts_model.dart';
 import '/features/search/domain/models/search_history_model.dart';
 import '/features/notifications/domain/models/notifications_model.dart';
 import '/features/profile/domain/models/interest_model.dart';
 import '/features/voting/domain/models/weights_model.dart';
 import '/features/auth/domain/models/user_contents_model.dart';
+import '/features/auth/domain/models/premium_users_model.dart';
 import 'models/feed/poll_details_model.dart';
 import 'models/feed/feed_details_model.dart';
-import 'models/post/comments_model.dart';
-import 'models/post/likes_model.dart';
 import 'models/shared/contents_interests_model.dart';
 import 'models/post/shares_model.dart';
 import 'models/transaction/point_model.dart';
-import '/features/auth/domain/models/premium_users_model.dart';
 import 'models/transaction/transactions_model.dart';
 import 'models/shared/client_model.dart';
 import '/features/profile/domain/models/jops_name_model.dart';
@@ -43,7 +39,7 @@ import '/features/profile/domain/models/jops_category_model.dart';
 import '/features/profile/domain/models/chat_interest_jops_model.dart';
 import '/features/chat/domain/models/chat_history_model.dart';
 import '/features/profile/domain/models/characters_model.dart';
-import '/features/posts/domain/models/encodings_model.dart';
+import 'models/media/encodings_model.dart';
 
 export 'dart:async' show StreamSubscription;
 export 'package:cloud_firestore/cloud_firestore.dart' hide Order;
@@ -52,123 +48,87 @@ export 'models/index.dart';
 export 'firebase/firestore/utils/firestore_util.dart';
 export 'firebase/firestore/utils/schema_util.dart';
 
-export 'models/user/users_model.dart';
-export '/features/notifications/domain/models/notification_model.dart';
-export 'models/user/settings_model.dart';
-export 'models/post/posts_model.dart';
-export 'models/media/images_model.dart';
-export '/features/voting/domain/models/votecounts_model.dart';
-export 'models/media/video_model.dart';
-export '/features/voting/domain/models/vote_expansion_requests_model.dart';
-export '/features/posts/domain/models/comments_model.dart';
-export '/features/posts/domain/models/likes_model.dart';
-export '/features/posts/domain/models/dislikes_model.dart';
-export '../features/chat/domain/models/chats_model.dart';
-export '/features/profile/domain/models/friends_list_model.dart';
-export 'models/chat/messages_model.dart';
-export '../features/chat/domain/models/group_chats_model.dart';
-export '../features/chat/domain/models/group_messages_model.dart';
-export '/features/voting/domain/models/rankings_model.dart';
-export '/features/posts/domain/models/ranked_posts_model.dart';
-export '/features/search/domain/models/search_history_model.dart';
-export '/features/notifications/domain/models/notifications_model.dart';
-export '/features/profile/domain/models/interest_model.dart';
-export '/features/voting/domain/models/weights_model.dart';
-export '/features/auth/domain/models/user_contents_model.dart';
-export 'models/feed/poll_details_model.dart';
-export 'models/feed/feed_details_model.dart';
-export 'models/post/comments_model.dart';
-export 'models/post/likes_model.dart';
-export 'models/shared/contents_interests_model.dart';
-export 'models/post/shares_model.dart';
-export 'models/transaction/point_model.dart';
-export '/features/auth/domain/models/premium_users_model.dart';
-export 'models/transaction/transactions_model.dart';
-export 'models/shared/client_model.dart';
-export '/features/profile/domain/models/jops_name_model.dart';
-export '/features/profile/domain/models/jops_category_model.dart';
-export '/features/profile/domain/models/chat_interest_jops_model.dart';
-export '../features/chat/domain/models/chat_history_model.dart';
-export '/features/profile/domain/models/characters_model.dart';
-export '/features/posts/domain/models/encodings_model.dart';
-export 'models/media/image_moderation_model.dart';
+// Feature-based exports - Phase 1 reorganization
+export '../features/posts/data/exports/posts_models.dart';
+export '../features/chat/data/exports/chat_models.dart';
+export '../features/profile/data/exports/profile_models.dart';
+export '../features/voting/data/exports/voting_models.dart';
+export '../features/notifications/data/exports/notification_models.dart';
+export '../features/auth/data/exports/auth_models.dart';
+export '../features/search/data/exports/search_models.dart';
 
+// Repository imports for Phase 2 query delegation
+import '../features/posts/data/repositories/post_repository_impl.dart';
+import '../features/profile/data/repositories/user_repository_impl.dart';
+import '../features/chat/data/repositories/chat_repository_impl.dart';
+import '../features/voting/data/repositories/voting_repository_impl.dart';
+import '../features/notifications/data/repositories/notification_repository_impl.dart';
+
+/// PHASE 2 MIGRATION: Delegated to UserRepositoryImpl
 /// Functions to query UsersModels (as a Stream and as a Future).
 Future<int> queryUsersModelCount({
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) =>
-    queryCollectionCount(
-      UsersModel.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+}) => UserRepositoryImpl.instance.queryUsersModelCount(
+    queryBuilder: queryBuilder,
+    limit: limit,
+  );
 
-Stream<List<UsersModel>> queryUsersModel({
+Stream<List<UserProfile>> queryUsersModel({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollection(
-      UsersModel.collection,
-      UsersModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => UserRepositoryImpl.instance.queryUsersModel(
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
-Future<List<UsersModel>> queryUsersModelOnce({
+Future<List<UserProfile>> queryUsersModelOnce({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      UsersModel.collection,
-      UsersModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => UserRepositoryImpl.instance.queryUsersModelOnce(
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
+/// PHASE 2 MIGRATION: Delegated to NotificationRepositoryImpl
 /// Functions to query NotificationRecords (as a Stream and as a Future).
 Future<int> queryNotificationModelCount({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) =>
-    queryCollectionCount(
-      NotificationModel.collection(parent),
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+}) => NotificationRepositoryImpl.instance.queryNotificationModelCount(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+  );
 
 Stream<List<NotificationModel>> queryNotificationModel({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollection(
-      NotificationModel.collection(parent),
-      NotificationModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => NotificationRepositoryImpl.instance.queryNotificationModel(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 Future<List<NotificationModel>> queryNotificationModelOnce({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      NotificationModel.collection(parent),
-      NotificationModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => NotificationRepositoryImpl.instance.queryNotificationModelOnce(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 /// Functions to query SettingsRecords (as a Stream and as a Future).
 Future<int> querySettingsModelCount({
@@ -210,42 +170,35 @@ Future<List<SettingsModel>> querySettingsModelOnce({
       singleRecord: singleRecord,
     );
 
+/// PHASE 2 MIGRATION: Delegated to PostRepositoryImpl
 /// Functions to query PostsModels (as a Stream and as a Future).
 Future<int> queryPostsModelCount({
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) =>
-    queryCollectionCount(
-      PostsModel.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+}) => PostRepositoryImpl().queryPostsModelCount(
+    queryBuilder: queryBuilder,
+    limit: limit,
+  );
 
 Stream<List<PostsModel>> queryPostsModel({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollection(
-      PostsModel.collection,
-      PostsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => PostRepositoryImpl().queryPostsModel(
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 Future<List<PostsModel>> queryPostsModelOnce({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      PostsModel.collection,
-      PostsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => PostRepositoryImpl().queryPostsModelOnce(
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 /// Functions to query ImagesRecords (as a Stream and as a Future).
 Future<int> queryImagesModelCount({
@@ -287,45 +240,41 @@ Future<List<ImagesModel>> queryImagesModelOnce({
       singleRecord: singleRecord,
     );
 
+/// PHASE 2 MIGRATION: Delegated to VotingRepositoryImpl
 /// Functions to query VotecountsRecords (as a Stream and as a Future).
 Future<int> queryVotecountsModelCount({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) =>
-    queryCollectionCount(
-      VotecountsModel.collection(parent),
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+}) => VotingRepositoryImpl.instance.queryVotecountsModelCount(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+  );
 
 Stream<List<VotecountsModel>> queryVotecountsModel({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollection(
-      VotecountsModel.collection(parent),
-      VotecountsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => VotingRepositoryImpl.instance.queryVotecountsModel(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 Future<List<VotecountsModel>> queryVotecountsModelOnce({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      VotecountsModel.collection(parent),
-      VotecountsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => VotingRepositoryImpl.instance.queryVotecountsModelOnce(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 /// Functions to query VideoRecords (as a Stream and as a Future).
 Future<int> queryVideoModelCount({
@@ -367,122 +316,107 @@ Future<List<VideoModel>> queryVideoModelOnce({
       singleRecord: singleRecord,
     );
 
+/// PHASE 2 MIGRATION: Delegated to VotingRepositoryImpl
 /// Functions to query VoteExpansionRequestsRecords (as a Stream and as a Future).
 Future<int> queryVoteExpansionRequestsModelCount({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) =>
-    queryCollectionCount(
-      VoteExpansionRequestsModel.collection(parent),
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+}) => VotingRepositoryImpl.instance.queryVoteExpansionRequestsModelCount(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+  );
 
 Stream<List<VoteExpansionRequestsModel>> queryVoteExpansionRequestsModel({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollection(
-      VoteExpansionRequestsModel.collection(parent),
-      VoteExpansionRequestsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => VotingRepositoryImpl.instance.queryVoteExpansionRequestsModel(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 Future<List<VoteExpansionRequestsModel>> queryVoteExpansionRequestsModelOnce({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      VoteExpansionRequestsModel.collection(parent),
-      VoteExpansionRequestsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => VotingRepositoryImpl.instance.queryVoteExpansionRequestsModelOnce(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
-/// Functions to query CommentsModels (as a Stream and as a Future).
+/// PHASE 2 MIGRATION: Delegated to PostRepositoryImpl
+/// Functions to query ContentCommentsModels (as a Stream and as a Future).
 Future<int> queryCommentsModelCount({
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) =>
-    queryCollectionCount(
-      CommentsModel.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+}) => PostRepositoryImpl().queryCommentsModelCount(
+    queryBuilder: queryBuilder,
+    limit: limit,
+  );
 
-Stream<List<CommentsModel>> queryCommentsModel({
+Stream<List<ContentCommentsModel>> queryCommentsModel({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollection(
-      CommentsModel.collection,
-      CommentsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => PostRepositoryImpl().queryCommentsModel(
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
-Future<List<CommentsModel>> queryCommentsModelOnce({
+Future<List<ContentCommentsModel>> queryCommentsModelOnce({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      CommentsModel.collection,
-      CommentsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => PostRepositoryImpl().queryCommentsModelOnce(
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
+/// PHASE 2 MIGRATION: Delegated to PostRepositoryImpl
 /// Functions to query LikesModels (as a Stream and as a Future).
 Future<int> queryLikesModelCount({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) =>
-    queryCollectionCount(
-      LikesModel.collection(parent),
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+}) => PostRepositoryImpl().queryLikesModelCount(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+  );
 
 Stream<List<LikesModel>> queryLikesModel({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollection(
-      LikesModel.collection(parent),
-      LikesModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => PostRepositoryImpl().queryLikesModel(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 Future<List<LikesModel>> queryLikesModelOnce({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      LikesModel.collection(parent),
-      LikesModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => PostRepositoryImpl().queryLikesModelOnce(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 /// Functions to query DislikesModels (as a Stream and as a Future).
 Future<int> queryDislikesModelCount({
@@ -524,276 +458,239 @@ Future<List<DislikesModel>> queryDislikesModelOnce({
       singleRecord: singleRecord,
     );
 
+/// PHASE 2 MIGRATION: Delegated to ChatRepositoryImpl
 /// Functions to query ChatsModels (as a Stream and as a Future).
 Future<int> queryChatsModelCount({
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) =>
-    queryCollectionCount(
-      ChatsModel.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+}) => ChatRepositoryImpl.instance.queryChatsModelCount(
+    queryBuilder: queryBuilder,
+    limit: limit,
+  );
 
 Stream<List<ChatsModel>> queryChatsModel({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollection(
-      ChatsModel.collection,
-      ChatsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => ChatRepositoryImpl.instance.queryChatsModel(
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 Future<List<ChatsModel>> queryChatsModelOnce({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      ChatsModel.collection,
-      ChatsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => ChatRepositoryImpl.instance.queryChatsModelOnce(
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
+/// PHASE 2 MIGRATION: Delegated to ChatRepositoryImpl
 /// Functions to query FriendsListModels (as a Stream and as a Future).
 Future<int> queryFriendsListModelCount({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) =>
-    queryCollectionCount(
-      FriendsListModel.collection(parent),
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+}) => ChatRepositoryImpl.instance.queryFriendsListModelCount(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+  );
 
 Stream<List<FriendsListModel>> queryFriendsListModel({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollection(
-      FriendsListModel.collection(parent),
-      FriendsListModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => ChatRepositoryImpl.instance.queryFriendsListModel(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 Future<List<FriendsListModel>> queryFriendsListModelOnce({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      FriendsListModel.collection(parent),
-      FriendsListModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => ChatRepositoryImpl.instance.queryFriendsListModelOnce(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
+/// PHASE 2 MIGRATION: Delegated to ChatRepositoryImpl
 /// Functions to query MessagesModels (as a Stream and as a Future).
 Future<int> queryMessagesModelCount({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) =>
-    queryCollectionCount(
-      MessagesModel.collection(parent),
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+}) => ChatRepositoryImpl.instance.queryMessagesModelCount(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+  );
 
 Stream<List<MessagesModel>> queryMessagesModel({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollection(
-      MessagesModel.collection(parent),
-      MessagesModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => ChatRepositoryImpl.instance.queryMessagesModel(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 Future<List<MessagesModel>> queryMessagesModelOnce({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      MessagesModel.collection(parent),
-      MessagesModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => ChatRepositoryImpl.instance.queryMessagesModelOnce(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
+/// PHASE 2 MIGRATION: Delegated to ChatRepositoryImpl
 /// Functions to query GroupChatsModels (as a Stream and as a Future).
 Future<int> queryGroupChatsModelCount({
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) =>
-    queryCollectionCount(
-      GroupChatsModel.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+}) => ChatRepositoryImpl.instance.queryGroupChatsModelCount(
+    queryBuilder: queryBuilder,
+    limit: limit,
+  );
 
 Stream<List<GroupChatsModel>> queryGroupChatsModel({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollection(
-      GroupChatsModel.collection,
-      GroupChatsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => ChatRepositoryImpl.instance.queryGroupChatsModel(
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 Future<List<GroupChatsModel>> queryGroupChatsModelOnce({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      GroupChatsModel.collection,
-      GroupChatsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => ChatRepositoryImpl.instance.queryGroupChatsModelOnce(
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
+/// PHASE 2 MIGRATION: Delegated to ChatRepositoryImpl
 /// Functions to query GroupMessagesModels (as a Stream and as a Future).
 Future<int> queryGroupMessagesModelCount({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) =>
-    queryCollectionCount(
-      GroupMessagesModel.collection(parent),
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+}) => ChatRepositoryImpl.instance.queryGroupMessagesModelCount(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+  );
 
 Stream<List<GroupMessagesModel>> queryGroupMessagesModel({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollection(
-      GroupMessagesModel.collection(parent),
-      GroupMessagesModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => ChatRepositoryImpl.instance.queryGroupMessagesModel(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 Future<List<GroupMessagesModel>> queryGroupMessagesModelOnce({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      GroupMessagesModel.collection(parent),
-      GroupMessagesModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => ChatRepositoryImpl.instance.queryGroupMessagesModelOnce(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
+/// PHASE 2 MIGRATION: Delegated to VotingRepositoryImpl
 /// Functions to query RankingsModels (as a Stream and as a Future).
 Future<int> queryRankingsModelCount({
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) =>
-    queryCollectionCount(
-      RankingsModel.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+}) => VotingRepositoryImpl.instance.queryRankingsModelCount(
+    queryBuilder: queryBuilder,
+    limit: limit,
+  );
 
 Stream<List<RankingsModel>> queryRankingsModel({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollection(
-      RankingsModel.collection,
-      RankingsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => VotingRepositoryImpl.instance.queryRankingsModel(
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 Future<List<RankingsModel>> queryRankingsModelOnce({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      RankingsModel.collection,
-      RankingsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => VotingRepositoryImpl.instance.queryRankingsModelOnce(
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
+/// PHASE 2 MIGRATION: Delegated to VotingRepositoryImpl
 /// Functions to query RankedPostsModels (as a Stream and as a Future).
 Future<int> queryRankedPostsModelCount({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) =>
-    queryCollectionCount(
-      RankedPostsModel.collection(parent),
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+}) => VotingRepositoryImpl.instance.queryRankedPostsModelCount(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+  );
 
 Stream<List<RankedPostsModel>> queryRankedPostsModel({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollection(
-      RankedPostsModel.collection(parent),
-      RankedPostsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => VotingRepositoryImpl.instance.queryRankedPostsModel(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 Future<List<RankedPostsModel>> queryRankedPostsModelOnce({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      RankedPostsModel.collection(parent),
-      RankedPostsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => VotingRepositoryImpl.instance.queryRankedPostsModelOnce(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 /// Functions to query SearchesModels (as a Stream and as a Future).
 Future<int> querySearchesModelCount({
@@ -832,42 +729,35 @@ Future<List<SearchesModel>> querySearchesModelOnce({
       singleRecord: singleRecord,
     );
 
+/// PHASE 2 MIGRATION: Delegated to NotificationRepositoryImpl
 /// Functions to query NotificationsModels (as a Stream and as a Future).
 Future<int> queryNotificationsModelCount({
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) =>
-    queryCollectionCount(
-      NotificationsModel.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+}) => NotificationRepositoryImpl.instance.queryNotificationsModelCount(
+    queryBuilder: queryBuilder,
+    limit: limit,
+  );
 
 Stream<List<NotificationsModel>> queryNotificationsModel({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollection(
-      NotificationsModel.collection,
-      NotificationsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => NotificationRepositoryImpl.instance.queryNotificationsModel(
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 Future<List<NotificationsModel>> queryNotificationsModelOnce({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      NotificationsModel.collection,
-      NotificationsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => NotificationRepositoryImpl.instance.queryNotificationsModelOnce(
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 /// Functions to query InterestModels (as a Stream and as a Future).
 Future<int> queryInterestModelCount({
@@ -906,45 +796,41 @@ Future<List<InterestModel>> queryInterestModelOnce({
       singleRecord: singleRecord,
     );
 
+/// PHASE 2 MIGRATION: Delegated to VotingRepositoryImpl
 /// Functions to query WeightsRecords (as a Stream and as a Future).
 Future<int> queryWeightsModelCount({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) =>
-    queryCollectionCount(
-      WeightsModel.collection(parent),
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+}) => VotingRepositoryImpl.instance.queryWeightsModelCount(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+  );
 
 Stream<List<WeightsModel>> queryWeightsModel({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollection(
-      WeightsModel.collection(parent),
-      WeightsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => VotingRepositoryImpl.instance.queryWeightsModel(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 Future<List<WeightsModel>> queryWeightsModelOnce({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      WeightsModel.collection(parent),
-      WeightsModel.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) => VotingRepositoryImpl.instance.queryWeightsModelOnce(
+    parent: parent,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
 
 /// Functions to query UserContentsModels (as a Stream and as a Future).
 Future<int> queryUserContentsModelCount({
@@ -1740,10 +1626,10 @@ Future<AppFirestorePage<T>> queryCollectionPage<T>(
 
 // Creates a Firestore document representing the logged in user if it doesn't yet exist
 Future maybeCreateUser(User user) async {
-  final userRecord = UsersModel.collection.doc(user.uid);
+  final userRecord = UserProfile.collection.doc(user.uid);
   final userExists = await userRecord.get().then((u) => u.exists);
   if (userExists) {
-    currentUserDocument = await UsersModel.getDocumentOnce(userRecord);
+    currentUserDocument = await UserProfile.getDocumentOnce(userRecord);
     return;
   }
 
@@ -1760,7 +1646,7 @@ Future maybeCreateUser(User user) async {
   );
 
   await userRecord.set(userData);
-  currentUserDocument = UsersModel.getDocumentFromData(userData, userRecord);
+  currentUserDocument = UserProfile.getDocumentFromData(userData, userRecord);
 }
 
 Future updateUserDocument({String? email}) async {

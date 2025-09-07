@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '/core/config/environment_config.dart';
 
 /// Perspective API 분석 결과
 class PerspectiveResult {
@@ -148,7 +149,8 @@ class ToxicSpan {
 
 /// Google Perspective API 서비스
 class PerspectiveApiService {
-  static const String _apiKey = 'AIzaSyAq1pADTpUpThb1lFKL1Ilrenr8X4IlP_E';
+  // API Key는 환경 변수에서 로드됩니다 (Phase 0 보안 수정)
+  static String get _apiKey => EnvironmentConfig.perspectiveApiKey;
   static const String _baseUrl = 'https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze';
   
   /// 텍스트 독성 분석

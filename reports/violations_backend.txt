@@ -1,0 +1,99 @@
+ARCHITECTURAL VIOLATIONS - Backend Analysis
+Generated: 2025-01-06
+
+FORBIDDEN IMPORT VIOLATIONS
+===========================
+
+VIOLATION #1: Backend → Features/Data Import
+File: /lib/backend/firebase/firestore/utils/schema_util.dart
+Line: import '/features/search/data/services/serialization_util.dart';
+Severity: HIGH
+Rule: Backend layer must not import from feature data layers
+Impact: Creates circular dependency, violates layered architecture
+
+VIOLATION #2: Backend → Features/Data Import  
+File: /lib/backend/backend.dart
+Line: import '/features/auth/data/services/auth_util.dart';
+Severity: HIGH  
+Rule: Backend layer must not import from feature data layers
+Impact: Creates circular dependency, prevents feature isolation
+
+SINGLE RESPONSIBILITY VIOLATIONS
+=================================
+
+VIOLATION #3: Monolithic Backend Facade
+File: /lib/backend/backend.dart (1,769 lines)
+Mixed Concerns: Post, Chat, User, Vote, Moderation, Search, Profile, Notifications
+Severity: CRITICAL
+Impact: Prevents modularization, creates massive compile-time dependencies
+
+VIOLATION #4: Mixed Domain Model
+File: /lib/backend/models/post/posts_model.dart (699 lines)  
+Mixed Concerns: Post, Vote, Moderation
+Severity: HIGH
+Impact: Voting and moderation logic coupled to post entity
+
+VIOLATION #5: Mixed Domain Model
+File: /lib/backend/models/chat/messages_model.dart (669 lines)
+Mixed Concerns: Chat, Vote, Media  
+Severity: HIGH
+Impact: Vote cards and media handling embedded in chat messages
+
+VIOLATION #6: Mixed Service Responsibilities
+File: /lib/backend/api/rest/api_manager.dart (578 lines)
+Mixed Concerns: API, User, Post
+Severity: MEDIUM
+Impact: API layer coupled to multiple business domains
+
+LEGACY CODE VIOLATIONS
+=======================
+
+VIOLATION #7: Abandoned Legacy Repository
+File: /lib/backend/repositories/user_repository_legacy.dart (860 lines)
+Issue: Legacy patterns mixed with new architecture
+Severity: HIGH
+Impact: Creates confusion about correct repository patterns
+
+VIOLATION #8: Empty Repository Files
+Files: 
+- /lib/backend/repositories/user_repository.dart (0 lines)
+- /lib/backend/repositories/post_repository.dart (0 lines)  
+- /lib/backend/repositories/media_repository.dart (0 lines)
+- /lib/backend/repositories/chat_repository.dart (0 lines)
+Issue: Incomplete migration leaving empty interfaces
+Severity: MEDIUM
+Impact: Indicates incomplete architectural migration
+
+DOMAIN COUPLING VIOLATIONS  
+===========================
+
+VIOLATION #9: Cross-Domain Model References
+File: /lib/backend/models/user/users_model.dart (484 lines)
+Issue: User model references Vote and Chat domains
+Severity: MEDIUM  
+Impact: Prevents independent domain evolution
+
+VIOLATION #10: Moderation-Post Coupling
+File: /lib/backend/models/media/image_moderation_model.dart (387 lines)
+Issue: Image moderation logic coupled to Post domain
+Severity: MEDIUM
+Impact: Moderation cannot be reused across domains
+
+SUMMARY
+=======
+Total Violations: 10
+Critical: 1  
+High: 4
+Medium: 5
+
+IMMEDIATE ACTIONS REQUIRED:
+1. Decompose backend.dart monolith
+2. Remove forbidden feature imports  
+3. Archive legacy repository code
+4. Separate mixed domain concerns in models
+
+MIGRATION IMPACT:
+- Backend violations block feature-level Clean Architecture migration
+- Must resolve backend issues before proceeding with features/
+- Estimated 20-28 hours to resolve all violations
+

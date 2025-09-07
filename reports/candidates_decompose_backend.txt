@@ -1,0 +1,104 @@
+BACKEND DECOMPOSITION CANDIDATES - Phase 1 Analysis
+Generated: 2025-01-06
+
+CRITICAL PRIORITY FILES (>300 lines + High Complexity)
+======================================================
+
+1. /lib/backend/backend.dart (1,769 lines) ⚠️ CRITICAL
+   - Mixed responsibilities: Post, Chat, User, Vote, Moderation, Search, Profile, Notifications  
+   - Contains 48 feature imports - violates dependency rules
+   - Acts as monolithic facade exposing all backend functionality
+   - COMPLEXITY: 0.95 (Extremely High)
+   - ACTION: Decompose into feature-specific exports
+
+2. /lib/backend/repositories/user_repository_legacy.dart (860 lines) ⚠️ HIGH  
+   - Legacy patterns with outdated architecture
+   - Mixed User, Post, Chat responsibilities
+   - COMPLEXITY: 0.82 (Very High)
+   - ACTION: Replace with clean architecture implementation
+
+3. /lib/backend/models/post/posts_model.dart (699 lines) ⚠️ HIGH
+   - Post model mixed with Vote and Moderation logic
+   - Should be separated into domain-specific models
+   - COMPLEXITY: 0.78 (High)  
+   - ACTION: Extract voting and moderation concerns
+
+4. /lib/backend/models/chat/messages_model.dart (669 lines) ⚠️ HIGH
+   - Chat messages with embedded Vote and Media logic
+   - Multiple domain concerns in single model
+   - COMPLEXITY: 0.75 (High)
+   - ACTION: Separate vote cards and media handling
+
+5. /lib/backend/api/rest/api_manager.dart (578 lines) ⚠️ MEDIUM
+   - API management with service coupling
+   - Handles User, Post, and generic API concerns  
+   - COMPLEXITY: 0.68 (Medium-High)
+   - ACTION: Split into service-specific managers
+
+6. /lib/backend/models/user/users_model.dart (484 lines) ⚠️ MEDIUM
+   - User model with Vote and Chat references
+   - Model coupling across domains
+   - COMPLEXITY: 0.62 (Medium)
+   - ACTION: Remove cross-domain references
+
+7. /lib/backend/models/media/image_moderation_model.dart (387 lines) ⚠️ MEDIUM
+   - Image moderation coupled with Post logic
+   - Should be domain-independent
+   - COMPLEXITY: 0.58 (Medium)
+   - ACTION: Extract post-specific logic
+
+ARCHITECTURAL VIOLATIONS
+========================
+
+FORBIDDEN IMPORTS:
+- /lib/backend/firebase/firestore/utils/schema_util.dart
+  → imports '/features/search/data/services/serialization_util.dart'
+- /lib/backend/backend.dart  
+  → imports '/features/auth/data/services/auth_util.dart'
+
+DEPENDENCY RULE VIOLATIONS:
+- Backend layer importing from feature data layers
+- Circular dependencies through backend.dart monolith
+- Mixed domain concerns in models
+
+MIGRATION BLOCKERS
+==================
+
+❌ CRITICAL BLOCKERS:
+1. backend.dart monolith prevents feature isolation
+2. Forbidden feature imports create circular dependencies
+3. Legacy repository patterns mixed with new architecture
+
+⚠️  HIGH PRIORITY WARNINGS:
+1. Large model files with mixed domain logic  
+2. Empty repository files indicate incomplete migration
+3. API layer coupled to multiple services
+
+DECOMPOSITION STRATEGY
+=====================
+
+PHASE 1 - Critical Path:
+1. Decompose backend.dart → Feature-specific exports
+2. Remove forbidden feature imports  
+3. Archive legacy/ directory
+4. Create clean repository interfaces
+
+PHASE 2 - Model Separation: 
+1. Extract voting logic from posts_model.dart
+2. Separate media handling from messages_model.dart
+3. Decouple user model from other domains
+
+PHASE 3 - API Cleanup:
+1. Split api_manager.dart by service boundaries
+2. Implement proper service interfaces
+3. Remove cross-domain coupling
+
+ESTIMATED EFFORT: 
+- Phase 1: 8-12 hours (Critical - Blocks other migrations)
+- Phase 2: 12-16 hours (High Impact)  
+- Phase 3: 6-8 hours (Cleanup)
+
+MIGRATION READINESS SCORE: 0.3/1.0 (Not Ready)
+- Requires Phase 1 completion before feature migrations can proceed
+- backend.dart decomposition is prerequisite for all other work
+

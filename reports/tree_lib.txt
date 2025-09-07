@@ -1,0 +1,265 @@
+VERSUS SPACE - LIB DIRECTORY STRUCTURE
+==================================================
+
+Generated: 2025-09-06T17:33:17.878721
+Depth: 5 levels
+
+/Users/g_black/versus-cursor/lib
+├── app
+│   ├── di
+│   ├── models
+│   ├── router
+│   │   └── navigation
+│   ├── state
+│   │   └── providers
+│   └── widgets
+│       ├── debug
+│       └── navigation
+├── backend
+│   ├── algolia
+│   ├── api
+│   │   ├── algolia
+│   │   ├── cache
+│   │   ├── core
+│   │   │   └── constants
+│   │   └── rest
+│   ├── firebase
+│   │   ├── config
+│   │   ├── firestore
+│   │   │   ├── collections
+│   │   │   └── utils
+│   │   └── storage
+│   ├── legacy
+│   ├── models
+│   │   ├── chat
+│   │   ├── feed
+│   │   ├── media
+│   │   ├── post
+│   │   ├── shared
+│   │   ├── transaction
+│   │   └── user
+│   └── repositories
+├── bridge
+├── core
+│   ├── actions
+│   ├── animations
+│   ├── constants
+│   ├── design_system
+│   │   ├── components
+│   │   ├── tokens
+│   │   └── utils
+│   ├── di
+│   ├── events
+│   ├── interfaces
+│   ├── localization
+│   ├── models
+│   ├── services
+│   │   └── media
+│   ├── theme
+│   ├── usecases
+│   ├── utils
+│   └── widgets
+│       ├── layout
+│       └── pickle_mark
+├── features
+│   ├── auth
+│   │   ├── data
+│   │   │   ├── datasources
+│   │   │   ├── exports
+│   │   │   ├── repositories
+│   │   │   └── services
+│   │   ├── domain
+│   │   │   ├── models
+│   │   │   └── usecases
+│   │   └── presentation
+│   │       ├── providers
+│   │       ├── screens
+│   │       │   ├── email_verification
+│   │       │   ├── forgot_password
+│   │       │   ├── login
+│   │       │   ├── phone_auth
+│   │       │   ├── signup
+│   │       │   └── start
+│   │       └── widgets
+│   ├── chat
+│   │   ├── data
+│   │   │   ├── datasources
+│   │   │   ├── exports
+│   │   │   ├── repositories
+│   │   │   └── services
+│   │   ├── domain
+│   │   │   ├── constants
+│   │   │   ├── models
+│   │   │   ├── repositories
+│   │   │   └── usecases
+│   │   └── presentation
+│   │       ├── providers
+│   │       ├── screens
+│   │       │   ├── ai_chat
+│   │       │   ├── chat_detail
+│   │       │   ├── chat_list
+│   │       │   ├── chat_search
+│   │       │   └── friends_list
+│   │       └── widgets
+│   ├── notifications
+│   │   ├── data
+│   │   │   ├── datasources
+│   │   │   ├── exports
+│   │   │   ├── repositories
+│   │   │   └── services
+│   │   ├── domain
+│   │   │   ├── models
+│   │   │   └── usecases
+│   │   └── presentation
+│   │       ├── constants
+│   │       ├── models
+│   │       ├── providers
+│   │       ├── screens
+│   │       │   └── notifications_list
+│   │       ├── utils
+│   │       └── widgets
+│   ├── posts
+│   │   ├── data
+│   │   │   ├── constants
+│   │   │   ├── datasources
+│   │   │   ├── exports
+│   │   │   ├── helpers
+│   │   │   ├── repositories
+│   │   │   └── services
+│   │   │       ├── cache
+│   │   │       ├── error
+│   │   │       ├── media
+│   │   │       ├── moderation
+│   │   │       ├── storage
+│   │   │       └── vote
+│   │   ├── domain
+│   │   │   ├── constants
+│   │   │   ├── models
+│   │   │   ├── services
+│   │   │   └── usecases
+│   │   │       ├── media
+│   │   │       ├── validation
+│   │   │       └── vote
+│   │   └── presentation
+│   │       ├── components
+│   │       ├── delegates
+│   │       ├── providers
+│   │       ├── screens
+│   │       │   ├── create_post
+│   │       │   ├── editor
+│   │       │   ├── feed
+│   │       │   ├── thumbnail
+│   │       │   └── viewer
+│   │       ├── utils
+│   │       └── widgets
+│   │           ├── components
+│   │           ├── dialogs
+│   │           ├── media
+│   │           └── vote
+│   ├── profile
+│   │   ├── data
+│   │   │   ├── datasources
+│   │   │   ├── exports
+│   │   │   ├── repositories
+│   │   │   └── services
+│   │   ├── domain
+│   │   │   ├── models
+│   │   │   └── usecases
+│   │   └── presentation
+│   │       ├── providers
+│   │       ├── screens
+│   │       │   ├── onboarding
+│   │       │   ├── profile_main
+│   │       │   ├── user_info
+│   │       │   └── user_info_input
+│   │       └── widgets
+│   ├── search
+│   │   ├── data
+│   │   │   ├── datasources
+│   │   │   ├── exports
+│   │   │   ├── repositories
+│   │   │   └── services
+│   │   ├── domain
+│   │   │   ├── models
+│   │   │   ├── repositories
+│   │   │   └── usecases
+│   │   ├── presentation
+│   │   │   ├── providers
+│   │   │   ├── screens
+│   │   │   │   ├── chat_search
+│   │   │   │   ├── search_page
+│   │   │   │   └── search_results
+│   │   │   └── widgets
+│   │   │       ├── search_bar
+│   │   │       ├── search_history
+│   │   │       └── search_results
+│   │   └── test
+│   │       └── widget_test
+│   ├── theme
+│   │   ├── data
+│   │   │   ├── models
+│   │   │   ├── providers
+│   │   │   ├── services
+│   │   │   └── widgets
+│   │   ├── domain
+│   │   │   ├── providers
+│   │   │   ├── services
+│   │   │   └── widgets
+│   │   └── presentation
+│   │       ├── models
+│   │       ├── repositories
+│   │       ├── services
+│   │       └── widgets
+│   ├── upload
+│   │   ├── data
+│   │   │   ├── repositories
+│   │   │   └── services
+│   │   ├── domain
+│   │   │   └── repositories
+│   │   └── presentation
+│   │       └── providers
+│   └── voting
+│       ├── data
+│       │   ├── datasources
+│       │   ├── exports
+│       │   ├── repositories
+│       │   └── services
+│       ├── domain
+│       │   ├── models
+│       │   └── usecases
+│       └── presentation
+│           ├── models
+│           ├── providers
+│           ├── screens
+│           ├── services
+│           └── widgets
+│               └── vote_card
+├── services
+│   ├── cache
+│   ├── content
+│   │   └── data
+│   │       └── models
+│   ├── image
+│   │   └── domain
+│   │       ├── datasources
+│   │       ├── entities
+│   │       ├── failures
+│   │       ├── interfaces
+│   │       ├── models
+│   │       ├── repositories
+│   │       ├── types
+│   │       └── usecases
+│   ├── logger
+│   ├── moderation
+│   │   └── utils
+│   ├── ui
+│   │   ├── cache
+│   │   ├── domain
+│   │   │   └── entities
+│   │   ├── exceptions
+│   │   └── mappers
+│   └── widgets
+│       └── feedback
+└── testpage_select
+
+257 directories

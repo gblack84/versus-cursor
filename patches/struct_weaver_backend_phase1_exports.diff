@@ -1,0 +1,185 @@
+diff --git a/lib/backend/backend.dart b/lib/backend/backend.dart
+index existing..new 100644
+--- a/lib/backend/backend.dart
++++ b/lib/backend/backend.dart
+@@ -46,42 +46,13 @@ export 'dart:async' show StreamSubscription;
+ export 'package:cloud_firestore/cloud_firestore.dart' hide Order;
+ export 'package:firebase_core/firebase_core.dart';
+ export 'models/index.dart';
+ export 'firebase/firestore/utils/firestore_util.dart';
+ export 'firebase/firestore/utils/schema_util.dart';
+ 
+-export '/features/profile/domain/models/user_profile.dart';
+-export '/features/notifications/domain/models/notification_model.dart';
+-export 'models/user/settings_model.dart';
+-export 'models/post/posts_model.dart';
+-export 'models/media/images_model.dart';
+-export '/features/voting/domain/models/votecounts_model.dart';
+-export 'models/media/video_model.dart';
+-export '/features/voting/domain/models/vote_expansion_requests_model.dart';
+-export 'models/post/comments_model.dart';
+-export 'models/post/likes_model.dart';
+-export 'models/post/dislikes_model.dart';
+-export '../features/chat/domain/models/chats_model.dart';
+-export '/features/profile/domain/models/friends_list_model.dart';
+-export 'models/chat/messages_model.dart';
+-export '../features/chat/domain/models/group_chats_model.dart';
+-export '../features/chat/domain/models/group_messages_model.dart';
+-export '/features/voting/domain/models/rankings_model.dart';
+-export 'models/post/ranked_posts_model.dart';
+-export '/features/search/domain/models/search_history_model.dart';
+-export '/features/notifications/domain/models/notifications_model.dart';
+-export '/features/profile/domain/models/interest_model.dart';
+-export '/features/voting/domain/models/weights_model.dart';
+-export '/features/auth/domain/models/user_contents_model.dart';
+-export 'models/feed/poll_details_model.dart';
+-export 'models/feed/feed_details_model.dart';
+-export 'models/shared/contents_interests_model.dart';
+-export 'models/post/shares_model.dart';
+-export 'models/transaction/point_model.dart';
+-export '/features/auth/domain/models/premium_users_model.dart';
+-export 'models/transaction/transactions_model.dart';
+-export 'models/shared/client_model.dart';
+-export '/features/profile/domain/models/jops_name_model.dart';
+-export '/features/profile/domain/models/jops_category_model.dart';
+-export '/features/profile/domain/models/chat_interest_jops_model.dart';
+-export '../features/chat/domain/models/chat_history_model.dart';
+-export '/features/profile/domain/models/characters_model.dart';
+-export 'models/media/encodings_model.dart';
+-export 'models/media/image_moderation_model.dart';
++// Feature-based exports - Phase 1 reorganization
++export '../features/posts/data/exports/posts_models.dart';
++export '../features/chat/data/exports/chat_models.dart';
++export '../features/profile/data/exports/profile_models.dart';
++export '../features/voting/data/exports/voting_models.dart';
++export '../features/notifications/data/exports/notification_models.dart';
++export '../features/auth/data/exports/auth_models.dart';
++export '../features/search/data/exports/search_models.dart';
+
+diff --git a/lib/features/posts/data/exports/posts_models.dart b/lib/features/posts/data/exports/posts_models.dart
+new file mode 100644
+index 0000000..new_file
+--- /dev/null
++++ b/lib/features/posts/data/exports/posts_models.dart
+@@ -0,0 +1,24 @@
++// Posts Feature - Model Exports
++// This file exports all data models related to posts functionality
++
++// Core Post Models
++export '../../../../backend/models/post/posts_model.dart';
++export '../../../../backend/models/post/comments_model.dart';
++export '../../../../backend/models/post/likes_model.dart';
++export '../../../../backend/models/post/dislikes_model.dart';
++export '../../../../backend/models/post/ranked_posts_model.dart';
++export '../../../../backend/models/post/shares_model.dart';
++export '../../../../backend/models/post/backend_post_models.dart';
++
++// Media Models (related to posts)
++export '../../../../backend/models/media/images_model.dart';
++export '../../../../backend/models/media/video_model.dart';
++export '../../../../backend/models/media/encodings_model.dart';
++export '../../../../backend/models/media/image_moderation_model.dart';
++
++// Feed Models (related to posts)
++export '../../../../backend/models/feed/poll_details_model.dart';
++export '../../../../backend/models/feed/feed_details_model.dart';
++
++// Content Interaction Models
++export '../../../../backend/models/shared/contents_interests_model.dart';
+
+diff --git a/lib/features/chat/data/exports/chat_models.dart b/lib/features/chat/data/exports/chat_models.dart
+new file mode 100644
+index 0000000..new_file
+--- /dev/null
++++ b/lib/features/chat/data/exports/chat_models.dart
+@@ -0,0 +1,11 @@
++// Chat Feature - Model Exports
++// This file exports all data models related to chat functionality
++
++// Core Chat Models
++export '../../domain/models/chats_model.dart';
++export '../../domain/models/group_chats_model.dart';
++export '../../domain/models/group_messages_model.dart';
++export '../../domain/models/chat_history_model.dart';
++
++// Message Models
++export '../../../../backend/models/chat/messages_model.dart';
+
+diff --git a/lib/features/profile/data/exports/profile_models.dart b/lib/features/profile/data/exports/profile_models.dart
+new file mode 100644
+index 0000000..new_file
+--- /dev/null
++++ b/lib/features/profile/data/exports/profile_models.dart
+@@ -0,0 +1,11 @@
++// Profile Feature - Model Exports
++// This file exports all data models related to profile functionality
++
++// Core Profile Models
++export '../../domain/models/user_profile.dart';
++export '../../domain/models/friends_list_model.dart';
++export '../../domain/models/characters_model.dart';
++export '../../domain/models/interest_model.dart';
++export '../../domain/models/jops_name_model.dart';
++export '../../domain/models/jops_category_model.dart';
++export '../../domain/models/chat_interest_jops_model.dart';
+
+diff --git a/lib/features/voting/data/exports/voting_models.dart b/lib/features/voting/data/exports/voting_models.dart
+new file mode 100644
+index 0000000..new_file
+--- /dev/null
++++ b/lib/features/voting/data/exports/voting_models.dart
+@@ -0,0 +1,8 @@
++// Voting Feature - Model Exports
++// This file exports all data models related to voting functionality
++
++// Core Voting Models
++export '../../domain/models/votecounts_model.dart';
++export '../../domain/models/vote_expansion_requests_model.dart';
++export '../../domain/models/rankings_model.dart';
++export '../../domain/models/weights_model.dart';
+
+diff --git a/lib/features/notifications/data/exports/notification_models.dart b/lib/features/notifications/data/exports/notification_models.dart
+new file mode 100644
+index 0000000..new_file
+--- /dev/null
++++ b/lib/features/notifications/data/exports/notification_models.dart
+@@ -0,0 +1,6 @@
++// Notifications Feature - Model Exports
++// This file exports all data models related to notifications functionality
++
++// Core Notification Models
++export '../../domain/models/notification_model.dart';
++export '../../domain/models/notifications_model.dart';
+
+diff --git a/lib/features/auth/data/exports/auth_models.dart b/lib/features/auth/data/exports/auth_models.dart
+new file mode 100644
+index 0000000..new_file
+--- /dev/null
++++ b/lib/features/auth/data/exports/auth_models.dart
+@@ -0,0 +1,14 @@
++// Auth Feature - Model Exports
++// This file exports all data models related to authentication functionality
++
++// Core Auth Models
++export '../../domain/models/user_contents_model.dart';
++export '../../domain/models/premium_users_model.dart';
++
++// User Settings Models
++export '../../../../backend/models/user/settings_model.dart';
++
++// Transaction Models (related to premium users)
++export '../../../../backend/models/transaction/point_model.dart';
++export '../../../../backend/models/transaction/transactions_model.dart';
++export '../../../../backend/models/shared/client_model.dart';
+
+diff --git a/lib/features/search/data/exports/search_models.dart b/lib/features/search/data/exports/search_models.dart
+new file mode 100644
+index 0000000..new_file
+--- /dev/null
++++ b/lib/features/search/data/exports/search_models.dart
+@@ -0,0 +1,5 @@
++// Search Feature - Model Exports
++// This file exports all data models related to search functionality
++
++// Core Search Models
++export '../../domain/models/search_history_model.dart';

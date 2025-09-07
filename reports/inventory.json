@@ -1,0 +1,175 @@
+{
+  "agent": "inventory-scout",
+  "scan_timestamp": "2025-01-06T12:00:00Z",
+  "parsed_options": {
+    "depth": 3,
+    "line_threshold": 300,
+    "scope": "/lib/backend/",
+    "ignored_patterns": ["test/", "*.g.dart", "*.freezed.dart"]
+  },
+  "summary": {
+    "total_files": 34,
+    "large_files_count": 7,
+    "total_lines": 7886,
+    "average_file_size": 232
+  },
+  "large_files": [
+    {
+      "path": "/lib/backend/backend.dart",
+      "lines": 1769,
+      "severity": "critical",
+      "description": "Massive monolith with mixed responsibilities - exports all backend models and contains query methods",
+      "mixed_responsibilities": ["Post", "Chat", "User", "Vote", "Moderation", "Search", "Profile", "Notifications"],
+      "violation_type": "single_responsibility_principle",
+      "complexity_score": 0.95
+    },
+    {
+      "path": "/lib/backend/repositories/user_repository_legacy.dart",
+      "lines": 860,
+      "severity": "high",
+      "description": "Legacy repository with outdated patterns",
+      "mixed_responsibilities": ["User", "Post", "Chat"],
+      "violation_type": "legacy_code",
+      "complexity_score": 0.82
+    },
+    {
+      "path": "/lib/backend/models/post/posts_model.dart", 
+      "lines": 699,
+      "severity": "high",
+      "description": "Large model file with voting, moderation, and post logic",
+      "mixed_responsibilities": ["Post", "Vote", "Moderation"],
+      "violation_type": "mixed_domain_logic",
+      "complexity_score": 0.78
+    },
+    {
+      "path": "/lib/backend/models/chat/messages_model.dart",
+      "lines": 669,
+      "severity": "high", 
+      "description": "Chat message model with mixed media and vote logic",
+      "mixed_responsibilities": ["Chat", "Vote", "Media"],
+      "violation_type": "mixed_domain_logic",
+      "complexity_score": 0.75
+    },
+    {
+      "path": "/lib/backend/api/rest/api_manager.dart",
+      "lines": 578,
+      "severity": "medium",
+      "description": "API management with multiple service responsibilities",
+      "mixed_responsibilities": ["API", "User", "Post"],
+      "violation_type": "service_coupling",
+      "complexity_score": 0.68
+    },
+    {
+      "path": "/lib/backend/models/user/users_model.dart",
+      "lines": 484,
+      "severity": "medium",
+      "description": "User model with voting and chat references",
+      "mixed_responsibilities": ["User", "Vote", "Chat"],
+      "violation_type": "model_coupling",
+      "complexity_score": 0.62
+    },
+    {
+      "path": "/lib/backend/models/media/image_moderation_model.dart",
+      "lines": 387,
+      "severity": "medium",
+      "description": "Image moderation with post coupling",
+      "mixed_responsibilities": ["Moderation", "Post"],
+      "violation_type": "domain_coupling",
+      "complexity_score": 0.58
+    }
+  ],
+  "architectural_violations": [
+    {
+      "type": "forbidden_import",
+      "severity": "high",
+      "file": "/lib/backend/firebase/firestore/utils/schema_util.dart",
+      "import": "import '/features/search/data/services/serialization_util.dart'",
+      "description": "Backend importing from feature data layer"
+    },
+    {
+      "type": "forbidden_import", 
+      "severity": "high",
+      "file": "/lib/backend/backend.dart",
+      "import": "import '/features/auth/data/services/auth_util.dart'",
+      "description": "Backend importing from feature data layer"
+    },
+    {
+      "type": "monolithic_structure",
+      "severity": "critical",
+      "file": "/lib/backend/backend.dart", 
+      "description": "Massive file acting as global backend facade with 48 imports from features"
+    }
+  ],
+  "directory_analysis": {
+    "models": {
+      "file_count": 18,
+      "total_lines": 3628,
+      "largest_file": "posts_model.dart (699 lines)",
+      "concerns": ["Mixed domain logic", "Model coupling"]
+    },
+    "repositories": {
+      "file_count": 5,
+      "total_lines": 893,
+      "largest_file": "user_repository_legacy.dart (860 lines)",
+      "concerns": ["Legacy patterns", "4 empty repository files"]
+    },
+    "api": {
+      "file_count": 4,  
+      "total_lines": 770,
+      "largest_file": "api_manager.dart (578 lines)",
+      "concerns": ["Service coupling", "Mixed API responsibilities"]
+    },
+    "firebase": {
+      "file_count": 4,
+      "total_lines": 266,
+      "concerns": ["Utils scattered across multiple files"]
+    },
+    "legacy": {
+      "file_count": 3,
+      "total_lines": 452,
+      "concerns": ["Outdated query patterns", "Should be removed"]
+    }
+  },
+  "decomposition_candidates": [
+    {
+      "priority": 1,
+      "file": "/lib/backend/backend.dart",
+      "strategy": "decompose_into_feature_exports",
+      "estimated_effort": "high",
+      "blocker_level": "critical"
+    },
+    {
+      "priority": 2,
+      "file": "/lib/backend/repositories/user_repository_legacy.dart", 
+      "strategy": "replace_with_clean_architecture",
+      "estimated_effort": "medium",
+      "blocker_level": "medium"
+    },
+    {
+      "priority": 3,
+      "file": "/lib/backend/models/post/posts_model.dart",
+      "strategy": "separate_voting_from_post_logic",
+      "estimated_effort": "high", 
+      "blocker_level": "high"
+    }
+  ],
+  "migration_readiness": {
+    "overall_score": 0.3,
+    "blockers": 3,
+    "warnings": 4,
+    "clean_files": 23,
+    "ready_for_phase1": false,
+    "prerequisite_actions": [
+      "Decompose backend.dart monolith",
+      "Remove forbidden feature imports", 
+      "Archive legacy repository files",
+      "Separate domain concerns in models"
+    ]
+  },
+  "next_steps": [
+    "Run RepoMover for backend.dart decomposition",
+    "Run ImportGuardian to fix forbidden imports",
+    "Create feature-specific backend exports", 
+    "Archive legacy directory"
+  ]
+}

@@ -1,0 +1,61 @@
+import '/features/chat/domain/models/message.dart';
+
+/// Chat Repository Interface
+/// 
+/// Feature 레이어를 위한 채팅 리포지토리 인터페이스
+/// UI/Service 레이어는 이 인터페이스를 통해서만 채팅 데이터에 접근
+abstract interface class IChatRepository {
+  /// 채팅 메시지 조회
+  Future<Message?> getMessage(String messageId);
+  
+  /// 채팅방 메시지 목록 조회
+  Future<List<Message>> getChatMessages(
+    String chatId, {
+    int limit = 50,
+    Message? lastMessage,
+  });
+  
+  /// 메시지 전송
+  Future<Message> sendMessage(Message message);
+  
+  /// 메시지 업데이트
+  Future<Message> updateMessage(Message message);
+  
+  /// 메시지 삭제
+  Future<bool> deleteMessage(String messageId);
+  
+  /// 채팅방 메시지 실시간 스트림
+  Stream<List<Message>> watchChatMessages(String chatId);
+  
+  /// 단일 메시지 실시간 스트림
+  Stream<Message?> watchMessage(String messageId);
+  
+  /// 투표 메시지 생성
+  Future<Message> createVoteMessage({
+    required String chatId,
+    required String senderId,
+    required String postId,
+    required Map<String, dynamic> voteData,
+  });
+  
+  /// 메시지 읽음 처리
+  Future<void> markAsRead(String messageId, String userId);
+  
+  /// 채팅방 마지막 메시지 업데이트
+  Future<void> updateLastMessage(String chatId, Message message);
+  
+  /// AI 채팅 메시지 조회
+  Future<List<Message>> getAIChatMessages(
+    String userId, {
+    int limit = 50,
+  });
+  
+  /// 채팅방 생성
+  Future<String> createChat({
+    required List<String> participantIds,
+    String? name,
+  });
+  
+  /// 채팅방 삭제
+  Future<bool> deleteChat(String chatId);
+}

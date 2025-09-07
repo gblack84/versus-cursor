@@ -1,0 +1,210 @@
+# VERSUS SPACE FLUTTER PROJECT - ARCHITECTURAL INVENTORY REPORT
+# Generated: 2025-09-06T17:35:00
+# Agent: inventory-scout
+
+agent: inventory-scout
+timestamp: 2025-09-06T17:35:00
+project: versus-space-flutter
+analysis_type: comprehensive-architecture-scan
+
+parsed_options:
+  depth: 5
+  line_threshold: 300 
+  scope: all
+  focus_areas:
+    - Backend layer violations
+    - Services layer violations  
+    - Core layer importing from Features
+    - Features importing from each other
+    - Large files needing decomposition
+    - Mixed responsibilities detection
+
+# === CRITICAL FINDINGS ===
+critical_violations:
+  features_to_backend: 77 # HIGH SEVERITY - Features directly importing backend
+  features_to_services: 119 # MEDIUM SEVERITY - Features importing services
+  cross_feature_imports: 15 # MEDIUM SEVERITY - Features importing each other
+  core_to_features: 2 # HIGH SEVERITY - Core importing from features
+  total_violations: 196
+
+# === PROJECT METRICS ===
+project_metrics:
+  total_files: 379
+  total_lines: 71162
+  features_count: 9
+  large_files_300plus: 68
+  directories: 275
+  architecture_layers:
+    - features-presentation
+    - features-domain  
+    - features-data
+    - core
+    - backend
+    - services
+    - app
+    - other
+
+# === FEATURE-FIRST COMPLIANCE ===
+compliance_analysis:
+  current_compliance: 48.3% # Based on violations vs total files
+  target_compliance: 90%+
+  gap_analysis: 41.7%
+  
+  violations_by_severity:
+    HIGH: 77 violations
+    MEDIUM: 119 violations
+    LOW: 0 violations
+
+# === TOP VIOLATION PATTERNS ===
+violation_patterns:
+  - pattern: "features → /backend/backend.dart"
+    count: 25
+    severity: HIGH
+    description: "Features directly accessing monolithic backend"
+    
+  - pattern: "features → /backend/firebase/firestore/utils/"
+    count: 35
+    severity: HIGH  
+    description: "Features importing Firebase utilities directly"
+    
+  - pattern: "features → /services/ui/"
+    count: 15
+    severity: MEDIUM
+    description: "Features importing centralized UI services"
+    
+  - pattern: "features → /features/auth/data/services/auth_util.dart"
+    count: 18
+    severity: MEDIUM
+    description: "Cross-feature auth service dependencies"
+
+# === LARGEST FILES NEEDING DECOMPOSITION ===
+decomposition_priorities:
+  critical_files:
+    - file: "lib/backend/backend.dart"
+      lines: 1769
+      responsibilities: [Notifications, Posts, Chat, Profile, Search, Authentication]
+      priority: URGENT
+      
+    - file: "lib/testpage_select/testpage_select_widget.dart" 
+      lines: 821
+      layer: other
+      priority: HIGH
+      
+    - file: "lib/backend/repositories/user_repository_legacy.dart"
+      lines: 861
+      layer: backend
+      priority: HIGH
+      
+    - file: "lib/backend/models/post/posts_model.dart"
+      lines: 699
+      layer: backend
+      priority: HIGH
+
+# === ARCHITECTURAL ISSUES ANALYSIS ===
+architectural_problems:
+  monolithic_backend:
+    description: "Single 1769-line backend.dart file with mixed responsibilities"
+    impact: "Prevents proper feature isolation"
+    solution: "Split into feature-specific repository implementations"
+    
+  centralized_services:
+    description: "Features importing from /services/ layer"
+    impact: "Tight coupling, difficult testing"
+    solution: "Move services into feature boundaries or create interfaces"
+    
+  firebase_direct_access:
+    description: "Features directly importing Firebase utilities"
+    impact: "Infrastructure leakage into business logic"  
+    solution: "Abstract behind repository interfaces"
+    
+  cross_feature_dependencies:
+    description: "Features importing from other features"
+    impact: "Circular dependencies, reduced modularity"
+    solution: "Extract shared logic to core or create events"
+
+# === RECOMMENDED REMEDIATION PHASES ===
+remediation_phases:
+  phase_1_critical:
+    priority: URGENT
+    timeline: "2-3 weeks"
+    tasks:
+      - "Split backend.dart into feature repositories"
+      - "Abstract Firebase utilities behind interfaces"
+      - "Move auth_util to core layer with proper interface"
+      - "Remove core → features violations (2 files)"
+    expected_compliance_gain: 25%
+    
+  phase_2_services:
+    priority: HIGH
+    timeline: "3-4 weeks"  
+    tasks:
+      - "Move UI services into features or abstract"
+      - "Create service interfaces in core"
+      - "Implement dependency injection for services"
+    expected_compliance_gain: 30%
+    
+  phase_3_decomposition:
+    priority: MEDIUM
+    timeline: "4-6 weeks"
+    tasks:
+      - "Break down 68 large files (300+ lines)"
+      - "Separate mixed responsibilities"
+      - "Create focused, single-purpose classes"
+    expected_compliance_gain: 15%
+    
+  phase_4_cross_features:
+    priority: MEDIUM
+    timeline: "2-3 weeks"
+    tasks:
+      - "Resolve cross-feature imports"
+      - "Extract shared models to core"
+      - "Implement event-driven communication"
+    expected_compliance_gain: 20%
+
+# === SUCCESS METRICS ===
+target_metrics:
+  post_remediation:
+    feature_first_compliance: 90%+
+    max_file_size: 200_lines
+    backend_violations: 0
+    cross_feature_imports: 0
+    
+  quality_indicators:
+    avg_file_size: <150_lines
+    feature_isolation: 95%+
+    testability_score: 90%+
+    build_time_improvement: 20%+
+
+# === NEXT STEPS ===
+immediate_actions:
+  1. "Start with backend.dart decomposition - highest impact"
+  2. "Create repository interfaces in domain layers"  
+  3. "Move auth_util to core with proper abstraction"
+  4. "Set up architectural testing to prevent regressions"
+  5. "Implement ImportGuardian rules for ongoing compliance"
+
+tools_recommended:
+  - "ImportGuardian: Prevent future violations"
+  - "RepoMover: Safely refactor repository patterns"
+  - "ArchUnit: Architectural unit testing"
+  - "Dependency Cruiser: Import analysis"
+
+# === OUTPUT FILES GENERATED ===
+output_files:
+  - reports/inventory.json
+  - reports/tree_lib.txt
+  - reports/candidates_decompose.txt  
+  - reports/violations.txt
+  - reports/final_inventory_summary.yaml
+
+# === RISK ASSESSMENT ===
+migration_risks:
+  HIGH: "Backend decomposition may break existing functionality"
+  MEDIUM: "Service abstraction requires careful interface design"
+  LOW: "File decomposition is mostly safe refactoring"
+  
+mitigation_strategies:
+  - "Comprehensive test coverage before refactoring"
+  - "Feature flag management for gradual rollout" 
+  - "Backup strategy for rollback capability"
+  - "Staged migration with validation gates"

@@ -3,7 +3,7 @@ import '/backend/firebase/firestore/utils/firestore_util.dart';
 import '/backend/backend.dart' show queryCollection, queryCollectionOnce, queryCollectionCount;
 import '/features/chat/domain/models/chats_model.dart';
 import '/features/profile/domain/models/friends_list_model.dart';
-import '/backend/models/chat/messages_model.dart';
+import '/features/chat/data/models/messages_model.dart';
 import '/features/chat/domain/models/group_chats_model.dart';
 import '/features/chat/domain/models/group_messages_model.dart';
 

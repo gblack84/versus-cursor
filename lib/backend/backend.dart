@@ -5,41 +5,47 @@ import '/features/auth/data/services/auth_util.dart';
 import '../core_exports.dart';
 import 'firebase/firestore/utils/firestore_util.dart';
 
+// Direct imports for moved models
+import '/features/profile/data/models/settings_model.dart';
+import '/features/posts/data/models/media/images_model.dart';
+import '/features/posts/data/models/media/video_model.dart';
+
+// Additional missing models after migration
+import '/features/posts/domain/models/dislikes_model.dart'; // DislikesModel (preferred domain model)
+import '/features/posts/data/models/comments_model.dart'; // ContentCommentsModel
+import '/features/chat/data/models/messages_model.dart'; // MessagesModel
+import '/features/posts/data/models/poll_details_model.dart'; // PollDetailsModel
+import '/features/posts/data/models/feed_details_model.dart'; // FeedDetailsModel
+import '/features/posts/data/models/likes_model.dart'; // ContentsLikesModel
+import '/features/profile/data/models/contents_interests_model.dart'; // ContentsInterestsModel
+import '/features/posts/data/models/shares_model.dart'; // ContentsSharesModel
+import '/features/profile/data/models/point_model.dart'; // PointModel
+import '/features/profile/data/models/transactions_model.dart'; // TransactionsModel
+import '/core/models/client_model.dart'; // ClientModel
+import '/features/posts/domain/models/encodings_model.dart'; // EncodingsModel (preferred domain model)
+
 import '/features/profile/domain/models/user_profile.dart';
 import '/features/notifications/domain/models/notification_model.dart';
-import 'models/user/settings_model.dart';
 import 'models/post/posts_model.dart';
-import 'models/media/images_model.dart';
 import '/features/voting/domain/models/votecounts_model.dart';
-import 'models/media/video_model.dart';
 import '/features/voting/domain/models/vote_expansion_requests_model.dart';
 import 'models/post/backend_post_models.dart';
 import '/features/chat/domain/models/chats_model.dart';
 import '/features/profile/domain/models/friends_list_model.dart';
-import 'models/chat/messages_model.dart';
 import '/features/chat/domain/models/group_chats_model.dart';
 import '/features/chat/domain/models/group_messages_model.dart';
 import '/features/voting/domain/models/rankings_model.dart';
-import 'models/post/ranked_posts_model.dart';
 import '/features/search/domain/models/search_history_model.dart';
 import '/features/notifications/domain/models/notifications_model.dart';
 import '/features/profile/domain/models/interest_model.dart';
 import '/features/voting/domain/models/weights_model.dart';
 import '/features/auth/domain/models/user_contents_model.dart';
 import '/features/auth/domain/models/premium_users_model.dart';
-import 'models/feed/poll_details_model.dart';
-import 'models/feed/feed_details_model.dart';
-import 'models/shared/contents_interests_model.dart';
-import 'models/post/shares_model.dart';
-import 'models/transaction/point_model.dart';
-import 'models/transaction/transactions_model.dart';
-import 'models/shared/client_model.dart';
 import '/features/profile/domain/models/jops_name_model.dart';
 import '/features/profile/domain/models/jops_category_model.dart';
 import '/features/profile/domain/models/chat_interest_jops_model.dart';
 import '/features/chat/domain/models/chat_history_model.dart';
 import '/features/profile/domain/models/characters_model.dart';
-import 'models/media/encodings_model.dart';
 
 export 'dart:async' show StreamSubscription;
 export 'package:cloud_firestore/cloud_firestore.dart' hide Order;

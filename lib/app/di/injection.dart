@@ -1,0 +1,71 @@
+import 'package:get_it/get_it.dart';
+import 'feature_modules.dart';
+import 'profile_module.dart';
+import 'posts_module.dart';
+import '../../core/di/core_module.dart';
+
+/// Main Dependency Injection Container
+/// 
+/// Centralizes all dependency registration and management
+/// following the Feature-First Clean Architecture pattern
+class DIContainer {
+  static final GetIt _serviceLocator = GetIt.instance;
+  static bool _isInitialized = false;
+  
+  /// Get the global service locator instance
+  static GetIt get sl => _serviceLocator;
+  
+  /// List of all feature modules to register
+  static final List<FeatureModule> _modules = [
+    CoreModule(),
+    ProfileModule(),
+    PostsModule(),
+  ];
+  
+  /// Initialize all dependencies
+  static Future<void> initialize() async {
+    if (_isInitialized) return;
+    
+    try {
+      // Register all feature modules
+      for (final module in _modules) {
+        module.register(_serviceLocator);
+        print('✅ ${module.name} module registered');
+      }
+      
+      _isInitialized = true;
+      print('✅ DI Container initialized successfully');
+    } catch (e) {
+      print('❌ DI Container initialization failed: $e');
+      rethrow;
+    }
+  }
+  
+  /// Reset all dependencies (primarily for testing)
+  static Future<void> reset() async {
+    if (!_isInitialized) return;
+    
+    try {
+      // Unregister all modules in reverse order
+      for (final module in _modules.reversed) {
+        module.unregister(_serviceLocator);
+        print('🔄 ${module.name} module unregistered');
+      }
+      
+      // Reset GetIt instance
+      await _serviceLocator.reset();
+      _isInitialized = false;
+      print('🔄 DI Container reset successfully');
+    } catch (e) {
+      print('❌ DI Container reset failed: $e');
+      rethrow;
+    }
+  }
+  
+  /// Check if the container is initialized
+  static bool get isInitialized => _isInitialized;
+  
+  /// Get list of registered modules
+  static List<String> get registeredModules => 
+      _modules.where((m) => m.isInitialized).map((m) => m.name).toList();
+}

@@ -1,0 +1,108 @@
+{
+  "scan_summary": {
+    "scan_scope": "/app/router",
+    "scan_mode": "detect",
+    "focus_area": "navigation",
+    "timestamp": "2025-01-09",
+    "files_scanned": 2,
+    "violations_found": 2
+  },
+  "violations": [
+    {
+      "rule_type": "app_data_import",
+      "severity": "CRITICAL",
+      "file": "/Users/g_black/versus-cursor/lib/app/router/navigation/nav.dart",
+      "line": 7,
+      "violation": "import '/features/auth/data/services/base_auth_user_provider.dart';",
+      "description": "App layer importing from feature data layer",
+      "rationale": "App router should not directly import from feature data layers. Should use domain interfaces or dependency injection.",
+      "suggested_fix": "Move BaseAuthUser to domain layer or create an interface in app/interfaces",
+      "impact": "Violates Clean Architecture - app depending on data implementation"
+    },
+    {
+      "rule_type": "backend_import",
+      "severity": "HIGH",
+      "file": "/Users/g_black/versus-cursor/lib/app/router/navigation/nav.dart",
+      "line": 11,
+      "violation": "import '/backend/backend.dart';",
+      "description": "Legacy backend package import in app layer",
+      "rationale": "Backend imports are forbidden - should migrate to new feature-based architecture",
+      "suggested_fix": "Replace with specific domain model imports from features",
+      "impact": "Legacy architecture dependency - should be migrated"
+    },
+    {
+      "rule_type": "backend_import",
+      "severity": "HIGH", 
+      "file": "/Users/g_black/versus-cursor/lib/app/router/navigation/serialization_util.dart",
+      "line": 5,
+      "violation": "import '/backend/backend.dart';",
+      "description": "Legacy backend package import in routing utilities",
+      "rationale": "Serialization utilities should use domain models, not backend implementations",
+      "suggested_fix": "Replace with feature domain model imports and create serialization interfaces",
+      "impact": "Legacy architecture dependency - limits feature modularity"
+    }
+  ],
+  "architectural_analysis": {
+    "compliance_score": "40%",
+    "critical_issues": 1,
+    "high_issues": 2,
+    "warnings": 0,
+    "clean_architecture_violations": [
+      {
+        "layer": "app",
+        "violates": "features/auth/data", 
+        "description": "App router directly importing auth data services"
+      },
+      {
+        "layer": "app",
+        "violates": "backend",
+        "description": "App layer importing legacy backend package"
+      }
+    ]
+  },
+  "recommendations": {
+    "immediate_actions": [
+      {
+        "priority": "CRITICAL",
+        "action": "Create AuthUserProvider interface in app/interfaces",
+        "details": "Extract BaseAuthUser interface and move implementation to auth feature domain"
+      },
+      {
+        "priority": "HIGH", 
+        "action": "Replace backend imports with feature domain models",
+        "details": "Replace /backend/backend.dart with specific imports from features/*/domain/models"
+      }
+    ],
+    "architectural_improvements": [
+      {
+        "improvement": "Implement Dependency Injection",
+        "description": "Use DI container to inject auth services instead of direct imports"
+      },
+      {
+        "improvement": "Create Router Abstractions",
+        "description": "Create routing interfaces that don't depend on specific implementations"
+      }
+    ],
+    "migration_strategy": {
+      "phase_1": "Extract interfaces for BaseAuthUser and move to app/interfaces",
+      "phase_2": "Replace backend imports with feature domain imports", 
+      "phase_3": "Implement proper DI for router dependencies",
+      "estimated_effort": "4-6 hours"
+    }
+  },
+  "affected_components": [
+    "AppStateNotifier - depends on BaseAuthUser",
+    "GoRouter authentication logic",
+    "Parameter serialization utilities", 
+    "Route navigation extensions"
+  ],
+  "risk_assessment": {
+    "current_risk": "MEDIUM",
+    "factors": [
+      "Navigation system tightly coupled to data layer",
+      "Legacy backend dependencies limit refactoring",
+      "Authentication logic mixed with routing concerns"
+    ],
+    "mitigation": "Implement interface abstraction and DI pattern"
+  }
+}

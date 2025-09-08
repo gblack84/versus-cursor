@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bot_toast/bot_toast.dart';
 
-import '/features/auth/data/services/base_auth_user_provider.dart';
+import '/core/interfaces/i_base_auth_user.dart';
 
 import '/core_exports.dart';
 
-import '/backend/backend.dart';
+import '/features/chat/domain/models/chats_model.dart';
 import '/app/widgets/index.dart';
 import '/app/widgets/navigation/main_navigation_shell.dart';
 

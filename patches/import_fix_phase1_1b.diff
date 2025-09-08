@@ -1,0 +1,78 @@
+diff --git a/lib/features/voting/data/repositories/voting_repository_impl.dart b/lib/features/voting/data/repositories/voting_repository_impl.dart
+index abc123..def456 100644
+--- a/lib/features/voting/data/repositories/voting_repository_impl.dart
++++ b/lib/features/voting/data/repositories/voting_repository_impl.dart
+@@ -4,7 +4,7 @@ import '/backend/backend.dart' show queryCollection, queryCollectionOnce, query
+ import '/features/voting/domain/models/votecounts_model.dart';
+ import '/features/voting/domain/models/vote_expansion_requests_model.dart';
+ import '/features/voting/domain/models/rankings_model.dart';
+-import '/backend/models/post/ranked_posts_model.dart';
++import '/features/posts/data/models/ranked_posts_model.dart';
+ import '/features/voting/domain/models/weights_model.dart';
+ 
+ /// Implementation of voting repository with migrated backend query functions
+
+diff --git a/lib/features/posts/data/repositories/post_repository_impl.dart b/lib/features/posts/data/repositories/post_repository_impl.dart
+index abc123..def456 100644
+--- a/lib/features/posts/data/repositories/post_repository_impl.dart
++++ b/lib/features/posts/data/repositories/post_repository_impl.dart
+@@ -9,7 +9,7 @@ import '../../domain/repositories/i_post_repository.dart';
+ import '/backend/firebase/firestore/utils/firestore_util.dart';
+ import '/backend/backend.dart' show queryCollection, queryCollectionOnce, queryCollectionCount;
+ import '/backend/models/post/posts_model.dart';
+-import '/backend/models/post/backend_post_models.dart';
++import '/features/posts/data/models/backend_post_models.dart';
+ import '../adapters/posts_model_adapter.dart';
+ import '../models/posts_model.dart' as feature_posts;
+
+diff --git a/lib/backend/backend.dart b/lib/backend/backend.dart
+index abc123..def456 100644
+--- a/lib/backend/backend.dart
++++ b/lib/backend/backend.dart
+@@ -29,7 +29,7 @@ import '/features/profile/domain/models/user_profile.dart';
+ import '/features/notifications/domain/models/notification_model.dart';
+ import 'models/post/posts_model.dart';
+ import '/features/voting/domain/models/votecounts_model.dart';
+ import '/features/voting/domain/models/vote_expansion_requests_model.dart';
+-import 'models/post/backend_post_models.dart';
++import '/features/posts/data/models/backend_post_models.dart';
+ import '/features/chat/domain/models/chats_model.dart';
+ import '/features/profile/domain/models/friends_list_model.dart';
+ import '/features/chat/domain/models/group_chats_model.dart';
+
+## Import Fix Phase 1.1B - Post Migration Import Updates
+
+### Summary
+This patch fixes import statements that reference files moved during Phase 1.1B Feature-First Architecture migration.
+
+### Priority 1: Critical Compilation Fixes
+
+**Files Moved:**
+- `/lib/backend/models/post/ranked_posts_model.dart` → `/lib/features/posts/data/models/ranked_posts_model.dart`
+- `/lib/backend/models/post/backend_post_models.dart` → `/lib/features/posts/data/models/backend_post_models.dart`
+- `/lib/backend/models/media/encodings_model.dart` → `/lib/features/posts/data/models/media/encodings_model.dart`
+
+**Import Updates Required:**
+1. **voting_repository_impl.dart** (line 7): Update ranked_posts_model import path
+2. **post_repository_impl.dart** (line 12): Update backend_post_models import path  
+3. **backend.dart** (line 32): Update backend_post_models relative import to absolute path
+
+### Architecture Compliance Notes
+
+**✅ Good Patterns Found:**
+- Features accessing their own data models correctly
+- Export files properly configured in posts data layer
+
+**⚠️ Architecture Violations to Address Later:**
+- Voting feature importing from Posts data layer (should use domain interfaces)
+- Backend.dart importing from feature data layers (reverse dependency)
+
+### Next Steps After This Patch
+1. Apply this patch to fix compilation errors
+2. Run `flutter analyze` to verify fixes
+3. Plan Phase 2: Remove backend dependencies from features
+4. Plan Phase 3: Implement proper domain interfaces
+
+### Files Modified: 3
+### Import References Fixed: 3
+### Architecture Priority: P1 (Compilation Critical)

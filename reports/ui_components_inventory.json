@@ -1,0 +1,354 @@
+{
+  "analysis_timestamp": "2025-09-08T12:00:00Z",
+  "agent": "inventory-scout",
+  "parsed_options": {
+    "depth": 5,
+    "line_threshold": 500,
+    "scope": ["lib/pages", "lib/components", "lib/app/widgets", "lib/features"],
+    "ignore": ["test/", "*.g.dart", "*.freezed.dart"]
+  },
+  "summary": {
+    "total_dart_files": 430,
+    "total_widget_files": 42,
+    "widget_files_with_backend_imports": 16,
+    "large_widget_files": 8,
+    "architecture_violations": {
+      "presentation_imports_backend_directly": 16,
+      "mixed_responsibility_files": 3
+    }
+  },
+  "findings": {
+    "ui_components_with_backend_imports": [
+      {
+        "file": "features/posts/presentation/screens/create_post/in_put_post_image_widget.dart",
+        "lines": 1730,
+        "violation_type": "presentation_imports_backend",
+        "backend_imports": ["/backend/backend.dart"],
+        "responsibility_issues": [
+          "Large file with multiple concerns",
+          "UI logic mixed with data operations",
+          "Direct backend model usage"
+        ],
+        "priority": "high"
+      },
+      {
+        "file": "features/auth/presentation/screens/login/login_page/login_page_widget.dart",
+        "lines": 1171,
+        "violation_type": "presentation_imports_backend",
+        "backend_imports": ["/backend/backend.dart"],
+        "responsibility_issues": [
+          "Authentication logic in UI layer",
+          "Direct Firebase model access"
+        ],
+        "priority": "high"
+      },
+      {
+        "file": "features/profile/presentation/screens/user_info_input/user_info_input_widget.dart",
+        "lines": 1099,
+        "violation_type": "presentation_imports_backend",
+        "backend_imports": ["/backend/backend.dart"],
+        "responsibility_issues": [
+          "User data manipulation in presentation",
+          "Form validation mixed with data layer"
+        ],
+        "priority": "high"
+      },
+      {
+        "file": "features/profile/presentation/screens/onboarding/interest_selection/expertise_select/expertise_select_widget.dart",
+        "lines": 883,
+        "violation_type": "presentation_imports_backend",
+        "backend_imports": ["/backend/backend.dart"],
+        "priority": "medium"
+      },
+      {
+        "file": "features/profile/presentation/screens/onboarding/interest_selection/hobbies_select/hobbies_select_widget.dart",
+        "lines": 872,
+        "violation_type": "presentation_imports_backend", 
+        "backend_imports": ["/backend/backend.dart"],
+        "priority": "medium"
+      },
+      {
+        "file": "features/profile/presentation/screens/onboarding/interest_selection/agreed_select/agrred_select_widget.dart",
+        "lines": 872,
+        "violation_type": "presentation_imports_backend",
+        "backend_imports": ["/backend/backend.dart"],
+        "priority": "medium"
+      },
+      {
+        "file": "features/auth/presentation/screens/phone_auth/phonelogeinpincode_widget.dart",
+        "lines": 747,
+        "violation_type": "presentation_imports_backend",
+        "backend_imports": ["/backend/backend.dart"],
+        "priority": "medium"
+      },
+      {
+        "file": "features/auth/presentation/screens/start/start_page/start_page_widget.dart",
+        "lines": 599,
+        "violation_type": "presentation_imports_backend",
+        "backend_imports": ["/backend/backend.dart"],
+        "priority": "medium"
+      },
+      {
+        "file": "features/auth/presentation/screens/email_verification/popup_timer_email/popup_timer_email_widget.dart", 
+        "lines": 468,
+        "violation_type": "presentation_imports_backend",
+        "backend_imports": ["/backend/backend.dart"],
+        "priority": "medium"
+      },
+      {
+        "file": "features/posts/presentation/screens/feed/home_page_widget.dart",
+        "lines": 342,
+        "violation_type": "presentation_imports_backend",
+        "backend_imports": ["/backend/backend.dart"],
+        "priority": "low"
+      },
+      {
+        "file": "features/search/presentation/screens/chat_search/chat_search_widget.dart",
+        "lines": 341,
+        "violation_type": "presentation_imports_backend", 
+        "backend_imports": ["/backend/backend.dart"],
+        "priority": "low"
+      },
+      {
+        "file": "features/chat/presentation/screens/chat_list/chat_list_widget.dart",
+        "lines": 264,
+        "violation_type": "presentation_imports_backend",
+        "backend_imports": ["/backend/backend.dart"],
+        "priority": "low"
+      },
+      {
+        "file": "features/chat/presentation/screens/friends_list/friends_list_widget.dart",
+        "lines": 261,
+        "violation_type": "presentation_imports_backend",
+        "backend_imports": ["/backend/backend.dart"],
+        "priority": "low"
+      },
+      {
+        "file": "features/profile/presentation/screens/profile_main/profile_page_widget.dart",
+        "lines": 280,
+        "violation_type": "presentation_imports_backend",
+        "backend_imports": ["/backend/backend.dart"],
+        "priority": "low"
+      },
+      {
+        "file": "features/profile/presentation/screens/user_info/character_detail/character_detail_page_widget.dart",
+        "lines": 250,
+        "violation_type": "presentation_imports_backend",
+        "backend_imports": ["/backend/backend.dart", "/backend/firebase/storage/storage.dart"],
+        "priority": "low"
+      },
+      {
+        "file": "features/notifications/presentation/screens/notifications_list/notifications_list_widget.dart",
+        "lines": 200,
+        "violation_type": "presentation_imports_backend",
+        "backend_imports": ["/backend/backend.dart"],
+        "priority": "low"
+      }
+    ],
+    "large_files_analysis": [
+      {
+        "file": "features/posts/presentation/screens/create_post/in_put_post_image_widget.dart",
+        "lines": 1730,
+        "complexity_score": 0.95,
+        "concerns": [
+          "Image processing logic",
+          "Media upload handling", 
+          "Form validation",
+          "Navigation logic",
+          "Error handling",
+          "State management"
+        ],
+        "refactoring_candidates": [
+          "Extract image processing service",
+          "Create media upload component",
+          "Separate form validation logic",
+          "Create custom hooks for state management"
+        ]
+      },
+      {
+        "file": "features/auth/presentation/screens/login/login_page/login_page_widget.dart",
+        "lines": 1171,
+        "complexity_score": 0.85,
+        "concerns": [
+          "Authentication flow",
+          "Form validation", 
+          "Navigation logic",
+          "Error handling",
+          "UI animations"
+        ],
+        "refactoring_candidates": [
+          "Extract authentication service",
+          "Create reusable form components",
+          "Separate animation logic"
+        ]
+      },
+      {
+        "file": "features/profile/presentation/screens/user_info_input/user_info_input_widget.dart",
+        "lines": 1099,
+        "complexity_score": 0.80,
+        "concerns": [
+          "User profile management",
+          "Form validation",
+          "Data persistence",
+          "Navigation logic"
+        ],
+        "refactoring_candidates": [
+          "Extract profile service",
+          "Create form validation mixin",
+          "Separate data operations"
+        ]
+      },
+      {
+        "file": "features/auth/presentation/screens/signup/create_account/create_account_widget.dart",
+        "lines": 942,
+        "complexity_score": 0.75,
+        "concerns": [
+          "Account creation flow",
+          "Validation logic", 
+          "Navigation"
+        ],
+        "refactoring_candidates": [
+          "Extract account creation service",
+          "Create validation components"
+        ]
+      },
+      {
+        "file": "features/posts/presentation/widgets/media/media_selection_flow_widget.dart",
+        "lines": 595,
+        "complexity_score": 0.70,
+        "concerns": [
+          "Media selection logic",
+          "File handling",
+          "UI flow management"
+        ],
+        "refactoring_candidates": [
+          "Extract media service",
+          "Create flow management component"
+        ]
+      },
+      {
+        "file": "features/posts/presentation/widgets/media/media_editor_widget.dart",
+        "lines": 541,
+        "complexity_score": 0.68,
+        "concerns": [
+          "Media editing logic",
+          "File operations",
+          "UI controls"
+        ],
+        "refactoring_candidates": [
+          "Extract editor service",
+          "Create editor control components"
+        ]
+      }
+    ],
+    "component_analysis": [
+      {
+        "file": "features/posts/presentation/widgets/components/media_selection_box_multi.dart",
+        "lines": 572,
+        "type": "component",
+        "backend_imports": [],
+        "complexity_score": 0.65,
+        "assessment": "Well-structured component with single responsibility"
+      },
+      {
+        "file": "features/posts/presentation/widgets/components/media_selection_box_single.dart", 
+        "lines": 539,
+        "type": "component",
+        "backend_imports": [],
+        "complexity_score": 0.63,
+        "assessment": "Good separation of concerns"
+      },
+      {
+        "file": "core/design_system/components/versus_text_field.dart",
+        "lines": 405,
+        "type": "design_system_component",
+        "backend_imports": [],
+        "complexity_score": 0.45,
+        "assessment": "Reusable design system component"
+      }
+    ]
+  },
+  "dependency_analysis": {
+    "backend_import_patterns": {
+      "/backend/backend.dart": 16,
+      "/backend/firebase/storage/storage.dart": 1,
+      "/backend/firebase/firestore/utils/firestore_util.dart": 25,
+      "/backend/firebase/firestore/utils/schema_util.dart": 8
+    },
+    "violation_categories": {
+      "presentation_layer_violations": {
+        "count": 16,
+        "severity": "high",
+        "description": "UI components directly importing backend models"
+      },
+      "mixed_responsibilities": {
+        "count": 3,
+        "severity": "high", 
+        "description": "Large files handling multiple concerns"
+      }
+    }
+  },
+  "migration_recommendations": {
+    "high_priority": [
+      {
+        "task": "Refactor in_put_post_image_widget.dart",
+        "description": "Extract business logic to domain/data layers",
+        "estimated_effort": "3-4 days",
+        "impact": "High - Removes largest architectural violation"
+      },
+      {
+        "task": "Refactor login_page_widget.dart", 
+        "description": "Extract authentication logic to service layer",
+        "estimated_effort": "2-3 days",
+        "impact": "High - Improves auth system architecture"
+      },
+      {
+        "task": "Refactor user_info_input_widget.dart",
+        "description": "Extract profile management to service layer", 
+        "estimated_effort": "2-3 days",
+        "impact": "Medium - Improves profile system"
+      }
+    ],
+    "medium_priority": [
+      {
+        "task": "Refactor interest selection widgets",
+        "description": "Create shared interest selection service",
+        "estimated_effort": "1-2 days",
+        "impact": "Medium - Reduces code duplication"
+      },
+      {
+        "task": "Extract phone auth logic",
+        "description": "Move phone authentication to service layer",
+        "estimated_effort": "1-2 days", 
+        "impact": "Medium - Improves auth architecture"
+      }
+    ],
+    "architectural_improvements": [
+      {
+        "task": "Implement Repository Pattern",
+        "description": "Add repository interfaces between presentation and backend",
+        "estimated_effort": "5-7 days",
+        "impact": "High - Establishes proper architectural boundaries"
+      },
+      {
+        "task": "Add UseCase Layer", 
+        "description": "Implement use cases for business logic",
+        "estimated_effort": "4-6 days",
+        "impact": "High - Separates business logic from UI"
+      },
+      {
+        "task": "Create Service Abstractions",
+        "description": "Abstract backend services with interfaces",
+        "estimated_effort": "3-4 days",
+        "impact": "Medium - Improves testability"
+      }
+    ]
+  },
+  "next_steps": [
+    "Start with high-priority refactoring tasks",
+    "Implement repository pattern for data access",
+    "Create service layer abstractions", 
+    "Extract business logic to domain layer",
+    "Add comprehensive unit tests for extracted logic"
+  ]
+}

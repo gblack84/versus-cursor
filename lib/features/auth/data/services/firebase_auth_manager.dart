@@ -5,7 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'auth_manager.dart';
 
-import '/backend/backend.dart';
+// Migrated from backend.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '/features/profile/domain/models/user_profile.dart';
 import 'anonymous_auth.dart';
 import 'apple_auth.dart';
 import 'email_auth.dart';
@@ -321,6 +323,41 @@ class FirebaseAuthManager extends AuthManager
         SnackBar(content: Text(errorMsg)),
       );
       return null;
+    }
+  }
+
+  // Migrated from backend.dart
+  UserProfile? currentUserDocument;
+  
+  Future<void> maybeCreateUser(User user) async {
+    final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final userDoc = await userRef.get();
+    
+    if (userDoc.exists) {
+      currentUserDocument = UserProfile.fromSnapshot(userDoc);
+      return;
+    }
+    
+    // Create new user document
+    final userData = {
+      'uid': user.uid,
+      'email': user.email ?? '',
+      'displayName': user.displayName ?? '',
+      'photoUrl': user.photoURL ?? '',
+      'createdTime': FieldValue.serverTimestamp(),
+      'phoneNumber': user.phoneNumber ?? '',
+    };
+    
+    await userRef.set(userData);
+    final newUserDoc = await userRef.get();
+    currentUserDocument = UserProfile.fromSnapshot(newUserDoc);
+  }
+  
+  Future<void> updateUserDocument({String? email}) async {
+    if (currentUserDocument != null) {
+      await currentUserDocument!.reference.update({
+        if (email != null) 'email': email,
+      });
     }
   }
 }

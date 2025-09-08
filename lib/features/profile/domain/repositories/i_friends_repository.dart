@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/profile_info.dart';
 
 /// Repository interface for friends/social operations

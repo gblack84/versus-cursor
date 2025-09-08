@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'unified_cache_service.dart';
-import '/features/chat/data/models/messages_model.dart';
 
 /// Preload strategy for improving cache hit rates
 /// 
@@ -128,15 +127,18 @@ class PreloadStrategy {
       
       if (messagesQuery.docs.isEmpty) return;
       
-      // Convert to MessagesModel and cache
+      // Convert to generic Map and cache (no model dependency)
       final messages = messagesQuery.docs
-          .map((doc) => MessagesModel.fromSnapshot(doc))
+          .map((doc) => {
+            'id': doc.id,
+            ...doc.data(),
+          })
           .toList();
       
       // Cache the messages
       final cacheKey = 'chat_messages_$chatId';
-      // Convert messages to JSON for caching
-      final messagesJson = messages.map((m) => m.toJson()).toList();
+      // Messages are already in JSON-compatible format
+      final messagesJson = messages;
       await UnifiedCacheService.instance.set(cacheKey, messagesJson);
       
       if (kDebugMode) {

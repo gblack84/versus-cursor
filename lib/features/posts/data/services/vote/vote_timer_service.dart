@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '/core_exports.dart';
 
 /// 투표 타이머 동기화 서비스
 /// 

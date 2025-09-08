@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:from_css_color/from_css_color.dart';
+import 'package:from_css_color/from_css_color.dart' as css_color;
 import '/features/search/data/services/serialization_util.dart';
 
 import '/core_exports.dart';
@@ -61,7 +61,7 @@ List<T>? getStructList<T>(
             .toList();
 
 Color? getSchemaColor(dynamic value) => value is String
-    ? fromCssColor(value)
+    ? css_color.fromCssColor(value)
     : value is Color
         ? value
         : null;

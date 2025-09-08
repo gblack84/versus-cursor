@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 
 // Import repository interfaces
-import 'package:versus_space/features/posts/domain/repositories/i_post_repository.dart';
-import 'package:versus_space/features/profile/domain/repositories/i_user_repository.dart';
 
 // Import domain models
 import 'package:versus_space/features/posts/domain/models/post.dart';

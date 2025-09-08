@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '/core_exports.dart';
 
 /// Service to handle message delivery and read status
 class ChatMessageLifecycleService {

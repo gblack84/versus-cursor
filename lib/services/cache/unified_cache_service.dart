@@ -1,8 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import '/backend/backend.dart';
 import 'simple_memory_cache.dart';
 import 'cache_statistics.dart';
+// Domain models imports (migrated from backend.dart)
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '/backend/models/chat/messages_model.dart';
+import '/backend/models/posts/posts_model.dart';
+import '/backend/models/users/users_model.dart';
 
 /// 캐시 레이어 정의
 enum CacheLayer {
@@ -43,8 +47,8 @@ abstract class UnifiedCacheService {
   Future<List<PostsModel>> getFeedPosts({int limit = 20});
   Future<void> setFeedPosts(List<PostsModel> posts);
   
-  Future<UsersModel?> getUserProfile(String userId);
-  Future<void> setUserProfile(String userId, UsersModel user);
+  Future<UserProfile?> getUserProfile(String userId);
+  Future<void> setUserProfile(String userId, UserProfile user);
   
   // 프리페칭
   Future<void> preloadRecentChats();
@@ -418,11 +422,11 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
   // === 사용자 관련 ===
   
   @override
-  Future<UsersModel?> getUserProfile(String userId) async {
+  Future<UserProfile?> getUserProfile(String userId) async {
     final cacheKey = CacheKeys.userProfile(userId);
     
     // L1: Memory Cache
-    final cached = _memoryCache.get<UsersModel>(cacheKey);
+    final cached = _memoryCache.get<UserProfile>(cacheKey);
     if (cached != null) {
       return cached;
     }
@@ -435,7 +439,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           .get();
       
       if (doc.exists) {
-        final user = UsersModel.fromSnapshot(doc);
+        final user = UserProfile.fromSnapshot(doc);
         _memoryCache.set(cacheKey, user, ttl: const Duration(hours: 1));
         return user;
       }
@@ -447,7 +451,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
   }
   
   @override
-  Future<void> setUserProfile(String userId, UsersModel user) async {
+  Future<void> setUserProfile(String userId, UserProfile user) async {
     final cacheKey = CacheKeys.userProfile(userId);
     _memoryCache.set(cacheKey, user, ttl: const Duration(hours: 1));
   }

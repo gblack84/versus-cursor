@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '/features/auth/data/services/auth_util.dart';
-import '/backend/backend.dart';
+import '/backend/backend.dart'; // Temporary for UsersModel
 import '/core/design_system/design_system.dart';
 
 class FriendsListWidget extends StatefulWidget {
@@ -149,6 +149,8 @@ class _FriendsListWidgetState extends State<FriendsListWidget> {
   }
 
   Widget _buildFriendItem(FriendsListModel friend) {
+    // Repository 패턴 사용 준비 (현재는 기존 방식 유지)
+    // TODO: UserRepository.getUserByUid()로 완전 마이그레이션 필요
     return FutureBuilder<UsersModel?>(
       future: UsersModel.getDocumentOnce(
         FirebaseFirestore.instance.doc('/users/${friend.friendsId}'),

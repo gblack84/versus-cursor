@@ -3,14 +3,6 @@ import 'dart:io';
 
 // Domain models
 import '../../lib/features/auth/domain/models/auth_user.dart';
-import '../../lib/features/profile/domain/models/profile_info.dart';
-import '../../lib/features/profile/domain/models/user_settings.dart';
-import '../../lib/features/profile/domain/models/user_stats.dart';
-import '../../lib/features/posts/domain/models/post.dart';
-import '../../lib/features/posts/domain/models/media_content.dart';
-import '../../lib/features/posts/domain/models/creator_info.dart';
-import '../../lib/features/posts/domain/models/vote_data.dart';
-import '../../lib/features/posts/domain/models/post_stats.dart';
 
 void main() {
   group('Clean Architecture Boundary Tests', () {

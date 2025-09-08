@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '/backend/firebase/firestore/utils/firestore_util.dart';
-import '/backend/firebase/firestore/utils/schema_util.dart';
+import '/core/firebase/utils/firestore_util.dart';
+import '/core/firebase/utils/schema_util.dart';
 
 import '/core_exports.dart';
 
@@ -150,6 +150,25 @@ class ChatsModel extends FirestoreRecord {
     DocumentReference reference,
   ) =>
       ChatsModel._(reference, mapFromFirestore(data));
+
+  // Convert model to JSON for Firestore
+  Map<String, dynamic> toJson() {
+    return {
+      'chatId': _chatId,
+      'chatType': _chatType,
+      'participantIds': _participantIds,
+      'chatName': _chatName,
+      'lastMessageContent': _lastMessageContent,
+      'lastMessageAt': _lastMessageAt,
+      'isRead': _isRead,
+      'displayName': _displayName,
+      'photoUrl': _photoUrl,
+      'uid': _uid,
+      'createdTime': _createdTime,
+      'phoneNumber': _phoneNumber,
+      'lastReadTimestamps': _lastReadTimestamps,
+    };
+  }
 
   @override
   String toString() =>

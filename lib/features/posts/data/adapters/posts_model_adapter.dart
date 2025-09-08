@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/backend/firebase/firestore/utils/firestore_util.dart'; // For LatLng
+// Removed backend dependency - using cloud_firestore GeoPoint directly
 import '../../domain/models/post_core.dart';
 import '../../domain/models/post_content.dart';
 import '../../domain/models/post_voting.dart';
@@ -174,7 +174,7 @@ class PostsModelAdapter {
       'visibility': _convertVisibilityToInt(core.visibility),
       'isAnonymous': core.isAnonymous,
       'premiumRequired': core.premiumRequired,
-      if (core.location != null) 'location': LatLng(core.location!.latitude, core.location!.longitude),
+      if (core.location != null) 'location': core.location,
       
       // Add legacy user info fields for compatibility
       'email': '', // These would need to be retrieved from user profile

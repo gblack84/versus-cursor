@@ -170,6 +170,11 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
 
+  path: any
+  freezed_annotation: any
+  google_generative_ai: any
+  crypto: any
+  http_parser: any
 dependency_overrides:
   http: ^1.4.0
   pointer_interceptor: 0.10.1+2

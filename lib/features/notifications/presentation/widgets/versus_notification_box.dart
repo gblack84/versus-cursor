@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '/core/types/layout_type.dart';
 import '/core/design_system/design_system.dart';
 import '../models/versus_box_size_data.dart';
 import '/services/ui/unified_box_calculator.dart';
 import '/services/image/unified_image_cache_service.dart';
 import '../constants/voting_notification_constraints.dart';
-import '/features/posts/domain/usecases/media/aspect_ratio_analyzer.dart';
 import 'notification_image_viewer.dart';
 
 /// 투표 알림에서 사용되는 A/B 박스 컴포넌트

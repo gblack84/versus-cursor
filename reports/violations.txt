@@ -1,0 +1,20 @@
+# 아키텍처 위반 분석 보고서
+
+## 🚨 Backend → Features 위반 (41건)
+lib/backend/backend.dart:import '/features/auth/data/services/auth_util.dart';
+lib/backend/backend.dart:import '/features/profile/data/models/settings_model.dart';
+lib/backend/backend.dart:import '/features/posts/data/models/media/images_model.dart';
+lib/backend/backend.dart:import '/features/posts/data/models/media/video_model.dart';
+lib/backend/backend.dart:import '/features/chat/data/models/messages_model.dart';
+... (총 41건)
+
+## ⚠️ Core → Features 위반 (3건)
+lib/core/models/upload_data.dart:import '/features/auth/data/services/auth_util.dart';
+lib/core/firebase/utils/schema_util.dart:import '/features/search/data/services/serialization_util.dart';
+lib/core/actions/global_actions.dart:import '/features/auth/data/services/auth_util.dart';
+
+## ✅ Services → Features 위반 (0건)
+양호함
+
+## ✅ Features 간 직접 참조 (0건)
+양호함

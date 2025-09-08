@@ -1,7 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'schema_util.dart';
-import '/core_exports.dart';
+import '/app/models/lat_lng.dart';
+import '/app/router/navigation/serialization_util.dart' show ColorSerialization;
+
+// Re-export commonly used Firestore classes
+export 'package:cloud_firestore/cloud_firestore.dart' show 
+  FirebaseFirestore, 
+  FieldValue, 
+  DocumentReference, 
+  CollectionReference, 
+  QuerySnapshot,
+  Timestamp,
+  GeoPoint,
+  DocumentSnapshot,
+  Query,
+  FieldPath;
 
 typedef RecordBuilder<T> = T Function(DocumentSnapshot snapshot);
 
@@ -77,11 +91,11 @@ Map<String, dynamic> mapToFirestore(Map<String, dynamic> data) =>
       }
       // Handle Color
       if (value is Color) {
-        value = value.toCssString();
+        value = ColorSerialization(value).toCssString();
       }
       // Handle list of Color
       if (value is Iterable && value.isNotEmpty && value.first is Color) {
-        value = value.map((v) => (v as Color).toCssString()).toList();
+        value = value.map((v) => ColorSerialization(v as Color).toCssString()).toList();
       }
       // Handle nested data.
       if (value is Map) {
@@ -147,4 +161,78 @@ Map<String, dynamic> mergeNestedFields(Map<String, dynamic> data) {
 extension _WhereMapExtension<K, V> on Map<K, V> {
   Map<K, V> where(bool Function(K, V) test) =>
       Map.fromEntries(entries.where((e) => test(e.key, e.value)));
+}
+
+// ============================================================================
+// Query utility functions (migrated from backend.dart)
+// Added: 2025-01-09 - Repository Layer Migration
+// ============================================================================
+
+/// Count documents in a collection with optional query builder
+Future<int> queryCollectionCount(
+  Query collection, {
+  Query Function(Query)? queryBuilder,
+  int limit = -1,
+}) {
+  final builder = queryBuilder ?? (q) => q;
+  var query = builder(collection);
+  if (limit > 0) {
+    query = query.limit(limit);
+  }
+  return query.count().get().then((value) => value.count!).catchError((err) {
+    print('Error querying $collection: $err');
+    return 0;
+  });
+}
+
+/// Stream query for collections with real-time updates
+Stream<List<T>> queryCollection<T>(
+  Query collection,
+  RecordBuilder<T> recordBuilder, {
+  Query Function(Query)? queryBuilder,
+  int limit = -1,
+  bool singleRecord = false,
+}) {
+  final builder = queryBuilder ?? (q) => q;
+  var query = builder(collection);
+  if (limit > 0 || singleRecord) {
+    query = query.limit(singleRecord ? 1 : limit);
+  }
+  return query.snapshots().handleError((err) {
+    print('Error querying $collection: $err');
+  }).map((s) => s.docs
+      .map(
+        (d) => safeGet(
+          () => recordBuilder(d),
+          (e) => print('Error serializing doc ${d.reference.path}:\n$e'),
+        ),
+      )
+      .where((d) => d != null)
+      .map((d) => d!)
+      .toList());
+}
+
+/// One-time query for collections
+Future<List<T>> queryCollectionOnce<T>(
+  Query collection,
+  RecordBuilder<T> recordBuilder, {
+  Query Function(Query)? queryBuilder,
+  int limit = -1,
+  bool singleRecord = false,
+}) {
+  final builder = queryBuilder ?? (q) => q;
+  var query = builder(collection);
+  if (limit > 0 || singleRecord) {
+    query = query.limit(singleRecord ? 1 : limit);
+  }
+  return query.get().then((s) => s.docs
+      .map(
+        (d) => safeGet(
+          () => recordBuilder(d),
+          (e) => print('Error serializing doc ${d.reference.path}:\n$e'),
+        ),
+      )
+      .where((d) => d != null)
+      .map((d) => d!)
+      .toList());
 }

@@ -1,6 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:get_it/get_it.dart';
+
+// DI imports
+import '../../lib/app/di/injection.dart';
+
+// Repository interfaces
+import '../../lib/features/profile/domain/repositories/i_user_repository.dart';
+import '../../lib/features/posts/domain/repositories/i_post_repository.dart';
 
 // Repository and Adapter imports
 import '../../lib/features/profile/data/repositories/user_repository_impl.dart';
@@ -24,7 +32,6 @@ import '../../lib/features/posts/domain/models/media_content.dart';
 import '../../lib/features/posts/data/models/posts_model.dart' as feature_posts;
 
 // Utils
-import '../../lib/backend/firebase/firestore/utils/firestore_util.dart';
 
 // Global test data
 late UserProfile testUserProfile;
@@ -35,8 +42,9 @@ late PostBundle testPostBundle;
 void main() {
   group('Repository-Adapter Integration Tests', () {
     late FakeFirebaseFirestore fakeFirestore;
-    late UserRepositoryImpl userRepository;
-    late PostRepositoryImpl postRepository;
+    late IUserRepository userRepository;
+    late IPostRepository postRepository;
+    final GetIt sl = GetIt.instance;
 
     setUpAll(() async {
       // Initialize Flutter testing
@@ -44,21 +52,32 @@ void main() {
     });
 
     setUp(() async {
+      // Reset DI container
+      await sl.reset();
+      
       // Initialize fake Firestore
       fakeFirestore = FakeFirebaseFirestore();
       
-      // Override FirebaseFirestore instance for testing
-      // Note: This would require dependency injection or factory pattern in production
-      userRepository = UserRepositoryImpl.instance;
-      postRepository = PostRepositoryImpl();
+      // Initialize DI container with test configuration
+      await DIContainer.initialize();
+      
+      // Get repository instances from DI container
+      userRepository = sl<IUserRepository>();
+      postRepository = sl<IPostRepository>();
+      
+      // Verify correct implementations are registered
+      expect(userRepository, isA<UserRepositoryImpl>());
+      expect(postRepository, isA<PostRepositoryImpl>());
 
       // Create test data
       _setupTestData();
     });
 
-    tearDown(() {
+    tearDown(() async {
       // Clean up
       fakeFirestore.terminate();
+      // Reset DI container
+      await DIContainer.reset();
     });
 
     group('UserRepository + UserProfileAdapter Integration', () {
@@ -188,28 +207,30 @@ void main() {
         expect(data['isPremiumUser'], equals(true));
       });
 
-      test('should retrieve individual domain models via adapter', () async {
+      test('should retrieve user and extract individual domain models', () async {
         // Arrange: Add test user to fake Firestore
         await fakeFirestore.collection('users').doc(testUserProfile.uid).set(
           _createUserFirestoreData()
         );
 
-        // Act & Assert: Test individual model retrieval
-        final profileInfo = await userRepository.getUserProfileInfo(testUserProfile.uid);
-        expect(profileInfo, isNotNull);
-        expect(profileInfo!.displayName, equals(testUserProfile.displayName));
+        // Act: Retrieve user and convert to bundle
+        final user = await userRepository.getUserByUid(testUserProfile.uid);
+        expect(user, isNotNull);
+        
+        final bundle = UserProfileAdapter.fromLegacy(user!);
+        
+        // Assert: Test individual model extraction
+        final profileInfo = bundle.profile;
+        expect(profileInfo.displayName, equals(testUserProfile.displayName));
 
-        final userSettings = await userRepository.getUserSettings(testUserProfile.uid);
-        expect(userSettings, isNotNull);
-        expect(userSettings!.isPremiumUser, equals(testUserProfile.isPremiumUser));
+        final settings = bundle.settings;
+        expect(settings.isPremiumUser, equals(testUserProfile.isPremiumUser));
 
-        final userStats = await userRepository.getUserStats(testUserProfile.uid);
-        expect(userStats, isNotNull);
-        expect(userStats!.pointsA, equals(testUserProfile.pointsA));
+        final stats = bundle.stats;
+        expect(stats.pointsA, equals(testUserProfile.pointsA));
 
-        final authUser = await userRepository.getAuthUser(testUserProfile.uid);
-        expect(authUser, isNotNull);
-        expect(authUser!.uid, equals(testUserProfile.uid));
+        final authUser = bundle.auth;
+        expect(authUser.uid, equals(testUserProfile.uid));
       });
     });
 

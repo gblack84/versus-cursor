@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import '/features/auth/data/services/auth_util.dart';
-import '/backend/backend.dart';
+import '/features/notifications/domain/models/notifications_model.dart';
 import '/core_exports.dart';
 
 class NotificationsListWidget extends StatefulWidget {
@@ -15,6 +16,13 @@ class NotificationsListWidget extends StatefulWidget {
 
 class _NotificationsListWidgetState extends State<NotificationsListWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
+  late final NotificationRepository _notificationRepository;
+
+  @override
+  void initState() {
+    super.initState();
+    _notificationRepository = GetIt.instance<NotificationRepository>();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +47,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
       body: SafeArea(
         top: true,
         child: StreamBuilder<List<NotificationsModel>>(
-          stream: queryNotificationsModel(
+          stream: _notificationRepository.queryNotifications(
             queryBuilder: (notificationsRecord) => notificationsRecord
                 .where('userId', isEqualTo: currentUserUid)
                 .orderBy('createdAt', descending: true),

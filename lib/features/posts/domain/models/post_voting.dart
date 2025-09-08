@@ -1,5 +1,39 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Vote status enumeration
+enum VoteStatus {
+  pending,
+  active,
+  completed,
+  cancelled,
+  timeout,
+}
+
+/// Vote option enumeration
+enum VoteOption {
+  A,
+  B,
+}
+
+/// Expansion status enumeration
+enum ExpansionStatus {
+  none,
+  pending,
+  active,
+  completed,
+}
+
+/// Vote exception class
+class VoteException implements Exception {
+  final String message;
+  final String? code;
+  
+  const VoteException(this.message, {this.code});
+  
+  @override
+  String toString() => 'VoteException: $message${code != null ? ' (code: $code)' : ''}';
+}
+
 /// PostVoting Domain Model
 /// Clean Architecture - Domain Layer Entity
 /// 
@@ -10,7 +44,7 @@ class PostVoting {
     required this.postId,
     this.voteStartTime,
     this.voteEndTime,
-    this.voteStatus = 'pending',
+    this.voteStatus = VoteStatus.pending,
     this.voteCompleted = false,
     this.voteCompletedAt,
     this.voteCancelledAt,
@@ -35,7 +69,7 @@ class PostVoting {
   // Timing Fields
   final DateTime? voteStartTime;
   final DateTime? voteEndTime;
-  final String voteStatus; // 'pending', 'active', 'completed', 'cancelled', 'timeout'
+  final VoteStatus voteStatus;
   final bool voteCompleted;
   final DateTime? voteCompletedAt;
   final DateTime? voteCancelledAt;
@@ -67,7 +101,7 @@ class PostVoting {
   int get totalVotes => votesA + votesB;
   
   /// Check if voting is currently active
-  bool get isActive => voteStatus == 'active' && !voteCompleted;
+  bool get isActive => voteStatus == VoteStatus.active && !voteCompleted;
   
   /// Check if user can vote
   bool canUserVote(String userId) {
@@ -81,9 +115,9 @@ class PostVoting {
   }
   
   /// Get user's vote choice
-  String? getUserVote(String userId) {
-    if (votedUserIdsA.contains(userId)) return 'A';
-    if (votedUserIdsB.contains(userId)) return 'B';
+  VoteOption? getUserVote(String userId) {
+    if (votedUserIdsA.contains(userId)) return VoteOption.A;
+    if (votedUserIdsB.contains(userId)) return VoteOption.B;
     return null;
   }
   
@@ -127,7 +161,7 @@ class PostVoting {
     return copyWith(
       voteStartTime: now,
       voteEndTime: now.add(timeout),
-      voteStatus: 'active',
+      voteStatus: VoteStatus.active,
       voteCompleted: false,
     );
   }
@@ -135,16 +169,16 @@ class PostVoting {
   /// Cast a vote
   PostVoting castVote({
     required String userId,
-    required String choice, // 'A' or 'B'
+    required VoteOption choice,
   }) {
     if (!canUserVote(userId)) return this;
     
-    if (choice == 'A') {
+    if (choice == VoteOption.A) {
       return copyWith(
         votesA: votesA + 1,
         votedUserIdsA: [...votedUserIdsA, userId],
       );
-    } else if (choice == 'B') {
+    } else if (choice == VoteOption.B) {
       return copyWith(
         votesB: votesB + 1,
         votedUserIdsB: [...votedUserIdsB, userId],
@@ -157,7 +191,7 @@ class PostVoting {
   /// Complete voting
   PostVoting completeVoting() {
     return copyWith(
-      voteStatus: 'completed',
+      voteStatus: VoteStatus.completed,
       voteCompleted: true,
       voteCompletedAt: DateTime.now(),
     );
@@ -166,7 +200,7 @@ class PostVoting {
   /// Cancel voting
   PostVoting cancelVoting({String? reason}) {
     return copyWith(
-      voteStatus: 'cancelled',
+      voteStatus: VoteStatus.cancelled,
       voteCompleted: true,
       voteCancelledAt: DateTime.now(),
       voteCancelledReason: reason,
@@ -176,7 +210,7 @@ class PostVoting {
   /// Timeout voting
   PostVoting timeoutVoting() {
     return copyWith(
-      voteStatus: 'timeout',
+      voteStatus: VoteStatus.timeout,
       voteCompleted: true,
       voteCompletedAt: DateTime.now(),
     );
@@ -205,13 +239,48 @@ class PostVoting {
   
   // ============= Serialization =============
   
+  /// Parse vote status from string
+  static VoteStatus _parseVoteStatus(dynamic value) {
+    if (value == null) return VoteStatus.pending;
+    if (value is VoteStatus) return value;
+    
+    switch (value.toString().toLowerCase()) {
+      case 'active':
+        return VoteStatus.active;
+      case 'completed':
+        return VoteStatus.completed;
+      case 'cancelled':
+        return VoteStatus.cancelled;
+      case 'timeout':
+        return VoteStatus.timeout;
+      default:
+        return VoteStatus.pending;
+    }
+  }
+  
+  /// Convert VoteStatus to string for Firestore
+  static String _voteStatusToString(VoteStatus status) {
+    switch (status) {
+      case VoteStatus.pending:
+        return 'pending';
+      case VoteStatus.active:
+        return 'active';
+      case VoteStatus.completed:
+        return 'completed';
+      case VoteStatus.cancelled:
+        return 'cancelled';
+      case VoteStatus.timeout:
+        return 'timeout';
+    }
+  }
+
   /// Create from Firestore document
   factory PostVoting.fromMap(Map<String, dynamic> data, String postId) {
     return PostVoting(
       postId: postId,
       voteStartTime: data['voteStartTime']?.toDate(),
       voteEndTime: data['voteEndTime']?.toDate(),
-      voteStatus: data['voteStatus'] ?? 'pending',
+      voteStatus: _parseVoteStatus(data['voteStatus']),
       voteCompleted: data['voteCompleted'] ?? false,
       voteCompletedAt: data['voteCompletedAt']?.toDate(),
       voteCancelledAt: data['voteCancelledAt']?.toDate(),
@@ -238,7 +307,7 @@ class PostVoting {
     return {
       if (voteStartTime != null) 'voteStartTime': Timestamp.fromDate(voteStartTime!),
       if (voteEndTime != null) 'voteEndTime': Timestamp.fromDate(voteEndTime!),
-      'voteStatus': voteStatus,
+      'voteStatus': _voteStatusToString(voteStatus),
       'voteCompleted': voteCompleted,
       if (voteCompletedAt != null) 'voteCompletedAt': Timestamp.fromDate(voteCompletedAt!),
       if (voteCancelledAt != null) 'voteCancelledAt': Timestamp.fromDate(voteCancelledAt!),
@@ -263,7 +332,7 @@ class PostVoting {
     String? postId,
     DateTime? voteStartTime,
     DateTime? voteEndTime,
-    String? voteStatus,
+    VoteStatus? voteStatus,
     bool? voteCompleted,
     DateTime? voteCompletedAt,
     DateTime? voteCancelledAt,

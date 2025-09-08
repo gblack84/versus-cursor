@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:get_it/get_it.dart';
 
@@ -24,7 +23,6 @@ import '../../lib/features/posts/domain/models/post_stats.dart';
 
 // Adapters
 import '../../lib/features/profile/data/adapters/user_profile_adapter.dart';
-import '../../lib/features/posts/data/adapters/posts_model_adapter.dart';
 
 void main() {
   group('Repository Integration Tests V2 - Feature-First Architecture', () {

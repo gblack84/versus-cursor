@@ -1,5 +1,6 @@
 import 'dart:async';
-import '/backend/backend.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'models/image_moderation_model.dart';
 
 class CloudImageModerationService {
   static final CloudImageModerationService _instance = CloudImageModerationService._internal();

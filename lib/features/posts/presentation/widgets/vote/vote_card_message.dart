@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '/core/types/layout_type.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '/core/design_system/design_system.dart';
+import '/core/types/layout_type.dart';
 import '/features/notifications/presentation/models/versus_box_size_data.dart';
 import '/services/ui/unified_box_calculator.dart';
 import 'versus_notification_box.dart';

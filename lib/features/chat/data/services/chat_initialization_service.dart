@@ -1,6 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
-import '/backend/backend.dart';
+// Migrated from backend.dart - Direct model imports
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '/features/chat/domain/models/chats_model.dart';
+import '/features/chat/data/models/messages_model.dart';
+import '/features/profile/domain/models/user_profile.dart';
 import '/features/auth/data/services/auth_util.dart';
 import '/features/profile/data/services/user_cache_service.dart';
 import '/services/cache/unified_cache_service.dart';
@@ -15,7 +19,7 @@ class ChatInitializationService {
   final ChatMessageLifecycleService _lifecycleService = ChatMessageLifecycleService();
   
   core.User? currentUser;
-  UsersModel? currentUserRecord;
+  UserProfile? currentUserRecord;
   DocumentSnapshot? anchorDocument;
   DocumentSnapshot? lastLoadedDocument;
   DateTime? lastLoadedTimestamp;
@@ -80,7 +84,7 @@ class ChatInitializationService {
             
         if (userDoc.exists) {
           final userData = userDoc.data()!;
-          currentUserRecord = UsersModel.fromSnapshot(userDoc);
+          currentUserRecord = UserProfile.fromSnapshot(userDoc);
           
           // 다중 fallback으로 표시 이름 결정
           final displayName = userData['displayName'] ?? 
@@ -227,7 +231,7 @@ class ChatInitializationService {
             .get();
             
         if (userDoc.exists) {
-          final userModel = UsersModel.fromSnapshot(userDoc);
+          final userModel = UserProfile.fromSnapshot(userDoc);
           final coreUser = ChatDetailMigrationService.convertUsersModelToCore(userModel);
           _userCacheService.updateUser(coreUser);
         }
@@ -339,7 +343,7 @@ class BootstrapResult {
   final bool isSuccessful;
   final List<core.Message> messages;
   final core.User? currentUser;
-  final UsersModel? currentUserRecord;
+  final UserProfile? currentUserRecord;
   final DocumentSnapshot? anchorDocument;
   final DocumentSnapshot? lastLoadedDocument;
   final DateTime? lastLoadedTimestamp;

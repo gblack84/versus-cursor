@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '/core_exports.dart';
 import '../../domain/models/post.dart';
 import '../../domain/models/vote_data.dart';
 import '../../domain/models/post_core.dart';
@@ -18,7 +18,17 @@ import '/features/posts/domain/models/ranked_posts_model.dart' as domain;
 class PostRepositoryImpl implements IPostRepository {
   static const String _collection = 'posts';
   
+  // Singleton instance
+  static PostRepositoryImpl? _instance;
+  static PostRepositoryImpl get instance => _instance ??= PostRepositoryImpl._();
+  
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  
+  // Private constructor for singleton
+  PostRepositoryImpl._();
+  
+  // Public constructor for DI (if needed)
+  PostRepositoryImpl();
   
   CollectionReference get _postsCollection => _firestore.collection(_collection);
 

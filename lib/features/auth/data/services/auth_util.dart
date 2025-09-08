@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '/backend/backend.dart';
+// Migrated from backend.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '/features/profile/domain/models/user_profile.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'firebase_auth_manager.dart';
 

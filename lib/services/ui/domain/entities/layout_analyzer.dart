@@ -1,3 +1,5 @@
+import 'package:versus_space_flutter/core/types/layout_type.dart';
+
 /// Layout analyzer for UI calculations
 class LayoutAnalyzer {
   /// Analyzes aspect ratios and determines optimal layout
@@ -13,11 +15,4 @@ class LayoutAnalyzer {
         ? LayoutType.vertical 
         : LayoutType.horizontal;
   }
-}
-
-/// Layout type enum
-enum LayoutType {
-  horizontal,
-  vertical,
-  single,
 }

@@ -1,7 +1,9 @@
 
-import '/backend/backend.dart';
+// Migrated from backend.dart
+import '/app/models/lat_lng.dart';
+import '/core/firebase/utils/schema_util.dart'; // For safeGet, toRef, StructBuilder
 
-import '/app/router/navigation/serialization_util.dart';
+import '/app/router/navigation/serialization_util.dart' hide fromCssColor;
 
 dynamic convertAlgoliaParam<T>(
   dynamic data,

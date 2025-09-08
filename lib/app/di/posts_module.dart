@@ -18,7 +18,7 @@ class PostsModule implements FeatureModule {
     // Register IPostRepository as lazy singleton
     if (!sl.isRegistered<IPostRepository>()) {
       sl.registerLazySingleton<IPostRepository>(
-        () => PostRepositoryImpl(),
+        () => PostRepositoryImpl.instance,
       );
     }
     

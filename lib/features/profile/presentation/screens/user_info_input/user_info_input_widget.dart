@@ -1,5 +1,6 @@
 import '/features/auth/data/services/auth_util.dart';
-import '/backend/backend.dart';
+// Replace backend imports with domain layer imports
+import '/features/profile/domain/repositories/i_user_repository.dart';
 import '/core_exports.dart';
 import '/features/profile/presentation/screens/user_info/character_detail/character_detail_page_widget.dart';
 import '/features/profile/presentation/screens/user_info/language_selector/language_selector_widget.dart';

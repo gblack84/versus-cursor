@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '/core_exports.dart';
 import '/features/posts/domain/models/target_audience_model.dart';
 
 /// 타겟 오디언스 관련 서비스

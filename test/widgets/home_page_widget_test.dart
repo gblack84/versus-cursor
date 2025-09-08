@@ -17,7 +17,6 @@ import 'package:versus_space/features/posts/domain/models/creator_info.dart';
 import 'package:versus_space/features/posts/domain/models/media_content.dart';
 import 'package:versus_space/features/posts/domain/models/vote_data.dart';
 import 'package:versus_space/features/posts/domain/models/post_stats.dart';
-import 'package:versus_space/features/profile/domain/models/user_profile.dart';
 
 // Mock classes
 @GenerateMocks([IPostRepository, IUserRepository])

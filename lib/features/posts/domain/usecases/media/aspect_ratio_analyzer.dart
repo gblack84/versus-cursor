@@ -1,3 +1,5 @@
+import '/core/types/layout_type.dart';
+
 /// 이미지 비율 분석 및 최적 레이아웃 결정 클래스
 class AspectRatioAnalyzer {
   // 이미지 방향 판단 기준값
@@ -111,6 +113,10 @@ class AspectRatioAnalyzer {
         return '상하 배치';
       case LayoutType.single:
         return '단일 이미지';
+      case LayoutType.grid:
+        return '그리드 배치';
+      case LayoutType.adaptive:
+        return '적응형 배치';
     }
   }
 }
@@ -120,11 +126,4 @@ enum ImageOrientation {
   landscape, // 가로형
   portrait,  // 세로형
   square,    // 정사각형
-}
-
-/// 레이아웃 타입 열거형
-enum LayoutType {
-  horizontal, // 가로 배치 (좌/우)
-  vertical,   // 세로 배치 (위/아래)
-  single,     // 단일 이미지
 }

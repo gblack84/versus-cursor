@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '/core_exports.dart';
 import '/features/notifications/presentation/providers/notification_badge_provider.dart';
-import '/backend/backend.dart';
+// TODO: PostsModel을 도메인 모델로 교체 필요
+import '/backend/models/post/posts_model.dart';
 import '/core/design_system/design_system.dart';
 import '/services/cache/unified_cache_service.dart';
 

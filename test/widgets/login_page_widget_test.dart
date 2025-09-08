@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
-import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:get_it/get_it.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,7 +11,6 @@ import '../../lib/features/auth/presentation/screens/login/login_page/login_page
 import '../../lib/features/profile/domain/repositories/i_user_repository.dart';
 
 // Import domain models
-import '../../lib/features/profile/domain/models/user_profile.dart';
 
 // Mock classes
 @GenerateMocks([IUserRepository, User, UserCredential])

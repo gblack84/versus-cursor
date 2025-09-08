@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/user_profile.dart';
 import '../models/profile_info.dart';
 import '../models/user_settings.dart';
 import '../models/user_stats.dart';

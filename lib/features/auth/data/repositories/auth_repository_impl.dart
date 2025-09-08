@@ -12,6 +12,15 @@ import 'dart:async';
 /// Data layer implementation of IAuthRepository interface.
 /// Handles Firebase Authentication operations and data transformation.
 class AuthRepositoryImpl implements IAuthRepository {
+  // Singleton instance
+  static AuthRepositoryImpl? _instance;
+  static AuthRepositoryImpl get instance => _instance ??= AuthRepositoryImpl._();
+  
+  AuthRepositoryImpl._({
+    FirebaseAuth? firebaseAuth,
+  }) : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
+
+  // Constructor for testing purposes
   AuthRepositoryImpl({
     FirebaseAuth? firebaseAuth,
   }) : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;

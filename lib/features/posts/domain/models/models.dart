@@ -13,5 +13,10 @@ export 'voting_summary.dart';
 // Metrics Domain Model
 export 'post_metrics.dart';
 
+// Re-export core post models
+export 'post_core.dart';
+export 'post_content.dart';
+export 'target_audience_model.dart';
+
 // Re-export commonly used voting types
 export 'post_voting.dart' show VoteStatus, VoteOption, ExpansionStatus, VoteException;

@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'post_voting.dart' show VoteStatus, VoteOption;
+import 'post_voting.dart';
 
 part 'voting_summary.freezed.dart';
 part 'voting_summary.g.dart';
@@ -34,16 +34,16 @@ class VotingSummary with _$VotingSummary {
   }) {
     return VotingSummary(
       postId: postId,
-      status: voting.status,
-      votesA: voting.displayVotesA ?? voting.votesA,
-      votesB: voting.displayVotesB ?? voting.votesB,
-      percentA: voting.displayPercentA?.toDouble() ?? voting.percentA,
-      percentB: voting.displayPercentB?.toDouble() ?? voting.percentB,
-      remainingTime: voting.remainingTime,
+      status: voting.voteStatus,
+      votesA: voting.displayVotesAFinal,
+      votesB: voting.displayVotesBFinal,
+      percentA: voting.percentageA,
+      percentB: voting.percentageB,
+      remainingTime: voting.remainingTime ?? Duration.zero,
       hasUserVoted: userId != null ? voting.hasUserVoted(userId) : false,
       userVote: userId != null ? voting.getUserVote(userId) : null,
-      endTime: voting.endTime,
-      completedAt: voting.completedAt,
+      endTime: voting.voteEndTime,
+      completedAt: voting.voteCompletedAt,
     );
   }
 

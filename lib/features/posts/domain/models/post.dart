@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core_exports.dart'; // For LatLng type
 import 'package:equatable/equatable.dart';
 import 'vote_data.dart';
 import 'media_content.dart';

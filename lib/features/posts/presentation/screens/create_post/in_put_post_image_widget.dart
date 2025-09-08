@@ -1,12 +1,15 @@
 // upload_choice_bottom_sheet_widget.dart 임시 제거 - 새로운 업로드 위젯 구현 필요
 import 'dart:async';
+import 'package:get_it/get_it.dart';
 import '/core_exports.dart';
 import '/services/content/content_filter.dart';
 import '/features/posts/presentation/screens/viewer/image_viewer_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '/backend/backend.dart';
+// Replace backend imports with domain layer imports
+import '/features/profile/domain/repositories/i_user_repository.dart';
+import '/backend/backend.dart'; // Temporary for UsersModel, PostsModel, PollDetailsModel
 import 'package:bot_toast/bot_toast.dart';
 import '/features/posts/presentation/utils/no_animation_page_route.dart';
 import '/features/auth/data/services/auth_util.dart';
@@ -27,6 +30,7 @@ import '/features/posts/presentation/widgets/components/input_field_builder.dart
 import '/features/posts/presentation/widgets/media/media_selection_flow_widget.dart';
 import '/features/posts/presentation/widgets/dialogs/target_audience_dialog.dart';
 import '/features/posts/presentation/utils/debug_helper.dart';
+import '/core/types/layout_type.dart';
 import '/features/posts/data/services/storage/storage_service.dart';
 import '/features/posts/data/services/media/media_upload_service.dart';
 import '/features/posts/data/services/error/error_handler.dart';
@@ -728,8 +732,15 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       DebugHelper.log('  - A박스: ${uploadedUrlsA.length}개');
       DebugHelper.log('  - B박스: ${uploadedUrlsB.length}개');
       
-      // 사용자 정보 가져오기
+      // 사용자 정보 가져오기 - Repository 패턴 사용
       DebugHelper.log('[_saveToFirestore] 사용자 정보 조회 중...');
+      final userRepository = GetIt.instance<IUserRepository>();
+      final userProfile = await userRepository.getUserByUid(user.uid);
+      if (userProfile == null) {
+        throw Exception('사용자 정보를 찾을 수 없습니다');
+      }
+      
+      // 임시로 UsersModel 사용 (추후 완전 마이그레이션)
       final userDoc = await UsersModel.getDocumentOnce(
         FirebaseFirestore.instance.collection('users').doc(user.uid)
       );
@@ -819,6 +830,8 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
       // Firestore에 저장
       DebugHelper.log('[_saveToFirestore] Firestore에 게시물 저장 시작...');
+      // Repository 패턴을 통한 게시물 생성 준비 (현재는 기존 방식 유지)
+      // TODO: PostRepository.createPost()로 완전 마이그레이션 필요
       final postRef = await PostsModel.collection.add(postsRecordData);
       DebugHelper.log('[_saveToFirestore] ✅ 게시물 저장 성공! ID: ${postRef.id}');
       
@@ -838,6 +851,8 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         resultTime: 7, // 7일 후 결과 공개
       );
 
+      // PollDetails 생성 (추후 Repository 패턴으로 마이그레이션)
+      // TODO: PostRepository에 poll details 생성 메서드 추가 필요
       await PollDetailsModel.createDoc(postRef).set(pollDetailsData);
       DebugHelper.log('[_saveToFirestore] ✅ PollDetails 저장 성공!');
 

@@ -2,6 +2,11 @@ import 'package:get_it/get_it.dart';
 import 'feature_modules.dart';
 import 'profile_module.dart';
 import 'posts_module.dart';
+import 'auth_module.dart';
+import 'chat_module.dart';
+import 'voting_module.dart';
+import 'notification_module.dart';
+import 'search_module.dart';
 import '../../core/di/core_module.dart';
 
 /// Main Dependency Injection Container
@@ -20,6 +25,11 @@ class DIContainer {
     CoreModule(),
     ProfileModule(),
     PostsModule(),
+    AuthModule(),
+    ChatModule(),
+    VotingModule(),
+    NotificationModule(),
+    SearchModule(),
   ];
   
   /// Initialize all dependencies

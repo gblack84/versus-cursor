@@ -6,3 +6,7 @@ export '../../domain/models/votecounts_model.dart';
 export '../../domain/models/vote_expansion_requests_model.dart';
 export '../../domain/models/rankings_model.dart';
 export '../../domain/models/weights_model.dart';
+
+// Vote State Models
+export '../../domain/models/vote_state.dart';
+export '../../domain/models/votes_model.dart';

@@ -1,0 +1,18 @@
+=== Inventory Scout Analysis Summary ===
+Generated: Mon Sep  8 11:13:47 KST 2025
+
+ARCHITECTURE VIOLATIONS FOUND:
+✗ 16 UI components directly importing backend models
+✗ 3 large files with mixed responsibilities (>1000 lines)
+✗ Presentation layer bypassing domain/data layers
+
+PRIORITY REFACTORING TARGETS:
+🔥 HIGH: in_put_post_image_widget.dart (1730 lines)
+🔥 HIGH: login_page_widget.dart (1171 lines)
+🔥 HIGH: user_info_input_widget.dart (1099 lines)
+
+NEXT RECOMMENDED ACTIONS:
+1. Run RepoMover agent for posts feature extraction
+2. Run ImportGuardian to fix presentation→backend violations
+3. Implement UseCase pattern for business logic separation
+4. Add Repository interfaces for data access abstraction

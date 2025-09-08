@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import 'package:intl/intl.dart';
 import '/core/design_system/design_system.dart';
-import '/backend/backend.dart';
+import '/features/chat/domain/models/chats_model.dart';
+import '/features/profile/domain/models/user_profile.dart';
 import '/features/posts/presentation/widgets/vote/vote_card_message.dart';
 import '/features/chat/data/services/chat_message_lifecycle_service.dart';
 
@@ -18,7 +19,7 @@ class ChatMessageBuilder {
     required bool isSentByMe,
     core.MessageGroupStatus? groupStatus,
     ChatsModel? chatDocument,
-    UsersModel? currentUserRecord,
+    UserProfile? currentUserRecord,
     String? searchQuery,
     bool isSearching = false,
     MessageDeliveryStatus? messageStatus,

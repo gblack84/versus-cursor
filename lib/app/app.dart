@@ -2,7 +2,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '/core_exports.dart';
 import '/features/auth/data/services/auth_util.dart';

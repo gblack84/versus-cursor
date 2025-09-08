@@ -3,8 +3,8 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 
-import '/backend/firebase/firestore/utils/firestore_util.dart';
-import '/backend/firebase/firestore/utils/schema_util.dart';
+import '/core/firebase/utils/firestore_util.dart';
+import '/core/firebase/utils/schema_util.dart';
 
 import '/core_exports.dart';
 
@@ -105,6 +105,23 @@ class GroupChatsModel extends FirestoreRecord {
     DocumentReference reference,
   ) =>
       GroupChatsModel._(reference, mapFromFirestore(data));
+
+  // Convert model to JSON for Firestore
+  Map<String, dynamic> toJson() {
+    return {
+      'group_chat_id': _groupChatId,
+      'creator_id': _creatorId,
+      'participantIds': _participantIds,
+      'group_name': _groupName,
+      'post_id': _postId,
+      'created_at': _createdAt,
+      'update_at': _updateAt,
+      'location': _location,
+      'group_image_url': _groupImageUrl,
+      'pending_user_ids': _pendingUserIds,
+      'chat_type': _chatType,
+    };
+  }
 
   @override
   String toString() =>

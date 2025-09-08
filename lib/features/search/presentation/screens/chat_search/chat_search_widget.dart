@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '/features/auth/data/services/auth_util.dart';
-import '/backend/backend.dart';
+import '/features/profile/domain/models/user_profile.dart';
 import '/core/design_system/design_system.dart';
 
 class ChatSearchWidget extends StatefulWidget {

@@ -1,0 +1,28 @@
+     430
+=== File Structure Overview ===
+lib
+lib/testpage_select
+lib/core
+lib/core/types
+lib/core/di
+lib/core/config
+lib/core/constants
+lib/core/design_system
+lib/core/design_system/utils
+lib/core/design_system/components
+lib/core/design_system/tokens
+lib/core/utils
+lib/core/models
+lib/core/theme
+lib/core/actions
+lib/core/errors
+lib/core/events
+lib/core/usecases
+lib/core/usecases/media
+lib/core/services
+
+=== Widget Files Summary ===
+      37
+
+=== Backend Import Violations ===
+      18

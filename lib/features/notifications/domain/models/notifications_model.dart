@@ -4,8 +4,8 @@ import 'dart:convert';
 
 import 'package:collection/collection.dart';
 
-import '/backend/firebase/firestore/utils/firestore_util.dart';
-import '/backend/firebase/firestore/utils/schema_util.dart';
+import '/core/firebase/utils/firestore_util.dart';
+import '/core/firebase/utils/schema_util.dart';
 
 import '/core_exports.dart';
 
@@ -175,6 +175,32 @@ class NotificationsModel extends FirestoreRecord {
     DocumentReference reference,
   ) =>
       NotificationsModel._(reference, mapFromFirestore(data));
+
+  // Convert model to JSON for Firestore
+  Map<String, dynamic> toJson() {
+    return {
+      'notificationId': _notificationId,
+      'userId': _userId,
+      'type': _type,
+      'sourceId': _sourceId,
+      'content': _content,
+      'createdAt': _createdAt,
+      'read': _read,
+      'targetAudience': _targetAudience,
+      'expiryTime': _expiryTime,
+      'location': _location,
+      'interactionType': _interactionType,
+      'status': _status,
+      'completedAt': _completedAt,
+      'title': _title,
+      'message': _message,
+      'imageUrl': _imageUrl,
+      'actionUrl': _actionUrl,
+      'priority': _priority,
+      'sourceType': _sourceType,
+      'postData': _postData,
+    };
+  }
 
   @override
   String toString() =>

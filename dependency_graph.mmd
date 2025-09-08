@@ -1,0 +1,216 @@
+graph TB
+    %% Phase 3.1 Migration Dependency Graph
+    %% Backend Layer → Features Layer Analysis
+    
+    %% Define the Backend Layer
+    subgraph Backend["🏗️ Backend Layer (/lib/backend/)"]
+        B[backend.dart<br/>📊 51 Dependencies<br/>⚠️ Architecture Violation]
+        B_Stats["📈 Migration Status<br/>✅ 35% Delegated (16 functions)<br/>❌ 52% Direct (24 functions)<br/>🔧 13% Fixes needed"]
+    end
+    
+    %% Feature Layer Groups
+    subgraph Features["🎯 Features Layer (/lib/features/)"]
+        
+        %% Auth Feature (3 deps)
+        subgraph Auth["🔐 Auth Feature (3 deps)"]
+            AU[AuthUtil<br/>🛠️ Service<br/>P4: Can Remove]
+            AUM[UserContentsModel<br/>📦 Domain<br/>P2: Direct→Repository]
+            APM[PremiumUsersModel<br/>📦 Domain<br/>P4: Direct→Repository]
+        end
+        
+        %% Posts Feature (9 deps) 
+        subgraph Posts["📝 Posts Feature (9 deps)"]
+            PI[ImagesModel<br/>📦 Data<br/>P1: Direct→Repository]
+            PV[VideoModel<br/>📦 Data<br/>P1: Direct→Repository]
+            PPD[PollDetailsModel<br/>📦 Data<br/>P3: Direct→Repository]
+            PFD[FeedDetailsModel<br/>📦 Data<br/>P3: Direct→Repository]
+            PSM[ContentsSharesModel<br/>📦 Data<br/>P3: Direct→Repository]
+            PEM[EncodingsModel<br/>📦 Domain<br/>P4: Direct→Repository]
+            PBM[BackendPostModels<br/>📦 Data<br/>P2: Complex Migration]
+            PRM[RankedPostsModel<br/>📦 Domain<br/>P2: Extend Repository]
+            PRE[PostRepositoryImpl<br/>🏛️ Repository<br/>❌ CRITICAL: Fix Instance Pattern]
+        end
+        
+        %% Profile Feature (11 deps)
+        subgraph Profile["👤 Profile Feature (11 deps)"]
+            PS[SettingsModel<br/>📦 Data<br/>P1: Direct→Repository]
+            PCI[ContentsInterestsModel<br/>📦 Data<br/>P3: Direct→Repository]
+            PPT[PointModel<br/>📦 Data<br/>P3: Direct→Repository]
+            PTM[TransactionsModel<br/>📦 Data<br/>P3: Direct→Repository]
+            PUP[UserProfile<br/>📦 Domain<br/>P2: Extend Repository]
+            PFL[FriendsListModel<br/>📦 Domain<br/>P2: Extend Repository]
+            PIM[InterestModel<br/>📦 Domain<br/>P1: Direct→Repository]
+            PJN[JopsNameModel<br/>📦 Domain<br/>P4: Direct→Repository]
+            PJC[JopsCategoryModel<br/>📦 Domain<br/>P4: Direct→Repository]
+            PCJ[ChatInterestJopsModel<br/>📦 Domain<br/>P3: Direct→Repository]
+            PCH[CharactersModel<br/>📦 Domain<br/>P1: Direct→Repository]
+            PUR[UserRepositoryImpl<br/>🏛️ Repository<br/>✅ Good Pattern]
+        end
+        
+        %% Chat Feature (6 deps)
+        subgraph Chat["💬 Chat Feature (6 deps)"]
+            CM[MessagesModel<br/>📦 Data<br/>P2: Extend Repository]
+            CCM[ChatsModel<br/>📦 Domain<br/>✅ Already Delegated]
+            CGC[GroupChatsModel<br/>📦 Domain<br/>✅ Already Delegated]
+            CGM[GroupMessagesModel<br/>📦 Domain<br/>✅ Already Delegated]
+            CHM[ChatHistoryModel<br/>📦 Domain<br/>P2: Direct→Repository]
+            CR[ChatRepositoryImpl<br/>🏛️ Repository<br/>✅ Good Pattern]
+        end
+        
+        %% Voting Feature (5 deps)
+        subgraph Voting["🗳️ Voting Feature (5 deps)"]
+            VC[VotecountsModel<br/>📦 Domain<br/>✅ Already Delegated]
+            VER[VoteExpansionRequestsModel<br/>📦 Domain<br/>✅ Already Delegated]
+            VR[RankingsModel<br/>📦 Domain<br/>✅ Already Delegated]
+            VW[WeightsModel<br/>📦 Domain<br/>✅ Already Delegated]
+            VRI[VotingRepositoryImpl<br/>🏛️ Repository<br/>✅ Good Pattern]
+        end
+        
+        %% Notifications Feature (3 deps)
+        subgraph Notifications["🔔 Notifications Feature (3 deps)"]
+            NM[NotificationModel<br/>📦 Domain<br/>✅ Already Delegated]
+            NMS[NotificationsModel<br/>📦 Domain<br/>✅ Already Delegated]
+            NR[NotificationRepositoryImpl<br/>🏛️ Repository<br/>✅ Good Pattern]
+        end
+        
+        %% Search Feature (1 dep)
+        subgraph Search["🔍 Search Feature (1 dep)"]
+            SH[SearchesModel<br/>📦 Domain<br/>P2: Direct→Repository]
+        end
+    end
+    
+    %% Core Layer (Target Architecture)
+    subgraph Core["🎯 Core Layer (Target Architecture)"]
+        subgraph CoreRepos["Repository Interfaces (To Be Created)"]
+            ISettings[ISettingsRepository]
+            IMedia[IMediaRepository]
+            IInterest[IInterestRepository]
+            ICharacter[ICharacterRepository]
+            ISocial[ISocialRepository]
+            ISearch[ISearchRepository]
+            IContent[IContentRepository]
+            IPoint[IPointRepository]
+            IReference[IReferenceRepository]
+            ISubscription[ISubscriptionRepository]
+        end
+        
+        subgraph DI["Dependency Injection"]
+            GetIt[GetIt Container<br/>Service Locator]
+        end
+    end
+    
+    %% Dependencies with color coding
+    %% Critical Issues (Red - Dashed)
+    B -.->|❌ Fix Instance Pattern| PRE
+    B -.->|❌ Can Remove Unused| AU
+    
+    %% Repository Dependencies (Green - Solid)
+    B -->|✅ Delegated| PUR
+    B -->|✅ Delegated| CR
+    B -->|✅ Delegated| VRI
+    B -->|✅ Delegated| NR
+    
+    %% P1 High Priority (Red - Thick)
+    B ==>|P1: Critical| PS
+    B ==>|P1: Critical| PI
+    B ==>|P1: Critical| PV
+    B ==>|P1: Critical| PIM
+    B ==>|P1: Critical| PCH
+    
+    %% P2 Medium Priority (Orange - Normal)
+    B -->|P2: Medium| AUM
+    B -->|P2: Medium| PBM
+    B -->|P2: Medium| PRM
+    B -->|P2: Medium| PUP
+    B -->|P2: Medium| PFL
+    B -->|P2: Medium| CM
+    B -->|P2: Medium| CHM
+    B -->|P2: Medium| SH
+    
+    %% P3-P4 Low Priority (Yellow - Thin)
+    B -.->|P3-P4: Low| PPD
+    B -.->|P3-P4: Low| PFD
+    B -.->|P3-P4: Low| PSM
+    B -.->|P3-P4: Low| PCI
+    B -.->|P3-P4: Low| PPT
+    B -.->|P3-P4: Low| PTM
+    B -.->|P3-P4: Low| PCJ
+    B -.->|P3-P4: Low| PJN
+    B -.->|P3-P4: Low| PJC
+    B -.->|P3-P4: Low| APM
+    B -.->|P3-P4: Low| PEM
+    
+    %% Already Delegated (Green - Dotted)
+    B -.->|✅ Delegated| CCM
+    B -.->|✅ Delegated| CGC
+    B -.->|✅ Delegated| CGM
+    B -.->|✅ Delegated| VC
+    B -.->|✅ Delegated| VER
+    B -.->|✅ Delegated| VR
+    B -.->|✅ Delegated| VW
+    B -.->|✅ Delegated| NM
+    B -.->|✅ Delegated| NMS
+    
+    %% Target Architecture Connections
+    ISettings -.->|Future| PS
+    IMedia -.->|Future| PI
+    IMedia -.->|Future| PV
+    IInterest -.->|Future| PIM
+    ICharacter -.->|Future| PCH
+    ISocial -.->|Future| PCI
+    ISearch -.->|Future| SH
+    IContent -.->|Future| PPD
+    IContent -.->|Future| PFD
+    IPoint -.->|Future| PPT
+    IPoint -.->|Future| PTM
+    IReference -.->|Future| PJN
+    IReference -.->|Future| PJC
+    ISubscription -.->|Future| APM
+    
+    GetIt -.->|Register| ISettings
+    GetIt -.->|Register| IMedia
+    GetIt -.->|Register| IInterest
+    GetIt -.->|Register| ICharacter
+    GetIt -.->|Register| ISocial
+    GetIt -.->|Register| ISearch
+    GetIt -.->|Register| IContent
+    GetIt -.->|Register| IPoint
+    GetIt -.->|Register| IReference
+    GetIt -.->|Register| ISubscription
+    
+    %% Styling
+    classDef critical fill:#ffcccc,stroke:#ff0000,stroke-width:3px
+    classDef delegated fill:#ccffcc,stroke:#00aa00,stroke-width:2px
+    classDef p1 fill:#ffdddd,stroke:#cc0000,stroke-width:2px
+    classDef p2 fill:#fff2cc,stroke:#ff8800,stroke-width:2px
+    classDef p3p4 fill:#ffffcc,stroke:#cccc00,stroke-width:1px
+    classDef repository fill:#cceeff,stroke:#0066cc,stroke-width:2px
+    classDef target fill:#f0f8ff,stroke:#4169e1,stroke-width:2px,stroke-dasharray: 5 5
+    
+    %% Apply styles
+    class PRE,AU critical
+    class PUR,CR,VRI,NR,CCM,CGC,CGM,VC,VER,VR,VW,NM,NMS delegated
+    class PS,PI,PV,PIM,PCH p1
+    class AUM,PBM,PRM,PUP,PFL,CM,CHM,SH p2
+    class PPD,PFD,PSM,PCI,PPT,PTM,PCJ,PJN,PJC,APM,PEM p3p4
+    class ISettings,IMedia,IInterest,ICharacter,ISocial,ISearch,IContent,IPoint,IReference,ISubscription target
+    class GetIt repository
+    
+    %% Legend
+    subgraph Legend["📋 Legend"]
+        L1[❌ Critical Issues - Fix Immediately]
+        L2[✅ Already Delegated - Good State]  
+        L3[P1: High Priority - Week 1]
+        L4[P2: Medium Priority - Week 2-3]
+        L5[P3-P4: Low Priority - Week 4]
+        L6[🏛️ Repository Pattern]
+        L7[🎯 Target Architecture]
+    end
+    
+    class L1 critical
+    class L2 delegated
+    class L3 p1
+    class L4 p2
+    class L5 p3p4
+    class L6 repository
+    class L7 target

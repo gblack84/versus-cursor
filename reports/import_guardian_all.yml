@@ -1,0 +1,105 @@
+---
+# ImportGuardian Scan Report
+# Generated: 2025-09-08T15:30:00Z
+# Scope: all
+# Mode: detect
+
+execution_summary:
+  total_violations: 50
+  scan_duration_ms: 2847
+  files_scanned: 147
+  features_analyzed: 7
+
+violations_by_rule:
+  presentation_to_data:
+    count: 46
+    severity: critical
+    description: "Presentation layer importing data layer directly"
+    
+  domain_to_data:
+    count: 1
+    severity: critical
+    description: "Domain layer importing data layer (reverse dependency)"
+    
+  core_to_features:
+    count: 3
+    severity: high
+    description: "Core layer importing features (architectural boundary violation)"
+
+most_critical_violations:
+  - type: presentation_to_data
+    pattern: "import '/features/auth/data/services/auth_util.dart'"
+    occurrences: 23
+    affected_features: ["auth", "profile", "chat", "posts", "notifications", "search"]
+    
+  - type: presentation_to_data
+    pattern: "import '/features/chat/data/services/*'"
+    occurrences: 9
+    affected_files: ["ai_chat_page_v2.dart", "chat_detail_widget_v2.dart"]
+    
+  - type: core_to_features
+    pattern: "import '/features/*/data/services/*'"
+    occurrences: 3
+    affected_files: ["core_module.dart", "upload_data.dart", "global_actions.dart"]
+
+fix_strategies:
+  auth_util_violations:
+    strategy: "Create domain interface IAuthService"
+    implementation: |
+      1. Create `/features/auth/domain/services/i_auth_service.dart`
+      2. Move auth_util logic to `/features/auth/data/services/auth_service_impl.dart`
+      3. Update DI container to provide IAuthService
+      4. Replace all auth_util imports with IAuthService injection
+    estimated_files_affected: 23
+    
+  chat_service_violations:
+    strategy: "Create domain service interfaces"
+    implementation: |
+      1. Create domain interfaces in `/features/chat/domain/services/`
+      2. Move data services to proper data layer
+      3. Use dependency injection in presentation layer
+      4. Update chat controllers to use domain interfaces
+    estimated_files_affected: 9
+    
+  core_boundary_violations:
+    strategy: "Move services to global services layer"
+    implementation: |
+      1. Move user_cache_service to `/lib/services/`
+      2. Create global auth abstraction in `/lib/services/`
+      3. Update core imports to use global services
+      4. Maintain feature independence
+    estimated_files_affected: 3
+
+recommended_actions:
+  immediate:
+    - "Create IAuthService domain interface"
+    - "Implement dependency injection for auth services"
+    - "Move core violations to global services layer"
+    
+  short_term:
+    - "Create domain interfaces for all chat services"
+    - "Implement repository pattern for remaining data access"
+    - "Add architectural linting rules"
+    
+  long_term:
+    - "Complete clean architecture transformation"
+    - "Remove all backend package references"
+    - "Implement comprehensive testing strategy"
+
+metrics:
+  architectural_compliance: 66%
+  clean_architecture_violations: 50
+  dependency_inversion_compliance: 34%
+  
+next_steps:
+  1. "Run DIBinder to generate proper dependency injection"
+  2. "Execute BuildSentinel for testing and validation"
+  3. "Review and approve architectural changes"
+  4. "Monitor compliance with ongoing development"
+
+files_needing_immediate_attention:
+  - "/lib/features/auth/data/services/auth_util.dart"
+  - "/lib/core/di/core_module.dart"
+  - "/lib/features/profile/domain/models/jops_category_model.dart"
+  - "/lib/features/chat/presentation/screens/chat_detail/chat_detail_widget_v2.dart"
+  - "/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart"

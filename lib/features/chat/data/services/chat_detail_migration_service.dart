@@ -1,5 +1,7 @@
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
-import '/backend/backend.dart';
+// Migrated from backend.dart - Direct model imports
+import '/features/chat/data/models/messages_model.dart';
+import '/features/profile/domain/models/user_profile.dart';
 import '/features/chat/data/services/chat_file_size_service.dart';
 
 /// Service to handle migration of ChatDetailWidget to v2
@@ -9,7 +11,7 @@ class ChatDetailMigrationService {
   static Future<core.Message> convertFirestoreToCore(
     MessagesModel message,
     Map<String, dynamic>? messageData,
-    Map<String, UsersModel> usersMap, {
+    Map<String, UserProfile> usersMap, {
     bool isAiChat = false,
   }) async {
     var senderId = message.senderId.isNotEmpty ? message.senderId : 'unknown';
@@ -193,8 +195,8 @@ class ChatDetailMigrationService {
     return metadata;
   }
   
-  /// Convert UsersModel to core.User
-  static core.User convertUsersModelToCore(UsersModel userModel) {
+  /// Convert UserProfile to core.User
+  static core.User convertUsersModelToCore(UserProfile userModel) {
     return core.User(
       id: userModel.reference.id,
       name: userModel.displayName,

@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '/core/types/layout_type.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '/backend/backend.dart';
+// Migrated from backend.dart - Direct model import
+import '/features/notifications/domain/models/notifications_model.dart';
 import '/features/auth/data/services/auth_util.dart';
 import '/features/notifications/presentation/widgets/voting_notification_dialog.dart';
 import '/features/notifications/presentation/models/versus_box_size_data.dart';
-import '/features/posts/domain/usecases/media/aspect_ratio_analyzer.dart';
 import '/core_exports.dart';
 import 'notification_service.dart';
 import '/features/posts/data/services/vote/vote_status_service.dart';

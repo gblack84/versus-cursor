@@ -109,7 +109,7 @@ Future<List<PostsModel>> queryPostsRecordOnce({
 // ============================================================================
 
 @Deprecated('Use PostRepository.streamComments() instead')
-Stream<List<CommentsModel>> queryCommentsRecord({
+Stream<List<ContentCommentsModel>> queryCommentsRecord({
   Query Function(Query)? queryBuilder,
   DocumentReference? parent,
   int limit = -1,
@@ -127,7 +127,7 @@ Stream<List<CommentsModel>> queryCommentsRecord({
   }
   
   return query.snapshots().map((snapshot) {
-    return snapshot.docs.map((doc) => CommentsModel.fromSnapshot(doc)).toList();
+    return snapshot.docs.map((doc) => ContentCommentsModel.fromSnapshot(doc)).toList();
   });
 }
 

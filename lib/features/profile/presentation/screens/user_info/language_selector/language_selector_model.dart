@@ -1,5 +1,4 @@
 import '/features/auth/data/services/auth_util.dart';
-import '/backend/backend.dart';
 import '/core_exports.dart';
 import 'language_selector_widget.dart' show LanguageSelectorWidget;
 import 'package:flutter/material.dart';

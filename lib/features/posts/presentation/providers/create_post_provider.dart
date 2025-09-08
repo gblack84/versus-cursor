@@ -3,21 +3,34 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get_it/get_it.dart';
 import '/core_exports.dart';
-import '/backend/backend.dart';
+import '/features/posts/domain/repositories/i_post_repository.dart';
+import '/features/profile/domain/models/user_profile.dart';
+import '/features/profile/domain/repositories/i_user_repository.dart';
+import '/features/posts/domain/models/post.dart';
+import '/features/posts/domain/models/media_content.dart';
+import '/features/posts/domain/models/creator_info.dart';
+import '/features/posts/domain/models/vote_data.dart';
+import '/features/posts/domain/models/post_stats.dart';
+import '/features/posts/data/models/poll_details_model.dart';
 import '/features/auth/data/services/auth_util.dart';
 import '/features/posts/data/services/validation_service.dart';
 import '/features/posts/data/services/moderation/models/moderation_result.dart' as ai;
 import '/services/content/content_filter.dart';
-import '/services/ui/models/enums.dart';
-import '/services/ui/injection/ui_service_injection.dart';
+import '/core/types/layout_type.dart';
 import '/features/posts/domain/usecases/media/ratio_calculator.dart';
 import '/features/posts/data/services/error/error_handler.dart';
 import '/features/posts/presentation/utils/debug_helper.dart';
 
 /// Provider for managing post creation business logic
 class CreatePostProvider extends ChangeNotifier {
+  final IPostRepository _postRepository;
+  final IUserRepository _userRepository;
 
-  CreatePostProvider() {
+  CreatePostProvider({
+    IPostRepository? postRepository,
+    IUserRepository? userRepository,
+  }) : _postRepository = postRepository ?? GetIt.instance<IPostRepository>(),
+       _userRepository = userRepository ?? GetIt.instance<IUserRepository>() {
     _initialize();
   }
   // Text Controllers
@@ -133,10 +146,11 @@ class CreatePostProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Get user document
-      final userDoc = await UsersModel.getDocumentOnce(
-        GetIt.instance<FirebaseFirestore>().collection('users').doc(user.uid)
-      );
+      // Get user document using repository
+      final userProfile = await _userRepository.getUserByUid(user.uid);
+      if (userProfile == null) {
+        throw Exception('User profile not found');
+      }
 
       // Calculate aspect ratios
       final aspectRatioA = appState.uploadImageAspectRatioA.isNotEmpty 
@@ -157,37 +171,39 @@ class CreatePostProvider extends ChangeNotifier {
         layoutType = _currentLayout == LayoutType.horizontal ? 'horizontal' : 'vertical';
       }
 
-      // Create post data
-      final postData = createPostsModelData(
-        userid: user.uid,
-        uid: user.uid,
-        email: user.email,
-        displayName: userDoc.displayName,
-        photoUrl: userDoc.photoUrl,
-        content: descriptionController.text,
+      // Create post using domain model
+      final post = Post(
+        id: '', // Will be set by repository
+        creatorInfo: CreatorInfo(
+          userid: user.uid,
+          uid: user.uid,
+          email: user.email ?? '',
+          displayName: userProfile.displayName,
+          photoUrl: userProfile.photoUrl ?? '',
+          createdTime: DateTime.now(),
+        ),
         questionTitle: titleController.text,
+        description: descriptionController.text,
+        optionA: MediaContent(
+          text: textAController.text,
+          imageUrls: appState.uploadImageA,
+          aspectRatio: aspectRatioA,
+          mediaType: 'image',
+        ),
+        optionB: MediaContent(
+          text: _isSingleMode ? '' : textBController.text,
+          imageUrls: _isSingleMode ? [] : appState.uploadImageB,
+          aspectRatio: _isSingleMode ? null : aspectRatioB,
+          mediaType: 'image',
+        ),
+        voteData: VoteData(), // Initialize empty vote data
+        stats: PostStats(), // Initialize empty stats
         createdAt: DateTime.now(),
-        createdTime: DateTime.now(),
-        optionA: {
-          'title': textAController.text,
-          'mediaUrls': appState.uploadImageA,
-          'mediaType': 'image',
-          'aspectRatio': aspectRatioA,
-        },
-        optionB: _isSingleMode ? null : {
-          'title': textBController.text,
-          'mediaUrls': appState.uploadImageB,
-          'mediaType': 'image',
-          'aspectRatio': aspectRatioB,
-        },
-        layoutType: layoutType,
-        targetAudience: targetAudience,
-        expectedRatioA: geminiResult?.expectedRatioA ?? 0.5,
-        expectedRatioB: geminiResult?.expectedRatioB ?? 0.5,
+        targetAudience: targetAudience ?? {},
       );
 
-      // Save to Firestore
-      await PostsModel.collection.add(postData);
+      // Save using repository
+      await _postRepository.createPost(post);
       
       // Clear form data
       clearForm(appState);

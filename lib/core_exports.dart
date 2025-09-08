@@ -18,6 +18,15 @@
 
 // ===== FROM CORE =====
 
+// Repository Interfaces (Added: 2025-01-09)
+export 'core/repositories/post_repository.dart';
+export 'core/repositories/user_repository.dart';
+export 'core/repositories/chat_repository.dart';
+export 'core/repositories/voting_repository.dart';
+export 'core/repositories/notification_repository.dart';
+export 'core/repositories/search_repository.dart';
+// auth_repository는 auth feature에 있으므로 제외
+
 // Theme & Styling
 export 'core/theme/app_theme.dart';
 
@@ -42,6 +51,10 @@ export 'core/utils/app_utils.dart';
 export 'core/utils/app_timer.dart';
 export 'core/utils/custom_functions.dart';
 
+// Firebase utilities
+export 'core/firebase/utils/firestore_util.dart';
+export 'core/firebase/utils/schema_util.dart';
+
 // Models
 export 'core/models/app_model.dart';
 export 'core/models/uploaded_file.dart';
@@ -52,7 +65,7 @@ export 'core/models/form_field_controller.dart';
 
 // Navigation (app/router/navigation)
 export 'app/router/navigation/nav.dart';
-export 'app/router/navigation/serialization_util.dart';
+export 'app/router/navigation/serialization_util.dart' hide fromCssColor;
 
 // App Models (app/models)
 export 'app/models/lat_lng.dart';

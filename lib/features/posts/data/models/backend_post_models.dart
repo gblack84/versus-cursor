@@ -6,13 +6,11 @@
 // Import existing backend models
 import 'comments_model.dart' as backend_comments;
 import 'likes_model.dart' as backend_likes;
-import 'dislikes_model.dart';
-import 'ranked_posts_model.dart';
 
 // For exports in backend.dart
 export 'comments_model.dart' show ContentCommentsModel;
 export 'likes_model.dart' show ContentsLikesModel;
-export 'dislikes_model.dart';
+export '../../domain/models/dislikes_model.dart';
 export 'ranked_posts_model.dart';
 
 // Re-export with expected names for backend compatibility

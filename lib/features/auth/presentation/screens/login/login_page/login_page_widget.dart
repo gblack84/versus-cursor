@@ -1,5 +1,7 @@
+import 'package:get_it/get_it.dart';
 import '/features/auth/data/services/auth_util.dart';
-import '/backend/backend.dart';
+import '/features/profile/domain/repositories/i_user_repository.dart';
+import '/features/profile/domain/models/user_profile.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
@@ -571,7 +573,11 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                     'role': 'admin',
                                                     'uid': user.uid,
                                                   };
-                                                  await UsersModel.collection.doc(user.uid).set(usersCreateData);
+                                                  // Repository 패턴 사용 - createUser 메서드 활용
+                                                  final userRepository = GetIt.instance<IUserRepository>();
+                                                  
+                                                  // UserProfile 생성
+                                                  await UserProfile.collection.doc(user.uid).set(usersCreateData);
                                                 }
                                                 
                                                 // authenticatedUserStream이 currentUser를 설정할 때까지 대기
@@ -584,9 +590,9 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                 if (currentUserReference == null) {
                                                   debugPrint('경고: currentUserReference가 설정되지 않음');
                                                   // 직접 DocumentReference 생성하여 업데이트
-                                                  final directRef = FirebaseFirestore.instance
-                                                      .collection('users')
-                                                      .doc(user.uid);
+                                                  // Repository를 통해 업데이트 (추후 완전 마이그레이션)
+                                                  final userRepository = GetIt.instance<IUserRepository>();
+                                                  final directRef = userRepository.getUserReference(user.uid);
                                                   
                                                   await directRef.update({
                                                     ...mapToFirestore({
@@ -673,7 +679,11 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                     'platform': 'ios',  // 플랫폼 정보 저장
                                                     'uid': user.uid,
                                                   };
-                                                  await UsersModel.collection.doc(user.uid).set(usersCreateData);
+                                                  // Repository 패턴 사용 - createUser 메서드 활용
+                                                  final userRepository = GetIt.instance<IUserRepository>();
+                                                  
+                                                  // UserProfile 생성
+                                                  await UserProfile.collection.doc(user.uid).set(usersCreateData);
                                                 }
                                                 
                                                 // authenticatedUserStream이 currentUser를 설정할 때까지 대기
@@ -686,9 +696,9 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                 if (currentUserReference == null) {
                                                   debugPrint('경고: currentUserReference가 설정되지 않음');
                                                   // 직접 DocumentReference 생성하여 업데이트
-                                                  final directRef = FirebaseFirestore.instance
-                                                      .collection('users')
-                                                      .doc(user.uid);
+                                                  // Repository를 통해 업데이트 (추후 완전 마이그레이션)
+                                                  final userRepository = GetIt.instance<IUserRepository>();
+                                                  final directRef = userRepository.getUserReference(user.uid);
                                                   
                                                   await directRef.update({
                                                     ...mapToFirestore({
@@ -782,7 +792,11 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                     'platform': 'android',
                                                     'uid': user.uid,
                                                   };
-                                                  await UsersModel.collection.doc(user.uid).set(usersCreateData);
+                                                  // Repository 패턴 사용 - createUser 메서드 활용
+                                                  final userRepository = GetIt.instance<IUserRepository>();
+                                                  
+                                                  // UserProfile 생성
+                                                  await UserProfile.collection.doc(user.uid).set(usersCreateData);
                                                 }
                                                 
                                                 // authenticatedUserStream이 currentUser를 설정할 때까지 대기
@@ -795,9 +809,9 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                 if (currentUserReference == null) {
                                                   debugPrint('경고: currentUserReference가 설정되지 않음');
                                                   // 직접 DocumentReference 생성하여 업데이트
-                                                  final directRef = FirebaseFirestore.instance
-                                                      .collection('users')
-                                                      .doc(user.uid);
+                                                  // Repository를 통해 업데이트 (추후 완전 마이그레이션)
+                                                  final userRepository = GetIt.instance<IUserRepository>();
+                                                  final directRef = userRepository.getUserReference(user.uid);
                                                   
                                                   await directRef.update({
                                                     ...mapToFirestore({
@@ -885,7 +899,11 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                     'platform': 'macos',
                                                     'uid': user.uid,
                                                   };
-                                                  await UsersModel.collection.doc(user.uid).set(usersCreateData);
+                                                  // Repository 패턴 사용 - createUser 메서드 활용
+                                                  final userRepository = GetIt.instance<IUserRepository>();
+                                                  
+                                                  // UserProfile 생성
+                                                  await UserProfile.collection.doc(user.uid).set(usersCreateData);
                                                 }
                                                 
                                                 // authenticatedUserStream이 currentUser를 설정할 때까지 대기
@@ -898,9 +916,9 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                 if (currentUserReference == null) {
                                                   debugPrint('경고: currentUserReference가 설정되지 않음');
                                                   // 직접 DocumentReference 생성하여 업데이트
-                                                  final directRef = FirebaseFirestore.instance
-                                                      .collection('users')
-                                                      .doc(user.uid);
+                                                  // Repository를 통해 업데이트 (추후 완전 마이그레이션)
+                                                  final userRepository = GetIt.instance<IUserRepository>();
+                                                  final directRef = userRepository.getUserReference(user.uid);
                                                   
                                                   await directRef.update({
                                                     ...mapToFirestore({
@@ -988,7 +1006,11 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                     'platform': 'web',
                                                     'uid': user.uid,
                                                   };
-                                                  await UsersModel.collection.doc(user.uid).set(usersCreateData);
+                                                  // Repository 패턴 사용 - createUser 메서드 활용
+                                                  final userRepository = GetIt.instance<IUserRepository>();
+                                                  
+                                                  // UserProfile 생성
+                                                  await UserProfile.collection.doc(user.uid).set(usersCreateData);
                                                 }
                                                 
                                                 // authenticatedUserStream이 currentUser를 설정할 때까지 대기
@@ -1001,9 +1023,9 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                                 if (currentUserReference == null) {
                                                   debugPrint('경고: currentUserReference가 설정되지 않음');
                                                   // 직접 DocumentReference 생성하여 업데이트
-                                                  final directRef = FirebaseFirestore.instance
-                                                      .collection('users')
-                                                      .doc(user.uid);
+                                                  // Repository를 통해 업데이트 (추후 완전 마이그레이션)
+                                                  final userRepository = GetIt.instance<IUserRepository>();
+                                                  final directRef = userRepository.getUserReference(user.uid);
                                                   
                                                   await directRef.update({
                                                     ...mapToFirestore({

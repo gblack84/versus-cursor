@@ -2,10 +2,38 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
-import '/backend/backend.dart';
-import '/core_exports.dart';  // Temporary - all models from bridge
+import '/core_exports.dart';  // Core utilities and types (includes cloud_firestore)
+import '/core/firebase/utils/firestore_util.dart';  // For FirestoreRecord, safeGet, RecordBuilder
 
 /// SERIALIZATION HELPERS
+
+// Color extensions for serialization
+extension ColorSerialization on Color {
+  String toCssString() {
+    final r = (this.r * 255.0).round();
+    final g = (this.g * 255.0).round();
+    final b = (this.b * 255.0).round();
+    final a = this.a;
+    return 'rgba($r, $g, $b, $a)';
+  }
+}
+
+Color fromCssColor(String cssColor) {
+  if (cssColor.startsWith('rgba')) {
+    final values = cssColor
+        .substring(5, cssColor.length - 1)
+        .split(',')
+        .map((s) => s.trim())
+        .toList();
+    return Color.fromARGB(
+      (double.parse(values[3]) * 255).round(),
+      int.parse(values[0]),
+      int.parse(values[1]),
+      int.parse(values[2]),
+    );
+  }
+  return Colors.black;
+}
 
 String dateTimeRangeToString(DateTimeRange dateTimeRange) {
   final startStr = dateTimeRange.start.millisecondsSinceEpoch.toString();

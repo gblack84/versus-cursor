@@ -1,0 +1,21 @@
+# 리팩토링 후보 분석 보고서
+
+## 🔥 대형 파일 (500줄 이상)
+1. lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart (1,745줄)
+2. lib/backend/backend.dart (1,665줄) 
+3. lib/core/localization/app_localizations.dart (1,280줄)
+4. lib/features/posts/presentation/widgets/vote/vote_card_message.dart (1,265줄)
+5. lib/features/auth/presentation/screens/login/login_page/login_page_widget.dart (1,194줄)
+6. lib/features/chat/presentation/screens/chat_detail/chat_detail_widget_v2.dart (1,158줄)
+7. lib/features/profile/presentation/screens/user_info_input/user_info_input_widget.dart (1,100줄)
+8. lib/features/notifications/presentation/widgets/versus_notification_box.dart (955줄)
+9. lib/features/auth/presentation/screens/signup/create_account/create_account_widget.dart (942줄)
+10. lib/features/notifications/presentation/widgets/notification_image_viewer.dart (936줄)
+
+## 🚫 빈 Feature 디렉토리
+- lib/features/theme/ (0개 파일)
+- lib/features/upload/ (0개 파일)
+
+## 🎯 잘못 위치한 코드
+- Backend 레이어가 Features의 Models/Services 직접 참조 (41건)
+- Core 레이어가 Features의 Utils/Services 참조 (3건)

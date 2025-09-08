@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '/features/auth/data/services/auth_util.dart';
 
 import '../core_exports.dart';
-import 'firebase/firestore/utils/firestore_util.dart';
+import '../core/firebase/utils/firestore_util.dart';
 
 // Direct imports for moved models
 import '/features/profile/data/models/settings_model.dart';
@@ -11,12 +11,12 @@ import '/features/posts/data/models/media/images_model.dart';
 import '/features/posts/data/models/media/video_model.dart';
 
 // Additional missing models after migration
-import '/features/posts/domain/models/dislikes_model.dart'; // DislikesModel (preferred domain model)
-import '/features/posts/data/models/comments_model.dart'; // ContentCommentsModel
+// DislikesModel (preferred domain model)
+// ContentCommentsModel (provided by backend_post_models.dart)
 import '/features/chat/data/models/messages_model.dart'; // MessagesModel
 import '/features/posts/data/models/poll_details_model.dart'; // PollDetailsModel
 import '/features/posts/data/models/feed_details_model.dart'; // FeedDetailsModel
-import '/features/posts/data/models/likes_model.dart'; // ContentsLikesModel
+// ContentsLikesModel
 import '/features/profile/data/models/contents_interests_model.dart'; // ContentsInterestsModel
 import '/features/posts/data/models/shares_model.dart'; // ContentsSharesModel
 import '/features/profile/data/models/point_model.dart'; // PointModel
@@ -52,8 +52,8 @@ export 'dart:async' show StreamSubscription;
 export 'package:cloud_firestore/cloud_firestore.dart' hide Order;
 export 'package:firebase_core/firebase_core.dart';
 // DEPRECATED: models/index.dart removed - using feature-specific exports only
-export 'firebase/firestore/utils/firestore_util.dart';
-export 'firebase/firestore/utils/schema_util.dart';
+export '../core/firebase/utils/firestore_util.dart';
+export '../core/firebase/utils/schema_util.dart';
 
 // Feature-based exports - Phase 1.1C reorganization complete
 export '../features/posts/data/exports/posts_models.dart';
@@ -185,7 +185,7 @@ Future<List<SettingsModel>> querySettingsModelOnce({
 Future<int> queryPostsModelCount({
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) => PostRepositoryImpl().queryPostsModelCount(
+}) => PostRepositoryImpl.instance.queryPostsModelCount(
     queryBuilder: queryBuilder,
     limit: limit,
   );
@@ -194,7 +194,7 @@ Stream<List<PostsModel>> queryPostsModel({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) => PostRepositoryImpl().queryPostsModel(
+}) => PostRepositoryImpl.instance.queryPostsModel(
     queryBuilder: queryBuilder,
     limit: limit,
     singleRecord: singleRecord,
@@ -204,7 +204,7 @@ Future<List<PostsModel>> queryPostsModelOnce({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) => PostRepositoryImpl().queryPostsModelOnce(
+}) => PostRepositoryImpl.instance.queryPostsModelOnce(
     queryBuilder: queryBuilder,
     limit: limit,
     singleRecord: singleRecord,
@@ -367,7 +367,7 @@ Future<List<VoteExpansionRequestsModel>> queryVoteExpansionRequestsModelOnce({
 Future<int> queryCommentsModelCount({
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) => PostRepositoryImpl().queryCommentsModelCount(
+}) => PostRepositoryImpl.instance.queryCommentsModelCount(
     queryBuilder: queryBuilder,
     limit: limit,
   );
@@ -376,7 +376,7 @@ Stream<List<ContentCommentsModel>> queryCommentsModel({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) => PostRepositoryImpl().queryCommentsModel(
+}) => PostRepositoryImpl.instance.queryCommentsModel(
     queryBuilder: queryBuilder,
     limit: limit,
     singleRecord: singleRecord,
@@ -386,7 +386,7 @@ Future<List<ContentCommentsModel>> queryCommentsModelOnce({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) => PostRepositoryImpl().queryCommentsModelOnce(
+}) => PostRepositoryImpl.instance.queryCommentsModelOnce(
     queryBuilder: queryBuilder,
     limit: limit,
     singleRecord: singleRecord,
@@ -398,7 +398,7 @@ Future<int> queryLikesModelCount({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) => PostRepositoryImpl().queryLikesModelCount(
+}) => PostRepositoryImpl.instance.queryLikesModelCount(
     parent: parent,
     queryBuilder: queryBuilder,
     limit: limit,
@@ -409,7 +409,7 @@ Stream<List<LikesModel>> queryLikesModel({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) => PostRepositoryImpl().queryLikesModel(
+}) => PostRepositoryImpl.instance.queryLikesModel(
     parent: parent,
     queryBuilder: queryBuilder,
     limit: limit,
@@ -421,7 +421,7 @@ Future<List<LikesModel>> queryLikesModelOnce({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) => PostRepositoryImpl().queryLikesModelOnce(
+}) => PostRepositoryImpl.instance.queryLikesModelOnce(
     parent: parent,
     queryBuilder: queryBuilder,
     limit: limit,
@@ -672,7 +672,7 @@ Future<int> queryRankedPostsModelCount({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) => PostRepositoryImpl().queryRankedPostsModelCount(
+}) => PostRepositoryImpl.instance.queryRankedPostsModelCount(
     parent: parent,
     queryBuilder: queryBuilder,
     limit: limit,
@@ -683,7 +683,7 @@ Stream<List<RankedPostsModel>> queryRankedPostsModel({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) => PostRepositoryImpl().queryRankedPostsModel(
+}) => PostRepositoryImpl.instance.queryRankedPostsModel(
     parent: parent,
     queryBuilder: queryBuilder,
     limit: limit,
@@ -695,7 +695,7 @@ Future<List<RankedPostsModel>> queryRankedPostsModelOnce({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) => PostRepositoryImpl().queryRankedPostsModelOnce(
+}) => PostRepositoryImpl.instance.queryRankedPostsModelOnce(
     parent: parent,
     queryBuilder: queryBuilder,
     limit: limit,

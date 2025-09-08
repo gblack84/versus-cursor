@@ -29,9 +29,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import 'package:uuid/uuid.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '/core_exports.dart';
 import '/core/design_system/design_system.dart';
-import '/backend/backend.dart';
+import '/features/chat/domain/models/chats_model.dart';
+import '/features/chat/data/models/messages_model.dart';
+import '/features/profile/domain/models/user_profile.dart';
 import '/features/auth/data/services/auth_util.dart';
 import '/features/chat/data/services/chat_message_lifecycle_service.dart';
 import '/features/chat/data/services/chat_initialization_service.dart';
@@ -79,7 +82,7 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
   
   // User management
   core.User? _currentUser;
-  UsersModel? _currentUserRecord;
+  UserProfile? _currentUserRecord;
   bool _isLoadingUsers = true;
   
   // Media upload - prepared for future implementation
@@ -565,7 +568,7 @@ class _ChatDetailWidgetV2State extends State<ChatDetailWidgetV2>
           .get();
       
       if (userDoc.exists) {
-        final userModel = UsersModel.fromSnapshot(userDoc);
+        final userModel = UserProfile.fromSnapshot(userDoc);
         final coreUser = ChatDetailMigrationService.convertUsersModelToCore(userModel);
         _userCacheService.updateUser(coreUser);
         return coreUser;

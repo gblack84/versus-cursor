@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/backend/firebase/firestore/utils/firestore_util.dart';
-import '/backend/backend.dart' show queryCollection, queryCollectionOnce, queryCollectionCount;
+import '/core/firebase/utils/firestore_util.dart' show queryCollection, queryCollectionOnce, queryCollectionCount;
 import '../../domain/models/user_profile.dart';
 import '../../domain/models/profile_info.dart';
 import '../../domain/models/user_settings.dart';

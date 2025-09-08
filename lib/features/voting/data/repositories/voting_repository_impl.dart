@@ -4,7 +4,7 @@ import '/backend/backend.dart' show queryCollection, queryCollectionOnce, queryC
 import '/features/voting/domain/models/votecounts_model.dart';
 import '/features/voting/domain/models/vote_expansion_requests_model.dart';
 import '/features/voting/domain/models/rankings_model.dart';
-import '/backend/models/post/ranked_posts_model.dart';
+import '/features/voting/domain/repositories/posts_data_source.dart';
 import '/features/voting/domain/models/weights_model.dart';
 
 /// Implementation of voting repository with migrated backend query functions
@@ -12,7 +12,12 @@ class VotingRepositoryImpl {
   static VotingRepositoryImpl? _instance;
   static VotingRepositoryImpl get instance => _instance ??= VotingRepositoryImpl._();
   
-  VotingRepositoryImpl._();
+  final PostsDataSource? _postsDataSource;
+  
+  VotingRepositoryImpl._() : _postsDataSource = null;
+  
+  // Constructor for dependency injection
+  VotingRepositoryImpl.withDataSource(this._postsDataSource);
 
   // MIGRATED: Votecounts queries (lines 256-294 from backend.dart)
   Future<int> queryVotecountsModelCount({
@@ -131,45 +136,30 @@ class VotingRepositoryImpl {
         singleRecord: singleRecord,
       );
 
-  // MIGRATED: RankedPosts queries (lines 724-762 from backend.dart)
-  Future<int> queryRankedPostsModelCount({
-    DocumentReference? parent,
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-  }) =>
-      queryCollectionCount(
-        RankedPostsModel.collection(parent),
-        queryBuilder: queryBuilder,
+  // MIGRATED: RankedPosts queries - Now using PostsDataSource interface
+  // These methods now delegate to PostsDataSource to avoid direct dependency
+  // on Posts feature's data layer
+  
+  Stream<List<RankedPostsData>> getRankedPosts({
+    String? category,
+    int? limit,
+  }) {
+    if (_postsDataSource != null) {
+      return _postsDataSource!.getRankedPosts(
+        category: category,
         limit: limit,
       );
-
-  Stream<List<RankedPostsModel>> queryRankedPostsModel({
-    DocumentReference? parent,
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  }) =>
-      queryCollection(
-        RankedPostsModel.collection(parent),
-        RankedPostsModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
-
-  Future<List<RankedPostsModel>> queryRankedPostsModelOnce({
-    DocumentReference? parent,
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  }) =>
-      queryCollectionOnce(
-        RankedPostsModel.collection(parent),
-        RankedPostsModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
+    }
+    // Fallback to empty stream if data source not provided
+    return Stream.value([]);
+  }
+  
+  Future<RankedPostsData?> getRankedPostById(String postId) async {
+    if (_postsDataSource != null) {
+      return _postsDataSource!.getRankedPostById(postId);
+    }
+    return null;
+  }
 
   // MIGRATED: Weights queries (lines 875-913 from backend.dart)
   Future<int> queryWeightsModelCount({

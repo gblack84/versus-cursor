@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/app/state/app_state.dart';
 import '/features/posts/domain/usecases/media/aspect_ratio_analyzer.dart';
+import '/core/types/layout_type.dart';
 
 class LayoutDebugInfo extends StatelessWidget {
   const LayoutDebugInfo({

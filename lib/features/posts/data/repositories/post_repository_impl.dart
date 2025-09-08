@@ -6,12 +6,13 @@ import '../../domain/models/post_content.dart';
 import '../../domain/models/post_voting.dart';
 import '../../domain/models/post_metrics.dart';
 import '../../domain/repositories/i_post_repository.dart';
-import '/backend/firebase/firestore/utils/firestore_util.dart';
-import '/backend/backend.dart' show queryCollection, queryCollectionOnce, queryCollectionCount;
-import '/backend/models/post/posts_model.dart';
-import '/backend/models/post/backend_post_models.dart';
+import '../utils/firestore_util.dart'; // Posts feature-specific Firestore utils
+// Removed backend dependencies - using local query functions
+import '/features/posts/data/models/backend_post_models.dart' hide RankedPostsModel;
 import '../adapters/posts_model_adapter.dart';
 import '../models/posts_model.dart' as feature_posts;
+import '/core/utils/migration_logger.dart';
+import '/features/posts/domain/models/ranked_posts_model.dart' as domain;
 
 /// Implementation of post repository using Firestore
 class PostRepositoryImpl implements IPostRepository {
@@ -44,7 +45,7 @@ class PostRepositoryImpl implements IPostRepository {
       final doc = await _postsCollection.doc(postId).get();
       if (doc.exists) {
         return Post.fromJson(
-          mapFromFirestore(doc.data() as Map<String, dynamic>),
+          PostsFirestoreUtil.mapFromFirestore(doc.data() as Map<String, dynamic>),
           doc.id,
         );
       }
@@ -62,7 +63,7 @@ class PostRepositoryImpl implements IPostRepository {
         .map((doc) {
           if (doc.exists) {
             return Post.fromJson(
-              mapFromFirestore(doc.data() as Map<String, dynamic>),
+              PostsFirestoreUtil.mapFromFirestore(doc.data() as Map<String, dynamic>),
               doc.id,
             );
           }
@@ -73,7 +74,7 @@ class PostRepositoryImpl implements IPostRepository {
   @override
   Future<String> createPost(Post post) async {
     try {
-      final docRef = await _postsCollection.add(mapToFirestore(post.toJson()));
+      final docRef = await _postsCollection.add(PostsFirestoreUtil.mapToFirestore(post.toJson()));
       return docRef.id;
     } catch (e) {
       throw Exception('Failed to create post: $e');
@@ -83,7 +84,7 @@ class PostRepositoryImpl implements IPostRepository {
   @override
   Future<void> updatePost(String postId, Post post) async {
     try {
-      await _postsCollection.doc(postId).update(mapToFirestore(post.toJson()));
+      await _postsCollection.doc(postId).update(PostsFirestoreUtil.mapToFirestore(post.toJson()));
     } catch (e) {
       throw Exception('Failed to update post: $e');
     }
@@ -101,7 +102,7 @@ class PostRepositoryImpl implements IPostRepository {
   @override
   Future<void> updateVoteData(String postId, VoteData voteData) async {
     try {
-      await _postsCollection.doc(postId).update(mapToFirestore(voteData.toJson()));
+      await _postsCollection.doc(postId).update(PostsFirestoreUtil.mapToFirestore(voteData.toJson()));
     } catch (e) {
       throw Exception('Failed to update vote data: $e');
     }
@@ -250,7 +251,7 @@ class PostRepositoryImpl implements IPostRepository {
   @override
   Future<void> updatePostStats(String postId, Map<String, dynamic> stats) async {
     try {
-      await _postsCollection.doc(postId).update(mapToFirestore(stats));
+      await _postsCollection.doc(postId).update(PostsFirestoreUtil.mapToFirestore(stats));
     } catch (e) {
       throw Exception('Failed to update post stats: $e');
     }
@@ -383,8 +384,16 @@ class PostRepositoryImpl implements IPostRepository {
   /// Helper method to convert QuerySnapshot to List<Post>
   List<Post> _convertToPostList(QuerySnapshot snapshot) {
     return snapshot.docs.map((doc) {
+      // Log new model access
+      MigrationLogger().logDataAccess(
+        model: 'Post',
+        method: 'fromJson',
+        feature: 'posts',
+        isLegacy: false,
+      );
+      
       return Post.fromJson(
-        mapFromFirestore(doc.data() as Map<String, dynamic>),
+        PostsFirestoreUtil.mapFromFirestore(doc.data() as Map<String, dynamic>),
         doc.id,
       );
     }).toList();
@@ -395,33 +404,33 @@ class PostRepositoryImpl implements IPostRepository {
     Query Function(Query)? queryBuilder,
     int limit = -1,
   }) =>
-      queryCollectionCount(
-        PostsModel.collection,
+      PostsQueryUtilParent.queryCollectionCountWithParent(
+        feature_posts.PostsModel.collection,
         queryBuilder: queryBuilder,
         limit: limit,
       );
 
-  Stream<List<PostsModel>> queryPostsModel({
+  Stream<List<feature_posts.PostsModel>> queryPostsModel({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
   }) =>
-      queryCollection(
-        PostsModel.collection,
-        PostsModel.fromSnapshot,
+      PostsQueryUtilParent.queryCollectionWithParent(
+        feature_posts.PostsModel.collection,
+        feature_posts.PostsModel.fromSnapshot,
         queryBuilder: queryBuilder,
         limit: limit,
         singleRecord: singleRecord,
       );
 
-  Future<List<PostsModel>> queryPostsModelOnce({
+  Future<List<feature_posts.PostsModel>> queryPostsModelOnce({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
   }) =>
-      queryCollectionOnce(
-        PostsModel.collection,
-        PostsModel.fromSnapshot,
+      PostsQueryUtilParent.queryCollectionOnceWithParent(
+        feature_posts.PostsModel.collection,
+        feature_posts.PostsModel.fromSnapshot,
         queryBuilder: queryBuilder,
         limit: limit,
         singleRecord: singleRecord,
@@ -432,33 +441,33 @@ class PostRepositoryImpl implements IPostRepository {
     Query Function(Query)? queryBuilder,
     int limit = -1,
   }) =>
-      queryCollectionCount(
-        CommentsModel.collection,
+      PostsQueryUtilParent.queryCollectionCountWithParent(
+        ContentCommentsModel.collection,
         queryBuilder: queryBuilder,
         limit: limit,
       );
 
-  Stream<List<CommentsModel>> queryCommentsModel({
+  Stream<List<ContentCommentsModel>> queryCommentsModel({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
   }) =>
-      queryCollection(
-        CommentsModel.collection,
-        CommentsModel.fromSnapshot,
+      PostsQueryUtilParent.queryCollectionWithParent(
+        ContentCommentsModel.collection,
+        ContentCommentsModel.fromSnapshot,
         queryBuilder: queryBuilder,
         limit: limit,
         singleRecord: singleRecord,
       );
 
-  Future<List<CommentsModel>> queryCommentsModelOnce({
+  Future<List<ContentCommentsModel>> queryCommentsModelOnce({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
   }) =>
-      queryCollectionOnce(
-        CommentsModel.collection,
-        CommentsModel.fromSnapshot,
+      PostsQueryUtilParent.queryCollectionOnceWithParent(
+        ContentCommentsModel.collection,
+        ContentCommentsModel.fromSnapshot,
         queryBuilder: queryBuilder,
         limit: limit,
         singleRecord: singleRecord,
@@ -470,7 +479,7 @@ class PostRepositoryImpl implements IPostRepository {
     Query Function(Query)? queryBuilder,
     int limit = -1,
   }) =>
-      queryCollectionCount(
+      PostsQueryUtilParent.queryCollectionCountWithParent(
         LikesModel.collection(parent),
         queryBuilder: queryBuilder,
         limit: limit,
@@ -482,7 +491,7 @@ class PostRepositoryImpl implements IPostRepository {
     int limit = -1,
     bool singleRecord = false,
   }) =>
-      queryCollection(
+      PostsQueryUtilParent.queryCollectionWithParent(
         LikesModel.collection(parent),
         LikesModel.fromSnapshot,
         queryBuilder: queryBuilder,
@@ -496,7 +505,7 @@ class PostRepositoryImpl implements IPostRepository {
     int limit = -1,
     bool singleRecord = false,
   }) =>
-      queryCollectionOnce(
+      PostsQueryUtilParent.queryCollectionOnceWithParent(
         LikesModel.collection(parent),
         LikesModel.fromSnapshot,
         queryBuilder: queryBuilder,
@@ -504,6 +513,46 @@ class PostRepositoryImpl implements IPostRepository {
         singleRecord: singleRecord,
       );
   
+  // MIGRATED: RankedPosts queries (from backend.dart lines 668-702)
+  Future<int> queryRankedPostsModelCount({
+    DocumentReference? parent,
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+  }) =>
+      PostsQueryUtilParent.queryCollectionCountWithParent(
+        domain.RankedPostsModel.collection(parent),
+        queryBuilder: queryBuilder,
+        limit: limit,
+      );
+
+  Stream<List<domain.RankedPostsModel>> queryRankedPostsModel({
+    DocumentReference? parent,
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+    bool singleRecord = false,
+  }) =>
+      PostsQueryUtilParent.queryCollectionWithParent(
+        domain.RankedPostsModel.collection(parent),
+        domain.RankedPostsModel.fromSnapshot,
+        queryBuilder: queryBuilder,
+        limit: limit,
+        singleRecord: singleRecord,
+      );
+
+  Future<List<domain.RankedPostsModel>> queryRankedPostsModelOnce({
+    DocumentReference? parent,
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+    bool singleRecord = false,
+  }) =>
+      PostsQueryUtilParent.queryCollectionOnceWithParent(
+        domain.RankedPostsModel.collection(parent),
+        domain.RankedPostsModel.fromSnapshot,
+        queryBuilder: queryBuilder,
+        limit: limit,
+        singleRecord: singleRecord,
+      );
+
   // ============= ADAPTER METHODS (NEW) =============
   // These methods provide access to the new domain models
   // while maintaining backward compatibility with legacy code
@@ -513,6 +562,14 @@ class PostRepositoryImpl implements IPostRepository {
     try {
       final doc = await _postsCollection.doc(postId).get();
       if (!doc.exists) return null;
+      
+      // Log adapter conversion
+      MigrationLogger().logConversion(
+        from: 'PostsModel',
+        to: 'PostBundle',
+        feature: 'posts',
+        metadata: {'postId': postId},
+      );
       
       final postsModel = feature_posts.PostsModel.fromSnapshot(doc);
       return PostsModelAdapter.toDomainModels(postsModel);
@@ -549,7 +606,7 @@ class PostRepositoryImpl implements IPostRepository {
   Future<String> createPostFromBundle(PostBundle bundle) async {
     try {
       final postsModel = PostsModelAdapter.fromDomainModels(bundle);
-      final data = postsModel.toFirestore();
+      final data = postsModel.snapshotData;
       final docRef = await _postsCollection.add(data);
       return docRef.id;
     } catch (e) {
@@ -561,7 +618,7 @@ class PostRepositoryImpl implements IPostRepository {
   Future<void> updatePostFromBundle(String postId, PostBundle bundle) async {
     try {
       final postsModel = PostsModelAdapter.fromDomainModels(bundle);
-      final data = postsModel.toFirestore();
+      final data = postsModel.snapshotData;
       await _postsCollection.doc(postId).update(data);
     } catch (e) {
       throw Exception('Failed to update post from bundle: $e');

@@ -29,7 +29,8 @@ import '/features/notifications/domain/models/notification_model.dart';
 import 'models/post/posts_model.dart';
 import '/features/voting/domain/models/votecounts_model.dart';
 import '/features/voting/domain/models/vote_expansion_requests_model.dart';
-import 'models/post/backend_post_models.dart';
+import '/features/posts/data/models/backend_post_models.dart' hide RankedPostsModel;
+import '/features/posts/domain/models/ranked_posts_model.dart';
 import '/features/chat/domain/models/chats_model.dart';
 import '/features/profile/domain/models/friends_list_model.dart';
 import '/features/chat/domain/models/group_chats_model.dart';
@@ -50,11 +51,11 @@ import '/features/profile/domain/models/characters_model.dart';
 export 'dart:async' show StreamSubscription;
 export 'package:cloud_firestore/cloud_firestore.dart' hide Order;
 export 'package:firebase_core/firebase_core.dart';
-export 'models/index.dart';
+// DEPRECATED: models/index.dart removed - using feature-specific exports only
 export 'firebase/firestore/utils/firestore_util.dart';
 export 'firebase/firestore/utils/schema_util.dart';
 
-// Feature-based exports - Phase 1 reorganization
+// Feature-based exports - Phase 1.1C reorganization complete
 export '../features/posts/data/exports/posts_models.dart';
 export '../features/chat/data/exports/chat_models.dart';
 export '../features/profile/data/exports/profile_models.dart';
@@ -62,6 +63,9 @@ export '../features/voting/data/exports/voting_models.dart';
 export '../features/notifications/data/exports/notification_models.dart';
 export '../features/auth/data/exports/auth_models.dart';
 export '../features/search/data/exports/search_models.dart';
+
+// Additional direct exports for common types
+export '/app/models/lat_lng.dart';  // LatLng type used across features
 
 // Repository imports for Phase 2 query delegation
 import '../features/posts/data/repositories/post_repository_impl.dart';
@@ -662,13 +666,13 @@ Future<List<RankingsModel>> queryRankingsModelOnce({
     singleRecord: singleRecord,
   );
 
-/// PHASE 2 MIGRATION: Delegated to VotingRepositoryImpl
+/// PHASE 2 MIGRATION: Delegated to PostRepositoryImpl (RankedPosts is under Posts feature)
 /// Functions to query RankedPostsModels (as a Stream and as a Future).
 Future<int> queryRankedPostsModelCount({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) => VotingRepositoryImpl.instance.queryRankedPostsModelCount(
+}) => PostRepositoryImpl().queryRankedPostsModelCount(
     parent: parent,
     queryBuilder: queryBuilder,
     limit: limit,
@@ -679,7 +683,7 @@ Stream<List<RankedPostsModel>> queryRankedPostsModel({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) => VotingRepositoryImpl.instance.queryRankedPostsModel(
+}) => PostRepositoryImpl().queryRankedPostsModel(
     parent: parent,
     queryBuilder: queryBuilder,
     limit: limit,
@@ -691,7 +695,7 @@ Future<List<RankedPostsModel>> queryRankedPostsModelOnce({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) => VotingRepositoryImpl.instance.queryRankedPostsModelOnce(
+}) => PostRepositoryImpl().queryRankedPostsModelOnce(
     parent: parent,
     queryBuilder: queryBuilder,
     limit: limit,

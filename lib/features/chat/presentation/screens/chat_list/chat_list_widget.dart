@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '/features/auth/data/services/auth_util.dart';
-import '/backend/backend.dart'; // TODO: ChatRepository로 마이그레이션 필요
 import '/core_exports.dart';
+import 'package:get_it/get_it.dart';
+import '/features/chat/domain/repositories/i_chat_repository.dart';
+import '/features/chat/domain/models/chats_model.dart';
 import '/core/design_system/design_system.dart';
 import '/features/chat/presentation/screens/chat_detail/chat_detail_widget_v2.dart';
 
@@ -53,10 +55,9 @@ class _ChatListWidgetState extends State<ChatListWidget> {
       body: SafeArea(
         top: true,
         child: StreamBuilder<List<ChatsModel>>(
-          // TODO: ChatRepository.getChatStream()으로 마이그레이션 필요
-          stream: queryChatsModel(
-            queryBuilder: (chatsRecord) => chatsRecord
-                .where('participantIds', arrayContains: currentUserUid)
+          // Repository를 통한 채팅 목록 조회
+          stream: GetIt.instance<IChatRepository>().getChatsByUserId(
+            currentUserUid
                 .orderBy('lastMessageAt', descending: true),
           ),
           builder: (context, snapshot) {

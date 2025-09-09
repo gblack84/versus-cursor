@@ -9,7 +9,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 // Replace backend imports with domain layer imports
 import '/features/profile/domain/repositories/i_user_repository.dart';
-import '/backend/backend.dart'; // Temporary for UsersModel, PostsModel, PollDetailsModel
+import '/features/posts/domain/repositories/i_post_repository.dart';
+import 'package:get_it/get_it.dart';
+import '/features/profile/domain/models/user_profile.dart';
 import 'package:bot_toast/bot_toast.dart';
 import '/features/posts/presentation/utils/no_animation_page_route.dart';
 import '/features/auth/data/services/auth_util.dart';
@@ -740,10 +742,9 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
         throw Exception('사용자 정보를 찾을 수 없습니다');
       }
       
-      // 임시로 UsersModel 사용 (추후 완전 마이그레이션)
-      final userDoc = await UsersModel.getDocumentOnce(
-        FirebaseFirestore.instance.collection('users').doc(user.uid)
-      );
+      // Repository를 통한 사용자 정보 조회
+      final userRepository = GetIt.instance<IUserRepository>();
+      final userDoc = await userRepository.getUserById(user.uid);
 
       // aspectRatio 계산
       final aspectRatioA = appState.uploadImageAspectRatioA.isNotEmpty 
@@ -777,51 +778,50 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       
       // Posts 문서 생성
       final postsRecordData = {
-        ...createPostsModelData(
-          userid: user.uid,
-          uid: user.uid,
-          email: user.email,
-          displayName: userDoc.displayName,
-          photoUrl: userDoc.photoUrl,
-          content: appState.questionDescription,
-          questionTitle: appState.questionTitle,
-          createdAt: DateTime.now(),
-          createdTime: DateTime.now(),
-          category: '', // 카테고리 선택 기능 추가 시 업데이트
-          isAnonymous: false,
-          visibility: 1, // 1: public
-          commentcount: 0,
-          likecount: 0,
-          participantcount: 0,
-          creatorInfo: {
-            'uid': user.uid,
-            'displayName': userDoc.displayName,
-            'photoUrl': userDoc.photoUrl,
-          },
-          optionA: {
-            'title': appState.uploadTextA,
-            'mediaUrls': uploadedUrlsA,
-            'mediaType': 'image',
-            'aspectRatio': aspectRatioA,
-          },
-          optionB: {
-            'title': appState.uploadTextB,
-            'mediaUrls': uploadedUrlsB,
-            'mediaType': 'image',
-            'aspectRatio': aspectRatioB,
-          },
-          stats: {
-            'voteCountA': 0,
-            'voteCountB': 0,
-            'totalVotes': 0,
-          },
-          moderation: {
-            'status': 'approved',
-            'aiScore': 0,
-            'expected_ratio_a': geminiResult?.expectedRatioA ?? 0.5,
-            'expected_ratio_b': geminiResult?.expectedRatioB ?? 0.5,
-          },
-          targetAudience: targetAudience,
+        'userid': user.uid,
+        'uid': user.uid,
+        'email': user.email,
+        'displayName': userDoc.displayName,
+        'photoUrl': userDoc.photoUrl,
+        'content': appState.questionDescription,
+        'questionTitle': appState.questionTitle,
+        'createdAt': DateTime.now(),
+        'createdTime': DateTime.now(),
+        'category': '', // 카테고리 선택 기능 추가 시 업데이트
+        'isAnonymous': false,
+        'visibility': 1, // 1: public
+        'commentcount': 0,
+        'likecount': 0,
+        'participantcount': 0,
+        'creatorInfo': {
+          'uid': user.uid,
+          'displayName': userDoc.displayName,
+          'photoUrl': userDoc.photoUrl,
+        },
+        'optionA': {
+          'title': appState.uploadTextA,
+          'mediaUrls': uploadedUrlsA,
+          'mediaType': 'image',
+          'aspectRatio': aspectRatioA,
+        },
+        'optionB': {
+          'title': appState.uploadTextB,
+          'mediaUrls': uploadedUrlsB,
+          'mediaType': 'image',
+          'aspectRatio': aspectRatioB,
+        },
+        'stats': {
+          'voteCountA': 0,
+          'voteCountB': 0,
+          'totalVotes': 0,
+        },
+        'moderation': {
+          'status': 'approved',
+          'aiScore': 0,
+          'expected_ratio_a': geminiResult?.expectedRatioA ?? 0.5,
+          'expected_ratio_b': geminiResult?.expectedRatioB ?? 0.5,
+        },
+        'targetAudience': targetAudience,
         ),
         'description': appState.questionDescription,  // Firebase Functions를 위한 description 필드 추가
         'isNotificationEnabled': true,  // 알림 전송 활성화
@@ -831,8 +831,10 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
       // Firestore에 저장
       DebugHelper.log('[_saveToFirestore] Firestore에 게시물 저장 시작...');
       // Repository 패턴을 통한 게시물 생성 준비 (현재는 기존 방식 유지)
-      // TODO: PostRepository.createPost()로 완전 마이그레이션 필요
-      final postRef = await PostsModel.collection.add(postsRecordData);
+      // Repository를 통한 게시물 생성
+      final postRepository = GetIt.instance<IPostRepository>();
+      final postId = await postRepository.createPost(postsRecordData);
+      final postRef = FirebaseFirestore.instance.collection('posts').doc(postId);
       DebugHelper.log('[_saveToFirestore] ✅ 게시물 저장 성공! ID: ${postRef.id}');
       
       // Firestore 일관성을 위한 지연 추가
@@ -841,19 +843,19 @@ class _InPutPostImageWidgetState extends State<InPutPostImageWidget>
 
       // PollDetails 서브컬렉션 생성
       DebugHelper.log('[_saveToFirestore] PollDetails 서브컬렉션 생성 중...');
-      final pollDetailsData = createPollDetailsModelData(
-        option1: appState.uploadTextA,
-        option2: appState.uploadTextB,
-        option1MediaUrl: uploadedUrlsA.isNotEmpty ? uploadedUrlsA.first : null,
-        option2MediaUrl: uploadedUrlsB.isNotEmpty ? uploadedUrlsB.first : null,
-        option1MediaType: 'image',
-        option2MediaType: 'image',
-        resultTime: 7, // 7일 후 결과 공개
-      );
+      final pollDetailsData = {
+        'option1': appState.uploadTextA,
+        'option2': appState.uploadTextB,
+        'option1MediaUrl': uploadedUrlsA.isNotEmpty ? uploadedUrlsA.first : null,
+        'option2MediaUrl': uploadedUrlsB.isNotEmpty ? uploadedUrlsB.first : null,
+        'option1MediaType': 'image',
+        'option2MediaType': 'image',
+        'resultTime': 7, // 7일 후 결과 공개
+      };
 
       // PollDetails 생성 (추후 Repository 패턴으로 마이그레이션)
-      // TODO: PostRepository에 poll details 생성 메서드 추가 필요
-      await PollDetailsModel.createDoc(postRef).set(pollDetailsData);
+      // Repository를 통한 poll details 생성
+      await postRepository.createPollDetails(postRef.id, pollDetailsData);
       DebugHelper.log('[_saveToFirestore] ✅ PollDetails 저장 성공!');
 
       // 멀티이미지 데이터 검증

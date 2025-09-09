@@ -33,7 +33,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '/core_exports.dart';
 import '/core/design_system/design_system.dart';
 import '/features/chat/domain/models/chats_model.dart';
-import '/features/chat/data/models/messages_model.dart';
+import '/features/chat/domain/models/messages_model.dart';
 import '/features/profile/domain/models/user_profile.dart';
 import '/features/auth/data/services/auth_util.dart';
 import '/features/chat/data/services/chat_message_lifecycle_service.dart';

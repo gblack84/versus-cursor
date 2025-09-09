@@ -1,20 +1,101 @@
-# 아키텍처 위반 분석 보고서
+Clean Architecture Violations Report
+=====================================
+Generated: 2025-01-09
+Scope: All features
+Mode: Detect
 
-## 🚨 Backend → Features 위반 (41건)
-lib/backend/backend.dart:import '/features/auth/data/services/auth_util.dart';
-lib/backend/backend.dart:import '/features/profile/data/models/settings_model.dart';
-lib/backend/backend.dart:import '/features/posts/data/models/media/images_model.dart';
-lib/backend/backend.dart:import '/features/posts/data/models/media/video_model.dart';
-lib/backend/backend.dart:import '/features/chat/data/models/messages_model.dart';
-... (총 41건)
+VIOLATIONS BY RULE TYPE:
 
-## ⚠️ Core → Features 위반 (3건)
-lib/core/models/upload_data.dart:import '/features/auth/data/services/auth_util.dart';
-lib/core/firebase/utils/schema_util.dart:import '/features/search/data/services/serialization_util.dart';
-lib/core/actions/global_actions.dart:import '/features/auth/data/services/auth_util.dart';
+1. CRITICAL: Presentation → Data Direct Imports (67 violations)
+   Rule: features/**/presentation must not import features/**/data directly
+   
+   Auth Feature Violations (23 violations):
+   - /features/notifications/presentation/screens/notifications_list/notifications_list_widget.dart:3
+   - /features/notifications/presentation/providers/notification_badge_provider.dart:3
+   - /features/profile/presentation/screens/user_info/language_selector/language_selector_model.dart:1
+   - /features/profile/presentation/screens/user_info/character_detail/character_detail_page_widget.dart:1
+   - /features/profile/presentation/screens/onboarding/interest_selection/hobbies_select/hobbies_select_widget.dart:1
+   - /features/profile/presentation/screens/onboarding/interest_selection/agreed_select/agrred_select_widget.dart:1
+   - /features/profile/presentation/screens/onboarding/interest_selection/expertise_select/expertise_select_widget.dart:1
+   - /features/profile/presentation/screens/profile_main/profile_page_widget.dart:4
+   - /features/profile/presentation/screens/user_info_input/user_info_input_widget.dart:1
+   - /features/search/presentation/screens/chat_search/chat_search_widget.dart:2
+   - /features/posts/presentation/widgets/vote/base_vote_message.dart:3
+   - /features/chat/presentation/screens/friends_list/friends_list_widget.dart:2
+   - /features/chat/presentation/screens/ai_chat/ai_chat_page_v2.dart:32
+   - /features/auth/presentation/screens/phone_auth/phone_creat_account/phone_creat_account_widget.dart:1
+   - /features/auth/presentation/screens/start/start_page/start_page_widget.dart:1
+   - /features/chat/presentation/screens/chat_list/chat_list_widget.dart:2
+   - /features/chat/presentation/screens/chat_detail/chat_detail_widget_v2.dart:38
+   - /features/auth/presentation/screens/forgot_password/forgot_password/forgot_password_widget.dart:1
+   - /features/auth/presentation/screens/signup/create_account/create_account_widget.dart:1
+   - /features/chat/presentation/screens/chat_detail/components/chat_message_builder.dart:8
+   - /features/auth/presentation/screens/phone_auth/phonelogeinpincode_widget.dart:1
+   - /features/auth/presentation/screens/login/login_page/login_page_widget.dart:2
+   - /features/auth/presentation/screens/email_verification/popup_timer_email/popup_timer_email_widget.dart:1
 
-## ✅ Services → Features 위반 (0건)
-양호함
+   Posts Feature Violations (13 violations):
+   - /features/posts/presentation/widgets/media/media_selection_flow_widget.dart:11
+   - /features/posts/presentation/widgets/media/media_editor_widget.dart:11
+   - /features/posts/presentation/widgets/vote/vote_card_message.dart:12
+   - /features/posts/presentation/widgets/vote/base_vote_message.dart:4
+   - /features/posts/presentation/screens/editor/pro_image_editor_page.dart:8
+   - /features/posts/presentation/providers/media_upload_provider.dart:5-7
+   - /features/posts/presentation/providers/create_post_provider.dart:15-17,21
+   - /features/posts/presentation/screens/create_post/in_put_post_image_widget.dart:17,30,36-38,42,44
+   - /features/voting/presentation/widgets/vote_card/vote_card_widget.dart:7
 
-## ✅ Features 간 직접 참조 (0건)
-양호함
+   Chat Feature Violations (12 violations):
+   - /features/chat/presentation/screens/ai_chat/ai_chat_page_v2.dart:34-36
+   - /features/chat/presentation/screens/chat_detail/chat_detail_widget_v2.dart:39-44
+   - /features/chat/presentation/screens/chat_detail/components/chat_media_picker.dart:9
+
+   Notification Feature Violations (1 violation):
+   - /features/notifications/presentation/providers/notification_badge_provider.dart:4
+
+   Other Feature Violations (18 violations):
+   - /features/profile/domain/models/jops_category_model.dart:4
+   - /main.dart:9
+   - /core/actions/global_actions.dart:1
+   - /core/di/core_module.dart:7
+   - /core/models/upload_data.dart:11
+   - /core/firebase/utils/schema_util.dart:5
+   - /app/app.dart:7-9
+   - plus 11 additional data layer imports
+
+2. CRITICAL: Missing Model Reference (1 violation)
+   Rule: Referenced model must exist
+   
+   - /services/cache/unified_cache_service.dart:9
+     Import: '/backend/models/users/users_model.dart'
+     Issue: File does not exist
+
+3. ALLOWED: App → Feature Data (Dependency Injection)
+   Rule: app/di.dart is allowed to import feature data layers
+   
+   Found 8 legitimate DI imports in:
+   - /app/di/profile_module.dart:4
+   - /app/di/search_module.dart:4
+   - /app/di/auth_module.dart:4
+   - /app/di/voting_module.dart:4
+   - /app/di/notification_module.dart:4
+   - /app/di/chat_module.dart:4
+   - /app/di/posts_module.dart:4
+   - /app/di.dart:8,12
+
+SUMMARY:
+========
+Total violations: 68
+Critical violations: 68
+- Presentation → Data direct imports: 67
+- Missing model references: 1
+
+Allowed patterns: 8
+- App DI imports: 8
+
+RECOMMENDATION:
+==============
+1. URGENT: Fix missing model reference in unified_cache_service.dart
+2. Generate fix patches for presentation → data violations
+3. Replace auth_util.dart imports with domain interfaces
+4. Move data layer services to proper domain abstractions

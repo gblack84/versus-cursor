@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/features/chat/domain/models/chats_model.dart';
-import '/features/chat/data/models/messages_model.dart';
+import '/features/chat/domain/models/messages_model.dart';
 import '/features/chat/domain/models/group_chats_model.dart';
 import '/features/chat/domain/models/group_messages_model.dart';
 import '/features/chat/domain/models/chat_history_model.dart';

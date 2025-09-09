@@ -3,7 +3,7 @@ import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 // Migrated from backend.dart - Direct model imports
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/features/chat/domain/models/chats_model.dart';
-import '/features/chat/data/models/messages_model.dart';
+import '/features/chat/domain/models/messages_model.dart';
 import '/features/profile/domain/models/user_profile.dart';
 import '/features/auth/data/services/auth_util.dart';
 import '/features/profile/data/services/user_cache_service.dart';

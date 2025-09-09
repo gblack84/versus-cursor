@@ -4,9 +4,9 @@ import 'simple_memory_cache.dart';
 import 'cache_statistics.dart';
 // Domain models imports (migrated from backend.dart)
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/backend/models/chat/messages_model.dart';
-import '/backend/models/posts/posts_model.dart';
-import '/backend/models/users/users_model.dart';
+import '/features/chat/domain/models/messages_model.dart';
+import '/features/posts/domain/models/posts_model.dart';
+import '/features/auth/domain/models/auth_user.dart';
 
 /// 캐시 레이어 정의
 enum CacheLayer {

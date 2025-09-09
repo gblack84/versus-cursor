@@ -1,0 +1,45 @@
+{
+  "agent": "inventory-scout",
+  "parsed_options": {
+    "depth": 5,
+    "line_threshold": 300,
+    "scope": "all",
+    "symbols": [
+      "Post",
+      "Vote",
+      "Moderation"
+    ],
+    "ignore": [
+      "test/",
+      "mocks/",
+      "*.g.dart",
+      "*.freezed.dart",
+      "build/",
+      ".dart_tool/",
+      "coverage/"
+    ]
+  },
+  "findings": {
+    "total_files": 435,
+    "large_files": 72,
+    "mixed_responsibility": 1,
+    "violations": 131,
+    "violations_by_rule": {
+      "app->data": 10,
+      "presentation->data": 35,
+      "warn:cross-presentation": 57,
+      "reverse:core/services->features": 29
+    }
+  },
+  "output_files": [
+    "reports/inventory.json",
+    "reports/tree_lib.txt",
+    "reports/candidates_decompose.txt",
+    "reports/violations.txt"
+  ],
+  "next_steps": [
+    "Run RepoMover for target features",
+    "Run ImportGuardian autofix for violations",
+    "Run BuildSentinel (quick) on impacted paths"
+  ]
+}

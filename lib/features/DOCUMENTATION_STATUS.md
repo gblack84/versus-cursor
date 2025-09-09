@@ -1,185 +1,287 @@
-# 📊 Features 문서화 상태 보고서
+# 📊 Features 마이그레이션 현황 및 아키텍처 분석 보고서
 
-> 작성일: 2025-08-25
-> 전체 진행률: 87% 완료
+> 최종 업데이트: 2025-01-09
+> 백엔드 마이그레이션: ✅ 100% 완료
+> Clean Architecture 준수율: ⚠️ 35% (47개 파일 위반)
 
-## 📈 전체 통계
+## 🔥 긴급 조치 필요사항
 
-| 항목 | 수치 | 비율 |
+### Critical Issues (즉시 해결 필요)
+1. **47개 파일 아키텍처 위반** - Clean Architecture 원칙 위반
+2. **5개 파일 레거시 의존성** - core/repositories 사용 중
+3. **2개 빈 Feature 디렉토리** - theme/, upload/ 삭제 필요
+4. **33개 파일** - Presentation → Data 직접 접근 (금지됨!)
+
+## 📈 현재 상태 통계
+
+| 항목 | 수치 | 상태 |
 |------|------|------|
-| **전체 기능 수** | 9개 | 100% |
-| **문서화 완료** | 8개 | 89% |
-| **부분 완료** | 1개 | 11% |
-| **미작성** | 0개 | 0% |
-| **총 문서 수** | 79개 | - |
-| **총 라인 수** | 약 25,000줄 | - |
+| **전체 Feature 수** | 9개 | 7개 활성, 2개 비어있음 |
+| **총 파일 수** | 305개 | backend에서 이동 완료 |
+| **총 코드 라인** | 56,690줄 | 100% 구조화 |
+| **아키텍처 위반** | 47개 파일 | ⚠️ 수정 필요 |
+| **테스트 커버리지** | 2개 파일 | ❌ 매우 부족 |
+| **Repository 패턴** | 85% | ⚠️ 일부 미완성 |
 
-## ✅ 기능별 문서화 상태
+## 🏗️ 현재 디렉토리 구조 및 마이그레이션 상태
 
-### 🏆 100% 완료 (4개)
+```
+📦 lib/features/
+├── ✅ auth (37 files, 6,848 lines) - Repository 패턴 ✅
+│   ├── ✅ domain/
+│   │   ├── ✅ models/ (3개 모델)
+│   │   ├── ✅ repositories/i_auth_repository.dart ✅
+│   │   └── ✅ services/i_auth_service.dart ✅
+│   ├── ⚠️ data/
+│   │   ├── ✅ repositories/auth_repository_impl.dart
+│   │   └── ⚠️ services/ → adapters/로 변경 필요 (7개)
+│   └── ⚠️ presentation/ (7개 파일 Data 직접 접근)
+│
+├── ✅ chat (30 files, 7,112 lines) - Repository 패턴 ✅
+│   ├── ✅ domain/
+│   │   ├── ✅ models/ (5개 모델)
+│   │   └── ✅ repositories/i_chat_repository.dart ✅
+│   ├── ⚠️ data/
+│   │   ├── ❌ repositories/ (core/repositories 사용)
+│   │   └── ⚠️ services/ → adapters/로 변경 필요 (9개)
+│   └── ⚠️ presentation/ (6개 파일 Data 직접 접근)
+│
+├── ⚠️ notifications (21 files, 6,221 lines) - Repository 패턴 ❌
+│   ├── ❌ domain/
+│   │   ├── ✅ models/ (2개 모델)
+│   │   └── ❌ repositories/ (인터페이스 없음!)
+│   ├── ⚠️ data/
+│   │   ├── ❌ repositories/ (core/repositories 사용)
+│   │   └── ⚠️ services/ → adapters/로 변경 필요 (3개)
+│   └── ⚠️ presentation/ (2개 파일 Data 직접 접근)
+│
+├── ⚠️ posts (126 files, 24,822 lines) - 과도하게 복잡
+│   ├── ✅ domain/
+│   │   ├── ✅ models/ (17개 모델)
+│   │   ├── ✅ repositories/i_post_repository.dart ✅
+│   │   └── ✅ usecases/ (6개)
+│   ├── ⚠️ data/
+│   │   ├── ✅ repositories/post_repository_impl.dart
+│   │   ├── ✅ adapters/posts_model_adapter.dart
+│   │   └── ⚠️ services/ → adapters/로 변경 필요 (20개!)
+│   └── ⚠️ presentation/ (9개 파일 Data 직접 접근)
+│
+├── ✅ profile (34 files, 7,947 lines) - Repository 패턴 부분적
+│   ├── ✅ domain/
+│   │   ├── ✅ models/ (10개 모델)
+│   │   └── ⚠️ repositories/ (3개 인터페이스, 1개만 구현)
+│   ├── ⚠️ data/
+│   │   ├── ✅ repositories/user_repository_impl.dart
+│   │   ├── ✅ adapters/user_profile_adapter.dart
+│   │   └── ⚠️ services/ → adapters/로 변경 필요 (2개)
+│   └── ⚠️ presentation/ (7개 파일 Data 직접 접근)
+│
+├── ⚠️ search (42 files, 1,581 lines) - Repository 중복
+│   ├── ⚠️ domain/
+│   │   ├── ✅ models/ (5개 모델)
+│   │   └── ⚠️ repositories/search_repository.dart (중복?)
+│   ├── ⚠️ data/
+│   │   ├── ❌ repositories/ (2개 구현체! + core 사용)
+│   │   └── ⚠️ services/ → adapters/로 변경 필요 (5개)
+│   └── ✅ presentation/ (1개만 Data 접근)
+│
+├── ⚠️ voting (15 files, 2,159 lines) - 잘못된 명명
+│   ├── ⚠️ domain/
+│   │   ├── ✅ models/ (6개 모델)
+│   │   └── ❌ repositories/posts_data_source.dart (잘못된 이름)
+│   ├── ⚠️ data/
+│   │   ├── ❌ repositories/ (core/repositories 사용)
+│   │   └── ⚠️ services/ → adapters/로 변경 필요 (1개)
+│   └── ⚠️ presentation/ (1개 파일 Data 접근)
+│
+├── ❌ theme/ (빈 디렉토리 - 삭제 필요)
+└── ❌ upload/ (빈 디렉토리 - 삭제 필요)
 
-#### 1. **Auth Feature** ✅
-- **상태**: 100% 완료
-- **문서 수**: 9개 (모든 하위 디렉토리)
-- **라인 수**: 5,190줄
-- **품질**: ⭐⭐⭐⭐⭐
-- **특징**: 가장 완성도 높은 문서화
-- **Core/App 동기화**: ✅ 완료
+```
 
-#### 2. **Search Feature** ✅
-- **상태**: 100% 완료
-- **문서 수**: 10개 (모든 하위 디렉토리)
-- **라인 수**: 2,850줄
-- **품질**: ⭐⭐⭐⭐⭐
-- **특징**: 3-Layer 아키텍처 완벽 문서화
-- **Core/App 동기화**: ✅ 완료
+## 🚨 아키텍처 위반 상세 분석
 
-#### 3. **Common Feature** ✅
-- **상태**: 100% 완료
-- **문서 수**: 11개 (모든 하위 디렉토리)
-- **라인 수**: 3,100줄
-- **품질**: ⭐⭐⭐⭐⭐
-- **특징**: 공통 컴포넌트 상세 문서화
-- **Core/App 동기화**: ✅ 완료
+### 1. Presentation → Data 직접 접근 (33개 파일) ❌
 
-#### 4. **Voting Feature** ✅
-- **상태**: 100% 완료
-- **문서 수**: 8개 (모든 하위 디렉토리)
-- **라인 수**: 2,500줄
-- **품질**: ⭐⭐⭐⭐⭐
-- **특징**: 구현 코드 제거 완료
-- **Core/App 동기화**: ✅ 완료
+| Feature | 파일 수 | 주요 위반 파일 |
+|---------|---------|---------------|
+| **auth** | 7개 | login_page_widget.dart, signup screens |
+| **posts** | 9개 | in_put_post_image_widget.dart, feed screens |
+| **profile** | 7개 | onboarding screens, profile_page_widget.dart |
+| **chat** | 6개 | chat_detail_widget_v2.dart, chat_list_widget.dart |
+| **notifications** | 2개 | notifications_list_widget.dart |
+| **search** | 1개 | search_page_widget.dart |
+| **voting** | 1개 | vote_card_widget.dart |
 
-### ⚡ 90% 이상 완료 (3개)
+### 2. Core/Repositories 레거시 의존성 (5개 파일) ❌
 
-#### 5. **Chat Feature** 🔧
-- **상태**: 95% 완료
-- **문서 수**: 9개
-- **라인 수**: 3,800줄
-- **품질**: ⭐⭐⭐⭐
-- **남은 작업**: presentation/widgets README 보완
-- **Core/App 동기화**: ✅ 완료
+```
+❌ chat/data/repositories/chat_repository_impl.dart
+❌ notifications/data/repositories/notification_repository_impl.dart
+❌ notifications/data/services/notification_service.dart
+❌ search/data/repositories/search_repository_impl.dart
+❌ voting/data/repositories/voting_repository_impl.dart
+```
 
-#### 6. **Posts Feature** 🔧
-- **상태**: 90% 완료
-- **문서 수**: 7개
-- **라인 수**: 2,200줄
-- **품질**: ⭐⭐⭐⭐
-- **남은 작업**: domain/usecases README 작성
-- **Core/App 동기화**: ✅ 완료
-- **구현 코드 제거**: ✅ 완료
+### 3. Data → Presentation 역방향 의존성 (15개 파일) ❌
 
-#### 7. **Notifications Feature** 🔧
-- **상태**: 90% 완료
-- **문서 수**: 7개
-- **라인 수**: 1,800줄
-- **품질**: ⭐⭐⭐⭐
-- **남은 작업**: presentation/providers README 작성
-- **Core/App 동기화**: ✅ 완료
+```
+🚨 notifications/data/services/global_notification_manager.dart
+🚨 chat/data/services/chat_scroll_service.dart
+🚨 posts/data/services/ (9개 파일 - 미디어, 검증, 캐시 서비스)
+🚨 기타 4개 파일
+```
 
-### 📝 기본 문서만 작성 (2개)
+## 📋 단계별 마이그레이션 작업 가이드
 
-#### 8. **Profile Feature** 📄
-- **상태**: 70% 완료
-- **문서 수**: 5개
-- **라인 수**: 1,200줄
-- **품질**: ⭐⭐⭐
-- **남은 작업**: 하위 디렉토리 README 작성
-- **Core/App 동기화**: ✅ 완료
+### 🔴 Phase 1: Critical Fixes (즉시 실행 - 2일)
 
-#### 9. **App Feature** 📄
-- **상태**: 60% 완료
-- **문서 수**: 4개
-- **라인 수**: 800줄
-- **품질**: ⭐⭐⭐
-- **남은 작업**: 상세 구현 가이드 추가
-- **Core/App 동기화**: N/A (자체가 App)
+#### 1.1 빈 디렉토리 삭제
+```bash
+rm -rf lib/features/theme
+rm -rf lib/features/upload
+```
 
-## 🔍 품질 검증 결과
+#### 1.2 레거시 의존성 제거 (5개 파일)
+```dart
+// ❌ 변경 전
+import '/core/repositories/chat_repository.dart';
 
-### ✅ 완료된 개선 작업
+// ✅ 변경 후
+import '../domain/repositories/i_chat_repository.dart';
+```
 
-1. **구현 코드 제거** (100% 완료)
-   - voting/data/datasources/README.md: 780줄 → 120줄 (85% 감소)
-   - voting/data/repositories/README.md: 530줄 → 105줄 (80% 감소)
-   - posts/data/datasources/README.md: 1345줄 → 205줄 (85% 감소)
+대상 파일:
+- chat/data/repositories/chat_repository_impl.dart
+- notifications/data/repositories/notification_repository_impl.dart
+- search/data/repositories/search_repository_impl.dart
+- voting/data/repositories/voting_repository_impl.dart
+- notifications/data/services/notification_service.dart
 
-2. **Core/App 마이그레이션 동기화** (100% 완료)
-   - 모든 MIGRATION_*.md 파일에 Core/App 섹션 추가
-   - FFAppState → AppState 변경사항 문서화
-   - flutter_flow/ → core/ 경로 변경 명시
-   - Import 예시 코드 추가
+#### 1.3 Repository 인터페이스 생성
+```dart
+// notifications/domain/repositories/i_notification_repository.dart 생성
+abstract class INotificationRepository {
+  // 메서드 정의
+}
 
-3. **네이밍 컨벤션 통일** (100% 완료)
-   - camelCase 사용 표준화
-   - 파일명은 snake_case 유지
-   - 모든 문서에서 일관성 확보
+// voting/domain/repositories/i_voting_repository.dart 생성
+// (posts_data_source.dart를 i_voting_repository.dart로 변경)
+```
 
-### 📊 문서 품질 메트릭
+### 🟡 Phase 2: Architecture Compliance (3-4일)
 
-| 메트릭 | 점수 | 설명 |
-|--------|------|------|
-| **구조 일관성** | 95% | 모든 README가 동일한 구조 |
-| **코드 예시** | 90% | 실제 구현 가능한 코드 포함 |
-| **다이어그램** | 85% | Mermaid 다이어그램 활용 |
-| **상호 참조** | 92% | 문서 간 링크 연결 |
-| **한국어 품질** | 98% | 명확하고 일관된 한국어 사용 |
+#### 2.1 Services → Adapters 이름 변경 (44개 디렉토리)
+```bash
+# 각 Feature의 data/services를 data/adapters로 변경
+mv data/services data/adapters
 
-## 🎯 남은 작업
+# 또는 data/gateways 사용 가능
+mv data/services data/gateways
+```
 
-### Phase 1: 문서 완성 (예상 2시간)
-- [ ] Chat - presentation/widgets README 보완
-- [ ] Posts - domain/usecases README 작성
-- [ ] Notifications - presentation/providers README 작성
-- [ ] Profile - 하위 디렉토리 README 3개 작성
-- [ ] App - 상세 구현 가이드 추가
+#### 2.2 Presentation → Data 의존성 제거 (33개 파일)
+```dart
+// ❌ 변경 전 (Presentation에서)
+import '../../data/repositories/auth_repository_impl.dart';
+final repo = AuthRepositoryImpl();
 
-### Phase 2: 품질 향상 (예상 1시간)
-- [ ] 모든 README에 테스트 전략 섹션 추가
-- [ ] 에러 처리 가이드라인 통일
-- [ ] 성능 최적화 팁 추가
+// ✅ 변경 후 (DI 사용)
+import '../../domain/repositories/i_auth_repository.dart';
+final repo = GetIt.I<IAuthRepository>();
+```
 
-### Phase 3: 최종 검증 (예상 30분)
-- [ ] 모든 링크 작동 확인
-- [ ] 코드 예시 문법 검증
-- [ ] 다이어그램 렌더링 확인
-- [ ] 오타 및 문법 검사
+#### 2.3 Data → Presentation 역방향 의존성 해결 (15개 파일)
+```dart
+// ❌ 변경 전 (Data 레이어에서)
+import '../../presentation/widgets/some_widget.dart';
 
-## 📝 개선 사항
+// ✅ 변경 후 (의존성 역전)
+// Domain에 인터페이스 정의, Presentation에서 구현
+```
 
-### 구현된 개선
-1. ✅ **구현 코드 완전 제거**: 문서에서 모든 구현 코드 제거
-2. ✅ **Core/App 동기화**: 모든 기능에 마이그레이션 섹션 추가
-3. ✅ **문서 구조 표준화**: 일관된 템플릿 적용
-4. ✅ **한국어 일관성**: 모든 문서 한국어로 통일
+### 🟢 Phase 3: DI Integration (2일)
 
-### 권장 사항
-1. **테스트 문서 추가**: 각 기능별 테스트 전략 문서 필요
-2. **API 문서 생성**: 외부 API 연동 가이드 필요
-3. **마이그레이션 체크리스트**: 단계별 체크리스트 보강
-4. **코드 스니펫 저장소**: 재사용 가능한 코드 패턴 모음
+#### 3.1 App/DI 모듈 업데이트
+```dart
+// app/di/notification_module.dart
+GetIt.I.registerLazySingleton<INotificationRepository>(
+  () => NotificationRepositoryImpl(),
+);
+```
 
-## 🚀 다음 단계
+#### 3.2 GetIt 사용으로 전환
+- 모든 직접 생성자 호출을 DI로 변경
+- Provider/Riverpod와 통합
 
-1. **즉시 실행 (오늘)**
-   - 남은 5개 README 파일 작성 완료
-   - 최종 품질 검증
+### 🔵 Phase 4: Testing & Documentation (2일)
 
-2. **단기 계획 (이번 주)**
-   - 실제 마이그레이션 시작
-   - 문서 기반 코드 이동 실행
+#### 4.1 테스트 추가
+- 각 Feature별 최소 5개 단위 테스트
+- Repository 통합 테스트
+- UseCase 테스트
 
-3. **장기 계획 (다음 주)**
-   - 마이그레이션 결과 문서 업데이트
-   - 실제 이슈 반영 및 개선
+#### 4.2 문서 업데이트
+- 각 Feature의 README.md 업데이트
+- 아키텍처 다이어그램 추가
+
+## 🔄 마이그레이션 우선순위 매트릭스
+
+| 우선순위 | Feature | 작업량 | 영향도 | 예상 시간 |
+|---------|---------|--------|--------|----------|
+| **🔴 1** | notifications | 높음 | 매우 높음 | 1일 |
+| **🔴 2** | voting | 중간 | 높음 | 0.5일 |
+| **🟡 3** | search | 중간 | 중간 | 0.5일 |
+| **🟡 4** | chat | 높음 | 높음 | 1일 |
+| **🟡 5** | posts | 매우 높음 | 매우 높음 | 2일 |
+| **🟢 6** | auth | 중간 | 중간 | 1일 |
+| **🟢 7** | profile | 중간 | 중간 | 1일 |
+
+## 📊 예상 결과
+
+### 마이그레이션 완료 후 상태
+- **아키텍처 위반**: 47개 → 0개
+- **레거시 의존성**: 5개 → 0개
+- **Clean Architecture 준수율**: 35% → 100%
+- **테스트 커버리지**: 향상 예정
+- **유지보수성**: 크게 개선
+
+### 기대 효과
+1. **개발 속도 향상**: 명확한 계층 분리로 병렬 개발 가능
+2. **버그 감소**: 의존성 명확화로 사이드 이펙트 감소
+3. **테스트 용이성**: 각 계층별 독립적 테스트 가능
+4. **확장성**: 새로운 Feature 추가 시 기존 코드 영향 최소화
+
+## 🛠️ 도구 및 스크립트
+
+### 유용한 검증 명령어
+```bash
+# 아키텍처 위반 검사
+flutter analyze
+
+# import 패턴 검색
+grep -r "import.*\/data\/" lib/features/*/presentation/
+grep -r "import.*\/presentation\/" lib/features/*/data/
+grep -r "import.*\/core\/repositories\/" lib/features/
+
+# Repository 패턴 확인
+find lib/features -name "*repository*.dart" | grep -E "(domain|data)"
+```
+
+### 자동화 스크립트 (준비 중)
+- service_to_adapter_rename.sh
+- fix_imports.dart
+- generate_repository_interface.dart
 
 ## 📌 참고 자료
 
-- [MIGRATION_ORDER.md](./MIGRATION_ORDER.md) - 전체 마이그레이션 순서
-- [각 Feature별 MIGRATION_*.md](./*/MIGRATION_*.md) - 개별 마이그레이션 가이드
+- [ARCHITECTURE_RULES.md](/lib/ARCHITECTURE_RULES.md) - 아키텍처 규칙 문서
+- [MIGRATION_COMPLETE_TREE_KR.md](/lib/backend/MIGRATION_COMPLETE_TREE_KR.md) - 백엔드 마이그레이션 완료 문서
 - [Clean Architecture 원칙](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+- [Feature-First Architecture](https://codewithandrea.com/articles/flutter-project-structure/)
 
 ---
 
-*이 보고서는 Feature-First Architecture 문서화 상태를 추적합니다.*
-*매주 업데이트 예정*
+*최종 업데이트: 2025-01-09*
+*작성자: SuperClaude with Inventory Scout & Import Guardian*
+*다음 검토: 2025-01-16*

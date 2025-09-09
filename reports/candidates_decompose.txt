@@ -1,21 +1,78 @@
-# 리팩토링 후보 분석 보고서
+# Large files
 
-## 🔥 대형 파일 (500줄 이상)
-1. lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart (1,745줄)
-2. lib/backend/backend.dart (1,665줄) 
-3. lib/core/localization/app_localizations.dart (1,280줄)
-4. lib/features/posts/presentation/widgets/vote/vote_card_message.dart (1,265줄)
-5. lib/features/auth/presentation/screens/login/login_page/login_page_widget.dart (1,194줄)
-6. lib/features/chat/presentation/screens/chat_detail/chat_detail_widget_v2.dart (1,158줄)
-7. lib/features/profile/presentation/screens/user_info_input/user_info_input_widget.dart (1,100줄)
-8. lib/features/notifications/presentation/widgets/versus_notification_box.dart (955줄)
-9. lib/features/auth/presentation/screens/signup/create_account/create_account_widget.dart (942줄)
-10. lib/features/notifications/presentation/widgets/notification_image_viewer.dart (936줄)
+  1747  lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart
+  1281  lib/core/localization/app_localizations.dart
+  1266  lib/features/posts/presentation/widgets/vote/vote_card_message.dart
+  1193  lib/features/auth/presentation/screens/login/login_page/login_page_widget.dart
+  1162  lib/features/chat/presentation/screens/chat_detail/chat_detail_widget_v2.dart
+  1100  lib/features/profile/presentation/screens/user_info_input/user_info_input_widget.dart
+   956  lib/features/notifications/presentation/widgets/versus_notification_box.dart
+   942  lib/features/auth/presentation/screens/signup/create_account/create_account_widget.dart
+   937  lib/features/notifications/presentation/widgets/notification_image_viewer.dart
+   937  lib/features/chat/presentation/screens/ai_chat/ai_chat_page_v2.dart
+   883  lib/features/profile/presentation/screens/onboarding/interest_selection/expertise_select/expertise_select_widget.dart
+   872  lib/features/profile/presentation/screens/onboarding/interest_selection/agreed_select/agrred_select_widget.dart
+   872  lib/features/profile/presentation/screens/onboarding/interest_selection/hobbies_select/hobbies_select_widget.dart
+   821  lib/testpage_select/testpage_select_widget.dart
+   746  lib/features/auth/presentation/screens/phone_auth/phonelogeinpincode_widget.dart
+   726  lib/features/notifications/presentation/widgets/voting_notification_dialog.dart
+   700  lib/features/posts/presentation/providers/media_provider.dart
+   699  lib/features/posts/domain/models/posts_model.dart
+   669  lib/features/chat/domain/models/messages_model.dart
+   664  lib/features/posts/data/repositories/post_repository_impl.dart
+   607  lib/core/localization/app_language_selector.dart
+   603  lib/features/posts/data/services/media/image_upload_orchestrator.dart
+   599  lib/features/auth/presentation/screens/start/start_page/start_page_widget.dart
+   596  lib/features/posts/presentation/widgets/media/media_selection_flow_widget.dart
+   578  lib/services/api/api_manager.dart
+   573  lib/features/posts/presentation/widgets/components/media_selection_box_multi.dart
+   554  lib/app/state/app_state.dart
+   554  lib/core/services/media/media_repository_impl.dart
+   544  lib/services/ui/unified_box_calculator.dart
+   542  lib/features/posts/presentation/widgets/media/media_editor_widget.dart
+   540  lib/features/posts/presentation/widgets/components/media_selection_box_single.dart
+   531  lib/app/router/navigation/nav.dart
+   528  lib/features/auth/presentation/screens/phone_auth/phone_creat_account/phone_creat_account_widget.dart
+   527  lib/services/cache/unified_cache_service.dart
+   525  lib/features/profile/domain/models/user_profile.dart
+   497  lib/core/utils/app_utils.dart
+   493  lib/features/notifications/data/services/global_notification_manager.dart
+   467  lib/features/auth/presentation/screens/email_verification/popup_timer_email/popup_timer_email_widget.dart
+   429  lib/features/voting/presentation/widgets/vote_card/vote_card_widget.dart
+   427  lib/features/posts/data/services/media/image_upload_orchestrator_v2.dart
+   425  lib/features/posts/presentation/screens/create_post/in_put_post_image_screen.dart
+   410  lib/features/profile/data/repositories/user_repository_impl.dart
+   406  lib/core/design_system/components/versus_text_field.dart
+   404  lib/features/voting/data/repositories/voting_repository_impl.dart
+   404  lib/features/posts/presentation/widgets/vote/vote_option_box.dart
+   394  lib/core/theme/app_theme.dart
+   390  lib/services/moderation/models/image_moderation_model.dart
+   390  lib/features/notifications/presentation/utils/adaptive_text_size.dart
+   390  lib/features/auth/presentation/screens/forgot_password/forgot_password/forgot_password_widget.dart
+   390  lib/features/posts/domain/models/post_voting.dart
+   388  lib/features/posts/data/services/media/image_editor_callback_handler.dart
+   382  lib/core/models/upload_data.dart
+   375  lib/features/posts/data/adapters/posts_model_adapter.dart
+   365  lib/features/posts/domain/models/post_metrics.dart
+   363  lib/features/auth/data/services/firebase_auth_manager.dart
+   363  lib/features/posts/presentation/widgets/dialogs/target_audience_steps/detailed_target_selector.dart
+   360  lib/features/chat/data/services/chat_initialization_service.dart
+   347  lib/core/design_system/components/versus_dialog.dart
+   344  lib/features/posts/presentation/screens/feed/home_page_widget.dart
+   343  lib/core/widgets/highlighted_text_field.dart
+   342  lib/features/search/presentation/screens/chat_search/chat_search_widget.dart
+   335  lib/features/posts/data/services/validation_service.dart
+   334  lib/features/posts/presentation/screens/viewer/image_viewer_page.dart
+   327  lib/features/posts/presentation/screens/thumbnail/thumbnail_selection_page.dart
+   322  lib/features/posts/presentation/widgets/dialogs/target_audience_steps/target_count_selector.dart
+   319  lib/features/chat/data/repositories/chat_repository_impl.dart
+   318  lib/features/notifications/domain/models/notifications_model.dart
+   313  lib/features/search/presentation/widgets/search_bar/search_bar_widget.dart
+   312  lib/features/profile/presentation/screens/user_info/character_detail/character_detail_page_widget.dart
+   312  lib/features/posts/presentation/widgets/dialogs/target_audience_dialog.dart
+   304  lib/core/widgets/app_widgets.dart
+   300  lib/features/posts/data/services/media/media_upload_service.dart
 
-## 🚫 빈 Feature 디렉토리
-- lib/features/theme/ (0개 파일)
-- lib/features/upload/ (0개 파일)
+# Mixed-responsibility suspects
 
-## 🎯 잘못 위치한 코드
-- Backend 레이어가 Features의 Models/Services 직접 참조 (41건)
-- Core 레이어가 Features의 Utils/Services 참조 (3건)
+Moderation,Vote           lib/features/posts/presentation/utils/debug_helper.dart

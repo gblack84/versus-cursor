@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get_it/get_it.dart';
 import '/features/notifications/domain/models/notifications_model.dart';
 import '/features/posts/domain/models/posts_model.dart';
-import '/core/repositories/notification_repository.dart';
+import '../../domain/repositories/i_notification_repository.dart';
 import '/features/posts/presentation/utils/debug_helper.dart';
 
 /// 실시간 투표 알림을 관리하는 서비스

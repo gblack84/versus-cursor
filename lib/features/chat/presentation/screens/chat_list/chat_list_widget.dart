@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '/features/auth/data/services/auth_util.dart';
+import '/features/auth/data/adapters/auth_util.dart';
 import '/core_exports.dart';
 import 'package:get_it/get_it.dart';
 import '/features/chat/domain/repositories/i_chat_repository.dart';

@@ -6,7 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '/core/config/environment_config.dart';
 import '/core/firebase/firebase_config.dart';
 import 'services/cache/unified_cache_service.dart';
-import 'features/notifications/data/services/notification_service.dart';
+import 'features/notifications/data/adapters/notification_service.dart';
 import '/app/state/providers/navigation_provider.dart';
 import '/app/di/injection.dart';
 import 'core_exports.dart';

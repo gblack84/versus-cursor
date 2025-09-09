@@ -1,14 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/core/firebase/utils/firestore_util.dart' show queryCollection, queryCollectionOnce, queryCollectionCount;
-import '/core/repositories/voting_repository.dart';
+import '../../domain/repositories/i_voting_repository.dart';
 import '/features/voting/domain/models/votecounts_model.dart';
 import '/features/voting/domain/models/vote_expansion_requests_model.dart';
 import '/features/voting/domain/models/rankings_model.dart';
 import '/features/voting/domain/models/weights_model.dart';
-import '/features/voting/domain/repositories/posts_data_source.dart';
 
 /// Implementation of voting repository with migrated backend query functions
-class VotingRepositoryImpl implements VotingRepository {
+class VotingRepositoryImpl implements IVotingRepository {
   static VotingRepositoryImpl? _instance;
   static VotingRepositoryImpl get instance => _instance ??= VotingRepositoryImpl._();
   

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import '/features/auth/data/services/auth_util.dart';
+import '/features/auth/data/adapters/auth_util.dart';
 import '/features/notifications/domain/models/notifications_model.dart';
 import '/core_exports.dart';
 

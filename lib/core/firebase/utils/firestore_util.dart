@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'schema_util.dart';
 import '/app/models/lat_lng.dart';
-import '/app/router/navigation/serialization_util.dart' show ColorSerialization;
+import '/app/router/navigation/serialization_util.dart' show AppColorSerialization;
 
 // Re-export commonly used Firestore classes
 export 'package:cloud_firestore/cloud_firestore.dart' show 
@@ -91,11 +91,11 @@ Map<String, dynamic> mapToFirestore(Map<String, dynamic> data) =>
       }
       // Handle Color
       if (value is Color) {
-        value = ColorSerialization(value).toCssString();
+        value = AppColorSerialization(value).toCssString();
       }
       // Handle list of Color
       if (value is Iterable && value.isNotEmpty && value.first is Color) {
-        value = value.map((v) => ColorSerialization(v as Color).toCssString()).toList();
+        value = value.map((v) => AppColorSerialization(v as Color).toCssString()).toList();
       }
       // Handle nested data.
       if (value is Map) {

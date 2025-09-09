@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 
-import '/features/search/data/services/algolia_manager.dart';
+import '/features/search/data/adapters/algolia_manager.dart';
 import 'package:collection/collection.dart';
 
 import '/core/firebase/utils/firestore_util.dart';

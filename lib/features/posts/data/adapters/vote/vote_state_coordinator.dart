@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/features/posts/data/services/vote/vote_timer_service.dart';
+import '/features/posts/data/adapters/vote/vote_timer_service.dart';
 import '/features/voting/domain/models/vote_state.dart';
-import '/features/auth/data/services/auth_util.dart';
+import '/features/auth/data/adapters/auth_util.dart';
 
 /// 투표 상태 통합 관리 서비스
 /// 

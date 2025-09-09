@@ -8,4 +8,4 @@ export '../../domain/models/group_messages_model.dart';
 export '../../domain/models/chat_history_model.dart';
 
 // Message Models
-export '../models/messages_model.dart';
+export '../../domain/models/messages_model.dart';

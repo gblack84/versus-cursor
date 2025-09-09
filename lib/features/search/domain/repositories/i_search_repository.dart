@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/features/search/domain/models/search_history_model.dart';
+import '../models/search_history_model.dart';
 
 /// Repository interface for Search-related operations
 /// This interface defines the contract for search functionality
-abstract class SearchRepository {
+abstract class ISearchRepository {
   // Search history queries
   Stream<List<SearchesModel>> querySearches({
     Query Function(Query)? queryBuilder,

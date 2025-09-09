@@ -6,7 +6,7 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '/app/state/app_state.dart';
 import '/services/moderation/models/image_moderation_model.dart';
 import 'media_upload_service.dart';
-import '/features/posts/data/services/cache/image_cache_helper.dart';
+import '/features/posts/data/adapters/cache/image_cache_helper.dart';
 import '/features/posts/presentation/screens/create_post/in_put_post_image_model.dart';
 import '/features/posts/presentation/utils/debug_helper.dart';
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '/core_exports.dart';
 import '/features/profile/domain/models/user_profile.dart';
-import '/features/auth/data/services/auth_util.dart';
+import '/features/auth/data/adapters/auth_util.dart';
 import '/core/design_system/design_system.dart';
 
 class ProfilePageWidget extends StatefulWidget {

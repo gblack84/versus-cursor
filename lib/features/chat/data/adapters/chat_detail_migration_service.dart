@@ -2,7 +2,7 @@ import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 // Migrated from backend.dart - Direct model imports
 import '/features/chat/domain/models/messages_model.dart';
 import '/features/profile/domain/models/user_profile.dart';
-import '/features/chat/data/services/chat_file_size_service.dart';
+import '/features/chat/data/adapters/chat_file_size_service.dart';
 
 /// Service to handle migration of ChatDetailWidget to v2
 class ChatDetailMigrationService {

@@ -1,11 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/core/firebase/utils/firestore_util.dart' show queryCollection, queryCollectionOnce, queryCollectionCount;
-import '/core/repositories/notification_repository.dart';
+import '../../domain/repositories/i_notification_repository.dart';
 import '/features/notifications/domain/models/notification_model.dart';
 import '/features/notifications/domain/models/notifications_model.dart';
 
 /// Implementation of notification repository with migrated backend query functions
-class NotificationRepositoryImpl implements NotificationRepository {
+class NotificationRepositoryImpl implements INotificationRepository {
   static NotificationRepositoryImpl? _instance;
   static NotificationRepositoryImpl get instance => _instance ??= NotificationRepositoryImpl._();
   

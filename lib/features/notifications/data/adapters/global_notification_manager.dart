@@ -5,12 +5,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 // Migrated from backend.dart - Direct model import
 import '/features/notifications/domain/models/notifications_model.dart';
-import '/features/auth/data/services/auth_util.dart';
+import '/features/auth/data/adapters/auth_util.dart';
 import '/features/notifications/presentation/widgets/voting_notification_dialog.dart';
 import '/features/notifications/presentation/models/versus_box_size_data.dart';
 import '/core_exports.dart';
 import 'notification_service.dart';
-import '/features/posts/data/services/vote/vote_status_service.dart';
+import '/features/posts/data/adapters/vote/vote_status_service.dart';
 import '/features/posts/presentation/utils/debug_helper.dart';
 
 /// 글로벌 알림 관리자

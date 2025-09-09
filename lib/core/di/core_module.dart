@@ -4,7 +4,7 @@
 import 'package:get_it/get_it.dart';
 import '../../app/di/feature_modules.dart';
 import '../interfaces/user_cache_interface.dart';
-import '../../features/profile/data/services/user_cache_service.dart';
+import '../../features/profile/data/adapters/user_cache_service.dart';
 
 class CoreModule implements FeatureModule {
   static bool _isInitialized = false;

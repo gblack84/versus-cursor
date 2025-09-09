@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '/features/auth/data/services/auth_util.dart';
-import '/features/notifications/data/services/notification_service.dart';
+import '/features/auth/data/adapters/auth_util.dart';
+import '/features/notifications/data/adapters/notification_service.dart';
 import '/features/notifications/presentation/widgets/notification_badge.dart';
 
 /// NotificationService와 연결된 알림 뱃지 제공자

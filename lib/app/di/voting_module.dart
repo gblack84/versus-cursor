@@ -1,6 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'feature_modules.dart';
-import '../../core/repositories/voting_repository.dart';
+import '../../features/voting/domain/repositories/i_voting_repository.dart';
 import '../../features/voting/data/repositories/voting_repository_impl.dart';
 
 /// Voting Feature DI Module
@@ -15,9 +15,9 @@ class VotingModule implements FeatureModule {
   
   @override
   void register(GetIt sl) {
-    // Register VotingRepository as lazy singleton
-    if (!sl.isRegistered<VotingRepository>()) {
-      sl.registerLazySingleton<VotingRepository>(
+    // Register IVotingRepository as lazy singleton
+    if (!sl.isRegistered<IVotingRepository>()) {
+      sl.registerLazySingleton<IVotingRepository>(
         () => VotingRepositoryImpl.instance,
       );
     }
@@ -27,8 +27,8 @@ class VotingModule implements FeatureModule {
   
   @override
   void unregister(GetIt sl) {
-    if (sl.isRegistered<VotingRepository>()) {
-      sl.unregister<VotingRepository>();
+    if (sl.isRegistered<IVotingRepository>()) {
+      sl.unregister<IVotingRepository>();
     }
     _isInitialized = false;
   }

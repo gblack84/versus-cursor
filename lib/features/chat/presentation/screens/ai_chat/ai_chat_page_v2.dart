@@ -29,11 +29,11 @@ import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/core/design_system/design_system.dart';
 import '/features/chat/domain/models/chats_model.dart';
-import '/features/auth/data/services/auth_util.dart';
+import '/features/auth/data/adapters/auth_util.dart';
 import '/features/posts/presentation/widgets/vote/vote_card_message.dart';
-import '/features/chat/data/services/chat_message_lifecycle_service.dart';
-import '/features/chat/data/services/chat_message_service.dart';
-import '/features/profile/data/services/user_cache_service.dart';
+import '/features/chat/data/adapters/chat_message_lifecycle_service.dart';
+import '/features/chat/data/adapters/chat_message_service.dart';
+import '/features/profile/data/adapters/user_cache_service.dart';
 import 'ai_chat_controller.dart';
 
 /// AI Chat Page using flutter_chat_ui v2

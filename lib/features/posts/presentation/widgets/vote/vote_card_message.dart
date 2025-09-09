@@ -9,7 +9,7 @@ import '/services/ui/responsive_breakpoints.dart';
 import '/features/posts/domain/usecases/media/aspect_ratio_analyzer.dart';
 import '/services/ui/unified_box_calculator.dart';
 import '/services/image/unified_image_cache_service.dart';
-import '/features/posts/data/services/vote/vote_state_coordinator.dart';
+import '/features/posts/data/adapters/vote/vote_state_coordinator.dart';
 import '/features/voting/domain/models/vote_state.dart';
 import 'base_vote_message.dart';
 

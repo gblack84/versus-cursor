@@ -4,9 +4,9 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '/core_exports.dart';
-import '/features/auth/data/services/auth_util.dart';
-import '/features/notifications/data/services/notification_service.dart';
-import '/features/notifications/data/services/global_notification_manager.dart';
+import '/features/auth/data/adapters/auth_util.dart';
+import '/features/notifications/data/adapters/notification_service.dart';
+import '/features/notifications/data/adapters/global_notification_manager.dart';
 import '/services/cache/preload_strategy.dart';
 
 class VersusApp extends StatefulWidget {

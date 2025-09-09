@@ -12,13 +12,13 @@ import '/features/posts/domain/models/creator_info.dart';
 import '/features/posts/domain/models/vote_data.dart';
 import '/features/posts/domain/models/post_stats.dart';
 import '/features/posts/data/models/poll_details_model.dart';
-import '/features/auth/data/services/auth_util.dart';
-import '/features/posts/data/services/validation_service.dart';
-import '/features/posts/data/services/moderation/models/moderation_result.dart' as ai;
+import '/features/auth/data/adapters/auth_util.dart';
+import '/features/posts/data/adapters/validation_service.dart';
+import '/features/posts/data/adapters/moderation/models/moderation_result.dart' as ai;
 import '/services/content/content_filter.dart';
 import '/core/types/layout_type.dart';
 import '/features/posts/domain/usecases/media/ratio_calculator.dart';
-import '/features/posts/data/services/error/error_handler.dart';
+import '/features/posts/data/adapters/error/error_handler.dart';
 import '/features/posts/presentation/utils/debug_helper.dart';
 
 /// Provider for managing post creation business logic

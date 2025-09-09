@@ -1,4 +1,4 @@
-import '/features/auth/data/services/auth_util.dart';
+import '/features/auth/data/adapters/auth_util.dart';
 import '/core_exports.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';

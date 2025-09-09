@@ -4,7 +4,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/models/auth_user.dart';
 import '../../domain/repositories/i_auth_repository.dart';
-import '../services/auth_util.dart' as auth_util;
+import '../adapters/auth_util.dart' as auth_util;
 import 'dart:async';
 
 /// AuthRepositoryImpl

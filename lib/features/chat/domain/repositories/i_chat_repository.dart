@@ -1,56 +1,89 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/chats_model.dart';
 import '../models/messages_model.dart';
+import '../models/group_chats_model.dart';
+import '../models/group_messages_model.dart';
+import '../models/chat_history_model.dart';
 
-/// Repository interface for chat operations
-/// Defines the contract for chat data access and management
+/// Repository interface for Chat-related operations
+/// This interface defines the contract for chat and messaging functionality
 abstract class IChatRepository {
-  /// Get chat stream by ID
-  Stream<ChatsModel?> getChatStream(String chatId);
-  
-  /// Get chat by ID (one-time fetch)
-  Future<ChatsModel?> getChatOnce(String chatId);
-  
-  /// Create a new chat
-  Future<String> createChat(ChatsModel chat);
-  
-  /// Update chat
-  Future<void> updateChat(String chatId, Map<String, dynamic> data);
-  
-  /// Delete chat
-  Future<void> deleteChat(String chatId);
-  
-  /// Get user's chats
-  Stream<List<ChatsModel>> getUserChats(String userId);
-  
-  /// Get chat messages
-  Stream<List<MessagesModel>> getChatMessages(String chatId, {int limit = 50});
-  
-  /// Send message
-  Future<void> sendMessage(String chatId, MessagesModel message);
-  
-  /// Update message
-  Future<void> updateMessage(String chatId, String messageId, Map<String, dynamic> data);
-  
-  /// Delete message
-  Future<void> deleteMessage(String chatId, String messageId);
-  
-  /// Mark message as read
-  Future<void> markMessageAsRead(String chatId, String messageId);
-  
-  /// Get unread message count
-  Future<int> getUnreadMessageCount(String chatId, String userId);
-  
-  /// Query chats with stream
+  // Chat queries
   Stream<List<ChatsModel>> queryChats({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
   });
-  
-  /// Get chat reference
-  DocumentReference getChatReference(String chatId);
-  
-  /// Get chats collection reference
-  CollectionReference get chatsCollection;
+
+  Future<int> queryChatsCount({
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+  });
+
+  // Message queries
+  Stream<List<MessagesModel>> queryMessages({
+    required DocumentReference parent,
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+    bool singleRecord = false,
+  });
+
+  Future<int> queryMessagesCount({
+    required DocumentReference parent,
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+  });
+
+  // Group chat queries
+  Stream<List<GroupChatsModel>> queryGroupChats({
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+    bool singleRecord = false,
+  });
+
+  Future<int> queryGroupChatsCount({
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+  });
+
+  // Group message queries
+  Stream<List<GroupMessagesModel>> queryGroupMessages({
+    required DocumentReference parent,
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+    bool singleRecord = false,
+  });
+
+  Future<int> queryGroupMessagesCount({
+    required DocumentReference parent,
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+  });
+
+  // Chat history queries
+  Stream<List<ChatHistoryModel>> queryChatHistory({
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+    bool singleRecord = false,
+  });
+
+  Future<int> queryChatHistoryCount({
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+  });
+
+  // CRUD operations
+  Future<ChatsModel?> getChat(String chatId);
+  Future<void> createChat(ChatsModel chat);
+  Future<void> updateChat(ChatsModel chat);
+  Future<void> deleteChat(String chatId);
+
+  // Message operations
+  Future<void> sendMessage(String chatId, MessagesModel message);
+  Future<void> deleteMessage(String chatId, String messageId);
+
+  // Group operations
+  Future<void> createGroupChat(GroupChatsModel group);
+  Future<void> addGroupMember(String groupId, String userId);
+  Future<void> removeGroupMember(String groupId, String userId);
 }

@@ -1,6 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'feature_modules.dart';
-import '../../core/repositories/search_repository.dart';
+import '../../features/search/domain/repositories/i_search_repository.dart';
 import '../../features/search/data/repositories/search_repository_impl.dart';
 
 /// Search Feature DI Module
@@ -15,9 +15,9 @@ class SearchModule implements FeatureModule {
   
   @override
   void register(GetIt sl) {
-    // Register SearchRepository as lazy singleton
-    if (!sl.isRegistered<SearchRepository>()) {
-      sl.registerLazySingleton<SearchRepository>(
+    // Register ISearchRepository as lazy singleton
+    if (!sl.isRegistered<ISearchRepository>()) {
+      sl.registerLazySingleton<ISearchRepository>(
         () => SearchRepositoryImpl.instance,
       );
     }
@@ -27,8 +27,8 @@ class SearchModule implements FeatureModule {
   
   @override
   void unregister(GetIt sl) {
-    if (sl.isRegistered<SearchRepository>()) {
-      sl.unregister<SearchRepository>();
+    if (sl.isRegistered<ISearchRepository>()) {
+      sl.unregister<ISearchRepository>();
     }
     _isInitialized = false;
   }

@@ -1,90 +1,90 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/post.dart';
-import '../models/vote_data.dart';
+import '../models/posts_model.dart';
+import '../models/comments_model.dart';
+import '../models/likes_model.dart';
+import '../models/dislikes_model.dart';
+import '../models/ranked_posts_model.dart';
 
-/// Repository interface for post operations
+/// Repository interface for Post-related operations
+/// This interface defines the contract that must be implemented
+/// by the data layer to provide post functionality
 abstract class IPostRepository {
-  /// Get a stream of all posts
-  Stream<List<Post>> getAllPosts();
-
-  /// Get a stream of posts by user ID
-  Stream<List<Post>> getPostsByUserId(String userId);
-
-  /// Get a single post by ID
-  Future<Post?> getPostById(String postId);
-
-  /// Get a stream of a single post by ID
-  Stream<Post?> getPostStream(String postId);
-
-  /// Create a new post
-  Future<String> createPost(Post post);
-
-  /// Update an existing post
-  Future<void> updatePost(String postId, Post post);
-
-  /// Delete a post
-  Future<void> deletePost(String postId);
-
-  /// Update post vote data
-  Future<void> updateVoteData(String postId, VoteData voteData);
-
-  /// Cast a vote on a post
-  Future<void> castVote(String postId, String userId, String option);
-
-  /// Remove a vote from a post
-  Future<void> removeVote(String postId, String userId, String option);
-
-  /// Get posts by category
-  Stream<List<Post>> getPostsByCategory(String category);
-
-  /// Get posts by tags
-  Stream<List<Post>> getPostsByTags(List<String> tags);
-
-  /// Get trending posts
-  Stream<List<Post>> getTrendingPosts({int limit = 20});
-
-  /// Get recent posts
-  Stream<List<Post>> getRecentPosts({int limit = 20});
-
-  /// Search posts by query
-  Stream<List<Post>> searchPosts(String query);
-
-  /// Get posts with pagination
-  Future<List<Post>> getPostsPaginated({
-    DocumentSnapshot? lastDocument,
-    int limit = 10,
+  // Post queries
+  Stream<List<PostsModel>> queryPosts({
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+    bool singleRecord = false,
   });
 
-  /// Report a post
-  Future<void> reportPost(String postId, String userId, String reason);
+  Future<int> queryPostsCount({
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+  });
 
-  /// Update post statistics
-  Future<void> updatePostStats(String postId, Map<String, dynamic> stats);
+  Future<PostsModel?> queryPostsSingleRecord({
+    Query Function(Query)? queryBuilder,
+    bool singleRecord = true,
+  });
 
-  /// Get posts by visibility level
-  Stream<List<Post>> getPostsByVisibility(int visibility);
+  // Comment queries
+  Stream<List<CommentsModel>> queryComments({
+    required DocumentReference parent,
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+    bool singleRecord = false,
+  });
 
-  /// Get anonymous posts
-  Stream<List<Post>> getAnonymousPosts();
+  Future<int> queryCommentsCount({
+    required DocumentReference parent,
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+  });
 
-  /// Get premium posts
-  Stream<List<Post>> getPremiumPosts();
+  // Like queries
+  Stream<List<LikesModel>> queryLikes({
+    required DocumentReference parent,
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+    bool singleRecord = false,
+  });
 
-  /// Complete a vote
-  Future<void> completeVote(String postId);
+  Future<int> queryLikesCount({
+    required DocumentReference parent,
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+  });
 
-  /// Cancel a vote
-  Future<void> cancelVote(String postId, String reason);
+  // Dislike queries  
+  Stream<List<DislikesModel>> queryDislikes({
+    required DocumentReference parent,
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+    bool singleRecord = false,
+  });
 
-  /// Send notifications for a post
-  Future<void> sendNotifications(String postId);
+  Future<int> queryDislikesCount({
+    required DocumentReference parent,
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+  });
 
-  /// Get vote results for a post
-  Future<Map<String, dynamic>> getVoteResults(String postId);
+  // Ranked posts queries
+  Stream<List<RankedPostsModel>> queryRankedPosts({
+    required DocumentReference parent,
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+    bool singleRecord = false,
+  });
 
-  /// Check if user has voted on a post
-  Future<bool> hasUserVoted(String postId, String userId);
+  Future<int> queryRankedPostsCount({
+    required DocumentReference parent,
+    Query Function(Query)? queryBuilder,
+    int limit = -1,
+  });
 
-  /// Get user's vote option on a post
-  Future<String?> getUserVoteOption(String postId, String userId);
+  // CRUD operations
+  Future<PostsModel?> getPost(String postId);
+  Future<void> createPost(PostsModel post);
+  Future<void> updatePost(PostsModel post);
+  Future<void> deletePost(String postId);
 }

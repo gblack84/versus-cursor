@@ -8,7 +8,7 @@ import '/core/firebase/utils/firestore_util.dart';  // For FirestoreRecord, safe
 /// SERIALIZATION HELPERS
 
 // Color extensions for serialization
-extension ColorSerialization on Color {
+extension AppColorSerialization on Color {
   String toCssString() {
     final r = (this.r * 255.0).round();
     final g = (this.g * 255.0).round();
@@ -18,7 +18,7 @@ extension ColorSerialization on Color {
   }
 }
 
-Color fromCssColor(String cssColor) {
+Color appFromCssColor(String cssColor) {
   if (cssColor.startsWith('rgba')) {
     final values = cssColor
         .substring(5, cssColor.length - 1)
@@ -246,7 +246,7 @@ dynamic deserializeParam<T>(
       case ParamType.LatLng:
         return latLngFromString(param);
       case ParamType.Color:
-        return fromCssColor(param);
+        return appFromCssColor(param);
       case ParamType.AppPlace:
         return placeFromString(param);
       case ParamType.AppUploadedFile:

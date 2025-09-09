@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/features/notifications/domain/models/notification_model.dart';
-import '/features/notifications/domain/models/notifications_model.dart';
+import '../models/notification_model.dart';
+import '../models/notifications_model.dart';
 
 /// Repository interface for Notification-related operations
 /// This interface defines the contract for notification functionality
-abstract class NotificationRepository {
+abstract class INotificationRepository {
   // Notification queries (legacy model)
   Stream<List<NotificationModel>> queryNotificationModel({
     Query Function(Query)? queryBuilder,

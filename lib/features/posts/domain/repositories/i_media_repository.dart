@@ -1,11 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/features/posts/data/models/media/images_model.dart';
-import '/features/posts/data/models/media/video_model.dart';
-import '/features/posts/domain/models/encodings_model.dart';
+import '../../data/models/media/images_model.dart';
+import '../../data/models/media/video_model.dart';
+import '../models/encodings_model.dart';
 
 /// Repository interface for Media-related operations
 /// This interface handles images, videos, and media encoding functionality
-abstract class MediaRepository {
+abstract class IMediaRepository {
   // Image queries
   Stream<List<ImagesModel>> queryImages({
     DocumentReference? parent,

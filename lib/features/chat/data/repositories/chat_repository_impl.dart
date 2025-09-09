@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/core/firebase/utils/firestore_util.dart' show queryCollection, queryCollectionOnce, queryCollectionCount;
-import '/core/repositories/chat_repository.dart';
+import '../../domain/repositories/i_chat_repository.dart';
 import '/features/chat/domain/models/chats_model.dart';
 import '/features/chat/domain/models/chat_history_model.dart';
 import '/features/profile/domain/models/friends_list_model.dart';
@@ -9,7 +9,7 @@ import '/features/chat/domain/models/group_chats_model.dart';
 import '/features/chat/domain/models/group_messages_model.dart';
 
 /// Implementation of chat repository with migrated backend query functions
-class ChatRepositoryImpl implements ChatRepository {
+class ChatRepositoryImpl implements IChatRepository {
   static ChatRepositoryImpl? _instance;
   static ChatRepositoryImpl get instance => _instance ??= ChatRepositoryImpl._();
   

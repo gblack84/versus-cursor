@@ -1,4 +1,4 @@
-import '/features/auth/data/services/auth_util.dart';
+import '/features/auth/data/adapters/auth_util.dart';
 import '/features/auth/presentation/screens/email_verification/popup_timer_email/popup_timer_email_widget.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';

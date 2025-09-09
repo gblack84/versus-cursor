@@ -1,4 +1,4 @@
-import '/features/auth/data/services/auth_util.dart';
+import '/features/auth/data/adapters/auth_util.dart';
 import '/services/storage/firebase_storage_service.dart';
 import '/core_exports.dart';
 import 'package:cached_network_image/cached_network_image.dart';

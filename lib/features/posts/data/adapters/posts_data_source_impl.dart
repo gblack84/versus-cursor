@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/features/voting/domain/repositories/posts_data_source.dart';
+import '/features/voting/domain/repositories/i_voting_repository.dart';
 import '../models/ranked_posts_model.dart';
 
 /// Implementation of PostsDataSource for voting feature

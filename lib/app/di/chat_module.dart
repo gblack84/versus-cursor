@@ -1,6 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'feature_modules.dart';
-import '../../core/repositories/chat_repository.dart';
+import '../../features/chat/domain/repositories/i_chat_repository.dart';
 import '../../features/chat/data/repositories/chat_repository_impl.dart';
 
 /// Chat Feature DI Module
@@ -16,8 +16,8 @@ class ChatModule implements FeatureModule {
   @override
   void register(GetIt sl) {
     // Register ChatRepository as lazy singleton
-    if (!sl.isRegistered<ChatRepository>()) {
-      sl.registerLazySingleton<ChatRepository>(
+    if (!sl.isRegistered<IChatRepository>()) {
+      sl.registerLazySingleton<IChatRepository>(
         () => ChatRepositoryImpl.instance,
       );
     }
@@ -27,8 +27,8 @@ class ChatModule implements FeatureModule {
   
   @override
   void unregister(GetIt sl) {
-    if (sl.isRegistered<ChatRepository>()) {
-      sl.unregister<ChatRepository>();
+    if (sl.isRegistered<IChatRepository>()) {
+      sl.unregister<IChatRepository>();
     }
     _isInitialized = false;
   }

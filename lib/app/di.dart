@@ -4,12 +4,12 @@
 /// following Clean Architecture principles
 
 import 'package:get_it/get_it.dart';
-import '/features/voting/domain/repositories/posts_data_source.dart';
+import '/features/voting/domain/repositories/i_voting_repository.dart';
 import '/features/posts/data/adapters/posts_data_source_impl.dart';
 
 // Auth Feature DI
 import '/features/auth/domain/services/i_auth_service.dart';
-import '/features/auth/data/services/auth_service_impl.dart';
+import '/features/auth/data/adapters/auth_service_impl.dart';
 
 final getIt = GetIt.instance;
 

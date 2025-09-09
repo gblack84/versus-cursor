@@ -7,7 +7,7 @@ import '/app/state/app_state.dart';
 import '/services/moderation/image_moderation_service.dart';
 import 'image_reorder_service.dart';
 import '/features/posts/presentation/utils/debug_helper.dart';
-import '/features/posts/data/services/error/error_handler.dart';
+import '/features/posts/data/adapters/error/error_handler.dart';
 
 /// 이미지 선택 결과 처리 서비스
 class SelectionResultProcessor {

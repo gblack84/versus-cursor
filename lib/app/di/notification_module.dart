@@ -1,6 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'feature_modules.dart';
-import '../../core/repositories/notification_repository.dart';
+import '../../features/notifications/domain/repositories/i_notification_repository.dart';
 import '../../features/notifications/data/repositories/notification_repository_impl.dart';
 
 /// Notification Feature DI Module
@@ -15,9 +15,9 @@ class NotificationModule implements FeatureModule {
   
   @override
   void register(GetIt sl) {
-    // Register NotificationRepository as lazy singleton
-    if (!sl.isRegistered<NotificationRepository>()) {
-      sl.registerLazySingleton<NotificationRepository>(
+    // Register INotificationRepository as lazy singleton
+    if (!sl.isRegistered<INotificationRepository>()) {
+      sl.registerLazySingleton<INotificationRepository>(
         () => NotificationRepositoryImpl.instance,
       );
     }
@@ -27,8 +27,8 @@ class NotificationModule implements FeatureModule {
   
   @override
   void unregister(GetIt sl) {
-    if (sl.isRegistered<NotificationRepository>()) {
-      sl.unregister<NotificationRepository>();
+    if (sl.isRegistered<INotificationRepository>()) {
+      sl.unregister<INotificationRepository>();
     }
     _isInitialized = false;
   }

@@ -4,7 +4,7 @@ import '/core/design_system/design_system.dart';
 import '/features/notifications/presentation/widgets/voting_notification_dialog.dart';
 import '/features/voting/domain/models/vote_state.dart';
 import '/services/ui/models/box_sizes.dart';
-import '/features/posts/data/services/vote/vote_state_coordinator.dart';
+import '/features/posts/data/adapters/vote/vote_state_coordinator.dart';
 import 'vote_timer_widget.dart';
 import 'vote_options_widget.dart';
 import 'vote_results_widget.dart';

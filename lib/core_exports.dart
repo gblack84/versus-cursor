@@ -18,14 +18,14 @@
 
 // ===== FROM CORE =====
 
-// Repository Interfaces (Added: 2025-01-09)
-export 'core/repositories/post_repository.dart';
-export 'core/repositories/user_repository.dart';
-export 'core/repositories/chat_repository.dart';
-export 'core/repositories/voting_repository.dart';
-export 'core/repositories/notification_repository.dart';
-export 'core/repositories/search_repository.dart';
-// auth_repository는 auth feature에 있으므로 제외
+// Repository Interfaces (Updated: 2025-01-09 - Moved to Features)
+export 'features/posts/domain/repositories/i_post_repository.dart';
+export 'features/posts/domain/repositories/i_media_repository.dart';
+export 'features/profile/domain/repositories/i_user_repository.dart';
+export 'features/chat/domain/repositories/i_chat_repository.dart';
+export 'features/voting/domain/repositories/i_voting_repository.dart';
+export 'features/notifications/domain/repositories/i_notification_repository.dart';
+export 'features/search/domain/repositories/i_search_repository.dart';
 
 // Theme & Styling
 export 'core/theme/app_theme.dart';
@@ -65,7 +65,7 @@ export 'core/models/form_field_controller.dart';
 
 // Navigation (app/router/navigation)
 export 'app/router/navigation/nav.dart';
-export 'app/router/navigation/serialization_util.dart' hide fromCssColor;
+export 'app/router/navigation/serialization_util.dart' hide appFromCssColor;
 
 // App Models (app/models)
 export 'app/models/lat_lng.dart';

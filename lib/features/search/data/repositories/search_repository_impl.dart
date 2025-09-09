@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/core/repositories/search_repository.dart';
+import '../../domain/repositories/i_search_repository.dart';
 import '/core/firebase/utils/firestore_util.dart' show queryCollection, queryCollectionOnce, queryCollectionCount;
 import '/features/search/domain/models/search_history_model.dart';
 
 /// Implementation of search repository
-class SearchRepositoryImpl implements SearchRepository {
+class SearchRepositoryImpl implements ISearchRepository {
   static SearchRepositoryImpl? _instance;
   static SearchRepositoryImpl get instance => _instance ??= SearchRepositoryImpl._();
   

@@ -1,23 +1,22 @@
 // ============================================
-// MIGRATION COMPLETED: 2025-01-09
-// All query functions have been migrated to 
-// Feature-specific repositories using DI pattern.
+// QUERY HELPERS - Firestore Query Utilities
+// Relocated from /lib/backend/backend.dart (2025-01-09)
 // 
-// Usage:
-// final repo = GetIt.instance<FeatureRepository>();
-// repo.queryFeature(...)
+// This file contains generic Firestore query utilities
+// that are used by various repository implementations.
+// Part of Clean Architecture core layer.
 // ============================================
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../core_exports.dart';
-import '../core/firebase/utils/firestore_util.dart';
+import '../../core_exports.dart';
+import 'utils/firestore_util.dart';
 
 export 'dart:async' show StreamSubscription;
 export 'package:cloud_firestore/cloud_firestore.dart' hide Order;
 export 'package:firebase_core/firebase_core.dart';
-export '../core/firebase/utils/firestore_util.dart';
-export '../core/firebase/utils/schema_util.dart';
+export 'utils/firestore_util.dart';
+export 'utils/schema_util.dart';
 
 // Core export for common types
 export '/app/models/lat_lng.dart';  // LatLng type used across features

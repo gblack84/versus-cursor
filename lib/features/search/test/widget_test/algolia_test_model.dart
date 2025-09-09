@@ -1,4 +1,4 @@
-import '/backend/backend.dart';
+import '/core/firebase/query_helpers.dart';
 import '/core_exports.dart';
 import 'algolia_test_widget.dart' show TestalgoriaWidget;
 import 'package:flutter/material.dart';

@@ -6,6 +6,19 @@
 
 알림 기능의 비즈니스 로직을 캡슐화하는 유스케이스 레이어입니다. 각 유스케이스는 단일 책임 원칙을 따르며, 특정 비즈니스 요구사항을 구현합니다.
 
+## 🚨 현재 상황 (2025-01-09)
+
+**Critical Issue**: UseCase 레이어가 완전히 비어있음
+- `/domain/usecases/` 디렉토리는 존재하나 구현된 UseCase 없음
+- 모든 비즈니스 로직이 adapters와 presentation에 분산됨
+- Clean Architecture 원칙 심각하게 위반 중
+
+### 시급한 문제점
+1. **UseCase 부재**: 비즈니스 로직이 구조화되지 않음
+2. **Domain 모델 오염**: Firebase 의존성이 Domain에 직접 노출
+3. **Repository Interface 미정의**: Domain에 repository 계약 없음
+4. **테스트 불가능**: Firebase 없이 비즈니스 로직 테스트 불가
+
 ## 🏗️ 디렉토리 구조
 
 ```

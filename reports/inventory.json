@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-09-09T02:12:12.910553Z",
+  "generated_at": "2025-09-09T08:08:55.242770Z",
   "files": [
     {
       "path": "lib/main.dart",
@@ -226,6 +226,10 @@
       "lines": 212
     },
     {
+      "path": "lib/features/notifications/domain/repositories/i_notification_repository.dart",
+      "lines": 71
+    },
+    {
       "path": "lib/features/notifications/domain/models/notifications_model.dart",
       "lines": 318
     },
@@ -238,19 +242,19 @@
       "lines": 284
     },
     {
-      "path": "lib/features/notifications/data/exports/notification_models.dart",
+      "path": "lib/features/notifications/data/models/notification_models.dart",
       "lines": 6
     },
     {
-      "path": "lib/features/notifications/data/services/global_notification_manager.dart",
+      "path": "lib/features/notifications/data/adapters/global_notification_manager.dart",
       "lines": 493
     },
     {
-      "path": "lib/features/notifications/data/services/notification_service.dart",
+      "path": "lib/features/notifications/data/adapters/notification_service.dart",
       "lines": 255
     },
     {
-      "path": "lib/features/notifications/data/services/target_audience_service.dart",
+      "path": "lib/features/notifications/data/adapters/target_audience_service.dart",
       "lines": 272
     },
     {
@@ -307,7 +311,7 @@
     },
     {
       "path": "lib/features/profile/domain/repositories/i_user_repository.dart",
-      "lines": 71
+      "lines": 98
     },
     {
       "path": "lib/features/profile/domain/repositories/i_friends_repository.dart",
@@ -382,12 +386,12 @@
       "lines": 16
     },
     {
-      "path": "lib/features/profile/data/adapters/user_profile_adapter.dart",
-      "lines": 243
+      "path": "lib/features/profile/data/adapters/user_cache_service.dart",
+      "lines": 246
     },
     {
-      "path": "lib/features/profile/data/services/user_cache_service.dart",
-      "lines": 246
+      "path": "lib/features/profile/data/adapters/user_profile_adapter.dart",
+      "lines": 243
     },
     {
       "path": "lib/features/search/presentation/providers/search_provider.dart",
@@ -466,6 +470,10 @@
       "lines": 4
     },
     {
+      "path": "lib/features/search/domain/repositories/i_search_repository.dart",
+      "lines": 72
+    },
+    {
       "path": "lib/features/search/domain/models/search_history_model.dart",
       "lines": 114
     },
@@ -530,23 +538,23 @@
       "lines": 5
     },
     {
-      "path": "lib/features/search/data/services/algolia_manager.dart",
+      "path": "lib/features/search/data/adapters/algolia_manager.dart",
       "lines": 89
     },
     {
-      "path": "lib/features/search/data/services/search_history_service.dart",
+      "path": "lib/features/search/data/adapters/search_history_service.dart",
       "lines": 5
     },
     {
-      "path": "lib/features/search/data/services/search_cache_service.dart",
+      "path": "lib/features/search/data/adapters/search_cache_service.dart",
       "lines": 5
     },
     {
-      "path": "lib/features/search/data/services/serialization_util.dart",
+      "path": "lib/features/search/data/adapters/serialization_util.dart",
       "lines": 69
     },
     {
-      "path": "lib/features/search/data/services/search_filter_service.dart",
+      "path": "lib/features/search/data/adapters/search_filter_service.dart",
       "lines": 5
     },
     {
@@ -570,8 +578,8 @@
       "lines": 429
     },
     {
-      "path": "lib/features/voting/domain/repositories/posts_data_source.dart",
-      "lines": 38
+      "path": "lib/features/voting/domain/repositories/i_voting_repository.dart",
+      "lines": 124
     },
     {
       "path": "lib/features/voting/domain/models/weights_model.dart",
@@ -599,19 +607,19 @@
     },
     {
       "path": "lib/features/voting/data/repositories/voting_repository_impl.dart",
-      "lines": 404
+      "lines": 403
     },
     {
       "path": "lib/features/voting/data/exports/voting_models.dart",
       "lines": 12
     },
     {
-      "path": "lib/features/voting/data/services/vote_message_helper.dart",
+      "path": "lib/features/voting/data/adapters/vote_message_helper.dart",
       "lines": 23
     },
     {
       "path": "lib/features/auth/presentation/screens/phone_auth/phonelogeinpincode_widget.dart",
-      "lines": 746
+      "lines": 747
     },
     {
       "path": "lib/features/auth/presentation/screens/phone_auth/phonelogeinpincode_model.dart",
@@ -627,7 +635,7 @@
     },
     {
       "path": "lib/features/auth/presentation/screens/email_verification/popup_timer_email/popup_timer_email_widget.dart",
-      "lines": 467
+      "lines": 468
     },
     {
       "path": "lib/features/auth/presentation/screens/email_verification/popup_timer_email/popup_timer_email_model.dart",
@@ -710,51 +718,51 @@
       "lines": 16
     },
     {
-      "path": "lib/features/auth/data/services/anonymous_auth.dart",
+      "path": "lib/features/auth/data/adapters/anonymous_auth.dart",
       "lines": 4
     },
     {
-      "path": "lib/features/auth/data/services/apple_auth.dart",
+      "path": "lib/features/auth/data/adapters/apple_auth.dart",
       "lines": 73
     },
     {
-      "path": "lib/features/auth/data/services/auth_service_impl.dart",
+      "path": "lib/features/auth/data/adapters/auth_service_impl.dart",
       "lines": 76
     },
     {
-      "path": "lib/features/auth/data/services/auth_util.dart",
+      "path": "lib/features/auth/data/adapters/auth_util.dart",
       "lines": 75
     },
     {
-      "path": "lib/features/auth/data/services/github_auth.dart",
+      "path": "lib/features/auth/data/adapters/github_auth.dart",
       "lines": 10
     },
     {
-      "path": "lib/features/auth/data/services/jwt_token_auth.dart",
+      "path": "lib/features/auth/data/adapters/jwt_token_auth.dart",
       "lines": 4
     },
     {
-      "path": "lib/features/auth/data/services/email_auth.dart",
+      "path": "lib/features/auth/data/adapters/email_auth.dart",
       "lines": 17
     },
     {
-      "path": "lib/features/auth/data/services/google_auth.dart",
+      "path": "lib/features/auth/data/adapters/google_auth.dart",
       "lines": 23
     },
     {
-      "path": "lib/features/auth/data/services/firebase_auth_manager.dart",
+      "path": "lib/features/auth/data/adapters/firebase_auth_manager.dart",
       "lines": 363
     },
     {
-      "path": "lib/features/auth/data/services/firebase_user_provider.dart",
+      "path": "lib/features/auth/data/adapters/firebase_user_provider.dart",
       "lines": 78
     },
     {
-      "path": "lib/features/auth/data/services/auth_manager.dart",
+      "path": "lib/features/auth/data/adapters/auth_manager.dart",
       "lines": 74
     },
     {
-      "path": "lib/features/auth/data/services/base_auth_user_provider.dart",
+      "path": "lib/features/auth/data/adapters/base_auth_user_provider.dart",
       "lines": 3
     },
     {
@@ -811,7 +819,7 @@
     },
     {
       "path": "lib/features/chat/domain/repositories/i_chat_repository.dart",
-      "lines": 56
+      "lines": 89
     },
     {
       "path": "lib/features/chat/domain/models/messages_model.dart",
@@ -842,39 +850,39 @@
       "lines": 11
     },
     {
-      "path": "lib/features/chat/data/services/chat_scroll_service.dart",
+      "path": "lib/features/chat/data/adapters/chat_scroll_service.dart",
       "lines": 71
     },
     {
-      "path": "lib/features/chat/data/services/chat_detail_migration_service.dart",
+      "path": "lib/features/chat/data/adapters/chat_detail_migration_service.dart",
       "lines": 210
     },
     {
-      "path": "lib/features/chat/data/services/chat_animation_service.dart",
+      "path": "lib/features/chat/data/adapters/chat_animation_service.dart",
       "lines": 63
     },
     {
-      "path": "lib/features/chat/data/services/chat_message_service.dart",
+      "path": "lib/features/chat/data/adapters/chat_message_service.dart",
       "lines": 212
     },
     {
-      "path": "lib/features/chat/data/services/chat_message_lifecycle_service.dart",
+      "path": "lib/features/chat/data/adapters/chat_message_lifecycle_service.dart",
       "lines": 246
     },
     {
-      "path": "lib/features/chat/data/services/chat_image_cache_service.dart",
+      "path": "lib/features/chat/data/adapters/chat_image_cache_service.dart",
       "lines": 123
     },
     {
-      "path": "lib/features/chat/data/services/chat_initialization_service.dart",
+      "path": "lib/features/chat/data/adapters/chat_initialization_service.dart",
       "lines": 360
     },
     {
-      "path": "lib/features/chat/data/services/chat_file_size_service.dart",
+      "path": "lib/features/chat/data/adapters/chat_file_size_service.dart",
       "lines": 128
     },
     {
-      "path": "lib/features/chat/data/services/chat_media_upload_service.dart",
+      "path": "lib/features/chat/data/adapters/chat_media_upload_service.dart",
       "lines": 168
     },
     {
@@ -1126,6 +1134,10 @@
       "lines": 90
     },
     {
+      "path": "lib/features/posts/domain/repositories/i_media_repository.dart",
+      "lines": 84
+    },
+    {
       "path": "lib/features/posts/domain/models/voting_summary.dart",
       "lines": 74
     },
@@ -1282,87 +1294,87 @@
       "lines": 375
     },
     {
+      "path": "lib/features/posts/data/adapters/validation_service.dart",
+      "lines": 335
+    },
+    {
       "path": "lib/features/posts/data/helpers/debug_helper.dart",
       "lines": 5
     },
     {
-      "path": "lib/features/posts/data/services/validation_service.dart",
-      "lines": 335
-    },
-    {
-      "path": "lib/features/posts/data/services/vote/vote_timer_service.dart",
+      "path": "lib/features/posts/data/adapters/vote/vote_timer_service.dart",
       "lines": 276
     },
     {
-      "path": "lib/features/posts/data/services/vote/vote_state_coordinator.dart",
+      "path": "lib/features/posts/data/adapters/vote/vote_state_coordinator.dart",
       "lines": 281
     },
     {
-      "path": "lib/features/posts/data/services/vote/vote_status_service.dart",
+      "path": "lib/features/posts/data/adapters/vote/vote_status_service.dart",
       "lines": 165
     },
     {
-      "path": "lib/features/posts/data/services/cache/image_cache_helper.dart",
+      "path": "lib/features/posts/data/adapters/cache/image_cache_helper.dart",
       "lines": 179
     },
     {
-      "path": "lib/features/posts/data/services/storage/storage_service.dart",
+      "path": "lib/features/posts/data/adapters/storage/storage_service.dart",
       "lines": 168
     },
     {
-      "path": "lib/features/posts/data/services/error/error_handler.dart",
+      "path": "lib/features/posts/data/adapters/error/error_handler.dart",
       "lines": 278
     },
     {
-      "path": "lib/features/posts/data/services/moderation/ai_moderation_service.dart",
+      "path": "lib/features/posts/data/adapters/moderation/ai_moderation_service.dart",
       "lines": 245
     },
     {
-      "path": "lib/features/posts/data/services/media/image_upload_orchestrator_v2.dart",
+      "path": "lib/features/posts/data/adapters/media/image_upload_orchestrator_v2.dart",
       "lines": 427
     },
     {
-      "path": "lib/features/posts/data/services/media/asset_picker_service.dart",
+      "path": "lib/features/posts/data/adapters/media/asset_picker_service.dart",
       "lines": 106
     },
     {
-      "path": "lib/features/posts/data/services/media/image_reorder_service.dart",
+      "path": "lib/features/posts/data/adapters/media/image_reorder_service.dart",
       "lines": 55
     },
     {
-      "path": "lib/features/posts/data/services/media/image_download_service.dart",
+      "path": "lib/features/posts/data/adapters/media/image_download_service.dart",
       "lines": 47
     },
     {
-      "path": "lib/features/posts/data/services/media/selection_result_processor.dart",
+      "path": "lib/features/posts/data/adapters/media/selection_result_processor.dart",
       "lines": 265
     },
     {
-      "path": "lib/features/posts/data/services/media/image_upload_orchestrator.dart",
+      "path": "lib/features/posts/data/adapters/media/image_upload_orchestrator.dart",
       "lines": 603
     },
     {
-      "path": "lib/features/posts/data/services/media/media_upload_service.dart",
+      "path": "lib/features/posts/data/adapters/media/media_upload_service.dart",
       "lines": 300
     },
     {
-      "path": "lib/features/posts/data/services/media/media_selection_service.dart",
+      "path": "lib/features/posts/data/adapters/media/media_selection_service.dart",
       "lines": 124
     },
     {
-      "path": "lib/features/posts/data/services/media/image_editor_callback_handler.dart",
+      "path": "lib/features/posts/data/adapters/media/image_editor_callback_handler.dart",
       "lines": 388
     },
     {
-      "path": "lib/features/posts/data/services/moderation/text_moderation/gemini_service.dart",
+      "path": "lib/features/posts/data/adapters/moderation/text_moderation/gemini_service.dart",
       "lines": 130
     },
     {
-      "path": "lib/features/posts/data/services/moderation/constants/moderation_config.dart",
+      "path": "lib/features/posts/data/adapters/moderation/constants/moderation_config.dart",
       "lines": 87
     },
     {
-      "path": "lib/features/posts/data/services/moderation/models/moderation_result.dart",
+      "path": "lib/features/posts/data/adapters/moderation/models/moderation_result.dart",
       "lines": 112
     },
     {
@@ -1492,38 +1504,6 @@
     {
       "path": "lib/core/utils/app_timer.dart",
       "lines": 128
-    },
-    {
-      "path": "lib/core/repositories/notification_repository.dart",
-      "lines": 71
-    },
-    {
-      "path": "lib/core/repositories/base_repository.dart",
-      "lines": 34
-    },
-    {
-      "path": "lib/core/repositories/voting_repository.dart",
-      "lines": 85
-    },
-    {
-      "path": "lib/core/repositories/chat_repository.dart",
-      "lines": 89
-    },
-    {
-      "path": "lib/core/repositories/search_repository.dart",
-      "lines": 72
-    },
-    {
-      "path": "lib/core/repositories/post_repository.dart",
-      "lines": 90
-    },
-    {
-      "path": "lib/core/repositories/user_repository.dart",
-      "lines": 78
-    },
-    {
-      "path": "lib/core/repositories/media_repository.dart",
-      "lines": 84
     },
     {
       "path": "lib/core/models/form_field_controller.dart",

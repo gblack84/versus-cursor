@@ -6,6 +6,27 @@
 
 알림 기능의 UI 상태를 관리하는 Provider 레이어입니다. Provider 패턴을 사용하여 알림 데이터와 UI 상태를 효율적으로 관리합니다.
 
+## 🚨 현재 상황 (2025-01-09)
+
+**Critical Issues**: Clean Architecture 심각한 위반
+- **Domain 우회**: Presentation이 Data 레이어에 직접 접근 
+- **Firebase 직접 사용**: UI 컴포넌트에서 Firestore 작업 수행
+- **UseCase 미사용**: 비즈니스 로직이 Provider에 산재
+- **Global Services 의존**: Feature가 전역 서비스에 의존
+
+### 발견된 위반사항
+1. **Data Layer 직접 접근** (Critical)
+   - `notification_badge_provider.dart`: NotificationService 직접 사용
+   - `notifications_list_widget.dart`: Repository 직접 접근
+   
+2. **Firebase Operations in UI** (Critical)
+   - UI에서 `reference.update()` 직접 호출
+   - FieldValue.serverTimestamp() 사용
+
+3. **Missing UseCase Pattern** (Critical)
+   - 모든 비즈니스 로직이 Provider/Widget에 존재
+   - Domain 레이어 완전 우회
+
 ## 🏗️ 디렉토리 구조
 
 ```

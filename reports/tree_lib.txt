@@ -1,7 +1,9 @@
 .DS_Store
+ARCHITECTURE_RULES.md
 README.md
 app
   .DS_Store
+  APP_INTEGRATION_GUIDE.md
   MIGRATION_APP_ORDER_RULES.md
   README.md
   TEST.md
@@ -129,15 +131,6 @@ core
     form_field_controller.dart
     upload_data.dart
     uploaded_file.dart
-  repositories
-    base_repository.dart
-    chat_repository.dart
-    media_repository.dart
-    notification_repository.dart
-    post_repository.dart
-    search_repository.dart
-    user_repository.dart
-    voting_repository.dart
   services
     media
       i_media_repository.dart
@@ -190,18 +183,16 @@ features
   .DS_Store
   DOCUMENTATION_STATUS.md
   FINAL_REPORT.md
+  MIGRATION_FEATURES_PART4.md
+  MIGRATION_PHASE1_CHECKPOINTS.md
+  MIGRATION_PHASE1_COMPLETION_KO.md
+  MIGRATION_PHASE1_TASKS.md
+  PHASE2_ERROR_CLASSIFICATION.md
   auth
     DOCUMENTATION_STATUS.md
     README.md
     data
-      datasources
-        README.md
-      exports
-        auth_models.dart
-      repositories
-        README.md
-        auth_repository_impl.dart
-      services
+      adapters
         README.md
         anonymous_auth.dart
         apple_auth.dart
@@ -215,6 +206,13 @@ features
         github_auth.dart
         google_auth.dart
         jwt_token_auth.dart
+      datasources
+        README.md
+      exports
+        auth_models.dart
+      repositories
+        README.md
+        auth_repository_impl.dart
     domain
       .DS_Store
       models
@@ -246,16 +244,7 @@ features
   chat
     README.md
     data
-      datasources
-        README.md
-      exports
-        chat_models.dart
-      models
-      repositories
-        README.md
-        chat_repository_impl.dart
-        chat_repository_impl.dart.backup
-      services
+      adapters
         README.md
         chat_animation_service.dart
         chat_detail_migration_service.dart
@@ -266,6 +255,15 @@ features
         chat_message_lifecycle_service.dart
         chat_message_service.dart
         chat_scroll_service.dart
+      datasources
+        README.md
+      exports
+        chat_models.dart
+      models
+      repositories
+        README.md
+        chat_repository_impl.dart
+        chat_repository_impl.dart.backup
     domain
       constants
         chat_constants.dart
@@ -294,28 +292,42 @@ features
       widgets
         README.md
   notifications
+    APP_LAYER_INTEGRATION.md
+    INTEGRATION_GUIDE.md
     README.md
     data
-      datasources
-        README.md
-      exports
-        notification_models.dart
-      repositories
-        README.md
-        notification_repository_impl.dart
-      services
+      DTO_MIGRATION_GUIDE.md
+      adapters
+        MIGRATION_GUIDE.md
         README.md
         global_notification_manager.dart
         notification_service.dart
         target_audience_service.dart
-    domain
+      datasources
+        DATASOURCE_MIGRATION_GUIDE.md
+        README.md
+      mappers
+        README.md
       models
+        README.md
+        notification_models.dart
+      repositories
+        README.md
+        REPOSITORY_MIGRATION_GUIDE.md
+        notification_repository_impl.dart
+    domain
+      DOMAIN_MIGRATION_GUIDE.md
+      models
+        DOMAIN_PURIFICATION_GUIDE.md
         README.md
         notification_model.dart
         notifications_model.dart
+      repositories
+        i_notification_repository.dart
       usecases
         README.md
     presentation
+      PRESENTATION_MIGRATION_GUIDE.md
       constants
         README.md
         voting_notification_constraints.dart
@@ -345,10 +357,18 @@ features
     README.md
     data
       adapters
+        README.md
+        cache
+        error
+        media
+        moderation
         posts_data_source_impl.dart
         posts_model_adapter.dart
         posts_model_adapter.dart.backup
         posts_model_adapter.dart.temp
+        storage
+        validation_service.dart
+        vote
       constants
         string_constants.dart
       data.dart
@@ -372,15 +392,6 @@ features
         README.md
         post_repository_impl.dart
         post_repository_impl.dart.backup
-      services
-        README.md
-        cache
-        error
-        media
-        moderation
-        storage
-        validation_service.dart
-        vote
       utils
         firestore_util.dart
     domain
@@ -419,6 +430,7 @@ features
         voting_summary.dart
         voting_update.dart
       repositories
+        i_media_repository.dart
         i_post_repository.dart
         voting_repository.dart
       services
@@ -464,6 +476,8 @@ features
     README.md
     data
       adapters
+        README.md
+        user_cache_service.dart
         user_profile_adapter.dart
       datasources
         README.md
@@ -477,9 +491,6 @@ features
       repositories
         README.md
         user_repository_impl.dart
-      services
-        README.md
-        user_cache_service.dart
     domain
       models
         README.md
@@ -514,6 +525,13 @@ features
     README.md
     data
       README.md
+      adapters
+        README.md
+        algolia_manager.dart
+        search_cache_service.dart
+        search_filter_service.dart
+        search_history_service.dart
+        serialization_util.dart
       datasources
         README.md
         algolia_datasource.dart
@@ -525,13 +543,6 @@ features
         README.md
         search_repository.dart
         search_repository_impl.dart
-      services
-        README.md
-        algolia_manager.dart
-        search_cache_service.dart
-        search_filter_service.dart
-        search_history_service.dart
-        serialization_util.dart
     domain
       README.md
       models
@@ -543,6 +554,7 @@ features
         search_result_model.dart
       repositories
         README.md
+        i_search_repository.dart
         search_repository.dart
       usecases
         README.md
@@ -571,32 +583,12 @@ features
       widget_test
         algolia_test_model.dart
         algolia_test_widget.dart
-  theme
-    data
-      models
-      providers
-      services
-      widgets
-    domain
-      providers
-      services
-      widgets
-    presentation
-      models
-      repositories
-      services
-      widgets
-  upload
-    data
-      repositories
-      services
-    domain
-      repositories
-    presentation
-      providers
   voting
     README.md
     data
+      adapters
+        README.md
+        vote_message_helper.dart
       datasources
         README.md
       exports
@@ -604,9 +596,6 @@ features
       repositories
         README.md
         voting_repository_impl.dart
-      services
-        README.md
-        vote_message_helper.dart
     domain
       models
         README.md
@@ -617,7 +606,7 @@ features
         votes_model.dart
         weights_model.dart
       repositories
-        posts_data_source.dart
+        i_voting_repository.dart
       usecases
         README.md
     presentation
@@ -626,7 +615,6 @@ features
         README.md
       screens
         README.md
-      services
       widgets
         README.md
         vote_card

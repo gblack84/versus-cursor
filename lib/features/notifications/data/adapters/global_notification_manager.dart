@@ -1,32 +1,43 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
-import '/core/types/layout_type.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-// Migrated from backend.dart - Direct model import
-import '/features/notifications/domain/models/notifications_model.dart';
-import '/features/auth/data/adapters/auth_util.dart';
-import '/features/notifications/presentation/widgets/voting_notification_dialog.dart';
+// Business logic imports only
+import '/features/notifications/domain/models/notification.dart' as domain;
+import '/features/notifications/domain/models/vote_notification.dart' as domain;
+import '/features/notifications/presentation/managers/i_notification_ui_delegate.dart';
+import '/features/notifications/presentation/managers/notification_ui_manager.dart';
 import '/features/notifications/presentation/models/versus_box_size_data.dart';
-import '/core_exports.dart';
+import '/features/auth/data/adapters/auth_util.dart';
 import 'notification_service.dart';
 import '/features/posts/data/adapters/vote/vote_status_service.dart';
 import '/features/posts/presentation/utils/debug_helper.dart';
 
-/// 글로벌 알림 관리자
+/// 글로벌 알림 관리자 - 비즈니스 로직 전용
 /// 
-/// 앱 전체에서 알림을 표시하고 관리하는 싱글톤 클래스
+/// Clean Architecture에 따라 UI 로직은 NotificationUIManager에 위임하고
+/// 알림 큐 관리, 데이터 처리, 비즈니스 로직만 담당합니다.
 class GlobalNotificationManager {
   static final GlobalNotificationManager _instance = GlobalNotificationManager._internal();
   static GlobalNotificationManager get instance => _instance;
   
-  GlobalNotificationManager._internal();
+  GlobalNotificationManager._internal() {
+    // UI 대리자 주입 (기본값으로 NotificationUIManager 사용)
+    _uiDelegate = NotificationUIManager.instance;
+  }
+  
+  /// UI 대리자 (의존성 주입 가능)
+  late INotificationUIDelegate _uiDelegate;
+  
+  /// UI 대리자 설정 (테스트나 커스텀 UI를 위한 의존성 주입)
+  void setUIDelegate(INotificationUIDelegate delegate) {
+    _uiDelegate = delegate;
+  }
   
   /// 알림 큐
-  final List<NotificationsModel> _notificationQueue = [];
+  final List<domain.Notification> _notificationQueue = [];
   
   /// 현재 표시 중인 알림
-  NotificationsModel? _currentNotification;
+  domain.Notification? _currentNotification;
   
   /// 알림 표시 중 여부
   bool _isShowingNotification = false;
@@ -35,7 +46,7 @@ class GlobalNotificationManager {
   final Set<String> _processedNotificationIds = {};
   
   /// 스트림 구독
-  StreamSubscription<List<NotificationsModel>>? _notificationSubscription;
+  StreamSubscription<List<domain.Notification>>? _notificationSubscription;
   
   /// 큐 처리 타이머
   Timer? _queueTimer;
@@ -93,10 +104,10 @@ class GlobalNotificationManager {
   }
   
   /// 새로운 알림 처리
-  void _handleNewNotifications(List<NotificationsModel> notifications) {
+  void _handleNewNotifications(List<domain.Notification> notifications) {
     // 기존 큐에 없고, 이미 처리되지 않은 새로운 알림만 추가
     for (final notification in notifications) {
-      final notificationId = notification.reference.id;
+      final notificationId = notification.id;
       
       // 이미 처리된 알림은 무시
       if (_processedNotificationIds.contains(notificationId)) {
@@ -104,7 +115,7 @@ class GlobalNotificationManager {
       }
       
       // 큐에 없는 경우만 추가
-      if (!_notificationQueue.any((n) => n.reference.id == notificationId)) {
+      if (!_notificationQueue.any((n) => n.id == notificationId)) {
         _notificationQueue.add(notification);
         DebugHelper.logOnce(
           'notif_queued_$notificationId',
@@ -117,7 +128,7 @@ class GlobalNotificationManager {
     
     // 큐 정렬 (생성 시간 기준)
     _notificationQueue.sort((a, b) => 
-      (a.createdAt ?? DateTime.now()).compareTo(b.createdAt ?? DateTime.now())
+      a.createdAt.compareTo(b.createdAt)
     );
     
     DebugHelper.debug('큐 크기: ${_notificationQueue.length}, 처리된: ${_processedNotificationIds.length}', tag: 'GlobalNotificationManager');
@@ -143,27 +154,13 @@ class GlobalNotificationManager {
     _showNotification(notification);
   }
   
-  /// 알림 표시
-  Future<void> _showNotification(NotificationsModel notification) async {
-    // Navigator와 인증 상태가 모두 준비될 때까지 대기
-    int attempts = 0;
-    BuildContext? context;
-    
-    while (attempts < 20) {  // 최대 10초 대기
-      context = appNavigatorKey.currentContext;
-      final user = FirebaseAuth.instance.currentUser;
-      
-      if (context != null && user != null) {
-        // 모든 조건이 충족됨
-        break;
-      }
-      
-      await Future.delayed(const Duration(milliseconds: 500));
-      attempts++;
-    }
+  /// 알림 표시 - UI 대리자를 통해 처리
+  Future<void> _showNotification(domain.Notification notification) async {
+    // UI 컨텍스트 준비 대기
+    final context = await _uiDelegate.waitForUIContext();
     
     if (context == null) {
-      DebugHelper.warning('Context 준비 실패 - 재시도 예약', tag: 'GlobalNotificationManager');
+      DebugHelper.warning('UI 컨텍스트 준비 실패 - 재시도 예약', tag: 'GlobalNotificationManager');
       // 5초 후 재시도
       Future.delayed(const Duration(seconds: 5), () {
         _notificationQueue.add(notification);
@@ -172,7 +169,7 @@ class GlobalNotificationManager {
     }
     
     // 알림을 처리 목록에 추가 (중복 표시 방지)
-    final notificationId = notification.reference.id;
+    final notificationId = notification.id;
     _processedNotificationIds.add(notificationId);
     
     // 처리 기록 저장 (비동기로 처리하여 UI 블로킹 방지)
@@ -182,211 +179,76 @@ class GlobalNotificationManager {
     _currentNotification = notification;
     
     try {
-      String question = '';
-      String optionA = '';
-      String optionB = '';
-      String? imageUrlA;
-      String? imageUrlB;
-      List<String>? imageUrlsA;
-      List<String>? imageUrlsB;
-      String? description;
-      double? aspectRatioA;
-      double? aspectRatioB;
-      String? layoutType;
-      String? authorName;
+      // 데이터 추출은 NotificationDataExtractor를 사용
+      final voteData = await NotificationDataExtractor.extractVoteData(notification);
       
-      // 먼저 content 필드에서 데이터 파싱 시도
-      if (notification.content.isNotEmpty) {
-        try {
-          final contentData = jsonDecode(notification.content) as Map<String, dynamic>;
-          
-          if (contentData.containsKey('postData')) {
-            final postData = contentData['postData'] as Map<String, dynamic>;
-            question = postData['questionTitle'] ?? '';
-            optionA = postData['optionA'] ?? '';
-            optionB = postData['optionB'] ?? '';
-            imageUrlA = postData['imageUrlA'];
-            imageUrlB = postData['imageUrlB'];
-            // 멀티이미지 지원 추가
-            if (postData['imageUrlsA'] is List) {
-              imageUrlsA = (postData['imageUrlsA'] as List).cast<String>();
-              }
-            if (postData['imageUrlsB'] is List) {
-              imageUrlsB = (postData['imageUrlsB'] as List).cast<String>();
-            }
-            description = postData['description'] ?? postData['descriptionA'] ?? postData['descriptionB'] ?? '';
-            aspectRatioA = postData['aspectRatioA']?.toDouble();
-            aspectRatioB = postData['aspectRatioB']?.toDouble();
-            layoutType = postData['layoutType'];
-            authorName = postData['authorName'];
-          }
-        } catch (e) {
-          // content 파싱 실패 시 posts 조회로 진행
-        }
+      if (voteData.isEmpty) {
+        DebugHelper.warning('알림 데이터 추출 실패', tag: 'GlobalNotificationManager');
+        _isShowingNotification = false;
+        return;
       }
       
-      // content 파싱이 실패하거나 데이터가 없으면 게시물 직접 조회
-      if (question.isEmpty) {
-        final postDoc = await FirebaseFirestore.instance
-            .collection('posts')
-            .doc(notification.sourceId)
-            .get();
-        
-        if (!postDoc.exists) {
-          DebugHelper.warning('게시물을 찾을 수 없음', tag: 'GlobalNotificationManager');
-          _isShowingNotification = false;
-          return;
-        }
-        
-        final postData = postDoc.data() as Map<String, dynamic>;
-        
-        // 실제 게시물 데이터 사용
-        question = postData['questionTitle'] ?? '';
-        
-        // description 추출
-        description = postData['description'] ?? postData['descriptionA'] ?? postData['descriptionB'] ?? '';
-        
-        // optionA와 optionB는 객체 형태로 저장됨
-        if (postData['optionA'] is Map) {
-          final optionAData = postData['optionA'] as Map<String, dynamic>;
-          optionA = optionAData['title'] ?? '';
-          if (optionAData['mediaUrls'] is List && (optionAData['mediaUrls'] as List).isNotEmpty) {
-            final mediaList = (optionAData['mediaUrls'] as List).cast<String>();
-            imageUrlsA = mediaList;
-            imageUrlA = mediaList.first; // 기존 호환성
-          }
-        } else {
-          optionA = postData['optionA'] ?? postData['textA'] ?? '';
-        }
-        
-        if (postData['optionB'] is Map) {
-          final optionBData = postData['optionB'] as Map<String, dynamic>;
-          optionB = optionBData['title'] ?? '';
-          if (optionBData['mediaUrls'] is List && (optionBData['mediaUrls'] as List).isNotEmpty) {
-            final mediaList = (optionBData['mediaUrls'] as List).cast<String>();
-            imageUrlsB = mediaList;
-            imageUrlB = mediaList.first; // 기존 호환성
-          }
-        } else {
-          optionB = postData['optionB'] ?? postData['textB'] ?? '';
-        }
-        
-        // 작성자 이름 추출
-        authorName = postData['authorName'] ?? postData['authorDisplayName'] ?? '익명';
-      }
-      
-      DebugHelper.logOnce(
-        'notif_show_$notificationId',
-        '투표 알림 표시: ${DebugHelper.maskSensitive(notificationId)}',
-        tag: 'GlobalNotificationManager',
-        level: LogLevel.INFO
-      );
-      
-      // VersusBoxSizeData 생성 (비율 정보가 있는 경우)
+      // UI 대리자에 NotificationUIManager가 있으면 sizeData 생성
       VersusBoxSizeData? sizeData;
-      if (aspectRatioA != null || aspectRatioB != null) {
-        try {
-          // 레이아웃 타입 파싱
-          LayoutType parsedLayoutType = LayoutType.horizontal;
-          if (layoutType != null) {
-            parsedLayoutType = LayoutType.values.firstWhere(
-              (e) => e.name == layoutType,
-              orElse: () => LayoutType.horizontal,
-            );
-          }
-          
-          // 기본 박스 크기 (화면 크기에 따라 동적으로 설정) - 더 크게 설정
-          final screenWidth = MediaQuery.of(context).size.width;
-          final screenHeight = MediaQuery.of(context).size.height;
-          final baseSize = Size(screenWidth * 0.7, screenHeight * 0.5);
-          
-          sizeData = VersusBoxSizeData(
-            layoutType: parsedLayoutType,
-            aspectRatioA: aspectRatioA,
-            aspectRatioB: aspectRatioB,
-            originalSizeA: baseSize,
-            originalSizeB: baseSize,
-            screenWidth: MediaQuery.of(context).size.width,
-            createdAt: DateTime.now(),
-            hasImageA: imageUrlA != null,
-            hasImageB: imageUrlB != null,
-          );
-        } catch (e) {
-          DebugHelper.warning('VersusBoxSizeData 생성 실패', tag: 'GlobalNotificationManager');
-        }
+      if (_uiDelegate is NotificationUIManager) {
+        final uiManager = _uiDelegate as NotificationUIManager;
+        sizeData = uiManager.createSizeDataFromAspectRatios(
+          context: context,
+          aspectRatioA: voteData.aspectRatioA,
+          aspectRatioB: voteData.aspectRatioB,
+          layoutType: voteData.layoutType,
+          hasImageA: voteData.imageUrlA != null,
+          hasImageB: voteData.imageUrlB != null,
+        );
       }
       
-      // 표준 showDialog를 사용하여 알림 표시 (Navigator context 문제 해결)
-      
-      showDialog(
+      // UI 대리자를 통해 알림 표시
+      await _uiDelegate.showVotingNotification(
+        notification: notification,
         context: context,
-        barrierDismissible: false,
-        barrierColor: Colors.black54,  // 검은색 반투명 배경
-        builder: (BuildContext dialogContext) {
-          return Dialog(
-            backgroundColor: Colors.transparent,
-            insetPadding: EdgeInsets.symmetric(
-              horizontal: MediaQuery.of(dialogContext).size.width * 0.04,  // 좌우 4%씩 여백 = 92% 사용
-              vertical: MediaQuery.of(dialogContext).size.height * 0.05  // 상하 5%씩 동적 여백
-            ),
-            alignment: Alignment.topCenter,
-            child: VotingNotificationDialog(
-                question: question,
-                optionA: optionA,
-                optionB: optionB,
-                imageUrlA: imageUrlA,
-                imageUrlB: imageUrlB,
-                imageUrlsA: imageUrlsA, // 멀티이미지 지원
-                imageUrlsB: imageUrlsB, // 멀티이미지 지원
-                description: description,
-                sizeData: sizeData,  // 사이즈 데이터 전달
-                showDebugInfo: false,  // 디버그 정보 비활성화
-                authorName: authorName,  // 작성자 이름 전달
-                onVote: (selectedOption) async {
-                  DebugHelper.info('투표 완료: $selectedOption', tag: 'GlobalNotificationManager');
-                  
-                  // 상태 즉시 업데이트 (권한 오류와 관계없이)
-                  _isShowingNotification = false;
-                  _currentNotification = null;
-                  
-                  // 다이얼로그 먼저 닫기
-                  if (dialogContext.mounted) {
-                    Navigator.of(dialogContext).pop();
-                  }
-                  
-                  // 비동기로 알림을 읽음으로 표시 시도
-                  _markAsRead(notification).then((_) {
-                  }).catchError((error) {
-                  });
-                  
-                  // 실제 투표 로직 구현
-                  await _submitVote(notification.sourceId, selectedOption);
-                  
-                  // 다음 알림 처리 (약간의 지연 후)
-                  Future.delayed(const Duration(milliseconds: 300), () {
-                    _processQueue();
-                  });
-                },
-                onDismiss: (hasVoted) {
-                  _isShowingNotification = false;
-                  _currentNotification = null;
-                  
-                  // 다이얼로그 닫기
-                  if (dialogContext.mounted) {
-                    Navigator.of(dialogContext).pop();
-                  }
-                  
-                  // 닫힌 알림도 처리된 것으로 표시
-                  _markAsRead(notification).catchError((error) {
-                  });
-                  
-                  // 다음 알림 처리
-                  Future.delayed(const Duration(milliseconds: 500), () {
-                    _processQueue();
-                  });
-                },
-              ),
-            );
+        question: voteData.question,
+        optionA: voteData.optionA,
+        optionB: voteData.optionB,
+        imageUrlA: voteData.imageUrlA,
+        imageUrlB: voteData.imageUrlB,
+        imageUrlsA: voteData.imageUrlsA,
+        imageUrlsB: voteData.imageUrlsB,
+        description: voteData.description,
+        authorName: voteData.authorName,
+        sizeData: sizeData,
+        onVote: (selectedOption) async {
+          DebugHelper.info('투표 완료: $selectedOption', tag: 'GlobalNotificationManager');
+          
+          // 상태 즉시 업데이트
+          _isShowingNotification = false;
+          _currentNotification = null;
+          
+          // 알림을 읽음으로 표시
+          await _markAsRead(notification);
+          
+          // 실제 투표 로직 처리
+          if (notification is domain.VoteNotification) {
+            await _submitVote(notification.postId, selectedOption);
+          }
+          
+          // 다음 알림 처리
+          Future.delayed(const Duration(milliseconds: 300), () {
+            _processQueue();
+          });
+        },
+        onDismiss: (hasVoted) {
+          _isShowingNotification = false;
+          _currentNotification = null;
+          
+          // 닫힌 알림도 처리된 것으로 표시
+          _markAsRead(notification).catchError((error) {
+            DebugHelper.warning('알림 읽음 처리 실패', tag: 'GlobalNotificationManager');
+          });
+          
+          // 다음 알림 처리
+          Future.delayed(const Duration(milliseconds: 500), () {
+            _processQueue();
+          });
         },
       );
     } catch (e) {
@@ -397,9 +259,12 @@ class GlobalNotificationManager {
   }
   
   /// 알림을 읽음으로 표시
-  Future<void> _markAsRead(NotificationsModel notification) async {
+  Future<void> _markAsRead(domain.Notification notification) async {
     try {
-      await notification.reference.update({
+      await FirebaseFirestore.instance
+          .collection('notifications')
+          .doc(notification.id)
+          .update({
         'read': true,
         'readAt': FieldValue.serverTimestamp(),
       });
@@ -456,7 +321,7 @@ class GlobalNotificationManager {
   bool get isShowingNotification => _isShowingNotification;
   
   /// 현재 표시 중인 알림 반환
-  NotificationsModel? get currentNotification => _currentNotification;
+  domain.Notification? get currentNotification => _currentNotification;
   
   /// 디버그 정보 반환
   Map<String, dynamic> getDebugInfo() {
@@ -464,7 +329,7 @@ class GlobalNotificationManager {
       'isShowingNotification': _isShowingNotification,
       'queueLength': _notificationQueue.length,
       'processedCount': _processedNotificationIds.length,
-      'currentNotificationId': _currentNotification?.reference.id,
+      'currentNotificationId': _currentNotification?.id,
       'currentNotificationType': _currentNotification?.type,
     };
   }

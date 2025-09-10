@@ -1,16 +1,34 @@
 import '/core_exports.dart';
 import '/features/posts/domain/models/target_audience_model.dart';
+import '../datasources/i_post_datasource.dart';
+import 'package:get_it/get_it.dart';
 
 /// 타겟 오디언스 관련 서비스
 /// 
 /// TargetAudienceModel을 Firebase Functions가 기대하는 형식으로 변환하고,
 /// 투표 생성 시 타겟 오디언스 정보를 저장합니다.
+/// 
+/// Clean Architecture를 위해 Firebase 직접 호출 대신 IPostDatasource를 사용합니다.
 class TargetAudienceService {
   // 싱글톤 인스턴스
   static final TargetAudienceService _instance = TargetAudienceService._internal();
   static TargetAudienceService get instance => _instance;
   
   TargetAudienceService._internal();
+  
+  // 의존성 주입을 위한 PostDatasource
+  IPostDatasource? _postDatasource;
+  
+  /// PostDatasource 설정 (DI용)
+  void setPostDatasource(IPostDatasource datasource) {
+    _postDatasource = datasource;
+  }
+  
+  /// PostDatasource 가져오기 (lazy loading)
+  IPostDatasource get postDatasource {
+    _postDatasource ??= GetIt.instance.get<IPostDatasource>();
+    return _postDatasource!;
+  }
 
   /// TargetAudienceModel을 Firestore 저장용 Map으로 변환
   /// 
@@ -133,15 +151,16 @@ class TargetAudienceService {
         },
       };
 
-      // 4. Firestore에 저장
-      final docRef = await FirebaseFirestore.instance
-          .collection('posts')
-          .add(completePostData);
+      // 4. PostDatasource를 통해 저장 (Firebase 직접 호출 제거)
+      final postId = await postDatasource.createPostWithTargetAudience(
+        postData: completePostData,
+        targetAudience: targetAudienceData,
+      );
 
-      print('[TargetAudienceService] 투표 생성 완료: ${docRef.id}');
+      print('[TargetAudienceService] 투표 생성 완료: $postId');
       print('[TargetAudienceService] 타겟 오디언스: ${targetAudience.collectionType}, ${targetAudience.targetCount}명');
 
-      return docRef.id;
+      return postId;
 
     } catch (e) {
       print('[TargetAudienceService] 투표 생성 오류: $e');
@@ -168,10 +187,12 @@ class TargetAudienceService {
         updateData['notificationStatus.completedCount'] = completedCount;
       }
 
-      await FirebaseFirestore.instance
-          .collection('posts')
-          .doc(postId)
-          .update(updateData);
+      // PostDatasource를 통해 업데이트 (Firebase 직접 호출 제거)
+      await postDatasource.updatePostNotificationStatus(
+        postId: postId,
+        notificationsSent: true,
+        notificationsSentAt: DateTime.now(),
+      );
 
       print('[TargetAudienceService] 알림 상태 업데이트: $postId, 발송: $sentCount명');
 

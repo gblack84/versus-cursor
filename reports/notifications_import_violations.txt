@@ -1,0 +1,230 @@
+IMPORT GUARDIAN - NOTIFICATIONS DATA LAYER VIOLATION REPORT
+==============================================================
+Analysis Date: 2025-01-09
+Scope: /Users/g_black/versus-cursor/lib/features/notifications/data
+Mode: detect
+Architecture: Clean Architecture with Feature-First Structure
+
+EXECUTIVE SUMMARY
+=================
+Total Files Analyzed: 5
+Total Violations Found: 14
+Critical Violations: 6
+Moderate Violations: 5
+Warning Violations: 3
+
+VIOLATION BREAKDOWN BY CATEGORY
+================================
+1. Data → Presentation Imports: 5 violations (CRITICAL)
+2. Cross-Feature Data Imports: 4 violations (CRITICAL) 
+3. Firebase Direct Imports: 2 violations (MODERATE)
+4. Cross-Feature Presentation Utils: 3 violations (MODERATE)
+
+DETAILED VIOLATION ANALYSIS
+===========================
+
+CRITICAL VIOLATIONS (Architecture Breaking)
+-------------------------------------------
+
+1. DATA → PRESENTATION LAYER VIOLATIONS (5 instances)
+   Rule: Data layer must not import from presentation layer
+   Severity: CRITICAL
+   
+   File: global_notification_manager.dart
+   Line 10: import '/features/notifications/presentation/widgets/voting_notification_dialog.dart';
+   Line 11: import '/features/notifications/presentation/models/versus_box_size_data.dart';
+   
+   File: notification_service.dart
+   Line 9: import '/features/posts/presentation/utils/debug_helper.dart';
+   
+   File: global_notification_manager.dart
+   Line 15: import '/features/posts/presentation/utils/debug_helper.dart';
+   
+   Impact: Violates dependency inversion principle
+   Suggested Fix: Move presentation logic to domain services or create data-layer DTOs
+
+2. CROSS-FEATURE DATA LAYER IMPORTS (4 instances)
+   Rule: Features should communicate through domain interfaces
+   Severity: CRITICAL
+   
+   File: target_audience_service.dart
+   Line 2: import '/features/posts/domain/models/target_audience_model.dart';
+   
+   File: notification_service.dart
+   Line 7: import '/features/posts/domain/models/posts_model.dart';
+   
+   File: global_notification_manager.dart
+   Line 9: import '/features/auth/data/adapters/auth_util.dart';
+   Line 14: import '/features/posts/data/adapters/vote/vote_status_service.dart';
+   
+   Impact: Creates tight coupling between features
+   Suggested Fix: Use domain events, shared kernel, or create abstraction interfaces
+
+MODERATE VIOLATIONS (Architecture Degradation)
+----------------------------------------------
+
+3. FIREBASE DIRECT IMPORTS (2 instances)
+   Rule: Data layer should abstract infrastructure dependencies
+   Severity: MODERATE
+   
+   File: notification_service.dart
+   Line 3: import 'package:cloud_firestore/cloud_firestore.dart';
+   
+   File: notification_repository_impl.dart
+   Line 1: import 'package:cloud_firestore/cloud_firestore.dart';
+   
+   Impact: Infrastructure coupling in data layer
+   Suggested Fix: Create datasource abstractions for Firestore operations
+   Note: May be acceptable if contained within repository implementations
+
+WARNING VIOLATIONS (Code Quality)
+---------------------------------
+
+4. CROSS-FEATURE PRESENTATION UTILS (3 instances)
+   Rule: Utility functions should be in shared core
+   Severity: WARNING
+   
+   Files: notification_service.dart, global_notification_manager.dart
+   Import: '/features/posts/presentation/utils/debug_helper.dart'
+   
+   Impact: Minor coupling, utility code duplication
+   Suggested Fix: Move debug utilities to core/utils or create shared debugging service
+
+SPECIFIC FILE ANALYSIS
+======================
+
+notification_models.dart
+------------------------
+Status: ✅ CLEAN
+Analysis: Only exports domain models, no violations detected
+
+target_audience_service.dart  
+----------------------------
+Status: ❌ VIOLATIONS DETECTED
+Violations: 1 critical
+- Cross-feature domain import (posts/domain/models)
+Architecture Issue: Should use shared domain or create local DTOs
+
+notification_service.dart
+------------------------
+Status: ❌ VIOLATIONS DETECTED  
+Violations: 3 (1 critical presentation import, 1 critical cross-feature, 1 moderate Firebase)
+Architecture Issues:
+- Imports posts domain models directly
+- Uses presentation layer debug utilities
+- Direct Firebase dependency
+
+global_notification_manager.dart
+-------------------------------
+Status: ❌ VIOLATIONS DETECTED
+Violations: 4 (2 critical presentation, 2 critical cross-feature)
+Architecture Issues:
+- Imports UI widgets in data layer
+- Cross-feature service dependencies
+- Auth utilities direct import
+
+notification_repository_impl.dart
+---------------------------------
+Status: ⚠️ MODERATE VIOLATIONS
+Violations: 1 moderate Firebase import
+Analysis: Firebase import acceptable in repository implementation
+Repository pattern correctly implemented otherwise
+
+REMEDIATION RECOMMENDATIONS
+===========================
+
+IMMEDIATE ACTIONS (Critical)
+----------------------------
+1. Extract UI Logic from Data Layer
+   - Move VotingNotificationDialog usage to presentation layer
+   - Create domain events for notification display
+   - Use dependency injection for UI services
+
+2. Implement Cross-Feature Interfaces
+   - Create IAuthService, IPostService abstractions
+   - Use domain events for cross-feature communication
+   - Implement shared kernel for common models
+
+3. Separate Presentation Utilities
+   - Move debug utilities to core/utils
+   - Create logging service interface
+   - Remove presentation imports from data layer
+
+SUGGESTED ARCHITECTURAL IMPROVEMENTS
+===================================
+
+1. Domain Events Pattern
+   ```dart
+   // Instead of direct service calls
+   DomainEvents.raise(NotificationDisplayRequested(notification));
+   ```
+
+2. Shared Kernel for Common Models
+   ```dart
+   // Move shared models to shared kernel
+   lib/shared/models/target_audience.dart
+   lib/shared/models/vote_request.dart
+   ```
+
+3. Service Abstractions
+   ```dart
+   // Create abstractions in domain
+   abstract class IAuthenticationService
+   abstract class IDebugService
+   abstract class IVotingService
+   ```
+
+MIGRATION PRIORITY MATRIX
+=========================
+High Priority (Fix First):
+- global_notification_manager.dart (4 violations)
+- notification_service.dart (3 violations)
+
+Medium Priority:
+- target_audience_service.dart (1 violation)
+
+Low Priority:
+- notification_repository_impl.dart (acceptable Firebase usage)
+
+ESTIMATED MIGRATION EFFORT
+==========================
+- High Priority Files: 8-12 hours
+- Medium Priority Files: 2-4 hours  
+- Total Estimated Effort: 10-16 hours
+- Recommended Approach: Incremental migration with feature flags
+
+COMPLIANCE METRICS
+==================
+Current Compliance: 28.6% (2/7 files clean)
+Target Compliance: 100% 
+Improvement Required: 71.4%
+
+Files by Status:
+- ✅ Clean: 1 file (14.3%)
+- ⚠️ Minor Issues: 1 file (14.3%)  
+- ❌ Major Issues: 3 files (71.4%)
+
+ARCHITECTURE IMPACT ASSESSMENT
+==============================
+Risk Level: HIGH
+- Critical path violations affecting notification system
+- Cross-feature coupling creating maintenance burden
+- Presentation layer imports breaking clean architecture
+
+Business Impact: MEDIUM
+- Notification system functionality preserved
+- Code maintainability significantly impacted
+- Future feature development complexity increased
+
+NEXT STEPS
+==========
+1. Review this report with architecture team
+2. Create migration tasks in project backlog
+3. Implement fixes in priority order
+4. Establish architectural guards/linting rules
+5. Re-run ImportGuardian to verify fixes
+
+END OF REPORT
+=============
+Generated by ImportGuardian v1.0.0
+Architecture Compliance Scanner for Clean Architecture Projects

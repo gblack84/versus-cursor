@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'package:uuid/uuid.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get_it/get_it.dart';
-import '/features/notifications/domain/models/notifications_model.dart';
+import '/features/notifications/domain/models/notification.dart';
+import '/features/notifications/domain/value_objects/notification_filter.dart';
 import '/features/posts/domain/models/posts_model.dart';
 import '../../domain/repositories/i_notification_repository.dart';
+import '../datasources/i_chat_datasource.dart';
 import '/features/posts/presentation/utils/debug_helper.dart';
 
 /// 실시간 투표 알림을 관리하는 서비스
@@ -16,17 +16,29 @@ class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   static NotificationService get instance => _instance;
   
-  NotificationService._internal();
+  NotificationService._internal() {
+    _repository = GetIt.instance<INotificationRepository>();
+    // Chat datasource는 optional - Chat feature가 등록한 경우에만 사용
+    if (GetIt.instance.isRegistered<IChatDatasource>()) {
+      _chatDatasource = GetIt.instance<IChatDatasource>();
+    }
+  }
 
-  // Firestore 리스너
-  StreamSubscription<QuerySnapshot>? _notificationListener;
+  // Repository 리스너
+  StreamSubscription<List<Notification>>? _notificationListener;
   
   // 알림 스트림 (GlobalNotificationManager를 위한)
-  final StreamController<List<NotificationsModel>> _notificationsStreamController = 
-      StreamController<List<NotificationsModel>>.broadcast();
+  final StreamController<List<Notification>> _notificationsStreamController = 
+      StreamController<List<Notification>>.broadcast();
   
-  Stream<List<NotificationsModel>> get notificationsStream => 
+  Stream<List<Notification>> get notificationsStream => 
       _notificationsStreamController.stream;
+  
+  // Repository 의존성
+  late final INotificationRepository _repository;
+  
+  // Chat datasource 의존성 (optional - Chat feature에서 제공)
+  IChatDatasource? _chatDatasource;
 
   /// 알림 리스닝 시작
   void startListening(String userId) {
@@ -35,29 +47,29 @@ class NotificationService {
     
     DebugHelper.info('알림 리스닝 시작 - 사용자: ${DebugHelper.maskSensitive(userId)}', tag: 'NotificationService');
     
-    // Firebase 쿼리 파라미터 로깅 (세션당 한 번만)
+    // Repository를 통한 알림 스트림 구독
     DebugHelper.logOnce(
       'notif_query_$userId',
       '알림 쿼리 시작: userId=${DebugHelper.maskSensitive(userId)}, type=voting_request',
-      tag: 'Firebase',
+      tag: 'Repository',
       level: LogLevel.INFO
     );
     
-    _notificationListener = FirebaseFirestore.instance
-        .collection('notifications')
-        .where('userId', isEqualTo: userId)
-        .where('type', isEqualTo: 'votingRequest')
-        .where('read', isEqualTo: false)
-        .where('expiryTime', isGreaterThan: Timestamp.now())
-        .orderBy('expiryTime', descending: false) // 만료 임박한 것부터
-        .orderBy('createdAt', descending: true)   // 최신 것부터
-        .snapshots()
-        .listen(
-          _handleNotificationChanges,
-          onError: (error) {
-            DebugHelper.error('리스너 오류', error: error, tag: 'NotificationService');
-          },
-        );
+    _notificationListener = _repository.watchUserNotifications(
+      userId: userId,
+      filter: NotificationFilter(
+        type: NotificationType.votingRequest,
+        unreadOnly: true,
+        excludeExpired: true,
+        sortBy: 'expiryTime',
+        sortOrder: SortOrder.ascending,
+      ),
+    ).listen(
+      _handleNotificationChanges,
+      onError: (error) {
+        DebugHelper.error('리스너 오류', error: error, tag: 'NotificationService');
+      },
+    );
   }
 
   /// 알림 리스닝 중지
@@ -68,58 +80,30 @@ class NotificationService {
     DebugHelper.info('알림 리스닝 중지', tag: 'NotificationService');
   }
 
-  /// Firestore 스냅샷 변경 처리
-  void _handleNotificationChanges(QuerySnapshot snapshot) {
-    // 스냅샷 요약 정보는 DEBUG 레벨로
-    DebugHelper.debug('스냅샷 변경: ${snapshot.docs.length}개 문서, ${snapshot.docChanges.length}개 변경', tag: 'NotificationService');
+  /// Repository 알림 변경 처리
+  void _handleNotificationChanges(List<Notification> notifications) {
+    // 알림 요약 정보는 DEBUG 레벨로
+    DebugHelper.debug('알림 변경: ${notifications.length}개 알림', tag: 'NotificationService');
     
-    // 새로운 알림만 로깅 (문서별 한 번만)
-    for (var change in snapshot.docChanges) {
-      if (change.type == DocumentChangeType.added) {
-        DebugHelper.logOnce(
-          'notif_doc_${change.doc.id}',
-          '🔔 새 알림: ${change.doc.id}',
-          tag: 'NotificationService',
-          level: LogLevel.INFO
-        );
-      }
-    }
-    
-    // 현재 활성 알림 리스트 생성
-    final List<NotificationsModel> activeNotifications = [];
-    
-    for (var doc in snapshot.docs) {
-      try {
-        final notification = NotificationsModel.fromSnapshot(doc);
-        activeNotifications.add(notification);
-      } catch (e) {
-        DebugHelper.logOnce(
-          'notif_parse_error_${doc.id}',
-          '알림 파싱 실패: ${doc.id}',
-          tag: 'NotificationService',
-          level: LogLevel.WARNING
-        );
-      }
+    // 새로운 알림만 로깅 (알림별 한 번만)
+    for (var notification in notifications) {
+      DebugHelper.logOnce(
+        'notif_doc_${notification.id}',
+        '🔔 새 알림: ${notification.id}',
+        tag: 'NotificationService',
+        level: LogLevel.INFO
+      );
     }
     
     // GlobalNotificationManager에 알림 전달
-    _notificationsStreamController.add(activeNotifications);
-    DebugHelper.debug('GlobalNotificationManager에 ${activeNotifications.length}개 알림 전달', tag: 'NotificationService');
+    _notificationsStreamController.add(notifications);
+    DebugHelper.debug('GlobalNotificationManager에 ${notifications.length}개 알림 전달', tag: 'NotificationService');
   }
 
 
   /// 사용자의 읽지 않은 알림 수 가져오기
   Stream<int> getUnreadNotificationCount(String userId) {
-    return FirebaseFirestore.instance
-        .collection('notifications')
-        .where('userId', isEqualTo: userId)
-        .where('type', isEqualTo: 'votingRequest')
-        .where('read', isEqualTo: false)
-        .where('expiryTime', isGreaterThan: Timestamp.now())
-        .orderBy('expiryTime', descending: false)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.length);
+    return _repository.watchUnreadCount(userId);
   }
 
   /// 디버그 정보
@@ -130,124 +114,50 @@ class NotificationService {
   }
 
   /// 투표 요청을 채팅 메시지로 생성
+  /// Chat Feature가 등록된 경우에만 동작
   Future<void> createVoteRequestChatMessage({
     required String senderId,
     required String recipientId,
     required String postId,
     required PostsModel post,
   }) async {
+    if (_chatDatasource == null) {
+      DebugHelper.warning('Chat datasource not available', tag: 'NotificationService');
+      return;
+    }
+    
     try {
-      DebugHelper.debug('투표 요청 메시지 생성', tag: 'NotificationService');
-      
-      // 1. 기존 채팅방 찾기 또는 생성
-      DocumentReference chatRef;
-      
-      // 참가자 ID 정렬 (일관된 채팅방 ID 생성을 위해)
-      final participantIds = [senderId, recipientId]..sort();
-      final chatId = participantIds.join('_');
-      
-      // 기존 채팅방 확인
-      final existingChat = await FirebaseFirestore.instance
-          .collection('chats')
-          .doc(chatId)
-          .get();
-      
-      if (existingChat.exists) {
-        chatRef = existingChat.reference;
-        // 기존 채팅방 사용 - 로그 제거
-      } else {
-        // 새 채팅방 생성
-        chatRef = FirebaseFirestore.instance
-            .collection('chats')
-            .doc(chatId);
-            
-        await chatRef.set({
-          'participantIds': participantIds,
-          'lastMessageContent': '투표 요청을 보냈습니다',
-          'lastMessageAt': FieldValue.serverTimestamp(),
-          'createdAt': FieldValue.serverTimestamp(),
-          'chatName': '채팅',
-        });
-        
-        // 새 채팅방 생성 - 로그 제거
-      }
-      
-      // 2. 투표 요청 메시지 생성
-      final messageId = const Uuid().v4();
-      
-      // optionA와 optionB에서 텍스트와 이미지 추출
-      final optionAData = post.optionA;
-      final optionBData = post.optionB;
-      
-      await chatRef.collection('messages').add({
-        'messageId': messageId,
-        'senderId': senderId,
-        'content': '',
-        'timeStamp': FieldValue.serverTimestamp(),
-        'isRead': false,
-        'messageType': 'voteRequest',
-        'votePostId': postId,
-        'voteTitle': post.questionTitle,
-        'voteDescription': post.description,
-        'voteOptionAText': optionAData['text'] ?? '',
-        'voteOptionBText': optionBData['text'] ?? '',
-        'voteOptionAImage': optionAData['imageUrl'] ?? '',
-        'voteOptionBImage': optionBData['imageUrl'] ?? '',
-        'voteOptionAImages': optionAData['imageUrls'],
-        'voteOptionBImages': optionBData['imageUrls'],
-        'voteAspectRatioA': optionAData['aspectRatio'],
-        'voteAspectRatioB': optionBData['aspectRatio'],
-        'voteStatus': 'pending',
-      });
-      
-      // 3. 채팅방 마지막 메시지 업데이트
-      await chatRef.update({
-        'lastMessageContent': '투표 요청: ${post.questionTitle}',
-        'lastMessageAt': FieldValue.serverTimestamp(),
-      });
-      
-      // 투표 요청 메시지 생성 완료 - 로그 제거
-      
+      await _chatDatasource!.createVoteRequestMessage(
+        senderId: senderId,
+        recipientId: recipientId,
+        postId: postId,
+        post: post,
+      );
+      DebugHelper.debug('투표 요청 메시지 생성 완료', tag: 'NotificationService');
     } catch (e) {
       DebugHelper.error('투표 요청 메시지 생성 오류', error: e, tag: 'NotificationService');
     }
   }
 
   /// AI 채팅 메시지의 투표 상태 업데이트
+  /// Chat Feature가 등록된 경우에만 동작
   Future<void> updateVoteMessageStatus({
     required String postId,
     required String userId,
     required String status,
   }) async {
+    if (_chatDatasource == null) {
+      DebugHelper.warning('Chat datasource not available', tag: 'NotificationService');
+      return;
+    }
+    
     try {
-      DebugHelper.debug('AI 채팅 메시지 상태 업데이트: $status', tag: 'NotificationService');
-      
-      // AI 채팅방 ID 생성
-      final aiChatId = 'ai_assistant_${userId}';
-      
-      // 해당 투표 메시지 찾기
-      final messagesSnapshot = await FirebaseFirestore.instance
-          .collection('chats')
-          .doc(aiChatId)
-          .collection('messages')
-          .where('votePostId', isEqualTo: postId)
-          .where('messageType', isEqualTo: 'voteRequest')
-          .get();
-      
-      if (messagesSnapshot.docs.isEmpty) {
-        DebugHelper.warning('투표 메시지를 찾을 수 없음', tag: 'NotificationService');
-        return;
-      }
-      
-      // 메시지 상태 업데이트
-      for (final doc in messagesSnapshot.docs) {
-        await doc.reference.update({
-          'cardStatus': status,
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-        // 메시지 상태 업데이트 완료 - 로그 제거
-      }
-      
+      await _chatDatasource!.updateVoteMessageStatus(
+        postId: postId,
+        userId: userId,
+        status: status,
+      );
+      DebugHelper.debug('AI 채팅 메시지 상태 업데이트 완료: $status', tag: 'NotificationService');
     } catch (e) {
       DebugHelper.error('AI 채팅 메시지 상태 업데이트 오류', error: e, tag: 'NotificationService');
     }

@@ -1,107 +1,118 @@
-[app->data] /Users/g_black/versus-cursor/lib/app/app.dart  ->  /features/auth/data/adapters/auth_util.dart
-[app->data] /Users/g_black/versus-cursor/lib/app/app.dart  ->  /features/notifications/data/adapters/notification_service.dart
-[app->data] /Users/g_black/versus-cursor/lib/app/app.dart  ->  /features/notifications/data/adapters/global_notification_manager.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/notifications/presentation/providers/notification_badge_provider.dart  ->  /features/notifications/data/adapters/notification_service.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/notifications/presentation/providers/notification_badge_provider.dart  ->  /features/notifications/presentation/widgets/notification_badge.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/notifications/presentation/widgets/voting_notification_dialog.dart  ->  /features/notifications/presentation/models/versus_box_size_data.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/notifications/presentation/widgets/voting_notification_dialog.dart  ->  /features/notifications/presentation/constants/voting_notification_constraints.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/notifications/presentation/widgets/notification_badge_example.dart  ->  /features/notifications/presentation/providers/notification_badge_provider.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/notifications/presentation/widgets/notification_overlay.dart  ->  /features/notifications/presentation/models/versus_box_size_data.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/profile/presentation/screens/user_info_input/user_info_input_widget.dart  ->  /features/profile/presentation/screens/user_info/character_detail/character_detail_page_widget.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/profile/presentation/screens/user_info_input/user_info_input_widget.dart  ->  /features/profile/presentation/screens/user_info/language_selector/language_selector_widget.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/profile/presentation/screens/user_info_input/user_info_input_model.dart  ->  /features/profile/presentation/screens/user_info/language_selector/language_selector_widget.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/voting/presentation/widgets/vote_card/vote_card_widget.dart  ->  /features/notifications/presentation/widgets/voting_notification_dialog.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/auth/presentation/screens/phone_auth/phonelogeinpincode_widget.dart  ->  /features/auth/data/adapters/auth_util.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/auth/presentation/screens/login/login_page/login_page_widget.dart  ->  /features/auth/data/adapters/auth_util.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/auth/presentation/screens/email_verification/popup_timer_email/popup_timer_email_widget.dart  ->  /features/auth/data/adapters/auth_util.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/auth/presentation/screens/start/start_page/start_page_widget.dart  ->  /features/auth/data/adapters/auth_util.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/auth/presentation/screens/signup/create_account/create_account_widget.dart  ->  /features/auth/data/adapters/auth_util.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/auth/presentation/screens/signup/create_account/create_account_widget.dart  ->  /features/auth/presentation/screens/email_verification/popup_timer_email/popup_timer_email_widget.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/auth/presentation/screens/phone_auth/phone_creat_account/phone_creat_account_widget.dart  ->  /features/auth/data/adapters/auth_util.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/auth/presentation/screens/forgot_password/forgot_password/forgot_password_widget.dart  ->  /features/auth/data/adapters/auth_util.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/chat/presentation/screens/chat_list/chat_list_widget.dart  ->  /features/chat/presentation/screens/chat_detail/chat_detail_widget_v2.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/chat/presentation/screens/chat_detail/chat_detail_widget_v2.dart  ->  /features/chat/data/adapters/chat_message_lifecycle_service.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/chat/presentation/screens/chat_detail/chat_detail_widget_v2.dart  ->  /features/chat/data/adapters/chat_initialization_service.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/chat/presentation/screens/chat_detail/chat_detail_widget_v2.dart  ->  /features/chat/data/adapters/chat_scroll_service.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/chat/presentation/screens/chat_detail/chat_detail_widget_v2.dart  ->  /features/chat/data/adapters/chat_animation_service.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/chat/presentation/screens/chat_detail/chat_detail_widget_v2.dart  ->  /features/chat/data/adapters/chat_detail_migration_service.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/chat/presentation/screens/ai_chat/ai_chat_page_v2.dart  ->  /features/posts/presentation/widgets/vote/vote_card_message.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/chat/presentation/screens/ai_chat/ai_chat_page_v2.dart  ->  /features/chat/data/adapters/chat_message_lifecycle_service.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/chat/presentation/screens/ai_chat/ai_chat_page_v2.dart  ->  /features/chat/data/adapters/chat_message_service.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/chat/presentation/screens/chat_detail/components/chat_message_builder.dart  ->  /features/posts/presentation/widgets/vote/vote_card_message.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/chat/presentation/screens/chat_detail/components/chat_message_builder.dart  ->  /features/chat/data/adapters/chat_message_lifecycle_service.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/chat/presentation/screens/chat_detail/components/chat_media_picker.dart  ->  /features/chat/data/adapters/chat_file_size_service.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/posts/presentation/providers/create_post_provider.dart  ->  /features/posts/data/models/poll_details_model.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/posts/presentation/providers/create_post_provider.dart  ->  /features/posts/data/adapters/validation_service.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/posts/presentation/providers/create_post_provider.dart  ->  /features/posts/data/adapters/moderation/models/moderation_result.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/posts/presentation/providers/create_post_provider.dart  ->  /features/posts/data/adapters/error/error_handler.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/providers/create_post_provider.dart  ->  /features/posts/presentation/utils/debug_helper.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/posts/presentation/providers/media_upload_provider.dart  ->  /features/posts/data/adapters/media/media_upload_service.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/posts/presentation/providers/media_upload_provider.dart  ->  /features/posts/data/adapters/media/selection_result_processor.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/posts/presentation/providers/media_upload_provider.dart  ->  /features/posts/data/adapters/error/error_handler.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/providers/media_upload_provider.dart  ->  /features/posts/presentation/utils/debug_helper.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/components/media_upload_section.dart  ->  /features/posts/presentation/providers/media_upload_provider.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/components/media_upload_section.dart  ->  /features/posts/presentation/widgets/components/media_selection_box_multi.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/components/media_upload_section.dart  ->  /features/posts/presentation/widgets/components/media_box_callbacks.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/components/media_upload_section.dart  ->  /features/posts/presentation/widgets/components/layout_debug_info.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/components/text_input_section.dart  ->  /features/posts/presentation/providers/create_post_provider.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/components/text_input_section.dart  ->  /features/posts/presentation/widgets/components/simple_validated_field.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/components/text_input_section.dart  ->  /features/posts/presentation/widgets/components/character_count_display.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/posts/presentation/widgets/vote/base_vote_message.dart  ->  /features/posts/data/adapters/vote/vote_status_service.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/widgets/vote/vote_card_message.dart  ->  /features/notifications/presentation/widgets/voting_notification_dialog.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/posts/presentation/widgets/vote/vote_card_message.dart  ->  /features/posts/data/adapters/vote/vote_state_coordinator.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/widgets/components/media_box_callbacks.dart  ->  /features/posts/presentation/screens/create_post/in_put_post_image_model.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/widgets/components/media_selection_box_multi.dart  ->  /features/posts/presentation/utils/debug_helper.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/widgets/components/input_field_builder.dart  ->  /features/posts/presentation/screens/create_post/in_put_post_image_model.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/widgets/components/base_media_selection_box.dart  ->  /features/posts/presentation/utils/debug_helper.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/posts/presentation/widgets/media/media_editor_widget.dart  ->  /features/posts/data/adapters/media/image_upload_orchestrator_v2.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/widgets/media/media_editor_widget.dart  ->  /features/posts/presentation/screens/create_post/in_put_post_image_model.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/widgets/media/media_selection_flow_widget.dart  ->  /features/posts/presentation/delegates/korean_asset_picker_delegate.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/widgets/media/media_selection_flow_widget.dart  ->  /features/posts/presentation/delegates/korean_camera_picker_delegate.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/posts/presentation/widgets/media/media_selection_flow_widget.dart  ->  /features/posts/data/adapters/media/image_download_service.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/widgets/media/media_selection_flow_widget.dart  ->  /features/posts/presentation/screens/thumbnail/thumbnail_selection_page.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/widgets/media/media_selection_flow_widget.dart  ->  /features/posts/presentation/delegates/camera_floating_button_delegate.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/widgets/media/media_selection_flow_widget.dart  ->  /features/posts/presentation/utils/no_animation_page_route.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/widgets/media/media_selection_flow_widget.dart  ->  /features/posts/presentation/screens/create_post/in_put_post_image_model.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart  ->  /features/posts/presentation/screens/viewer/image_viewer_page.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart  ->  /features/posts/presentation/utils/no_animation_page_route.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart  ->  /features/posts/presentation/widgets/components/media_box_callbacks.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart  ->  /features/posts/presentation/widgets/components/media_selection_box_multi.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart  ->  /features/posts/presentation/widgets/components/character_count_display.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart  ->  /features/posts/presentation/widgets/components/next_button.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart  ->  /features/posts/presentation/widgets/components/simple_validated_field.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart  ->  /features/posts/presentation/widgets/components/layout_debug_info.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart  ->  /features/posts/presentation/widgets/components/warning_message.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart  ->  /features/posts/data/adapters/validation_service.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart  ->  /features/posts/presentation/widgets/components/input_field_builder.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart  ->  /features/posts/presentation/widgets/media/media_selection_flow_widget.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart  ->  /features/posts/presentation/widgets/dialogs/target_audience_dialog.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart  ->  /features/posts/presentation/utils/debug_helper.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart  ->  /features/posts/data/adapters/storage/storage_service.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart  ->  /features/posts/data/adapters/media/media_upload_service.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart  ->  /features/posts/data/adapters/error/error_handler.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart  ->  /features/posts/data/adapters/media/selection_result_processor.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_widget.dart  ->  /features/posts/data/adapters/moderation/models/moderation_result.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_screen.dart  ->  /features/posts/presentation/providers/create_post_provider.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_screen.dart  ->  /features/posts/presentation/providers/media_upload_provider.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_screen.dart  ->  /features/posts/presentation/components/media_upload_section.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_screen.dart  ->  /features/posts/presentation/components/text_input_section.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_screen.dart  ->  /features/posts/presentation/widgets/components/next_button.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_screen.dart  ->  /features/posts/presentation/widgets/components/warning_message.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_screen.dart  ->  /features/posts/presentation/widgets/dialogs/target_audience_dialog.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_screen.dart  ->  /features/posts/presentation/utils/no_animation_page_route.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/create_post/in_put_post_image_screen.dart  ->  /features/posts/presentation/widgets/media/media_selection_flow_widget.dart
-[warn:cross-presentation] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/feed/home_page_widget.dart  ->  /features/notifications/presentation/providers/notification_badge_provider.dart
-[presentation->data] /Users/g_black/versus-cursor/lib/features/posts/presentation/screens/editor/pro_image_editor_page.dart  ->  /features/posts/data/adapters/media/image_download_service.dart
-[app->data] /Users/g_black/versus-cursor/lib/app/di/search_module.dart  ->  ../../features/search/data/repositories/search_repository_impl.dart
-[app->data] /Users/g_black/versus-cursor/lib/app/di/voting_module.dart  ->  ../../features/voting/data/repositories/voting_repository_impl.dart
-[app->data] /Users/g_black/versus-cursor/lib/app/di/notification_module.dart  ->  ../../features/notifications/data/repositories/notification_repository_impl.dart
-[app->data] /Users/g_black/versus-cursor/lib/app/di/auth_module.dart  ->  ../../features/auth/data/repositories/auth_repository_impl.dart
-[app->data] /Users/g_black/versus-cursor/lib/app/di/posts_module.dart  ->  ../../features/posts/data/repositories/post_repository_impl.dart
-[app->data] /Users/g_black/versus-cursor/lib/app/di/chat_module.dart  ->  ../../features/chat/data/repositories/chat_repository_impl.dart
-[app->data] /Users/g_black/versus-cursor/lib/app/di/profile_module.dart  ->  ../../features/profile/data/repositories/user_repository_impl.dart
-[reverse:core/services->features] /Users/g_black/versus-cursor/lib/core/di/core_module.dart  ->  ../../features/profile/data/adapters/user_cache_service.dart
-[reverse:core/services->features] /Users/g_black/versus-cursor/lib/core/models/upload_data.dart  ->  /features/auth/data/adapters/auth_util.dart
-[reverse:core/services->features] /Users/g_black/versus-cursor/lib/core/actions/global_actions.dart  ->  /features/auth/data/adapters/auth_util.dart
-[reverse:core/services->features] /Users/g_black/versus-cursor/lib/core/actions/global_actions.dart  ->  /features/profile/domain/repositories/i_user_repository.dart
-[reverse:core/services->features] /Users/g_black/versus-cursor/lib/core/firebase/utils/schema_util.dart  ->  /features/search/data/adapters/serialization_util.dart
+ARCHITECTURE VIOLATIONS REPORT
+=============================
+Scan Date: 2025-01-10
+Layer: /lib/features/notifications/data
+Violation Count: 57 critical issues
+
+🚨 CRITICAL VIOLATIONS
+
+1. FIREBASE DIRECT CALLS (47 occurrences)
+   ==========================================
+   Severity: CRITICAL
+   Impact: Breaks Clean Architecture data layer abstraction
+   
+   repositories/notification_repository_impl.dart:
+   - Line 152: FirebaseFirestore.instance.collection('notifications')
+   - Line 168: FirebaseFirestore.instance.collection('notifications')
+   - Line 188: FirebaseFirestore.instance.collection('notifications')
+   - Line 203: FirebaseFirestore.instance.collection('notifications')
+   - Line 215: FirebaseFirestore.instance.collection('notifications')
+   - Line 229: FirebaseFirestore.instance.collection('notifications')
+   - Line 251: FirebaseFirestore.instance.collection('notifications')
+   - Line 260: FirebaseFirestore.instance.collection('notifications')
+   - Line 268: FirebaseFirestore.instance.collection('notifications')
+   - Line 279-284: Multiple batch operations
+   - Line 300: FirebaseFirestore.instance.collection('notifications')
+   - Line 308-318: Multiple batch operations
+   - Line 327-337: Multiple batch operations
+   - Line 345-355: Multiple batch operations
+   - Line 369-380: Multiple batch operations
+   - Line 388-414: Multiple batch operations
+   - Line 428-446: Multiple batch operations
+   - Line 480-501: Multiple queries
+   - Line 506: FirebaseFirestore.instance.collection('users')
+   
+   adapters/global_notification_manager.dart:
+   - Line 231: FirebaseFirestore.instance.collection('posts')
+   - Line 405: FirebaseFirestore.instance.collection('notifications')
+   
+   adapters/notification_service.dart:
+   - Line 90: FirebaseFirestore.instance.collection('notifications')
+   - Line 105: FirebaseFirestore.instance.collection('notifications')  
+   - Line 152: FirebaseFirestore.instance.collection('chats')
+   - Line 155: FirebaseFirestore.instance.collection('chats')
+   - Line 160: FirebaseFirestore.instance.collection('chats')
+   
+   adapters/target_audience_service.dart:
+   - Line 64: FirebaseFirestore.instance.collection('notifications')
+   - Line 67: FirebaseFirestore.instance.collection('notifications')
+   - Line 118: FirebaseFirestore.instance.collection('users')
+
+2. PRESENTATION LAYER IMPORTS IN DATA LAYER (3 occurrences)
+   =======================================================
+   Severity: CRITICAL
+   Impact: Violates Clean Architecture dependency inversion
+   
+   adapters/global_notification_manager.dart:
+   - Line 10: import '/features/notifications/presentation/widgets/voting_notification_dialog.dart'
+   - Line 11: import '/features/notifications/presentation/models/versus_box_size_data.dart'
+   - Line 15: import '/features/posts/presentation/utils/debug_helper.dart'
+   
+   FORBIDDEN FLOW: data → presentation (should be presentation → data)
+
+3. CROSS-FEATURE DEPENDENCIES (5 occurrences)  
+   =========================================
+   Severity: HIGH
+   Impact: Creates tight coupling between features
+   
+   adapters/global_notification_manager.dart:
+   - Line 9: import '/features/auth/data/adapters/auth_util.dart'
+   - Line 14: import '/features/posts/data/adapters/vote/vote_status_service.dart'
+   
+   adapters/notification_service.dart:
+   - Line 6: import '/features/posts/domain/models/posts_model.dart'
+   
+   adapters/target_audience_service.dart:
+   - Line 3: import '/features/posts/domain/models/target_audience_model.dart'
+
+4. MISSING CLEAN ARCHITECTURE LAYERS
+   ================================
+   Severity: HIGH
+   Impact: Incomplete Clean Architecture implementation
+   
+   datasources/ - EMPTY (should contain Firebase abstraction)
+   mappers/ - EMPTY (should contain DTO ↔ Domain mapping)
+   models/ - MINIMAL (only 5 lines, missing DTOs)
+
+🔴 ARCHITECTURE FLOW VIOLATIONS
+
+Current (WRONG):
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Presentation   │ ←──│      Data       │ ←──│   Firebase      │
+│     Layer       │    │     Layer       │    │   Direct Call   │  
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                              ↑
+                    ┌─────────────────┐
+                    │  Posts Feature  │  (Cross-coupling)
+                    └─────────────────┘
+
+Required (CORRECT):
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Presentation   │ ─→ │     Domain      │ ←──│      Data       │ ─→ │   Datasource    │
+│     Layer       │    │     Layer       │    │     Layer       │    │   (Firebase)    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
+
+🚨 CRITICAL MIGRATION BLOCKERS
+============================
+
+1. Repository directly calls Firebase (bypasses datasource layer)
+2. Data layer imports presentation widgets (dependency inversion violation)  
+3. Cross-feature coupling creates circular dependencies
+4. Missing DTO models prevent proper data transformation
+5. Empty datasource/mapper directories indicate incomplete architecture
+
+RISK ASSESSMENT: 🔴 CRITICAL
+- Migration complexity: 9/10
+- Architecture violations: 57 issues
+- Refactoring required: ~1,600 lines across 4 files
+- Estimated effort: 3-4 days for complete Clean Architecture compliance

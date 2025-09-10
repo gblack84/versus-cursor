@@ -5,8 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '/core_exports.dart';
 import '/features/auth/data/adapters/auth_util.dart';
-import '/features/notifications/data/adapters/notification_service.dart';
-import '/features/notifications/data/adapters/global_notification_manager.dart';
+import '/features/notifications/presentation/coordinators/notification_coordinator.dart';
 import '/services/cache/preload_strategy.dart';
 
 class VersusApp extends StatefulWidget {
@@ -60,11 +59,13 @@ class _VersusAppState extends State<VersusApp> {
       ..listen((user) async {
         _appStateNotifier.update(user);
         
-        // NotificationService 초기화
+        // NotificationCoordinator를 통한 통합 알림 시스템 초기화
         if (user.loggedIn && user.uid != null && user.uid!.isNotEmpty) {
-          // 사용자가 로그인하면 알림 리스닝 시작
-          NotificationService.instance.startListening(user.uid!);
-          GlobalNotificationManager.instance.startListening();
+          // 사용자가 로그인하면 알림 시스템 초기화
+          await NotificationCoordinator.instance.initialize(
+            userId: user.uid!,
+            context: context,
+          );
           
           // lastActive 필드 업데이트
           try {
@@ -96,9 +97,8 @@ class _VersusAppState extends State<VersusApp> {
             debugPrint('[VersusApp] lastActive 업데이트 실패: $e');
           }
         } else {
-          // 사용자가 로그아웃하면 알림 리스닝 중지
-          NotificationService.instance.stopListening();
-          GlobalNotificationManager.instance.stopListening();
+          // 사용자가 로그아웃하면 알림 시스템 종료
+          NotificationCoordinator.instance.dispose();
           debugPrint('[VersusApp] 알림 서비스 중지');
         }
       });
@@ -108,8 +108,7 @@ class _VersusAppState extends State<VersusApp> {
   @override
   void dispose() {
     authUserSub.cancel();
-    NotificationService.instance.stopListening();
-    GlobalNotificationManager.instance.stopListening();
+    NotificationCoordinator.instance.dispose();
     super.dispose();
   }
 

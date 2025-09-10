@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:intl/intl.dart';
 import '/features/auth/data/adapters/auth_util.dart';
-import '/features/notifications/domain/models/notifications_model.dart';
+import '/features/notifications/domain/models/notification.dart';
+import '/features/notifications/domain/models/vote_notification.dart';
+import '/features/notifications/domain/models/system_notification.dart';
+import '/features/notifications/domain/models/social_notification.dart';
+import '/features/notifications/domain/usecases/get_user_notifications_use_case.dart';
+import '/features/notifications/domain/usecases/mark_notification_as_read_use_case.dart';
+import '/features/notifications/domain/repositories/i_notification_repository.dart';
 import '/core_exports.dart';
 
 class NotificationsListWidget extends StatefulWidget {
@@ -16,12 +23,16 @@ class NotificationsListWidget extends StatefulWidget {
 
 class _NotificationsListWidgetState extends State<NotificationsListWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
-  late final NotificationRepository _notificationRepository;
+  late final INotificationRepository _notificationRepository;
+  late final GetUserNotificationsUseCase _getUserNotifications;
+  late final MarkNotificationAsReadUseCase _markAsRead;
 
   @override
   void initState() {
     super.initState();
-    _notificationRepository = GetIt.instance<NotificationRepository>();
+    _notificationRepository = GetIt.instance<INotificationRepository>();
+    _getUserNotifications = GetIt.instance<GetUserNotificationsUseCase>();
+    _markAsRead = GetIt.instance<MarkNotificationAsReadUseCase>();
   }
 
   @override
@@ -46,11 +57,9 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
       ),
       body: SafeArea(
         top: true,
-        child: StreamBuilder<List<NotificationsModel>>(
-          stream: _notificationRepository.queryNotifications(
-            queryBuilder: (notificationsRecord) => notificationsRecord
-                .where('userId', isEqualTo: currentUserUid)
-                .orderBy('createdAt', descending: true),
+        child: StreamBuilder<List<Notification>>(
+          stream: _notificationRepository.watchUserNotifications(
+            userId: currentUserUid ?? '',
           ),
           builder: (context, snapshot) {
             // 로딩 중
@@ -68,7 +77,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
               );
             }
 
-            List<NotificationsModel> notifications = snapshot.data!;
+            List<Notification> notifications = snapshot.data!;
             
             if (notifications.isEmpty) {
               return Center(
@@ -101,19 +110,17 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
               itemCount: notifications.length,
               itemBuilder: (context, index) {
                 final notification = notifications[index];
-                final isExpired = notification.expiryTime != null &&
-                    notification.expiryTime!.isBefore(DateTime.now());
+                final isExpired = notification.isExpired;
                 
                 return Opacity(
-                  opacity: notification.read || isExpired ? 0.6 : 1.0,
+                  opacity: notification.isRead || isExpired ? 0.6 : 1.0,
                   child: InkWell(
                     onTap: isExpired ? null : () async {
                       // 읽음 처리
-                      if (!notification.read) {
-                        await notification.reference.update({
-                          'read': true,
-                          'readAt': FieldValue.serverTimestamp(),
-                        });
+                      if (!notification.isRead) {
+                        await _markAsRead.execute(
+                          MarkAsReadParams(notificationId: notification.id),
+                        );
                       }
                       
                       // 알림 클릭 시 관련 게시물로 이동하는 기능이 필요합니다.
@@ -128,7 +135,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
                     child: Container(
                       padding: const EdgeInsets.all(16.0),
                       decoration: BoxDecoration(
-                        color: notification.read 
+                        color: notification.isRead 
                             ? Colors.transparent 
                             : AppTheme.of(context).accent1.withValues(alpha: 0.1),
                         border: Border(
@@ -148,7 +155,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
-                              Icons.how_to_vote,
+                              _getNotificationIcon(notification),
                               color: Colors.white,
                               size: 24.0,
                             ),
@@ -159,9 +166,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  notification.type == 'votingRequest' 
-                                      ? '투표 요청' 
-                                      : '알림',
+                                  _getNotificationTitle(notification),
                                   style: AppTheme.of(context).bodyLarge.override(
                                         fontWeight: FontWeight.w600,
                                         letterSpacing: 0.0,
@@ -169,7 +174,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
                                 ),
                                 const SizedBox(height: 4.0),
                                 Text(
-                                  '이 게시물에 대한 당신의 의견이 필요해요!',
+                                  notification.content,
                                   style: AppTheme.of(context).bodyMedium.override(
                                         color: AppTheme.of(context).secondaryText,
                                         letterSpacing: 0.0,
@@ -178,7 +183,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
                                 const SizedBox(height: 4.0),
                                 Text(
                                   DateFormat('MM월 dd일 HH:mm').format(
-                                    notification.createdAt!,
+                                    notification.createdAt,
                                   ),
                                   style: AppTheme.of(context).bodySmall.override(
                                         color: AppTheme.of(context).secondaryText,
@@ -188,7 +193,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
                               ],
                             ),
                           ),
-                          if (!notification.read && !isExpired)
+                          if (!notification.isRead && !isExpired)
                             Container(
                               width: 8.0,
                               height: 8.0,
@@ -208,5 +213,47 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
         ),
       ),
     );
+  }
+
+  String _getNotificationTitle(Notification notification) {
+    switch (notification.type) {
+      case NotificationType.votingRequest:
+        return '투표 요청';
+      case NotificationType.systemAlert:
+        return '시스템 알림';
+      case NotificationType.postLiked:
+        return '좋아요';
+      case NotificationType.commentAdded:
+        return '댓글';
+      case NotificationType.friendRequest:
+        return '친구 요청';
+      case NotificationType.postCompleted:
+        return '게시물 완료';
+      case NotificationType.achievementUnlocked:
+        return '업적 달성';
+      default:
+        return '알림';
+    }
+  }
+
+  IconData _getNotificationIcon(Notification notification) {
+    switch (notification.type) {
+      case NotificationType.votingRequest:
+        return Icons.how_to_vote;
+      case NotificationType.systemAlert:
+        return Icons.info_outline;
+      case NotificationType.postLiked:
+        return Icons.favorite;
+      case NotificationType.commentAdded:
+        return Icons.comment;
+      case NotificationType.friendRequest:
+        return Icons.person_add;
+      case NotificationType.postCompleted:
+        return Icons.check_circle;
+      case NotificationType.achievementUnlocked:
+        return Icons.emoji_events;
+      default:
+        return Icons.notifications;
+    }
   }
 }

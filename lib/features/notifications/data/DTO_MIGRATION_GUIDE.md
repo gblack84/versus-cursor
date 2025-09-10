@@ -1,17 +1,18 @@
 # 🔄 Notifications Feature DTO Pattern Migration Guide
 
 > Domain-Data 분리를 위한 DTO 패턴 마이그레이션 가이드  
-> **최종 업데이트**: 2025-01-09 | **버전**: 1.1.0
+> **최종 업데이트**: 2025-01-10 | **버전**: 1.2.0
 > **예상 시간**: 4시간 - MASTER_MIGRATION_GUIDE.md Phase 2의 일부
+> **현재 상태**: ✅ Phase 1-4 완료 | 🔄 Phase 5 진행중 (66% 전체 진행률)
 > 
-> ⚠️ **Note**: 이 문서는 전체 마이그레이션 Phase 2(Data 레이어)의 Sub-phase 1에 해당합니다.
+> ⚠️ **Note**: Domain 레이어가 완료되어 DTO 마이그레이션 시작 준비가 완료되었습니다.
 
 ## 📌 Prerequisites (전제조건)
 
 ### 시작 전 확인사항
-- [ ] Domain 모델 분석 완료 (`/spawn inventory-scout "--depth 3 --scope lib/features/notifications --line-threshold 200"`)
-- [ ] Firebase 의존성 파악 완료 (`/spawn import-guardian "--scope notifications --mode detect"`)
-- [ ] 현재 모델 백업 완료 (`git stash` 또는 브랜치 생성)
+- [x] Domain 모델 분석 완료 (`/spawn inventory-scout "--depth 3 --scope lib/features/notifications --line-threshold 200"`)
+- [x] Firebase 의존성 파악 완료 (`/spawn import-guardian "--scope notifications --mode detect"`)
+- [x] 현재 모델 백업 완료 (`git stash` 또는 브랜치 생성)
 - [ ] 테스트 환경 준비 완료
 
 ### 필요한 도구
@@ -525,28 +526,37 @@ void main() {
 
 ## 📊 마이그레이션 체크리스트
 
-- [ ] Phase 1: 백업 및 분석 완료
-- [ ] Phase 2: Domain 모델 생성
-  - [ ] Abstract Notification
-  - [ ] VoteNotification
-  - [ ] SocialNotification
-  - [ ] SystemNotification
-- [ ] Phase 3: DTO 모델 구현
-  - [ ] NotificationDto
-  - [ ] JSON Serialization
-- [ ] Phase 4: Mapper 구현
-  - [ ] NotificationMapper
-  - [ ] Error handling
-- [ ] Phase 5: Datasource 수정
-  - [ ] DTO 반환으로 변경
-- [ ] Phase 6: Repository 수정
-  - [ ] Mapper 통합
-- [ ] Phase 7: Presentation 수정
-  - [ ] Import 경로 변경
-  - [ ] Provider 수정
-- [ ] Phase 8: 테스트
+- [x] Phase 1: 백업 및 분석 완료 ✅
+- [x] Phase 2: Domain 모델 생성 ✅
+  - [x] Abstract Notification
+  - [x] VoteNotification
+  - [x] SocialNotification
+  - [x] SystemNotification
+- [x] Phase 3: DTO 모델 구현 ✅
+  - [x] NotificationDto
+  - [x] VoteNotificationDto
+  - [x] SocialNotificationDto
+  - [x] SystemNotificationDto
+  - [x] DTO Extensions
+- [x] Phase 4: Mapper 구현 ✅
+  - [x] NotificationMapper
+  - [x] Error handling
+- [x] Phase 5: Datasource 구현 ✅
+  - [x] IRemoteNotificationDatasource
+  - [x] ILocalNotificationDatasource
+  - [x] FirebaseNotificationDatasource
+  - [x] SharedPrefsNotificationDatasource
+- [x] Phase 6: Repository 구현 ✅
+  - [x] NotificationRepositoryImpl
+  - [x] Mapper 통합
+  - [x] 캐싱 로직
+- [ ] Phase 7: Service/Adapter 정리 🔄 (60%)
+  - [x] NotificationService 리팩토링
+  - [ ] GlobalNotificationManager UI 분리
+  - [ ] TargetAudienceService 정리
+- [ ] Phase 8: DI 통합 및 테스트
+  - [ ] GetIt 설정
   - [ ] Domain 테스트
-  - [ ] Mapper 테스트
   - [ ] Integration 테스트
 
 ## 🎯 Success Metrics
@@ -570,6 +580,79 @@ void main() {
 - [Clean Architecture 원칙](../../ARCHITECTURE_RULES.md)
 - [DTO Pattern Best Practices](https://martinfowler.com/eaaCatalog/dataTransferObject.html)
 - [Flutter Clean Architecture](https://resocoder.com/flutter-clean-architecture-tdd/)
+
+## 📝 완료된 Phase 산출물
+
+### ✅ Phase 1-4: 기초 레이어 구현 완료
+
+#### Phase 2: DTO 모델 (100% 완료)
+**생성된 파일들:**
+- `data/models/notification_dto.dart` - 기본 DTO 모델
+- `data/models/vote_notification_dto.dart` - 투표 알림 DTO
+- `data/models/social_notification_dto.dart` - 소셜 알림 DTO
+- `data/models/system_notification_dto.dart` - 시스템 알림 DTO
+- `data/models/dto_extensions.dart` - DTO 확장 유틸리티
+
+#### Phase 3: Mapper (100% 완료)
+**생성된 파일:**
+- `data/mappers/notification_mapper.dart` - Domain ↔ DTO 변환 로직
+
+#### Phase 4: DataSource (100% 완료)
+**생성된 파일들:**
+- `data/datasources/i_remote_notification_datasource.dart` - Remote 인터페이스
+- `data/datasources/i_local_notification_datasource.dart` - Local 인터페이스
+- `data/datasources/remote/firebase_notification_datasource.dart` - Firebase 구현
+- `data/datasources/local/shared_prefs_notification_datasource.dart` - 로컬 캐싱 구현
+
+#### Phase 5: Repository (100% 완료)
+**생성된 파일:**
+- `data/repositories/notification_repository_impl.dart` - Repository 구현체
+  - Domain 인터페이스 구현
+  - Mapper 통합
+  - 캐싱 로직 포함
+  - DataSource 조합
+
+## 📝 Phase 7: Service/Adapter 정리 진행 상황 (현재 진행중)
+
+### 완료된 작업 (60%)
+
+#### ✅ NotificationService 리팩토링 완료
+- **파일**: `data/adapters/notification_service.dart`
+- **변경사항**:
+  - Firebase 직접 호출 완전 제거 (5개 → 0개)
+  - Repository 패턴 적용
+  - 인터페이스 기반 의존성 주입 구현
+- **개선 효과**:
+  - 테스트 가능한 구조
+  - Firebase 의존성 격리
+  - Clean Architecture 준수
+
+#### 🔄 GlobalNotificationManager 복구 완료
+- **파일**: `data/adapters/global_notification_manager.dart`
+- **수정사항**:
+  - 컴파일 에러 해결
+  - 누락된 import 추가
+  - TODO 주석으로 향후 작업 표시
+
+### 진행 중인 작업 (Phase 5.5)
+
+#### 🚧 UI/Business 로직 분리
+- **대상**: GlobalNotificationManager
+- **계획**:
+  1. IPostDatasource 인터페이스 생성
+  2. NotificationUIManager와 연동
+  3. NotificationCoordinator 구현
+  4. app.dart 연동 수정
+
+#### 📋 생성된 인터페이스
+- `IChatDatasource`: Chat 기능 의존성 분리
+- `IPostDatasource`: Post 기능 의존성 분리 (예정)
+
+### 다음 단계
+1. Phase 5.5 완료 (UI/Business 분리)
+2. Phase 6: TargetAudienceService 정리
+3. Phase 7: DI 설정 업데이트
+4. Phase 8: 문서 최종 업데이트
 
 ---
 

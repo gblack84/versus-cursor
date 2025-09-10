@@ -607,12 +607,25 @@ void main() {
 }
 ```
 
-## 🔧 마이그레이션 체크리스트
+## 📋 상세 실행 태스크
+
+> **중요**: 체크박스 형태의 상세 실행 태스크는 별도 문서로 분리되었습니다.
+> 
+> 👉 **[DOMAIN_MIGRATION_TASKS.md](./DOMAIN_MIGRATION_TASKS.md)** - 실행 가능한 상세 태스크 (체크리스트 포함)
+
+### 태스크 문서 구성
+- Phase별 상세 작업 항목 (체크박스)
+- 파일별 구체적인 구현 내용
+- 서브에이전트 검증 명령어
+- 진행 상황 추적 시트
+
+## 🔧 마이그레이션 체크리스트 (요약)
 
 ### Pre-Migration
 - [ ] 현재 Domain 백업
 - [ ] 영향받는 파일 목록 작성
 - [ ] 테스트 환경 준비
+- [ ] **[상세 태스크 문서](./DOMAIN_MIGRATION_TASKS.md) 확인**
 
 ### Phase 1: Model 순수화
 - [ ] Abstract Notification 클래스 생성

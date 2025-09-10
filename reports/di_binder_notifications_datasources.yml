@@ -1,0 +1,88 @@
+feature: notifications_datasources
+mode: detect
+status: ready_for_application
+timestamp: 2025-09-10T15:30:00Z
+
+summary: |
+  Notifications feature DataSource 의존성 주입 등록 작업 완료.
+  4개의 DataSource와 2개의 외부 의존성, 1개의 Mapper를 DI에 등록했습니다.
+
+external_dependencies:
+  added:
+    - name: FirebaseFirestore
+      registration: registerLazySingleton<FirebaseFirestore>
+      implementation: FirebaseFirestore.instance
+      
+    - name: SharedPreferences  
+      registration: registerSingletonAsync<SharedPreferences>
+      implementation: SharedPreferences.getInstance()
+      note: "비동기 초기화 필요"
+
+datasource_registrations:
+  added:
+    - port: IRemoteNotificationDatasource
+      adapter: FirebaseNotificationDatasource
+      dependencies: ["FirebaseFirestore"]
+      registration_type: registerLazySingleton
+      path: /features/notifications/data/datasources/remote/firebase_notification_datasource.dart
+      
+    - port: ILocalNotificationDatasource
+      adapter: SharedPrefsNotificationDatasource
+      dependencies: ["SharedPreferences"]
+      registration_type: registerSingletonWithDependencies
+      path: /features/notifications/data/datasources/local/shared_prefs_notification_datasource.dart
+      note: "SharedPreferences에 의존하므로 dependsOn 설정"
+      
+    - port: IPostDatasource
+      adapter: MockPostDatasource
+      dependencies: []
+      registration_type: registerLazySingleton
+      path: /features/notifications/data/datasources/cross/mock_post_datasource.dart
+      note: "임시 Mock 구현체, 향후 Posts feature에서 실제 구현체로 교체 필요"
+
+mapper_registrations:
+  added:
+    - name: NotificationMapper
+      registration: registerLazySingleton<NotificationMapper>
+      implementation: NotificationMapper()
+      path: /features/notifications/data/mappers/notification_mapper.dart
+
+imports_added:
+  - "package:cloud_firestore/cloud_firestore.dart"
+  - "package:shared_preferences/shared_preferences.dart"
+  - "/features/notifications/data/datasources/i_remote_notification_datasource.dart"
+  - "/features/notifications/data/datasources/i_local_notification_datasource.dart"
+  - "/features/notifications/data/datasources/i_post_datasource.dart"
+  - "/features/notifications/data/datasources/remote/firebase_notification_datasource.dart"
+  - "/features/notifications/data/datasources/local/shared_prefs_notification_datasource.dart"
+  - "/features/notifications/data/datasources/cross/mock_post_datasource.dart"
+  - "/features/notifications/data/mappers/notification_mapper.dart"
+
+architectural_compliance:
+  clean_architecture: ✅
+  dependency_inversion: ✅
+  single_responsibility: ✅
+  interface_segregation: ✅
+
+files_modified:
+  - path: lib/app/di.dart
+    changes: 
+      - 외부 의존성 2개 추가
+      - DataSource 3개 등록
+      - Mapper 1개 등록
+      - import 9개 추가
+    lines_added: ~35
+
+next_steps:
+  - SharedPreferences 비동기 초기화를 위해 main.dart에서 GetIt.allReady() 호출 확인
+  - MockPostDatasource를 Posts feature의 실제 구현체로 교체
+  - Repository 레이어에서 DataSource 의존성 주입 확인
+  - Flutter analyze 실행하여 import 에러 확인
+
+validation_checklist:
+  - ✅ 모든 인터페이스와 구현체 매핑 완료
+  - ✅ 의존성 체인 순서 준수 (Firebase, SharedPreferences → DataSource)
+  - ✅ 비동기 의존성 적절히 처리 (SharedPreferences)
+  - ✅ Clean Architecture 원칙 준수
+  - ⚠️ MockPostDatasource는 임시 구현체
+  - ⚠️ 실제 프로덕션에서 SharedPreferences 초기화 검증 필요

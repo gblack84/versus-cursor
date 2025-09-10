@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get_it/get_it.dart';
 import '../models/versus_box_size_data.dart';
 import '/features/notifications/domain/models/notification.dart' as domain;
 import '/features/notifications/domain/models/vote_notification.dart' as domain;
+import '/features/notifications/data/datasources/i_post_datasource.dart';
 
 /// 알림 UI 처리를 위한 델리게이트 인터페이스
 /// 
@@ -85,16 +86,13 @@ class NotificationDataExtractor {
 
   static Future<NotificationVoteData> _extractFromFirestore(String postId) async {
     try {
-      final postDoc = await FirebaseFirestore.instance
-          .collection('posts')
-          .doc(postId)
-          .get();
+      // PostDatasource를 DI container에서 가져옴
+      final postDatasource = GetIt.instance<IPostDatasource>();
+      final postData = await postDatasource.getPost(postId);
 
-      if (!postDoc.exists) {
+      if (postData == null) {
         return NotificationVoteData.empty();
       }
-
-      final postData = postDoc.data() as Map<String, dynamic>;
       
       String optionA = '';
       String optionB = '';

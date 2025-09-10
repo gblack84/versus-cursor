@@ -1,7 +1,6 @@
 import '/core_exports.dart';
 import '/features/posts/domain/models/target_audience_model.dart';
 import '../datasources/i_post_datasource.dart';
-import 'package:get_it/get_it.dart';
 
 /// 타겟 오디언스 관련 서비스
 /// 
@@ -10,25 +9,14 @@ import 'package:get_it/get_it.dart';
 /// 
 /// Clean Architecture를 위해 Firebase 직접 호출 대신 IPostDatasource를 사용합니다.
 class TargetAudienceService {
-  // 싱글톤 인스턴스
-  static final TargetAudienceService _instance = TargetAudienceService._internal();
-  static TargetAudienceService get instance => _instance;
+  final IPostDatasource _postDatasource;
   
-  TargetAudienceService._internal();
+  TargetAudienceService({
+    required IPostDatasource postDatasource,
+  }) : _postDatasource = postDatasource;
   
-  // 의존성 주입을 위한 PostDatasource
-  IPostDatasource? _postDatasource;
-  
-  /// PostDatasource 설정 (DI용)
-  void setPostDatasource(IPostDatasource datasource) {
-    _postDatasource = datasource;
-  }
-  
-  /// PostDatasource 가져오기 (lazy loading)
-  IPostDatasource get postDatasource {
-    _postDatasource ??= GetIt.instance.get<IPostDatasource>();
-    return _postDatasource!;
-  }
+  /// PostDatasource 가져오기
+  IPostDatasource get postDatasource => _postDatasource;
 
   /// TargetAudienceModel을 Firestore 저장용 Map으로 변환
   /// 
@@ -206,14 +194,11 @@ class TargetAudienceService {
   /// 현재 사용자의 타겟 오디언스 사용 통계를 조회합니다.
   Future<TargetAudienceStats> getUserStats(String userId) async {
     try {
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('posts')
-          .where('user', isEqualTo: userId)
-          .where('targetAudience', isNotEqualTo: null)
-          .orderBy('targetAudience')
-          .orderBy('createdTime', descending: true)
-          .limit(100)
-          .get();
+      // Use injected datasource instead of direct Firebase call
+      final posts = await _postDatasource.getUserPostsWithTargetAudience(
+        userId: userId,
+        limit: 100,
+      );
 
       int totalSent = 0;
       int totalCompleted = 0;
@@ -223,8 +208,7 @@ class TargetAudienceService {
         'custom': 0,
       };
 
-      for (final doc in querySnapshot.docs) {
-        final data = doc.data();
+      for (final data in posts) {
         final targetAudience = data['targetAudience'] as Map<String, dynamic>?;
         final notificationStatus = data['notificationStatus'] as Map<String, dynamic>?;
 
@@ -242,7 +226,7 @@ class TargetAudienceService {
       }
 
       return TargetAudienceStats(
-        totalPosts: querySnapshot.size,
+        totalPosts: posts.length,
         totalSent: totalSent,
         totalCompleted: totalCompleted,
         typeCount: typeCount,

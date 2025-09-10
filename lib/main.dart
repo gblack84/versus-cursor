@@ -8,7 +8,8 @@ import '/core/firebase/firebase_config.dart';
 import 'services/cache/unified_cache_service.dart';
 import 'features/notifications/data/adapters/notification_service.dart';
 import '/app/state/providers/navigation_provider.dart';
-import '/app/di/injection.dart';
+import '/app/di.dart';
+import 'package:get_it/get_it.dart';
 import 'core_exports.dart';
 import 'app/app.dart';
 
@@ -30,8 +31,8 @@ void main() async {
 
   await initFirebase();
   
-  // Initialize Dependency Injection Container
-  await DIContainer.initialize();
+  // Initialize Dependency Injection
+  await setupDependencyInjection();
   
   // Firestore 오프라인 캐시 활성화 - 앱 성능 대폭 개선
   FirebaseFirestore.instance.settings = const Settings(
@@ -51,7 +52,7 @@ void main() async {
     providers: [
       ChangeNotifierProvider(create: (context) => appState),
       ChangeNotifierProvider(create: (context) => NavigationProvider()),
-      Provider<NotificationService>(create: (context) => NotificationService.instance),
+      Provider<NotificationService>(create: (context) => GetIt.instance<NotificationService>()),
     ],
     child: const VersusApp(),
   ));

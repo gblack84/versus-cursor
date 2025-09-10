@@ -1,0 +1,79 @@
+--- lib/app/di.dart.original
++++ lib/app/di.dart
+@@ -3,9 +3,24 @@
+ /// This file configures dependency injection for the application
+ /// following Clean Architecture principles
+ 
++import 'package:cloud_firestore/cloud_firestore.dart';
+ import 'package:get_it/get_it.dart';
++import 'package:shared_preferences/shared_preferences.dart';
+ import '/features/voting/domain/repositories/i_voting_repository.dart';
+ import '/features/posts/data/adapters/posts_data_source_impl.dart';
++
++// Notifications DataSource Interfaces
++import '/features/notifications/data/datasources/i_remote_notification_datasource.dart';
++import '/features/notifications/data/datasources/i_local_notification_datasource.dart';
++import '/features/notifications/data/datasources/i_post_datasource.dart';
++
++// Notifications DataSource Implementations
++import '/features/notifications/data/datasources/remote/firebase_notification_datasource.dart';
++import '/features/notifications/data/datasources/local/shared_prefs_notification_datasource.dart';
++import '/features/notifications/data/datasources/cross/mock_post_datasource.dart';
++
++// Notifications Mappers
++import '/features/notifications/data/mappers/notification_mapper.dart';
+ 
+ // Auth Feature DI
+ import '/features/auth/domain/services/i_auth_service.dart';
+@@ -29,6 +44,25 @@ final getIt = GetIt.instance;
+ 
+ /// Initialize dependency injection
+ void setupDependencyInjection() {
++  // ===== External Dependencies =====
++  
++  // Register Firebase Firestore instance
++  getIt.registerLazySingleton<FirebaseFirestore>(
++    () => FirebaseFirestore.instance,
++  );
++  
++  // Register SharedPreferences (async initialization required)
++  getIt.registerSingletonAsync<SharedPreferences>(
++    () => SharedPreferences.getInstance(),
++  );
++  
++  // Register NotificationMapper
++  getIt.registerLazySingleton<NotificationMapper>(
++    () => NotificationMapper(),
++  );
++  
++  // ===== Feature Dependencies =====
++  
+   // Register Posts data source for Voting feature
+   getIt.registerLazySingleton<PostsDataSource>(
+     () => PostsDataSourceImpl.instance,
+@@ -40,6 +74,25 @@ void setupDependencyInjection() {
+   );
+   
+   // ===== Notifications Feature DI =====
++  
++  // Register DataSource implementations
++  getIt.registerLazySingleton<IRemoteNotificationDatasource>(
++    () => FirebaseNotificationDatasource(
++      firestore: getIt<FirebaseFirestore>(),
++    ),
++  );
++  
++  getIt.registerSingletonWithDependencies<ILocalNotificationDatasource>(
++    () => SharedPrefsNotificationDatasource(
++      prefs: getIt<SharedPreferences>(),
++    ),
++    dependsOn: [SharedPreferences],
++  );
++  
++  getIt.registerLazySingleton<IPostDatasource>(
++    () => MockPostDatasource(),
++  );
++  
+   
+   // Register Repository implementation
+   getIt.registerLazySingleton<INotificationRepository>(

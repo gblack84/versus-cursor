@@ -1,5 +1,5 @@
 import 'dart:async';
-import '/backend/backend.dart'; // PostsModel
+import '/features/posts/domain/models/posts_model.dart';
 
 /// Cross-feature datasource interface for post data
 /// Abstracts access to posts feature data
@@ -39,5 +39,12 @@ abstract class IPostDatasource {
     required String postId,
     required int votesA,
     required int votesB,
+  });
+  
+  /// Get user's target audience statistics
+  /// Returns a list of posts with target audience data for statistics
+  Future<List<Map<String, dynamic>>> getUserPostsWithTargetAudience({
+    required String userId,
+    int limit = 100,
   });
 }

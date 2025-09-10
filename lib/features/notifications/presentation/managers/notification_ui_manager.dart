@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get_it/get_it.dart';
 import '/core/types/layout_type.dart';
+import '/features/notifications/domain/services/i_user_service.dart';
 import '/features/notifications/domain/models/notification.dart' as domain;
 import '/features/notifications/presentation/widgets/voting_notification_dialog.dart';
 import '/features/notifications/presentation/models/versus_box_size_data.dart';
@@ -22,11 +23,32 @@ class NotificationUIManager implements INotificationUIDelegate {
   /// 현재 표시 중인 다이얼로그
   bool _isShowingDialog = false;
   
+  /// 컨텍스트 (Optional - Coordinator에서 설정)
+  BuildContext? _context;
+  
+  /// User Service (lazy initialized)
+  IUserService? _userService;
+  IUserService get userService => _userService ??= GetIt.instance<IUserService>();
+  
+  /// 컨텍스트 설정
+  void setContext(BuildContext context) {
+    _context = context;
+  }
+  
+  /// 컨텍스트 확인
+  bool get hasContext => _context != null || appNavigatorKey.currentContext != null;
+  
+  /// 리소스 정리
+  void dispose() {
+    _context = null;
+    _isShowingDialog = false;
+  }
+  
   @override
   bool isUIContextAvailable() {
     final context = appNavigatorKey.currentContext;
-    final user = FirebaseAuth.instance.currentUser;
-    return context != null && user != null;
+    final isAuthenticated = userService.isAuthenticated;
+    return context != null && isAuthenticated;
   }
 
   @override
@@ -35,9 +57,9 @@ class NotificationUIManager implements INotificationUIDelegate {
     
     while (DateTime.now().isBefore(endTime)) {
       final context = appNavigatorKey.currentContext;
-      final user = FirebaseAuth.instance.currentUser;
+      final isAuthenticated = userService.isAuthenticated;
       
-      if (context != null && user != null) {
+      if (context != null && isAuthenticated) {
         return context;
       }
       

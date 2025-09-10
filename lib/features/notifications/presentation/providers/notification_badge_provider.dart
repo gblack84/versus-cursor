@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '/features/auth/data/adapters/auth_util.dart';
-import '/features/notifications/data/adapters/notification_service.dart';
+import '/features/notifications/domain/usecases/get_current_user_id.dart';
+import '/features/notifications/domain/usecases/get_unread_notification_count.dart';
 import '/features/notifications/presentation/widgets/notification_badge.dart';
 
 /// NotificationService와 연결된 알림 뱃지 제공자
@@ -17,17 +17,19 @@ class NotificationBadgeProvider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = currentUser;
+    // UseCase를 Provider에서 가져옴 (DI container에서 제공)
+    final getCurrentUserId = Provider.of<GetCurrentUserIdUseCase>(context, listen: false);
+    final getUnreadCount = Provider.of<GetUnreadNotificationCountUseCase>(context, listen: false);
     
-    if (user == null || user.uid == null) {
+    final userId = getCurrentUserId.execute();
+    
+    if (userId == null) {
       // 로그인하지 않은 경우 0개로 표시
       return builder(context, 0);
     }
-
-    final notificationService = Provider.of<NotificationService>(context, listen: false);
     
     return StreamBuilder<int>(
-      stream: notificationService.getUnreadNotificationCount(user.uid!),
+      stream: getUnreadCount.execute(userId),
       initialData: 0,
       builder: (context, snapshot) {
         final count = snapshot.data ?? 0;

@@ -30,6 +30,9 @@ abstract class INotificationRepository {
   /// 읽지 않은 알림 개수 스트림
   Stream<int> watchUnreadCount(String userId);
   
+  /// 읽지 않은 알림 개수 실시간 스트림 (NotificationBadgeProvider에서 사용)
+  Stream<int> getUnreadNotificationCount(String userId);
+  
   /// 특정 타입의 알림 조회
   Future<List<T>> getNotificationsByType<T extends Notification>({
     required String userId,

@@ -1,4 +1,5 @@
 import '../i_post_datasource.dart';
+import '/features/posts/domain/models/posts_model.dart';
 
 /// Posts feature에 대한 Mock DataSource 구현체
 /// 
@@ -32,6 +33,13 @@ class MockPostDatasource implements IPostDatasource {
       'createdAt': DateTime.now().toIso8601String(),
       'notificationsSent': false,
     };
+  }
+  
+  @override
+  Future<PostsModel?> getPostModel(String postId) async {
+    // TODO: Posts Feature 마이그레이션 후 실제 구현으로 교체
+    print('[MockPostDatasource] getPostModel called for: $postId');
+    return null;
   }
   
   @override
@@ -110,6 +118,31 @@ class MockPostDatasource implements IPostDatasource {
       _posts[postId]!['votesB'] = votesB;
       _posts[postId]!['lastVoteUpdate'] = DateTime.now().toIso8601String();
     }
+  }
+  
+  @override
+  Future<List<Map<String, dynamic>>> getUserPostsWithTargetAudience({
+    required String userId,
+    int limit = 100,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 150));
+    
+    // Filter posts by user that have targetAudience
+    final userPosts = _posts.values
+        .where((post) => 
+            post['creatorId'] == userId && 
+            post['targetAudience'] != null)
+        .take(limit)
+        .toList();
+    
+    // Sort by creation time (descending)
+    userPosts.sort((a, b) {
+      final aTime = a['createdAt'] ?? '';
+      final bTime = b['createdAt'] ?? '';
+      return bTime.compareTo(aTime);
+    });
+    
+    return userPosts;
   }
   
   // 테스트 헬퍼 메서드

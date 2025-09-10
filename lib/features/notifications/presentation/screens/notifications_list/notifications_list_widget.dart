@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
-import '/features/auth/data/adapters/auth_util.dart';
-import '/features/notifications/domain/models/notification.dart';
+import '/features/notifications/domain/services/i_user_service.dart';
+import '/features/notifications/domain/models/notification.dart' as domain;
+import '/features/notifications/domain/models/notification.dart' show NotificationType;
 import '/features/notifications/domain/models/vote_notification.dart';
 import '/features/notifications/domain/models/system_notification.dart';
 import '/features/notifications/domain/models/social_notification.dart';
@@ -26,6 +27,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
   late final INotificationRepository _notificationRepository;
   late final GetUserNotificationsUseCase _getUserNotifications;
   late final MarkNotificationAsReadUseCase _markAsRead;
+  late final IUserService _userService;
 
   @override
   void initState() {
@@ -33,6 +35,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
     _notificationRepository = GetIt.instance<INotificationRepository>();
     _getUserNotifications = GetIt.instance<GetUserNotificationsUseCase>();
     _markAsRead = GetIt.instance<MarkNotificationAsReadUseCase>();
+    _userService = GetIt.instance<IUserService>();
   }
 
   @override
@@ -57,9 +60,9 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
       ),
       body: SafeArea(
         top: true,
-        child: StreamBuilder<List<Notification>>(
+        child: StreamBuilder<List<domain.Notification>>(
           stream: _notificationRepository.watchUserNotifications(
-            userId: currentUserUid ?? '',
+            userId: _userService.currentUserId ?? '',
           ),
           builder: (context, snapshot) {
             // 로딩 중
@@ -77,7 +80,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
               );
             }
 
-            List<Notification> notifications = snapshot.data!;
+            List<domain.Notification> notifications = snapshot.data!;
             
             if (notifications.isEmpty) {
               return Center(
@@ -118,7 +121,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
                     onTap: isExpired ? null : () async {
                       // 읽음 처리
                       if (!notification.isRead) {
-                        await _markAsRead.execute(
+                        await _markAsRead.call(
                           MarkAsReadParams(notificationId: notification.id),
                         );
                       }
@@ -215,7 +218,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
     );
   }
 
-  String _getNotificationTitle(Notification notification) {
+  String _getNotificationTitle(domain.Notification notification) {
     switch (notification.type) {
       case NotificationType.votingRequest:
         return '투표 요청';
@@ -236,7 +239,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
     }
   }
 
-  IconData _getNotificationIcon(Notification notification) {
+  IconData _getNotificationIcon(domain.Notification notification) {
     switch (notification.type) {
       case NotificationType.votingRequest:
         return Icons.how_to_vote;

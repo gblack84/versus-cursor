@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import '../../data/adapters/global_notification_manager.dart';
 import '../../data/adapters/notification_service.dart';
+import '../../domain/models/vote_notification.dart' as domain;
+import '../../domain/value_objects/vote_options.dart' as domain;
 import '../managers/notification_ui_manager.dart';
-import '../managers/i_notification_ui_delegate.dart';
 
 /// 알림 시스템 코디네이터
 /// 
@@ -37,14 +39,14 @@ class NotificationCoordinator {
         uiManager.setContext(context);
       }
       
-      // 2. Global Notification Manager에 UI 대리자 설정
-      GlobalNotificationManager.instance.setUIDelegate(uiManager);
+      // 2. Get GlobalNotificationManager from DI
+      final globalManager = GetIt.instance<GlobalNotificationManager>();
       
       // 3. Notification Service 시작
-      NotificationService.instance.startListening(userId);
+      GetIt.instance<NotificationService>().startListening(userId);
       
       // 4. Global Notification Manager 시작
-      GlobalNotificationManager.instance.startListening();
+      globalManager.startListening();
       
       _isInitialized = true;
       debugPrint('[NotificationCoordinator] ✅ 초기화 완료');
@@ -68,8 +70,8 @@ class NotificationCoordinator {
     
     try {
       // 역순으로 정리
-      GlobalNotificationManager.instance.stopListening();
-      NotificationService.instance.stopListening();
+      GetIt.instance<GlobalNotificationManager>().stopListening();
+      GetIt.instance<NotificationService>().stopListening();
       NotificationUIManager.instance.dispose();
       
       _isInitialized = false;
@@ -95,6 +97,7 @@ class NotificationCoordinator {
   
   /// 수동으로 알림 표시 (테스트용)
   Future<void> showTestNotification({
+    required BuildContext context,
     required String postId,
     required String title,
     required String optionA,
@@ -104,20 +107,40 @@ class NotificationCoordinator {
       throw StateError('NotificationCoordinator가 초기화되지 않음');
     }
     
-    await NotificationUIManager.instance.showVotingNotification(
-      notificationId: 'test_${DateTime.now().millisecondsSinceEpoch}',
+    // 테스트용 Notification 객체 생성
+    final testNotification = domain.VoteNotification(
+      id: 'test_${DateTime.now().millisecondsSinceEpoch}',
+      userId: 'test_user',
       postId: postId,
       postTitle: title,
+      title: title,
+      content: '$optionA vs $optionB',
+      postContent: '$optionA vs $optionB',
+      createdAt: DateTime.now(),
+      isRead: false,
+      voteOptions: domain.VoteOptions(
+        optionATitle: optionA,
+        optionBTitle: optionB,
+        optionAImageUrls: [],
+        optionBImageUrls: [],
+      ),
+      voteStartTime: DateTime.now(),
+      voteEndTime: DateTime.now().add(const Duration(minutes: 10)),
+    );
+    
+    await NotificationUIManager.instance.showVotingNotification(
+      notification: testNotification,
+      context: context,
+      question: title,
       optionA: optionA,
       optionB: optionB,
       imageUrlsA: [],
       imageUrlsB: [],
-      voteEndTime: DateTime.now().add(const Duration(minutes: 10)),
-      onVote: (option) {
+      onVote: (option) async {
         debugPrint('[NotificationCoordinator] 테스트 투표: $option');
       },
-      onDismiss: () {
-        debugPrint('[NotificationCoordinator] 테스트 알림 닫기');
+      onDismiss: (hasVoted) {
+        debugPrint('[NotificationCoordinator] 테스트 알림 닫기: 투표했음=$hasVoted');
       },
     );
   }
@@ -126,20 +149,20 @@ class NotificationCoordinator {
   Map<String, dynamic> getQueueStatus() {
     return {
       'initialized': _isInitialized,
-      'queueSize': GlobalNotificationManager.instance.getQueueSize(),
-      'isShowingNotification': GlobalNotificationManager.instance.isShowingNotification,
+      'queueSize': GetIt.instance<GlobalNotificationManager>().getQueueSize(),
+      'isShowingNotification': GetIt.instance<GlobalNotificationManager>().isShowingNotification,
       'hasUIContext': NotificationUIManager.instance.hasContext,
     };
   }
   
   /// 처리된 알림 개수 조회
   int getProcessedCount() {
-    return GlobalNotificationManager.instance.getProcessedNotificationCount();
+    return GetIt.instance<GlobalNotificationManager>().getProcessedNotificationCount();
   }
   
   /// 알림 큐 비우기
   void clearQueue() {
-    GlobalNotificationManager.instance.clearQueue();
+    GetIt.instance<GlobalNotificationManager>().clearQueue();
     debugPrint('[NotificationCoordinator] 알림 큐 비움');
   }
 }

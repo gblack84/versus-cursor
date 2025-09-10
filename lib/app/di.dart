@@ -24,11 +24,29 @@ import '/features/notifications/domain/usecases/watch_unread_count_use_case.dart
 import '/features/notifications/presentation/managers/i_notification_ui_delegate.dart';
 import '/features/notifications/presentation/managers/notification_ui_manager.dart';
 import '/features/notifications/data/adapters/global_notification_manager.dart';
+import '/features/notifications/data/adapters/notification_service.dart';
+import '/features/notifications/data/adapters/target_audience_service.dart';
+import '/features/notifications/data/datasources/i_remote_notification_datasource.dart';
+import '/features/notifications/data/datasources/remote/firebase_notification_datasource.dart';
+import '/features/notifications/data/datasources/i_local_notification_datasource.dart';
+import '/features/notifications/data/datasources/local/shared_prefs_notification_datasource.dart';
+import '/features/notifications/data/datasources/i_post_datasource.dart';
+import '/features/notifications/data/datasources/cross/mock_post_datasource.dart';
+import '/features/notifications/data/datasources/i_chat_datasource.dart';
+import '/features/notifications/data/datasources/cross/mock_chat_datasource.dart';
+import '/features/notifications/data/mappers/notification_mapper.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final getIt = GetIt.instance;
 
 /// Initialize dependency injection
-void setupDependencyInjection() {
+Future<void> setupDependencyInjection() async {
+  // ===== Core Dependencies =====
+  
+  // SharedPreferences 인스턴스 초기화
+  final sharedPreferences = await SharedPreferences.getInstance();
+  getIt.registerSingleton<SharedPreferences>(sharedPreferences);
   // Register Posts data source for Voting feature
   getIt.registerLazySingleton<PostsDataSource>(
     () => PostsDataSourceImpl.instance,
@@ -41,9 +59,39 @@ void setupDependencyInjection() {
   
   // ===== Notifications Feature DI =====
   
+  // DataSource 등록
+  getIt.registerLazySingleton<IRemoteNotificationDatasource>(
+    () => FirebaseNotificationDatasource(
+      firestore: FirebaseFirestore.instance,
+    ),
+  );
+  
+  getIt.registerLazySingleton<ILocalNotificationDatasource>(
+    () => SharedPrefsNotificationDatasource(
+      prefs: getIt<SharedPreferences>(),
+    ),
+  );
+  
+  // Cross-feature DataSource (임시 Mock 구현)
+  getIt.registerLazySingleton<IPostDatasource>(
+    () => MockPostDatasource(),
+  );
+  
+  getIt.registerLazySingleton<IChatDatasource>(
+    () => MockChatDatasource(),
+  );
+  
+  // Mapper 등록
+  getIt.registerLazySingleton<NotificationMapper>(
+    () => NotificationMapper(),
+  );
+  
   // Register Repository implementation
   getIt.registerLazySingleton<INotificationRepository>(
-    () => NotificationRepositoryImpl.instance,
+    () => NotificationRepositoryImpl(
+      remoteDatasource: getIt<IRemoteNotificationDatasource>(),
+      localDatasource: getIt<ILocalNotificationDatasource>(),
+    ),
   );
   
   // Register UseCases
@@ -72,9 +120,20 @@ void setupDependencyInjection() {
     () => NotificationUIManager.instance,
   );
   
-  // Register Global Notification Manager
-  getIt.registerLazySingleton<GlobalNotificationManager>(
-    () => GlobalNotificationManager.instance,
+  // GlobalNotificationManager is now registered in NotificationModule
+  
+  // Register Services
+  getIt.registerLazySingleton<NotificationService>(
+    () => NotificationService(
+      repository: getIt<INotificationRepository>(),
+      chatDatasource: getIt<IChatDatasource>(),
+    ),
+  );
+  
+  getIt.registerLazySingleton<TargetAudienceService>(
+    () => TargetAudienceService(
+      postDatasource: getIt<IPostDatasource>(),
+    ),
   );
   
   // Add more dependency registrations here as needed

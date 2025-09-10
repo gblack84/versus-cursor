@@ -4,7 +4,7 @@ import 'package:get_it/get_it.dart';
 import '../models/versus_box_size_data.dart';
 import '/features/notifications/domain/models/notification.dart' as domain;
 import '/features/notifications/domain/models/vote_notification.dart' as domain;
-import '/features/notifications/data/datasources/i_post_datasource.dart';
+import '/features/notifications/domain/usecases/get_post_data_use_case.dart';
 
 /// 알림 UI 처리를 위한 델리게이트 인터페이스
 /// 
@@ -86,9 +86,9 @@ class NotificationDataExtractor {
 
   static Future<NotificationVoteData> _extractFromFirestore(String postId) async {
     try {
-      // PostDatasource를 DI container에서 가져옴
-      final postDatasource = GetIt.instance<IPostDatasource>();
-      final postData = await postDatasource.getPost(postId);
+      // GetPostDataUseCase를 DI container에서 가져옴 (Clean Architecture 준수)
+      final getPostDataUseCase = GetIt.instance<GetPostDataUseCase>();
+      final postData = await getPostDataUseCase.execute(postId: postId);
 
       if (postData == null) {
         return NotificationVoteData.empty();

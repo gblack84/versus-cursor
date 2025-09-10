@@ -19,6 +19,10 @@ import '/features/notifications/domain/usecases/mark_as_read_use_case.dart';
 import '/features/notifications/domain/usecases/process_vote_notification_use_case.dart';
 import '/features/notifications/domain/usecases/send_notification_use_case.dart';
 import '/features/notifications/domain/usecases/watch_unread_count_use_case.dart';
+import '/features/notifications/domain/usecases/initialize_notifications_use_case.dart';
+import '/features/notifications/domain/usecases/start_notification_listening_use_case.dart';
+import '/features/notifications/domain/usecases/stop_notification_listening_use_case.dart';
+import '/features/notifications/domain/usecases/get_post_data_use_case.dart';
 
 // Notifications UI & Adapters
 import '/features/notifications/presentation/managers/i_notification_ui_delegate.dart';
@@ -113,6 +117,23 @@ Future<void> setupDependencyInjection() async {
   
   getIt.registerFactory<WatchUnreadCountUseCase>(
     () => WatchUnreadCountUseCase(getIt<INotificationRepository>()),
+  );
+  
+  // Register new Clean Architecture UseCases
+  getIt.registerFactory<InitializeNotificationsUseCase>(
+    () => InitializeNotificationsUseCase(getIt<INotificationRepository>()),
+  );
+  
+  getIt.registerFactory<StartNotificationListeningUseCase>(
+    () => StartNotificationListeningUseCase(getIt<INotificationRepository>()),
+  );
+  
+  getIt.registerFactory<StopNotificationListeningUseCase>(
+    () => StopNotificationListeningUseCase(getIt<INotificationRepository>()),
+  );
+  
+  getIt.registerFactory<GetPostDataUseCase>(
+    () => GetPostDataUseCase(getIt<INotificationRepository>()),
   );
   
   // Register UI Delegate

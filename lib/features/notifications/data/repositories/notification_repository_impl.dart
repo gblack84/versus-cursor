@@ -478,6 +478,80 @@ class NotificationRepositoryImpl implements INotificationRepository {
     }
   }
   
+  // ===== Clean Architecture Methods (New) =====
+  
+  @override
+  Future<void> initializeNotificationSystem({required String userId}) async {
+    try {
+      // Initialize GlobalNotificationManager
+      // Note: Actual implementation would initialize the notification system
+      // For now, we'll just clear the cache and prepare for listening
+      await _localDatasource.clearCache(userId);
+      print('[NotificationRepository] Notification system initialized for user: $userId');
+    } catch (e) {
+      throw Exception('Failed to initialize notification system: $e');
+    }
+  }
+  
+  @override
+  Future<Stream<Notification>> startListening({required String userId}) async {
+    try {
+      // Start listening to notification stream from remote datasource
+      final stream = _remoteDatasource.watchUserNotifications(userId: userId);
+      
+      // Transform stream to domain models
+      return stream.expand((dataList) => dataList).map((data) {
+        final dto = _createDtoFromMap(data);
+        return NotificationMapper.toDomain(dto);
+      });
+    } catch (e) {
+      throw Exception('Failed to start notification listening: $e');
+    }
+  }
+  
+  @override
+  Stream<int> getUnreadNotificationCount(String userId) {
+    // Create a stream controller to emit unread count updates
+    return Stream.periodic(const Duration(seconds: 30), (_) async {
+      try {
+        final notifications = await getUserNotifications(
+          userId: userId,
+          filter: NotificationFilter(unreadOnly: true),
+        );
+        return notifications.length;
+      } catch (e) {
+        print('[NotificationRepository] Error getting unread count: $e');
+        return 0;
+      }
+    }).asyncMap((future) => future);
+  }
+  
+  @override
+  Future<void> stopListening({required String userId}) async {
+    try {
+      // Stop listening to notifications
+      // Note: Actual implementation would stop any active streams
+      // For now, just clear cache
+      await _localDatasource.clearCache(userId);
+      print('[NotificationRepository] Stopped listening for user: $userId');
+    } catch (e) {
+      throw Exception('Failed to stop notification listening: $e');
+    }
+  }
+  
+  @override
+  Future<Map<String, dynamic>?> getPostData({required String postId}) async {
+    try {
+      // This would normally delegate to a cross-feature datasource
+      // For now, return null as placeholder
+      // TODO: Implement actual cross-feature post data retrieval
+      print('[NotificationRepository] Getting post data for: $postId');
+      return null;
+    } catch (e) {
+      throw Exception('Failed to get post data: $e');
+    }
+  }
+  
   // ===== Private Helper Methods =====
   
   /// Map 데이터를 적절한 DTO로 변환

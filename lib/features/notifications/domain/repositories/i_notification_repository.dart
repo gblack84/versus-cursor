@@ -103,4 +103,26 @@ abstract class INotificationRepository {
     required DateTime from,
     required DateTime to,
   });
+
+  // ===== 시스템 초기화 Operations (Clean Architecture) =====
+  
+  /// 알림 시스템 초기화
+  Future<void> initializeNotificationSystem({
+    required String userId,
+  });
+  
+  /// 알림 리스너 시작
+  Future<Stream<Notification>> startListening({
+    required String userId,
+  });
+  
+  /// 알림 리스너 중지
+  Future<void> stopListening({
+    required String userId,
+  });
+  
+  /// Cross-feature post 데이터 조회를 위한 추상 메서드
+  Future<Map<String, dynamic>?> getPostData({
+    required String postId,
+  });
 }

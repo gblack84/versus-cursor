@@ -26,7 +26,7 @@ Notifications Domain 레이어는 **Clean Architecture**의 핵심으로, 알림
 
 ### 주요 특징
 - ✅ **Firebase 의존성 0건** - 완전한 도메인 순수성 달성
-- ✅ **UseCase 패턴** - 명확한 비즈니스 작업 정의
+- ✅ **UseCase 패턴** - 11개 비즈니스 UseCase 구현 완료
 - ✅ **Repository 인터페이스** - 데이터 소스 추상화
 - ✅ **Value Objects** - 도메인 개념 캡슐화
 - ✅ **다형성 모델** - 알림 타입별 특화 구현

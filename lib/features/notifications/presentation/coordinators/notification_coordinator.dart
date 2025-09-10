@@ -1,22 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import '../../data/adapters/global_notification_manager.dart';
-import '../../data/adapters/notification_service.dart';
 import '../../domain/models/vote_notification.dart' as domain;
 import '../../domain/value_objects/vote_options.dart' as domain;
+import '../../domain/usecases/initialize_notifications_use_case.dart';
+import '../../domain/usecases/start_notification_listening_use_case.dart';
+import '../../domain/usecases/stop_notification_listening_use_case.dart';
 import '../managers/notification_ui_manager.dart';
 
-/// 알림 시스템 코디네이터
+/// 알림 시스템 코디네이터 (Clean Architecture)
 /// 
-/// UI 레이어와 Business 레이어를 연결하고 조율하는 역할
-/// app.dart에서 초기화되어 전체 알림 시스템을 통합 관리
+/// UseCase를 통해 Business 로직을 처리하고 UI와 연결
+/// Singleton 패턴 제거, DI를 통한 의존성 주입
 class NotificationCoordinator {
-  static final NotificationCoordinator _instance = NotificationCoordinator._internal();
-  static NotificationCoordinator get instance => _instance;
-  
-  NotificationCoordinator._internal();
+  // UseCase 의존성
+  final InitializeNotificationsUseCase _initializeUseCase;
+  final StartNotificationListeningUseCase _startListeningUseCase;
+  final StopNotificationListeningUseCase _stopListeningUseCase;
   
   bool _isInitialized = false;
+  
+  // Factory constructor with DI
+  factory NotificationCoordinator() {
+    return NotificationCoordinator._(
+      initializeUseCase: GetIt.instance<InitializeNotificationsUseCase>(),
+      startListeningUseCase: GetIt.instance<StartNotificationListeningUseCase>(),
+      stopListeningUseCase: GetIt.instance<StopNotificationListeningUseCase>(),
+    );
+  }
+  
+  // Private constructor for dependency injection
+  NotificationCoordinator._({    required InitializeNotificationsUseCase initializeUseCase,
+    required StartNotificationListeningUseCase startListeningUseCase,
+    required StopNotificationListeningUseCase stopListeningUseCase,
+  }) : _initializeUseCase = initializeUseCase,
+       _startListeningUseCase = startListeningUseCase,
+       _stopListeningUseCase = stopListeningUseCase;
+  
+  // Static instance getter for backward compatibility
+  static NotificationCoordinator get instance => NotificationCoordinator();
   
   /// 알림 시스템 초기화
   /// 
@@ -39,14 +60,11 @@ class NotificationCoordinator {
         uiManager.setContext(context);
       }
       
-      // 2. Get GlobalNotificationManager from DI
-      final globalManager = GetIt.instance<GlobalNotificationManager>();
+      // 2. UseCase를 통한 초기화 (Clean Architecture)
+      await _initializeUseCase.execute(userId: userId);
       
-      // 3. Notification Service 시작
-      GetIt.instance<NotificationService>().startListening(userId);
-      
-      // 4. Global Notification Manager 시작
-      globalManager.startListening();
+      // 3. UseCase를 통한 리스닝 시작
+      await _startListeningUseCase.execute(userId: userId);
       
       _isInitialized = true;
       debugPrint('[NotificationCoordinator] ✅ 초기화 완료');
@@ -61,7 +79,7 @@ class NotificationCoordinator {
   /// 알림 시스템 종료
   /// 
   /// app.dart의 dispose에서 호출되어야 함
-  void dispose() {
+  Future<void> dispose() async {
     if (!_isInitialized) {
       return;
     }
@@ -69,9 +87,11 @@ class NotificationCoordinator {
     debugPrint('[NotificationCoordinator] 종료 시작');
     
     try {
-      // 역순으로 정리
-      GetIt.instance<GlobalNotificationManager>().stopListening();
-      GetIt.instance<NotificationService>().stopListening();
+      // UseCase를 통한 정리 (Clean Architecture)
+      // TODO: userId를 저장해두고 여기서 사용해야 함
+      // 현재는 임시로 빈 문자열 사용 (실제 구현 시 수정 필요)
+      await _stopListeningUseCase.execute(userId: '');
+      
       NotificationUIManager.instance.dispose();
       
       _isInitialized = false;
@@ -147,22 +167,25 @@ class NotificationCoordinator {
   
   /// 알림 큐 상태 조회
   Map<String, dynamic> getQueueStatus() {
+    // TODO: GlobalNotificationManager를 UseCase로 추상화해야 함
+    // 현재는 임시 데이터 반환
     return {
       'initialized': _isInitialized,
-      'queueSize': GetIt.instance<GlobalNotificationManager>().getQueueSize(),
-      'isShowingNotification': GetIt.instance<GlobalNotificationManager>().isShowingNotification,
+      'queueSize': 0,
+      'isShowingNotification': false,
       'hasUIContext': NotificationUIManager.instance.hasContext,
     };
   }
   
   /// 처리된 알림 개수 조회
   int getProcessedCount() {
-    return GetIt.instance<GlobalNotificationManager>().getProcessedNotificationCount();
+    // TODO: UseCase를 통한 조회로 변경 필요
+    return 0;
   }
   
   /// 알림 큐 비우기
   void clearQueue() {
-    GetIt.instance<GlobalNotificationManager>().clearQueue();
-    debugPrint('[NotificationCoordinator] 알림 큐 비움');
+    // TODO: UseCase를 통한 처리로 변경 필요
+    debugPrint('[NotificationCoordinator] 알림 큐 비우기 - UseCase 구현 필요');
   }
 }

@@ -1,5 +1,5 @@
 /// Dependency Injection Configuration
-/// 
+///
 /// This file configures dependency injection for the application
 /// following Clean Architecture principles
 
@@ -24,12 +24,11 @@ import '/features/notifications/domain/usecases/start_notification_listening_use
 import '/features/notifications/domain/usecases/stop_notification_listening_use_case.dart';
 import '/features/notifications/domain/usecases/get_post_data_use_case.dart';
 
-// Notifications UI & Adapters
-import '/features/notifications/presentation/managers/i_notification_ui_delegate.dart';
-import '/features/notifications/presentation/managers/notification_ui_manager.dart';
-import '/features/notifications/data/adapters/global_notification_manager.dart';
+// Voting UI & Adapters
+import '/features/voting/domain/ports/i_vote_ui_delegate.dart';
+import '/features/voting/presentation/managers/vote_ui_manager.dart';
 import '/features/notifications/data/adapters/notification_service.dart';
-import '/features/notifications/data/adapters/target_audience_service.dart';
+import '/features/posts/data/services/target_audience_service.dart';
 import '/features/notifications/data/datasources/i_remote_notification_datasource.dart';
 import '/features/notifications/data/datasources/remote/firebase_notification_datasource.dart';
 import '/features/notifications/data/datasources/i_local_notification_datasource.dart';
@@ -47,7 +46,7 @@ final getIt = GetIt.instance;
 /// Initialize dependency injection
 Future<void> setupDependencyInjection() async {
   // ===== Core Dependencies =====
-  
+
   // SharedPreferences 인스턴스 초기화
   final sharedPreferences = await SharedPreferences.getInstance();
   getIt.registerSingleton<SharedPreferences>(sharedPreferences);
@@ -55,41 +54,41 @@ Future<void> setupDependencyInjection() async {
   getIt.registerLazySingleton<PostsDataSource>(
     () => PostsDataSourceImpl.instance,
   );
-  
+
   // Register Auth service
   getIt.registerLazySingleton<IAuthService>(
     () => AuthServiceImpl(),
   );
-  
+
   // ===== Notifications Feature DI =====
-  
+
   // DataSource 등록
   getIt.registerLazySingleton<IRemoteNotificationDatasource>(
     () => FirebaseNotificationDatasource(
       firestore: FirebaseFirestore.instance,
     ),
   );
-  
+
   getIt.registerLazySingleton<ILocalNotificationDatasource>(
     () => SharedPrefsNotificationDatasource(
       prefs: getIt<SharedPreferences>(),
     ),
   );
-  
+
   // Cross-feature DataSource (임시 Mock 구현)
   getIt.registerLazySingleton<IPostDatasource>(
     () => MockPostDatasource(),
   );
-  
+
   getIt.registerLazySingleton<IChatDatasource>(
     () => MockChatDatasource(),
   );
-  
+
   // Mapper 등록
   getIt.registerLazySingleton<NotificationMapper>(
     () => NotificationMapper(),
   );
-  
+
   // Register Repository implementation
   getIt.registerLazySingleton<INotificationRepository>(
     () => NotificationRepositoryImpl(
@@ -97,52 +96,52 @@ Future<void> setupDependencyInjection() async {
       localDatasource: getIt<ILocalNotificationDatasource>(),
     ),
   );
-  
+
   // Register UseCases
   getIt.registerFactory<GetUserNotificationsUseCase>(
     () => GetUserNotificationsUseCase(getIt<INotificationRepository>()),
   );
-  
+
   getIt.registerFactory<MarkAsReadUseCase>(
     () => MarkAsReadUseCase(getIt<INotificationRepository>()),
   );
-  
+
   getIt.registerFactory<ProcessVoteNotificationUseCase>(
     () => ProcessVoteNotificationUseCase(getIt<INotificationRepository>()),
   );
-  
+
   getIt.registerFactory<SendNotificationUseCase>(
     () => SendNotificationUseCase(getIt<INotificationRepository>()),
   );
-  
+
   getIt.registerFactory<WatchUnreadCountUseCase>(
     () => WatchUnreadCountUseCase(getIt<INotificationRepository>()),
   );
-  
+
   // Register new Clean Architecture UseCases
   getIt.registerFactory<InitializeNotificationsUseCase>(
     () => InitializeNotificationsUseCase(getIt<INotificationRepository>()),
   );
-  
+
   getIt.registerFactory<StartNotificationListeningUseCase>(
     () => StartNotificationListeningUseCase(getIt<INotificationRepository>()),
   );
-  
+
   getIt.registerFactory<StopNotificationListeningUseCase>(
     () => StopNotificationListeningUseCase(getIt<INotificationRepository>()),
   );
-  
+
   getIt.registerFactory<GetPostDataUseCase>(
     () => GetPostDataUseCase(getIt<INotificationRepository>()),
   );
-  
-  // Register UI Delegate
-  getIt.registerLazySingleton<INotificationUIDelegate>(
-    () => NotificationUIManager.instance,
+
+  // Register UI Delegate for Voting Feature
+  getIt.registerLazySingleton<IVoteUIDelegate>(
+    () => VoteUIManager.instance,
   );
-  
+
   // GlobalNotificationManager is now registered in NotificationModule
-  
+
   // Register Services
   getIt.registerLazySingleton<NotificationService>(
     () => NotificationService(
@@ -150,12 +149,12 @@ Future<void> setupDependencyInjection() async {
       chatDatasource: getIt<IChatDatasource>(),
     ),
   );
-  
+
   getIt.registerLazySingleton<TargetAudienceService>(
     () => TargetAudienceService(
       postDatasource: getIt<IPostDatasource>(),
     ),
   );
-  
+
   // Add more dependency registrations here as needed
 }

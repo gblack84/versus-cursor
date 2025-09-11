@@ -3,27 +3,26 @@ import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 /// AI Chat Controller with Streaming Support
-/// 
+///
 /// This controller manages the chat state for AI conversations,
 /// including support for streaming messages using TextStreamMessage.
 class AIChatController extends InMemoryChatController {
-  
   // Gemini AI model instance
   GenerativeModel? _model;
-  
+
   // Current streaming subscription
   StreamSubscription? _currentStreamSubscription;
-  
+
   // Current streaming message ID
   String? _currentStreamMessageId;
-  
+
   // User ID constants
   static const String aiUserId = 'ai_assistant';
   static const String aiUserName = 'AI 피클';
-  
+
   /// Initialize the controller with optional initial messages
   AIChatController({List<Message>? messages}) : super(messages: messages);
-  
+
   /// Initialize Gemini AI model
   void initializeAI(String apiKey) {
     _model = GenerativeModel(
@@ -35,7 +34,7 @@ class AIChatController extends InMemoryChatController {
       ),
     );
   }
-  
+
   /// Send a query to AI and receive streaming response
   Future<void> sendAIQuery({
     required String query,
@@ -44,10 +43,10 @@ class AIChatController extends InMemoryChatController {
     if (_model == null) {
       throw Exception('AI model not initialized. Call initializeAI first.');
     }
-    
+
     // Cancel any existing stream
     await cancelStream();
-    
+
     // Add user message
     final userMessage = Message.text(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -56,7 +55,7 @@ class AIChatController extends InMemoryChatController {
       createdAt: DateTime.now(),
     );
     await insertMessage(userMessage);
-    
+
     // Create streaming message placeholder
     _currentStreamMessageId = 'stream_${DateTime.now().millisecondsSinceEpoch}';
     final streamMessage = Message.textStream(
@@ -66,19 +65,19 @@ class AIChatController extends InMemoryChatController {
       createdAt: DateTime.now(),
     );
     await insertMessage(streamMessage);
-    
+
     // Start AI streaming
     try {
       final content = [Content.text(query)];
       final response = _model!.generateContentStream(content);
-      
+
       String accumulatedText = '';
-      
+
       _currentStreamSubscription = response.listen(
         (chunk) {
           if (chunk.text != null) {
             accumulatedText += chunk.text!;
-            
+
             // Update the message with accumulated text
             updateMessage(
               streamMessage,
@@ -95,7 +94,7 @@ class AIChatController extends InMemoryChatController {
           // Stream completed
           _currentStreamSubscription = null;
           _currentStreamMessageId = null;
-          
+
           // Finalize the message as a regular text message
           if (accumulatedText.isNotEmpty) {
             updateMessage(
@@ -114,7 +113,7 @@ class AIChatController extends InMemoryChatController {
           // Handle streaming error
           _currentStreamSubscription = null;
           _currentStreamMessageId = null;
-          
+
           // Update message with error state
           updateMessage(
             streamMessage,
@@ -131,7 +130,7 @@ class AIChatController extends InMemoryChatController {
     } catch (e) {
       // Handle initialization error
       _currentStreamMessageId = null;
-      
+
       // Add error message
       final errorMessage = Message.text(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -143,13 +142,13 @@ class AIChatController extends InMemoryChatController {
       await insertMessage(errorMessage);
     }
   }
-  
+
   /// Cancel the current streaming operation
   Future<void> cancelStream() async {
     if (_currentStreamSubscription != null) {
       await _currentStreamSubscription!.cancel();
       _currentStreamSubscription = null;
-      
+
       // Mark the streaming message as cancelled
       if (_currentStreamMessageId != null) {
         final messages = this.messages;
@@ -160,7 +159,7 @@ class AIChatController extends InMemoryChatController {
             authorId: aiUserId,
           ),
         );
-        
+
         if (streamMessage is TextStreamMessage) {
           updateMessage(
             streamMessage,
@@ -174,14 +173,14 @@ class AIChatController extends InMemoryChatController {
           );
         }
       }
-      
+
       _currentStreamMessageId = null;
     }
   }
-  
+
   /// Check if streaming is currently active
   bool get isStreaming => _currentStreamSubscription != null;
-  
+
   @override
   void dispose() {
     cancelStream();

@@ -3,7 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '/core/design_system/design_system.dart';
 
 /// 투표 카드 메시지의 헤더 컴포넌트
-/// 
+///
 /// 프로필 이미지, 발신자 정보, 상태 배지를 표시합니다.
 class VoteCardHeader extends StatelessWidget {
   final bool isMe;
@@ -24,13 +24,12 @@ class VoteCardHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // isMe에 따라 표시할 이름과 프로필 결정
-    final displayName = isMe 
-        ? (currentUserName ?? '나')
-        : (senderDisplayName ?? '알 수 없는 사용자');
-    
+    final displayName =
+        isMe ? (currentUserName ?? '나') : (senderDisplayName ?? '알 수 없는 사용자');
+
     // 프로필 이미지도 isMe에 따라 결정
     final hasProfileImage = senderProfileImageUrl?.isNotEmpty ?? false;
-    
+
     return Row(
       children: [
         // 프로필 이미지
@@ -45,7 +44,7 @@ class VoteCardHeader extends StatelessWidget {
                 ? CachedNetworkImageProvider(senderProfileImageUrl!)
                 : null,
             backgroundColor: hasProfileImage && !isMe
-                ? Colors.transparent 
+                ? Colors.transparent
                 : VersusColors.borderLight,
             child: !hasProfileImage || isMe
                 ? Icon(
@@ -57,7 +56,7 @@ class VoteCardHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        
+
         // 중간 영역: Pikle 브랜딩 + 발신자 정보
         Expanded(
           child: Column(
@@ -74,9 +73,7 @@ class VoteCardHeader extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     // isMe에 따라 다른 텍스트 표시
-                    isMe
-                        ? '내가 만든 피클' 
-                        : 'Pikle 도착!',
+                    isMe ? '내가 만든 피클' : 'Pikle 도착!',
                     style: VersusTextStyles.labelMedium.copyWith(
                       color: VersusColors.textPrimary,
                       fontWeight: FontWeight.w600,
@@ -85,7 +82,7 @@ class VoteCardHeader extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 2),
-              
+
               // 발신자 정보
               Padding(
                 padding: const EdgeInsets.only(left: 4),
@@ -100,9 +97,7 @@ class VoteCardHeader extends StatelessWidget {
                         ),
                       ),
                       TextSpan(
-                        text: isMe
-                            ? ' • 투표 생성됨'
-                            : '님이 물어봅니다',
+                        text: isMe ? ' • 투표 생성됨' : '님이 물어봅니다',
                         style: VersusTextStyles.labelSmall.copyWith(
                           color: VersusColors.textSecondary,
                         ),
@@ -114,7 +109,7 @@ class VoteCardHeader extends StatelessWidget {
             ],
           ),
         ),
-        
+
         // 오른쪽: 상태 배지
         Container(
           padding: const EdgeInsets.symmetric(

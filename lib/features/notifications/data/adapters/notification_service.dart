@@ -7,29 +7,29 @@ import '../datasources/i_chat_datasource.dart';
 import '/core/utils/logger.dart';
 
 /// 실시간 투표 알림을 관리하는 서비스
-/// 
+///
 /// Firebase Firestore의 notifications 컬렉션을 감시하여
 /// 새로운 투표 알림이 도착하면 UI에 표시합니다.
 class NotificationService {
   NotificationService({
     required INotificationRepository repository,
     IChatDatasource? chatDatasource,
-  }) : _repository = repository,
-       _chatDatasource = chatDatasource;
+  })  : _repository = repository,
+        _chatDatasource = chatDatasource;
 
   // Repository 리스너
   StreamSubscription<List<Notification>>? _notificationListener;
-  
+
   // 알림 스트림 (GlobalNotificationManager를 위한)
-  final StreamController<List<Notification>> _notificationsStreamController = 
+  final StreamController<List<Notification>> _notificationsStreamController =
       StreamController<List<Notification>>.broadcast();
-  
-  Stream<List<Notification>> get notificationsStream => 
+
+  Stream<List<Notification>> get notificationsStream =>
       _notificationsStreamController.stream;
-  
+
   // Repository 의존성
   final INotificationRepository _repository;
-  
+
   // Chat datasource 의존성 (optional - Chat feature에서 제공)
   final IChatDatasource? _chatDatasource;
 
@@ -37,18 +37,17 @@ class NotificationService {
   void startListening(String userId) {
     // 기존 리스너 정리
     stopListening();
-    
-    Logger.info('알림 리스닝 시작 - 사용자: ${Logger.maskSensitive(userId)}', tag: 'NotificationService');
-    
+
+    Logger.info('알림 리스닝 시작 - 사용자: ${Logger.maskSensitive(userId)}',
+        tag: 'NotificationService');
+
     // Repository를 통한 알림 스트림 구독
-    Logger.logOnce(
-      'notif_query_$userId',
-      '알림 쿼리 시작: userId=${Logger.maskSensitive(userId)}, type=voting_request',
-      tag: 'Repository',
-      level: LogLevel.INFO
-    );
-    
-    _notificationListener = _repository.watchUserNotifications(
+    Logger.logOnce('notif_query_$userId',
+        '알림 쿼리 시작: userId=${Logger.maskSensitive(userId)}, type=voting_request',
+        tag: 'Repository', level: LogLevel.INFO);
+
+    _notificationListener = _repository
+        .watchUserNotifications(
       userId: userId,
       filter: NotificationFilter(
         type: NotificationType.votingRequest,
@@ -57,7 +56,8 @@ class NotificationService {
         sortBy: 'expiryTime',
         sortOrder: SortOrder.ascending,
       ),
-    ).listen(
+    )
+        .listen(
       _handleNotificationChanges,
       onError: (error) {
         Logger.error('리스너 오류', error: error, tag: 'NotificationService');
@@ -76,23 +76,21 @@ class NotificationService {
   /// Repository 알림 변경 처리
   void _handleNotificationChanges(List<Notification> notifications) {
     // 알림 요약 정보는 DEBUG 레벨로
-    Logger.debug('알림 변경: ${notifications.length}개 알림', tag: 'NotificationService');
-    
+    Logger.debug('알림 변경: ${notifications.length}개 알림',
+        tag: 'NotificationService');
+
     // 새로운 알림만 로깅 (알림별 한 번만)
     for (var notification in notifications) {
       Logger.logOnce(
-        'notif_doc_${notification.id}',
-        '🔔 새 알림: ${notification.id}',
-        tag: 'NotificationService',
-        level: LogLevel.INFO
-      );
+          'notif_doc_${notification.id}', '🔔 새 알림: ${notification.id}',
+          tag: 'NotificationService', level: LogLevel.INFO);
     }
-    
+
     // GlobalNotificationManager에 알림 전달
     _notificationsStreamController.add(notifications);
-    Logger.debug('GlobalNotificationManager에 ${notifications.length}개 알림 전달', tag: 'NotificationService');
+    Logger.debug('GlobalNotificationManager에 ${notifications.length}개 알림 전달',
+        tag: 'NotificationService');
   }
-
 
   /// 사용자의 읽지 않은 알림 수 가져오기
   Stream<int> getUnreadNotificationCount(String userId) {
@@ -115,10 +113,11 @@ class NotificationService {
     required PostsModel post,
   }) async {
     if (_chatDatasource == null) {
-      Logger.warning('Chat datasource not available', tag: 'NotificationService');
+      Logger.warning('Chat datasource not available',
+          tag: 'NotificationService');
       return;
     }
-    
+
     try {
       await _chatDatasource!.createVoteRequestMessage(
         senderId: senderId,
@@ -140,10 +139,11 @@ class NotificationService {
     required String status,
   }) async {
     if (_chatDatasource == null) {
-      Logger.warning('Chat datasource not available', tag: 'NotificationService');
+      Logger.warning('Chat datasource not available',
+          tag: 'NotificationService');
       return;
     }
-    
+
     try {
       await _chatDatasource!.updateVoteMessageStatus(
         postId: postId,
@@ -152,7 +152,8 @@ class NotificationService {
       );
       Logger.debug('AI 채팅 메시지 상태 업데이트 완료: $status', tag: 'NotificationService');
     } catch (e) {
-      Logger.error('AI 채팅 메시지 상태 업데이트 오류', error: e, tag: 'NotificationService');
+      Logger.error('AI 채팅 메시지 상태 업데이트 오류',
+          error: e, tag: 'NotificationService');
     }
   }
 }

@@ -8,7 +8,8 @@ import '../../domain/models/post_metrics.dart';
 import '../../domain/repositories/i_post_repository.dart';
 import '../utils/firestore_util.dart'; // Posts feature-specific Firestore utils
 // Removed backend dependencies - using local query functions
-import '/features/posts/data/models/backend_post_models.dart' hide RankedPostsModel;
+import '/features/posts/data/models/backend_post_models.dart'
+    hide RankedPostsModel;
 import '../adapters/posts_model_adapter.dart';
 import '../models/posts_model.dart' as feature_posts;
 import '/core/utils/migration_logger.dart';
@@ -17,20 +18,22 @@ import '/features/posts/domain/models/ranked_posts_model.dart' as domain;
 /// Implementation of post repository using Firestore
 class PostRepositoryImpl implements IPostRepository {
   static const String _collection = 'posts';
-  
+
   // Singleton instance
   static PostRepositoryImpl? _instance;
-  static PostRepositoryImpl get instance => _instance ??= PostRepositoryImpl._();
-  
+  static PostRepositoryImpl get instance =>
+      _instance ??= PostRepositoryImpl._();
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
+
   // Private constructor for singleton
   PostRepositoryImpl._();
-  
+
   // Public constructor for DI (if needed)
   PostRepositoryImpl();
-  
-  CollectionReference get _postsCollection => _firestore.collection(_collection);
+
+  CollectionReference get _postsCollection =>
+      _firestore.collection(_collection);
 
   @override
   Stream<List<Post>> getAllPosts() {
@@ -55,7 +58,8 @@ class PostRepositoryImpl implements IPostRepository {
       final doc = await _postsCollection.doc(postId).get();
       if (doc.exists) {
         return Post.fromJson(
-          PostsFirestoreUtil.mapFromFirestore(doc.data() as Map<String, dynamic>),
+          PostsFirestoreUtil.mapFromFirestore(
+              doc.data() as Map<String, dynamic>),
           doc.id,
         );
       }
@@ -67,24 +71,23 @@ class PostRepositoryImpl implements IPostRepository {
 
   @override
   Stream<Post?> getPostStream(String postId) {
-    return _postsCollection
-        .doc(postId)
-        .snapshots()
-        .map((doc) {
-          if (doc.exists) {
-            return Post.fromJson(
-              PostsFirestoreUtil.mapFromFirestore(doc.data() as Map<String, dynamic>),
-              doc.id,
-            );
-          }
-          return null;
-        });
+    return _postsCollection.doc(postId).snapshots().map((doc) {
+      if (doc.exists) {
+        return Post.fromJson(
+          PostsFirestoreUtil.mapFromFirestore(
+              doc.data() as Map<String, dynamic>),
+          doc.id,
+        );
+      }
+      return null;
+    });
   }
 
   @override
   Future<String> createPost(Post post) async {
     try {
-      final docRef = await _postsCollection.add(PostsFirestoreUtil.mapToFirestore(post.toJson()));
+      final docRef = await _postsCollection
+          .add(PostsFirestoreUtil.mapToFirestore(post.toJson()));
       return docRef.id;
     } catch (e) {
       throw Exception('Failed to create post: $e');
@@ -94,7 +97,9 @@ class PostRepositoryImpl implements IPostRepository {
   @override
   Future<void> updatePost(String postId, Post post) async {
     try {
-      await _postsCollection.doc(postId).update(PostsFirestoreUtil.mapToFirestore(post.toJson()));
+      await _postsCollection
+          .doc(postId)
+          .update(PostsFirestoreUtil.mapToFirestore(post.toJson()));
     } catch (e) {
       throw Exception('Failed to update post: $e');
     }
@@ -112,7 +117,9 @@ class PostRepositoryImpl implements IPostRepository {
   @override
   Future<void> updateVoteData(String postId, VoteData voteData) async {
     try {
-      await _postsCollection.doc(postId).update(PostsFirestoreUtil.mapToFirestore(voteData.toJson()));
+      await _postsCollection
+          .doc(postId)
+          .update(PostsFirestoreUtil.mapToFirestore(voteData.toJson()));
     } catch (e) {
       throw Exception('Failed to update vote data: $e');
     }
@@ -123,7 +130,7 @@ class PostRepositoryImpl implements IPostRepository {
     try {
       final batch = _firestore.batch();
       final postRef = _postsCollection.doc(postId);
-      
+
       if (option == 'A') {
         batch.update(postRef, {
           'votedUserIdsA': FieldValue.arrayUnion([userId]),
@@ -141,7 +148,7 @@ class PostRepositoryImpl implements IPostRepository {
           'actualTotalVotes': FieldValue.increment(1),
         });
       }
-      
+
       await batch.commit();
     } catch (e) {
       throw Exception('Failed to cast vote: $e');
@@ -153,7 +160,7 @@ class PostRepositoryImpl implements IPostRepository {
     try {
       final batch = _firestore.batch();
       final postRef = _postsCollection.doc(postId);
-      
+
       if (option == 'A') {
         batch.update(postRef, {
           'votedUserIdsA': FieldValue.arrayRemove([userId]),
@@ -171,7 +178,7 @@ class PostRepositoryImpl implements IPostRepository {
           'actualTotalVotes': FieldValue.increment(-1),
         });
       }
-      
+
       await batch.commit();
     } catch (e) {
       throw Exception('Failed to remove vote: $e');
@@ -230,14 +237,13 @@ class PostRepositoryImpl implements IPostRepository {
     int limit = 10,
   }) async {
     try {
-      Query query = _postsCollection
-          .orderBy('createdAt', descending: true)
-          .limit(limit);
-      
+      Query query =
+          _postsCollection.orderBy('createdAt', descending: true).limit(limit);
+
       if (lastDocument != null) {
         query = query.startAfterDocument(lastDocument);
       }
-      
+
       final snapshot = await query.get();
       return _convertToPostList(snapshot);
     } catch (e) {
@@ -259,9 +265,12 @@ class PostRepositoryImpl implements IPostRepository {
   }
 
   @override
-  Future<void> updatePostStats(String postId, Map<String, dynamic> stats) async {
+  Future<void> updatePostStats(
+      String postId, Map<String, dynamic> stats) async {
     try {
-      await _postsCollection.doc(postId).update(PostsFirestoreUtil.mapToFirestore(stats));
+      await _postsCollection
+          .doc(postId)
+          .update(PostsFirestoreUtil.mapToFirestore(stats));
     } catch (e) {
       throw Exception('Failed to update post stats: $e');
     }
@@ -381,7 +390,7 @@ class PostRepositoryImpl implements IPostRepository {
         final data = doc.data() as Map<String, dynamic>;
         final votedUserIdsA = List<String>.from(data['votedUserIdsA'] ?? []);
         final votedUserIdsB = List<String>.from(data['votedUserIdsB'] ?? []);
-        
+
         if (votedUserIdsA.contains(userId)) return 'A';
         if (votedUserIdsB.contains(userId)) return 'B';
       }
@@ -401,7 +410,7 @@ class PostRepositoryImpl implements IPostRepository {
         feature: 'posts',
         isLegacy: false,
       );
-      
+
       return Post.fromJson(
         PostsFirestoreUtil.mapFromFirestore(doc.data() as Map<String, dynamic>),
         doc.id,
@@ -522,7 +531,7 @@ class PostRepositoryImpl implements IPostRepository {
         limit: limit,
         singleRecord: singleRecord,
       );
-  
+
   // MIGRATED: RankedPosts queries (from backend.dart lines 668-702)
   Future<int> queryRankedPostsModelCount({
     DocumentReference? parent,
@@ -566,13 +575,13 @@ class PostRepositoryImpl implements IPostRepository {
   // ============= ADAPTER METHODS (NEW) =============
   // These methods provide access to the new domain models
   // while maintaining backward compatibility with legacy code
-  
+
   /// Get post as separate domain models using Adapter
   Future<PostBundle?> getPostBundleById(String postId) async {
     try {
       final doc = await _postsCollection.doc(postId).get();
       if (!doc.exists) return null;
-      
+
       // Log adapter conversion
       MigrationLogger().logConversion(
         from: 'PostsModel',
@@ -580,38 +589,38 @@ class PostRepositoryImpl implements IPostRepository {
         feature: 'posts',
         metadata: {'postId': postId},
       );
-      
+
       final postsModel = feature_posts.PostsModel.fromSnapshot(doc);
       return PostsModelAdapter.toDomainModels(postsModel);
     } catch (e) {
       throw Exception('Failed to get post bundle: $e');
     }
   }
-  
+
   /// Get post core data only
   Future<PostCore?> getPostCore(String postId) async {
     final bundle = await getPostBundleById(postId);
     return bundle?.core;
   }
-  
+
   /// Get post content only
   Future<PostContent?> getPostContent(String postId) async {
     final bundle = await getPostBundleById(postId);
     return bundle?.content;
   }
-  
+
   /// Get post voting data only
   Future<PostVoting?> getPostVoting(String postId) async {
     final bundle = await getPostBundleById(postId);
     return bundle?.voting;
   }
-  
+
   /// Get post metrics only
   Future<PostMetrics?> getPostMetrics(String postId) async {
     final bundle = await getPostBundleById(postId);
     return bundle?.metrics;
   }
-  
+
   /// Create post from domain models
   Future<String> createPostFromBundle(PostBundle bundle) async {
     try {
@@ -623,7 +632,7 @@ class PostRepositoryImpl implements IPostRepository {
       throw Exception('Failed to create post from bundle: $e');
     }
   }
-  
+
   /// Update post using domain models
   Future<void> updatePostFromBundle(String postId, PostBundle bundle) async {
     try {
@@ -634,20 +643,20 @@ class PostRepositoryImpl implements IPostRepository {
       throw Exception('Failed to update post from bundle: $e');
     }
   }
-  
+
   /// Stream of post bundles
   Stream<List<PostBundle>> getPostBundlesStream() {
     return _postsCollection
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            final postsModel = feature_posts.PostsModel.fromSnapshot(doc);
-            return PostsModelAdapter.toDomainModels(postsModel);
-          }).toList();
-        });
+      return snapshot.docs.map((doc) {
+        final postsModel = feature_posts.PostsModel.fromSnapshot(doc);
+        return PostsModelAdapter.toDomainModels(postsModel);
+      }).toList();
+    });
   }
-  
+
   /// Get posts by user as bundles
   Stream<List<PostBundle>> getPostBundlesByUserId(String userId) {
     return _postsCollection
@@ -655,10 +664,10 @@ class PostRepositoryImpl implements IPostRepository {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            final postsModel = feature_posts.PostsModel.fromSnapshot(doc);
-            return PostsModelAdapter.toDomainModels(postsModel);
-          }).toList();
-        });
+      return snapshot.docs.map((doc) {
+        final postsModel = feature_posts.PostsModel.fromSnapshot(doc);
+        return PostsModelAdapter.toDomainModels(postsModel);
+      }).toList();
+    });
   }
 }

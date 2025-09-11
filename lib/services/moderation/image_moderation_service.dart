@@ -28,13 +28,13 @@ class ImageModerationService {
       });
 
       final data = response.data;
-      
+
       // 디버깅용 로그
       print('[ImageModerationService] Cloud Function 응답:');
       print('  - isAppropriate: ${data['isAppropriate']}');
       print('  - reason: ${data['reason']}');
       print('  - hasText: ${data['hasText']}');
-      
+
       return ModerationResult(
         isAppropriate: data['isAppropriate'] ?? false,
         reason: data['reason'] ?? '',
@@ -57,7 +57,7 @@ class ImageModerationService {
 
     for (int i = 0; i < imageFiles.length; i++) {
       onProgress?.call(i + 1, imageFiles.length);
-      
+
       final result = await checkImage(
         imageFile: imageFiles[i],
         box: box,
@@ -73,7 +73,7 @@ class ImageModerationService {
     try {
       final bytes = await imageFile.readAsBytes();
       final image = img.decodeImage(bytes);
-      
+
       if (image == null) {
         throw Exception('이미지 디코딩 실패');
       }
@@ -81,7 +81,7 @@ class ImageModerationService {
       // 검열용으로 리사이즈 (최대 800px - 텍스트 가독성 향상)
       const maxSize = 800;
       img.Image resized;
-      
+
       if (image.width > maxSize || image.height > maxSize) {
         if (image.width > image.height) {
           resized = img.copyResize(image, width: maxSize);

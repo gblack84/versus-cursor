@@ -1,4 +1,3 @@
-
 import '../image/domain/types/image_types.dart';
 
 class BoxCalculatorImpl {

@@ -1,6 +1,6 @@
 /// UserSettings Domain Model
 /// Clean Architecture - Domain Layer Entity
-/// 
+///
 /// This model contains user preferences, notification settings,
 /// and subscription information, separated from profile data
 /// and authentication for better separation of concerns.
@@ -20,17 +20,17 @@ class UserSettings {
 
   // Core Fields
   final String userId; // Foreign key to AuthUser.uid
-  
+
   // Premium Status
   final bool isPremiumUser;
-  
+
   // Notification Preferences
   final bool receiveRankUpdateNotifications;
   final bool receiveTitleUpdateNotifications;
   final bool receiveVoteNotifications;
   final bool receiveCommentNotifications;
   final bool receiveFriendNotifications;
-  
+
   // Complex Settings
   final Map<String, dynamic> subscription; // Subscription details
   final Map<String, dynamic> stats; // User statistics preferences
@@ -41,8 +41,10 @@ class UserSettings {
     return UserSettings(
       userId: userId,
       isPremiumUser: data['isPremiumUser'] ?? false,
-      receiveRankUpdateNotifications: data['receiveRankUpdateNotifications'] ?? true,
-      receiveTitleUpdateNotifications: data['receiveTitleUpdateNotifications'] ?? true,
+      receiveRankUpdateNotifications:
+          data['receiveRankUpdateNotifications'] ?? true,
+      receiveTitleUpdateNotifications:
+          data['receiveTitleUpdateNotifications'] ?? true,
       receiveVoteNotifications: data['receiveVoteNotifications'] ?? true,
       receiveCommentNotifications: data['receiveCommentNotifications'] ?? true,
       receiveFriendNotifications: data['receiveFriendNotifications'] ?? true,
@@ -96,11 +98,16 @@ class UserSettings {
     return UserSettings(
       userId: userId ?? this.userId,
       isPremiumUser: isPremiumUser ?? this.isPremiumUser,
-      receiveRankUpdateNotifications: receiveRankUpdateNotifications ?? this.receiveRankUpdateNotifications,
-      receiveTitleUpdateNotifications: receiveTitleUpdateNotifications ?? this.receiveTitleUpdateNotifications,
-      receiveVoteNotifications: receiveVoteNotifications ?? this.receiveVoteNotifications,
-      receiveCommentNotifications: receiveCommentNotifications ?? this.receiveCommentNotifications,
-      receiveFriendNotifications: receiveFriendNotifications ?? this.receiveFriendNotifications,
+      receiveRankUpdateNotifications:
+          receiveRankUpdateNotifications ?? this.receiveRankUpdateNotifications,
+      receiveTitleUpdateNotifications: receiveTitleUpdateNotifications ??
+          this.receiveTitleUpdateNotifications,
+      receiveVoteNotifications:
+          receiveVoteNotifications ?? this.receiveVoteNotifications,
+      receiveCommentNotifications:
+          receiveCommentNotifications ?? this.receiveCommentNotifications,
+      receiveFriendNotifications:
+          receiveFriendNotifications ?? this.receiveFriendNotifications,
       subscription: subscription ?? this.subscription,
       stats: stats ?? this.stats,
       privacySettings: privacySettings ?? this.privacySettings,
@@ -108,7 +115,7 @@ class UserSettings {
   }
 
   /// Check if user has any notification enabled
-  bool get hasAnyNotificationEnabled => 
+  bool get hasAnyNotificationEnabled =>
       receiveRankUpdateNotifications ||
       receiveTitleUpdateNotifications ||
       receiveVoteNotifications ||
@@ -117,12 +124,12 @@ class UserSettings {
 
   /// Get all notification settings as a map
   Map<String, bool> get notificationSettings => {
-    'rankUpdates': receiveRankUpdateNotifications,
-    'titleUpdates': receiveTitleUpdateNotifications,
-    'votes': receiveVoteNotifications,
-    'comments': receiveCommentNotifications,
-    'friends': receiveFriendNotifications,
-  };
+        'rankUpdates': receiveRankUpdateNotifications,
+        'titleUpdates': receiveTitleUpdateNotifications,
+        'votes': receiveVoteNotifications,
+        'comments': receiveCommentNotifications,
+        'friends': receiveFriendNotifications,
+      };
 
   @override
   bool operator ==(Object other) {

@@ -1,5 +1,5 @@
 /// Backend model aliases for Clean Architecture compatibility
-/// 
+///
 /// This file provides aliases and adapters between backend models and feature models
 /// to maintain backward compatibility while following Clean Architecture principles.
 

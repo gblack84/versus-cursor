@@ -11,7 +11,8 @@ import 'firebase_auth_manager.dart';
 
 export 'firebase_auth_manager.dart';
 export 'base_auth_user_provider.dart';
-export 'firebase_user_provider.dart' show versusSpaceFirebaseUserStream, VersusSpaceFirebaseUser;
+export 'firebase_user_provider.dart'
+    show versusSpaceFirebaseUserStream, VersusSpaceFirebaseUser;
 
 final _authManager = FirebaseAuthManager();
 FirebaseAuthManager get authManager => _authManager;

@@ -64,15 +64,14 @@ class CreatorInfo extends Equatable {
       displayName: json['display_name'] ?? json['displayName'] ?? '',
       photoUrl: json['photo_url'] ?? json['photoUrl'] ?? '',
       phoneNumber: json['phone_number'] ?? json['phoneNumber'] ?? '',
-      createdTime: (json['created_time'] ?? json['createdTime'] as Timestamp?)?.toDate(),
+      createdTime:
+          (json['created_time'] ?? json['createdTime'] as Timestamp?)?.toDate(),
     );
   }
 
   /// Checks if this creator has complete profile information
-  bool get hasCompleteProfile => 
-      displayName.isNotEmpty && 
-      photoUrl.isNotEmpty && 
-      uid.isNotEmpty;
+  bool get hasCompleteProfile =>
+      displayName.isNotEmpty && photoUrl.isNotEmpty && uid.isNotEmpty;
 
   /// Gets display name or fallback to email
   String get displayNameOrEmail => displayName.isNotEmpty ? displayName : email;

@@ -57,8 +57,7 @@ class _ChatListWidgetState extends State<ChatListWidget> {
         child: StreamBuilder<List<ChatsModel>>(
           // Repository를 통한 채팅 목록 조회
           stream: GetIt.instance<IChatRepository>().getChatsByUserId(
-            currentUserUid
-                .orderBy('lastMessageAt', descending: true),
+            currentUserUid.orderBy('lastMessageAt', descending: true),
           ),
           builder: (context, snapshot) {
             // 로딩 중
@@ -129,9 +128,9 @@ class _ChatListWidgetState extends State<ChatListWidget> {
 
   Widget _buildChatItem(ChatsModel chat) {
     // AI 채팅방인지 확인
-    final isAIChat = chat.participantIds.contains('ai_assistant') || 
-                     chat.chatType == 'aiChat';
-    
+    final isAIChat = chat.participantIds.contains('ai_assistant') ||
+        chat.chatType == 'aiChat';
+
     return InkWell(
       onTap: () {
         // 채팅 상세 페이지로 이동
@@ -140,7 +139,7 @@ class _ChatListWidgetState extends State<ChatListWidget> {
           extra: <String, dynamic>{
             'chatDocument': chat,
             kTransitionInfoKey: TransitionInfo(
-              hasTransition: false,  // 애니메이션 제거로 스크롤 점프 문제 해결
+              hasTransition: false, // 애니메이션 제거로 스크롤 점프 문제 해결
             ),
           },
         );
@@ -164,14 +163,14 @@ class _ChatListWidgetState extends State<ChatListWidget> {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: isAIChat 
-                      ? Colors.purple.withValues(alpha: 0.1)  // AI 채팅방은 보라색 배경
+                  color: isAIChat
+                      ? Colors.purple.withValues(alpha: 0.1) // AI 채팅방은 보라색 배경
                       : VersusColors.primaryWithAlpha(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
                   child: Icon(
-                    isAIChat ? Icons.smart_toy : Icons.person,  // AI는 로봇 아이콘
+                    isAIChat ? Icons.smart_toy : Icons.person, // AI는 로봇 아이콘
                     color: isAIChat ? Colors.purple : VersusColors.primary,
                     size: 28,
                   ),
@@ -188,9 +187,9 @@ class _ChatListWidgetState extends State<ChatListWidget> {
                       children: [
                         Text(
                           isAIChat
-                              ? 'AI 피클'  // AI 채팅방 이름
-                              : (chat.chatName.isNotEmpty 
-                                  ? chat.chatName 
+                              ? 'AI 피클' // AI 채팅방 이름
+                              : (chat.chatName.isNotEmpty
+                                  ? chat.chatName
                                   : '채팅'),
                           style: VersusTextStyles.buttonMedium.copyWith(
                             color: Colors.black,
@@ -211,8 +210,9 @@ class _ChatListWidgetState extends State<ChatListWidget> {
                         Expanded(
                           child: Text(
                             // AI 채팅방은 더 깔끔한 메시지 표시
-                            isAIChat && chat.lastMessageContent.startsWith('[투표]')
-                                ? chat.lastMessageContent  // 이미 포맷팅된 메시지
+                            isAIChat &&
+                                    chat.lastMessageContent.startsWith('[투표]')
+                                ? chat.lastMessageContent // 이미 포맷팅된 메시지
                                 : chat.lastMessageContent,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,

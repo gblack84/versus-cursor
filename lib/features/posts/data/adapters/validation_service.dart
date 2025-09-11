@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '/features/posts/data/adapters/moderation/ai_moderation_service.dart';
-import '/features/posts/data/adapters/moderation/models/moderation_result.dart' as ai;
+import '/features/posts/data/adapters/moderation/models/moderation_result.dart'
+    as ai;
 import '/features/posts/domain/constants/field_styles.dart';
 import '/features/auth/data/adapters/auth_util.dart';
 import 'package:provider/provider.dart';
@@ -89,14 +90,15 @@ class ValidationService {
       );
 
       // PROCEED_WITH_SUGGESTION 케이스 처리
-      if (moderationResult.geminiResult?.severity == 'warning' && context != null) {
+      if (moderationResult.geminiResult?.severity == 'warning' &&
+          context != null) {
         // 개선 제안이 있는 경우
         final proceed = await showImprovementDialog(
           context,
           moderationResult.geminiResult!.reason,
           moderationResult.geminiResult!.suggestions,
         );
-        
+
         if (!proceed) {
           print('[ValidationService] 사용자가 수정하기를 선택함');
           return ValidationResult(
@@ -158,7 +160,7 @@ class ValidationService {
         violations: violations,
         geminiResult: geminiResult,
       );
-      
+
       await AIModerationService.showModerationDialog(context, moderationResult);
     } else {
       // 기본 다이얼로그 표시
@@ -175,9 +177,10 @@ class ValidationService {
                 const Text('다음 항목에서 부적절한 내용이 감지되었습니다:'),
                 const SizedBox(height: 10),
                 ...violations.map((violation) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Text('• $violation', style: const TextStyle(color: Colors.red)),
-                )),
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Text('• $violation',
+                          style: const TextStyle(color: Colors.red)),
+                    )),
                 const SizedBox(height: 10),
                 const Text('내용을 수정한 후 다시 시도해주세요.'),
               ],
@@ -226,7 +229,8 @@ class ValidationService {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('✓ 제안:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text('✓ 제안:',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 4),
                       Text(description),
                     ],
@@ -306,7 +310,8 @@ class ValidationEmptyResult {
     required this.isBTitleEmpty,
   });
 
-  bool get hasEmptyField => isQuestionTitleEmpty || isATitleEmpty || isBTitleEmpty;
+  bool get hasEmptyField =>
+      isQuestionTitleEmpty || isATitleEmpty || isBTitleEmpty;
 }
 
 /// 전체 검증 결과
@@ -328,8 +333,9 @@ class ValidationResult {
   });
 
   // 이전 버전 호환성을 위한 getter
-  ai.GeminiModerationResult? get geminiResult => aiModerationResult?.geminiResult;
-  
+  ai.GeminiModerationResult? get geminiResult =>
+      aiModerationResult?.geminiResult;
+
   // 기존 코드 호환성을 위한 getter
   Map<String, dynamic> get validationResults => {};
 }

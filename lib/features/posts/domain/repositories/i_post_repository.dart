@@ -54,7 +54,7 @@ abstract class IPostRepository {
     int limit = -1,
   });
 
-  // Dislike queries  
+  // Dislike queries
   Stream<List<DislikesModel>> queryDislikes({
     required DocumentReference parent,
     Query Function(Query)? queryBuilder,

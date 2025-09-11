@@ -3,7 +3,7 @@ import '../../domain/models/vote_notification.dart' as domain;
 import '../../domain/models/notification_display_data.dart';
 
 /// Service for extracting display data from notifications
-/// 
+///
 /// This service handles the extraction of vote data from notifications
 /// and converts it into a format suitable for UI display.
 class NotificationDataExtractor {
@@ -14,18 +14,20 @@ class NotificationDataExtractor {
     try {
       // Extract data based on notification type
       final Map<String, dynamic> voteData = {};
-      
+
       if (notification is domain.VoteNotification) {
         // Extract from VoteNotification
         voteData['question'] = notification.postTitle;
         voteData['optionA'] = notification.voteOptions.optionATitle;
         voteData['optionB'] = notification.voteOptions.optionBTitle;
-        voteData['imageUrlA'] = notification.voteOptions.optionAImageUrls.isNotEmpty 
-            ? notification.voteOptions.optionAImageUrls.first 
-            : null;
-        voteData['imageUrlB'] = notification.voteOptions.optionBImageUrls.isNotEmpty 
-            ? notification.voteOptions.optionBImageUrls.first 
-            : null;
+        voteData['imageUrlA'] =
+            notification.voteOptions.optionAImageUrls.isNotEmpty
+                ? notification.voteOptions.optionAImageUrls.first
+                : null;
+        voteData['imageUrlB'] =
+            notification.voteOptions.optionBImageUrls.isNotEmpty
+                ? notification.voteOptions.optionBImageUrls.first
+                : null;
         voteData['imageUrlsA'] = notification.voteOptions.optionAImageUrls;
         voteData['imageUrlsB'] = notification.voteOptions.optionBImageUrls;
         voteData['description'] = notification.postDescription;
@@ -40,7 +42,7 @@ class NotificationDataExtractor {
         if (data.isEmpty) {
           return null;
         }
-        
+
         voteData['question'] = data['question'] ?? '';
         voteData['optionA'] = data['optionA'] ?? '';
         voteData['optionB'] = data['optionB'] ?? '';
@@ -55,12 +57,12 @@ class NotificationDataExtractor {
         voteData['layoutType'] = data['layoutType'];
         voteData['postId'] = data['postId'];
       }
-      
+
       // Validate required fields
       if (voteData['question'] == null || voteData['question'].isEmpty) {
         return null;
       }
-      
+
       return NotificationDisplayData.fromVoteData(voteData);
     } catch (e) {
       // Log error but don't throw - return null to indicate extraction failure

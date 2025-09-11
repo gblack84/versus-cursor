@@ -74,12 +74,12 @@ class ModerationOptions {
   });
 
   static const ModerationOptions defaultOptions = ModerationOptions();
-  
+
   static const ModerationOptions textOnly = ModerationOptions(
     enableVisionAPI: false,
     enableOCR: false,
   );
-  
+
   static const ModerationOptions imageOnly = ModerationOptions(
     enablePerspectiveAPI: false,
     enableGeminiAI: false,

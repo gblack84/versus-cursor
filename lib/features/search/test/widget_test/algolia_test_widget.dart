@@ -8,7 +8,7 @@ export 'algolia_test_model.dart';
 
 class TestalgoriaWidget extends StatefulWidget {
   const TestalgoriaWidget({super.key});
-  
+
   static const String routeName = 'testalgoria';
   static const String routePath = '/testalgoria';
 
@@ -58,18 +58,14 @@ class _TestalgoriaWidgetState extends State<TestalgoriaWidget> {
             ),
             style: AppTheme.of(context).headlineMedium.override(
                   font: GoogleFonts.plusJakartaSans(
-                    fontWeight:
-                        AppTheme.of(context).headlineMedium.fontWeight,
-                    fontStyle:
-                        AppTheme.of(context).headlineMedium.fontStyle,
+                    fontWeight: AppTheme.of(context).headlineMedium.fontWeight,
+                    fontStyle: AppTheme.of(context).headlineMedium.fontStyle,
                   ),
                   color: Colors.white,
                   fontSize: 22.0,
                   letterSpacing: 0.0,
-                  fontWeight:
-                      AppTheme.of(context).headlineMedium.fontWeight,
-                  fontStyle:
-                      AppTheme.of(context).headlineMedium.fontStyle,
+                  fontWeight: AppTheme.of(context).headlineMedium.fontWeight,
+                  fontStyle: AppTheme.of(context).headlineMedium.fontStyle,
                 ),
           ),
           actions: [],
@@ -111,17 +107,14 @@ class _TestalgoriaWidgetState extends State<TestalgoriaWidget> {
                           width: 100.0,
                           height: 100.0,
                           decoration: BoxDecoration(
-                            color: AppTheme.of(context)
-                                .secondaryBackground,
+                            color: AppTheme.of(context).secondaryBackground,
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.max,
                             children: [
                               Text(
                                 searchlistItem.jopName,
-                                style: AppTheme.of(context)
-                                    .bodyMedium
-                                    .override(
+                                style: AppTheme.of(context).bodyMedium.override(
                                       font: GoogleFonts.plusJakartaSans(
                                         fontWeight: AppTheme.of(context)
                                             .bodyMedium
@@ -141,9 +134,7 @@ class _TestalgoriaWidgetState extends State<TestalgoriaWidget> {
                               ),
                               Text(
                                 searchlistItem.categoryRefB,
-                                style: AppTheme.of(context)
-                                    .bodyMedium
-                                    .override(
+                                style: AppTheme.of(context).bodyMedium.override(
                                       font: GoogleFonts.plusJakartaSans(
                                         fontWeight: AppTheme.of(context)
                                             .bodyMedium
@@ -163,9 +154,7 @@ class _TestalgoriaWidgetState extends State<TestalgoriaWidget> {
                               ),
                               Text(
                                 searchlistItem.categoryRefA,
-                                style: AppTheme.of(context)
-                                    .bodyMedium
-                                    .override(
+                                style: AppTheme.of(context).bodyMedium.override(
                                       font: GoogleFonts.plusJakartaSans(
                                         fontWeight: AppTheme.of(context)
                                             .bodyMedium
@@ -201,45 +190,35 @@ class _TestalgoriaWidgetState extends State<TestalgoriaWidget> {
                       obscureText: false,
                       decoration: InputDecoration(
                         isDense: true,
-                        labelStyle:
-                            AppTheme.of(context).labelMedium.override(
-                                  font: GoogleFonts.plusJakartaSans(
-                                    fontWeight: AppTheme.of(context)
-                                        .labelMedium
-                                        .fontWeight,
-                                    fontStyle: AppTheme.of(context)
-                                        .labelMedium
-                                        .fontStyle,
-                                  ),
-                                  letterSpacing: 0.0,
-                                  fontWeight: AppTheme.of(context)
-                                      .labelMedium
-                                      .fontWeight,
-                                  fontStyle: AppTheme.of(context)
-                                      .labelMedium
-                                      .fontStyle,
-                                ),
+                        labelStyle: AppTheme.of(context).labelMedium.override(
+                              font: GoogleFonts.plusJakartaSans(
+                                fontWeight:
+                                    AppTheme.of(context).labelMedium.fontWeight,
+                                fontStyle:
+                                    AppTheme.of(context).labelMedium.fontStyle,
+                              ),
+                              letterSpacing: 0.0,
+                              fontWeight:
+                                  AppTheme.of(context).labelMedium.fontWeight,
+                              fontStyle:
+                                  AppTheme.of(context).labelMedium.fontStyle,
+                            ),
                         hintText: AppLocalizations.of(context).getText(
                           '4ofzrgyp' /* TextField */,
                         ),
-                        hintStyle:
-                            AppTheme.of(context).labelMedium.override(
-                                  font: GoogleFonts.plusJakartaSans(
-                                    fontWeight: AppTheme.of(context)
-                                        .labelMedium
-                                        .fontWeight,
-                                    fontStyle: AppTheme.of(context)
-                                        .labelMedium
-                                        .fontStyle,
-                                  ),
-                                  letterSpacing: 0.0,
-                                  fontWeight: AppTheme.of(context)
-                                      .labelMedium
-                                      .fontWeight,
-                                  fontStyle: AppTheme.of(context)
-                                      .labelMedium
-                                      .fontStyle,
-                                ),
+                        hintStyle: AppTheme.of(context).labelMedium.override(
+                              font: GoogleFonts.plusJakartaSans(
+                                fontWeight:
+                                    AppTheme.of(context).labelMedium.fontWeight,
+                                fontStyle:
+                                    AppTheme.of(context).labelMedium.fontStyle,
+                              ),
+                              letterSpacing: 0.0,
+                              fontWeight:
+                                  AppTheme.of(context).labelMedium.fontWeight,
+                              fontStyle:
+                                  AppTheme.of(context).labelMedium.fontStyle,
+                            ),
                         enabledBorder: OutlineInputBorder(
                           borderSide: BorderSide(
                             color: Color(0x00000000),
@@ -269,25 +248,20 @@ class _TestalgoriaWidgetState extends State<TestalgoriaWidget> {
                           borderRadius: BorderRadius.circular(8.0),
                         ),
                         filled: true,
-                        fillColor:
-                            AppTheme.of(context).secondaryBackground,
+                        fillColor: AppTheme.of(context).secondaryBackground,
                       ),
                       style: AppTheme.of(context).bodyMedium.override(
                             font: GoogleFonts.plusJakartaSans(
-                              fontWeight: AppTheme.of(context)
-                                  .bodyMedium
-                                  .fontWeight,
-                              fontStyle: AppTheme.of(context)
-                                  .bodyMedium
-                                  .fontStyle,
+                              fontWeight:
+                                  AppTheme.of(context).bodyMedium.fontWeight,
+                              fontStyle:
+                                  AppTheme.of(context).bodyMedium.fontStyle,
                             ),
                             letterSpacing: 0.0,
-                            fontWeight: AppTheme.of(context)
-                                .bodyMedium
-                                .fontWeight,
-                            fontStyle: AppTheme.of(context)
-                                .bodyMedium
-                                .fontStyle,
+                            fontWeight:
+                                AppTheme.of(context).bodyMedium.fontWeight,
+                            fontStyle:
+                                AppTheme.of(context).bodyMedium.fontStyle,
                           ),
                       cursorColor: AppTheme.of(context).primaryText,
                       validator:

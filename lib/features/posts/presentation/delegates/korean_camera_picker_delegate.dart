@@ -3,31 +3,31 @@ import 'package:wechat_camera_picker/wechat_camera_picker.dart';
 // 카메라 피커를 위한 한국어 텍스트 델리게이트
 class CustomKoreanCameraPickerTextDelegate extends CameraPickerTextDelegate {
   const CustomKoreanCameraPickerTextDelegate();
-  
+
   @override
   String get confirm => '확인';
-  
+
   @override
   String get shootingTips => '탭하여 사진 촬영, 길게 눌러 비디오 녹화';
-  
+
   @override
   String get shootingWithRecordingTips => '탭하여 사진 촬영, 길게 눌러 비디오 녹화';
-  
+
   @override
   String get shootingOnlyRecordingTips => '길게 눌러 비디오 녹화';
-  
+
   @override
   String get shootingTapRecordingTips => '탭하여 녹화';
-  
+
   @override
   String get loadFailed => '로드 실패';
-  
+
   @override
   String get loading => '로딩 중...';
-  
+
   @override
   String get saving => '저장 중...';
-  
+
   @override
   String sCameraLensDirectionLabel(CameraLensDirection value) {
     switch (value) {
@@ -39,7 +39,7 @@ class CustomKoreanCameraPickerTextDelegate extends CameraPickerTextDelegate {
         return '외부 카메라';
     }
   }
-  
+
   @override
   String? sCameraPreviewLabel(CameraLensDirection? value) {
     if (value == null) {
@@ -47,7 +47,7 @@ class CustomKoreanCameraPickerTextDelegate extends CameraPickerTextDelegate {
     }
     return sCameraLensDirectionLabel(value);
   }
-  
+
   @override
   String sFlashModeLabel(FlashMode mode) {
     switch (mode) {
@@ -61,7 +61,7 @@ class CustomKoreanCameraPickerTextDelegate extends CameraPickerTextDelegate {
         return '손전등';
     }
   }
-  
+
   @override
   String sSwitchCameraLensDirectionLabel(CameraLensDirection value) {
     switch (value) {

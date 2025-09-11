@@ -8,7 +8,7 @@ import '/core/firebase/utils/firestore_util.dart';
 import '/core_exports.dart';
 
 /// DEPRECATED: Use features/posts/domain/models/encodings_model.dart instead
-/// 
+///
 /// This model is maintained in backend for backward compatibility only.
 /// New code should import from the posts feature domain layer.
 @Deprecated('Use features/posts/domain/models/encodings_model.dart')

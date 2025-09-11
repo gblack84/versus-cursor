@@ -36,7 +36,7 @@ class _YouTubePlayerWidgetState extends State<YouTubePlayerWidget> {
   void initState() {
     super.initState();
     final videoId = _extractVideoId(widget.url);
-    
+
     _controller = YoutubePlayerController(
       initialVideoId: videoId ?? '',
       flags: YoutubePlayerFlags(
@@ -71,13 +71,14 @@ class _YouTubePlayerWidgetState extends State<YouTubePlayerWidget> {
 
     // YouTube video ID extraction logic
     // Handle various YouTube URL formats
-    if (uri.host.contains('youtube.com') || uri.host.contains('www.youtube.com')) {
+    if (uri.host.contains('youtube.com') ||
+        uri.host.contains('www.youtube.com')) {
       // Standard YouTube URLs
       final videoId = uri.queryParameters['v'];
       if (videoId != null) {
         return videoId;
       }
-      
+
       // YouTube embed URLs
       if (uri.pathSegments.contains('embed') && uri.pathSegments.length > 2) {
         return uri.pathSegments[2];
@@ -88,7 +89,7 @@ class _YouTubePlayerWidgetState extends State<YouTubePlayerWidget> {
         return uri.pathSegments[0];
       }
     }
-    
+
     // Try to extract video ID using the package's built-in converter
     return YoutubePlayer.convertUrlToId(url);
   }
@@ -96,7 +97,7 @@ class _YouTubePlayerWidgetState extends State<YouTubePlayerWidget> {
   @override
   Widget build(BuildContext context) {
     final videoId = _extractVideoId(widget.url);
-    
+
     if (videoId == null || videoId.isEmpty) {
       return Container(
         width: widget.width ?? double.infinity,
@@ -146,10 +147,10 @@ class _YouTubePlayerWidgetState extends State<YouTubePlayerWidget> {
 bool isYouTubeUrl(String url) {
   final uri = Uri.tryParse(url);
   if (uri == null) return false;
-  
-  return uri.host.contains('youtube.com') || 
-         uri.host.contains('youtu.be') ||
-         uri.host.contains('www.youtube.com');
+
+  return uri.host.contains('youtube.com') ||
+      uri.host.contains('youtu.be') ||
+      uri.host.contains('www.youtube.com');
 }
 
 // Helper function to extract YouTube video ID from URL

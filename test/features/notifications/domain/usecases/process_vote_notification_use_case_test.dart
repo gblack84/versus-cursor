@@ -11,11 +11,11 @@ void main() {
     late MockNotificationRepository mockRepository;
     late VoteNotification testNotification;
     final now = DateTime.now();
-    
+
     setUp(() {
       mockRepository = MockNotificationRepository();
       useCase = ProcessVoteNotificationUseCase(mockRepository);
-      
+
       testNotification = VoteNotification(
         id: 'notification-1',
         userId: 'user-123',
@@ -43,15 +43,15 @@ void main() {
         currentVotesA: 10,
         currentVotesB: 5,
       );
-      
+
       // Add test notification to repository
       mockRepository.addNotification(testNotification);
     });
-    
+
     tearDown(() {
       mockRepository.clear();
     });
-    
+
     group('Successful Vote Processing', () {
       test('should process vote for option A successfully', () async {
         // Arrange
@@ -60,10 +60,10 @@ void main() {
           userId: 'user-123',
           voteChoice: 'A',
         );
-        
+
         // Act
         final result = await useCase.call(params);
-        
+
         // Assert
         expect(result.isSuccess, true);
         expect(result.data, isNotNull);
@@ -72,12 +72,12 @@ void main() {
         expect(result.data!.currentVotesA, 11); // Should increment
         expect(result.data!.currentVotesB, 5); // Should remain same
         expect(result.data!.isRead, true); // Should be marked as read
-        
+
         // Verify repository was called
         expect(mockRepository.updateNotificationCalled, true);
         expect(mockRepository.lastUpdatedNotification, isNotNull);
       });
-      
+
       test('should process vote for option B successfully', () async {
         // Arrange
         const params = ProcessVoteParams(
@@ -85,10 +85,10 @@ void main() {
           userId: 'user-123',
           voteChoice: 'B',
         );
-        
+
         // Act
         final result = await useCase.call(params);
-        
+
         // Assert
         expect(result.isSuccess, true);
         expect(result.data, isNotNull);
@@ -99,7 +99,7 @@ void main() {
         expect(result.data!.isRead, true);
       });
     });
-    
+
     group('Validation and Error Cases', () {
       test('should return failure for invalid vote choice', () async {
         // Arrange
@@ -108,16 +108,16 @@ void main() {
           userId: 'user-123',
           voteChoice: 'C', // Invalid choice
         );
-        
+
         // Act
         final result = await useCase.call(params);
-        
+
         // Assert
         expect(result.isFailure, true);
         expect(result.error, 'Invalid vote choice: Must be A or B');
         expect(mockRepository.updateNotificationCalled, false);
       });
-      
+
       test('should return failure when notification not found', () async {
         // Arrange
         const params = ProcessVoteParams(
@@ -125,31 +125,32 @@ void main() {
           userId: 'user-123',
           voteChoice: 'A',
         );
-        
+
         // Act
         final result = await useCase.call(params);
-        
+
         // Assert
         expect(result.isFailure, true);
         expect(result.error, 'Notification not found');
       });
-      
-      test('should return failure when user does not own notification', () async {
+
+      test('should return failure when user does not own notification',
+          () async {
         // Arrange
         const params = ProcessVoteParams(
           notificationId: 'notification-1',
           userId: 'different-user', // Different user
           voteChoice: 'A',
         );
-        
+
         // Act
         final result = await useCase.call(params);
-        
+
         // Assert
         expect(result.isFailure, true);
         expect(result.error, contains('Unauthorized'));
       });
-      
+
       test('should return failure when already voted', () async {
         // Arrange
         final votedNotification = VoteNotification(
@@ -179,23 +180,23 @@ void main() {
           currentVotesA: 10,
           currentVotesB: 5,
         );
-        
+
         mockRepository.addNotification(votedNotification);
-        
+
         const params = ProcessVoteParams(
           notificationId: 'notification-2',
           userId: 'user-123',
           voteChoice: 'B',
         );
-        
+
         // Act
         final result = await useCase.call(params);
-        
+
         // Assert
         expect(result.isFailure, true);
         expect(result.error, 'Already voted on this notification');
       });
-      
+
       test('should return failure when voting period ended', () async {
         // Arrange
         final expiredNotification = VoteNotification(
@@ -225,46 +226,46 @@ void main() {
           currentVotesA: 10,
           currentVotesB: 5,
         );
-        
+
         mockRepository.addNotification(expiredNotification);
-        
+
         const params = ProcessVoteParams(
           notificationId: 'notification-3',
           userId: 'user-123',
           voteChoice: 'A',
         );
-        
+
         // Act
         final result = await useCase.call(params);
-        
+
         // Assert
         expect(result.isFailure, true);
         expect(result.error, 'Voting period has ended');
       });
     });
-    
+
     group('Error Handling', () {
       test('should handle repository exceptions gracefully', () async {
         // Arrange
         mockRepository.shouldThrowError = true;
         mockRepository.errorMessage = 'Database error';
-        
+
         const params = ProcessVoteParams(
           notificationId: 'notification-1',
           userId: 'user-123',
           voteChoice: 'A',
         );
-        
+
         // Act
         final result = await useCase.call(params);
-        
+
         // Assert
         expect(result.isFailure, true);
         expect(result.error, contains('Failed to process vote'));
         expect(result.error, contains('Database error'));
       });
     });
-    
+
     group('Business Logic Edge Cases', () {
       test('should handle notification marked as expired', () async {
         // Arrange
@@ -284,7 +285,8 @@ void main() {
           senderName: 'Test Sender',
           voteStartTime: now.subtract(const Duration(days: 30)),
           voteEndTime: now.add(const Duration(minutes: 5)), // Still in future
-          expiryTime: now.subtract(const Duration(hours: 1)), // Expired 1 hour ago
+          expiryTime:
+              now.subtract(const Duration(hours: 1)), // Expired 1 hour ago
           voteOptions: const VoteOptions(
             optionATitle: 'Option A',
             optionBTitle: 'Option B',
@@ -296,40 +298,41 @@ void main() {
           currentVotesA: 10,
           currentVotesB: 5,
         );
-        
+
         mockRepository.addNotification(expiredNotification);
-        
+
         const params = ProcessVoteParams(
           notificationId: 'notification-4',
           userId: 'user-123',
           voteChoice: 'A',
         );
-        
+
         // Act
         final result = await useCase.call(params);
-        
+
         // Assert
         expect(result.isFailure, true);
         expect(result.error, 'Notification has expired');
       });
-      
-      test('should update notification twice for vote and read status', () async {
+
+      test('should update notification twice for vote and read status',
+          () async {
         // Arrange
         const params = ProcessVoteParams(
           notificationId: 'notification-1',
           userId: 'user-123',
           voteChoice: 'A',
         );
-        
+
         // Act
         final result = await useCase.call(params);
-        
+
         // Assert
         expect(result.isSuccess, true);
-        
+
         // Should be called at least once for voting and once for marking as read
         expect(mockRepository.updateNotificationCalled, true);
-        
+
         // Final notification should have both updates
         final finalNotification = result.data!;
         expect(finalNotification.hasVoted, true);

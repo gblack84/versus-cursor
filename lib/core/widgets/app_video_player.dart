@@ -51,8 +51,7 @@ class AppVideoPlayer extends StatefulWidget {
   State<StatefulWidget> createState() => _AppVideoPlayerState();
 }
 
-class _AppVideoPlayerState extends State<AppVideoPlayer>
-    with RouteAware {
+class _AppVideoPlayerState extends State<AppVideoPlayer> with RouteAware {
   VideoPlayerController? _videoPlayerController;
   ChewieController? _chewieController;
   bool _loggedError = false;

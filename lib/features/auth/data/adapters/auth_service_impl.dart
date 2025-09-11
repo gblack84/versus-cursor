@@ -16,35 +16,38 @@ class AuthServiceImpl implements IAuthService {
     }
     return null;
   }
-  
+
   @override
   bool get loggedIn => auth_util.loggedIn;
-  
+
   @override
   Future<User?> signInWithEmail(String email, String password) async {
     // TODO: This implementation requires BuildContext which isn't available here
     // Consider passing context through IAuthService interface or using a different approach
-    throw UnimplementedError('signInWithEmail requires refactoring to handle BuildContext');
+    throw UnimplementedError(
+        'signInWithEmail requires refactoring to handle BuildContext');
   }
-  
+
   @override
   Future<User?> createUserWithEmail(String email, String password) async {
     // TODO: This implementation requires BuildContext which isn't available here
     // Consider passing context through IAuthService interface or using a different approach
-    throw UnimplementedError('createUserWithEmail requires refactoring to handle BuildContext');
+    throw UnimplementedError(
+        'createUserWithEmail requires refactoring to handle BuildContext');
   }
-  
+
   @override
   Future<void> signOut() async {
     return await auth_util.authManager.signOut();
   }
-  
+
   @override
   Future<void> sendPasswordResetEmail(String email) async {
     // TODO: This implementation requires BuildContext which isn't available here
-    throw UnimplementedError('sendPasswordResetEmail requires refactoring to handle BuildContext');
+    throw UnimplementedError(
+        'sendPasswordResetEmail requires refactoring to handle BuildContext');
   }
-  
+
   @override
   Future<void> beginPhoneAuth({
     required String phoneNumber,
@@ -54,12 +57,12 @@ class AuthServiceImpl implements IAuthService {
     // TODO: Phone auth implementation needed
     throw UnimplementedError('Phone auth not yet implemented');
   }
-  
+
   @override
   Stream<User?> authStateChanges() {
     return FirebaseAuth.instance.authStateChanges();
   }
-  
+
   @override
   Future<void> updateUserDisplayName(String displayName) async {
     final user = currentUser;
@@ -67,10 +70,11 @@ class AuthServiceImpl implements IAuthService {
       await user.updateDisplayName(displayName);
     }
   }
-  
+
   @override
   Future<void> deleteUser() async {
-    // TODO: This implementation requires BuildContext which isn't available here  
-    throw UnimplementedError('deleteUser requires refactoring to handle BuildContext');
+    // TODO: This implementation requires BuildContext which isn't available here
+    throw UnimplementedError(
+        'deleteUser requires refactoring to handle BuildContext');
   }
 }

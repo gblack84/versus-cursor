@@ -91,16 +91,14 @@ class _PhonemaximumWidgetState extends State<PhonemaximumWidget> {
                       style: AppTheme.of(context).bodyMedium.override(
                             font: GoogleFonts.plusJakartaSans(
                               fontWeight: FontWeight.w800,
-                              fontStyle: AppTheme.of(context)
-                                  .bodyMedium
-                                  .fontStyle,
+                              fontStyle:
+                                  AppTheme.of(context).bodyMedium.fontStyle,
                             ),
                             fontSize: 20.0,
                             letterSpacing: 0.0,
                             fontWeight: FontWeight.w800,
-                            fontStyle: AppTheme.of(context)
-                                .bodyMedium
-                                .fontStyle,
+                            fontStyle:
+                                AppTheme.of(context).bodyMedium.fontStyle,
                           ),
                     ),
                   ),
@@ -135,18 +133,14 @@ class _PhonemaximumWidgetState extends State<PhonemaximumWidget> {
                   color: AppTheme.of(context).primaryText,
                   textStyle: AppTheme.of(context).titleSmall.override(
                         font: GoogleFonts.plusJakartaSans(
-                          fontWeight: AppTheme.of(context)
-                              .titleSmall
-                              .fontWeight,
-                          fontStyle:
-                              AppTheme.of(context).titleSmall.fontStyle,
+                          fontWeight:
+                              AppTheme.of(context).titleSmall.fontWeight,
+                          fontStyle: AppTheme.of(context).titleSmall.fontStyle,
                         ),
                         color: Colors.white,
                         letterSpacing: 0.0,
-                        fontWeight:
-                            AppTheme.of(context).titleSmall.fontWeight,
-                        fontStyle:
-                            AppTheme.of(context).titleSmall.fontStyle,
+                        fontWeight: AppTheme.of(context).titleSmall.fontWeight,
+                        fontStyle: AppTheme.of(context).titleSmall.fontStyle,
                       ),
                   elevation: 0.0,
                   borderSide: BorderSide(

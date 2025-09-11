@@ -88,11 +88,11 @@ void main() {
         final authRepo = sl<IAuthRepository>();
         final chatRepo = sl<IChatRepository>();
         final postRepo = sl<IPostRepository>();
-        
+
         expect(authRepo, isNotNull);
         expect(chatRepo, isNotNull);
         expect(postRepo, isNotNull);
-        
+
         // Each should be independent instances
         expect(authRepo != chatRepo, isTrue);
         expect(chatRepo != postRepo, isTrue);

@@ -18,13 +18,13 @@ class CollectionTypeSelector extends StatefulWidget {
 }
 
 class _CollectionTypeSelectorState extends State<CollectionTypeSelector> {
-
   @override
   Widget build(BuildContext context) {
     return Consumer<TargetAudienceModel>(
       builder: (context, model, child) {
         // 모든 타입 표시
-        final availableTypes = TargetAudienceConstants.collectionTypes.entries.toList();
+        final availableTypes =
+            TargetAudienceConstants.collectionTypes.entries.toList();
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(TargetAudienceConstants.contentPadding),
@@ -34,17 +34,17 @@ class _CollectionTypeSelectorState extends State<CollectionTypeSelector> {
               Text(
                 '투표 수집 방식을 선택하세요',
                 style: AppTheme.of(context).headlineSmall.override(
-                  fontWeight: FontWeight.w600,
-                ),
+                      fontWeight: FontWeight.w600,
+                    ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              
+
               // 수집 방식 옵션들
               ...availableTypes.map((entry) {
                 final typeInfo = entry.value;
                 final isSelected = model.collectionType == typeInfo.id;
-                
+
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: _buildTypeOption(
@@ -52,9 +52,12 @@ class _CollectionTypeSelectorState extends State<CollectionTypeSelector> {
                     typeInfo: typeInfo,
                     isSelected: isSelected,
                     onTap: () {
-                      debugPrint('[CollectionTypeSelector] 수집 방식 선택: ${typeInfo.id}');
-                      debugPrint('[CollectionTypeSelector]   - 제목: ${typeInfo.title}');
-                      debugPrint('[CollectionTypeSelector]   - 설명: ${typeInfo.subtitle}');
+                      debugPrint(
+                          '[CollectionTypeSelector] 수집 방식 선택: ${typeInfo.id}');
+                      debugPrint(
+                          '[CollectionTypeSelector]   - 제목: ${typeInfo.title}');
+                      debugPrint(
+                          '[CollectionTypeSelector]   - 설명: ${typeInfo.subtitle}');
                       widget.onTypeSelected(typeInfo.id);
                     },
                   ),
@@ -80,13 +83,13 @@ class _CollectionTypeSelectorState extends State<CollectionTypeSelector> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isSelected 
+          color: isSelected
               ? AppTheme.of(context).primary.withValues(alpha: 0.1)
               : AppTheme.of(context).secondaryBackground,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected 
-                ? AppTheme.of(context).primary 
+            color: isSelected
+                ? AppTheme.of(context).primary
                 : AppTheme.of(context).alternate,
             width: isSelected ? 2 : 1,
           ),
@@ -111,7 +114,7 @@ class _CollectionTypeSelectorState extends State<CollectionTypeSelector> {
               ),
             ),
             const SizedBox(width: 16),
-            
+
             // 텍스트
             Expanded(
               child: Column(
@@ -122,11 +125,11 @@ class _CollectionTypeSelectorState extends State<CollectionTypeSelector> {
                       Text(
                         typeInfo.title,
                         style: AppTheme.of(context).bodyLarge.override(
-                          fontWeight: FontWeight.w600,
-                          color: isSelected 
-                              ? AppTheme.of(context).primary
-                              : AppTheme.of(context).primaryText,
-                        ),
+                              fontWeight: FontWeight.w600,
+                              color: isSelected
+                                  ? AppTheme.of(context).primary
+                                  : AppTheme.of(context).primaryText,
+                            ),
                       ),
                       if (typeInfo.description.isNotEmpty) ...[
                         const SizedBox(width: 8),
@@ -142,9 +145,9 @@ class _CollectionTypeSelectorState extends State<CollectionTypeSelector> {
                           child: Text(
                             typeInfo.description,
                             style: AppTheme.of(context).bodySmall.override(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
                           ),
                         ),
                       ],
@@ -154,13 +157,13 @@ class _CollectionTypeSelectorState extends State<CollectionTypeSelector> {
                   Text(
                     typeInfo.subtitle,
                     style: AppTheme.of(context).bodySmall.override(
-                      color: AppTheme.of(context).secondaryText,
-                    ),
+                          color: AppTheme.of(context).secondaryText,
+                        ),
                   ),
                 ],
               ),
             ),
-            
+
             // 선택 표시
             Container(
               width: 24,
@@ -168,13 +171,13 @@ class _CollectionTypeSelectorState extends State<CollectionTypeSelector> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected 
-                      ? AppTheme.of(context).primary 
+                  color: isSelected
+                      ? AppTheme.of(context).primary
                       : AppTheme.of(context).secondaryText,
                   width: 2,
                 ),
-                color: isSelected 
-                    ? AppTheme.of(context).primary 
+                color: isSelected
+                    ? AppTheme.of(context).primary
                     : Colors.transparent,
               ),
               child: isSelected

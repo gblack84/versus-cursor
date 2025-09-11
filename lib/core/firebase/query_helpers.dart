@@ -1,7 +1,7 @@
 // ============================================
 // QUERY HELPERS - Firestore Query Utilities
 // Relocated from /lib/backend/backend.dart (2025-01-09)
-// 
+//
 // This file contains generic Firestore query utilities
 // that are used by various repository implementations.
 // Part of Clean Architecture core layer.
@@ -19,7 +19,7 @@ export 'utils/firestore_util.dart';
 export 'utils/schema_util.dart';
 
 // Core export for common types
-export '/app/models/lat_lng.dart';  // LatLng type used across features
+export '/app/models/lat_lng.dart'; // LatLng type used across features
 
 // ============================================
 // UTILITY FUNCTIONS ONLY

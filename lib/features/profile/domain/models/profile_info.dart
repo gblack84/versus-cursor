@@ -2,9 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// ProfileInfo Domain Model
 /// Clean Architecture - Domain Layer Entity
-/// 
+///
 /// This model contains user profile display information,
-/// separated from authentication concerns (AuthUser) and 
+/// separated from authentication concerns (AuthUser) and
 /// statistics (UserStats) for better separation of concerns.
 class ProfileInfo {
   const ProfileInfo({
@@ -24,17 +24,17 @@ class ProfileInfo {
   final String userId; // Foreign key to AuthUser.uid
   final String displayName;
   final String? photoUrl;
-  
+
   // Profile Details
   final String? shortDescription;
   final String? gender;
   final DateTime? dateOfBirth;
   final String language;
-  
+
   // Lists
   final List<String> interests;
   final List<String> expertise;
-  
+
   // Location
   final GeoPoint? location;
 
@@ -47,7 +47,7 @@ class ProfileInfo {
       photoUrl: data['photoUrl'],
       shortDescription: data['shortDescription'],
       gender: data['gender'],
-      dateOfBirth: data['dateOfBirth'] != null 
+      dateOfBirth: data['dateOfBirth'] != null
           ? (data['dateOfBirth'] as Timestamp).toDate()
           : null,
       language: data['language'] ?? 'en',
@@ -65,14 +65,15 @@ class ProfileInfo {
       photoUrl: json['photoUrl'],
       shortDescription: json['shortDescription'],
       gender: json['gender'],
-      dateOfBirth: json['dateOfBirth'] != null 
+      dateOfBirth: json['dateOfBirth'] != null
           ? DateTime.parse(json['dateOfBirth'])
           : null,
       language: json['language'] ?? 'en',
       interests: List<String>.from(json['interests'] ?? []),
       expertise: List<String>.from(json['expertise'] ?? []),
-      location: json['location'] != null 
-          ? GeoPoint(json['location']['latitude'], json['location']['longitude'])
+      location: json['location'] != null
+          ? GeoPoint(
+              json['location']['latitude'], json['location']['longitude'])
           : null,
     );
   }
@@ -104,10 +105,11 @@ class ProfileInfo {
       'language': language,
       'interests': interests,
       'expertise': expertise,
-      if (location != null) 'location': {
-        'latitude': location!.latitude,
-        'longitude': location!.longitude,
-      },
+      if (location != null)
+        'location': {
+          'latitude': location!.latitude,
+          'longitude': location!.longitude,
+        },
     };
   }
 
@@ -141,7 +143,7 @@ class ProfileInfo {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is ProfileInfo && 
+    return other is ProfileInfo &&
         other.userId == userId &&
         other.displayName == displayName;
   }

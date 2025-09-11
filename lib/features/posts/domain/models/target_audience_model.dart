@@ -29,7 +29,7 @@ class TargetAudienceModel extends ChangeNotifier {
   // Custom 설정 - 관심사
   final List<String> _selectedInterests = [];
   List<String> get selectedInterests => List.unmodifiable(_selectedInterests);
-  
+
   void toggleInterest(String interest) {
     if (_selectedInterests.contains(interest)) {
       _selectedInterests.remove(interest);
@@ -80,18 +80,18 @@ class TargetAudienceModel extends ChangeNotifier {
   bool get isValid {
     // Step 1: 수집 방식은 항상 선택됨
     if (_currentStep == 0) return true;
-    
+
     // Step 2: 목표 수는 항상 유효
     if (_currentStep == 1) return _targetCount > 0;
-    
+
     // Step 3: Custom 설정일 때만 검사
     if (_currentStep == 2 && _collectionType == 'custom') {
       // 최소 하나의 조건은 설정해야 함
-      return _selectedInterests.isNotEmpty || 
-             _selectedAgeGroup != '전체' || 
-             _selectedGender != 'all';
+      return _selectedInterests.isNotEmpty ||
+          _selectedAgeGroup != '전체' ||
+          _selectedGender != 'all';
     }
-    
+
     return true;
   }
 

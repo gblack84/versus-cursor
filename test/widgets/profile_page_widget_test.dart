@@ -35,12 +35,12 @@ void main() {
       // Initialize GetIt for testing
       sl = GetIt.instance;
       sl.reset();
-      
+
       // Create mocks
       mockUserRepository = MockIUserRepository();
       mockPostRepository = MockIPostRepository();
       mockDocumentReference = MockDocumentReference();
-      
+
       // Register mocks in DI container
       sl.registerSingleton<IUserRepository>(mockUserRepository);
       sl.registerSingleton<IPostRepository>(mockPostRepository);
@@ -101,11 +101,11 @@ void main() {
       );
     }
 
-    testWidgets('should display user profile information', 
+    testWidgets('should display user profile information',
         (WidgetTester tester) async {
       // Arrange
       final testUser = createTestUser();
-      
+
       when(mockUserRepository.getUserByUid('test-user-id'))
           .thenAnswer((_) async => testUser);
       when(mockPostRepository.getPostsByUserId('test-user-id'))
@@ -126,11 +126,11 @@ void main() {
       expect(find.text('Expert Tester'), findsOneWidget);
     });
 
-    testWidgets('should display user points and stats', 
+    testWidgets('should display user points and stats',
         (WidgetTester tester) async {
       // Arrange
       final testUser = createTestUser();
-      
+
       when(mockUserRepository.getUserByUid('test-user-id'))
           .thenAnswer((_) async => testUser);
       when(mockPostRepository.getPostsByUserId('test-user-id'))
@@ -151,11 +151,11 @@ void main() {
       expect(find.text('포인트 Q'), findsOneWidget); // Points Q in Korean
     });
 
-    testWidgets('should display user interests and expertise', 
+    testWidgets('should display user interests and expertise',
         (WidgetTester tester) async {
       // Arrange
       final testUser = createTestUser();
-      
+
       when(mockUserRepository.getUserByUid('test-user-id'))
           .thenAnswer((_) async => testUser);
       when(mockPostRepository.getPostsByUserId('test-user-id'))
@@ -171,14 +171,15 @@ void main() {
 
       // Assert - Check interests
       expect(find.text('flutter'), findsOneWidget);
-      expect(find.text('testing'), findsWidgets); // Appears in both interests and expertise
+      expect(find.text('testing'),
+          findsWidgets); // Appears in both interests and expertise
       expect(find.text('mobile'), findsOneWidget);
-      
+
       // Check expertise
       expect(find.text('dart'), findsOneWidget);
     });
 
-    testWidgets('should display user posts from repository', 
+    testWidgets('should display user posts from repository',
         (WidgetTester tester) async {
       // Arrange
       final testUser = createTestUser();
@@ -186,7 +187,7 @@ void main() {
         createUserPost('1', 'My First Question'),
         createUserPost('2', 'Another Question'),
       ];
-      
+
       when(mockUserRepository.getUserByUid('test-user-id'))
           .thenAnswer((_) async => testUser);
       when(mockPostRepository.getPostsByUserId('test-user-id'))
@@ -205,11 +206,11 @@ void main() {
       expect(find.text('Another Question'), findsOneWidget);
     });
 
-    testWidgets('should display premium badge for premium users', 
+    testWidgets('should display premium badge for premium users',
         (WidgetTester tester) async {
       // Arrange
       final testUser = createTestUser(); // isPremiumUser = true
-      
+
       when(mockUserRepository.getUserByUid('test-user-id'))
           .thenAnswer((_) async => testUser);
       when(mockPostRepository.getPostsByUserId('test-user-id'))
@@ -228,11 +229,11 @@ void main() {
       expect(find.text('프리미엄'), findsOneWidget); // Premium in Korean
     });
 
-    testWidgets('should display edit button for own profile', 
+    testWidgets('should display edit button for own profile',
         (WidgetTester tester) async {
       // Arrange
       final testUser = createTestUser();
-      
+
       when(mockUserRepository.getUserByUid('test-user-id'))
           .thenAnswer((_) async => testUser);
       when(mockPostRepository.getPostsByUserId('test-user-id'))
@@ -254,11 +255,11 @@ void main() {
       expect(find.text('프로필 편집'), findsOneWidget); // Edit Profile in Korean
     });
 
-    testWidgets('should not display edit button for other users profile', 
+    testWidgets('should not display edit button for other users profile',
         (WidgetTester tester) async {
       // Arrange
       final testUser = createTestUser();
-      
+
       when(mockUserRepository.getUserByUid('test-user-id'))
           .thenAnswer((_) async => testUser);
       when(mockPostRepository.getPostsByUserId('test-user-id'))
@@ -280,14 +281,14 @@ void main() {
       expect(find.text('프로필 편집'), findsNothing);
     });
 
-    testWidgets('should display loading state while fetching user data', 
+    testWidgets('should display loading state while fetching user data',
         (WidgetTester tester) async {
       // Arrange
       when(mockUserRepository.getUserByUid('test-user-id'))
           .thenAnswer((_) async {
-            await Future.delayed(Duration(milliseconds: 100));
-            return createTestUser();
-          });
+        await Future.delayed(Duration(milliseconds: 100));
+        return createTestUser();
+      });
       when(mockPostRepository.getPostsByUserId('test-user-id'))
           .thenAnswer((_) => Stream.value([]));
 
@@ -300,15 +301,15 @@ void main() {
 
       // Assert - Should show loading initially
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      
+
       await tester.pumpAndSettle();
-      
+
       // Loading should disappear after data loads
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(find.text('Test User'), findsOneWidget);
     });
 
-    testWidgets('should display error message when user not found', 
+    testWidgets('should display error message when user not found',
         (WidgetTester tester) async {
       // Arrange
       when(mockUserRepository.getUserByUid('non-existent'))
@@ -325,14 +326,15 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert
-      expect(find.text('사용자를 찾을 수 없습니다'), findsOneWidget); // User not found in Korean
+      expect(find.text('사용자를 찾을 수 없습니다'),
+          findsOneWidget); // User not found in Korean
     });
 
-    testWidgets('should use domain models instead of backend models', 
+    testWidgets('should use domain models instead of backend models',
         (WidgetTester tester) async {
       // This test verifies Clean Architecture compliance
       // The widget should use UserProfile domain model, not backend models
-      
+
       final domainUser = UserProfile.fromFirestore(
         {
           'uid': 'domain-user',
@@ -363,7 +365,7 @@ void main() {
       expect(find.text('Domain Model User'), findsOneWidget);
       expect(find.text('999'), findsOneWidget); // pointsA
       expect(find.text('888'), findsOneWidget); // pointsQ
-      
+
       // The test compiles and runs, proving it uses domain models
     });
   });

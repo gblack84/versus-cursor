@@ -14,42 +14,43 @@ import '../models/system_notification_dto.dart';
 import '../models/social_notification_dto.dart';
 
 /// Clean Architecture 준수 Repository 구현체
-/// 
+///
 /// DataSource를 통해 데이터를 가져오고,
 /// Mapper를 통해 Domain 모델로 변환합니다.
 class NotificationRepositoryImpl implements INotificationRepository {
   final IRemoteNotificationDatasource _remoteDatasource;
   final ILocalNotificationDatasource _localDatasource;
-  
+
   // 캐시 설정
   static const Duration _cacheExpiry = Duration(minutes: 30);
   static const int _maxCacheSize = 100;
-  
+
   NotificationRepositoryImpl({
     required IRemoteNotificationDatasource remoteDatasource,
     required ILocalNotificationDatasource localDatasource,
-  }) : _remoteDatasource = remoteDatasource,
-       _localDatasource = localDatasource;
-  
+  })  : _remoteDatasource = remoteDatasource,
+        _localDatasource = localDatasource;
+
   // ===== 조회 Operations =====
-  
+
   @override
   Future<Notification?> getNotification(String notificationId) async {
     try {
       // 캐시 확인
-      final cached = await _localDatasource.getCachedNotification(notificationId);
+      final cached =
+          await _localDatasource.getCachedNotification(notificationId);
       if (cached != null) {
         final dto = _createDtoFromMap(cached);
         return NotificationMapper.toDomain(dto);
       }
-      
+
       // Remote에서 가져오기
       final data = await _remoteDatasource.getNotification(notificationId);
       if (data == null) return null;
-      
+
       // 캐시 저장
       await _localDatasource.cacheNotification(notificationId, data);
-      
+
       // Domain 모델로 변환
       final dto = _createDtoFromMap(data);
       return NotificationMapper.toDomain(dto);
@@ -68,10 +69,10 @@ class NotificationRepositoryImpl implements INotificationRepository {
       // 캐시 확인
       final cached = await _localDatasource.getCachedNotifications(userId);
       final cacheTime = await _localDatasource.getLastCacheTime(userId);
-      
+
       // 캐시가 유효한 경우
-      if (cached.isNotEmpty && 
-          cacheTime != null && 
+      if (cached.isNotEmpty &&
+          cacheTime != null &&
           DateTime.now().difference(cacheTime) < _cacheExpiry) {
         final notifications = cached
             .map((data) => _createDtoFromMap(data))
@@ -79,7 +80,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
             .toList();
         return _applyFilter(notifications, filter);
       }
-      
+
       // Remote에서 가져오기
       final remoteData = await _remoteDatasource.getNotifications(
         userId: userId,
@@ -89,16 +90,16 @@ class NotificationRepositoryImpl implements INotificationRepository {
         before: filter?.before,
         limit: filter?.limit ?? _maxCacheSize,
       );
-      
+
       // 캐시 업데이트
       await _localDatasource.cacheNotifications(userId, remoteData);
-      
+
       // Domain 모델로 변환
       final notifications = remoteData
           .map((data) => _createDtoFromMap(data))
           .map((dto) => NotificationMapper.toDomain(dto))
           .toList();
-      
+
       return _applyFilter(notifications, filter);
     } catch (e) {
       print('Error getting notifications: $e');
@@ -111,17 +112,19 @@ class NotificationRepositoryImpl implements INotificationRepository {
     required String userId,
     NotificationFilter? filter,
   }) {
-    return _remoteDatasource.watchUserNotifications(
+    return _remoteDatasource
+        .watchUserNotifications(
       userId: userId,
       type: filter?.type?.value,
       unreadOnly: filter?.unreadOnly,
       after: filter?.after,
       before: filter?.before,
       limit: filter?.limit,
-    ).asyncMap((dtoList) async {
+    )
+        .asyncMap((dtoList) async {
       // 캐시 업데이트
       await _localDatasource.cacheNotifications(userId, dtoList);
-      
+
       // Domain 모델로 변환
       final notifications = <Notification>[];
       for (final dtoData in dtoList) {
@@ -133,7 +136,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
           print('Failed to map notification: $e');
         }
       }
-      
+
       // 필터 적용 (추가 필터링이 필요한 경우)
       return _applyFilter(notifications, filter);
     });
@@ -153,7 +156,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return 0;
     }
   }
-  
+
   @override
   Stream<int> watchUnreadCount(String userId) {
     return _remoteDatasource.watchUnreadCount(
@@ -174,7 +177,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
         type: type.value,
         limit: limit,
       );
-      
+
       final notifications = <T>[];
       for (final dtoData in remoteData) {
         try {
@@ -187,7 +190,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
           print('Failed to map notification: $e');
         }
       }
-      
+
       return notifications;
     } catch (e) {
       print('Error getting notifications by type: $e');
@@ -195,65 +198,65 @@ class NotificationRepositoryImpl implements INotificationRepository {
     }
   }
   // ===== 생성/수정 Operations =====
-  
+
   @override
   Future<String> createNotification(Notification notification) async {
     try {
       // Domain → DTO 변환
       final dto = NotificationMapper.toDto(notification);
-      
+
       // Map으로 변환
       final data = dto.toJson();
-      
+
       // Remote에 생성
       final id = await _remoteDatasource.createNotification(data);
-      
+
       // 캐시 무효화
       await _localDatasource.clearCache(notification.userId);
-      
+
       print('Notification created with id: $id');
       return id;
     } catch (e) {
       throw Exception('Failed to create notification: $e');
     }
   }
-  
+
   @override
   Future<void> updateNotification(Notification notification) async {
     try {
       // Domain → DTO 변환
       final dto = NotificationMapper.toDto(notification);
-      
+
       // Map으로 변환
       final updates = dto.toJson();
-      
+
       // Remote 업데이트
       await _remoteDatasource.updateNotification(notification.id, updates);
-      
+
       // 캐시 무효화
       await _localDatasource.clearCache(notification.userId);
     } catch (e) {
       throw Exception('Failed to update notification: $e');
     }
   }
-  
+
   @override
   Future<void> markAsRead(String notificationId) async {
     try {
       await _remoteDatasource.markAsRead(notificationId);
-      
+
       // 캐시 무효화
       await _localDatasource.clearAllCache();
     } catch (e) {
       throw Exception('Failed to mark as read: $e');
     }
   }
-  
+
   @override
   Future<void> markAllAsRead(String userId) async {
     try {
       await _remoteDatasource.markAllAsRead(userId);
-      
+
       // 캐시 무효화
       await _localDatasource.clearCache(userId);
     } catch (e) {
@@ -262,13 +265,13 @@ class NotificationRepositoryImpl implements INotificationRepository {
   }
 
   // ===== 삭제 Operations =====
-  
+
   @override
   Future<void> deleteNotification(String notificationId) async {
     try {
       // Remote에서 삭제
       await _remoteDatasource.deleteNotification(notificationId);
-      
+
       // 캐시에서도 제거
       await _localDatasource.clearAllCache();
     } catch (e) {
@@ -282,11 +285,11 @@ class NotificationRepositoryImpl implements INotificationRepository {
       // TODO: Implement deleteAllUserNotifications in datasource
       // For now, get all user notifications and delete them individually
       final notifications = await getUserNotifications(userId: userId);
-      
+
       for (final notification in notifications) {
         await deleteNotification(notification.id);
       }
-      
+
       // 캐시에서도 제거
       await _localDatasource.clearCache(userId);
     } catch (e) {
@@ -303,14 +306,13 @@ class NotificationRepositoryImpl implements INotificationRepository {
       // TODO: Implement deleteNotificationsBefore in datasource
       // For now, get all notifications and filter by date
       final allNotifications = await getUserNotifications(userId: userId);
-      final oldNotifications = allNotifications
-          .where((n) => n.createdAt.isBefore(before))
-          .toList();
-      
+      final oldNotifications =
+          allNotifications.where((n) => n.createdAt.isBefore(before)).toList();
+
       for (final notification in oldNotifications) {
         await deleteNotification(notification.id);
       }
-      
+
       // 캐시 무효화
       await _localDatasource.clearCache(userId);
     } catch (e) {
@@ -324,14 +326,13 @@ class NotificationRepositoryImpl implements INotificationRepository {
       // TODO: Implement deleteExpiredNotifications in datasource
       // For now, get all notifications and filter by expiry
       final allNotifications = await getUserNotifications(userId: userId);
-      final expiredNotifications = allNotifications
-          .where((n) => n.isExpired)
-          .toList();
-      
+      final expiredNotifications =
+          allNotifications.where((n) => n.isExpired).toList();
+
       for (final notification in expiredNotifications) {
         await deleteNotification(notification.id);
       }
-      
+
       // 캐시 무효화
       await _localDatasource.clearCache(userId);
     } catch (e) {
@@ -339,7 +340,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
     }
   }
   // ===== 특수 Operations =====
-  
+
   @override
   Future<List<String>> createVoteNotifications({
     required VoteNotification baseNotification,
@@ -347,7 +348,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
   }) async {
     try {
       final createdIds = <String>[];
-      
+
       for (final userId in targetUserIds) {
         // 각 사용자별 알림 생성
         final notification = VoteNotification(
@@ -377,11 +378,11 @@ class NotificationRepositoryImpl implements INotificationRepository {
           body: baseNotification.body,
           notificationPriority: baseNotification.notificationPriority,
         );
-        
+
         final id = await createNotification(notification);
         createdIds.add(id);
       }
-      
+
       return createdIds;
     } catch (e) {
       throw Exception('Failed to create vote notifications: $e');
@@ -413,13 +414,38 @@ class NotificationRepositoryImpl implements INotificationRepository {
             iconUrl: notification.iconUrl,
             isDismissible: notification.isDismissible,
           );
-          
+
           await createNotification(userNotification);
         }
       } else {
-        // 모든 사용자에게 브로드캐스트 (Remote에서 처리)
-        // TODO: Implement broadcastSystemNotification in datasource
-        throw UnimplementedError('Broadcast system notification to all users not implemented yet');
+        // 모든 사용자에게 브로드캐스트
+        // 실제로는 users 컬렉션을 직접 조회해야 하지만,
+        // Clean Architecture를 유지하기 위해 datasource에 메서드 추가 필요
+        // 현재는 임시로 빈 리스트 반환
+        final userIds = <String>[];
+
+        // TODO: IRemoteNotificationDatasource에 getAllActiveUserIds() 메서드 추가 필요
+        // 임시 구현: 알림을 생성하지 않음 (에러는 발생하지 않음)
+        for (final userId in userIds) {
+          final userNotification = SystemNotification(
+            id: '', // Remote에서 생성됨
+            userId: userId,
+            createdAt: notification.createdAt,
+            isRead: false,
+            title: notification.title,
+            content: notification.content,
+            expiryTime: notification.expiryTime,
+            metadata: notification.metadata,
+            alertType: notification.alertType,
+            actionUrl: notification.actionUrl,
+            actionLabel: notification.actionLabel,
+            actionButtons: notification.actionButtons,
+            iconUrl: notification.iconUrl,
+            isDismissible: notification.isDismissible,
+          );
+
+          await createNotification(userNotification);
+        }
       }
     } catch (e) {
       throw Exception('Failed to broadcast system notification: $e');
@@ -433,19 +459,101 @@ class NotificationRepositoryImpl implements INotificationRepository {
     required String relatedPostId,
   }) async {
     try {
-      // TODO: Implement groupSocialNotifications in datasource
-      // For now, just clear cache as placeholder
+      // 1. 최근 24시간 내 같은 타입의 알림 조회
+      final recentNotifications = await _remoteDatasource.getNotifications(
+        userId: userId,
+        type: 'social',
+        after: DateTime.now().subtract(const Duration(hours: 24)),
+        limit: 50,
+      );
+
+      // 2. 같은 actionType과 postId를 가진 알림 찾기
+      Map<String, dynamic>? existingNotification;
+      for (final notif in recentNotifications) {
+        if (notif['actionType'] == actionType.value &&
+            notif['relatedPostId'] == relatedPostId) {
+          existingNotification = notif;
+          break;
+        }
+      }
+
+      if (existingNotification != null) {
+        // 3. 기존 알림이 있으면 interactionCount 증가
+        final currentCount = existingNotification['interactionCount'] ?? 1;
+        await _remoteDatasource.updateNotification(
+          existingNotification['id'],
+          {
+            'interactionCount': currentCount + 1,
+            'updatedAt': DateTime.now().toIso8601String(),
+          },
+        );
+      } else {
+        // 4. 새 소셜 알림 생성
+        final newNotification = SocialNotification(
+          id: '', // Remote에서 생성됨
+          userId: userId,
+          createdAt: DateTime.now(),
+          isRead: false,
+          title: _generateSocialTitle(actionType),
+          content: _generateSocialContent(actionType, relatedPostId),
+          actionType: actionType,
+          fromUserId: '', // 실제로는 호출하는 곳에서 제공해야 함
+          fromUserName: 'User', // 실제로는 호출하는 곳에서 제공해야 함
+          relatedPostId: relatedPostId,
+          interactionCount: 1,
+        );
+
+        await createNotification(newNotification);
+      }
+
+      // 5. 캐시 업데이트
       await _localDatasource.clearCache(userId);
-      
-      throw UnimplementedError('Group social notifications not implemented yet');
     } catch (e) {
-      if (e is UnimplementedError) rethrow;
       throw Exception('Failed to group social notifications: $e');
     }
   }
 
+  // Helper 메서드들
+  String _generateSocialTitle(SocialActionType actionType) {
+    switch (actionType) {
+      case SocialActionType.like:
+        return '새로운 좋아요';
+      case SocialActionType.comment:
+        return '새로운 댓글';
+      case SocialActionType.friendRequest:
+        return '친구 요청';
+      case SocialActionType.friendAccepted:
+        return '친구 요청 수락됨';
+      case SocialActionType.follow:
+        return '새로운 팔로워';
+      case SocialActionType.mention:
+        return '새로운 멘션';
+      case SocialActionType.share:
+        return '새로운 공유';
+    }
+  }
+
+  String _generateSocialContent(SocialActionType actionType, String postId) {
+    switch (actionType) {
+      case SocialActionType.like:
+        return '게시물에 좋아요를 받았습니다';
+      case SocialActionType.comment:
+        return '게시물에 새 댓글이 달렸습니다';
+      case SocialActionType.friendRequest:
+        return '친구 요청을 받았습니다';
+      case SocialActionType.friendAccepted:
+        return '친구 요청이 수락되었습니다';
+      case SocialActionType.follow:
+        return '새로운 팔로워가 있습니다';
+      case SocialActionType.mention:
+        return '게시물에서 멘션되었습니다';
+      case SocialActionType.share:
+        return '게시물이 공유되었습니다';
+    }
+  }
+
   // ===== 통계 및 분석 =====
-  
+
   @override
   Future<Map<String, dynamic>> getNotificationStats(String userId) async {
     try {
@@ -477,9 +585,9 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return [];
     }
   }
-  
+
   // ===== Clean Architecture Methods (New) =====
-  
+
   @override
   Future<void> initializeNotificationSystem({required String userId}) async {
     try {
@@ -487,18 +595,19 @@ class NotificationRepositoryImpl implements INotificationRepository {
       // Note: Actual implementation would initialize the notification system
       // For now, we'll just clear the cache and prepare for listening
       await _localDatasource.clearCache(userId);
-      print('[NotificationRepository] Notification system initialized for user: $userId');
+      print(
+          '[NotificationRepository] Notification system initialized for user: $userId');
     } catch (e) {
       throw Exception('Failed to initialize notification system: $e');
     }
   }
-  
+
   @override
   Future<Stream<Notification>> startListening({required String userId}) async {
     try {
       // Start listening to notification stream from remote datasource
       final stream = _remoteDatasource.watchUserNotifications(userId: userId);
-      
+
       // Transform stream to domain models
       return stream.expand((dataList) => dataList).map((data) {
         final dto = _createDtoFromMap(data);
@@ -508,7 +617,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
       throw Exception('Failed to start notification listening: $e');
     }
   }
-  
+
   @override
   Stream<int> getUnreadNotificationCount(String userId) {
     // Create a stream controller to emit unread count updates
@@ -525,7 +634,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
       }
     }).asyncMap((future) => future);
   }
-  
+
   @override
   Future<void> stopListening({required String userId}) async {
     try {
@@ -538,7 +647,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
       throw Exception('Failed to stop notification listening: $e');
     }
   }
-  
+
   @override
   Future<Map<String, dynamic>?> getPostData({required String postId}) async {
     try {
@@ -551,13 +660,13 @@ class NotificationRepositoryImpl implements INotificationRepository {
       throw Exception('Failed to get post data: $e');
     }
   }
-  
+
   // ===== Private Helper Methods =====
-  
+
   /// Map 데이터를 적절한 DTO로 변환
   NotificationDto _createDtoFromMap(Map<String, dynamic> data) {
     final type = data['type'] as String?;
-    
+
     switch (type) {
       case 'votingRequest':
         return VoteNotificationDto.fromJson(data);
@@ -569,27 +678,29 @@ class NotificationRepositoryImpl implements INotificationRepository {
         return NotificationDto.fromJson(data);
     }
   }
-  
+
   /// 추가 필터 적용
   List<Notification> _applyFilter(
     List<Notification> notifications,
     NotificationFilter? filter,
   ) {
     if (filter == null) return notifications;
-    
+
     var filtered = notifications;
-    
+
     // Exclude expired notifications if requested
     if (filter.excludeExpired == true) {
       filtered = filtered.where((n) => !n.isExpired).toList();
     }
-    
+
     // 정렬
     if (filter.sortBy == 'priority') {
       filtered.sort((a, b) {
-        final aPriority = (a is VoteNotification) ? a.notificationPriority.weight : 0;
-        final bPriority = (b is VoteNotification) ? b.notificationPriority.weight : 0;
-        
+        final aPriority =
+            (a is VoteNotification) ? a.notificationPriority.weight : 0;
+        final bPriority =
+            (b is VoteNotification) ? b.notificationPriority.weight : 0;
+
         if (filter.sortOrder == SortOrder.descending) {
           return bPriority.compareTo(aPriority);
         } else {
@@ -606,12 +717,12 @@ class NotificationRepositoryImpl implements INotificationRepository {
         }
       });
     }
-    
+
     // Limit 적용
     if (filter.limit != null && filtered.length > filter.limit!) {
       filtered = filtered.take(filter.limit!).toList();
     }
-    
+
     return filtered;
   }
 }

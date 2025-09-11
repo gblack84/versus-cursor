@@ -27,16 +27,17 @@ enum ExpansionStatus {
 class VoteException implements Exception {
   final String message;
   final String? code;
-  
+
   const VoteException(this.message, {this.code});
-  
+
   @override
-  String toString() => 'VoteException: $message${code != null ? ' (code: $code)' : ''}';
+  String toString() =>
+      'VoteException: $message${code != null ? ' (code: $code)' : ''}';
 }
 
 /// PostVoting Domain Model
 /// Clean Architecture - Domain Layer Entity
-/// 
+///
 /// Manages the complex voting system for Versus posts.
 /// Handles vote state, timing, counts, and expansion system.
 class PostVoting {
@@ -65,7 +66,7 @@ class PostVoting {
 
   // Core Identity
   final String postId; // Foreign key to PostCore.id
-  
+
   // Timing Fields
   final DateTime? voteStartTime;
   final DateTime? voteEndTime;
@@ -75,68 +76,68 @@ class PostVoting {
   final DateTime? voteCancelledAt;
   final String? voteCancelledReason;
   final Duration voteTimeout;
-  
+
   // Vote Counts
   final int votesA;
   final int votesB;
   final List<String> votedUserIdsA;
   final List<String> votedUserIdsB;
-  
+
   // Display Values (for animations/privacy)
   final int? displayVotesA; // May differ from actual for animation
   final int? displayVotesB;
-  
+
   // Notification System
   final bool notificationsSent;
   final DateTime? notificationsSentAt;
-  
+
   // Expansion System
   final int expansionPointsUsed;
   final int expandedUserCount;
   final String expansionStatus; // 'none', 'pending', 'active', 'completed'
 
   // ============= Computed Properties =============
-  
+
   /// Total votes cast
   int get totalVotes => votesA + votesB;
-  
+
   /// Check if voting is currently active
   bool get isActive => voteStatus == VoteStatus.active && !voteCompleted;
-  
+
   /// Check if user can vote
   bool canUserVote(String userId) {
     if (!isActive) return false;
     return !votedUserIdsA.contains(userId) && !votedUserIdsB.contains(userId);
   }
-  
+
   /// Check if user has voted
   bool hasUserVoted(String userId) {
     return votedUserIdsA.contains(userId) || votedUserIdsB.contains(userId);
   }
-  
+
   /// Get user's vote choice
   VoteOption? getUserVote(String userId) {
     if (votedUserIdsA.contains(userId)) return VoteOption.A;
     if (votedUserIdsB.contains(userId)) return VoteOption.B;
     return null;
   }
-  
+
   /// Calculate percentage for option A
   double get percentageA {
     if (totalVotes == 0) return 0.0;
     return (votesA / totalVotes) * 100;
   }
-  
+
   /// Calculate percentage for option B
   double get percentageB {
     if (totalVotes == 0) return 0.0;
     return (votesB / totalVotes) * 100;
   }
-  
+
   /// Get display votes (for UI animations)
   int get displayVotesAFinal => displayVotesA ?? votesA;
   int get displayVotesBFinal => displayVotesB ?? votesB;
-  
+
   /// Calculate remaining time
   Duration? get remainingTime {
     if (voteEndTime == null || !isActive) return null;
@@ -144,20 +145,20 @@ class PostVoting {
     if (now.isAfter(voteEndTime!)) return Duration.zero;
     return voteEndTime!.difference(now);
   }
-  
+
   /// Check if voting has timed out
   bool get hasTimedOut {
     if (voteEndTime == null) return false;
     return DateTime.now().isAfter(voteEndTime!);
   }
-  
+
   // ============= State Transitions =============
-  
+
   /// Start voting
   PostVoting startVoting({Duration? customTimeout}) {
     final now = DateTime.now();
     final timeout = customTimeout ?? voteTimeout;
-    
+
     return copyWith(
       voteStartTime: now,
       voteEndTime: now.add(timeout),
@@ -165,14 +166,14 @@ class PostVoting {
       voteCompleted: false,
     );
   }
-  
+
   /// Cast a vote
   PostVoting castVote({
     required String userId,
     required VoteOption choice,
   }) {
     if (!canUserVote(userId)) return this;
-    
+
     if (choice == VoteOption.A) {
       return copyWith(
         votesA: votesA + 1,
@@ -184,10 +185,10 @@ class PostVoting {
         votedUserIdsB: [...votedUserIdsB, userId],
       );
     }
-    
+
     return this;
   }
-  
+
   /// Complete voting
   PostVoting completeVoting() {
     return copyWith(
@@ -196,7 +197,7 @@ class PostVoting {
       voteCompletedAt: DateTime.now(),
     );
   }
-  
+
   /// Cancel voting
   PostVoting cancelVoting({String? reason}) {
     return copyWith(
@@ -206,7 +207,7 @@ class PostVoting {
       voteCancelledReason: reason,
     );
   }
-  
+
   /// Timeout voting
   PostVoting timeoutVoting() {
     return copyWith(
@@ -215,7 +216,7 @@ class PostVoting {
       voteCompletedAt: DateTime.now(),
     );
   }
-  
+
   /// Mark notifications as sent
   PostVoting markNotificationsSent() {
     return copyWith(
@@ -223,7 +224,7 @@ class PostVoting {
       notificationsSentAt: DateTime.now(),
     );
   }
-  
+
   /// Update expansion
   PostVoting updateExpansion({
     required int pointsUsed,
@@ -236,14 +237,14 @@ class PostVoting {
       expansionStatus: status,
     );
   }
-  
+
   // ============= Serialization =============
-  
+
   /// Parse vote status from string
   static VoteStatus _parseVoteStatus(dynamic value) {
     if (value == null) return VoteStatus.pending;
     if (value is VoteStatus) return value;
-    
+
     switch (value.toString().toLowerCase()) {
       case 'active':
         return VoteStatus.active;
@@ -257,7 +258,7 @@ class PostVoting {
         return VoteStatus.pending;
     }
   }
-  
+
   /// Convert VoteStatus to string for Firestore
   static String _voteStatusToString(VoteStatus status) {
     switch (status) {
@@ -285,7 +286,7 @@ class PostVoting {
       voteCompletedAt: data['voteCompletedAt']?.toDate(),
       voteCancelledAt: data['voteCancelledAt']?.toDate(),
       voteCancelledReason: data['voteCancelledReason'],
-      voteTimeout: data['voteTimeout'] != null 
+      voteTimeout: data['voteTimeout'] != null
           ? Duration(milliseconds: data['voteTimeout'])
           : const Duration(minutes: 10),
       votesA: data['votesA'] ?? 0,
@@ -301,17 +302,21 @@ class PostVoting {
       expansionStatus: data['expansionStatus'] ?? 'none',
     );
   }
-  
+
   /// Convert to Map for Firestore
   Map<String, dynamic> toFirestore() {
     return {
-      if (voteStartTime != null) 'voteStartTime': Timestamp.fromDate(voteStartTime!),
+      if (voteStartTime != null)
+        'voteStartTime': Timestamp.fromDate(voteStartTime!),
       if (voteEndTime != null) 'voteEndTime': Timestamp.fromDate(voteEndTime!),
       'voteStatus': _voteStatusToString(voteStatus),
       'voteCompleted': voteCompleted,
-      if (voteCompletedAt != null) 'voteCompletedAt': Timestamp.fromDate(voteCompletedAt!),
-      if (voteCancelledAt != null) 'voteCancelledAt': Timestamp.fromDate(voteCancelledAt!),
-      if (voteCancelledReason != null) 'voteCancelledReason': voteCancelledReason,
+      if (voteCompletedAt != null)
+        'voteCompletedAt': Timestamp.fromDate(voteCompletedAt!),
+      if (voteCancelledAt != null)
+        'voteCancelledAt': Timestamp.fromDate(voteCancelledAt!),
+      if (voteCancelledReason != null)
+        'voteCancelledReason': voteCancelledReason,
       'voteTimeout': voteTimeout.inMilliseconds,
       'votesA': votesA,
       'votesB': votesB,
@@ -320,13 +325,14 @@ class PostVoting {
       if (displayVotesA != null) 'displayVotesA': displayVotesA,
       if (displayVotesB != null) 'displayVotesB': displayVotesB,
       'notificationsSent': notificationsSent,
-      if (notificationsSentAt != null) 'notificationsSentAt': Timestamp.fromDate(notificationsSentAt!),
+      if (notificationsSentAt != null)
+        'notificationsSentAt': Timestamp.fromDate(notificationsSentAt!),
       'expansionPointsUsed': expansionPointsUsed,
       'expandedUserCount': expandedUserCount,
       'expansionStatus': expansionStatus,
     };
   }
-  
+
   /// Create a copy with updated fields
   PostVoting copyWith({
     String? postId,
@@ -373,16 +379,16 @@ class PostVoting {
       expansionStatus: expansionStatus ?? this.expansionStatus,
     );
   }
-  
+
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is PostVoting && other.postId == postId;
   }
-  
+
   @override
   int get hashCode => postId.hashCode;
-  
+
   @override
   String toString() {
     return 'PostVoting(postId: $postId, status: $voteStatus, votes: A=$votesA B=$votesB)';

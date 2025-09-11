@@ -87,7 +87,6 @@ class _PhonelogeinpincodeWidgetState extends State<PhonelogeinpincodeWidget> {
               extra: <String, dynamic>{
                 kTransitionInfoKey: TransitionInfo(
                   hasTransition: true,
-                  
                 ),
               },
             );
@@ -105,19 +104,15 @@ class _PhonelogeinpincodeWidgetState extends State<PhonelogeinpincodeWidget> {
                 ),
                 style: AppTheme.of(context).displaySmall.override(
                       font: GoogleFonts.plusJakartaSans(
-                        fontWeight: AppTheme.of(context)
-                            .displaySmall
-                            .fontWeight,
-                        fontStyle:
-                            AppTheme.of(context).displaySmall.fontStyle,
+                        fontWeight:
+                            AppTheme.of(context).displaySmall.fontWeight,
+                        fontStyle: AppTheme.of(context).displaySmall.fontStyle,
                       ),
                       color: Colors.black,
                       fontSize: 16.0,
                       letterSpacing: 0.0,
-                      fontWeight:
-                          AppTheme.of(context).displaySmall.fontWeight,
-                      fontStyle:
-                          AppTheme.of(context).displaySmall.fontStyle,
+                      fontWeight: AppTheme.of(context).displaySmall.fontWeight,
+                      fontStyle: AppTheme.of(context).displaySmall.fontStyle,
                     ),
               ),
             ),
@@ -158,21 +153,17 @@ class _PhonelogeinpincodeWidgetState extends State<PhonelogeinpincodeWidget> {
                   ),
                   style: AppTheme.of(context).headlineMedium.override(
                         font: GoogleFonts.plusJakartaSans(
-                          fontWeight: AppTheme.of(context)
-                              .headlineMedium
-                              .fontWeight,
-                          fontStyle: AppTheme.of(context)
-                              .headlineMedium
-                              .fontStyle,
+                          fontWeight:
+                              AppTheme.of(context).headlineMedium.fontWeight,
+                          fontStyle:
+                              AppTheme.of(context).headlineMedium.fontStyle,
                         ),
                         color: Colors.black,
                         letterSpacing: 0.0,
-                        fontWeight: AppTheme.of(context)
-                            .headlineMedium
-                            .fontWeight,
-                        fontStyle: AppTheme.of(context)
-                            .headlineMedium
-                            .fontStyle,
+                        fontWeight:
+                            AppTheme.of(context).headlineMedium.fontWeight,
+                        fontStyle:
+                            AppTheme.of(context).headlineMedium.fontStyle,
                       ),
                 ),
               ),
@@ -184,18 +175,13 @@ class _PhonelogeinpincodeWidgetState extends State<PhonelogeinpincodeWidget> {
                   ),
                   style: AppTheme.of(context).labelMedium.override(
                         font: GoogleFonts.plusJakartaSans(
-                          fontWeight: AppTheme.of(context)
-                              .labelMedium
-                              .fontWeight,
-                          fontStyle: AppTheme.of(context)
-                              .labelMedium
-                              .fontStyle,
+                          fontWeight:
+                              AppTheme.of(context).labelMedium.fontWeight,
+                          fontStyle: AppTheme.of(context).labelMedium.fontStyle,
                         ),
                         letterSpacing: 0.0,
-                        fontWeight:
-                            AppTheme.of(context).labelMedium.fontWeight,
-                        fontStyle:
-                            AppTheme.of(context).labelMedium.fontStyle,
+                        fontWeight: AppTheme.of(context).labelMedium.fontWeight,
+                        fontStyle: AppTheme.of(context).labelMedium.fontStyle,
                       ),
                 ),
               ),
@@ -234,18 +220,16 @@ class _PhonelogeinpincodeWidgetState extends State<PhonelogeinpincodeWidget> {
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.w600,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                           fontSize: 19.0,
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.w600,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
+                                          fontStyle: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontStyle,
                                         ),
                                   ),
                                   TextSpan(
@@ -259,23 +243,19 @@ Enter the 6-digit code sent t... */
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.bold,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.bold,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
+                                          fontStyle: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontStyle,
                                         ),
                                   )
                                 ],
-                                style: AppTheme.of(context)
-                                    .bodyMedium
-                                    .override(
+                                style: AppTheme.of(context).bodyMedium.override(
                                       font: GoogleFonts.plusJakartaSans(
                                         fontWeight: AppTheme.of(context)
                                             .bodyMedium
@@ -305,25 +285,24 @@ Enter the 6-digit code sent t... */
                               autoDisposeControllers: false,
                               appContext: context,
                               length: 6,
-                              textStyle: AppTheme.of(context)
-                                  .bodyLarge
-                                  .override(
-                                    font: GoogleFonts.plusJakartaSans(
-                                      fontWeight: AppTheme.of(context)
-                                          .bodyLarge
-                                          .fontWeight,
-                                      fontStyle: AppTheme.of(context)
-                                          .bodyLarge
-                                          .fontStyle,
-                                    ),
-                                    letterSpacing: 0.0,
-                                    fontWeight: AppTheme.of(context)
-                                        .bodyLarge
-                                        .fontWeight,
-                                    fontStyle: AppTheme.of(context)
-                                        .bodyLarge
-                                        .fontStyle,
-                                  ),
+                              textStyle:
+                                  AppTheme.of(context).bodyLarge.override(
+                                        font: GoogleFonts.plusJakartaSans(
+                                          fontWeight: AppTheme.of(context)
+                                              .bodyLarge
+                                              .fontWeight,
+                                          fontStyle: AppTheme.of(context)
+                                              .bodyLarge
+                                              .fontStyle,
+                                        ),
+                                        letterSpacing: 0.0,
+                                        fontWeight: AppTheme.of(context)
+                                            .bodyLarge
+                                            .fontWeight,
+                                        fontStyle: AppTheme.of(context)
+                                            .bodyLarge
+                                            .fontStyle,
+                                      ),
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               enableActiveFill: false,
                               autoFocus: true,
@@ -346,12 +325,9 @@ Enter the 6-digit code sent t... */
                                   topRight: Radius.circular(12.0),
                                 ),
                                 shape: PinCodeFieldShape.box,
-                                activeColor:
-                                    AppTheme.of(context).primaryText,
-                                inactiveColor:
-                                    AppTheme.of(context).alternate,
-                                selectedColor:
-                                    AppTheme.of(context).primary,
+                                activeColor: AppTheme.of(context).primaryText,
+                                inactiveColor: AppTheme.of(context).alternate,
+                                selectedColor: AppTheme.of(context).primary,
                               ),
                               controller: _model.pinCodeController,
                               onChanged: (_) {},
@@ -396,8 +372,7 @@ Enter the 6-digit code sent t... */
                           padding: EdgeInsets.all(10.0),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: AppTheme.of(context)
-                                  .secondaryBackground,
+                              color: AppTheme.of(context).secondaryBackground,
                               shape: BoxShape.rectangle,
                             ),
                             child: Column(
@@ -414,19 +389,17 @@ Enter the 6-digit code sent t... */
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.w800,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                           color: Color(0xFF8000FD),
                                           fontSize: 20.0,
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.w800,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
+                                          fontStyle: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontStyle,
                                         ),
                                   ),
                                 if (_model.isVerified == false)
@@ -440,19 +413,17 @@ Enter the 6-digit code sent t... */
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.w800,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                           color: Color(0xFFFF0000),
                                           fontSize: 20.0,
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.w800,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
+                                          fontStyle: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontStyle,
                                         ),
                                   ),
                               ],
@@ -462,8 +433,7 @@ Enter the 6-digit code sent t... */
                         Container(
                           width: double.infinity,
                           decoration: BoxDecoration(
-                            color: AppTheme.of(context)
-                                .secondaryBackground,
+                            color: AppTheme.of(context).secondaryBackground,
                           ),
                           child: Column(
                             mainAxisSize: MainAxisSize.max,
@@ -485,25 +455,24 @@ Enter the 6-digit code sent t... */
                                   if (shouldUpdate) setState(() {});
                                 },
                                 textAlign: TextAlign.start,
-                                style: AppTheme.of(context)
-                                    .headlineSmall
-                                    .override(
-                                      font: GoogleFonts.plusJakartaSans(
-                                        fontWeight: AppTheme.of(context)
-                                            .headlineSmall
-                                            .fontWeight,
-                                        fontStyle: AppTheme.of(context)
-                                            .headlineSmall
-                                            .fontStyle,
-                                      ),
-                                      letterSpacing: 0.0,
-                                      fontWeight: AppTheme.of(context)
-                                          .headlineSmall
-                                          .fontWeight,
-                                      fontStyle: AppTheme.of(context)
-                                          .headlineSmall
-                                          .fontStyle,
-                                    ),
+                                style:
+                                    AppTheme.of(context).headlineSmall.override(
+                                          font: GoogleFonts.plusJakartaSans(
+                                            fontWeight: AppTheme.of(context)
+                                                .headlineSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .headlineSmall
+                                                .fontStyle,
+                                          ),
+                                          letterSpacing: 0.0,
+                                          fontWeight: AppTheme.of(context)
+                                              .headlineSmall
+                                              .fontWeight,
+                                          fontStyle: AppTheme.of(context)
+                                              .headlineSmall
+                                              .fontStyle,
+                                        ),
                               ),
                               Padding(
                                 padding: EdgeInsets.all(8.0),
@@ -563,8 +532,7 @@ Enter the 6-digit code sent t... */
                                                 content: Text(
                                                   'pMessage resent. After 3 attempts, you will be returned to the login screen.',
                                                   style: TextStyle(
-                                                    color: AppTheme.of(
-                                                            context)
+                                                    color: AppTheme.of(context)
                                                         .primaryText,
                                                   ),
                                                   textAlign: TextAlign.center,
@@ -601,25 +569,21 @@ Enter the 6-digit code sent t... */
                                         .titleSmall
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
                                           ),
                                           color: Colors.white,
                                           letterSpacing: 0.0,
-                                          fontWeight:
-                                              AppTheme.of(context)
-                                                  .titleSmall
-                                                  .fontWeight,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .titleSmall
-                                                  .fontStyle,
+                                          fontWeight: AppTheme.of(context)
+                                              .titleSmall
+                                              .fontWeight,
+                                          fontStyle: AppTheme.of(context)
+                                              .titleSmall
+                                              .fontStyle,
                                         ),
                                     elevation: 10.0,
                                     borderRadius: BorderRadius.circular(8.0),
@@ -642,24 +606,20 @@ Enter the 6-digit code sent t... */
                                         .bodyMedium
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                           letterSpacing: 0.0,
-                                          fontWeight:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontWeight,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
+                                          fontWeight: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontWeight,
+                                          fontStyle: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontStyle,
                                         ),
                                   ),
                                 ),
@@ -691,7 +651,6 @@ Enter the 6-digit code sent t... */
                               extra: <String, dynamic>{
                                 kTransitionInfoKey: TransitionInfo(
                                   hasTransition: true,
-                                  
                                   duration: Duration(milliseconds: 500),
                                 ),
                               },
@@ -708,25 +667,20 @@ Enter the 6-digit code sent t... */
                       iconPadding:
                           EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                       color: Colors.black,
-                      textStyle:
-                          AppTheme.of(context).titleSmall.override(
-                                font: GoogleFonts.plusJakartaSans(
-                                  fontWeight: AppTheme.of(context)
-                                      .titleSmall
-                                      .fontWeight,
-                                  fontStyle: AppTheme.of(context)
-                                      .titleSmall
-                                      .fontStyle,
-                                ),
-                                color: Colors.white,
-                                letterSpacing: 0.0,
-                                fontWeight: AppTheme.of(context)
-                                    .titleSmall
-                                    .fontWeight,
-                                fontStyle: AppTheme.of(context)
-                                    .titleSmall
-                                    .fontStyle,
-                              ),
+                      textStyle: AppTheme.of(context).titleSmall.override(
+                            font: GoogleFonts.plusJakartaSans(
+                              fontWeight:
+                                  AppTheme.of(context).titleSmall.fontWeight,
+                              fontStyle:
+                                  AppTheme.of(context).titleSmall.fontStyle,
+                            ),
+                            color: Colors.white,
+                            letterSpacing: 0.0,
+                            fontWeight:
+                                AppTheme.of(context).titleSmall.fontWeight,
+                            fontStyle:
+                                AppTheme.of(context).titleSmall.fontStyle,
+                          ),
                       elevation: 10.0,
                       borderSide: BorderSide(
                         color: Colors.transparent,

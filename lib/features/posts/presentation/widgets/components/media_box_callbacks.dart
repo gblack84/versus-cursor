@@ -8,7 +8,8 @@ class MediaBoxCallbacks {
   final BuildContext context;
   final InPutPostImageModel model;
   final VoidCallback showBBoxWarning;
-  final Function(BuildContext, String, {bool isAddMode, int? currentIndex}) openAssetsPicker;
+  final Function(BuildContext, String, {bool isAddMode, int? currentIndex})
+      openAssetsPicker;
   final VoidCallback showSnackBar;
   final VoidCallback updateLayout;
   final void Function(VoidCallback) setState;
@@ -32,7 +33,7 @@ class MediaBoxCallbacks {
     });
     // 레이아웃 재계산 트리거
     updateLayout();
-    
+
     // 디버그 로그
     print('[MediaBoxCallbacks] B박스 표시 - 레이아웃 재계산 실행');
   }
@@ -43,7 +44,8 @@ class MediaBoxCallbacks {
       showBBoxWarning();
     } else {
       // 추가 모드로 피커 열기
-      await openAssetsPicker(context, box, isAddMode: true, currentIndex: currentIndex);
+      await openAssetsPicker(context, box,
+          isAddMode: true, currentIndex: currentIndex);
     }
   }
 
@@ -71,8 +73,9 @@ class MediaBoxCallbacks {
   }
 
   void _deleteFromA(int index) {
-    print('A박스 이미지 삭제 실행 - 인덱스: $index, 현재 이미지 개수: ${appState.tempImageFilesA.length}');
-    
+    print(
+        'A박스 이미지 삭제 실행 - 인덱스: $index, 현재 이미지 개수: ${appState.tempImageFilesA.length}');
+
     // tempImageFiles 사용 여부 확인
     if (appState.tempImageFilesA.isNotEmpty) {
       if (index < appState.tempImageFilesA.length) {
@@ -84,10 +87,11 @@ class MediaBoxCallbacks {
         if (index < appState.assetEntityIdsA.length) {
           appState.removeAtIndexFromAssetEntityIdsA(index);
         }
-        
+
         // currentIndex 조정
         if (appState.tempImageFilesA.isNotEmpty) {
-          model.currentImageIndexA = model.currentImageIndexA.clamp(0, appState.tempImageFilesA.length - 1);
+          model.currentImageIndexA = model.currentImageIndexA
+              .clamp(0, appState.tempImageFilesA.length - 1);
         } else {
           model.currentImageIndexA = 0;
         }
@@ -109,10 +113,11 @@ class MediaBoxCallbacks {
         if (index < appState.assetEntityIdsB.length) {
           appState.removeAtIndexFromAssetEntityIdsB(index);
         }
-        
+
         // currentIndex 조정
         if (appState.tempImageFilesB.isNotEmpty) {
-          model.currentImageIndexB = model.currentImageIndexB.clamp(0, appState.tempImageFilesB.length - 1);
+          model.currentImageIndexB = model.currentImageIndexB
+              .clamp(0, appState.tempImageFilesB.length - 1);
         } else {
           model.currentImageIndexB = 0;
         }

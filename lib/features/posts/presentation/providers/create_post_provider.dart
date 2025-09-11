@@ -14,7 +14,8 @@ import '/features/posts/domain/models/post_stats.dart';
 import '/features/posts/data/models/poll_details_model.dart';
 import '/features/auth/data/adapters/auth_util.dart';
 import '/features/posts/data/adapters/validation_service.dart';
-import '/features/posts/data/adapters/moderation/models/moderation_result.dart' as ai;
+import '/features/posts/data/adapters/moderation/models/moderation_result.dart'
+    as ai;
 import '/services/content/content_filter.dart';
 import '/core/types/layout_type.dart';
 import '/features/posts/domain/usecases/media/ratio_calculator.dart';
@@ -29,8 +30,8 @@ class CreatePostProvider extends ChangeNotifier {
   CreatePostProvider({
     IPostRepository? postRepository,
     IUserRepository? userRepository,
-  }) : _postRepository = postRepository ?? GetIt.instance<IPostRepository>(),
-       _userRepository = userRepository ?? GetIt.instance<IUserRepository>() {
+  })  : _postRepository = postRepository ?? GetIt.instance<IPostRepository>(),
+        _userRepository = userRepository ?? GetIt.instance<IUserRepository>() {
     _initialize();
   }
   // Text Controllers
@@ -52,7 +53,7 @@ class CreatePostProvider extends ChangeNotifier {
   LayoutType _currentLayout = LayoutType.horizontal;
   String? _validationMessage;
   String _validationSessionId = '';
-  
+
   // Getters
   bool get isValidating => _isValidating;
   bool get isShowingDialog => _isShowingDialog;
@@ -64,9 +65,10 @@ class CreatePostProvider extends ChangeNotifier {
   void _initialize() {
     // Generate validation session ID
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final random = DateTime.now().microsecondsSinceEpoch.toString().substring(10);
+    final random =
+        DateTime.now().microsecondsSinceEpoch.toString().substring(10);
     _validationSessionId = '${timestamp}_$random';
-    
+
     // Initialize content filter
     ContentFilter.initialize();
   }
@@ -74,8 +76,8 @@ class CreatePostProvider extends ChangeNotifier {
   /// Check if all required fields are filled
   bool areRequiredFieldsFilled() {
     return titleController.text.isNotEmpty &&
-           textAController.text.isNotEmpty &&
-           (!_isSingleMode || textBController.text.isNotEmpty);
+        textAController.text.isNotEmpty &&
+        (!_isSingleMode || textBController.text.isNotEmpty);
   }
 
   /// Toggle single/dual mode
@@ -153,22 +155,26 @@ class CreatePostProvider extends ChangeNotifier {
       }
 
       // Calculate aspect ratios
-      final aspectRatioA = appState.uploadImageAspectRatioA.isNotEmpty 
+      final aspectRatioA = appState.uploadImageAspectRatioA.isNotEmpty
           ? RatioCalculator.getRatio(appState.uploadImageAspectRatioA, box: 'A')
           : null;
-      final aspectRatioB = (_isSingleMode || appState.uploadImageAspectRatioB.isEmpty)
-          ? null
-          : RatioCalculator.getRatio(appState.uploadImageAspectRatioB, box: 'B');
+      final aspectRatioB =
+          (_isSingleMode || appState.uploadImageAspectRatioB.isEmpty)
+              ? null
+              : RatioCalculator.getRatio(appState.uploadImageAspectRatioB,
+                  box: 'B');
 
       // Determine layout type
       String layoutType;
       if (_isSingleMode) {
         layoutType = 'single';
       } else if (aspectRatioA != null || aspectRatioB != null) {
-        final analyzedLayout = layoutAnalyzer.getOptimalLayout(aspectRatioA, aspectRatioB);
+        final analyzedLayout =
+            layoutAnalyzer.getOptimalLayout(aspectRatioA, aspectRatioB);
         layoutType = analyzedLayout.name;
       } else {
-        layoutType = _currentLayout == LayoutType.horizontal ? 'horizontal' : 'vertical';
+        layoutType =
+            _currentLayout == LayoutType.horizontal ? 'horizontal' : 'vertical';
       }
 
       // Create post using domain model
@@ -204,10 +210,10 @@ class CreatePostProvider extends ChangeNotifier {
 
       // Save using repository
       await _postRepository.createPost(post);
-      
+
       // Clear form data
       clearForm(appState);
-      
+
       ErrorHandler.showSuccessToast('질문이 성공적으로 등록되었습니다!');
     } catch (e) {
       ErrorHandler.handle(
@@ -228,7 +234,7 @@ class CreatePostProvider extends ChangeNotifier {
     descriptionController.clear();
     textAController.clear();
     textBController.clear();
-    
+
     appState.update(() {
       appState.uploadImageA = [];
       appState.uploadImageB = [];
@@ -243,7 +249,7 @@ class CreatePostProvider extends ChangeNotifier {
       appState.uploadTextA = '';
       appState.uploadTextB = '';
     });
-    
+
     notifyListeners();
   }
 

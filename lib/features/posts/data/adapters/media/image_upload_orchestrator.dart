@@ -16,7 +16,7 @@ class ImageUploadOrchestrator {
   final AppState appState;
   final String box;
   final InPutPostImageModel? model; // 편집 모드 감지를 위해 추가
-  
+
   ImageUploadOrchestrator({
     required this.context,
     required this.appState,
@@ -45,38 +45,39 @@ class ImageUploadOrchestrator {
     try {
       // 1. 편집된 이미지 업로드 및 검열
       onModerationProgress?.call(1, allFiles.isEmpty ? 1 : allFiles.length);
-      
+
       final editedResult = await MediaUploadService.uploadAndWaitForModeration(
         imageBytes: editedImageBytes,
         box: box,
         timeout: const Duration(seconds: 15),
       );
-      
+
       // 편집된 이미지 검열 결과 저장
       bool firstImageRejected = false;
       String? firstImageRejectionReason;
-      
+
       if (editedResult['isApproved'] != true) {
         firstImageRejected = true;
-        firstImageRejectionReason = editedResult['rejectionReason'] ?? '커뮤니티 가이드라인 위반';
+        firstImageRejectionReason =
+            editedResult['rejectionReason'] ?? '커뮤니티 가이드라인 위반';
         print('[ImageUploadOrchestrator] 첫 번째 이미지 검열 실패');
       }
-      
+
       // Vision API 데이터를 model에 저장 (첫 번째 이미지)
       if (model != null && editedResult['moderation'] != null) {
         final moderation = editedResult['moderation'] as ImageModerationModel;
         final visionData = _extractVisionData(moderation);
-        
+
         if (box == 'A') {
           model!.visionResultA = visionData;
         } else {
           model!.visionResultB = visionData;
         }
       }
-      
+
       final editedDisplayUrl = editedResult['urls']['display'] as String;
       final editedAspectRatio = editedResult['aspectRatio'] as double;
-      
+
       // 2. 첫 번째 이미지가 승인된 경우에만 추가
       if (!firstImageRejected) {
         if (isAddMode && currentIndex != null) {
@@ -85,7 +86,7 @@ class ImageUploadOrchestrator {
             reorderedUrls.addAll(existingImageUrls);
             reorderedRatios.addAll(existingAspectRatios);
           }
-          
+
           // 새 이미지를 추가
           reorderedUrls.add(editedDisplayUrl);
           reorderedRatios.add(editedAspectRatio);
@@ -94,18 +95,20 @@ class ImageUploadOrchestrator {
           reorderedUrls.add(editedDisplayUrl);
           reorderedRatios.add(editedAspectRatio);
         }
-        
+
         // 첫 번째 이미지 즉시 프리캐싱
         await _precacheImage(editedDisplayUrl);
       }
-      
+
       onProgress?.call(0.4);
-      
+
       // 3. 나머지 이미지들 처리
       final rejectionReasonsMap = <String, List<int>>{}; // 거부 이유별 이미지 번호
       int rejectedCount = 0;
-      
-      if (!isAddMode && existingImageUrls != null && existingImageUrls.isNotEmpty) {
+
+      if (!isAddMode &&
+          existingImageUrls != null &&
+          existingImageUrls.isNotEmpty) {
         // 기존 URL 재사용 모드
         await _reuseExistingImages(
           existingImageUrls: existingImageUrls,
@@ -126,27 +129,31 @@ class ImageUploadOrchestrator {
           reorderedRatios: reorderedRatios,
           onProgress: onProgress,
         );
-        
+
         rejectedCount = uploadResult['rejectedCount'] as int;
-        final resultRejectionMap = uploadResult['rejectionReasonsMap'] as Map<String, List<int>>;
-        
+        final resultRejectionMap =
+            uploadResult['rejectionReasonsMap'] as Map<String, List<int>>;
+
         // 결과를 rejectionReasonsMap에 병합
         resultRejectionMap.forEach((reason, numbers) {
           rejectionReasonsMap.putIfAbsent(reason, () => []).addAll(numbers);
         });
-        
+
         // 첫 번째 이미지가 거부된 경우 추가
         if (firstImageRejected) {
           rejectedCount++;
-          rejectionReasonsMap.putIfAbsent(firstImageRejectionReason!, () => []).add(0);
+          rejectionReasonsMap
+              .putIfAbsent(firstImageRejectionReason!, () => [])
+              .add(0);
         }
-        
+
         // 전체 이미지 개수와 거부된 이미지 개수 확인
         final totalImages = allFiles.length;
         final approvedCount = totalImages - rejectedCount;
-        
-        print('[ImageUploadOrchestrator] 전체 이미지: $totalImages, 거부: $rejectedCount, 승인: $approvedCount');
-        
+
+        print(
+            '[ImageUploadOrchestrator] 전체 이미지: $totalImages, 거부: $rejectedCount, 승인: $approvedCount');
+
         // 시나리오 판단
         if (approvedCount == 0) {
           // 시나리오 2: 모든 이미지가 거부됨
@@ -157,14 +164,14 @@ class ImageUploadOrchestrator {
               box: box,
             );
           }
-          
+
           // 거부 이유 메시지 생성
           final messages = <String>[];
           rejectionReasonsMap.forEach((reason, numbers) {
             final adjustedNumbers = numbers.map((n) => n + 1).toList()..sort();
             messages.add('$reason: ${adjustedNumbers.join(",")}');
           });
-          
+
           return ImageUploadResult(
             success: false,
             rejectionReason: messages.join('\n'),
@@ -173,14 +180,14 @@ class ImageUploadOrchestrator {
         } else if (rejectedCount > 0) {
           // 시나리오 1: 일부 이미지만 거부됨
           onProgress?.call(1.0);
-          
+
           // AppState 업데이트 먼저 수행
           _updateAppState(
             reorderedUrls: reorderedUrls,
             reorderedRatios: reorderedRatios,
             reorderedAssetIds: reorderedAssetIds,
           );
-          
+
           // 편집 모드일 경우 승인된 이미지만으로 DB 업데이트
           if (model != null && model!.isEditMode) {
             await _updateFirestoreAfterRejection(
@@ -188,14 +195,14 @@ class ImageUploadOrchestrator {
               box: box,
             );
           }
-          
+
           // 거부 이유 메시지 생성
           final messages = <String>[];
           rejectionReasonsMap.forEach((reason, numbers) {
             final adjustedNumbers = numbers.map((n) => n + 1).toList()..sort();
             messages.add('$reason: ${adjustedNumbers.join(",")}');
           });
-          
+
           return ImageUploadResult(
             success: true,
             imageUrls: reorderedUrls,
@@ -205,7 +212,7 @@ class ImageUploadOrchestrator {
           );
         }
       }
-      
+
       // 4. AssetEntity ID 순서 맞추기
       _reorderAssetIds(
         isAddMode: isAddMode,
@@ -214,14 +221,14 @@ class ImageUploadOrchestrator {
         currentEditIndex: currentEditIndex,
         reorderedAssetIds: reorderedAssetIds,
       );
-      
+
       // 5. AppState 업데이트
       _updateAppState(
         reorderedUrls: reorderedUrls,
         reorderedRatios: reorderedRatios,
         reorderedAssetIds: reorderedAssetIds,
       );
-      
+
       // 6. 편집 모드일 경우 DB 업데이트
       if (model != null && model!.isEditMode && rejectedCount > 0) {
         await _updateFirestoreAfterRejection(
@@ -229,16 +236,15 @@ class ImageUploadOrchestrator {
           box: box,
         );
       }
-      
+
       onProgress?.call(1.0);
-      
+
       return ImageUploadResult(
         success: true,
         imageUrls: reorderedUrls,
         aspectRatios: reorderedRatios,
         assetIds: reorderedAssetIds,
       );
-      
     } catch (e) {
       return ImageUploadResult(
         success: false,
@@ -257,25 +263,25 @@ class ImageUploadOrchestrator {
   }) async {
     try {
       onModerationStart?.call();
-      
+
       final result = await MediaUploadService.uploadAndWaitForModeration(
         imageBytes: imageBytes,
         box: box,
         timeout: const Duration(seconds: 15),
       );
-      
+
       // Vision API 데이터를 model에 저장
       if (model != null && result['moderation'] != null) {
         final moderation = result['moderation'] as ImageModerationModel;
         final visionData = _extractVisionData(moderation);
-        
+
         if (box == 'A') {
           model!.visionResultA = visionData;
         } else {
           model!.visionResultB = visionData;
         }
       }
-      
+
       // 검열 결과 확인
       if (result['isApproved'] != true) {
         // 편집 모드일 경우 빈 배열로 DB 업데이트
@@ -285,18 +291,18 @@ class ImageUploadOrchestrator {
             box: box,
           );
         }
-        
+
         return ImageUploadResult(
           success: false,
           rejectionReason: result['rejectionReason'] ?? '커뮤니티 가이드라인 위반',
         );
       }
-      
+
       final displayUrl = result['urls']['display'] as String;
       final aspectRatio = result['aspectRatio'] as double;
-      
+
       onProgress?.call(0.9);
-      
+
       // 편집 모드가 아닐 때만 AppState에 추가
       if (!isEditMode) {
         appState.update(() {
@@ -315,17 +321,16 @@ class ImageUploadOrchestrator {
           }
         });
       }
-      
+
       // 프리캐싱
       await _precacheImage(displayUrl);
       onProgress?.call(1.0);
-      
+
       return ImageUploadResult(
         success: true,
         imageUrls: [displayUrl],
         aspectRatios: [aspectRatio],
       );
-      
     } catch (e) {
       return ImageUploadResult(
         success: false,
@@ -367,46 +372,44 @@ class ImageUploadOrchestrator {
   }) async {
     final uploadFutures = <Future<Map<String, dynamic>>>[];
     final fileBytesFutures = <Future<Uint8List>>[];
-    
+
     // 파일 읽기를 먼저 병렬로 처리
     for (int i = 0; i < allFiles.length; i++) {
       if (i != currentEditIndex) {
         fileBytesFutures.add(allFiles[i].readAsBytes());
       }
     }
-    
+
     if (fileBytesFutures.isNotEmpty) {
       final allFileBytes = await Future.wait(fileBytesFutures);
-      
+
       // 업로드 작업을 병렬로 시작
       for (final fileBytes in allFileBytes) {
-        uploadFutures.add(
-          MediaUploadService.uploadAndWaitForModeration(
-            imageBytes: fileBytes,
-            box: box,
-            timeout: const Duration(seconds: 15),
-          ).catchError((e) {
-            print('[ImageUploadOrchestrator] 이미지 업로드 실패 (건너뜀): $e');
-            return <String, dynamic>{
-              'urls': {'display': '', 'original': '', 'thumbnail': ''},
-              'aspectRatio': 1.0,
-              'isApproved': true, // 에러 시 기본값
-            };
-          })
-        );
+        uploadFutures.add(MediaUploadService.uploadAndWaitForModeration(
+          imageBytes: fileBytes,
+          box: box,
+          timeout: const Duration(seconds: 15),
+        ).catchError((e) {
+          print('[ImageUploadOrchestrator] 이미지 업로드 실패 (건너뜀): $e');
+          return <String, dynamic>{
+            'urls': {'display': '', 'original': '', 'thumbnail': ''},
+            'aspectRatio': 1.0,
+            'isApproved': true, // 에러 시 기본값
+          };
+        }));
       }
-      
+
       onProgress?.call(0.6);
-      
+
       // 모든 업로드 완료 대기
       final results = await Future.wait(uploadFutures);
-      
+
       // 결과 처리 및 프리캐싱
       final precacheFutures = <Future<void>>[];
       int imageIndex = 1; // 편집된 이미지가 0번이므로 1부터 시작
       int rejectedCount = 0; // 거부된 이미지 개수 추적
       final rejectionReasonsMap = <String, List<int>>{}; // 거부 이유별 이미지 번호
-      
+
       for (final result in results) {
         // 검열 결과 확인
         if (result['isApproved'] == true) {
@@ -414,7 +417,7 @@ class ImageUploadOrchestrator {
           if (displayUrl != null && displayUrl.isNotEmpty) {
             reorderedUrls.add(displayUrl);
             reorderedRatios.add(result['aspectRatio']);
-            
+
             // 백그라운드 프리캐싱
             precacheFutures.add(_precacheImage(displayUrl));
           }
@@ -426,18 +429,18 @@ class ImageUploadOrchestrator {
         }
         imageIndex++;
       }
-      
+
       // 나머지 이미지들은 백그라운드에서 계속 프리캐싱
       Future.wait(precacheFutures).then((_) {
         print('모든 이미지 프리캐싱 완료');
       });
-      
+
       return {
         'rejectedCount': rejectedCount,
         'rejectionReasonsMap': rejectionReasonsMap,
       };
     }
-    
+
     return {
       'rejectedCount': 0,
       'rejectionReasonsMap': <String, List<int>>{},
@@ -457,7 +460,8 @@ class ImageUploadOrchestrator {
       if (existingAssetIds != null) {
         reorderedAssetIds.addAll(existingAssetIds);
       }
-      if (selectedAssets.isNotEmpty && currentEditIndex < selectedAssets.length) {
+      if (selectedAssets.isNotEmpty &&
+          currentEditIndex < selectedAssets.length) {
         reorderedAssetIds.add(selectedAssets[currentEditIndex].id);
       }
     } else if (selectedAssets.isNotEmpty) {
@@ -484,31 +488,42 @@ class ImageUploadOrchestrator {
         'medical': moderation.safeSearchResults.medical,
         'spoof': moderation.safeSearchResults.spoof,
       },
-      'labels': moderation.labels.map((label) => {
-        'description': label.description,
-        'score': label.score,
-      }).toList(),
-      'detectedText': moderation.detectedText.isNotEmpty ? moderation.detectedText : null,
-      'logos': moderation.logos.map((logo) => {
-        'description': logo.description,
-        'score': logo.score,
-      }).toList(),
-      'objects': moderation.objects.map((obj) => {
-        'name': obj.name,
-        'score': obj.score,
-      }).toList(),
-      'dominantColors': moderation.dominantColors.map((color) => {
-        'red': color.color['red'] ?? 0,
-        'green': color.color['green'] ?? 0,
-        'blue': color.color['blue'] ?? 0,
-        'score': color.score,
-      }).toList(),
-      'faces': moderation.faces.map((face) => {
-        'joy': face.joyLikelihood,
-        'sorrow': face.sorrowLikelihood,
-        'anger': face.angerLikelihood,
-        'surprise': face.surpriseLikelihood,
-      }).toList(),
+      'labels': moderation.labels
+          .map((label) => {
+                'description': label.description,
+                'score': label.score,
+              })
+          .toList(),
+      'detectedText':
+          moderation.detectedText.isNotEmpty ? moderation.detectedText : null,
+      'logos': moderation.logos
+          .map((logo) => {
+                'description': logo.description,
+                'score': logo.score,
+              })
+          .toList(),
+      'objects': moderation.objects
+          .map((obj) => {
+                'name': obj.name,
+                'score': obj.score,
+              })
+          .toList(),
+      'dominantColors': moderation.dominantColors
+          .map((color) => {
+                'red': color.color['red'] ?? 0,
+                'green': color.color['green'] ?? 0,
+                'blue': color.color['blue'] ?? 0,
+                'score': color.score,
+              })
+          .toList(),
+      'faces': moderation.faces
+          .map((face) => {
+                'joy': face.joyLikelihood,
+                'sorrow': face.sorrowLikelihood,
+                'anger': face.angerLikelihood,
+                'surprise': face.surpriseLikelihood,
+              })
+          .toList(),
       'moderationStatus': moderation.moderationStatus,
       'moderatedAt': moderation.moderatedAt?.toIso8601String(),
     };
@@ -532,7 +547,7 @@ class ImageUploadOrchestrator {
       }
     });
   }
-  
+
   /// Firestore에서 거부된 이미지 후 업데이트
   Future<void> _updateFirestoreAfterRejection({
     required List<String> approvedUrls,
@@ -542,38 +557,39 @@ class ImageUploadOrchestrator {
     if (model == null || !model!.isEditMode || model!.existingPostRef == null) {
       return;
     }
-    
+
     try {
       final postRef = model!.existingPostRef!;
-      
+
       // 필드 이름 결정
       final optionField = box == 'A' ? 'optionA' : 'optionB';
-      final pollOptionField = box == 'A' ? 'option_1_media_urls' : 'option_2_media_urls';
-      
+      final pollOptionField =
+          box == 'A' ? 'option_1_media_urls' : 'option_2_media_urls';
+
       // 트랜잭션으로 원자성 보장
       await FirebaseFirestore.instance.runTransaction((transaction) async {
         // posts_record 업데이트
         transaction.update(postRef, {
           '$optionField.mediaUrls': approvedUrls,
         });
-        
+
         // poll_details 서브컬렉션 업데이트
-        final pollDetailsQuery = await postRef
-            .collection('pollDetails')
-            .limit(1)
-            .get();
-            
+        final pollDetailsQuery =
+            await postRef.collection('pollDetails').limit(1).get();
+
         if (pollDetailsQuery.docs.isNotEmpty) {
           final pollDetailsRef = pollDetailsQuery.docs.first.reference;
           transaction.update(pollDetailsRef, {
             pollOptionField: approvedUrls,
             // 첫 번째 이미지 URL도 업데이트 (단일 URL 필드)
-            '${pollOptionField.replaceAll('_urls', '_url')}': approvedUrls.isNotEmpty ? approvedUrls.first : '',
+            '${pollOptionField.replaceAll('_urls', '_url')}':
+                approvedUrls.isNotEmpty ? approvedUrls.first : '',
           });
         }
       });
-      
-      DebugHelper.log('[ImageUploadOrchestrator] 거부된 이미지 후 Firestore 업데이트 성공 - $box 박스');
+
+      DebugHelper.log(
+          '[ImageUploadOrchestrator] 거부된 이미지 후 Firestore 업데이트 성공 - $box 박스');
     } catch (e) {
       DebugHelper.logError('Firestore 업데이트 중 오류', e);
       // 에러가 발생해도 사용자 경험은 방해하지 않음

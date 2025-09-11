@@ -29,12 +29,12 @@ class ChatMediaUploadService {
 
       // Compress image
       final compressedImage = await _compressImage(imageFile);
-      
+
       // Generate storage path
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final fileName = 'chat_image_$timestamp.jpg';
       final storagePath = 'chat_media/$chatId/$messageId/$fileName';
-      
+
       // Upload to Firebase Storage
       final ref = _storage.ref().child(storagePath);
       final uploadTask = await ref.putData(compressedImage);
@@ -44,7 +44,7 @@ class ChatMediaUploadService {
       final codec = await ui.instantiateImageCodec(compressedImage);
       final frame = await codec.getNextFrame();
       final image = frame.image;
-      
+
       return {
         'url': downloadUrl,
         'size': compressedImage.length,
@@ -72,12 +72,12 @@ class ChatMediaUploadService {
 
       // Generate thumbnail
       final thumbnailPath = await _generateVideoThumbnail(videoFile);
-      
+
       // Generate storage paths
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final videoFileName = 'chat_video_$timestamp.mp4';
       final videoStoragePath = 'chat_media/$chatId/$messageId/$videoFileName';
-      
+
       // Upload video
       final videoRef = _storage.ref().child(videoStoragePath);
       final videoUploadTask = await videoRef.putFile(videoFile);
@@ -88,16 +88,17 @@ class ChatMediaUploadService {
       if (thumbnailPath != null) {
         final thumbnailFile = File(thumbnailPath);
         final thumbnailFileName = 'video_thumbnail_$timestamp.jpg';
-        final thumbnailStoragePath = 'chat_media/$chatId/$messageId/$thumbnailFileName';
-        
+        final thumbnailStoragePath =
+            'chat_media/$chatId/$messageId/$thumbnailFileName';
+
         final thumbnailRef = _storage.ref().child(thumbnailStoragePath);
         final thumbnailUploadTask = await thumbnailRef.putFile(thumbnailFile);
         thumbnailUrl = await thumbnailUploadTask.ref.getDownloadURL();
-        
+
         // Clean up temp thumbnail
         await thumbnailFile.delete();
       }
-      
+
       return {
         'url': videoUrl,
         'thumbnailUrl': thumbnailUrl,
@@ -112,7 +113,7 @@ class ChatMediaUploadService {
   /// Compress image to reduce file size
   Future<Uint8List> _compressImage(File imageFile) async {
     final bytes = await imageFile.readAsBytes();
-    
+
     // Compress and resize if needed
     final compressedBytes = await FlutterImageCompress.compressWithList(
       bytes,
@@ -121,7 +122,7 @@ class ChatMediaUploadService {
       quality: compressionQuality,
       format: CompressFormat.jpeg,
     );
-    
+
     return compressedBytes;
   }
 
@@ -136,7 +137,7 @@ class ChatMediaUploadService {
         maxHeight: 400,
         quality: 75,
       );
-      
+
       return thumbnailPath;
     } catch (e) {
       print('Thumbnail generation failed: $e');
@@ -160,7 +161,7 @@ class ChatMediaUploadService {
   }) {
     final ref = _storage.ref().child(path);
     final uploadTask = ref.putFile(file);
-    
+
     return uploadTask.snapshotEvents.map((snapshot) {
       return snapshot.bytesTransferred / snapshot.totalBytes;
     });

@@ -5,6 +5,7 @@ import 'package:get_it/get_it.dart';
 import '/features/profile/domain/repositories/i_user_repository.dart';
 import '/features/profile/domain/models/user_profile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '/features/profile/domain/models/friends_list_model.dart';
 
 class FriendsListWidget extends StatefulWidget {
   const FriendsListWidget({Key? key}) : super(key: key);
@@ -30,8 +31,8 @@ class _FriendsListWidgetState extends State<FriendsListWidget> {
         title: Text(
           '친구',
           style: VersusTextStyles.headingSmall.copyWith(
-                color: Colors.black,
-              ),
+            color: Colors.black,
+          ),
         ),
         actions: [
           IconButton(
@@ -162,7 +163,7 @@ class _FriendsListWidgetState extends State<FriendsListWidget> {
         }
 
         final userData = snapshot.data!;
-        
+
         return InkWell(
           onTap: () {
             // 프로필 페이지로 이동

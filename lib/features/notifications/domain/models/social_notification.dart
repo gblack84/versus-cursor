@@ -11,7 +11,7 @@ class SocialNotification extends Notification {
   final String? relatedCommentId;
   final String? relatedContent;
   final int? interactionCount;
-  
+
   // Alternative field names for repository compatibility
   String get actorId => fromUserId;
   String get actorName => fromUserName;
@@ -40,7 +40,8 @@ class SocialNotification extends Notification {
         );
 
   /// 액션 타입을 알림 타입으로 매핑
-  static NotificationType _mapActionTypeToNotificationType(SocialActionType actionType) {
+  static NotificationType _mapActionTypeToNotificationType(
+      SocialActionType actionType) {
     switch (actionType) {
       case SocialActionType.like:
         return NotificationType.postLiked;
@@ -74,7 +75,7 @@ class SocialNotification extends Notification {
   /// 친구 관련 알림인지
   bool get isFriendRelated {
     return actionType == SocialActionType.friendRequest ||
-           actionType == SocialActionType.friendAccepted;
+        actionType == SocialActionType.friendAccepted;
   }
 
   /// 포스트 관련 알림인지

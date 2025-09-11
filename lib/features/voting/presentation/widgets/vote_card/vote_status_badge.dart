@@ -5,7 +5,6 @@ import '/features/voting/domain/models/vote_state.dart';
 /// 투표 상태 배지 위젯
 /// 현재 투표 상태를 시각적으로 표시합니다
 class VoteStatusBadge extends StatelessWidget {
-  
   const VoteStatusBadge({
     super.key,
     required this.state,
@@ -13,11 +12,11 @@ class VoteStatusBadge extends StatelessWidget {
   });
   final VoteState state;
   final bool hasUserVoted;
-  
+
   @override
   Widget build(BuildContext context) {
     final statusInfo = _getStatusInfo();
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: VersusSpacing.sm,
@@ -51,10 +50,10 @@ class VoteStatusBadge extends StatelessWidget {
       ),
     );
   }
-  
+
   Map<String, dynamic> _getStatusInfo() {
     final statusInfo = <String, dynamic>{};
-    
+
     switch (state) {
       case VoteState.votingRequest:
         statusInfo['text'] = '피클요청';
@@ -89,7 +88,7 @@ class VoteStatusBadge extends StatelessWidget {
         statusInfo['icon'] = Icons.block;
         break;
     }
-    
+
     return statusInfo;
   }
 }

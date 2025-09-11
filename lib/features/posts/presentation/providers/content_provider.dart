@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// ContentProvider - 콘텐츠 생성 관련 상태 관리
-/// 
+///
 /// AppState에서 분리된 콘텐츠 생성 관련 필드들을 관리합니다.
 /// 텍스트 입력, 질문 제목/설명 등의 상태와 관련 기능을 포함합니다.
 class ContentProvider extends ChangeNotifier {
@@ -128,9 +128,9 @@ class ContentProvider extends ChangeNotifier {
 
   /// 전체 콘텐츠가 있는지 확인
   bool get hasAnyContent {
-    return hasContentA || 
-           hasContentB || 
-           hasQuestionContent ||
-           _previewText.isNotEmpty;
+    return hasContentA ||
+        hasContentB ||
+        hasQuestionContent ||
+        _previewText.isNotEmpty;
   }
 }

@@ -54,11 +54,11 @@ class _VersusAppState extends State<VersusApp> {
 
     _appStateNotifier = AppStateNotifier.instance;
     _router = createRouter(_appStateNotifier);
-    
+
     userStream = versusSpaceFirebaseUserStream()
       ..listen((user) async {
         _appStateNotifier.update(user);
-        
+
         // NotificationCoordinator를 통한 통합 알림 시스템 초기화
         if (user.loggedIn && user.uid != null && user.uid!.isNotEmpty) {
           // 사용자가 로그인하면 알림 시스템 초기화
@@ -66,17 +66,17 @@ class _VersusAppState extends State<VersusApp> {
             userId: user.uid!,
             context: context,
           );
-          
+
           // lastActive 필드 업데이트
           try {
             await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .update({
-                'lastActive': FieldValue.serverTimestamp(),
-              });
+                .collection('users')
+                .doc(user.uid)
+                .update({
+              'lastActive': FieldValue.serverTimestamp(),
+            });
             debugPrint('[VersusApp] 알림 서비스 시작 및 lastActive 업데이트: ${user.uid}');
-            
+
             // Preload recent chats for better cache performance
             // UI 렌더링이 완료된 후 시작하도록 지연시킴
             Future.delayed(const Duration(milliseconds: 500), () async {
@@ -129,7 +129,7 @@ class _VersusAppState extends State<VersusApp> {
       builder: (context, child) {
         // BotToast 초기화
         final botToastBuilder = BotToastInit();
-        
+
         return botToastBuilder(context, child);
       },
       scrollBehavior: VersusAppScrollBehavior(),

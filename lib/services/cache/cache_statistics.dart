@@ -5,31 +5,31 @@ class CacheStatistics {
   // 싱글톤 인스턴스
   static final CacheStatistics _instance = CacheStatistics._internal();
   static CacheStatistics get instance => _instance;
-  
+
   CacheStatistics._internal();
-  
+
   // 전체 통계
   int _totalRequests = 0;
   int _totalHits = 0;
-  
+
   // 레이어별 통계
-  int _l1Hits = 0;  // Memory hits
-  int _l2Hits = 0;  // Hive hits
-  int _l3Hits = 0;  // Firestore cache hits
-  int _networkHits = 0;  // Network fetches
-  
+  int _l1Hits = 0; // Memory hits
+  int _l2Hits = 0; // Hive hits
+  int _l3Hits = 0; // Firestore cache hits
+  int _networkHits = 0; // Network fetches
+
   // 응답 시간 추적
-  final List<int> _responseTimes = [];  // in milliseconds
+  final List<int> _responseTimes = []; // in milliseconds
   static const int _maxResponseTimeHistory = 100;
-  
+
   // Firestore 읽기 절약
   int _firestoreSavedReads = 0;
-  
+
   // 캐시 요청 기록
   void recordRequest() {
     _totalRequests++;
   }
-  
+
   // L1 히트 기록
   void recordL1Hit({int? responseTimeMs}) {
     _totalHits++;
@@ -39,7 +39,7 @@ class CacheStatistics {
       _addResponseTime(responseTimeMs);
     }
   }
-  
+
   // L2 히트 기록
   void recordL2Hit({int? responseTimeMs}) {
     _totalHits++;
@@ -49,7 +49,7 @@ class CacheStatistics {
       _addResponseTime(responseTimeMs);
     }
   }
-  
+
   // L3 히트 기록
   void recordL3Hit({int? responseTimeMs}) {
     _totalHits++;
@@ -60,7 +60,7 @@ class CacheStatistics {
       _addResponseTime(responseTimeMs);
     }
   }
-  
+
   // 네트워크 히트 기록
   void recordNetworkHit({int? responseTimeMs}) {
     _networkHits++;
@@ -68,7 +68,7 @@ class CacheStatistics {
       _addResponseTime(responseTimeMs);
     }
   }
-  
+
   // 응답 시간 추가
   void _addResponseTime(int responseTimeMs) {
     _responseTimes.add(responseTimeMs);
@@ -76,50 +76,49 @@ class CacheStatistics {
       _responseTimes.removeAt(0);
     }
   }
-  
+
   // === Getters ===
-  
+
   // 전체 히트율
-  double get overallHitRate => 
+  double get overallHitRate =>
       _totalRequests == 0 ? 0 : _totalHits / _totalRequests;
-  
+
   // L1 히트율
-  double get l1HitRate => 
-      _totalRequests == 0 ? 0 : _l1Hits / _totalRequests;
-  
+  double get l1HitRate => _totalRequests == 0 ? 0 : _l1Hits / _totalRequests;
+
   // L2 히트율
-  double get l2HitRate => 
-      _totalRequests == 0 ? 0 : _l2Hits / _totalRequests;
-  
+  double get l2HitRate => _totalRequests == 0 ? 0 : _l2Hits / _totalRequests;
+
   // L3 히트율
-  double get l3HitRate => 
-      _totalRequests == 0 ? 0 : _l3Hits / _totalRequests;
-  
+  double get l3HitRate => _totalRequests == 0 ? 0 : _l3Hits / _totalRequests;
+
   // 네트워크 히트율
-  double get networkHitRate => 
+  double get networkHitRate =>
       _totalRequests == 0 ? 0 : _networkHits / _totalRequests;
-  
+
   // 평균 응답 시간
   double get averageResponseTime {
     if (_responseTimes.isEmpty) return 0;
     final sum = _responseTimes.reduce((a, b) => a + b);
     return sum / _responseTimes.length;
   }
-  
+
   // 최소 응답 시간
-  int get minResponseTime =>
-      _responseTimes.isEmpty ? 0 : _responseTimes.reduce((a, b) => a < b ? a : b);
-  
+  int get minResponseTime => _responseTimes.isEmpty
+      ? 0
+      : _responseTimes.reduce((a, b) => a < b ? a : b);
+
   // 최대 응답 시간
-  int get maxResponseTime =>
-      _responseTimes.isEmpty ? 0 : _responseTimes.reduce((a, b) => a > b ? a : b);
-  
+  int get maxResponseTime => _responseTimes.isEmpty
+      ? 0
+      : _responseTimes.reduce((a, b) => a > b ? a : b);
+
   // Firestore 절약 비용 (읽기당 $0.06/100,000 documents 기준)
   double get estimatedCostSavings {
-    const costPer100k = 0.06;  // USD
+    const costPer100k = 0.06; // USD
     return (_firestoreSavedReads / 100000) * costPer100k;
   }
-  
+
   // 통계 리셋
   void reset() {
     _totalRequests = 0;
@@ -131,7 +130,7 @@ class CacheStatistics {
     _responseTimes.clear();
     _firestoreSavedReads = 0;
   }
-  
+
   // 통계 요약 출력
   String getSummary() {
     return '''
@@ -158,7 +157,7 @@ class CacheStatistics {
 ╚════════════════════════════════════════════════════╝
 ''';
   }
-  
+
   // 디버그 모드에서 자동 출력
   void logStatistics() {
     if (kDebugMode) {

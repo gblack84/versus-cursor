@@ -55,8 +55,7 @@ class ChatInterestJopsModel extends FirestoreRecord {
   static Stream<ChatInterestJopsModel> getDocument(DocumentReference ref) =>
       ref.snapshots().map((s) => ChatInterestJopsModel.fromSnapshot(s));
 
-  static Future<ChatInterestJopsModel> getDocumentOnce(
-          DocumentReference ref) =>
+  static Future<ChatInterestJopsModel> getDocumentOnce(DocumentReference ref) =>
       ref.get().then((s) => ChatInterestJopsModel.fromSnapshot(s));
 
   static ChatInterestJopsModel fromSnapshot(DocumentSnapshot snapshot) =>

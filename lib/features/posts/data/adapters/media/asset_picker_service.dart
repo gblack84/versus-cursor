@@ -5,7 +5,8 @@ import '/core_exports.dart';
 /// Asset Picker 관련 로직을 담당하는 서비스
 class AssetPickerService {
   /// AssetEntity ID 목록에서 AssetEntity 복원
-  static Future<List<AssetEntity>> restoreAssetsFromIds(List<String>? assetIds) async {
+  static Future<List<AssetEntity>> restoreAssetsFromIds(
+      List<String>? assetIds) async {
     if (assetIds == null || assetIds.isEmpty) {
       return [];
     }
@@ -76,7 +77,8 @@ class AssetPickerService {
   /// 첫 5개 사진의 생성 날짜 디버깅 (카메라 버튼 클릭 시)
   static Future<void> debugPhotoOrder() async {
     try {
-      final paths = await PhotoManager.getAssetPathList(type: RequestType.image);
+      final paths =
+          await PhotoManager.getAssetPathList(type: RequestType.image);
       if (paths.isNotEmpty) {
         final firstPath = paths.first;
         final assets = await firstPath.getAssetListPaged(page: 0, size: 5);
@@ -84,7 +86,8 @@ class AssetPickerService {
         for (int i = 0; i < assets.length; i++) {
           final asset = assets[i];
           final createDate = asset.createDateTime;
-          print('  ${i + 1}. ${createDate.toString()} - ${asset.title ?? "No title"}');
+          print(
+              '  ${i + 1}. ${createDate.toString()} - ${asset.title ?? "No title"}');
         }
       }
     } catch (e) {

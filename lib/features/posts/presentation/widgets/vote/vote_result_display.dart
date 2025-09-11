@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import '/core/design_system/design_system.dart';
 
 /// 투표 카드의 결과 표시 컴포넌트
-/// 
+///
 /// 투표가 완료된 후 결과를 보러 오라는 메시지를 표시합니다.
 class VoteResultDisplay extends StatelessWidget {
   final String? currentUserName;
-  
+
   const VoteResultDisplay({
     super.key,
     this.currentUserName,
@@ -15,7 +15,7 @@ class VoteResultDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final displayName = currentUserName ?? '나';
-    
+
     return Container(
       padding: const EdgeInsets.all(VersusSpacing.sm),
       decoration: BoxDecoration(

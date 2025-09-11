@@ -1,8 +1,8 @@
 /// Image Upload Metadata Model
-/// 
+///
 /// Simplified metadata for image upload operations.
 /// Complements the comprehensive ImageMetadata entity.
-/// 
+///
 /// Created: 2025-09-05
 /// Author: CodeSurgeon
 
@@ -11,7 +11,6 @@ import 'package:flutter/foundation.dart';
 /// Metadata associated with an image upload
 @immutable
 class ImageUploadMetadata {
-
   const ImageUploadMetadata({
     required this.fileName,
     required this.fileSize,
@@ -58,27 +57,28 @@ class ImageUploadMetadata {
       additionalData: map['additionalData'] as Map<String, dynamic>?,
     );
   }
+
   /// Original file name
   final String fileName;
-  
+
   /// File size in bytes
   final int fileSize;
-  
+
   /// MIME type (e.g., 'image/jpeg')
   final String mimeType;
-  
+
   /// Upload timestamp
   final DateTime uploadedAt;
-  
+
   /// User ID who uploaded the image
   final String? uploadedBy;
-  
+
   /// Upload source (e.g., 'camera', 'gallery', 'web')
   final String? source;
-  
+
   /// Device information
   final String? deviceInfo;
-  
+
   /// Additional metadata
   final Map<String, dynamic>? additionalData;
 
@@ -158,29 +158,29 @@ class ImageUploadMetadata {
   @override
   String toString() {
     return 'ImageUploadMetadata('
-      'fileName: $fileName, '
-      'size: $formattedFileSize, '
-      'type: $mimeType, '
-      'uploaded: ${uploadedAt.toIso8601String()}'
-    ')';
+        'fileName: $fileName, '
+        'size: $formattedFileSize, '
+        'type: $mimeType, '
+        'uploaded: ${uploadedAt.toIso8601String()}'
+        ')';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    
+
     return other is ImageUploadMetadata &&
-      other.fileName == fileName &&
-      other.fileSize == fileSize &&
-      other.mimeType == mimeType &&
-      other.uploadedAt == uploadedAt;
+        other.fileName == fileName &&
+        other.fileSize == fileSize &&
+        other.mimeType == mimeType &&
+        other.uploadedAt == uploadedAt;
   }
 
   @override
   int get hashCode {
     return fileName.hashCode ^
-      fileSize.hashCode ^
-      mimeType.hashCode ^
-      uploadedAt.hashCode;
+        fileSize.hashCode ^
+        mimeType.hashCode ^
+        uploadedAt.hashCode;
   }
 }

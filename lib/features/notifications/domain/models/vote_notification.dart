@@ -83,11 +83,11 @@ class VoteNotification extends Notification {
   double get completionPercentage {
     if (isVotePending) return 0.0;
     if (isVoteEnded) return 100.0;
-    
+
     final elapsed = DateTime.now().difference(voteStartTime);
     final total = totalVotingDuration;
     if (total.inSeconds == 0) return 0.0;
-    
+
     return (elapsed.inSeconds / total.inSeconds * 100).clamp(0.0, 100.0);
   }
 
@@ -95,25 +95,25 @@ class VoteNotification extends Notification {
   int get totalVotes {
     return (currentVotesA ?? 0) + (currentVotesB ?? 0);
   }
-  
+
   /// 이전 버전 호환성을 위한 getter
   int get votesA => currentVotesA ?? 0;
   int get votesB => currentVotesB ?? 0;
-  
+
   /// 테스트 호환성을 위한 getter
   VoteOptions get optionA => VoteOptions(
-    optionATitle: voteOptions.optionATitle,
-    optionBTitle: voteOptions.optionBTitle,
-    text: voteOptions.optionATitle,
-    imageUrls: voteOptions.optionAImageUrls,
-  );
-  
+        optionATitle: voteOptions.optionATitle,
+        optionBTitle: voteOptions.optionBTitle,
+        text: voteOptions.optionATitle,
+        imageUrls: voteOptions.optionAImageUrls,
+      );
+
   VoteOptions get optionB => VoteOptions(
-    optionATitle: voteOptions.optionATitle,
-    optionBTitle: voteOptions.optionBTitle,
-    text: voteOptions.optionBTitle,
-    imageUrls: voteOptions.optionBImageUrls,
-  );
+        optionATitle: voteOptions.optionATitle,
+        optionBTitle: voteOptions.optionBTitle,
+        text: voteOptions.optionBTitle,
+        imageUrls: voteOptions.optionBImageUrls,
+      );
 
   /// A 옵션 투표 비율
   double get votesAPercentage {
@@ -126,7 +126,7 @@ class VoteNotification extends Notification {
     if (totalVotes == 0) return 50.0;
     return ((currentVotesB ?? 0) / totalVotes * 100);
   }
-  
+
   /// 투표 비율 맵 (테스트 호환용)
   Map<String, double> get votesPercentage {
     return {
@@ -160,7 +160,7 @@ class VoteNotification extends Notification {
   String get formattedRemainingTime {
     final remaining = remainingTime;
     if (remaining == null) return '종료됨';
-    
+
     if (remaining.inDays > 0) {
       return '${remaining.inDays}일 ${remaining.inHours % 24}시간';
     } else if (remaining.inHours > 0) {
@@ -177,14 +177,14 @@ class VoteNotification extends Notification {
     if (targetAudience == null || targetAudience == 'public') {
       return true;
     }
-    
+
     // AI 타겟팅 (quick mode)
     if (targetAudience == 'quick') {
       // AI가 선택한 사용자 리스트와 매칭
       // 실제 구현은 UseCase에서 처리
       return true;
     }
-    
+
     // 커스텀 타겟팅 로직
     // 관심사, 나이, 성별 등으로 필터링
     return true;

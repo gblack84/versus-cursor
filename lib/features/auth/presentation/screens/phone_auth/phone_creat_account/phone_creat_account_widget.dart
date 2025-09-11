@@ -86,19 +86,15 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                 ),
                 style: AppTheme.of(context).displaySmall.override(
                       font: GoogleFonts.plusJakartaSans(
-                        fontWeight: AppTheme.of(context)
-                            .displaySmall
-                            .fontWeight,
-                        fontStyle:
-                            AppTheme.of(context).displaySmall.fontStyle,
+                        fontWeight:
+                            AppTheme.of(context).displaySmall.fontWeight,
+                        fontStyle: AppTheme.of(context).displaySmall.fontStyle,
                       ),
                       color: Colors.black,
                       fontSize: 16.0,
                       letterSpacing: 0.0,
-                      fontWeight:
-                          AppTheme.of(context).displaySmall.fontWeight,
-                      fontStyle:
-                          AppTheme.of(context).displaySmall.fontStyle,
+                      fontWeight: AppTheme.of(context).displaySmall.fontWeight,
+                      fontStyle: AppTheme.of(context).displaySmall.fontStyle,
                     ),
               ),
             ),
@@ -139,21 +135,17 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                   ),
                   style: AppTheme.of(context).headlineMedium.override(
                         font: GoogleFonts.plusJakartaSans(
-                          fontWeight: AppTheme.of(context)
-                              .headlineMedium
-                              .fontWeight,
-                          fontStyle: AppTheme.of(context)
-                              .headlineMedium
-                              .fontStyle,
+                          fontWeight:
+                              AppTheme.of(context).headlineMedium.fontWeight,
+                          fontStyle:
+                              AppTheme.of(context).headlineMedium.fontStyle,
                         ),
                         color: Colors.black,
                         letterSpacing: 0.0,
-                        fontWeight: AppTheme.of(context)
-                            .headlineMedium
-                            .fontWeight,
-                        fontStyle: AppTheme.of(context)
-                            .headlineMedium
-                            .fontStyle,
+                        fontWeight:
+                            AppTheme.of(context).headlineMedium.fontWeight,
+                        fontStyle:
+                            AppTheme.of(context).headlineMedium.fontStyle,
                       ),
                 ),
               ),
@@ -165,18 +157,13 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                   ),
                   style: AppTheme.of(context).labelMedium.override(
                         font: GoogleFonts.plusJakartaSans(
-                          fontWeight: AppTheme.of(context)
-                              .labelMedium
-                              .fontWeight,
-                          fontStyle: AppTheme.of(context)
-                              .labelMedium
-                              .fontStyle,
+                          fontWeight:
+                              AppTheme.of(context).labelMedium.fontWeight,
+                          fontStyle: AppTheme.of(context).labelMedium.fontStyle,
                         ),
                         letterSpacing: 0.0,
-                        fontWeight:
-                            AppTheme.of(context).labelMedium.fontWeight,
-                        fontStyle:
-                            AppTheme.of(context).labelMedium.fontStyle,
+                        fontWeight: AppTheme.of(context).labelMedium.fontWeight,
+                        fontStyle: AppTheme.of(context).labelMedium.fontStyle,
                       ),
                 ),
               ),
@@ -207,44 +194,42 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                               labelText: AppLocalizations.of(context).getText(
                                 '3rvgi38u' /* +Code */,
                               ),
-                              labelStyle: AppTheme.of(context)
-                                  .labelMedium
-                                  .override(
-                                    font: GoogleFonts.plusJakartaSans(
-                                      fontWeight: AppTheme.of(context)
-                                          .labelMedium
-                                          .fontWeight,
-                                      fontStyle: AppTheme.of(context)
-                                          .labelMedium
-                                          .fontStyle,
-                                    ),
-                                    letterSpacing: 0.0,
-                                    fontWeight: AppTheme.of(context)
-                                        .labelMedium
-                                        .fontWeight,
-                                    fontStyle: AppTheme.of(context)
-                                        .labelMedium
-                                        .fontStyle,
-                                  ),
-                              hintStyle: AppTheme.of(context)
-                                  .labelMedium
-                                  .override(
-                                    font: GoogleFonts.plusJakartaSans(
-                                      fontWeight: AppTheme.of(context)
-                                          .labelMedium
-                                          .fontWeight,
-                                      fontStyle: AppTheme.of(context)
-                                          .labelMedium
-                                          .fontStyle,
-                                    ),
-                                    letterSpacing: 0.0,
-                                    fontWeight: AppTheme.of(context)
-                                        .labelMedium
-                                        .fontWeight,
-                                    fontStyle: AppTheme.of(context)
-                                        .labelMedium
-                                        .fontStyle,
-                                  ),
+                              labelStyle:
+                                  AppTheme.of(context).labelMedium.override(
+                                        font: GoogleFonts.plusJakartaSans(
+                                          fontWeight: AppTheme.of(context)
+                                              .labelMedium
+                                              .fontWeight,
+                                          fontStyle: AppTheme.of(context)
+                                              .labelMedium
+                                              .fontStyle,
+                                        ),
+                                        letterSpacing: 0.0,
+                                        fontWeight: AppTheme.of(context)
+                                            .labelMedium
+                                            .fontWeight,
+                                        fontStyle: AppTheme.of(context)
+                                            .labelMedium
+                                            .fontStyle,
+                                      ),
+                              hintStyle:
+                                  AppTheme.of(context).labelMedium.override(
+                                        font: GoogleFonts.plusJakartaSans(
+                                          fontWeight: AppTheme.of(context)
+                                              .labelMedium
+                                              .fontWeight,
+                                          fontStyle: AppTheme.of(context)
+                                              .labelMedium
+                                              .fontStyle,
+                                        ),
+                                        letterSpacing: 0.0,
+                                        fontWeight: AppTheme.of(context)
+                                            .labelMedium
+                                            .fontWeight,
+                                        fontStyle: AppTheme.of(context)
+                                            .labelMedium
+                                            .fontStyle,
+                                      ),
                               enabledBorder: OutlineInputBorder(
                                 borderSide: BorderSide(
                                   color: AppTheme.of(context).alternate,
@@ -278,9 +263,7 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                               contentPadding: EdgeInsetsDirectional.fromSTEB(
                                   5.0, 24.0, 5.0, 24.0),
                             ),
-                            style: AppTheme.of(context)
-                                .bodyMedium
-                                .override(
+                            style: AppTheme.of(context).bodyMedium.override(
                                   font: GoogleFonts.plusJakartaSans(
                                     fontWeight: AppTheme.of(context)
                                         .bodyMedium
@@ -294,9 +277,8 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                                   fontWeight: AppTheme.of(context)
                                       .bodyMedium
                                       .fontWeight,
-                                  fontStyle: AppTheme.of(context)
-                                      .bodyMedium
-                                      .fontStyle,
+                                  fontStyle:
+                                      AppTheme.of(context).bodyMedium.fontStyle,
                                 ),
                             maxLines: null,
                             maxLength: 4,
@@ -320,47 +302,45 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                               labelText: AppLocalizations.of(context).getText(
                                 'kna6yami' /* Your Phone Number... */,
                               ),
-                              labelStyle: AppTheme.of(context)
-                                  .labelMedium
-                                  .override(
-                                    font: GoogleFonts.plusJakartaSans(
-                                      fontWeight: AppTheme.of(context)
-                                          .labelMedium
-                                          .fontWeight,
-                                      fontStyle: AppTheme.of(context)
-                                          .labelMedium
-                                          .fontStyle,
-                                    ),
-                                    letterSpacing: 0.0,
-                                    fontWeight: AppTheme.of(context)
-                                        .labelMedium
-                                        .fontWeight,
-                                    fontStyle: AppTheme.of(context)
-                                        .labelMedium
-                                        .fontStyle,
-                                  ),
+                              labelStyle:
+                                  AppTheme.of(context).labelMedium.override(
+                                        font: GoogleFonts.plusJakartaSans(
+                                          fontWeight: AppTheme.of(context)
+                                              .labelMedium
+                                              .fontWeight,
+                                          fontStyle: AppTheme.of(context)
+                                              .labelMedium
+                                              .fontStyle,
+                                        ),
+                                        letterSpacing: 0.0,
+                                        fontWeight: AppTheme.of(context)
+                                            .labelMedium
+                                            .fontWeight,
+                                        fontStyle: AppTheme.of(context)
+                                            .labelMedium
+                                            .fontStyle,
+                                      ),
                               hintText: AppLocalizations.of(context).getText(
                                 'npd3p5vi' /* Enter your Phone Number... */,
                               ),
-                              hintStyle: AppTheme.of(context)
-                                  .labelMedium
-                                  .override(
-                                    font: GoogleFonts.plusJakartaSans(
-                                      fontWeight: AppTheme.of(context)
-                                          .labelMedium
-                                          .fontWeight,
-                                      fontStyle: AppTheme.of(context)
-                                          .labelMedium
-                                          .fontStyle,
-                                    ),
-                                    letterSpacing: 0.0,
-                                    fontWeight: AppTheme.of(context)
-                                        .labelMedium
-                                        .fontWeight,
-                                    fontStyle: AppTheme.of(context)
-                                        .labelMedium
-                                        .fontStyle,
-                                  ),
+                              hintStyle:
+                                  AppTheme.of(context).labelMedium.override(
+                                        font: GoogleFonts.plusJakartaSans(
+                                          fontWeight: AppTheme.of(context)
+                                              .labelMedium
+                                              .fontWeight,
+                                          fontStyle: AppTheme.of(context)
+                                              .labelMedium
+                                              .fontStyle,
+                                        ),
+                                        letterSpacing: 0.0,
+                                        fontWeight: AppTheme.of(context)
+                                            .labelMedium
+                                            .fontWeight,
+                                        fontStyle: AppTheme.of(context)
+                                            .labelMedium
+                                            .fontStyle,
+                                      ),
                               enabledBorder: OutlineInputBorder(
                                 borderSide: BorderSide(
                                   color: AppTheme.of(context).alternate,
@@ -394,9 +374,7 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                               contentPadding: EdgeInsetsDirectional.fromSTEB(
                                   24.0, 24.0, 20.0, 24.0),
                             ),
-                            style: AppTheme.of(context)
-                                .bodyMedium
-                                .override(
+                            style: AppTheme.of(context).bodyMedium.override(
                                   font: GoogleFonts.plusJakartaSans(
                                     fontWeight: AppTheme.of(context)
                                         .bodyMedium
@@ -410,9 +388,8 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                                   fontWeight: AppTheme.of(context)
                                       .bodyMedium
                                       .fontWeight,
-                                  fontStyle: AppTheme.of(context)
-                                      .bodyMedium
-                                      .fontStyle,
+                                  fontStyle:
+                                      AppTheme.of(context).bodyMedium.fontStyle,
                                 ),
                             maxLines: null,
                             maxLength: 12,
@@ -489,25 +466,20 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                       iconPadding:
                           EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                       color: Colors.black,
-                      textStyle:
-                          AppTheme.of(context).titleSmall.override(
-                                font: GoogleFonts.plusJakartaSans(
-                                  fontWeight: AppTheme.of(context)
-                                      .titleSmall
-                                      .fontWeight,
-                                  fontStyle: AppTheme.of(context)
-                                      .titleSmall
-                                      .fontStyle,
-                                ),
-                                color: Colors.white,
-                                letterSpacing: 0.0,
-                                fontWeight: AppTheme.of(context)
-                                    .titleSmall
-                                    .fontWeight,
-                                fontStyle: AppTheme.of(context)
-                                    .titleSmall
-                                    .fontStyle,
-                              ),
+                      textStyle: AppTheme.of(context).titleSmall.override(
+                            font: GoogleFonts.plusJakartaSans(
+                              fontWeight:
+                                  AppTheme.of(context).titleSmall.fontWeight,
+                              fontStyle:
+                                  AppTheme.of(context).titleSmall.fontStyle,
+                            ),
+                            color: Colors.white,
+                            letterSpacing: 0.0,
+                            fontWeight:
+                                AppTheme.of(context).titleSmall.fontWeight,
+                            fontStyle:
+                                AppTheme.of(context).titleSmall.fontStyle,
+                          ),
                       elevation: 10.0,
                       borderSide: BorderSide(
                         color: Colors.transparent,

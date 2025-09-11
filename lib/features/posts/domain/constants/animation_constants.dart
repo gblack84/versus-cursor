@@ -13,10 +13,10 @@ class AnimationConstants {
   static const Duration loadingDialogDelay = Duration(milliseconds: 100);
   static const Duration moderationTimeout = Duration(seconds: 30);
   static const Duration uploadTimeout = Duration(seconds: 15);
-  
+
   // Animation Values
   static const double shakeAnimationExtent = 8.0;
-  
+
   // Toast Position
   static const Alignment toastAlignment = Alignment(0, 0.8);
 }

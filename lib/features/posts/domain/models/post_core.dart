@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// PostCore Domain Model
 /// Clean Architecture - Domain Layer Entity
-/// 
+///
 /// Core post entity containing essential fields only.
 /// Separated from voting, media, and analytics concerns
 /// for better separation of concerns and maintainability.
@@ -28,23 +28,23 @@ class PostCore {
   final String questionTitle;
   final String? description;
   final String? content;
-  
+
   // Ownership
   final String userId; // Foreign key to AuthUser.uid
-  
+
   // Timestamps
   final DateTime createdAt;
   final DateTime? updatedAt;
-  
+
   // Classification
   final String? category;
   final List<String> tags;
-  
+
   // Access Control
   final String visibility; // public, private, friends
   final bool isAnonymous;
   final bool premiumRequired;
-  
+
   // Location
   final GeoPoint? location;
 
@@ -76,19 +76,19 @@ class PostCore {
       description: json['description'],
       content: json['content'],
       userId: json['userId'] ?? '',
-      createdAt: json['createdAt'] != null 
+      createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
-      updatedAt: json['updatedAt'] != null 
-          ? DateTime.parse(json['updatedAt'])
-          : null,
+      updatedAt:
+          json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
       category: json['category'],
       tags: List<String>.from(json['tags'] ?? []),
       visibility: json['visibility'] ?? 'public',
       isAnonymous: json['isAnonymous'] ?? false,
       premiumRequired: json['premiumRequired'] ?? false,
-      location: json['location'] != null 
-          ? GeoPoint(json['location']['latitude'], json['location']['longitude'])
+      location: json['location'] != null
+          ? GeoPoint(
+              json['location']['latitude'], json['location']['longitude'])
           : null,
     );
   }
@@ -126,10 +126,11 @@ class PostCore {
       'visibility': visibility,
       'isAnonymous': isAnonymous,
       'premiumRequired': premiumRequired,
-      if (location != null) 'location': {
-        'latitude': location!.latitude,
-        'longitude': location!.longitude,
-      },
+      if (location != null)
+        'location': {
+          'latitude': location!.latitude,
+          'longitude': location!.longitude,
+        },
     };
   }
 

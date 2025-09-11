@@ -1,7 +1,7 @@
 import '/features/posts/domain/models/posts_model.dart';
 
 /// Chat Feature와의 인터페이스
-/// 
+///
 /// Notification Feature에서 채팅 기능이 필요한 경우
 /// 이 인터페이스를 통해 접근합니다.
 abstract class IChatDatasource {
@@ -12,7 +12,7 @@ abstract class IChatDatasource {
     required String postId,
     required PostsModel post,
   });
-  
+
   /// AI 채팅 메시지의 투표 상태 업데이트
   Future<void> updateVoteMessageStatus({
     required String postId,

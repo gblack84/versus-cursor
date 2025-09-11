@@ -108,8 +108,7 @@ class VoteExpansionRequestsModelDocumentEquality
   const VoteExpansionRequestsModelDocumentEquality();
 
   @override
-  bool equals(
-      VoteExpansionRequestsModel? e1, VoteExpansionRequestsModel? e2) {
+  bool equals(VoteExpansionRequestsModel? e1, VoteExpansionRequestsModel? e2) {
     return e1?.userId == e2?.userId &&
         e1?.pointsUsed == e2?.pointsUsed &&
         e1?.additionalUserCount == e2?.additionalUserCount &&

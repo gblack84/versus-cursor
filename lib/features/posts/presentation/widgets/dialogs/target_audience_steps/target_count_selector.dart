@@ -27,27 +27,27 @@ class TargetCountSelector extends StatelessWidget {
               Text(
                 '목표 응답 수를 설정하세요',
                 style: AppTheme.of(context).headlineSmall.override(
-                  fontWeight: FontWeight.w600,
-                ),
+                      fontWeight: FontWeight.w600,
+                    ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              
+
               // 목표 응답 수 섹션
               _buildTargetCountSection(context, model),
-              
+
               const SizedBox(height: 24),
-              
+
               // 예상 소요 시간 섹션
               _buildEstimatedTimeSection(context, model),
-              
+
               const SizedBox(height: 24),
-              
+
               // 프리미엄 옵션
               _buildPremiumOption(context, model),
-              
+
               const SizedBox(height: 24),
-              
+
               // 안내 메시지
               _buildInfoMessage(context),
             ],
@@ -57,7 +57,8 @@ class TargetCountSelector extends StatelessWidget {
     );
   }
 
-  Widget _buildTargetCountSection(BuildContext context, TargetAudienceModel model) {
+  Widget _buildTargetCountSection(
+      BuildContext context, TargetAudienceModel model) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -73,11 +74,11 @@ class TargetCountSelector extends StatelessWidget {
           Text(
             '목표 응답 수',
             style: AppTheme.of(context).bodyLarge.override(
-              fontWeight: FontWeight.w600,
-            ),
+                  fontWeight: FontWeight.w600,
+                ),
           ),
           const SizedBox(height: 16),
-          
+
           // 드롭다운
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -112,9 +113,9 @@ class TargetCountSelector extends StatelessWidget {
               },
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // 빠른 선택 버튼들
           Row(
             children: TargetAudienceConstants.targetCountOptions.map((count) {
@@ -128,12 +129,12 @@ class TargetCountSelector extends StatelessWidget {
                       onCountChanged(count);
                     },
                     style: OutlinedButton.styleFrom(
-                      backgroundColor: isSelected 
-                          ? AppTheme.of(context).primary 
+                      backgroundColor: isSelected
+                          ? AppTheme.of(context).primary
                           : Colors.transparent,
                       side: BorderSide(
-                        color: isSelected 
-                            ? AppTheme.of(context).primary 
+                        color: isSelected
+                            ? AppTheme.of(context).primary
                             : AppTheme.of(context).alternate,
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -144,11 +145,11 @@ class TargetCountSelector extends StatelessWidget {
                     child: Text(
                       '$count',
                       style: AppTheme.of(context).bodySmall.override(
-                        color: isSelected 
-                            ? Colors.white 
-                            : AppTheme.of(context).primaryText,
-                        fontWeight: FontWeight.w500,
-                      ),
+                            color: isSelected
+                                ? Colors.white
+                                : AppTheme.of(context).primaryText,
+                            fontWeight: FontWeight.w500,
+                          ),
                     ),
                   ),
                 ),
@@ -160,7 +161,8 @@ class TargetCountSelector extends StatelessWidget {
     );
   }
 
-  Widget _buildEstimatedTimeSection(BuildContext context, TargetAudienceModel model) {
+  Widget _buildEstimatedTimeSection(
+      BuildContext context, TargetAudienceModel model) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -181,8 +183,8 @@ class TargetCountSelector extends StatelessWidget {
               Text(
                 '예상 소요 시간',
                 style: AppTheme.of(context).bodyMedium.override(
-                  fontWeight: FontWeight.w600,
-                ),
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ],
           ),
@@ -190,9 +192,9 @@ class TargetCountSelector extends StatelessWidget {
           Text(
             model.estimatedTime,
             style: AppTheme.of(context).headlineMedium.override(
-              color: AppTheme.of(context).primary,
-              fontWeight: FontWeight.w700,
-            ),
+                  color: AppTheme.of(context).primary,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
         ],
       ),
@@ -247,7 +249,7 @@ class TargetCountSelector extends StatelessWidget {
                   : null,
             ),
             const SizedBox(width: 12),
-            
+
             // 텍스트
             Expanded(
               child: Column(
@@ -258,8 +260,8 @@ class TargetCountSelector extends StatelessWidget {
                       Text(
                         '빠른 수집 모드',
                         style: AppTheme.of(context).bodyLarge.override(
-                          fontWeight: FontWeight.w600,
-                        ),
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -272,16 +274,16 @@ class TargetCountSelector extends StatelessWidget {
                   Text(
                     '5분 내 완료 보장',
                     style: AppTheme.of(context).bodySmall.override(
-                      color: AppTheme.of(context).secondaryText,
-                    ),
+                          color: AppTheme.of(context).secondaryText,
+                        ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '(프리미엄 기능)',
                     style: AppTheme.of(context).labelSmall.override(
-                      color: AppTheme.of(context).tertiary,
-                      fontWeight: FontWeight.w500,
-                    ),
+                          color: AppTheme.of(context).tertiary,
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
                 ],
               ),
@@ -311,8 +313,8 @@ class TargetCountSelector extends StatelessWidget {
             child: Text(
               '활성 사용자가 많은 시간대에는 더 빠르게 수집됩니다',
               style: AppTheme.of(context).bodySmall.override(
-                color: AppTheme.of(context).primaryText,
-              ),
+                    color: AppTheme.of(context).primaryText,
+                  ),
             ),
           ),
         ],

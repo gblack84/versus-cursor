@@ -27,14 +27,15 @@ class LayoutDebugInfo extends StatelessWidget {
       ),
       child: Consumer<AppState>(
         builder: (context, appState, _) {
-          final aRatio = appState.uploadImageAspectRatioA.isNotEmpty 
+          final aRatio = appState.uploadImageAspectRatioA.isNotEmpty
               ? appState.uploadImageAspectRatioA.first.toStringAsFixed(2)
               : 'N/A';
-          final bRatio = appState.uploadImageAspectRatioB.isNotEmpty 
+          final bRatio = appState.uploadImageAspectRatioB.isNotEmpty
               ? appState.uploadImageAspectRatioB.first.toStringAsFixed(2)
               : 'N/A';
-          final layoutDesc = AspectRatioAnalyzer.getLayoutDescription(currentLayout);
-          
+          final layoutDesc =
+              AspectRatioAnalyzer.getLayoutDescription(currentLayout);
+
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -46,7 +47,8 @@ class LayoutDebugInfo extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 4.0),
-              Text('A 비율: $aRatio | B 비율: $bRatio', style: TextStyle(fontSize: 11.0)),
+              Text('A 비율: $aRatio | B 비율: $bRatio',
+                  style: TextStyle(fontSize: 11.0)),
               Text('현재 레이아웃: $layoutDesc', style: TextStyle(fontSize: 11.0)),
             ],
           );

@@ -94,7 +94,7 @@ class InputFieldBuilder {
     if (validationResult.profanityScore > 0.8) issues.add('욕설');
     if (validationResult.threatScore > 0.8) issues.add('위협적 표현');
     if (validationResult.insultScore > 0.8) issues.add('모욕적 표현');
-    
+
     final errorMessage = issues.isEmpty ? '부적절한 콘텐츠' : issues.join(', ');
 
     return Padding(
@@ -108,7 +108,7 @@ class InputFieldBuilder {
       ),
     );
   }
-  
+
   /// 질문 제목 필드 생성 (SimpleValidatedField 사용)
   static Widget buildQuestionTitleField({
     required BuildContext context,
@@ -141,7 +141,7 @@ class InputFieldBuilder {
       onRequiredFieldsCheck: onRequiredFieldsCheck,
     );
   }
-  
+
   /// 공통 InputDecoration 생성
   static InputDecoration getInputDecoration({
     required BuildContext context,
@@ -204,7 +204,7 @@ class InputFieldBuilder {
       suffixIcon: suffixIcon,
     );
   }
-  
+
   /// 공통 TextStyle 생성
   static TextStyle getTextStyle({
     required BuildContext context,

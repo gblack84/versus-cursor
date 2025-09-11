@@ -22,7 +22,7 @@ class _HomePageWidgetState extends State<HomePageWidget> {
   @override
   void initState() {
     super.initState();
-    
+
     // 백그라운드에서 인기 게시물 프리로드
     Future.microtask(() async {
       try {
@@ -64,8 +64,9 @@ class _HomePageWidgetState extends State<HomePageWidget> {
               .orderBy('createdAt', descending: true)
               .limit(20)
               .snapshots()
-              .map((snapshot) => 
-                  snapshot.docs.map((doc) => PostsModel.fromSnapshot(doc)).toList()),
+              .map((snapshot) => snapshot.docs
+                  .map((doc) => PostsModel.fromSnapshot(doc))
+                  .toList()),
           builder: (context, snapshot) {
             // 로딩 상태
             if (!snapshot.hasData) {
@@ -128,9 +129,7 @@ class _HomePageWidgetState extends State<HomePageWidget> {
   Widget _buildVersusCard(BuildContext context, PostsModel post) {
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: VersusSpacing.md, 
-        vertical: VersusSpacing.sm
-      ),
+          horizontal: VersusSpacing.md, vertical: VersusSpacing.sm),
       child: InkWell(
         onTap: () {
           // TODO: 게시물 상세 페이지로 이동
@@ -163,7 +162,8 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                           ? NetworkImage(post.photoUrl)
                           : null,
                       child: post.photoUrl.isEmpty
-                          ? Icon(Icons.person, color: VersusColors.primary, size: 20)
+                          ? Icon(Icons.person,
+                              color: VersusColors.primary, size: 20)
                           : null,
                     ),
                     VersusSpacing.gapH(VersusSpacing.sm),
@@ -172,8 +172,8 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            post.displayName.isNotEmpty 
-                                ? post.displayName 
+                            post.displayName.isNotEmpty
+                                ? post.displayName
                                 : '익명',
                             style: VersusTextStyles.bodyMedium.copyWith(
                               fontWeight: FontWeight.w600,
@@ -191,7 +191,7 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                   ],
                 ),
                 VersusSpacing.gapMD,
-                
+
                 // 질문 제목
                 Text(
                   post.questionTitle,
@@ -200,7 +200,7 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 VersusSpacing.gapMD,
-                
+
                 // A vs B 옵션
                 Row(
                   children: [
@@ -219,10 +219,10 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                             Text(
                               'A',
                               style: VersusTextStyles.labelLarge.copyWith(
-                                    color: VersusColors.primary,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.0,
-                                  ),
+                                color: VersusColors.primary,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.0,
+                              ),
                             ),
                             SizedBox(height: 4),
                             Text(
@@ -241,10 +241,10 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                       child: Text(
                         'VS',
                         style: VersusTextStyles.labelLarge.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: VersusColors.textSecondary,
-                              letterSpacing: 0.0,
-                            ),
+                          fontWeight: FontWeight.bold,
+                          color: VersusColors.textSecondary,
+                          letterSpacing: 0.0,
+                        ),
                       ),
                     ),
                     Expanded(
@@ -254,7 +254,8 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                           color: VersusColors.secondary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: VersusColors.secondary.withValues(alpha: 0.3),
+                            color:
+                                VersusColors.secondary.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Column(
@@ -262,10 +263,10 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                             Text(
                               'B',
                               style: VersusTextStyles.labelLarge.copyWith(
-                                    color: VersusColors.secondary,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.0,
-                                  ),
+                                color: VersusColors.secondary,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.0,
+                              ),
                             ),
                             SizedBox(height: 4),
                             Text(
@@ -282,7 +283,7 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                   ],
                 ),
                 VersusSpacing.gapMD,
-                
+
                 // 상호작용 정보
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

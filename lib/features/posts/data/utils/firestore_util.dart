@@ -59,7 +59,8 @@ class PostsFirestoreUtil {
   }
 
   /// Convert string path to DocumentReference
-  static DocumentReference toRef(String ref) => FirebaseFirestore.instance.doc(ref);
+  static DocumentReference toRef(String ref) =>
+      FirebaseFirestore.instance.doc(ref);
 }
 
 /// Type definition for record builders
@@ -159,7 +160,8 @@ extension PostsQueryExtension on Query {
 extension PostsQueryUtilParent on PostsQueryUtil {
   /// Count documents with parent parameter
   static Future<int> queryCollectionCountWithParent(
-    Query<Map<String, dynamic>> Function([DocumentReference?]) collectionBuilder, {
+    Query<Map<String, dynamic>> Function([DocumentReference?])
+        collectionBuilder, {
     DocumentReference? parent,
     Query Function(Query)? queryBuilder,
     int limit = -1,
@@ -174,7 +176,8 @@ extension PostsQueryUtilParent on PostsQueryUtil {
 
   /// Stream query with parent parameter
   static Stream<List<T>> queryCollectionWithParent<T>(
-    Query<Map<String, dynamic>> Function([DocumentReference?]) collectionBuilder,
+    Query<Map<String, dynamic>> Function([DocumentReference?])
+        collectionBuilder,
     RecordBuilder<T> recordBuilder, {
     DocumentReference? parent,
     Query Function(Query)? queryBuilder,
@@ -193,7 +196,8 @@ extension PostsQueryUtilParent on PostsQueryUtil {
 
   /// One-time query with parent parameter
   static Future<List<T>> queryCollectionOnceWithParent<T>(
-    Query<Map<String, dynamic>> Function([DocumentReference?]) collectionBuilder,
+    Query<Map<String, dynamic>> Function([DocumentReference?])
+        collectionBuilder,
     RecordBuilder<T> recordBuilder, {
     DocumentReference? parent,
     Query Function(Query)? queryBuilder,

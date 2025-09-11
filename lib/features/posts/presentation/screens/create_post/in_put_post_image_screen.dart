@@ -32,12 +32,12 @@ class _InPutPostImageScreenState extends State<InPutPostImageScreen>
   late InPutPostImageModel _model;
   late CreatePostProvider _createProvider;
   late MediaUploadProvider _uploadProvider;
-  
+
   final scaffoldKey = GlobalKey<ScaffoldState>();
   ScrollController? _scrollController;
   AnimationController? _shakeController;
   Animation<double>? _shakeAnimation;
-  
+
   bool _showNextButton = false;
   bool _hasValidated = false;
   bool _isProcessing = false;
@@ -46,21 +46,21 @@ class _InPutPostImageScreenState extends State<InPutPostImageScreen>
   void initState() {
     super.initState();
     _model = createModel(context, () => InPutPostImageModel());
-    
+
     // Initialize providers
     _createProvider = CreatePostProvider();
     _uploadProvider = MediaUploadProvider();
-    
+
     // Initialize scroll controller
     _scrollController = ScrollController();
     _scrollController!.addListener(_scrollListener);
-    
+
     // Initialize shake animation
     _shakeController = AnimationController(
       duration: AnimationConstants.shakeAnimationDuration,
       vsync: this,
     );
-    
+
     _shakeAnimation = Tween<double>(
       begin: 0,
       end: AnimationConstants.shakeAnimationExtent,
@@ -72,12 +72,13 @@ class _InPutPostImageScreenState extends State<InPutPostImageScreen>
 
   void _scrollListener() {
     if (!mounted) return;
-    
+
     final isNearBottom = _scrollController!.position.pixels >=
         _scrollController!.position.maxScrollExtent - 100;
-    
-    final shouldShow = isNearBottom || _createProvider.areRequiredFieldsFilled();
-    
+
+    final shouldShow =
+        isNearBottom || _createProvider.areRequiredFieldsFilled();
+
     if (shouldShow != _showNextButton) {
       setState(() {
         _showNextButton = shouldShow;
@@ -116,42 +117,42 @@ class _InPutPostImageScreenState extends State<InPutPostImageScreen>
       builder: (context, appState, _) {
         final hasImageInA = appState.tempImageFilesA.isNotEmpty;
         final hasImageInB = appState.tempImageFilesB.isNotEmpty;
-        final isBEmpty = appState.tempImageFilesB.isEmpty && 
-                         appState.uploadTextB.isEmpty;
-        
+        final isBEmpty =
+            appState.tempImageFilesB.isEmpty && appState.uploadTextB.isEmpty;
+
         return SingleChildScrollView(
           controller: _scrollController,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             children: [
               const SizedBox(height: 20),
-              
+
               // Title section
               _buildTitleSection(),
-              
+
               const SizedBox(height: 30),
-              
+
               // Text input section
               TextInputSection(
                 hasValidated: _hasValidated,
                 onFieldChanged: _checkRequiredFields,
               ),
-              
+
               const SizedBox(height: 20),
-              
-              // Media upload section  
+
+              // Media upload section
               MediaUploadSection(
                 isSingleMode: _model.absellected,
                 showDebugInfo: false, // Set to true for debugging
                 onMediaSelect: _handleMediaSelection,
               ),
-              
+
               // Warning message if needed
-              if (!hasImageInA && hasImageInB) 
+              if (!hasImageInA && hasImageInB)
                 const WarningMessage(
                   message: 'A 박스에 이미지를 먼저 추가해주세요',
                 ),
-              
+
               const SizedBox(height: 100),
             ],
           ),
@@ -179,8 +180,8 @@ class _InPutPostImageScreenState extends State<InPutPostImageScreen>
               // Toggle single mode button
               IconButton(
                 icon: Icon(
-                  _model.absellected 
-                      ? Icons.check_box 
+                  _model.absellected
+                      ? Icons.check_box
                       : Icons.check_box_outline_blank,
                   color: Colors.white,
                 ),
@@ -256,7 +257,7 @@ class _InPutPostImageScreenState extends State<InPutPostImageScreen>
     int? currentIndex,
   }) async {
     final appState = context.read<AppState>();
-    
+
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
       NoAnimationPageRoute(
@@ -265,15 +266,13 @@ class _InPutPostImageScreenState extends State<InPutPostImageScreen>
           model: _model,
           isAddMode: isAddMode,
           currentIndex: currentIndex,
-          existingAssetIds: box == 'A' 
-            ? appState.assetEntityIdsA
-            : appState.assetEntityIdsB,
-          existingImageUrls: box == 'A'
-            ? appState.uploadImageA
-            : appState.uploadImageB,
+          existingAssetIds:
+              box == 'A' ? appState.assetEntityIdsA : appState.assetEntityIdsB,
+          existingImageUrls:
+              box == 'A' ? appState.uploadImageA : appState.uploadImageB,
           existingAspectRatios: box == 'A'
-            ? appState.uploadImageAspectRatioA
-            : appState.uploadImageAspectRatioB,
+              ? appState.uploadImageAspectRatioA
+              : appState.uploadImageAspectRatioB,
           onComplete: (imageUrl) {
             // Handle single image completion
           },
@@ -283,7 +282,7 @@ class _InPutPostImageScreenState extends State<InPutPostImageScreen>
         ),
       ),
     );
-    
+
     // Process result if needed
     if (result != null && result['action'] == 'processing' && isAddMode) {
       await _processSelectedAssets(result['selectedAssets'], box, appState);
@@ -296,17 +295,17 @@ class _InPutPostImageScreenState extends State<InPutPostImageScreen>
     AppState appState,
   ) async {
     if (assets == null) return;
-    
+
     setState(() {
       _isProcessing = true;
     });
-    
+
     final cancel = BotToast.showCustomLoading(
       toastBuilder: (_) => _buildProcessingOverlay(),
       allowClick: false,
       clickClose: false,
     );
-    
+
     try {
       await _uploadProvider.processAssets(
         context: context,
@@ -365,20 +364,20 @@ class _InPutPostImageScreenState extends State<InPutPostImageScreen>
       _triggerShakeAnimation();
       return;
     }
-    
+
     final appState = context.read<AppState>();
-    
+
     // Validate texts
     final validationResult = await _createProvider.validateTexts(
       context: context,
       appState: appState,
     );
-    
+
     if (!validationResult.success) {
       // Validation failed
       return;
     }
-    
+
     // Show target audience dialog
     final targetAudience = await TargetAudienceDialog.show(context);
     if (targetAudience == null) {
@@ -386,7 +385,7 @@ class _InPutPostImageScreenState extends State<InPutPostImageScreen>
       await _uploadProvider.cleanupUploadedImages(appState);
       return;
     }
-    
+
     // Save to Firestore
     await _createProvider.savePost(
       context: context,
@@ -394,7 +393,7 @@ class _InPutPostImageScreenState extends State<InPutPostImageScreen>
       targetAudience: targetAudience,
       geminiResult: validationResult.geminiResult,
     );
-    
+
     // Navigate back or to success screen
     if (mounted) {
       Navigator.of(context).pop();

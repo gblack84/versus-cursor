@@ -38,17 +38,17 @@ void main() {
     setUp(() async {
       // Reset DI container
       await sl.reset();
-      
+
       // Initialize fake Firestore
       fakeFirestore = FakeFirebaseFirestore();
-      
+
       // Initialize DI container
       await DIContainer.initialize();
-      
+
       // Get repository instances from DI container
       userRepository = sl<IUserRepository>();
       postRepository = sl<IPostRepository>();
-      
+
       // Verify correct implementations are registered
       expect(userRepository, isA<UserRepositoryImpl>());
       expect(postRepository, isA<PostRepositoryImpl>());
@@ -60,7 +60,8 @@ void main() {
     });
 
     group('UserRepository with DI Integration', () {
-      test('should create and retrieve user through repository interface', () async {
+      test('should create and retrieve user through repository interface',
+          () async {
         // Arrange: Create test user
         final testUser = UserProfile(
           uid: 'test-user-1',
@@ -131,7 +132,8 @@ void main() {
         }
 
         // Act: Search users
-        final results = await userRepository.searchUsersByName('Search', limit: 5);
+        final results =
+            await userRepository.searchUsersByName('Search', limit: 5);
 
         // Assert: Verify search results
         expect(results.length, equals(3));
@@ -140,7 +142,8 @@ void main() {
     });
 
     group('PostRepository with DI Integration', () {
-      test('should create and retrieve post through repository interface', () async {
+      test('should create and retrieve post through repository interface',
+          () async {
         // Arrange: Create test post
         final testPost = Post(
           id: 'test-post-1',
@@ -303,11 +306,13 @@ void main() {
         }
 
         // Act: Get posts by user ID
-        final userPosts = await postRepository.getPostsByUserId('test-creator').first;
+        final userPosts =
+            await postRepository.getPostsByUserId('test-creator').first;
 
         // Assert: Verify results
         expect(userPosts.length, equals(3));
-        expect(userPosts.every((p) => p.creatorInfo.userId == 'test-creator'), isTrue);
+        expect(userPosts.every((p) => p.creatorInfo.userId == 'test-creator'),
+            isTrue);
       });
     });
 
@@ -316,7 +321,7 @@ void main() {
         // Verify that we're using interfaces, not implementations
         expect(userRepository, isA<IUserRepository>());
         expect(postRepository, isA<IPostRepository>());
-        
+
         // Verify that the actual implementations are registered
         expect(userRepository.runtimeType.toString().contains('Impl'), isTrue);
         expect(postRepository.runtimeType.toString().contains('Impl'), isTrue);
@@ -385,12 +390,13 @@ void main() {
         }
 
         stopwatch.stop();
-        
+
         // Should complete in reasonable time (under 5 seconds for 100 users)
         expect(stopwatch.elapsedMilliseconds, lessThan(5000));
-        
+
         // Verify all users were created
-        final doc = await fakeFirestore.collection('users').doc('perf-user-99').get();
+        final doc =
+            await fakeFirestore.collection('users').doc('perf-user-99').get();
         expect(doc.exists, isTrue);
       });
     });

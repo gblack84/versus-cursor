@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import '/core/design_system/tokens/versus_tokens.dart';
 
 /// Versus Space 표준 텍스트 필드 컴포넌트
-/// 
+///
 /// 기존 SimpleValidatedField와 TextField 패턴을 분석하여 표준화했습니다.
 /// 일관된 스타일과 동작을 제공합니다.
 class VersusTextField extends StatefulWidget {
@@ -190,7 +190,7 @@ class _VersusTextFieldState extends State<VersusTextField> {
   Widget build(BuildContext context) {
     final textStyle = _getTextStyle();
     final inputDecoration = _buildInputDecoration();
-    
+
     Widget textField = TextField(
       controller: _controller,
       focusNode: widget.focusNode,
@@ -235,13 +235,12 @@ class _VersusTextFieldState extends State<VersusTextField> {
 
   InputDecoration _buildInputDecoration() {
     final borderColor = widget.borderColor ?? VersusColors.borderLight;
-    final focusedBorderColor = widget.errorText != null 
-        ? VersusColors.error 
-        : VersusColors.primary;
-    
+    final focusedBorderColor =
+        widget.errorText != null ? VersusColors.error : VersusColors.primary;
+
     InputBorder border;
     Color? fillColor;
-    
+
     switch (widget.type) {
       case VersusTextFieldType.outline:
         border = OutlineInputBorder(
@@ -249,7 +248,7 @@ class _VersusTextFieldState extends State<VersusTextField> {
           borderSide: BorderSide(color: borderColor, width: 1),
         );
         break;
-        
+
       case VersusTextFieldType.filled:
         border = OutlineInputBorder(
           borderRadius: VersusRadius.radiusSmall,
@@ -257,7 +256,7 @@ class _VersusTextFieldState extends State<VersusTextField> {
         );
         fillColor = widget.fillColor ?? VersusColors.backgroundSecondary;
         break;
-        
+
       case VersusTextFieldType.underline:
         border = UnderlineInputBorder(
           borderSide: BorderSide(color: borderColor, width: 1),
@@ -393,14 +392,14 @@ class _VersusPasswordFieldState extends State<VersusPasswordField> {
 
 /// 텍스트 필드 타입 열거형
 enum VersusTextFieldType {
-  outline,    // 외곽선 (기본)
-  filled,     // 배경 채움
-  underline,  // 밑줄만
+  outline, // 외곽선 (기본)
+  filled, // 배경 채움
+  underline, // 밑줄만
 }
 
 /// 텍스트 필드 크기 열거형
 enum VersusTextFieldSize {
-  small,      // 작은 크기
-  medium,     // 중간 크기 (기본)
-  large,      // 큰 크기
+  small, // 작은 크기
+  medium, // 중간 크기 (기본)
+  large, // 큰 크기
 }

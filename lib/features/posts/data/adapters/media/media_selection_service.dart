@@ -21,16 +21,17 @@ class MediaSelectionService {
         textDelegate: const CustomKoreanAssetPickerTextDelegate(),
         gridCount: 4,
         specialItemPosition: SpecialItemPosition.prepend,
-        specialItemBuilder: (BuildContext context, AssetPathEntity? path, int length) {
+        specialItemBuilder:
+            (BuildContext context, AssetPathEntity? path, int length) {
           return _buildCameraButton(context);
         },
       ),
     );
-    
+
     if (result != null && result.isNotEmpty) {
       return _processAssetEntity(result.first, box);
     }
-    
+
     return null;
   }
 
@@ -45,7 +46,7 @@ class MediaSelectionService {
             textDelegate: const CustomKoreanCameraPickerTextDelegate(),
           ),
         );
-        
+
         if (entity != null && context.mounted) {
           Navigator.of(context).pop([entity]);
         }
@@ -92,10 +93,10 @@ class MediaSelectionService {
     String box,
   ) async {
     final file = await asset.file;
-    
+
     if (file != null) {
       final isVideo = asset.type == AssetType.video;
-      
+
       return MediaSelectionResult(
         file: file,
         isVideo: isVideo,
@@ -103,7 +104,7 @@ class MediaSelectionService {
         assetEntity: asset,
       );
     }
-    
+
     return null;
   }
 }

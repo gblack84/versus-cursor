@@ -85,7 +85,7 @@ abstract class IVotingRepository {
 }
 
 /// Domain interface for accessing post-related data from voting feature
-/// 
+///
 /// This interface follows Dependency Inversion Principle to avoid
 /// direct dependency on Posts feature's data layer
 abstract class PostsDataSource {
@@ -94,7 +94,7 @@ abstract class PostsDataSource {
     String? category,
     int? limit,
   });
-  
+
   /// Get a single ranked post by ID
   Future<RankedPostsData?> getRankedPostById(String postId);
 }

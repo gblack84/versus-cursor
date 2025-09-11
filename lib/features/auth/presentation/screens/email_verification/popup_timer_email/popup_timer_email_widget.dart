@@ -101,14 +101,12 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                   style: AppTheme.of(context).bodyMedium.override(
                         font: GoogleFonts.plusJakartaSans(
                           fontWeight: FontWeight.w800,
-                          fontStyle:
-                              AppTheme.of(context).bodyMedium.fontStyle,
+                          fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
                         ),
                         fontSize: 20.0,
                         letterSpacing: 0.0,
                         fontWeight: FontWeight.w800,
-                        fontStyle:
-                            AppTheme.of(context).bodyMedium.fontStyle,
+                        fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
                       ),
                 ),
               ),
@@ -136,7 +134,6 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                               extra: <String, dynamic>{
                                 kTransitionInfoKey: TransitionInfo(
                                   hasTransition: true,
-                                  
                                   duration: Duration(milliseconds: 500),
                                 ),
                               },
@@ -152,25 +149,20 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                       iconPadding:
                           EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                       color: Colors.white,
-                      textStyle:
-                          AppTheme.of(context).titleSmall.override(
-                                font: GoogleFonts.plusJakartaSans(
-                                  fontWeight: AppTheme.of(context)
-                                      .titleSmall
-                                      .fontWeight,
-                                  fontStyle: AppTheme.of(context)
-                                      .titleSmall
-                                      .fontStyle,
-                                ),
-                                color: Color(0xFF14181B),
-                                letterSpacing: 0.0,
-                                fontWeight: AppTheme.of(context)
-                                    .titleSmall
-                                    .fontWeight,
-                                fontStyle: AppTheme.of(context)
-                                    .titleSmall
-                                    .fontStyle,
-                              ),
+                      textStyle: AppTheme.of(context).titleSmall.override(
+                            font: GoogleFonts.plusJakartaSans(
+                              fontWeight:
+                                  AppTheme.of(context).titleSmall.fontWeight,
+                              fontStyle:
+                                  AppTheme.of(context).titleSmall.fontStyle,
+                            ),
+                            color: Color(0xFF14181B),
+                            letterSpacing: 0.0,
+                            fontWeight:
+                                AppTheme.of(context).titleSmall.fontWeight,
+                            fontStyle:
+                                AppTheme.of(context).titleSmall.fontStyle,
+                          ),
                       elevation: 10.0,
                       borderSide: BorderSide(
                         color: Color(0xFF14181B),
@@ -203,20 +195,16 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                         ),
                         style: AppTheme.of(context).bodyMedium.override(
                               font: GoogleFonts.plusJakartaSans(
-                                fontWeight: AppTheme.of(context)
-                                    .bodyMedium
-                                    .fontWeight,
-                                fontStyle: AppTheme.of(context)
-                                    .bodyMedium
-                                    .fontStyle,
+                                fontWeight:
+                                    AppTheme.of(context).bodyMedium.fontWeight,
+                                fontStyle:
+                                    AppTheme.of(context).bodyMedium.fontStyle,
                               ),
                               letterSpacing: 0.0,
-                              fontWeight: AppTheme.of(context)
-                                  .bodyMedium
-                                  .fontWeight,
-                              fontStyle: AppTheme.of(context)
-                                  .bodyMedium
-                                  .fontStyle,
+                              fontWeight:
+                                  AppTheme.of(context).bodyMedium.fontWeight,
+                              fontStyle:
+                                  AppTheme.of(context).bodyMedium.fontStyle,
                             ),
                       ),
                       TextSpan(
@@ -227,29 +215,25 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                         style: AppTheme.of(context).bodyMedium.override(
                               font: GoogleFonts.plusJakartaSans(
                                 fontWeight: FontWeight.bold,
-                                fontStyle: AppTheme.of(context)
-                                    .bodyMedium
-                                    .fontStyle,
+                                fontStyle:
+                                    AppTheme.of(context).bodyMedium.fontStyle,
                               ),
                               letterSpacing: 0.0,
                               fontWeight: FontWeight.bold,
-                              fontStyle: AppTheme.of(context)
-                                  .bodyMedium
-                                  .fontStyle,
+                              fontStyle:
+                                  AppTheme.of(context).bodyMedium.fontStyle,
                             ),
                       )
                     ],
                     style: AppTheme.of(context).bodyMedium.override(
                           font: GoogleFonts.plusJakartaSans(
                             fontWeight: FontWeight.w600,
-                            fontStyle: AppTheme.of(context)
-                                .bodyMedium
-                                .fontStyle,
+                            fontStyle:
+                                AppTheme.of(context).bodyMedium.fontStyle,
                           ),
                           letterSpacing: 0.0,
                           fontWeight: FontWeight.w600,
-                          fontStyle:
-                              AppTheme.of(context).bodyMedium.fontStyle,
+                          fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
                         ),
                   ),
                   textAlign: TextAlign.center,
@@ -287,25 +271,20 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                         iconPadding:
                             EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                         color: Colors.black,
-                        textStyle:
-                            AppTheme.of(context).titleSmall.override(
-                                  font: GoogleFonts.plusJakartaSans(
-                                    fontWeight: AppTheme.of(context)
-                                        .titleSmall
-                                        .fontWeight,
-                                    fontStyle: AppTheme.of(context)
-                                        .titleSmall
-                                        .fontStyle,
-                                  ),
-                                  color: Colors.white,
-                                  letterSpacing: 0.0,
-                                  fontWeight: AppTheme.of(context)
-                                      .titleSmall
-                                      .fontWeight,
-                                  fontStyle: AppTheme.of(context)
-                                      .titleSmall
-                                      .fontStyle,
-                                ),
+                        textStyle: AppTheme.of(context).titleSmall.override(
+                              font: GoogleFonts.plusJakartaSans(
+                                fontWeight:
+                                    AppTheme.of(context).titleSmall.fontWeight,
+                                fontStyle:
+                                    AppTheme.of(context).titleSmall.fontStyle,
+                              ),
+                              color: Colors.white,
+                              letterSpacing: 0.0,
+                              fontWeight:
+                                  AppTheme.of(context).titleSmall.fontWeight,
+                              fontStyle:
+                                  AppTheme.of(context).titleSmall.fontStyle,
+                            ),
                         elevation: 10.0,
                         borderRadius: BorderRadius.circular(8.0),
                         disabledColor: Color(0xFF57636C),
@@ -339,25 +318,21 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                                           .headlineSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .headlineSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .headlineSmall
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .headlineSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .headlineSmall
+                                                  .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .headlineSmall
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .headlineSmall
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .headlineSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .headlineSmall
+                                                .fontStyle,
                                           ),
                                       textAlign: TextAlign.center,
                                     ),
@@ -373,7 +348,6 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                                   extra: <String, dynamic>{
                                     kTransitionInfoKey: TransitionInfo(
                                       hasTransition: true,
-                                      
                                       duration: Duration(milliseconds: 500),
                                     ),
                                   },
@@ -390,25 +364,20 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                         iconPadding:
                             EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                         color: Colors.black,
-                        textStyle:
-                            AppTheme.of(context).titleSmall.override(
-                                  font: GoogleFonts.plusJakartaSans(
-                                    fontWeight: AppTheme.of(context)
-                                        .titleSmall
-                                        .fontWeight,
-                                    fontStyle: AppTheme.of(context)
-                                        .titleSmall
-                                        .fontStyle,
-                                  ),
-                                  color: Colors.white,
-                                  letterSpacing: 0.0,
-                                  fontWeight: AppTheme.of(context)
-                                      .titleSmall
-                                      .fontWeight,
-                                  fontStyle: AppTheme.of(context)
-                                      .titleSmall
-                                      .fontStyle,
-                                ),
+                        textStyle: AppTheme.of(context).titleSmall.override(
+                              font: GoogleFonts.plusJakartaSans(
+                                fontWeight:
+                                    AppTheme.of(context).titleSmall.fontWeight,
+                                fontStyle:
+                                    AppTheme.of(context).titleSmall.fontStyle,
+                              ),
+                              color: Colors.white,
+                              letterSpacing: 0.0,
+                              fontWeight:
+                                  AppTheme.of(context).titleSmall.fontWeight,
+                              fontStyle:
+                                  AppTheme.of(context).titleSmall.fontStyle,
+                            ),
                         elevation: 10.0,
                         borderRadius: BorderRadius.circular(8.0),
                         disabledColor: Color(0xFF57636C),
@@ -444,19 +413,14 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                 textAlign: TextAlign.start,
                 style: AppTheme.of(context).headlineSmall.override(
                       font: GoogleFonts.plusJakartaSans(
-                        fontWeight: AppTheme.of(context)
-                            .headlineSmall
-                            .fontWeight,
-                        fontStyle: AppTheme.of(context)
-                            .headlineSmall
-                            .fontStyle,
+                        fontWeight:
+                            AppTheme.of(context).headlineSmall.fontWeight,
+                        fontStyle: AppTheme.of(context).headlineSmall.fontStyle,
                       ),
                       color: Color(0xFFFF4E00),
                       letterSpacing: 0.0,
-                      fontWeight:
-                          AppTheme.of(context).headlineSmall.fontWeight,
-                      fontStyle:
-                          AppTheme.of(context).headlineSmall.fontStyle,
+                      fontWeight: AppTheme.of(context).headlineSmall.fontWeight,
+                      fontStyle: AppTheme.of(context).headlineSmall.fontStyle,
                     ),
               ),
             ),

@@ -27,7 +27,7 @@ class TargetAudienceConstants {
 
   // 목표 응답 수 옵션
   static const List<int> targetCountOptions = [10, 50, 100, 500];
-  
+
   // 관심사 목록
   static const List<String> interests = [
     '스포츠',
@@ -60,8 +60,8 @@ class TargetAudienceConstants {
   };
 
   // 시간 제한 (초)
-  static const int freeTimeLimit = 600;  // 10분
-  static const int premiumTimeLimit = 300;  // 5분
+  static const int freeTimeLimit = 600; // 10분
+  static const int premiumTimeLimit = 300; // 5분
 
   // UI 관련 상수
   static const double dialogWidth = 400.0;

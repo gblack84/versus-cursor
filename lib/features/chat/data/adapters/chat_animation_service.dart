@@ -7,7 +7,7 @@ class ChatAnimationService {
   late Animation<double> fabBounceAnimation;
   late AnimationController fabScaleController;
   late Animation<double> fabScaleAnimation;
-  
+
   /// 애니메이션 초기화
   void initializeAnimations(TickerProvider vsync) {
     // FAB 바운스 애니메이션
@@ -15,7 +15,7 @@ class ChatAnimationService {
       duration: const Duration(milliseconds: 600),
       vsync: vsync,
     );
-    
+
     fabBounceAnimation = Tween<double>(
       begin: 1.0,
       end: 1.2,
@@ -23,13 +23,13 @@ class ChatAnimationService {
       parent: fabAnimationController,
       curve: Curves.elasticOut,
     ));
-    
+
     // FAB 스케일 애니메이션
     fabScaleController = AnimationController(
       duration: const Duration(milliseconds: 200),
       vsync: vsync,
     );
-    
+
     fabScaleAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -38,23 +38,23 @@ class ChatAnimationService {
       curve: Curves.easeInOut,
     ));
   }
-  
+
   /// FAB 바운스 애니메이션 실행
   Future<void> playFabBounce() async {
     await fabAnimationController.forward();
     await fabAnimationController.reverse();
   }
-  
+
   /// FAB 표시
   void showFab() {
     fabScaleController.forward();
   }
-  
+
   /// FAB 숨기기
   void hideFab() {
     fabScaleController.reverse();
   }
-  
+
   /// 리소스 정리
   void dispose() {
     fabAnimationController.dispose();

@@ -69,18 +69,14 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget> {
             ),
             style: AppTheme.of(context).displaySmall.override(
                   font: GoogleFonts.plusJakartaSans(
-                    fontWeight:
-                        AppTheme.of(context).displaySmall.fontWeight,
-                    fontStyle:
-                        AppTheme.of(context).displaySmall.fontStyle,
+                    fontWeight: AppTheme.of(context).displaySmall.fontWeight,
+                    fontStyle: AppTheme.of(context).displaySmall.fontStyle,
                   ),
                   color: Colors.black,
                   fontSize: 16.0,
                   letterSpacing: 0.0,
-                  fontWeight:
-                      AppTheme.of(context).displaySmall.fontWeight,
-                  fontStyle:
-                      AppTheme.of(context).displaySmall.fontStyle,
+                  fontWeight: AppTheme.of(context).displaySmall.fontWeight,
+                  fontStyle: AppTheme.of(context).displaySmall.fontStyle,
                 ),
           ),
         ),
@@ -137,9 +133,7 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget> {
                             AppLocalizations.of(context).getText(
                               'vczmwqaz' /* Back */,
                             ),
-                            style: AppTheme.of(context)
-                                .bodyMedium
-                                .override(
+                            style: AppTheme.of(context).bodyMedium.override(
                                   font: GoogleFonts.plusJakartaSans(
                                     fontWeight: AppTheme.of(context)
                                         .bodyMedium
@@ -152,9 +146,8 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget> {
                                   fontWeight: AppTheme.of(context)
                                       .bodyMedium
                                       .fontWeight,
-                                  fontStyle: AppTheme.of(context)
-                                      .bodyMedium
-                                      .fontStyle,
+                                  fontStyle:
+                                      AppTheme.of(context).bodyMedium.fontStyle,
                                 ),
                           ),
                         ),
@@ -170,21 +163,17 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget> {
                   ),
                   style: AppTheme.of(context).headlineMedium.override(
                         font: GoogleFonts.plusJakartaSans(
-                          fontWeight: AppTheme.of(context)
-                              .headlineMedium
-                              .fontWeight,
-                          fontStyle: AppTheme.of(context)
-                              .headlineMedium
-                              .fontStyle,
+                          fontWeight:
+                              AppTheme.of(context).headlineMedium.fontWeight,
+                          fontStyle:
+                              AppTheme.of(context).headlineMedium.fontStyle,
                         ),
                         color: Colors.black,
                         letterSpacing: 0.0,
-                        fontWeight: AppTheme.of(context)
-                            .headlineMedium
-                            .fontWeight,
-                        fontStyle: AppTheme.of(context)
-                            .headlineMedium
-                            .fontStyle,
+                        fontWeight:
+                            AppTheme.of(context).headlineMedium.fontWeight,
+                        fontStyle:
+                            AppTheme.of(context).headlineMedium.fontStyle,
                       ),
                 ),
               ),
@@ -196,18 +185,13 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget> {
                   ),
                   style: AppTheme.of(context).labelMedium.override(
                         font: GoogleFonts.plusJakartaSans(
-                          fontWeight: AppTheme.of(context)
-                              .labelMedium
-                              .fontWeight,
-                          fontStyle: AppTheme.of(context)
-                              .labelMedium
-                              .fontStyle,
+                          fontWeight:
+                              AppTheme.of(context).labelMedium.fontWeight,
+                          fontStyle: AppTheme.of(context).labelMedium.fontStyle,
                         ),
                         letterSpacing: 0.0,
-                        fontWeight:
-                            AppTheme.of(context).labelMedium.fontWeight,
-                        fontStyle:
-                            AppTheme.of(context).labelMedium.fontStyle,
+                        fontWeight: AppTheme.of(context).labelMedium.fontWeight,
+                        fontStyle: AppTheme.of(context).labelMedium.fontStyle,
                       ),
                 ),
               ),
@@ -224,45 +208,35 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget> {
                       labelText: AppLocalizations.of(context).getText(
                         '8mw92l30' /* Your email address... */,
                       ),
-                      labelStyle:
-                          AppTheme.of(context).labelMedium.override(
-                                font: GoogleFonts.plusJakartaSans(
-                                  fontWeight: AppTheme.of(context)
-                                      .labelMedium
-                                      .fontWeight,
-                                  fontStyle: AppTheme.of(context)
-                                      .labelMedium
-                                      .fontStyle,
-                                ),
-                                letterSpacing: 0.0,
-                                fontWeight: AppTheme.of(context)
-                                    .labelMedium
-                                    .fontWeight,
-                                fontStyle: AppTheme.of(context)
-                                    .labelMedium
-                                    .fontStyle,
-                              ),
+                      labelStyle: AppTheme.of(context).labelMedium.override(
+                            font: GoogleFonts.plusJakartaSans(
+                              fontWeight:
+                                  AppTheme.of(context).labelMedium.fontWeight,
+                              fontStyle:
+                                  AppTheme.of(context).labelMedium.fontStyle,
+                            ),
+                            letterSpacing: 0.0,
+                            fontWeight:
+                                AppTheme.of(context).labelMedium.fontWeight,
+                            fontStyle:
+                                AppTheme.of(context).labelMedium.fontStyle,
+                          ),
                       hintText: AppLocalizations.of(context).getText(
                         'jabo9c3s' /* Enter your email... */,
                       ),
-                      hintStyle:
-                          AppTheme.of(context).labelMedium.override(
-                                font: GoogleFonts.plusJakartaSans(
-                                  fontWeight: AppTheme.of(context)
-                                      .labelMedium
-                                      .fontWeight,
-                                  fontStyle: AppTheme.of(context)
-                                      .labelMedium
-                                      .fontStyle,
-                                ),
-                                letterSpacing: 0.0,
-                                fontWeight: AppTheme.of(context)
-                                    .labelMedium
-                                    .fontWeight,
-                                fontStyle: AppTheme.of(context)
-                                    .labelMedium
-                                    .fontStyle,
-                              ),
+                      hintStyle: AppTheme.of(context).labelMedium.override(
+                            font: GoogleFonts.plusJakartaSans(
+                              fontWeight:
+                                  AppTheme.of(context).labelMedium.fontWeight,
+                              fontStyle:
+                                  AppTheme.of(context).labelMedium.fontStyle,
+                            ),
+                            letterSpacing: 0.0,
+                            fontWeight:
+                                AppTheme.of(context).labelMedium.fontWeight,
+                            fontStyle:
+                                AppTheme.of(context).labelMedium.fontStyle,
+                          ),
                       enabledBorder: OutlineInputBorder(
                         borderSide: BorderSide(
                           color: AppTheme.of(context).alternate,
@@ -298,20 +272,16 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget> {
                     ),
                     style: AppTheme.of(context).bodyMedium.override(
                           font: GoogleFonts.plusJakartaSans(
-                            fontWeight: AppTheme.of(context)
-                                .bodyMedium
-                                .fontWeight,
-                            fontStyle: AppTheme.of(context)
-                                .bodyMedium
-                                .fontStyle,
+                            fontWeight:
+                                AppTheme.of(context).bodyMedium.fontWeight,
+                            fontStyle:
+                                AppTheme.of(context).bodyMedium.fontStyle,
                           ),
                           color: Colors.black,
                           letterSpacing: 0.0,
-                          fontWeight: AppTheme.of(context)
-                              .bodyMedium
-                              .fontWeight,
-                          fontStyle:
-                              AppTheme.of(context).bodyMedium.fontStyle,
+                          fontWeight:
+                              AppTheme.of(context).bodyMedium.fontWeight,
+                          fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
                         ),
                     maxLines: null,
                     keyboardType: TextInputType.emailAddress,
@@ -353,25 +323,20 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget> {
                       iconPadding:
                           EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                       color: Colors.black,
-                      textStyle:
-                          AppTheme.of(context).titleSmall.override(
-                                font: GoogleFonts.plusJakartaSans(
-                                  fontWeight: AppTheme.of(context)
-                                      .titleSmall
-                                      .fontWeight,
-                                  fontStyle: AppTheme.of(context)
-                                      .titleSmall
-                                      .fontStyle,
-                                ),
-                                color: Colors.white,
-                                letterSpacing: 0.0,
-                                fontWeight: AppTheme.of(context)
-                                    .titleSmall
-                                    .fontWeight,
-                                fontStyle: AppTheme.of(context)
-                                    .titleSmall
-                                    .fontStyle,
-                              ),
+                      textStyle: AppTheme.of(context).titleSmall.override(
+                            font: GoogleFonts.plusJakartaSans(
+                              fontWeight:
+                                  AppTheme.of(context).titleSmall.fontWeight,
+                              fontStyle:
+                                  AppTheme.of(context).titleSmall.fontStyle,
+                            ),
+                            color: Colors.white,
+                            letterSpacing: 0.0,
+                            fontWeight:
+                                AppTheme.of(context).titleSmall.fontWeight,
+                            fontStyle:
+                                AppTheme.of(context).titleSmall.fontStyle,
+                          ),
                       elevation: 3.0,
                       borderSide: BorderSide(
                         color: Colors.transparent,

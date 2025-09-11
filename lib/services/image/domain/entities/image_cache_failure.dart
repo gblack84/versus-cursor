@@ -2,7 +2,6 @@ import 'package:equatable/equatable.dart';
 import '../types/cache_types.dart';
 
 class ImageCacheFailure extends Equatable {
-
   const ImageCacheFailure({
     required this.type,
     this.message = '',

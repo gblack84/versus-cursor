@@ -48,7 +48,7 @@ class ImageEditorCallbackHandler {
     print('onImageEditingComplete 호출됨');
     try {
       onProgressUpdate(0.2);
-      
+
       if (allSelectedFiles.isNotEmpty) {
         await _handleMultiImageUpload(bytes);
       } else {
@@ -72,34 +72,36 @@ class ImageEditorCallbackHandler {
   Future<void> _handleMultiImageUpload(Uint8List bytes) async {
     final reorderedUrls = <String>[];
     final reorderedRatios = <double>[];
-    
+
     // 1. 편집된 이미지 업로드
     onProgressUpdate(0.2);
-    
+
     final editedResult = await _uploadEditedImage(bytes);
     if (editedResult == null) return; // 업로드 실패
-    
+
     final editedDisplayUrl = editedResult['urls']['display'];
     final editedAspectRatio = editedResult['aspectRatio'];
-    
+
     // 추가 모드 처리
     if (isAddMode && currentIndex != null) {
-      await _handleAddMode(reorderedUrls, reorderedRatios, editedDisplayUrl, editedAspectRatio);
+      await _handleAddMode(
+          reorderedUrls, reorderedRatios, editedDisplayUrl, editedAspectRatio);
     } else {
-      await _handleEditMode(reorderedUrls, reorderedRatios, editedDisplayUrl, editedAspectRatio);
+      await _handleEditMode(
+          reorderedUrls, reorderedRatios, editedDisplayUrl, editedAspectRatio);
     }
-    
+
     // AssetEntity ID 순서 맞추기
     final reorderedAssetIds = _reorderAssetIds();
-    
+
     // AppState에 저장
     _updateAppState(reorderedUrls, reorderedRatios, reorderedAssetIds);
-    
+
     // 콜백 호출
     onMultiComplete?.call(reorderedUrls);
-    
+
     onProgressUpdate(1.0);
-    
+
     // 모달 닫기
     if (context.mounted) {
       Navigator.pop(context);
@@ -110,19 +112,19 @@ class ImageEditorCallbackHandler {
   /// 단일 이미지 업로드 처리
   Future<void> _handleSingleImageUpload(Uint8List bytes) async {
     onProgressUpdate(0.5);
-    
+
     // 업로드
     final result = await _uploadEditedImage(bytes);
     if (result == null) return;
-    
+
     final displayUrl = result['urls']['display'] as String;
     final aspectRatio = result['aspectRatio'] as double;
-    
+
     onProgressUpdate(0.9);
-    
+
     // 편집 모드 확인
     final isEditMode = startWithEditor && initialImageUrl != null;
-    
+
     if (!isEditMode) {
       // 편집 모드가 아닐 때만 AppState에 추가
       appState.update(() {
@@ -141,17 +143,18 @@ class ImageEditorCallbackHandler {
         }
       });
     }
-    
+
     // 프리캐싱
-    precacheImage(CachedNetworkImageProvider(displayUrl), context).catchError((e) {
+    precacheImage(CachedNetworkImageProvider(displayUrl), context)
+        .catchError((e) {
       print('프리캐싱 실패 (무시됨): $e');
     });
-    
+
     // 콜백 호출
     onSingleComplete?.call(displayUrl);
-    
+
     onProgressUpdate(1.0);
-    
+
     // 모달 닫기
     if (context.mounted) {
       Navigator.pop(context);
@@ -165,16 +168,18 @@ class ImageEditorCallbackHandler {
       return await MediaUploadService.uploadImageWithVariants(
         imageBytes: bytes,
         box: box,
-        onModerationStatusUpdate: (status) => _handleModerationStatusUpdate(status),
+        onModerationStatusUpdate: (status) =>
+            _handleModerationStatusUpdate(status),
         onRejected: (reason) => _handleModerationRejected(reason),
       );
     } catch (e) {
       if (context.mounted) {
         String errorMessage = '이미지 업로드 실패';
-        if (e.toString().contains('커뮤니티 가이드라인') || e.toString().contains('부적절한')) {
+        if (e.toString().contains('커뮤니티 가이드라인') ||
+            e.toString().contains('부적절한')) {
           errorMessage = e.toString();
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
@@ -196,17 +201,17 @@ class ImageEditorCallbackHandler {
     double editedAspectRatio,
   ) async {
     print('추가 모드: 현재 인덱스 $currentIndex에서 이미지 추가');
-    
+
     // 기존 이미지들을 그대로 복사
     if (existingImageUrls != null && existingAspectRatios != null) {
       reorderedUrls.addAll(existingImageUrls!);
       reorderedRatios.addAll(existingAspectRatios!);
     }
-    
+
     // 새 이미지를 추가
     reorderedUrls.add(editedDisplayUrl);
     reorderedRatios.add(editedAspectRatio);
-    
+
     print('새 이미지 추가 완료. 총 ${reorderedUrls.length}개 이미지');
   }
 
@@ -221,19 +226,20 @@ class ImageEditorCallbackHandler {
     reorderedUrls.add(editedDisplayUrl);
     reorderedRatios.add(editedAspectRatio);
     print('편집된 이미지 업로드 완료 (썸네일)');
-    
+
     // 첫 번째 이미지 즉시 프리캐싱
-    await precacheImage(
-      CachedNetworkImageProvider(editedDisplayUrl), 
-      context
-    ).catchError((e) {
+    await precacheImage(CachedNetworkImageProvider(editedDisplayUrl), context)
+        .catchError((e) {
       print('첫 이미지 프리캐싱 실패 (무시됨): $e');
     });
-    
+
     onProgressUpdate(0.4);
-    
+
     // 나머지 이미지들 처리
-    if (!isAddMode && existingImageUrls != null && existingAspectRatios != null && existingImageUrls!.isNotEmpty) {
+    if (!isAddMode &&
+        existingImageUrls != null &&
+        existingAspectRatios != null &&
+        existingImageUrls!.isNotEmpty) {
       await _reuseExistingImages(reorderedUrls, reorderedRatios);
     } else {
       await _uploadRemainingImages(reorderedUrls, reorderedRatios);
@@ -264,41 +270,39 @@ class ImageEditorCallbackHandler {
   ) async {
     final uploadFutures = <Future<Map<String, dynamic>>>[];
     final fileBytesFutures = <Future<Uint8List>>[];
-    
+
     // 파일 읽기 병렬 처리
     for (int i = 0; i < allSelectedFiles.length; i++) {
       if (i != currentEditIndex) {
         fileBytesFutures.add(allSelectedFiles[i].readAsBytes());
       }
     }
-    
+
     if (fileBytesFutures.isEmpty) return;
-    
+
     final allFileBytes = await Future.wait(fileBytesFutures);
-    
+
     // 업로드 작업 병렬로 시작
     for (final fileBytes in allFileBytes) {
-      uploadFutures.add(
-        MediaUploadService.uploadImageWithVariants(
-          imageBytes: fileBytes,
-          box: box,
-          onModerationStatusUpdate: (_) {},
-          onRejected: (_) {},
-        ).catchError((e) {
-          print('[MediaSelection] 이미지 업로드 실패 (건너뜀): $e');
-          return <String, dynamic>{
-            'urls': {'display': '', 'original': '', 'thumbnail': ''},
-            'aspectRatio': 1.0,
-          };
-        })
-      );
+      uploadFutures.add(MediaUploadService.uploadImageWithVariants(
+        imageBytes: fileBytes,
+        box: box,
+        onModerationStatusUpdate: (_) {},
+        onRejected: (_) {},
+      ).catchError((e) {
+        print('[MediaSelection] 이미지 업로드 실패 (건너뜀): $e');
+        return <String, dynamic>{
+          'urls': {'display': '', 'original': '', 'thumbnail': ''},
+          'aspectRatio': 1.0,
+        };
+      }));
     }
-    
+
     onProgressUpdate(0.6);
-    
+
     // 모든 업로드 완료 대기
     final results = await Future.wait(uploadFutures);
-    
+
     // 결과 처리 및 프리캐싱
     final precacheFutures = <Future<void>>[];
     for (final result in results) {
@@ -306,37 +310,35 @@ class ImageEditorCallbackHandler {
       if (displayUrl != null && displayUrl.isNotEmpty) {
         reorderedUrls.add(displayUrl);
         reorderedRatios.add(result['aspectRatio']);
-        
+
         // 백그라운드 프리캐싱
         precacheFutures.add(
-          precacheImage(
-            CachedNetworkImageProvider(displayUrl), 
-            context
-          ).catchError((e) {
-            print('프리캐싱 실패 (무시됨): $e');
-          })
-        );
+            precacheImage(CachedNetworkImageProvider(displayUrl), context)
+                .catchError((e) {
+          print('프리캐싱 실패 (무시됨): $e');
+        }));
       }
     }
-    
+
     // 백그라운드 프리캐싱
     Future.wait(precacheFutures).then((_) {
       print('모든 이미지 프리캐싱 완료');
     });
-    
+
     print('전체 이미지 처리 완료: ${reorderedUrls.length}개');
   }
 
   /// AssetEntity ID 재정렬
   List<String> _reorderAssetIds() {
     final reorderedAssetIds = <String>[];
-    
+
     if (isAddMode) {
       // 추가 모드: 기존 ID들 + 새 ID
       if (existingAssetIds != null) {
         reorderedAssetIds.addAll(existingAssetIds!);
       }
-      if (selectedAssets.isNotEmpty && currentEditIndex < selectedAssets.length) {
+      if (selectedAssets.isNotEmpty &&
+          currentEditIndex < selectedAssets.length) {
         reorderedAssetIds.add(selectedAssets[currentEditIndex].id);
       }
     } else if (selectedAssets.isNotEmpty) {
@@ -351,7 +353,7 @@ class ImageEditorCallbackHandler {
         }
       }
     }
-    
+
     return reorderedAssetIds;
   }
 

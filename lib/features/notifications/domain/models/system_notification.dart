@@ -9,9 +9,10 @@ class SystemNotification extends Notification {
   final Map<String, String>? actionButtons;
   final String? iconUrl;
   final bool isDismissible;
-  
+
   // Alias for backward compatibility
-  SystemAlertLevel get alertLevel => SystemAlertLevel.fromString(alertType.value);
+  SystemAlertLevel get alertLevel =>
+      SystemAlertLevel.fromString(alertType.value);
 
   const SystemNotification({
     required super.id,
@@ -86,11 +87,11 @@ class SystemNotification extends Notification {
 
 /// 시스템 알림 타입
 enum SystemAlertType {
-  critical('critical'),      // 중요 시스템 알림
-  security('security'),      // 보안 관련 알림
+  critical('critical'), // 중요 시스템 알림
+  security('security'), // 보안 관련 알림
   maintenance('maintenance'), // 점검 알림
-  update('update'),          // 업데이트 알림
-  info('info');             // 일반 정보
+  update('update'), // 업데이트 알림
+  info('info'); // 일반 정보
 
   final String value;
   const SystemAlertType(this.value);

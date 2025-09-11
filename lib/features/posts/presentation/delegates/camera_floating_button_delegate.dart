@@ -20,16 +20,16 @@ class CameraFloatingButtonDelegate extends DefaultAssetPickerBuilderDelegate {
     super.keepScrollOffset,
     required this.onCameraPressed,
   });
-  
+
   final Future<void> Function() onCameraPressed;
-  
+
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
         // 기본 피커 UI
         super.build(context),
-        
+
         // 플로팅 카메라 버튼
         Positioned(
           bottom: 100, // 하단 바 위

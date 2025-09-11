@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 class FieldStyles {
   // 필드 타입 상수
   static const String questionTitle = 'questionTitle';
-  static const String description = 'description'; 
+  static const String description = 'description';
   static const String textA = 'textA';
   static const String textB = 'textB';
-  
+
   // 필드별 설정
   static const Map<String, FieldConfig> fieldConfigs = {
     questionTitle: FieldConfig(
@@ -26,7 +26,6 @@ class FieldStyles {
       showCharacterCount: true,
       showClearButton: true,
     ),
-    
     description: FieldConfig(
       textSize: 20.0,
       labelSize: 25.0,
@@ -42,7 +41,6 @@ class FieldStyles {
       showCharacterCount: true,
       showClearButton: true,
     ),
-    
     textA: FieldConfig(
       textSize: 15.0,
       labelSize: 20.0,
@@ -58,7 +56,6 @@ class FieldStyles {
       showCharacterCount: true,
       showClearButton: true,
     ),
-    
     textB: FieldConfig(
       textSize: 15.0,
       labelSize: 20.0,
@@ -75,19 +72,19 @@ class FieldStyles {
       showClearButton: true,
     ),
   };
-  
+
   // 공통 스타일 상수
   static const Color borderColor = Colors.black;
   static const Color focusedBorderColor = Colors.black;
   static const Color errorBorderColor = Colors.black;
   static const double borderRadius = 12.0;
   static const double borderRadiusDense = 12.0;
-  
+
   // 헬퍼 메서드
   static FieldConfig getConfig(String fieldName) {
     return fieldConfigs[fieldName] ?? _defaultConfig;
   }
-  
+
   // 기본 설정
   static const FieldConfig _defaultConfig = FieldConfig(
     textSize: 14.0,
@@ -121,7 +118,7 @@ class FieldConfig {
   final TextInputAction textInputAction;
   final bool showCharacterCount;
   final bool showClearButton;
-  
+
   const FieldConfig({
     required this.textSize,
     required this.labelSize,
@@ -137,7 +134,7 @@ class FieldConfig {
     required this.showCharacterCount,
     required this.showClearButton,
   });
-  
+
   /// 기존 설정을 복사하면서 일부 속성만 변경
   /// 나중에 전역 스타일을 상속받을 때 유용
   FieldConfig copyWith({

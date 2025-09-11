@@ -13,10 +13,8 @@ void main() {
       test('should convert UserProfile to all 4 domain models correctly', () {
         // Arrange
         final testData = _createTestUserProfileData();
-        final userProfile = UserProfile.getDocumentFromData(
-          testData, 
-          FirebaseFirestore.instance.collection('users').doc('test-user-id')
-        );
+        final userProfile = UserProfile.getDocumentFromData(testData,
+            FirebaseFirestore.instance.collection('users').doc('test-user-id'));
 
         // Act
         final result = UserProfileAdapter.toDomainModels(userProfile);
@@ -35,7 +33,8 @@ void main() {
         // Assert - ProfileInfo
         expect(result.profile.userId, equals('test-user-id'));
         expect(result.profile.displayName, equals('John Doe'));
-        expect(result.profile.photoUrl, equals('https://example.com/photo.jpg'));
+        expect(
+            result.profile.photoUrl, equals('https://example.com/photo.jpg'));
         expect(result.profile.shortDescription, equals('Software Developer'));
         expect(result.profile.gender, equals('Male'));
         expect(result.profile.dateOfBirth, isA<DateTime>());
@@ -77,10 +76,8 @@ void main() {
       test('should handle null and empty values correctly', () {
         // Arrange
         final minimalData = _createMinimalUserProfileData();
-        final userProfile = UserProfile.getDocumentFromData(
-          minimalData, 
-          FirebaseFirestore.instance.collection('users').doc('test-user-id')
-        );
+        final userProfile = UserProfile.getDocumentFromData(minimalData,
+            FirebaseFirestore.instance.collection('users').doc('test-user-id'));
 
         // Act
         final result = UserProfileAdapter.toDomainModels(userProfile);
@@ -104,10 +101,8 @@ void main() {
       test('should set consistent userId across all domain models', () {
         // Arrange
         final testData = _createTestUserProfileData();
-        final userProfile = UserProfile.getDocumentFromData(
-          testData, 
-          FirebaseFirestore.instance.collection('users').doc('test-user-id')
-        );
+        final userProfile = UserProfile.getDocumentFromData(testData,
+            FirebaseFirestore.instance.collection('users').doc('test-user-id'));
 
         // Act
         final result = UserProfileAdapter.toDomainModels(userProfile);
@@ -125,7 +120,8 @@ void main() {
       test('should convert 4 domain models back to UserProfile correctly', () {
         // Arrange
         final domainModels = _createTestDomainModels();
-        final userReference = FirebaseFirestore.instance.collection('users').doc('test-user-id');
+        final userReference =
+            FirebaseFirestore.instance.collection('users').doc('test-user-id');
 
         // Act
         final result = UserProfileAdapter.fromDomainModels(
@@ -155,12 +151,17 @@ void main() {
         expect(result.friends, equals(['friend1', 'friend2']));
       });
 
-      test('should handle displayName preference from ProfileInfo over AuthUser', () {
+      test(
+          'should handle displayName preference from ProfileInfo over AuthUser',
+          () {
         // Arrange
         final domainModels = _createTestDomainModels();
-        final modifiedAuth = domainModels.auth.copyWith(displayName: 'Auth Name');
-        final modifiedProfile = domainModels.profile.copyWith(displayName: 'Profile Name');
-        final userReference = FirebaseFirestore.instance.collection('users').doc('test-user-id');
+        final modifiedAuth =
+            domainModels.auth.copyWith(displayName: 'Auth Name');
+        final modifiedProfile =
+            domainModels.profile.copyWith(displayName: 'Profile Name');
+        final userReference =
+            FirebaseFirestore.instance.collection('users').doc('test-user-id');
 
         // Act
         final result = UserProfileAdapter.fromDomainModels(
@@ -179,8 +180,10 @@ void main() {
         // Arrange
         final domainModels = _createTestDomainModels();
         final geoPoint = GeoPoint(40.7128, -74.0060); // New York
-        final modifiedProfile = domainModels.profile.copyWith(location: geoPoint);
-        final userReference = FirebaseFirestore.instance.collection('users').doc('test-user-id');
+        final modifiedProfile =
+            domainModels.profile.copyWith(location: geoPoint);
+        final userReference =
+            FirebaseFirestore.instance.collection('users').doc('test-user-id');
 
         // Act
         final result = UserProfileAdapter.fromDomainModels(
@@ -200,11 +203,14 @@ void main() {
       test('should preserve all data through full conversion cycle', () {
         // Arrange
         final originalData = _createTestUserProfileData();
-        final userReference = FirebaseFirestore.instance.collection('users').doc('test-user-id');
-        final originalUserProfile = UserProfile.getDocumentFromData(originalData, userReference);
+        final userReference =
+            FirebaseFirestore.instance.collection('users').doc('test-user-id');
+        final originalUserProfile =
+            UserProfile.getDocumentFromData(originalData, userReference);
 
         // Act - Convert to domain models and back
-        final domainModels = UserProfileAdapter.toDomainModels(originalUserProfile);
+        final domainModels =
+            UserProfileAdapter.toDomainModels(originalUserProfile);
         final reconstructed = UserProfileAdapter.fromDomainModels(
           auth: domainModels.auth,
           profile: domainModels.profile,
@@ -216,26 +222,33 @@ void main() {
         // Assert key fields are preserved
         expect(reconstructed.uid, equals(originalUserProfile.uid));
         expect(reconstructed.email, equals(originalUserProfile.email));
-        expect(reconstructed.displayName, equals(originalUserProfile.displayName));
-        expect(reconstructed.shortDescription, equals(originalUserProfile.shortDescription));
+        expect(
+            reconstructed.displayName, equals(originalUserProfile.displayName));
+        expect(reconstructed.shortDescription,
+            equals(originalUserProfile.shortDescription));
         expect(reconstructed.gender, equals(originalUserProfile.gender));
         expect(reconstructed.language, equals(originalUserProfile.language));
         expect(reconstructed.interests, equals(originalUserProfile.interests));
         expect(reconstructed.expertise, equals(originalUserProfile.expertise));
         expect(reconstructed.pointsA, equals(originalUserProfile.pointsA));
         expect(reconstructed.pointsQ, equals(originalUserProfile.pointsQ));
-        expect(reconstructed.currentRank, equals(originalUserProfile.currentRank));
-        expect(reconstructed.isPremiumUser, equals(originalUserProfile.isPremiumUser));
+        expect(
+            reconstructed.currentRank, equals(originalUserProfile.currentRank));
+        expect(reconstructed.isPremiumUser,
+            equals(originalUserProfile.isPremiumUser));
       });
 
       test('should handle minimal data through round-trip conversion', () {
         // Arrange
         final minimalData = _createMinimalUserProfileData();
-        final userReference = FirebaseFirestore.instance.collection('users').doc('test-user-id');
-        final originalUserProfile = UserProfile.getDocumentFromData(minimalData, userReference);
+        final userReference =
+            FirebaseFirestore.instance.collection('users').doc('test-user-id');
+        final originalUserProfile =
+            UserProfile.getDocumentFromData(minimalData, userReference);
 
         // Act - Convert to domain models and back
-        final domainModels = UserProfileAdapter.toDomainModels(originalUserProfile);
+        final domainModels =
+            UserProfileAdapter.toDomainModels(originalUserProfile);
         final reconstructed = UserProfileAdapter.fromDomainModels(
           auth: domainModels.auth,
           profile: domainModels.profile,
@@ -247,7 +260,8 @@ void main() {
         // Assert essential fields are preserved
         expect(reconstructed.uid, equals(originalUserProfile.uid));
         expect(reconstructed.email, equals(originalUserProfile.email));
-        expect(reconstructed.displayName, equals(originalUserProfile.displayName));
+        expect(
+            reconstructed.displayName, equals(originalUserProfile.displayName));
       });
     });
 
@@ -255,8 +269,10 @@ void main() {
       test('should create bundle correctly', () {
         // Arrange
         final testData = _createTestUserProfileData();
-        final userReference = FirebaseFirestore.instance.collection('users').doc('test-user-id');
-        final userProfile = UserProfile.getDocumentFromData(testData, userReference);
+        final userReference =
+            FirebaseFirestore.instance.collection('users').doc('test-user-id');
+        final userProfile =
+            UserProfile.getDocumentFromData(testData, userReference);
 
         // Act
         final bundle = UserProfileAdapter.createBundle(userProfile);
@@ -272,8 +288,10 @@ void main() {
       test('should convert bundle back to legacy UserProfile', () {
         // Arrange
         final testData = _createTestUserProfileData();
-        final userReference = FirebaseFirestore.instance.collection('users').doc('test-user-id');
-        final originalUserProfile = UserProfile.getDocumentFromData(testData, userReference);
+        final userReference =
+            FirebaseFirestore.instance.collection('users').doc('test-user-id');
+        final originalUserProfile =
+            UserProfile.getDocumentFromData(testData, userReference);
         final bundle = UserProfileAdapter.createBundle(originalUserProfile);
 
         // Act
@@ -281,7 +299,8 @@ void main() {
 
         // Assert
         expect(reconstructed.uid, equals(originalUserProfile.uid));
-        expect(reconstructed.displayName, equals(originalUserProfile.displayName));
+        expect(
+            reconstructed.displayName, equals(originalUserProfile.displayName));
         expect(reconstructed.email, equals(originalUserProfile.email));
       });
 
@@ -303,7 +322,8 @@ void main() {
       test('should create copy with updated fields', () {
         // Arrange
         final domainModels = _createTestDomainModels();
-        final userReference = FirebaseFirestore.instance.collection('users').doc('test-user-id');
+        final userReference =
+            FirebaseFirestore.instance.collection('users').doc('test-user-id');
         final originalBundle = UserProfileBundle(
           auth: domainModels.auth,
           profile: domainModels.profile,
@@ -318,10 +338,13 @@ void main() {
 
         // Assert
         expect(updatedBundle.auth.displayName, equals('New Name'));
-        expect(updatedBundle.profile, same(originalBundle.profile)); // Unchanged
-        expect(updatedBundle.settings, same(originalBundle.settings)); // Unchanged
+        expect(
+            updatedBundle.profile, same(originalBundle.profile)); // Unchanged
+        expect(
+            updatedBundle.settings, same(originalBundle.settings)); // Unchanged
         expect(updatedBundle.stats, same(originalBundle.stats)); // Unchanged
-        expect(updatedBundle.reference, same(originalBundle.reference)); // Unchanged
+        expect(updatedBundle.reference,
+            same(originalBundle.reference)); // Unchanged
       });
     });
 
@@ -329,8 +352,10 @@ void main() {
       test('should validate correct field mapping', () {
         // Arrange
         final testData = _createTestUserProfileData();
-        final userReference = FirebaseFirestore.instance.collection('users').doc('test-user-id');
-        final userProfile = UserProfile.getDocumentFromData(testData, userReference);
+        final userReference =
+            FirebaseFirestore.instance.collection('users').doc('test-user-id');
+        final userProfile =
+            UserProfile.getDocumentFromData(testData, userReference);
         final domainModels = UserProfileAdapter.toDomainModels(userProfile);
 
         // Act
@@ -349,10 +374,12 @@ void main() {
       test('should detect invalid field mapping', () {
         // Arrange
         final testData = _createTestUserProfileData();
-        final userReference = FirebaseFirestore.instance.collection('users').doc('test-user-id');
-        final userProfile = UserProfile.getDocumentFromData(testData, userReference);
+        final userReference =
+            FirebaseFirestore.instance.collection('users').doc('test-user-id');
+        final userProfile =
+            UserProfile.getDocumentFromData(testData, userReference);
         final domainModels = UserProfileAdapter.toDomainModels(userProfile);
-        
+
         // Create invalid auth with different uid
         final invalidAuth = domainModels.auth.copyWith(uid: 'different-uid');
 
@@ -377,9 +404,11 @@ void main() {
         dataWithEmptyStrings['displayName'] = '';
         dataWithEmptyStrings['email'] = '';
         dataWithEmptyStrings['shortDescription'] = '';
-        
-        final userReference = FirebaseFirestore.instance.collection('users').doc('test-user-id');
-        final userProfile = UserProfile.getDocumentFromData(dataWithEmptyStrings, userReference);
+
+        final userReference =
+            FirebaseFirestore.instance.collection('users').doc('test-user-id');
+        final userProfile = UserProfile.getDocumentFromData(
+            dataWithEmptyStrings, userReference);
 
         // Act
         final result = UserProfileAdapter.toDomainModels(userProfile);
@@ -397,9 +426,11 @@ void main() {
         largeListData['interests'] = List.generate(1000, (i) => 'interest$i');
         largeListData['expertise'] = List.generate(500, (i) => 'skill$i');
         largeListData['friends'] = List.generate(10000, (i) => 'friend$i');
-        
-        final userReference = FirebaseFirestore.instance.collection('users').doc('test-user-id');
-        final userProfile = UserProfile.getDocumentFromData(largeListData, userReference);
+
+        final userReference =
+            FirebaseFirestore.instance.collection('users').doc('test-user-id');
+        final userProfile =
+            UserProfile.getDocumentFromData(largeListData, userReference);
 
         // Act
         final result = UserProfileAdapter.toDomainModels(userProfile);
@@ -417,9 +448,11 @@ void main() {
         extremeData['pointsQ'] = -999999999;
         extremeData['currentRank'] = 0;
         extremeData['rankEvaluationCount'] = 999999;
-        
-        final userReference = FirebaseFirestore.instance.collection('users').doc('test-user-id');
-        final userProfile = UserProfile.getDocumentFromData(extremeData, userReference);
+
+        final userReference =
+            FirebaseFirestore.instance.collection('users').doc('test-user-id');
+        final userProfile =
+            UserProfile.getDocumentFromData(extremeData, userReference);
 
         // Act
         final result = UserProfileAdapter.toDomainModels(userProfile);
@@ -457,7 +490,10 @@ Map<String, dynamic> _createTestUserProfileData() {
     'receiveRankUpdateNotifications': true,
     'receiveTitleUpdateNotifications': true,
     'subscription': 'premium',
-    'stats': {'level': 5, 'achievements': ['coder', 'expert']},
+    'stats': {
+      'level': 5,
+      'achievements': ['coder', 'expert']
+    },
     'pointsA': 1500,
     'pointsQ': 2000,
     'totalAPoints': 15000,
@@ -507,7 +543,8 @@ Map<String, dynamic> _createMinimalUserProfileData() {
   };
 }
 
-({AuthUser auth, ProfileInfo profile, UserSettings settings, UserStats stats}) _createTestDomainModels() {
+({AuthUser auth, ProfileInfo profile, UserSettings settings, UserStats stats})
+    _createTestDomainModels() {
   final now = DateTime.now();
   const userId = 'test-user-id';
 

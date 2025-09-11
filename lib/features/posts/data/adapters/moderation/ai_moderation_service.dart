@@ -6,7 +6,7 @@ import 'text_moderation/gemini_service.dart';
 import '/core/design_system/design_system.dart';
 
 /// 통합 AI 검열 서비스
-/// 
+///
 /// 모든 AI 기반 콘텐츠 검열을 중앙에서 관리합니다.
 /// - Perspective API (텍스트 유해성)
 /// - Vision API (이미지 검열)
@@ -21,13 +21,13 @@ class AIModerationService {
     final violations = <String>[];
     TextModerationResult? textResult;
     GeminiModerationResult? geminiResult;
-    
+
     try {
       // 1단계: 텍스트 유해성 검사 (Perspective API)
       if (options.enablePerspectiveAPI) {
         onProgressUpdate?.call('텍스트를 검토하고 있습니다...');
         textResult = await _moderateText(request);
-        
+
         if (textResult.isToxic) {
           violations.add(_formatTextViolation(textResult));
         }
@@ -36,7 +36,7 @@ class AIModerationService {
       // 2단계: 텍스트 검증 통과 시 Gemini AI 검증
       if (options.enableGeminiAI && violations.isEmpty) {
         onProgressUpdate?.call('AI가 내용을 분석하고 있습니다...');
-        
+
         // 클라이언트에서 직접 Gemini 호출
         geminiResult = await GeminiModerationService.validateContent(
           userId: request.userId,
@@ -53,7 +53,7 @@ class AIModerationService {
           documentId: request.documentId,
           revisionCount: request.revisionCount,
         );
-        
+
         if (geminiResult != null) {
           if (!geminiResult.isValid) {
             violations.add(geminiResult.reason);
@@ -68,7 +68,7 @@ class AIModerationService {
 
       // 3단계: 최종 결과 생성
       final severity = _determineSeverity(textResult, geminiResult, violations);
-      
+
       return ModerationResult(
         isValid: violations.isEmpty || severity == 'warning',
         severity: severity,
@@ -76,7 +76,6 @@ class AIModerationService {
         textResult: textResult,
         geminiResult: geminiResult,
       );
-      
     } catch (e) {
       print('[AIModerationService] Error: $e');
       return ModerationResult(
@@ -89,9 +88,10 @@ class AIModerationService {
   }
 
   /// 텍스트 검열 (Perspective API)
-  static Future<TextModerationResult> _moderateText(ModerationRequest request) async {
+  static Future<TextModerationResult> _moderateText(
+      ModerationRequest request) async {
     final textsToValidate = <String, String>{};
-    
+
     if (request.questionTitle?.isNotEmpty == true) {
       textsToValidate['질문'] = request.questionTitle!;
     }
@@ -114,13 +114,14 @@ class AIModerationService {
     }
 
     // Perspective API 호출
-    final results = await PerspectiveApiService.analyzeMultipleTexts(textsToValidate);
-    
+    final results =
+        await PerspectiveApiService.analyzeMultipleTexts(textsToValidate);
+
     // 가장 높은 점수와 카테고리 찾기
     double maxScore = 0.0;
     String? detectedCategory;
     Map<String, double> allScores = {};
-    
+
     results.forEach((fieldName, result) {
       if (result.isToxic) {
         result.allScores.forEach((category, score) {
@@ -132,7 +133,7 @@ class AIModerationService {
         });
       }
     });
-    
+
     return TextModerationResult(
       scores: allScores,
       isToxic: detectedCategory != null,
@@ -144,9 +145,10 @@ class AIModerationService {
   /// 텍스트 위반 사항 포맷팅
   static String _formatTextViolation(TextModerationResult result) {
     if (result.detectedCategory == null) return '부적절한 내용';
-    
-    final categoryName = ModerationConfig.koreanCategoryNames[result.detectedCategory] ?? 
-                        result.detectedCategory!;
+
+    final categoryName =
+        ModerationConfig.koreanCategoryNames[result.detectedCategory] ??
+            result.detectedCategory!;
     return categoryName;
   }
 
@@ -160,12 +162,12 @@ class AIModerationService {
     if (textResult?.isToxic == true) {
       return 'error';
     }
-    
+
     // Gemini 결과에 따른 처리
     if (geminiResult != null) {
       return geminiResult.severity;
     }
-    
+
     // 위반 사항이 있으면 error, 없으면 pass
     return violations.isNotEmpty ? 'error' : 'pass';
   }
@@ -182,7 +184,7 @@ class AIModerationService {
         result.geminiResult!.reason,
         result.geminiResult!.suggestions,
       );
-      
+
       if (!proceed) {
         // 사용자가 수정을 선택한 경우 - 정상적인 흐름이므로 에러를 던지지 않음
         return;
@@ -222,7 +224,7 @@ class AIModerationService {
       cancelText: '수정하기',
       barrierDismissible: false,
     );
-    
+
     return result ?? false;
   }
 

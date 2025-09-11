@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
-import '/core_exports.dart';  // Core utilities and types (includes cloud_firestore)
-import '/core/firebase/utils/firestore_util.dart';  // For FirestoreRecord, safeGet, RecordBuilder
+import '/core_exports.dart'; // Core utilities and types (includes cloud_firestore)
+import '/core/firebase/utils/firestore_util.dart'; // For FirestoreRecord, safeGet, RecordBuilder
 
 /// SERIALIZATION HELPERS
 

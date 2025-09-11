@@ -20,7 +20,8 @@ class SimpleValidatedField extends StatelessWidget {
   final int? minLines; // 오버라이드용
   final double? fontSize; // 오버라이드용
   final TextInputAction? textInputAction; // 오버라이드용
-  final Function(String, String, bool)? onFieldChanged; // value, fieldName, isBlocked
+  final Function(String, String, bool)?
+      onFieldChanged; // value, fieldName, isBlocked
   final Function()? onFieldCleared;
   final Function()? onRequiredFieldsCheck;
   final PerspectiveResult? validationResult;
@@ -59,73 +60,73 @@ class SimpleValidatedField extends StatelessWidget {
   Widget build(BuildContext context) {
     // fieldName 기반으로 설정 가져오기
     final config = FieldStyles.getConfig(fieldName ?? '');
-    
+
     // 오버라이드 값이 있으면 사용, 없으면 config 값 사용
     final effectiveMaxLength = maxLength ?? config.maxLength;
     final effectiveMaxLines = maxLines ?? config.maxLines;
     final effectiveMinLines = minLines ?? config.minLines;
     final effectiveFontSize = fontSize ?? config.textSize;
     final effectiveTextInputAction = textInputAction ?? config.textInputAction;
-    
+
     return Padding(
       padding: config.fieldPadding,
       child: ValidatedTextField(
-      controller: controller,
-      focusNode: focusNode,
-      onChanged: (value) {
-        // Simple onChanged callback
-        if (onChanged != null) {
-          onChanged!(value);
-        }
-        
-        // 필수 필드 체크
-        if (onRequiredFieldsCheck != null) {
-          onRequiredFieldsCheck!();
-        }
-        
-        // 디바운스된 필터링 (fieldName이 있는 경우에만)
-        if (fieldName != null && onFieldChanged != null) {
-          EasyDebounce.debounce(
-            debounceKey ?? 'simple_validated_field_$fieldName',
-            debounceDuration,
-            () {
-              final result = ContentFilter.filterText(value);
-              onFieldChanged!(value, fieldName!, result.isBlocked);
-            },
-          );
-        } else if (debounceKey != null && onFieldChanged != null) {
-          // debounceKey만 있는 경우 (ValidatedInputField 호환)
-          EasyDebounce.debounce(
-            debounceKey!,
-            debounceDuration,
-            () {
-              final result = ContentFilter.filterText(value);
-              onFieldChanged!(value, '', result.isBlocked);
-            },
-          );
-        }
-      },
-      validationResult: validationResult,
-      showValidationResults: showValidationResults,
-      minLines: effectiveMinLines,
-      maxLines: effectiveMaxLines,
-      textInputAction: effectiveTextInputAction,
-      maxLength: effectiveMaxLength,
-      decoration: _buildDecoration(context, config),
-      style: AppTheme.of(context).bodyMedium.override(
-            font: GoogleFonts.plusJakartaSans(
+        controller: controller,
+        focusNode: focusNode,
+        onChanged: (value) {
+          // Simple onChanged callback
+          if (onChanged != null) {
+            onChanged!(value);
+          }
+
+          // 필수 필드 체크
+          if (onRequiredFieldsCheck != null) {
+            onRequiredFieldsCheck!();
+          }
+
+          // 디바운스된 필터링 (fieldName이 있는 경우에만)
+          if (fieldName != null && onFieldChanged != null) {
+            EasyDebounce.debounce(
+              debounceKey ?? 'simple_validated_field_$fieldName',
+              debounceDuration,
+              () {
+                final result = ContentFilter.filterText(value);
+                onFieldChanged!(value, fieldName!, result.isBlocked);
+              },
+            );
+          } else if (debounceKey != null && onFieldChanged != null) {
+            // debounceKey만 있는 경우 (ValidatedInputField 호환)
+            EasyDebounce.debounce(
+              debounceKey!,
+              debounceDuration,
+              () {
+                final result = ContentFilter.filterText(value);
+                onFieldChanged!(value, '', result.isBlocked);
+              },
+            );
+          }
+        },
+        validationResult: validationResult,
+        showValidationResults: showValidationResults,
+        minLines: effectiveMinLines,
+        maxLines: effectiveMaxLines,
+        textInputAction: effectiveTextInputAction,
+        maxLength: effectiveMaxLength,
+        decoration: _buildDecoration(context, config),
+        style: AppTheme.of(context).bodyMedium.override(
+              font: GoogleFonts.plusJakartaSans(
+                fontWeight: AppTheme.of(context).bodyMedium.fontWeight,
+                fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
+              ),
+              fontSize: effectiveFontSize,
+              letterSpacing: 0.0,
               fontWeight: AppTheme.of(context).bodyMedium.fontWeight,
               fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
             ),
-            fontSize: effectiveFontSize,
-            letterSpacing: 0.0,
-            fontWeight: AppTheme.of(context).bodyMedium.fontWeight,
-            fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
-          ),
       ),
     );
   }
-  
+
   /// InputDecoration 빌드
   InputDecoration _buildDecoration(BuildContext context, FieldConfig config) {
     return InputDecoration(
@@ -160,7 +161,9 @@ class SimpleValidatedField extends StatelessWidget {
       focusedErrorBorder: _getBorder(config, FieldStyles.errorBorderColor),
       filled: true,
       fillColor: AppTheme.of(context).secondaryBackground,
-      suffixIcon: config.showClearButton && showClearButton && (controller?.text.isNotEmpty ?? false)
+      suffixIcon: config.showClearButton &&
+              showClearButton &&
+              (controller?.text.isNotEmpty ?? false)
           ? InkWell(
               onTap: () {
                 controller?.clear();
@@ -181,7 +184,7 @@ class SimpleValidatedField extends StatelessWidget {
           : null,
     );
   }
-  
+
   /// 보더 스타일 생성
   InputBorder _getBorder(FieldConfig config, Color color) {
     switch (config.borderType) {
@@ -191,9 +194,9 @@ class SimpleValidatedField extends StatelessWidget {
             color: color,
             width: config.borderWidth,
           ),
-          borderRadius: BorderRadius.circular(
-            config.isDense ? FieldStyles.borderRadiusDense : FieldStyles.borderRadius
-          ),
+          borderRadius: BorderRadius.circular(config.isDense
+              ? FieldStyles.borderRadiusDense
+              : FieldStyles.borderRadius),
         );
       case FieldBorderType.outline:
         return OutlineInputBorder(

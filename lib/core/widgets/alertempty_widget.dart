@@ -92,16 +92,14 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
                     style: AppTheme.of(context).bodyMedium.override(
                           font: GoogleFonts.plusJakartaSans(
                             fontWeight: FontWeight.w800,
-                            fontStyle: AppTheme.of(context)
-                                .bodyMedium
-                                .fontStyle,
+                            fontStyle:
+                                AppTheme.of(context).bodyMedium.fontStyle,
                           ),
                           color: Color(0xFFE04343),
                           fontSize: 20.0,
                           letterSpacing: 0.0,
                           fontWeight: FontWeight.w800,
-                          fontStyle:
-                              AppTheme.of(context).bodyMedium.fontStyle,
+                          fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
                         ),
                   ),
                 ),
@@ -126,15 +124,13 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
                     style: AppTheme.of(context).bodyMedium.override(
                           font: GoogleFonts.plusJakartaSans(
                             fontWeight: FontWeight.w800,
-                            fontStyle: AppTheme.of(context)
-                                .bodyMedium
-                                .fontStyle,
+                            fontStyle:
+                                AppTheme.of(context).bodyMedium.fontStyle,
                           ),
                           fontSize: 14.0,
                           letterSpacing: 0.0,
                           fontWeight: FontWeight.w800,
-                          fontStyle:
-                              AppTheme.of(context).bodyMedium.fontStyle,
+                          fontStyle: AppTheme.of(context).bodyMedium.fontStyle,
                         ),
                   ),
                 ),
@@ -207,25 +203,20 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
                       iconPadding:
                           EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                       color: AppTheme.of(context).primaryText,
-                      textStyle:
-                          AppTheme.of(context).titleSmall.override(
-                                font: GoogleFonts.plusJakartaSans(
-                                  fontWeight: AppTheme.of(context)
-                                      .titleSmall
-                                      .fontWeight,
-                                  fontStyle: AppTheme.of(context)
-                                      .titleSmall
-                                      .fontStyle,
-                                ),
-                                color: Colors.white,
-                                letterSpacing: 0.0,
-                                fontWeight: AppTheme.of(context)
-                                    .titleSmall
-                                    .fontWeight,
-                                fontStyle: AppTheme.of(context)
-                                    .titleSmall
-                                    .fontStyle,
-                              ),
+                      textStyle: AppTheme.of(context).titleSmall.override(
+                            font: GoogleFonts.plusJakartaSans(
+                              fontWeight:
+                                  AppTheme.of(context).titleSmall.fontWeight,
+                              fontStyle:
+                                  AppTheme.of(context).titleSmall.fontStyle,
+                            ),
+                            color: Colors.white,
+                            letterSpacing: 0.0,
+                            fontWeight:
+                                AppTheme.of(context).titleSmall.fontWeight,
+                            fontStyle:
+                                AppTheme.of(context).titleSmall.fontStyle,
+                          ),
                       elevation: 10.0,
                       borderSide: BorderSide(
                         color: AppTheme.of(context).info,

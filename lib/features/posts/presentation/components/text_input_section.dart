@@ -8,7 +8,6 @@ import '/features/posts/domain/constants/text_limits.dart';
 
 /// Text input section component for post creation
 class TextInputSection extends StatefulWidget {
-  
   const TextInputSection({
     super.key,
     this.hasValidated = false,
@@ -38,14 +37,14 @@ class _TextInputSectionState extends State<TextInputSection> {
           children: [
             // Question Title
             _buildTitleField(provider),
-            
+
             const SizedBox(height: 12),
-            
+
             // Description (optional)
             _buildDescriptionField(provider),
-            
+
             const SizedBox(height: 20),
-            
+
             // Option A Text
             _buildOptionField(
               provider: provider,
@@ -54,10 +53,10 @@ class _TextInputSectionState extends State<TextInputSection> {
               label: 'A',
               fieldKey: 'optionA',
             ),
-            
+
             if (!provider.isSingleMode) ...[
               const SizedBox(height: 12),
-              
+
               // Option B Text
               _buildOptionField(
                 provider: provider,
@@ -75,7 +74,7 @@ class _TextInputSectionState extends State<TextInputSection> {
 
   Widget _buildTitleField(CreatePostProvider provider) {
     final config = FieldStyles.questionTitle;
-    
+
     return SimpleValidatedField(
       controller: provider.titleController,
       focusNode: provider.titleFocusNode,
@@ -86,9 +85,8 @@ class _TextInputSectionState extends State<TextInputSection> {
       required: config.required,
       showCounter: config.showCounter,
       hasValidated: widget.hasValidated,
-      errorText: widget.hasValidated && _fieldEmpty['title']! 
-          ? '제목은 필수 항목입니다' 
-          : null,
+      errorText:
+          widget.hasValidated && _fieldEmpty['title']! ? '제목은 필수 항목입니다' : null,
       onChanged: (val) {
         setState(() {
           _fieldEmpty['title'] = val.isEmpty;
@@ -100,7 +98,7 @@ class _TextInputSectionState extends State<TextInputSection> {
 
   Widget _buildDescriptionField(CreatePostProvider provider) {
     final config = FieldStyles.questionDescription;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -136,10 +134,9 @@ class _TextInputSectionState extends State<TextInputSection> {
     required String label,
     required String fieldKey,
   }) {
-    final config = label == 'A' 
-        ? FieldStyles.optionATitle 
-        : FieldStyles.optionBTitle;
-    
+    final config =
+        label == 'A' ? FieldStyles.optionATitle : FieldStyles.optionBTitle;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -149,8 +146,8 @@ class _TextInputSectionState extends State<TextInputSection> {
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: label == 'A' 
-                    ? const Color(0xFF4A90E2) 
+                color: label == 'A'
+                    ? const Color(0xFF4A90E2)
                     : const Color(0xFFF5A623),
                 shape: BoxShape.circle,
               ),
@@ -176,8 +173,8 @@ class _TextInputSectionState extends State<TextInputSection> {
                 required: config.required,
                 showCounter: false, // We show custom counter
                 hasValidated: widget.hasValidated,
-                errorText: widget.hasValidated && _fieldEmpty[fieldKey]! 
-                    ? '$label 옵션은 필수 항목입니다' 
+                errorText: widget.hasValidated && _fieldEmpty[fieldKey]!
+                    ? '$label 옵션은 필수 항목입니다'
                     : null,
                 onChanged: (val) {
                   setState(() {

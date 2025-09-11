@@ -46,8 +46,7 @@ class WeightsModel extends FirestoreRecord {
   static Future<WeightsModel> getDocumentOnce(DocumentReference ref) =>
       ref.get().then((s) => WeightsModel.fromSnapshot(s));
 
-  static WeightsModel fromSnapshot(DocumentSnapshot snapshot) =>
-      WeightsModel._(
+  static WeightsModel fromSnapshot(DocumentSnapshot snapshot) => WeightsModel._(
         snapshot.reference,
         mapFromFirestore(snapshot.data() as Map<String, dynamic>),
       );

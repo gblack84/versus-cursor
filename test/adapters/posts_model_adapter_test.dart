@@ -11,13 +11,12 @@ import 'package:versus_space/features/posts/domain/models/media_content.dart';
 void main() {
   group('PostsModelAdapter', () {
     group('toDomainModels', () {
-      test('should convert PostsModel to PostBundle with all 4 domain models', () {
+      test('should convert PostsModel to PostBundle with all 4 domain models',
+          () {
         // Arrange
         final testData = _createTestPostsModelData();
-        final postsModel = PostsModel.getDocumentFromData(
-          testData, 
-          FirebaseFirestore.instance.collection('posts').doc('test-post-id')
-        );
+        final postsModel = PostsModel.getDocumentFromData(testData,
+            FirebaseFirestore.instance.collection('posts').doc('test-post-id'));
 
         // Act
         final result = PostsModelAdapter.toDomainModels(postsModel);
@@ -29,7 +28,8 @@ void main() {
         // Assert - PostCore
         expect(result.core.id, equals('test-post-id'));
         expect(result.core.questionTitle, equals('Flutter vs React Native'));
-        expect(result.core.description, equals('Which framework is better for mobile development?'));
+        expect(result.core.description,
+            equals('Which framework is better for mobile development?'));
         expect(result.core.content, equals('Detailed comparison needed'));
         expect(result.core.userId, equals('user-123'));
         expect(result.core.createdAt, isA<DateTime>());
@@ -67,7 +67,8 @@ void main() {
         expect(result.metrics.postId, equals('test-post-id'));
         expect(result.metrics.commentCount, equals(25));
         expect(result.metrics.likeCount, equals(75));
-        expect(result.metrics.shareCount, equals(10)); // Note: using typo 'sherecount'
+        expect(result.metrics.shareCount,
+            equals(10)); // Note: using typo 'sherecount'
         expect(result.metrics.saveCount, equals(30));
         expect(result.metrics.reportCount, equals(2));
         expect(result.metrics.participantCount, equals(500));
@@ -80,9 +81,10 @@ void main() {
         // Arrange
         final minimalData = _createMinimalPostsModelData();
         final postsModel = PostsModel.getDocumentFromData(
-          minimalData, 
-          FirebaseFirestore.instance.collection('posts').doc('minimal-post-id')
-        );
+            minimalData,
+            FirebaseFirestore.instance
+                .collection('posts')
+                .doc('minimal-post-id'));
 
         // Act
         final result = PostsModelAdapter.toDomainModels(postsModel);
@@ -112,15 +114,16 @@ void main() {
           'aspectRatio': 0.7, // Portrait
         };
         portraitData['optionB'] = {
-          'text': 'Option B', 
+          'text': 'Option B',
           'imageUrls': ['https://example.com/portrait2.jpg'],
           'aspectRatio': 0.8, // Portrait
         };
 
         final postsModel = PostsModel.getDocumentFromData(
-          portraitData, 
-          FirebaseFirestore.instance.collection('posts').doc('portrait-post')
-        );
+            portraitData,
+            FirebaseFirestore.instance
+                .collection('posts')
+                .doc('portrait-post'));
 
         // Act
         final result = PostsModelAdapter.toDomainModels(postsModel);
@@ -137,9 +140,10 @@ void main() {
         votingData['voteStatus'] = 'completed';
 
         final postsModel = PostsModel.getDocumentFromData(
-          votingData, 
-          FirebaseFirestore.instance.collection('posts').doc('completed-vote')
-        );
+            votingData,
+            FirebaseFirestore.instance
+                .collection('posts')
+                .doc('completed-vote'));
 
         // Act
         final result = PostsModelAdapter.toDomainModels(postsModel);
@@ -160,16 +164,19 @@ void main() {
         metricsData['reportCount'] = 0; // No reports for good quality
 
         final postsModel = PostsModel.getDocumentFromData(
-          metricsData, 
-          FirebaseFirestore.instance.collection('posts').doc('high-engagement')
-        );
+            metricsData,
+            FirebaseFirestore.instance
+                .collection('posts')
+                .doc('high-engagement'));
 
         // Act
         final result = PostsModelAdapter.toDomainModels(postsModel);
 
         // Assert calculated metrics
-        expect(result.metrics.engagementRate, equals(42.5)); // (100+200+50+75)/1000 * 100
-        expect(result.metrics.qualityScore, greaterThan(0.5)); // Should be high with no reports
+        expect(result.metrics.engagementRate,
+            equals(42.5)); // (100+200+50+75)/1000 * 100
+        expect(result.metrics.qualityScore,
+            greaterThan(0.5)); // Should be high with no reports
       });
     });
 
@@ -270,7 +277,7 @@ void main() {
 
         // Assert percentages
         expect(result.totalVotes, equals(100));
-        
+
         // Note: The PostsModel should contain calculated percentage fields
         // based on the voting data conversion in the adapter
       });
@@ -285,7 +292,8 @@ void main() {
         // Assert legacy fields
         expect(result.uid, equals('test-user-id')); // Backward compatibility
         expect(result.createdTime, isA<DateTime>()); // Legacy timestamp
-        expect(result.isVotingComplete, equals(result.voteCompleted)); // Duplicate field
+        expect(result.isVotingComplete,
+            equals(result.voteCompleted)); // Duplicate field
         expect(result.stats, isA<Map>()); // Legacy stats object
       });
     });
@@ -294,42 +302,43 @@ void main() {
       test('should preserve all data through full conversion cycle', () {
         // Arrange
         final originalData = _createTestPostsModelData();
-        final originalPostsModel = PostsModel.getDocumentFromData(
-          originalData, 
-          FirebaseFirestore.instance.collection('posts').doc('test-post-id')
-        );
+        final originalPostsModel = PostsModel.getDocumentFromData(originalData,
+            FirebaseFirestore.instance.collection('posts').doc('test-post-id'));
 
         // Act - Convert to domain models and back
         final bundle = PostsModelAdapter.toDomainModels(originalPostsModel);
         final reconstructed = PostsModelAdapter.fromDomainModels(bundle);
 
         // Assert key fields are preserved
-        expect(reconstructed.questionTitle, equals(originalPostsModel.questionTitle));
-        expect(reconstructed.description, equals(originalPostsModel.description));
+        expect(reconstructed.questionTitle,
+            equals(originalPostsModel.questionTitle));
+        expect(
+            reconstructed.description, equals(originalPostsModel.description));
         expect(reconstructed.userid, equals(originalPostsModel.userid));
         expect(reconstructed.category, equals(originalPostsModel.category));
         expect(reconstructed.tags, equals(originalPostsModel.tags));
-        expect(reconstructed.isAnonymous, equals(originalPostsModel.isAnonymous));
+        expect(
+            reconstructed.isAnonymous, equals(originalPostsModel.isAnonymous));
         expect(reconstructed.votesA, equals(originalPostsModel.votesA));
         expect(reconstructed.votesB, equals(originalPostsModel.votesB));
-        expect(reconstructed.commentcount, equals(originalPostsModel.commentcount));
+        expect(reconstructed.commentcount,
+            equals(originalPostsModel.commentcount));
         expect(reconstructed.likecount, equals(originalPostsModel.likecount));
       });
 
       test('should handle minimal data through round-trip conversion', () {
         // Arrange
         final minimalData = _createMinimalPostsModelData();
-        final originalPostsModel = PostsModel.getDocumentFromData(
-          minimalData, 
-          FirebaseFirestore.instance.collection('posts').doc('minimal-post')
-        );
+        final originalPostsModel = PostsModel.getDocumentFromData(minimalData,
+            FirebaseFirestore.instance.collection('posts').doc('minimal-post'));
 
         // Act - Convert to domain models and back
         final bundle = PostsModelAdapter.toDomainModels(originalPostsModel);
         final reconstructed = PostsModelAdapter.fromDomainModels(bundle);
 
         // Assert essential fields are preserved
-        expect(reconstructed.questionTitle, equals(originalPostsModel.questionTitle));
+        expect(reconstructed.questionTitle,
+            equals(originalPostsModel.questionTitle));
         expect(reconstructed.userid, equals(originalPostsModel.userid));
         expect(reconstructed.votesA, equals(originalPostsModel.votesA));
         expect(reconstructed.votesB, equals(originalPostsModel.votesB));
@@ -340,7 +349,7 @@ void main() {
       test('should validate consistency correctly', () {
         // Arrange - Consistent bundle
         final consistentBundle = _createTestPostBundle();
-        
+
         // Assert
         expect(consistentBundle.isConsistent, isTrue);
         expect(consistentBundle.postId, equals('test-post-id'));
@@ -361,10 +370,12 @@ void main() {
         expect(inconsistentBundle.isConsistent, isFalse);
       });
 
-      test('should throw error for inconsistent bundle in fromDomainModels', () {
+      test('should throw error for inconsistent bundle in fromDomainModels',
+          () {
         // Arrange
         final bundle = _createTestPostBundle();
-        final inconsistentVoting = bundle.voting.copyWith(postId: 'different-id');
+        final inconsistentVoting =
+            bundle.voting.copyWith(postId: 'different-id');
         final inconsistentBundle = PostBundle(
           core: bundle.core,
           content: bundle.content,
@@ -373,10 +384,8 @@ void main() {
         );
 
         // Act & Assert
-        expect(
-          () => PostsModelAdapter.fromDomainModels(inconsistentBundle), 
-          throwsArgumentError
-        );
+        expect(() => PostsModelAdapter.fromDomainModels(inconsistentBundle),
+            throwsArgumentError);
       });
     });
 
@@ -384,14 +393,10 @@ void main() {
       test('should convert list of PostsModels to PostBundles', () {
         // Arrange
         final postsModels = [
-          PostsModel.getDocumentFromData(
-            _createTestPostsModelData(), 
-            FirebaseFirestore.instance.collection('posts').doc('post-1')
-          ),
-          PostsModel.getDocumentFromData(
-            _createMinimalPostsModelData(), 
-            FirebaseFirestore.instance.collection('posts').doc('post-2')
-          ),
+          PostsModel.getDocumentFromData(_createTestPostsModelData(),
+              FirebaseFirestore.instance.collection('posts').doc('post-1')),
+          PostsModel.getDocumentFromData(_createMinimalPostsModelData(),
+              FirebaseFirestore.instance.collection('posts').doc('post-2')),
         ];
 
         // Act
@@ -425,10 +430,8 @@ void main() {
       test('should extract individual domain models correctly', () {
         // Arrange
         final testData = _createTestPostsModelData();
-        final postsModel = PostsModel.getDocumentFromData(
-          testData, 
-          FirebaseFirestore.instance.collection('posts').doc('extract-test')
-        );
+        final postsModel = PostsModel.getDocumentFromData(testData,
+            FirebaseFirestore.instance.collection('posts').doc('extract-test'));
 
         // Act
         final core = PostsModelAdapter.extractCore(postsModel);
@@ -451,9 +454,10 @@ void main() {
         singleOptionData['optionB'] = {}; // Empty option B
 
         final postsModel = PostsModel.getDocumentFromData(
-          singleOptionData, 
-          FirebaseFirestore.instance.collection('posts').doc('single-option')
-        );
+            singleOptionData,
+            FirebaseFirestore.instance
+                .collection('posts')
+                .doc('single-option'));
 
         // Act
         final result = PostsModelAdapter.toDomainModels(postsModel);
@@ -468,13 +472,15 @@ void main() {
         final extremeVotesData = _createTestPostsModelData();
         extremeVotesData['votesA'] = 999999999;
         extremeVotesData['votesB'] = 0;
-        extremeVotesData['votedUserIdsA'] = List.generate(1000000, (i) => 'user$i');
+        extremeVotesData['votedUserIdsA'] =
+            List.generate(1000000, (i) => 'user$i');
         extremeVotesData['votedUserIdsB'] = <String>[];
 
         final postsModel = PostsModel.getDocumentFromData(
-          extremeVotesData, 
-          FirebaseFirestore.instance.collection('posts').doc('extreme-votes')
-        );
+            extremeVotesData,
+            FirebaseFirestore.instance
+                .collection('posts')
+                .doc('extreme-votes'));
 
         // Act
         final result = PostsModelAdapter.toDomainModels(postsModel);
@@ -495,10 +501,8 @@ void main() {
         longStringData['questionTitle'] = longTitle;
         longStringData['description'] = longDescription;
 
-        final postsModel = PostsModel.getDocumentFromData(
-          longStringData, 
-          FirebaseFirestore.instance.collection('posts').doc('long-strings')
-        );
+        final postsModel = PostsModel.getDocumentFromData(longStringData,
+            FirebaseFirestore.instance.collection('posts').doc('long-strings'));
 
         // Act
         final result = PostsModelAdapter.toDomainModels(postsModel);
@@ -515,23 +519,26 @@ void main() {
         malformedData['optionB'] = null; // Null value
 
         final postsModel = PostsModel.getDocumentFromData(
-          malformedData, 
-          FirebaseFirestore.instance.collection('posts').doc('malformed-media')
-        );
+            malformedData,
+            FirebaseFirestore.instance
+                .collection('posts')
+                .doc('malformed-media'));
 
         // Act & Assert - Should not throw
-        expect(() => PostsModelAdapter.toDomainModels(postsModel), returnsNormally);
+        expect(() => PostsModelAdapter.toDomainModels(postsModel),
+            returnsNormally);
       });
     });
 
     group('helper methods', () {
-      test('should calculate engagement rate correctly for various scenarios', () {
+      test('should calculate engagement rate correctly for various scenarios',
+          () {
         // Test cases: [comments, likes, shares, saves, participants, expectedRate]
         final testCases = [
           [100, 200, 50, 75, 1000, 42.5], // Normal case
-          [0, 0, 0, 0, 1000, 0.0],         // No engagement
-          [100, 200, 50, 75, 0, 0.0],      // No participants
-          [10, 20, 5, 15, 100, 50.0],      // High engagement rate
+          [0, 0, 0, 0, 1000, 0.0], // No engagement
+          [100, 200, 50, 75, 0, 0.0], // No participants
+          [10, 20, 5, 15, 100, 50.0], // High engagement rate
         ];
 
         for (final testCase in testCases) {
@@ -543,9 +550,10 @@ void main() {
           testData['participantcount'] = testCase[4];
 
           final postsModel = PostsModel.getDocumentFromData(
-            testData, 
-            FirebaseFirestore.instance.collection('posts').doc('engagement-test')
-          );
+              testData,
+              FirebaseFirestore.instance
+                  .collection('posts')
+                  .doc('engagement-test'));
 
           final result = PostsModelAdapter.toDomainModels(postsModel);
           expect(result.metrics.engagementRate, closeTo(testCase[5], 0.1));
@@ -560,10 +568,8 @@ void main() {
         highQualityData['commentcount'] = 100;
         highQualityData['participantcount'] = 2000;
 
-        final postsModel = PostsModel.getDocumentFromData(
-          highQualityData, 
-          FirebaseFirestore.instance.collection('posts').doc('high-quality')
-        );
+        final postsModel = PostsModel.getDocumentFromData(highQualityData,
+            FirebaseFirestore.instance.collection('posts').doc('high-quality'));
 
         // Act
         final result = PostsModelAdapter.toDomainModels(postsModel);

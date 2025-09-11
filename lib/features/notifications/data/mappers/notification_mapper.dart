@@ -15,7 +15,7 @@ class NotificationMapper {
   static Notification toDomain(NotificationDto dto) {
     // Determine the type and map accordingly
     final type = dto.type ?? 'systemAlert';
-    
+
     switch (type) {
       case 'votingRequest':
         return _toVoteNotification(dto);
@@ -28,26 +28,29 @@ class NotificationMapper {
         return _toSystemNotification(dto);
     }
   }
-  
+
   /// Convert Vote DTO to Vote Domain Entity
   static VoteNotification _toVoteNotification(NotificationDto dto) {
-    final voteDto = dto is VoteNotificationDto ? dto : VoteNotificationDto(
-      id: dto.id,
-      userId: dto.userId,
-      type: dto.type,
-      title: dto.title,
-      content: dto.content,
-      data: dto.data,
-      createdAt: dto.createdAt,
-      readAt: dto.readAt,
-      isRead: dto.isRead,
-      expiryTime: dto.expiryTime,
-      metadata: dto.metadata,
-      priority: dto.priority,
-    );
-    
-    final createdAt = DtoHelper.parseDateTime(voteDto.createdAt) ?? DateTime.now();
-    
+    final voteDto = dto is VoteNotificationDto
+        ? dto
+        : VoteNotificationDto(
+            id: dto.id,
+            userId: dto.userId,
+            type: dto.type,
+            title: dto.title,
+            content: dto.content,
+            data: dto.data,
+            createdAt: dto.createdAt,
+            readAt: dto.readAt,
+            isRead: dto.isRead,
+            expiryTime: dto.expiryTime,
+            metadata: dto.metadata,
+            priority: dto.priority,
+          );
+
+    final createdAt =
+        DtoHelper.parseDateTime(voteDto.createdAt) ?? DateTime.now();
+
     return VoteNotification(
       id: voteDto.id ?? '',
       userId: voteDto.userId ?? '',
@@ -64,42 +67,44 @@ class NotificationMapper {
       voteOptions: VoteOptions(
         optionATitle: voteDto.optionA?['text'] ?? '',
         optionBTitle: voteDto.optionB?['text'] ?? '',
-        optionAImageUrls: DtoHelper.parseStringList(
-          voteDto.optionA?['imageUrls']
-        ) ?? [],
-        optionBImageUrls: DtoHelper.parseStringList(
-          voteDto.optionB?['imageUrls']
-        ) ?? [],
+        optionAImageUrls:
+            DtoHelper.parseStringList(voteDto.optionA?['imageUrls']) ?? [],
+        optionBImageUrls:
+            DtoHelper.parseStringList(voteDto.optionB?['imageUrls']) ?? [],
       ),
-      voteStartTime: DtoHelper.parseDateTime(voteDto.voteStartTime) ?? createdAt,
-      voteEndTime: DtoHelper.parseDateTime(voteDto.voteEndTime) ?? 
-                   createdAt.add(const Duration(days: 7)),
+      voteStartTime:
+          DtoHelper.parseDateTime(voteDto.voteStartTime) ?? createdAt,
+      voteEndTime: DtoHelper.parseDateTime(voteDto.voteEndTime) ??
+          createdAt.add(const Duration(days: 7)),
       currentVotesA: voteDto.votesA ?? 0,
       currentVotesB: voteDto.votesB ?? 0,
       senderId: voteDto.senderId,
       senderName: voteDto.senderName,
       body: voteDto.body,
-      notificationPriority: NotificationPriority.fromWeight(voteDto.priority ?? 2),
+      notificationPriority:
+          NotificationPriority.fromWeight(voteDto.priority ?? 2),
     );
   }
-  
+
   /// Convert System DTO to System Domain Entity
   static SystemNotification _toSystemNotification(NotificationDto dto) {
-    final systemDto = dto is SystemNotificationDto ? dto : SystemNotificationDto(
-      id: dto.id,
-      userId: dto.userId,
-      type: dto.type,
-      title: dto.title,
-      content: dto.content,
-      data: dto.data,
-      createdAt: dto.createdAt,
-      readAt: dto.readAt,
-      isRead: dto.isRead,
-      expiryTime: dto.expiryTime,
-      metadata: dto.metadata,
-      priority: dto.priority,
-    );
-    
+    final systemDto = dto is SystemNotificationDto
+        ? dto
+        : SystemNotificationDto(
+            id: dto.id,
+            userId: dto.userId,
+            type: dto.type,
+            title: dto.title,
+            content: dto.content,
+            data: dto.data,
+            createdAt: dto.createdAt,
+            readAt: dto.readAt,
+            isRead: dto.isRead,
+            expiryTime: dto.expiryTime,
+            metadata: dto.metadata,
+            priority: dto.priority,
+          );
+
     return SystemNotification(
       id: systemDto.id ?? '',
       userId: systemDto.userId ?? '',
@@ -115,24 +120,26 @@ class NotificationMapper {
       actionLabel: systemDto.actionLabel,
     );
   }
-  
+
   /// Convert Social DTO to Social Domain Entity
   static SocialNotification _toSocialNotification(NotificationDto dto) {
-    final socialDto = dto is SocialNotificationDto ? dto : SocialNotificationDto(
-      id: dto.id,
-      userId: dto.userId,
-      type: dto.type,
-      title: dto.title,
-      content: dto.content,
-      data: dto.data,
-      createdAt: dto.createdAt,
-      readAt: dto.readAt,
-      isRead: dto.isRead,
-      expiryTime: dto.expiryTime,
-      metadata: dto.metadata,
-      priority: dto.priority,
-    );
-    
+    final socialDto = dto is SocialNotificationDto
+        ? dto
+        : SocialNotificationDto(
+            id: dto.id,
+            userId: dto.userId,
+            type: dto.type,
+            title: dto.title,
+            content: dto.content,
+            data: dto.data,
+            createdAt: dto.createdAt,
+            readAt: dto.readAt,
+            isRead: dto.isRead,
+            expiryTime: dto.expiryTime,
+            metadata: dto.metadata,
+            priority: dto.priority,
+          );
+
     return SocialNotification(
       id: socialDto.id ?? '',
       userId: socialDto.userId ?? '',
@@ -148,12 +155,13 @@ class NotificationMapper {
       fromUserName: socialDto.actorName ?? '',
       fromUserProfileUrl: socialDto.actorProfileImage,
       relatedPostId: socialDto.targetId,
-      relatedCommentId: socialDto.targetType == 'comment' ? socialDto.targetId : null,
+      relatedCommentId:
+          socialDto.targetType == 'comment' ? socialDto.targetId : null,
       relatedContent: socialDto.socialData?['content'] as String?,
       interactionCount: socialDto.socialData?['count'] as int?,
     );
   }
-  
+
   /// Convert Domain Entity to DTO
   static NotificationDto toDto(Notification entity) {
     if (entity is VoteNotification) {
@@ -179,7 +187,7 @@ class NotificationMapper {
       );
     }
   }
-  
+
   /// Convert VoteNotification to VoteNotificationDto
   static VoteNotificationDto _fromVoteNotification(VoteNotification entity) {
     return VoteNotificationDto(
@@ -214,9 +222,10 @@ class NotificationMapper {
       votesB: entity.currentVotesB,
     );
   }
-  
+
   /// Convert SystemNotification to SystemNotificationDto
-  static SystemNotificationDto _fromSystemNotification(SystemNotification entity) {
+  static SystemNotificationDto _fromSystemNotification(
+      SystemNotification entity) {
     return SystemNotificationDto(
       id: entity.id,
       userId: entity.userId,
@@ -234,9 +243,10 @@ class NotificationMapper {
       actionLabel: entity.actionLabel,
     );
   }
-  
+
   /// Convert SocialNotification to SocialNotificationDto
-  static SocialNotificationDto _fromSocialNotification(SocialNotification entity) {
+  static SocialNotificationDto _fromSocialNotification(
+      SocialNotification entity) {
     return SocialNotificationDto(
       id: entity.id,
       userId: entity.userId,

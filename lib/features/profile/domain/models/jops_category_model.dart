@@ -125,8 +125,7 @@ Map<String, dynamic> createJopsCategoryModelData({
   return firestoreData;
 }
 
-class JopsCategoryModelDocumentEquality
-    implements Equality<JopsCategoryModel> {
+class JopsCategoryModelDocumentEquality implements Equality<JopsCategoryModel> {
   const JopsCategoryModelDocumentEquality();
 
   @override

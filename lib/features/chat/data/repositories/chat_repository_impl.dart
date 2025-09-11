@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/core/firebase/utils/firestore_util.dart' show queryCollection, queryCollectionOnce, queryCollectionCount;
+import '/core/firebase/utils/firestore_util.dart'
+    show queryCollection, queryCollectionOnce, queryCollectionCount;
 import '../../domain/repositories/i_chat_repository.dart';
 import '/features/chat/domain/models/chats_model.dart';
 import '/features/chat/domain/models/chat_history_model.dart';
@@ -11,10 +12,11 @@ import '/features/chat/domain/models/group_messages_model.dart';
 /// Implementation of chat repository with migrated backend query functions
 class ChatRepositoryImpl implements IChatRepository {
   static ChatRepositoryImpl? _instance;
-  static ChatRepositoryImpl get instance => _instance ??= ChatRepositoryImpl._();
-  
+  static ChatRepositoryImpl get instance =>
+      _instance ??= ChatRepositoryImpl._();
+
   ChatRepositoryImpl._();
-  
+
   // MIGRATED: Chats queries (lines 493-528 from backend.dart)
   @override
   Future<int> queryChatsCount({
@@ -240,10 +242,8 @@ class ChatRepositoryImpl implements IChatRepository {
   // CRUD operations
   @override
   Future<ChatsModel?> getChat(String chatId) async {
-    final doc = await FirebaseFirestore.instance
-        .collection('chats')
-        .doc(chatId)
-        .get();
+    final doc =
+        await FirebaseFirestore.instance.collection('chats').doc(chatId).get();
     return doc.exists ? ChatsModel.fromSnapshot(doc) : null;
   }
 
@@ -262,10 +262,7 @@ class ChatRepositoryImpl implements IChatRepository {
 
   @override
   Future<void> deleteChat(String chatId) async {
-    await FirebaseFirestore.instance
-        .collection('chats')
-        .doc(chatId)
-        .delete();
+    await FirebaseFirestore.instance.collection('chats').doc(chatId).delete();
   }
 
   // Message operations

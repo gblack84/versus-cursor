@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 
 /// MediaProvider - 미디어 관련 상태 관리
-/// 
+///
 /// AppState에서 분리된 미디어 관련 필드들을 관리합니다.
 /// 이미지, 비디오, YouTube 링크 등의 상태와 관련 기능을 포함합니다.
 class MediaProvider extends ChangeNotifier {
@@ -284,8 +284,10 @@ class MediaProvider extends ChangeNotifier {
 
   /// A박스 이미지 순서 변경
   void reorderUploadImageA(int oldIndex, int newIndex) {
-    if (oldIndex >= 0 && oldIndex < _uploadImageA.length && 
-        newIndex >= 0 && newIndex < _uploadImageA.length) {
+    if (oldIndex >= 0 &&
+        oldIndex < _uploadImageA.length &&
+        newIndex >= 0 &&
+        newIndex < _uploadImageA.length) {
       final item = _uploadImageA.removeAt(oldIndex);
       _uploadImageA.insert(newIndex, item);
       notifyListeners();
@@ -359,8 +361,10 @@ class MediaProvider extends ChangeNotifier {
 
   /// A박스 화면비 순서 변경
   void reorderUploadImageAspectRatioA(int oldIndex, int newIndex) {
-    if (oldIndex >= 0 && oldIndex < _uploadImageAspectRatioA.length && 
-        newIndex >= 0 && newIndex < _uploadImageAspectRatioA.length) {
+    if (oldIndex >= 0 &&
+        oldIndex < _uploadImageAspectRatioA.length &&
+        newIndex >= 0 &&
+        newIndex < _uploadImageAspectRatioA.length) {
       final item = _uploadImageAspectRatioA.removeAt(oldIndex);
       _uploadImageAspectRatioA.insert(newIndex, item);
       notifyListeners();
@@ -402,8 +406,10 @@ class MediaProvider extends ChangeNotifier {
 
   /// A박스 로컬 경로 순서 변경
   void reorderLocalImagePathsA(int oldIndex, int newIndex) {
-    if (oldIndex >= 0 && oldIndex < _localImagePathsA.length && 
-        newIndex >= 0 && newIndex < _localImagePathsA.length) {
+    if (oldIndex >= 0 &&
+        oldIndex < _localImagePathsA.length &&
+        newIndex >= 0 &&
+        newIndex < _localImagePathsA.length) {
       final item = _localImagePathsA.removeAt(oldIndex);
       _localImagePathsA.insert(newIndex, item);
       notifyListeners();
@@ -465,8 +471,10 @@ class MediaProvider extends ChangeNotifier {
   }
 
   void reorderUploadImageB(int oldIndex, int newIndex) {
-    if (oldIndex >= 0 && oldIndex < _uploadImageB.length && 
-        newIndex >= 0 && newIndex < _uploadImageB.length) {
+    if (oldIndex >= 0 &&
+        oldIndex < _uploadImageB.length &&
+        newIndex >= 0 &&
+        newIndex < _uploadImageB.length) {
       final item = _uploadImageB.removeAt(oldIndex);
       _uploadImageB.insert(newIndex, item);
       notifyListeners();
@@ -531,8 +539,10 @@ class MediaProvider extends ChangeNotifier {
   }
 
   void reorderUploadImageAspectRatioB(int oldIndex, int newIndex) {
-    if (oldIndex >= 0 && oldIndex < _uploadImageAspectRatioB.length && 
-        newIndex >= 0 && newIndex < _uploadImageAspectRatioB.length) {
+    if (oldIndex >= 0 &&
+        oldIndex < _uploadImageAspectRatioB.length &&
+        newIndex >= 0 &&
+        newIndex < _uploadImageAspectRatioB.length) {
       final item = _uploadImageAspectRatioB.removeAt(oldIndex);
       _uploadImageAspectRatioB.insert(newIndex, item);
       notifyListeners();
@@ -569,8 +579,10 @@ class MediaProvider extends ChangeNotifier {
   }
 
   void reorderLocalImagePathsB(int oldIndex, int newIndex) {
-    if (oldIndex >= 0 && oldIndex < _localImagePathsB.length && 
-        newIndex >= 0 && newIndex < _localImagePathsB.length) {
+    if (oldIndex >= 0 &&
+        oldIndex < _localImagePathsB.length &&
+        newIndex >= 0 &&
+        newIndex < _localImagePathsB.length) {
       final item = _localImagePathsB.removeAt(oldIndex);
       _localImagePathsB.insert(newIndex, item);
       notifyListeners();
@@ -683,18 +695,18 @@ class MediaProvider extends ChangeNotifier {
   /// A박스에 미디어 콘텐츠가 있는지 확인
   bool get hasMediaA {
     return _uploadImageA.isNotEmpty ||
-           _tempImageFilesA.isNotEmpty ||
-           _uploadVideoA.isNotEmpty ||
-           _uploadYoutubeA.isNotEmpty ||
-           _uploadLinkA.isNotEmpty;
+        _tempImageFilesA.isNotEmpty ||
+        _uploadVideoA.isNotEmpty ||
+        _uploadYoutubeA.isNotEmpty ||
+        _uploadLinkA.isNotEmpty;
   }
 
   /// B박스에 미디어 콘텐츠가 있는지 확인
   bool get hasMediaB {
     return _uploadImageB.isNotEmpty ||
-           _tempImageFilesB.isNotEmpty ||
-           _uploadVideoB.isNotEmpty ||
-           _uploadYoutubeB.isNotEmpty ||
-           _uploadLinkB.isNotEmpty;
+        _tempImageFilesB.isNotEmpty ||
+        _uploadVideoB.isNotEmpty ||
+        _uploadYoutubeB.isNotEmpty ||
+        _uploadLinkB.isNotEmpty;
   }
 }

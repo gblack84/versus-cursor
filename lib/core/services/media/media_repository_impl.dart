@@ -16,11 +16,10 @@ enum MediaType {
 }
 
 /// MediaRepository 구현체
-/// 
+///
 /// 미디어 업로드, 처리, 다운로드를 담당합니다.
 /// Firebase Storage를 통합합니다.
 class MediaRepositoryImpl implements IMediaRepository {
-
   MediaRepositoryImpl({
     FirebaseStorage? storage,
   }) : _storage = storage ?? FirebaseStorage.instance;
@@ -63,7 +62,8 @@ class MediaRepositoryImpl implements IMediaRepository {
       }
 
       // 경로 설정
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${file.uri.pathSegments.last}';
+      final fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${file.uri.pathSegments.last}';
       final uploadPath = path ?? 'uploads/images/$fileName';
 
       // Firebase Storage 업로드
@@ -128,10 +128,10 @@ class MediaRepositoryImpl implements IMediaRepository {
   }) async {
     try {
       final futures = files.map((file) => uploadImage(
-        file,
-        compress: compress,
-      ));
-      
+            file,
+            compress: compress,
+          ));
+
       return await Future.wait(futures);
     } catch (e) {
       throw Exception('다중 이미지 업로드 실패: $e');
@@ -154,7 +154,8 @@ class MediaRepositoryImpl implements IMediaRepository {
       }
 
       final bytes = await file.readAsBytes();
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${file.uri.pathSegments.last}';
+      final fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${file.uri.pathSegments.last}';
       final uploadPath = path ?? 'uploads/videos/$fileName';
 
       // 비디오 업로드
@@ -196,12 +197,13 @@ class MediaRepositoryImpl implements IMediaRepository {
       }
 
       final bytes = await file.readAsBytes();
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${file.uri.pathSegments.last}';
+      final fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${file.uri.pathSegments.last}';
       final uploadPath = path ?? 'uploads/files/$fileName';
 
       final ref = _storage.ref(uploadPath);
       final snapshot = await ref.putData(bytes);
-      
+
       return await snapshot.ref.getDownloadURL();
     } catch (e) {
       throw Exception('파일 업로드 실패: $e');
@@ -217,16 +219,16 @@ class MediaRepositoryImpl implements IMediaRepository {
       final ref = _storage.refFromURL(url);
       const maxSize = 100 * 1024 * 1024; // 100MB
       final bytes = await ref.getData(maxSize);
-      
+
       if (bytes == null) return null;
 
       // 저장 경로 설정
       final fileName = Uri.parse(url).pathSegments.last;
       final localPath = savePath ?? '${Directory.systemTemp.path}/$fileName';
-      
+
       final file = File(localPath);
       await file.writeAsBytes(bytes);
-      
+
       return file;
     } catch (e) {
       return null;
@@ -290,7 +292,8 @@ class MediaRepositoryImpl implements IMediaRepository {
       );
 
       // 썸네일 업로드
-      final thumbnailFileName = 'thumb_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final thumbnailFileName =
+          'thumb_${DateTime.now().millisecondsSinceEpoch}.jpg';
       return await uploadImageBytes(
         thumbnailBytes,
         thumbnailFileName,
@@ -328,7 +331,7 @@ class MediaRepositoryImpl implements IMediaRepository {
 
       final resizedFile = File('${file.path}_resized.jpg');
       await resizedFile.writeAsBytes(resizedBytes);
-      
+
       return resizedFile;
     } catch (e) {
       throw Exception('이미지 리사이징 실패: $e');
@@ -351,7 +354,7 @@ class MediaRepositoryImpl implements IMediaRepository {
 
       final compressedFile = File('${file.path}_compressed.jpg');
       await compressedFile.writeAsBytes(compressedBytes);
-      
+
       return compressedFile;
     } catch (e) {
       throw Exception('이미지 압축 실패: $e');
@@ -377,7 +380,7 @@ class MediaRepositoryImpl implements IMediaRepository {
     try {
       final ref = _storage.refFromURL(url);
       final metadata = await ref.getMetadata();
-      
+
       return {
         'name': metadata.name,
         'size': metadata.size,
@@ -406,7 +409,7 @@ class MediaRepositoryImpl implements IMediaRepository {
   @override
   Future<String> getMediaType(File file) async {
     final extension = path.extension(file.path).toLowerCase();
-    
+
     switch (extension) {
       case '.jpg':
       case '.jpeg':
@@ -441,7 +444,7 @@ class MediaRepositoryImpl implements IMediaRepository {
   bool isValidMediaType(File file, List<MediaType> allowedTypes) {
     final extension = path.extension(file.path).toLowerCase();
     MediaType type;
-    
+
     switch (extension) {
       case '.jpg':
       case '.jpeg':
@@ -464,7 +467,7 @@ class MediaRepositoryImpl implements IMediaRepository {
       default:
         type = MediaType.other;
     }
-    
+
     return allowedTypes.contains(type);
   }
 
@@ -517,13 +520,13 @@ class MediaRepositoryImpl implements IMediaRepository {
     try {
       final ref = _storage.ref(path);
       final result = await ref.listAll();
-      
+
       final urls = <String>[];
       for (final item in result.items) {
         final url = await item.getDownloadURL();
         urls.add(url);
       }
-      
+
       return urls;
     } catch (e) {
       throw Exception('파일 목록 조회 실패: $e');
@@ -534,18 +537,18 @@ class MediaRepositoryImpl implements IMediaRepository {
     try {
       final ref = _storage.ref(path);
       final result = await ref.listAll();
-      
+
       int totalSize = 0;
       for (final item in result.items) {
         final metadata = await item.getMetadata();
         totalSize += metadata.size ?? 0;
       }
-      
+
       // 하위 디렉토리 크기 계산
       for (final prefix in result.prefixes) {
         totalSize += await getDirectorySize(prefix.fullPath);
       }
-      
+
       return totalSize;
     } catch (e) {
       throw Exception('디렉토리 크기 계산 실패: $e');

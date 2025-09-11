@@ -14,12 +14,12 @@ class ImageReorderService {
         final oldFiles = List<File>.from(appState.tempImageFilesA);
         final oldRatios = List<double>.from(appState.uploadImageAspectRatioA);
         final oldIds = List<String>.from(appState.assetEntityIdsA);
-        
+
         // 새 순서대로 재배치
         appState.tempImageFilesA.clear();
         appState.uploadImageAspectRatioA.clear();
         appState.assetEntityIdsA.clear();
-        
+
         for (final newId in newOrder) {
           final oldIndex = oldIds.indexOf(newId);
           if (oldIndex != -1 && oldIndex < oldFiles.length) {
@@ -34,11 +34,11 @@ class ImageReorderService {
         final oldFiles = List<File>.from(appState.tempImageFilesB);
         final oldRatios = List<double>.from(appState.uploadImageAspectRatioB);
         final oldIds = List<String>.from(appState.assetEntityIdsB);
-        
+
         appState.tempImageFilesB.clear();
         appState.uploadImageAspectRatioB.clear();
         appState.assetEntityIdsB.clear();
-        
+
         for (final newId in newOrder) {
           final oldIndex = oldIds.indexOf(newId);
           if (oldIndex != -1 && oldIndex < oldFiles.length) {

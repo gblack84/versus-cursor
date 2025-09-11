@@ -125,8 +125,7 @@ Map<String, dynamic> createUserContentsModelData({
   return firestoreData;
 }
 
-class UserContentsModelDocumentEquality
-    implements Equality<UserContentsModel> {
+class UserContentsModelDocumentEquality implements Equality<UserContentsModel> {
   const UserContentsModelDocumentEquality();
 
   @override

@@ -78,7 +78,7 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                   }
 
                   final user = snapshot.data!;
-                  
+
                   return SingleChildScrollView(
                     padding: VersusSpacing.paddingMD,
                     child: Column(
@@ -102,25 +102,27 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                               // 프로필 이미지
                               CircleAvatar(
                                 radius: 50,
-                                backgroundColor: VersusColors.primaryWithAlpha(0.2),
+                                backgroundColor:
+                                    VersusColors.primaryWithAlpha(0.2),
                                 backgroundImage: user.photoUrl.isNotEmpty
                                     ? NetworkImage(user.photoUrl)
                                     : null,
                                 child: user.photoUrl.isEmpty
-                                    ? Icon(Icons.person, color: VersusColors.primary, size: 50)
+                                    ? Icon(Icons.person,
+                                        color: VersusColors.primary, size: 50)
                                     : null,
                               ),
                               VersusSpacing.gapMD,
-                              
+
                               // 이름
                               Text(
-                                user.displayName.isNotEmpty 
-                                    ? user.displayName 
+                                user.displayName.isNotEmpty
+                                    ? user.displayName
                                     : '이름 없음',
                                 style: VersusTextStyles.headingSmall,
                               ),
                               VersusSpacing.gapXS,
-                              
+
                               // 이메일
                               Text(
                                 user.email,
@@ -129,10 +131,11 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                                 ),
                               ),
                               VersusSpacing.gapMD,
-                              
+
                               // 포인트 정보
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
                                 children: [
                                   _buildPointInfo(
                                     context,
@@ -157,7 +160,7 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                           ),
                         ),
                         VersusSpacing.gapLG,
-                        
+
                         // 프로필 정보
                         Container(
                           padding: VersusSpacing.paddingLG,
@@ -180,39 +183,39 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                                 style: VersusTextStyles.headingMedium,
                               ),
                               VersusSpacing.gapMD,
-                              
+
                               // 성별
                               if (user.gender.isNotEmpty)
                                 _buildInfoRow(context, '성별', user.gender),
-                              
+
                               // 가입일
                               if (user.createdTime != null)
                                 _buildInfoRow(
-                                  context, 
-                                  '가입일', 
+                                  context,
+                                  '가입일',
                                   dateTimeFormat('yMMMd', user.createdTime),
                                 ),
-                              
+
                               // 전문분야
                               if (user.expertise.isNotEmpty)
                                 _buildInfoRow(
-                                  context, 
-                                  '전문분야', 
+                                  context,
+                                  '전문분야',
                                   user.expertise.join(', '),
                                 ),
-                              
+
                               // 관심사
                               if (user.interests.isNotEmpty)
                                 _buildInfoRow(
-                                  context, 
-                                  '관심사', 
+                                  context,
+                                  '관심사',
                                   user.interests.join(', '),
                                 ),
                             ],
                           ),
                         ),
                         VersusSpacing.gapLG,
-                        
+
                         // 로그아웃 버튼
                         VersusButton.error(
                           text: '로그아웃',
@@ -232,7 +235,8 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
     );
   }
 
-  Widget _buildPointInfo(BuildContext context, String label, String value, Color color) {
+  Widget _buildPointInfo(
+      BuildContext context, String label, String value, Color color) {
     return Column(
       children: [
         Text(

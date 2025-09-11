@@ -10,7 +10,7 @@ class MediaSelectionBoxMulti extends StatefulWidget {
   final bool isSelected;
   final bool isVideoSelected;
   final VoidCallback onTap;
-  final Function(int index)? onCancel;  // 인덱스를 받도록 변경
+  final Function(int index)? onCancel; // 인덱스를 받도록 변경
   final bool isHorizontal;
   final Color boxColor;
   final List<String> imageUrls; // 멀티 이미지 URL 리스트 (하위 호환성)
@@ -44,7 +44,7 @@ class MediaSelectionBoxMulti extends StatefulWidget {
     this.dynamicWidth,
     this.onCurrentIndexChanged,
   }) : super(key: key);
-  
+
   @override
   State<MediaSelectionBoxMulti> createState() => _MediaSelectionBoxMultiState();
 }
@@ -52,13 +52,13 @@ class MediaSelectionBoxMulti extends StatefulWidget {
 class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
   late PageController _pageController;
   int _currentIndex = 0;
-  
+
   @override
   void initState() {
     super.initState();
     _currentIndex = 0; // 명시적으로 0으로 초기화
     _pageController = PageController(initialPage: 0);
-    
+
     // 초기 이미지 프리로드 (URL이 있는 경우에만)
     if (widget.imageUrls.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -69,17 +69,17 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
         );
       });
     }
-    
+
     // 레이아웃 정보 로그 (최초 한 번만)
     _logLayoutInfo();
   }
-  
+
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
   }
-  
+
   /// 메모리 캐시 너비 계산
   int _calculateMemCacheWidth() {
     return UnifiedImageCacheService.calculateForBox(
@@ -91,15 +91,16 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
 
   /// 현재 이미지 개수 가져오기
   int get _imageCount => widget.imageFiles?.length ?? widget.imageUrls.length;
-  
+
   /// 이미지가 있는지 확인
   bool get _hasImages => _imageCount > 0;
-  
+
   /// 레이아웃 정보 로그
   void _logLayoutInfo() {
     DebugHelper.runInDebug(() {
       if (widget.dynamicHeight != null) {
-        DebugHelper.logLayout('${widget.label}박스: dynamicHeight=${widget.dynamicHeight}, isHorizontal=${widget.isHorizontal}');
+        DebugHelper.logLayout(
+            '${widget.label}박스: dynamicHeight=${widget.dynamicHeight}, isHorizontal=${widget.isHorizontal}');
       }
     });
   }
@@ -107,25 +108,27 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
   @override
   void didUpdateWidget(MediaSelectionBoxMulti oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // 레이아웃 정보가 변경되었을 때만 로그
     if (oldWidget.dynamicHeight != widget.dynamicHeight ||
         oldWidget.isHorizontal != widget.isHorizontal) {
       _logLayoutInfo();
     }
-    
+
     // 이미지 개수 계산
     final oldCount = oldWidget.imageFiles?.length ?? oldWidget.imageUrls.length;
     final newCount = _imageCount;
-    
+
     // 이미지 개수가 변경되었을 때
     if (newCount != oldCount) {
-      DebugHelper.logImageSelection('${widget.label}박스 이미지 개수 변경: $oldCount → $newCount');
-      
+      DebugHelper.logImageSelection(
+          '${widget.label}박스 이미지 개수 변경: $oldCount → $newCount');
+
       // 현재 인덱스가 범위를 벗어나면 조정
       if (_currentIndex >= newCount && newCount > 0) {
         _currentIndex = newCount - 1;
-        DebugHelper.logImageSelection('${widget.label}박스 인덱스 조정: $_currentIndex');
+        DebugHelper.logImageSelection(
+            '${widget.label}박스 인덱스 조정: $_currentIndex');
         // PageController가 attach 상태인지 확인
         if (_pageController.hasClients) {
           _pageController.jumpToPage(_currentIndex);
@@ -135,7 +138,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
       }
     }
   }
-  
+
   Widget _buildRemoteImage(int index) {
     // imageFiles가 있으면 우선 사용
     if (widget.imageFiles != null && widget.imageFiles!.isNotEmpty) {
@@ -145,7 +148,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
           color: AppTheme.of(context).error,
         );
       }
-      
+
       return Image.file(
         widget.imageFiles![index],
         fit: BoxFit.cover,
@@ -153,7 +156,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
         height: double.infinity,
       );
     }
-    
+
     // imageFiles가 없으면 기존 imageUrls 사용
     if (index >= widget.imageUrls.length) {
       return Icon(
@@ -161,12 +164,12 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
         color: AppTheme.of(context).error,
       );
     }
-    
+
     // aspect ratio가 있으면 사용하여 일관된 크롭 보장
     final imageWidget = CachedNetworkImage(
       imageUrl: widget.imageUrls[index],
       fit: BoxFit.cover,
-      alignment: Alignment.center,  // 중앙 정렬로 일관성 확보
+      alignment: Alignment.center, // 중앙 정렬로 일관성 확보
       width: double.infinity,
       height: double.infinity,
       memCacheWidth: _calculateMemCacheWidth(),
@@ -185,7 +188,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
         );
       },
     );
-    
+
     // aspect ratio 정보가 있고 이미지가 URL인 경우 AspectRatio 적용
     if (widget.imageUrls.isNotEmpty && index < widget.imageUrls.length) {
       // 여기서는 AspectRatio를 직접 적용하지 않음
@@ -193,10 +196,10 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
       // alignment만 적용하여 일관성 확보
       return imageWidget;
     }
-    
+
     return imageWidget;
   }
-  
+
   /// 우측 상단 클로즈 버튼 빌드
   Widget? _buildTopRightCloseButton() {
     // A박스 - 이미지가 있을 때 X 아이콘 (삭제)
@@ -211,8 +214,10 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
             hoverColor: Colors.transparent,
             highlightColor: Colors.transparent,
             onTap: () {
-              final safeIndex = !_hasImages ? 0 : _currentIndex.clamp(0, _imageCount - 1);
-              DebugHelper.logImageSelection('${widget.label}박스 이미지 삭제 시도 - 현재 인덱스: $_currentIndex, 안전한 인덱스: $safeIndex, 전체 이미지 수: $_imageCount');
+              final safeIndex =
+                  !_hasImages ? 0 : _currentIndex.clamp(0, _imageCount - 1);
+              DebugHelper.logImageSelection(
+                  '${widget.label}박스 이미지 삭제 시도 - 현재 인덱스: $_currentIndex, 안전한 인덱스: $safeIndex, 전체 이미지 수: $_imageCount');
               widget.onCancel?.call(safeIndex);
             },
             child: Container(
@@ -231,7 +236,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
         ),
       );
     }
-    
+
     // B박스의 X 아이콘 - 이미지 유무에 따라 다른 스타일
     if (widget.label == 'B' && widget.onCancel != null) {
       return Align(
@@ -244,61 +249,65 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
             hoverColor: Colors.transparent,
             highlightColor: Colors.transparent,
             onTap: () {
-              final safeIndex = !_hasImages ? 0 : _currentIndex.clamp(0, _imageCount - 1);
-              DebugHelper.logImageSelection('${widget.label}박스 이미지 삭제 시도 - 현재 인덱스: $_currentIndex, 안전한 인덱스: $safeIndex, 전체 이미지 수: $_imageCount');
+              final safeIndex =
+                  !_hasImages ? 0 : _currentIndex.clamp(0, _imageCount - 1);
+              DebugHelper.logImageSelection(
+                  '${widget.label}박스 이미지 삭제 시도 - 현재 인덱스: $_currentIndex, 안전한 인덱스: $safeIndex, 전체 이미지 수: $_imageCount');
               widget.onCancel?.call(safeIndex);
             },
             child: _hasImages
-              ? Container(
-                  decoration: BoxDecoration(
+                ? Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      shape: BoxShape.circle,
+                    ),
+                    padding: EdgeInsets.all(4.0),
+                    child: Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 24.0,
+                    ),
+                  )
+                : Icon(
+                    Icons.cancel,
                     color: Colors.black.withValues(alpha: 0.6),
-                    shape: BoxShape.circle,
+                    size: 40.0,
                   ),
-                  padding: EdgeInsets.all(4.0),
-                  child: Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 24.0,
-                  ),
-                )
-              : Icon(
-                  Icons.cancel,
-                  color: Colors.black.withValues(alpha: 0.6),
-                  size: 40.0,
-                ),
           ),
         ),
       );
     }
-    
+
     return null;
   }
 
   /// 액션 버튼들 빌드
   Widget? _buildActionButtons() {
     if (!_hasImages) return null;
-    
+
     return Positioned(
       right: 12.0,
       bottom: 12.0,
-      child: widget.isHorizontal 
-        ? Column(
-            mainAxisSize: MainAxisSize.min,
-            children: _buildActionButtonList(),
-          )
-        : Row(
-            mainAxisSize: MainAxisSize.min,
-            children: _buildActionButtonList(),
-          ),
+      child: widget.isHorizontal
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: _buildActionButtonList(),
+            )
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: _buildActionButtonList(),
+            ),
     );
   }
-  
+
   /// 액션 버튼 리스트 생성
   List<Widget> _buildActionButtonList() {
     final buttons = <Widget>[];
-    
+
     // +B 아이콘 (A박스에만, B박스가 숨겨진 상태일 때)
-    if (widget.label == 'A' && widget.showPlusIcon && widget.onPlusIconTap != null) {
+    if (widget.label == 'A' &&
+        widget.showPlusIcon &&
+        widget.onPlusIconTap != null) {
       buttons.add(
         Container(
           margin: EdgeInsets.only(
@@ -323,7 +332,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
         ),
       );
     }
-    
+
     // +이미지 아이콘
     buttons.add(
       Container(
@@ -348,7 +357,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
         ),
       ),
     );
-    
+
     // 편집 아이콘
     buttons.add(
       Container(
@@ -369,22 +378,23 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
         ),
       ),
     );
-    
+
     return buttons;
   }
 
   @override
   Widget build(BuildContext context) {
     // 동적 높이가 제공되면 사용, 아니면 기본값 사용
-    final double boxHeight = widget.dynamicHeight ?? (widget.isSelected 
-        ? (widget.isHorizontal ? 350.0 : 250.0)
-        : (widget.isHorizontal ? 350.0 : 200.0));
-    
+    final double boxHeight = widget.dynamicHeight ??
+        (widget.isSelected
+            ? (widget.isHorizontal ? 350.0 : 250.0)
+            : (widget.isHorizontal ? 350.0 : 200.0));
+
     // 박스 높이에 비례한 동적 아이콘 크기 계산
     // 가로형일 때는 45%, 세로형일 때는 40%
     final double iconRatio = widget.isHorizontal ? 0.45 : 0.40;
     final double calculatedIconSize = boxHeight * iconRatio;
-    
+
     // 최소 80px, 최대 300px로 제한
     final double iconSize = calculatedIconSize.clamp(80.0, 300.0);
 
@@ -393,7 +403,8 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
       child: InkWell(
         onTap: widget.onTap,
         child: Container(
-          width: widget.dynamicWidth ?? (widget.isHorizontal ? double.infinity : null),
+          width: widget.dynamicWidth ??
+              (widget.isHorizontal ? double.infinity : null),
           height: boxHeight,
           decoration: BoxDecoration(
             color: widget.boxColor,
@@ -417,15 +428,17 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                           physics: const PageScrollPhysics(),
                           allowImplicitScrolling: true, // 인접 페이지 프리로딩
                           onPageChanged: (index) {
-                            DebugHelper.logImageSelection('${widget.label}박스 PageView 페이지 변경: $index');
+                            DebugHelper.logImageSelection(
+                                '${widget.label}박스 PageView 페이지 변경: $index');
                             setState(() {
                               _currentIndex = index;
                             });
                             // 현재 인덱스 변경을 부모에게 알림
                             widget.onCurrentIndexChanged?.call(index);
-                            
+
                             // 인접 이미지 프리로드
-                            UnifiedImageCacheService.instance.preloadAdjacentImages(
+                            UnifiedImageCacheService.instance
+                                .preloadAdjacentImages(
                               context,
                               widget.imageUrls,
                               index,
@@ -480,7 +493,10 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                         ),
                 ),
               // + 아이콘 - A박스에서 이미지가 없을 때 표시 (B박스 표시용)
-              if (widget.label == 'A' && !_hasImages && widget.showPlusIcon && widget.onPlusIconTap != null)
+              if (widget.label == 'A' &&
+                  !_hasImages &&
+                  widget.showPlusIcon &&
+                  widget.onPlusIconTap != null)
                 Align(
                   alignment: AlignmentDirectional(1.0, -1.0),
                   child: Padding(
@@ -510,7 +526,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                       fontSize: 50.0,
                       letterSpacing: 0.0,
                       color: _hasImages
-                          ? Colors.white 
+                          ? Colors.white
                           : AppTheme.of(context).primaryText,
                       fontWeight: FontWeight.bold,
                     ),
@@ -518,7 +534,8 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
                 ),
               ),
               // 우측 상단 클로즈 버튼
-              if (_buildTopRightCloseButton() != null) _buildTopRightCloseButton()!,
+              if (_buildTopRightCloseButton() != null)
+                _buildTopRightCloseButton()!,
               // 액션 버튼들 (이미지가 있을 때만)
               if (_buildActionButtons() != null) _buildActionButtons()!,
               // 이미지 카운터
@@ -528,7 +545,7 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
         ),
       ),
     );
-    
+
     // 흔들림 애니메이션 적용
     if (widget.shakeAnimation != null) {
       return AnimatedBuilder(
@@ -542,14 +559,14 @@ class _MediaSelectionBoxMultiState extends State<MediaSelectionBoxMulti> {
         child: content,
       );
     }
-    
+
     return content;
   }
-  
+
   /// 이미지 카운터 빌드
   Widget? _buildImageCounter() {
     if (_imageCount <= 1) return null;
-    
+
     return Positioned(
       left: 12,
       bottom: 12,

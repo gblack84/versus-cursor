@@ -8,14 +8,15 @@ import '../adapters/auth_util.dart' as auth_util;
 import 'dart:async';
 
 /// AuthRepositoryImpl
-/// 
+///
 /// Data layer implementation of IAuthRepository interface.
 /// Handles Firebase Authentication operations and data transformation.
 class AuthRepositoryImpl implements IAuthRepository {
   // Singleton instance
   static AuthRepositoryImpl? _instance;
-  static AuthRepositoryImpl get instance => _instance ??= AuthRepositoryImpl._();
-  
+  static AuthRepositoryImpl get instance =>
+      _instance ??= AuthRepositoryImpl._();
+
   AuthRepositoryImpl._({
     FirebaseAuth? firebaseAuth,
   }) : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
@@ -31,33 +32,41 @@ class AuthRepositoryImpl implements IAuthRepository {
   Future<AuthUser?> getCurrentUser() async {
     try {
       final firebaseUser = _firebaseAuth.currentUser;
-      return firebaseUser != null ? AuthUser.fromFirebaseUser(firebaseUser) : null;
+      return firebaseUser != null
+          ? AuthUser.fromFirebaseUser(firebaseUser)
+          : null;
     } catch (e) {
       return null;
     }
   }
 
   @override
-  Future<AuthUser?> signInWithEmailAndPassword(String email, String password) async {
+  Future<AuthUser?> signInWithEmailAndPassword(
+      String email, String password) async {
     try {
       final credential = await _firebaseAuth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      return credential.user != null ? AuthUser.fromFirebaseUser(credential.user!) : null;
+      return credential.user != null
+          ? AuthUser.fromFirebaseUser(credential.user!)
+          : null;
     } catch (e) {
       return null;
     }
   }
 
   @override
-  Future<AuthUser?> createUserWithEmailAndPassword(String email, String password) async {
+  Future<AuthUser?> createUserWithEmailAndPassword(
+      String email, String password) async {
     try {
       final credential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      return credential.user != null ? AuthUser.fromFirebaseUser(credential.user!) : null;
+      return credential.user != null
+          ? AuthUser.fromFirebaseUser(credential.user!)
+          : null;
     } catch (e) {
       return null;
     }
@@ -72,13 +81,14 @@ class AuthRepositoryImpl implements IAuthRepository {
 
   @override
   Future<AuthUser?> signInWithApple() async {
-    // TODO: Implement Apple sign in integration  
+    // TODO: Implement Apple sign in integration
     // For now, delegate to existing auth_util system
     return getCurrentUser();
   }
 
   @override
-  Future<AuthUser?> signInWithPhoneNumber(String phoneNumber, String verificationCode) async {
+  Future<AuthUser?> signInWithPhoneNumber(
+      String phoneNumber, String verificationCode) async {
     try {
       // This would require implementing phone auth flow
       // For now, delegate to auth_util
@@ -154,7 +164,9 @@ class AuthRepositoryImpl implements IAuthRepository {
   @override
   Stream<AuthUser?> get authStateChanges {
     return _firebaseAuth.authStateChanges().map((firebaseUser) {
-      return firebaseUser != null ? AuthUser.fromFirebaseUser(firebaseUser) : null;
+      return firebaseUser != null
+          ? AuthUser.fromFirebaseUser(firebaseUser)
+          : null;
     });
   }
 }

@@ -86,24 +86,20 @@ class _EditviedoWidgetState extends State<EditviedoWidget> {
                           AppLocalizations.of(context).getText(
                             '613h5dwl' /* Hello World */,
                           ),
-                          style:
-                              AppTheme.of(context).bodyMedium.override(
-                                    font: GoogleFonts.plusJakartaSans(
-                                      fontWeight: AppTheme.of(context)
-                                          .bodyMedium
-                                          .fontWeight,
-                                      fontStyle: AppTheme.of(context)
-                                          .bodyMedium
-                                          .fontStyle,
-                                    ),
-                                    letterSpacing: 0.0,
-                                    fontWeight: AppTheme.of(context)
-                                        .bodyMedium
-                                        .fontWeight,
-                                    fontStyle: AppTheme.of(context)
-                                        .bodyMedium
-                                        .fontStyle,
-                                  ),
+                          style: AppTheme.of(context).bodyMedium.override(
+                                font: GoogleFonts.plusJakartaSans(
+                                  fontWeight: AppTheme.of(context)
+                                      .bodyMedium
+                                      .fontWeight,
+                                  fontStyle:
+                                      AppTheme.of(context).bodyMedium.fontStyle,
+                                ),
+                                letterSpacing: 0.0,
+                                fontWeight:
+                                    AppTheme.of(context).bodyMedium.fontWeight,
+                                fontStyle:
+                                    AppTheme.of(context).bodyMedium.fontStyle,
+                              ),
                         ),
                         Slider(
                           activeColor: AppTheme.of(context).primary,
@@ -132,24 +128,20 @@ class _EditviedoWidgetState extends State<EditviedoWidget> {
                           AppLocalizations.of(context).getText(
                             'h9yoweew' /* Hello World */,
                           ),
-                          style:
-                              AppTheme.of(context).bodyMedium.override(
-                                    font: GoogleFonts.plusJakartaSans(
-                                      fontWeight: AppTheme.of(context)
-                                          .bodyMedium
-                                          .fontWeight,
-                                      fontStyle: AppTheme.of(context)
-                                          .bodyMedium
-                                          .fontStyle,
-                                    ),
-                                    letterSpacing: 0.0,
-                                    fontWeight: AppTheme.of(context)
-                                        .bodyMedium
-                                        .fontWeight,
-                                    fontStyle: AppTheme.of(context)
-                                        .bodyMedium
-                                        .fontStyle,
-                                  ),
+                          style: AppTheme.of(context).bodyMedium.override(
+                                font: GoogleFonts.plusJakartaSans(
+                                  fontWeight: AppTheme.of(context)
+                                      .bodyMedium
+                                      .fontWeight,
+                                  fontStyle:
+                                      AppTheme.of(context).bodyMedium.fontStyle,
+                                ),
+                                letterSpacing: 0.0,
+                                fontWeight:
+                                    AppTheme.of(context).bodyMedium.fontWeight,
+                                fontStyle:
+                                    AppTheme.of(context).bodyMedium.fontStyle,
+                              ),
                         ),
                         Slider(
                           activeColor: AppTheme.of(context).primary,
@@ -195,25 +187,20 @@ class _EditviedoWidgetState extends State<EditviedoWidget> {
                         iconPadding:
                             EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                         color: AppTheme.of(context).primary,
-                        textStyle:
-                            AppTheme.of(context).titleSmall.override(
-                                  font: GoogleFonts.plusJakartaSans(
-                                    fontWeight: AppTheme.of(context)
-                                        .titleSmall
-                                        .fontWeight,
-                                    fontStyle: AppTheme.of(context)
-                                        .titleSmall
-                                        .fontStyle,
-                                  ),
-                                  color: Colors.white,
-                                  letterSpacing: 0.0,
-                                  fontWeight: AppTheme.of(context)
-                                      .titleSmall
-                                      .fontWeight,
-                                  fontStyle: AppTheme.of(context)
-                                      .titleSmall
-                                      .fontStyle,
-                                ),
+                        textStyle: AppTheme.of(context).titleSmall.override(
+                              font: GoogleFonts.plusJakartaSans(
+                                fontWeight:
+                                    AppTheme.of(context).titleSmall.fontWeight,
+                                fontStyle:
+                                    AppTheme.of(context).titleSmall.fontStyle,
+                              ),
+                              color: Colors.white,
+                              letterSpacing: 0.0,
+                              fontWeight:
+                                  AppTheme.of(context).titleSmall.fontWeight,
+                              fontStyle:
+                                  AppTheme.of(context).titleSmall.fontStyle,
+                            ),
                         elevation: 0.0,
                         borderRadius: BorderRadius.circular(8.0),
                       ),
@@ -235,25 +222,20 @@ class _EditviedoWidgetState extends State<EditviedoWidget> {
                         iconPadding:
                             EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                         color: AppTheme.of(context).primary,
-                        textStyle:
-                            AppTheme.of(context).titleSmall.override(
-                                  font: GoogleFonts.plusJakartaSans(
-                                    fontWeight: AppTheme.of(context)
-                                        .titleSmall
-                                        .fontWeight,
-                                    fontStyle: AppTheme.of(context)
-                                        .titleSmall
-                                        .fontStyle,
-                                  ),
-                                  color: Colors.white,
-                                  letterSpacing: 0.0,
-                                  fontWeight: AppTheme.of(context)
-                                      .titleSmall
-                                      .fontWeight,
-                                  fontStyle: AppTheme.of(context)
-                                      .titleSmall
-                                      .fontStyle,
-                                ),
+                        textStyle: AppTheme.of(context).titleSmall.override(
+                              font: GoogleFonts.plusJakartaSans(
+                                fontWeight:
+                                    AppTheme.of(context).titleSmall.fontWeight,
+                                fontStyle:
+                                    AppTheme.of(context).titleSmall.fontStyle,
+                              ),
+                              color: Colors.white,
+                              letterSpacing: 0.0,
+                              fontWeight:
+                                  AppTheme.of(context).titleSmall.fontWeight,
+                              fontStyle:
+                                  AppTheme.of(context).titleSmall.fontStyle,
+                            ),
                         elevation: 0.0,
                         borderRadius: BorderRadius.circular(8.0),
                       ),

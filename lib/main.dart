@@ -20,26 +20,27 @@ void main() async {
 
   // 환경 변수 로드 (Phase 0 보안 수정)
   await EnvironmentConfig.init();
-  
+
   // 환경 변수 검증
   if (!EnvironmentConfig.validateConfiguration()) {
-    print('❌ Environment configuration is invalid. Please check your .env file.');
+    print(
+        '❌ Environment configuration is invalid. Please check your .env file.');
   }
-  
+
   // 개발 환경에서만 상태 출력
   EnvironmentConfig.printStatus();
 
   await initFirebase();
-  
+
   // Initialize Dependency Injection
   await setupDependencyInjection();
-  
+
   // Firestore 오프라인 캐시 활성화 - 앱 성능 대폭 개선
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
-    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,  // 무제한 캐시
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED, // 무제한 캐시
   );
-  
+
   // UnifiedCacheService 초기화 - 3-Layer 캐싱
   await UnifiedCacheService.initialize();
 
@@ -52,7 +53,8 @@ void main() async {
     providers: [
       ChangeNotifierProvider(create: (context) => appState),
       ChangeNotifierProvider(create: (context) => NavigationProvider()),
-      Provider<NotificationService>(create: (context) => GetIt.instance<NotificationService>()),
+      Provider<NotificationService>(
+          create: (context) => GetIt.instance<NotificationService>()),
     ],
     child: const VersusApp(),
   ));

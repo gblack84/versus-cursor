@@ -2,8 +2,7 @@ import '/core_exports.dart';
 import 'character_detail_page_widget.dart' show CharacterDetailPageWidget;
 import 'package:flutter/material.dart';
 
-class CharacterDetailPageModel
-    extends AppModel<CharacterDetailPageWidget> {
+class CharacterDetailPageModel extends AppModel<CharacterDetailPageWidget> {
   ///  Local state fields for this component.
 
   String selectedCharacterUrl = '\" \"';

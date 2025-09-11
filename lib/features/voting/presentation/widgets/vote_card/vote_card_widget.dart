@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '/core/design_system/design_system.dart';
-import '/features/notifications/presentation/widgets/voting_notification_dialog.dart';
+import '/features/voting/presentation/dialogs/voting_dialog.dart';
 import '/features/voting/domain/models/vote_state.dart';
 import '/services/ui/models/box_sizes.dart';
-import '/features/posts/data/adapters/vote/vote_state_coordinator.dart';
+import '/features/voting/domain/coordinators/vote_state_coordinator.dart';
 import 'vote_timer_widget.dart';
 import 'vote_options_widget.dart';
 import 'vote_results_widget.dart';
@@ -13,7 +13,6 @@ import 'vote_status_badge.dart';
 /// 리팩토링된 투표 카드 메인 위젯
 /// 모든 하위 컴포넌트를 조합하여 완전한 투표 카드를 구성합니다
 class VoteCardWidget extends StatefulWidget {
-  
   const VoteCardWidget({
     super.key,
     required this.postId,
@@ -51,7 +50,7 @@ class VoteCardWidget extends StatefulWidget {
   final String? currentUserName;
   final String? searchQuery;
   final Function(String)? onVote;
-  
+
   @override
   State<VoteCardWidget> createState() => _VoteCardWidgetState();
 }
@@ -59,13 +58,13 @@ class VoteCardWidget extends StatefulWidget {
 class _VoteCardWidgetState extends State<VoteCardWidget> {
   bool _isVoting = false;
   late Stream<VoteStateData> _voteStateStream;
-  
+
   @override
   void initState() {
     super.initState();
     _initializeVoteStateStream();
   }
-  
+
   void _initializeVoteStateStream() {
     _voteStateStream = VoteStateCoordinator.instance.getVoteStateStream(
       postId: widget.postId,
@@ -74,11 +73,11 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
       userVotes: widget.userVotes,
     );
   }
-  
+
   @override
   void didUpdateWidget(VoteCardWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     if (oldWidget.postId != widget.postId ||
         oldWidget.voteEndTime != widget.voteEndTime ||
         oldWidget.cardStatus != widget.cardStatus) {
@@ -86,13 +85,13 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
       _initializeVoteStateStream();
     }
   }
-  
+
   @override
   void dispose() {
     VoteStateCoordinator.instance.dispose(widget.postId);
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<VoteStateData>(
@@ -101,17 +100,18 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
         if (snapshot.hasError) {
           return _buildErrorCard();
         }
-        
-        final stateData = snapshot.data ?? VoteStateData(
-          state: _mapInitialStatus(widget.cardStatus),
-          voteEndTime: widget.voteEndTime,
-        );
-        
+
+        final stateData = snapshot.data ??
+            VoteStateData(
+              state: _mapInitialStatus(widget.cardStatus),
+              voteEndTime: widget.voteEndTime,
+            );
+
         return _buildCard(stateData);
       },
     );
   }
-  
+
   Widget _buildCard(VoteStateData stateData) {
     return GestureDetector(
       onTap: () => _handleTap(stateData.state),
@@ -135,7 +135,7 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
               // 헤더 (상태 배지, 타이머)
               _buildHeader(stateData),
               const SizedBox(height: VersusSpacing.sm),
-              
+
               // 제목
               _buildTitle(),
               if (widget.description != null) ...[
@@ -143,9 +143,10 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
                 _buildDescription(),
               ],
               const SizedBox(height: VersusSpacing.md),
-              
+
               // 투표 옵션 또는 결과
-              if (stateData.state == VoteState.completed && widget.voteResults != null)
+              if (stateData.state == VoteState.completed &&
+                  widget.voteResults != null)
                 VoteResultsWidget(
                   currentUserName: widget.currentUserName,
                   state: stateData.state,
@@ -160,9 +161,9 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
                   boxSizes: widget.boxSizes,
                   isHorizontal: widget.isHorizontal,
                 ),
-              
+
               const SizedBox(height: VersusSpacing.md),
-              
+
               // 액션 버튼
               _buildActionButton(stateData.state),
             ],
@@ -171,7 +172,7 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
       ),
     );
   }
-  
+
   Widget _buildHeader(VoteStateData stateData) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -181,9 +182,10 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
           state: stateData.state,
           hasUserVoted: stateData.hasUserVoted,
         ),
-        
+
         // 타이머
-        if (stateData.state == VoteState.inProgress && !stateData.isTimerExpired)
+        if (stateData.state == VoteState.inProgress &&
+            !stateData.isTimerExpired)
           VoteTimerWidget(
             state: stateData.state,
             remainingTime: stateData.remainingTime,
@@ -193,7 +195,7 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
       ],
     );
   }
-  
+
   Widget _buildTitle() {
     if (widget.searchQuery == null || widget.searchQuery!.isEmpty) {
       return Text(
@@ -205,16 +207,18 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
         overflow: TextOverflow.ellipsis,
       );
     }
-    
+
     // 검색어 하이라이팅 로직
-    return _highlightText(widget.title, VersusTextStyles.bodyLarge.copyWith(
-      fontWeight: FontWeight.bold,
-    ));
+    return _highlightText(
+        widget.title,
+        VersusTextStyles.bodyLarge.copyWith(
+          fontWeight: FontWeight.bold,
+        ));
   }
-  
+
   Widget _buildDescription() {
     if (widget.description == null) return const SizedBox.shrink();
-    
+
     return Text(
       widget.description!,
       style: VersusTextStyles.bodySmall.copyWith(
@@ -224,7 +228,7 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
       overflow: TextOverflow.ellipsis,
     );
   }
-  
+
   Widget _buildActionButton(VoteState state) {
     String buttonText;
     if (widget.isMe) {
@@ -232,7 +236,7 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
     } else {
       buttonText = state == VoteState.votingRequest ? '투표하기' : '투표 현황 보기';
     }
-    
+
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
@@ -256,7 +260,7 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
       ),
     );
   }
-  
+
   Widget _buildErrorCard() {
     return Container(
       padding: const EdgeInsets.all(VersusSpacing.md),
@@ -278,20 +282,20 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
       ),
     );
   }
-  
+
   void _handleTap(VoteState state) {
     if (_isVoting) return;
-    
+
     setState(() {
       _isVoting = true;
     });
-    
+
     if (state == VoteState.votingRequest) {
       _showVotingDialog();
     } else {
       _navigateToPost();
     }
-    
+
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
         setState(() {
@@ -300,20 +304,20 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
       }
     });
   }
-  
+
   void _handleActionTap(VoteState state) {
     if (_isVoting) return;
-    
+
     setState(() {
       _isVoting = true;
     });
-    
+
     if (state == VoteState.votingRequest) {
       _showVotingDialog();
     } else {
       _navigateToPost();
     }
-    
+
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
         setState(() {
@@ -322,14 +326,14 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
       }
     });
   }
-  
+
   void _navigateToPost() {
     context.pushNamed(
       'PostView',
       queryParameters: {'postId': widget.postId},
     );
   }
-  
+
   void _showVotingDialog() {
     showDialog(
       context: context,
@@ -342,8 +346,10 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
           question: widget.title,
           optionA: widget.optionAText,
           optionB: widget.optionBText,
-          imageUrlA: widget.optionAImages.isNotEmpty ? widget.optionAImages[0] : null,
-          imageUrlB: widget.optionBImages.isNotEmpty ? widget.optionBImages[0] : null,
+          imageUrlA:
+              widget.optionAImages.isNotEmpty ? widget.optionAImages[0] : null,
+          imageUrlB:
+              widget.optionBImages.isNotEmpty ? widget.optionBImages[0] : null,
           imageUrlsA: widget.optionAImages,
           imageUrlsB: widget.optionBImages,
           aspectRatioA: null, // TODO: aspectRatio 전달 필요
@@ -363,7 +369,7 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
       ),
     );
   }
-  
+
   Widget _highlightText(String text, TextStyle baseStyle) {
     if (widget.searchQuery == null || widget.searchQuery!.isEmpty) {
       return Text(
@@ -373,11 +379,11 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
         overflow: TextOverflow.ellipsis,
       );
     }
-    
+
     final lowerText = text.toLowerCase();
     final lowerQuery = widget.searchQuery!.toLowerCase();
     final index = lowerText.indexOf(lowerQuery);
-    
+
     if (index == -1) {
       return Text(
         text,
@@ -386,11 +392,11 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
         overflow: TextOverflow.ellipsis,
       );
     }
-    
+
     final beforeText = text.substring(0, index);
     final matchText = text.substring(index, index + widget.searchQuery!.length);
     final afterText = text.substring(index + widget.searchQuery!.length);
-    
+
     return RichText(
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
@@ -409,7 +415,7 @@ class _VoteCardWidgetState extends State<VoteCardWidget> {
       ),
     );
   }
-  
+
   VoteState _mapInitialStatus(String status) {
     switch (status) {
       case 'votingRequest':

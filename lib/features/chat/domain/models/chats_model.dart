@@ -88,9 +88,10 @@ class ChatsModel extends FirestoreRecord {
 
   // "lastReadTimestamps" field.
   Map<String, DateTime>? _lastReadTimestamps;
-  Map<String, DateTime> get lastReadTimestamps => _lastReadTimestamps ?? const {};
+  Map<String, DateTime> get lastReadTimestamps =>
+      _lastReadTimestamps ?? const {};
   bool hasLastReadTimestamps() => _lastReadTimestamps != null;
-  
+
   // Helper method to get specific user's last read timestamp
   DateTime? getLastReadFor(String userId) {
     return _lastReadTimestamps?[userId];
@@ -115,9 +116,10 @@ class ChatsModel extends FirestoreRecord {
     _uid = snapshotData['uid'] as String?;
     _createdTime = snapshotData['createdTime'] as DateTime?;
     _phoneNumber = snapshotData['phoneNumber'] as String?;
-    
+
     // Parse lastReadTimestamps map
-    final lastReadData = snapshotData['lastReadTimestamps'] as Map<String, dynamic>?;
+    final lastReadData =
+        snapshotData['lastReadTimestamps'] as Map<String, dynamic>?;
     if (lastReadData != null) {
       _lastReadTimestamps = lastReadData.map((key, value) {
         if (value is Timestamp) {

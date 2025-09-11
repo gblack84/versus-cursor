@@ -117,8 +117,7 @@ Map<String, dynamic> createTransactionsModelData({
   return firestoreData;
 }
 
-class TransactionsModelDocumentEquality
-    implements Equality<TransactionsModel> {
+class TransactionsModelDocumentEquality implements Equality<TransactionsModel> {
   const TransactionsModelDocumentEquality();
 
   @override

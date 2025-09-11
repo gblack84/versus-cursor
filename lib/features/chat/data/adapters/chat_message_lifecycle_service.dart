@@ -2,7 +2,8 @@ import '/core_exports.dart';
 
 /// Service to handle message delivery and read status
 class ChatMessageLifecycleService {
-  static final ChatMessageLifecycleService _instance = ChatMessageLifecycleService._internal();
+  static final ChatMessageLifecycleService _instance =
+      ChatMessageLifecycleService._internal();
   factory ChatMessageLifecycleService() => _instance;
   ChatMessageLifecycleService._internal();
 
@@ -89,7 +90,7 @@ class ChatMessageLifecycleService {
       }
 
       final data = doc.data()!;
-      
+
       if (data['seenAt'] != null) {
         return MessageDeliveryStatus.seen;
       } else if (data['deliveredAt'] != null) {
@@ -108,10 +109,8 @@ class ChatMessageLifecycleService {
     required String chatId,
     List<String>? messageIds,
   }) {
-    Query query = _firestore
-        .collection('chats')
-        .doc(chatId)
-        .collection('messages');
+    Query query =
+        _firestore.collection('chats').doc(chatId).collection('messages');
 
     if (messageIds != null && messageIds.isNotEmpty) {
       query = query.where(FieldPath.documentId, whereIn: messageIds);
@@ -119,11 +118,11 @@ class ChatMessageLifecycleService {
 
     return query.snapshots().map((snapshot) {
       final statusMap = <String, MessageDeliveryStatus>{};
-      
+
       for (final doc in snapshot.docs) {
         final data = doc.data() as Map<String, dynamic>;
         MessageDeliveryStatus status;
-        
+
         if (data['seenAt'] != null) {
           status = MessageDeliveryStatus.seen;
         } else if (data['deliveredAt'] != null) {
@@ -131,14 +130,14 @@ class ChatMessageLifecycleService {
         } else {
           status = MessageDeliveryStatus.sent;
         }
-        
+
         statusMap[doc.id] = status;
       }
-      
+
       return statusMap;
     });
   }
-  
+
   /// Update the last read timestamp for a user in a chat
   /// Uses dot-notation to update only the specific user's timestamp
   Future<void> updateLastReadAt({
@@ -148,10 +147,7 @@ class ChatMessageLifecycleService {
     try {
       // Use dot-notation to update only this user's timestamp
       // This prevents overwriting other users' timestamps
-      await _firestore
-          .collection('chats')
-          .doc(chatId)
-          .update({
+      await _firestore.collection('chats').doc(chatId).update({
         'lastReadTimestamps.$userId': FieldValue.serverTimestamp(),
       });
     } catch (e) {
@@ -159,41 +155,39 @@ class ChatMessageLifecycleService {
       print('Error updating lastReadAt: $e');
     }
   }
-  
+
   /// Get the last read timestamp for a user in a chat
   Future<DateTime?> getLastReadAt({
     required String chatId,
     required String userId,
   }) async {
     try {
-      final doc = await _firestore
-          .collection('chats')
-          .doc(chatId)
-          .get();
-      
+      final doc = await _firestore.collection('chats').doc(chatId).get();
+
       if (!doc.exists) return null;
-      
+
       final data = doc.data()!;
-      final lastReadTimestamps = data['lastReadTimestamps'] as Map<String, dynamic>?;
-      
+      final lastReadTimestamps =
+          data['lastReadTimestamps'] as Map<String, dynamic>?;
+
       if (lastReadTimestamps == null) return null;
-      
+
       final timestamp = lastReadTimestamps[userId];
       if (timestamp == null) return null;
-      
+
       if (timestamp is Timestamp) {
         return timestamp.toDate();
       } else if (timestamp is DateTime) {
         return timestamp;
       }
-      
+
       return null;
     } catch (e) {
       print('Error getting lastReadAt: $e');
       return null;
     }
   }
-  
+
   /// Get the count of unread messages for a user in a chat
   Future<int> getUnreadCount({
     required String chatId,
@@ -201,7 +195,7 @@ class ChatMessageLifecycleService {
   }) async {
     try {
       final lastReadAt = await getLastReadAt(chatId: chatId, userId: userId);
-      
+
       // If no lastReadAt, all messages are unread
       if (lastReadAt == null) {
         final query = await _firestore
@@ -211,10 +205,10 @@ class ChatMessageLifecycleService {
             .where('senderId', isNotEqualTo: userId)
             .count()
             .get();
-        
+
         return query.count ?? 0;
       }
-      
+
       // Count messages after lastReadAt that are not from the user
       final query = await _firestore
           .collection('chats')
@@ -222,13 +216,13 @@ class ChatMessageLifecycleService {
           .collection('messages')
           .where('timeStamp', isGreaterThan: Timestamp.fromDate(lastReadAt))
           .get();
-      
+
       // Filter out messages from current user in client
       final unreadCount = query.docs.where((doc) {
         final data = doc.data();
         return data['senderId'] != userId;
       }).length;
-      
+
       return unreadCount;
     } catch (e) {
       print('Error getting unread count: $e');
@@ -239,8 +233,8 @@ class ChatMessageLifecycleService {
 
 /// Message delivery status enum
 enum MessageDeliveryStatus {
-  sent,      // Message sent from client
+  sent, // Message sent from client
   delivered, // Message delivered to server
-  seen,      // Message seen by recipient
-  unknown,   // Unknown status
+  seen, // Message seen by recipient
+  unknown, // Unknown status
 }

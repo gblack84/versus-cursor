@@ -153,26 +153,22 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                             .displaySmall
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
-                                                fontWeight:
-                                                    AppTheme.of(context)
-                                                        .displaySmall
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    AppTheme.of(context)
-                                                        .displaySmall
-                                                        .fontStyle,
+                                                fontWeight: AppTheme.of(context)
+                                                    .displaySmall
+                                                    .fontWeight,
+                                                fontStyle: AppTheme.of(context)
+                                                    .displaySmall
+                                                    .fontStyle,
                                               ),
                                               color: Colors.black,
                                               fontSize: 30.0,
                                               letterSpacing: 0.0,
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .displaySmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .displaySmall
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .displaySmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .displaySmall
+                                                  .fontStyle,
                                             ),
                                       ),
                                     ),
@@ -194,27 +190,22 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                             .labelMedium
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
-                                                fontWeight:
-                                                    AppTheme.of(context)
-                                                        .labelMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    AppTheme.of(context)
-                                                        .labelMedium
-                                                        .fontStyle,
+                                                fontWeight: AppTheme.of(context)
+                                                    .labelMedium
+                                                    .fontWeight,
+                                                fontStyle: AppTheme.of(context)
+                                                    .labelMedium
+                                                    .fontStyle,
                                               ),
-                                              color:
-                                                  AppTheme.of(context)
-                                                      .secondaryText,
+                                              color: AppTheme.of(context)
+                                                  .secondaryText,
                                               letterSpacing: 0.0,
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .labelMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .labelMedium
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .labelMedium
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .labelMedium
+                                                  .fontStyle,
                                             ),
                                       ),
                                     ),
@@ -233,32 +224,28 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                       autofillHints: [AutofillHints.email],
                                       obscureText: false,
                                       decoration: InputDecoration(
-                                        labelText:
-                                            AppLocalizations.of(context).getText(
+                                        labelText: AppLocalizations.of(context)
+                                            .getText(
                                           'b4wuzum8' /* Email */,
                                         ),
                                         labelStyle: AppTheme.of(context)
                                             .labelMedium
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
-                                                fontWeight:
-                                                    AppTheme.of(context)
-                                                        .labelMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    AppTheme.of(context)
-                                                        .labelMedium
-                                                        .fontStyle,
+                                                fontWeight: AppTheme.of(context)
+                                                    .labelMedium
+                                                    .fontWeight,
+                                                fontStyle: AppTheme.of(context)
+                                                    .labelMedium
+                                                    .fontStyle,
                                               ),
                                               letterSpacing: 0.0,
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .labelMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .labelMedium
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .labelMedium
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .labelMedium
+                                                  .fontStyle,
                                             ),
                                         enabledBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
@@ -270,8 +257,7 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                         ),
                                         focusedBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
-                                            color: AppTheme.of(context)
-                                                .primary,
+                                            color: AppTheme.of(context).primary,
                                             width: 2.0,
                                           ),
                                           borderRadius:
@@ -279,8 +265,7 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                         ),
                                         errorBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
-                                            color: AppTheme.of(context)
-                                                .error,
+                                            color: AppTheme.of(context).error,
                                             width: 2.0,
                                           ),
                                           borderRadius:
@@ -288,8 +273,7 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                         ),
                                         focusedErrorBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
-                                            color: AppTheme.of(context)
-                                                .error,
+                                            color: AppTheme.of(context).error,
                                             width: 2.0,
                                           ),
                                           borderRadius:
@@ -302,25 +286,21 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                           .bodyMedium
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontStyle,
                                             ),
                                             color: Colors.black,
                                             letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                       validator: _model
                                           .emailAddressTextControllerValidator
@@ -340,32 +320,28 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                       autofillHints: [AutofillHints.password],
                                       obscureText: !_model.passwordVisibility,
                                       decoration: InputDecoration(
-                                        labelText:
-                                            AppLocalizations.of(context).getText(
+                                        labelText: AppLocalizations.of(context)
+                                            .getText(
                                           'h5546n6k' /* Password */,
                                         ),
                                         labelStyle: AppTheme.of(context)
                                             .labelMedium
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
-                                                fontWeight:
-                                                    AppTheme.of(context)
-                                                        .labelMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    AppTheme.of(context)
-                                                        .labelMedium
-                                                        .fontStyle,
+                                                fontWeight: AppTheme.of(context)
+                                                    .labelMedium
+                                                    .fontWeight,
+                                                fontStyle: AppTheme.of(context)
+                                                    .labelMedium
+                                                    .fontStyle,
                                               ),
                                               letterSpacing: 0.0,
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .labelMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .labelMedium
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .labelMedium
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .labelMedium
+                                                  .fontStyle,
                                             ),
                                         enabledBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
@@ -377,8 +353,7 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                         ),
                                         focusedBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
-                                            color: AppTheme.of(context)
-                                                .primary,
+                                            color: AppTheme.of(context).primary,
                                             width: 2.0,
                                           ),
                                           borderRadius:
@@ -386,8 +361,7 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                         ),
                                         errorBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
-                                            color: AppTheme.of(context)
-                                                .error,
+                                            color: AppTheme.of(context).error,
                                             width: 2.0,
                                           ),
                                           borderRadius:
@@ -395,8 +369,7 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                         ),
                                         focusedErrorBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
-                                            color: AppTheme.of(context)
-                                                .error,
+                                            color: AppTheme.of(context).error,
                                             width: 2.0,
                                           ),
                                           borderRadius:
@@ -425,25 +398,21 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                           .bodyMedium
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontStyle,
                                             ),
                                             color: Colors.black,
                                             letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                       validator: _model
                                           .passwordTextControllerValidator
@@ -466,32 +435,28 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                       obscureText:
                                           !_model.passwordConfirmVisibility,
                                       decoration: InputDecoration(
-                                        labelText:
-                                            AppLocalizations.of(context).getText(
+                                        labelText: AppLocalizations.of(context)
+                                            .getText(
                                           'dpnl6798' /* Confirm Password */,
                                         ),
                                         labelStyle: AppTheme.of(context)
                                             .labelMedium
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
-                                                fontWeight:
-                                                    AppTheme.of(context)
-                                                        .labelMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    AppTheme.of(context)
-                                                        .labelMedium
-                                                        .fontStyle,
+                                                fontWeight: AppTheme.of(context)
+                                                    .labelMedium
+                                                    .fontWeight,
+                                                fontStyle: AppTheme.of(context)
+                                                    .labelMedium
+                                                    .fontStyle,
                                               ),
                                               letterSpacing: 0.0,
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .labelMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .labelMedium
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .labelMedium
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .labelMedium
+                                                  .fontStyle,
                                             ),
                                         enabledBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
@@ -503,8 +468,7 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                         ),
                                         focusedBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
-                                            color: AppTheme.of(context)
-                                                .primary,
+                                            color: AppTheme.of(context).primary,
                                             width: 2.0,
                                           ),
                                           borderRadius:
@@ -512,8 +476,7 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                         ),
                                         errorBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
-                                            color: AppTheme.of(context)
-                                                .error,
+                                            color: AppTheme.of(context).error,
                                             width: 2.0,
                                           ),
                                           borderRadius:
@@ -521,8 +484,7 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                         ),
                                         focusedErrorBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
-                                            color: AppTheme.of(context)
-                                                .error,
+                                            color: AppTheme.of(context).error,
                                             width: 2.0,
                                           ),
                                           borderRadius:
@@ -553,25 +515,21 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                           .bodyMedium
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontStyle,
                                             ),
                                             color: Colors.black,
                                             letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                       minLines: 1,
                                       validator: _model
@@ -655,7 +613,8 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
 
                                         setState(() {});
                                       },
-                                      text: AppLocalizations.of(context).getText(
+                                      text:
+                                          AppLocalizations.of(context).getText(
                                         'ifzwhrve' /* Create Account */,
                                       ),
                                       icon: Icon(
@@ -677,25 +636,21 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                             .titleSmall
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
-                                                fontWeight:
-                                                    AppTheme.of(context)
-                                                        .titleSmall
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    AppTheme.of(context)
-                                                        .titleSmall
-                                                        .fontStyle,
+                                                fontWeight: AppTheme.of(context)
+                                                    .titleSmall
+                                                    .fontWeight,
+                                                fontStyle: AppTheme.of(context)
+                                                    .titleSmall
+                                                    .fontStyle,
                                               ),
                                               color: Colors.white,
                                               letterSpacing: 0.0,
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
                                             ),
                                         elevation: 10.0,
                                         borderSide: BorderSide(
@@ -747,25 +702,21 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                         .titleSmall
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
                                           ),
                                           color: Colors.white,
                                           letterSpacing: 0.0,
-                                          fontWeight:
-                                              AppTheme.of(context)
-                                                  .titleSmall
-                                                  .fontWeight,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .titleSmall
-                                                  .fontStyle,
+                                          fontWeight: AppTheme.of(context)
+                                              .titleSmall
+                                              .fontWeight,
+                                          fontStyle: AppTheme.of(context)
+                                              .titleSmall
+                                              .fontStyle,
                                         ),
                                     elevation: 5.0,
                                     borderSide: BorderSide(
@@ -789,25 +740,21 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                           .bodyMedium
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontStyle,
                                             ),
                                             fontSize: 12.0,
                                             letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                     ),
                                   ),
@@ -845,8 +792,7 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                                   .getText(
                                                 'do58zhdd' /*  Log In here */,
                                               ),
-                                              style: AppTheme.of(
-                                                      context)
+                                              style: AppTheme.of(context)
                                                   .bodyMedium
                                                   .override(
                                                     font: GoogleFonts
@@ -856,8 +802,7 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                                       fontStyle:
                                                           FontStyle.italic,
                                                     ),
-                                                    color: AppTheme.of(
-                                                            context)
+                                                    color: AppTheme.of(context)
                                                         .primaryText,
                                                     fontSize: 18.0,
                                                     letterSpacing: 0.0,
@@ -874,25 +819,21 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
                                                 font:
                                                     GoogleFonts.plusJakartaSans(
                                                   fontWeight:
-                                                      AppTheme.of(
-                                                              context)
+                                                      AppTheme.of(context)
                                                           .labelLarge
                                                           .fontWeight,
                                                   fontStyle:
-                                                      AppTheme.of(
-                                                              context)
+                                                      AppTheme.of(context)
                                                           .labelLarge
                                                           .fontStyle,
                                                 ),
                                                 letterSpacing: 0.0,
-                                                fontWeight:
-                                                    AppTheme.of(context)
-                                                        .labelLarge
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    AppTheme.of(context)
-                                                        .labelLarge
-                                                        .fontStyle,
+                                                fontWeight: AppTheme.of(context)
+                                                    .labelLarge
+                                                    .fontWeight,
+                                                fontStyle: AppTheme.of(context)
+                                                    .labelLarge
+                                                    .fontStyle,
                                               ),
                                         ),
                                       ),

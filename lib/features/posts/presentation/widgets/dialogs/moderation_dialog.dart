@@ -5,13 +5,13 @@ import '/core_exports.dart';
 class ModerationDialog extends StatelessWidget {
   final int currentIndex;
   final int totalCount;
-  
+
   const ModerationDialog({
     super.key,
     required this.currentIndex,
     required this.totalCount,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -54,7 +54,7 @@ class ModerationDialog extends StatelessWidget {
       ),
     );
   }
-  
+
   /// 다이얼로그 표시 헬퍼 메서드
   static void show({
     required BuildContext context,

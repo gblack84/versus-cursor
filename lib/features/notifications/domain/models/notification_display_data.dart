@@ -1,5 +1,5 @@
 /// Domain model for notification display data
-/// 
+///
 /// This model encapsulates all the data needed to display a notification
 /// without exposing UI-specific types to the data layer.
 class NotificationDisplayData {
@@ -15,7 +15,7 @@ class NotificationDisplayData {
   final double? aspectRatioA;
   final double? aspectRatioB;
   final String? layoutType;
-  
+
   const NotificationDisplayData({
     required this.question,
     required this.optionA,
@@ -30,11 +30,11 @@ class NotificationDisplayData {
     this.aspectRatioB,
     this.layoutType,
   });
-  
+
   /// Check if this notification has images
   bool get hasImageA => imageUrlA != null;
   bool get hasImageB => imageUrlB != null;
-  
+
   /// Create from extracted vote data (used by NotificationDataExtractor)
   factory NotificationDisplayData.fromVoteData(Map<String, dynamic> voteData) {
     return NotificationDisplayData(
@@ -43,11 +43,11 @@ class NotificationDisplayData {
       optionB: voteData['optionB'] ?? '',
       imageUrlA: voteData['imageUrlA'],
       imageUrlB: voteData['imageUrlB'],
-      imageUrlsA: voteData['imageUrlsA'] != null 
-          ? List<String>.from(voteData['imageUrlsA']) 
+      imageUrlsA: voteData['imageUrlsA'] != null
+          ? List<String>.from(voteData['imageUrlsA'])
           : null,
-      imageUrlsB: voteData['imageUrlsB'] != null 
-          ? List<String>.from(voteData['imageUrlsB']) 
+      imageUrlsB: voteData['imageUrlsB'] != null
+          ? List<String>.from(voteData['imageUrlsB'])
           : null,
       description: voteData['description'],
       authorName: voteData['authorName'],

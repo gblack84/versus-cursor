@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/core/firebase/utils/firestore_util.dart' show queryCollection, queryCollectionOnce, queryCollectionCount;
+import '/core/firebase/utils/firestore_util.dart'
+    show queryCollection, queryCollectionOnce, queryCollectionCount;
 import '../../domain/models/user_profile.dart';
 import '../../domain/models/profile_info.dart';
 import '../../domain/models/user_settings.dart';
@@ -13,12 +14,13 @@ import '../adapters/user_profile_adapter.dart';
 /// Implementation of user repository following RepoMover patterns
 class UserRepositoryImpl implements IUserRepository {
   static UserRepositoryImpl? _instance;
-  static UserRepositoryImpl get instance => _instance ??= UserRepositoryImpl._();
-  
+  static UserRepositoryImpl get instance =>
+      _instance ??= UserRepositoryImpl._();
+
   UserRepositoryImpl._();
-  
+
   @override
-  CollectionReference get usersCollection => 
+  CollectionReference get usersCollection =>
       FirebaseFirestore.instance.collection('users');
 
   @override
@@ -67,7 +69,7 @@ class UserRepositoryImpl implements IUserRepository {
       dateOfBirth: user.dateOfBirth,
       language: user.language,
     );
-    
+
     await usersCollection.doc(user.uid).set(data);
   }
 
@@ -101,7 +103,7 @@ class UserRepositoryImpl implements IUserRepository {
       language: user.language,
       lastActiveTime: getCurrentTimestamp(),
     );
-    
+
     await usersCollection.doc(user.uid).update(data);
   }
 
@@ -111,13 +113,14 @@ class UserRepositoryImpl implements IUserRepository {
   }
 
   @override
-  Future<List<UserProfile>> searchUsersByName(String query, {int limit = 10}) async {
+  Future<List<UserProfile>> searchUsersByName(String query,
+      {int limit = 10}) async {
     final querySnapshot = await usersCollection
         .where('displayName', isGreaterThanOrEqualTo: query)
         .where('displayName', isLessThanOrEqualTo: query + '\uf8ff')
         .limit(limit)
         .get();
-    
+
     return querySnapshot.docs
         .map((doc) => UserProfile.fromSnapshot(doc))
         .toList();
@@ -127,31 +130,30 @@ class UserRepositoryImpl implements IUserRepository {
   Future<List<UserProfile>> getUserFriends(String uid) async {
     final userDoc = await getUserByUid(uid);
     if (userDoc == null || userDoc.friends.isEmpty) return [];
-    
+
     return getUsersByIds(userDoc.friends);
   }
 
   @override
   Future<List<UserProfile>> getUsersByIds(List<String> uids) async {
     if (uids.isEmpty) return [];
-    
+
     // Firestore 'in' queries are limited to 10 items
     final chunks = <List<String>>[];
     for (int i = 0; i < uids.length; i += 10) {
       chunks.add(uids.skip(i).take(10).toList());
     }
-    
+
     final users = <UserProfile>[];
     for (final chunk in chunks) {
       final querySnapshot = await usersCollection
           .where(FieldPath.documentId, whereIn: chunk)
           .get();
-      
+
       users.addAll(
-        querySnapshot.docs.map((doc) => UserProfile.fromSnapshot(doc))
-      );
+          querySnapshot.docs.map((doc) => UserProfile.fromSnapshot(doc)));
     }
-    
+
     return users;
   }
 
@@ -159,12 +161,14 @@ class UserRepositoryImpl implements IUserRepository {
   Future<void> updateUserPoints(String uid, int pointsA, int pointsQ) async {
     final currentUser = await getUserByUid(uid);
     if (currentUser == null) return;
-    
+
     await updateUser(uid, {
       'pointsA': pointsA,
       'pointsQ': pointsQ,
-      'totalAPoints': currentUser.totalAPoints + (pointsA - currentUser.pointsA),
-      'totalQPoints': currentUser.totalQPoints + (pointsQ - currentUser.pointsQ),
+      'totalAPoints':
+          currentUser.totalAPoints + (pointsA - currentUser.pointsA),
+      'totalQPoints':
+          currentUser.totalQPoints + (pointsQ - currentUser.pointsQ),
       'lastActiveTime': getCurrentTimestamp(),
     });
   }
@@ -173,19 +177,21 @@ class UserRepositoryImpl implements IUserRepository {
   Future<void> updateUserRanking(String uid, String rank, String title) async {
     final currentUser = await getUserByUid(uid);
     if (currentUser == null) return;
-    
+
     final now = getCurrentTimestamp();
     final rankHistory = List<String>.from(currentUser.rankHistory);
     final titleHistory = List<String>.from(currentUser.titleHistory);
-    
+
     if (currentUser.currentRank != rank) {
-      rankHistory.add('${currentUser.currentRank}:${now.millisecondsSinceEpoch}');
+      rankHistory
+          .add('${currentUser.currentRank}:${now.millisecondsSinceEpoch}');
     }
-    
+
     if (currentUser.currentTitle != title) {
-      titleHistory.add('${currentUser.currentTitle}:${now.millisecondsSinceEpoch}');
+      titleHistory
+          .add('${currentUser.currentTitle}:${now.millisecondsSinceEpoch}');
     }
-    
+
     await updateUser(uid, {
       'currentRank': rank,
       'currentTitle': title,
@@ -200,14 +206,14 @@ class UserRepositoryImpl implements IUserRepository {
   // ============= ADAPTER METHODS (NEW) =============
   // These methods provide access to the new domain models
   // while maintaining backward compatibility with legacy code
-  
+
   /// Get user as separate domain models using Adapter
   Future<UserProfileBundle?> getUserBundleByUid(String uid) async {
     final userProfile = await getUserByUid(uid);
     if (userProfile == null) return null;
     return UserProfileAdapter.createBundle(userProfile);
   }
-  
+
   /// Get user profile info only
   Future<ProfileInfo?> getUserProfileInfo(String uid) async {
     final userProfile = await getUserByUid(uid);
@@ -215,15 +221,15 @@ class UserRepositoryImpl implements IUserRepository {
     final bundle = UserProfileAdapter.toDomainModels(userProfile);
     return bundle.profile;
   }
-  
-  /// Get user settings only  
+
+  /// Get user settings only
   Future<UserSettings?> getUserSettings(String uid) async {
     final userProfile = await getUserByUid(uid);
     if (userProfile == null) return null;
     final bundle = UserProfileAdapter.toDomainModels(userProfile);
     return bundle.settings;
   }
-  
+
   /// Get user stats only
   Future<UserStats?> getUserStats(String uid) async {
     final userProfile = await getUserByUid(uid);
@@ -231,7 +237,7 @@ class UserRepositoryImpl implements IUserRepository {
     final bundle = UserProfileAdapter.toDomainModels(userProfile);
     return bundle.stats;
   }
-  
+
   /// Get auth user data only
   Future<AuthUser?> getAuthUser(String uid) async {
     final userProfile = await getUserByUid(uid);
@@ -239,13 +245,13 @@ class UserRepositoryImpl implements IUserRepository {
     final bundle = UserProfileAdapter.toDomainModels(userProfile);
     return bundle.auth;
   }
-  
+
   /// Update user using domain models
   Future<void> updateUserWithBundle(UserProfileBundle bundle) async {
     final userProfile = bundle.toLegacy();
     await updateUserProfile(userProfile);
   }
-  
+
   /// Create user from domain models
   Future<void> createUserFromBundle(UserProfileBundle bundle) async {
     final userProfile = bundle.toLegacy();
@@ -294,8 +300,7 @@ class UserRepositoryImpl implements IUserRepository {
   }
 
   @override
-  DocumentReference getUserReference(String uid) =>
-      usersCollection.doc(uid);
+  DocumentReference getUserReference(String uid) => usersCollection.doc(uid);
 
   // MIGRATED: Users queries (lines 62-97 from backend.dart)
   Future<int> queryUsersModelCount({

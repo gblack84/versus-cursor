@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/core/firebase/utils/firestore_util.dart' show queryCollection, queryCollectionOnce, queryCollectionCount;
+import '/core/firebase/utils/firestore_util.dart'
+    show queryCollection, queryCollectionOnce, queryCollectionCount;
 import '../../domain/repositories/i_voting_repository.dart';
 import '/features/voting/domain/models/votecounts_model.dart';
 import '/features/voting/domain/models/vote_expansion_requests_model.dart';
@@ -9,19 +10,20 @@ import '/features/voting/domain/models/weights_model.dart';
 /// Implementation of voting repository with migrated backend query functions
 class VotingRepositoryImpl implements IVotingRepository {
   static VotingRepositoryImpl? _instance;
-  static VotingRepositoryImpl get instance => _instance ??= VotingRepositoryImpl._();
-  
+  static VotingRepositoryImpl get instance =>
+      _instance ??= VotingRepositoryImpl._();
+
   final PostsDataSource? _postsDataSource;
-  
+
   VotingRepositoryImpl._() : _postsDataSource = null;
-  
+
   // Constructor for dependency injection
   VotingRepositoryImpl.withDataSource(this._postsDataSource);
 
   // ============================================================================
   // Vote Counts Queries
   // ============================================================================
-  
+
   @override
   Future<int> queryVotecountsCount({
     Query Function(Query)? queryBuilder,
@@ -63,7 +65,7 @@ class VotingRepositoryImpl implements IVotingRepository {
   // ============================================================================
   // Vote Expansion Requests Queries
   // ============================================================================
-  
+
   @override
   Future<int> queryVoteExpansionRequestsCount({
     Query Function(Query)? queryBuilder,
@@ -105,7 +107,7 @@ class VotingRepositoryImpl implements IVotingRepository {
   // ============================================================================
   // Rankings Queries
   // ============================================================================
-  
+
   @override
   Future<int> queryRankingsCount({
     Query Function(Query)? queryBuilder,
@@ -147,7 +149,7 @@ class VotingRepositoryImpl implements IVotingRepository {
   // ============================================================================
   // Weights Queries
   // ============================================================================
-  
+
   @override
   Future<int> queryWeightsCount({
     Query Function(Query)? queryBuilder,
@@ -189,7 +191,7 @@ class VotingRepositoryImpl implements IVotingRepository {
   // ============================================================================
   // Voting Operations
   // ============================================================================
-  
+
   @override
   Future<void> castVote({
     required String postId,
@@ -201,13 +203,13 @@ class VotingRepositoryImpl implements IVotingRepository {
         .doc(postId)
         .collection('votes')
         .doc(userId);
-    
+
     await voteRef.set({
       'userId': userId,
       'voteOption': voteOption,
       'votedAt': FieldValue.serverTimestamp(),
     });
-    
+
     // Update vote counts
     final postRef = FirebaseFirestore.instance.collection('posts').doc(postId);
     final voteField = voteOption == 'A' ? 'votesA' : 'votesB';
@@ -228,16 +230,17 @@ class VotingRepositoryImpl implements IVotingRepository {
         .collection('votes')
         .doc(userId)
         .get();
-    
+
     if (voteDoc.exists) {
       final voteOption = voteDoc.data()?['voteOption'] as String?;
-      
+
       // Delete the vote document
       await voteDoc.reference.delete();
-      
+
       // Update vote counts
       if (voteOption != null) {
-        final postRef = FirebaseFirestore.instance.collection('posts').doc(postId);
+        final postRef =
+            FirebaseFirestore.instance.collection('posts').doc(postId);
         final voteField = voteOption == 'A' ? 'votesA' : 'votesB';
         await postRef.update({
           voteField: FieldValue.increment(-1),
@@ -254,50 +257,52 @@ class VotingRepositoryImpl implements IVotingRepository {
         .collection('votecounts')
         .doc('summary')
         .get();
-    
+
     return doc.exists ? VotecountsModel.fromSnapshot(doc) : null;
   }
 
   // ============================================================================
   // Ranking Operations
   // ============================================================================
-  
+
   @override
   Future<void> updateRankings() async {
     // This would typically be handled by a Cloud Function or backend service
     // For now, we'll implement a basic ranking algorithm
-    
+
     final postsSnapshot = await FirebaseFirestore.instance
         .collection('posts')
         .orderBy('createdAt', descending: true)
         .limit(100)
         .get();
-    
+
     final batch = FirebaseFirestore.instance.batch();
-    
+
     for (int i = 0; i < postsSnapshot.docs.length; i++) {
       final post = postsSnapshot.docs[i];
       final votesA = post.data()['votesA'] ?? 0;
       final votesB = post.data()['votesB'] ?? 0;
       final totalVotes = votesA + votesB;
-      
+
       // Simple ranking score based on total votes and recency
       final score = totalVotes * 1.0;
-      
-      final rankingRef = FirebaseFirestore.instance
-          .collection('rankings')
-          .doc(post.id);
-      
-      batch.set(rankingRef, {
-        'postId': post.id,
-        'rank': i + 1,
-        'score': score,
-        'votesA': votesA,
-        'votesB': votesB,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+
+      final rankingRef =
+          FirebaseFirestore.instance.collection('rankings').doc(post.id);
+
+      batch.set(
+          rankingRef,
+          {
+            'postId': post.id,
+            'rank': i + 1,
+            'score': score,
+            'votesA': votesA,
+            'votesB': votesB,
+            'updatedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true));
     }
-    
+
     await batch.commit();
   }
 
@@ -308,14 +313,14 @@ class VotingRepositoryImpl implements IVotingRepository {
         .orderBy('score', descending: true)
         .limit(limit)
         .get();
-    
+
     return snapshot.docs.map((doc) => RankingsModel.fromSnapshot(doc)).toList();
   }
 
   // ============================================================================
   // Vote Expansion Operations
   // ============================================================================
-  
+
   @override
   Future<void> requestVoteExpansion({
     required String postId,
@@ -337,26 +342,28 @@ class VotingRepositoryImpl implements IVotingRepository {
         .collection('voteExpansionRequests')
         .doc(requestId)
         .get();
-    
+
     if (requestDoc.exists) {
       final data = requestDoc.data()!;
       final postId = data['postId'] as String;
       final additionalTime = data['additionalTime'] as int;
-      
+
       // Update the request status
       await requestDoc.reference.update({
         'status': 'approved',
         'approvedAt': FieldValue.serverTimestamp(),
       });
-      
+
       // Extend the vote end time for the post
-      final postRef = FirebaseFirestore.instance.collection('posts').doc(postId);
+      final postRef =
+          FirebaseFirestore.instance.collection('posts').doc(postId);
       final postDoc = await postRef.get();
-      
+
       if (postDoc.exists) {
         final currentEndTime = postDoc.data()?['voteEndTime'] as Timestamp?;
         if (currentEndTime != null) {
-          final newEndTime = currentEndTime.toDate().add(Duration(minutes: additionalTime));
+          final newEndTime =
+              currentEndTime.toDate().add(Duration(minutes: additionalTime));
           await postRef.update({
             'voteEndTime': Timestamp.fromDate(newEndTime),
           });
@@ -379,7 +386,7 @@ class VotingRepositoryImpl implements IVotingRepository {
   // ============================================================================
   // Delegated Methods for Ranked Posts (using PostsDataSource)
   // ============================================================================
-  
+
   Stream<List<RankedPostsData>> getRankedPosts({
     String? category,
     int? limit,
@@ -393,7 +400,7 @@ class VotingRepositoryImpl implements IVotingRepository {
     // Fallback to empty stream if data source not provided
     return Stream.value([]);
   }
-  
+
   Future<RankedPostsData?> getRankedPostById(String postId) async {
     if (_postsDataSource != null) {
       return _postsDataSource!.getRankedPostById(postId);

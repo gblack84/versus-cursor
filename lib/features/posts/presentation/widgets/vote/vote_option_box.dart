@@ -4,7 +4,7 @@ import '/core/design_system/design_system.dart';
 import '/services/image/unified_image_cache_service.dart';
 
 /// 투표 카드의 옵션 박스 컴포넌트
-/// 
+///
 /// A/B 옵션을 시각적으로 표현하며, 이미지와 텍스트를 함께 표시합니다.
 class VoteOptionBox extends StatelessWidget {
   final String label;
@@ -35,13 +35,14 @@ class VoteOptionBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 멀티이미지 우선 사용
-    final effectiveImageUrl = (imageUrls != null && imageUrls!.isNotEmpty) 
-        ? imageUrls!.first : imageUrl;
+    final effectiveImageUrl = (imageUrls != null && imageUrls!.isNotEmpty)
+        ? imageUrls!.first
+        : imageUrl;
     final hasMultipleImages = (imageUrls != null && imageUrls!.length > 1);
-    
+
     // 효과적인 높이 계산 (폴백 처리)
-    final double effectiveHeight = boxHeight ?? 200;  // 기본값 200px
-    
+    final double effectiveHeight = boxHeight ?? 200; // 기본값 200px
+
     return Semantics(
       label: '옵션 $label: $text',
       image: effectiveImageUrl != null,
@@ -49,7 +50,7 @@ class VoteOptionBox extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOutCubic,
-        height: effectiveHeight,  // 고정 높이 설정
+        height: effectiveHeight, // 고정 높이 설정
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(7),
         ),
@@ -58,17 +59,16 @@ class VoteOptionBox extends StatelessWidget {
           children: [
             if (effectiveImageUrl != null && effectiveImageUrl.isNotEmpty)
               _buildImageBackground(effectiveImageUrl, context),
-            
+
             // 그라데이션 오버레이
             if (effectiveImageUrl != null && effectiveImageUrl.isNotEmpty)
               _buildGradientOverlay(),
-            
+
             // 텍스트 콘텐츠
             _buildTextContent(effectiveImageUrl, hasMultipleImages),
-            
+
             // 멀티이미지 인디케이터
-            if (hasMultipleImages)
-              _buildMultiImageIndicator(imageUrls!.length),
+            if (hasMultipleImages) _buildMultiImageIndicator(imageUrls!.length),
           ],
         ),
       ),
@@ -123,8 +123,8 @@ class VoteOptionBox extends StatelessWidget {
                     Colors.transparent,
                   ],
             stops: isSingleImageMode
-                ? const [0.0, 0.3]  // 단일: 30%까지
-                : const [0.0, 0.2],  // 멀티: 20%까지
+                ? const [0.0, 0.3] // 단일: 30%까지
+                : const [0.0, 0.2], // 멀티: 20%까지
           ),
         ),
       ),
@@ -244,7 +244,7 @@ class VoteOptionBox extends StatelessWidget {
               vertical: 2,
             ),
             decoration: BoxDecoration(
-              color: label == 'A' 
+              color: label == 'A'
                   ? const Color(0xFFFF6B6B).withValues(alpha: 0.8)
                   : const Color(0xFF4ECDC4).withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(4),
@@ -258,8 +258,7 @@ class VoteOptionBox extends StatelessWidget {
               ),
             ),
           ),
-        if (!isSingleImageMode)
-          const SizedBox(width: 6),
+        if (!isSingleImageMode) const SizedBox(width: 6),
         Expanded(
           child: searchQuery != null && searchQuery!.isNotEmpty
               ? _highlightText(
@@ -342,16 +341,17 @@ class VoteOptionBox extends StatelessWidget {
   /// 검색어 하이라이팅 위젯
   Widget _highlightText(String text, TextStyle style) {
     if (searchQuery == null || searchQuery!.isEmpty) {
-      return Text(text, style: style, maxLines: 2, overflow: TextOverflow.ellipsis);
+      return Text(text,
+          style: style, maxLines: 2, overflow: TextOverflow.ellipsis);
     }
 
     final List<TextSpan> spans = [];
     final String lowerText = text.toLowerCase();
     final String lowerQuery = searchQuery!.toLowerCase();
-    
+
     int start = 0;
     int index = lowerText.indexOf(lowerQuery, start);
-    
+
     while (index != -1) {
       if (index > start) {
         spans.add(TextSpan(
@@ -359,25 +359,25 @@ class VoteOptionBox extends StatelessWidget {
           style: style,
         ));
       }
-      
+
       spans.add(TextSpan(
         text: text.substring(index, index + searchQuery!.length),
         style: style.copyWith(
           backgroundColor: VersusColors.warning.withValues(alpha: 0.4),
         ),
       ));
-      
+
       start = index + searchQuery!.length;
       index = lowerText.indexOf(lowerQuery, start);
     }
-    
+
     if (start < text.length) {
       spans.add(TextSpan(
         text: text.substring(start),
         style: style,
       ));
     }
-    
+
     return RichText(
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
@@ -390,14 +390,14 @@ class VoteOptionBox extends StatelessWidget {
     // VoteCardMessage와 동일한 로직 사용
     final view = View.of(context);
     final screenWidth = view.physicalSize.width / view.devicePixelRatio;
-    
+
     // 메시지 카드는 화면 폭의 약 92% 사용
     final cardWidth = screenWidth * 0.92;
-    
+
     // 옵션 박스는 카드 폭의 약 절반 (가로 배치) 또는 전체 (세로 배치)
     // 여기서는 최대값 기준으로 계산
     final optionWidth = cardWidth * 0.8;
-    
+
     // 캐시 폭을 400-1200px 범위로 제한
     return optionWidth.clamp(400, 1200).toInt();
   }

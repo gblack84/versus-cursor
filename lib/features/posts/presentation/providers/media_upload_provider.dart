@@ -20,7 +20,7 @@ class MediaUploadProvider extends ChangeNotifier {
   bool _isUpdatingLayout = false;
   LayoutType _currentLayout = LayoutType.horizontal;
   bool _isVerticalRatio = false;
-  
+
   // Current image indices for each box
   int _currentImageIndexA = 0;
   int _currentImageIndexB = 0;
@@ -53,9 +53,8 @@ class MediaUploadProvider extends ChangeNotifier {
         context: context,
         appState: appState,
         box: box,
-        existingAssetIds: box == 'A' 
-          ? appState.assetEntityIdsA
-          : appState.assetEntityIdsB,
+        existingAssetIds:
+            box == 'A' ? appState.assetEntityIdsA : appState.assetEntityIdsB,
         onProgressUpdate: (progress) {
           _uploadProgress = progress;
           notifyListeners();
@@ -70,13 +69,13 @@ class MediaUploadProvider extends ChangeNotifier {
           notifyListeners();
         },
       );
-      
+
       await processor.processSelectionResult(assets);
     } catch (e) {
       _isProcessing = false;
       _processingMessage = null;
       notifyListeners();
-      
+
       ErrorHandler.handle(
         e,
         type: ErrorType.media,
@@ -90,7 +89,7 @@ class MediaUploadProvider extends ChangeNotifier {
   void _updateLayoutBasedOnImages(AppState appState) {
     // Cancel any pending update
     _layoutUpdateTimer?.cancel();
-    
+
     // Debounce layout updates
     _layoutUpdateTimer = Timer(const Duration(milliseconds: 300), () {
       _performLayoutUpdate(appState);
@@ -104,37 +103,35 @@ class MediaUploadProvider extends ChangeNotifier {
 
     try {
       // Check for vertical images in B box
-      if (appState.tempImageFilesB.isEmpty && 
+      if (appState.tempImageFilesB.isEmpty &&
           appState.uploadImageAspectRatioA.isNotEmpty) {
         final ratioA = RatioCalculator.getRatio(
-          appState.uploadImageAspectRatioA, 
-          box: 'A'
-        );
-        
+            appState.uploadImageAspectRatioA,
+            box: 'A');
+
         // If vertical image detected, switch to vertical layout
         if (ratioA < 1.0) {
           _currentLayout = LayoutType.vertical;
           _isVerticalRatio = false; // Vertical placement (top/bottom)
           notifyListeners();
-          DebugHelper.logLayout('Vertical image detected, switching to vertical layout');
+          DebugHelper.logLayout(
+              'Vertical image detected, switching to vertical layout');
         }
       }
 
       // Analyze both boxes if both have images
-      if (appState.uploadImageAspectRatioA.isNotEmpty && 
+      if (appState.uploadImageAspectRatioA.isNotEmpty &&
           appState.uploadImageAspectRatioB.isNotEmpty) {
         final ratioA = RatioCalculator.getRatio(
-          appState.uploadImageAspectRatioA, 
-          box: 'A'
-        );
+            appState.uploadImageAspectRatioA,
+            box: 'A');
         final ratioB = RatioCalculator.getRatio(
-          appState.uploadImageAspectRatioB, 
-          box: 'B'
-        );
-        
+            appState.uploadImageAspectRatioB,
+            box: 'B');
+
         // Use AspectRatioAnalyzer to determine optimal layout
         final optimalLayout = layoutAnalyzer.getOptimalLayout(ratioA, ratioB);
-        
+
         if (_currentLayout != optimalLayout) {
           _currentLayout = optimalLayout;
           _isVerticalRatio = optimalLayout == LayoutType.horizontal;
@@ -160,7 +157,7 @@ class MediaUploadProvider extends ChangeNotifier {
           // Delete from storage
           final urlToDelete = appState.uploadImageA[index];
           await MediaUploadService.deleteFromStorage(urlToDelete);
-          
+
           // Update app state
           appState.update(() {
             appState.uploadImageA.removeAt(index);
@@ -178,7 +175,7 @@ class MediaUploadProvider extends ChangeNotifier {
           // Delete from storage
           final urlToDelete = appState.uploadImageB[index];
           await MediaUploadService.deleteFromStorage(urlToDelete);
-          
+
           // Update app state
           appState.update(() {
             appState.uploadImageB.removeAt(index);
@@ -192,10 +189,9 @@ class MediaUploadProvider extends ChangeNotifier {
           });
         }
       }
-      
+
       // Update layout after deletion
       _updateLayoutBasedOnImages(appState);
-      
     } catch (e) {
       ErrorHandler.handle(
         e,
@@ -216,7 +212,7 @@ class MediaUploadProvider extends ChangeNotifier {
       for (String url in appState.uploadImageB) {
         await MediaUploadService.deleteFromStorage(url);
       }
-      
+
       // Clear app state
       appState.update(() {
         appState.uploadImageA.clear();
@@ -228,7 +224,6 @@ class MediaUploadProvider extends ChangeNotifier {
         appState.assetEntityIdsA.clear();
         appState.assetEntityIdsB.clear();
       });
-      
     } catch (e) {
       DebugHelper.logError('Error cleaning up uploaded images', e);
     }
@@ -246,9 +241,9 @@ class MediaUploadProvider extends ChangeNotifier {
 
   /// Toggle layout between horizontal and vertical
   void toggleLayout() {
-    _currentLayout = _currentLayout == LayoutType.horizontal 
-      ? LayoutType.vertical 
-      : LayoutType.horizontal;
+    _currentLayout = _currentLayout == LayoutType.horizontal
+        ? LayoutType.vertical
+        : LayoutType.horizontal;
     _isVerticalRatio = !_isVerticalRatio;
     notifyListeners();
   }

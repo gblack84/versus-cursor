@@ -58,8 +58,7 @@ class VotesModel extends FirestoreRecord {
   static Future<VotesModel> getDocumentOnce(DocumentReference ref) =>
       ref.get().then((s) => VotesModel.fromSnapshot(s));
 
-  static VotesModel fromSnapshot(DocumentSnapshot snapshot) =>
-      VotesModel._(
+  static VotesModel fromSnapshot(DocumentSnapshot snapshot) => VotesModel._(
         snapshot.reference,
         mapFromFirestore(snapshot.data() as Map<String, dynamic>),
       );
@@ -113,12 +112,8 @@ class VotesModelDocumentEquality implements Equality<VotesModel> {
   }
 
   @override
-  int hash(VotesModel? e) => const ListEquality().hash([
-        e?.userId,
-        e?.choice,
-        e?.votedAt,
-        e?.userInfo
-      ]);
+  int hash(VotesModel? e) => const ListEquality()
+      .hash([e?.userId, e?.choice, e?.votedAt, e?.userInfo]);
 
   @override
   bool isValidKey(Object? o) => o is VotesModel;

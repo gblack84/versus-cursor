@@ -32,7 +32,8 @@ class NavigationProvider extends ChangeNotifier {
   int get chatTabIndex => _chatTabIndex;
 
   /// 현재 모드에 따른 선택된 탭 인덱스
-  int get currentTabIndex => _mode == NavigationMode.main ? _mainTabIndex : _chatTabIndex;
+  int get currentTabIndex =>
+      _mode == NavigationMode.main ? _mainTabIndex : _chatTabIndex;
 
   /// 메인 모드 네비게이션 아이템들
   static const List<NavigationItem> mainItems = [
@@ -124,9 +125,10 @@ class NavigationProvider extends ChangeNotifier {
     if (_mode == NavigationMode.main) {
       if (_mainTabIndex != index) {
         _mainTabIndex = index;
-        
+
         // 채팅 탭을 선택하면 채팅 모드로 전환
-        if (index == 3) { // 채팅 인덱스
+        if (index == 3) {
+          // 채팅 인덱스
           switchToChatMode();
         }
         notifyListeners();
@@ -134,9 +136,10 @@ class NavigationProvider extends ChangeNotifier {
     } else {
       if (_chatTabIndex != index) {
         _chatTabIndex = index;
-        
+
         // 홈 탭을 선택하면 메인 모드로 전환
-        if (index == 3) { // 채팅 모드에서 홈 인덱스
+        if (index == 3) {
+          // 채팅 모드에서 홈 인덱스
           switchToMainMode();
           _mainTabIndex = 0; // 홈으로 이동
         }

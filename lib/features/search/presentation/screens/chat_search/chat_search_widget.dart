@@ -16,7 +16,7 @@ class ChatSearchWidget extends StatefulWidget {
 class _ChatSearchWidgetState extends State<ChatSearchWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
-  
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -34,8 +34,8 @@ class _ChatSearchWidgetState extends State<ChatSearchWidget> {
         title: Text(
           '친구 추천',
           style: VersusTextStyles.headingSmall.copyWith(
-                color: Colors.black,
-              ),
+            color: Colors.black,
+          ),
         ),
         centerTitle: true,
         elevation: 0.0,
@@ -66,15 +66,16 @@ class _ChatSearchWidgetState extends State<ChatSearchWidget> {
                   decoration: InputDecoration(
                     hintText: '친구 검색',
                     hintStyle: VersusTextStyles.bodyMedium.copyWith(
-                          color: VersusColors.textSecondary,
-                        ),
+                      color: VersusColors.textSecondary,
+                    ),
                     prefixIcon: Icon(
                       Icons.search,
                       color: VersusColors.textSecondary,
                       size: 20,
                     ),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                   onChanged: (value) {
                     // 검색 로직
@@ -124,7 +125,7 @@ class _ChatSearchWidgetState extends State<ChatSearchWidget> {
         }
 
         final users = snapshot.data!;
-        
+
         if (users.isEmpty) {
           return _buildEmptyState();
         }
@@ -143,7 +144,7 @@ class _ChatSearchWidgetState extends State<ChatSearchWidget> {
 
   Widget _buildSearchResults() {
     final searchQuery = _searchController.text.toLowerCase();
-    
+
     return StreamBuilder<List<UsersModel>>(
       stream: queryUsersModel(
         queryBuilder: (usersRecord) => usersRecord

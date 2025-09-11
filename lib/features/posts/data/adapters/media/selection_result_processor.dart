@@ -33,34 +33,37 @@ class SelectionResultProcessor {
   Future<void> processSelectionResult(List<AssetEntity> selectedAssets) async {
     try {
       onProgressUpdate(0.1);
-      
+
       // 기존 AssetEntity ID 목록
       final existingIds = existingAssetIds ?? [];
       final selectedIds = selectedAssets.map((e) => e.id).toList();
-      
+
       // 삭제된 항목 찾기
-      final removedIds = existingIds.where((id) => !selectedIds.contains(id)).toList();
-      
+      final removedIds =
+          existingIds.where((id) => !selectedIds.contains(id)).toList();
+
       // 새로 추가된 항목 찾기
-      final newAssets = selectedAssets.where((asset) => !existingIds.contains(asset.id)).toList();
-      
+      final newAssets = selectedAssets
+          .where((asset) => !existingIds.contains(asset.id))
+          .toList();
+
       print('기존: ${existingIds.length}개, 선택: ${selectedIds.length}개');
       print('삭제: ${removedIds.length}개, 추가: ${newAssets.length}개');
-      
+
       // 삭제 처리
       if (removedIds.isNotEmpty) {
         _handleRemovals(removedIds);
       }
-      
+
       onProgressUpdate(0.3);
-      
+
       // 새 이미지 업로드
       if (newAssets.isNotEmpty) {
         await _handleNewAssets(newAssets);
       }
-      
+
       // 순서 재정렬 (선택된 순서대로)
-      if (selectedIds.length == appState.assetEntityIdsA.length || 
+      if (selectedIds.length == appState.assetEntityIdsA.length ||
           selectedIds.length == appState.assetEntityIdsB.length) {
         ImageReorderService.reorderImages(
           appState: appState,
@@ -68,18 +71,18 @@ class SelectionResultProcessor {
           newOrder: selectedIds,
         );
       }
-      
+
       onProgressUpdate(1.0);
-      
+
       // 콜백 호출
       if (onMultiComplete != null) {
         final urls = box == 'A' ? appState.uploadImageA : appState.uploadImageB;
         onMultiComplete!(urls);
       }
-      
+
       // 모달 닫기는 호출한 곳에서 처리
       DebugHelper.log('선택 완료');
-      
+
       // 처리 완료 콜백 호출
       onProcessingComplete?.call();
     } catch (e) {
@@ -134,39 +137,42 @@ class SelectionResultProcessor {
     final approvedAssets = <AssetEntity>[];
     final rejectedIndices = <int>[];
     final rejectedReasons = <String, List<int>>{};
-    
+
     // 검열 진행
     for (int i = 0; i < newAssets.length; i++) {
       final asset = newAssets[i];
       final file = await asset.file;
       if (file == null) continue;
-      
+
       onProgressUpdate(0.3 + (0.3 * (i + 1) / newAssets.length));
-      
+
       try {
         // 이미지 검열
         final result = await ImageModerationService.checkImage(
           imageFile: file,
           box: box,
         );
-        
+
         if (result.isAppropriate) {
           approvedFiles.add(file);
           approvedAssets.add(asset);
         } else {
           // 기존 이미지 개수를 고려하여 실제 번호 계산
-          final existingCount = box == 'A' ? appState.tempImageFilesA.length : appState.tempImageFilesB.length;
+          final existingCount = box == 'A'
+              ? appState.tempImageFilesA.length
+              : appState.tempImageFilesB.length;
           final actualIndex = existingCount + i + 1;
           rejectedIndices.add(actualIndex); // 사용자에게 표시할 번호
-          
+
           // 거부 이유별로 그룹화
           if (rejectedReasons.containsKey(result.reason)) {
             rejectedReasons[result.reason]!.add(actualIndex);
           } else {
             rejectedReasons[result.reason] = [actualIndex];
           }
-          
-          DebugHelper.logModeration('[SelectionProcessor] 이미지 검열 실패: ${result.reason}');
+
+          DebugHelper.logModeration(
+              '[SelectionProcessor] 이미지 검열 실패: ${result.reason}');
         }
       } catch (e) {
         // 검열 오류 시 통과로 처리 (나중에 서버에서 재검증)
@@ -175,9 +181,9 @@ class SelectionResultProcessor {
         approvedAssets.add(asset);
       }
     }
-    
+
     onProgressUpdate(0.7);
-    
+
     // 검열 결과 처리
     if (rejectedIndices.isNotEmpty && approvedFiles.isEmpty) {
       // 모든 이미지가 거부됨
@@ -187,16 +193,16 @@ class SelectionResultProcessor {
       // 일부 이미지만 거부됨
       _showRejectionToast(rejectedReasons);
     }
-    
+
     // 승인된 이미지들을 AppState에 File 객체로 저장
     for (int i = 0; i < approvedFiles.length; i++) {
       final file = approvedFiles[i];
       final asset = approvedAssets[i];
-      
+
       // 이미지 비율 계산
       final bytes = await file.readAsBytes();
       final aspectRatio = await _calculateAspectRatio(bytes);
-      
+
       appState.update(() {
         if (box == 'A') {
           appState.addToTempImageFilesA(file);
@@ -209,10 +215,10 @@ class SelectionResultProcessor {
         }
       });
     }
-    
+
     onProgressUpdate(1.0);
   }
-  
+
   /// 이미지 비율 계산
   Future<double> _calculateAspectRatio(Uint8List bytes) async {
     try {
@@ -220,28 +226,28 @@ class SelectionResultProcessor {
       final width = decodedImage.width;
       final height = decodedImage.height;
       final ratio = width / height;
-      
+
       DebugHelper.log('[SelectionProcessor] 이미지 비율 계산:');
       DebugHelper.log('  - 이미지 크기: ${width}x${height}');
       DebugHelper.log('  - 계산된 비율: $ratio');
-      
+
       return ratio;
     } catch (e) {
       DebugHelper.logError('비율 계산 실패', e);
       return 1.0; // 기본값
     }
   }
-  
+
   /// 거부 메시지 표시 (ErrorHandler 스타일과 통일)
   void _showRejectionToast(Map<String, List<int>> rejectedReasons) {
     final messages = <String>[];
-    
+
     rejectedReasons.forEach((reason, indices) {
       messages.add('$reason: ${indices.join(", ")}');
     });
-    
+
     final message = messages.join('\n');
-    
+
     BotToast.showCustomText(
       toastBuilder: (_) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

@@ -11,7 +11,6 @@ import '/features/posts/domain/constants/strings.dart';
 import '/features/posts/domain/constants/config.dart';
 
 class MediaUploadService {
-
   /// 이미지를 3가지 크기로 업로드 (original, display, thumbnail)
   /// 반환값: URLs와 aspect ratio 정보를 포함한 Map
   static Future<Map<String, dynamic>> uploadImageWithVariants({
@@ -19,7 +18,8 @@ class MediaUploadService {
     required String box,
     String? customPath,
     String? sessionId,
-    Function(String)? onModerationStatusUpdate, // deprecated - use uploadAndWaitForModeration
+    Function(String)?
+        onModerationStatusUpdate, // deprecated - use uploadAndWaitForModeration
     Function(String)? onRejected, // deprecated - use uploadAndWaitForModeration
   }) async {
     try {
@@ -66,7 +66,7 @@ class MediaUploadService {
         final displayBytes = Uint8List.fromList(
           img.encodeJpg(displayImage, quality: ImageConstants.jpegQuality),
         );
-        
+
         futures['display'] = _uploadToFirebase(
           displayBytes,
           '$basePath/${timestamp}_${box}_display.jpg',
@@ -84,19 +84,22 @@ class MediaUploadService {
       }
 
       // 3. Thumbnail 생성 및 업로드
-      final thumbnailImage = _createSquareThumbnail(originalImage, ImageConstants.thumbnailSize);
+      final thumbnailImage =
+          _createSquareThumbnail(originalImage, ImageConstants.thumbnailSize);
       final thumbnailBytes = Uint8List.fromList(
         img.encodeJpg(thumbnailImage, quality: ImageConstants.jpegQuality),
       );
-      
+
       futures['thumbnail'] = _uploadToFirebase(
         thumbnailBytes,
         '$basePath/${timestamp}_${box}_thumb.jpg',
         metadata: {
           ConfigConstants.boxMetadataKey: box,
           ConfigConstants.typeMetadataKey: ConfigConstants.thumbnailType,
-          ConfigConstants.widthMetadataKey: ImageConstants.thumbnailSize.toString(),
-          ConfigConstants.heightMetadataKey: ImageConstants.thumbnailSize.toString(),
+          ConfigConstants.widthMetadataKey:
+              ImageConstants.thumbnailSize.toString(),
+          ConfigConstants.heightMetadataKey:
+              ImageConstants.thumbnailSize.toString(),
           if (sessionId != null) 'sessionId': sessionId,
         },
       );
@@ -119,9 +122,9 @@ class MediaUploadService {
         'height': originalImage.height,
         'filePath': '$basePath/${timestamp}_${box}_original.jpg',
       };
-      
+
       // 백그라운드 검열 모니터링 제거됨 - uploadAndWaitForModeration 사용
-      
+
       return uploadResult;
     } catch (e) {
       DebugHelper.logError('이미지 업로드 중 오류 발생', e);
@@ -132,9 +135,10 @@ class MediaUploadService {
   /// 정사각형 썸네일 생성 (중앙 크롭)
   static img.Image _createSquareThumbnail(img.Image source, int size) {
     // 먼저 짧은 쪽을 기준으로 리사이즈
-    final shortSide = source.width < source.height ? source.width : source.height;
+    final shortSide =
+        source.width < source.height ? source.width : source.height;
     final scale = size / shortSide;
-    
+
     final resized = img.copyResize(
       source,
       width: (source.width * scale).round(),
@@ -145,7 +149,7 @@ class MediaUploadService {
     // 중앙에서 정사각형으로 크롭
     final x = (resized.width - size) ~/ 2;
     final y = (resized.height - size) ~/ 2;
-    
+
     return img.copyCrop(
       resized,
       x: x.clamp(0, resized.width - size),
@@ -162,7 +166,7 @@ class MediaUploadService {
     Map<String, String>? metadata,
   }) async {
     final ref = FirebaseStorage.instance.ref(path);
-    
+
     final uploadTask = ref.putData(
       bytes,
       SettableMetadata(
@@ -190,11 +194,11 @@ class MediaUploadService {
       box: box,
       customPath: customPath,
     );
-    
+
     // display URL을 기본으로 반환 (기존 호환성 유지)
     return result['urls']['display'];
   }
-  
+
   /// 이미지 업로드 후 검열 결과 확인
   static Future<Map<String, dynamic>> uploadAndWaitForModeration({
     required Uint8List imageBytes,
@@ -210,38 +214,39 @@ class MediaUploadService {
       customPath: customPath,
       sessionId: sessionId,
     );
-    
+
     // 검열 결과 대기
     final filePath = uploadResult['filePath'] as String;
     final moderation = await CloudImageModerationService.waitForModeration(
       filePath,
       timeout: timeout,
     );
-    
+
     // 검열 결과 확인
     final isApproved = CloudImageModerationService.isImageSafe(moderation);
     final isRejected = CloudImageModerationService.isImageRejected(moderation);
-    
+
     // 거부된 경우 이미지 삭제
     if (isRejected) {
       DebugHelper.log('[MediaUpload] 부적절한 이미지 감지, 삭제 시작: $filePath');
-      
+
       // 모든 버전 삭제
-      final deleteSuccess = await StorageService.deleteAllImageVersions(filePath);
-      
+      final deleteSuccess =
+          await StorageService.deleteAllImageVersions(filePath);
+
       if (deleteSuccess) {
         DebugHelper.log('[MediaUpload] 부적절한 이미지 삭제 완료');
       } else {
         DebugHelper.log('[MediaUpload] 부적절한 이미지 삭제 실패');
       }
-      
+
       // URL로도 삭제 시도 (백업)
       if (!deleteSuccess) {
         final urls = uploadResult['urls'] as Map<String, String>;
         await StorageService.deleteMultipleImages(urls.values.toList());
       }
     }
-    
+
     // 검열 결과를 포함하여 반환
     return {
       ...uploadResult,
@@ -269,12 +274,12 @@ class MediaUploadService {
       }
 
       final uploadedUrls = <String>[];
-      
+
       // 각 파일을 순차적으로 업로드 (순서 유지를 위해)
       for (int i = 0; i < files.length; i++) {
         final file = files[i];
         final bytes = await file.readAsBytes();
-        
+
         // uploadImageWithVariants를 사용하여 3가지 크기로 업로드
         final result = await uploadImageWithVariants(
           imageBytes: bytes,
@@ -282,15 +287,15 @@ class MediaUploadService {
           customPath: customPath,
           sessionId: sessionId,
         );
-        
+
         // display URL만 저장 (posts_record에서 사용)
         final displayUrl = result['urls']['display'];
         uploadedUrls.add(displayUrl);
-        
+
         DebugHelper.log('File ${i + 1}/${files.length} 업로드 완료');
         DebugHelper.log('[uploadTempFiles] Display URL: $displayUrl');
       }
-      
+
       return uploadedUrls;
     } catch (e) {
       DebugHelper.logError('임시 파일 업로드 실패', e);

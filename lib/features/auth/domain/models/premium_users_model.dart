@@ -126,8 +126,7 @@ Map<String, dynamic> createPremiumUsersModelData({
   return firestoreData;
 }
 
-class PremiumUsersModelDocumentEquality
-    implements Equality<PremiumUsersModel> {
+class PremiumUsersModelDocumentEquality implements Equality<PremiumUsersModel> {
   const PremiumUsersModelDocumentEquality();
 
   @override

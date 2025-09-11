@@ -376,7 +376,7 @@ extension ListDivideExtension<T> on List<T> {
     }
     return chunks;
   }
-  
+
   List<T> divide(T separator) {
     if (isEmpty) return this;
     final List<T> list = [];
@@ -388,23 +388,22 @@ extension ListDivideExtension<T> on List<T> {
     }
     return list;
   }
-  
+
   List<T> addToStart(T item) {
     return [item, ...this];
   }
-  
+
   List<T> addToEnd(T item) {
     return [...this, item];
   }
 }
-
 
 // castToType 함수 추가
 T? castToType<T>(dynamic value) {
   if (value == null) {
     return null;
   }
-  
+
   switch (T) {
     case String:
       return value.toString() as T;
@@ -431,7 +430,7 @@ T? castToType<T>(dynamic value) {
       if (value is int) return DateTime.fromMillisecondsSinceEpoch(value) as T;
       break;
   }
-  
+
   // Try direct cast as last resort
   try {
     return value as T;
@@ -454,7 +453,7 @@ extension DoubleExtension on double {
 extension StringCapitalizationExt on String {
   String toCapitalization(TextCapitalization capitalization) {
     if (isEmpty) return this;
-    
+
     switch (capitalization) {
       case TextCapitalization.words:
         return split(' ').map((word) {

@@ -13,7 +13,6 @@ import '/services/ui/injection/ui_service_injection.dart';
 
 /// Media upload section component for post creation
 class MediaUploadSection extends StatefulWidget {
-
   const MediaUploadSection({
     super.key,
     required this.isSingleMode,
@@ -22,7 +21,8 @@ class MediaUploadSection extends StatefulWidget {
   });
   final bool isSingleMode;
   final bool showDebugInfo;
-  final Function(String box, {bool isAddMode, int? currentIndex})? onMediaSelect;
+  final Function(String box, {bool isAddMode, int? currentIndex})?
+      onMediaSelect;
 
   @override
   State<MediaUploadSection> createState() => _MediaUploadSectionState();
@@ -46,16 +46,17 @@ class _MediaUploadSectionState extends State<MediaUploadSection> {
           layoutType: uploadProvider.currentLayout,
           isVerticalRatio: uploadProvider.isVerticalRatio,
           aspectRatioA: _getAspectRatio(appState.uploadImageAspectRatioA, 'A'),
-          aspectRatioB: widget.isSingleMode 
-              ? null 
+          aspectRatioB: widget.isSingleMode
+              ? null
               : _getAspectRatio(appState.uploadImageAspectRatioB, 'B'),
           hasText: true,
           singleMode: widget.isSingleMode,
-          maxWidth: MediaQuery.of(context).size.width - (Dimensions.pagePadding * 2),
+          maxWidth:
+              MediaQuery.of(context).size.width - (Dimensions.pagePadding * 2),
         );
-        
+
         final sizes = boxCalculator.calculate(params);
-        
+
         return Column(
           children: [
             _buildLayoutContent(
@@ -64,7 +65,7 @@ class _MediaUploadSectionState extends State<MediaUploadSection> {
               uploadProvider: uploadProvider,
               sizes: sizes,
             ),
-            if (widget.showDebugInfo) 
+            if (widget.showDebugInfo)
               LayoutDebugInfo(
                 uploadProvider: uploadProvider,
                 appState: appState,
@@ -83,7 +84,7 @@ class _MediaUploadSectionState extends State<MediaUploadSection> {
     required BoxSizes sizes,
   }) {
     final isVertical = uploadProvider.currentLayout == LayoutType.vertical;
-    
+
     if (isVertical) {
       return Column(
         children: [
@@ -140,11 +141,11 @@ class _MediaUploadSectionState extends State<MediaUploadSection> {
     required BoxSizes sizes,
   }) {
     final images = box == 'A' ? appState.uploadImageA : appState.uploadImageB;
-    final aspectRatios = box == 'A' 
-        ? appState.uploadImageAspectRatioA 
+    final aspectRatios = box == 'A'
+        ? appState.uploadImageAspectRatioA
         : appState.uploadImageAspectRatioB;
-    final currentIndex = box == 'A' 
-        ? uploadProvider.currentImageIndexA 
+    final currentIndex = box == 'A'
+        ? uploadProvider.currentImageIndexA
         : uploadProvider.currentImageIndexB;
 
     return MediaSelectionBoxMulti(
@@ -155,18 +156,23 @@ class _MediaUploadSectionState extends State<MediaUploadSection> {
       dynamicWidth: box == 'A' ? sizes.boxA.width : sizes.boxB.width,
       dynamicHeight: box == 'A' ? sizes.boxA.height : sizes.boxB.height,
       absellected: widget.isSingleMode && box == 'B',
-      onCancel: () => _handleBoxCancel(box, images.length, uploadProvider, appState),
-      onDeleteImage: (index) => _handleImageDelete(box, index, uploadProvider, appState),
+      onCancel: () =>
+          _handleBoxCancel(box, images.length, uploadProvider, appState),
+      onDeleteImage: (index) =>
+          _handleImageDelete(box, index, uploadProvider, appState),
       onReorderImage: (index) => _handleImageReorder(box, index, appState),
-      onPageChanged: (index) => uploadProvider.updateCurrentImageIndex(box, index),
-      onImageViewTap: () => widget.onMediaSelect?.call(box, currentIndex: currentIndex),
+      onPageChanged: (index) =>
+          uploadProvider.updateCurrentImageIndex(box, index),
+      onImageViewTap: () =>
+          widget.onMediaSelect?.call(box, currentIndex: currentIndex),
       onPlaceholderTap: () => widget.onMediaSelect?.call(box),
       onAddImages: () => widget.onMediaSelect?.call(box, isAddMode: true),
       onEditImage: () => _handleImageEdit(box, currentIndex, appState),
     );
   }
 
-  void _handleBoxCancel(String box, int imageCount, MediaUploadProvider uploadProvider, AppState appState) {
+  void _handleBoxCancel(String box, int imageCount,
+      MediaUploadProvider uploadProvider, AppState appState) {
     setState(() {
       if (box == 'B' && imageCount == 0) {
         // Toggle single mode
@@ -175,7 +181,8 @@ class _MediaUploadSectionState extends State<MediaUploadSection> {
     });
   }
 
-  Future<void> _handleImageDelete(String box, int index, MediaUploadProvider uploadProvider, AppState appState) async {
+  Future<void> _handleImageDelete(String box, int index,
+      MediaUploadProvider uploadProvider, AppState appState) async {
     await uploadProvider.deleteImage(
       context: context,
       appState: appState,
@@ -201,7 +208,7 @@ class _MediaUploadSectionState extends State<MediaUploadSection> {
 
   double? _getAspectRatio(List<double> ratios, String box) {
     if (ratios.isEmpty) return null;
-    
+
     // Calculate average aspect ratio
     double sum = 0;
     for (var ratio in ratios) {

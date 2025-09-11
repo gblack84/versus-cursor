@@ -27,7 +27,7 @@ class TargetAudienceDialog extends StatefulWidget {
   }
 }
 
-class _TargetAudienceDialogState extends State<TargetAudienceDialog> 
+class _TargetAudienceDialogState extends State<TargetAudienceDialog>
     with SingleTickerProviderStateMixin {
   late final PageController _pageController;
   late final AnimationController _animationController;
@@ -60,7 +60,7 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
     debugPrint('[TargetAudienceDialog] 다음 단계로 이동 요청');
     debugPrint('[TargetAudienceDialog]   - 현재 단계: ${model.currentStep}');
     debugPrint('[TargetAudienceDialog]   - 수집 방식: ${model.collectionType}');
-    
+
     if (model.currentStep < 2) {
       // Custom이 아니고 Step 2에서는 완료
       if (model.collectionType != 'custom' && model.currentStep == 1) {
@@ -68,7 +68,7 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
         _completeSetup(model);
         return;
       }
-      
+
       model.currentStep = model.currentStep + 1;
       debugPrint('[TargetAudienceDialog] 단계 ${model.currentStep}로 이동');
       _pageController.animateToPage(
@@ -95,7 +95,7 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
 
   void _completeSetup(TargetAudienceModel model) {
     final result = model.toMap();
-    
+
     debugPrint('[TargetAudienceDialog] ========== 설정 완료 ==========');
     debugPrint('[TargetAudienceDialog] 최종 결과:');
     debugPrint('[TargetAudienceDialog]   - 수집 방식: ${result['type']}');
@@ -115,7 +115,8 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
         builder: (context, model, child) {
           return Dialog(
             backgroundColor: Colors.transparent,
-            insetPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+            insetPadding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
             child: FadeTransition(
               opacity: _fadeAnimation,
               child: Container(
@@ -140,7 +141,7 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
                   children: [
                     // 상단 스텝 인디케이터
                     _buildStepIndicator(model),
-                    
+
                     // 컨텐츠 영역
                     Flexible(
                       child: PageView(
@@ -167,7 +168,7 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
                         ],
                       ),
                     ),
-                    
+
                     // 하단 버튼 영역
                     _buildBottomButtons(model),
                   ],
@@ -182,7 +183,7 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
 
   Widget _buildStepIndicator(TargetAudienceModel model) {
     final totalSteps = model.collectionType == 'custom' ? 3 : 2;
-    
+
     return Container(
       height: TargetAudienceConstants.stepIndicatorHeight,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -197,7 +198,7 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
         children: List.generate(totalSteps, (index) {
           final isActive = index <= model.currentStep;
           final isCompleted = index < model.currentStep;
-          
+
           return Expanded(
             child: Row(
               children: [
@@ -206,9 +207,11 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: isActive 
-                        ? AppTheme.of(context).primary 
-                        : AppTheme.of(context).secondaryText.withValues(alpha: 0.3),
+                    color: isActive
+                        ? AppTheme.of(context).primary
+                        : AppTheme.of(context)
+                            .secondaryText
+                            .withValues(alpha: 0.3),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -221,11 +224,11 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
                         : Text(
                             '${index + 1}',
                             style: AppTheme.of(context).bodySmall.override(
-                              color: isActive 
-                                  ? AppTheme.of(context).primaryBackground
-                                  : AppTheme.of(context).secondaryText,
-                              fontWeight: FontWeight.w600,
-                            ),
+                                  color: isActive
+                                      ? AppTheme.of(context).primaryBackground
+                                      : AppTheme.of(context).secondaryText,
+                                  fontWeight: FontWeight.w600,
+                                ),
                           ),
                   ),
                 ),
@@ -237,7 +240,9 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
                       margin: const EdgeInsets.symmetric(horizontal: 8),
                       color: isCompleted
                           ? AppTheme.of(context).primary
-                          : AppTheme.of(context).secondaryText.withValues(alpha: 0.3),
+                          : AppTheme.of(context)
+                              .secondaryText
+                              .withValues(alpha: 0.3),
                     ),
                   ),
               ],
@@ -267,8 +272,8 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
               child: Text(
                 '이전',
                 style: AppTheme.of(context).bodyMedium.override(
-                  color: AppTheme.of(context).secondaryText,
-                ),
+                      color: AppTheme.of(context).secondaryText,
+                    ),
               ),
             )
           else
@@ -277,18 +282,16 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
               child: Text(
                 '취소',
                 style: AppTheme.of(context).bodyMedium.override(
-                  color: AppTheme.of(context).secondaryText,
-                ),
+                      color: AppTheme.of(context).secondaryText,
+                    ),
               ),
             ),
-          
+
           const Spacer(),
-          
+
           // 다음/완료 버튼
           ElevatedButton(
-            onPressed: model.canGoNext 
-                ? () => _goToNextStep(model)
-                : null,
+            onPressed: model.canGoNext ? () => _goToNextStep(model) : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.of(context).primary,
               foregroundColor: AppTheme.of(context).primaryBackground,
@@ -300,9 +303,9 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
             child: Text(
               model.isFinalStep ? '설정 완료' : '다음',
               style: AppTheme.of(context).bodyMedium.override(
-                color: AppTheme.of(context).primaryBackground,
-                fontWeight: FontWeight.w600,
-              ),
+                    color: AppTheme.of(context).primaryBackground,
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
           ),
         ],

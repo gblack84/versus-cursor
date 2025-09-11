@@ -10,14 +10,14 @@ import 'package:versus_space/features/notifications/domain/value_objects/vote_op
 class MockNotificationRepository implements INotificationRepository {
   final Map<String, Notification> _notifications = {};
   final List<String> _createdNotificationIds = [];
-  
+
   // Test helpers
   bool markAsReadCalled = false;
   String? lastMarkedAsReadId;
-  
+
   bool updateNotificationCalled = false;
   Notification? lastUpdatedNotification;
-  
+
   bool shouldThrowError = false;
   String errorMessage = 'Test error';
 
@@ -38,11 +38,10 @@ class MockNotificationRepository implements INotificationRepository {
     if (shouldThrowError) {
       throw Exception(errorMessage);
     }
-    
-    var notifications = _notifications.values
-        .where((n) => n.userId == userId)
-        .toList();
-    
+
+    var notifications =
+        _notifications.values.where((n) => n.userId == userId).toList();
+
     // Apply filter if provided
     if (filter != null) {
       if (filter.type != null) {
@@ -50,31 +49,29 @@ class MockNotificationRepository implements INotificationRepository {
             .where((n) => n.type.toString().split('.').last == filter.type)
             .toList();
       }
-      
+
       if (filter.unreadOnly == true) {
-        notifications = notifications
-            .where((n) => !n.isRead)
-            .toList();
+        notifications = notifications.where((n) => !n.isRead).toList();
       }
-      
+
       if (filter.after != null) {
         notifications = notifications
             .where((n) => n.createdAt.isAfter(filter.after!))
             .toList();
       }
-      
+
       if (filter.before != null) {
         notifications = notifications
             .where((n) => n.createdAt.isBefore(filter.before!))
             .toList();
       }
     }
-    
+
     // Apply limit
     if (notifications.length > limit) {
       notifications = notifications.take(limit).toList();
     }
-    
+
     yield notifications;
   }
 
@@ -83,11 +80,11 @@ class MockNotificationRepository implements INotificationRepository {
     if (shouldThrowError) {
       throw Exception(errorMessage);
     }
-    
+
     final count = _notifications.values
         .where((n) => n.userId == userId && !n.isRead)
         .length;
-    
+
     yield count;
   }
 
@@ -96,10 +93,10 @@ class MockNotificationRepository implements INotificationRepository {
     if (shouldThrowError) {
       throw Exception(errorMessage);
     }
-    
+
     markAsReadCalled = true;
     lastMarkedAsReadId = notificationId;
-    
+
     final notification = _notifications[notificationId];
     if (notification != null) {
       _notifications[notificationId] = notification.markAsRead();
@@ -111,7 +108,7 @@ class MockNotificationRepository implements INotificationRepository {
     if (shouldThrowError) {
       throw Exception(errorMessage);
     }
-    
+
     _notifications.updateAll((key, notification) {
       if (notification.userId == userId) {
         return notification.markAsRead();
@@ -125,7 +122,7 @@ class MockNotificationRepository implements INotificationRepository {
     if (shouldThrowError) {
       throw Exception(errorMessage);
     }
-    
+
     final id = 'test-id-${_notifications.length}';
     _notifications[id] = notification;
     _createdNotificationIds.add(id);
@@ -137,7 +134,7 @@ class MockNotificationRepository implements INotificationRepository {
     if (shouldThrowError) {
       throw Exception(errorMessage);
     }
-    
+
     updateNotificationCalled = true;
     lastUpdatedNotification = notification;
     _notifications[notification.id] = notification;
@@ -148,7 +145,7 @@ class MockNotificationRepository implements INotificationRepository {
     if (shouldThrowError) {
       throw Exception(errorMessage);
     }
-    
+
     _notifications.remove(notificationId);
   }
 
@@ -160,9 +157,9 @@ class MockNotificationRepository implements INotificationRepository {
     if (shouldThrowError) {
       throw Exception(errorMessage);
     }
-    
+
     final createdIds = <String>[];
-    
+
     for (final userId in targetUserIds) {
       // Create a new notification for each user
       final notification = VoteNotification(
@@ -187,19 +184,19 @@ class MockNotificationRepository implements INotificationRepository {
         currentVotesA: baseNotification.currentVotesA,
         currentVotesB: baseNotification.currentVotesB,
       );
-      
+
       final id = await createNotification(notification);
       createdIds.add(id);
     }
-    
+
     return createdIds;
   }
-  
+
   // Test helper methods
   void addNotification(Notification notification) {
     _notifications[notification.id] = notification;
   }
-  
+
   void clear() {
     _notifications.clear();
     _createdNotificationIds.clear();
@@ -209,51 +206,47 @@ class MockNotificationRepository implements INotificationRepository {
     lastUpdatedNotification = null;
     shouldThrowError = false;
   }
-  
+
   List<String> get createdNotificationIds => _createdNotificationIds;
-  
+
   // ===== Additional interface methods with default implementations =====
-  
+
   @override
   Future<List<Notification>> getUserNotifications({
     required String userId,
     NotificationFilter? filter,
     int limit = 50,
   }) async {
-    var notifications = _notifications.values
-        .where((n) => n.userId == userId)
-        .toList();
-    
+    var notifications =
+        _notifications.values.where((n) => n.userId == userId).toList();
+
     // Apply filter if provided
     if (filter != null) {
       if (filter.type != null) {
-        notifications = notifications
-            .where((n) => n.type == filter.type)
-            .toList();
+        notifications =
+            notifications.where((n) => n.type == filter.type).toList();
       }
-      
+
       if (filter.unreadOnly == true) {
-        notifications = notifications
-            .where((n) => !n.isRead)
-            .toList();
+        notifications = notifications.where((n) => !n.isRead).toList();
       }
     }
-    
+
     // Apply limit
     if (notifications.length > limit) {
       notifications = notifications.take(limit).toList();
     }
-    
+
     return notifications;
   }
-  
+
   @override
   Future<int> getUnreadCount(String userId) async {
     return _notifications.values
         .where((n) => n.userId == userId && !n.isRead)
         .length;
   }
-  
+
   @override
   Future<List<T>> getNotificationsByType<T extends Notification>({
     required String userId,
@@ -267,30 +260,32 @@ class MockNotificationRepository implements INotificationRepository {
     }
     return notifications.cast<T>().toList();
   }
-  
+
   @override
   Future<void> deleteAllNotifications(String userId) async {
-    _notifications.removeWhere((key, notification) => notification.userId == userId);
+    _notifications
+        .removeWhere((key, notification) => notification.userId == userId);
   }
-  
+
   @override
   Future<void> deleteOldNotifications({
     required String userId,
     required DateTime before,
   }) async {
-    _notifications.removeWhere((key, notification) => 
-        notification.userId == userId && notification.createdAt.isBefore(before));
+    _notifications.removeWhere((key, notification) =>
+        notification.userId == userId &&
+        notification.createdAt.isBefore(before));
   }
-  
+
   @override
   Future<void> deleteExpiredNotifications(String userId) async {
     final now = DateTime.now();
-    _notifications.removeWhere((key, notification) => 
-        notification.userId == userId && 
-        notification.expiryTime != null && 
+    _notifications.removeWhere((key, notification) =>
+        notification.userId == userId &&
+        notification.expiryTime != null &&
         notification.expiryTime!.isBefore(now));
   }
-  
+
   @override
   Future<void> broadcastSystemNotification({
     required SystemNotification notification,
@@ -314,7 +309,7 @@ class MockNotificationRepository implements INotificationRepository {
       }
     }
   }
-  
+
   @override
   Future<void> groupSocialNotifications({
     required String userId,
@@ -323,20 +318,19 @@ class MockNotificationRepository implements INotificationRepository {
   }) async {
     // Mock implementation - no-op for testing
   }
-  
+
   @override
   Future<Map<String, dynamic>> getNotificationStats(String userId) async {
-    final userNotifications = _notifications.values
-        .where((n) => n.userId == userId)
-        .toList();
-    
+    final userNotifications =
+        _notifications.values.where((n) => n.userId == userId).toList();
+
     return {
       'total': userNotifications.length,
       'unread': userNotifications.where((n) => !n.isRead).length,
       'read': userNotifications.where((n) => n.isRead).length,
     };
   }
-  
+
   @override
   Future<List<Map<String, dynamic>>> getNotificationActivityLog({
     required String userId,
@@ -344,15 +338,16 @@ class MockNotificationRepository implements INotificationRepository {
     required DateTime to,
   }) async {
     return _notifications.values
-        .where((n) => n.userId == userId && 
-                     n.createdAt.isAfter(from) && 
-                     n.createdAt.isBefore(to))
+        .where((n) =>
+            n.userId == userId &&
+            n.createdAt.isAfter(from) &&
+            n.createdAt.isBefore(to))
         .map((n) => {
-          'id': n.id,
-          'type': n.type.toString(),
-          'createdAt': n.createdAt.toIso8601String(),
-          'isRead': n.isRead,
-        })
+              'id': n.id,
+              'type': n.type.toString(),
+              'createdAt': n.createdAt.toIso8601String(),
+              'isRead': n.isRead,
+            })
         .toList();
   }
 }

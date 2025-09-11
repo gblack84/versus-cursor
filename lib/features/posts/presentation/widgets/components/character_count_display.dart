@@ -52,10 +52,13 @@ class _CharacterCountDisplayState extends State<CharacterCountDisplay> {
 
   @override
   Widget build(BuildContext context) {
-    final showError = (widget.isEmpty && widget.hasValidated) || widget.hasBlockedWord || (widget.validationResult?.isToxic ?? false);
-    
+    final showError = (widget.isEmpty && widget.hasValidated) ||
+        widget.hasBlockedWord ||
+        (widget.validationResult?.isToxic ?? false);
+
     return Padding(
-      padding: EdgeInsetsDirectional.fromSTEB(widget.horizontalPadding, 4.5, widget.horizontalPadding, 0.0),
+      padding: EdgeInsetsDirectional.fromSTEB(
+          widget.horizontalPadding, 4.5, widget.horizontalPadding, 0.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -65,26 +68,26 @@ class _CharacterCountDisplayState extends State<CharacterCountDisplay> {
               child: Text(
                 _getErrorMessage(),
                 style: AppTheme.of(context).bodySmall.override(
-                  font: GoogleFonts.plusJakartaSans(),
-                  color: AppTheme.of(context).error,
-                  fontSize: 12.0,
-                  fontWeight: FontWeight.w500,
-                ),
+                      font: GoogleFonts.plusJakartaSans(),
+                      color: AppTheme.of(context).error,
+                      fontSize: 12.0,
+                      fontWeight: FontWeight.w500,
+                    ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             )
           else
             const SizedBox.shrink(),
-          
+
           // 오른쪽: 글자 수 (항상 표시)
           Text(
             '${widget.controller?.text.length ?? 0}/${widget.maxLength}',
             style: AppTheme.of(context).bodySmall.override(
-              font: GoogleFonts.plusJakartaSans(),
-              color: AppTheme.of(context).secondaryText,
-              fontSize: 12.0,
-            ),
+                  font: GoogleFonts.plusJakartaSans(),
+                  color: AppTheme.of(context).secondaryText,
+                  fontSize: 12.0,
+                ),
           ),
         ],
       ),

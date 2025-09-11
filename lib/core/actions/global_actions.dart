@@ -9,7 +9,7 @@ Future selectedLanguage(
   String? language,
 }) async {
   final userRepository = GetIt.instance<IUserRepository>();
-  
+
   // Update user language preference through repository
   await userRepository.updateUser(
     currentUserReference!.id,

@@ -99,7 +99,8 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
               path: HomePageWidget.routePath,
               pageBuilder: (context, state) => CustomTransitionPage(
                 child: HomePageWidget(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) => child,
               ),
             ),
             GoRoute(
@@ -107,7 +108,8 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
               path: SearchPageWidget.routePath,
               pageBuilder: (context, state) => CustomTransitionPage(
                 child: SearchPageWidget(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) => child,
               ),
             ),
             GoRoute(
@@ -115,7 +117,8 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
               path: ProfilePageWidget.routePath,
               pageBuilder: (context, state) => CustomTransitionPage(
                 child: ProfilePageWidget(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) => child,
               ),
             ),
             GoRoute(
@@ -123,7 +126,8 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
               path: InPutPostImageWidget.routePath,
               pageBuilder: (context, state) => CustomTransitionPage(
                 child: InPutPostImageWidget(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) => child,
               ),
             ),
             // Chat routes
@@ -132,7 +136,8 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
               path: ChatListWidget.routePath,
               pageBuilder: (context, state) => CustomTransitionPage(
                 child: ChatListWidget(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) => child,
               ),
             ),
             GoRoute(
@@ -140,7 +145,8 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
               path: FriendsListWidget.routePath,
               pageBuilder: (context, state) => CustomTransitionPage(
                 child: FriendsListWidget(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) => child,
               ),
             ),
             GoRoute(
@@ -148,7 +154,8 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
               path: ChatSearchWidget.routePath,
               pageBuilder: (context, state) => CustomTransitionPage(
                 child: ChatSearchWidget(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) => child,
               ),
             ),
           ],
@@ -247,16 +254,23 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           name: ImageViewerPage.routeName,
           path: ImageViewerPage.routePath,
           builder: (context, params) => ImageViewerPage(
-            imageUrls: params.getParam<String>('imageUrls', ParamType.String) != null
-                ? (params.getParam<String>('imageUrls', ParamType.String) ?? '').split(',')
+            imageUrls: params.getParam<String>('imageUrls', ParamType.String) !=
+                    null
+                ? (params.getParam<String>('imageUrls', ParamType.String) ?? '')
+                    .split(',')
                 : [],
-            imagePaths: params.getParam<String>('imagePaths', ParamType.String) != null
-                ? (params.getParam<String>('imagePaths', ParamType.String) ?? '').split('|')
-                : [],
+            imagePaths:
+                params.getParam<String>('imagePaths', ParamType.String) != null
+                    ? (params.getParam<String>(
+                                'imagePaths', ParamType.String) ??
+                            '')
+                        .split('|')
+                    : [],
             initialIndex: params.getParam(
-              'initialIndex',
-              ParamType.int,
-            ) ?? 0,
+                  'initialIndex',
+                  ParamType.int,
+                ) ??
+                0,
             box: params.getParam(
               'box',
               ParamType.String,
@@ -275,7 +289,8 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           requireAuth: true,
           builder: (context, params) => ChatDetailWidgetV2(
             chatDocument: params.state.extra != null
-                ? (params.state.extra as Map<String, dynamic>)['chatDocument'] as ChatsModel?
+                ? (params.state.extra as Map<String, dynamic>)['chatDocument']
+                    as ChatsModel?
                 : null,
           ),
         ).toRoute(appStateNotifier),
@@ -468,13 +483,13 @@ class AppRoute {
           return CustomTransitionPage(
             key: state.pageKey,
             child: child,
-            transitionDuration: transitionInfo.hasTransition 
-                ? transitionInfo.duration 
-                : Duration.zero,  // 애니메이션 없이 즉시 전환
+            transitionDuration: transitionInfo.hasTransition
+                ? transitionInfo.duration
+                : Duration.zero, // 애니메이션 없이 즉시 전환
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
               if (!transitionInfo.hasTransition) {
-                return child;  // 애니메이션 없이 즉시 표시
+                return child; // 애니메이션 없이 즉시 표시
               }
               // 페이드 전환 효과 (hasTransition: true일 때만)
               return FadeTransition(

@@ -18,7 +18,7 @@ class ErrorHandlingResult {
   final bool handled;
   final String? userMessage;
   final dynamic originalError;
-  
+
   ErrorHandlingResult({
     required this.handled,
     this.userMessage,
@@ -38,7 +38,7 @@ class ErrorHandler {
     ErrorType.moderation: '콘텐츠 검열 중 오류가 발생했습니다.',
     ErrorType.unknown: '알 수 없는 오류가 발생했습니다.',
   };
-  
+
   /// 에러 처리 및 로깅
   static ErrorHandlingResult handle(
     dynamic error, {
@@ -50,31 +50,31 @@ class ErrorHandler {
   }) {
     // 에러 타입 자동 감지
     final errorType = type ?? _detectErrorType(error);
-    
+
     // 사용자 메시지 결정
-    final userMessage = customMessage ?? 
-                       _getUserMessage(error, errorType) ?? 
-                       _errorMessages[errorType] ?? 
-                       _errorMessages[ErrorType.unknown]!;
-    
+    final userMessage = customMessage ??
+        _getUserMessage(error, errorType) ??
+        _errorMessages[errorType] ??
+        _errorMessages[ErrorType.unknown]!;
+
     // 디버그 로깅
     DebugHelper.logError('[$errorType] $userMessage', error);
     if (stackTrace != null && DebugHelper.isDebugMode) {
       print('StackTrace: $stackTrace');
     }
-    
+
     // Toast 표시
     if (showToast && context != null && context.mounted) {
       _showErrorToast(userMessage);
     }
-    
+
     return ErrorHandlingResult(
       handled: true,
       userMessage: userMessage,
       originalError: error,
     );
   }
-  
+
   /// 비동기 작업 래퍼
   static Future<T?> tryAsync<T>(
     Future<T> Function() operation, {
@@ -96,12 +96,12 @@ class ErrorHandler {
         context: context,
         stackTrace: stackTrace,
       );
-      
+
       onError?.call(result);
       return defaultValue;
     }
   }
-  
+
   /// 동기 작업 래퍼
   static T? trySync<T>(
     T Function() operation, {
@@ -123,55 +123,55 @@ class ErrorHandler {
         context: context,
         stackTrace: stackTrace,
       );
-      
+
       onError?.call(result);
       return defaultValue;
     }
   }
-  
+
   /// 에러 타입 자동 감지
   static ErrorType _detectErrorType(dynamic error) {
     final errorString = error.toString().toLowerCase();
-    
-    if (errorString.contains('network') || 
+
+    if (errorString.contains('network') ||
         errorString.contains('connection') ||
         errorString.contains('socket')) {
       return ErrorType.network;
     }
-    
-    if (errorString.contains('permission') || 
+
+    if (errorString.contains('permission') ||
         errorString.contains('denied') ||
         errorString.contains('unauthorized')) {
       return ErrorType.permission;
     }
-    
-    if (errorString.contains('storage') || 
+
+    if (errorString.contains('storage') ||
         errorString.contains('disk') ||
         errorString.contains('space')) {
       return ErrorType.storage;
     }
-    
-    if (errorString.contains('validation') || 
+
+    if (errorString.contains('validation') ||
         errorString.contains('invalid') ||
         errorString.contains('format')) {
       return ErrorType.validation;
     }
-    
-    if (errorString.contains('image') || 
+
+    if (errorString.contains('image') ||
         errorString.contains('photo') ||
         errorString.contains('picture')) {
       return ErrorType.imageProcessing;
     }
-    
-    if (errorString.contains('moderation') || 
+
+    if (errorString.contains('moderation') ||
         errorString.contains('content') ||
         errorString.contains('inappropriate')) {
       return ErrorType.moderation;
     }
-    
+
     return ErrorType.unknown;
   }
-  
+
   /// 에러 객체에서 사용자 메시지 추출
   static String? _getUserMessage(dynamic error, ErrorType type) {
     if (error is Exception) {
@@ -181,19 +181,19 @@ class ErrorHandler {
         return message.substring(11);
       }
     }
-    
+
     // Firebase 에러 처리
     if (error.toString().contains('firebase')) {
       return _handleFirebaseError(error);
     }
-    
+
     return null;
   }
-  
+
   /// Firebase 에러 메시지 처리
   static String _handleFirebaseError(dynamic error) {
     final errorString = error.toString().toLowerCase();
-    
+
     if (errorString.contains('permission-denied')) {
       return '권한이 없습니다.';
     }
@@ -206,10 +206,10 @@ class ErrorHandler {
     if (errorString.contains('quota-exceeded')) {
       return '할당량을 초과했습니다.';
     }
-    
+
     return '서버 오류가 발생했습니다.';
   }
-  
+
   /// 에러 토스트 표시
   static void _showErrorToast(String message) {
     BotToast.showCustomText(
@@ -242,7 +242,7 @@ class ErrorHandler {
       onlyOne: true,
     );
   }
-  
+
   /// 성공 토스트 표시 (에러 처리와 일관성을 위해)
   static void showSuccessToast(String message) {
     BotToast.showCustomText(

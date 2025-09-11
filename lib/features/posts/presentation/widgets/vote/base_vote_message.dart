@@ -101,7 +101,6 @@ abstract class BaseVoteMessage extends StatefulWidget {
     }
     return [];
   }
-
 }
 
 /// 투표 메시지 상태 관리를 위한 mixin
@@ -121,7 +120,6 @@ mixin BaseVoteMessageStateMixin<T extends BaseVoteMessage> on State<T> {
   void dispose() {
     super.dispose();
   }
-
 
   /// 시간 포맷팅
   String formatTime(DateTime time) {
@@ -172,21 +170,20 @@ mixin BaseVoteMessageStateMixin<T extends BaseVoteMessage> on State<T> {
           ),
         );
       }
-      
+
       rethrow;
     }
   }
 
-
   /// 타임스탬프 위젯 빌드
   Widget buildTimestamp() {
     if (widget.timestamp == null) return const SizedBox.shrink();
-    
+
     return Text(
       formatTime(widget.timestamp!),
       style: VersusTextStyles.labelSmall.copyWith(
-        fontSize: 12,  // 11 → 12로 크기 증가
-        color: VersusColors.textPrimary,  // 훨씬 진한 색상으로 변경
+        fontSize: 12, // 11 → 12로 크기 증가
+        color: VersusColors.textPrimary, // 훨씬 진한 색상으로 변경
       ),
     );
   }

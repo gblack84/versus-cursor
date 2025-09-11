@@ -325,14 +325,15 @@ class MessagesModel extends FirestoreRecord {
 
   factory MessagesModel.fromJson(Map<String, dynamic> json) {
     final model = MessagesModel._(
-      FirebaseFirestore.instance.doc('temp/temp'), // Temporary reference for cache
-      json,  // Use actual json data as snapshotData instead of empty Map
+      FirebaseFirestore.instance
+          .doc('temp/temp'), // Temporary reference for cache
+      json, // Use actual json data as snapshotData instead of empty Map
     );
-    
+
     // Helper function to safely parse DateTime from various formats
     DateTime? parseDateTime(dynamic value) {
       if (value == null) return null;
-      
+
       try {
         if (value is int) {
           // Milliseconds since epoch
@@ -349,11 +350,12 @@ class MessagesModel extends FirestoreRecord {
         }
       } catch (e) {
         // Log error but don't crash
-        print('Error parsing DateTime from value: $value, type: ${value.runtimeType}');
+        print(
+            'Error parsing DateTime from value: $value, type: ${value.runtimeType}');
       }
       return null;
     }
-    
+
     // Set all fields from JSON
     model._messageId = json['messageId'] as String?;
     model._senderId = json['senderId'] as String?;
@@ -398,7 +400,7 @@ class MessagesModel extends FirestoreRecord {
     model._votePercentA = json['votePercentA'] as double?;
     model._votePercentB = json['votePercentB'] as double?;
     model._metadata = json['metadata'] as Map<String, dynamic>?;
-    
+
     return model;
   }
 
@@ -410,7 +412,7 @@ class MessagesModel extends FirestoreRecord {
     _attachmentType = snapshotData['attachmentType'] as String?;
     _timeStamp = snapshotData['timeStamp'] as DateTime?;
     _isRead = snapshotData['isRead'] as bool?;
-    
+
     // Media fields
     _mediaType = snapshotData['mediaType'] as String?;
     _imageUrl = snapshotData['imageUrl'] as String?;
@@ -419,14 +421,14 @@ class MessagesModel extends FirestoreRecord {
     _mediaSize = castToType<int>(snapshotData['mediaSize']);
     _mediaWidth = castToType<double>(snapshotData['mediaWidth']);
     _mediaHeight = castToType<double>(snapshotData['mediaHeight']);
-    
+
     // Message lifecycle fields
     _deliveredAt = snapshotData['deliveredAt'] as DateTime?;
     _seenAt = snapshotData['seenAt'] as DateTime?;
-    
+
     // Message type
     _messageType = snapshotData['messageType'] as String?;
-    
+
     // Vote request fields
     _votePostId = snapshotData['votePostId'] as String?;
     _voteTitle = snapshotData['voteTitle'] as String?;
@@ -436,7 +438,7 @@ class MessagesModel extends FirestoreRecord {
     _voteOptionAImage = snapshotData['voteOptionAImage'] as String?;
     _voteOptionBImage = snapshotData['voteOptionBImage'] as String?;
     _voteStatus = snapshotData['voteStatus'] as String?;
-    
+
     // Initialize new vote-related fields
     _receiverId = snapshotData['receiverId'] as String?;
     _voteOptionAImages = getDataList(snapshotData['voteOptionAImages']);
@@ -445,7 +447,7 @@ class MessagesModel extends FirestoreRecord {
     _voteEndTime = snapshotData['voteEndTime'] as DateTime?;
     _voteResults = snapshotData['voteResults'] as Map<String, dynamic>?;
     _userVotes = snapshotData['userVotes'] as Map<String, dynamic>?;
-    
+
     // AspectRatio and vote results fields
     _voteAspectRatioA = castToType<double>(snapshotData['voteAspectRatioA']);
     _voteAspectRatioB = castToType<double>(snapshotData['voteAspectRatioB']);
@@ -453,7 +455,7 @@ class MessagesModel extends FirestoreRecord {
     _voteResultsB = castToType<int>(snapshotData['voteResultsB']);
     _votePercentA = castToType<double>(snapshotData['votePercentA']);
     _votePercentB = castToType<double>(snapshotData['votePercentB']);
-    
+
     _metadata = snapshotData['metadata'] as Map<String, dynamic>?;
   }
 
@@ -568,10 +570,12 @@ Map<String, dynamic> createMessagesModelData({
       'voteOptionBImages': voteOptionBImages,
       'cardStatus': cardStatus,
       'voteEndTime': voteEndTime,
-      'userVoted': userVoted,  // deprecated but kept for backwards compatibility
-      'voteChoice': voteChoice,  // deprecated but kept for backwards compatibility
+      'userVoted': userVoted, // deprecated but kept for backwards compatibility
+      'voteChoice':
+          voteChoice, // deprecated but kept for backwards compatibility
       'voteResults': voteResults,
-      'voteParticipatedAt': voteParticipatedAt,  // deprecated but kept for backwards compatibility
+      'voteParticipatedAt':
+          voteParticipatedAt, // deprecated but kept for backwards compatibility
       'userVotes': userVotes,
       'voteAspectRatioA': voteAspectRatioA,
       'voteAspectRatioB': voteAspectRatioB,

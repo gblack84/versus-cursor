@@ -8,7 +8,7 @@ import '/core/firebase/utils/firestore_util.dart';
 import '/core_exports.dart';
 
 /// DEPRECATED: Use features/posts/domain/models/dislikes_model.dart instead
-/// 
+///
 /// This model is maintained in backend for backward compatibility only.
 /// New code should import from the posts feature domain layer.
 @Deprecated('Use features/posts/domain/models/dislikes_model.dart')
@@ -103,9 +103,9 @@ class DislikesModelDocumentEquality implements Equality<DislikesModel> {
 
   @override
   bool equals(DislikesModel? e1, DislikesModel? e2) {
-    return e1?.userId == e2?.userId && 
-           e1?.createdAt == e2?.createdAt &&
-           e1?.postId == e2?.postId;
+    return e1?.userId == e2?.userId &&
+        e1?.createdAt == e2?.createdAt &&
+        e1?.postId == e2?.postId;
   }
 
   @override

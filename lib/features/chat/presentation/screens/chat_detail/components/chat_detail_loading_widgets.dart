@@ -73,18 +73,14 @@ class ChatDetailLoadingWidgets {
             ),
             const SizedBox(height: 16),
             Text(
-              isAiChat 
-                  ? 'AI 피클과 대화를 시작해보세요'
-                  : '메시지를 보내서 대화를 시작하세요',
+              isAiChat ? 'AI 피클과 대화를 시작해보세요' : '메시지를 보내서 대화를 시작하세요',
               style: VersusTextStyles.headingMedium.copyWith(
                 color: VersusColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              isAiChat
-                  ? '질문을 입력하면 AI가 답변해드립니다'
-                  : '첫 메시지를 보내보세요',
+              isAiChat ? '질문을 입력하면 AI가 답변해드립니다' : '첫 메시지를 보내보세요',
               style: VersusTextStyles.bodyMedium.copyWith(
                 color: VersusColors.textSecondary,
               ),

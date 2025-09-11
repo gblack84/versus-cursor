@@ -370,7 +370,7 @@ class PostsModel extends FirestoreRecord {
     _moderation = snapshotData['moderation'] as Map<String, dynamic>?;
     _targetAudience = snapshotData['targetAudience'] as Map<String, dynamic>?;
     _description = snapshotData['description'] as String?;
-    
+
     // Initialize vote system fields
     _voteStartTime = snapshotData['voteStartTime'] as DateTime?;
     _voteEndTime = snapshotData['voteEndTime'] as DateTime?;
@@ -384,7 +384,7 @@ class PostsModel extends FirestoreRecord {
     _voteCompletedAt = snapshotData['voteCompletedAt'] as DateTime?;
     _voteCancelledAt = snapshotData['voteCancelledAt'] as DateTime?;
     _voteCancelledReason = snapshotData['voteCancelledReason'] as String?;
-    
+
     // Initialize notification and display fields
     _notificationsSent = snapshotData['notificationsSent'] as bool?;
     _notificationsSentAt = snapshotData['notificationsSentAt'] as DateTime?;

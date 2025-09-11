@@ -2,20 +2,22 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'schema_util.dart';
 import '/app/models/lat_lng.dart';
-import '/app/router/navigation/serialization_util.dart' show AppColorSerialization;
+import '/app/router/navigation/serialization_util.dart'
+    show AppColorSerialization;
 
 // Re-export commonly used Firestore classes
-export 'package:cloud_firestore/cloud_firestore.dart' show 
-  FirebaseFirestore, 
-  FieldValue, 
-  DocumentReference, 
-  CollectionReference, 
-  QuerySnapshot,
-  Timestamp,
-  GeoPoint,
-  DocumentSnapshot,
-  Query,
-  FieldPath;
+export 'package:cloud_firestore/cloud_firestore.dart'
+    show
+        FirebaseFirestore,
+        FieldValue,
+        DocumentReference,
+        CollectionReference,
+        QuerySnapshot,
+        Timestamp,
+        GeoPoint,
+        DocumentSnapshot,
+        Query,
+        FieldPath;
 
 typedef RecordBuilder<T> = T Function(DocumentSnapshot snapshot);
 
@@ -95,7 +97,9 @@ Map<String, dynamic> mapToFirestore(Map<String, dynamic> data) =>
       }
       // Handle list of Color
       if (value is Iterable && value.isNotEmpty && value.first is Color) {
-        value = value.map((v) => AppColorSerialization(v as Color).toCssString()).toList();
+        value = value
+            .map((v) => AppColorSerialization(v as Color).toCssString())
+            .toList();
       }
       // Handle nested data.
       if (value is Map) {

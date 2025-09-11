@@ -7,7 +7,7 @@ class ProImageEditorModel extends AppModel<ProImageEditorPage> {
 
   // 이미지 업로드 중 상태
   bool isUploading = false;
-  
+
   // 업로드 진행률
   double uploadProgress = 0.0;
 

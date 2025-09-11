@@ -38,7 +38,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
     _model = createModel(context, () => ImageViewerModel());
     _model.currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: widget.initialIndex);
-    
+
     // Validate that we have either URLs or paths
     assert(widget.imageUrls.isNotEmpty || widget.imagePaths.isNotEmpty,
         'Either imageUrls or imagePaths must be provided');
@@ -61,7 +61,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
         errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
       );
     }
-    
+
     // URL이 있는 경우
     if (widget.imageUrls.isNotEmpty && index < widget.imageUrls.length) {
       return CachedNetworkImage(
@@ -75,7 +75,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
         errorWidget: (context, url, error) => _buildErrorWidget(),
       );
     }
-    
+
     return _buildErrorWidget();
   }
 
@@ -111,8 +111,8 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
           // Image PageView
           PageView.builder(
             controller: _pageController,
-            itemCount: widget.imagePaths.isNotEmpty 
-                ? widget.imagePaths.length 
+            itemCount: widget.imagePaths.isNotEmpty
+                ? widget.imagePaths.length
                 : widget.imageUrls.length,
             onPageChanged: (index) {
               setState(() {
@@ -129,7 +129,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
               );
             },
           ),
-          
+
           // Top Bar
           Positioned(
             top: 0,
@@ -148,7 +148,8 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
               ),
               child: SafeArea(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -161,7 +162,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                         ),
                         onPressed: () => context.pop(),
                       ),
-                      
+
                       // Title
                       Text(
                         widget.box != null ? '${widget.box} 이미지' : '이미지 보기',
@@ -170,17 +171,18 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                               fontWeight: FontWeight.w600,
                             ),
                       ),
-                      
+
                       // Page Indicator
                       Builder(
                         builder: (context) {
-                          final totalCount = widget.imagePaths.isNotEmpty 
-                              ? widget.imagePaths.length 
+                          final totalCount = widget.imagePaths.isNotEmpty
+                              ? widget.imagePaths.length
                               : widget.imageUrls.length;
-                          
+
                           if (totalCount > 1) {
                             return Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 12.0, vertical: 6.0),
                               decoration: BoxDecoration(
                                 color: Colors.black.withValues(alpha: 0.5),
                                 borderRadius: BorderRadius.circular(20.0),
@@ -203,7 +205,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
               ),
             ),
           ),
-          
+
           // Bottom Actions
           Positioned(
             bottom: 0,
@@ -239,7 +241,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                           );
                         },
                       ),
-                      
+
                       // Share Button
                       _buildActionButton(
                         icon: Icons.share,
@@ -253,7 +255,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                           );
                         },
                       ),
-                      
+
                       // Delete Button
                       _buildActionButton(
                         icon: Icons.delete_outline,
@@ -268,17 +270,19 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                                 actions: [
                                   TextButton(
                                     child: Text('취소'),
-                                    onPressed: () => Navigator.of(context).pop(false),
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(false),
                                   ),
                                   TextButton(
                                     child: Text('삭제'),
-                                    onPressed: () => Navigator.of(context).pop(true),
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(true),
                                   ),
                                 ],
                               );
                             },
                           );
-                          
+
                           if (confirm == true) {
                             // TODO: 실제 삭제 로직 구현
                             ScaffoldMessenger.of(context).showSnackBar(

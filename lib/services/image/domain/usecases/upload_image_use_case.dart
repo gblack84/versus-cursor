@@ -1,8 +1,8 @@
 /// Upload Image Use Case
-/// 
+///
 /// Business logic for image upload operations.
 /// Implements validation, moderation, and processing logic.
-/// 
+///
 /// Created: 2025-09-05
 /// Author: CodeSurgeon
 
@@ -18,7 +18,6 @@ import '../repositories/i_image_upload_repository.dart';
 /// Parameters for single image upload
 @immutable
 class UploadImageParams {
-
   const UploadImageParams({
     required this.imageBytes,
     required this.metadata,
@@ -38,13 +37,14 @@ class UploadImageParams {
 }
 
 /// Use case for uploading a single image
-class UploadImageUseCase implements UseCase<ImageUploadResult, UploadImageParams> {
-
+class UploadImageUseCase
+    implements UseCase<ImageUploadResult, UploadImageParams> {
   UploadImageUseCase({required this.repository});
   final IImageUploadRepository repository;
 
   @override
-  Future<Either<Failure, ImageUploadResult>> call(UploadImageParams params) async {
+  Future<Either<Failure, ImageUploadResult>> call(
+      UploadImageParams params) async {
     try {
       // Step 1: Validate image
       final validationResult = await repository.validateImage(
@@ -81,7 +81,6 @@ class UploadImageUseCase implements UseCase<ImageUploadResult, UploadImageParams
 /// Parameters for multiple image upload
 @immutable
 class UploadMultipleImagesParams {
-
   const UploadMultipleImagesParams({
     required this.images,
     this.folder,
@@ -99,9 +98,8 @@ class UploadMultipleImagesParams {
 }
 
 /// Use case for uploading multiple images
-class UploadMultipleImagesUseCase 
+class UploadMultipleImagesUseCase
     implements UseCase<ImageUploadResult, UploadMultipleImagesParams> {
-
   UploadMultipleImagesUseCase({required this.repository});
   final IImageUploadRepository repository;
 
@@ -125,8 +123,7 @@ class UploadMultipleImagesUseCase
 
         if (!isValid) {
           return Left(ValidationFailure(
-            'Image validation failed for: ${metadata.fileName}'
-          ));
+              'Image validation failed for: ${metadata.fileName}'));
         }
       }
 
@@ -148,7 +145,6 @@ class UploadMultipleImagesUseCase
 /// Parameters for replacing an image
 @immutable
 class ReplaceImageParams {
-
   const ReplaceImageParams({
     required this.oldImageUrl,
     required this.newImageBytes,
@@ -162,13 +158,14 @@ class ReplaceImageParams {
 }
 
 /// Use case for replacing an existing image
-class ReplaceImageUseCase implements UseCase<ImageUploadResult, ReplaceImageParams> {
-
+class ReplaceImageUseCase
+    implements UseCase<ImageUploadResult, ReplaceImageParams> {
   ReplaceImageUseCase({required this.repository});
   final IImageUploadRepository repository;
 
   @override
-  Future<Either<Failure, ImageUploadResult>> call(ReplaceImageParams params) async {
+  Future<Either<Failure, ImageUploadResult>> call(
+      ReplaceImageParams params) async {
     try {
       // Replace the image
       final result = await repository.replaceImage(
@@ -200,7 +197,6 @@ class ReplaceImageUseCase implements UseCase<ImageUploadResult, ReplaceImagePara
 /// Parameters for deleting images
 @immutable
 class DeleteImageParams {
-
   const DeleteImageParams({
     required this.imageUrls,
     this.deleteAllVariants = true,
@@ -211,7 +207,6 @@ class DeleteImageParams {
 
 /// Use case for deleting images
 class DeleteImageUseCase implements UseCase<void, DeleteImageParams> {
-
   DeleteImageUseCase({required this.repository});
   final IImageUploadRepository repository;
 
@@ -235,9 +230,8 @@ class DeleteImageUseCase implements UseCase<void, DeleteImageParams> {
 }
 
 /// Use case for getting upload statistics
-class GetUploadStatisticsUseCase 
+class GetUploadStatisticsUseCase
     implements UseCase<Map<String, dynamic>, String> {
-
   GetUploadStatisticsUseCase({required this.repository});
   final IImageUploadRepository repository;
 
@@ -253,7 +247,6 @@ class GetUploadStatisticsUseCase
 
 /// Use case for cleaning orphaned images
 class CleanOrphanedImagesUseCase implements UseCase<int, int> {
-
   CleanOrphanedImagesUseCase({required this.repository});
   final IImageUploadRepository repository;
 

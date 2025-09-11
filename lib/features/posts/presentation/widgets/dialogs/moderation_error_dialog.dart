@@ -6,14 +6,14 @@ class ModerationErrorDialog extends StatelessWidget {
   final String reason;
   final String box;
   final VoidCallback? onRetry;
-  
+
   const ModerationErrorDialog({
     super.key,
     required this.reason,
     required this.box,
     this.onRetry,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -57,7 +57,7 @@ class ModerationErrorDialog extends StatelessWidget {
       ],
     );
   }
-  
+
   /// 다이얼로그 표시 헬퍼 메서드
   static void show({
     required BuildContext context,

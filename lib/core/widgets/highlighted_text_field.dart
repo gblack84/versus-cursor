@@ -47,20 +47,21 @@ class _HighlightedTextFieldState extends State<HighlightedTextField> {
           minLines: widget.minLines,
           style: widget.style,
           decoration: widget.decoration?.copyWith(
-            errorText: widget.validationResult?.isToxic == true
-                ? '부적절한 내용이 감지되었습니다'
-                : null,
-          ) ?? InputDecoration(
-            hintText: widget.hintText,
-            errorText: widget.validationResult?.isToxic == true
-                ? '부적절한 내용이 감지되었습니다'
-                : null,
-          ),
+                errorText: widget.validationResult?.isToxic == true
+                    ? '부적절한 내용이 감지되었습니다'
+                    : null,
+              ) ??
+              InputDecoration(
+                hintText: widget.hintText,
+                errorText: widget.validationResult?.isToxic == true
+                    ? '부적절한 내용이 감지되었습니다'
+                    : null,
+              ),
         ),
-        
+
         // 하이라이팅된 텍스트 표시 (검증 결과가 있고 독성이 감지된 경우)
-        if (widget.showHighlights && 
-            widget.validationResult?.isToxic == true && 
+        if (widget.showHighlights &&
+            widget.validationResult?.isToxic == true &&
             widget.controller?.text.isNotEmpty == true)
           Container(
             margin: const EdgeInsets.only(top: 8),
@@ -94,7 +95,7 @@ class _HighlightedTextFieldState extends State<HighlightedTextField> {
   Widget _buildHighlightedText() {
     final text = widget.controller?.text ?? '';
     final toxicSpans = widget.validationResult?.toxicSpans ?? [];
-    
+
     if (text.isEmpty || toxicSpans.isEmpty) {
       return Text(text, style: widget.style);
     }
@@ -176,12 +177,12 @@ class ValidatedTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 독성 단어가 감지된 경우 하이라이팅된 텍스트 표시
-    if (showValidationResults && 
-        validationResult?.isToxic == true && 
+    if (showValidationResults &&
+        validationResult?.isToxic == true &&
         controller?.text.isNotEmpty == true) {
       return _buildHighlightedTextField(context);
     }
-    
+
     // 일반 텍스트 필드
     return TextFormField(
       controller: controller,
@@ -195,15 +196,17 @@ class ValidatedTextField extends StatelessWidget {
       autocorrect: false,
       enableSuggestions: false,
       decoration: decoration?.copyWith(
-        errorText: null, // 에러 텍스트는 필드 외부에서 처리
-        counterText: '',
-      ) ?? InputDecoration(
-        hintText: hintText,
-        errorText: null, // 에러 텍스트는 필드 외부에서 처리
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        isDense: true,
-        counterText: '',
-      ),
+            errorText: null, // 에러 텍스트는 필드 외부에서 처리
+            counterText: '',
+          ) ??
+          InputDecoration(
+            hintText: hintText,
+            errorText: null, // 에러 텍스트는 필드 외부에서 처리
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            isDense: true,
+            counterText: '',
+          ),
     );
   }
 
@@ -218,7 +221,8 @@ class ValidatedTextField extends StatelessWidget {
             Positioned.fill(
               child: IgnorePointer(
                 child: Container(
-                  padding: decoration?.contentPadding ?? const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  padding: decoration?.contentPadding ??
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   alignment: Alignment.centerLeft,
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
@@ -265,7 +269,7 @@ class ValidatedTextField extends StatelessWidget {
   Widget _buildHighlightedText() {
     final text = controller?.text ?? '';
     final toxicSpans = validationResult?.toxicSpans ?? [];
-    
+
     if (text.isEmpty || toxicSpans.isEmpty) {
       return Text(text, style: style);
     }
@@ -319,14 +323,14 @@ class ValidatedTextField extends StatelessWidget {
     // 가장 높은 점수의 카테고리 찾기
     String topCategory = '';
     double maxScore = 0.0;
-    
+
     validationResult!.allScores.forEach((category, score) {
       if (score > maxScore) {
         maxScore = score;
         topCategory = category;
       }
     });
-    
+
     switch (topCategory) {
       case 'PROFANITY':
         return '욕설이 포함되어 있습니다';

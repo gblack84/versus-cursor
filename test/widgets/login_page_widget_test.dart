@@ -25,10 +25,10 @@ void main() {
       // Initialize GetIt for testing
       sl = GetIt.instance;
       sl.reset();
-      
+
       // Create mocks
       mockUserRepository = MockIUserRepository();
-      
+
       // Register mocks in DI container
       sl.registerSingleton<IUserRepository>(mockUserRepository);
     });
@@ -37,7 +37,7 @@ void main() {
       sl.reset();
     });
 
-    testWidgets('should display login form with email and password fields', 
+    testWidgets('should display login form with email and password fields',
         (WidgetTester tester) async {
       // Arrange & Act
       await tester.pumpWidget(
@@ -47,13 +47,14 @@ void main() {
       );
 
       // Assert
-      expect(find.byType(TextFormField), findsNWidgets(2)); // Email and password fields
+      expect(find.byType(TextFormField),
+          findsNWidgets(2)); // Email and password fields
       expect(find.text('이메일'), findsOneWidget); // Email label in Korean
       expect(find.text('비밀번호'), findsOneWidget); // Password label in Korean
       expect(find.text('로그인'), findsOneWidget); // Login button
     });
 
-    testWidgets('should show validation error for invalid email', 
+    testWidgets('should show validation error for invalid email',
         (WidgetTester tester) async {
       // Arrange
       await tester.pumpWidget(
@@ -63,10 +64,7 @@ void main() {
       );
 
       // Act - Enter invalid email
-      await tester.enterText(
-        find.byType(TextFormField).first, 
-        'invalid-email'
-      );
+      await tester.enterText(find.byType(TextFormField).first, 'invalid-email');
       await tester.tap(find.text('로그인'));
       await tester.pump();
 
@@ -74,7 +72,7 @@ void main() {
       expect(find.text('유효한 이메일을 입력해주세요'), findsOneWidget);
     });
 
-    testWidgets('should show validation error for empty password', 
+    testWidgets('should show validation error for empty password',
         (WidgetTester tester) async {
       // Arrange
       await tester.pumpWidget(
@@ -85,9 +83,7 @@ void main() {
 
       // Act - Leave password empty
       await tester.enterText(
-        find.byType(TextFormField).first, 
-        'test@example.com'
-      );
+          find.byType(TextFormField).first, 'test@example.com');
       await tester.tap(find.text('로그인'));
       await tester.pump();
 
@@ -95,7 +91,7 @@ void main() {
       expect(find.text('비밀번호를 입력해주세요'), findsOneWidget);
     });
 
-    testWidgets('should call repository when login is successful', 
+    testWidgets('should call repository when login is successful',
         (WidgetTester tester) async {
       // Arrange
       // Create a mock user profile for testing
@@ -105,7 +101,7 @@ void main() {
         'email': 'test@example.com',
         'displayName': 'Test User',
       };
-      
+
       // Note: Actual login testing would require mocking Firebase Auth
       // This test is simplified to focus on UI behavior
 
@@ -117,22 +113,17 @@ void main() {
 
       // Act - Enter valid credentials
       await tester.enterText(
-        find.byType(TextFormField).first, 
-        'test@example.com'
-      );
-      await tester.enterText(
-        find.byType(TextFormField).last, 
-        'password123'
-      );
-      
+          find.byType(TextFormField).first, 'test@example.com');
+      await tester.enterText(find.byType(TextFormField).last, 'password123');
+
       // Note: Actual login would require Firebase Auth mock
       // This test focuses on UI behavior
-      
+
       // Assert - Check UI responds correctly
       expect(find.text('test@example.com'), findsOneWidget);
     });
 
-    testWidgets('should navigate to sign up page when link is tapped', 
+    testWidgets('should navigate to sign up page when link is tapped',
         (WidgetTester tester) async {
       // Arrange
       await tester.pumpWidget(
@@ -144,7 +135,7 @@ void main() {
       // Act - Find and tap sign up link
       final signUpLink = find.text('회원가입'); // Sign up in Korean
       expect(signUpLink, findsOneWidget);
-      
+
       await tester.tap(signUpLink);
       await tester.pumpAndSettle();
 
@@ -153,7 +144,7 @@ void main() {
       expect(signUpLink, findsOneWidget);
     });
 
-    testWidgets('should show/hide password when visibility icon is tapped', 
+    testWidgets('should show/hide password when visibility icon is tapped',
         (WidgetTester tester) async {
       // Arrange
       await tester.pumpWidget(
@@ -165,20 +156,20 @@ void main() {
       // Find password field and visibility toggle
       final passwordField = find.byType(TextFormField).last;
       final visibilityToggle = find.byIcon(Icons.visibility_off);
-      
+
       // Initially password should be obscured
       expect(visibilityToggle, findsOneWidget);
-      
+
       // Act - Tap visibility toggle
       await tester.tap(visibilityToggle);
       await tester.pump();
-      
+
       // Assert - Icon should change
       expect(find.byIcon(Icons.visibility), findsOneWidget);
       expect(find.byIcon(Icons.visibility_off), findsNothing);
     });
 
-    testWidgets('should display social login buttons', 
+    testWidgets('should display social login buttons',
         (WidgetTester tester) async {
       // Arrange & Act
       await tester.pumpWidget(

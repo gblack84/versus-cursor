@@ -40,12 +40,12 @@ abstract class BaseMediaSelectionBox extends StatefulWidget {
 
 /// 공통 기능을 제공하는 State 믹스인
 mixin MediaSelectionBoxMixin<T extends BaseMediaSelectionBox> on State<T> {
-  
   /// 박스 높이 계산
   double getBoxHeight() {
-    return widget.dynamicHeight ?? (widget.isSelected 
-        ? (widget.isHorizontal ? 350.0 : 250.0)
-        : (widget.isHorizontal ? 350.0 : 200.0));
+    return widget.dynamicHeight ??
+        (widget.isSelected
+            ? (widget.isHorizontal ? 350.0 : 250.0)
+            : (widget.isHorizontal ? 350.0 : 200.0));
   }
 
   /// 아이콘 크기 계산
@@ -73,7 +73,8 @@ mixin MediaSelectionBoxMixin<T extends BaseMediaSelectionBox> on State<T> {
       child: InkWell(
         onTap: widget.onTap,
         child: Container(
-          width: widget.dynamicWidth ?? (widget.isHorizontal ? double.infinity : null),
+          width: widget.dynamicWidth ??
+              (widget.isHorizontal ? double.infinity : null),
           height: boxHeight,
           decoration: BoxDecoration(
             color: widget.boxColor,
@@ -116,9 +117,10 @@ mixin MediaSelectionBoxMixin<T extends BaseMediaSelectionBox> on State<T> {
                 ),
                 fontSize: 50.0,
                 letterSpacing: 0.0,
-                color: color ?? (widget.imageUrls.isNotEmpty
-                    ? Colors.white 
-                    : AppTheme.of(context).primaryText),
+                color: color ??
+                    (widget.imageUrls.isNotEmpty
+                        ? Colors.white
+                        : AppTheme.of(context).primaryText),
               ),
         ),
       ),
@@ -145,9 +147,9 @@ mixin MediaSelectionBoxMixin<T extends BaseMediaSelectionBox> on State<T> {
 
   /// + 아이콘 빌드 (A박스 전용)
   Widget? buildPlusIcon() {
-    if (widget.label == 'A' && 
-        widget.imageUrls.isEmpty && 
-        widget.showPlusIcon && 
+    if (widget.label == 'A' &&
+        widget.imageUrls.isEmpty &&
+        widget.showPlusIcon &&
         widget.onPlusIconTap != null) {
       return Align(
         alignment: AlignmentDirectional(1.0, -1.0),

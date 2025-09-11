@@ -54,17 +54,17 @@ void main() {
     setUp(() async {
       // Reset DI container
       await sl.reset();
-      
+
       // Initialize fake Firestore
       fakeFirestore = FakeFirebaseFirestore();
-      
+
       // Initialize DI container with test configuration
       await DIContainer.initialize();
-      
+
       // Get repository instances from DI container
       userRepository = sl<IUserRepository>();
       postRepository = sl<IPostRepository>();
-      
+
       // Verify correct implementations are registered
       expect(userRepository, isA<UserRepositoryImpl>());
       expect(postRepository, isA<PostRepositoryImpl>());
@@ -81,20 +81,25 @@ void main() {
     });
 
     group('UserRepository + UserProfileAdapter Integration', () {
-      test('should retrieve user and convert to domain models via adapter', () async {
+      test('should retrieve user and convert to domain models via adapter',
+          () async {
         // Arrange: Add test user to fake Firestore
-        await fakeFirestore.collection('users').doc(testUserProfile.uid).set(
-          _createUserFirestoreData()
-        );
+        await fakeFirestore
+            .collection('users')
+            .doc(testUserProfile.uid)
+            .set(_createUserFirestoreData());
 
         // Act: Retrieve user bundle using repository + adapter
-        final retrievedBundle = await userRepository.getUserBundleByUid(testUserProfile.uid);
+        final retrievedBundle =
+            await userRepository.getUserBundleByUid(testUserProfile.uid);
 
         // Assert: Verify data flow through adapter
         expect(retrievedBundle, isNotNull);
         expect(retrievedBundle!.auth.uid, equals(testUserProfile.uid));
-        expect(retrievedBundle.profile.displayName, equals(testUserProfile.displayName));
-        expect(retrievedBundle.settings.isPremiumUser, equals(testUserProfile.isPremiumUser));
+        expect(retrievedBundle.profile.displayName,
+            equals(testUserProfile.displayName));
+        expect(retrievedBundle.settings.isPremiumUser,
+            equals(testUserProfile.isPremiumUser));
         expect(retrievedBundle.stats.pointsA, equals(testUserProfile.pointsA));
 
         // Verify adapter mapping completeness
@@ -172,7 +177,10 @@ void main() {
         await userRepository.createUserFromBundle(newUserBundle);
 
         // Assert: Verify user was created in Firestore
-        final doc = await fakeFirestore.collection('users').doc('test-user-create').get();
+        final doc = await fakeFirestore
+            .collection('users')
+            .doc('test-user-create')
+            .get();
         expect(doc.exists, isTrue);
 
         final data = doc.data()!;
@@ -186,9 +194,10 @@ void main() {
 
       test('should update user using domain models via adapter', () async {
         // Arrange: Create initial user
-        await fakeFirestore.collection('users').doc(testUserProfile.uid).set(
-          _createUserFirestoreData()
-        );
+        await fakeFirestore
+            .collection('users')
+            .doc(testUserProfile.uid)
+            .set(_createUserFirestoreData());
 
         // Create updated bundle
         final updatedBundle = testUserBundle.copyWith(
@@ -200,25 +209,30 @@ void main() {
         await userRepository.updateUserWithBundle(updatedBundle);
 
         // Assert: Verify changes were persisted
-        final doc = await fakeFirestore.collection('users').doc(testUserProfile.uid).get();
+        final doc = await fakeFirestore
+            .collection('users')
+            .doc(testUserProfile.uid)
+            .get();
         final data = doc.data()!;
         expect(data['pointsA'], equals(999));
         expect(data['pointsQ'], equals(888));
         expect(data['isPremiumUser'], equals(true));
       });
 
-      test('should retrieve user and extract individual domain models', () async {
+      test('should retrieve user and extract individual domain models',
+          () async {
         // Arrange: Add test user to fake Firestore
-        await fakeFirestore.collection('users').doc(testUserProfile.uid).set(
-          _createUserFirestoreData()
-        );
+        await fakeFirestore
+            .collection('users')
+            .doc(testUserProfile.uid)
+            .set(_createUserFirestoreData());
 
         // Act: Retrieve user and convert to bundle
         final user = await userRepository.getUserByUid(testUserProfile.uid);
         expect(user, isNotNull);
-        
+
         final bundle = UserProfileAdapter.fromLegacy(user!);
-        
+
         // Assert: Test individual model extraction
         final profileInfo = bundle.profile;
         expect(profileInfo.displayName, equals(testUserProfile.displayName));
@@ -235,12 +249,14 @@ void main() {
     });
 
     group('PostRepository + PostsModelAdapter Integration', () {
-      test('should retrieve post and convert to domain models via adapter', () async {
+      test('should retrieve post and convert to domain models via adapter',
+          () async {
         // Arrange: Add test post to fake Firestore
         const postId = 'test-post-123';
-        await fakeFirestore.collection('posts').doc(postId).set(
-          _createPostFirestoreData()
-        );
+        await fakeFirestore
+            .collection('posts')
+            .doc(postId)
+            .set(_createPostFirestoreData());
 
         // Act: Retrieve post bundle using repository + adapter
         final retrievedBundle = await postRepository.getPostBundleById(postId);
@@ -326,11 +342,13 @@ void main() {
         );
 
         // Act: Create post using repository + adapter
-        final createdPostId = await postRepository.createPostFromBundle(newPostBundle);
+        final createdPostId =
+            await postRepository.createPostFromBundle(newPostBundle);
 
         // Assert: Verify post was created in Firestore
         expect(createdPostId, isNotEmpty);
-        final doc = await fakeFirestore.collection('posts').doc(createdPostId).get();
+        final doc =
+            await fakeFirestore.collection('posts').doc(createdPostId).get();
         expect(doc.exists, isTrue);
 
         final data = doc.data()!;
@@ -342,9 +360,10 @@ void main() {
       test('should update post using domain models via adapter', () async {
         // Arrange: Create initial post
         const postId = 'update-test-post';
-        await fakeFirestore.collection('posts').doc(postId).set(
-          _createPostFirestoreData()
-        );
+        await fakeFirestore
+            .collection('posts')
+            .doc(postId)
+            .set(_createPostFirestoreData());
 
         // Create updated bundle
         final updatedBundle = PostBundle(
@@ -368,9 +387,10 @@ void main() {
       test('should retrieve individual domain models via adapter', () async {
         // Arrange: Add test post to fake Firestore
         const postId = 'individual-test-post';
-        await fakeFirestore.collection('posts').doc(postId).set(
-          _createPostFirestoreData()
-        );
+        await fakeFirestore
+            .collection('posts')
+            .doc(postId)
+            .set(_createPostFirestoreData());
 
         // Act & Assert: Test individual model retrieval
         final postCore = await postRepository.getPostCore(postId);
@@ -393,15 +413,18 @@ void main() {
       test('should stream post bundles and filter by user', () async {
         // Arrange: Add multiple test posts
         const userId = 'test-user-123';
-        await fakeFirestore.collection('posts').doc('post1').set(
-          _createPostFirestoreData(userId: userId)
-        );
-        await fakeFirestore.collection('posts').doc('post2').set(
-          _createPostFirestoreData(userId: 'other-user')
-        );
-        await fakeFirestore.collection('posts').doc('post3').set(
-          _createPostFirestoreData(userId: userId)
-        );
+        await fakeFirestore
+            .collection('posts')
+            .doc('post1')
+            .set(_createPostFirestoreData(userId: userId));
+        await fakeFirestore
+            .collection('posts')
+            .doc('post2')
+            .set(_createPostFirestoreData(userId: 'other-user'));
+        await fakeFirestore
+            .collection('posts')
+            .doc('post3')
+            .set(_createPostFirestoreData(userId: userId));
 
         // Act: Get posts stream filtered by user
         final stream = postRepository.getPostBundlesByUserId(userId);
@@ -419,9 +442,10 @@ void main() {
     group('Performance Benchmarks', () {
       test('adapter conversion overhead should be <10ms', () async {
         // Arrange: Create test data
-        await fakeFirestore.collection('users').doc(testUserProfile.uid).set(
-          _createUserFirestoreData()
-        );
+        await fakeFirestore
+            .collection('users')
+            .doc(testUserProfile.uid)
+            .set(_createUserFirestoreData());
 
         const iterations = 100;
         final stopwatch = Stopwatch();
@@ -443,10 +467,12 @@ void main() {
 
         // Assert: Verify performance requirement
         final averageTimeMs = stopwatch.elapsedMilliseconds / iterations;
-        expect(averageTimeMs, lessThan(10.0), 
-          reason: 'Adapter conversion should be <10ms, but took ${averageTimeMs.toStringAsFixed(2)}ms');
+        expect(averageTimeMs, lessThan(10.0),
+            reason:
+                'Adapter conversion should be <10ms, but took ${averageTimeMs.toStringAsFixed(2)}ms');
 
-        print('User adapter average conversion time: ${averageTimeMs.toStringAsFixed(2)}ms');
+        print(
+            'User adapter average conversion time: ${averageTimeMs.toStringAsFixed(2)}ms');
       });
 
       test('post adapter conversion overhead should be <10ms', () async {
@@ -465,9 +491,11 @@ void main() {
         // Assert: Verify performance requirement
         final averageTimeMs = stopwatch.elapsedMilliseconds / iterations;
         expect(averageTimeMs, lessThan(10.0),
-          reason: 'Post adapter conversion should be <10ms, but took ${averageTimeMs.toStringAsFixed(2)}ms');
+            reason:
+                'Post adapter conversion should be <10ms, but took ${averageTimeMs.toStringAsFixed(2)}ms');
 
-        print('Post adapter average conversion time: ${averageTimeMs.toStringAsFixed(2)}ms');
+        print(
+            'Post adapter average conversion time: ${averageTimeMs.toStringAsFixed(2)}ms');
       });
 
       test('batch operations should scale linearly', () async {
@@ -492,19 +520,23 @@ void main() {
         // Assert: Verify linear scaling
         final ratio5050 = results[50]! / results[10]!;
         final ratio10050 = results[100]! / results[50]!;
-        
-        expect(ratio5050, lessThan(6.0), // Should be ~5x but allow some variance
-          reason: 'Batch processing should scale linearly');
-        expect(ratio10050, lessThan(2.5), // Should be ~2x but allow some variance
-          reason: 'Batch processing should scale linearly');
 
-        print('Batch processing scaling: 10=${results[10]}ms, 50=${results[50]}ms, 100=${results[100]}ms');
+        expect(
+            ratio5050, lessThan(6.0), // Should be ~5x but allow some variance
+            reason: 'Batch processing should scale linearly');
+        expect(
+            ratio10050, lessThan(2.5), // Should be ~2x but allow some variance
+            reason: 'Batch processing should scale linearly');
+
+        print(
+            'Batch processing scaling: 10=${results[10]}ms, 50=${results[50]}ms, 100=${results[100]}ms');
       });
 
-      test('memory usage should remain stable during batch operations', () async {
+      test('memory usage should remain stable during batch operations',
+          () async {
         // This is a basic test - more sophisticated memory testing would require additional tools
         final largeBatch = List.generate(1000, (i) => testPostsModel);
-        
+
         // Act: Process large batch
         final bundles = PostsModelAdapter.toDomainModelsList(largeBatch);
         final converted = PostsModelAdapter.fromDomainModelsList(bundles);
@@ -535,14 +567,15 @@ void main() {
 
       test('should handle missing post data', () async {
         // Act & Assert: Should return null for non-existent post
-        final bundle = await postRepository.getPostBundleById('non-existent-post');
+        final bundle =
+            await postRepository.getPostBundleById('non-existent-post');
         expect(bundle, isNull);
       });
 
       test('should handle Firestore connection failures', () async {
         // This would require more sophisticated mocking of connection failures
         // For now, we test the error propagation structure
-        
+
         // Act & Assert: Error should be properly wrapped and propagated
         expect(
           () async => await postRepository.getPostBundleById('connection-test'),
@@ -572,7 +605,10 @@ void main() {
       test('should maintain all legacy UserProfile fields', () async {
         // Arrange: Create user with all legacy fields
         final legacyFields = _createUserFirestoreData();
-        await fakeFirestore.collection('users').doc('legacy-test').set(legacyFields);
+        await fakeFirestore
+            .collection('users')
+            .doc('legacy-test')
+            .set(legacyFields);
 
         // Act: Convert through adapter
         final bundle = await userRepository.getUserBundleByUid('legacy-test');
@@ -584,22 +620,25 @@ void main() {
         expect(reconstructed.displayName, equals(testUserProfile.displayName));
         expect(reconstructed.pointsA, equals(testUserProfile.pointsA));
         expect(reconstructed.pointsQ, equals(testUserProfile.pointsQ));
-        expect(reconstructed.isPremiumUser, equals(testUserProfile.isPremiumUser));
+        expect(
+            reconstructed.isPremiumUser, equals(testUserProfile.isPremiumUser));
       });
 
       test('should maintain all legacy PostsModel fields', () async {
         // Arrange: Create post with all legacy fields
         const postId = 'legacy-post-test';
-        await fakeFirestore.collection('posts').doc(postId).set(
-          _createPostFirestoreData()
-        );
+        await fakeFirestore
+            .collection('posts')
+            .doc(postId)
+            .set(_createPostFirestoreData());
 
         // Act: Convert through adapter
         final bundle = await postRepository.getPostBundleById(postId);
         final reconstructed = PostsModelAdapter.fromDomainModels(bundle!);
 
         // Assert: Verify critical legacy fields are preserved
-        expect(reconstructed.questionTitle, equals(testPostsModel.questionTitle));
+        expect(
+            reconstructed.questionTitle, equals(testPostsModel.questionTitle));
         expect(reconstructed.votesA, equals(testPostsModel.votesA));
         expect(reconstructed.votesB, equals(testPostsModel.votesB));
         expect(reconstructed.likecount, equals(testPostsModel.likecount));
@@ -709,7 +748,7 @@ Map<String, dynamic> _createPostFirestoreData({String? userId}) {
     },
     'optionB': <String, dynamic>{
       'text': 'Option B Text',
-      'imageUrls': const ['https://example.com/b1.jpg'], 
+      'imageUrls': const ['https://example.com/b1.jpg'],
       'aspectRatio': 1.2,
     },
     'votesA': 10,
@@ -725,7 +764,8 @@ Map<String, dynamic> _createPostFirestoreData({String? userId}) {
     'interestcount': 15,
     'reportCount': 0,
     'voteStartTime': Timestamp.now(),
-    'voteEndTime': Timestamp.fromDate(DateTime.now().add(const Duration(minutes: 10))),
+    'voteEndTime':
+        Timestamp.fromDate(DateTime.now().add(const Duration(minutes: 10))),
     'voteStatus': 'active',
     'voteCompleted': false,
     'isVotingComplete': false,

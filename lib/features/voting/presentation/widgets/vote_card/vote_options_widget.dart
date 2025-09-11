@@ -6,7 +6,6 @@ import '/services/ui/models/box_sizes.dart';
 /// 투표 옵션 A/B 표시 위젯
 /// 이미지와 텍스트 옵션을 레이아웃에 맞게 표시합니다
 class VoteOptionsWidget extends StatelessWidget {
-  
   const VoteOptionsWidget({
     super.key,
     required this.optionAText,
@@ -24,7 +23,7 @@ class VoteOptionsWidget extends StatelessWidget {
   final BoxSizes boxSizes;
   final bool isHorizontal;
   final Widget? searchHighlighter;
-  
+
   @override
   Widget build(BuildContext context) {
     if (isHorizontal) {
@@ -33,7 +32,7 @@ class VoteOptionsWidget extends StatelessWidget {
       return _buildVerticalLayout();
     }
   }
-  
+
   Widget _buildHorizontalLayout() {
     return Row(
       children: [
@@ -59,7 +58,7 @@ class VoteOptionsWidget extends StatelessWidget {
       ],
     );
   }
-  
+
   Widget _buildVerticalLayout() {
     return Column(
       children: [
@@ -81,7 +80,7 @@ class VoteOptionsWidget extends StatelessWidget {
       ],
     );
   }
-  
+
   Widget _buildOptionBox({
     required String text,
     required List<String> images,
@@ -90,7 +89,7 @@ class VoteOptionsWidget extends StatelessWidget {
     required double height,
   }) {
     final hasImage = images.isNotEmpty;
-    
+
     return Container(
       width: width,
       height: height,
@@ -110,7 +109,7 @@ class VoteOptionsWidget extends StatelessWidget {
             _buildImageContent(images, width)
           else
             _buildTextContent(text),
-            
+
           // 라벨
           Positioned(
             top: 4,
@@ -137,14 +136,15 @@ class VoteOptionsWidget extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildImageContent(List<String> images, double boxWidth) {
     return Builder(
       builder: (context) {
         if (images.isEmpty) return const SizedBox.shrink();
-        
-        final memCacheWidth = (boxWidth * MediaQuery.of(context).devicePixelRatio).toInt();
-        
+
+        final memCacheWidth =
+            (boxWidth * MediaQuery.of(context).devicePixelRatio).toInt();
+
         // 단일 이미지
         if (images.length == 1) {
           return ClipRRect(
@@ -166,7 +166,7 @@ class VoteOptionsWidget extends StatelessWidget {
             ),
           );
         }
-        
+
         // 멀티 이미지는 PageView로 표시
         return ClipRRect(
           borderRadius: BorderRadius.circular(8),
@@ -194,7 +194,7 @@ class VoteOptionsWidget extends StatelessWidget {
       },
     );
   }
-  
+
   Widget _buildTextContent(String text) {
     return Center(
       child: Padding(

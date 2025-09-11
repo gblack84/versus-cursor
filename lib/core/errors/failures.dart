@@ -4,7 +4,7 @@
 import 'package:equatable/equatable.dart';
 
 /// Base class for all failures in the application
-/// 
+///
 /// All failures should extend this abstract class
 /// to provide consistent error handling across layers.
 abstract class Failure extends Equatable {

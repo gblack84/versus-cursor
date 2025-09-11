@@ -79,17 +79,13 @@ class _HobbiesSelectWidgetState extends State<HobbiesSelectWidget> {
               textAlign: TextAlign.end,
               style: AppTheme.of(context).headlineSmall.override(
                     font: GoogleFonts.plusJakartaSans(
-                      fontWeight:
-                          AppTheme.of(context).headlineSmall.fontWeight,
-                      fontStyle:
-                          AppTheme.of(context).headlineSmall.fontStyle,
+                      fontWeight: AppTheme.of(context).headlineSmall.fontWeight,
+                      fontStyle: AppTheme.of(context).headlineSmall.fontStyle,
                     ),
                     color: Color(0xFF14181B),
                     letterSpacing: 0.0,
-                    fontWeight:
-                        AppTheme.of(context).headlineSmall.fontWeight,
-                    fontStyle:
-                        AppTheme.of(context).headlineSmall.fontStyle,
+                    fontWeight: AppTheme.of(context).headlineSmall.fontWeight,
+                    fontStyle: AppTheme.of(context).headlineSmall.fontStyle,
                   ),
             ),
           ),
@@ -138,22 +134,21 @@ class _HobbiesSelectWidgetState extends State<HobbiesSelectWidget> {
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight: FontWeight.w800,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
+                                              fontStyle: AppTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontStyle,
                                             ),
                                             fontSize: 18.0,
                                             letterSpacing: 0.0,
                                             fontWeight: FontWeight.w800,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                     ),
                                     TextSpan(
-                                      text: AppLocalizations.of(context).getText(
+                                      text:
+                                          AppLocalizations.of(context).getText(
                                         'jnha4tov' /*  Next, share your hobbies and ... */,
                                       ),
                                       style: AppTheme.of(context)
@@ -161,21 +156,20 @@ class _HobbiesSelectWidgetState extends State<HobbiesSelectWidget> {
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight: FontWeight.w600,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
+                                              fontStyle: AppTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontStyle,
                                             ),
                                             letterSpacing: 0.0,
                                             fontWeight: FontWeight.w600,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                     ),
                                     TextSpan(
-                                      text: AppLocalizations.of(context).getText(
+                                      text:
+                                          AppLocalizations.of(context).getText(
                                         's6khifdw' /* 
 We’ll tailor recommendations ... */
                                         ,
@@ -186,23 +180,21 @@ We’ll tailor recommendations ... */
                                       ),
                                     )
                                   ],
-                                  style: AppTheme.of(context)
-                                      .bodyMedium
-                                      .override(
-                                        font: GoogleFonts.plusJakartaSans(
-                                          fontWeight: FontWeight.bold,
-                                          fontStyle:
-                                              AppTheme.of(context)
+                                  style:
+                                      AppTheme.of(context).bodyMedium.override(
+                                            font: GoogleFonts.plusJakartaSans(
+                                              fontWeight: FontWeight.bold,
+                                              fontStyle: AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
-                                        ),
-                                        fontSize: 16.0,
-                                        letterSpacing: 0.0,
-                                        fontWeight: FontWeight.bold,
-                                        fontStyle: AppTheme.of(context)
-                                            .bodyMedium
-                                            .fontStyle,
-                                      ),
+                                            ),
+                                            fontSize: 16.0,
+                                            letterSpacing: 0.0,
+                                            fontWeight: FontWeight.bold,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
+                                          ),
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -293,8 +285,7 @@ We’ll tailor recommendations ... */
                                             .headlineMedium
                                             .fontStyle,
                                       ),
-                                      color: AppTheme.of(context)
-                                          .secondaryText,
+                                      color: AppTheme.of(context).secondaryText,
                                       letterSpacing: 0.0,
                                       fontWeight: AppTheme.of(context)
                                           .headlineMedium
@@ -303,46 +294,44 @@ We’ll tailor recommendations ... */
                                           .headlineMedium
                                           .fontStyle,
                                     ),
-                                hintStyle: AppTheme.of(context)
-                                    .labelMedium
-                                    .override(
-                                      font: GoogleFonts.plusJakartaSans(
-                                        fontWeight: AppTheme.of(context)
-                                            .labelMedium
-                                            .fontWeight,
-                                        fontStyle: AppTheme.of(context)
-                                            .labelMedium
-                                            .fontStyle,
-                                      ),
-                                      letterSpacing: 0.0,
-                                      fontWeight: AppTheme.of(context)
-                                          .labelMedium
-                                          .fontWeight,
-                                      fontStyle: AppTheme.of(context)
-                                          .labelMedium
-                                          .fontStyle,
-                                    ),
-                                errorStyle: AppTheme.of(context)
-                                    .bodyMedium
-                                    .override(
-                                      font: GoogleFonts.plusJakartaSans(
-                                        fontWeight: AppTheme.of(context)
-                                            .bodyMedium
-                                            .fontWeight,
-                                        fontStyle: AppTheme.of(context)
-                                            .bodyMedium
-                                            .fontStyle,
-                                      ),
-                                      color: AppTheme.of(context).error,
-                                      fontSize: 12.0,
-                                      letterSpacing: 0.0,
-                                      fontWeight: AppTheme.of(context)
-                                          .bodyMedium
-                                          .fontWeight,
-                                      fontStyle: AppTheme.of(context)
-                                          .bodyMedium
-                                          .fontStyle,
-                                    ),
+                                hintStyle:
+                                    AppTheme.of(context).labelMedium.override(
+                                          font: GoogleFonts.plusJakartaSans(
+                                            fontWeight: AppTheme.of(context)
+                                                .labelMedium
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .labelMedium
+                                                .fontStyle,
+                                          ),
+                                          letterSpacing: 0.0,
+                                          fontWeight: AppTheme.of(context)
+                                              .labelMedium
+                                              .fontWeight,
+                                          fontStyle: AppTheme.of(context)
+                                              .labelMedium
+                                              .fontStyle,
+                                        ),
+                                errorStyle:
+                                    AppTheme.of(context).bodyMedium.override(
+                                          font: GoogleFonts.plusJakartaSans(
+                                            fontWeight: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
+                                          ),
+                                          color: AppTheme.of(context).error,
+                                          fontSize: 12.0,
+                                          letterSpacing: 0.0,
+                                          fontWeight: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontWeight,
+                                          fontStyle: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontStyle,
+                                        ),
                                 enabledBorder: OutlineInputBorder(
                                   borderSide: BorderSide(
                                     color: Colors.white,
@@ -372,33 +361,31 @@ We’ll tailor recommendations ... */
                                   borderRadius: BorderRadius.circular(10.0),
                                 ),
                                 filled: true,
-                                fillColor:
-                                    (_model.hobbiesFocusNode?.hasFocus ?? false)
-                                        ? AppTheme.of(context).accent1
-                                        : AppTheme.of(context)
-                                            .secondaryBackground,
+                                fillColor: (_model.hobbiesFocusNode?.hasFocus ??
+                                        false)
+                                    ? AppTheme.of(context).accent1
+                                    : AppTheme.of(context).secondaryBackground,
                                 contentPadding: EdgeInsetsDirectional.fromSTEB(
                                     16.0, 20.0, 16.0, 20.0),
                               ),
-                              style: AppTheme.of(context)
-                                  .headlineMedium
-                                  .override(
-                                    font: GoogleFonts.plusJakartaSans(
-                                      fontWeight: AppTheme.of(context)
-                                          .headlineMedium
-                                          .fontWeight,
-                                      fontStyle: AppTheme.of(context)
-                                          .headlineMedium
-                                          .fontStyle,
-                                    ),
-                                    letterSpacing: 0.0,
-                                    fontWeight: AppTheme.of(context)
-                                        .headlineMedium
-                                        .fontWeight,
-                                    fontStyle: AppTheme.of(context)
-                                        .headlineMedium
-                                        .fontStyle,
-                                  ),
+                              style:
+                                  AppTheme.of(context).headlineMedium.override(
+                                        font: GoogleFonts.plusJakartaSans(
+                                          fontWeight: AppTheme.of(context)
+                                              .headlineMedium
+                                              .fontWeight,
+                                          fontStyle: AppTheme.of(context)
+                                              .headlineMedium
+                                              .fontStyle,
+                                        ),
+                                        letterSpacing: 0.0,
+                                        fontWeight: AppTheme.of(context)
+                                            .headlineMedium
+                                            .fontWeight,
+                                        fontStyle: AppTheme.of(context)
+                                            .headlineMedium
+                                            .fontStyle,
+                                      ),
                               maxLength: 20,
                               buildCounter: (context,
                                       {required currentLength,
@@ -427,9 +414,7 @@ We’ll tailor recommendations ... */
                                   'qdn4sbni' /* You can add up to 8 items. */,
                                 ),
                                 textAlign: TextAlign.center,
-                                style: AppTheme.of(context)
-                                    .bodyMedium
-                                    .override(
+                                style: AppTheme.of(context).bodyMedium.override(
                                       font: GoogleFonts.plusJakartaSans(
                                         fontWeight: AppTheme.of(context)
                                             .bodyMedium
@@ -507,30 +492,26 @@ We’ll tailor recommendations ... */
                                       16.0, 0.0, 16.0, 0.0),
                                   iconPadding: EdgeInsetsDirectional.fromSTEB(
                                       0.0, 0.0, 0.0, 0.0),
-                                  color:
-                                      AppTheme.of(context).primaryText,
-                                  textStyle: AppTheme.of(context)
-                                      .titleSmall
-                                      .override(
-                                        font: GoogleFonts.plusJakartaSans(
-                                          fontWeight:
-                                              AppTheme.of(context)
+                                  color: AppTheme.of(context).primaryText,
+                                  textStyle:
+                                      AppTheme.of(context).titleSmall.override(
+                                            font: GoogleFonts.plusJakartaSans(
+                                              fontWeight: AppTheme.of(context)
                                                   .titleSmall
                                                   .fontWeight,
-                                          fontStyle:
-                                              AppTheme.of(context)
+                                              fontStyle: AppTheme.of(context)
                                                   .titleSmall
                                                   .fontStyle,
-                                        ),
-                                        color: Colors.white,
-                                        letterSpacing: 0.0,
-                                        fontWeight: AppTheme.of(context)
-                                            .titleSmall
-                                            .fontWeight,
-                                        fontStyle: AppTheme.of(context)
-                                            .titleSmall
-                                            .fontStyle,
-                                      ),
+                                            ),
+                                            color: Colors.white,
+                                            letterSpacing: 0.0,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
+                                          ),
                                   elevation: 0.0,
                                   borderRadius: BorderRadius.circular(8.0),
                                   disabledColor: Color(0xFF646464),
@@ -557,9 +538,7 @@ We’ll tailor recommendations ... */
                                 'tial28r9' /* List. */,
                               ),
                               textAlign: TextAlign.center,
-                              style: AppTheme.of(context)
-                                  .bodyMedium
-                                  .override(
+                              style: AppTheme.of(context).bodyMedium.override(
                                     font: GoogleFonts.plusJakartaSans(
                                       fontWeight: FontWeight.w800,
                                       fontStyle: AppTheme.of(context)
@@ -618,14 +597,12 @@ We’ll tailor recommendations ... */
                                         child: Container(
                                           height: 32.0,
                                           decoration: BoxDecoration(
-                                            color: AppTheme.of(context)
-                                                .accent3,
+                                            color: AppTheme.of(context).accent3,
                                             borderRadius:
                                                 BorderRadius.circular(8.0),
                                             border: Border.all(
                                               color:
-                                                  AppTheme.of(context)
-                                                      .tertiary,
+                                                  AppTheme.of(context).tertiary,
                                             ),
                                           ),
                                           child: Row(
@@ -640,8 +617,7 @@ We’ll tailor recommendations ... */
                                                 child: Text(
                                                   authenticatedUserItem,
                                                   textAlign: TextAlign.center,
-                                                  style: AppTheme.of(
-                                                          context)
+                                                  style: AppTheme.of(context)
                                                       .bodyMedium
                                                       .override(
                                                         font: GoogleFonts
@@ -659,13 +635,11 @@ We’ll tailor recommendations ... */
                                                         ),
                                                         letterSpacing: 0.0,
                                                         fontWeight:
-                                                            AppTheme.of(
-                                                                    context)
+                                                            AppTheme.of(context)
                                                                 .bodyMedium
                                                                 .fontWeight,
                                                         fontStyle:
-                                                            AppTheme.of(
-                                                                    context)
+                                                            AppTheme.of(context)
                                                                 .bodyMedium
                                                                 .fontStyle,
                                                       ),
@@ -676,9 +650,8 @@ We’ll tailor recommendations ... */
                                                 buttonSize: 30.0,
                                                 icon: Icon(
                                                   Icons.cancel_outlined,
-                                                  color: AppTheme.of(
-                                                          context)
-                                                      .info,
+                                                  color:
+                                                      AppTheme.of(context).info,
                                                   size: 15.0,
                                                 ),
                                                 onPressed: () async {
@@ -730,44 +703,40 @@ We’ll tailor recommendations ... */
                                   text: AppLocalizations.of(context).getText(
                                     'ddy2vf0h' /* Tip. */,
                                   ),
-                                  style: AppTheme.of(context)
-                                      .bodyMedium
-                                      .override(
-                                        font: GoogleFonts.plusJakartaSans(
-                                          fontWeight: FontWeight.w600,
-                                          fontStyle:
-                                              AppTheme.of(context)
+                                  style:
+                                      AppTheme.of(context).bodyMedium.override(
+                                            font: GoogleFonts.plusJakartaSans(
+                                              fontWeight: FontWeight.w600,
+                                              fontStyle: AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
-                                        ),
-                                        fontSize: 17.0,
-                                        letterSpacing: 0.0,
-                                        fontWeight: FontWeight.w600,
-                                        fontStyle: AppTheme.of(context)
-                                            .bodyMedium
-                                            .fontStyle,
-                                      ),
+                                            ),
+                                            fontSize: 17.0,
+                                            letterSpacing: 0.0,
+                                            fontWeight: FontWeight.w600,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
+                                          ),
                                 ),
                                 TextSpan(
                                   text: AppLocalizations.of(context).getText(
                                     'ap7dkw8g' /*  Add your favorite hobbies or ... */,
                                   ),
-                                  style: AppTheme.of(context)
-                                      .bodyMedium
-                                      .override(
-                                        font: GoogleFonts.plusJakartaSans(
-                                          fontWeight: FontWeight.w500,
-                                          fontStyle:
-                                              AppTheme.of(context)
+                                  style:
+                                      AppTheme.of(context).bodyMedium.override(
+                                            font: GoogleFonts.plusJakartaSans(
+                                              fontWeight: FontWeight.w500,
+                                              fontStyle: AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
-                                        ),
-                                        letterSpacing: 0.0,
-                                        fontWeight: FontWeight.w500,
-                                        fontStyle: AppTheme.of(context)
-                                            .bodyMedium
-                                            .fontStyle,
-                                      ),
+                                            ),
+                                            letterSpacing: 0.0,
+                                            fontWeight: FontWeight.w500,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
+                                          ),
                                 ),
                                 TextSpan(
                                   text: AppLocalizations.of(context).getText(
@@ -793,9 +762,7 @@ We’ll tailor recommendations ... */
                                   ),
                                 )
                               ],
-                              style: AppTheme.of(context)
-                                  .bodyMedium
-                                  .override(
+                              style: AppTheme.of(context).bodyMedium.override(
                                     font: GoogleFonts.plusJakartaSans(
                                       fontWeight: AppTheme.of(context)
                                           .bodyMedium
@@ -836,25 +803,21 @@ We’ll tailor recommendations ... */
                           iconPadding: EdgeInsetsDirectional.fromSTEB(
                               0.0, 0.0, 0.0, 0.0),
                           color: AppTheme.of(context).primaryText,
-                          textStyle:
-                              AppTheme.of(context).titleSmall.override(
-                                    font: GoogleFonts.plusJakartaSans(
-                                      fontWeight: AppTheme.of(context)
-                                          .titleSmall
-                                          .fontWeight,
-                                      fontStyle: AppTheme.of(context)
-                                          .titleSmall
-                                          .fontStyle,
-                                    ),
-                                    color: Colors.white,
-                                    letterSpacing: 0.0,
-                                    fontWeight: AppTheme.of(context)
-                                        .titleSmall
-                                        .fontWeight,
-                                    fontStyle: AppTheme.of(context)
-                                        .titleSmall
-                                        .fontStyle,
-                                  ),
+                          textStyle: AppTheme.of(context).titleSmall.override(
+                                font: GoogleFonts.plusJakartaSans(
+                                  fontWeight: AppTheme.of(context)
+                                      .titleSmall
+                                      .fontWeight,
+                                  fontStyle:
+                                      AppTheme.of(context).titleSmall.fontStyle,
+                                ),
+                                color: Colors.white,
+                                letterSpacing: 0.0,
+                                fontWeight:
+                                    AppTheme.of(context).titleSmall.fontWeight,
+                                fontStyle:
+                                    AppTheme.of(context).titleSmall.fontStyle,
+                              ),
                           elevation: 0.0,
                           borderRadius: BorderRadius.circular(8.0),
                         ),

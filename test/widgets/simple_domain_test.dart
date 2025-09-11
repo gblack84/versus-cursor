@@ -40,9 +40,12 @@ void main() {
       // Arrange & Act
       final imageMedia = MediaContent(
         mediaType: 'image',
-        imageUrls: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg'],
+        imageUrls: [
+          'https://example.com/image1.jpg',
+          'https://example.com/image2.jpg'
+        ],
         thumbnailUrl: 'https://example.com/thumb.jpg',
-        aspectRatio: 16/9,
+        aspectRatio: 16 / 9,
       );
 
       // Assert
@@ -137,23 +140,23 @@ void main() {
     test('Domain models should be immutable', () {
       // This test verifies that domain models use final fields
       // and copyWith pattern for updates
-      
+
       final creator = CreatorInfo(
         userid: 'immutable-test',
         displayName: 'Test User',
       );
-      
+
       final media = MediaContent(
         mediaType: 'text',
         text: 'Immutable content',
       );
-      
+
       final votes = VoteData(
         votesA: 100,
         votesB: 50,
         totalVotes: 150,
       );
-      
+
       // All fields should be final (compile-time check)
       expect(creator.userid, equals('immutable-test'));
       expect(media.text, equals('Immutable content'));

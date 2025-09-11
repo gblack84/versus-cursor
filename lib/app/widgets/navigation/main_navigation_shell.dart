@@ -8,7 +8,7 @@ import '/app/state/providers/navigation_provider.dart' as nav;
 /// 바텀 네비게이션 바와 페이지들을 관리하는 위젯
 class MainNavigationShell extends StatelessWidget {
   final Widget child;
-  
+
   const MainNavigationShell({
     Key? key,
     required this.child,
@@ -20,13 +20,15 @@ class MainNavigationShell extends StatelessWidget {
       builder: (context, navigationProvider, _) {
         return Scaffold(
           body: child,
-          bottomNavigationBar: _buildBottomNavigationBar(context, navigationProvider),
+          bottomNavigationBar:
+              _buildBottomNavigationBar(context, navigationProvider),
         );
       },
     );
   }
 
-  Widget _buildBottomNavigationBar(BuildContext context, nav.NavigationProvider provider) {
+  Widget _buildBottomNavigationBar(
+      BuildContext context, nav.NavigationProvider provider) {
     final items = provider.currentItems;
     final currentIndex = provider.currentTabIndex;
 
@@ -71,10 +73,11 @@ class MainNavigationShell extends StatelessWidget {
     );
   }
 
-  void _onItemTapped(BuildContext context, nav.NavigationProvider provider, int index) {
+  void _onItemTapped(
+      BuildContext context, nav.NavigationProvider provider, int index) {
     final items = provider.currentItems;
     final selectedItem = items[index];
-    
+
     // 특별한 처리가 필요한 경우
     if (provider.mode == nav.NavigationMode.main && index == 3) {
       // 메인 모드에서 채팅 탭 선택 시
@@ -120,8 +123,8 @@ class NavigationItemWidget extends StatelessWidget {
               child: Icon(
                 isSelected ? item.activeIcon : item.icon,
                 key: ValueKey(isSelected),
-                color: isSelected 
-                    ? VersusColors.primary 
+                color: isSelected
+                    ? VersusColors.primary
                     : VersusColors.textSecondary,
                 size: 24,
               ),
@@ -130,8 +133,8 @@ class NavigationItemWidget extends StatelessWidget {
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
               style: VersusTextStyles.labelSmall.copyWith(
-                color: isSelected 
-                    ? VersusColors.primary 
+                color: isSelected
+                    ? VersusColors.primary
                     : VersusColors.textSecondary,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),

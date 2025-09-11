@@ -168,7 +168,8 @@ class VoteData extends Equatable {
       voteCancelledAt: (json['voteCancelledAt'] as Timestamp?)?.toDate(),
       voteCancelledReason: json['voteCancelledReason'] ?? '',
       notificationsSent: json['notificationsSent'] ?? false,
-      notificationsSentAt: (json['notificationsSentAt'] as Timestamp?)?.toDate(),
+      notificationsSentAt:
+          (json['notificationsSentAt'] as Timestamp?)?.toDate(),
       displayVotesA: json['displayVotesA'] ?? 0,
       displayVotesB: json['displayVotesB'] ?? 0,
       displayPercentA: json['displayPercentA'] ?? 0,
@@ -213,5 +214,6 @@ class VoteData extends Equatable {
       ];
 
   @override
-  String toString() => 'VoteData(status: $voteStatus, votesA: $votesA, votesB: $votesB)';
+  String toString() =>
+      'VoteData(status: $voteStatus, votesA: $votesA, votesB: $votesB)';
 }

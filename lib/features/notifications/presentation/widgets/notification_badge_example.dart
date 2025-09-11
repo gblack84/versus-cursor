@@ -5,7 +5,7 @@ import 'notification_badge.dart';
 import '/features/notifications/presentation/providers/notification_badge_provider.dart';
 
 /// 알림 뱃지 사용 예제 모음
-/// 
+///
 /// 다양한 상황에서 알림 뱃지를 사용하는 방법을 보여줍니다.
 class NotificationBadgeExamples extends StatelessWidget {
   const NotificationBadgeExamples({Key? key}) : super(key: key);
@@ -34,7 +34,7 @@ class NotificationBadgeExamples extends StatelessWidget {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 32),
-            
+
             // 예제 2: 기본 뱃지
             const Text('기본 뱃지:', style: TextStyle(fontSize: 16)),
             const SizedBox(height: 8),
@@ -43,7 +43,7 @@ class NotificationBadgeExamples extends StatelessWidget {
               child: Icon(Icons.notifications, size: 48),
             ),
             const SizedBox(height: 24),
-            
+
             // 예제 3: 커스텀 색상
             const Text('커스텀 색상:', style: TextStyle(fontSize: 16)),
             const SizedBox(height: 8),
@@ -54,7 +54,7 @@ class NotificationBadgeExamples extends StatelessWidget {
               child: Icon(Icons.email, size: 48, color: Colors.blue),
             ),
             const SizedBox(height: 24),
-            
+
             // 예제 4: 큰 숫자 (99+)
             const Text('큰 숫자 표시:', style: TextStyle(fontSize: 16)),
             const SizedBox(height: 8),
@@ -63,9 +63,9 @@ class NotificationBadgeExamples extends StatelessWidget {
               child: Icon(Icons.message, size: 48, color: Colors.purple),
             ),
             const SizedBox(height: 24),
-            
+
             // 예제 5: 실시간 업데이트
-            const Text('실시간 업데이트 (NotificationBadgeProvider):', 
+            const Text('실시간 업데이트 (NotificationBadgeProvider):',
                 style: TextStyle(fontSize: 16)),
             const SizedBox(height: 8),
             NotificationBadgeProvider(
@@ -83,7 +83,7 @@ class NotificationBadgeExamples extends StatelessWidget {
               },
             ),
             const SizedBox(height: 24),
-            
+
             // 예제 6: 버튼과 함께 사용
             const Text('버튼과 함께:', style: TextStyle(fontSize: 16)),
             const SizedBox(height: 8),
@@ -102,9 +102,9 @@ class NotificationBadgeExamples extends StatelessWidget {
               },
             ),
             const SizedBox(height: 24),
-            
+
             // 예제 7: BottomNavigationBar에서 사용
-            const Text('BottomNavigationBar에서 사용:', 
+            const Text('BottomNavigationBar에서 사용:',
                 style: TextStyle(fontSize: 16)),
             const SizedBox(height: 8),
             Container(

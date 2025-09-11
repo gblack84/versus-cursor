@@ -53,26 +53,26 @@ class MediaSelectionFlowWidget extends StatefulWidget {
   final InPutPostImageModel? model; // 편집 모드 감지를 위해 추가
 
   @override
-  State<MediaSelectionFlowWidget> createState() => _MediaSelectionFlowWidgetState();
+  State<MediaSelectionFlowWidget> createState() =>
+      _MediaSelectionFlowWidgetState();
 }
 
 class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   // 선택된 파일
   File? _selectedFile;
-  
+
   // 멀티 이미지 선택 시 사용
   List<File> _allSelectedFiles = [];
   List<AssetEntity> _selectedAssets = []; // AssetEntity 저장
   int _currentEditIndex = 0;
-  
-  
+
   // 재시도 상태 추적
   bool _isRetrying = false;
 
   @override
   void initState() {
     super.initState();
-    
+
     // 기존 이미지가 있고 에디터로 바로 시작하는 경우
     if (widget.startWithEditor) {
       if (widget.initialImageFile != null) {
@@ -103,9 +103,9 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       toastBuilder: (_) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isError 
-            ? Colors.red.shade700.withValues(alpha: 0.9) 
-            : Colors.black.withValues(alpha: 0.8),
+          color: isError
+              ? Colors.red.shade700.withValues(alpha: 0.9)
+              : Colors.black.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
@@ -123,9 +123,10 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   Future<void> _openPicker() async {
     try {
       // 권한 확인 및 요청
-      final PermissionState permission = await PhotoManager.requestPermissionExtend();
+      final PermissionState permission =
+          await PhotoManager.requestPermissionExtend();
       print('[AssetPicker] Permission state: $permission');
-      
+
       if (permission.isAuth != true) {
         // 권한이 거부된 경우
         if (permission == PermissionState.denied) {
@@ -133,7 +134,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         } else if (permission == PermissionState.limited) {
           _showToast('제한된 사진 접근만 허용되었습니다.\n모든 사진에 접근하려면 설정을 변경해주세요.');
         }
-        
+
         // 설정으로 이동하는 다이얼로그 표시
         if (mounted) {
           final bool? openSettings = await showDialog<bool>(
@@ -143,8 +144,8 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
                 title: const Text('사진 접근 권한'),
                 content: Text(
                   permission == PermissionState.denied
-                    ? '사진을 선택하려면 갤러리 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.'
-                    : '선택한 사진만 접근 가능합니다.\n모든 사진에 접근하려면 설정을 변경해주세요.',
+                      ? '사진을 선택하려면 갤러리 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.'
+                      : '선택한 사진만 접근 가능합니다.\n모든 사진에 접근하려면 설정을 변경해주세요.',
                 ),
                 actions: [
                   TextButton(
@@ -159,12 +160,12 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
               );
             },
           );
-          
+
           if (openSettings == true) {
             await PhotoManager.openSetting();
           }
         }
-        
+
         // 권한이 없으면 플로우 종료
         if (mounted) {
           Navigator.of(context).pop();
@@ -173,13 +174,15 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       }
       // 기존에 선택된 AssetEntity 복원
       List<AssetEntity> selectedAssets = [];
-      
+
       print('[AssetPicker] Opening picker...');
       print('[AssetPicker] Box: ${widget.box}');
       print('[AssetPicker] isAddMode: ${widget.isAddMode}');
-      print('[AssetPicker] existingAssetIds: ${widget.existingAssetIds?.length ?? 0}');
-      
-      if (widget.existingAssetIds != null && widget.existingAssetIds!.isNotEmpty) {
+      print(
+          '[AssetPicker] existingAssetIds: ${widget.existingAssetIds?.length ?? 0}');
+
+      if (widget.existingAssetIds != null &&
+          widget.existingAssetIds!.isNotEmpty) {
         for (String id in widget.existingAssetIds!) {
           try {
             final asset = await AssetEntity.fromId(id);
@@ -192,7 +195,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         }
         print('[AssetPicker] 복원된 AssetEntity 개수: ${selectedAssets.length}');
       }
-      
+
       print('[AssetPicker] Config:');
       print('  - Max assets: 4');
       print('  - Special item position: NONE (using floating camera button)');
@@ -200,9 +203,10 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       print('  - Grid count: 4');
       print('  - Sort by modified date: true');
       print('  - Should revert grid: false (최신 사진 맨 위)');
-      
+
       // 커스텀 델리게이트를 사용하여 플로팅 카메라 버튼 추가
-      final List<AssetEntity>? result = await AssetPicker.pickAssetsWithDelegate(
+      final List<AssetEntity>? result =
+          await AssetPicker.pickAssetsWithDelegate(
         context,
         delegate: CameraFloatingButtonDelegate(
           provider: DefaultAssetPickerProvider(
@@ -241,26 +245,30 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
           textDelegate: const CustomKoreanAssetPickerTextDelegate(),
           onCameraPressed: () async {
             print('[AssetPicker] Floating camera button pressed');
-            
+
             // 정렬 순서 디버깅
             try {
-              final paths = await PhotoManager.getAssetPathList(type: RequestType.image);
+              final paths =
+                  await PhotoManager.getAssetPathList(type: RequestType.image);
               if (paths.isNotEmpty) {
                 final firstPath = paths.first;
-                final assets = await firstPath.getAssetListPaged(page: 0, size: 5);
+                final assets =
+                    await firstPath.getAssetListPaged(page: 0, size: 5);
                 print('[AssetPicker] 첫 5개 사진 생성 날짜:');
                 for (int i = 0; i < assets.length; i++) {
                   final asset = assets[i];
                   final createDate = asset.createDateTime;
-                  print('  ${i + 1}. ${createDate.toString()} - ${asset.title ?? "No title"}');
+                  print(
+                      '  ${i + 1}. ${createDate.toString()} - ${asset.title ?? "No title"}');
                 }
               }
             } catch (e) {
               print('[AssetPicker] 정렬 디버깅 실패: $e');
             }
-            
+
             // 카메라 열기
-            final AssetEntity? cameraResult = await _openCameraForPicker(context);
+            final AssetEntity? cameraResult =
+                await _openCameraForPicker(context);
             if (cameraResult != null) {
               // 촬영한 사진을 선택 목록에 추가
               setState(() {
@@ -282,18 +290,22 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         },
       );
 
-      print('[AssetPicker] Picker result: ${result?.length ?? 0} items selected');
-      
+      print(
+          '[AssetPicker] Picker result: ${result?.length ?? 0} items selected');
+
       if (result != null && result.isNotEmpty) {
         // 추가 모드이거나 기존 이미지가 있는 경우 - diff 처리
-        if (widget.isAddMode || 
-            (widget.existingImageUrls != null && widget.existingImageUrls!.isNotEmpty) ||
-            (widget.existingImageFiles != null && widget.existingImageFiles!.isNotEmpty)) {
-          print('[AssetPicker] Processing with existing images (diff mode) - isAddMode: ${widget.isAddMode}');
+        if (widget.isAddMode ||
+            (widget.existingImageUrls != null &&
+                widget.existingImageUrls!.isNotEmpty) ||
+            (widget.existingImageFiles != null &&
+                widget.existingImageFiles!.isNotEmpty)) {
+          print(
+              '[AssetPicker] Processing with existing images (diff mode) - isAddMode: ${widget.isAddMode}');
           await _processSelectionResult(result);
           return;
         }
-        
+
         // 기존 이미지가 없거나 첫 번째 이미지인 경우 - 기존 플로우 유지
         // 1장만 선택한 경우 바로 편집
         if (result.length == 1) {
@@ -307,23 +319,22 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
             });
           }
         } else {
-          print('[AssetPicker] Multiple images selected (${result.length}), opening thumbnail selection');
+          print(
+              '[AssetPicker] Multiple images selected (${result.length}), opening thumbnail selection');
           // 여러 장 선택한 경우 썸네일 선택 페이지로 이동
           print('[MediaSelection] 멀티 이미지 파일 변환 시작');
-          final files = await Future.wait(
-            result.map((asset) async {
-              final file = await asset.file;
-              if (file != null) {
-                final bytes = await file.readAsBytes();
-                print('[MediaSelection] AssetEntity -> File 변환:');
-                print('  - Asset ID: ${asset.id}');
-                print('  - 파일 경로: ${file.path}');
-                print('  - 파일 크기: ${bytes.length} bytes');
-              }
-              return file;
-            })
-          );
-          
+          final files = await Future.wait(result.map((asset) async {
+            final file = await asset.file;
+            if (file != null) {
+              final bytes = await file.readAsBytes();
+              print('[MediaSelection] AssetEntity -> File 변환:');
+              print('  - Asset ID: ${asset.id}');
+              print('  - 파일 경로: ${file.path}');
+              print('  - 파일 크기: ${bytes.length} bytes');
+            }
+            return file;
+          }));
+
           final validFiles = files.whereType<File>().toList();
           if (validFiles.isNotEmpty && mounted) {
             // AssetEntity 리스트 저장
@@ -356,7 +367,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
     setState(() {
       _allSelectedFiles = files;
     });
-    
+
     // ThumbnailSelectionPage로 이동
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
@@ -367,7 +378,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         ),
       ),
     );
-    
+
     if (result != null && mounted) {
       // 뒤로가기 액션인 경우 피커로 돌아가기
       if (result['action'] == 'back_to_picker') {
@@ -394,13 +405,14 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   Future<AssetEntity?> _openCameraForPicker(BuildContext context) async {
     try {
       // 카메라 권한 확인
-      final PermissionState cameraPermission = await PhotoManager.requestPermissionExtend();
-      
+      final PermissionState cameraPermission =
+          await PhotoManager.requestPermissionExtend();
+
       if (cameraPermission.isAuth != true) {
         _showToast('카메라 권한이 필요합니다.', isError: true);
         return null;
       }
-      
+
       final AssetEntity? entity = await CameraPicker.pickFromCamera(
         context,
         pickerConfig: CameraPickerConfig(
@@ -408,7 +420,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
           textDelegate: const CustomKoreanCameraPickerTextDelegate(),
         ),
       );
-      
+
       if (entity != null) {
         print('[AssetPicker] Photo taken from camera in picker');
         return entity;
@@ -427,25 +439,27 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   Future<void> _editExistingFile() async {
     setState(() {
       _selectedFile = widget.initialImageFile;
-      
+
       // 멀티 이미지 편집 시 전체 파일 목록 설정
-      if (widget.existingImageFiles != null && widget.existingImageFiles!.isNotEmpty) {
+      if (widget.existingImageFiles != null &&
+          widget.existingImageFiles!.isNotEmpty) {
         _allSelectedFiles = List<File>.from(widget.existingImageFiles!);
         _currentEditIndex = widget.currentIndex ?? 0;
       }
-      
+
       // AssetEntity ID들도 복원
-      if (widget.existingAssetIds != null && widget.existingAssetIds!.isNotEmpty) {
+      if (widget.existingAssetIds != null &&
+          widget.existingAssetIds!.isNotEmpty) {
         // AssetEntity 복원은 비동기로 처리
         _restoreAssetEntities();
       }
     });
   }
-  
+
   /// AssetEntity ID들을 비동기로 복원
   Future<void> _restoreAssetEntities() async {
     if (widget.existingAssetIds == null) return;
-    
+
     final restoredAssets = <AssetEntity>[];
     for (String id in widget.existingAssetIds!) {
       try {
@@ -457,7 +471,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         print('[MediaSelectionFlow] AssetEntity 복원 실패 (ID: $id): $e');
       }
     }
-    
+
     if (mounted) {
       setState(() {
         _selectedAssets = restoredAssets;
@@ -469,9 +483,10 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   Future<void> _downloadAndEditExistingImage() async {
     try {
       // Firebase Storage URL에서 이미지 다운로드
-      final localPath = await ImageDownloadService.downloadImage(widget.initialImageUrl!);
+      final localPath =
+          await ImageDownloadService.downloadImage(widget.initialImageUrl!);
       final file = File(localPath);
-      
+
       setState(() {
         _selectedFile = file;
       });
@@ -496,9 +511,8 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         height: MediaQuery.of(context).size.height,
         color: Colors.black,
         child: SafeArea(
-          child: _selectedFile != null
-              ? _buildEditorPage()
-              : _buildLoadingPage(),
+          child:
+              _selectedFile != null ? _buildEditorPage() : _buildLoadingPage(),
         ),
       ),
     );
@@ -533,11 +547,11 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       onSingleComplete: (imageUrl) {
         // URL 기반 완료 처리
         widget.onComplete(imageUrl);
-        
+
         // File 기반에서 편집 시작한 경우, File 콜백도 호출
         // 단, 멀티 이미지가 아닌 경우에만 (멀티 이미지는 이미 처리됨)
-        if (widget.initialImageFile != null && 
-            widget.onFileComplete != null && 
+        if (widget.initialImageFile != null &&
+            widget.onFileComplete != null &&
             _allSelectedFiles.isEmpty) {
           // 편집된 파일이 _selectedFile에 저장되어 있음
           widget.onFileComplete!(_selectedFile!);
@@ -577,13 +591,14 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       },
     );
   }
-  
+
   /// 선택 결과 처리 (diff 계산)
   Future<void> _processSelectionResult(List<AssetEntity> selectedAssets) async {
     try {
       // MediaSelectionFlow 모달 닫기 - processing 액션 전달
       if (mounted) {
-        Navigator.pop(context, {'action': 'processing', 'selectedAssets': selectedAssets});
+        Navigator.pop(context,
+            {'action': 'processing', 'selectedAssets': selectedAssets});
       }
     } catch (e) {
       // 에러 발생 시에도 모달 닫기

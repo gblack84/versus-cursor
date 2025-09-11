@@ -328,16 +328,17 @@ class FirebaseAuthManager extends AuthManager
 
   // Migrated from backend.dart
   UserProfile? currentUserDocument;
-  
+
   Future<void> maybeCreateUser(User user) async {
-    final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final userRef =
+        FirebaseFirestore.instance.collection('users').doc(user.uid);
     final userDoc = await userRef.get();
-    
+
     if (userDoc.exists) {
       currentUserDocument = UserProfile.fromSnapshot(userDoc);
       return;
     }
-    
+
     // Create new user document
     final userData = {
       'uid': user.uid,
@@ -347,12 +348,12 @@ class FirebaseAuthManager extends AuthManager
       'createdTime': FieldValue.serverTimestamp(),
       'phoneNumber': user.phoneNumber ?? '',
     };
-    
+
     await userRef.set(userData);
     final newUserDoc = await userRef.get();
     currentUserDocument = UserProfile.fromSnapshot(newUserDoc);
   }
-  
+
   Future<void> updateUserDocument({String? email}) async {
     if (currentUserDocument != null) {
       await currentUserDocument!.reference.update({

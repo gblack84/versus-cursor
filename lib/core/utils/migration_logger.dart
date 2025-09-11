@@ -1,8 +1,8 @@
 /// Migration Logger for Phase 1.1
-/// 
+///
 /// Tracks model conversion and data access patterns during migration
 /// Helps monitor the transition from legacy to new models
-/// 
+///
 /// Created: 2025-01-08
 
 import 'package:flutter/foundation.dart';
@@ -16,7 +16,7 @@ class MigrationLogger {
   final Map<String, int> _conversionCounts = {};
   final Map<String, Duration> _conversionTimes = {};
   final List<MigrationEvent> _events = [];
-  
+
   // Configuration
   bool isEnabled = kDebugMode; // Only log in debug mode by default
   bool logToConsole = true;
@@ -45,7 +45,8 @@ class MigrationLogger {
     _incrementCount('conversion_${from}_to_$to');
 
     if (logToConsole) {
-      debugPrint('[Migration] Converting $from → $to${feature != null ? ' in $feature' : ''}');
+      debugPrint(
+          '[Migration] Converting $from → $to${feature != null ? ' in $feature' : ''}');
     }
   }
 
@@ -88,13 +89,14 @@ class MigrationLogger {
     try {
       final result = await task();
       stopwatch.stop();
-      
+
       _conversionTimes[operation] = stopwatch.elapsed;
-      
+
       if (logToConsole && stopwatch.elapsed.inMilliseconds > 100) {
-        debugPrint('[Migration] ⚠️ Slow conversion: $operation took ${stopwatch.elapsed.inMilliseconds}ms');
+        debugPrint(
+            '[Migration] ⚠️ Slow conversion: $operation took ${stopwatch.elapsed.inMilliseconds}ms');
       }
-      
+
       return result;
     } catch (e) {
       stopwatch.stop();
@@ -204,7 +206,7 @@ class MigrationLogger {
   // Private helper methods
   void _recordEvent(MigrationEvent event) {
     _events.add(event);
-    
+
     // Trim history if needed
     if (_events.length > maxEventHistory) {
       _events.removeRange(0, _events.length - maxEventHistory);
@@ -261,11 +263,11 @@ class MigrationEvent {
   });
 
   Map<String, dynamic> toJson() => {
-    'type': type.toString(),
-    'from': from,
-    'to': to,
-    if (feature != null) 'feature': feature,
-    'timestamp': timestamp.toIso8601String(),
-    if (metadata != null) 'metadata': metadata,
-  };
+        'type': type.toString(),
+        'from': from,
+        'to': to,
+        if (feature != null) 'feature': feature,
+        'timestamp': timestamp.toIso8601String(),
+        if (metadata != null) 'metadata': metadata,
+      };
 }

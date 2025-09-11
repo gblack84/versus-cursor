@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '/core/design_system/tokens/versus_tokens.dart';
 
 /// Versus Space 표준 버튼 컴포넌트
-/// 
+///
 /// 기존 OutlinedButton 패턴을 분석하여 표준화했습니다.
 /// 일관된 스타일과 동작을 제공합니다.
 class VersusButton extends StatelessWidget {
@@ -140,7 +140,7 @@ class VersusButton extends StatelessWidget {
     final padding = _getPadding();
 
     Widget button;
-    
+
     switch (type) {
       case VersusButtonType.filled:
         button = ElevatedButton(
@@ -157,7 +157,7 @@ class VersusButton extends StatelessWidget {
           child: _buildButtonContent(textStyle.copyWith(color: Colors.white)),
         );
         break;
-        
+
       case VersusButtonType.outline:
         button = OutlinedButton(
           style: OutlinedButton.styleFrom(
@@ -177,7 +177,7 @@ class VersusButton extends StatelessWidget {
           )),
         );
         break;
-        
+
       case VersusButtonType.text:
         button = TextButton(
           style: TextButton.styleFrom(
@@ -237,7 +237,6 @@ class VersusButton extends StatelessWidget {
     return Text(text, style: textStyle);
   }
 
-
   TextStyle _getTextStyle() {
     switch (size) {
       case VersusButtonSize.small:
@@ -280,14 +279,14 @@ class VersusButton extends StatelessWidget {
 
 /// 버튼 타입 열거형
 enum VersusButtonType {
-  filled,   // 배경 채워진 버튼
-  outline,  // 외곽선 버튼
-  text,     // 텍스트만 있는 버튼
+  filled, // 배경 채워진 버튼
+  outline, // 외곽선 버튼
+  text, // 텍스트만 있는 버튼
 }
 
 /// 버튼 크기 열거형
 enum VersusButtonSize {
-  small,    // 작은 버튼
-  medium,   // 중간 버튼 (기본)
-  large,    // 큰 버튼
+  small, // 작은 버튼
+  medium, // 중간 버튼 (기본)
+  large, // 큰 버튼
 }

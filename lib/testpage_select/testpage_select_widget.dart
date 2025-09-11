@@ -1,6 +1,6 @@
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
-import '/features/notifications/presentation/widgets/voting_overlay.dart';
+import '/features/voting/presentation/dialogs/voting_overlay.dart';
 import '/features/notifications/presentation/providers/notification_badge_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -73,17 +73,13 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
               textAlign: TextAlign.end,
               style: AppTheme.of(context).headlineSmall.override(
                     font: GoogleFonts.plusJakartaSans(
-                      fontWeight:
-                          AppTheme.of(context).headlineSmall.fontWeight,
-                      fontStyle:
-                          AppTheme.of(context).headlineSmall.fontStyle,
+                      fontWeight: AppTheme.of(context).headlineSmall.fontWeight,
+                      fontStyle: AppTheme.of(context).headlineSmall.fontStyle,
                     ),
                     color: Colors.black,
                     letterSpacing: 0.0,
-                    fontWeight:
-                        AppTheme.of(context).headlineSmall.fontWeight,
-                    fontStyle:
-                        AppTheme.of(context).headlineSmall.fontStyle,
+                    fontWeight: AppTheme.of(context).headlineSmall.fontWeight,
+                    fontStyle: AppTheme.of(context).headlineSmall.fontStyle,
                   ),
             ),
           ),
@@ -129,9 +125,7 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                           AppLocalizations.of(context).getText(
                             'r6d1yxm7' /* Hello World */,
                           ),
-                          style: AppTheme.of(context)
-                              .headlineMedium
-                              .override(
+                          style: AppTheme.of(context).headlineMedium.override(
                                 font: GoogleFonts.plusJakartaSans(
                                   fontWeight: AppTheme.of(context)
                                       .headlineMedium
@@ -178,7 +172,8 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       onPressed: () {
                                         print('Button pressed ...');
                                       },
-                                      text: AppLocalizations.of(context).getText(
+                                      text:
+                                          AppLocalizations.of(context).getText(
                                         'x79ae4w2' /* Button */,
                                       ),
                                       options: AppButtonOptions(
@@ -193,24 +188,20 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                             .titleSmall
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
-                                                fontWeight:
-                                                    AppTheme.of(context)
-                                                        .titleSmall
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    AppTheme.of(context)
-                                                        .titleSmall
-                                                        .fontStyle,
+                                                fontWeight: AppTheme.of(context)
+                                                    .titleSmall
+                                                    .fontWeight,
+                                                fontStyle: AppTheme.of(context)
+                                                    .titleSmall
+                                                    .fontStyle,
                                               ),
                                               letterSpacing: 0.0,
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
                                             ),
                                         elevation: 0.0,
                                         borderRadius:
@@ -259,31 +250,26 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       iconPadding:
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
-                                      color:
-                                          AppTheme.of(context).primary,
+                                      color: AppTheme.of(context).primary,
                                       textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
                                           ),
                                       elevation: 0.0,
                                       borderRadius: BorderRadius.circular(8.0),
@@ -304,31 +290,26 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       iconPadding:
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
-                                      color:
-                                          AppTheme.of(context).primary,
+                                      color: AppTheme.of(context).primary,
                                       textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
                                           ),
                                       elevation: 0.0,
                                       borderRadius: BorderRadius.circular(8.0),
@@ -349,31 +330,26 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       iconPadding:
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
-                                      color:
-                                          AppTheme.of(context).primary,
+                                      color: AppTheme.of(context).primary,
                                       textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
                                           ),
                                       elevation: 0.0,
                                       borderRadius: BorderRadius.circular(8.0),
@@ -396,31 +372,26 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       iconPadding:
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
-                                      color:
-                                          AppTheme.of(context).primary,
+                                      color: AppTheme.of(context).primary,
                                       textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
                                           ),
                                       elevation: 0.0,
                                       borderRadius: BorderRadius.circular(8.0),
@@ -443,31 +414,26 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       iconPadding:
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
-                                      color:
-                                          AppTheme.of(context).primary,
+                                      color: AppTheme.of(context).primary,
                                       textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
                                           ),
                                       elevation: 0.0,
                                       borderRadius: BorderRadius.circular(8.0),
@@ -501,8 +467,7 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                 children: [
                                   AppButtonWidget(
                                     onPressed: () async {
-                                      context.pushNamed(
-                                          'testalgoria');
+                                      context.pushNamed('testalgoria');
                                     },
                                     text: AppLocalizations.of(context).getText(
                                       '4ffxgxck' /* testalgolia
@@ -516,31 +481,26 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       iconPadding:
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
-                                      color:
-                                          AppTheme.of(context).primary,
+                                      color: AppTheme.of(context).primary,
                                       textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
                                           ),
                                       elevation: 0.0,
                                       borderRadius: BorderRadius.circular(8.0),
@@ -561,31 +521,26 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       iconPadding:
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
-                                      color:
-                                          AppTheme.of(context).primary,
+                                      color: AppTheme.of(context).primary,
                                       textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
                                           ),
                                       elevation: 0.0,
                                       borderRadius: BorderRadius.circular(8.0),
@@ -631,31 +586,26 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       iconPadding:
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
-                                      color:
-                                          AppTheme.of(context).primary,
+                                      color: AppTheme.of(context).primary,
                                       textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
                                           ),
                                       elevation: 0.0,
                                       borderRadius: BorderRadius.circular(8.0),
@@ -676,31 +626,26 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       iconPadding:
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
-                                      color:
-                                          AppTheme.of(context).primary,
+                                      color: AppTheme.of(context).primary,
                                       textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
                                           ),
                                       elevation: 0.0,
                                       borderRadius: BorderRadius.circular(8.0),
@@ -713,8 +658,10 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                         question: '어떤 스마트폰을 선호하시나요?',
                                         optionA: 'iPhone 15 Pro',
                                         optionB: 'Galaxy S24 Ultra',
-                                        imageUrlA: 'https://picsum.photos/200/200?random=1',
-                                        imageUrlB: 'https://picsum.photos/200/200?random=2',
+                                        imageUrlA:
+                                            'https://picsum.photos/200/200?random=1',
+                                        imageUrlB:
+                                            'https://picsum.photos/200/200?random=2',
                                         onVote: (option) {
                                           print('투표 완료: $option 선택됨!');
                                           // 나중에 실제 투표 제출 로직 구현
@@ -729,30 +676,26 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       iconPadding:
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
-                                      color: Color(0xFFFF6B6B),  // 다른 색상으로 구분
+                                      color: Color(0xFFFF6B6B), // 다른 색상으로 구분
                                       textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
                                           ),
                                       elevation: 0.0,
                                       borderRadius: BorderRadius.circular(8.0),
@@ -772,31 +715,26 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                       iconPadding:
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
-                                      color:
-                                          AppTheme.of(context).primary,
+                                      color: AppTheme.of(context).primary,
                                       textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
                                             ),
                                             color: Colors.white,
                                             letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
                                           ),
                                       elevation: 0.0,
                                       borderRadius: BorderRadius.circular(8.0),

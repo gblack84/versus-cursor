@@ -52,7 +52,7 @@ class _ThumbnailSelectionPageState extends State<ThumbnailSelectionPage> {
             Positioned.fill(
               child: _buildImagePreview(),
             ),
-            
+
             // UI 요소들을 SafeArea로 감싸기
             SafeArea(
               child: Stack(
@@ -67,19 +67,20 @@ class _ThumbnailSelectionPageState extends State<ThumbnailSelectionPage> {
                       children: [
                         // 안내 문구
                         _buildInfoText(),
-                        
+
                         // 썸네일 리스트
                         _buildThumbnailList(),
                       ],
                     ),
                   ),
-                  
+
                   // 뒤로가기 버튼 (텍스트 스타일)
                   Positioned(
                     top: 8,
                     left: 8,
                     child: InkWell(
-                      onTap: () => Navigator.pop(context, {'action': 'back_to_picker'}),
+                      onTap: () =>
+                          Navigator.pop(context, {'action': 'back_to_picker'}),
                       child: Container(
                         height: 44,
                         padding: const EdgeInsets.only(left: 10, right: 14),
@@ -110,7 +111,7 @@ class _ThumbnailSelectionPageState extends State<ThumbnailSelectionPage> {
                       ),
                     ),
                   ),
-                  
+
                   // 체크 버튼 (우측 상단)
                   Positioned(
                     top: 8,
@@ -146,7 +147,6 @@ class _ThumbnailSelectionPageState extends State<ThumbnailSelectionPage> {
       ),
     );
   }
-
 
   Widget _buildImagePreview() {
     return PageView.builder(
@@ -242,86 +242,88 @@ class _ThumbnailSelectionPageState extends State<ThumbnailSelectionPage> {
         child: Center(
           child: Row(
             mainAxisSize: MainAxisSize.min,
-          children: List.generate(widget.imagePaths.length, (index) {
-            final isSelected = index == _selectedIndex;
-            return GestureDetector(
-              onTap: () {
-                _pageController.animateToPage(
-                  index,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                );
-              },
-              child: Container(
-                width: 80,
-                height: 80,
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected ? AppTheme.of(context).primary : Colors.transparent,
-                    width: 3,
+            children: List.generate(widget.imagePaths.length, (index) {
+              final isSelected = index == _selectedIndex;
+              return GestureDetector(
+                onTap: () {
+                  _pageController.animateToPage(
+                    index,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                },
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppTheme.of(context).primary
+                          : Colors.transparent,
+                      width: 3,
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(9),
+                        child: Image.file(
+                          widget.imagePaths[index],
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      // 선택된 썸네일에 체크 표시
+                      if (isSelected)
+                        Positioned(
+                          right: 4,
+                          top: 4,
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: AppTheme.of(context).primary,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      // 순서 표시
+                      Positioned(
+                        left: 4,
+                        bottom: 4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.7),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '${index + 1}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(9),
-                      child: Image.file(
-                        widget.imagePaths[index],
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    // 선택된 썸네일에 체크 표시
-                    if (isSelected)
-                      Positioned(
-                        right: 4,
-                        top: 4,
-                        child: Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: AppTheme.of(context).primary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.check,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                        ),
-                      ),
-                    // 순서 표시
-                    Positioned(
-                      left: 4,
-                      bottom: 4,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.7),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '${index + 1}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
+              );
+            }),
+          ),
         ),
-      ),
       ),
     );
   }
-
 }

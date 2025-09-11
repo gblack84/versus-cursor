@@ -5,13 +5,13 @@ import 'package:get_it/get_it.dart';
 abstract class FeatureModule {
   /// Unique name identifier for this module
   String get name;
-  
+
   /// Register all dependencies for this module
   void register(GetIt serviceLocator);
-  
+
   /// Unregister all dependencies for this module
   void unregister(GetIt serviceLocator);
-  
+
   /// Check if the module has been initialized
   bool get isInitialized;
 }

@@ -26,7 +26,7 @@ abstract class Notification {
   });
 
   // ===== 비즈니스 로직 메서드 =====
-  
+
   /// 알림이 만료되었는지 확인
   bool get isExpired {
     if (expiryTime == null) return false;

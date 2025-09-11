@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
-import '/features/notifications/domain/services/i_user_service.dart';
+import '/core/domain/ports/i_user_service.dart';
 import '/features/notifications/domain/models/notification.dart' as domain;
-import '/features/notifications/domain/models/notification.dart' show NotificationType;
+import '/features/notifications/domain/models/notification.dart'
+    show NotificationType;
 import '/features/notifications/domain/models/vote_notification.dart';
 import '/features/notifications/domain/models/system_notification.dart';
 import '/features/notifications/domain/models/social_notification.dart';
@@ -19,7 +20,8 @@ class NotificationsListWidget extends StatefulWidget {
   static String routePath = '/notifications';
 
   @override
-  State<NotificationsListWidget> createState() => _NotificationsListWidgetState();
+  State<NotificationsListWidget> createState() =>
+      _NotificationsListWidgetState();
 }
 
 class _NotificationsListWidgetState extends State<NotificationsListWidget> {
@@ -81,7 +83,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
             }
 
             List<domain.Notification> notifications = snapshot.data!;
-            
+
             if (notifications.isEmpty) {
               return Center(
                 child: Padding(
@@ -114,33 +116,38 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
               itemBuilder: (context, index) {
                 final notification = notifications[index];
                 final isExpired = notification.isExpired;
-                
+
                 return Opacity(
                   opacity: notification.isRead || isExpired ? 0.6 : 1.0,
                   child: InkWell(
-                    onTap: isExpired ? null : () async {
-                      // 읽음 처리
-                      if (!notification.isRead) {
-                        await _markAsRead.call(
-                          MarkAsReadParams(notificationId: notification.id),
-                        );
-                      }
-                      
-                      // 알림 클릭 시 관련 게시물로 이동하는 기능이 필요합니다.
-                      // 현재는 알림 읽음 처리만 수행하고 있습니다.
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('알림 상세 보기 구현 예정'),
-                          duration: Duration(seconds: 1),
-                        ),
-                      );
-                    },
+                    onTap: isExpired
+                        ? null
+                        : () async {
+                            // 읽음 처리
+                            if (!notification.isRead) {
+                              await _markAsRead.call(
+                                MarkAsReadParams(
+                                    notificationId: notification.id),
+                              );
+                            }
+
+                            // 알림 클릭 시 관련 게시물로 이동하는 기능이 필요합니다.
+                            // 현재는 알림 읽음 처리만 수행하고 있습니다.
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('알림 상세 보기 구현 예정'),
+                                duration: Duration(seconds: 1),
+                              ),
+                            );
+                          },
                     child: Container(
                       padding: const EdgeInsets.all(16.0),
                       decoration: BoxDecoration(
-                        color: notification.isRead 
-                            ? Colors.transparent 
-                            : AppTheme.of(context).accent1.withValues(alpha: 0.1),
+                        color: notification.isRead
+                            ? Colors.transparent
+                            : AppTheme.of(context)
+                                .accent1
+                                .withValues(alpha: 0.1),
                         border: Border(
                           bottom: BorderSide(
                             color: AppTheme.of(context).alternate,
@@ -170,16 +177,20 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
                               children: [
                                 Text(
                                   _getNotificationTitle(notification),
-                                  style: AppTheme.of(context).bodyLarge.override(
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: 0.0,
-                                      ),
+                                  style:
+                                      AppTheme.of(context).bodyLarge.override(
+                                            fontWeight: FontWeight.w600,
+                                            letterSpacing: 0.0,
+                                          ),
                                 ),
                                 const SizedBox(height: 4.0),
                                 Text(
                                   notification.content,
-                                  style: AppTheme.of(context).bodyMedium.override(
-                                        color: AppTheme.of(context).secondaryText,
+                                  style: AppTheme.of(context)
+                                      .bodyMedium
+                                      .override(
+                                        color:
+                                            AppTheme.of(context).secondaryText,
                                         letterSpacing: 0.0,
                                       ),
                                 ),
@@ -188,8 +199,11 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
                                   DateFormat('MM월 dd일 HH:mm').format(
                                     notification.createdAt,
                                   ),
-                                  style: AppTheme.of(context).bodySmall.override(
-                                        color: AppTheme.of(context).secondaryText,
+                                  style: AppTheme.of(context)
+                                      .bodySmall
+                                      .override(
+                                        color:
+                                            AppTheme.of(context).secondaryText,
                                         letterSpacing: 0.0,
                                       ),
                                 ),

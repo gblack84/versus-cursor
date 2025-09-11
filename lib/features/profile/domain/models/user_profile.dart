@@ -157,12 +157,16 @@ class UserProfile extends FirestoreRecord {
 
   // Notification Settings
   bool? _receiveRankUpdateNotifications;
-  bool get receiveRankUpdateNotifications => _receiveRankUpdateNotifications ?? false;
-  bool hasReceiveRankUpdateNotifications() => _receiveRankUpdateNotifications != null;
+  bool get receiveRankUpdateNotifications =>
+      _receiveRankUpdateNotifications ?? false;
+  bool hasReceiveRankUpdateNotifications() =>
+      _receiveRankUpdateNotifications != null;
 
   bool? _receiveTitleUpdateNotifications;
-  bool get receiveTitleUpdateNotifications => _receiveTitleUpdateNotifications ?? false;
-  bool hasReceiveTitleUpdateNotifications() => _receiveTitleUpdateNotifications != null;
+  bool get receiveTitleUpdateNotifications =>
+      _receiveTitleUpdateNotifications ?? false;
+  bool hasReceiveTitleUpdateNotifications() =>
+      _receiveTitleUpdateNotifications != null;
 
   // Social Connections
   List<String>? _friends;
@@ -216,7 +220,8 @@ class UserProfile extends FirestoreRecord {
     _phoneNumber = snapshotData['phoneNumber'] as String?;
     _isPremiumUser = snapshotData['isPremiumUser'] as bool?;
     _anonymousPostsCount = castToType<int>(snapshotData['anonymousPostsCount']);
-    _anonymousCommentsCount = castToType<int>(snapshotData['anonymousCommentsCount']);
+    _anonymousCommentsCount =
+        castToType<int>(snapshotData['anonymousCommentsCount']);
     _currentRank = snapshotData['currentRank'] as String?;
     _currentTitle = snapshotData['currentTitle'] as String?;
     _rankChangeDate = snapshotData['rankChangeDate'] as DateTime?;
@@ -225,9 +230,12 @@ class UserProfile extends FirestoreRecord {
     _rankEvaluationCount = castToType<int>(snapshotData['rankEvaluationCount']);
     _rankHistory = getDataList(snapshotData['rankHistory']);
     _titleHistory = getDataList(snapshotData['titleHistory']);
-    _receiveRankUpdateNotifications = snapshotData['receiveRankUpdateNotifications'] as bool?;
-    _receiveTitleUpdateNotifications = snapshotData['receiveTitleUpdateNotifications'] as bool?;
-    _anonymousQuestionCount = castToType<int>(snapshotData['anonymousQuestionCount']);
+    _receiveRankUpdateNotifications =
+        snapshotData['receiveRankUpdateNotifications'] as bool?;
+    _receiveTitleUpdateNotifications =
+        snapshotData['receiveTitleUpdateNotifications'] as bool?;
+    _anonymousQuestionCount =
+        castToType<int>(snapshotData['anonymousQuestionCount']);
     _friends = getDataList(snapshotData['friends']);
     _activeChats = getDataList(snapshotData['activeChats']);
     _groupChats = getDataList(snapshotData['groupChats']);
@@ -384,8 +392,10 @@ class UserProfileDocumentEquality implements Equality<UserProfile> {
         e1?.rankEvaluationCount == e2?.rankEvaluationCount &&
         listEquality.equals(e1?.rankHistory, e2?.rankHistory) &&
         listEquality.equals(e1?.titleHistory, e2?.titleHistory) &&
-        e1?.receiveRankUpdateNotifications == e2?.receiveRankUpdateNotifications &&
-        e1?.receiveTitleUpdateNotifications == e2?.receiveTitleUpdateNotifications &&
+        e1?.receiveRankUpdateNotifications ==
+            e2?.receiveRankUpdateNotifications &&
+        e1?.receiveTitleUpdateNotifications ==
+            e2?.receiveTitleUpdateNotifications &&
         e1?.anonymousQuestionCount == e2?.anonymousQuestionCount &&
         listEquality.equals(e1?.friends, e2?.friends) &&
         listEquality.equals(e1?.activeChats, e2?.activeChats) &&
@@ -488,38 +498,39 @@ Map<String, dynamic> createUsersModelData({
   String? language,
   Map<String, dynamic>? stats,
   Map<String, dynamic>? subscription,
-}) => createUserProfileData(
-  uid: uid,
-  email: email,
-  location: location,
-  pointsA: pointsA,
-  pointsQ: pointsQ,
-  lastActive: lastActive,
-  displayName: displayName,
-  createdTime: createdTime,
-  photoUrl: photoUrl,
-  phoneNumber: phoneNumber,
-  isPremiumUser: isPremiumUser,
-  anonymousPostsCount: anonymousPostsCount,
-  anonymousCommentsCount: anonymousCommentsCount,
-  currentRank: currentRank,
-  currentTitle: currentTitle,
-  rankChangeDate: rankChangeDate,
-  titleChangeDate: titleChangeDate,
-  isRankEligible: isRankEligible,
-  rankEvaluationCount: rankEvaluationCount,
-  receiveRankUpdateNotifications: receiveRankUpdateNotifications,
-  receiveTitleUpdateNotifications: receiveTitleUpdateNotifications,
-  anonymousQuestionCount: anonymousQuestionCount,
-  totalAPoints: totalAPoints,
-  totalQPoints: totalQPoints,
-  shortDescription: shortDescription,
-  lastActiveTime: lastActiveTime,
-  role: role,
-  title: title,
-  gender: gender,
-  dateOfBirth: dateOfBirth,
-  language: language,
-  stats: stats,
-  subscription: subscription,
-);
+}) =>
+    createUserProfileData(
+      uid: uid,
+      email: email,
+      location: location,
+      pointsA: pointsA,
+      pointsQ: pointsQ,
+      lastActive: lastActive,
+      displayName: displayName,
+      createdTime: createdTime,
+      photoUrl: photoUrl,
+      phoneNumber: phoneNumber,
+      isPremiumUser: isPremiumUser,
+      anonymousPostsCount: anonymousPostsCount,
+      anonymousCommentsCount: anonymousCommentsCount,
+      currentRank: currentRank,
+      currentTitle: currentTitle,
+      rankChangeDate: rankChangeDate,
+      titleChangeDate: titleChangeDate,
+      isRankEligible: isRankEligible,
+      rankEvaluationCount: rankEvaluationCount,
+      receiveRankUpdateNotifications: receiveRankUpdateNotifications,
+      receiveTitleUpdateNotifications: receiveTitleUpdateNotifications,
+      anonymousQuestionCount: anonymousQuestionCount,
+      totalAPoints: totalAPoints,
+      totalQPoints: totalQPoints,
+      shortDescription: shortDescription,
+      lastActiveTime: lastActiveTime,
+      role: role,
+      title: title,
+      gender: gender,
+      dateOfBirth: dateOfBirth,
+      language: language,
+      stats: stats,
+      subscription: subscription,
+    );

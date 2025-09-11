@@ -1,4 +1,3 @@
-
 // Migrated from backend.dart
 import '/app/models/lat_lng.dart';
 import '/core/firebase/utils/schema_util.dart'; // For safeGet, toRef, StructBuilder

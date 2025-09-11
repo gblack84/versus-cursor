@@ -8,13 +8,14 @@ class AppLogger {
   /// 액션 로그 추가
   static void logAction(String action, {Map<String, dynamic>? data}) {
     final timestamp = DateTime.now().toIso8601String();
-    final logEntry = '[$timestamp] ACTION: $action${data != null ? ' | DATA: $data' : ''}';
-    
+    final logEntry =
+        '[$timestamp] ACTION: $action${data != null ? ' | DATA: $data' : ''}';
+
     _logs.add(logEntry);
     if (_logs.length > _maxLogs) {
       _logs.removeAt(0);
     }
-    
+
     // 디버그 모드에서만 콘솔에 출력
     if (kDebugMode) {
       print(logEntry);
@@ -34,13 +35,14 @@ class AppLogger {
   /// 에러 로그
   static void logError(String error, {StackTrace? stackTrace}) {
     final timestamp = DateTime.now().toIso8601String();
-    final logEntry = '[$timestamp] ERROR: $error${stackTrace != null ? '\nSTACK: $stackTrace' : ''}';
-    
+    final logEntry =
+        '[$timestamp] ERROR: $error${stackTrace != null ? '\nSTACK: $stackTrace' : ''}';
+
     _logs.add(logEntry);
     if (_logs.length > _maxLogs) {
       _logs.removeAt(0);
     }
-    
+
     if (kDebugMode) {
       print(logEntry);
     }

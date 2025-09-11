@@ -9,12 +9,12 @@ class NavigationExample {
   static void navigateToNotificationsList(BuildContext context) {
     context.goNamed(NotificationsListWidget.routeName);
   }
-  
+
   // Push notifications list (keeps current route in stack)
   static void pushNotificationsList(BuildContext context) {
     context.pushNamed(NotificationsListWidget.routeName);
   }
-  
+
   // Navigate with authentication check
   static void navigateWithAuth(BuildContext context, bool mounted) {
     context.goNamedAuth(
@@ -22,7 +22,7 @@ class NavigationExample {
       mounted,
     );
   }
-  
+
   // Push with authentication check
   static void pushWithAuth(BuildContext context, bool mounted) {
     context.pushNamedAuth(

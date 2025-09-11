@@ -1,5 +1,5 @@
 /// Core Event System for Cross-Feature Communication
-/// 
+///
 /// Features communicate through events to maintain isolation
 /// and follow Clean Architecture principles
 
@@ -10,9 +10,9 @@ class EventBus {
   factory EventBus() => _instance;
   EventBus._internal();
   static final EventBus _instance = EventBus._internal();
-  
+
   final Map<Type, StreamController> _controllers = {};
-  
+
   /// Publish an event
   void publish<T extends Event>(T event) {
     final controller = _controllers[T];
@@ -20,13 +20,13 @@ class EventBus {
       controller.add(event);
     }
   }
-  
+
   /// Subscribe to events of type T
   Stream<T> on<T extends Event>() {
     _controllers[T] ??= StreamController<T>.broadcast();
     return (_controllers[T] as StreamController<T>).stream;
   }
-  
+
   /// Dispose all controllers
   void dispose() {
     for (final controller in _controllers.values) {
@@ -39,7 +39,7 @@ class EventBus {
 /// Base event class
 abstract class Event {
   Event() : timestamp = DateTime.now();
-  
+
   final DateTime timestamp;
 }
 
@@ -49,7 +49,7 @@ class UserProfileUpdatedEvent extends Event {
     required this.userId,
     required this.profile,
   });
-  
+
   final String userId;
   final Map<String, dynamic> profile;
 }
@@ -57,7 +57,7 @@ class UserProfileUpdatedEvent extends Event {
 /// User cache invalidation event
 class UserCacheInvalidationEvent extends Event {
   UserCacheInvalidationEvent({required this.userId});
-  
+
   final String userId;
 }
 
@@ -68,7 +68,7 @@ class PostVoteUpdatedEvent extends Event {
     required this.userId,
     required this.option,
   });
-  
+
   final String postId;
   final String userId;
   final String option;

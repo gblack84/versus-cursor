@@ -33,13 +33,11 @@ class AppState extends ChangeNotifier {
     _displayName = value;
   }
 
-
   String _uploadTextA = '';
   String get uploadTextA => _uploadTextA;
   set uploadTextA(String value) {
     _uploadTextA = value;
   }
-
 
   String _uploadTextB = '';
   String get uploadTextB => _uploadTextB;
@@ -47,23 +45,19 @@ class AppState extends ChangeNotifier {
     _uploadTextB = value;
   }
 
-
   List<String> _uploadImageA = [];
   List<String> get uploadImageA => _uploadImageA;
   set uploadImageA(List<String> value) {
     _uploadImageA = value;
   }
 
-
   void addToUploadImageA(String value) {
     uploadImageA.add(value);
   }
 
-
   void removeFromUploadImageA(String value) {
     uploadImageA.remove(value);
   }
-
 
   void removeAtIndexFromUploadImageA(int index) {
     if (index >= 0 && index < uploadImageA.length) {
@@ -73,8 +67,10 @@ class AppState extends ChangeNotifier {
   }
 
   void reorderUploadImageA(int oldIndex, int newIndex) {
-    if (oldIndex >= 0 && oldIndex < uploadImageA.length && 
-        newIndex >= 0 && newIndex < uploadImageA.length) {
+    if (oldIndex >= 0 &&
+        oldIndex < uploadImageA.length &&
+        newIndex >= 0 &&
+        newIndex < uploadImageA.length) {
       final item = uploadImageA.removeAt(oldIndex);
       uploadImageA.insert(newIndex, item);
       notifyListeners();
@@ -131,16 +127,13 @@ class AppState extends ChangeNotifier {
     _uploadImageB = value;
   }
 
-
   void addToUploadImageB(String value) {
     uploadImageB.add(value);
   }
 
-
   void removeFromUploadImageB(String value) {
     uploadImageB.remove(value);
   }
-
 
   void removeAtIndexFromUploadImageB(int index) {
     if (index >= 0 && index < uploadImageB.length) {
@@ -150,8 +143,10 @@ class AppState extends ChangeNotifier {
   }
 
   void reorderUploadImageB(int oldIndex, int newIndex) {
-    if (oldIndex >= 0 && oldIndex < uploadImageB.length && 
-        newIndex >= 0 && newIndex < uploadImageB.length) {
+    if (oldIndex >= 0 &&
+        oldIndex < uploadImageB.length &&
+        newIndex >= 0 &&
+        newIndex < uploadImageB.length) {
       final item = uploadImageB.removeAt(oldIndex);
       uploadImageB.insert(newIndex, item);
       notifyListeners();
@@ -208,13 +203,11 @@ class AppState extends ChangeNotifier {
     _uploadImageEditing = value;
   }
 
-
   int _uploadTextEditing = 0;
   int get uploadTextEditing => _uploadTextEditing;
   set uploadTextEditing(int value) {
     _uploadTextEditing = value;
   }
-
 
   String _previewText = '';
   String get previewText => _previewText;
@@ -222,13 +215,11 @@ class AppState extends ChangeNotifier {
     _previewText = value;
   }
 
-
   String _uploadVideoA = '';
   String get uploadVideoA => _uploadVideoA;
   set uploadVideoA(String value) {
     _uploadVideoA = value;
   }
-
 
   String _uploadVideoB = '';
   String get uploadVideoB => _uploadVideoB;
@@ -236,20 +227,17 @@ class AppState extends ChangeNotifier {
     _uploadVideoB = value;
   }
 
-
   int _uploadVideoEdit = 0;
   int get uploadVideoEdit => _uploadVideoEdit;
   set uploadVideoEdit(int value) {
     _uploadVideoEdit = value;
   }
 
-
   bool _selectedVideoSet = false;
   bool get selectedVideoSet => _selectedVideoSet;
   set selectedVideoSet(bool value) {
     _selectedVideoSet = value;
   }
-
 
   String _uploadYoutubeA = '';
   String get uploadYoutubeA => _uploadYoutubeA;
@@ -349,8 +337,10 @@ class AppState extends ChangeNotifier {
   }
 
   void reorderUploadImageAspectRatioA(int oldIndex, int newIndex) {
-    if (oldIndex >= 0 && oldIndex < _uploadImageAspectRatioA.length && 
-        newIndex >= 0 && newIndex < _uploadImageAspectRatioA.length) {
+    if (oldIndex >= 0 &&
+        oldIndex < _uploadImageAspectRatioA.length &&
+        newIndex >= 0 &&
+        newIndex < _uploadImageAspectRatioA.length) {
       final item = _uploadImageAspectRatioA.removeAt(oldIndex);
       _uploadImageAspectRatioA.insert(newIndex, item);
       notifyListeners();
@@ -384,8 +374,10 @@ class AppState extends ChangeNotifier {
   }
 
   void reorderUploadImageAspectRatioB(int oldIndex, int newIndex) {
-    if (oldIndex >= 0 && oldIndex < _uploadImageAspectRatioB.length && 
-        newIndex >= 0 && newIndex < _uploadImageAspectRatioB.length) {
+    if (oldIndex >= 0 &&
+        oldIndex < _uploadImageAspectRatioB.length &&
+        newIndex >= 0 &&
+        newIndex < _uploadImageAspectRatioB.length) {
       final item = _uploadImageAspectRatioB.removeAt(oldIndex);
       _uploadImageAspectRatioB.insert(newIndex, item);
       notifyListeners();
@@ -500,8 +492,10 @@ class AppState extends ChangeNotifier {
 
   // 로컬 경로와 원격 URL 매핑을 위한 헬퍼
   void reorderLocalImagePathsA(int oldIndex, int newIndex) {
-    if (oldIndex >= 0 && oldIndex < _localImagePathsA.length && 
-        newIndex >= 0 && newIndex < _localImagePathsA.length) {
+    if (oldIndex >= 0 &&
+        oldIndex < _localImagePathsA.length &&
+        newIndex >= 0 &&
+        newIndex < _localImagePathsA.length) {
       final item = _localImagePathsA.removeAt(oldIndex);
       _localImagePathsA.insert(newIndex, item);
       notifyListeners();
@@ -517,8 +511,10 @@ class AppState extends ChangeNotifier {
   }
 
   void reorderLocalImagePathsB(int oldIndex, int newIndex) {
-    if (oldIndex >= 0 && oldIndex < _localImagePathsB.length && 
-        newIndex >= 0 && newIndex < _localImagePathsB.length) {
+    if (oldIndex >= 0 &&
+        oldIndex < _localImagePathsB.length &&
+        newIndex >= 0 &&
+        newIndex < _localImagePathsB.length) {
       final item = _localImagePathsB.removeAt(oldIndex);
       _localImagePathsB.insert(newIndex, item);
       notifyListeners();
@@ -550,5 +546,4 @@ class AppState extends ChangeNotifier {
 
   // 이미지 검열 상태 관리 - 동기식 검열로 전환되어 제거됨
   // 이제 uploadAndWaitForModeration을 사용하여 업로드 시점에 검열 완료
-
 }

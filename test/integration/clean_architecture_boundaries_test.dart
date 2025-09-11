@@ -25,31 +25,33 @@ void main() {
           final file = File('../../$filePath');
           if (file.existsSync()) {
             final content = file.readAsStringSync();
-            
+
             // Check for forbidden imports
             expect(content.contains('import \'package:flutter/'), isFalse,
                 reason: 'Domain model $filePath should not import Flutter');
             expect(content.contains('import \'package:firebase'), isFalse,
                 reason: 'Domain model $filePath should not import Firebase');
-            expect(content.contains('import \'package:cloud_firestore'), isFalse,
+            expect(
+                content.contains('import \'package:cloud_firestore'), isFalse,
                 reason: 'Domain model $filePath should not import Firestore');
-                
+
             // Check for allowed imports only
             if (content.contains('import ')) {
               final imports = content
                   .split('\n')
                   .where((line) => line.trim().startsWith('import '))
                   .toList();
-              
+
               for (final import in imports) {
                 // Allow only dart core libraries and equatable
                 final isAllowed = import.contains('dart:') ||
                     import.contains('package:equatable') ||
                     import.contains('/domain/') ||
                     import.contains('/core_exports.dart');
-                    
+
                 expect(isAllowed, isTrue,
-                    reason: 'Domain model $filePath has forbidden import: $import');
+                    reason:
+                        'Domain model $filePath has forbidden import: $import');
               }
             }
           }
@@ -121,16 +123,19 @@ void main() {
           final file = File('../../$filePath');
           if (file.existsSync()) {
             final content = file.readAsStringSync();
-            
+
             // Check that interfaces don't import data layer
             expect(content.contains('/data/'), isFalse,
-                reason: 'Repository interface $filePath should not import data layer');
+                reason:
+                    'Repository interface $filePath should not import data layer');
             expect(content.contains('firebase'), isFalse,
-                reason: 'Repository interface $filePath should not reference Firebase');
-            
+                reason:
+                    'Repository interface $filePath should not reference Firebase');
+
             // Check that interfaces use domain models
             expect(content.contains('/domain/models/'), isTrue,
-                reason: 'Repository interface $filePath should use domain models');
+                reason:
+                    'Repository interface $filePath should use domain models');
           }
         }
       });
@@ -152,41 +157,45 @@ void main() {
         for (final feature in featureDirectories) {
           final featureName = feature.split('/')[2];
           final dir = Directory('../../$feature');
-          
+
           if (dir.existsSync()) {
             final files = dir
                 .listSync(recursive: true)
                 .whereType<File>()
                 .where((f) => f.path.endsWith('.dart'))
                 .toList();
-            
+
             for (final file in files) {
               final content = file.readAsStringSync();
               final relativePath = file.path.split('versus-cursor/').last;
-              
+
               // Skip if it's a shared/core file
-              if (relativePath.contains('/core/') || 
+              if (relativePath.contains('/core/') ||
                   relativePath.contains('core_exports')) {
                 continue;
               }
-              
+
               // Check for cross-feature imports (except through domain interfaces)
               for (final otherFeature in featureDirectories) {
                 final otherName = otherFeature.split('/')[2];
                 if (otherName != featureName) {
                   final crossImport = 'features/$otherName/';
-                  
+
                   if (content.contains(crossImport)) {
                     // Allow domain interface imports
-                    final isInterfaceImport = content.contains('$crossImport' + 'domain/repositories/');
-                    final isDomainModel = content.contains('$crossImport' + 'domain/models/');
-                    
+                    final isInterfaceImport = content
+                        .contains('$crossImport' + 'domain/repositories/');
+                    final isDomainModel =
+                        content.contains('$crossImport' + 'domain/models/');
+
                     if (!isInterfaceImport && !isDomainModel) {
                       // Check if it's in presentation layer (allowed for navigation)
-                      final isPresentationLayer = relativePath.contains('/presentation/');
-                      
+                      final isPresentationLayer =
+                          relativePath.contains('/presentation/');
+
                       if (!isPresentationLayer) {
-                        fail('Feature $featureName should not directly import from $otherName\n'
+                        fail(
+                            'Feature $featureName should not directly import from $otherName\n'
                             'File: $relativePath\n'
                             'Import found: $crossImport');
                       }
@@ -213,25 +222,28 @@ void main() {
 
         for (final dir in presentationDirs) {
           final directory = Directory('../../$dir');
-          
+
           if (directory.existsSync()) {
             final files = directory
                 .listSync(recursive: true)
                 .whereType<File>()
                 .where((f) => f.path.endsWith('.dart'))
                 .toList();
-            
+
             for (final file in files) {
               final content = file.readAsStringSync();
               final relativePath = file.path.split('versus-cursor/').last;
-              
+
               // Check that presentation doesn't import data layer
               expect(content.contains('/data/repositories/'), isFalse,
-                  reason: 'Presentation file $relativePath should not import data repositories directly');
+                  reason:
+                      'Presentation file $relativePath should not import data repositories directly');
               expect(content.contains('/data/models/'), isFalse,
-                  reason: 'Presentation file $relativePath should not import data models directly');
+                  reason:
+                      'Presentation file $relativePath should not import data models directly');
               expect(content.contains('/data/adapters/'), isFalse,
-                  reason: 'Presentation file $relativePath should not import adapters directly');
+                  reason:
+                      'Presentation file $relativePath should not import adapters directly');
             }
           }
         }
@@ -239,24 +251,25 @@ void main() {
     });
 
     group('Dependency Direction Tests', () {
-      test('Dependencies should flow inward (Presentation → Domain ← Data)', () {
+      test('Dependencies should flow inward (Presentation → Domain ← Data)',
+          () {
         // This is a conceptual test to document the architecture rules
-        
+
         // Presentation layer can depend on:
         // - Domain interfaces
         // - Domain models
         // - DI container
-        
+
         // Domain layer can depend on:
         // - Nothing external (pure business logic)
         // - Other domain models
         // - Core utilities (if pure)
-        
+
         // Data layer can depend on:
         // - Domain interfaces (to implement them)
         // - Domain models (to convert to/from)
         // - External packages (Firebase, HTTP, etc.)
-        
+
         expect(true, isTrue, reason: 'Architecture rules documented');
       });
     });

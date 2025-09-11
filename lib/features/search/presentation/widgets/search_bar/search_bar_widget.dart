@@ -3,7 +3,7 @@ import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import '/core/design_system/design_system.dart';
 
 /// 채팅 검색 바 컴포넌트
-/// 
+///
 /// 메시지 검색 기능을 제공하는 UI 컴포넌트입니다.
 class ChatSearchBar extends StatefulWidget {
   final Function(String) onSearch;
@@ -11,7 +11,7 @@ class ChatSearchBar extends StatefulWidget {
   final List<core.Message> searchResults;
   final int currentSearchIndex;
   final Function(bool) onNavigate;
-  
+
   const ChatSearchBar({
     super.key,
     required this.onSearch,
@@ -20,7 +20,7 @@ class ChatSearchBar extends StatefulWidget {
     required this.currentSearchIndex,
     required this.onNavigate,
   });
-  
+
   @override
   State<ChatSearchBar> createState() => _ChatSearchBarState();
 }
@@ -28,7 +28,7 @@ class ChatSearchBar extends StatefulWidget {
 class _ChatSearchBarState extends State<ChatSearchBar> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  
+
   @override
   void initState() {
     super.initState();
@@ -37,14 +37,14 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
       _searchFocusNode.requestFocus();
     });
   }
-  
+
   @override
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -69,7 +69,7 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
             ),
             onPressed: widget.onClose,
           ),
-          
+
           // Search field
           Expanded(
             child: TextField(
@@ -89,7 +89,7 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
               ),
             ),
           ),
-          
+
           // Search results count
           if (widget.searchResults.isNotEmpty) ...[
             Container(
@@ -107,7 +107,7 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
               ),
             ),
             const SizedBox(width: 8),
-            
+
             // Navigation buttons
             IconButton(
               icon: Icon(
@@ -128,7 +128,7 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
                   : null,
             ),
           ],
-          
+
           // Clear button
           if (_searchController.text.isNotEmpty)
             IconButton(
@@ -151,13 +151,13 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
 class ChatAISearchInput extends StatefulWidget {
   final Function(String) onSubmit;
   final VoidCallback onClose;
-  
+
   const ChatAISearchInput({
     super.key,
     required this.onSubmit,
     required this.onClose,
   });
-  
+
   @override
   State<ChatAISearchInput> createState() => _ChatAISearchInputState();
 }
@@ -165,7 +165,7 @@ class ChatAISearchInput extends StatefulWidget {
 class _ChatAISearchInputState extends State<ChatAISearchInput> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  
+
   @override
   void initState() {
     super.initState();
@@ -174,14 +174,14 @@ class _ChatAISearchInputState extends State<ChatAISearchInput> {
       _focusNode.requestFocus();
     });
   }
-  
+
   @override
   void dispose() {
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -224,7 +224,7 @@ class _ChatAISearchInputState extends State<ChatAISearchInput> {
             ),
           ),
           const SizedBox(width: 12),
-          
+
           // Input field
           Expanded(
             child: Container(
@@ -265,7 +265,7 @@ class _ChatAISearchInputState extends State<ChatAISearchInput> {
                       ),
                     ),
                   ),
-                  
+
                   // Send button
                   Material(
                     color: Colors.transparent,
@@ -296,7 +296,7 @@ class _ChatAISearchInputState extends State<ChatAISearchInput> {
               ),
             ),
           ),
-          
+
           // Close button
           const SizedBox(width: 8),
           IconButton(

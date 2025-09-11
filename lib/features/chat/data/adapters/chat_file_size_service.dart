@@ -22,7 +22,7 @@ class ChatFileSizeService {
       return 0;
     }
   }
-  
+
   /// Check if file size is within acceptable limits (10MB)
   Future<bool> checkFileSize(File file, {int maxSizeInBytes = 10485760}) async {
     try {
@@ -70,7 +70,7 @@ class ChatFileSizeService {
       if (url.contains('firebasestorage.googleapis.com')) {
         final uri = Uri.parse(url);
         final pathSegments = uri.pathSegments;
-        
+
         // Find 'o' segment which indicates the start of the encoded path
         final oIndex = pathSegments.indexOf('o');
         if (oIndex != -1 && oIndex < pathSegments.length - 1) {

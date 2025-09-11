@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import '/core/design_system/design_system.dart';
 
 /// 투표 카드의 액션 버튼 컴포넌트
-/// 
+///
 /// 투표하기 또는 투표 현황 보기 버튼을 표시합니다.
 class VoteActionButton extends StatelessWidget {
   final bool isMe;
   final String cardStatus;
   final VoidCallback onPressed;
-  
+
   const VoteActionButton({
     super.key,
     required this.isMe,
@@ -27,7 +27,7 @@ class VoteActionButton extends StatelessWidget {
       // 남이 만든 투표
       buttonText = cardStatus == 'votingRequest' ? '투표하기' : '투표 현황 보기';
     }
-    
+
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(

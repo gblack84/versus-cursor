@@ -92,7 +92,8 @@ class MediaContent extends Equatable {
   }
 
   /// Checks if this media content has any media (images or videos)
-  bool get hasMedia => imageUrls.isNotEmpty || videoUrl.isNotEmpty || youtubeUrl.isNotEmpty;
+  bool get hasMedia =>
+      imageUrls.isNotEmpty || videoUrl.isNotEmpty || youtubeUrl.isNotEmpty;
 
   /// Checks if this media content has images
   bool get hasImages => imageUrls.isNotEmpty;
@@ -102,18 +103,18 @@ class MediaContent extends Equatable {
 
   /// Gets the primary image URL (first in the list)
   String get primaryImageUrl => imageUrls.isNotEmpty ? imageUrls.first : '';
-  
+
   /// Check if content is empty (no text and no media)
   bool get isEmpty => text.isEmpty && !hasMedia;
-  
+
   /// Check if has any content (text or media)
   bool get hasContent => text.isNotEmpty || hasMedia;
-  
+
   /// Create from Map (alias for fromJson for compatibility)
   factory MediaContent.fromMap(Map<String, dynamic> map) {
     return MediaContent.fromJson(map);
   }
-  
+
   /// Convert to Map (alias for toJson for compatibility)
   Map<String, dynamic> toMap() => toJson();
 
@@ -133,5 +134,6 @@ class MediaContent extends Equatable {
       ];
 
   @override
-  String toString() => 'MediaContent(text: $text, hasImages: $hasImages, hasVideo: $hasVideo)';
+  String toString() =>
+      'MediaContent(text: $text, hasImages: $hasImages, hasVideo: $hasVideo)';
 }

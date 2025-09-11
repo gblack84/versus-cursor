@@ -227,19 +227,17 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.bold,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                           color: Colors.white,
                                           fontSize: 14.0,
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.bold,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
+                                          fontStyle: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontStyle,
                                         ),
                                     elevation: 5.0,
                                     borderSide: BorderSide(
@@ -272,8 +270,8 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                               TestpageSelectWidget.routeName,
                                               context.mounted);
                                         },
-                                        text:
-                                            AppLocalizations.of(context).getText(
+                                        text: AppLocalizations.of(context)
+                                            .getText(
                                           '3gnrvqoi' /* Continue with Apple */,
                                         ),
                                         icon: FaIcon(
@@ -291,16 +289,14 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                                   0.0, 0.0, 0.0, 0.0),
                                           iconColor: Color(0xFF14181B),
                                           color: Colors.white,
-                                          textStyle: AppTheme.of(
-                                                  context)
+                                          textStyle: AppTheme.of(context)
                                               .bodyMedium
                                               .override(
                                                 font:
                                                     GoogleFonts.plusJakartaSans(
                                                   fontWeight: FontWeight.bold,
                                                   fontStyle:
-                                                      AppTheme.of(
-                                                              context)
+                                                      AppTheme.of(context)
                                                           .bodyMedium
                                                           .fontStyle,
                                                 ),
@@ -308,10 +304,9 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                                 fontSize: 14.0,
                                                 letterSpacing: 0.0,
                                                 fontWeight: FontWeight.bold,
-                                                fontStyle:
-                                                    AppTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontStyle,
+                                                fontStyle: AppTheme.of(context)
+                                                    .bodyMedium
+                                                    .fontStyle,
                                               ),
                                           elevation: 5.0,
                                           borderSide: BorderSide(
@@ -368,19 +363,17 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.bold,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                           color: Color(0xFF101213),
                                           fontSize: 14.0,
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.bold,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
+                                          fontStyle: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontStyle,
                                         ),
                                     elevation: 5.0,
                                     borderSide: BorderSide(
@@ -437,19 +430,17 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.bold,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                           color: Color(0xFF101213),
                                           fontSize: 14.0,
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.bold,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
+                                          fontStyle: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontStyle,
                                         ),
                                     elevation: 5.0,
                                     borderSide: BorderSide(
@@ -498,24 +489,22 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                       0.0, 0.0, 0.0, 0.0),
                                   iconColor: Colors.white,
                                   color: Color(0xFFFF8455),
-                                  textStyle: AppTheme.of(context)
-                                      .bodyMedium
-                                      .override(
-                                        font: GoogleFonts.plusJakartaSans(
-                                          fontWeight: FontWeight.bold,
-                                          fontStyle:
-                                              AppTheme.of(context)
+                                  textStyle:
+                                      AppTheme.of(context).bodyMedium.override(
+                                            font: GoogleFonts.plusJakartaSans(
+                                              fontWeight: FontWeight.bold,
+                                              fontStyle: AppTheme.of(context)
                                                   .bodyMedium
                                                   .fontStyle,
-                                        ),
-                                        color: Color(0xFF101213),
-                                        fontSize: 14.0,
-                                        letterSpacing: 0.0,
-                                        fontWeight: FontWeight.bold,
-                                        fontStyle: AppTheme.of(context)
-                                            .bodyMedium
-                                            .fontStyle,
-                                      ),
+                                            ),
+                                            color: Color(0xFF101213),
+                                            fontSize: 14.0,
+                                            letterSpacing: 0.0,
+                                            fontWeight: FontWeight.bold,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
+                                          ),
                                   elevation: 5.0,
                                   borderSide: BorderSide(
                                     color: Color(0xFFE0E3E7),
@@ -555,19 +544,17 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.bold,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                           color: Color(0xFF101213),
                                           fontSize: 14.0,
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.bold,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
+                                          fontStyle: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontStyle,
                                         ),
                                     elevation: 10.0,
                                     borderSide: BorderSide(

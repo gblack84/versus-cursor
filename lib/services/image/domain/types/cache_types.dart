@@ -5,22 +5,8 @@ enum CacheEvictionStrategy {
   random
 }
 
-enum CachePriority {
-  high,
-  normal,
-  low
-}
+enum CachePriority { high, normal, low }
 
-enum CacheEventType {
-  added,
-  retrieved,
-  evicted,
-  expired
-}
+enum CacheEventType { added, retrieved, evicted, expired }
 
-enum FailureType {
-  storage,
-  network,
-  permissions,
-  unknown
-}
+enum FailureType { storage, network, permissions, unknown }

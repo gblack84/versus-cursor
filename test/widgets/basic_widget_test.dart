@@ -24,7 +24,7 @@ void main() {
       sl.reset();
     });
 
-    testWidgets('should render a simple Material App', 
+    testWidgets('should render a simple Material App',
         (WidgetTester tester) async {
       // Arrange & Act
       await tester.pumpWidget(
@@ -56,7 +56,7 @@ void main() {
           text: 'Option A',
         ),
         optionB: MediaContent(
-          mediaType: 'text', 
+          mediaType: 'text',
           text: 'Option B',
         ),
         voteData: VoteData(
@@ -103,7 +103,7 @@ void main() {
       expect(voteData.totalVotes, equals(50));
     });
 
-    testWidgets('should display domain model data in widget', 
+    testWidgets('should display domain model data in widget',
         (WidgetTester tester) async {
       // Arrange
       final post = Post(

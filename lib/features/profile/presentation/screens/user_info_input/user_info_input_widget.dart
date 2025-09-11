@@ -237,24 +237,20 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                             .titleMedium
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
-                                                fontWeight:
-                                                    AppTheme.of(context)
-                                                        .titleMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    AppTheme.of(context)
-                                                        .titleMedium
-                                                        .fontStyle,
+                                                fontWeight: AppTheme.of(context)
+                                                    .titleMedium
+                                                    .fontWeight,
+                                                fontStyle: AppTheme.of(context)
+                                                    .titleMedium
+                                                    .fontStyle,
                                               ),
                                               letterSpacing: 0.0,
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .titleMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleMedium
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleMedium
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleMedium
+                                                  .fontStyle,
                                               decoration:
                                                   TextDecoration.underline,
                                             ),
@@ -272,25 +268,21 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                 font:
                                                     GoogleFonts.plusJakartaSans(
                                                   fontWeight:
-                                                      AppTheme.of(
-                                                              context)
+                                                      AppTheme.of(context)
                                                           .titleMedium
                                                           .fontWeight,
                                                   fontStyle:
-                                                      AppTheme.of(
-                                                              context)
+                                                      AppTheme.of(context)
                                                           .titleMedium
                                                           .fontStyle,
                                                 ),
                                                 letterSpacing: 0.0,
-                                                fontWeight:
-                                                    AppTheme.of(context)
-                                                        .titleMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    AppTheme.of(context)
-                                                        .titleMedium
-                                                        .fontStyle,
+                                                fontWeight: AppTheme.of(context)
+                                                    .titleMedium
+                                                    .fontWeight,
+                                                fontStyle: AppTheme.of(context)
+                                                    .titleMedium
+                                                    .fontStyle,
                                                 decoration:
                                                     TextDecoration.underline,
                                               ),
@@ -311,24 +303,20 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                             .titleSmall
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
-                                                fontWeight:
-                                                    AppTheme.of(context)
-                                                        .titleSmall
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    AppTheme.of(context)
-                                                        .titleSmall
-                                                        .fontStyle,
+                                                fontWeight: AppTheme.of(context)
+                                                    .titleSmall
+                                                    .fontWeight,
+                                                fontStyle: AppTheme.of(context)
+                                                    .titleSmall
+                                                    .fontStyle,
                                               ),
                                               letterSpacing: 0.0,
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
                                               decoration:
                                                   TextDecoration.underline,
                                             ),
@@ -353,17 +341,15 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
                                                 fontWeight: FontWeight.w600,
-                                                fontStyle:
-                                                    AppTheme.of(context)
-                                                        .bodyLarge
-                                                        .fontStyle,
+                                                fontStyle: AppTheme.of(context)
+                                                    .bodyLarge
+                                                    .fontStyle,
                                               ),
                                               letterSpacing: 0.0,
                                               fontWeight: FontWeight.w600,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .bodyLarge
-                                                      .fontStyle,
+                                              fontStyle: AppTheme.of(context)
+                                                  .bodyLarge
+                                                  .fontStyle,
                                             ),
                                       ),
                                     ),
@@ -376,24 +362,20 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                         .bodyMedium
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                           letterSpacing: 0.0,
-                                          fontWeight:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontWeight,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
+                                          fontWeight: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontWeight,
+                                          fontStyle: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontStyle,
                                         ),
                                   ),
                                   Container(
@@ -407,85 +389,70 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                           TextCapitalization.words,
                                       obscureText: false,
                                       decoration: InputDecoration(
-                                        labelText:
-                                            AppLocalizations.of(context).getText(
+                                        labelText: AppLocalizations.of(context)
+                                            .getText(
                                           'm58rgdkp' /* Display name* */,
                                         ),
                                         labelStyle: AppTheme.of(context)
                                             .headlineMedium
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
-                                                fontWeight:
-                                                    AppTheme.of(context)
-                                                        .headlineMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    AppTheme.of(context)
-                                                        .headlineMedium
-                                                        .fontStyle,
+                                                fontWeight: AppTheme.of(context)
+                                                    .headlineMedium
+                                                    .fontWeight,
+                                                fontStyle: AppTheme.of(context)
+                                                    .headlineMedium
+                                                    .fontStyle,
                                               ),
-                                              color:
-                                                  AppTheme.of(context)
-                                                      .secondaryText,
+                                              color: AppTheme.of(context)
+                                                  .secondaryText,
                                               letterSpacing: 0.0,
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .headlineMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .headlineMedium
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .headlineMedium
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .headlineMedium
+                                                  .fontStyle,
                                             ),
                                         hintStyle: AppTheme.of(context)
                                             .labelMedium
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
-                                                fontWeight:
-                                                    AppTheme.of(context)
-                                                        .labelMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    AppTheme.of(context)
-                                                        .labelMedium
-                                                        .fontStyle,
+                                                fontWeight: AppTheme.of(context)
+                                                    .labelMedium
+                                                    .fontWeight,
+                                                fontStyle: AppTheme.of(context)
+                                                    .labelMedium
+                                                    .fontStyle,
                                               ),
                                               letterSpacing: 0.0,
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .labelMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .labelMedium
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .labelMedium
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .labelMedium
+                                                  .fontStyle,
                                             ),
                                         errorStyle: AppTheme.of(context)
                                             .bodyMedium
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
-                                                fontWeight:
-                                                    AppTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    AppTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontStyle,
+                                                fontWeight: AppTheme.of(context)
+                                                    .bodyMedium
+                                                    .fontWeight,
+                                                fontStyle: AppTheme.of(context)
+                                                    .bodyMedium
+                                                    .fontStyle,
                                               ),
-                                              color:
-                                                  AppTheme.of(context)
-                                                      .error,
+                                              color: AppTheme.of(context).error,
                                               fontSize: 12.0,
                                               letterSpacing: 0.0,
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontStyle,
                                             ),
                                         enabledBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
@@ -497,8 +464,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                         ),
                                         focusedBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
-                                            color: AppTheme.of(context)
-                                                .primary,
+                                            color: AppTheme.of(context).primary,
                                             width: 2.0,
                                           ),
                                           borderRadius:
@@ -506,8 +472,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                         ),
                                         errorBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
-                                            color: AppTheme.of(context)
-                                                .error,
+                                            color: AppTheme.of(context).error,
                                             width: 2.0,
                                           ),
                                           borderRadius:
@@ -515,8 +480,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                         ),
                                         focusedErrorBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
-                                            color: AppTheme.of(context)
-                                                .error,
+                                            color: AppTheme.of(context).error,
                                             width: 2.0,
                                           ),
                                           borderRadius:
@@ -526,8 +490,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                         fillColor: (_model.displayNameFocusNode
                                                     ?.hasFocus ??
                                                 false)
-                                            ? AppTheme.of(context)
-                                                .accent1
+                                            ? AppTheme.of(context).accent1
                                             : AppTheme.of(context)
                                                 .secondaryBackground,
                                         contentPadding:
@@ -538,28 +501,23 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                           .headlineMedium
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .headlineMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .headlineMedium
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .headlineMedium
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .headlineMedium
+                                                  .fontStyle,
                                             ),
                                             letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .headlineMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .headlineMedium
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .headlineMedium
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .headlineMedium
+                                                .fontStyle,
                                           ),
                                       maxLength: 20,
-                                      cursorColor:
-                                          AppTheme.of(context).primary,
+                                      cursorColor: AppTheme.of(context).primary,
                                       validator: _model
                                           .displayNameTextControllerValidator
                                           .asValidator(context),
@@ -585,24 +543,20 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                         .bodyMedium
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                           letterSpacing: 0.0,
-                                          fontWeight:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontWeight,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
+                                          fontWeight: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontWeight,
+                                          fontStyle: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontStyle,
                                         ),
                                   ),
                                   Container(
@@ -627,24 +581,20 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                         .bodyMedium
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                           letterSpacing: 0.0,
-                                          fontWeight:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontWeight,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
+                                          fontWeight: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontWeight,
+                                          fontStyle: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontStyle,
                                         ),
                                   ),
                                   AppChoiceChips(
@@ -662,9 +612,8 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                         'tmsnqk92' /* Other */,
                                       ))
                                     ],
-                                    onChanged: (val) => setState(() =>
-                                        _model.choiceChipsValue =
-                                            val?.firstOrNull),
+                                    onChanged: (val) => setState(() => _model
+                                        .choiceChipsValue = val?.firstOrNull),
                                     selectedChipStyle: ChipStyle(
                                       backgroundColor:
                                           AppTheme.of(context).accent2,
@@ -672,71 +621,62 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                           .bodyMedium
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontStyle,
                                             ),
                                             color: AppTheme.of(context)
                                                 .primaryText,
                                             letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
-                                      iconColor: AppTheme.of(context)
-                                          .primaryText,
+                                      iconColor:
+                                          AppTheme.of(context).primaryText,
                                       iconSize: 18.0,
                                       elevation: 0.0,
-                                      borderColor: AppTheme.of(context)
-                                          .secondary,
+                                      borderColor:
+                                          AppTheme.of(context).secondary,
                                       borderWidth: 2.0,
                                       borderRadius: BorderRadius.circular(8.0),
                                     ),
                                     unselectedChipStyle: ChipStyle(
-                                      backgroundColor:
-                                          AppTheme.of(context)
-                                              .primaryBackground,
+                                      backgroundColor: AppTheme.of(context)
+                                          .primaryBackground,
                                       textStyle: AppTheme.of(context)
                                           .bodyMedium
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontStyle,
                                             ),
                                             color: AppTheme.of(context)
                                                 .secondaryText,
                                             letterSpacing: 0.0,
-                                            fontWeight:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontWeight: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
-                                      iconColor: AppTheme.of(context)
-                                          .secondaryText,
+                                      iconColor:
+                                          AppTheme.of(context).secondaryText,
                                       iconSize: 18.0,
                                       elevation: 0.0,
-                                      borderColor: AppTheme.of(context)
-                                          .alternate,
+                                      borderColor:
+                                          AppTheme.of(context).alternate,
                                       borderWidth: 2.0,
                                       borderRadius: BorderRadius.circular(8.0),
                                     ),
@@ -827,8 +767,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                         'cn54l9bj' /* I confirm that I am at least  */,
                                                       ),
                                                       style:
-                                                          AppTheme.of(
-                                                                  context)
+                                                          AppTheme.of(context)
                                                               .bodyMedium
                                                               .override(
                                                                 font: GoogleFonts
@@ -861,36 +800,36 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                           .getText(
                                                         'e8bfoncc' /*  13 */,
                                                       ),
-                                                      style: AppTheme
-                                                              .of(context)
-                                                          .bodyMedium
-                                                          .override(
-                                                            font: GoogleFonts
-                                                                .plusJakartaSans(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              fontStyle:
-                                                                  AppTheme.of(
+                                                      style:
+                                                          AppTheme.of(context)
+                                                              .bodyMedium
+                                                              .override(
+                                                                font: GoogleFonts
+                                                                    .plusJakartaSans(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  fontStyle: AppTheme.of(
                                                                           context)
                                                                       .bodyMedium
                                                                       .fontStyle,
-                                                            ),
-                                                            color: Color(
-                                                                0xFFE8303B),
-                                                            fontSize: 20.0,
-                                                            letterSpacing: 0.0,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            fontStyle:
-                                                                AppTheme.of(
+                                                                ),
+                                                                color: Color(
+                                                                    0xFFE8303B),
+                                                                fontSize: 20.0,
+                                                                letterSpacing:
+                                                                    0.0,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                fontStyle: AppTheme.of(
                                                                         context)
                                                                     .bodyMedium
                                                                     .fontStyle,
-                                                            decoration:
-                                                                TextDecoration
-                                                                    .underline,
-                                                          ),
+                                                                decoration:
+                                                                    TextDecoration
+                                                                        .underline,
+                                                              ),
                                                     ),
                                                     TextSpan(
                                                       text: AppLocalizations.of(
@@ -899,8 +838,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                         'eqbsqvs2' /*   years old. */,
                                                       ),
                                                       style:
-                                                          AppTheme.of(
-                                                                  context)
+                                                          AppTheme.of(context)
                                                               .bodyMedium
                                                               .override(
                                                                 font: GoogleFonts
@@ -928,8 +866,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                               ),
                                                     )
                                                   ],
-                                                  style: AppTheme.of(
-                                                          context)
+                                                  style: AppTheme.of(context)
                                                       .bodyMedium
                                                       .override(
                                                         font: GoogleFonts
@@ -947,13 +884,11 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                         ),
                                                         letterSpacing: 0.0,
                                                         fontWeight:
-                                                            AppTheme.of(
-                                                                    context)
+                                                            AppTheme.of(context)
                                                                 .bodyMedium
                                                                 .fontWeight,
                                                         fontStyle:
-                                                            AppTheme.of(
-                                                                    context)
+                                                            AppTheme.of(context)
                                                                 .bodyMedium
                                                                 .fontStyle,
                                                       ),
@@ -973,25 +908,21 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                 font:
                                                     GoogleFonts.plusJakartaSans(
                                                   fontWeight:
-                                                      AppTheme.of(
-                                                              context)
+                                                      AppTheme.of(context)
                                                           .bodyMedium
                                                           .fontWeight,
                                                   fontStyle:
-                                                      AppTheme.of(
-                                                              context)
+                                                      AppTheme.of(context)
                                                           .bodyMedium
                                                           .fontStyle,
                                                 ),
                                                 letterSpacing: 0.0,
-                                                fontWeight:
-                                                    AppTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    AppTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontStyle,
+                                                fontWeight: AppTheme.of(context)
+                                                    .bodyMedium
+                                                    .fontWeight,
+                                                fontStyle: AppTheme.of(context)
+                                                    .bodyMedium
+                                                    .fontStyle,
                                               ),
                                         ),
                                       ],
@@ -1033,7 +964,8 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                   ExpertiseSelectWidget
                                                       .routeName);
                                             },
-                                      text: AppLocalizations.of(context).getText(
+                                      text:
+                                          AppLocalizations.of(context).getText(
                                         'k84ryt65' /* Continue */,
                                       ),
                                       options: AppButtonOptions(
@@ -1049,25 +981,21 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                             .titleSmall
                                             .override(
                                               font: GoogleFonts.plusJakartaSans(
-                                                fontWeight:
-                                                    AppTheme.of(context)
-                                                        .titleSmall
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    AppTheme.of(context)
-                                                        .titleSmall
-                                                        .fontStyle,
+                                                fontWeight: AppTheme.of(context)
+                                                    .titleSmall
+                                                    .fontWeight,
+                                                fontStyle: AppTheme.of(context)
+                                                    .titleSmall
+                                                    .fontStyle,
                                               ),
                                               color: Colors.white,
                                               letterSpacing: 0.0,
-                                              fontWeight:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
                                             ),
                                         elevation: 3.0,
                                         borderSide: BorderSide(

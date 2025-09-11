@@ -11,9 +11,10 @@ Future initFirebase() async {
               authDomain: EnvironmentConfig.firebaseAuthDomain,
               projectId: EnvironmentConfig.firebaseProjectId,
               storageBucket: EnvironmentConfig.firebaseStorageBucket,
-              messagingSenderId: EnvironmentConfig.firebaseMessagingSenderId.isNotEmpty 
-                  ? EnvironmentConfig.firebaseMessagingSenderId 
-                  : "636984750551",
+              messagingSenderId:
+                  EnvironmentConfig.firebaseMessagingSenderId.isNotEmpty
+                      ? EnvironmentConfig.firebaseMessagingSenderId
+                      : "636984750551",
               appId: EnvironmentConfig.firebaseAppId.isNotEmpty
                   ? EnvironmentConfig.firebaseAppId
                   : "1:636984750551:web:4cf3216b87a29dc7691b92"));

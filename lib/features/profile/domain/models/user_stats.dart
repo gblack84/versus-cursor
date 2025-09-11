@@ -1,6 +1,6 @@
 /// UserStats Domain Model
 /// Clean Architecture - Domain Layer Entity
-/// 
+///
 /// This model contains user gamification statistics, points, rankings,
 /// and social metrics, separated from profile and authentication data
 /// for better separation of concerns and performance optimization.
@@ -27,13 +27,13 @@ class UserStats {
 
   // Core Fields
   final String userId; // Foreign key to AuthUser.uid
-  
+
   // Points System
   final int pointsA; // Answer points (current)
   final int pointsQ; // Question points (current)
   final int totalAPoints; // Total answer points (lifetime)
   final int totalQPoints; // Total question points (lifetime)
-  
+
   // Ranking System
   final String currentRank;
   final String currentTitle;
@@ -41,15 +41,15 @@ class UserStats {
   final DateTime? titleChangeDate;
   final bool isRankEligible;
   final int rankEvaluationCount;
-  
+
   // Social Connections
   final List<String> friends; // Friend user IDs
   final List<String> activeChats; // Active chat IDs
-  
+
   // History
   final List<String> rankHistory;
   final List<String> titleHistory;
-  
+
   // Activity Metrics
   final int anonymousPostsCount;
   final int anonymousCommentsCount;
@@ -87,10 +87,10 @@ class UserStats {
       totalQPoints: json['totalQPoints'] ?? 0,
       currentRank: json['currentRank'] ?? '',
       currentTitle: json['currentTitle'] ?? '',
-      rankChangeDate: json['rankChangeDate'] != null 
+      rankChangeDate: json['rankChangeDate'] != null
           ? DateTime.parse(json['rankChangeDate'])
           : null,
-      titleChangeDate: json['titleChangeDate'] != null 
+      titleChangeDate: json['titleChangeDate'] != null
           ? DateTime.parse(json['titleChangeDate'])
           : null,
       isRankEligible: json['isRankEligible'] ?? false,
@@ -136,8 +136,10 @@ class UserStats {
       'totalQPoints': totalQPoints,
       'currentRank': currentRank,
       'currentTitle': currentTitle,
-      if (rankChangeDate != null) 'rankChangeDate': rankChangeDate!.toIso8601String(),
-      if (titleChangeDate != null) 'titleChangeDate': titleChangeDate!.toIso8601String(),
+      if (rankChangeDate != null)
+        'rankChangeDate': rankChangeDate!.toIso8601String(),
+      if (titleChangeDate != null)
+        'titleChangeDate': titleChangeDate!.toIso8601String(),
       'isRankEligible': isRankEligible,
       'rankEvaluationCount': rankEvaluationCount,
       'friends': friends,
@@ -186,7 +188,8 @@ class UserStats {
       rankHistory: rankHistory ?? this.rankHistory,
       titleHistory: titleHistory ?? this.titleHistory,
       anonymousPostsCount: anonymousPostsCount ?? this.anonymousPostsCount,
-      anonymousCommentsCount: anonymousCommentsCount ?? this.anonymousCommentsCount,
+      anonymousCommentsCount:
+          anonymousCommentsCount ?? this.anonymousCommentsCount,
     );
   }
 

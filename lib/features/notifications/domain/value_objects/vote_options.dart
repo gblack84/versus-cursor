@@ -11,7 +11,7 @@ class VoteOptions {
   final double? optionBAspectRatio;
   final List<String> relatedInterests;
   final Map<String, dynamic> metadata;
-  
+
   // 이전 버전 호환성을 위한 필드
   String get text => optionATitle; // 기본적으로 A 옵션 제목 반환
   List<String> get imageUrls => optionAImageUrls; // 기본적으로 A 옵션 이미지 반환
@@ -66,9 +66,10 @@ class VoteOptions {
     if (optionAAspectRatio == null || optionBAspectRatio == null) {
       return 'single';
     }
-    
+
     // 세로형 이미지가 하나라도 있으면 horizontal (좌우 배치)
-    final hasVerticalImage = (optionAAspectRatio! < 1.0) || (optionBAspectRatio! < 1.0);
+    final hasVerticalImage =
+        (optionAAspectRatio! < 1.0) || (optionBAspectRatio! < 1.0);
     return hasVerticalImage ? 'horizontal' : 'vertical';
   }
 

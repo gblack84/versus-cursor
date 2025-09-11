@@ -7,7 +7,7 @@ void main() {
   group('VoteNotification', () {
     late VoteNotification notification;
     final now = DateTime.now();
-    
+
     setUp(() {
       notification = VoteNotification(
         id: 'test-id',
@@ -82,7 +82,7 @@ void main() {
           currentVotesA: 0,
           currentVotesB: 0,
         );
-        
+
         expect(futureVote.isVoteActive, false);
       });
 
@@ -113,13 +113,14 @@ void main() {
           currentVotesA: 0,
           currentVotesB: 0,
         );
-        
+
         expect(expiredVote.isVoteActive, false);
       });
     });
 
     group('Business Logic - User Vote Status', () {
-      test('canUserVote should return true when not voted and vote is active', () {
+      test('canUserVote should return true when not voted and vote is active',
+          () {
         expect(notification.canUserVote, true);
       });
 
@@ -150,7 +151,7 @@ void main() {
           currentVotesA: 10,
           currentVotesB: 5,
         );
-        
+
         expect(votedNotification.canUserVote, false);
       });
     });
@@ -190,7 +191,7 @@ void main() {
           currentVotesA: 0,
           currentVotesB: 0,
         );
-        
+
         expect(expiredVote.remainingTime, isNull);
       });
     });
@@ -229,7 +230,7 @@ void main() {
           currentVotesA: 0,
           currentVotesB: 0,
         );
-        
+
         final percentages = noVotes.votesPercentage;
         expect(percentages['A'], 50.0);
         expect(percentages['B'], 50.0);
@@ -239,7 +240,7 @@ void main() {
     group('Business Logic - Record Vote', () {
       test('recordUserVote should update vote state correctly', () {
         final updatedNotification = notification.recordUserVote('A');
-        
+
         expect(updatedNotification.hasVoted, true);
         expect(updatedNotification.userVoteChoice, 'A');
         expect(updatedNotification.votesA, 11);
@@ -248,7 +249,7 @@ void main() {
 
       test('recordUserVote should update votesB when choosing B', () {
         final updatedNotification = notification.recordUserVote('B');
-        
+
         expect(updatedNotification.hasVoted, true);
         expect(updatedNotification.userVoteChoice, 'B');
         expect(updatedNotification.votesA, 10);
@@ -284,7 +285,7 @@ void main() {
           currentVotesA: 0,
           currentVotesB: 0,
         );
-        
+
         expect(minimalNotification.metadata, isNotNull);
         expect(minimalNotification.metadata, isEmpty);
       });
@@ -292,7 +293,7 @@ void main() {
       test('should handle empty image URLs in VoteOptions', () {
         expect(notification.optionA.imageUrls.length, 1);
         expect(notification.optionB.imageUrls.length, 1);
-        
+
         final noImages = VoteNotification(
           id: 'test-id',
           userId: 'user-123',
@@ -319,7 +320,7 @@ void main() {
           currentVotesA: 0,
           currentVotesB: 0,
         );
-        
+
         expect(noImages.optionA.imageUrls, isEmpty);
         expect(noImages.optionB.imageUrls, isEmpty);
       });
@@ -351,7 +352,7 @@ void main() {
           currentVotesA: 999999,
           currentVotesB: 1,
         );
-        
+
         final percentages = largeVotes.votesPercentage;
         expect(percentages['A'], closeTo(99.9999, 0.0001));
         expect(percentages['B'], closeTo(0.0001, 0.0001));

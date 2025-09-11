@@ -152,19 +152,17 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight: FontWeight.w500,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .labelMedium
-                                                      .fontStyle,
+                                              fontStyle: AppTheme.of(context)
+                                                  .labelMedium
+                                                  .fontStyle,
                                             ),
                                             color: Color(0xFF57636C),
                                             fontSize: 14.0,
                                             letterSpacing: 0.0,
                                             fontWeight: FontWeight.w500,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .labelMedium
-                                                    .fontStyle,
+                                            fontStyle: AppTheme.of(context)
+                                                .labelMedium
+                                                .fontStyle,
                                           ),
                                       enabledBorder: OutlineInputBorder(
                                         borderSide: BorderSide(
@@ -207,19 +205,17 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.w500,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                           color: Colors.black,
                                           fontSize: 14.0,
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.w500,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
+                                          fontStyle: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontStyle,
                                         ),
                                     keyboardType: TextInputType.emailAddress,
                                     validator: _model
@@ -251,19 +247,17 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight: FontWeight.w500,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .labelMedium
-                                                      .fontStyle,
+                                              fontStyle: AppTheme.of(context)
+                                                  .labelMedium
+                                                  .fontStyle,
                                             ),
                                             color: Color(0xFF57636C),
                                             fontSize: 14.0,
                                             letterSpacing: 0.0,
                                             fontWeight: FontWeight.w500,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .labelMedium
-                                                    .fontStyle,
+                                            fontStyle: AppTheme.of(context)
+                                                .labelMedium
+                                                .fontStyle,
                                           ),
                                       enabledBorder: OutlineInputBorder(
                                         borderSide: BorderSide(
@@ -321,19 +315,17 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                         .override(
                                           font: GoogleFonts.plusJakartaSans(
                                             fontWeight: FontWeight.w500,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                           color: Colors.black,
                                           fontSize: 14.0,
                                           letterSpacing: 0.0,
                                           fontWeight: FontWeight.w500,
-                                          fontStyle:
-                                              AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
+                                          fontStyle: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontStyle,
                                         ),
                                     validator: _model
                                         .passwordLoginTextControllerValidator
@@ -363,18 +355,22 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
 
                                       // authenticatedUserStream이 currentUser를 설정할 때까지 대기
                                       int attempts = 0;
-                                      while (currentUserReference == null && attempts < 20) {
-                                        await Future.delayed(const Duration(milliseconds: 500));
+                                      while (currentUserReference == null &&
+                                          attempts < 20) {
+                                        await Future.delayed(
+                                            const Duration(milliseconds: 500));
                                         attempts++;
                                       }
-                                      
+
                                       if (currentUserReference == null) {
-                                        debugPrint('경고: currentUserReference가 설정되지 않음');
+                                        debugPrint(
+                                            '경고: currentUserReference가 설정되지 않음');
                                         // 직접 DocumentReference 생성하여 업데이트
-                                        final directRef = FirebaseFirestore.instance
+                                        final directRef = FirebaseFirestore
+                                            .instance
                                             .collection('users')
                                             .doc(user.uid);
-                                        
+
                                         await directRef.update({
                                           ...mapToFirestore(
                                             {
@@ -424,19 +420,17 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight: FontWeight.w500,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
                                             ),
                                             color: Colors.white,
                                             fontSize: 16.0,
                                             letterSpacing: 0.0,
                                             fontWeight: FontWeight.w500,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontStyle,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
                                           ),
                                       elevation: 10.0,
                                       borderSide: BorderSide(
@@ -489,19 +483,17 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight: FontWeight.w500,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .titleSmall
-                                                      .fontStyle,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
                                             ),
                                             color: Colors.white,
                                             fontSize: 16.0,
                                             letterSpacing: 0.0,
                                             fontWeight: FontWeight.w500,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .titleSmall
-                                                    .fontStyle,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
                                           ),
                                       elevation: 10.0,
                                       borderSide: BorderSide(
@@ -527,91 +519,121 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                           style: AppTheme.of(context)
                                               .bodyMedium
                                               .override(
-                                                font: GoogleFonts.plusJakartaSans(),
-                                                color: AppTheme.of(context).secondaryText,
+                                                font: GoogleFonts
+                                                    .plusJakartaSans(),
+                                                color: AppTheme.of(context)
+                                                    .secondaryText,
                                                 letterSpacing: 0.0,
                                               ),
                                         ),
                                         SizedBox(height: 8.0),
                                         Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
                                             // 관리자 계정
                                             AppButtonWidget(
                                               onPressed: () async {
-                                                GoRouter.of(context).prepareAuthEvent();
-                                                
+                                                GoRouter.of(context)
+                                                    .prepareAuthEvent();
+
                                                 // 먼저 로그인 시도
-                                                var user = await authManager.signInWithEmail(
+                                                var user = await authManager
+                                                    .signInWithEmail(
                                                   context,
                                                   'admin@versus.test',
                                                   'test1234!',
                                                 );
-                                                
+
                                                 // 계정이 없으면 생성
                                                 if (user == null) {
-                                                  user = await authManager.createAccountWithEmail(
+                                                  user = await authManager
+                                                      .createAccountWithEmail(
                                                     context,
                                                     'admin@versus.test',
                                                     'test1234!',
                                                   );
-                                                  
+
                                                   if (user == null) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
                                                       SnackBar(
-                                                        content: Text('관리자 계정 생성 실패'),
+                                                        content: Text(
+                                                            '관리자 계정 생성 실패'),
                                                       ),
                                                     );
                                                     return;
                                                   }
-                                                  
+
                                                   // 사용자 문서 생성
                                                   final usersCreateData = {
-                                                    'email': 'admin@versus.test',
+                                                    'email':
+                                                        'admin@versus.test',
                                                     'displayName': '관리자',
-                                                    'createdTime': FieldValue.serverTimestamp(),
+                                                    'createdTime': FieldValue
+                                                        .serverTimestamp(),
                                                     'role': 'admin',
                                                     'uid': user.uid,
                                                   };
                                                   // Repository 패턴 사용 - createUser 메서드 활용
-                                                  final userRepository = GetIt.instance<IUserRepository>();
-                                                  
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+
                                                   // UserProfile 생성
-                                                  await UserProfile.collection.doc(user.uid).set(usersCreateData);
+                                                  await UserProfile.collection
+                                                      .doc(user.uid)
+                                                      .set(usersCreateData);
                                                 }
-                                                
+
                                                 // authenticatedUserStream이 currentUser를 설정할 때까지 대기
                                                 int attempts = 0;
-                                                while (currentUserReference == null && attempts < 20) {
-                                                  await Future.delayed(const Duration(milliseconds: 500));
+                                                while (currentUserReference ==
+                                                        null &&
+                                                    attempts < 20) {
+                                                  await Future.delayed(
+                                                      const Duration(
+                                                          milliseconds: 500));
                                                   attempts++;
                                                 }
-                                                
-                                                if (currentUserReference == null) {
-                                                  debugPrint('경고: currentUserReference가 설정되지 않음');
+
+                                                if (currentUserReference ==
+                                                    null) {
+                                                  debugPrint(
+                                                      '경고: currentUserReference가 설정되지 않음');
                                                   // 직접 DocumentReference 생성하여 업데이트
                                                   // Repository를 통해 업데이트 (추후 완전 마이그레이션)
-                                                  final userRepository = GetIt.instance<IUserRepository>();
-                                                  final directRef = userRepository.getUserReference(user.uid);
-                                                  
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+                                                  final directRef =
+                                                      userRepository
+                                                          .getUserReference(
+                                                              user.uid);
+
                                                   await directRef.update({
                                                     ...mapToFirestore({
-                                                      'lastActive': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
                                                       'role': 'admin',
                                                     }),
                                                   });
                                                 } else {
                                                   // 정상적으로 currentUserReference 사용
-                                                  await currentUserReference!.update({
+                                                  await currentUserReference!
+                                                      .update({
                                                     ...mapToFirestore({
-                                                      'lastActive': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
                                                       'role': 'admin',
                                                     }),
                                                   });
                                                 }
-                                                
+
                                                 context.pushNamedAuth(
-                                                  TestpageSelectWidget.routeName,
+                                                  TestpageSelectWidget
+                                                      .routeName,
                                                   context.mounted,
                                                 );
                                               },
@@ -619,107 +641,147 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                               options: AppButtonOptions(
                                                 width: 100.0,
                                                 height: 40.0,
-                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
-                                                iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
-                                                color: AppTheme.of(context).primary,
-                                                textStyle: AppTheme.of(context).titleSmall.override(
-                                                  font: GoogleFonts.plusJakartaSans(),
-                                                  color: Colors.white,
-                                                  fontSize: 14.0,
-                                                  letterSpacing: 0.0,
-                                                ),
+                                                padding: EdgeInsetsDirectional
+                                                    .fromSTEB(
+                                                        0.0, 0.0, 0.0, 0.0),
+                                                iconPadding:
+                                                    EdgeInsetsDirectional
+                                                        .fromSTEB(
+                                                            0.0, 0.0, 0.0, 0.0),
+                                                color: AppTheme.of(context)
+                                                    .primary,
+                                                textStyle: AppTheme.of(context)
+                                                    .titleSmall
+                                                    .override(
+                                                      font: GoogleFonts
+                                                          .plusJakartaSans(),
+                                                      color: Colors.white,
+                                                      fontSize: 14.0,
+                                                      letterSpacing: 0.0,
+                                                    ),
                                                 elevation: 3.0,
                                                 borderSide: BorderSide(
                                                   color: Colors.transparent,
                                                   width: 1.0,
                                                 ),
-                                                borderRadius: BorderRadius.circular(8.0),
+                                                borderRadius:
+                                                    BorderRadius.circular(8.0),
                                               ),
                                             ),
                                             SizedBox(width: 12.0),
                                             // 플랫폼별 테스트 계정
                                             AppButtonWidget(
                                               onPressed: () async {
-                                                GoRouter.of(context).prepareAuthEvent();
-                                                
+                                                GoRouter.of(context)
+                                                    .prepareAuthEvent();
+
                                                 // iOS 플랫폼 고정
-                                                final testEmail = 'tester-ios@versus.test';
-                                                final testPassword = 'test1234!';
-                                                
+                                                final testEmail =
+                                                    'tester-ios@versus.test';
+                                                final testPassword =
+                                                    'test1234!';
+
                                                 // 먼저 로그인 시도
-                                                var user = await authManager.signInWithEmail(
+                                                var user = await authManager
+                                                    .signInWithEmail(
                                                   context,
                                                   testEmail,
                                                   testPassword,
                                                 );
-                                                
+
                                                 // 계정이 없으면 생성
                                                 if (user == null) {
-                                                  user = await authManager.createAccountWithEmail(
+                                                  user = await authManager
+                                                      .createAccountWithEmail(
                                                     context,
                                                     testEmail,
                                                     testPassword,
                                                   );
-                                                  
+
                                                   if (user == null) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
                                                       SnackBar(
-                                                        content: Text('iOS 테스터 계정 생성 실패'),
+                                                        content: Text(
+                                                            'iOS 테스터 계정 생성 실패'),
                                                       ),
                                                     );
                                                     return;
                                                   }
-                                                  
+
                                                   // 사용자 문서 생성
                                                   final usersCreateData = {
                                                     'email': testEmail,
-                                                    'displayName': '테스터 (아이폰 16 프로)',
-                                                    'createdTime': FieldValue.serverTimestamp(),
+                                                    'displayName':
+                                                        '테스터 (아이폰 16 프로)',
+                                                    'createdTime': FieldValue
+                                                        .serverTimestamp(),
                                                     'role': 'tester',
-                                                    'platform': 'ios',  // 플랫폼 정보 저장
+                                                    'platform':
+                                                        'ios', // 플랫폼 정보 저장
                                                     'uid': user.uid,
                                                   };
                                                   // Repository 패턴 사용 - createUser 메서드 활용
-                                                  final userRepository = GetIt.instance<IUserRepository>();
-                                                  
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+
                                                   // UserProfile 생성
-                                                  await UserProfile.collection.doc(user.uid).set(usersCreateData);
+                                                  await UserProfile.collection
+                                                      .doc(user.uid)
+                                                      .set(usersCreateData);
                                                 }
-                                                
+
                                                 // authenticatedUserStream이 currentUser를 설정할 때까지 대기
                                                 int attempts = 0;
-                                                while (currentUserReference == null && attempts < 20) {
-                                                  await Future.delayed(const Duration(milliseconds: 500));
+                                                while (currentUserReference ==
+                                                        null &&
+                                                    attempts < 20) {
+                                                  await Future.delayed(
+                                                      const Duration(
+                                                          milliseconds: 500));
                                                   attempts++;
                                                 }
-                                                
-                                                if (currentUserReference == null) {
-                                                  debugPrint('경고: currentUserReference가 설정되지 않음');
+
+                                                if (currentUserReference ==
+                                                    null) {
+                                                  debugPrint(
+                                                      '경고: currentUserReference가 설정되지 않음');
                                                   // 직접 DocumentReference 생성하여 업데이트
                                                   // Repository를 통해 업데이트 (추후 완전 마이그레이션)
-                                                  final userRepository = GetIt.instance<IUserRepository>();
-                                                  final directRef = userRepository.getUserReference(user.uid);
-                                                  
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+                                                  final directRef =
+                                                      userRepository
+                                                          .getUserReference(
+                                                              user.uid);
+
                                                   await directRef.update({
                                                     ...mapToFirestore({
-                                                      'lastActive': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
                                                       'role': 'tester',
                                                       'platform': 'ios',
                                                     }),
                                                   });
                                                 } else {
                                                   // 정상적으로 currentUserReference 사용
-                                                  await currentUserReference!.update({
+                                                  await currentUserReference!
+                                                      .update({
                                                     ...mapToFirestore({
-                                                      'lastActive': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
                                                       'role': 'tester',
                                                       'platform': 'ios',
                                                     }),
                                                   });
                                                 }
-                                                
+
                                                 context.pushNamedAuth(
-                                                  TestpageSelectWidget.routeName,
+                                                  TestpageSelectWidget
+                                                      .routeName,
                                                   context.mounted,
                                                 );
                                               },
@@ -727,21 +789,31 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                               options: AppButtonOptions(
                                                 width: 120.0,
                                                 height: 40.0,
-                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
-                                                iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
-                                                color: AppTheme.of(context).secondary,
-                                                textStyle: AppTheme.of(context).titleSmall.override(
-                                                  font: GoogleFonts.plusJakartaSans(),
-                                                  color: Colors.white,
-                                                  fontSize: 14.0,
-                                                  letterSpacing: 0.0,
-                                                ),
+                                                padding: EdgeInsetsDirectional
+                                                    .fromSTEB(
+                                                        0.0, 0.0, 0.0, 0.0),
+                                                iconPadding:
+                                                    EdgeInsetsDirectional
+                                                        .fromSTEB(
+                                                            0.0, 0.0, 0.0, 0.0),
+                                                color: AppTheme.of(context)
+                                                    .secondary,
+                                                textStyle: AppTheme.of(context)
+                                                    .titleSmall
+                                                    .override(
+                                                      font: GoogleFonts
+                                                          .plusJakartaSans(),
+                                                      color: Colors.white,
+                                                      fontSize: 14.0,
+                                                      letterSpacing: 0.0,
+                                                    ),
                                                 elevation: 3.0,
                                                 borderSide: BorderSide(
                                                   color: Colors.transparent,
                                                   width: 1.0,
                                                 ),
-                                                borderRadius: BorderRadius.circular(8.0),
+                                                borderRadius:
+                                                    BorderRadius.circular(8.0),
                                               ),
                                             ),
                                           ],
@@ -749,90 +821,120 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                         SizedBox(height: 12.0),
                                         // 두 번째 줄: Android, macOS, 웹앱
                                         Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
                                             // Android 테스트 계정
                                             AppButtonWidget(
                                               onPressed: () async {
-                                                GoRouter.of(context).prepareAuthEvent();
-                                                
-                                                final testEmail = 'tester-android@versus.test';
-                                                final testPassword = 'test1234!';
-                                                
+                                                GoRouter.of(context)
+                                                    .prepareAuthEvent();
+
+                                                final testEmail =
+                                                    'tester-android@versus.test';
+                                                final testPassword =
+                                                    'test1234!';
+
                                                 // 먼저 로그인 시도
-                                                var user = await authManager.signInWithEmail(
+                                                var user = await authManager
+                                                    .signInWithEmail(
                                                   context,
                                                   testEmail,
                                                   testPassword,
                                                 );
-                                                
+
                                                 // 계정이 없으면 생성
                                                 if (user == null) {
-                                                  user = await authManager.createAccountWithEmail(
+                                                  user = await authManager
+                                                      .createAccountWithEmail(
                                                     context,
                                                     testEmail,
                                                     testPassword,
                                                   );
-                                                  
+
                                                   if (user == null) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
                                                       SnackBar(
-                                                        content: Text('Android 테스터 계정 생성 실패'),
+                                                        content: Text(
+                                                            'Android 테스터 계정 생성 실패'),
                                                       ),
                                                     );
                                                     return;
                                                   }
-                                                  
+
                                                   // 사용자 문서 생성
                                                   final usersCreateData = {
                                                     'email': testEmail,
-                                                    'displayName': '테스터 (Android)',
-                                                    'createdTime': FieldValue.serverTimestamp(),
+                                                    'displayName':
+                                                        '테스터 (Android)',
+                                                    'createdTime': FieldValue
+                                                        .serverTimestamp(),
                                                     'role': 'tester',
                                                     'platform': 'android',
                                                     'uid': user.uid,
                                                   };
                                                   // Repository 패턴 사용 - createUser 메서드 활용
-                                                  final userRepository = GetIt.instance<IUserRepository>();
-                                                  
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+
                                                   // UserProfile 생성
-                                                  await UserProfile.collection.doc(user.uid).set(usersCreateData);
+                                                  await UserProfile.collection
+                                                      .doc(user.uid)
+                                                      .set(usersCreateData);
                                                 }
-                                                
+
                                                 // authenticatedUserStream이 currentUser를 설정할 때까지 대기
                                                 int attempts = 0;
-                                                while (currentUserReference == null && attempts < 20) {
-                                                  await Future.delayed(const Duration(milliseconds: 500));
+                                                while (currentUserReference ==
+                                                        null &&
+                                                    attempts < 20) {
+                                                  await Future.delayed(
+                                                      const Duration(
+                                                          milliseconds: 500));
                                                   attempts++;
                                                 }
-                                                
-                                                if (currentUserReference == null) {
-                                                  debugPrint('경고: currentUserReference가 설정되지 않음');
+
+                                                if (currentUserReference ==
+                                                    null) {
+                                                  debugPrint(
+                                                      '경고: currentUserReference가 설정되지 않음');
                                                   // 직접 DocumentReference 생성하여 업데이트
                                                   // Repository를 통해 업데이트 (추후 완전 마이그레이션)
-                                                  final userRepository = GetIt.instance<IUserRepository>();
-                                                  final directRef = userRepository.getUserReference(user.uid);
-                                                  
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+                                                  final directRef =
+                                                      userRepository
+                                                          .getUserReference(
+                                                              user.uid);
+
                                                   await directRef.update({
                                                     ...mapToFirestore({
-                                                      'lastActive': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
                                                       'role': 'tester',
                                                       'platform': 'android',
                                                     }),
                                                   });
                                                 } else {
                                                   // 정상적으로 currentUserReference 사용
-                                                  await currentUserReference!.update({
+                                                  await currentUserReference!
+                                                      .update({
                                                     ...mapToFirestore({
-                                                      'lastActive': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
                                                       'role': 'tester',
                                                       'platform': 'android',
                                                     }),
                                                   });
                                                 }
-                                                
+
                                                 context.pushNamedAuth(
-                                                  TestpageSelectWidget.routeName,
+                                                  TestpageSelectWidget
+                                                      .routeName,
                                                   context.mounted,
                                                 );
                                               },
@@ -840,106 +942,145 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                               options: AppButtonOptions(
                                                 width: 80.0,
                                                 height: 40.0,
-                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
-                                                iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
-                                                color: AppTheme.of(context).secondary,
-                                                textStyle: AppTheme.of(context).titleSmall.override(
-                                                  font: GoogleFonts.plusJakartaSans(),
-                                                  color: Colors.white,
-                                                  fontSize: 13.0,
-                                                  letterSpacing: 0.0,
-                                                ),
+                                                padding: EdgeInsetsDirectional
+                                                    .fromSTEB(
+                                                        0.0, 0.0, 0.0, 0.0),
+                                                iconPadding:
+                                                    EdgeInsetsDirectional
+                                                        .fromSTEB(
+                                                            0.0, 0.0, 0.0, 0.0),
+                                                color: AppTheme.of(context)
+                                                    .secondary,
+                                                textStyle: AppTheme.of(context)
+                                                    .titleSmall
+                                                    .override(
+                                                      font: GoogleFonts
+                                                          .plusJakartaSans(),
+                                                      color: Colors.white,
+                                                      fontSize: 13.0,
+                                                      letterSpacing: 0.0,
+                                                    ),
                                                 elevation: 3.0,
                                                 borderSide: BorderSide(
                                                   color: Colors.transparent,
                                                   width: 1.0,
                                                 ),
-                                                borderRadius: BorderRadius.circular(8.0),
+                                                borderRadius:
+                                                    BorderRadius.circular(8.0),
                                               ),
                                             ),
                                             SizedBox(width: 8.0),
                                             // macOS 테스트 계정
                                             AppButtonWidget(
                                               onPressed: () async {
-                                                GoRouter.of(context).prepareAuthEvent();
-                                                
-                                                final testEmail = 'tester-macos@versus.test';
-                                                final testPassword = 'test1234!';
-                                                
+                                                GoRouter.of(context)
+                                                    .prepareAuthEvent();
+
+                                                final testEmail =
+                                                    'tester-macos@versus.test';
+                                                final testPassword =
+                                                    'test1234!';
+
                                                 // 먼저 로그인 시도
-                                                var user = await authManager.signInWithEmail(
+                                                var user = await authManager
+                                                    .signInWithEmail(
                                                   context,
                                                   testEmail,
                                                   testPassword,
                                                 );
-                                                
+
                                                 // 계정이 없으면 생성
                                                 if (user == null) {
-                                                  user = await authManager.createAccountWithEmail(
+                                                  user = await authManager
+                                                      .createAccountWithEmail(
                                                     context,
                                                     testEmail,
                                                     testPassword,
                                                   );
-                                                  
+
                                                   if (user == null) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
                                                       SnackBar(
-                                                        content: Text('macOS 테스터 계정 생성 실패'),
+                                                        content: Text(
+                                                            'macOS 테스터 계정 생성 실패'),
                                                       ),
                                                     );
                                                     return;
                                                   }
-                                                  
+
                                                   // 사용자 문서 생성
                                                   final usersCreateData = {
                                                     'email': testEmail,
-                                                    'displayName': '테스터 (macOS)',
-                                                    'createdTime': FieldValue.serverTimestamp(),
+                                                    'displayName':
+                                                        '테스터 (macOS)',
+                                                    'createdTime': FieldValue
+                                                        .serverTimestamp(),
                                                     'role': 'tester',
                                                     'platform': 'macos',
                                                     'uid': user.uid,
                                                   };
                                                   // Repository 패턴 사용 - createUser 메서드 활용
-                                                  final userRepository = GetIt.instance<IUserRepository>();
-                                                  
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+
                                                   // UserProfile 생성
-                                                  await UserProfile.collection.doc(user.uid).set(usersCreateData);
+                                                  await UserProfile.collection
+                                                      .doc(user.uid)
+                                                      .set(usersCreateData);
                                                 }
-                                                
+
                                                 // authenticatedUserStream이 currentUser를 설정할 때까지 대기
                                                 int attempts = 0;
-                                                while (currentUserReference == null && attempts < 20) {
-                                                  await Future.delayed(const Duration(milliseconds: 500));
+                                                while (currentUserReference ==
+                                                        null &&
+                                                    attempts < 20) {
+                                                  await Future.delayed(
+                                                      const Duration(
+                                                          milliseconds: 500));
                                                   attempts++;
                                                 }
-                                                
-                                                if (currentUserReference == null) {
-                                                  debugPrint('경고: currentUserReference가 설정되지 않음');
+
+                                                if (currentUserReference ==
+                                                    null) {
+                                                  debugPrint(
+                                                      '경고: currentUserReference가 설정되지 않음');
                                                   // 직접 DocumentReference 생성하여 업데이트
                                                   // Repository를 통해 업데이트 (추후 완전 마이그레이션)
-                                                  final userRepository = GetIt.instance<IUserRepository>();
-                                                  final directRef = userRepository.getUserReference(user.uid);
-                                                  
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+                                                  final directRef =
+                                                      userRepository
+                                                          .getUserReference(
+                                                              user.uid);
+
                                                   await directRef.update({
                                                     ...mapToFirestore({
-                                                      'lastActive': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
                                                       'role': 'tester',
                                                       'platform': 'macos',
                                                     }),
                                                   });
                                                 } else {
                                                   // 정상적으로 currentUserReference 사용
-                                                  await currentUserReference!.update({
+                                                  await currentUserReference!
+                                                      .update({
                                                     ...mapToFirestore({
-                                                      'lastActive': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
                                                       'role': 'tester',
                                                       'platform': 'macos',
                                                     }),
                                                   });
                                                 }
-                                                
+
                                                 context.pushNamedAuth(
-                                                  TestpageSelectWidget.routeName,
+                                                  TestpageSelectWidget
+                                                      .routeName,
                                                   context.mounted,
                                                 );
                                               },
@@ -947,106 +1088,144 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                               options: AppButtonOptions(
                                                 width: 90.0,
                                                 height: 40.0,
-                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
-                                                iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
-                                                color: AppTheme.of(context).secondary,
-                                                textStyle: AppTheme.of(context).titleSmall.override(
-                                                  font: GoogleFonts.plusJakartaSans(),
-                                                  color: Colors.white,
-                                                  fontSize: 13.0,
-                                                  letterSpacing: 0.0,
-                                                ),
+                                                padding: EdgeInsetsDirectional
+                                                    .fromSTEB(
+                                                        0.0, 0.0, 0.0, 0.0),
+                                                iconPadding:
+                                                    EdgeInsetsDirectional
+                                                        .fromSTEB(
+                                                            0.0, 0.0, 0.0, 0.0),
+                                                color: AppTheme.of(context)
+                                                    .secondary,
+                                                textStyle: AppTheme.of(context)
+                                                    .titleSmall
+                                                    .override(
+                                                      font: GoogleFonts
+                                                          .plusJakartaSans(),
+                                                      color: Colors.white,
+                                                      fontSize: 13.0,
+                                                      letterSpacing: 0.0,
+                                                    ),
                                                 elevation: 3.0,
                                                 borderSide: BorderSide(
                                                   color: Colors.transparent,
                                                   width: 1.0,
                                                 ),
-                                                borderRadius: BorderRadius.circular(8.0),
+                                                borderRadius:
+                                                    BorderRadius.circular(8.0),
                                               ),
                                             ),
                                             SizedBox(width: 8.0),
                                             // 웹앱 테스트 계정
                                             AppButtonWidget(
                                               onPressed: () async {
-                                                GoRouter.of(context).prepareAuthEvent();
-                                                
-                                                final testEmail = 'tester-web@versus.test';
-                                                final testPassword = 'test1234!';
-                                                
+                                                GoRouter.of(context)
+                                                    .prepareAuthEvent();
+
+                                                final testEmail =
+                                                    'tester-web@versus.test';
+                                                final testPassword =
+                                                    'test1234!';
+
                                                 // 먼저 로그인 시도
-                                                var user = await authManager.signInWithEmail(
+                                                var user = await authManager
+                                                    .signInWithEmail(
                                                   context,
                                                   testEmail,
                                                   testPassword,
                                                 );
-                                                
+
                                                 // 계정이 없으면 생성
                                                 if (user == null) {
-                                                  user = await authManager.createAccountWithEmail(
+                                                  user = await authManager
+                                                      .createAccountWithEmail(
                                                     context,
                                                     testEmail,
                                                     testPassword,
                                                   );
-                                                  
+
                                                   if (user == null) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
                                                       SnackBar(
-                                                        content: Text('웹앱 테스터 계정 생성 실패'),
+                                                        content: Text(
+                                                            '웹앱 테스터 계정 생성 실패'),
                                                       ),
                                                     );
                                                     return;
                                                   }
-                                                  
+
                                                   // 사용자 문서 생성
                                                   final usersCreateData = {
                                                     'email': testEmail,
                                                     'displayName': '테스터 (웹앱)',
-                                                    'createdTime': FieldValue.serverTimestamp(),
+                                                    'createdTime': FieldValue
+                                                        .serverTimestamp(),
                                                     'role': 'tester',
                                                     'platform': 'web',
                                                     'uid': user.uid,
                                                   };
                                                   // Repository 패턴 사용 - createUser 메서드 활용
-                                                  final userRepository = GetIt.instance<IUserRepository>();
-                                                  
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+
                                                   // UserProfile 생성
-                                                  await UserProfile.collection.doc(user.uid).set(usersCreateData);
+                                                  await UserProfile.collection
+                                                      .doc(user.uid)
+                                                      .set(usersCreateData);
                                                 }
-                                                
+
                                                 // authenticatedUserStream이 currentUser를 설정할 때까지 대기
                                                 int attempts = 0;
-                                                while (currentUserReference == null && attempts < 20) {
-                                                  await Future.delayed(const Duration(milliseconds: 500));
+                                                while (currentUserReference ==
+                                                        null &&
+                                                    attempts < 20) {
+                                                  await Future.delayed(
+                                                      const Duration(
+                                                          milliseconds: 500));
                                                   attempts++;
                                                 }
-                                                
-                                                if (currentUserReference == null) {
-                                                  debugPrint('경고: currentUserReference가 설정되지 않음');
+
+                                                if (currentUserReference ==
+                                                    null) {
+                                                  debugPrint(
+                                                      '경고: currentUserReference가 설정되지 않음');
                                                   // 직접 DocumentReference 생성하여 업데이트
                                                   // Repository를 통해 업데이트 (추후 완전 마이그레이션)
-                                                  final userRepository = GetIt.instance<IUserRepository>();
-                                                  final directRef = userRepository.getUserReference(user.uid);
-                                                  
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+                                                  final directRef =
+                                                      userRepository
+                                                          .getUserReference(
+                                                              user.uid);
+
                                                   await directRef.update({
                                                     ...mapToFirestore({
-                                                      'lastActive': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
                                                       'role': 'tester',
                                                       'platform': 'web',
                                                     }),
                                                   });
                                                 } else {
                                                   // 정상적으로 currentUserReference 사용
-                                                  await currentUserReference!.update({
+                                                  await currentUserReference!
+                                                      .update({
                                                     ...mapToFirestore({
-                                                      'lastActive': FieldValue.serverTimestamp(),
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
                                                       'role': 'tester',
                                                       'platform': 'web',
                                                     }),
                                                   });
                                                 }
-                                                
+
                                                 context.pushNamedAuth(
-                                                  TestpageSelectWidget.routeName,
+                                                  TestpageSelectWidget
+                                                      .routeName,
                                                   context.mounted,
                                                 );
                                               },
@@ -1054,21 +1233,31 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                               options: AppButtonOptions(
                                                 width: 70.0,
                                                 height: 40.0,
-                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
-                                                iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
-                                                color: AppTheme.of(context).secondary,
-                                                textStyle: AppTheme.of(context).titleSmall.override(
-                                                  font: GoogleFonts.plusJakartaSans(),
-                                                  color: Colors.white,
-                                                  fontSize: 13.0,
-                                                  letterSpacing: 0.0,
-                                                ),
+                                                padding: EdgeInsetsDirectional
+                                                    .fromSTEB(
+                                                        0.0, 0.0, 0.0, 0.0),
+                                                iconPadding:
+                                                    EdgeInsetsDirectional
+                                                        .fromSTEB(
+                                                            0.0, 0.0, 0.0, 0.0),
+                                                color: AppTheme.of(context)
+                                                    .secondary,
+                                                textStyle: AppTheme.of(context)
+                                                    .titleSmall
+                                                    .override(
+                                                      font: GoogleFonts
+                                                          .plusJakartaSans(),
+                                                      color: Colors.white,
+                                                      fontSize: 13.0,
+                                                      letterSpacing: 0.0,
+                                                    ),
                                                 elevation: 3.0,
                                                 borderSide: BorderSide(
                                                   color: Colors.transparent,
                                                   width: 1.0,
                                                 ),
-                                                borderRadius: BorderRadius.circular(8.0),
+                                                borderRadius:
+                                                    BorderRadius.circular(8.0),
                                               ),
                                             ),
                                           ],
@@ -1112,19 +1301,17 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                           .override(
                                             font: GoogleFonts.plusJakartaSans(
                                               fontWeight: FontWeight.w500,
-                                              fontStyle:
-                                                  AppTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
+                                              fontStyle: AppTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontStyle,
                                             ),
                                             color: Color(0xFF101213),
                                             fontSize: 14.0,
                                             letterSpacing: 0.0,
                                             fontWeight: FontWeight.w500,
-                                            fontStyle:
-                                                AppTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
                                           ),
                                       elevation: 10.0,
                                       borderSide: BorderSide(
@@ -1159,9 +1346,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                 'e1wsx5w1' /* Or sign up with, goto test */,
                               ),
                               textAlign: TextAlign.center,
-                              style: AppTheme.of(context)
-                                  .labelMedium
-                                  .override(
+                              style: AppTheme.of(context).labelMedium.override(
                                     font: GoogleFonts.plusJakartaSans(
                                       fontWeight: FontWeight.w500,
                                       fontStyle: AppTheme.of(context)

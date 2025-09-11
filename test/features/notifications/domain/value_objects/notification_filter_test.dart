@@ -58,7 +58,8 @@ void main() {
       });
 
       test('byType should create filter with specified type', () {
-        final filter = NotificationFilter.byType(NotificationType.votingRequest);
+        final filter =
+            NotificationFilter.byType(NotificationType.votingRequest);
 
         expect(filter.type, NotificationType.votingRequest);
         expect(filter.unreadOnly, isNull);
@@ -72,7 +73,7 @@ void main() {
 
         expect(filter.after, isNotNull);
         expect(filter.limit, 20);
-        
+
         // Check that 'after' is approximately 7 days ago
         final expectedDate = DateTime.now().subtract(const Duration(days: 7));
         final difference = filter.after!.difference(expectedDate).abs();
@@ -84,7 +85,7 @@ void main() {
 
         expect(filter.after, isNotNull);
         expect(filter.limit, 50);
-        
+
         // Check that 'after' is approximately 30 days ago (default)
         final expectedDate = DateTime.now().subtract(const Duration(days: 30));
         final difference = filter.after!.difference(expectedDate).abs();
@@ -199,10 +200,10 @@ void main() {
     group('Validation Cases', () {
       test('recent factory should create valid date range', () {
         final filter = NotificationFilter.recent(days: 7);
-        
+
         expect(filter.after, isNotNull);
         expect(filter.before, isNull);
-        
+
         // Verify the date is in the past
         expect(filter.after!.isBefore(DateTime.now()), true);
       });
@@ -210,7 +211,7 @@ void main() {
       test('should allow before without after', () {
         final tomorrow = DateTime.now().add(const Duration(days: 1));
         final filter = NotificationFilter(before: tomorrow);
-        
+
         expect(filter.after, isNull);
         expect(filter.before, tomorrow);
       });
@@ -218,7 +219,7 @@ void main() {
       test('should allow after without before', () {
         final yesterday = DateTime.now().subtract(const Duration(days: 1));
         final filter = NotificationFilter(after: yesterday);
-        
+
         expect(filter.after, yesterday);
         expect(filter.before, isNull);
       });

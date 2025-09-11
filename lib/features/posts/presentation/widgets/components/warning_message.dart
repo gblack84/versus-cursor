@@ -17,11 +17,12 @@ class WarningMessage extends StatelessWidget {
       padding: EdgeInsetsDirectional.fromSTEB(20.0, 8.0, 20.0, 0.0),
       child: Text(
         message,
-        style: textStyle ?? TextStyle(
-          color: AppTheme.of(context).error,
-          fontSize: 12.0,
-          fontWeight: FontWeight.w500,
-        ),
+        style: textStyle ??
+            TextStyle(
+              color: AppTheme.of(context).error,
+              fontSize: 12.0,
+              fontWeight: FontWeight.w500,
+            ),
       ),
     );
   }

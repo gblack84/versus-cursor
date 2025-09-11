@@ -101,7 +101,8 @@ class PostStats extends Equatable {
   int get totalEngagement => likeCount + commentCount + shareCount + saveCount;
 
   /// Gets engagement rate based on participant count
-  double get engagementRate => participantCount > 0 ? totalEngagement / participantCount : 0.0;
+  double get engagementRate =>
+      participantCount > 0 ? totalEngagement / participantCount : 0.0;
 
   @override
   List<Object?> get props => [
@@ -120,5 +121,6 @@ class PostStats extends Equatable {
       ];
 
   @override
-  String toString() => 'PostStats(likes: $likeCount, comments: $commentCount, participants: $participantCount)';
+  String toString() =>
+      'PostStats(likes: $likeCount, comments: $commentCount, participants: $participantCount)';
 }

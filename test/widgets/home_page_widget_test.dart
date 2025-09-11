@@ -32,11 +32,11 @@ void main() {
       // Initialize GetIt for testing
       sl = GetIt.instance;
       sl.reset();
-      
+
       // Create mocks
       mockPostRepository = MockIPostRepository();
       mockUserRepository = MockIUserRepository();
-      
+
       // Register mocks in DI container
       sl.registerSingleton<IPostRepository>(mockPostRepository);
       sl.registerSingleton<IUserRepository>(mockUserRepository);
@@ -75,7 +75,7 @@ void main() {
       );
     }
 
-    testWidgets('should display app bar with title', 
+    testWidgets('should display app bar with title',
         (WidgetTester tester) async {
       // Arrange
       when(mockPostRepository.getRecentPosts(limit: 20))
@@ -92,7 +92,7 @@ void main() {
       expect(find.text('Versus Space'), findsOneWidget);
     });
 
-    testWidgets('should display list of posts from repository', 
+    testWidgets('should display list of posts from repository',
         (WidgetTester tester) async {
       // Arrange
       final testPosts = [
@@ -118,7 +118,7 @@ void main() {
       expect(find.text('Third Question'), findsOneWidget);
     });
 
-    testWidgets('should show loading indicator while fetching posts', 
+    testWidgets('should show loading indicator while fetching posts',
         (WidgetTester tester) async {
       // Arrange
       when(mockPostRepository.getRecentPosts(limit: 20))
@@ -133,18 +133,18 @@ void main() {
 
       // Assert - Initial loading state
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      
+
       await tester.pumpAndSettle();
-      
+
       // Loading should disappear after data loads
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 
-    testWidgets('should display vote counts for each post', 
+    testWidgets('should display vote counts for each post',
         (WidgetTester tester) async {
       // Arrange
       final testPost = createTestPost('1', 'Vote Test Question');
-      
+
       when(mockPostRepository.getRecentPosts(limit: 20))
           .thenAnswer((_) => Stream.value([testPost]));
 
@@ -161,11 +161,11 @@ void main() {
       expect(find.text('5'), findsOneWidget); // votesB
     });
 
-    testWidgets('should navigate to post detail when post is tapped', 
+    testWidgets('should navigate to post detail when post is tapped',
         (WidgetTester tester) async {
       // Arrange
       final testPost = createTestPost('1', 'Tappable Question');
-      
+
       when(mockPostRepository.getRecentPosts(limit: 20))
           .thenAnswer((_) => Stream.value([testPost]));
 
@@ -176,7 +176,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      
+
       // Find and tap the post
       await tester.tap(find.text('Tappable Question'));
       await tester.pumpAndSettle();
@@ -185,7 +185,7 @@ void main() {
       expect(find.text('Tappable Question'), findsOneWidget);
     });
 
-    testWidgets('should display empty state when no posts available', 
+    testWidgets('should display empty state when no posts available',
         (WidgetTester tester) async {
       // Arrange
       when(mockPostRepository.getRecentPosts(limit: 20))
@@ -200,10 +200,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert
-      expect(find.text('아직 게시물이 없습니다'), findsOneWidget); // No posts yet in Korean
+      expect(
+          find.text('아직 게시물이 없습니다'), findsOneWidget); // No posts yet in Korean
     });
 
-    testWidgets('should display error message when repository throws error', 
+    testWidgets('should display error message when repository throws error',
         (WidgetTester tester) async {
       // Arrange
       when(mockPostRepository.getRecentPosts(limit: 20))
@@ -218,10 +219,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert
-      expect(find.text('게시물을 불러올 수 없습니다'), findsOneWidget); // Cannot load posts in Korean
+      expect(find.text('게시물을 불러올 수 없습니다'),
+          findsOneWidget); // Cannot load posts in Korean
     });
 
-    testWidgets('should refresh posts when pull to refresh is triggered', 
+    testWidgets('should refresh posts when pull to refresh is triggered',
         (WidgetTester tester) async {
       // Arrange
       final initialPosts = [createTestPost('1', 'Initial Post')];
@@ -258,7 +260,7 @@ void main() {
       expect(find.text('Initial Post'), findsOneWidget);
     });
 
-    testWidgets('should display floating action button for creating post', 
+    testWidgets('should display floating action button for creating post',
         (WidgetTester tester) async {
       // Arrange
       when(mockPostRepository.getRecentPosts(limit: 20))
@@ -276,11 +278,11 @@ void main() {
       expect(find.byIcon(Icons.add), findsOneWidget);
     });
 
-    testWidgets('should use domain models instead of backend models', 
+    testWidgets('should use domain models instead of backend models',
         (WidgetTester tester) async {
       // This test verifies the architecture compliance
       // The widget should use Post domain model, not PostsModel
-      
+
       // Arrange
       final domainPost = Post(
         id: 'domain-1',
@@ -323,7 +325,7 @@ void main() {
       // Assert
       expect(find.text('Domain Model Question'), findsOneWidget);
       expect(find.text('Domain User'), findsOneWidget);
-      
+
       // The test compiles and runs, proving it uses domain models
       // not the legacy PostsModel
     });

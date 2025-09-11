@@ -19,4 +19,5 @@ export 'post_content.dart';
 export 'target_audience_model.dart';
 
 // Re-export commonly used voting types
-export 'post_voting.dart' show VoteStatus, VoteOption, ExpansionStatus, VoteException;
+export 'post_voting.dart'
+    show VoteStatus, VoteOption, ExpansionStatus, VoteException;

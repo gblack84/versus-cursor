@@ -51,7 +51,7 @@ void main() {
     test('Feature modules should be registered without errors', () {
       // Test that feature modules registration completed
       expect(Injection.isInitialized, isTrue);
-      
+
       // Since some repositories might have compilation issues,
       // we just test that the DI system itself works
       expect(sl.isRegistered<FirebaseAuth>(), isTrue);
@@ -60,10 +60,10 @@ void main() {
 
     test('DI system should handle reset properly', () async {
       expect(Injection.isInitialized, isTrue);
-      
+
       await Injection.reset();
       expect(Injection.isInitialized, isFalse);
-      
+
       // Should be able to initialize again
       await Injection.init();
       expect(Injection.isInitialized, isTrue);

@@ -34,9 +34,10 @@ class UserProfileAdapter {
     // Convert LatLng to GeoPoint if needed
     GeoPoint? geoPoint;
     if (legacy.location != null) {
-      geoPoint = GeoPoint(legacy.location!.latitude, legacy.location!.longitude);
+      geoPoint =
+          GeoPoint(legacy.location!.latitude, legacy.location!.longitude);
     }
-    
+
     final profileInfo = ProfileInfo(
       userId: legacy.uid,
       displayName: legacy.displayName,
@@ -108,7 +109,7 @@ class UserProfileAdapter {
     if (profile.location != null) {
       location = profile.location;
     }
-    
+
     final data = <String, dynamic>{
       // Core Identity Fields (from AuthUser)
       'uid': auth.uid,
@@ -131,7 +132,8 @@ class UserProfileAdapter {
       // User Settings (from UserSettings)
       'isPremiumUser': settings.isPremiumUser,
       'receiveRankUpdateNotifications': settings.receiveRankUpdateNotifications,
-      'receiveTitleUpdateNotifications': settings.receiveTitleUpdateNotifications,
+      'receiveTitleUpdateNotifications':
+          settings.receiveTitleUpdateNotifications,
       'subscription': settings.subscription,
       'stats': settings.stats,
 
@@ -169,7 +171,6 @@ class UserProfileAdapter {
       reference: legacy.reference,
     );
   }
-
 
   /// Validates field mapping completeness
   /// Used for testing to ensure all 44 fields are properly mapped
@@ -213,7 +214,8 @@ class UserProfileBundle {
   /// Convert bundle back to legacy UserProfile
   UserProfile toLegacy() {
     if (reference == null) {
-      throw ArgumentError('DocumentReference is required to create UserProfile');
+      throw ArgumentError(
+          'DocumentReference is required to create UserProfile');
     }
     return UserProfileAdapter.fromDomainModels(
       auth: auth,

@@ -8,7 +8,7 @@ class VersusIcon extends StatelessWidget {
   final double? size;
   final Color? color;
   final String? semanticLabel;
-  
+
   const VersusIcon(
     this.iconData, {
     Key? key,
@@ -16,7 +16,7 @@ class VersusIcon extends StatelessWidget {
     this.color,
     this.semanticLabel,
   }) : super(key: key);
-  
+
   @override
   Widget build(BuildContext context) {
     return Icon(

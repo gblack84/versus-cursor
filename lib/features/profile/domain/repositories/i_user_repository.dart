@@ -75,11 +75,11 @@ abstract class IUserRepository {
   // Character operations
   Future<CharactersModel?> getUserCharacter(String userId);
   Future<void> updateUserCharacter(String userId, CharactersModel character);
-  
+
   // Helper methods for Firebase operations
   DocumentReference getUserReference(String userId);
   Future<UserProfile?> getUserById(String userId);
-  
+
   // Factory method for creating user data
   Map<String, dynamic> createUsersModelData({
     String? email,

@@ -9,29 +9,29 @@ class ImageDownloadService {
     try {
       // HTTP GET 요청으로 이미지 다운로드
       final response = await http.get(Uri.parse(imageUrl));
-      
+
       if (response.statusCode != 200) {
         throw Exception('이미지 다운로드 실패: HTTP ${response.statusCode}');
       }
-      
+
       // 임시 디렉토리 가져오기
       final tempDir = await getTemporaryDirectory();
-      
+
       // 파일명 생성 (timestamp 사용)
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final fileName = 'edit_image_$timestamp.jpg';
       final filePath = path.join(tempDir.path, fileName);
-      
+
       // 파일로 저장
       final file = File(filePath);
       await file.writeAsBytes(response.bodyBytes);
-      
+
       return filePath;
     } catch (e) {
       throw Exception('이미지 다운로드 중 오류 발생: $e');
     }
   }
-  
+
   /// 임시 파일 정리 (편집 완료 후 호출)
   static Future<void> cleanupTempFile(String filePath) async {
     try {

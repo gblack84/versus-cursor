@@ -42,7 +42,8 @@ class ImageModerationModel extends FirestoreRecord {
 
   // "safeSearchResults" field.
   SafeSearchResults? _safeSearchResults;
-  SafeSearchResults get safeSearchResults => _safeSearchResults ?? SafeSearchResults();
+  SafeSearchResults get safeSearchResults =>
+      _safeSearchResults ?? SafeSearchResults();
   bool hasSafeSearchResults() => _safeSearchResults != null;
 
   // "moderatedAt" field.
@@ -101,12 +102,13 @@ class ImageModerationModel extends FirestoreRecord {
     _filePath = snapshotData['filePath'] as String?;
     _userId = snapshotData['userId'] as String?;
     _moderationStatus = snapshotData['moderationStatus'] as String?;
-    _safeSearchResults = SafeSearchResults.maybeFromMap(snapshotData['safeSearchResults']);
+    _safeSearchResults =
+        SafeSearchResults.maybeFromMap(snapshotData['safeSearchResults']);
     _moderatedAt = snapshotData['moderatedAt'] as DateTime?;
     _blurredUrl = snapshotData['blurredUrl'] as String?;
     _action = snapshotData['action'] as String?;
     _error = snapshotData['error'] as String?;
-    
+
     // 새로운 Vision API 필드 초기화
     _labels = (snapshotData['labels'] as List<dynamic>?)
         ?.map((e) => LabelAnnotation.fromMap(e as Map<String, dynamic>))
@@ -209,16 +211,16 @@ class LabelAnnotation {
   });
 
   factory LabelAnnotation.fromMap(Map<String, dynamic> data) => LabelAnnotation(
-    description: data['description'] ?? '',
-    score: (data['score'] ?? 0.0).toDouble(),
-    topicality: data['topicality']?.toDouble(),
-  );
+        description: data['description'] ?? '',
+        score: (data['score'] ?? 0.0).toDouble(),
+        topicality: data['topicality']?.toDouble(),
+      );
 
   Map<String, dynamic> toMap() => {
-    'description': description,
-    'score': score,
-    if (topicality != null) 'topicality': topicality,
-  };
+        'description': description,
+        'score': score,
+        if (topicality != null) 'topicality': topicality,
+      };
 }
 
 // 로고 정보
@@ -232,14 +234,14 @@ class LogoAnnotation {
   });
 
   factory LogoAnnotation.fromMap(Map<String, dynamic> data) => LogoAnnotation(
-    description: data['description'] ?? '',
-    score: (data['score'] ?? 0.0).toDouble(),
-  );
+        description: data['description'] ?? '',
+        score: (data['score'] ?? 0.0).toDouble(),
+      );
 
   Map<String, dynamic> toMap() => {
-    'description': description,
-    'score': score,
-  };
+        'description': description,
+        'score': score,
+      };
 }
 
 // 객체 위치 정보
@@ -255,16 +257,16 @@ class LocalizedObject {
   });
 
   factory LocalizedObject.fromMap(Map<String, dynamic> data) => LocalizedObject(
-    name: data['name'] ?? '',
-    score: (data['score'] ?? 0.0).toDouble(),
-    boundingPoly: data['boundingPoly'] as Map<String, dynamic>?,
-  );
+        name: data['name'] ?? '',
+        score: (data['score'] ?? 0.0).toDouble(),
+        boundingPoly: data['boundingPoly'] as Map<String, dynamic>?,
+      );
 
   Map<String, dynamic> toMap() => {
-    'name': name,
-    'score': score,
-    if (boundingPoly != null) 'boundingPoly': boundingPoly,
-  };
+        'name': name,
+        'score': score,
+        if (boundingPoly != null) 'boundingPoly': boundingPoly,
+      };
 }
 
 // 색상 정보
@@ -280,16 +282,16 @@ class ColorInfo {
   });
 
   factory ColorInfo.fromMap(Map<String, dynamic> data) => ColorInfo(
-    color: data['color'] ?? {},
-    score: (data['score'] ?? 0.0).toDouble(),
-    pixelFraction: data['pixelFraction']?.toDouble(),
-  );
+        color: data['color'] ?? {},
+        score: (data['score'] ?? 0.0).toDouble(),
+        pixelFraction: data['pixelFraction']?.toDouble(),
+      );
 
   Map<String, dynamic> toMap() => {
-    'color': color,
-    'score': score,
-    if (pixelFraction != null) 'pixelFraction': pixelFraction,
-  };
+        'color': color,
+        'score': score,
+        if (pixelFraction != null) 'pixelFraction': pixelFraction,
+      };
 }
 
 // 얼굴 감지 정보
@@ -309,20 +311,22 @@ class FaceAnnotation {
   });
 
   factory FaceAnnotation.fromMap(Map<String, dynamic> data) => FaceAnnotation(
-    joyLikelihood: data['joyLikelihood'] as String?,
-    sorrowLikelihood: data['sorrowLikelihood'] as String?,
-    angerLikelihood: data['angerLikelihood'] as String?,
-    surpriseLikelihood: data['surpriseLikelihood'] as String?,
-    detectionConfidence: data['detectionConfidence']?.toDouble(),
-  );
+        joyLikelihood: data['joyLikelihood'] as String?,
+        sorrowLikelihood: data['sorrowLikelihood'] as String?,
+        angerLikelihood: data['angerLikelihood'] as String?,
+        surpriseLikelihood: data['surpriseLikelihood'] as String?,
+        detectionConfidence: data['detectionConfidence']?.toDouble(),
+      );
 
   Map<String, dynamic> toMap() => {
-    if (joyLikelihood != null) 'joyLikelihood': joyLikelihood,
-    if (sorrowLikelihood != null) 'sorrowLikelihood': sorrowLikelihood,
-    if (angerLikelihood != null) 'angerLikelihood': angerLikelihood,
-    if (surpriseLikelihood != null) 'surpriseLikelihood': surpriseLikelihood,
-    if (detectionConfidence != null) 'detectionConfidence': detectionConfidence,
-  };
+        if (joyLikelihood != null) 'joyLikelihood': joyLikelihood,
+        if (sorrowLikelihood != null) 'sorrowLikelihood': sorrowLikelihood,
+        if (angerLikelihood != null) 'angerLikelihood': angerLikelihood,
+        if (surpriseLikelihood != null)
+          'surpriseLikelihood': surpriseLikelihood,
+        if (detectionConfidence != null)
+          'detectionConfidence': detectionConfidence,
+      };
 }
 
 Map<String, dynamic> createImageModerationModelData({

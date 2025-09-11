@@ -1,5 +1,6 @@
 // Export pages
-export '/features/auth/presentation/screens/login/login_page/login_page_widget.dart' show LoginPageWidget;
+export '/features/auth/presentation/screens/login/login_page/login_page_widget.dart'
+    show LoginPageWidget;
 export '/features/auth/presentation/screens/signup/create_account/create_account_widget.dart'
     show CreateAccountWidget;
 export '/features/auth/presentation/screens/forgot_password/forgot_password/forgot_password_widget.dart'
@@ -9,12 +10,14 @@ export '/features/profile/presentation/screens/user_info_input/user_info_input_w
 export '/testpage_select/testpage_select_widget.dart' show TestpageSelectWidget;
 export '/features/profile/presentation/screens/onboarding/interest_selection/expertise_select/expertise_select_widget.dart'
     show ExpertiseSelectWidget;
-export '/features/search/test/widget_test/algolia_test_widget.dart' show TestalgoriaWidget;
+export '/features/search/test/widget_test/algolia_test_widget.dart'
+    show TestalgoriaWidget;
 export '/features/profile/presentation/screens/onboarding/interest_selection/hobbies_select/hobbies_select_widget.dart'
     show HobbiesSelectWidget;
 export '/features/profile/presentation/screens/onboarding/interest_selection/agreed_select/agrred_select_widget.dart'
     show AgrredSelectWidget;
-export '/features/auth/presentation/screens/start/start_page/start_page_widget.dart' show StartPageWidget;
+export '/features/auth/presentation/screens/start/start_page/start_page_widget.dart'
+    show StartPageWidget;
 export '/features/auth/presentation/screens/phone_auth/phone_creat_account/phone_creat_account_widget.dart'
     show PhoneCreatAccountWidget;
 export '/features/auth/presentation/screens/phone_auth/phonelogeinpincode_widget.dart'
@@ -27,10 +30,17 @@ export '/features/posts/presentation/screens/viewer/image_viewer_page.dart'
     show ImageViewerPage;
 export '/features/notifications/presentation/screens/notifications_list/notifications_list_widget.dart'
     show NotificationsListWidget;
-export '/features/posts/presentation/screens/feed/home_page_widget.dart' show HomePageWidget;
-export '/features/search/presentation/screens/search_page/search_page_widget.dart' show SearchPageWidget;
-export '/features/profile/presentation/screens/profile_main/profile_page_widget.dart' show ProfilePageWidget;
-export '/features/chat/presentation/screens/chat_list/chat_list_widget.dart' show ChatListWidget;
-export '/features/chat/presentation/screens/friends_list/friends_list_widget.dart' show FriendsListWidget;
-export '/features/search/presentation/screens/chat_search/chat_search_widget.dart' show ChatSearchWidget;
-export '/features/chat/presentation/screens/chat_detail/chat_detail_widget_v2.dart' show ChatDetailWidgetV2;
+export '/features/posts/presentation/screens/feed/home_page_widget.dart'
+    show HomePageWidget;
+export '/features/search/presentation/screens/search_page/search_page_widget.dart'
+    show SearchPageWidget;
+export '/features/profile/presentation/screens/profile_main/profile_page_widget.dart'
+    show ProfilePageWidget;
+export '/features/chat/presentation/screens/chat_list/chat_list_widget.dart'
+    show ChatListWidget;
+export '/features/chat/presentation/screens/friends_list/friends_list_widget.dart'
+    show FriendsListWidget;
+export '/features/search/presentation/screens/chat_search/chat_search_widget.dart'
+    show ChatSearchWidget;
+export '/features/chat/presentation/screens/chat_detail/chat_detail_widget_v2.dart'
+    show ChatDetailWidgetV2;

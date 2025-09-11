@@ -1,8 +1,8 @@
 /// Cache eviction strategies
 enum CacheEvictionStrategy {
-  lru,  // Least Recently Used
+  lru, // Least Recently Used
   fifo, // First In First Out
-  lfu,  // Least Frequently Used
+  lfu, // Least Frequently Used
 }
 
 /// Cache priority levels

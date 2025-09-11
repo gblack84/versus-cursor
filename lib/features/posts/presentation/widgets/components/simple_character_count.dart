@@ -5,7 +5,7 @@ import '/core_exports.dart';
 class SimpleCharacterCount extends StatefulWidget {
   final TextEditingController? controller;
   final int maxLength;
-  
+
   const SimpleCharacterCount({
     Key? key,
     this.controller,
@@ -43,10 +43,10 @@ class _SimpleCharacterCountState extends State<SimpleCharacterCount> {
           Text(
             '${widget.controller?.text.length ?? 0}/${widget.maxLength}',
             style: AppTheme.of(context).bodySmall.override(
-              font: GoogleFonts.plusJakartaSans(),
-              color: AppTheme.of(context).secondaryText,
-              fontSize: 12.0,
-            ),
+                  font: GoogleFonts.plusJakartaSans(),
+                  color: AppTheme.of(context).secondaryText,
+                  fontSize: 12.0,
+                ),
           ),
         ],
       ),

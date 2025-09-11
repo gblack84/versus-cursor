@@ -1,8 +1,8 @@
 /// Image Upload Result Model
-/// 
+///
 /// Domain model for image upload operation results.
 /// Follows Clean Architecture principles for the Image Service.
-/// 
+///
 /// Created: 2025-09-05
 /// Author: CodeSurgeon
 
@@ -11,7 +11,6 @@ import 'package:flutter/foundation.dart';
 /// Result of an image upload operation
 @immutable
 class ImageUploadResult {
-
   const ImageUploadResult({
     required this.success,
     this.originalUrl,
@@ -109,54 +108,55 @@ class ImageUploadResult {
       visionApiResults: visionApiResults,
     );
   }
+
   /// Whether the upload was successful
   final bool success;
-  
+
   /// Original image URL (full resolution)
   final String? originalUrl;
-  
+
   /// Display-optimized image URL (800px width)
   final String? displayUrl;
-  
+
   /// Thumbnail image URL (150px width)
   final String? thumbnailUrl;
-  
+
   /// Aspect ratio of the uploaded image
   final double? aspectRatio;
-  
+
   /// Original image width in pixels
   final int? width;
-  
+
   /// Original image height in pixels
   final int? height;
-  
+
   /// File size in bytes
   final int? fileSize;
-  
+
   /// List of all image URLs (for multi-upload scenarios)
   final List<String>? imageUrls;
-  
+
   /// List of aspect ratios (for multi-upload scenarios)
   final List<double>? aspectRatios;
-  
+
   /// Asset IDs from image picker (for tracking)
   final List<String>? assetIds;
-  
+
   /// Error message if upload failed
   final String? errorMessage;
-  
+
   /// Rejection reason from moderation service
   final String? rejectionReason;
-  
+
   /// Whether the image was rejected by moderation
   final bool? isRejected;
-  
+
   /// Vision API results (if moderation was performed)
   final Map<String, dynamic>? visionApiResults;
-  
+
   /// Upload timestamp
   final DateTime? uploadedAt;
-  
+
   /// Processing duration in milliseconds
   final int? processingDurationMs;
 
@@ -183,7 +183,7 @@ class ImageUploadResult {
   /// Calculate file size in human-readable format
   String? get formattedFileSize {
     if (fileSize == null) return null;
-    
+
     if (fileSize! < 1024) {
       return '$fileSize B';
     } else if (fileSize! < 1024 * 1024) {
@@ -248,21 +248,21 @@ class ImageUploadResult {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    
+
     return other is ImageUploadResult &&
-      other.success == success &&
-      other.originalUrl == originalUrl &&
-      other.displayUrl == displayUrl &&
-      other.thumbnailUrl == thumbnailUrl &&
-      other.aspectRatio == aspectRatio;
+        other.success == success &&
+        other.originalUrl == originalUrl &&
+        other.displayUrl == displayUrl &&
+        other.thumbnailUrl == thumbnailUrl &&
+        other.aspectRatio == aspectRatio;
   }
 
   @override
   int get hashCode {
     return success.hashCode ^
-      originalUrl.hashCode ^
-      displayUrl.hashCode ^
-      thumbnailUrl.hashCode ^
-      aspectRatio.hashCode;
+        originalUrl.hashCode ^
+        displayUrl.hashCode ^
+        thumbnailUrl.hashCode ^
+        aspectRatio.hashCode;
   }
 }

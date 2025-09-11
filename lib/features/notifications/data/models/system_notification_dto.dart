@@ -49,8 +49,8 @@ class SystemNotificationDto extends NotificationDto {
       metadata: data['metadata'] as Map<String, dynamic>?,
       priority: data['priority'] as int?,
       // System specific fields
-      alertType: data['alertType'] as String? ?? 
-                 data['alertLevel'] as String?, // Legacy support
+      alertType: data['alertType'] as String? ??
+          data['alertLevel'] as String?, // Legacy support
       actionUrl: data['actionUrl'] as String?,
       actionLabel: data['actionLabel'] as String?,
       systemData: data['systemData'] as Map<String, dynamic>?,
@@ -74,8 +74,8 @@ class SystemNotificationDto extends NotificationDto {
       metadata: json['metadata'] as Map<String, dynamic>?,
       priority: json['priority'] as int?,
       // System specific fields
-      alertType: json['alertType'] as String? ?? 
-                 json['alertLevel'] as String?, // Legacy support
+      alertType: json['alertType'] as String? ??
+          json['alertLevel'] as String?, // Legacy support
       actionUrl: json['actionUrl'] as String?,
       actionLabel: json['actionLabel'] as String?,
       systemData: json['systemData'] as Map<String, dynamic>?,

@@ -2,7 +2,7 @@ import 'media_content.dart';
 
 /// PostContent Domain Model
 /// Clean Architecture - Domain Layer Entity
-/// 
+///
 /// Manages A vs B content structure for Versus posts.
 /// Wraps MediaContent objects and provides content-specific
 /// business logic and validation.
@@ -21,37 +21,40 @@ class PostContent {
 
   // Core Fields
   final String postId; // Foreign key to PostCore.id
-  
+
   // A vs B Content
   final MediaContent optionA;
   final MediaContent optionB;
-  
+
   // Layout Configuration
   final String layoutType; // 'horizontal', 'vertical', 'single'
-  
+
   // Metadata
   final Map<String, dynamic>? targetAudience; // AI targeting data
   final Map<String, dynamic>? moderation; // Content moderation results
   final Map<String, String> thumbnails; // Thumbnail URLs for quick preview
-  
+
   // Processing Status
-  final String processingStatus; // 'pending', 'processing', 'completed', 'failed'
+  final String
+      processingStatus; // 'pending', 'processing', 'completed', 'failed'
   final DateTime? processedAt;
 
   /// Check if this is single option mode (no B option)
   bool get isSingleOption => optionB.isEmpty;
-  
+
   /// Check if this has dual options
   bool get hasDualOptions => !isSingleOption;
-  
+
   /// Check if content is ready for voting
   bool get isReadyForVoting {
     if (isSingleOption) {
       return optionA.hasContent && processingStatus == 'completed';
     }
-    return optionA.hasContent && optionB.hasContent && processingStatus == 'completed';
+    return optionA.hasContent &&
+        optionB.hasContent &&
+        processingStatus == 'completed';
   }
-  
+
   /// Get the dominant media type
   String get dominantMediaType {
     if (optionA.mediaType == optionB.mediaType) {
@@ -62,22 +65,22 @@ class PostContent {
     if (optionA.hasVideo || optionB.hasVideo) return 'video';
     return 'text';
   }
-  
+
   /// Calculate aspect ratio difference
   double get aspectRatioDifference {
     final ratioA = optionA.aspectRatio ?? 1.0;
     final ratioB = optionB.aspectRatio ?? 1.0;
     return (ratioA - ratioB).abs();
   }
-  
+
   /// Determine optimal layout based on content
   String calculateOptimalLayout() {
     if (isSingleOption) return 'single';
-    
+
     // Use aspect ratios for smart layout
     final ratioA = optionA.aspectRatio;
     final ratioB = optionB.aspectRatio;
-    
+
     if (ratioA != null && ratioB != null) {
       // Both portrait images (aspect < 1)
       if (ratioA < 1.0 && ratioB < 1.0) {
@@ -88,7 +91,7 @@ class PostContent {
         return 'vertical'; // Stack vertically
       }
     }
-    
+
     // Default based on media type
     if (dominantMediaType == 'text') return 'vertical';
     return layoutType; // Use provided layout
@@ -120,7 +123,7 @@ class PostContent {
       moderation: json['moderation'],
       thumbnails: Map<String, String>.from(json['thumbnails'] ?? {}),
       processingStatus: json['processingStatus'] ?? 'pending',
-      processedAt: json['processedAt'] != null 
+      processedAt: json['processedAt'] != null
           ? DateTime.parse(json['processedAt'])
           : null,
     );
@@ -205,7 +208,7 @@ class PostContentValidator {
         error: 'Option A is required',
       );
     }
-    
+
     // For dual mode, ensure option B has content
     if (!content.isSingleOption && !content.optionB.hasContent) {
       return ValidationResult(
@@ -213,7 +216,7 @@ class PostContentValidator {
         error: 'Option B is required in dual mode',
       );
     }
-    
+
     // Warn about mixed media types
     if (content.optionA.mediaType != content.optionB.mediaType) {
       return ValidationResult(
@@ -221,7 +224,7 @@ class PostContentValidator {
         warning: 'Different media types may affect layout',
       );
     }
-    
+
     return ValidationResult(isValid: true);
   }
 }
@@ -231,7 +234,7 @@ class ValidationResult {
   final bool isValid;
   final String? error;
   final String? warning;
-  
+
   const ValidationResult({
     required this.isValid,
     this.error,

@@ -2,8 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 
 /// 채팅 메시지 변환 및 관리를 위한 통합 서비스
-/// 
-/// chat_detail_widget_v2와 ai_chat_page_v2에서 중복되던 
+///
+/// chat_detail_widget_v2와 ai_chat_page_v2에서 중복되던
 /// 메시지 변환 로직을 통합하여 관리합니다.
 class ChatMessageService {
   static final ChatMessageService _instance = ChatMessageService._internal();
@@ -11,7 +11,7 @@ class ChatMessageService {
   ChatMessageService._internal();
 
   /// Firestore 문서를 flutter_chat_ui의 Message 객체로 변환
-  /// 
+  ///
   /// 다양한 메시지 타입을 지원:
   /// - text: 일반 텍스트 메시지
   /// - image: 이미지 메시지
@@ -39,8 +39,9 @@ class ChatMessageService {
       switch (messageType) {
         case 'voteRequest':
         case 'voteCreated':
-          return _createVoteMessage(messageId, senderId, createdAt, data, messageType);
-        
+          return _createVoteMessage(
+              messageId, senderId, createdAt, data, messageType);
+
         case 'system':
           return core.SystemMessage(
             id: messageId,
@@ -48,10 +49,10 @@ class ChatMessageService {
             createdAt: createdAt,
             authorId: 'system',
           );
-        
+
         case 'image':
           return _createImageMessage(messageId, senderId, createdAt, data);
-        
+
         case 'text':
         default:
           return core.TextMessage(
@@ -110,12 +111,12 @@ class ChatMessageService {
   ) {
     final imageUrl = data['imageUrl'] ?? data['image'] ?? '';
     final metadata = <String, dynamic>{};
-    
+
     // 이미지 메타데이터 추가
     if (data['width'] != null) metadata['width'] = data['width'];
     if (data['height'] != null) metadata['height'] = data['height'];
     if (data['size'] != null) metadata['size'] = data['size'];
-    
+
     return core.ImageMessage(
       id: messageId,
       authorId: senderId,
@@ -133,9 +134,12 @@ class ChatMessageService {
     // 병렬 처리로 성능 최적화
     final messageFutures = docs.map((doc) => convertDocumentToMessage(doc));
     final messages = await Future.wait(messageFutures);
-    
+
     // null 제거 후 반환
-    return messages.where((message) => message != null).cast<core.Message>().toList();
+    return messages
+        .where((message) => message != null)
+        .cast<core.Message>()
+        .toList();
   }
 
   /// 메시지 메타데이터 업데이트
@@ -177,11 +181,11 @@ class ChatMessageService {
       // null 체크 추가
       final aTime = a.createdAt;
       final bTime = b.createdAt;
-      
+
       if (aTime == null && bTime == null) return 0;
       if (aTime == null) return ascending ? -1 : 1;
       if (bTime == null) return ascending ? 1 : -1;
-      
+
       final comparison = aTime.compareTo(bTime);
       return ascending ? comparison : -comparison;
     });

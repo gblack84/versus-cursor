@@ -1,4 +1,4 @@
-import '/features/notifications/domain/services/i_user_service.dart';
+import '/core/domain/ports/i_user_service.dart';
 
 /// 현재 로그인한 사용자 ID를 가져오는 UseCase
 class GetCurrentUserIdUseCase {

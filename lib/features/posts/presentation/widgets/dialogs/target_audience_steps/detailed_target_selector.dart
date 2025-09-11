@@ -20,27 +20,27 @@ class DetailedTargetSelector extends StatelessWidget {
               Text(
                 '타겟 조건을 설정하세요',
                 style: AppTheme.of(context).headlineSmall.override(
-                  fontWeight: FontWeight.w600,
-                ),
+                      fontWeight: FontWeight.w600,
+                    ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              
+
               // 관심사 선택
               _buildInterestsSection(context, model),
-              
+
               const SizedBox(height: 24),
-              
+
               // 연령대 선택
               _buildAgeGroupSection(context, model),
-              
+
               const SizedBox(height: 24),
-              
+
               // 성별 선택
               _buildGenderSection(context, model),
-              
+
               const SizedBox(height: 24),
-              
+
               // 고급 옵션
               _buildAdvancedOptions(context, model),
             ],
@@ -50,15 +50,16 @@ class DetailedTargetSelector extends StatelessWidget {
     );
   }
 
-  Widget _buildInterestsSection(BuildContext context, TargetAudienceModel model) {
+  Widget _buildInterestsSection(
+      BuildContext context, TargetAudienceModel model) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           '관심사 (복수 선택 가능)',
           style: AppTheme.of(context).bodyLarge.override(
-            fontWeight: FontWeight.w600,
-          ),
+                fontWeight: FontWeight.w600,
+              ),
         ),
         const SizedBox(height: 12),
         Container(
@@ -75,30 +76,34 @@ class DetailedTargetSelector extends StatelessWidget {
             runSpacing: TargetAudienceConstants.chipRunSpacing,
             children: TargetAudienceConstants.interests.map((interest) {
               final isSelected = model.selectedInterests.contains(interest);
-              
+
               return FilterChip(
                 label: Text(interest),
                 selected: isSelected,
                 onSelected: (_) {
-                  debugPrint('[DetailedTargetSelector] 관심사 토글: $interest (현재: $isSelected)');
+                  debugPrint(
+                      '[DetailedTargetSelector] 관심사 토글: $interest (현재: $isSelected)');
                   model.toggleInterest(interest);
                 },
                 selectedColor: AppTheme.of(context).primary,
                 checkmarkColor: Colors.white,
                 backgroundColor: AppTheme.of(context).secondaryBackground,
                 labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : AppTheme.of(context).primaryText,
+                  color: isSelected
+                      ? Colors.white
+                      : AppTheme.of(context).primaryText,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
                 side: BorderSide(
-                  color: isSelected 
-                      ? AppTheme.of(context).primary 
+                  color: isSelected
+                      ? AppTheme.of(context).primary
                       : AppTheme.of(context).alternate,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               );
             }).toList(),
           ),
@@ -107,15 +112,16 @@ class DetailedTargetSelector extends StatelessWidget {
     );
   }
 
-  Widget _buildAgeGroupSection(BuildContext context, TargetAudienceModel model) {
+  Widget _buildAgeGroupSection(
+      BuildContext context, TargetAudienceModel model) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           '연령대',
           style: AppTheme.of(context).bodyLarge.override(
-            fontWeight: FontWeight.w600,
-          ),
+                fontWeight: FontWeight.w600,
+              ),
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -123,23 +129,25 @@ class DetailedTargetSelector extends StatelessWidget {
           runSpacing: 12,
           children: TargetAudienceConstants.ageGroups.entries.map((entry) {
             final isSelected = model.selectedAgeGroup == entry.key;
-            
+
             return InkWell(
               onTap: () {
-                debugPrint('[DetailedTargetSelector] 연령대 선택: ${entry.value} (${entry.key})');
+                debugPrint(
+                    '[DetailedTargetSelector] 연령대 선택: ${entry.value} (${entry.key})');
                 model.selectedAgeGroup = entry.key;
               },
               borderRadius: BorderRadius.circular(20),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isSelected 
-                      ? AppTheme.of(context).primary 
+                  color: isSelected
+                      ? AppTheme.of(context).primary
                       : AppTheme.of(context).secondaryBackground,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected 
-                        ? AppTheme.of(context).primary 
+                    color: isSelected
+                        ? AppTheme.of(context).primary
                         : AppTheme.of(context).alternate,
                   ),
                 ),
@@ -151,12 +159,10 @@ class DetailedTargetSelector extends StatelessWidget {
                       height: 16,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isSelected 
-                            ? Colors.white 
-                            : Colors.transparent,
+                        color: isSelected ? Colors.white : Colors.transparent,
                         border: Border.all(
-                          color: isSelected 
-                              ? Colors.white 
+                          color: isSelected
+                              ? Colors.white
                               : AppTheme.of(context).secondaryText,
                           width: 2,
                         ),
@@ -175,10 +181,11 @@ class DetailedTargetSelector extends StatelessWidget {
                     Text(
                       entry.value,
                       style: TextStyle(
-                        color: isSelected 
-                            ? Colors.white 
+                        color: isSelected
+                            ? Colors.white
                             : AppTheme.of(context).primaryText,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.normal,
                       ),
                     ),
                   ],
@@ -198,36 +205,40 @@ class DetailedTargetSelector extends StatelessWidget {
         Text(
           '성별',
           style: AppTheme.of(context).bodyLarge.override(
-            fontWeight: FontWeight.w600,
-          ),
+                fontWeight: FontWeight.w600,
+              ),
         ),
         const SizedBox(height: 12),
         Row(
           children: TargetAudienceConstants.genderOptions.entries.map((entry) {
             final isSelected = model.selectedGender == entry.key;
             final genderInfo = entry.value;
-            
+
             return Expanded(
               child: Padding(
                 padding: EdgeInsets.only(
-                  right: entry.key != TargetAudienceConstants.genderOptions.keys.last ? 8 : 0,
+                  right: entry.key !=
+                          TargetAudienceConstants.genderOptions.keys.last
+                      ? 8
+                      : 0,
                 ),
                 child: InkWell(
                   onTap: () {
-                    debugPrint('[DetailedTargetSelector] 성별 선택: ${entry.value} (${entry.key})');
+                    debugPrint(
+                        '[DetailedTargetSelector] 성별 선택: ${entry.value} (${entry.key})');
                     model.selectedGender = entry.key;
                   },
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
-                      color: isSelected 
-                          ? AppTheme.of(context).primary 
+                      color: isSelected
+                          ? AppTheme.of(context).primary
                           : AppTheme.of(context).secondaryBackground,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isSelected 
-                            ? AppTheme.of(context).primary 
+                        color: isSelected
+                            ? AppTheme.of(context).primary
                             : AppTheme.of(context).alternate,
                       ),
                     ),
@@ -239,12 +250,11 @@ class DetailedTargetSelector extends StatelessWidget {
                           height: 16,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: isSelected 
-                                ? Colors.white 
-                                : Colors.transparent,
+                            color:
+                                isSelected ? Colors.white : Colors.transparent,
                             border: Border.all(
-                              color: isSelected 
-                                  ? Colors.white 
+                              color: isSelected
+                                  ? Colors.white
                                   : AppTheme.of(context).secondaryText,
                               width: 2,
                             ),
@@ -263,10 +273,12 @@ class DetailedTargetSelector extends StatelessWidget {
                         Text(
                           genderInfo.label,
                           style: TextStyle(
-                            color: isSelected 
-                                ? Colors.white 
+                            color: isSelected
+                                ? Colors.white
                                 : AppTheme.of(context).primaryText,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
                           ),
                         ),
                       ],
@@ -281,7 +293,8 @@ class DetailedTargetSelector extends StatelessWidget {
     );
   }
 
-  Widget _buildAdvancedOptions(BuildContext context, TargetAudienceModel model) {
+  Widget _buildAdvancedOptions(
+      BuildContext context, TargetAudienceModel model) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -297,8 +310,8 @@ class DetailedTargetSelector extends StatelessWidget {
           Text(
             '고급 옵션',
             style: AppTheme.of(context).bodyLarge.override(
-              fontWeight: FontWeight.w600,
-            ),
+                  fontWeight: FontWeight.w600,
+                ),
           ),
           const SizedBox(height: 12),
           InkWell(
@@ -339,15 +352,15 @@ class DetailedTargetSelector extends StatelessWidget {
                         Text(
                           '활성 사용자 우선',
                           style: AppTheme.of(context).bodyMedium.override(
-                            fontWeight: FontWeight.w500,
-                          ),
+                                fontWeight: FontWeight.w500,
+                              ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           '최근 1시간 이내 활동',
                           style: AppTheme.of(context).bodySmall.override(
-                            color: AppTheme.of(context).secondaryText,
-                          ),
+                                color: AppTheme.of(context).secondaryText,
+                              ),
                         ),
                       ],
                     ),

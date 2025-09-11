@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// 알림 뱃지를 표시하는 위젯
-/// 
+///
 /// 아이콘 위에 읽지 않은 알림 개수를 표시합니다.
 /// 개수가 0일 때는 뱃지가 표시되지 않습니다.
 class NotificationBadge extends StatelessWidget {
@@ -56,7 +56,8 @@ class NotificationBadge extends StatelessWidget {
             decoration: BoxDecoration(
               color: badgeBackgroundColor,
               shape: count > 99 ? BoxShape.rectangle : BoxShape.circle,
-              borderRadius: count > 99 ? BorderRadius.circular(badgeSize / 2) : null,
+              borderRadius:
+                  count > 99 ? BorderRadius.circular(badgeSize / 2) : null,
             ),
             child: Center(
               child: Text(

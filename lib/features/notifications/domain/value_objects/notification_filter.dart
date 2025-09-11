@@ -73,14 +73,14 @@ class NotificationFilter {
       limit: limit,
     );
   }
-  
+
   /// 읽지 않은 알림만 필터
   factory NotificationFilter.unreadOnly() {
     return const NotificationFilter(
       unreadOnly: true,
     );
   }
-  
+
   /// 타입별 필터
   factory NotificationFilter.byType(NotificationType type) {
     return NotificationFilter(
@@ -124,7 +124,7 @@ class NotificationFilter {
     if (excludeExpired == true) filters.add('excludeExpired');
     if (userId != null) filters.add('userId=$userId');
     if (sortOrder != null) filters.add('sort=${sortOrder?.name}');
-    
+
     return 'NotificationFilter(${filters.join(', ')})';
   }
 }

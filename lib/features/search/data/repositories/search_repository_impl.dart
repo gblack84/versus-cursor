@@ -1,15 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/repositories/i_search_repository.dart';
-import '/core/firebase/utils/firestore_util.dart' show queryCollection, queryCollectionOnce, queryCollectionCount;
+import '/core/firebase/utils/firestore_util.dart'
+    show queryCollection, queryCollectionOnce, queryCollectionCount;
 import '/features/search/domain/models/search_history_model.dart';
 
 /// Implementation of search repository
 class SearchRepositoryImpl implements ISearchRepository {
   static SearchRepositoryImpl? _instance;
-  static SearchRepositoryImpl get instance => _instance ??= SearchRepositoryImpl._();
-  
+  static SearchRepositoryImpl get instance =>
+      _instance ??= SearchRepositoryImpl._();
+
   SearchRepositoryImpl._();
-  
+
   // Search history queries
   @override
   Stream<List<SearchesModel>> querySearches({
@@ -94,7 +96,8 @@ class SearchRepositoryImpl implements ISearchRepository {
     Map<String, dynamic>? filters,
   }) async {
     // TODO: Implement posts search with Algolia
-    throw UnimplementedError('searchPosts not implemented - requires Algolia setup');
+    throw UnimplementedError(
+        'searchPosts not implemented - requires Algolia setup');
   }
 
   @override
@@ -104,7 +107,8 @@ class SearchRepositoryImpl implements ISearchRepository {
     Map<String, dynamic>? filters,
   }) async {
     // TODO: Implement users search with Algolia
-    throw UnimplementedError('searchUsers not implemented - requires Algolia setup');
+    throw UnimplementedError(
+        'searchUsers not implemented - requires Algolia setup');
   }
 
   @override
@@ -115,7 +119,8 @@ class SearchRepositoryImpl implements ISearchRepository {
     Map<String, dynamic>? filters,
   }) async {
     // TODO: Implement content search with Algolia
-    throw UnimplementedError('searchContent not implemented - requires Algolia setup');
+    throw UnimplementedError(
+        'searchContent not implemented - requires Algolia setup');
   }
 
   @override

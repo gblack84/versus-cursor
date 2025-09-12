@@ -2,6 +2,9 @@ import 'package:get_it/get_it.dart';
 import 'feature_modules.dart';
 import '../../features/posts/domain/repositories/i_post_repository.dart';
 import '../../features/posts/data/repositories/post_repository_impl.dart';
+import '../../features/posts/data/adapters/vote/vote_timer_service.dart';
+import '../../features/voting/domain/ports/i_vote_timer_port.dart';
+import '../../features/voting/data/adapters/vote_timer_adapter.dart';
 
 /// Posts Feature DI Module
 ///
@@ -22,11 +25,32 @@ class PostsModule implements FeatureModule {
       );
     }
 
+    // Register VoteTimerService (owned by posts feature)
+    if (!sl.isRegistered<VoteTimerService>()) {
+      sl.registerLazySingleton<VoteTimerService>(
+        () => VoteTimerService(),
+      );
+    }
+
+    // Register VoteTimerPort adapter for voting feature
+    // This bridges posts and voting features without direct dependency
+    if (!sl.isRegistered<IVoteTimerPort>()) {
+      sl.registerLazySingleton<IVoteTimerPort>(
+        () => VoteTimerAdapter(sl<VoteTimerService>()),
+      );
+    }
+
     _isInitialized = true;
   }
 
   @override
   void unregister(GetIt sl) {
+    if (sl.isRegistered<IVoteTimerPort>()) {
+      sl.unregister<IVoteTimerPort>();
+    }
+    if (sl.isRegistered<VoteTimerService>()) {
+      sl.unregister<VoteTimerService>();
+    }
     if (sl.isRegistered<IPostRepository>()) {
       sl.unregister<IPostRepository>();
     }

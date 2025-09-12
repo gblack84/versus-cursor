@@ -12,6 +12,9 @@ import '/features/chat/domain/models/chats_model.dart';
 import '/app/widgets/index.dart';
 import '/app/widgets/navigation/main_navigation_shell.dart';
 
+// Import Voting Feature routes
+import '/features/voting/presentation/routes/voting_routes.dart';
+
 export 'package:go_router/go_router.dart';
 export 'serialization_util.dart';
 
@@ -294,6 +297,9 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
                 : null,
           ),
         ).toRoute(appStateNotifier),
+        
+        // Voting Feature routes
+        ...VotingRoutes.routes,
       ],
       observers: [routeObserver, BotToastNavigatorObserver()],
     );

@@ -248,7 +248,7 @@ abstract class ModerationModule {
 #### Day 4: AspectRatioAnalyzer 이동
 ```dart
 // Before: services/ui/unified_box_calculator.dart
-import 'package:versus_space/features/posts/domain/usecases/media/aspect_ratio_analyzer.dart';
+import 'package:versus_space/core/utils/media/aspect_ratio_analyzer.dart';
 
 // After: AspectRatioAnalyzer를 Services로 이동
 // lib/services/ui/domain/entities/layout_analyzer.dart

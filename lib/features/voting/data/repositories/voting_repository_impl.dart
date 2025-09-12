@@ -1,24 +1,23 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '/core/firebase/utils/firestore_util.dart'
-    show queryCollection, queryCollectionOnce, queryCollectionCount;
 import '../../domain/repositories/i_voting_repository.dart';
-import '/features/voting/domain/models/votecounts_model.dart';
-import '/features/voting/domain/models/vote_expansion_requests_model.dart';
-import '/features/voting/domain/models/rankings_model.dart';
-import '/features/voting/domain/models/weights_model.dart';
+import '../../domain/models/vote_counts_model.dart';
+import '../../domain/models/vote_expansion_requests_model.dart';
+import '../../domain/models/rankings_model.dart';
+import '../../domain/models/weights_model.dart';
+import '../../domain/models/vote_cache_state.dart';
+import '../datasources/i_voting_remote_datasource.dart';
+import '../datasources/i_voting_local_datasource.dart';
+import '../adapters/votecounts_adapter.dart';
 
-/// Implementation of voting repository with migrated backend query functions
+/// Implementation of voting repository using DataSource pattern
 class VotingRepositoryImpl implements IVotingRepository {
-  static VotingRepositoryImpl? _instance;
-  static VotingRepositoryImpl get instance =>
-      _instance ??= VotingRepositoryImpl._();
+  final IVotingRemoteDataSource _remoteDataSource;
+  final IVotingLocalDataSource _localDataSource;
 
-  final PostsDataSource? _postsDataSource;
-
-  VotingRepositoryImpl._() : _postsDataSource = null;
-
-  // Constructor for dependency injection
-  VotingRepositoryImpl.withDataSource(this._postsDataSource);
+  VotingRepositoryImpl({
+    required IVotingRemoteDataSource remoteDataSource,
+    required IVotingLocalDataSource localDataSource,
+  }) : _remoteDataSource = remoteDataSource,
+       _localDataSource = localDataSource;
 
   // ============================================================================
   // Vote Counts Queries
@@ -26,41 +25,41 @@ class VotingRepositoryImpl implements IVotingRepository {
 
   @override
   Future<int> queryVotecountsCount({
-    Query Function(Query)? queryBuilder,
+    dynamic queryBuilder,
     int limit = -1,
-  }) =>
-      queryCollectionCount(
-        VotecountsModel.collection(null),
-        queryBuilder: queryBuilder,
-        limit: limit,
-      );
+  }) {
+    return _remoteDataSource.queryVotecountsCount(
+      queryBuilder: queryBuilder,
+      limit: limit,
+    );
+  }
 
   @override
-  Stream<List<VotecountsModel>> queryVotecounts({
-    Query Function(Query)? queryBuilder,
+  Stream<List<VoteCounts>> queryVotecounts({
+    dynamic queryBuilder,
     int limit = -1,
     bool singleRecord = false,
-  }) =>
-      queryCollection(
-        VotecountsModel.collection(null),
-        VotecountsModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
+  }) {
+    return _remoteDataSource.queryVotecounts(
+      queryBuilder: queryBuilder,
+      limit: limit,
+      singleRecord: singleRecord,
+    ).map((models) => VoteCountsAdapter.fromFirestoreList(models));
+  }
 
-  Future<List<VotecountsModel>> queryVotecountsOnce({
-    Query Function(Query)? queryBuilder,
+  @override
+  Future<List<VoteCounts>> queryVotecountsOnce({
+    dynamic queryBuilder,
     int limit = -1,
     bool singleRecord = false,
-  }) =>
-      queryCollectionOnce(
-        VotecountsModel.collection(null),
-        VotecountsModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
+  }) async {
+    final models = await _remoteDataSource.queryVotecountsOnce(
+      queryBuilder: queryBuilder,
+      limit: limit,
+      singleRecord: singleRecord,
+    );
+    return VoteCountsAdapter.fromFirestoreList(models);
+  }
 
   // ============================================================================
   // Vote Expansion Requests Queries
@@ -68,41 +67,39 @@ class VotingRepositoryImpl implements IVotingRepository {
 
   @override
   Future<int> queryVoteExpansionRequestsCount({
-    Query Function(Query)? queryBuilder,
+    dynamic queryBuilder,
     int limit = -1,
-  }) =>
-      queryCollectionCount(
-        VoteExpansionRequestsModel.collection(null),
-        queryBuilder: queryBuilder,
-        limit: limit,
-      );
+  }) {
+    return _remoteDataSource.queryVoteExpansionRequestsCount(
+      queryBuilder: queryBuilder,
+      limit: limit,
+    );
+  }
 
   @override
   Stream<List<VoteExpansionRequestsModel>> queryVoteExpansionRequests({
-    Query Function(Query)? queryBuilder,
+    dynamic queryBuilder,
     int limit = -1,
     bool singleRecord = false,
-  }) =>
-      queryCollection(
-        VoteExpansionRequestsModel.collection(null),
-        VoteExpansionRequestsModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
+  }) {
+    return _remoteDataSource.queryVoteExpansionRequests(
+      queryBuilder: queryBuilder,
+      limit: limit,
+      singleRecord: singleRecord,
+    );
+  }
 
   Future<List<VoteExpansionRequestsModel>> queryVoteExpansionRequestsOnce({
-    Query Function(Query)? queryBuilder,
+    dynamic queryBuilder,
     int limit = -1,
     bool singleRecord = false,
-  }) =>
-      queryCollectionOnce(
-        VoteExpansionRequestsModel.collection(null),
-        VoteExpansionRequestsModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
+  }) {
+    return _remoteDataSource.queryVoteExpansionRequestsOnce(
+      queryBuilder: queryBuilder,
+      limit: limit,
+      singleRecord: singleRecord,
+    );
+  }
 
   // ============================================================================
   // Rankings Queries
@@ -110,41 +107,37 @@ class VotingRepositoryImpl implements IVotingRepository {
 
   @override
   Future<int> queryRankingsCount({
-    Query Function(Query)? queryBuilder,
+    dynamic queryBuilder,
     int limit = -1,
-  }) =>
-      queryCollectionCount(
-        RankingsModel.collection,
-        queryBuilder: queryBuilder,
-        limit: limit,
-      );
+  }) {
+    return _remoteDataSource.queryRankingsCount(
+      queryBuilder: queryBuilder,
+      limit: limit,
+    );
+  }
 
   @override
   Stream<List<RankingsModel>> queryRankings({
-    Query Function(Query)? queryBuilder,
+    dynamic queryBuilder,
     int limit = -1,
     bool singleRecord = false,
-  }) =>
-      queryCollection(
-        RankingsModel.collection,
-        RankingsModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
+  }) {
+    return _remoteDataSource.queryRankings(
+      queryBuilder: queryBuilder,
+      limit: limit,
+      singleRecord: singleRecord,
+    );
+  }
 
   Future<List<RankingsModel>> queryRankingsOnce({
-    Query Function(Query)? queryBuilder,
+    dynamic queryBuilder,
     int limit = -1,
     bool singleRecord = false,
-  }) =>
-      queryCollectionOnce(
-        RankingsModel.collection,
-        RankingsModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
+  }) {
+    // This method is not in IVotingRepository interface, so we keep it as internal
+    // You may want to add it to the interface if needed
+    return _remoteDataSource.getTopRankings(limit: limit);
+  }
 
   // ============================================================================
   // Weights Queries
@@ -152,41 +145,39 @@ class VotingRepositoryImpl implements IVotingRepository {
 
   @override
   Future<int> queryWeightsCount({
-    Query Function(Query)? queryBuilder,
+    dynamic queryBuilder,
     int limit = -1,
-  }) =>
-      queryCollectionCount(
-        WeightsModel.collection(null),
-        queryBuilder: queryBuilder,
-        limit: limit,
-      );
+  }) {
+    return _remoteDataSource.queryWeightsCount(
+      queryBuilder: queryBuilder,
+      limit: limit,
+    );
+  }
 
   @override
   Stream<List<WeightsModel>> queryWeights({
-    Query Function(Query)? queryBuilder,
+    dynamic queryBuilder,
     int limit = -1,
     bool singleRecord = false,
-  }) =>
-      queryCollection(
-        WeightsModel.collection(null),
-        WeightsModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
+  }) {
+    return _remoteDataSource.queryWeights(
+      queryBuilder: queryBuilder,
+      limit: limit,
+      singleRecord: singleRecord,
+    );
+  }
 
   Future<List<WeightsModel>> queryWeightsOnce({
-    Query Function(Query)? queryBuilder,
+    dynamic queryBuilder,
     int limit = -1,
     bool singleRecord = false,
-  }) =>
-      queryCollectionOnce(
-        WeightsModel.collection(null),
-        WeightsModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
+  }) {
+    return _remoteDataSource.queryWeightsOnce(
+      queryBuilder: queryBuilder,
+      limit: limit,
+      singleRecord: singleRecord,
+    );
+  }
 
   // ============================================================================
   // Voting Operations
@@ -198,24 +189,31 @@ class VotingRepositoryImpl implements IVotingRepository {
     required String userId,
     required String voteOption,
   }) async {
-    final voteRef = FirebaseFirestore.instance
-        .collection('posts')
-        .doc(postId)
-        .collection('votes')
-        .doc(userId);
-
-    await voteRef.set({
-      'userId': userId,
-      'voteOption': voteOption,
-      'votedAt': FieldValue.serverTimestamp(),
-    });
-
-    // Update vote counts
-    final postRef = FirebaseFirestore.instance.collection('posts').doc(postId);
-    final voteField = voteOption == 'A' ? 'votesA' : 'votesB';
-    await postRef.update({
-      voteField: FieldValue.increment(1),
-    });
+    // Cast vote to remote
+    await _remoteDataSource.castVote(
+      postId: postId,
+      userId: userId,
+      voteOption: voteOption,
+    );
+    
+    // Update local cache
+    await _localDataSource.cacheVoteState(
+      postId: postId,
+      userId: userId,
+      voteState: VoteState(
+        option: voteOption,
+        timestamp: DateTime.now(),
+        completed: false,
+      ),
+    );
+    
+    // Add to vote history
+    await _localDataSource.cacheVoteHistory(
+      userId: userId,
+      postId: postId,
+      voteOption: voteOption,
+      votedAt: DateTime.now(),
+    );
   }
 
   @override
@@ -223,42 +221,69 @@ class VotingRepositoryImpl implements IVotingRepository {
     required String postId,
     required String userId,
   }) async {
-    // Get the current vote to know which counter to decrement
-    final voteDoc = await FirebaseFirestore.instance
-        .collection('posts')
-        .doc(postId)
-        .collection('votes')
-        .doc(userId)
-        .get();
-
-    if (voteDoc.exists) {
-      final voteOption = voteDoc.data()?['voteOption'] as String?;
-
-      // Delete the vote document
-      await voteDoc.reference.delete();
-
-      // Update vote counts
-      if (voteOption != null) {
-        final postRef =
-            FirebaseFirestore.instance.collection('posts').doc(postId);
-        final voteField = voteOption == 'A' ? 'votesA' : 'votesB';
-        await postRef.update({
-          voteField: FieldValue.increment(-1),
-        });
-      }
-    }
+    // Remove vote from remote
+    await _remoteDataSource.removeVote(
+      postId: postId,
+      userId: userId,
+    );
+    
+    // Remove from local cache
+    await _localDataSource.removeCachedVoteState(
+      postId: postId,
+      userId: userId,
+    );
   }
 
   @override
-  Future<VotecountsModel?> getVoteCounts(String postId) async {
-    final doc = await FirebaseFirestore.instance
-        .collection('posts')
-        .doc(postId)
-        .collection('votecounts')
-        .doc('summary')
-        .get();
+  Future<dynamic> checkUserVote({
+    required String postId,
+    required String userId,
+  }) async {
+    // Check local cache first
+    final cachedState = await _localDataSource.getCachedVoteState(
+      postId: postId,
+      userId: userId,
+    );
+    
+    if (cachedState != null) {
+      return {
+        'choice': cachedState.option,
+        'voteOption': cachedState.option,
+        'timestamp': cachedState.timestamp?.millisecondsSinceEpoch,
+      };
+    }
+    
+    // If not in cache, check remote
+    // For now, return null if not found in cache
+    return null;
+  }
 
-    return doc.exists ? VotecountsModel.fromSnapshot(doc) : null;
+  @override
+  Future<VoteCounts?> getVoteCounts(String postId) async {
+    // Try to get from cache first
+    final cached = await _localDataSource.getCachedVoteCounts(postId);
+    if (cached != null) {
+      // Check if cache is still valid (e.g., less than 5 minutes old)
+      final cacheTime = await _localDataSource.getVoteCountsCacheTime(postId);
+      if (cacheTime != null && 
+          DateTime.now().difference(cacheTime).inMinutes < 5) {
+        return VoteCountsAdapter.fromFirestore(cached);
+      }
+    }
+    
+    // Get from remote
+    final voteCountsModel = await _remoteDataSource.getVoteCounts(postId);
+    
+    // Cache the result if not null
+    if (voteCountsModel != null) {
+      await _localDataSource.cacheVoteCounts(
+        postId: postId,
+        voteCounts: voteCountsModel,
+      );
+      return VoteCountsAdapter.fromFirestore(voteCountsModel);
+    }
+    
+    return null;
   }
 
   // ============================================================================
@@ -267,54 +292,34 @@ class VotingRepositoryImpl implements IVotingRepository {
 
   @override
   Future<void> updateRankings() async {
-    // This would typically be handled by a Cloud Function or backend service
-    // For now, we'll implement a basic ranking algorithm
-
-    final postsSnapshot = await FirebaseFirestore.instance
-        .collection('posts')
-        .orderBy('createdAt', descending: true)
-        .limit(100)
-        .get();
-
-    final batch = FirebaseFirestore.instance.batch();
-
-    for (int i = 0; i < postsSnapshot.docs.length; i++) {
-      final post = postsSnapshot.docs[i];
-      final votesA = post.data()['votesA'] ?? 0;
-      final votesB = post.data()['votesB'] ?? 0;
-      final totalVotes = votesA + votesB;
-
-      // Simple ranking score based on total votes and recency
-      final score = totalVotes * 1.0;
-
-      final rankingRef =
-          FirebaseFirestore.instance.collection('rankings').doc(post.id);
-
-      batch.set(
-          rankingRef,
-          {
-            'postId': post.id,
-            'rank': i + 1,
-            'score': score,
-            'votesA': votesA,
-            'votesB': votesB,
-            'updatedAt': FieldValue.serverTimestamp(),
-          },
-          SetOptions(merge: true));
-    }
-
-    await batch.commit();
+    await _remoteDataSource.updateRankings();
   }
 
   @override
   Future<List<RankingsModel>> getTopRankings({int limit = 10}) async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('rankings')
-        .orderBy('score', descending: true)
-        .limit(limit)
-        .get();
-
-    return snapshot.docs.map((doc) => RankingsModel.fromSnapshot(doc)).toList();
+    // Try to get from cache first
+    final cacheKey = 'top_rankings_$limit';
+    final cached = await _localDataSource.getCachedRankings(cacheKey);
+    
+    if (cached != null) {
+      // Check if cache is still valid (e.g., less than 10 minutes old)
+      final cacheTime = await _localDataSource.getRankingsCacheTime(cacheKey);
+      if (cacheTime != null && 
+          DateTime.now().difference(cacheTime).inMinutes < 10) {
+        return cached;
+      }
+    }
+    
+    // Get from remote
+    final rankings = await _remoteDataSource.getTopRankings(limit: limit);
+    
+    // Cache the result
+    await _localDataSource.cacheRankings(
+      rankings: rankings,
+      cacheKey: cacheKey,
+    );
+    
+    return rankings;
   }
 
   // ============================================================================
@@ -327,84 +332,44 @@ class VotingRepositoryImpl implements IVotingRepository {
     required String userId,
     required int additionalTime,
   }) async {
-    await FirebaseFirestore.instance.collection('voteExpansionRequests').add({
-      'postId': postId,
-      'userId': userId,
-      'additionalTime': additionalTime,
-      'requestedAt': FieldValue.serverTimestamp(),
-      'status': 'pending',
-    });
+    await _remoteDataSource.requestVoteExpansion(
+      postId: postId,
+      userId: userId,
+      additionalTime: additionalTime,
+    );
   }
 
   @override
   Future<void> approveVoteExpansion(String requestId) async {
-    final requestDoc = await FirebaseFirestore.instance
-        .collection('voteExpansionRequests')
-        .doc(requestId)
-        .get();
-
-    if (requestDoc.exists) {
-      final data = requestDoc.data()!;
-      final postId = data['postId'] as String;
-      final additionalTime = data['additionalTime'] as int;
-
-      // Update the request status
-      await requestDoc.reference.update({
-        'status': 'approved',
-        'approvedAt': FieldValue.serverTimestamp(),
-      });
-
-      // Extend the vote end time for the post
-      final postRef =
-          FirebaseFirestore.instance.collection('posts').doc(postId);
-      final postDoc = await postRef.get();
-
-      if (postDoc.exists) {
-        final currentEndTime = postDoc.data()?['voteEndTime'] as Timestamp?;
-        if (currentEndTime != null) {
-          final newEndTime =
-              currentEndTime.toDate().add(Duration(minutes: additionalTime));
-          await postRef.update({
-            'voteEndTime': Timestamp.fromDate(newEndTime),
-          });
-        }
-      }
-    }
+    await _remoteDataSource.approveVoteExpansion(requestId);
   }
 
   @override
   Future<void> rejectVoteExpansion(String requestId) async {
-    await FirebaseFirestore.instance
-        .collection('voteExpansionRequests')
-        .doc(requestId)
-        .update({
-      'status': 'rejected',
-      'rejectedAt': FieldValue.serverTimestamp(),
-    });
+    await _remoteDataSource.rejectVoteExpansion(requestId);
   }
 
-  // ============================================================================
-  // Delegated Methods for Ranked Posts (using PostsDataSource)
-  // ============================================================================
-
-  Stream<List<RankedPostsData>> getRankedPosts({
-    String? category,
-    int? limit,
-  }) {
-    if (_postsDataSource != null) {
-      return _postsDataSource!.getRankedPosts(
-        category: category,
-        limit: limit,
-      );
+  @override
+  Future<List<Map<String, dynamic>>> getUserVoteHistory(String userId) async {
+    try {
+      // Try to get from local cache first
+      final cachedHistory = await _localDataSource.getCachedVoteHistory(userId);
+      if (cachedHistory != null && cachedHistory.isNotEmpty) {
+        return cachedHistory;
+      }
+      
+      // If not in cache, get from remote
+      final remoteHistory = await _remoteDataSource.getUserVotes(userId);
+      
+      // Cache the result
+      if (remoteHistory.isNotEmpty) {
+        await _localDataSource.cacheUserVoteHistory(userId, remoteHistory);
+      }
+      
+      return remoteHistory;
+    } catch (e) {
+      // Return empty list on error
+      return [];
     }
-    // Fallback to empty stream if data source not provided
-    return Stream.value([]);
-  }
-
-  Future<RankedPostsData?> getRankedPostById(String postId) async {
-    if (_postsDataSource != null) {
-      return _postsDataSource!.getRankedPostById(postId);
-    }
-    return null;
   }
 }

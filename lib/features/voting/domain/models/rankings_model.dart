@@ -1,10 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+// Legacy Firebase model - violates Clean Architecture, needs refactoring
 import 'dart:async';
-
 import 'package:collection/collection.dart';
-
-import '/core/firebase/utils/firestore_util.dart';
-
 import '/core_exports.dart';
 
 class RankingsModel extends FirestoreRecord {
@@ -68,6 +64,26 @@ class RankingsModel extends FirestoreRecord {
   bool operator ==(other) =>
       other is RankingsModel &&
       reference.path.hashCode == other.reference.path.hashCode;
+
+  // Temporary toJson method for cache support
+  // TODO: Migrate to Clean Architecture model
+  Map<String, dynamic> toJson() {
+    return {
+      'rakingId': rakingId,
+      'type': type,
+      'date': date?.toIso8601String(),
+    };
+  }
+
+  // Temporary fromJson factory for cache support
+  // TODO: Migrate to Clean Architecture model
+  static RankingsModel fromJson(Map<String, dynamic> json) {
+    // Note: Cannot properly instantiate without DocumentReference
+    // This is why we need to migrate to Clean Architecture
+    throw UnimplementedError(
+      'RankingsModel.fromJson requires migration to Clean Architecture'
+    );
+  }
 }
 
 Map<String, dynamic> createRankingsModelData({

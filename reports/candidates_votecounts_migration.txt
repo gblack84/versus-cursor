@@ -1,0 +1,132 @@
+VOTING FEATURE - VOTECOUNTS MODEL MIGRATION CANDIDATES
+======================================================
+
+스캔 대상: /lib/features/voting (105 Dart files)
+분석 시간: 2025-09-12 10:30:00Z
+기준: --line-threshold 100 --depth 5
+
+📊 모델 사용 현황
+================
+- VotecountsModel (레거시): 47개 사용처
+- VoteCounts (Clean): 35개 사용처
+- 공존 파일: 2개
+- 충돌 가능 파일: 11개
+
+🚨 우선순위 1: DATA LAYER 마이그레이션 필요
+=========================================
+
+1. data/datasources/voting_remote_datasource_impl.dart (190줄)
+   - VotecountsModel.fromSnapshot() 사용
+   - Firebase 직접 연동
+   - 마이그레이션 영향도: HIGH
+
+2. data/repositories/voting_repository_impl.dart (280줄)
+   - getVoteCounts() 메서드 VotecountsModel 반환
+   - 캐시 로직과 연결
+   - 마이그레이션 영향도: HIGH
+
+3. domain/usecases/get_vote_counts_use_case.dart (40줄)
+   - UseCase<List<VotecountsModel>, GetVoteCountsParams>
+   - 핵심 비즈니스 로직
+   - 마이그레이션 영향도: CRITICAL
+
+4. domain/usecases/stream_vote_counts_use_case.dart (45줄)
+   - StreamUseCase<List<VotecountsModel>, StreamVoteCountsParams>
+   - 실시간 투표 수 스트림
+   - 마이그레이션 영향도: CRITICAL
+
+⚠️ 우선순위 2: PRESENTATION LAYER 적응 필요
+==========================================
+
+5. presentation/providers/voting_data_provider.dart (220줄)
+   - 현재 수동 변환 로직 존재 (Line 153-160)
+   - VotecountsModel → VoteCounts 수동 매핑
+   - 마이그레이션 영향도: MEDIUM
+
+6. presentation/providers/voting_state_provider.dart (180줄)
+   - VoteCounts 모델 사용 중
+   - GetVoteCountsUseCase, StreamVoteCountsUseCase 의존
+   - 마이그레이션 영향도: LOW (이미 Clean)
+
+🔧 우선순위 3: INFRASTRUCTURE LAYER 업데이트
+===========================================
+
+7. data/datasources/local/services/vote_counts_cache_service.dart (130줄)
+   - VotecountsModel 캐싱 로직
+   - SharedPreferences 연동
+   - 마이그레이션 영향도: MEDIUM
+
+8. data/datasources/voting_local_datasource_impl.dart (150줄)
+   - cacheVoteCounts(), getCachedVoteCounts() 메서드
+   - VoteCountsCacheService 위임
+   - 마이그레이션 영향도: MEDIUM
+
+9. domain/repositories/i_voting_repository.dart (90줄)
+   - 인터페이스 정의
+   - Future<VotecountsModel?> getVoteCounts()
+   - 마이그레이션 영향도: HIGH
+
+🎯 마이그레이션 시퀀스 권장사항
+=============================
+
+Phase 1: Domain Layer (1일)
+- VoteCountsAdapter 클래스 생성
+- fromFirestore/toFirestore 변환 메서드
+- 테스트 케이스 작성
+
+Phase 2: Use Cases (0.5일)  
+- GetVoteCountsUseCase → VoteCounts 반환 변경
+- StreamVoteCountsUseCase → Stream<VoteCounts> 변경
+- Repository 인터페이스 업데이트
+
+Phase 3: Data Layer (1일)
+- Remote/Local DataSource 업데이트
+- Repository 구현체 변경
+- 캐시 서비스 VoteCounts 적응
+
+Phase 4: Presentation (0.5일)
+- VotingDataProvider 수동 변환 제거
+- 의존성 주입 업데이트
+- UI 테스트 검증
+
+📋 타입 불일치 위험 지점
+========================
+
+필드 매핑 충돌:
+- VotecountsModel.option1 → VoteCounts.votesA  
+- VotecountsModel.option2 → VoteCounts.votesB
+- VoteCounts.totalVotes (신규 필드)
+
+NULL 처리 차이:
+- VotecountsModel: int? (nullable)
+- VoteCounts: int (non-nullable, required)
+
+🔍 어댑터 패턴 적용 지점
+========================
+
+presentation/providers/voting_data_provider.dart:153-160
+```dart
+// 현재 수동 변환 (제거 대상)
+final counts = VoteCounts(
+  votesA: voteCountsList.first.option1,
+  votesB: voteCountsList.first.option2, 
+  totalVotes: (voteCountsList.first.option1 + voteCountsList.first.option2),
+);
+```
+
+권장 어댑터:
+```dart
+class VoteCountsAdapter {
+  static VoteCounts fromFirestore(VotecountsModel model) {
+    return VoteCounts(
+      votesA: model.option1 ?? 0,
+      votesB: model.option2 ?? 0,
+      totalVotes: (model.option1 ?? 0) + (model.option2 ?? 0),
+    );
+  }
+}
+```
+
+총 추정 노력: 3일
+총 위험도: MEDIUM
+권장 마이그레이션 순서: Domain → Use Cases → Data → Presentation

@@ -17,7 +17,7 @@ import '/features/posts/presentation/utils/no_animation_page_route.dart';
 import '/features/auth/data/adapters/auth_util.dart';
 import 'in_put_post_image_model.dart';
 export 'in_put_post_image_model.dart';
-import '/features/posts/domain/usecases/media/aspect_ratio_analyzer.dart';
+import '/core/utils/media/aspect_ratio_analyzer.dart';
 import '/services/ui/unified_box_calculator.dart';
 import '/features/posts/presentation/widgets/components/media_box_callbacks.dart';
 import '/features/posts/domain/usecases/media/ratio_calculator.dart';

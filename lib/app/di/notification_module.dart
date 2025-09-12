@@ -50,7 +50,9 @@ class NotificationModule implements FeatureModule {
     );
 
     sl.registerLazySingleton<IVoteService>(
-      () => VoteServiceImpl(),
+      () => VoteServiceImpl(
+        voteStatusService: sl.get(),
+      ),
     );
 
     // DataSources

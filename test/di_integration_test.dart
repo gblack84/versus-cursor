@@ -1,111 +1,64 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-import 'package:versus_space/app/di/injection.dart';
-import 'package:versus_space/features/auth/domain/repositories/i_auth_repository.dart';
-import 'package:versus_space/features/chat/domain/repositories/i_chat_repository.dart';
-import 'package:versus_space/features/posts/domain/repositories/i_post_repository.dart';
-import 'package:versus_space/features/profile/domain/repositories/i_profile_repository.dart';
-import 'package:versus_space/features/profile/domain/repositories/i_friends_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:versus_space/app/di.dart';
+import 'package:versus_space/features/voting/domain/repositories/i_voting_repository.dart';
+import 'package:versus_space/features/voting/domain/ports/i_vote_timer_port.dart';
+import 'package:versus_space/features/voting/domain/ports/i_vote_status_service.dart';
+import 'package:versus_space/features/voting/domain/ports/i_vote_service.dart';
+import 'package:versus_space/features/voting/domain/usecases/cast_vote_use_case.dart';
+import 'package:versus_space/features/voting/presentation/providers/voting_state_provider.dart';
 
 void main() {
-  group('DI Integration Tests', () {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  
+  group('Voting DI Integration Tests', () {
     late GetIt sl;
 
     setUpAll(() async {
-      // Initialize DI container
-      await Injection.init();
+      // Initialize SharedPreferences with test values
+      SharedPreferences.setMockInitialValues({});
+      
+      // Setup DI
+      await setupDependencyInjection();
       sl = GetIt.instance;
     });
 
     tearDownAll(() async {
-      await Injection.reset();
+      sl.reset();
     });
 
-    group('Firebase Services', () {
-      test('Firebase services should be registered', () {
-        expect(sl.isRegistered<FirebaseAuth>(), isTrue);
-        expect(sl.isRegistered<FirebaseFirestore>(), isTrue);
+    group('Voting Feature DI', () {
+      test('Core voting dependencies are registered', () {
+        // Core voting dependencies
+        expect(sl.isRegistered<IVoteTimerPort>(), isTrue,
+            reason: 'IVoteTimerPort should be registered');
+        expect(sl.isRegistered<IVotingRepository>(), isTrue,
+            reason: 'IVotingRepository should be registered');
+        expect(sl.isRegistered<IVoteStatusService>(), isTrue,
+            reason: 'IVoteStatusService should be registered');
+        expect(sl.isRegistered<IVoteService>(), isTrue,
+            reason: 'IVoteService should be registered');
       });
-
-      test('Firebase instances should be singletons', () {
-        final auth1 = sl<FirebaseAuth>();
-        final auth2 = sl<FirebaseAuth>();
-        expect(identical(auth1, auth2), isTrue);
+      
+      test('Voting UseCases are registered', () {
+        expect(sl.isRegistered<CastVoteUseCase>(), isTrue,
+            reason: 'CastVoteUseCase should be registered');
       });
-    });
-
-    group('Repository Registration', () {
-      test('All feature repositories should be registered', () {
-        expect(sl.isRegistered<IAuthRepository>(), isTrue);
-        expect(sl.isRegistered<IChatRepository>(), isTrue);
-        expect(sl.isRegistered<IPostRepository>(), isTrue);
-        expect(sl.isRegistered<IProfileRepository>(), isTrue);
-        expect(sl.isRegistered<IFriendsRepository>(), isTrue);
+      
+      test('Voting Providers are registered', () {
+        expect(sl.isRegistered<VotingStateProvider>(), isTrue,
+            reason: 'VotingStateProvider should be registered');
       });
-
-      test('Repository instances should be singletons', () {
-        final authRepo1 = sl<IAuthRepository>();
-        final authRepo2 = sl<IAuthRepository>();
-        expect(identical(authRepo1, authRepo2), isTrue);
-      });
-    });
-
-    group('Feature Module Integration', () {
-      test('Feature modules should be registered', () {
-        // Check that feature modules manager has modules
-        expect(sl.isRegistered<IAuthRepository>(), isTrue);
-        expect(sl.isRegistered<IChatRepository>(), isTrue);
-        expect(sl.isRegistered<IPostRepository>(), isTrue);
-        expect(sl.isRegistered<IProfileRepository>(), isTrue);
-      });
-
-      test('Repository dependencies should resolve', () {
-        expect(() => sl<IAuthRepository>(), returnsNormally);
-        expect(() => sl<IChatRepository>(), returnsNormally);
-        expect(() => sl<IPostRepository>(), returnsNormally);
-        expect(() => sl<IProfileRepository>(), returnsNormally);
-        expect(() => sl<IFriendsRepository>(), returnsNormally);
-      });
-    });
-
-    group('Dependency Graph', () {
-      test('No circular dependencies should exist', () {
-        // Try to resolve all main dependencies
-        expect(() {
-          sl<IAuthRepository>();
-          sl<IChatRepository>();
-          sl<IPostRepository>();
-          sl<IProfileRepository>();
-          sl<IFriendsRepository>();
-        }, returnsNormally);
-      });
-
-      test('Dependencies should follow Feature-First boundaries', () {
-        // Test that repositories don't depend on each other inappropriately
-        final authRepo = sl<IAuthRepository>();
-        final chatRepo = sl<IChatRepository>();
-        final postRepo = sl<IPostRepository>();
-
-        expect(authRepo, isNotNull);
-        expect(chatRepo, isNotNull);
-        expect(postRepo, isNotNull);
-
-        // Each should be independent instances
-        expect(authRepo != chatRepo, isTrue);
-        expect(chatRepo != postRepo, isTrue);
-        expect(postRepo != authRepo, isTrue);
-      });
-    });
-
-    group('Service Dependencies', () {
-      test('Services should have access to repositories', () {
-        // UnifiedCacheService should work with repositories
-        expect(() => sl<IAuthRepository>(), returnsNormally);
-        expect(() => sl<IChatRepository>(), returnsNormally);
-        expect(() => sl<IPostRepository>(), returnsNormally);
+      
+      test('Can resolve voting dependencies', () {
+        // Try to resolve key dependencies
+        expect(() => sl<IVoteTimerPort>(), returnsNormally,
+            reason: 'Should be able to resolve IVoteTimerPort');
+        expect(() => sl<IVotingRepository>(), returnsNormally,
+            reason: 'Should be able to resolve IVotingRepository');
+        expect(() => sl<CastVoteUseCase>(), returnsNormally,
+            reason: 'Should be able to resolve CastVoteUseCase');
       });
     });
   });

@@ -279,4 +279,40 @@ class VoteTimerService extends ChangeNotifier {
 
   /// 현재 활성 Stream 수 (디버깅용)
   int get activeStreamCount => _streamControllers.length;
+
+  /// 타이머 시작 (VoteStateAdapter 호환용)
+  /// 
+  /// VoteStateAdapter에서 사용하기 위한 인터페이스 메서드
+  void startTimer({required String postId, required DateTime voteEndTime}) {
+    // 기존 타이머가 있으면 정리
+    stopTimer(postId);
+    
+    // 새 타이머 스트림 생성
+    _createTimerStream(postId, voteEndTime);
+    
+    if (kDebugMode) {
+      print('[VoteTimerService] Timer started for postId: $postId until $voteEndTime');
+    }
+  }
+
+  /// 타이머 중지 (VoteStateAdapter 호환용)
+  /// 
+  /// VoteStateAdapter에서 사용하기 위한 인터페이스 메서드
+  void stopTimer(String postId) {
+    // Timer 정리
+    _timers[postId]?.cancel();
+    _timers.remove(postId);
+    
+    // Stream Controller 정리
+    _streamControllers[postId]?.close();
+    _streamControllers.remove(postId);
+    
+    // 캐시 정리
+    _lastRemainingTimes.remove(postId);
+    _listenerCounts.remove(postId);
+    
+    if (kDebugMode) {
+      print('[VoteTimerService] Timer stopped for postId: $postId');
+    }
+  }
 }

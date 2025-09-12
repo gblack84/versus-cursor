@@ -7,6 +7,9 @@ import 'package:get_it/get_it.dart';
 import '/features/voting/domain/repositories/i_voting_repository.dart';
 import '/features/posts/data/adapters/posts_data_source_impl.dart';
 
+// Voting Feature DI Module
+import '/features/voting/di/voting_di_module.dart';
+
 // Auth Feature DI
 import '/features/auth/domain/services/i_auth_service.dart';
 import '/features/auth/data/adapters/auth_service_impl.dart';
@@ -40,6 +43,13 @@ import '/features/notifications/data/datasources/cross/mock_chat_datasource.dart
 import '/features/notifications/data/mappers/notification_mapper.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+// Posts Feature - VoteTimerService
+import '/features/posts/data/adapters/vote/vote_timer_service.dart';
+
+// Voting Feature - Port and Adapter
+import '/features/voting/domain/ports/i_vote_timer_port.dart';
+import '/features/voting/data/adapters/vote_timer_adapter.dart';
 
 final getIt = GetIt.instance;
 
@@ -155,6 +165,17 @@ Future<void> setupDependencyInjection() async {
       postDatasource: getIt<IPostDatasource>(),
     ),
   );
+
+  // ===== Voting Feature DI =====
+  
+  // Register VoteTimerPort adapter BEFORE the voting module
+  // This wraps the VoteTimerService from posts feature to avoid cross-feature dependency
+  getIt.registerLazySingleton<IVoteTimerPort>(
+    () => VoteTimerAdapter(VoteTimerService()),
+  );
+  
+  // Register all Voting feature dependencies
+  registerVotingModule(getIt);
 
   // Add more dependency registrations here as needed
 }

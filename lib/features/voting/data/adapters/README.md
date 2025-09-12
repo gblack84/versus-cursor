@@ -1,37 +1,81 @@
-# 🛠️ /lib/features/voting/data/services
+# 🛠️ /lib/features/voting/data/adapters
 
-> Feature-First Architecture - Voting 서비스 계층
+> Feature-First Architecture - Voting 어댑터 계층
 
 ## 📋 개요
 
-투표 기능의 **Service Layer**를 담당하는 디렉토리입니다. 비즈니스 로직 구현, 실시간 동기화, 타이머 관리, 알림 조정 등 핵심 투표 기능을 제공합니다.
+투표 기능의 **Adapter Layer**를 담당하는 디렉토리입니다. 레거시 모델과 Clean Architecture 도메인 모델 간의 변환, 외부 서비스 통합, 데이터 변환 등을 담당합니다.
 
 ### 🎯 목적
-- **비즈니스 로직**: 투표 관련 핵심 비즈니스 로직 구현
-- **실시간 동기화**: Firebase Realtime 통합
-- **타이머 관리**: 10분 투표 타이머 시스템
-- **상태 조정**: 복잡한 투표 상태 관리
+- **모델 변환**: 레거시 Firestore 모델과 Clean Architecture 도메인 모델 간의 안전한 변환
+- **외부 서비스 통합**: Firebase Functions, 타이머 서비스, 알림 서비스 등의 어댑터
+- **데이터 적응**: 다양한 데이터 형식 간의 안전한 변환
+- **Null 안전성**: 레거시 nullable 필드를 non-nullable 도메인 모델로 변환
 
 ## 🏗️ 디렉토리 구조
 
 ```
-services/
-├── vote_service.dart                 # 투표 CRUD 서비스
-├── vote_timer_service.dart           # 투표 타이머 관리
-├── vote_status_service.dart          # 투표 상태 관리
-├── vote_state_coordinator.dart       # 투표 상태 조정자
-├── notification_service.dart         # 알림 서비스
-├── global_notification_manager.dart  # 전역 알림 관리
-├── target_audience_service.dart      # 타겟 오디언스 서비스
-├── vote_analytics_service.dart       # 투표 분석 서비스
-└── vote_helper_service.dart          # 투표 헬퍼 유틸리티
+adapters/
+├── votecounts_adapter.dart           # 투표 수 모델 변환 어댑터
+├── vote_message_helper.dart          # 투표 메시지 헬퍼
+├── vote_service_impl.dart            # 투표 서비스 구현체
+├── notification_service.dart         # 알림 서비스 어댑터
+├── global_notification_manager.dart  # 전역 알림 관리 어댑터
+└── README.md                         # 어댑터 계층 문서
 ```
 
-## 📂 주요 서비스 구현
+## 📂 주요 어댑터 구현
+
+### VoteCountsAdapter
+
+**역할**: 레거시 VotecountsModel과 Clean Architecture VoteCounts 간 변환
+
+**주요 기능**:
+- 레거시 Firestore 모델(VotecountsModel) ↔ Clean Architecture 도메인 모델(VoteCounts) 양방향 변환
+- Null 안전성 처리: nullable option1/option2 → non-nullable votesA/votesB
+- 자동 totalVotes 계산 (votesA + votesB)
+- 타입 안전성: 다양한 데이터 타입 안전한 변환
+- 배치 변환: 리스트 단위 변환 지원
+
+**데이터 매핑**:
+```dart
+// Legacy → Clean Architecture
+VotecountsModel {          VoteCounts {
+  option1: int? (nullable)    votesA: int (non-nullable)
+  option2: int? (nullable) →  votesB: int (non-nullable)  
+}                            totalVotes: int (calculated)
+                           }
+```
+
+**주요 메서드**:
+- `fromFirestore()`: VotecountsModel → VoteCounts 변환
+- `toFirestore()`: VoteCounts → Map<String, dynamic> 변환
+- `fromMap()`: Map 데이터 직접 변환 (타입 안전성 보장)
+- `fromFirestoreList()`: 배치 변환 (List<VotecountsModel> → List<VoteCounts>)
+- `validateConversion()`: 변환 결과 검증
+- `createEmpty()`: 빈 도메인 모델 생성
+
+**Null 안전성 처리**:
+- option1/option2가 null인 경우 → 0으로 처리
+- 다양한 타입(int, double, String, null) 안전한 변환
+- `_safeInt()` 헬퍼로 타입 캐스팅 보장
+
+**사용 예제**:
+```dart
+// Legacy → Clean 변환
+final votecountsModel = // ... from Firestore
+final cleanVoteCounts = VoteCountsAdapter.fromFirestore(votecountsModel);
+print('A: ${cleanVoteCounts.votesA}, B: ${cleanVoteCounts.votesB}');
+
+// Clean → Firestore 변환
+const voteCounts = VoteCounts(votesA: 25, votesB: 15, totalVotes: 40);
+final firestoreData = VoteCountsAdapter.toFirestore(voteCounts);
+// 결과: {'option1': 25, 'option2': 15}
+```
 
 ### VoteService
 
-**역할**: 투표 CRUD 핵심 서비스
+**역할**: 투표 서비스 구현체
 
 **주요 기능**:
 - 투표 생성 및 초기화
@@ -175,18 +219,25 @@ graph TD
 ## ✅ 체크리스트
 
 ### 구현 완료
-- [x] VoteService - 투표 CRUD
-- [x] VoteTimerService - 타이머 관리
-- [x] VoteStatusService - 상태 관리
-- [x] VoteStateCoordinator - 상태 조정
-- [x] NotificationService - 알림 서비스
-- [x] GlobalNotificationManager - 전역 알림
+- [x] **VoteCountsAdapter** - 투표 수 모델 변환 어댑터
+  - [x] 레거시 ↔ Clean Architecture 양방향 변환
+  - [x] Null 안전성 처리
+  - [x] 타입 안전성 보장
+  - [x] 배치 변환 지원
+  - [x] 변환 검증 메서드
+  - [x] 편의 메서드 (createEmpty, createEmptyFirestore)
+  - [x] 포괄적인 테스트 케이스
+  - [x] 사용법 예제 문서
+- [x] VoteMessageHelper - 투표 메시지 헬퍼
+- [x] VoteServiceImpl - 투표 서비스 구현체
+- [x] NotificationService - 알림 서비스 어댑터
+- [x] GlobalNotificationManager - 전역 알림 관리 어댑터
 
 ### 구현 예정
-- [ ] VoteAnalyticsService - 투표 분석
-- [ ] VoteHelperService - 헬퍼 유틸리티
-- [ ] TargetAudienceService 고도화
-- [ ] 실시간 동기화 최적화
+- [ ] PostsModelAdapter 통합 (투표 관련 필드)
+- [ ] VoteMetricsAdapter - 투표 지표 변환
+- [ ] VoteHistoryAdapter - 투표 이력 변환
+- [ ] BatchVoteAdapter - 대량 투표 처리 어댑터
 
 ## 📚 참고 자료
 

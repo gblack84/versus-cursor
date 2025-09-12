@@ -45,7 +45,7 @@ extensibility:
 #### 1.1 역방향 의존성 제거
 ```dart
 // ❌ 현재: Services가 Features 의존
-import '/features/posts/domain/usecases/media/aspect_ratio_analyzer.dart';
+import '/core/utils/media/aspect_ratio_analyzer.dart';
 
 // ✅ 개선: 인터페이스를 Services에 정의
 // lib/services/ui/interfaces/layout_analyzer.dart

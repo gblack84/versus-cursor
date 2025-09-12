@@ -6,6 +6,7 @@ import '../../domain/usecases/initialize_notifications_use_case.dart';
 import '../../domain/usecases/start_notification_listening_use_case.dart';
 import '../../domain/usecases/stop_notification_listening_use_case.dart';
 import '/features/voting/presentation/managers/vote_ui_manager.dart';
+import '/features/voting/domain/models/vote_notification.dart' as voting;
 
 /// 알림 시스템 코디네이터 (Clean Architecture)
 ///
@@ -148,8 +149,31 @@ class NotificationCoordinator {
       voteEndTime: DateTime.now().add(const Duration(minutes: 10)),
     );
 
+    // Convert domain notification to voting notification
+    final votingNotification = voting.VoteNotification(
+      id: testNotification.id,
+      postId: testNotification.postId,
+      userId: 'test_user', // TODO: Get actual user ID
+      type: 'vote_request',
+      data: {
+        'optionATitle': testNotification.voteOptions.optionATitle,
+        'optionBTitle': testNotification.voteOptions.optionBTitle,
+        'optionAImageUrl': testNotification.voteOptions.optionAImageUrls.isNotEmpty 
+            ? testNotification.voteOptions.optionAImageUrls.first 
+            : null,
+        'optionBImageUrl': testNotification.voteOptions.optionBImageUrls.isNotEmpty 
+            ? testNotification.voteOptions.optionBImageUrls.first 
+            : null,
+        'optionAImageUrls': testNotification.voteOptions.optionAImageUrls,
+        'optionBImageUrls': testNotification.voteOptions.optionBImageUrls,
+        'voteStartTime': testNotification.voteStartTime?.toIso8601String(),
+        'voteEndTime': testNotification.voteEndTime?.toIso8601String(),
+      },
+      createdAt: DateTime.now(),
+    );
+
     await VoteUIManager.instance.showVotingNotification(
-      notification: testNotification,
+      notification: votingNotification,
       context: context,
       question: title,
       optionA: optionA,

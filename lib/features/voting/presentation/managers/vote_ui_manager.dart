@@ -1,25 +1,32 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
 import '/core/types/layout_type.dart';
 import '/core/domain/ports/i_user_service.dart';
-import '/features/notifications/domain/models/notification.dart' as domain;
+import '/features/voting/domain/models/vote_notification.dart';
 import '/features/voting/presentation/dialogs/voting_dialog.dart';
 import '/features/voting/domain/models/versus_box_size_data.dart';
 import '/features/voting/domain/ports/i_vote_ui_delegate.dart';
 import '/core_exports.dart';
-import '/features/posts/presentation/utils/debug_helper.dart';
+import '/core/utils/debug_helper.dart';
 
 /// 투표 UI 관리자
 ///
 /// Presentation 레이어에서 투표 UI 표시를 담당합니다.
 /// IVoteUIDelegate 인터페이스를 구현하여 비즈니스 로직과 분리합니다.
 class VoteUIManager implements IVoteUIDelegate {
-  static final VoteUIManager _instance =
-      VoteUIManager._internal();
-  static VoteUIManager get instance => _instance;
+  static VoteUIManager? _instance;
+  static VoteUIManager get instance {
+    _instance ??= VoteUIManager._internal(null);
+    return _instance!;
+  }
+  
+  /// Factory constructor for DI
+  factory VoteUIManager({IUserService? userService}) {
+    _instance ??= VoteUIManager._internal(userService);
+    return _instance!;
+  }
 
-  VoteUIManager._internal();
+  VoteUIManager._internal(this._userService);
 
   /// 현재 표시 중인 다이얼로그
   bool _isShowingDialog = false;
@@ -27,10 +34,14 @@ class VoteUIManager implements IVoteUIDelegate {
   /// 컨텍스트 (Optional - Coordinator에서 설정)
   BuildContext? _context;
 
-  /// User Service (lazy initialized)
-  IUserService? _userService;
-  IUserService get userService =>
-      _userService ??= GetIt.instance<IUserService>();
+  /// User Service (injected through constructor)
+  final IUserService? _userService;
+  IUserService get userService {
+    if (_userService == null) {
+      throw StateError('UserService not initialized. Please inject it through constructor.');
+    }
+    return _userService!;
+  }
 
   /// 컨텍스트 설정
   void setContext(BuildContext context) {
@@ -75,7 +86,7 @@ class VoteUIManager implements IVoteUIDelegate {
 
   @override
   Future<void> showVotingNotification({
-    required domain.Notification notification,
+    required VoteNotification notification,
     required BuildContext context,
     required String question,
     required String optionA,
@@ -121,7 +132,7 @@ class VoteUIManager implements IVoteUIDelegate {
 
   /// 투표 다이얼로그 표시 (내부 메서드)
   Future<void> _showVotingDialog({
-    required domain.Notification notification,
+    required VoteNotification notification,
     required BuildContext context,
     required String question,
     required String optionA,

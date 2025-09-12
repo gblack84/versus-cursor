@@ -1,5 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/votecounts_model.dart';
+import '../models/vote_counts_model.dart';
 import '../models/vote_expansion_requests_model.dart';
 import '../models/rankings_model.dart';
 import '../models/weights_model.dart';
@@ -8,50 +7,56 @@ import '../models/weights_model.dart';
 /// This interface defines the contract for voting and ranking functionality
 abstract class IVotingRepository {
   // Vote counts queries
-  Stream<List<VotecountsModel>> queryVotecounts({
-    Query Function(Query)? queryBuilder,
+  Stream<List<VoteCounts>> queryVotecounts({
+    dynamic queryBuilder,
     int limit = -1,
     bool singleRecord = false,
   });
 
   Future<int> queryVotecountsCount({
-    Query Function(Query)? queryBuilder,
+    dynamic queryBuilder,
     int limit = -1,
+  });
+
+  Future<List<VoteCounts>> queryVotecountsOnce({
+    dynamic queryBuilder,
+    int limit = -1,
+    bool singleRecord = false,
   });
 
   // Vote expansion requests queries
   Stream<List<VoteExpansionRequestsModel>> queryVoteExpansionRequests({
-    Query Function(Query)? queryBuilder,
+    dynamic queryBuilder,
     int limit = -1,
     bool singleRecord = false,
   });
 
   Future<int> queryVoteExpansionRequestsCount({
-    Query Function(Query)? queryBuilder,
+    dynamic queryBuilder,
     int limit = -1,
   });
 
   // Rankings queries
   Stream<List<RankingsModel>> queryRankings({
-    Query Function(Query)? queryBuilder,
+    dynamic queryBuilder,
     int limit = -1,
     bool singleRecord = false,
   });
 
   Future<int> queryRankingsCount({
-    Query Function(Query)? queryBuilder,
+    dynamic queryBuilder,
     int limit = -1,
   });
 
   // Weights queries
   Stream<List<WeightsModel>> queryWeights({
-    Query Function(Query)? queryBuilder,
+    dynamic queryBuilder,
     int limit = -1,
     bool singleRecord = false,
   });
 
   Future<int> queryWeightsCount({
-    Query Function(Query)? queryBuilder,
+    dynamic queryBuilder,
     int limit = -1,
   });
 
@@ -67,7 +72,13 @@ abstract class IVotingRepository {
     required String userId,
   });
 
-  Future<VotecountsModel?> getVoteCounts(String postId);
+  Future<VoteCounts?> getVoteCounts(String postId);
+  
+  // Check user vote
+  Future<dynamic> checkUserVote({
+    required String postId,
+    required String userId,
+  });
 
   // Ranking operations
   Future<void> updateRankings();
@@ -82,6 +93,9 @@ abstract class IVotingRepository {
 
   Future<void> approveVoteExpansion(String requestId);
   Future<void> rejectVoteExpansion(String requestId);
+  
+  // User vote history
+  Future<List<Map<String, dynamic>>> getUserVoteHistory(String userId);
 }
 
 /// Domain interface for accessing post-related data from voting feature

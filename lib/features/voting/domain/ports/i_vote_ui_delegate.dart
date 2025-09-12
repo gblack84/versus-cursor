@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '/features/notifications/domain/models/notification.dart' as domain;
+import '/features/voting/domain/models/vote_notification.dart';
 import '/features/voting/domain/models/versus_box_size_data.dart';
 
 /// 투표 UI 처리를 위한 델리게이트 인터페이스
@@ -13,7 +13,7 @@ abstract class IVoteUIDelegate {
   /// [onVote] 투표 선택 시 콜백
   /// [onDismiss] 알림 닫기 시 콜백
   Future<void> showVotingNotification({
-    required domain.Notification notification,
+    required VoteNotification notification,
     required BuildContext context,
     required String question,
     required String optionA,

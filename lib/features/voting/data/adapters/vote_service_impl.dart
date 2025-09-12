@@ -1,11 +1,17 @@
 import '../../domain/ports/i_vote_service.dart';
-import '../../../posts/data/adapters/vote/vote_status_service.dart';
+import '../../domain/ports/i_vote_status_service.dart';
 
 /// Vote service implementation for voting feature
 ///
 /// This adapter wraps the VoteStatusService to provide
 /// the IVoteService interface implementation
 class VoteServiceImpl implements IVoteService {
+  final IVoteStatusService _voteStatusService;
+  
+  VoteServiceImpl({
+    required IVoteStatusService voteStatusService,
+  }) : _voteStatusService = voteStatusService;
+  
   @override
   Future<void> submitVote({
     required String postId,
@@ -15,8 +21,8 @@ class VoteServiceImpl implements IVoteService {
     String? chatId,
     Function(String)? onError,
   }) async {
-    // Delegate to the actual vote status service
-    await VoteStatusService.submitVote(
+    // Delegate to the actual vote status service through interface
+    await _voteStatusService.submitVote(
       postId: postId,
       userId: userId,
       choice: choice,

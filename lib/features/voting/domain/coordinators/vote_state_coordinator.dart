@@ -1,27 +1,35 @@
 import 'package:flutter/foundation.dart';
 import 'package:rxdart/rxdart.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '/features/posts/data/adapters/vote/vote_timer_service.dart';
-import '/features/voting/domain/models/vote_state.dart';
-import '/features/auth/data/adapters/auth_util.dart';
+import '../ports/i_vote_state_port.dart';
+import '../models/vote_state.dart';
 
 /// 투표 상태 통합 관리 서비스
 ///
-/// Firebase, 타이머, 알림 상태를 통합하여 단일 진실의 소스(Single Source of Truth)를 제공합니다.
+/// Port-Adapter 패턴을 통해 외부 의존성을 추상화하고
+/// 단일 진실의 소스(Single Source of Truth)를 제공합니다.
 class VoteStateCoordinator {
-  static final VoteStateCoordinator _instance =
-      VoteStateCoordinator._internal();
-  static VoteStateCoordinator get instance => _instance;
+  static VoteStateCoordinator? _instance;
+  static VoteStateCoordinator get instance {
+    _instance ??= VoteStateCoordinator._internal(
+      port: null, // DI에서 주입받아야 함
+    );
+    return _instance!;
+  }
 
-  VoteStateCoordinator._internal();
-
-  final _voteTimerService = VoteTimerService();
+  final IVoteStatePort? _port;
   final _stateCache = <String, BehaviorSubject<VoteStateData>>{};
-  final _subscriptions = <String, dynamic>{};
+  final _subscriptions = <String, Stream<VoteStateData>>{};
+
+  VoteStateCoordinator._internal({IVoteStatePort? port}) : _port = port;
+
+  /// DI를 통한 초기화
+  static void initialize(IVoteStatePort port) {
+    _instance = VoteStateCoordinator._internal(port: port);
+  }
 
   /// 통합 상태 Stream 제공
   ///
-  /// Firebase 실시간 데이터, 타이머 상태, 사용자 투표 정보를 결합하여
+  /// Port를 통해 추상화된 데이터 소스들을 결합하여
   /// 통합된 투표 상태를 제공합니다.
   Stream<VoteStateData> getVoteStateStream({
     required String postId,
@@ -29,53 +37,87 @@ class VoteStateCoordinator {
     String? initialStatus,
     Map<String, dynamic>? userVotes,
   }) {
+    // Port가 없으면 에러 스트림 반환
+    if (_port == null) {
+      if (kDebugMode) {
+        print('[VoteStateCoordinator] Port not initialized');
+      }
+      return Stream.error('VoteStateCoordinator not properly initialized');
+    }
+
     // 캐시 확인
     if (_stateCache.containsKey(postId)) {
       return _stateCache[postId]!.stream;
     }
 
     // 새 BehaviorSubject 생성 (마지막 값 캐싱)
-    final subject = BehaviorSubject<VoteStateData>();
+    final subject = _port!.getOrCreateStateStream(postId);
     _stateCache[postId] = subject;
 
     // 현재 사용자 ID
-    final currentUserId = currentUserUid;
+    final currentUserId = _port!.getCurrentUserId();
 
-    // 3개 Stream 결합
-    final subscription = CombineLatestStream.combine3<DocumentSnapshot?,
-        Duration?, String?, VoteStateData>(
-      // 1. Firebase 실시간 상태
-      FirebaseFirestore.instance
-          .collection('posts')
-          .doc(postId)
-          .snapshots()
-          .handleError((error) {
-        if (kDebugMode) {
-          print('[VoteStateCoordinator] Firebase error: $error');
+    // 투표 상태 모니터링 시작
+    _port!.startMonitoringVoteState(
+      postId: postId,
+      voteEndTime: voteEndTime,
+    );
+
+    // Port에서 업데이트 스트림 구독
+    final voteUpdatesStream = _port!.streamVoteUpdates(postId);
+    
+    // 스트림 결합 및 상태 계산
+    final combinedStream = voteUpdatesStream.asyncMap((voteData) async {
+      // 사용자 투표 여부 확인
+      bool hasUserVoted = false;
+      String? userChoice;
+      
+      if (currentUserId != null) {
+        // 투표 데이터에서 사용자 투표 정보 확인
+        final votedUsersA = List<String>.from(voteData['votedUserIDsA'] ?? []);
+        final votedUsersB = List<String>.from(voteData['votedUserIDsB'] ?? []);
+        
+        if (votedUsersA.contains(currentUserId)) {
+          hasUserVoted = true;
+          userChoice = 'A';
+        } else if (votedUsersB.contains(currentUserId)) {
+          hasUserVoted = true;
+          userChoice = 'B';
         }
-        return null;
-      }),
-
-      // 2. 타이머 상태 (voteEndTime이 있을 때만)
-      voteEndTime != null
-          ? _voteTimerService.getRemainingTimeStream(postId, voteEndTime)
-          : Stream.value(null),
-
-      // 3. 초기 상태 (한 번만 방출)
-      Stream.value(initialStatus),
-
-      // 통합 상태 계산
-      (postSnapshot, remainingTime, initStatus) {
-        return _calculateUnifiedState(
-          postSnapshot: postSnapshot,
-          remainingTime: remainingTime,
-          initialStatus: initStatus,
-          voteEndTime: voteEndTime,
-          userVotes: userVotes,
-          currentUserId: currentUserId,
-        );
-      },
-    ).listen(
+      }
+      
+      // 타이머 상태 확인
+      final isTimerExpired = voteEndTime != null && 
+          DateTime.now().isAfter(voteEndTime);
+      
+      // 투표 상태 결정
+      VoteState state;
+      if (voteData['voteCompleted'] == true || isTimerExpired) {
+        state = VoteState.completed;
+      } else if (voteData['voteStatus'] == 'expired') {
+        state = VoteState.expired;
+      } else if (voteData['voteStatus'] == 'votingRequest') {
+        state = VoteState.votingRequest;
+      } else {
+        state = VoteState.inProgress;
+      }
+      
+      return VoteStateData(
+        state: state,
+        hasUserVoted: hasUserVoted,
+        userChoice: userChoice,
+        voteEndTime: voteEndTime,
+        isTimerExpired: isTimerExpired,
+        remainingTime: isTimerExpired ? Duration.zero : null,
+        voteResults: _extractVoteResults(voteData),
+      );
+    });
+    
+    // 스트림 구독 저장
+    _subscriptions[postId] = combinedStream;
+    
+    // 상태 업데이트 리스닝
+    combinedStream.listen(
       (stateData) {
         if (!subject.isClosed) {
           subject.add(stateData);
@@ -91,113 +133,10 @@ class VoteStateCoordinator {
       },
     );
 
-    // 구독 저장 (나중에 정리를 위해)
-    _subscriptions[postId] = subscription;
-
     return subject.stream;
   }
 
-  /// 통합 상태 계산 로직
-  VoteStateData _calculateUnifiedState({
-    DocumentSnapshot? postSnapshot,
-    Duration? remainingTime,
-    String? initialStatus,
-    DateTime? voteEndTime,
-    Map<String, dynamic>? userVotes,
-    String? currentUserId,
-  }) {
-    // 1. 타이머 종료 체크 (최우선)
-    final isTimerExpired =
-        remainingTime != null && remainingTime.inSeconds <= 0;
-
-    // Firebase 데이터 파싱
-    Map<String, dynamic>? firebaseData;
-    if (postSnapshot != null && postSnapshot.exists) {
-      firebaseData = postSnapshot.data() as Map<String, dynamic>?;
-    }
-
-    // 사용자 투표 정보 확인
-    bool hasUserVoted = false;
-    String? userChoice;
-
-    if (currentUserId != null) {
-      // Firebase 데이터에서 확인
-      if (firebaseData != null) {
-        final votedUsersA =
-            List<String>.from(firebaseData['votedUserIDsA'] ?? []);
-        final votedUsersB =
-            List<String>.from(firebaseData['votedUserIDsB'] ?? []);
-
-        if (votedUsersA.contains(currentUserId)) {
-          hasUserVoted = true;
-          userChoice = 'A';
-        } else if (votedUsersB.contains(currentUserId)) {
-          hasUserVoted = true;
-          userChoice = 'B';
-        }
-      }
-
-      // userVotes 매개변수에서도 확인
-      if (!hasUserVoted && userVotes != null) {
-        final userVote = userVotes[currentUserId] as Map<String, dynamic>?;
-        if (userVote != null) {
-          hasUserVoted = true;
-          userChoice = userVote['option'] as String?;
-        }
-      }
-    }
-
-    // 타이머가 만료되었으면 즉시 completed 상태로
-    if (isTimerExpired) {
-      // Firebase 데이터가 아직 업데이트되지 않았어도 completed로 표시
-      return VoteStateData(
-        state: VoteState.completed,
-        remainingTime: Duration.zero,
-        isTimerExpired: true,
-        voteEndTime: voteEndTime,
-        hasUserVoted: hasUserVoted,
-        userChoice: userChoice,
-        voteResults: _extractVoteResults(firebaseData),
-      );
-    }
-
-    // 2. Firebase 데이터 확인
-    if (firebaseData != null) {
-      // voteCompleted 필드 확인
-      if (firebaseData['voteCompleted'] == true) {
-        return VoteStateData(
-          state: VoteState.completed,
-          remainingTime: Duration.zero,
-          voteResults: _extractVoteResults(firebaseData),
-          voteEndTime: voteEndTime,
-          hasUserVoted: hasUserVoted,
-          userChoice: userChoice,
-        );
-      }
-
-      // voteStatus 필드 확인
-      final voteStatus = firebaseData['voteStatus'] ?? initialStatus;
-
-      return VoteStateData(
-        state: _mapStatusToState(voteStatus),
-        remainingTime: remainingTime,
-        voteEndTime: voteEndTime,
-        hasUserVoted: hasUserVoted,
-        userChoice: userChoice,
-      );
-    }
-
-    // 3. 초기 상태 사용
-    return VoteStateData(
-      state: _mapStatusToState(initialStatus ?? 'inProgress'),
-      remainingTime: remainingTime,
-      voteEndTime: voteEndTime,
-      hasUserVoted: hasUserVoted,
-      userChoice: userChoice,
-    );
-  }
-
-  /// Firebase 데이터에서 투표 결과 추출
+  /// 투표 데이터에서 결과 추출
   Map<String, dynamic> _extractVoteResults(Map<String, dynamic>? data) {
     if (data == null) return {};
 
@@ -242,8 +181,8 @@ class VoteStateCoordinator {
 
   /// 특정 투표의 리소스 정리
   void dispose(String postId) {
-    // 구독 취소
-    _subscriptions[postId]?.cancel();
+    // 모니터링 중지
+    _port?.stopMonitoringVoteState(postId);
     _subscriptions.remove(postId);
 
     // Subject 닫기
@@ -257,9 +196,9 @@ class VoteStateCoordinator {
 
   /// 전체 캐시 정리
   void disposeAll() {
-    // 모든 구독 취소
-    for (final subscription in _subscriptions.values) {
-      subscription?.cancel();
+    // 모든 모니터링 중지
+    for (final postId in _subscriptions.keys) {
+      _port?.stopMonitoringVoteState(postId);
     }
     _subscriptions.clear();
 
@@ -282,5 +221,43 @@ class VoteStateCoordinator {
   /// 캐시 상태 확인
   bool hasCache(String postId) {
     return _stateCache.containsKey(postId);
+  }
+
+  /// 투표 제출
+  Future<void> submitVote({
+    required String postId,
+    required String voteOption,
+  }) async {
+    if (_port == null) {
+      throw StateError('VoteStateCoordinator not properly initialized');
+    }
+    
+    final userId = _port!.getCurrentUserId();
+    if (userId == null) {
+      throw StateError('User not authenticated');
+    }
+    
+    await _port!.submitVote(
+      postId: postId,
+      userId: userId,
+      voteOption: voteOption,
+    );
+  }
+
+  /// 사용자 투표 여부 확인
+  Future<bool> hasUserVoted(String postId) async {
+    if (_port == null) {
+      return false;
+    }
+    
+    final userId = _port!.getCurrentUserId();
+    if (userId == null) {
+      return false;
+    }
+    
+    return await _port!.hasUserVoted(
+      postId: postId,
+      userId: userId,
+    );
   }
 }

@@ -1,7 +1,8 @@
 import 'dart:async';
 import '/features/notifications/domain/models/notification.dart';
 import '/features/notifications/domain/value_objects/notification_filter.dart';
-import '/features/posts/domain/models/posts_model.dart';
+import '/features/notifications/domain/services/i_notification_service.dart';
+import '/core/interfaces/common/i_content_model.dart';
 import '../../domain/repositories/i_notification_repository.dart';
 import '../datasources/i_chat_datasource.dart';
 import '/core/utils/logger.dart';
@@ -10,7 +11,7 @@ import '/core/utils/logger.dart';
 ///
 /// Firebase Firestore의 notifications 컬렉션을 감시하여
 /// 새로운 투표 알림이 도착하면 UI에 표시합니다.
-class NotificationService {
+class NotificationService implements INotificationService {
   NotificationService({
     required INotificationRepository repository,
     IChatDatasource? chatDatasource,
@@ -110,7 +111,7 @@ class NotificationService {
     required String senderId,
     required String recipientId,
     required String postId,
-    required PostsModel post,
+    required IContentModel post,
   }) async {
     if (_chatDatasource == null) {
       Logger.warning('Chat datasource not available',
@@ -155,5 +156,81 @@ class NotificationService {
       Logger.error('AI 채팅 메시지 상태 업데이트 오류',
           error: e, tag: 'NotificationService');
     }
+  }
+
+  // ===== INotificationService 구현 =====
+
+  @override
+  Future<void> markAsRead(String notificationId) async {
+    try {
+      await _repository.markAsRead(notificationId);
+      Logger.debug('알림 읽음 처리: $notificationId', tag: 'NotificationService');
+    } catch (e) {
+      Logger.error('알림 읽음 처리 오류', error: e, tag: 'NotificationService');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> reshowNotification(String notificationId) async {
+    try {
+      await _repository.updateNotification(notificationId, {
+        'dismissed': false,
+        'reshownAt': DateTime.now(),
+      });
+      Logger.debug('알림 다시 표시: $notificationId', tag: 'NotificationService');
+    } catch (e) {
+      Logger.error('알림 다시 표시 오류', error: e, tag: 'NotificationService');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> deleteNotification(String notificationId) async {
+    try {
+      await _repository.deleteNotification(notificationId);
+      Logger.debug('알림 삭제: $notificationId', tag: 'NotificationService');
+    } catch (e) {
+      Logger.error('알림 삭제 오류', error: e, tag: 'NotificationService');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> markAllAsRead(String userId) async {
+    try {
+      await _repository.markAllAsRead(userId);
+      Logger.debug('모든 알림 읽음 처리: $userId', tag: 'NotificationService');
+    } catch (e) {
+      Logger.error('모든 알림 읽음 처리 오류', error: e, tag: 'NotificationService');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> cleanupExpiredNotifications(String userId) async {
+    try {
+      await _repository.cleanupExpiredNotifications(userId);
+      Logger.debug('만료된 알림 정리: $userId', tag: 'NotificationService');
+    } catch (e) {
+      Logger.error('만료된 알림 정리 오류', error: e, tag: 'NotificationService');
+      rethrow;
+    }
+  }
+
+  @override
+  void clearQueue() {
+    // 알림 큐 비우기 - 메모리에서만 제거
+    // 실제로는 GlobalNotificationManager에서 큐를 관리하므로
+    // 여기서는 스트림을 통해 빈 리스트를 전달합니다.
+    _notificationsStreamController.add([]);
+    Logger.debug('알림 큐 비움', tag: 'NotificationService');
+  }
+
+  @override
+  void dispose() {
+    stopListening();
+    _notificationsStreamController.close();
+    Logger.info('NotificationService 리소스 정리', tag: 'NotificationService');
   }
 }

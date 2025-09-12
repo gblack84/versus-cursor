@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
-import '/features/notifications/domain/models/notification.dart' as domain;
-import '/features/notifications/domain/models/notification_display_data.dart';
-import '/features/notifications/domain/handlers/i_notification_handler.dart';
+import '/core/domain/ports/i_notification_display_port.dart';
 import '../managers/vote_ui_manager.dart';
 import '/features/voting/domain/models/versus_box_size_data.dart';
 
-/// Implementation of INotificationHandler in the presentation layer
+/// Implementation of INotificationDisplayPort for the voting feature
 ///
-/// This class bridges the domain layer with the actual UI implementation,
-/// delegating UI operations to VoteUIManager while conforming
-/// to the domain interface.
-class VoteHandlerImpl implements INotificationHandler {
+/// This class implements the Port interface to handle notification display
+/// operations specific to voting. It delegates UI operations to VoteUIManager
+/// while maintaining clean architecture boundaries.
+class VoteHandlerImpl implements INotificationDisplayPort {
   final VoteUIManager _uiManager;
 
   VoteHandlerImpl({
@@ -24,32 +22,35 @@ class VoteHandlerImpl implements INotificationHandler {
 
   @override
   Future<void> showVotingNotification({
-    required domain.Notification notification,
+    required dynamic notification,
     required BuildContext context,
-    required NotificationDisplayData displayData,
+    required dynamic displayData,
     required Function(String) onVote,
     required Function(bool) onDismiss,
   }) async {
-    // Convert NotificationDisplayData to individual parameters for UIManager
+    // Extract properties from dynamic displayData
+    // This maintains compatibility while avoiding cross-feature dependencies
+    final data = displayData as Map<String, dynamic>;
+    
     await _uiManager.showVotingNotification(
       notification: notification,
       context: context,
-      question: displayData.question,
-      optionA: displayData.optionA,
-      optionB: displayData.optionB,
-      imageUrlA: displayData.imageUrlA,
-      imageUrlB: displayData.imageUrlB,
-      imageUrlsA: displayData.imageUrlsA,
-      imageUrlsB: displayData.imageUrlsB,
-      description: displayData.description,
-      authorName: displayData.authorName,
+      question: data['question'] ?? '',
+      optionA: data['optionA'] ?? '',
+      optionB: data['optionB'] ?? '',
+      imageUrlA: data['imageUrlA'],
+      imageUrlB: data['imageUrlB'],
+      imageUrlsA: data['imageUrlsA'] ?? [],
+      imageUrlsB: data['imageUrlsB'] ?? [],
+      description: data['description'],
+      authorName: data['authorName'],
       sizeData: createSizeDataFromAspectRatios(
         context: context,
-        aspectRatioA: displayData.aspectRatioA,
-        aspectRatioB: displayData.aspectRatioB,
-        layoutType: displayData.layoutType,
-        hasImageA: displayData.hasImageA,
-        hasImageB: displayData.hasImageB,
+        aspectRatioA: data['aspectRatioA'],
+        aspectRatioB: data['aspectRatioB'],
+        layoutType: data['layoutType'],
+        hasImageA: data['hasImageA'] ?? false,
+        hasImageB: data['hasImageB'] ?? false,
       ) as VersusBoxSizeData?,
       onVote: (selectedOption) async {
         await onVote(selectedOption);

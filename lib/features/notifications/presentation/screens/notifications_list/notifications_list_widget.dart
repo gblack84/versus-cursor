@@ -1,16 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:intl/intl.dart';
 import '/core/domain/ports/i_user_service.dart';
 import '/features/notifications/domain/models/notification.dart' as domain;
 import '/features/notifications/domain/models/notification.dart'
     show NotificationType;
-import '/features/notifications/domain/models/vote_notification.dart';
-import '/features/notifications/domain/models/system_notification.dart';
-import '/features/notifications/domain/models/social_notification.dart';
-import '/features/notifications/domain/usecases/get_user_notifications_use_case.dart';
 import '/features/notifications/domain/usecases/mark_notification_as_read_use_case.dart';
-import '/features/notifications/domain/repositories/i_notification_repository.dart';
 import '/core_exports.dart';
 
 class NotificationsListWidget extends StatefulWidget {
@@ -27,7 +21,6 @@ class NotificationsListWidget extends StatefulWidget {
 class _NotificationsListWidgetState extends State<NotificationsListWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
   late final INotificationRepository _notificationRepository;
-  late final GetUserNotificationsUseCase _getUserNotifications;
   late final MarkNotificationAsReadUseCase _markAsRead;
   late final IUserService _userService;
 
@@ -35,7 +28,6 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
   void initState() {
     super.initState();
     _notificationRepository = GetIt.instance<INotificationRepository>();
-    _getUserNotifications = GetIt.instance<GetUserNotificationsUseCase>();
     _markAsRead = GetIt.instance<MarkNotificationAsReadUseCase>();
     _userService = GetIt.instance<IUserService>();
   }
@@ -64,7 +56,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
         top: true,
         child: StreamBuilder<List<domain.Notification>>(
           stream: _notificationRepository.watchUserNotifications(
-            userId: _userService.currentUserId ?? '',
+            userId: _userService.currentUserId,
           ),
           builder: (context, snapshot) {
             // 로딩 중
@@ -248,8 +240,6 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
         return '게시물 완료';
       case NotificationType.achievementUnlocked:
         return '업적 달성';
-      default:
-        return '알림';
     }
   }
 
@@ -269,8 +259,6 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
         return Icons.check_circle;
       case NotificationType.achievementUnlocked:
         return Icons.emoji_events;
-      default:
-        return Icons.notifications;
     }
   }
 }

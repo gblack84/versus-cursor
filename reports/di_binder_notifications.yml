@@ -1,0 +1,34 @@
+feature: notifications
+port_interfaces:
+  - IVoteService (Core Interface)
+  - IPostService (Core Interface)
+adapter_implementations:
+  - CoreVoteServiceAdapter
+  - MockPostServiceAdapter
+dependencies:
+  - voting.IVoteService (from Voting Feature DI Module)
+  - IVoteStatusService (transitively via Voting Feature)
+mode: apply
+status: success
+changes:
+  - added: Core Interface binding for IVoteService using adapter pattern
+  - added: Core Interface binding for IPostService using mock implementation
+  - added: Import statements for core interfaces and adapters
+  - created: CoreVoteServiceAdapter (/features/notifications/data/adapters/)
+  - created: MockPostServiceAdapter (/features/notifications/data/adapters/)
+  - imports: 6 new imports added
+violations: []
+notes:
+  - VoteServiceImpl is registered by Voting Feature DI Module, not directly
+  - CoreVoteServiceAdapter bridges core.IVoteService with voting.IVoteService
+  - MockPostServiceAdapter provides temporary IPostService implementation
+  - Registration order is important: Voting module first, then Core adapters
+next_steps:
+  - Test NotificationCoordinator initialization
+  - Replace MockPostServiceAdapter when Posts feature provides IPostService implementation
+  - Consider implementing missing methods in CoreVoteServiceAdapter (getVoteStatus, hasUserVoted, getVoteCounts)
+architecture_notes:
+  - Clean separation between Core interfaces and Feature-specific implementations
+  - Adapter pattern prevents direct feature-to-feature dependencies
+  - Voting Feature DI Module handles IVoteStatusService dependencies internally
+  - Mock implementations allow notifications feature to work independently

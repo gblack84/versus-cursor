@@ -1,4 +1,4 @@
-import '/features/posts/domain/models/posts_model.dart';
+import '/core/interfaces/common/i_content_model.dart';
 
 /// Chat Feature와의 인터페이스
 ///
@@ -10,7 +10,7 @@ abstract class IChatDatasource {
     required String senderId,
     required String recipientId,
     required String postId,
-    required PostsModel post,
+    required IContentModel post,
   });
 
   /// AI 채팅 메시지의 투표 상태 업데이트

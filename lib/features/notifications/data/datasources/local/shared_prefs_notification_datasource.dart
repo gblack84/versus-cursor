@@ -52,7 +52,6 @@ class SharedPrefsNotificationDatasource
   Future<List<Map<String, dynamic>>> getCachedNotifications(
       String userId) async {
     final cacheKey = '$_cachePrefix$userId';
-    final timeKey = '$_cacheTimePrefix$userId';
 
     // 캐시 시간 확인
     final lastCacheTime = await getLastCacheTime(userId);
@@ -85,7 +84,6 @@ class SharedPrefsNotificationDatasource
     List<Map<String, dynamic>> notifications,
   ) async {
     final cacheKey = '$_cachePrefix$userId';
-    final timeKey = '$_cacheTimePrefix$userId';
 
     // 최대 크기 제한
     final limitedNotifications = notifications.take(_maxCacheSize).toList();

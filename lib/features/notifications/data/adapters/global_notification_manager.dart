@@ -3,15 +3,14 @@ import 'dart:async';
 import '../../domain/models/notification.dart' as domain;
 import '../../domain/models/vote_notification.dart' as domain;
 import '../../domain/handlers/i_notification_handler.dart';
-import '../../domain/repositories/i_notification_repository.dart';
 // Data layer imports
 import '../datasources/i_remote_notification_datasource.dart';
 import '../datasources/i_local_notification_datasource.dart';
-import '../services/notification_data_extractor.dart';
-import 'notification_service.dart';
+import 'notification_data_extractor.dart';
+import '../../domain/services/i_notification_service.dart';
 // Domain service interfaces (no cross-feature dependencies)
 import '/core/domain/ports/i_user_service.dart';
-import '/features/voting/domain/ports/i_vote_service.dart';
+import '/core/interfaces/features/i_vote_service.dart';
 import '/core/utils/logger.dart';
 
 /// 글로벌 알림 관리자 - 비즈니스 로직 전용
@@ -20,23 +19,20 @@ import '/core/utils/logger.dart';
 /// 알림 큐 관리, 데이터 처리, 비즈니스 로직만 담당합니다.
 class GlobalNotificationManager {
   final INotificationHandler _notificationHandler;
-  final INotificationRepository _notificationRepository;
   final IRemoteNotificationDatasource _remoteDatasource;
   final ILocalNotificationDatasource _localDatasource;
-  final NotificationService _notificationService;
+  final INotificationService _notificationService;
   final IUserService _userService;
   final IVoteService _voteService;
 
   GlobalNotificationManager({
     required INotificationHandler notificationHandler,
-    required INotificationRepository notificationRepository,
     required IRemoteNotificationDatasource remoteDatasource,
     required ILocalNotificationDatasource localDatasource,
-    required NotificationService notificationService,
+    required INotificationService notificationService,
     required IUserService userService,
     required IVoteService voteService,
   })  : _notificationHandler = notificationHandler,
-        _notificationRepository = notificationRepository,
         _remoteDatasource = remoteDatasource,
         _localDatasource = localDatasource,
         _notificationService = notificationService,
@@ -195,8 +191,9 @@ class GlobalNotificationManager {
         return;
       }
 
-      // Size data creation (optional)
-      final sizeData = _notificationHandler.createSizeDataFromAspectRatios(
+      // Size data creation (optional) - sizeData는 현재 사용되지 않음
+      // TODO: sizeData를 showVotingNotification에 전달하거나 제거 필요
+      _notificationHandler.createSizeDataFromAspectRatios(
         context: context,
         aspectRatioA: displayData.aspectRatioA,
         aspectRatioB: displayData.aspectRatioB,

@@ -62,6 +62,36 @@ abstract class IRemoteNotificationDatasource {
     required String userId,
     required String status,
   });
+
+  // ===== P1 추가 메서드 =====
+
+  /// Delete all notifications for a user
+  Future<void> deleteAllUserNotifications(String userId);
+
+  /// Delete notifications before a specific date
+  Future<void> deleteNotificationsBefore({
+    required String userId,
+    required DateTime before,
+  });
+
+  /// Delete expired notifications
+  Future<void> deleteExpiredNotifications(String userId);
+
+  /// Get all active user IDs
+  Future<List<String>> getAllActiveUserIds();
+
+  /// Get notification statistics for a user
+  Future<Map<String, dynamic>> getNotificationStats(String userId);
+
+  /// Get notification activity log
+  Future<List<Map<String, dynamic>>> getNotificationActivityLog({
+    required String userId,
+    required DateTime from,
+    required DateTime to,
+  });
+
+  /// Get post data (cross-feature)
+  Future<Map<String, dynamic>?> getPostData(String postId);
 }
 
 /// Batch update request model

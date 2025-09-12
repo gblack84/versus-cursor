@@ -1,5 +1,5 @@
 import 'dart:async';
-import '/features/posts/domain/models/posts_model.dart';
+import '/core/interfaces/common/i_content_model.dart';
 
 /// Cross-feature datasource interface for post data
 /// Abstracts access to posts feature data
@@ -10,7 +10,7 @@ abstract class IPostDatasource {
   Future<Map<String, dynamic>?> getPost(String postId);
 
   /// Get post model by ID (typed version)
-  Future<PostsModel?> getPostModel(String postId);
+  Future<IContentModel?> getPostModel(String postId);
 
   /// Create post with target audience settings
   Future<String> createPostWithTargetAudience({

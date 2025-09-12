@@ -9,6 +9,7 @@ import '/features/posts/data/adapters/posts_data_source_impl.dart';
 
 // Voting Feature DI Module
 import '/features/voting/di/voting_di_module.dart';
+import '/features/voting/domain/ports/i_vote_service.dart' as voting;
 
 // Auth Feature DI
 import '/features/auth/domain/services/i_auth_service.dart';
@@ -17,19 +18,24 @@ import '/features/auth/data/adapters/auth_service_impl.dart';
 // Notifications Feature DI
 import '/features/notifications/domain/repositories/i_notification_repository.dart';
 import '/features/notifications/data/repositories/notification_repository_impl.dart';
-import '/features/notifications/domain/usecases/get_user_notifications_use_case.dart';
-import '/features/notifications/domain/usecases/mark_as_read_use_case.dart';
-import '/features/notifications/domain/usecases/process_vote_notification_use_case.dart';
-import '/features/notifications/domain/usecases/send_notification_use_case.dart';
-import '/features/notifications/domain/usecases/watch_unread_count_use_case.dart';
-import '/features/notifications/domain/usecases/initialize_notifications_use_case.dart';
-import '/features/notifications/domain/usecases/start_notification_listening_use_case.dart';
-import '/features/notifications/domain/usecases/stop_notification_listening_use_case.dart';
-import '/features/notifications/domain/usecases/get_post_data_use_case.dart';
+import '/features/notifications/domain/handlers/i_notification_handler.dart';
+import '/features/notifications/presentation/adapters/notification_display_adapter.dart';
+import '/features/notifications/domain/services/i_notification_service.dart';
+// NOTE: UseCases are imported and registered in NotificationFactory
+
+// Core Interface Implementations for Notifications
+import '/core/interfaces/features/i_vote_service.dart' as core;
+import '/core/interfaces/features/i_post_service.dart';
+import 'di/adapters/core_vote_service_adapter.dart';
+import '/features/notifications/data/adapters/mock_post_service_adapter.dart';
+
+// Core Ports
+import '/core/domain/ports/i_notification_display_port.dart';
 
 // Voting UI & Adapters
 import '/features/voting/domain/ports/i_vote_ui_delegate.dart';
 import '/features/voting/presentation/managers/vote_ui_manager.dart';
+import '/features/voting/presentation/handlers/vote_handler_impl.dart';
 import '/features/notifications/data/adapters/notification_service.dart';
 import '/features/posts/data/services/target_audience_service.dart';
 import '/features/notifications/data/datasources/i_remote_notification_datasource.dart';
@@ -50,6 +56,7 @@ import '/features/posts/data/adapters/vote/vote_timer_service.dart';
 // Voting Feature - Port and Adapter
 import '/features/voting/domain/ports/i_vote_timer_port.dart';
 import '/features/voting/data/adapters/vote_timer_adapter.dart';
+
 
 final getIt = GetIt.instance;
 
@@ -93,6 +100,16 @@ Future<void> setupDependencyInjection() async {
   getIt.registerLazySingleton<IChatDatasource>(
     () => MockChatDatasource(),
   );
+  
+  // ===== Core Interface Adapters =====
+  // NOTE: These must be registered AFTER Voting DI Module
+  
+  // Register Mock Post Service (until Posts feature is migrated)
+  getIt.registerLazySingleton<IPostService>(
+    () => MockPostServiceAdapter(),
+  );
+  
+  // Register Core Vote Service Adapter (will be registered after Voting module below)
 
   // Mapper 등록
   getIt.registerLazySingleton<NotificationMapper>(
@@ -107,42 +124,21 @@ Future<void> setupDependencyInjection() async {
     ),
   );
 
-  // Register UseCases
-  getIt.registerFactory<GetUserNotificationsUseCase>(
-    () => GetUserNotificationsUseCase(getIt<INotificationRepository>()),
+  // NOTE: UseCases are now registered by NotificationFactory
+  // See: /lib/app/di/factories/notification_factory.dart
+
+  // Register Port Implementation for cross-feature communication
+  // The VoteHandlerImpl now implements INotificationDisplayPort instead of INotificationHandler
+  getIt.registerLazySingleton<INotificationDisplayPort>(
+    () => VoteHandlerImpl(uiManager: VoteUIManager.instance),
   );
 
-  getIt.registerFactory<MarkAsReadUseCase>(
-    () => MarkAsReadUseCase(getIt<INotificationRepository>()),
-  );
-
-  getIt.registerFactory<ProcessVoteNotificationUseCase>(
-    () => ProcessVoteNotificationUseCase(getIt<INotificationRepository>()),
-  );
-
-  getIt.registerFactory<SendNotificationUseCase>(
-    () => SendNotificationUseCase(getIt<INotificationRepository>()),
-  );
-
-  getIt.registerFactory<WatchUnreadCountUseCase>(
-    () => WatchUnreadCountUseCase(getIt<INotificationRepository>()),
-  );
-
-  // Register new Clean Architecture UseCases
-  getIt.registerFactory<InitializeNotificationsUseCase>(
-    () => InitializeNotificationsUseCase(getIt<INotificationRepository>()),
-  );
-
-  getIt.registerFactory<StartNotificationListeningUseCase>(
-    () => StartNotificationListeningUseCase(getIt<INotificationRepository>()),
-  );
-
-  getIt.registerFactory<StopNotificationListeningUseCase>(
-    () => StopNotificationListeningUseCase(getIt<INotificationRepository>()),
-  );
-
-  getIt.registerFactory<GetPostDataUseCase>(
-    () => GetPostDataUseCase(getIt<INotificationRepository>()),
+  // Register Notification Handler with Adapter pattern
+  // This adapter delegates to the Port implementation to avoid circular dependencies
+  getIt.registerLazySingleton<INotificationHandler>(
+    () => NotificationDisplayAdapter(
+      port: getIt<INotificationDisplayPort>(),
+    ),
   );
 
   // Register UI Delegate for Voting Feature
@@ -152,8 +148,8 @@ Future<void> setupDependencyInjection() async {
 
   // GlobalNotificationManager is now registered in NotificationModule
 
-  // Register Services
-  getIt.registerLazySingleton<NotificationService>(
+  // Register Services (인터페이스로 등록)
+  getIt.registerLazySingleton<INotificationService>(
     () => NotificationService(
       repository: getIt<INotificationRepository>(),
       chatDatasource: getIt<IChatDatasource>(),
@@ -175,7 +171,24 @@ Future<void> setupDependencyInjection() async {
   );
   
   // Register all Voting feature dependencies
+  // This will register voting.IVoteService internally
   registerVotingModule(getIt);
+
+  // ===== Core Interface Bindings for Cross-Feature Communication =====
+  
+  // Register Core IVoteService using adapter pattern after voting module
+  // This allows notifications to use voting functionality without direct dependency
+  getIt.registerLazySingleton<core.IVoteService>(
+    () => CoreVoteServiceAdapter(
+      votingService: getIt<voting.IVoteService>(),
+    ),
+  );
+  
+  // Register Core IPostService using mock implementation
+  // TODO: Replace with real implementation when Posts feature provides one
+  getIt.registerLazySingleton<IPostService>(
+    () => MockPostServiceAdapter(),
+  );
 
   // Add more dependency registrations here as needed
 }

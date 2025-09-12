@@ -63,8 +63,16 @@ class ProcessVoteNotificationUseCase
       final updatedNotification =
           notification.recordUserVote(params.voteChoice);
 
-      // 3.2 알림 업데이트
-      await _notificationRepository.updateNotification(updatedNotification);
+      // 3.2 알림 업데이트 - 수정: 메서드 시그니처에 맞게 변경
+      await _notificationRepository.updateNotification(
+        updatedNotification.id,
+        {
+          'userVoteChoice': updatedNotification.userVoteChoice,
+          'hasVoted': updatedNotification.hasVoted,
+          'isRead': updatedNotification.isRead,
+          'updatedAt': DateTime.now(),
+        },
+      );
 
       // 3.3 포스트에 투표 카운트 증가 (Cross-feature 호출)
       // await _postRepository.incrementVoteCount(
@@ -75,7 +83,14 @@ class ProcessVoteNotificationUseCase
 
       // 4. 알림 자동 읽음 처리
       final readNotification = updatedNotification.markAsRead();
-      await _notificationRepository.updateNotification(readNotification);
+      await _notificationRepository.updateNotification(
+        readNotification.id,
+        {
+          'isRead': true,
+          'readAt': DateTime.now(),
+          'updatedAt': DateTime.now(),
+        },
+      );
 
       // 5. 도메인 이벤트 발생
       // _eventBus.fire(VoteCompletedEvent(

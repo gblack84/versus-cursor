@@ -1,8 +1,8 @@
-# 📚 Notifications Presentation Layer
+# 📱 Notifications Presentation Layer
 
 > Clean Architecture 프레젠테이션 레이어 - UI 컴포넌트와 상태 관리  
-> **최종 업데이트**: 2025-01-10 | **버전**: 3.0.0  
-> **상태**: ✅ 100% Clean Architecture 준수 | UseCase 패턴 완전 적용
+> **최종 업데이트**: 2025-09-12 | **버전**: 3.1.0  
+> **상태**: ✅ 100% Clean Architecture 준수 | Phase 5 마이그레이션 완료
 
 ## 📋 목차
 - [개요](#-개요)
@@ -37,38 +37,26 @@ Notifications Presentation 레이어는 **Clean Architecture**의 최상위 계�
 
 ```
 presentation/
-├── coordinators/                # 시스템 조정자 (UseCase 오케스트레이션)
-│   └── notification_coordinator.dart  # ✅ 알림 시스템 메인 코디네이터
+├── 📁 coordinators/              # 시스템 조정자 (UseCase 오케스트레이션)
+│   └── notification_coordinator.dart    # ✅ 알림 시스템 메인 코디네이터
 │
-├── handlers/                    # 도메인 인터페이스 구현체
-│   └── notification_handler_impl.dart  # ✅ INotificationHandler 구현
+├── 📁 adapters/                  # 외부 통신 어댑터 (Phase 5 추가)
+│   └── notification_display_adapter.dart # ✅ 알림 표시 어댑터
 │
-├── managers/                    # UI 관리자
-│   ├── i_notification_ui_delegate.dart  # ✅ UI 델리게이트 인터페이스
-│   └── notification_ui_manager.dart     # ✅ UI 매니저 (싱글톤)
+├── 📁 screens/                   # 화면 컴포넌트
+│   └── notifications_list/       # 알림 목록 화면
+│       ├── notifications_list_widget.dart  # ✅ 메인 리스트 UI
+│       └── navigation_example.dart         # ✅ 네비게이션 예제
 │
-├── models/                      # Presentation 전용 모델
-│   └── versus_box_size_data.dart  # ✅ UI 레이아웃 데이터
+├── 📁 widgets/                   # 재사용 가능한 UI 컴포넌트
+│   ├── notification_badge.dart            # ✅ 알림 배지 컴포넌트
+│   └── notification_badge_example.dart    # ✅ 배지 사용 예제
 │
-├── providers/                   # 상태 관리 (Provider 패턴)
-│   └── notification_badge_provider.dart  # ✅ 배지 상태 관리
+├── 📁 providers/                 # 상태 관리 (Provider 패턴)
+│   └── notification_badge_provider.dart   # ✅ 배지 상태 Provider
 │
-├── screens/                     # 화면 컴포넌트
-│   └── notifications_list/
-│       └── notifications_list_widget.dart  # ✅ 알림 목록 화면
-│
-└── widgets/                     # 재사용 가능한 UI 컴포넌트
-    ├── adaptive_text_size.dart           # ✅ 반응형 텍스트
-    ├── in_app_notification_dialog.dart   # ✅ 인앱 알림 다이얼로그
-    ├── navigation_example.dart           # ✅ 네비게이션 예제
-    ├── notification_badge_example.dart   # ✅ 배지 예제
-    ├── notification_badge.dart           # ✅ 알림 배지
-    ├── notification_image_viewer.dart    # ✅ 이미지 뷰어
-    ├── notification_overlay.dart         # ✅ 알림 오버레이
-    ├── versus_notification_box.dart      # ✅ VS 박스 컴포넌트
-    ├── voting_notification_constraints.dart  # ✅ 투표 제약사항
-    ├── voting_notification_dialog.dart   # ✅ 투표 다이얼로그
-    └── voting_overlay.dart              # ✅ 투표 오버레이
+└── 📁 routes/                    # 라우팅 설정
+    └── notification_routes.dart            # ✅ 알림 관련 라우트 정의
 ```
 
 ## 🔧 핵심 컴포넌트
@@ -101,25 +89,28 @@ class NotificationCoordinator {
 }
 ```
 
-### 2. NotificationUIManager (UI 매니저)
+### 2. NotificationDisplayAdapter (어댑터 패턴 - Phase 5 추가)
 
-**역할**: UI 관련 로직 중앙 관리
+**역할**: Cross-feature 의존성 제거를 위한 어댑터
 
 ```dart
-class NotificationUIManager implements INotificationUIDelegate {
-  // UI 컨텍스트 관리
-  BuildContext? _context;
+class NotificationDisplayAdapter implements INotificationHandler {
+  final INotificationDisplayPort _port;
   
-  // 투표 알림 UI 표시
+  // UI Context 대기
+  Future<BuildContext?> waitForUIContext();
+  
+  // 투표 알림 표시 (Map으로 데이터 전달)
   Future<void> showVotingNotification({
     required Notification notification,
     required BuildContext context,
+    required Map<String, dynamic> displayData,  // Cross-feature 의존성 제거
     required Function(String) onVote,
     required Function(bool) onDismiss,
   });
   
   // 레이아웃 계산
-  VersusBoxSizeData? createSizeDataFromAspectRatios();
+  dynamic createSizeDataFromAspectRatios();
 }
 ```
 
@@ -138,16 +129,24 @@ class NotificationBadgeProvider extends ChangeNotifier {
 }
 ```
 
-### 4. Widgets (UI 컴포넌트)
+### 4. NotificationsListWidget (화면 컴포넌트)
 
-#### VotingNotificationDialog
 ```dart
-class VotingNotificationDialog extends StatelessWidget {
-  final VoteNotification notification;
-  final Function(String) onVote;
+class NotificationsListWidget extends StatefulWidget {
+  static String routeName = 'notificationsList';
+  static String routePath = '/notifications';
   
-  // Pure UI Component - 비즈니스 로직 없음
-  // 모든 동작은 콜백을 통해 상위로 위임
+  // Repository와 UseCase를 DI로 주입
+  late final INotificationRepository _notificationRepository;
+  late final MarkNotificationAsReadUseCase _markAsRead;
+  
+  // StreamBuilder로 실시간 알림 목록 표시
+  StreamBuilder<List<Notification>>(
+    stream: _notificationRepository.watchUserNotifications(userId),
+    builder: (context, snapshot) {
+      // 알림 목록 렌더링
+    },
+  );
 }
 ```
 
@@ -237,12 +236,12 @@ graph TD
     style UseCase fill:#E6F3FF
 ```
 
-### DI 설정 (app/di.dart)
+### DI 설정 (app/di.dart - Phase 5 업데이트)
 
 ```dart
 // Presentation 레이어 DI 등록
-void setupPresentationDI() {
-  // UseCases
+void setupDependencyInjection() {
+  // UseCases (Factory 패턴으로 등록)
   getIt.registerFactory<InitializeNotificationsUseCase>(
     () => InitializeNotificationsUseCase(getIt<INotificationRepository>()),
   );
@@ -251,17 +250,26 @@ void setupPresentationDI() {
     () => StartNotificationListeningUseCase(getIt<INotificationRepository>()),
   );
   
-  getIt.registerFactory<StopNotificationListeningUseCase>(
-    () => StopNotificationListeningUseCase(getIt<INotificationRepository>()),
+  getIt.registerFactory<MarkNotificationAsReadUseCase>(
+    () => MarkNotificationAsReadUseCase(getIt<INotificationRepository>()),
   );
   
-  getIt.registerFactory<GetPostDataUseCase>(
-    () => GetPostDataUseCase(getIt<INotificationRepository>()),
+  // Core Interface Adapters (Phase 5)
+  getIt.registerLazySingleton<INotificationDisplayPort>(
+    () => VoteHandlerImpl(uiManager: VoteUIManager.instance),
   );
   
-  // UI Delegate
-  getIt.registerLazySingleton<INotificationUIDelegate>(
-    () => NotificationUIManager.instance,
+  getIt.registerLazySingleton<INotificationHandler>(
+    () => NotificationDisplayAdapter(
+      port: getIt<INotificationDisplayPort>(),
+    ),
+  );
+  
+  // Core Vote Service (Phase 5)
+  getIt.registerLazySingleton<IVoteService>(
+    () => CoreVoteServiceAdapter(
+      votingService: getIt<voting.IVoteService>(),
+    ),
   );
 }
 ```
@@ -393,14 +401,17 @@ test('NotificationProvider loads notifications', () async {
 });
 ```
 
-## 📊 현재 상태
+## 📊 현재 상태 (Phase 5 완료)
 
 | 지표 | 상태 | 설명 |
 |------|------|------|
-| Clean Architecture 준수 | ✅ 100% | 18/18 파일 |
+| Clean Architecture 준수 | ✅ 100% | 모든 파일 준수 |
+| Cross-feature 의존성 | ✅ 0개 | Core 인터페이스로 추상화 |
 | Data 레이어 직접 참조 | ✅ 0개 | 완전 제거 |
 | UseCase 패턴 적용 | ✅ 100% | 모든 비즈니스 로직 |
 | DI 패턴 | ✅ 적용 | GetIt 사용 |
+| Adapter 패턴 | ✅ 적용 | NotificationDisplayAdapter |
+| Import Guardian 검증 | ✅ PASS | Critical 위반 0개 |
 | 컴파일 에러 | ✅ 0개 | 정상 빌드 |
 
 ## 🚀 Next Steps
@@ -410,15 +421,30 @@ test('NotificationProvider loads notifications', () async {
 3. **상태 관리 최적화**: Riverpod 마이그레이션 검토
 4. **UI 컴포넌트 라이브러리화**: 재사용 가능한 컴포넌트 패키지화
 
+## 🎯 마이그레이션 이력
+
+### v3.1.0 (2025-09-12) - Phase 5 완료
+- ✅ **Phase 2**: Cross-feature imports를 Core interfaces로 변경
+- ✅ **Phase 3**: DI 설정 및 Adapter 패턴 구현
+- ✅ **Phase 4**: 디렉토리 구조 정리 (services → adapters)
+- ✅ **Phase 5**: Import Guardian 검증 통과 (100% 준수)
+- ✅ NotificationDisplayAdapter 추가로 외부 의존성 완전 제거
+- ✅ CoreVoteServiceAdapter를 DI 레이어로 이동
+
+### v3.0.0 (2025-01-10) - Clean Architecture 달성
+- ✅ UseCase 패턴 전면 적용
+- ✅ Singleton 패턴 제거
+- ✅ Data 레이어 직접 참조 제거
+
 ## 📚 관련 문서
 
 - [Domain Layer README](../domain/README.md) - 비즈니스 로직과 엔티티
 - [Data Layer README](../data/README.md) - 데이터 소스와 Repository 구현
-- [PRESENTATION_MIGRATION_GUIDE](./PRESENTATION_MIGRATION_GUIDE.md) - 마이그레이션 상세 내역
-- [CLEAN_ARCHITECTURE_MIGRATION_COMPLETE](../CLEAN_ARCHITECTURE_MIGRATION_COMPLETE.md) - 전체 마이그레이션 완료 보고서
+- [Migration Guide](../data/MIGRATION_GUIDE_DATA_ERRORS.md) - Phase별 마이그레이션 가이드
+- [Clean Architecture Guide](../../../../docs/ARCHITECTURE.md) - 전체 아키텍처 가이드
 
 ---
 
 *이 문서는 notifications feature의 Presentation 레이어 구조와 사용법을 설명합니다.*
 
-**버전**: 3.0.0 | **상태**: ✅ Production Ready
+**버전**: 3.1.0 | **상태**: ✅ Production Ready | **Clean Architecture**: 100%

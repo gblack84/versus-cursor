@@ -222,19 +222,13 @@ class NotificationRepositoryImpl implements INotificationRepository {
   }
 
   @override
-  Future<void> updateNotification(Notification notification) async {
+  Future<void> updateNotification(String notificationId, Map<String, dynamic> updates) async {
     try {
-      // Domain → DTO 변환
-      final dto = NotificationMapper.toDto(notification);
-
-      // Map으로 변환
-      final updates = dto.toJson();
-
       // Remote 업데이트
-      await _remoteDatasource.updateNotification(notification.id, updates);
+      await _remoteDatasource.updateNotification(notificationId, updates);
 
-      // 캐시 무효화
-      await _localDatasource.clearCache(notification.userId);
+      // 캐시 무효화 - notificationId로부터 userId를 추출할 수 없으므로 전체 캐시 무효화
+      await _localDatasource.clearAllCache();
     } catch (e) {
       throw Exception('Failed to update notification: $e');
     }
@@ -282,16 +276,13 @@ class NotificationRepositoryImpl implements INotificationRepository {
   @override
   Future<void> deleteAllNotifications(String userId) async {
     try {
-      // TODO: Implement deleteAllUserNotifications in datasource
-      // For now, get all user notifications and delete them individually
-      final notifications = await getUserNotifications(userId: userId);
-
-      for (final notification in notifications) {
-        await deleteNotification(notification.id);
-      }
+      // Datasource의 효율적인 배치 삭제 메서드 사용
+      await _remoteDatasource.deleteAllUserNotifications(userId);
 
       // 캐시에서도 제거
       await _localDatasource.clearCache(userId);
+      
+      print('[NotificationRepository] Deleted all notifications for user: $userId');
     } catch (e) {
       throw Exception('Failed to delete all notifications: $e');
     }
@@ -303,18 +294,16 @@ class NotificationRepositoryImpl implements INotificationRepository {
     required DateTime before,
   }) async {
     try {
-      // TODO: Implement deleteNotificationsBefore in datasource
-      // For now, get all notifications and filter by date
-      final allNotifications = await getUserNotifications(userId: userId);
-      final oldNotifications =
-          allNotifications.where((n) => n.createdAt.isBefore(before)).toList();
-
-      for (final notification in oldNotifications) {
-        await deleteNotification(notification.id);
-      }
+      // Datasource의 효율적인 날짜 기반 삭제 메서드 사용
+      await _remoteDatasource.deleteNotificationsBefore(
+        userId: userId,
+        before: before,
+      );
 
       // 캐시 무효화
       await _localDatasource.clearCache(userId);
+      
+      print('[NotificationRepository] Deleted notifications before $before for user: $userId');
     } catch (e) {
       throw Exception('Failed to delete old notifications: $e');
     }
@@ -323,21 +312,23 @@ class NotificationRepositoryImpl implements INotificationRepository {
   @override
   Future<void> deleteExpiredNotifications(String userId) async {
     try {
-      // TODO: Implement deleteExpiredNotifications in datasource
-      // For now, get all notifications and filter by expiry
-      final allNotifications = await getUserNotifications(userId: userId);
-      final expiredNotifications =
-          allNotifications.where((n) => n.isExpired).toList();
-
-      for (final notification in expiredNotifications) {
-        await deleteNotification(notification.id);
-      }
+      // Datasource의 효율적인 만료 알림 삭제 메서드 사용
+      await _remoteDatasource.deleteExpiredNotifications(userId);
 
       // 캐시 무효화
       await _localDatasource.clearCache(userId);
+      
+      print('[NotificationRepository] Deleted expired notifications for user: $userId');
     } catch (e) {
       throw Exception('Failed to delete expired notifications: $e');
     }
+  }
+
+  @override
+  Future<void> cleanupExpiredNotifications(String userId) async {
+    // cleanupExpiredNotifications는 deleteExpiredNotifications와 동일한 기능
+    // 호환성을 위해 별칭으로 제공
+    return deleteExpiredNotifications(userId);
   }
   // ===== 특수 Operations =====
 
@@ -418,14 +409,11 @@ class NotificationRepositoryImpl implements INotificationRepository {
           await createNotification(userNotification);
         }
       } else {
-        // 모든 사용자에게 브로드캐스트
-        // 실제로는 users 컬렉션을 직접 조회해야 하지만,
-        // Clean Architecture를 유지하기 위해 datasource에 메서드 추가 필요
-        // 현재는 임시로 빈 리스트 반환
-        final userIds = <String>[];
-
-        // TODO: IRemoteNotificationDatasource에 getAllActiveUserIds() 메서드 추가 필요
-        // 임시 구현: 알림을 생성하지 않음 (에러는 발생하지 않음)
+        // 모든 활성 사용자 ID 가져오기
+        final userIds = await _remoteDatasource.getAllActiveUserIds();
+        
+        print('[NotificationRepository] Broadcasting to ${userIds.length} active users');
+        
         for (final userId in userIds) {
           final userNotification = SystemNotification(
             id: '', // Remote에서 생성됨
@@ -557,17 +545,29 @@ class NotificationRepositoryImpl implements INotificationRepository {
   @override
   Future<Map<String, dynamic>> getNotificationStats(String userId) async {
     try {
-      // TODO: Implement getNotificationStats in datasource
-      return <String, dynamic>{
+      // Datasource에서 통계 데이터 가져오기
+      final stats = await _remoteDatasource.getNotificationStats(userId);
+      
+      // 기본값 보장
+      return {
+        'totalNotifications': stats['totalNotifications'] ?? 0,
+        'unreadCount': stats['unreadCount'] ?? 0,
+        'votingRequests': stats['votingRequests'] ?? 0,
+        'systemAlerts': stats['systemAlerts'] ?? 0,
+        'socialNotifications': stats['socialNotifications'] ?? 0,
+        'lastUpdated': DateTime.now().toIso8601String(),
+      };
+    } catch (e) {
+      print('[NotificationRepository] Error getting notification stats: $e');
+      // 에러 시 기본값 반환
+      return {
         'totalNotifications': 0,
         'unreadCount': 0,
         'votingRequests': 0,
         'systemAlerts': 0,
         'socialNotifications': 0,
+        'error': e.toString(),
       };
-    } catch (e) {
-      print('Error getting notification stats: $e');
-      return <String, dynamic>{};
     }
   }
 
@@ -578,10 +578,23 @@ class NotificationRepositoryImpl implements INotificationRepository {
     required DateTime to,
   }) async {
     try {
-      // TODO: Implement getNotificationActivityLog in datasource
-      return <Map<String, dynamic>>[];
+      // Datasource에서 활동 로그 가져오기
+      final logs = await _remoteDatasource.getNotificationActivityLog(
+        userId: userId,
+        from: from,
+        to: to,
+      );
+      
+      // 로그 정보 포맷팅
+      return logs.map((log) => {
+        'timestamp': log['timestamp'] ?? DateTime.now().toIso8601String(),
+        'action': log['action'] ?? 'unknown',
+        'notificationId': log['notificationId'] ?? '',
+        'notificationType': log['notificationType'] ?? '',
+        'details': log['details'] ?? {},
+      }).toList();
     } catch (e) {
-      print('Error getting notification activity log: $e');
+      print('[NotificationRepository] Error getting activity log: $e');
       return [];
     }
   }
@@ -651,12 +664,29 @@ class NotificationRepositoryImpl implements INotificationRepository {
   @override
   Future<Map<String, dynamic>?> getPostData({required String postId}) async {
     try {
-      // This would normally delegate to a cross-feature datasource
-      // For now, return null as placeholder
-      // TODO: Implement actual cross-feature post data retrieval
-      print('[NotificationRepository] Getting post data for: $postId');
-      return null;
+      // Cross-feature 데이터 접근을 위한 datasource 메서드 호출
+      final postData = await _remoteDatasource.getPostData(postId);
+      
+      if (postData == null) {
+        print('[NotificationRepository] Post not found: $postId');
+        return null;
+      }
+      
+      // 필요한 필드만 추출하여 반환
+      return {
+        'postId': postData['postId'] ?? postId,
+        'title': postData['title'] ?? '',
+        'content': postData['content'] ?? '',
+        'optionA': postData['optionA'] ?? {},
+        'optionB': postData['optionB'] ?? {},
+        'createdBy': postData['createdBy'] ?? '',
+        'createdAt': postData['createdAt'],
+        'voteEndTime': postData['voteEndTime'],
+        'votesA': postData['votesA'] ?? 0,
+        'votesB': postData['votesB'] ?? 0,
+      };
     } catch (e) {
+      print('[NotificationRepository] Failed to get post data: $e');
       throw Exception('Failed to get post data: $e');
     }
   }

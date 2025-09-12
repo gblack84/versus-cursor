@@ -14,6 +14,8 @@ import '/app/widgets/navigation/main_navigation_shell.dart';
 
 // Import Voting Feature routes
 import '/features/voting/presentation/routes/voting_routes.dart';
+// Import Notification Feature routes
+import '/features/notifications/presentation/routes/notification_routes.dart';
 
 export 'package:go_router/go_router.dart';
 export 'serialization_util.dart';
@@ -281,12 +283,6 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           ),
         ).toRoute(appStateNotifier),
         AppRoute(
-          name: NotificationsListWidget.routeName,
-          path: NotificationsListWidget.routePath,
-          requireAuth: true,
-          builder: (context, params) => NotificationsListWidget(),
-        ).toRoute(appStateNotifier),
-        AppRoute(
           name: ChatDetailWidgetV2.routeName,
           path: ChatDetailWidgetV2.routePath,
           requireAuth: true,
@@ -297,6 +293,9 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
                 : null,
           ),
         ).toRoute(appStateNotifier),
+        
+        // Notification Feature routes
+        ...NotificationRoutes.routes,
         
         // Voting Feature routes
         ...VotingRoutes.routes,

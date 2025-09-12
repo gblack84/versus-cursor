@@ -1,5 +1,5 @@
 import '../i_post_datasource.dart';
-import '/features/posts/domain/models/posts_model.dart';
+import '/core/interfaces/common/i_content_model.dart';
 
 /// Posts feature에 대한 Mock DataSource 구현체
 ///
@@ -36,7 +36,7 @@ class MockPostDatasource implements IPostDatasource {
   }
 
   @override
-  Future<PostsModel?> getPostModel(String postId) async {
+  Future<IContentModel?> getPostModel(String postId) async {
     // TODO: Posts Feature 마이그레이션 후 실제 구현으로 교체
     print('[MockPostDatasource] getPostModel called for: $postId');
     return null;

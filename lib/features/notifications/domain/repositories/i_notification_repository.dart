@@ -46,7 +46,7 @@ abstract class INotificationRepository {
   Future<String> createNotification(Notification notification);
 
   /// 알림 업데이트 (읽음 처리 등)
-  Future<void> updateNotification(Notification notification);
+  Future<void> updateNotification(String notificationId, Map<String, dynamic> updates);
 
   /// 알림을 읽음으로 표시
   Future<void> markAsRead(String notificationId);
@@ -70,6 +70,9 @@ abstract class INotificationRepository {
 
   /// 만료된 알림 자동 삭제
   Future<void> deleteExpiredNotifications(String userId);
+
+  /// 만료된 알림 정리 (동일한 기능, 다른 이름으로 호환성 유지)
+  Future<void> cleanupExpiredNotifications(String userId);
 
   // ===== 특수 Operations =====
 

@@ -1,0 +1,178 @@
+diff --git a/lib/features/notifications/data/adapters/notification_service.dart b/lib/features/notifications/data/adapters/notification_service.dart
+index 1234567..abcdef0 100644
+--- a/lib/features/notifications/data/adapters/notification_service.dart
++++ b/lib/features/notifications/data/adapters/notification_service.dart
+@@ -2,7 +2,7 @@ import 'dart:async';
+ import '/features/notifications/domain/models/notification.dart';
+ import '/features/notifications/domain/value_objects/notification_filter.dart';
+ import '/features/notifications/domain/services/i_notification_service.dart';
+-import '/features/posts/domain/models/posts_model.dart';
++import '/core/interfaces/common/i_content_model.dart';
+ import '../../domain/repositories/i_notification_repository.dart';
+ import '../datasources/i_chat_datasource.dart';
+ import '/core/utils/logger.dart';
+
+diff --git a/lib/features/notifications/data/adapters/global_notification_manager.dart b/lib/features/notifications/data/adapters/global_notification_manager.dart
+index 1234567..abcdef0 100644
+--- a/lib/features/notifications/data/adapters/global_notification_manager.dart
++++ b/lib/features/notifications/data/adapters/global_notification_manager.dart
+@@ -10,7 +10,7 @@ import '../services/notification_data_extractor.dart';
+ import '../../domain/services/i_notification_service.dart';
+ // Domain service interfaces (no cross-feature dependencies)
+ import '/core/domain/ports/i_user_service.dart';
+-import '/features/voting/domain/ports/i_vote_service.dart';
++import '/core/interfaces/features/i_vote_service.dart';
+ import '/core/utils/logger.dart';
+ 
+ /// 글로벌 알림 관리자 - 비즈니스 로직 전용
+
+diff --git a/lib/features/notifications/data/datasources/i_post_datasource.dart b/lib/features/notifications/data/datasources/i_post_datasource.dart
+index 1234567..abcdef0 100644
+--- a/lib/features/notifications/data/datasources/i_post_datasource.dart
++++ b/lib/features/notifications/data/datasources/i_post_datasource.dart
+@@ -1,5 +1,5 @@
+ import 'dart:async';
+-import '/features/posts/domain/models/posts_model.dart';
++import '/core/interfaces/common/i_content_model.dart';
+ 
+ /// Cross-feature datasource interface for post data
+ /// Abstracts access to posts feature data
+@@ -11,7 +11,7 @@ abstract class IPostDatasource {
+   Future<Map<String, dynamic>?> getPost(String postId);
+ 
+   /// Get post model by ID (typed version)
+-  Future<PostsModel?> getPostModel(String postId);
++  Future<IContentModel?> getPostModel(String postId);
+ 
+   /// Create post with target audience settings
+   Future<String> createPostWithTargetAudience({
+
+diff --git a/lib/features/notifications/data/datasources/i_chat_datasource.dart b/lib/features/notifications/data/datasources/i_chat_datasource.dart
+index 1234567..abcdef0 100644
+--- a/lib/features/notifications/data/datasources/i_chat_datasource.dart
++++ b/lib/features/notifications/data/datasources/i_chat_datasource.dart
+@@ -1,4 +1,4 @@
+-import '/features/posts/domain/models/posts_model.dart';
++import '/core/interfaces/common/i_content_model.dart';
+ 
+ /// Chat Feature와의 인터페이스
+ ///
+@@ -10,7 +10,7 @@ abstract class IChatDatasource {
+     required String senderId,
+     required String recipientId,
+     required String postId,
+-    required PostsModel post,
++    required IContentModel post,
+   });
+ 
+   /// AI 채팅 메시지의 투표 상태 업데이트
+
+diff --git a/lib/features/notifications/data/datasources/cross/mock_post_datasource.dart b/lib/features/notifications/data/datasources/cross/mock_post_datasource.dart
+index 1234567..abcdef0 100644
+--- a/lib/features/notifications/data/datasources/cross/mock_post_datasource.dart
++++ b/lib/features/notifications/data/datasources/cross/mock_post_datasource.dart
+@@ -1,5 +1,5 @@
+ import '../i_post_datasource.dart';
+-import '/features/posts/domain/models/posts_model.dart';
++import '/core/interfaces/common/i_content_model.dart';
+ 
+ /// Posts feature에 대한 Mock DataSource 구현체
+ ///
+@@ -36,7 +36,7 @@ class MockPostDatasource implements IPostDatasource {
+   }
+ 
+   @override
+-  Future<PostsModel?> getPostModel(String postId) async {
++  Future<IContentModel?> getPostModel(String postId) async {
+     // TODO: Posts Feature 마이그레이션 후 실제 구현으로 교체
+     print('[MockPostDatasource] getPostModel called for: $postId');
+     return null;
+
+diff --git a/lib/features/notifications/data/datasources/cross/mock_chat_datasource.dart b/lib/features/notifications/data/datasources/cross/mock_chat_datasource.dart
+index 1234567..abcdef0 100644
+--- a/lib/features/notifications/data/datasources/cross/mock_chat_datasource.dart
++++ b/lib/features/notifications/data/datasources/cross/mock_chat_datasource.dart
+@@ -1,5 +1,5 @@
+ import '../i_chat_datasource.dart';
+-import '/features/posts/domain/models/posts_model.dart';
++import '/core/interfaces/common/i_content_model.dart';
+ 
+ /// IChatDatasource의 Mock 구현체
+ ///
+@@ -13,7 +13,7 @@ class MockChatDatasource implements IChatDatasource {
+     required String senderId,
+     required String recipientId,
+     required String postId,
+-    required PostsModel post,
++    required IContentModel post,
+   }) async {
+     // TODO: Chat Feature 마이그레이션 후 실제 구현으로 교체
+     print('[MockChatDatasource] createVoteRequestMessage called');
+
+diff --git a/lib/features/notifications/presentation/coordinators/notification_coordinator.dart b/lib/features/notifications/presentation/coordinators/notification_coordinator.dart
+index 1234567..abcdef0 100644
+--- a/lib/features/notifications/presentation/coordinators/notification_coordinator.dart
++++ b/lib/features/notifications/presentation/coordinators/notification_coordinator.dart
+@@ -8,8 +8,8 @@ import '../../domain/usecases/stop_notification_listening_use_case.dart';
+ import '../../domain/usecases/get_queue_status_use_case.dart';
+ import '../../domain/usecases/get_processed_count_use_case.dart';
+ import '../../domain/usecases/clear_queue_use_case.dart';
+-import '/features/voting/presentation/managers/vote_ui_manager.dart';
+-import '/features/voting/domain/models/vote_notification.dart' as voting;
++import '/core/interfaces/features/i_vote_service.dart';
++import '/core/interfaces/features/i_notification_content.dart';
+ 
+ /// 알림 시스템 코디네이터 (Clean Architecture)
+ ///
+@@ -24,6 +24,9 @@ class NotificationCoordinator {
+   final GetProcessedCountUseCase _getProcessedCountUseCase;
+   final ClearQueueUseCase _clearQueueUseCase;
+ 
++  // Replace VoteUIManager dependency with IVoteService
++  final IVoteService _voteService;
++
+   bool _isInitialized = false;
+   String _currentUserId = '';
+ 
+@@ -36,6 +39,7 @@ class NotificationCoordinator {
+       getQueueStatusUseCase: GetIt.instance<GetQueueStatusUseCase>(),
+       getProcessedCountUseCase: GetIt.instance<GetProcessedCountUseCase>(),
+       clearQueueUseCase: GetIt.instance<ClearQueueUseCase>(),
++      voteService: GetIt.instance<IVoteService>(),
+     );
+   }
+ 
+@@ -47,9 +51,10 @@ class NotificationCoordinator {
+     required GetQueueStatusUseCase getQueueStatusUseCase,
+     required GetProcessedCountUseCase getProcessedCountUseCase,
+     required ClearQueueUseCase clearQueueUseCase,
++    required IVoteService voteService,
+   })  : _initializeUseCase = initializeUseCase,
+         _startListeningUseCase = startListeningUseCase,
+         _stopListeningUseCase = stopListeningUseCase,
+         _getQueueStatusUseCase = getQueueStatusUseCase,
+         _getProcessedCountUseCase = getProcessedCountUseCase,
+-        _clearQueueUseCase = clearQueueUseCase;
++        _clearQueueUseCase = clearQueueUseCase,
++        _voteService = voteService;
+
+diff --git a/lib/core/interfaces/features/i_vote_service.dart b/lib/core/interfaces/features/i_vote_service.dart
+index 1234567..abcdef0 100644
+--- a/lib/core/interfaces/features/i_vote_service.dart
++++ b/lib/core/interfaces/features/i_vote_service.dart
+@@ -163,6 +163,13 @@ enum VoteOption {
+   optionB,
+ }
+ 
++/// 투표 상태
++enum VoteStatus {
++  pending,
++  active,
++  completed,
++  expired,
++  cancelled,
++}
++
+ /// 투표 제한 사유
+ enum VoteRestrictionReason {
+   alreadyVoted,

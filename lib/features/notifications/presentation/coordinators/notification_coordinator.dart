@@ -5,8 +5,10 @@ import '../../domain/value_objects/vote_options.dart' as domain;
 import '../../domain/usecases/initialize_notifications_use_case.dart';
 import '../../domain/usecases/start_notification_listening_use_case.dart';
 import '../../domain/usecases/stop_notification_listening_use_case.dart';
-import '/features/voting/presentation/managers/vote_ui_manager.dart';
-import '/features/voting/domain/models/vote_notification.dart' as voting;
+import '../../domain/usecases/get_queue_status_use_case.dart';
+import '../../domain/usecases/get_processed_count_use_case.dart';
+import '../../domain/usecases/clear_queue_use_case.dart';
+import '/core/interfaces/features/i_vote_service.dart';
 
 /// 알림 시스템 코디네이터 (Clean Architecture)
 ///
@@ -17,8 +19,15 @@ class NotificationCoordinator {
   final InitializeNotificationsUseCase _initializeUseCase;
   final StartNotificationListeningUseCase _startListeningUseCase;
   final StopNotificationListeningUseCase _stopListeningUseCase;
+  final GetQueueStatusUseCase _getQueueStatusUseCase;
+  final GetProcessedCountUseCase _getProcessedCountUseCase;
+  final ClearQueueUseCase _clearQueueUseCase;
+  
+  // Replace VoteUIManager dependency with IVoteService
+  final IVoteService _voteService;
 
   bool _isInitialized = false;
+  String _currentUserId = '';
 
   // Factory constructor with DI
   factory NotificationCoordinator() {
@@ -27,6 +36,10 @@ class NotificationCoordinator {
       startListeningUseCase:
           GetIt.instance<StartNotificationListeningUseCase>(),
       stopListeningUseCase: GetIt.instance<StopNotificationListeningUseCase>(),
+      getQueueStatusUseCase: GetIt.instance<GetQueueStatusUseCase>(),
+      getProcessedCountUseCase: GetIt.instance<GetProcessedCountUseCase>(),
+      clearQueueUseCase: GetIt.instance<ClearQueueUseCase>(),
+      voteService: GetIt.instance<IVoteService>(),
     );
   }
 
@@ -35,9 +48,17 @@ class NotificationCoordinator {
     required InitializeNotificationsUseCase initializeUseCase,
     required StartNotificationListeningUseCase startListeningUseCase,
     required StopNotificationListeningUseCase stopListeningUseCase,
+    required GetQueueStatusUseCase getQueueStatusUseCase,
+    required GetProcessedCountUseCase getProcessedCountUseCase,
+    required ClearQueueUseCase clearQueueUseCase,
+    required IVoteService voteService,
   })  : _initializeUseCase = initializeUseCase,
         _startListeningUseCase = startListeningUseCase,
-        _stopListeningUseCase = stopListeningUseCase;
+        _stopListeningUseCase = stopListeningUseCase,
+        _getQueueStatusUseCase = getQueueStatusUseCase,
+        _getProcessedCountUseCase = getProcessedCountUseCase,
+        _clearQueueUseCase = clearQueueUseCase,
+        _voteService = voteService;
 
   // Static instance getter for backward compatibility
   static NotificationCoordinator get instance => NotificationCoordinator();
@@ -57,17 +78,20 @@ class NotificationCoordinator {
     try {
       debugPrint('[NotificationCoordinator] 초기화 시작: $userId');
 
-      // 1. UI Manager 초기화
-      final uiManager = VoteUIManager.instance;
+      // 1. Vote Service 초기화
       if (context != null) {
-        uiManager.setContext(context);
+        _voteService.setUIContext(context);
       }
+      await _voteService.initialize();
 
       // 2. UseCase를 통한 초기화 (Clean Architecture)
       await _initializeUseCase.execute(userId: userId);
 
       // 3. UseCase를 통한 리스닝 시작
       await _startListeningUseCase.execute(userId: userId);
+
+      // 4. 현재 사용자 ID 저장
+      _currentUserId = userId;
 
       _isInitialized = true;
       debugPrint('[NotificationCoordinator] ✅ 초기화 완료');
@@ -90,11 +114,9 @@ class NotificationCoordinator {
 
     try {
       // UseCase를 통한 정리 (Clean Architecture)
-      // TODO: userId를 저장해두고 여기서 사용해야 함
-      // 현재는 임시로 빈 문자열 사용 (실제 구현 시 수정 필요)
-      await _stopListeningUseCase.execute(userId: '');
+      await _stopListeningUseCase.execute(userId: _currentUserId);
 
-      VoteUIManager.instance.dispose();
+      _voteService.dispose();
 
       _isInitialized = false;
       debugPrint('[NotificationCoordinator] ✅ 종료 완료');
@@ -112,7 +134,7 @@ class NotificationCoordinator {
       return;
     }
 
-    VoteUIManager.instance.setContext(context);
+    _voteService.setUIContext(context);
     debugPrint('[NotificationCoordinator] 컨텍스트 업데이트됨');
   }
 
@@ -149,67 +171,79 @@ class NotificationCoordinator {
       voteEndTime: DateTime.now().add(const Duration(minutes: 10)),
     );
 
-    // Convert domain notification to voting notification
-    final votingNotification = voting.VoteNotification(
-      id: testNotification.id,
-      postId: testNotification.postId,
-      userId: 'test_user', // TODO: Get actual user ID
-      type: 'vote_request',
-      data: {
-        'optionATitle': testNotification.voteOptions.optionATitle,
-        'optionBTitle': testNotification.voteOptions.optionBTitle,
-        'optionAImageUrl': testNotification.voteOptions.optionAImageUrls.isNotEmpty 
-            ? testNotification.voteOptions.optionAImageUrls.first 
-            : null,
-        'optionBImageUrl': testNotification.voteOptions.optionBImageUrls.isNotEmpty 
-            ? testNotification.voteOptions.optionBImageUrls.first 
-            : null,
-        'optionAImageUrls': testNotification.voteOptions.optionAImageUrls,
-        'optionBImageUrls': testNotification.voteOptions.optionBImageUrls,
-        'voteStartTime': testNotification.voteStartTime?.toIso8601String(),
-        'voteEndTime': testNotification.voteEndTime?.toIso8601String(),
-      },
-      createdAt: DateTime.now(),
-    );
-
-    await VoteUIManager.instance.showVotingNotification(
-      notification: votingNotification,
-      context: context,
-      question: title,
-      optionA: optionA,
-      optionB: optionB,
-      imageUrlsA: [],
-      imageUrlsB: [],
-      onVote: (option) async {
-        debugPrint('[NotificationCoordinator] 테스트 투표: $option');
-      },
-      onDismiss: (hasVoted) {
-        debugPrint('[NotificationCoordinator] 테스트 알림 닫기: 투표했음=$hasVoted');
-      },
-    );
+    // TODO: Convert to IVoteService after implementing concrete IVoteNotification
+    // This requires a complete refactoring as voting.VoteNotification needs to implement IVoteNotification
+    debugPrint('[NotificationCoordinator] 테스트 알림 표시 - IVoteService 구현 필요');
+    
+    // Temporary implementation - show simple debug message
+    // await _voteService.showVotingNotification(
+    //   context: context,
+    //   notification: testNotification, // Need to convert to IVoteNotification
+    //   onVote: (optionA) async {
+    //     debugPrint('[NotificationCoordinator] 테스트 투표: ${optionA ? 'A' : 'B'}');
+    //   },
+    //   onDismiss: (hasVoted) {
+    //     debugPrint('[NotificationCoordinator] 테스트 알림 닫기: 투표했음=$hasVoted');
+    //   },
+    // );
   }
 
   /// 알림 큐 상태 조회
-  Map<String, dynamic> getQueueStatus() {
-    // TODO: GlobalNotificationManager를 UseCase로 추상화해야 함
-    // 현재는 임시 데이터 반환
-    return {
-      'initialized': _isInitialized,
-      'queueSize': 0,
-      'isShowingNotification': false,
-      'hasUIContext': VoteUIManager.instance.hasContext,
-    };
+  Future<Map<String, dynamic>> getQueueStatus() async {
+    // UseCase를 통한 큐 상태 조회
+    final result = await _getQueueStatusUseCase(null);
+    
+    if (result.isSuccess) {
+      final status = result.data!;
+      // UI context 정보 추가
+      status['hasUIContext'] = _voteService.hasUIContext;
+      status['initialized'] = _isInitialized;
+      return status;
+    } else {
+      // 에러 시 기본값 반환
+      return {
+        'initialized': _isInitialized,
+        'queueSize': 0,
+        'isShowingNotification': false,
+        'hasUIContext': _voteService.hasUIContext,
+        'error': result.error,
+      };
+    }
   }
 
   /// 처리된 알림 개수 조회
-  int getProcessedCount() {
-    // TODO: UseCase를 통한 조회로 변경 필요
-    return 0;
+  Future<int> getProcessedCount() async {
+    // UseCase를 통한 처리 개수 조회
+    if (_currentUserId.isEmpty) {
+      debugPrint('[NotificationCoordinator] 사용자 ID가 없음');
+      return 0;
+    }
+    
+    final result = await _getProcessedCountUseCase(_currentUserId);
+    
+    if (result.isSuccess) {
+      return result.data ?? 0;
+    } else {
+      debugPrint('[NotificationCoordinator] 처리 개수 조회 실패: ${result.error}');
+      return 0;
+    }
   }
 
   /// 알림 큐 비우기
-  void clearQueue() {
-    // TODO: UseCase를 통한 처리로 변경 필요
-    debugPrint('[NotificationCoordinator] 알림 큐 비우기 - UseCase 구현 필요');
+  Future<void> clearQueue() async {
+    // UseCase를 통한 큐 비우기
+    if (_currentUserId.isEmpty) {
+      debugPrint('[NotificationCoordinator] 사용자 ID가 없음');
+      return;
+    }
+    
+    debugPrint('[NotificationCoordinator] 알림 큐 비우기 시작');
+    final result = await _clearQueueUseCase(_currentUserId);
+    
+    if (result.isSuccess) {
+      debugPrint('[NotificationCoordinator] ✅ 알림 큐 비우기 완료');
+    } else {
+      debugPrint('[NotificationCoordinator] ❌ 알림 큐 비우기 실패: ${result.error}');
+    }
   }
 }

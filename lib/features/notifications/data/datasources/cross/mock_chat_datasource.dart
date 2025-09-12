@@ -1,5 +1,5 @@
 import '../i_chat_datasource.dart';
-import '/features/posts/domain/models/posts_model.dart';
+import '/core/interfaces/common/i_content_model.dart';
 
 /// IChatDatasource의 Mock 구현체
 ///
@@ -13,7 +13,7 @@ class MockChatDatasource implements IChatDatasource {
     required String senderId,
     required String recipientId,
     required String postId,
-    required PostsModel post,
+    required IContentModel post,
   }) async {
     // TODO: Chat Feature 마이그레이션 후 실제 구현으로 교체
     print('[MockChatDatasource] createVoteRequestMessage called');

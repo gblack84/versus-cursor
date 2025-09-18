@@ -183,10 +183,8 @@ class MockVersusContentModel implements IVersusContentModel {
   @override
   final String content;
   
-  @override
   final String optionAText;
   
-  @override
   final String optionBText;
   
   @override
@@ -262,10 +260,8 @@ class MockVersusContentModel implements IVersusContentModel {
   }
   
   // Additional required fields from IContentModel
-  @override
   String? get description => content;
   
-  @override
   String get authorId => creatorId;
   
   // Additional required fields from IVersusContentModel
@@ -279,7 +275,7 @@ class MockVersusContentModel implements IVersusContentModel {
   Map<String, dynamic>? get targetAudience => null;
   
   // ContentType would come from IContentModel import
-  ContentType get contentType => ContentType.versus;
+  ContentType get contentType => ContentType.post;
   
   @override
   bool get isPublic => true;
@@ -300,7 +296,6 @@ class MockVersusContentModel implements IVersusContentModel {
   @override
   DateTime? get voteEndTime => createdAt.add(Duration(minutes: 10));
   
-  @override
   Map<String, dynamic> toJson() {
     return {
       'id': id,

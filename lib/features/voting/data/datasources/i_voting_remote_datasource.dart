@@ -146,4 +146,11 @@ abstract class IVotingRemoteDataSource {
     Query Function(Query)? queryBuilder,
     int limit = -1,
   });
+
+  // ============================================================================
+  // User Vote History
+  // ============================================================================
+
+  /// Get user's vote history from Firestore
+  Future<List<Map<String, dynamic>>> getUserVotes(String userId);
 }

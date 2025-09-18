@@ -112,7 +112,16 @@ abstract class IVotingLocalDataSource {
   
   /// Clear user's vote history
   Future<void> clearUserVoteHistory(String userId);
-  
+
+  /// Get cached vote history (for repository compatibility)
+  Future<List<Map<String, dynamic>>?> getCachedVoteHistory(String userId);
+
+  /// Cache user vote history
+  Future<void> cacheUserVoteHistory(
+    String userId,
+    List<Map<String, dynamic>> history,
+  );
+
   // ============================================================================
   // Pending Operations Cache (for offline support)
   // ============================================================================

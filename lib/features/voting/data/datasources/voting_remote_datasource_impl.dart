@@ -418,4 +418,41 @@ class VotingRemoteDataSourceImpl implements IVotingRemoteDataSource {
       limit: limit,
     );
   }
+
+  // ============================================================================
+  // User Vote History
+  // ============================================================================
+
+  @override
+  Future<List<Map<String, dynamic>>> getUserVotes(String userId) async {
+    try {
+      // Get user's votes from the votes subcollection across all posts
+      final votesQuery = await _firestore
+          .collectionGroup('votes')
+          .where('userId', isEqualTo: userId)
+          .orderBy('votedAt', descending: true)
+          .limit(100)
+          .get();
+
+      return votesQuery.docs.map((doc) {
+        final data = doc.data();
+        // Extract postId from the document path
+        final pathSegments = doc.reference.path.split('/');
+        final postId = pathSegments[pathSegments.indexOf('posts') + 1];
+
+        return {
+          'postId': postId,
+          'voteOption': data['voteOption'] ?? '',
+          'votedAt': data['votedAt'] is Timestamp
+              ? (data['votedAt'] as Timestamp).millisecondsSinceEpoch
+              : DateTime.now().millisecondsSinceEpoch,
+        };
+      }).toList();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error getting user votes: $e');
+      }
+      return [];
+    }
+  }
 }

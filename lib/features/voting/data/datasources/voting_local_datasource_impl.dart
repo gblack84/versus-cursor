@@ -175,7 +175,43 @@ class VotingLocalDataSourceImpl implements IVotingLocalDataSource {
   @override
   Future<void> clearUserVoteHistory(String userId) =>
       _voteHistoryCache.clearUserVoteHistory(userId);
-  
+
+  @override
+  Future<List<Map<String, dynamic>>?> getCachedVoteHistory(String userId) async {
+    final entries = await _voteHistoryCache.getUserVoteHistory(
+      userId: userId,
+      limit: null,
+    );
+    if (entries.isEmpty) return null;
+
+    return entries.map((entry) => {
+      'postId': entry.postId,
+      'voteOption': entry.voteOption,
+      'votedAt': entry.votedAt.millisecondsSinceEpoch,
+    }).toList();
+  }
+
+  @override
+  Future<void> cacheUserVoteHistory(
+    String userId,
+    List<Map<String, dynamic>> history,
+  ) async {
+    // Clear existing history first
+    await _voteHistoryCache.clearUserVoteHistory(userId);
+
+    // Cache each entry
+    for (final item in history) {
+      await _voteHistoryCache.cacheVoteHistory(
+        userId: userId,
+        postId: item['postId'] ?? '',
+        voteOption: item['voteOption'] ?? '',
+        votedAt: item['votedAt'] is int
+          ? DateTime.fromMillisecondsSinceEpoch(item['votedAt'])
+          : DateTime.now(),
+      );
+    }
+  }
+
   // ============================================================================
   // Pending Operations Cache - Delegated to PendingOperationsService
   // ============================================================================

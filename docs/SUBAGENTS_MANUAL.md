@@ -80,12 +80,18 @@ BuildSentinel (full) → 최종 게이트
 ```
 
 ### 2.3 StructWeaver
-**언제**: 
+**언제**:
 - (A) 전역 매퍼 분해
 - (B) 전역 상태 → 피처 Provider로 분리
 
+**⚠️ Direct Migration v4.0 설정**:
+- `--bridge false` 필수 (재내보내기/Facade 생성 방지)
+- @Deprecated 브릿지 생성하지 않음
+- 즉시 완전 전환 지원
+
 **입력**:
 - `--task mapper|state`
+- `--bridge false` (v4.0 필수)
 - mapper: `--source <model_adapter.dart>`
 - state: `--map "Sym->lib/features/...;Sym2->..."`
 
@@ -98,11 +104,14 @@ BuildSentinel (full) → 최종 게이트
 
 **호출 예**:
 ```bash
-# 매퍼 분해
-/spawn struct-weaver "--task mapper --mode detect --source lib/backend/models/migration/model_adapter.dart"
+# v4.0 Direct Migration (권장)
+/spawn struct-weaver "--task mapper --mode detect --bridge false --source lib/backend/models/migration/model_adapter.dart"
 
-# 상태 분리
-/spawn struct-weaver "--task state --mode detect --map 'MediaUploadProvider->lib/features/upload/presentation/providers/media_upload_provider.dart'"
+# 상태 분리 (v4.0)
+/spawn struct-weaver "--task state --mode detect --bridge false --map 'MediaUploadProvider->lib/features/upload/presentation/providers/media_upload_provider.dart'"
+
+# 레거시 방식 (비권장)
+# /spawn struct-weaver "--task mapper --mode detect --bridge true --source ..."
 ```
 
 ### 2.4 DIBinder
@@ -184,6 +193,44 @@ BuildSentinel (full) → 최종 게이트
 /spawn build-sentinel "quick"
 ```
 
+### 2.8 CodeSurgeon
+**언제**: 300줄 이상 대규모 파일 분해, 복합 책임 분리
+
+**입력**:
+- `--file <path>`: 분해할 파일
+- `--strategy`: split-by-responsibility|extract-usecases
+- `--max-lines`: 파일당 최대 라인 수 (기본: 100)
+
+**출력**:
+- `patches/code_surgeon_*.diff`
+- `reports/decomposition_*.yml`
+
+**성공**: 단일 파일 → 여러 작은 UseCase/Service로 분해
+
+**호출 예**:
+```bash
+/spawn code-surgeon "--file lib/backend/auth_util.dart --strategy extract-usecases --max-lines 50"
+```
+
+### 2.9 OrchestratorPipeline
+**언제**: 전체 마이그레이션 파이프라인 자동 실행
+
+**입력**:
+- `--features`: 마이그레이션할 피처 리스트
+- `--mode`: sequential|parallel
+- `--gates`: quality|safety|all
+
+**출력**:
+- `reports/pipeline_*.yml`
+- `logs/orchestration_*.log`
+
+**성공**: 모든 피처 마이그레이션 완료, 게이트 통과
+
+**호출 예**:
+```bash
+/spawn orchestrator-pipeline "--features auth,posts,profile --mode sequential --gates all"
+```
+
 ## 3) 표준 실행 시나리오
 
 ### 3.1 시작 전 (베이스라인)
@@ -198,8 +245,8 @@ BuildSentinel (full) → 최종 게이트
 /spawn repo-mover "--feature posts --mode dry-run --include repositories,mappers,firebase,api"
 /spawn repo-mover "--feature posts --mode apply --include repositories,mappers"
 
-# 매퍼 분해
-/spawn struct-weaver "--task mapper --mode detect --source lib/backend/models/migration/model_adapter.dart"
+# 매퍼 분해 (v4.0: bridge false 필수)
+/spawn struct-weaver "--task mapper --mode detect --bridge false --source lib/backend/models/migration/model_adapter.dart"
 
 # DI 결선
 /spawn di-binder "--feature posts --port 'package:.../posts/domain/repositories/post_repository.dart' --adapter 'package:.../posts/data/repositories/post_repository_impl.dart' --deps firestore,dio --mode detect"
@@ -219,8 +266,8 @@ git apply patches/import_guardian_fix.diff
 /spawn router-splitter "--features posts,auth,chat,profile,search,notifications --mode detect"
 # 리뷰 후 apply
 
-# 상태 분리
-/spawn struct-weaver "--task state --mode detect --map 'MediaUploadProvider->lib/features/upload/presentation/providers/media_upload_provider.dart;ContentCreationProvider->lib/features/posts/presentation/providers/content_creation_provider.dart'"
+# 상태 분리 (v4.0: bridge false 필수)
+/spawn struct-weaver "--task state --mode detect --bridge false --map 'MediaUploadProvider->lib/features/upload/presentation/providers/media_upload_provider.dart;ContentCreationProvider->lib/features/posts/presentation/providers/content_creation_provider.dart'"
 
 # 최종 점검
 /spawn import-guardian "--scope all --mode detect"

@@ -1,0 +1,202 @@
+# Migration Manifest Template (Direct Migration v4.0)
+# Purpose: Track Clean Architecture migrations without Facade pattern
+# Strategy: Direct migration with atomic commits
+# Usage: Copy this template for each feature migration
+
+feature: [feature_name]  # e.g., auth, posts, profile
+date: [YYYY-MM-DD]
+status: [planning|in_progress|completed]
+migration_type: direct  # Direct migration without Facade
+migrated_by: [AI/Human/Both]
+
+# Phase 1: Domain Layer
+domain:
+  created_files:
+    - path: lib/features/[feature]/domain/repositories/i_[feature]_repository.dart
+      purpose: Repository interface definition
+      lines: ~50
+
+    - path: lib/features/[feature]/domain/usecases/[action]_use_case.dart
+      purpose: [Describe use case purpose]
+      lines: ~40
+
+  models:
+    - path: lib/features/[feature]/domain/models/[model].dart
+      purpose: Domain model
+      lines: ~100
+
+# Phase 2: Data Layer
+data:
+  created_files:
+    - path: lib/features/[feature]/data/repositories/[feature]_repository_impl.dart
+      purpose: Repository implementation
+      lines: ~200
+
+    - path: lib/features/[feature]/data/datasources/[feature]_remote_datasource.dart
+      purpose: Remote data operations
+      lines: ~150
+
+    - path: lib/features/[feature]/data/datasources/[feature]_local_datasource.dart
+      purpose: Local caching
+      lines: ~100
+
+  adapters:
+    - path: lib/features/[feature]/data/adapters/[adapter]_adapter.dart
+      purpose: External service integration
+      lines: ~80
+
+# Phase 3: DI Configuration
+dependency_injection:
+  created_files:
+    - path: lib/features/[feature]/di/[feature]_di_module.dart
+      purpose: Feature DI module
+      lines: ~100
+
+  integration:
+    - file: lib/app/di.dart
+      change: Added register[Feature]Module(getIt) call
+      line: ~[line_number]
+
+# Phase 4: Presentation Layer
+presentation:
+  created_files:
+    - path: lib/features/[feature]/presentation/providers/[feature]_provider.dart
+      purpose: State management
+      lines: ~150
+
+    - path: lib/features/[feature]/presentation/screens/[screen]_screen.dart
+      purpose: UI screen
+      lines: ~300
+
+# Migration Scope (Direct Migration 추적)
+migration_scope:
+  files_affected: [number]        # 영향받는 파일 수
+  references_updated: [number]     # 업데이트된 참조 수
+  tests_added: [number]           # 추가된 테스트 수
+  legacy_removed: [number]        # 제거된 레거시 파일 수
+
+# Legacy Code Handling (Direct Migration)
+legacy_handling:
+  original_file: lib/[old_path]/[old_file].dart
+  type: "[Type A/B/C - see ARCHITECTURE_RULES.md]"
+  dependencies: [number] files  # grep으로 확인한 의존성 수
+
+  # 코드 검색 결과 (필수)
+  search_performed:
+    - command: "grep -r '[function_name]' lib/"
+    - found: [true/false]
+    - locations: ["path1", "path2"]  # 발견된 기존 코드 위치
+
+  # 직접 전환 실행
+  direct_migration:
+    all_references_found: [true/false]
+    references_count: [number]
+    migration_strategy: atomic  # atomic, incremental
+    rollback_plan: [describe rollback strategy]
+
+# Moved/Refactored Code (이동된 코드 추적)
+moved_code:
+  - from: lib/[old_path]/[old_file].dart
+    to: lib/features/[feature]/[layer]/[new_location]
+    lines_before: 1000
+    lines_after: "14 files × ~50 lines each"
+    reason: Split mixed responsibilities
+    method: "moved"  # moved, copied, refactored
+
+  # 구체적 코드 이동 추적
+  - from_function: "[original_function_name]"
+    to_usecase: "[UseCase name]"
+    lines: "[20-30] → [15-25]"
+
+# Atomic Commit (직접 전환 검증)
+atomic_commit:
+  commit_hash: [git_hash]
+  commit_message: "feat([feature]): Migrate to Clean Architecture without Facade"
+  all_tests_passing: [true/false]
+  rollback_possible: [true/false]
+  verification:
+    - [ ] 모든 레거시 참조 제거
+    - [ ] 새 UseCase로 완전 교체
+    - [ ] 기능 동작 확인
+    - [ ] 성능 저하 없음
+    - [ ] 테스트 커버리지 80% 이상
+
+# Removed Files (레거시 코드 완전 제거)
+removed_files:
+  - path: lib/[old_path]/[old_file].dart
+    reason: [Why removed]
+    status: "removed"  # removed, archived
+    replacement: lib/features/[feature]/[new_location]
+    breaking_change: [false/true]
+    backup_location: [archive/path if archived]
+
+# Integration Points
+integration_points:
+  di:
+    - file: lib/app/di.dart
+      import: package:versus_space/features/[feature]/di/[feature]_di_module.dart
+      usage: register[Feature]Module(getIt);
+
+  router:
+    - file: lib/app/router/app_router.dart
+      import: package:versus_space/features/[feature]/presentation/screens/[screen].dart
+      route: /[feature]/[route]
+
+  exports:
+    - file: lib/features/[feature]/[feature]_exports.dart
+      purpose: Public API for the feature
+
+# Testing
+tests:
+  unit:
+    - path: test/features/[feature]/domain/usecases/[usecase]_test.dart
+      coverage: 90%
+
+  integration:
+    - path: test/features/[feature]/data/repositories/[repo]_test.dart
+      coverage: 85%
+
+  widget:
+    - path: test/features/[feature]/presentation/screens/[screen]_test.dart
+      coverage: 80%
+
+# Metrics (Direct Migration)
+metrics:
+  files_created: 25
+  files_removed: 3  # 레거시 파일 완전 제거
+  lines_of_code:
+    before: 2000 (3 files)
+    after: 1500 (25 files)
+  average_file_size: 60 lines
+  architecture_score: 95/100  # Based on Clean Architecture v4.0 compliance
+  migration_time: [hours/days]  # 실제 마이그레이션 소요 시간
+  test_coverage: [percentage]  # 테스트 커버리지
+
+# Notes
+notes:
+  - [Any important information about the migration]
+  - [Challenges faced and solutions]
+  - [Future improvements needed]
+
+# Direct Migration Validation Checklist
+validation:
+  pre_migration:
+    - [ ] 모든 사용처 파악 완료
+    - [ ] 의존성 트리 작성 완료
+    - [ ] 영향 범위 분석 완료
+
+  migration_execution:
+    - [ ] 1 UseCase = 1 파일 준수
+    - [ ] Repository 인터페이스 domain에 위치
+    - [ ] DTO는 Firebase 1:1 매핑
+    - [ ] DI 모듈 생성 및 등록
+
+  post_migration:
+    - [ ] 모든 레거시 코드 제거
+    - [ ] 모든 테스트 통과
+    - [ ] No circular dependencies
+    - [ ] No direct Firebase imports in domain
+    - [ ] No cross-feature imports
+    - [ ] flutter analyze shows 0 issues
+    - [ ] Architecture rules v4.0 compliance 100%
+    - [ ] Atomic commit 완료

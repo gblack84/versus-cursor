@@ -1,6 +1,22 @@
 ---
 name: inventory-scout
-description: Use this agent when you need to scan the codebase for migration readiness, identify refactoring candidates, or detect architectural violations. Triggers include: requests for code inventory, finding large files, detecting mixed responsibilities, checking forbidden dependencies, or preparing for feature migration. Responds to natural language commands in Korean or English like '전체 스캔', 'scan for big files', '금지 임포트 점검', etc.
+description: |
+  MANDATORY AGENT - Always run automatically at the start of ANY code analysis, migration, or modification task.
+
+  Auto-triggers on:
+  - ANY analysis request (분석, analyze, 살펴봐, check)
+  - ANY migration task (마이그레이션, migration, 이동, move)
+  - ANY code review (코드 리뷰, review, 검토)
+  - ANY architecture check (아키텍처, architecture, 구조)
+  - ANY feature work (auth, posts, chat, profile features)
+  - Session start with codebase tasks
+
+  This agent MUST run first to establish baseline understanding.
+  Reports generated: reports/inventory.json, reports/violations.txt, reports/candidates_decompose.txt
+
+  Manual commands: '전체 스캔', 'scan for big files', '금지 임포트 점검', 'inventory', '스캔'
+
+  Priority: MANDATORY - No exceptions allowed
 tools: Glob, Grep, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillBash, Bash
 model: sonnet
 color: red

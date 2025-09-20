@@ -1562,3 +1562,82 @@ if (model.isVideoSelectedA) {
 - [변경 이력](./CHANGELOG.md)
 - [문서화 인덱스](./index_document.md)
 - [네이밍 컨벤션](./docs/guides/NAMING_CONVENTION.md)
+
+## 📋 Auth Feature Testing Strategy (격리 테스트)
+
+**Date**: 2025-01-20 | **Status**: Migration in Progress
+
+### 현재 상황
+- 앱 전체 빌드 에러로 인해 통합 테스트 실행 불가
+- Auth feature를 Clean Architecture v4.0으로 마이그레이션 중
+- 격리된 단위 테스트 전략으로 전환
+
+### 테스트 전략
+```yaml
+approach: "Complete Feature Isolation"
+method: "Dependency Injection + Comprehensive Mocking"
+validation: "Unit Tests Only"
+coverage_target: "80% through business logic tests"
+```
+
+### Mock 인프라
+```dart
+// 사용 가능한 Mock 클래스들
+MockFirebaseAuth         // Firebase Auth 서비스 모킹
+MockFirebaseFirestore    // Firestore 데이터베이스 모킹
+MockGoogleSignIn        // Google 로그인 모킹
+MockAuthRepository      // Repository 인터페이스 모킹
+AuthFixtures           // 테스트용 사용자 데이터
+TokenFixtures         // 테스트용 토큰 데이터
+```
+
+### 테스트 실행 명령어
+```bash
+# Auth feature 단위 테스트 실행
+flutter test lib/features/auth/test/unit
+
+# 커버리지와 함께 실행
+flutter test lib/features/auth/test/unit --coverage
+
+# HTML 커버리지 리포트 생성
+genhtml coverage/lcov.info -o coverage/html
+open coverage/html/index.html
+
+# 격리 검증 (Firebase 의존성 없음 확인)
+grep -r "import 'package:firebase" lib/features/auth/test/unit/ || echo "✅ No Firebase deps"
+
+# 커버리지 확인
+lcov --summary coverage/lcov.info | grep lines
+```
+
+### 테스트 구조
+```
+lib/features/auth/
+├── domain/
+│   ├── repositories/    # 인터페이스 정의 (모킹용)
+│   └── usecases/       # 비즈니스 로직 (100% 커버리지 목표)
+├── data/
+│   └── repositories/    # 구현체 (90% 커버리지 목표)
+└── test/
+    ├── unit/           # 격리된 단위 테스트
+    ├── mocks/         # Mock 정의
+    └── fixtures/      # 테스트 데이터
+```
+
+### Quick Start
+```bash
+# 1. Mock 생성
+flutter pub run build_runner build --delete-conflicting-outputs
+
+# 2. 테스트 실행
+flutter test lib/features/auth/test/unit
+
+# 3. 커버리지 확인
+echo "Coverage: $(lcov --summary coverage/lcov.info | grep lines | awk '{print $2}')"
+```
+
+### 관련 문서
+- [Auth Migration Plan](/specs/001-users-g-black/plan.md)
+- [Test Quickstart Guide](/specs/001-users-g-black/quickstart.md)
+- [Domain Models](/specs/001-users-g-black/data-model.md)
+- [Repository Contracts](/specs/001-users-g-black/contracts/)

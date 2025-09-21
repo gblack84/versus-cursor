@@ -29,6 +29,8 @@ def parse_args():
     p.add_argument("--apply", dest="apply", action="store_true", default=False)
     p.add_argument("--ignore", default="test/,mocks/,*.g.dart,*.freezed.dart,build/,.dart_tool/,coverage/")
     p.add_argument("--plan", default="", help="optional RepoMover plan for backend mapping (not used in this minimal skeleton)")
+    p.add_argument("--output", choices=["file", "stdout", "both"], default="file",
+                   help="Output destination: file (default), stdout, or both")
     return p.parse_args()
 
 def should_ignore(path: Path, ignore_globs):
@@ -180,10 +182,67 @@ def main():
         else:
             summary["fixes_generated"] = 0
 
+    # Claude-centric JSON output
+    next_action = None
+    if sum(by_rule.values()) > 0 and args.mode == "detect":
+        next_action = {
+            "recommended_agent": "import-guardian",
+            "params": {"mode": "fix", "scope": args.scope},
+            "priority": "high",
+            "reason": f"Fix {sum(by_rule.values())} violations detected"
+        }
+    elif args.mode == "fix" and summary.get("fixes_generated", 0) > 0:
+        next_action = {
+            "recommended_agent": "build-sentinel",
+            "params": {"mode": "quick"},
+            "priority": "medium",
+            "reason": "Verify fixes with quick build check"
+        }
+
+    claude_output = {
+        "agent": "import-guardian",
+        "version": "1.0.0",
+        "timestamp": datetime.now().isoformat(),
+        "status": "success" if args.mode == "detect" or summary.get("fixes_generated", 0) > 0 else "no_action",
+        "data": {
+            "mode": args.mode,
+            "scope": args.scope,
+            "violations": {
+                "total": sum(by_rule.values()),
+                "by_type": dict(by_rule)
+            },
+            "fixes": {
+                "generated": summary.get("fixes_generated", 0),
+                "patch_file": summary.get("patch_file", None)
+            }
+        },
+        "next_action": next_action,
+        "decision_hints": {
+            "has_violations": sum(by_rule.values()) > 0,
+            "critical_violations": by_rule.get("presentation->data", 0) > 0,
+            "fixes_available": args.mode == "fix" and summary.get("fixes_generated", 0) > 0,
+            "needs_review": args.mode == "fix" and not args.apply
+        }
+    }
+
+    # Save or output Claude-centric JSON based on args
+    json_output = json.dumps(claude_output, ensure_ascii=False, indent=2)
+
+    if args.output in ["file", "both"]:
+        (REPORTS / "import_guardian.json").write_text(
+            json_output, encoding="utf-8"
+        )
+
+    if args.output in ["stdout", "both"]:
+        print(json_output)
+        sys.stdout.flush()
+
+    # Keep legacy format
     (REPORTS / f"import_guardian_{args.scope}.yml").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    print("Import Guardian done. See reports/ and patches/ .")
+    if args.output == "file":
+        print("Import Guardian done. See reports/ and patches/ .")
 
 if __name__ == "__main__":
     sys.exit(main())

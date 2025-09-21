@@ -6,7 +6,7 @@ StructWeaver - (task=mapper|state) 분해/생성 패치
 - state:   app_state 등 전역 상태 → features/*/presentation/providers/* 생성 스텁
 기능: detect(패치 생성), apply(파일 생성)
 """
-import argparse, sys, difflib
+import argparse, sys, difflib, json
 from pathlib import Path
 from datetime import datetime
 
@@ -48,6 +48,8 @@ def main():
     ap.add_argument("--features", default="auto")
     ap.add_argument("--map", default="")  # "SymA->lib/features/upload/presentation/providers/upload_provider.dart;SymB->..."
     ap.add_argument("--mode", choices=["detect","apply"], default="detect")
+    ap.add_argument("--output", choices=["file", "stdout", "both"], default="file",
+                    help="Output destination: file (default), stdout, or both")
     args = ap.parse_args()
 
     changes=[]
@@ -75,14 +77,84 @@ def main():
 
     diff = mk_diff(changes)
     patch.write_text(diff, encoding="utf-8")
-    REPORTS/f"struct_weaver_{args.task}.yml".write_text(
-        f"task: {args.task}\nmode: {args.mode}\npatch: {patch}\nfiles: {len(changes)}\n",
-        encoding="utf-8"
-    )
+
     if args.mode=="apply":
         for p, old, new in changes:
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(new, encoding="utf-8")
+
+    # Claude-centric JSON output
+    structures_decomposed = len(changes)
+
+    next_action = None
+    if structures_decomposed > 0:
+        if args.mode == "detect":
+            next_action = {
+                "recommended_agent": "struct-weaver",
+                "params": {"task": args.task, "mode": "apply"},
+                "priority": "medium",
+                "reason": f"Apply patches for {structures_decomposed} structures"
+            }
+        else:
+            next_action = {
+                "recommended_agent": "import-guardian",
+                "params": {"mode": "detect", "scope": "all"},
+                "priority": "high",
+                "reason": f"Check imports after decomposing {structures_decomposed} structures"
+            }
+
+    # Extract affected features for decision hints
+    affected_features = set()
+    for p, _, _ in changes:
+        path_str = str(p)
+        if "/features/" in path_str:
+            feature = path_str.split("/features/")[1].split("/")[0]
+            affected_features.add(feature)
+
+    claude_output = {
+        "agent": "struct-weaver",
+        "version": "1.0.0",
+        "timestamp": datetime.now().isoformat(),
+        "status": "success" if structures_decomposed > 0 else "no_action",
+        "data": {
+            "task": args.task,
+            "mode": args.mode,
+            "structures_decomposed": structures_decomposed,
+            "patch_file": str(patch) if structures_decomposed > 0 else None,
+            "affected_features": list(affected_features),
+            "files_created": [
+                str(p.relative_to(ROOT)) for p, _, _ in changes
+            ] if args.mode == "apply" else [],
+            "source_file": args.source if args.task == "mapper" else args.file
+        },
+        "next_action": next_action,
+        "decision_hints": {
+            "needs_decomposition": structures_decomposed > 0,
+            "ready_to_apply": args.mode == "detect" and structures_decomposed > 0,
+            "applied_successfully": args.mode == "apply" and structures_decomposed > 0,
+            "task_type": args.task,
+            "features_affected": len(affected_features)
+        }
+    }
+
+    # Save or output Claude-centric JSON based on args
+    json_output = json.dumps(claude_output, ensure_ascii=False, indent=2)
+
+    if args.output in ["file", "both"]:
+        (REPORTS / "struct_weaver.json").write_text(
+            json_output,
+            encoding="utf-8"
+        )
+
+    if args.output in ["stdout", "both"]:
+        print(json_output)
+        sys.stdout.flush()
+
+    # Keep legacy output
+    (REPORTS / f"struct_weaver_{args.task}.yml").write_text(
+        f"task: {args.task}\nmode: {args.mode}\npatch: {patch}\nfiles: {len(changes)}\n",
+        encoding="utf-8"
+    )
     print(f"[StructWeaver] patch -> {patch} (mode={args.mode})")
 
 if __name__=="__main__":

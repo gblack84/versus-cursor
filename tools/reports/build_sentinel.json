@@ -1,0 +1,32 @@
+{
+  "agent": "build-sentinel",
+  "version": "1.0.0",
+  "timestamp": "2025-09-21T14:26:38.687865",
+  "status": "success",
+  "data": {
+    "mode": "quick",
+    "platform": "none",
+    "flutter_version": "3.32.5",
+    "dart_version": "3.8.1",
+    "analysis": {
+      "errors": 0,
+      "warnings": 0,
+      "by_type": {
+        "import": 0,
+        "di": 0,
+        "undefined": 0
+      }
+    },
+    "test": {
+      "failures": 0
+    }
+  },
+  "next_action": null,
+  "decision_hints": {
+    "has_import_errors": false,
+    "has_di_errors": false,
+    "has_test_failures": false,
+    "needs_rollback": false,
+    "error_priority": "none"
+  }
+}

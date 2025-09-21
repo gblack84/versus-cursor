@@ -72,7 +72,7 @@ You may execute commands like:
 python tools/repo_mover.py --feature <name> --mode dry-run --include repositories,mappers
 git mv lib/backend/repositories/user_repository.dart lib/features/auth/data/repositories/user_repository_impl.dart
 mkdir -p lib/features/notifications/data/mappers
-echo "Migration completed" >> reports/repo_mover_notifications.yml
+echo "Migration completed" >> reports/repo_mover_notifications.json
 ```
 
 ## Default Behavior

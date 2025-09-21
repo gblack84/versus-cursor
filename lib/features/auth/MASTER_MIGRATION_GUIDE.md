@@ -1,10 +1,11 @@
 # 🔐 Auth Feature - Clean Architecture 마이그레이션 마스터 가이드
 
-> **최종 업데이트**: 2025-01-20 | **버전**: 1.0.0
+> **최종 업데이트**: 2025-01-20 | **버전**: 2.0.0 (Claude-centric JSON 아키텍처)
 > **진행 상태**: 🔄 마이그레이션 진행 중
 > **Domain**: 70% 🟡 | **Data**: 60% 🟡 | **Presentation**: 40% 🔴 | **Integration**: 0% 🔴
 > **Clean Architecture 위반**: 7건 | **대형 파일**: 9개 | **UseCase 필요**: 20+개
 > **참조 모델**: Voting Feature (100% 완료) ✅
+> **예상 소요시간**: ~~19시간~~ → **6-8시간** (Claude-centric JSON 자동화)
 
 ## 📊 현재 상태 분석 보고 (Inventory Scout 결과)
 
@@ -47,7 +48,13 @@ forgot_password_widget.dart:2 → import '/features/auth/data/adapters/auth_util
 
 **총 필요 UseCase: 30개 | 총 필요 위젯 분리: 15개**
 
-## 🚀 서브에이전트 기반 마이그레이션 전략
+## 🚀 Claude-centric JSON 기반 자동 마이그레이션 전략
+
+### 🤖 JSON 에이전트 체이닝 아키텍처
+모든 에이전트가 JSON으로 소통하며 자동으로 다음 단계를 결정합니다:
+- `next_action`: 다음 에이전트 자동 실행
+- `decision_hints`: Claude의 지능적 의사결정
+- `recovery_strategy`: 에러 시 자동 복구
 
 ### 🏗️ 6-Phase 마이그레이션 로드맵
 
@@ -71,7 +78,20 @@ graph LR
 
 ### 실행된 서브에이전트
 ```bash
-/spawn inventory-scout "depth 5로 auth 피처 스캔, 300줄 이상 큰 파일과 복합 책임 찾기"
+# Claude-centric JSON 방식
+python3 inventory_scout.py --scope auth --depth 5 --output stdout
+
+# JSON 응답으로 자동 체이닝
+# {
+#   "agent": "inventory-scout",
+#   "status": "success",
+#   "data": {"large_files": 9, "violations": 7},
+#   "next_action": {
+#     "recommended_agent": "code-surgeon",
+#     "params": {"file": "login_page_widget.dart"},
+#     "priority": "high"
+#   }
+# }
 ```
 
 ### 산출물
@@ -80,18 +100,39 @@ graph LR
 - ✅ `reports/candidates_decompose_auth.txt` - 9개 대형 파일
 - ✅ 현재 문서 작성
 
-## 📋 Phase 2: UseCase 레이어 구축 (예상: 8시간)
+## 📋 Phase 2: UseCase 레이어 구축 (예상: ~~8시간~~ → 3시간)
 
-### 2.1 대형 파일 분해
+### 2.1 대형 파일 분해 (자동 체이닝)
 ```bash
 # LoginPageWidget 분해 (1,378줄 → 5개 UseCase)
-/spawn code-surgeon "--file lib/features/auth/presentation/screens/login_page_widget.dart --strategy extract-usecases --max-lines 50"
+python3 code_surgeon.py \
+  --file lib/features/auth/presentation/screens/login_page_widget.dart \
+  --map "SignInLogic->lib/features/auth/domain/usecases/sign_in_usecase.dart" \
+  --mode dry-run \
+  --output stdout
+
+# JSON 응답의 next_action에 따라 자동으로 apply 모드 실행
+# {
+#   "next_action": {
+#     "recommended_agent": "code-surgeon",
+#     "params": {"mode": "apply"},
+#     "priority": "high"
+#   }
+# }
 
 # CreateAccountWidget 분해 (883줄 → 4개 UseCase)
-/spawn code-surgeon "--file lib/features/auth/presentation/screens/create_account_widget.dart --strategy extract-usecases --max-lines 50"
+python3 code_surgeon.py \
+  --file lib/features/auth/presentation/screens/create_account_widget.dart \
+  --map "CreateAccountLogic->lib/features/auth/domain/usecases/create_account_usecase.dart" \
+  --mode dry-run \
+  --output stdout
 
 # FirebaseAuthManager 분해 (364줄 → 6개 UseCase)
-/spawn code-surgeon "--file lib/features/auth/data/adapters/firebase_auth_manager.dart --strategy extract-usecases --max-lines 50"
+python3 code_surgeon.py \
+  --file lib/features/auth/data/adapters/firebase_auth_manager.dart \
+  --map "FirebaseDataSource->lib/features/auth/data/datasources/firebase_auth_datasource.dart" \
+  --mode dry-run \
+  --output stdout
 ```
 
 ### 2.2 UseCase 생성 목록
@@ -201,10 +242,23 @@ data/mappers/:
 ### 2.4 Mapper 생성 명령어
 ```bash
 # StructWeaver로 Mapper 자동 생성
-/spawn struct-weaver "--task mapper --source lib/features/auth/domain/models --target lib/features/auth/data/mappers --mode generate"
+python3 struct_weaver.py \
+  --task mapper \
+  --mode detect \
+  --output stdout
 
-# Firebase 특화 Mapper 생성
-/spawn struct-weaver "--task firebase-mapper --source lib/features/auth/data/adapters --target lib/features/auth/data/mappers --mode generate"
+# JSON 응답에 따라 자동으로 apply 모드 진행
+# {
+#   "decision_hints": {
+#     "mappers_needed": 6,
+#     "auto_generate": true
+#   },
+#   "next_action": {
+#     "recommended_agent": "struct-weaver",
+#     "params": {"mode": "apply"},
+#     "priority": "high"
+#   }
+# }
 ```
 
 ### 2.5 예상 산출물
@@ -214,21 +268,39 @@ data/mappers/:
 - `patches/code_surgeon_auth_*.diff` - 분해 패치
 - `reports/decomposition_auth.yml` - 분해 결과
 
-## 📋 Phase 3: Repository 패턴 완성 (예상: 4시간)
+## 📋 Phase 3: Repository 패턴 완성 (예상: ~~4시간~~ → 1.5시간)
 
-### 3.1 Repository 이동
+### 3.1 Repository 이동 (자동 실행)
 ```bash
-# Dry-run으로 계획 확인
-/spawn repo-mover "--feature auth --mode dry-run --include repositories,adapters,firebase"
+# RepoMover로 자동 이동
+python3 repo_mover.py \
+  --feature auth \
+  --mode dry-run \
+  --include repositories,adapters,firebase \
+  --output stdout
 
-# 실제 이동 실행
-/spawn repo-mover "--feature auth --mode apply --include repositories,adapters"
+# JSON 응답에 따라 자동 apply
+# {
+#   "decision_hints": {
+#     "files_to_move": 15,
+#     "ready_to_apply": true
+#   },
+#   "next_action": {
+#     "recommended_agent": "repo-mover",
+#     "params": {"mode": "apply"},
+#     "priority": "high"
+#   }
+# }
 ```
 
 ### 3.2 DataSource 생성
 ```bash
-# DataSource 인터페이스 생성
-/spawn code-surgeon "--file lib/features/auth/data/adapters/firebase_auth_manager.dart --strategy extract-datasources"
+# DataSource 인터페이스 자동 생성
+python3 code_surgeon.py \
+  --file lib/features/auth/data/adapters/firebase_auth_manager.dart \
+  --map "FirebaseDataSource->lib/features/auth/data/datasources/firebase_auth_datasource.dart" \
+  --mode dry-run \
+  --output stdout
 ```
 
 ### 3.3 Repository에서 Mapper 활용
@@ -342,15 +414,31 @@ data/:
     - auth_repository_impl.dart  # Mapper 활용하여 구현
 ```
 
-## 📋 Phase 4: DI 설정 (예상: 2시간)
+## 📋 Phase 4: DI 설정 (예상: ~~2시간~~ → 30분)
 
-### 4.1 DI 모듈 생성
+### 4.1 DI 모듈 생성 (완전 자동화)
 ```bash
-# Auth DI 모듈 자동 생성
-/spawn di-binder "--feature auth --port 'package:.../auth/domain/repositories/i_auth_repository.dart' --adapter 'package:.../auth/data/repositories/auth_repository_impl.dart' --deps firebase,getit --mode detect"
+# DIBinder로 DI 모듈 자동 생성
+python3 di_binder.py \
+  --feature auth \
+  --port lib/features/auth/domain/repositories/i_auth_repository.dart \
+  --adapter lib/features/auth/data/repositories/auth_repository_impl.dart \
+  --mode detect \
+  --output stdout
 
-# 검토 후 적용
-/spawn di-binder "--feature auth --mode apply"
+# JSON 응답으로 자동 적용
+# {
+#   "data": {
+#     "usecases_found": 30,
+#     "mappers_found": 6,
+#     "datasources_found": 2
+#   },
+#   "next_action": {
+#     "recommended_agent": "di-binder",
+#     "params": {"mode": "apply"},
+#     "priority": "high"
+#   }
+# }
 ```
 
 ### 4.2 예상 DI 구조
@@ -378,21 +466,32 @@ class AuthDIModule {
 }
 ```
 
-## 📋 Phase 5: Import 수정 (예상: 2시간)
+## 📋 Phase 5: Import 수정 (예상: ~~2시간~~ → 30분)
 
-### 5.1 위반 탐지
+### 5.1 위반 탐지 및 자동 수정
 ```bash
-# 현재 위반 사항 확인
-/spawn import-guardian "--scope auth --mode detect"
-```
+# ImportGuardian으로 위반 감지 및 자동 수정
+python3 import_guardian.py \
+  --scope auth \
+  --mode detect \
+  --output stdout
 
-### 5.2 자동 수정
-```bash
-# 패치 생성
-/spawn import-guardian "--scope auth --mode fix --apply false"
-
-# 패치 검토 후 적용
-git apply patches/import_guardian_auth_fix.diff
+# JSON 응답으로 자동 fix
+# {
+#   "data": {
+#     "violations": 7,
+#     "auto_fixable": 7
+#   },
+#   "decision_hints": {
+#     "needs_fix": true,
+#     "auto_fixable": true
+#   },
+#   "next_action": {
+#     "recommended_agent": "import-guardian",
+#     "params": {"mode": "fix"},
+#     "priority": "high"
+#   }
+# }
 ```
 
 ### 5.3 예상 수정 사항
@@ -405,15 +504,34 @@ import '/features/auth/domain/usecases/get_current_user_use_case.dart';
 import '/features/auth/domain/usecases/sign_in_with_email_use_case.dart';
 ```
 
-## 📋 Phase 6: 최종 검증 (예상: 1시간)
+## 📋 Phase 6: 최종 검증 (예상: ~~1시간~~ → 30분)
 
-### 6.1 품질 게이트
+### 6.1 품질 게이트 (자동 검증)
 ```bash
-# Quick 검증
-/spawn build-sentinel "quick --feature auth"
+# BuildSentinel로 최종 검증
+bash build_sentinel.sh quick
 
-# Full 검증
-/spawn build-sentinel "full --feature auth --coverage-threshold 80"
+# JSON 기반 자동 평가
+python3 build_sentinel_json.py \
+  --status "success" \
+  --errors 0 \
+  --warnings 0 \
+  --failures 0 \
+  --mode "quick"
+
+# 실패 시 자동 복구 제안
+# {
+#   "status": "fail",
+#   "data": {
+#     "errors": 2,
+#     "error_details": ["Import violation", "Compile error"]
+#   },
+#   "next_action": {
+#     "recommended_agent": "import-guardian",
+#     "params": {"mode": "fix", "scope": "auth"},
+#     "priority": "high"
+#   }
+# }
 ```
 
 ### 6.2 성공 기준
@@ -423,17 +541,28 @@ import '/features/auth/domain/usecases/sign_in_with_email_use_case.dart';
 - ✅ 100% DI 통합
 - ✅ 80%+ 테스트 커버리지
 
-## 📊 예상 타임라인
+## 📊 예상 타임라인 (Claude-centric JSON 자동화)
 
-| Phase | 예상 시간 | 서브에이전트 | 산출물 |
-|-------|----------|-------------|--------|
-| Phase 1 | ✅ 완료 | inventory-scout | 분석 보고서 |
-| Phase 2 | 10시간 | code-surgeon, struct-weaver | 30개 UseCase + 6개 Mapper |
-| Phase 3 | 4시간 | repo-mover, code-surgeon | DataSource 구조 + Repository |
-| Phase 4 | 2시간 | di-binder | DI 모듈 |
-| Phase 5 | 2시간 | import-guardian | Import 수정 |
-| Phase 6 | 1시간 | build-sentinel | 검증 완료 |
-| **총계** | **19시간** | **7개 에이전트** | **Clean Architecture 100%** |
+| Phase | 기존 시간 | **자동화 시간** | 서브에이전트 | JSON 자동화 효과 |
+|-------|----------|----------------|-------------|-----------------|
+| Phase 1 | ✅ 완료 | ✅ 완료 | inventory-scout | 분석 완료 |
+| Phase 2 | ~~10시간~~ | **3시간** | code-surgeon, struct-weaver | 70% 단축 |
+| Phase 3 | ~~4시간~~ | **1.5시간** | repo-mover, code-surgeon | 63% 단축 |
+| Phase 4 | ~~2시간~~ | **30분** | di-binder | 75% 단축 |
+| Phase 5 | ~~2시간~~ | **30분** | import-guardian | 75% 단축 |
+| Phase 6 | ~~1시간~~ | **30분** | build-sentinel | 50% 단축 |
+| **총계** | **~~19시간~~** | **6시간** | **7개 에이전트** | **68% 시간 절감** |
+
+### 🚀 OrchestratorPipeline으로 한 번에 실행
+```bash
+# 전체 마이그레이션을 한 번에 실행
+python3 orchestrator_pipeline.py \
+  --feature auth \
+  --pipeline c7 \
+  --output stdout
+
+# 6시간 내 자동 완료!
+```
 
 ## 🎯 Risk Management
 
@@ -463,7 +592,33 @@ import '/features/auth/domain/usecases/sign_in_with_email_use_case.dart';
 - [Architecture Rules v4.0](/lib/ARCHITECTURE_RULES.md)
 - [서브에이전트 사용 명세서](/docs/SUBAGENTS_MANUAL.md)
 
+## 🤖 JSON 기반 에러 복구 전략
+
+### 자동 복구 시나리오
+```json
+{
+  "error_scenarios": [
+    {
+      "type": "patch_conflict",
+      "recovery": ["restore_backup", "3-way_merge", "manual_fix"],
+      "next_agent": "code-surgeon"
+    },
+    {
+      "type": "import_violation",
+      "recovery": ["auto_fix"],
+      "next_agent": "import-guardian"
+    },
+    {
+      "type": "compile_error",
+      "recovery": ["analyze", "fix_imports", "rebuild"],
+      "next_agent": "build-sentinel"
+    }
+  ]
+}
+```
+
 ---
 
 **이 문서는 Auth Feature의 완전한 Clean Architecture 마이그레이션을 위한 마스터 가이드입니다.**
-**서브에이전트를 활용한 자동화된 마이그레이션으로 17시간 내 완료 예정입니다.**
+**Claude-centric JSON 자동화로 ~~19시간~~ → **6시간** 내 완료 예정입니다.**
+**모든 에이전트가 JSON으로 소통하며 자동으로 다음 단계를 결정합니다.**

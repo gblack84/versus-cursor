@@ -48,6 +48,8 @@ def main():
     ap.add_argument("--impl-sym", required=False) # FooRepositoryImpl
     ap.add_argument("--deps", default="")         # firestore,dio,...
     ap.add_argument("--mode", choices=["detect","apply"], default="detect")
+    ap.add_argument("--output", choices=["file", "stdout", "both"], default="file",
+                    help="Output destination: file (default), stdout, or both")
     args = ap.parse_args()
 
     port_sym = args.port_sym or Path(args.port).stem.replace(".dart","").split("_")[-2].capitalize()+"Repository"
@@ -66,7 +68,65 @@ def main():
         APP_DI.parent.mkdir(parents=True, exist_ok=True)
         APP_DI.write_text(new, encoding="utf-8")
 
-    REPORTS/f"di_binder_{args.feature}.yml".write_text(
+    # Claude-centric JSON output
+    import json
+    from datetime import datetime as dt
+
+    bindings_added = 1 if new != src else 0
+    next_action = None
+
+    if bindings_added > 0 and args.mode == "apply":
+        next_action = {
+            "recommended_agent": "build-sentinel",
+            "params": {"mode": "test", "test_path": f"lib/features/{args.feature}/"},
+            "priority": "high",
+            "reason": f"Test DI bindings for {args.feature} feature"
+        }
+    elif bindings_added > 0 and args.mode == "detect":
+        next_action = {
+            "recommended_agent": "di-binder",
+            "params": {"feature": args.feature, "port": args.port, "adapter": args.adapter, "mode": "apply"},
+            "priority": "medium",
+            "reason": "Apply DI bindings"
+        }
+
+    claude_output = {
+        "agent": "di-binder",
+        "version": "1.0.0",
+        "timestamp": dt.now().isoformat(),
+        "status": "success" if bindings_added > 0 else "no_action",
+        "data": {
+            "feature": args.feature,
+            "port": args.port,
+            "adapter": args.adapter,
+            "mode": args.mode,
+            "bindings_added": bindings_added,
+            "patch_file": str(patch) if bindings_added > 0 else None,
+            "file_modified": str(APP_DI) if args.mode == "apply" and bindings_added > 0 else None
+        },
+        "next_action": next_action,
+        "decision_hints": {
+            "binding_needed": bindings_added > 0,
+            "ready_to_apply": args.mode == "detect" and bindings_added > 0,
+            "applied_successfully": args.mode == "apply" and bindings_added > 0
+        }
+    }
+
+    # Save or output Claude-centric JSON based on args
+    json_output = json.dumps(claude_output, ensure_ascii=False, indent=2)
+
+    if args.output in ["file", "both"]:
+        (REPORTS / "di_binder.json").write_text(
+            json_output,
+            encoding="utf-8"
+        )
+
+    if args.output in ["stdout", "both"]:
+        print(json_output)
+        sys.stdout.flush()
+
+    # Keep legacy format
+    (REPORTS / f"di_binder_{args.feature}.yml").write_text(
         f"feature: {args.feature}\nport: {args.port}\nadapter: {args.adapter}\npatch: {patch}\nmode: {args.mode}\n",
         encoding="utf-8"
     )

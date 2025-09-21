@@ -1,5 +1,7 @@
-import '/features/auth/domain/usecases/sign_in_with_email_usecase.dart';
-import '/features/auth/domain/usecases/create_test_account_usecase.dart';
+import 'package:get_it/get_it.dart';
+import '/features/auth/data/adapters/auth_util.dart';
+import '/features/profile/domain/repositories/i_user_repository.dart';
+import '/features/profile/domain/models/user_profile.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
@@ -22,8 +24,6 @@ class LoginPageWidget extends StatefulWidget {
 class _LoginPageWidgetState extends State<LoginPageWidget>
     with TickerProviderStateMixin {
   late LoginPageModel _model;
-  late SignInWithEmailUseCase _signInWithEmailUseCase;
-  late CreateTestAccountUseCase _createTestAccountUseCase;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -33,8 +33,6 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
   void initState() {
     super.initState();
     _model = createModel(context, () => LoginPageModel());
-    _signInWithEmailUseCase = SignInWithEmailUseCase();
-    _createTestAccountUseCase = CreateTestAccountUseCase();
 
     _model.emailAddressLoginTextController ??= TextEditingController();
     _model.emailAddressLoginFocusNode ??= FocusNode();
@@ -79,65 +77,6 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
     _model.dispose();
 
     super.dispose();
-  }
-
-  // Helper method for email login
-  Future<void> _handleEmailLogin() async {
-    GoRouter.of(context).prepareAuthEvent();
-
-    final user = await _signInWithEmailUseCase.execute(
-      context: context,
-      email: _model.emailAddressLoginTextController.text,
-      password: _model.passwordLoginTextController.text,
-    );
-
-    if (user == null) {
-      return;
-    }
-
-    if (context.mounted) {
-      context.pushNamedAuth(
-        TestpageSelectWidget.routeName,
-        context.mounted,
-        extra: <String, dynamic>{
-          kTransitionInfoKey: TransitionInfo(
-            hasTransition: true,
-            duration: Duration(milliseconds: 500),
-          ),
-        },
-      );
-    }
-  }
-
-  // Helper method for test account login
-  Future<void> _handleTestAccountLogin({
-    required String email,
-    required String password,
-    required String displayName,
-    required String role,
-    String? platform,
-  }) async {
-    GoRouter.of(context).prepareAuthEvent();
-
-    final user = await _createTestAccountUseCase.execute(
-      context: context,
-      email: email,
-      password: password,
-      displayName: displayName,
-      role: role,
-      platform: platform,
-    );
-
-    if (user == null) {
-      return;
-    }
-
-    if (context.mounted) {
-      context.pushNamedAuth(
-        TestpageSelectWidget.routeName,
-        context.mounted,
-      );
-    }
   }
 
   @override
@@ -401,7 +340,68 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                       0.0, 20.0, 0.0, 16.0),
                                   child: AppButtonWidget(
                                     onPressed: () async {
-                                      await _handleEmailLogin();
+                                      GoRouter.of(context).prepareAuthEvent();
+
+                                      final user =
+                                          await authManager.signInWithEmail(
+                                        context,
+                                        _model.emailAddressLoginTextController
+                                            .text,
+                                        _model.passwordLoginTextController.text,
+                                      );
+                                      if (user == null) {
+                                        return;
+                                      }
+
+                                      // authenticatedUserStream이 currentUser를 설정할 때까지 대기
+                                      int attempts = 0;
+                                      while (currentUserReference == null &&
+                                          attempts < 20) {
+                                        await Future.delayed(
+                                            const Duration(milliseconds: 500));
+                                        attempts++;
+                                      }
+
+                                      if (currentUserReference == null) {
+                                        debugPrint(
+                                            '경고: currentUserReference가 설정되지 않음');
+                                        // 직접 DocumentReference 생성하여 업데이트
+                                        final directRef = FirebaseFirestore
+                                            .instance
+                                            .collection('users')
+                                            .doc(user.uid);
+
+                                        await directRef.update({
+                                          ...mapToFirestore(
+                                            {
+                                              'lastActive':
+                                                  FieldValue.serverTimestamp(),
+                                            },
+                                          ),
+                                        });
+                                      } else {
+                                        // 정상적으로 currentUserReference 사용
+                                        await currentUserReference!.update({
+                                          ...mapToFirestore(
+                                            {
+                                              'lastActive':
+                                                  FieldValue.serverTimestamp(),
+                                            },
+                                          ),
+                                        });
+                                      }
+
+                                      context.pushNamedAuth(
+                                        TestpageSelectWidget.routeName,
+                                        context.mounted,
+                                        extra: <String, dynamic>{
+                                          kTransitionInfoKey: TransitionInfo(
+                                            hasTransition: true,
+                                            duration:
+                                                Duration(milliseconds: 500),
+                                          ),
+                                        },
+                                      );
                                     },
                                     text: AppLocalizations.of(context).getText(
                                       '4wwn8ov8' /* Log in */,
@@ -534,11 +534,107 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                             // 관리자 계정
                                             AppButtonWidget(
                                               onPressed: () async {
-                                                await _handleTestAccountLogin(
-                                                  email: 'admin@versus.test',
-                                                  password: 'test1234!',
-                                                  displayName: '관리자',
-                                                  role: 'admin',
+                                                GoRouter.of(context)
+                                                    .prepareAuthEvent();
+
+                                                // 먼저 로그인 시도
+                                                var user = await authManager
+                                                    .signInWithEmail(
+                                                  context,
+                                                  'admin@versus.test',
+                                                  'test1234!',
+                                                );
+
+                                                // 계정이 없으면 생성
+                                                if (user == null) {
+                                                  user = await authManager
+                                                      .createAccountWithEmail(
+                                                    context,
+                                                    'admin@versus.test',
+                                                    'test1234!',
+                                                  );
+
+                                                  if (user == null) {
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                            '관리자 계정 생성 실패'),
+                                                      ),
+                                                    );
+                                                    return;
+                                                  }
+
+                                                  // 사용자 문서 생성
+                                                  final usersCreateData = {
+                                                    'email':
+                                                        'admin@versus.test',
+                                                    'displayName': '관리자',
+                                                    'createdTime': FieldValue
+                                                        .serverTimestamp(),
+                                                    'role': 'admin',
+                                                    'uid': user.uid,
+                                                  };
+                                                  // Repository 패턴 사용 - createUser 메서드 활용
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+
+                                                  // UserProfile 생성
+                                                  await UserProfile.collection
+                                                      .doc(user.uid)
+                                                      .set(usersCreateData);
+                                                }
+
+                                                // authenticatedUserStream이 currentUser를 설정할 때까지 대기
+                                                int attempts = 0;
+                                                while (currentUserReference ==
+                                                        null &&
+                                                    attempts < 20) {
+                                                  await Future.delayed(
+                                                      const Duration(
+                                                          milliseconds: 500));
+                                                  attempts++;
+                                                }
+
+                                                if (currentUserReference ==
+                                                    null) {
+                                                  debugPrint(
+                                                      '경고: currentUserReference가 설정되지 않음');
+                                                  // 직접 DocumentReference 생성하여 업데이트
+                                                  // Repository를 통해 업데이트 (추후 완전 마이그레이션)
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+                                                  final directRef =
+                                                      userRepository
+                                                          .getUserReference(
+                                                              user.uid);
+
+                                                  await directRef.update({
+                                                    ...mapToFirestore({
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
+                                                      'role': 'admin',
+                                                    }),
+                                                  });
+                                                } else {
+                                                  // 정상적으로 currentUserReference 사용
+                                                  await currentUserReference!
+                                                      .update({
+                                                    ...mapToFirestore({
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
+                                                      'role': 'admin',
+                                                    }),
+                                                  });
+                                                }
+
+                                                context.pushNamedAuth(
+                                                  TestpageSelectWidget
+                                                      .routeName,
+                                                  context.mounted,
                                                 );
                                               },
                                               text: '관리자',
@@ -576,12 +672,117 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                             // 플랫폼별 테스트 계정
                                             AppButtonWidget(
                                               onPressed: () async {
-                                                await _handleTestAccountLogin(
-                                                  email: 'tester-ios@versus.test',
-                                                  password: 'test1234!',
-                                                  displayName: '테스터 (아이폰 16 프로)',
-                                                  role: 'tester',
-                                                  platform: 'ios',
+                                                GoRouter.of(context)
+                                                    .prepareAuthEvent();
+
+                                                // iOS 플랫폼 고정
+                                                final testEmail =
+                                                    'tester-ios@versus.test';
+                                                final testPassword =
+                                                    'test1234!';
+
+                                                // 먼저 로그인 시도
+                                                var user = await authManager
+                                                    .signInWithEmail(
+                                                  context,
+                                                  testEmail,
+                                                  testPassword,
+                                                );
+
+                                                // 계정이 없으면 생성
+                                                if (user == null) {
+                                                  user = await authManager
+                                                      .createAccountWithEmail(
+                                                    context,
+                                                    testEmail,
+                                                    testPassword,
+                                                  );
+
+                                                  if (user == null) {
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                            'iOS 테스터 계정 생성 실패'),
+                                                      ),
+                                                    );
+                                                    return;
+                                                  }
+
+                                                  // 사용자 문서 생성
+                                                  final usersCreateData = {
+                                                    'email': testEmail,
+                                                    'displayName':
+                                                        '테스터 (아이폰 16 프로)',
+                                                    'createdTime': FieldValue
+                                                        .serverTimestamp(),
+                                                    'role': 'tester',
+                                                    'platform':
+                                                        'ios', // 플랫폼 정보 저장
+                                                    'uid': user.uid,
+                                                  };
+                                                  // Repository 패턴 사용 - createUser 메서드 활용
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+
+                                                  // UserProfile 생성
+                                                  await UserProfile.collection
+                                                      .doc(user.uid)
+                                                      .set(usersCreateData);
+                                                }
+
+                                                // authenticatedUserStream이 currentUser를 설정할 때까지 대기
+                                                int attempts = 0;
+                                                while (currentUserReference ==
+                                                        null &&
+                                                    attempts < 20) {
+                                                  await Future.delayed(
+                                                      const Duration(
+                                                          milliseconds: 500));
+                                                  attempts++;
+                                                }
+
+                                                if (currentUserReference ==
+                                                    null) {
+                                                  debugPrint(
+                                                      '경고: currentUserReference가 설정되지 않음');
+                                                  // 직접 DocumentReference 생성하여 업데이트
+                                                  // Repository를 통해 업데이트 (추후 완전 마이그레이션)
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+                                                  final directRef =
+                                                      userRepository
+                                                          .getUserReference(
+                                                              user.uid);
+
+                                                  await directRef.update({
+                                                    ...mapToFirestore({
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
+                                                      'role': 'tester',
+                                                      'platform': 'ios',
+                                                    }),
+                                                  });
+                                                } else {
+                                                  // 정상적으로 currentUserReference 사용
+                                                  await currentUserReference!
+                                                      .update({
+                                                    ...mapToFirestore({
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
+                                                      'role': 'tester',
+                                                      'platform': 'ios',
+                                                    }),
+                                                  });
+                                                }
+
+                                                context.pushNamedAuth(
+                                                  TestpageSelectWidget
+                                                      .routeName,
+                                                  context.mounted,
                                                 );
                                               },
                                               text: '아이폰 16 프로',
@@ -626,12 +827,115 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                             // Android 테스트 계정
                                             AppButtonWidget(
                                               onPressed: () async {
-                                                await _handleTestAccountLogin(
-                                                  email: 'tester-android@versus.test',
-                                                  password: 'test1234!',
-                                                  displayName: '테스터 (Android)',
-                                                  role: 'tester',
-                                                  platform: 'android',
+                                                GoRouter.of(context)
+                                                    .prepareAuthEvent();
+
+                                                final testEmail =
+                                                    'tester-android@versus.test';
+                                                final testPassword =
+                                                    'test1234!';
+
+                                                // 먼저 로그인 시도
+                                                var user = await authManager
+                                                    .signInWithEmail(
+                                                  context,
+                                                  testEmail,
+                                                  testPassword,
+                                                );
+
+                                                // 계정이 없으면 생성
+                                                if (user == null) {
+                                                  user = await authManager
+                                                      .createAccountWithEmail(
+                                                    context,
+                                                    testEmail,
+                                                    testPassword,
+                                                  );
+
+                                                  if (user == null) {
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                            'Android 테스터 계정 생성 실패'),
+                                                      ),
+                                                    );
+                                                    return;
+                                                  }
+
+                                                  // 사용자 문서 생성
+                                                  final usersCreateData = {
+                                                    'email': testEmail,
+                                                    'displayName':
+                                                        '테스터 (Android)',
+                                                    'createdTime': FieldValue
+                                                        .serverTimestamp(),
+                                                    'role': 'tester',
+                                                    'platform': 'android',
+                                                    'uid': user.uid,
+                                                  };
+                                                  // Repository 패턴 사용 - createUser 메서드 활용
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+
+                                                  // UserProfile 생성
+                                                  await UserProfile.collection
+                                                      .doc(user.uid)
+                                                      .set(usersCreateData);
+                                                }
+
+                                                // authenticatedUserStream이 currentUser를 설정할 때까지 대기
+                                                int attempts = 0;
+                                                while (currentUserReference ==
+                                                        null &&
+                                                    attempts < 20) {
+                                                  await Future.delayed(
+                                                      const Duration(
+                                                          milliseconds: 500));
+                                                  attempts++;
+                                                }
+
+                                                if (currentUserReference ==
+                                                    null) {
+                                                  debugPrint(
+                                                      '경고: currentUserReference가 설정되지 않음');
+                                                  // 직접 DocumentReference 생성하여 업데이트
+                                                  // Repository를 통해 업데이트 (추후 완전 마이그레이션)
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+                                                  final directRef =
+                                                      userRepository
+                                                          .getUserReference(
+                                                              user.uid);
+
+                                                  await directRef.update({
+                                                    ...mapToFirestore({
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
+                                                      'role': 'tester',
+                                                      'platform': 'android',
+                                                    }),
+                                                  });
+                                                } else {
+                                                  // 정상적으로 currentUserReference 사용
+                                                  await currentUserReference!
+                                                      .update({
+                                                    ...mapToFirestore({
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
+                                                      'role': 'tester',
+                                                      'platform': 'android',
+                                                    }),
+                                                  });
+                                                }
+
+                                                context.pushNamedAuth(
+                                                  TestpageSelectWidget
+                                                      .routeName,
+                                                  context.mounted,
                                                 );
                                               },
                                               text: 'Android',
@@ -669,12 +973,115 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                             // macOS 테스트 계정
                                             AppButtonWidget(
                                               onPressed: () async {
-                                                await _handleTestAccountLogin(
-                                                  email: 'tester-macos@versus.test',
-                                                  password: 'test1234!',
-                                                  displayName: '테스터 (macOS)',
-                                                  role: 'tester',
-                                                  platform: 'macos',
+                                                GoRouter.of(context)
+                                                    .prepareAuthEvent();
+
+                                                final testEmail =
+                                                    'tester-macos@versus.test';
+                                                final testPassword =
+                                                    'test1234!';
+
+                                                // 먼저 로그인 시도
+                                                var user = await authManager
+                                                    .signInWithEmail(
+                                                  context,
+                                                  testEmail,
+                                                  testPassword,
+                                                );
+
+                                                // 계정이 없으면 생성
+                                                if (user == null) {
+                                                  user = await authManager
+                                                      .createAccountWithEmail(
+                                                    context,
+                                                    testEmail,
+                                                    testPassword,
+                                                  );
+
+                                                  if (user == null) {
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                            'macOS 테스터 계정 생성 실패'),
+                                                      ),
+                                                    );
+                                                    return;
+                                                  }
+
+                                                  // 사용자 문서 생성
+                                                  final usersCreateData = {
+                                                    'email': testEmail,
+                                                    'displayName':
+                                                        '테스터 (macOS)',
+                                                    'createdTime': FieldValue
+                                                        .serverTimestamp(),
+                                                    'role': 'tester',
+                                                    'platform': 'macos',
+                                                    'uid': user.uid,
+                                                  };
+                                                  // Repository 패턴 사용 - createUser 메서드 활용
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+
+                                                  // UserProfile 생성
+                                                  await UserProfile.collection
+                                                      .doc(user.uid)
+                                                      .set(usersCreateData);
+                                                }
+
+                                                // authenticatedUserStream이 currentUser를 설정할 때까지 대기
+                                                int attempts = 0;
+                                                while (currentUserReference ==
+                                                        null &&
+                                                    attempts < 20) {
+                                                  await Future.delayed(
+                                                      const Duration(
+                                                          milliseconds: 500));
+                                                  attempts++;
+                                                }
+
+                                                if (currentUserReference ==
+                                                    null) {
+                                                  debugPrint(
+                                                      '경고: currentUserReference가 설정되지 않음');
+                                                  // 직접 DocumentReference 생성하여 업데이트
+                                                  // Repository를 통해 업데이트 (추후 완전 마이그레이션)
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+                                                  final directRef =
+                                                      userRepository
+                                                          .getUserReference(
+                                                              user.uid);
+
+                                                  await directRef.update({
+                                                    ...mapToFirestore({
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
+                                                      'role': 'tester',
+                                                      'platform': 'macos',
+                                                    }),
+                                                  });
+                                                } else {
+                                                  // 정상적으로 currentUserReference 사용
+                                                  await currentUserReference!
+                                                      .update({
+                                                    ...mapToFirestore({
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
+                                                      'role': 'tester',
+                                                      'platform': 'macos',
+                                                    }),
+                                                  });
+                                                }
+
+                                                context.pushNamedAuth(
+                                                  TestpageSelectWidget
+                                                      .routeName,
+                                                  context.mounted,
                                                 );
                                               },
                                               text: 'macOS 앱',
@@ -712,12 +1119,114 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                                             // 웹앱 테스트 계정
                                             AppButtonWidget(
                                               onPressed: () async {
-                                                await _handleTestAccountLogin(
-                                                  email: 'tester-web@versus.test',
-                                                  password: 'test1234!',
-                                                  displayName: '테스터 (웹앱)',
-                                                  role: 'tester',
-                                                  platform: 'web',
+                                                GoRouter.of(context)
+                                                    .prepareAuthEvent();
+
+                                                final testEmail =
+                                                    'tester-web@versus.test';
+                                                final testPassword =
+                                                    'test1234!';
+
+                                                // 먼저 로그인 시도
+                                                var user = await authManager
+                                                    .signInWithEmail(
+                                                  context,
+                                                  testEmail,
+                                                  testPassword,
+                                                );
+
+                                                // 계정이 없으면 생성
+                                                if (user == null) {
+                                                  user = await authManager
+                                                      .createAccountWithEmail(
+                                                    context,
+                                                    testEmail,
+                                                    testPassword,
+                                                  );
+
+                                                  if (user == null) {
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                            '웹앱 테스터 계정 생성 실패'),
+                                                      ),
+                                                    );
+                                                    return;
+                                                  }
+
+                                                  // 사용자 문서 생성
+                                                  final usersCreateData = {
+                                                    'email': testEmail,
+                                                    'displayName': '테스터 (웹앱)',
+                                                    'createdTime': FieldValue
+                                                        .serverTimestamp(),
+                                                    'role': 'tester',
+                                                    'platform': 'web',
+                                                    'uid': user.uid,
+                                                  };
+                                                  // Repository 패턴 사용 - createUser 메서드 활용
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+
+                                                  // UserProfile 생성
+                                                  await UserProfile.collection
+                                                      .doc(user.uid)
+                                                      .set(usersCreateData);
+                                                }
+
+                                                // authenticatedUserStream이 currentUser를 설정할 때까지 대기
+                                                int attempts = 0;
+                                                while (currentUserReference ==
+                                                        null &&
+                                                    attempts < 20) {
+                                                  await Future.delayed(
+                                                      const Duration(
+                                                          milliseconds: 500));
+                                                  attempts++;
+                                                }
+
+                                                if (currentUserReference ==
+                                                    null) {
+                                                  debugPrint(
+                                                      '경고: currentUserReference가 설정되지 않음');
+                                                  // 직접 DocumentReference 생성하여 업데이트
+                                                  // Repository를 통해 업데이트 (추후 완전 마이그레이션)
+                                                  final userRepository =
+                                                      GetIt.instance<
+                                                          IUserRepository>();
+                                                  final directRef =
+                                                      userRepository
+                                                          .getUserReference(
+                                                              user.uid);
+
+                                                  await directRef.update({
+                                                    ...mapToFirestore({
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
+                                                      'role': 'tester',
+                                                      'platform': 'web',
+                                                    }),
+                                                  });
+                                                } else {
+                                                  // 정상적으로 currentUserReference 사용
+                                                  await currentUserReference!
+                                                      .update({
+                                                    ...mapToFirestore({
+                                                      'lastActive': FieldValue
+                                                          .serverTimestamp(),
+                                                      'role': 'tester',
+                                                      'platform': 'web',
+                                                    }),
+                                                  });
+                                                }
+
+                                                context.pushNamedAuth(
+                                                  TestpageSelectWidget
+                                                      .routeName,
+                                                  context.mounted,
                                                 );
                                               },
                                               text: '웹앱',

@@ -28,6 +28,8 @@ def parse_args():
                    help="comma list of features (e.g., posts,chat) or 'all'")
     p.add_argument("--symbols", default="Post,Vote,Moderation")
     p.add_argument("--ignore", default="test/,mocks/,*.g.dart,*.freezed.dart,build/,.dart_tool/,coverage/")
+    p.add_argument("--output", choices=["file", "stdout", "both"], default="file",
+                   help="Output destination: file (default), stdout, or both")
     # NL 한 줄 명령도 허용 (선택)
     p.add_argument("nl", nargs="*", help="optional natural language hint")
     return p.parse_args()
@@ -167,6 +169,77 @@ def main():
         vio_lines.append(f"[{rule}] {src}  ->  {tgt}")
     (REPORTS / "violations.txt").write_text("\n".join(vio_lines), encoding="utf-8")
 
+    # Determine next action for Claude
+    next_action = None
+    decision_hints = {
+        "has_large_files": len(big) > 0,
+        "needs_decomposition": len(mixed_candidates) > 0,
+        "has_violations": sum(by_rule.values()) > 0,
+        "critical_violations": by_rule.get("presentation->data", 0) > 0
+    }
+
+    # Priority-based next action selection
+    if by_rule.get("presentation->data", 0) > 0:
+        next_action = {
+            "recommended_agent": "import-guardian",
+            "params": {"mode": "fix", "scope": "all"},
+            "priority": "high",
+            "reason": f"{by_rule.get('presentation->data', 0)} critical architecture violations"
+        }
+    elif len(mixed_candidates) > 5:
+        next_action = {
+            "recommended_agent": "code-surgeon",
+            "params": {"mode": "detect", "feature": scope_features[0] if scope_features else "all"},
+            "priority": "medium",
+            "reason": f"{len(mixed_candidates)} files with mixed responsibilities"
+        }
+    elif len(big) > 0:
+        largest = sorted(big, key=lambda x: -x["lines"])[0]
+        next_action = {
+            "recommended_agent": "code-surgeon",
+            "params": {"file": largest["path"], "mode": "detect"},
+            "priority": "low",
+            "reason": f"Largest file has {largest['lines']} lines"
+        }
+
+    # Claude-centric output
+    claude_output = {
+        "agent": "inventory-scout",
+        "version": "1.0.0",
+        "timestamp": datetime.now().isoformat(),
+        "status": "success",
+        "data": {
+            "total_files": len(files),
+            "large_files": len(big),
+            "mixed_responsibility": len(mixed_candidates),
+            "violations": {
+                "total": sum(by_rule.values()),
+                "by_type": dict(by_rule)
+            },
+            "scope": "all" if not scope_features else scope_features
+        },
+        "next_action": next_action,
+        "decision_hints": decision_hints,
+        "metrics": {
+            "execution_time_ms": 0,  # TODO: Add timing
+            "files_scanned": len(files)
+        }
+    }
+
+    # Save or output Claude-centric JSON based on args
+    json_output = json.dumps(claude_output, ensure_ascii=False, indent=2)
+
+    if args.output in ["file", "both"]:
+        (REPORTS / "inventory_scout.json").write_text(
+            json_output,
+            encoding="utf-8"
+        )
+
+    if args.output in ["stdout", "both"]:
+        print(json_output)
+        sys.stdout.flush()
+
+    # Keep legacy format for compatibility
     summary = {
         "agent": "inventory-scout",
         "parsed_options": {
@@ -183,7 +256,8 @@ def main():
         },
         "output_files": [
             "reports/inventory.json","reports/tree_lib.txt",
-            "reports/candidates_decompose.txt","reports/violations.txt"
+            "reports/candidates_decompose.txt","reports/violations.txt",
+            "reports/inventory_scout.json"  # Added new output
         ],
         "next_steps": [
             "Run RepoMover for target features",
@@ -195,7 +269,8 @@ def main():
         json.dumps(summary, ensure_ascii=False, indent=2),
         encoding="utf-8"
     )
-    print("Inventory Scout done. See reports/ .")
+    if args.output == "file":
+        print("Inventory Scout done. See reports/ .")
 
 if __name__ == "__main__":
     sys.exit(main())

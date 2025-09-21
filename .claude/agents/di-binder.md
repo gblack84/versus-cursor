@@ -129,9 +129,11 @@ changes:
   - added: sl.registerLazySingleton<PostRepository>...
   - imports: 2 added
 violations: []
-next_steps:
-  - Run ImportGuardian scan
-  - Execute flutter analyze
+next_action:
+  recommended_agent: "agent-name"
+  params: {}
+  priority: "high"
+  reason: "Automated decision"
 ```
 
 You are meticulous about maintaining clean architecture boundaries while providing efficient, idempotent DI configuration management.

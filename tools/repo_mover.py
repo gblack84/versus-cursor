@@ -50,6 +50,8 @@ def main():
     ap.add_argument("--feature", required=True)
     ap.add_argument("--mode", choices=["dry-run","apply"], default="dry-run")
     ap.add_argument("--include", default="repositories,mappers,firebase,api")
+    ap.add_argument("--output", choices=["file", "stdout", "both"], default="file",
+                    help="Output destination: file (default), stdout, or both")
     args = ap.parse_args()
     include = [s.strip() for s in args.include.split(",") if s.strip()]
     moves = pick(args.feature, include)
@@ -67,6 +69,64 @@ def main():
                 d.parent.mkdir(parents=True, exist_ok=True)
                 ok = git_mv(s,d)
                 log.write(f"{'git mv' if ok else 'mv'} {s} -> {d}\n")
+
+    # Claude-centric JSON output
+    from datetime import datetime
+
+    next_action = None
+    if len(moves) > 0:
+        if args.mode == "dry-run":
+            next_action = {
+                "recommended_agent": "repo-mover",
+                "params": {"feature": args.feature, "mode": "apply", "include": args.include},
+                "priority": "medium",
+                "reason": f"Apply movement plan for {len(moves)} files"
+            }
+        else:
+            next_action = {
+                "recommended_agent": "import-guardian",
+                "params": {"mode": "detect", "scope": args.feature},
+                "priority": "high",
+                "reason": f"Check imports after moving {len(moves)} files"
+            }
+
+    claude_output = {
+        "agent": "repo-mover",
+        "version": "1.0.0",
+        "timestamp": datetime.now().isoformat(),
+        "status": "success" if len(moves) > 0 else "no_action",
+        "data": {
+            "feature": args.feature,
+            "mode": args.mode,
+            "included_types": include,
+            "files_to_move": len(moves),
+            "plan_file": str(plan) if len(moves) > 0 else None,
+            "log_file": str(LOGS/f"move_{args.feature}.log") if args.mode == "apply" else None,
+            "movements": [
+                {"from": str(s.relative_to(ROOT)), "to": str(d.relative_to(ROOT))}
+                for s, d in moves[:5]  # First 5 for preview
+            ] if len(moves) > 0 else []
+        },
+        "next_action": next_action,
+        "decision_hints": {
+            "has_movements": len(moves) > 0,
+            "ready_to_apply": args.mode == "dry-run" and len(moves) > 0,
+            "needs_import_check": args.mode == "apply" and len(moves) > 0,
+            "feature_isolated": args.feature in include
+        }
+    }
+
+    # Save or output Claude-centric JSON based on args
+    json_output = json.dumps(claude_output, ensure_ascii=False, indent=2)
+
+    if args.output in ["file", "both"]:
+        (REPORTS / "repo_mover.json").write_text(json_output, encoding="utf-8")
+
+    if args.output in ["stdout", "both"]:
+        print(json_output)
+        sys.stdout.flush()
+
+    # Keep legacy output
     print(f"[RepoMover] wrote {plan} ({len(moves)} files). mode={args.mode}")
 
 if __name__=="__main__":

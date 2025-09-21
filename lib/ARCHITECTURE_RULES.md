@@ -174,6 +174,33 @@ class SignInUseCase {
     return repository.signIn(email, password);
   }
 }
+
+// ✅ GOOD: 200줄이지만 하나의 비즈니스 트랜잭션
+class RegisterUserUseCase {
+  Future<User> execute(RegistrationData data) async {
+    // 1. 이메일 중복 체크
+    // 2. 비밀번호 강도 검증
+    // 3. Auth 계정 생성
+    // 4. Firestore 사용자 문서 생성
+    // 5. 프로필 이미지 업로드
+    // 6. 환영 이메일 발송
+    // 7. 초기 설정 생성
+    // 모두 "회원가입"의 필수 단계들
+  }
+}
+
+// ✅ GOOD: 복잡하지만 하나의 완전한 프로세스
+class PlaceOrderUseCase {
+  Future<Order> execute(OrderRequest request) async {
+    // 1. 재고 확인
+    // 2. 가격 계산 및 할인 적용
+    // 3. 결제 처리
+    // 4. 주문 생성
+    // 5. 재고 차감
+    // 6. 알림 발송
+    // 트랜잭션 보장 필요
+  }
+}
 ```
 
 ### ❌ DON'T
@@ -186,6 +213,17 @@ class AuthUseCases {  // NO! 분리하세요
   void signIn() {}
   void signOut() {}
   void getUser() {}
+}
+
+// ❌ BAD: 50줄이지만 2개 책임 섞임
+class SignInAndUpdateStatsUseCase {
+  Future<User> execute(String email, String password) {
+    // 로그인 (책임 1)
+    final user = await authRepository.signIn(email, password);
+    // 통계 업데이트 (책임 2 - 독립적, 다른 시점에도 호출)
+    await statsRepository.updateLoginCount();
+    return user;
+  }
 }
 ```
 
@@ -239,10 +277,70 @@ git add -A && git commit -m "feat(auth): Migrate to Clean Architecture without F
 - ✅ **완전성**: 레거시 코드 100% 제거
 - 🧪 **테스트 필수**: 모든 UseCase에 단위 테스트
 
-### 파일 분할 기준
-- ✅ 300줄 초과 시 분할
-- ✅ 여러 책임이 혼재
-- ✅ 여러 UseCase가 한 파일에
+### 파일 분할 기준 (v4.1 - 레이어별 차별 적용)
+
+#### Domain Layer (비즈니스 로직)
+- **UseCase**: 비즈니스 트랜잭션 단위 (엄격)
+  - 1 UseCase = 1 비즈니스 트랜잭션 = 1 파일
+  - 하나의 유저 스토리/액션을 완성하는 단위
+  - 줄 수 참고: Simple(50-100줄), Normal(100-300줄), Complex(300-500줄)
+
+- **분할 기준** (하나라도 해당되면 분할 검토):
+  - ✅ 다른 Actor가 독립적으로 사용하는 기능
+  - ✅ 다른 시점에 호출되는 로직
+  - ✅ 메서드명에 "And"가 필요함 (예: processOrderAndSendEmail)
+  - ✅ 테스트 시나리오가 완전히 다름
+
+- **통합 유지 기준** (이런 경우는 하나로):
+  - ✅ 트랜잭션으로 묶여야 하는 작업들
+  - ✅ 순서가 중요한 비즈니스 프로세스
+  - ✅ 일부만 실행되면 의미가 없는 흐름
+  - ✅ "회원가입", "주문하기" 같은 하나의 완전한 유저 액션
+
+- **Repository Interface**: 100-150줄
+- **Domain Model**: 150-200줄
+
+#### Data Layer (데이터 처리)
+- **Repository Implementation**: 200-300줄 (권장)
+  - 300줄 초과 시 DataSource로 분리
+- **DataSource**: 150-200줄
+- **Mapper/Adapter**: 100-150줄
+- **DTO**: Firebase 1:1 매핑 (줄 수 무관)
+- **분할 트리거**: 300줄 초과 또는 복합 데이터소스
+
+#### Presentation Layer (UI)
+- **Screen Widget**: 500-800줄 (유연)
+  - Flutter UI 특성상 허용
+  - 비즈니스 로직은 UseCase로 추출
+  - 800줄 초과 시 컴포넌트 분리 검토
+- **Component Widget**: 200-300줄
+- **Provider/Controller**: 150-200줄
+- **분할 트리거**: 800줄 초과 또는 재사용 가능 컴포넌트
+
+#### 예외 및 제외 사항
+- ❌ 생성 코드 (*.g.dart, *.freezed.dart)
+- ❌ 순수 스타일링 코드 (줄 수 계산에서 제외 가능)
+- ❌ 테스트 파일 (별도 기준)
+- ❌ Migration 파일 (임시)
+- ❌ 라우팅 설정 파일
+
+### 레이어 자동 감지 규칙
+서브에이전트와 도구가 파일의 레이어를 자동으로 판단하는 기준:
+
+#### 경로 기반 감지
+- `/domain/` 포함 → Domain Layer (비즈니스 트랜잭션 단위)
+- `/data/` 포함 → Data Layer (300줄 제한)
+- `/presentation/` 포함 → Presentation Layer (800줄 제한)
+
+#### 파일명 패턴 감지
+- `*_use_case.dart` → Domain Layer (트랜잭션 단위, 50-500줄)
+- `*_repository.dart` (interface) → Domain Layer (150줄)
+- `*_repository_impl.dart` → Data Layer (300줄)
+- `*_datasource.dart` → Data Layer (200줄)
+- `*_mapper.dart` → Data Layer (150줄)
+- `*_widget.dart` → Presentation Layer (800줄)
+- `*_screen.dart` → Presentation Layer (800줄)
+- `*_provider.dart` → Presentation Layer (200줄)
 
 ### DTO/Mapper 전략
 
@@ -288,10 +386,11 @@ class UserDto {
 ```
 /lib/features/voting/
 ├── domain/
-│   └── usecases/        # 14개 UseCase = 14개 파일
-│       ├── cast_vote_use_case.dart
-│       ├── check_user_vote_status_use_case.dart
-│       └── ... (각각 30-50줄)
+│   └── usecases/        # 비즈니스 트랜잭션별 분리
+│       ├── cast_vote_use_case.dart           # 투표하기 (100줄)
+│       ├── complete_voting_use_case.dart     # 투표 완료 처리 (250줄)
+│       ├── check_user_vote_status_use_case.dart  # 상태 확인 (50줄)
+│       └── ... (트랜잭션 단위로 50-500줄)
 ├── data/
 │   ├── repositories/
 │   └── adapters/

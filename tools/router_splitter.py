@@ -3,8 +3,9 @@
 """
 RouterSplitter - app/router.dart 비대 라우트를 feature routes 파일로 분리 (패치 생성 중심)
 """
-import argparse, sys, difflib, re
+import argparse, sys, difflib, re, json
 from pathlib import Path
+from datetime import datetime
 
 ROOT = Path(__file__).resolve().parents[1]
 APP_ROUTER = ROOT/"lib/app/router/router.dart"   # 필요시 경로 조정
@@ -35,6 +36,8 @@ def main():
     ap.add_argument("--scope", default="all")
     ap.add_argument("--mode", choices=["detect","apply"], default="detect")
     ap.add_argument("--features", default="")
+    ap.add_argument("--output", choices=["file", "stdout", "both"], default="file",
+                    help="Output destination: file (default), stdout, or both")
     args = ap.parse_args()
     feats = [f.strip() for f in args.features.split(",") if f.strip()]
     if not feats: feats = ["auth","posts","chat","profile","search","notifications"]
@@ -67,7 +70,67 @@ def main():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(new, encoding="utf-8")
 
-    REPORTS/"router_splitter_all.yml".write_text(
+    # Claude-centric JSON output
+    routes_split = len(changes) - 1  # Exclude app/router.dart wire-up
+
+    next_action = None
+    if routes_split > 0:
+        if args.mode == "detect":
+            next_action = {
+                "recommended_agent": "router-splitter",
+                "params": {"mode": "apply", "features": ",".join(feats)},
+                "priority": "medium",
+                "reason": f"Apply router split for {routes_split} features"
+            }
+        else:
+            next_action = {
+                "recommended_agent": "build-sentinel",
+                "params": {"mode": "quick"},
+                "priority": "medium",
+                "reason": f"Verify routing after splitting {routes_split} routes"
+            }
+
+    claude_output = {
+        "agent": "router-splitter",
+        "version": "1.0.0",
+        "timestamp": datetime.now().isoformat(),
+        "status": "success" if routes_split > 0 else "no_action",
+        "data": {
+            "mode": args.mode,
+            "features": feats,
+            "routes_split": routes_split,
+            "patch_file": str(patch) if routes_split > 0 else None,
+            "changes": len(changes),
+            "router_wired": len(changes) > 0,
+            "files_created": [
+                f"lib/features/{f}/presentation/routes/{f}_routes.dart"
+                for f in feats
+            ] if args.mode == "apply" else []
+        },
+        "next_action": next_action,
+        "decision_hints": {
+            "needs_split": routes_split > 0,
+            "ready_to_apply": args.mode == "detect" and routes_split > 0,
+            "applied_successfully": args.mode == "apply" and routes_split > 0,
+            "router_centralized": APP_ROUTER.exists()
+        }
+    }
+
+    # Save or output Claude-centric JSON based on args
+    json_output = json.dumps(claude_output, ensure_ascii=False, indent=2)
+
+    if args.output in ["file", "both"]:
+        (REPORTS / "router_splitter.json").write_text(
+            json_output,
+            encoding="utf-8"
+        )
+
+    if args.output in ["stdout", "both"]:
+        print(json_output)
+        sys.stdout.flush()
+
+    # Keep legacy output
+    (REPORTS / "router_splitter_all.yml").write_text(
         f"features: {feats}\npatch: {patch}\nmode: {args.mode}\n", encoding="utf-8")
     print(f"[RouterSplitter] patch -> {patch} (mode={args.mode})")
 

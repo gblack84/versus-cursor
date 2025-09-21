@@ -1,9 +1,35 @@
 # 📋 Auth Feature 마이그레이션 Phase 1-2 상세 타스크
 
 > **작성일**: 2025-01-20
-> **버전**: 1.0.0
-> **참조**: ARCHITECTURE_RULES.md v4.0, SUBAGENTS_MANUAL.md
-> **원칙**: Direct Migration (Facade 없음), 기존 코드 재사용, 서브에이전트 활용
+> **버전**: 2.0.0 (Claude-centric JSON 아키텍처 반영)
+> **참조**: ARCHITECTURE_RULES.md v4.0, SUBAGENTS_MANUAL.md v2.0
+> **원칙**: Direct Migration (Facade 없음), 기존 코드 재사용, Claude-centric JSON 에이전트 활용
+
+## 🚨 올바른 마이그레이션 워크플로우
+
+### Claude-centric JSON 에이전트 사용 방법
+모든 에이전트는 이제 `--output stdout` 파라미터를 사용하여 Claude가 직접 읽을 수 있는 JSON을 반환합니다.
+
+```bash
+# 기존 방식 (사람이 읽는 리포트)
+/spawn inventory-scout "auth 스캔"
+
+# 새 방식 (Claude가 읽는 JSON)
+python3 inventory_scout.py --scope auth --depth 5 --output stdout
+```
+
+### CodeSurgeon 사용 시 필수 순서
+1. **파일 백업** - 원본 상태 보존
+2. **패치 생성** - CodeSurgeon dry-run 모드 + JSON 출력
+3. **에이전트 체이닝** - JSON의 next_action 따라 자동 진행
+4. **패치 적용** - git apply (중간 수정 없이!)
+5. **검증** - BuildSentinel JSON 기반 자동 검증
+6. **다음 파일** - JSON decision_hints 참고하여 진행
+
+**⚠️ 주의사항**:
+- 절대 패치 생성과 적용 사이에 파일 수정 금지
+- 패치는 원본 파일 기준으로만 작동
+- 실패 시 JSON의 recovery_strategy 따라 자동 복구
 
 ## 🎯 마이그레이션 원칙 체크리스트
 
@@ -24,7 +50,23 @@
 #### 실행 명령
 - [x] Inventory Scout 실행 완료
   ```bash
-  /spawn inventory-scout "depth 5로 auth 피처 스캔, 300줄 이상 큰 파일과 복합 책임 찾기"
+  # Claude-centric JSON 방식
+  python3 inventory_scout.py --scope auth --depth 5 --output stdout
+
+  # JSON 응답 예시:
+  # {
+  #   "agent": "inventory-scout",
+  #   "status": "success",
+  #   "data": {
+  #     "large_files": [...],
+  #     "violations": [...]
+  #   },
+  #   "next_action": {
+  #     "recommended_agent": "code-surgeon",
+  #     "params": {"file": "...", "mode": "dry-run"},
+  #     "priority": "high"
+  #   }
+  # }
   ```
 
 #### 산출물 검증
@@ -53,7 +95,18 @@
 #### 실행 명령
 - [x] Import Guardian detect 모드 실행
   ```bash
-  /spawn import-guardian "--scope auth --mode detect"
+  # Claude-centric JSON 방식
+  python3 import_guardian.py --scope auth --mode detect --output stdout
+
+  # 자동 에러 복구 예시:
+  # JSON 응답의 decision_hints에서 자동으로 fix 모드 권장
+  # {
+  #   "decision_hints": {
+  #     "has_violations": true,
+  #     "auto_fixable": true,
+  #     "needs_fix": true
+  #   }
+  # }
   ```
 
 #### 산출물 검증
@@ -70,46 +123,113 @@
 ### 2.1 대형 파일 분해 준비
 
 #### 2.1.1 LoginPageWidget 분석 (1,378줄)
-- [ ] 파일 백업 생성
+
+**현재 상태**: ⚠️ 패치 생성 완료, 적용 실패 (10%만 적용됨)
+
+- [x] 파일 백업 생성 ✅
   ```bash
-  cp lib/features/auth/presentation/screens/login_page_widget.dart \
-     lib/features/auth/presentation/screens/login_page_widget.dart.backup
+  cp lib/features/auth/presentation/screens/login/login_page/login_page_widget.dart \
+     lib/features/auth/presentation/screens/login/login_page/login_page_widget.dart.backup
   ```
 
-- [ ] 비즈니스 로직 추출 대상 식별
-  - [ ] Email 로그인 로직 (약 150줄)
-  - [ ] Google 로그인 로직 (약 100줄)
-  - [ ] Apple 로그인 로직 (약 100줄)
-  - [ ] 폼 검증 로직 (약 80줄)
-  - [ ] 네비게이션 로직 (약 50줄)
+- [x] 비즈니스 로직 추출 대상 식별 ✅
+  - [x] Email 로그인 로직 (signInWithEmail 호출 6곳)
+  - [ ] ~~Google 로그인 로직~~ (이 파일에 없음)
+  - [ ] ~~Apple 로그인 로직~~ (이 파일에 없음)
+  - [x] 계정 생성 로직 (createAccountWithEmail 호출 5곳)
+  - [x] 테스트 계정 관리 로직 (Admin, iOS, Android, macOS, Web)
 
-- [ ] CodeSurgeon 실행 (dry-run)
+- [x] CodeSurgeon 실행 (dry-run) ✅
   ```bash
-  /spawn code-surgeon "--file lib/features/auth/presentation/screens/login_page_widget.dart --strategy extract-usecases --max-lines 50 --mode dry-run"
+  # Claude-centric JSON 방식
+  python3 code_surgeon.py \
+    --file lib/features/auth/presentation/screens/login/login_page/login_page_widget.dart \
+    --map "SignInLogic->lib/features/auth/domain/usecases/sign_in_usecase.dart" \
+    --mode dry-run \
+    --output stdout
+
+  # 에러 발생 시 자동 복구:
+  # JSON 응답에서 자동으로 다음 단계 권장
+  # {
+  #   "status": "partial",
+  #   "next_action": {
+  #     "recommended_agent": "code-surgeon",
+  #     "params": {"mode": "apply", "patch": "3-way"},
+  #     "reason": "부분 적용 실패, 3-way merge 필요"
+  #   }
+  # }
   ```
 
-- [ ] 패치 검토
-  - [ ] `patches/code_surgeon_login_page.diff` 검토
-  - [ ] UI 로직 남아있는지 확인
-  - [ ] 비즈니스 로직 완전 추출 확인
+- [x] 패치 검토 ✅
+  - [x] `patches/code_surgeon_login_page.diff` 생성 완료
+  - [ ] **⚠️ 패치 적용 실패** (git apply 부분 실패)
+  - [ ] 비즈니스 로직 완전 추출 확인 - 10%만 완료
+
+- [ ] **패치 적용** 🔄 (재시도 필요)
+  ```bash
+  # 백업에서 원본 복원
+  cp login_page_widget.dart.backup login_page_widget.dart
+
+  # 패치 재적용 (3-way merge)
+  git apply --3way patches/code_surgeon_login_page.diff
+  ```
+
+- [ ] **검증**
+  - [ ] flutter analyze 통과
+  - [ ] 기능 테스트
+  - [ ] authManager 직접 호출 제거 확인 (현재 10개 남음)
 
 #### 2.1.2 CreateAccountWidget 분석 (883줄)
-- [ ] 파일 백업 생성
-- [ ] 비즈니스 로직 추출 대상 식별
-  - [ ] 계정 생성 로직 (약 120줄)
-  - [ ] 이메일 검증 로직 (약 80줄)
-  - [ ] 프로필 설정 로직 (약 100줄)
-  - [ ] 폼 검증 로직 (약 60줄)
 
-- [ ] CodeSurgeon 실행 (dry-run)
+**현재 상태**: ⚠️ 패치 생성 완료, 적용 대기 중
+
+- [x] 파일 백업 생성 ✅
   ```bash
-  /spawn code-surgeon "--file lib/features/auth/presentation/screens/create_account_widget.dart --strategy extract-usecases --max-lines 50 --mode dry-run"
+  cp lib/features/auth/presentation/screens/signup/create_account/create_account_widget.dart \
+     lib/features/auth/presentation/screens/signup/create_account/create_account_widget.dart.backup
+  ```
+- [x] 비즈니스 로직 추출 대상 식별 ✅
+  - [x] 계정 생성 로직 (createAccountWithEmail)
+  - [x] 이메일 검증 로직 (sendEmailVerification)
+  - [ ] 프로필 설정 로직 (추가 분석 필요)
+  - [ ] 폼 검증 로직 (추가 분석 필요)
+
+- [x] CodeSurgeon 실행 (dry-run) ✅
+  ```bash
+  # Claude-centric JSON 방식
+  python3 code_surgeon.py \
+    --file lib/features/auth/presentation/screens/signup/create_account/create_account_widget.dart \
+    --map "CreateAccountLogic->lib/features/auth/domain/usecases/create_account_usecase.dart" \
+    --mode dry-run \
+    --output stdout
   ```
 
-- [ ] 패치 검토
+- [x] 패치 검토 ✅
+  - [x] `patches/code_surgeon_create_account.diff` 생성 완료
+
+- [ ] **패치 적용** 🔄 (대기 중)
+  ```bash
+  # 백업에서 원본 복원 (만약 수정했다면)
+  cp create_account_widget.dart.backup create_account_widget.dart
+
+  # 패치 적용
+  git apply patches/code_surgeon_create_account.diff
+  ```
+
+- [ ] **검증**
+  - [ ] flutter analyze 통과
+  - [ ] 기능 테스트
 
 #### 2.1.3 FirebaseAuthManager 분석 (364줄)
+
+**현재 상태**: 🔄 대기 중
+
 - [ ] 파일 백업 생성
+  ```bash
+  cp lib/features/auth/data/adapters/firebase_auth_manager.dart \
+     lib/features/auth/data/adapters/firebase_auth_manager.dart.backup
+  ```
+
 - [ ] DataSource 분리 대상 식별
   - [ ] Firebase Auth 직접 호출 (약 200줄)
   - [ ] Firestore 사용자 정보 저장 (약 100줄)
@@ -117,18 +237,34 @@
 
 - [ ] CodeSurgeon 실행 (dry-run)
   ```bash
-  /spawn code-surgeon "--file lib/features/auth/data/adapters/firebase_auth_manager.dart --strategy extract-datasources --mode dry-run"
+  # Claude-centric JSON 방식
+  python3 code_surgeon.py \
+    --file lib/features/auth/data/adapters/firebase_auth_manager.dart \
+    --map "FirebaseDataSource->lib/features/auth/data/datasources/firebase_auth_datasource.dart" \
+    --mode dry-run \
+    --output stdout
   ```
+
+- [ ] 패치 검토
+
+- [ ] **패치 적용**
+  ```bash
+  git apply patches/code_surgeon_firebase_auth_manager.diff
+  ```
+
+- [ ] **검증**
 
 ### 2.2 UseCase 생성
 
-#### 2.2.1 인증 기본 UseCase (7개)
-- [ ] SignInWithEmailUseCase 생성
-  - [ ] 인터페이스 정의
-  - [ ] LoginPageWidget에서 로직 추출
-  - [ ] Repository 메서드 호출
-  - [ ] 에러 처리 로직 포함
+**참고**: CodeSurgeon 패치 적용 시 자동으로 생성되는 UseCase와 추가로 생성해야 할 UseCase를 구분
 
+#### 2.2.1 CodeSurgeon으로 생성되는 UseCase (패치 적용 시 자동 생성)
+- [x] SignInWithEmailUseCase ✅ (code_surgeon_login_page.diff에 포함)
+- [x] CreateTestAccountUseCase ✅ (code_surgeon_login_page.diff에 포함)
+- [ ] CreateAccountWithEmailUseCase (code_surgeon_create_account.diff에 포함 예정)
+- [ ] VerifyEmailUseCase (code_surgeon_create_account.diff에 포함 예정)
+
+#### 2.2.2 추가로 생성 필요한 UseCase
 - [ ] SignInWithGoogleUseCase 생성
   - [ ] Google Sign In 로직 추출
   - [ ] Firebase 연동 처리
@@ -210,7 +346,21 @@
 
 - [ ] StructWeaver로 Mapper 자동 생성
   ```bash
-  /spawn struct-weaver "--task mapper --source lib/features/auth/domain/models --target lib/features/auth/data/mappers --mode detect --bridge false"
+  # Claude-centric JSON 방식
+  python3 struct_weaver.py \
+    --task mapper \
+    --mode detect \
+    --output stdout
+
+  # JSON 응답에 따라 자동으로 apply 모드로 진행
+  # {
+  #   "next_action": {
+  #     "recommended_agent": "struct-weaver",
+  #     "params": {"mode": "apply"},
+  #     "priority": "high",
+  #     "reason": "Mapper 파일 생성 준비 완료"
+  #   }
+  # }
   ```
 
 - [ ] 생성된 Mapper 검증
@@ -279,7 +429,25 @@
 #### 2.6.3 BuildSentinel Quick 실행
 - [ ] BuildSentinel quick 모드 실행
   ```bash
-  /spawn build-sentinel "quick --feature auth"
+  # Claude-centric JSON 방식
+  bash build_sentinel.sh quick
+
+  # JSON 출력 포함 (build_sentinel.json)
+  python3 build_sentinel_json.py \
+    --status "success" \
+    --errors 0 \
+    --warnings 0 \
+    --failures 0 \
+    --mode "quick"
+
+  # 실패 시 자동으로 원인 분석
+  # {
+  #   "next_action": {
+  #     "recommended_agent": "import-guardian",
+  #     "params": {"mode": "fix", "scope": "auth"},
+  #     "reason": "Import 위반으로 인한 컴파일 에러"
+  #   }
+  # }
   ```
 
 - [ ] 결과 확인
@@ -296,21 +464,23 @@
 - Import Guardian (detect): ✅
 - 현황 분석 문서: ✅
 
-### Phase 2 완료율: 0% 🔄
-- UseCase 생성: 0/30
+### Phase 2 완료율: 10% ⚠️
+- UseCase 생성: 2/30 (CodeSurgeon 패치로 2개 생성, 10%만 적용)
 - Mapper 생성: 0/6
 - DTO 모델: 0/4
 - DataSource: 0/2
 - Repository 수정: 0/1
+- **문제**: LoginPageWidget 패치 적용 실패로 진행 중단
 
-### 서브에이전트 사용 현황
-| 에이전트 | Phase 1 | Phase 2 | 상태 |
-|---------|---------|---------|------|
-| Inventory Scout | ✅ | - | 완료 |
-| Import Guardian | ✅ | 🔄 | 진행예정 |
-| CodeSurgeon | - | 🔄 | 준비중 |
-| StructWeaver | - | 🔄 | 준비중 |
-| BuildSentinel | - | 🔄 | 대기중 |
+### 서브에이전트 사용 현황 (v2.0 Claude-centric JSON)
+| 에이전트 | Phase 1 | Phase 2 | JSON 출력 | 자동 체이닝 |
+|---------|---------|---------|-----------|------------|
+| Inventory Scout | ✅ | - | ✅ | ✅ |
+| Import Guardian | ✅ | 🔄 | ✅ | ✅ |
+| CodeSurgeon | - | 🔄 | ✅ | ✅ |
+| StructWeaver | - | 🔄 | ✅ | ✅ |
+| BuildSentinel | - | 🔄 | ✅ | ✅ |
+| OrchestratorPipeline | - | - | ✅ | ✅ |
 
 ### 다음 단계
 1. Phase 2.1: 대형 파일 분해 (CodeSurgeon)
@@ -320,5 +490,116 @@
 
 ---
 
+## 🤖 자동화된 에러 복구 전략
+
+### JSON 기반 자동 복구 플로우
+모든 에이전트는 실패 시 자동으로 복구 전략을 제시합니다:
+
+```json
+{
+  "status": "error",
+  "error": {
+    "type": "patch_conflict",
+    "message": "Patch cannot be applied cleanly"
+  },
+  "recovery_strategy": {
+    "steps": [
+      {"action": "restore_from_backup", "file": "login_page_widget.dart.backup"},
+      {"action": "re-run", "agent": "code-surgeon", "params": {"mode": "detect"}},
+      {"action": "manual_fix", "suggestion": "Use 3-way merge"}
+    ]
+  },
+  "next_action": {
+    "recommended_agent": "code-surgeon",
+    "params": {"mode": "apply", "patch": "3-way"},
+    "priority": "high"
+  }
+}
+```
+
+### 일반적인 에러 시나리오와 자동 복구
+
+1. **패치 충돌**: 백업에서 복원 → 3-way merge 시도
+2. **Import 위반**: import-guardian fix 모드 자동 실행
+3. **컴파일 에러**: build-sentinel → import-guardian 체인
+4. **부분 적용**: 성공한 부분 유지 → 실패 부분만 재시도
+
+---
+
+## 🔄 OrchestratorPipeline 활용
+
+### 복잡한 워크플로우 자동화
+```bash
+# Phase 2 전체를 한 번에 실행
+python3 orchestrator_pipeline.py \
+  --feature auth \
+  --pipeline c7 \
+  --output stdout
+
+# c7 파이프라인 자동 실행 순서:
+# 1. inventory-scout (상태 분석)
+# 2. code-surgeon (파일 분해)
+# 3. struct-weaver (Mapper 생성)
+# 4. di-binder (DI 등록)
+# 5. import-guardian (위반 수정)
+# 6. router-splitter (라우터 분리)
+# 7. build-sentinel (최종 검증)
+```
+
+### Quality 파이프라인
+```bash
+# 품질 검증만 실행
+python3 orchestrator_pipeline.py \
+  --feature auth \
+  --pipeline quality \
+  --output stdout
+
+# 실행 순서:
+# 1. inventory-scout (대형 파일 탐지)
+# 2. import-guardian (아키텍처 위반 탐지)
+```
+
+---
+
+## 📊 JSON 체이닝 예시
+
+### 성공적인 체이닝 플로우
+```python
+# 1. Inventory Scout 실행
+response1 = inventory_scout(scope="auth")
+# response1.next_action = {"recommended_agent": "code-surgeon", ...}
+
+# 2. 자동으로 CodeSurgeon 실행
+response2 = code_surgeon(response1.next_action.params)
+# response2.next_action = {"recommended_agent": "struct-weaver", ...}
+
+# 3. 자동으로 StructWeaver 실행
+response3 = struct_weaver(response2.next_action.params)
+# response3.next_action = {"recommended_agent": "build-sentinel", ...}
+
+# 4. 최종 검증
+response4 = build_sentinel(response3.next_action.params)
+# response4.status = "success"
+```
+
+### decision_hints 활용
+```json
+{
+  "decision_hints": {
+    "has_large_files": true,      // 대형 파일 존재
+    "needs_decomposition": true,   // 분해 필요
+    "auto_fixable": true,          // 자동 수정 가능
+    "complexity": 0.8,             // 복잡도
+    "priority_files": [            // 우선순위 파일
+      "login_page_widget.dart",
+      "create_account_widget.dart"
+    ]
+  }
+}
+```
+
+---
+
 **이 문서는 Auth Feature의 Phase 1-2 상세 실행 계획입니다.**
+**Claude-centric JSON 아키텍처를 통해 자동화되고 지능적인 마이그레이션이 가능합니다.**
 **모든 체크박스를 완료하면 Clean Architecture 기반이 완성됩니다.**

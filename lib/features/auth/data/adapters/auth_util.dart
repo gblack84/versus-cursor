@@ -7,15 +7,17 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/features/profile/domain/models/user_profile.dart';
 import 'package:stream_transform/stream_transform.dart';
-import 'firebase_auth_manager.dart';
+import '/core/interfaces/i_base_auth_user.dart';
+// FirebaseAuthManager는 더 이상 사용되지 않습니다 (Clean Architecture 마이그레이션 완료)
+// import 'firebase_auth_manager.dart';
 
-export 'firebase_auth_manager.dart';
 export 'base_auth_user_provider.dart';
 export 'firebase_user_provider.dart'
     show versusSpaceFirebaseUserStream, VersusSpaceFirebaseUser;
 
-final _authManager = FirebaseAuthManager();
-FirebaseAuthManager get authManager => _authManager;
+// FirebaseAuthManager는 UseCase 패턴으로 대체되었습니다
+// final _authManager = FirebaseAuthManager();
+// FirebaseAuthManager get authManager => _authManager;
 
 String get currentUserEmail =>
     currentUserDocument?.email ?? currentUser?.email ?? '';

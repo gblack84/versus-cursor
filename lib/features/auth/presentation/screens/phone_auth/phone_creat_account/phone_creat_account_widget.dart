@@ -1,4 +1,5 @@
-import '/features/auth/data/adapters/auth_util.dart';
+import '/features/auth/domain/usecases/send_sms_otp_usecase.dart';
+import '/features/auth/domain/factories/auth_repository_factory.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
@@ -26,8 +27,18 @@ class PhoneCreatAccountWidget extends StatefulWidget {
 
 class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
   late PhoneCreatAccountModel _model;
+  SendSmsOtpUseCase? _sendSmsOtpUseCase;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  Future<void> _initializeUseCases() async {
+    // Factory를 통한 Repository 생성 (Clean Architecture 준수)
+    final repository = await AuthRepositoryFactory.create();
+
+    setState(() {
+      _sendSmsOtpUseCase = SendSmsOtpUseCase(repository: repository);
+    });
+  }
 
   @override
   void initState() {
@@ -41,7 +52,10 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
     _model.phoneNumberTextController ??= TextEditingController();
     _model.phoneNumberFocusNode ??= FocusNode();
 
-    authManager.handlePhoneAuthStateChanges(context);
+    // UseCase 초기화
+    _initializeUseCases();
+
+    // Phone Auth 상태 변경 처리는 UseCase 내부에서 처리
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
@@ -437,23 +451,40 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                               );
                               return;
                             }
-                            await authManager.beginPhoneAuth(
-                              context: context,
+                            // UseCase가 초기화되지 않았으면 대기
+                            if (_sendSmsOtpUseCase == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Initializing... Please wait.'),
+                                ),
+                              );
+                              return;
+                            }
+
+                            final smsSent = await _sendSmsOtpUseCase!.execute(
                               phoneNumber: phoneNumberVal,
-                              onCodeSent: (context) async {
-                                context.goNamedAuth(
-                                  PhonelogeinpincodeWidget.routeName,
-                                  context.mounted,
-                                  queryParameters: {
-                                    'phoneNumberParam': serializeParam(
-                                      '${_model.codeCuntryTextController.text}${_model.phoneNumberTextController.text}',
-                                      ParamType.String,
-                                    ),
-                                  }.withoutNulls,
-                                  ignoreRedirect: true,
-                                );
-                              },
                             );
+
+                            if (smsSent) {
+                              // 코드가 성공적으로 전송되면 PIN 입력 화면으로 이동
+                              context.goNamedAuth(
+                                PhonelogeinpincodeWidget.routeName,
+                                context.mounted,
+                                queryParameters: {
+                                  'phoneNumberParam': serializeParam(
+                                    '${_model.codeCuntryTextController.text}${_model.phoneNumberTextController.text}',
+                                    ParamType.String,
+                                  ),
+                                }.withoutNulls,
+                                ignoreRedirect: true,
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to send SMS code. Please try again.'),
+                                ),
+                              );
+                            }
                           },
                     text: AppLocalizations.of(context).getText(
                       'pqidvgqu' /* Send  Code */,

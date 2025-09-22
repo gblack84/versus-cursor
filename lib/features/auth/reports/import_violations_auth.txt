@@ -1,0 +1,152 @@
+===============================================================
+AUTH FEATURE IMPORT VIOLATIONS ANALYSIS
+Clean Architecture Compliance Report
+Generated: 2025-09-22
+===============================================================
+
+CRITICAL VIOLATIONS (Presentation → Data Layer)
+=======================================================
+
+1. LOGIN PAGE WIDGET - DIRECT DATA LAYER IMPORTS
+   File: lib/features/auth/presentation/screens/login/login_page/login_page_widget.dart
+   Lines: 3-6
+   Violations:
+   - Line 3: import '/features/auth/data/repositories/auth_repository_impl.dart';
+   - Line 4: import '/features/auth/data/datasources/firebase_auth_remote_datasource.dart';
+   - Line 5: import '/features/auth/data/datasources/auth_local_datasource.dart';
+   - Line 6: import 'package:firebase_auth/firebase_auth.dart';
+
+   Severity: CRITICAL
+   Issue: Presentation layer directly importing concrete data implementations
+   Impact: Breaks dependency inversion principle, creates tight coupling
+   Fix: Use dependency injection to provide repository through domain interface
+
+2. CREATE ACCOUNT WIDGET - DATA LAYER DEPENDENCIES
+   File: lib/features/auth/presentation/screens/signup/create_account/create_account_widget.dart
+   Lines: 2-5
+   Violations:
+   - Line 2: import '/features/auth/data/repositories/auth_repository_impl.dart';
+   - Line 3: import '/features/auth/data/datasources/firebase_auth_remote_datasource.dart';
+   - Line 4: import '/features/auth/data/datasources/auth_local_datasource.dart';
+   - Line 5: import 'package:firebase_auth/firebase_auth.dart';
+
+   Severity: CRITICAL
+   Issue: Same violation as login page
+   Impact: Duplicate violation pattern across presentation layer
+   Fix: Extract dependency injection setup to app layer
+
+3. AUTH_UTIL IN PRESENTATION LAYER - WIDESPREAD VIOLATION
+   Files affected: 8 presentation layer files
+
+   a) popup_timer_email_widget.dart:1
+   b) phone_creat_account_widget.dart:1
+   c) forgot_password_widget.dart:1
+   d) start_page_widget.dart:1
+   e) phonelogeinpincode_widget.dart:1
+   f) create_account_widget_refactored.dart:1
+
+   Violation: import '/features/auth/data/adapters/auth_util.dart';
+   Severity: CRITICAL
+   Issue: Presentation layer importing data layer utilities
+   Impact: Business logic scattered in data layer, violates layer boundaries
+   Fix: Create domain service interface for auth utilities
+
+HIGH VIOLATIONS (Infrastructure Dependencies)
+============================================
+
+4. FIREBASE DIRECT USAGE IN PRESENTATION
+   Files: login_page_widget.dart, create_account_widget.dart
+
+   a) FirebaseAuth.instance direct instantiation (lines 52-53)
+   b) FirebaseFirestore.instance direct usage (lines 53)
+
+   Severity: HIGH
+   Issue: Presentation layer creating infrastructure dependencies
+   Impact: Impossible to test without Firebase, violates clean architecture
+   Fix: Move infrastructure creation to data layer and dependency injection
+
+5. DOMAIN MODELS WITH INFRASTRUCTURE IMPORTS
+   File: lib/features/auth/domain/models/premium_users_model.dart
+   Lines: 6-7, 9
+   Violations:
+   - Line 6: import '/core/firebase/utils/firestore_util.dart';
+   - Line 7: import '/core/firebase/utils/schema_util.dart';
+   - Line 9: import '/core_exports.dart';
+
+   Severity: HIGH
+   Issue: Domain models depending on infrastructure utilities
+   Impact: Domain layer contaminated with framework-specific code
+   Fix: Move Firestore-specific logic to data layer, create pure domain models
+
+6. USER_CONTENTS_MODEL - SAME PATTERN
+   File: lib/features/auth/domain/models/user_contents_model.dart
+   Lines: 6-7, 9
+   Same violations as premium_users_model.dart
+
+   Severity: HIGH
+   Issue: Duplicate pattern in domain models
+   Fix: Apply same fix as premium_users_model
+
+MEDIUM VIOLATIONS (Business Logic Misplacement)
+==============================================
+
+7. BUSINESS LOGIC IN REFACTORED WIDGET
+   File: create_account_widget_refactored.dart
+   Lines: 56-96
+
+   Issue: Email validation, password matching, account creation logic in UI
+   Severity: MEDIUM
+   Impact: Business rules scattered across presentation layer
+   Fix: Move to use cases or domain services
+
+8. MISSING USE CASE PATTERN
+   File: create_account_widget_refactored.dart
+   Line 71: await authManager.createAccountWithEmail(...)
+
+   Issue: Direct call to auth manager instead of use case
+   Severity: MEDIUM
+   Impact: Inconsistent architecture patterns
+   Fix: Create and use CreateAccountWithEmailUseCase consistently
+
+9. DATA LAYER IMPORTING DOMAIN (Allowed but check for violations)
+   File: lib/features/auth/data/repositories/auth_repository_impl.dart
+   Lines: 7-9
+
+   Status: COMPLIANT (data layer can import domain interfaces)
+   Note: This is correct - data layer implementing domain interfaces
+
+LOW VIOLATIONS (Style/Convention Issues)
+=======================================
+
+10. CORE EXPORTS USAGE
+    Multiple files importing '/core_exports.dart'
+
+    Issue: Might be importing more than needed
+    Severity: LOW
+    Impact: Potential unnecessary dependencies
+    Fix: Import specific dependencies where possible
+
+11. MISSING DEPENDENCY INJECTION SETUP
+    Multiple presentation files creating their own repositories
+
+    Issue: No centralized dependency injection
+    Severity: LOW
+    Impact: Code duplication, harder to test
+    Fix: Implement proper DI container in app layer
+
+SUMMARY STATISTICS
+=================
+Total files analyzed: 81
+Critical violations: 12 imports across 8 files
+High violations: 6 imports across 3 files
+Medium violations: 4 patterns across 2 files
+Low violations: 2 patterns across multiple files
+
+RECOMMENDED FIX PRIORITY
+=======================
+1. Create IAuthService domain interface to replace auth_util imports
+2. Implement dependency injection in app layer
+3. Remove direct Firebase imports from presentation layer
+4. Clean domain models from infrastructure dependencies
+5. Extract business logic from presentation to use cases
+6. Standardize use case pattern across all auth operations

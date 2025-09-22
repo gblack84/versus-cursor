@@ -1,0 +1,91 @@
+diff --git a/lib/features/auth/presentation/screens/login/components/email_login_form.dart b/lib/features/auth/presentation/screens/login/components/email_login_form.dart
+new file mode 100644
+index 0000000..abcdef1
+--- /dev/null
++++ b/lib/features/auth/presentation/screens/login/components/email_login_form.dart
+@@ -0,0 +1,159 @@
++import 'package:flutter/material.dart';
++import 'package:google_fonts/google_fonts.dart';
++import '/core_exports.dart';
++
++class EmailLoginForm extends StatelessWidget {
++  final TextEditingController emailController;
++  final TextEditingController passwordController;
++  final FocusNode emailFocusNode;
++  final FocusNode passwordFocusNode;
++  final bool passwordVisibility;
++  final VoidCallback onPasswordVisibilityToggle;
++  final String? Function(String?)? emailValidator;
++  final String? Function(String?)? passwordValidator;
++  // ... Component implementation
++}
+
+diff --git a/lib/features/auth/presentation/screens/login/components/test_account_buttons.dart b/lib/features/auth/presentation/screens/login/components/test_account_buttons.dart
+new file mode 100644
+index 0000000..bcdef12
+--- /dev/null
++++ b/lib/features/auth/presentation/screens/login/components/test_account_buttons.dart
+@@ -0,0 +1,225 @@
++import 'package:flutter/material.dart';
++import 'package:google_fonts/google_fonts.dart';
++import '/core_exports.dart';
++import '/app/widgets/index.dart';
++
++class TestAccountButtons extends StatelessWidget {
++  final Future<void> Function({
++    required String email,
++    required String password,
++    required String displayName,
++    required String role,
++    String? platform,
++  }) onTestAccountLogin;
++  // ... Component implementation
++}
+
+diff --git a/lib/features/auth/presentation/screens/login/components/login_buttons.dart b/lib/features/auth/presentation/screens/login/components/login_buttons.dart
+new file mode 100644
+index 0000000..cdef123
+--- /dev/null
++++ b/lib/features/auth/presentation/screens/login/components/login_buttons.dart
+@@ -0,0 +1,83 @@
++import 'package:flutter/material.dart';
++import 'package:google_fonts/google_fonts.dart';
++import '/core_exports.dart';
++import '/app/widgets/index.dart';
++
++class LoginButtons extends StatelessWidget {
++  final VoidCallback onEmailLogin;
++  final VoidCallback onPhoneLogin;
++  // ... Component implementation
++}
+
+diff --git a/lib/features/auth/presentation/screens/login/components/create_account_link.dart b/lib/features/auth/presentation/screens/login/components/create_account_link.dart
+new file mode 100644
+index 0000000..def1234
+--- /dev/null
++++ b/lib/features/auth/presentation/screens/login/components/create_account_link.dart
+@@ -0,0 +1,66 @@
++import 'package:flutter/material.dart';
++import 'package:google_fonts/google_fonts.dart';
++import '/core_exports.dart';
++import '/app/widgets/index.dart';
++
++class CreateAccountLink extends StatelessWidget {
++  final VoidCallback onTap;
++  // ... Component implementation
++}
+
+diff --git a/lib/features/auth/presentation/screens/login/login_page/login_page_widget_refactored.dart b/lib/features/auth/presentation/screens/login/login_page/login_page_widget_refactored.dart
+new file mode 100644
+index 0000000..ef12345
+--- /dev/null
++++ b/lib/features/auth/presentation/screens/login/login_page/login_page_widget_refactored.dart
+@@ -0,0 +1,250 @@
++import '/features/auth/domain/usecases/sign_in_with_email_usecase.dart';
++import '/features/auth/domain/usecases/create_test_account_usecase.dart';
++import '/features/auth/presentation/screens/login/components/email_login_form.dart';
++import '/features/auth/presentation/screens/login/components/test_account_buttons.dart';
++import '/features/auth/presentation/screens/login/components/login_buttons.dart';
++import '/features/auth/presentation/screens/login/components/create_account_link.dart';
++// ... Refactored widget implementation (869 lines → 250 lines)
++}

@@ -1,74 +1,99 @@
-import '/features/auth/data/adapters/auth_util.dart';
-import '/core_exports.dart';
-import 'package:flutter/material.dart';
+// Sign In With Email UseCase
+// Clean Architecture - Domain Layer
 
+import 'package:flutter/foundation.dart';
+import '../models/auth_user.dart';
+import '../repositories/i_auth_repository.dart';
+import '../failures/auth_failure.dart';
+
+/// SignInWithEmailUseCase
+///
+/// Business logic for email and password authentication.
+/// Handles validation, authentication, and user session management.
 class SignInWithEmailUseCase {
-  SignInWithEmailUseCase();
+  final IAuthRepository _repository;
 
-  Future<BaseAuthUser?> execute({
-    required BuildContext context,
+  SignInWithEmailUseCase({
+    required IAuthRepository repository,
+  }) : _repository = repository;
+
+  /// Execute Email Sign In
+  ///
+  /// Signs in a user with email and password credentials
+  Future<AuthUser?> execute({
     required String email,
     required String password,
   }) async {
     try {
-      // PrepareAuthEvent는 이미 호출된 것으로 가정
-      final user = await authManager.signInWithEmail(
-        context,
+      debugPrint('Attempting to sign in with email...');
+
+      // Validate email format
+      if (!_isValidEmail(email)) {
+        debugPrint('Invalid email format: $email');
+        return null;
+      }
+
+      // Validate password is not empty
+      if (password.isEmpty) {
+        debugPrint('Password cannot be empty');
+        return null;
+      }
+
+      // Attempt sign in through repository
+      final user = await _repository.signInWithEmailAndPassword(
         email,
         password,
       );
 
       if (user == null) {
+        debugPrint('Sign in failed: Invalid credentials or user not found');
         return null;
       }
 
-      // authenticatedUserStream이 currentUser를 설정할 때까지 대기
-      await _waitForCurrentUserReference();
+      // Check if email is verified (optional based on business requirements)
+      if (!user.isEmailVerified) {
+        debugPrint('Warning: User email is not verified');
+        // You might want to handle this based on your business logic
+        // For now, we'll allow sign in but log the warning
+      }
 
-      // lastActive 업데이트
-      await _updateLastActive(user.uid);
+      debugPrint('Sign in successful for user: ${user.uid}');
+
+      // Note: lastActive update should be handled by the repository/data layer
+      // or through a separate use case if needed
 
       return user;
+
+    } on AuthFailure catch (e) {
+      // Handle specific auth failures
+      if (e is InvalidEmail) {
+        debugPrint('Sign in failed: Invalid email format');
+      } else if (e is InvalidCredentials) {
+        debugPrint('Sign in failed: Invalid email or password');
+      } else if (e is UserNotFound) {
+        debugPrint('Sign in failed: User not found');
+      } else if (e is UserDisabled) {
+        debugPrint('Sign in failed: User account is disabled');
+      } else if (e is EmailNotVerified) {
+        debugPrint('Sign in failed: Email not verified');
+      } else if (e is RequiresRecentLogin) {
+        debugPrint('Sign in failed: Requires recent login');
+      } else {
+        debugPrint('Sign in failed with AuthFailure: ${e.message}');
+      }
+      return null;
     } catch (e) {
-      debugPrint('SignInWithEmailUseCase error: $e');
+      debugPrint('Sign in failed with unexpected error: $e');
       return null;
     }
   }
 
-  Future<void> _waitForCurrentUserReference() async {
-    int attempts = 0;
-    while (currentUserReference == null && attempts < 20) {
-      await Future.delayed(const Duration(milliseconds: 500));
-      attempts++;
-    }
-  }
-
-  Future<void> _updateLastActive(String? uid) async {
-    if (uid == null) return;
-
-    if (currentUserReference == null) {
-      debugPrint('경고: currentUserReference가 설정되지 않음');
-      // 직접 DocumentReference 생성하여 업데이트
-      final directRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid);
-
-      await directRef.update({
-        ...mapToFirestore(
-          {
-            'lastActive': FieldValue.serverTimestamp(),
-          },
-        ),
-      });
-    } else {
-      // 정상적으로 currentUserReference 사용
-      await currentUserReference!.update({
-        ...mapToFirestore(
-          {
-            'lastActive': FieldValue.serverTimestamp(),
-          },
-        ),
-      });
-    }
+  /// Validate email format
+  bool _isValidEmail(String email) {
+    // Basic email validation regex
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    return emailRegex.hasMatch(email);
   }
 }

@@ -1,11 +1,17 @@
 import '/features/auth/domain/usecases/sign_in_with_email_usecase.dart';
 import '/features/auth/domain/usecases/create_test_account_usecase.dart';
+import '/features/auth/domain/factories/auth_repository_factory.dart';
+import '/features/auth/presentation/screens/login/components/email_login_form.dart';
+import '/features/auth/presentation/screens/login/components/test_account_buttons.dart';
+import '/features/auth/presentation/screens/login/components/login_buttons.dart';
+import '/features/auth/presentation/screens/login/components/create_account_link.dart';
+import '/testpage_select/testpage_select_widget.dart';
+import '/features/auth/presentation/screens/phone_auth/phone_creat_account/phone_creat_account_widget.dart';
+import '/features/auth/presentation/screens/signup/create_account/create_account_widget.dart';
 import '/core_exports.dart';
-import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'login_page_model.dart';
 export 'login_page_model.dart';
 
@@ -22,19 +28,31 @@ class LoginPageWidget extends StatefulWidget {
 class _LoginPageWidgetState extends State<LoginPageWidget>
     with TickerProviderStateMixin {
   late LoginPageModel _model;
-  late SignInWithEmailUseCase _signInWithEmailUseCase;
-  late CreateTestAccountUseCase _createTestAccountUseCase;
+  SignInWithEmailUseCase? _signInWithEmailUseCase;
+  CreateTestAccountUseCase? _createTestAccountUseCase;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   final animationsMap = <String, AnimationInfo>{};
 
+  Future<void> _initializeUseCases() async {
+    // Factory를 통한 Repository 생성 (Clean Architecture 준수)
+    final repository = await AuthRepositoryFactory.create();
+
+    // UseCase 초기화
+    setState(() {
+      _signInWithEmailUseCase = SignInWithEmailUseCase(repository: repository);
+      _createTestAccountUseCase = CreateTestAccountUseCase(repository: repository);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => LoginPageModel());
-    _signInWithEmailUseCase = SignInWithEmailUseCase();
-    _createTestAccountUseCase = CreateTestAccountUseCase();
+
+    // UseCase 초기화 (Phase 2.6에서 DI로 대체 예정)
+    _initializeUseCases();
 
     _model.emailAddressLoginTextController ??= TextEditingController();
     _model.emailAddressLoginFocusNode ??= FocusNode();
@@ -77,21 +95,41 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
   @override
   void dispose() {
     _model.dispose();
-
     super.dispose();
   }
 
   // Helper method for email login
   Future<void> _handleEmailLogin() async {
+    // UseCase가 아직 초기화되지 않았으면 리턴
+    if (_signInWithEmailUseCase == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('시스템을 초기화 중입니다. 잠시 후 다시 시도해주세요.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return;
+    }
+
     GoRouter.of(context).prepareAuthEvent();
 
-    final user = await _signInWithEmailUseCase.execute(
-      context: context,
+    final user = await _signInWithEmailUseCase!.execute(
       email: _model.emailAddressLoginTextController.text,
       password: _model.passwordLoginTextController.text,
     );
 
     if (user == null) {
+      // UI 피드백: 로그인 실패 메시지 표시
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
     }
 
@@ -117,10 +155,22 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
     required String role,
     String? platform,
   }) async {
+    // UseCase가 아직 초기화되지 않았으면 리턴
+    if (_createTestAccountUseCase == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('시스템을 초기화 중입니다. 잠시 후 다시 시도해주세요.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return;
+    }
+
     GoRouter.of(context).prepareAuthEvent();
 
-    final user = await _createTestAccountUseCase.execute(
-      context: context,
+    final result = await _createTestAccountUseCase!.execute(
       email: email,
       password: password,
       displayName: displayName,
@@ -128,8 +178,27 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
       platform: platform,
     );
 
-    if (user == null) {
+    // UI 피드백: 결과에 따라 적절한 메시지 표시
+    if (!result.success) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message ?? '테스트 계정 생성/로그인에 실패했습니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
+    }
+
+    // 성공 메시지 표시
+    if (context.mounted && result.message != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message!),
+          backgroundColor: Colors.green,
+        ),
+      );
     }
 
     if (context.mounted) {
@@ -138,6 +207,36 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
         context.mounted,
       );
     }
+  }
+
+  void _handlePhoneLogin() {
+    context.pushNamed(
+      PhoneCreatAccountWidget.routeName,
+      queryParameters: {
+        'phoneNumberParam': serializeParam(
+          '',
+          ParamType.String,
+        ),
+      }.withoutNulls,
+      extra: <String, dynamic>{
+        kTransitionInfoKey: TransitionInfo(
+          hasTransition: true,
+          duration: Duration(milliseconds: 500),
+        ),
+      },
+    );
+  }
+
+  void _handleCreateAccount() async {
+    context.pushNamed(
+      CreateAccountWidget.routeName,
+      extra: <String, dynamic>{
+        kTransitionInfoKey: TransitionInfo(
+          hasTransition: true,
+          duration: Duration(milliseconds: 900),
+        ),
+      },
+    );
   }
 
   @override
@@ -165,6 +264,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                   child: Column(
                     mainAxisSize: MainAxisSize.max,
                     children: [
+                      // Header Image
                       Container(
                         width: double.infinity,
                         height: 350.0,
@@ -176,10 +276,8 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                             ).image,
                           ),
                         ),
-                        child: Stack(
-                          children: [],
-                        ),
                       ),
+                      // Login Form Container
                       Align(
                         alignment: AlignmentDirectional(0.0, 0.0),
                         child: Padding(
@@ -190,670 +288,50 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
                             mainAxisAlignment: MainAxisAlignment.end,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Padding(
-                                padding: EdgeInsetsDirectional.fromSTEB(
-                                    0.0, 0.0, 0.0, 16.0),
-                                child: Container(
-                                  width: double.infinity,
-                                  child: TextFormField(
-                                    controller:
-                                        _model.emailAddressLoginTextController,
-                                    focusNode:
-                                        _model.emailAddressLoginFocusNode,
-                                    autofocus: true,
-                                    autofillHints: [AutofillHints.email],
-                                    obscureText: false,
-                                    decoration: InputDecoration(
-                                      labelText:
-                                          AppLocalizations.of(context).getText(
-                                        'b6l0k8k2' /* Email */,
-                                      ),
-                                      labelStyle: AppTheme.of(context)
-                                          .labelMedium
-                                          .override(
-                                            font: GoogleFonts.plusJakartaSans(
-                                              fontWeight: FontWeight.w500,
-                                              fontStyle: AppTheme.of(context)
-                                                  .labelMedium
-                                                  .fontStyle,
-                                            ),
-                                            color: Color(0xFF57636C),
-                                            fontSize: 14.0,
-                                            letterSpacing: 0.0,
-                                            fontWeight: FontWeight.w500,
-                                            fontStyle: AppTheme.of(context)
-                                                .labelMedium
-                                                .fontStyle,
-                                          ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Color(0xFFE0E3E7),
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Color(0xFF4B39EF),
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      errorBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Color(0xFFFF5963),
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      focusedErrorBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Color(0xFFFF5963),
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      filled: true,
-                                      fillColor: Colors.white,
-                                      contentPadding: EdgeInsets.all(24.0),
-                                    ),
-                                    style: AppTheme.of(context)
-                                        .bodyMedium
-                                        .override(
-                                          font: GoogleFonts.plusJakartaSans(
-                                            fontWeight: FontWeight.w500,
-                                            fontStyle: AppTheme.of(context)
-                                                .bodyMedium
-                                                .fontStyle,
-                                          ),
-                                          color: Colors.black,
-                                          fontSize: 14.0,
-                                          letterSpacing: 0.0,
-                                          fontWeight: FontWeight.w500,
-                                          fontStyle: AppTheme.of(context)
-                                              .bodyMedium
-                                              .fontStyle,
-                                        ),
-                                    keyboardType: TextInputType.emailAddress,
-                                    validator: _model
-                                        .emailAddressLoginTextControllerValidator
-                                        .asValidator(context),
-                                  ),
+                              // Email & Password Form Fields
+                              EmailLoginForm(
+                                emailController:
+                                    _model.emailAddressLoginTextController!,
+                                passwordController:
+                                    _model.passwordLoginTextController!,
+                                emailFocusNode:
+                                    _model.emailAddressLoginFocusNode!,
+                                passwordFocusNode:
+                                    _model.passwordLoginFocusNode!,
+                                passwordVisibility:
+                                    _model.passwordLoginVisibility,
+                                onPasswordVisibilityToggle: () => setState(
+                                  () => _model.passwordLoginVisibility =
+                                      !_model.passwordLoginVisibility,
                                 ),
+                                emailValidator: _model
+                                    .emailAddressLoginTextControllerValidator
+                                    .asValidator(context),
+                                passwordValidator: _model
+                                    .passwordLoginTextControllerValidator
+                                    .asValidator(context),
                               ),
-                              Padding(
-                                padding: EdgeInsetsDirectional.fromSTEB(
-                                    0.0, 0.0, 0.0, 16.0),
-                                child: Container(
-                                  width: double.infinity,
-                                  child: TextFormField(
-                                    controller:
-                                        _model.passwordLoginTextController,
-                                    focusNode: _model.passwordLoginFocusNode,
-                                    autofocus: false,
-                                    autofillHints: [AutofillHints.password],
-                                    obscureText:
-                                        !_model.passwordLoginVisibility,
-                                    decoration: InputDecoration(
-                                      labelText:
-                                          AppLocalizations.of(context).getText(
-                                        '6l9ekgal' /* Password */,
-                                      ),
-                                      labelStyle: AppTheme.of(context)
-                                          .labelMedium
-                                          .override(
-                                            font: GoogleFonts.plusJakartaSans(
-                                              fontWeight: FontWeight.w500,
-                                              fontStyle: AppTheme.of(context)
-                                                  .labelMedium
-                                                  .fontStyle,
-                                            ),
-                                            color: Color(0xFF57636C),
-                                            fontSize: 14.0,
-                                            letterSpacing: 0.0,
-                                            fontWeight: FontWeight.w500,
-                                            fontStyle: AppTheme.of(context)
-                                                .labelMedium
-                                                .fontStyle,
-                                          ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Color(0xFFE0E3E7),
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Color(0xFF4B39EF),
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      errorBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Color(0xFFFF5963),
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      focusedErrorBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Color(0xFFFF5963),
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      filled: true,
-                                      fillColor: Colors.white,
-                                      contentPadding: EdgeInsets.all(24.0),
-                                      suffixIcon: InkWell(
-                                        onTap: () => setState(
-                                          () => _model.passwordLoginVisibility =
-                                              !_model.passwordLoginVisibility,
-                                        ),
-                                        focusNode:
-                                            FocusNode(skipTraversal: true),
-                                        child: Icon(
-                                          _model.passwordLoginVisibility
-                                              ? Icons.visibility_outlined
-                                              : Icons.visibility_off_outlined,
-                                          color: Color(0xFF57636C),
-                                          size: 24.0,
-                                        ),
-                                      ),
-                                    ),
-                                    style: AppTheme.of(context)
-                                        .bodyMedium
-                                        .override(
-                                          font: GoogleFonts.plusJakartaSans(
-                                            fontWeight: FontWeight.w500,
-                                            fontStyle: AppTheme.of(context)
-                                                .bodyMedium
-                                                .fontStyle,
-                                          ),
-                                          color: Colors.black,
-                                          fontSize: 14.0,
-                                          letterSpacing: 0.0,
-                                          fontWeight: FontWeight.w500,
-                                          fontStyle: AppTheme.of(context)
-                                              .bodyMedium
-                                              .fontStyle,
-                                        ),
-                                    validator: _model
-                                        .passwordLoginTextControllerValidator
-                                        .asValidator(context),
-                                  ),
-                                ),
+                              // Login Buttons (Email & Phone)
+                              LoginButtons(
+                                onEmailLogin: _handleEmailLogin,
+                                onPhoneLogin: _handlePhoneLogin,
                               ),
-                              Align(
-                                alignment: AlignmentDirectional(0.0, 0.0),
-                                child: Padding(
+                              // Test Account Buttons (Development Only)
+                              if (kDebugMode || kProfileMode)
+                                Padding(
                                   padding: EdgeInsetsDirectional.fromSTEB(
-                                      0.0, 20.0, 0.0, 16.0),
-                                  child: AppButtonWidget(
-                                    onPressed: () async {
-                                      await _handleEmailLogin();
-                                    },
-                                    text: AppLocalizations.of(context).getText(
-                                      '4wwn8ov8' /* Log in */,
-                                    ),
-                                    options: AppButtonOptions(
-                                      width: 230.0,
-                                      height: 52.0,
-                                      padding: EdgeInsetsDirectional.fromSTEB(
-                                          0.0, 0.0, 0.0, 0.0),
-                                      iconPadding:
-                                          EdgeInsetsDirectional.fromSTEB(
-                                              0.0, 0.0, 0.0, 0.0),
-                                      color: Colors.black,
-                                      textStyle: AppTheme.of(context)
-                                          .titleSmall
-                                          .override(
-                                            font: GoogleFonts.plusJakartaSans(
-                                              fontWeight: FontWeight.w500,
-                                              fontStyle: AppTheme.of(context)
-                                                  .titleSmall
-                                                  .fontStyle,
-                                            ),
-                                            color: Colors.white,
-                                            fontSize: 16.0,
-                                            letterSpacing: 0.0,
-                                            fontWeight: FontWeight.w500,
-                                            fontStyle: AppTheme.of(context)
-                                                .titleSmall
-                                                .fontStyle,
-                                          ),
-                                      elevation: 10.0,
-                                      borderSide: BorderSide(
-                                        color: Colors.transparent,
-                                        width: 1.0,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
+                                      0.0, 16.0, 0.0, 0.0),
+                                  child: TestAccountButtons(
+                                    onTestAccountLogin: _handleTestAccountLogin,
                                   ),
                                 ),
-                              ),
-                              Align(
-                                alignment: AlignmentDirectional(0.0, 0.0),
-                                child: Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(
-                                      0.0, 0.0, 0.0, 16.0),
-                                  child: AppButtonWidget(
-                                    onPressed: () async {
-                                      context.pushNamed(
-                                        PhoneCreatAccountWidget.routeName,
-                                        queryParameters: {
-                                          'phoneNumberParam': serializeParam(
-                                            '',
-                                            ParamType.String,
-                                          ),
-                                        }.withoutNulls,
-                                        extra: <String, dynamic>{
-                                          kTransitionInfoKey: TransitionInfo(
-                                            hasTransition: true,
-                                            duration:
-                                                Duration(milliseconds: 500),
-                                          ),
-                                        },
-                                      );
-                                    },
-                                    text: AppLocalizations.of(context).getText(
-                                      'uk1cwrhu' /* Phone Log in */,
-                                    ),
-                                    options: AppButtonOptions(
-                                      width: 230.0,
-                                      height: 52.0,
-                                      padding: EdgeInsetsDirectional.fromSTEB(
-                                          0.0, 0.0, 0.0, 0.0),
-                                      iconPadding:
-                                          EdgeInsetsDirectional.fromSTEB(
-                                              0.0, 0.0, 0.0, 0.0),
-                                      color: Colors.black,
-                                      textStyle: AppTheme.of(context)
-                                          .titleSmall
-                                          .override(
-                                            font: GoogleFonts.plusJakartaSans(
-                                              fontWeight: FontWeight.w500,
-                                              fontStyle: AppTheme.of(context)
-                                                  .titleSmall
-                                                  .fontStyle,
-                                            ),
-                                            color: Colors.white,
-                                            fontSize: 16.0,
-                                            letterSpacing: 0.0,
-                                            fontWeight: FontWeight.w500,
-                                            fontStyle: AppTheme.of(context)
-                                                .titleSmall
-                                                .fontStyle,
-                                          ),
-                                      elevation: 10.0,
-                                      borderSide: BorderSide(
-                                        color: Colors.transparent,
-                                        width: 1.0,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              // 테스트 계정 로그인 버튼 (디버그 모드에서만 표시)
-                              if (!kReleaseMode)
-                                Align(
-                                  alignment: AlignmentDirectional(0.0, 0.0),
-                                  child: Padding(
-                                    padding: EdgeInsetsDirectional.fromSTEB(
-                                        0.0, 0.0, 0.0, 16.0),
-                                    child: Column(
-                                      children: [
-                                        Text(
-                                          '테스트 계정',
-                                          style: AppTheme.of(context)
-                                              .bodyMedium
-                                              .override(
-                                                font: GoogleFonts
-                                                    .plusJakartaSans(),
-                                                color: AppTheme.of(context)
-                                                    .secondaryText,
-                                                letterSpacing: 0.0,
-                                              ),
-                                        ),
-                                        SizedBox(height: 8.0),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            // 관리자 계정
-                                            AppButtonWidget(
-                                              onPressed: () async {
-                                                await _handleTestAccountLogin(
-                                                  email: 'admin@versus.test',
-                                                  password: 'test1234!',
-                                                  displayName: '관리자',
-                                                  role: 'admin',
-                                                );
-                                              },
-                                              text: '관리자',
-                                              options: AppButtonOptions(
-                                                width: 100.0,
-                                                height: 40.0,
-                                                padding: EdgeInsetsDirectional
-                                                    .fromSTEB(
-                                                        0.0, 0.0, 0.0, 0.0),
-                                                iconPadding:
-                                                    EdgeInsetsDirectional
-                                                        .fromSTEB(
-                                                            0.0, 0.0, 0.0, 0.0),
-                                                color: AppTheme.of(context)
-                                                    .primary,
-                                                textStyle: AppTheme.of(context)
-                                                    .titleSmall
-                                                    .override(
-                                                      font: GoogleFonts
-                                                          .plusJakartaSans(),
-                                                      color: Colors.white,
-                                                      fontSize: 14.0,
-                                                      letterSpacing: 0.0,
-                                                    ),
-                                                elevation: 3.0,
-                                                borderSide: BorderSide(
-                                                  color: Colors.transparent,
-                                                  width: 1.0,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(8.0),
-                                              ),
-                                            ),
-                                            SizedBox(width: 12.0),
-                                            // 플랫폼별 테스트 계정
-                                            AppButtonWidget(
-                                              onPressed: () async {
-                                                await _handleTestAccountLogin(
-                                                  email: 'tester-ios@versus.test',
-                                                  password: 'test1234!',
-                                                  displayName: '테스터 (아이폰 16 프로)',
-                                                  role: 'tester',
-                                                  platform: 'ios',
-                                                );
-                                              },
-                                              text: '아이폰 16 프로',
-                                              options: AppButtonOptions(
-                                                width: 120.0,
-                                                height: 40.0,
-                                                padding: EdgeInsetsDirectional
-                                                    .fromSTEB(
-                                                        0.0, 0.0, 0.0, 0.0),
-                                                iconPadding:
-                                                    EdgeInsetsDirectional
-                                                        .fromSTEB(
-                                                            0.0, 0.0, 0.0, 0.0),
-                                                color: AppTheme.of(context)
-                                                    .secondary,
-                                                textStyle: AppTheme.of(context)
-                                                    .titleSmall
-                                                    .override(
-                                                      font: GoogleFonts
-                                                          .plusJakartaSans(),
-                                                      color: Colors.white,
-                                                      fontSize: 14.0,
-                                                      letterSpacing: 0.0,
-                                                    ),
-                                                elevation: 3.0,
-                                                borderSide: BorderSide(
-                                                  color: Colors.transparent,
-                                                  width: 1.0,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(8.0),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: 12.0),
-                                        // 두 번째 줄: Android, macOS, 웹앱
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            // Android 테스트 계정
-                                            AppButtonWidget(
-                                              onPressed: () async {
-                                                await _handleTestAccountLogin(
-                                                  email: 'tester-android@versus.test',
-                                                  password: 'test1234!',
-                                                  displayName: '테스터 (Android)',
-                                                  role: 'tester',
-                                                  platform: 'android',
-                                                );
-                                              },
-                                              text: 'Android',
-                                              options: AppButtonOptions(
-                                                width: 80.0,
-                                                height: 40.0,
-                                                padding: EdgeInsetsDirectional
-                                                    .fromSTEB(
-                                                        0.0, 0.0, 0.0, 0.0),
-                                                iconPadding:
-                                                    EdgeInsetsDirectional
-                                                        .fromSTEB(
-                                                            0.0, 0.0, 0.0, 0.0),
-                                                color: AppTheme.of(context)
-                                                    .secondary,
-                                                textStyle: AppTheme.of(context)
-                                                    .titleSmall
-                                                    .override(
-                                                      font: GoogleFonts
-                                                          .plusJakartaSans(),
-                                                      color: Colors.white,
-                                                      fontSize: 13.0,
-                                                      letterSpacing: 0.0,
-                                                    ),
-                                                elevation: 3.0,
-                                                borderSide: BorderSide(
-                                                  color: Colors.transparent,
-                                                  width: 1.0,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(8.0),
-                                              ),
-                                            ),
-                                            SizedBox(width: 8.0),
-                                            // macOS 테스트 계정
-                                            AppButtonWidget(
-                                              onPressed: () async {
-                                                await _handleTestAccountLogin(
-                                                  email: 'tester-macos@versus.test',
-                                                  password: 'test1234!',
-                                                  displayName: '테스터 (macOS)',
-                                                  role: 'tester',
-                                                  platform: 'macos',
-                                                );
-                                              },
-                                              text: 'macOS 앱',
-                                              options: AppButtonOptions(
-                                                width: 90.0,
-                                                height: 40.0,
-                                                padding: EdgeInsetsDirectional
-                                                    .fromSTEB(
-                                                        0.0, 0.0, 0.0, 0.0),
-                                                iconPadding:
-                                                    EdgeInsetsDirectional
-                                                        .fromSTEB(
-                                                            0.0, 0.0, 0.0, 0.0),
-                                                color: AppTheme.of(context)
-                                                    .secondary,
-                                                textStyle: AppTheme.of(context)
-                                                    .titleSmall
-                                                    .override(
-                                                      font: GoogleFonts
-                                                          .plusJakartaSans(),
-                                                      color: Colors.white,
-                                                      fontSize: 13.0,
-                                                      letterSpacing: 0.0,
-                                                    ),
-                                                elevation: 3.0,
-                                                borderSide: BorderSide(
-                                                  color: Colors.transparent,
-                                                  width: 1.0,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(8.0),
-                                              ),
-                                            ),
-                                            SizedBox(width: 8.0),
-                                            // 웹앱 테스트 계정
-                                            AppButtonWidget(
-                                              onPressed: () async {
-                                                await _handleTestAccountLogin(
-                                                  email: 'tester-web@versus.test',
-                                                  password: 'test1234!',
-                                                  displayName: '테스터 (웹앱)',
-                                                  role: 'tester',
-                                                  platform: 'web',
-                                                );
-                                              },
-                                              text: '웹앱',
-                                              options: AppButtonOptions(
-                                                width: 70.0,
-                                                height: 40.0,
-                                                padding: EdgeInsetsDirectional
-                                                    .fromSTEB(
-                                                        0.0, 0.0, 0.0, 0.0),
-                                                iconPadding:
-                                                    EdgeInsetsDirectional
-                                                        .fromSTEB(
-                                                            0.0, 0.0, 0.0, 0.0),
-                                                color: AppTheme.of(context)
-                                                    .secondary,
-                                                textStyle: AppTheme.of(context)
-                                                    .titleSmall
-                                                    .override(
-                                                      font: GoogleFonts
-                                                          .plusJakartaSans(),
-                                                      color: Colors.white,
-                                                      fontSize: 13.0,
-                                                      letterSpacing: 0.0,
-                                                    ),
-                                                elevation: 3.0,
-                                                borderSide: BorderSide(
-                                                  color: Colors.transparent,
-                                                  width: 1.0,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(8.0),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              Align(
-                                alignment: AlignmentDirectional(0.0, 0.0),
-                                child: Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(
-                                      0.0, 16.0, 0.0, 16.0),
-                                  child: AppButtonWidget(
-                                    onPressed: () async {
-                                      context.pushNamed(
-                                        ForgotPasswordWidget.routeName,
-                                        extra: <String, dynamic>{
-                                          kTransitionInfoKey: TransitionInfo(
-                                            hasTransition: true,
-                                            duration:
-                                                Duration(milliseconds: 500),
-                                          ),
-                                        },
-                                      );
-                                    },
-                                    text: AppLocalizations.of(context).getText(
-                                      'ymtbo8l4' /* Forgot Password */,
-                                    ),
-                                    options: AppButtonOptions(
-                                      width: 230.0,
-                                      height: 44.0,
-                                      padding: EdgeInsetsDirectional.fromSTEB(
-                                          0.0, 0.0, 0.0, 0.0),
-                                      iconPadding:
-                                          EdgeInsetsDirectional.fromSTEB(
-                                              0.0, 0.0, 0.0, 0.0),
-                                      color: Colors.white,
-                                      textStyle: AppTheme.of(context)
-                                          .bodyMedium
-                                          .override(
-                                            font: GoogleFonts.plusJakartaSans(
-                                              fontWeight: FontWeight.w500,
-                                              fontStyle: AppTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
-                                            ),
-                                            color: Color(0xFF101213),
-                                            fontSize: 14.0,
-                                            letterSpacing: 0.0,
-                                            fontWeight: FontWeight.w500,
-                                            fontStyle: AppTheme.of(context)
-                                                .bodyMedium
-                                                .fontStyle,
-                                          ),
-                                      elevation: 10.0,
-                                      borderSide: BorderSide(
-                                        color: Colors.white,
-                                        width: 2.0,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                  ),
-                                ),
+                              // Create Account Link
+                              CreateAccountLink(
+                                onTap: _handleCreateAccount,
                               ),
                             ],
                           ).animateOnPageLoad(
                               animationsMap['columnOnPageLoadAnimation']!),
-                        ),
-                      ),
-                      Align(
-                        alignment: AlignmentDirectional(0.0, 0.0),
-                        child: Padding(
-                          padding: EdgeInsetsDirectional.fromSTEB(
-                              16.0, 0.0, 16.0, 24.0),
-                          child: InkWell(
-                            splashColor: Colors.transparent,
-                            focusColor: Colors.transparent,
-                            hoverColor: Colors.transparent,
-                            highlightColor: Colors.transparent,
-                            onTap: () async {
-                              context.pushNamed(TestpageSelectWidget.routeName);
-                            },
-                            child: Text(
-                              AppLocalizations.of(context).getText(
-                                'e1wsx5w1' /* Or sign up with, goto test */,
-                              ),
-                              textAlign: TextAlign.center,
-                              style: AppTheme.of(context).labelMedium.override(
-                                    font: GoogleFonts.plusJakartaSans(
-                                      fontWeight: FontWeight.w500,
-                                      fontStyle: AppTheme.of(context)
-                                          .labelMedium
-                                          .fontStyle,
-                                    ),
-                                    color: Color(0xFF57636C),
-                                    fontSize: 14.0,
-                                    letterSpacing: 0.0,
-                                    fontWeight: FontWeight.w500,
-                                    fontStyle: AppTheme.of(context)
-                                        .labelMedium
-                                        .fontStyle,
-                                  ),
-                            ),
-                          ),
                         ),
                       ),
                     ],

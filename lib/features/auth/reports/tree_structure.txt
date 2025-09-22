@@ -1,0 +1,119 @@
+/Users/g_black/versus-cursor/lib/features/auth
+├── data
+│   ├── adapters
+│   │   ├── anonymous_auth.dart
+│   │   ├── apple_auth.dart
+│   │   ├── auth_manager.dart
+│   │   ├── auth_service_impl.dart
+│   │   ├── auth_util.dart
+│   │   ├── base_auth_user_provider.dart
+│   │   ├── email_auth.dart
+│   │   ├── firebase_auth_manager.dart
+│   │   ├── firebase_user_provider.dart
+│   │   ├── github_auth.dart
+│   │   ├── google_auth.dart
+│   │   ├── jwt_token_auth.dart
+│   │   └── user_service_impl.dart
+│   ├── datasources
+│   │   ├── auth_local_datasource.dart
+│   │   ├── firebase_auth_remote_datasource.dart
+│   │   ├── i_auth_local_datasource.dart
+│   │   └── i_auth_remote_datasource.dart
+│   ├── dto
+│   │   ├── auth_user_dto.dart
+│   │   └── user_profile_dto.dart
+│   ├── exports
+│   │   └── auth_models.dart
+│   ├── mappers
+│   │   └── auth_user_mapper.dart
+│   └── repositories
+│       └── auth_repository_impl.dart
+├── domain
+│   ├── failures
+│   │   └── auth_failure.dart
+│   ├── models
+│   │   ├── auth_user_extended.dart
+│   │   ├── auth_user.dart
+│   │   ├── premium_users_model.dart
+│   │   └── user_contents_model.dart
+│   ├── repositories
+│   │   └── i_auth_repository.dart
+│   ├── services
+│   │   └── i_auth_service.dart
+│   └── usecases
+│       ├── auth_state_usecase.dart
+│       ├── create_account_with_email_usecase.dart
+│       ├── create_phone_account_usecase.dart
+│       ├── create_test_account_usecase.dart
+│       ├── delete_account_usecase.dart
+│       ├── get_current_user_email_usecase.dart
+│       ├── get_current_user_uid_usecase.dart
+│       ├── get_current_user_usecase.dart
+│       ├── get_jwt_token_usecase.dart
+│       ├── is_authenticated_usecase.dart
+│       ├── is_email_verified_usecase.dart
+│       ├── refresh_token_usecase.dart
+│       ├── resend_sms_otp_usecase.dart
+│       ├── reset_password_usecase.dart
+│       ├── send_sms_otp_usecase.dart
+│       ├── sign_in_anonymously_usecase.dart
+│       ├── sign_in_with_apple_usecase.dart
+│       ├── sign_in_with_email_usecase.dart
+│       ├── sign_in_with_github_usecase.dart
+│       ├── sign_in_with_google_usecase.dart
+│       ├── sign_in_with_phone_usecase.dart
+│       ├── sign_out_usecase.dart
+│       ├── update_password_usecase.dart
+│       ├── update_user_profile_usecase.dart
+│       ├── verify_email_usecase.dart
+│       └── verify_phone_otp_usecase.dart
+├── presentation
+│   ├── providers
+│   ├── screens
+│   │   ├── email_verification
+│   │   │   └── popup_timer_email
+│   │   │       ├── popup_timer_email_model.dart
+│   │   │       └── popup_timer_email_widget.dart
+│   │   ├── forgot_password
+│   │   │   └── forgot_password
+│   │   │       ├── forgot_password_model.dart
+│   │   │       └── forgot_password_widget.dart
+│   │   ├── login
+│   │   │   ├── components
+│   │   │   │   ├── create_account_link.dart
+│   │   │   │   ├── email_login_form.dart
+│   │   │   │   ├── login_buttons.dart
+│   │   │   │   └── test_account_buttons.dart
+│   │   │   └── login_page
+│   │   │       ├── login_page_model.dart
+│   │   │       └── login_page_widget.dart
+│   │   ├── phone_auth
+│   │   │   ├── phone_creat_account
+│   │   │   │   ├── phone_creat_account_model.dart
+│   │   │   │   └── phone_creat_account_widget.dart
+│   │   │   ├── phonelogeinpincode_model.dart
+│   │   │   ├── phonelogeinpincode_widget.dart
+│   │   │   └── phonemaximum
+│   │   │       ├── phonemaximum_model.dart
+│   │   │       └── phonemaximum_widget.dart
+│   │   ├── signup
+│   │   │   ├── components
+│   │   │   │   ├── header_section.dart
+│   │   │   │   ├── login_link.dart
+│   │   │   │   ├── signup_buttons.dart
+│   │   │   │   ├── signup_form.dart
+│   │   │   │   └── terms_section.dart
+│   │   │   └── create_account
+│   │   │       ├── create_account_model.dart
+│   │   │       ├── create_account_widget_refactored.dart
+│   │   │       └── create_account_widget.dart
+│   │   └── start
+│   │       └── start_page
+│   │           ├── start_page_model.dart
+│   │           └── start_page_widget.dart
+│   └── widgets
+└── reports
+    ├── inventory_scout.json
+    └── tree_structure.txt
+
+34 directories, 83 files

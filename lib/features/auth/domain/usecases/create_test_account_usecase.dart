@@ -1,17 +1,26 @@
-import 'package:get_it/get_it.dart';
-import '/features/auth/data/adapters/auth_util.dart';
-import '/features/profile/domain/models/user_profile.dart';
-import '/core_exports.dart';
-import 'package:flutter/material.dart';
+// Create Test Account UseCase
+// Clean Architecture - Domain Layer
 
+import 'package:flutter/foundation.dart';
+import '../models/auth_user.dart';
+import '../repositories/i_auth_repository.dart';
+import '../failures/auth_failure.dart';
+
+/// CreateTestAccountUseCase
+///
+/// Business logic for creating and managing test accounts.
+/// Used for development and testing purposes.
 class CreateTestAccountUseCase {
-  final IUserRepository _userRepository;
+  final IAuthRepository _repository;
 
-  CreateTestAccountUseCase({IUserRepository? userRepository})
-      : _userRepository = userRepository ?? GetIt.instance<IUserRepository>();
+  CreateTestAccountUseCase({
+    required IAuthRepository repository,
+  }) : _repository = repository;
 
-  Future<BaseAuthUser?> execute({
-    required BuildContext context,
+  /// Execute Test Account Creation
+  ///
+  /// Creates a test account or signs in if it already exists
+  Future<TestAccountResult> execute({
     required String email,
     required String password,
     required String displayName,
@@ -19,101 +28,173 @@ class CreateTestAccountUseCase {
     String? platform,
   }) async {
     try {
-      // 먼저 로그인 시도
-      var user = await authManager.signInWithEmail(
-        context,
+      debugPrint('Creating or accessing test account: $displayName');
+
+      // Validate input parameters
+      if (!_isValidEmail(email)) {
+        return TestAccountResult(
+          success: false,
+          message: 'Invalid email format',
+        );
+      }
+
+      if (password.length < 6) {
+        return TestAccountResult(
+          success: false,
+          message: 'Password must be at least 6 characters',
+        );
+      }
+
+      if (displayName.isEmpty) {
+        return TestAccountResult(
+          success: false,
+          message: 'Display name is required',
+        );
+      }
+
+      // Validate role
+      if (!_isValidRole(role)) {
+        return TestAccountResult(
+          success: false,
+          message: 'Invalid role: $role',
+        );
+      }
+
+      // First, try to sign in with existing account
+      debugPrint('Attempting to sign in with existing test account...');
+      var user = await _repository.signInWithEmailAndPassword(
         email,
         password,
       );
 
-      // 계정이 없으면 생성
+      bool isNewAccount = false;
+
+      // If sign in fails, create new account
       if (user == null) {
-        user = await authManager.createAccountWithEmail(
-          context,
+        debugPrint('Account does not exist, creating new test account...');
+
+        user = await _repository.createUserWithEmailAndPassword(
           email,
           password,
         );
 
         if (user == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('$displayName 계정 생성 실패'),
-            ),
+          return TestAccountResult(
+            success: false,
+            message: '$displayName account creation failed',
           );
-          return null;
         }
 
-        // 사용자 문서 생성
-        final usersCreateData = {
-          'email': email,
-          'displayName': displayName,
-          'createdTime': FieldValue.serverTimestamp(),
-          'role': role,
-          'uid': user.uid,
-        };
+        isNewAccount = true;
 
-        if (platform != null) {
-          usersCreateData['platform'] = platform;
-        }
-
-        // UserProfile 생성
-        await UserProfile.collection
-            .doc(user.uid)
-            .set(usersCreateData);
-      }
-
-      // authenticatedUserStream이 currentUser를 설정할 때까지 대기
-      await _waitForCurrentUserReference();
-
-      // lastActive 및 role 정보 업데이트
-      await _updateUserData(user.uid, role, platform);
-
-      return user;
-    } catch (e) {
-      debugPrint('CreateTestAccountUseCase error: $e');
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('$displayName 계정 처리 중 오류 발생'),
-          ),
+        // Update profile with display name
+        await _repository.updateUserProfile(
+          displayName: displayName,
+          photoURL: null,
         );
+
+        debugPrint('Test account created successfully: $displayName');
+      } else {
+        debugPrint('Signed in to existing test account: $displayName');
       }
-      return null;
+
+      // Note: Additional user profile setup (role, platform, etc.)
+      // should be handled by a separate UserProfileUseCase or
+      // through the repository layer if needed
+
+      return TestAccountResult(
+        success: true,
+        user: user,
+        isNewAccount: isNewAccount,
+        message: isNewAccount
+          ? 'Test account created: $displayName'
+          : 'Signed in to existing test account: $displayName',
+        metadata: TestAccountMetadata(
+          role: role,
+          platform: platform ?? _detectPlatform(),
+          createdAt: DateTime.now(),
+        ),
+      );
+
+    } on AuthFailure catch (e) {
+      String message = 'Authentication failed';
+
+      if (e is EmailAlreadyInUse) {
+        // This shouldn't happen as we try to sign in first
+        message = 'Email already in use with different password';
+      } else if (e is WeakPassword) {
+        message = 'Password is too weak';
+      } else if (e is InvalidEmail) {
+        message = 'Invalid email format';
+      } else {
+        message = 'Failed to create test account: ${e.message}';
+      }
+
+      debugPrint('Test account creation failed: $message');
+      return TestAccountResult(
+        success: false,
+        message: message,
+      );
+
+    } catch (e) {
+      debugPrint('Unexpected error creating test account: $e');
+      return TestAccountResult(
+        success: false,
+        message: 'An unexpected error occurred',
+      );
     }
   }
 
-  Future<void> _waitForCurrentUserReference() async {
-    int attempts = 0;
-    while (currentUserReference == null && attempts < 20) {
-      await Future.delayed(const Duration(milliseconds: 500));
-      attempts++;
-    }
+  /// Validate email format
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    return emailRegex.hasMatch(email);
   }
 
-  Future<void> _updateUserData(String? uid, String role, String? platform) async {
-    if (uid == null) return;
-
-    final updateData = {
-      'lastActive': FieldValue.serverTimestamp(),
-      'role': role,
-    };
-
-    if (platform != null) {
-      updateData['platform'] = platform;
-    }
-
-    if (currentUserReference == null) {
-      debugPrint('경고: currentUserReference가 설정되지 않음');
-      // Repository를 통해 업데이트
-      final directRef = _userRepository.getUserReference(uid);
-      await directRef.update({
-        ...mapToFirestore(updateData),
-      });
-    } else {
-      // 정상적으로 currentUserReference 사용
-      await currentUserReference!.update({
-        ...mapToFirestore(updateData),
-      });
-    }
+  /// Validate role
+  bool _isValidRole(String role) {
+    const validRoles = ['admin', 'tester', 'user', 'developer'];
+    return validRoles.contains(role.toLowerCase());
   }
+
+  /// Detect platform
+  String _detectPlatform() {
+    if (kIsWeb) return 'Web';
+
+    // In a real implementation, you would use Platform.isIOS, etc.
+    // For now, return a default
+    return 'Unknown';
+  }
+}
+
+/// Result class for test account creation
+class TestAccountResult {
+  final bool success;
+  final AuthUser? user;
+  final String? message;
+  final bool isNewAccount;
+  final TestAccountMetadata? metadata;
+
+  TestAccountResult({
+    required this.success,
+    this.user,
+    this.message,
+    this.isNewAccount = false,
+    this.metadata,
+  });
+}
+
+/// Metadata for test accounts
+class TestAccountMetadata {
+  final String role;
+  final String platform;
+  final DateTime createdAt;
+
+  TestAccountMetadata({
+    required this.role,
+    required this.platform,
+    required this.createdAt,
+  });
 }

@@ -1,64 +1,130 @@
-// Auth User Domain Model
-// Clean Architecture - Domain Layer Entity
+// Extended Auth User Domain Model for Versus Space
+// Clean Architecture - Domain Layer Entity with full user profile
 
 class AuthUser {
   const AuthUser({
     required this.uid,
     this.email,
     this.displayName,
-    this.photoURL,
+    this.userName,
+    this.photoUrl,
     this.phoneNumber,
     this.isEmailVerified = false,
     this.isAnonymous = false,
-    this.createdTime,
-    this.lastActive,
+    this.providerId,
+    // Profile fields
+    this.bio,
+    this.age,
+    this.gender,
+    this.interests = const [],
+    this.expertise = const [],
+    this.hobbies = const [],
+    this.pointsA = 0,
+    this.pointsQ = 0,
+    this.role = 'user',
+    this.isPremium = false,
+    // Timestamps
+    this.createdAt,
+    this.lastLoginAt,
+    // Additional
+    this.settings = const {},
   });
 
+  // Authentication fields
   final String uid;
   final String? email;
   final String? displayName;
-  final String? photoURL;
+  final String? userName;
+  final String? photoUrl;
   final String? phoneNumber;
   final bool isEmailVerified;
   final bool isAnonymous;
-  final DateTime? createdTime;
-  final DateTime? lastActive;
+  final String? providerId;
 
-  factory AuthUser.fromFirebaseUser(dynamic firebaseUser) {
-    return AuthUser(
-      uid: firebaseUser.uid,
-      email: firebaseUser.email,
-      displayName: firebaseUser.displayName,
-      photoURL: firebaseUser.photoURL,
-      phoneNumber: firebaseUser.phoneNumber,
-      isEmailVerified: firebaseUser.emailVerified ?? false,
-      isAnonymous: firebaseUser.isAnonymous ?? false,
-      createdTime: firebaseUser.metadata?.creationTime,
-      lastActive: DateTime.now(), // Track last authentication activity
-    );
+  // Profile fields
+  final String? bio;
+  final int? age;
+  final String? gender;
+  final List<String> interests;
+  final List<String> expertise;
+  final List<String> hobbies;
+  final int pointsA;
+  final int pointsQ;
+  final String role; // admin, tester, user
+  final bool isPremium;
+
+  // Timestamps
+  final DateTime? createdAt;
+  final DateTime? lastLoginAt;
+
+  // Additional data
+  final Map<String, dynamic> settings;
+
+  /// Check if user has completed profile setup
+  bool get isProfileComplete {
+    return userName != null &&
+           displayName != null &&
+           age != null &&
+           interests.isNotEmpty;
   }
 
+  /// Check if user is admin
+  bool get isAdmin => role == 'admin';
+
+  /// Check if user is tester
+  bool get isTester => role == 'tester' || role == 'admin';
+
+  /// Get total points
+  int get totalPoints => pointsA + pointsQ;
+
+  /// Copy with method
   AuthUser copyWith({
     String? uid,
     String? email,
     String? displayName,
-    String? photoURL,
+    String? userName,
+    String? photoUrl,
     String? phoneNumber,
     bool? isEmailVerified,
     bool? isAnonymous,
-    DateTime? createdTime,
-    DateTime? lastActive,
+    String? providerId,
+    String? bio,
+    int? age,
+    String? gender,
+    List<String>? interests,
+    List<String>? expertise,
+    List<String>? hobbies,
+    int? pointsA,
+    int? pointsQ,
+    String? role,
+    bool? isPremium,
+    DateTime? createdAt,
+    DateTime? lastLoginAt,
+    Map<String, dynamic>? settings,
   }) {
     return AuthUser(
       uid: uid ?? this.uid,
       email: email ?? this.email,
       displayName: displayName ?? this.displayName,
-      photoURL: photoURL ?? this.photoURL,
+      userName: userName ?? this.userName,
+      photoUrl: photoUrl ?? this.photoUrl,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       isEmailVerified: isEmailVerified ?? this.isEmailVerified,
       isAnonymous: isAnonymous ?? this.isAnonymous,
-      createdTime: createdTime ?? this.createdTime,
-      lastActive: lastActive ?? this.lastActive,
+      providerId: providerId ?? this.providerId,
+      bio: bio ?? this.bio,
+      age: age ?? this.age,
+      gender: gender ?? this.gender,
+      interests: interests ?? this.interests,
+      expertise: expertise ?? this.expertise,
+      hobbies: hobbies ?? this.hobbies,
+      pointsA: pointsA ?? this.pointsA,
+      pointsQ: pointsQ ?? this.pointsQ,
+      role: role ?? this.role,
+      isPremium: isPremium ?? this.isPremium,
+      createdAt: createdAt ?? this.createdAt,
+      lastLoginAt: lastLoginAt ?? this.lastLoginAt,
+      settings: settings ?? this.settings,
     );
   }
 
@@ -73,6 +139,6 @@ class AuthUser {
 
   @override
   String toString() {
-    return 'AuthUser(uid: $uid, email: $email, displayName: $displayName)';
+    return 'AuthUser(uid: $uid, userName: $userName, displayName: $displayName, role: $role)';
   }
 }

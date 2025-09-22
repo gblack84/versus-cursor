@@ -1,0 +1,42 @@
+{
+  "agent": "inventory-scout",
+  "version": "1.0.0",
+  "timestamp": "2025-09-21T15:26:34.424507",
+  "status": "success",
+  "data": {
+    "total_files": 177,
+    "large_files": 27,
+    "mixed_responsibility": 3,
+    "violations": {
+      "total": 39,
+      "by_type": {
+        "app->data": 24,
+        "presentation->data": 6,
+        "warn:cross-presentation": 1,
+        "reverse:core/services->features": 8
+      }
+    },
+    "scope": [
+      "auth"
+    ]
+  },
+  "next_action": {
+    "recommended_agent": "import-guardian",
+    "params": {
+      "mode": "fix",
+      "scope": "all"
+    },
+    "priority": "high",
+    "reason": "6 critical architecture violations"
+  },
+  "decision_hints": {
+    "has_large_files": true,
+    "needs_decomposition": true,
+    "has_violations": true,
+    "critical_violations": true
+  },
+  "metrics": {
+    "execution_time_ms": 0,
+    "files_scanned": 177
+  }
+}

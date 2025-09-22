@@ -1,5 +1,9 @@
+import '/features/auth/domain/usecases/sign_in_with_google_usecase.dart';
+import '/features/auth/domain/usecases/sign_in_with_apple_usecase.dart';
+import '/features/auth/domain/factories/auth_repository_factory.dart';
 import '/features/auth/data/adapters/auth_util.dart';
-import '/features/auth/domain/repositories/i_auth_repository.dart';
+import '/features/auth/presentation/screens/login/login_page/login_page_widget.dart';
+import '/testpage_select/testpage_select_widget.dart';
 import '/core/widgets/pickle_mark/pickle_mark_widget.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
@@ -23,16 +27,31 @@ class StartPageWidget extends StatefulWidget {
 class _StartPageWidgetState extends State<StartPageWidget>
     with TickerProviderStateMixin {
   late StartPageModel _model;
+  SignInWithGoogleUseCase? _signInWithGoogleUseCase;
+  SignInWithAppleUseCase? _signInWithAppleUseCase;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
   var hasButtonTriggered1 = false;
   var hasButtonTriggered2 = false;
   final animationsMap = <String, AnimationInfo>{};
 
+  Future<void> _initializeUseCases() async {
+    // Factory를 통한 Repository 생성 (Clean Architecture 준수)
+    final repository = await AuthRepositoryFactory.create();
+
+    setState(() {
+      _signInWithGoogleUseCase = SignInWithGoogleUseCase(repository: repository);
+      _signInWithAppleUseCase = SignInWithAppleUseCase(repository: repository);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => StartPageModel());
+
+    // UseCase 초기화
+    _initializeUseCases();
 
     animationsMap.addAll({
       'columnOnPageLoadAnimation': AnimationInfo(
@@ -258,10 +277,18 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                           0.0, 0.0, 0.0, 8.0),
                                       child: AppButtonWidget(
                                         onPressed: () async {
-                                          GoRouter.of(context)
-                                              .prepareAuthEvent();
-                                          final user = await authManager
-                                              .signInWithApple(context);
+                                          // UseCase가 초기화되지 않았으면 대기
+                                          if (_signInWithAppleUseCase == null) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text('초기화 중입니다. 잠시만 기다려주세요.'),
+                                              ),
+                                            );
+                                            return;
+                                          }
+
+                                          GoRouter.of(context).prepareAuthEvent();
+                                          final user = await _signInWithAppleUseCase!.execute();
                                           if (user == null) {
                                             return;
                                           }
@@ -323,9 +350,18 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                     0.0, 0.0, 0.0, 8.0),
                                 child: AppButtonWidget(
                                   onPressed: () async {
+                                    // UseCase가 초기화되지 않았으면 대기
+                                    if (_signInWithGoogleUseCase == null) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('초기화 중입니다. 잠시만 기다려주세요.'),
+                                        ),
+                                      );
+                                      return;
+                                    }
+
                                     GoRouter.of(context).prepareAuthEvent();
-                                    final user = await authManager
-                                        .signInWithGoogle(context);
+                                    final user = await _signInWithGoogleUseCase!.execute();
                                     if (user == null) {
                                       return;
                                     }
@@ -389,9 +425,18 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                     0.0, 0.0, 0.0, 8.0),
                                 child: AppButtonWidget(
                                   onPressed: () async {
+                                    // UseCase가 초기화되지 않았으면 대기
+                                    if (_signInWithGoogleUseCase == null) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('초기화 중입니다. 잠시만 기다려주세요.'),
+                                        ),
+                                      );
+                                      return;
+                                    }
+
                                     GoRouter.of(context).prepareAuthEvent();
-                                    final user = await authManager
-                                        .signInWithGoogle(context);
+                                    final user = await _signInWithGoogleUseCase!.execute();
                                     if (user == null) {
                                       return;
                                     }
@@ -453,9 +498,18 @@ class _StartPageWidgetState extends State<StartPageWidget>
                               ),
                               AppButtonWidget(
                                 onPressed: () async {
+                                  // UseCase가 초기화되지 않았으면 대기
+                                  if (_signInWithGoogleUseCase == null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('초기화 중입니다. 잠시만 기다려주세요.'),
+                                      ),
+                                    );
+                                    return;
+                                  }
+
                                   GoRouter.of(context).prepareAuthEvent();
-                                  final user = await authManager
-                                      .signInWithGoogle(context);
+                                  final user = await _signInWithGoogleUseCase!.execute();
                                   if (user == null) {
                                     return;
                                   }

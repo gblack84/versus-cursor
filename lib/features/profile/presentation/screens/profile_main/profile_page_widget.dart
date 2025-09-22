@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '/core_exports.dart';
 import '/features/profile/domain/models/user_profile.dart';
 import '/features/auth/data/adapters/auth_util.dart';
+import '/features/auth/domain/usecases/sign_out_usecase.dart';
+import '/features/auth/data/repositories/auth_repository_impl.dart';
+import '/features/auth/data/datasources/firebase_auth_remote_datasource.dart';
+import '/features/auth/data/datasources/auth_local_datasource.dart';
 import '/core/design_system/design_system.dart';
 
 class ProfilePageWidget extends StatefulWidget {
@@ -16,6 +24,32 @@ class ProfilePageWidget extends StatefulWidget {
 
 class _ProfilePageWidgetState extends State<ProfilePageWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
+  SignOutUseCase? _signOutUseCase;
+
+  Future<void> _initializeUseCases() async {
+    // Phase 2.6에서 DI로 대체 예정
+    final prefs = await SharedPreferences.getInstance();
+    final localDataSource = AuthLocalDataSource(prefs: prefs);
+
+    final repository = AuthRepositoryImpl(
+      remoteDataSource: FirebaseAuthRemoteDataSource(
+        firebaseAuth: FirebaseAuth.instance,
+        firestore: FirebaseFirestore.instance,
+        googleSignIn: GoogleSignIn(),
+      ),
+      localDataSource: localDataSource,
+    );
+
+    setState(() {
+      _signOutUseCase = SignOutUseCase(repository: repository);
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeUseCases();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -222,8 +256,20 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                           isFullWidth: true,
                           size: VersusButtonSize.large,
                           onPressed: () async {
-                            await authManager.signOut();
-                            context.goNamed('startPage');
+                            // UseCase가 초기화되지 않았으면 대기
+                            if (_signOutUseCase == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('초기화 중입니다. 잠시만 기다려주세요.'),
+                                ),
+                              );
+                              return;
+                            }
+
+                            final success = await _signOutUseCase!.execute();
+                            if (success) {
+                              context.goNamed('startPage');
+                            }
                           },
                         ),
                       ],

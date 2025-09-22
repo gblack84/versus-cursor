@@ -29,6 +29,9 @@ abstract class IAuthRepository {
   Future<AuthUser?> signInWithPhoneNumber(
       String phoneNumber, String verificationCode);
 
+  /// Send SMS OTP code for phone authentication
+  Future<bool> sendSmsOtp(String phoneNumber);
+
   /// Sign out current user
   Future<void> signOut();
 
@@ -36,10 +39,10 @@ abstract class IAuthRepository {
   Future<void> sendPasswordResetEmail(String email);
 
   /// Send email verification
-  Future<void> sendEmailVerification();
+  Future<bool> sendEmailVerification();
 
   /// Delete current user account
-  Future<void> deleteUser();
+  Future<bool> deleteUser();
 
   /// Update user profile
   Future<void> updateUserProfile({

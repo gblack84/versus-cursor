@@ -1,0 +1,25 @@
+{
+  "agent": "import-guardian",
+  "generated_at": "2025-09-21T06:29:17.363933Z",
+  "params": {
+    "scope": "auth",
+    "mode": "detect",
+    "apply": false,
+    "ignore": [
+      "test/",
+      "mocks/",
+      "*.g.dart",
+      "*.freezed.dart",
+      "build/",
+      ".dart_tool/",
+      "coverage/"
+    ]
+  },
+  "counts_by_rule": {
+    "app->data": 24,
+    "presentation->data": 6,
+    "reverse:core/services->features": 8
+  },
+  "total": 38,
+  "next_steps": []
+}

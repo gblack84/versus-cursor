@@ -1,3 +1,6 @@
+import '/features/auth/domain/usecases/verify_phone_otp_usecase.dart';
+import '/features/auth/domain/usecases/send_sms_otp_usecase.dart';
+import '/features/auth/domain/factories/auth_repository_factory.dart';
 import '/features/auth/data/adapters/auth_util.dart';
 import '/features/profile/domain/models/user_profile.dart';
 import '/core_exports.dart';
@@ -28,8 +31,20 @@ class PhonelogeinpincodeWidget extends StatefulWidget {
 
 class _PhonelogeinpincodeWidgetState extends State<PhonelogeinpincodeWidget> {
   late PhonelogeinpincodeModel _model;
+  VerifyPhoneOtpUseCase? _verifyPhoneOtpUseCase;
+  SendSmsOtpUseCase? _sendSmsOtpUseCase;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  Future<void> _initializeUseCases() async {
+    // Factory를 통한 Repository 생성 (Clean Architecture 준수)
+    final repository = await AuthRepositoryFactory.create();
+
+    setState(() {
+      _verifyPhoneOtpUseCase = VerifyPhoneOtpUseCase(repository: repository);
+      _sendSmsOtpUseCase = SendSmsOtpUseCase(repository: repository);
+    });
+  }
 
   @override
   void initState() {
@@ -46,7 +61,10 @@ class _PhonelogeinpincodeWidgetState extends State<PhonelogeinpincodeWidget> {
 
     _model.pinCodeFocusNode ??= FocusNode();
 
-    authManager.handlePhoneAuthStateChanges(context);
+    // UseCase 초기화
+    _initializeUseCases();
+
+    // Phone Auth 상태 변경 처리는 UseCase 내부에서 처리
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
@@ -344,12 +362,21 @@ Enter the 6-digit code sent t... */
                                   );
                                   return;
                                 }
-                                final phoneVerifiedUser =
-                                    await authManager.verifySmsCode(
-                                  context: context,
-                                  smsCode: smsCodeVal,
+                                // UseCase가 초기화되지 않았으면 대기
+                                if (_verifyPhoneOtpUseCase == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Initializing... Please wait.'),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                final phoneVerified = await _verifyPhoneOtpUseCase!.execute(
+                                  phoneNumber: widget.phoneNumberParam ?? '',
+                                  otpCode: smsCodeVal,
                                 );
-                                if (phoneVerifiedUser == null) {
+                                if (!phoneVerified) {
                                   return;
                                 }
 
@@ -506,25 +533,24 @@ Enter the 6-digit code sent t... */
                                               );
                                               return;
                                             }
-                                            await authManager.beginPhoneAuth(
-                                              context: context,
+                                            // UseCase가 초기화되지 않았으면 대기
+                                            if (_sendSmsOtpUseCase == null) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text('Initializing... Please wait.'),
+                                                ),
+                                              );
+                                              return;
+                                            }
+
+                                            final smsSent = await _sendSmsOtpUseCase!.execute(
                                               phoneNumber: phoneNumberVal,
-                                              onCodeSent: (context) async {
-                                                context.goNamedAuth(
-                                                  PhonelogeinpincodeWidget
-                                                      .routeName,
-                                                  context.mounted,
-                                                  queryParameters: {
-                                                    'phoneNumberParam':
-                                                        serializeParam(
-                                                      '',
-                                                      ParamType.String,
-                                                    ),
-                                                  }.withoutNulls,
-                                                  ignoreRedirect: true,
-                                                );
-                                              },
                                             );
+
+                                            if (smsSent) {
+                                              // 코드가 성공적으로 전송되면 현재 페이지를 유지
+                                              // (이미 PIN 입력 화면에 있으므로)
+                                            }
 
                                             ScaffoldMessenger.of(context)
                                                 .showSnackBar(

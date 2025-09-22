@@ -1,0 +1,7 @@
+file: /Users/g_black/versus-cursor/lib/features/auth/presentation/screens/login/login_page/login_page_widget.dart
+patch: /Users/g_black/versus-cursor/patches/code_surgeon_login_page_widget.diff
+mode: detect
+extracted: 0
+symbols:
+  - _handleEmailLogin: /Users/g_black/versus-cursor/lib/features/auth/domain/usecases/email_login_usecase.dart
+  - _handleTestAccountLogin: /Users/g_black/versus-cursor/lib/features/auth/domain/usecases/test_account_login_usecase.dart

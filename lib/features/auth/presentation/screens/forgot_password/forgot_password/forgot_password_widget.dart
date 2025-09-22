@@ -1,4 +1,12 @@
-import '/features/auth/data/adapters/auth_util.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '/features/auth/domain/usecases/reset_password_usecase.dart';
+import '/features/auth/data/repositories/auth_repository_impl.dart';
+import '/features/auth/data/datasources/firebase_auth_remote_datasource.dart';
+import '/features/auth/data/datasources/auth_local_datasource.dart';
+import '/features/auth/presentation/screens/login/login_page/login_page_widget.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
@@ -18,8 +26,28 @@ class ForgotPasswordWidget extends StatefulWidget {
 
 class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget> {
   late ForgotPasswordModel _model;
+  ResetPasswordUseCase? _resetPasswordUseCase;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  Future<void> _initializeUseCases() async {
+    // Phase 2.6에서 DI로 대체 예정
+    final prefs = await SharedPreferences.getInstance();
+    final localDataSource = AuthLocalDataSource(prefs: prefs);
+
+    final repository = AuthRepositoryImpl(
+      remoteDataSource: FirebaseAuthRemoteDataSource(
+        firebaseAuth: FirebaseAuth.instance,
+        firestore: FirebaseFirestore.instance,
+        googleSignIn: GoogleSignIn(),
+      ),
+      localDataSource: localDataSource,
+    );
+
+    setState(() {
+      _resetPasswordUseCase = ResetPasswordUseCase(repository: repository);
+    });
+  }
 
   @override
   void initState() {
@@ -28,6 +56,9 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget> {
 
     _model.emailAddressTextController ??= TextEditingController();
     _model.emailAddressFocusNode ??= FocusNode();
+
+    // UseCase 초기화
+    _initializeUseCases();
 
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
@@ -307,10 +338,56 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget> {
                         );
                         return;
                       }
-                      await authManager.resetPassword(
-                        email: _model.emailAddressTextController.text,
-                        context: context,
-                      );
+
+                      // UseCase가 초기화되지 않았으면 대기
+                      if (_resetPasswordUseCase == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Initializing... Please wait.',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+
+                      // Reset password using UseCase
+                      try {
+                        final result = await _resetPasswordUseCase!.execute(
+                          email: _model.emailAddressTextController.text.trim(),
+                        );
+
+                        if (result) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Password reset email sent. Please check your inbox.',
+                              ),
+                            ),
+                          );
+
+                          // Navigate back or to login page
+                          if (mounted) {
+                            context.pop();
+                          }
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Failed to send password reset email. Please try again.',
+                              ),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Error: ${e.toString()}',
+                            ),
+                          ),
+                        );
+                      }
                     },
                     text: AppLocalizations.of(context).getText(
                       '4rzuk0hj' /* Send Link */,

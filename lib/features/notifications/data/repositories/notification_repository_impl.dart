@@ -7,6 +7,8 @@ import '../../domain/models/social_notification.dart';
 import '../../domain/value_objects/notification_filter.dart';
 import '../datasources/i_remote_notification_datasource.dart';
 import '../datasources/i_local_notification_datasource.dart';
+import '/app/contracts/post_contract.dart';
+import '/app/contracts/notification_contract.dart';
 import '../mappers/notification_mapper.dart';
 import '../models/notification_dto.dart';
 import '../models/vote_notification_dto.dart';
@@ -17,9 +19,10 @@ import '../models/social_notification_dto.dart';
 ///
 /// DataSource를 통해 데이터를 가져오고,
 /// Mapper를 통해 Domain 모델로 변환합니다.
-class NotificationRepositoryImpl implements INotificationRepository {
+class NotificationRepositoryImpl implements INotificationRepository, NotificationContract {
   final IRemoteNotificationDatasource _remoteDatasource;
   final ILocalNotificationDatasource _localDatasource;
+  final PostContract? _postContract; // Optional injection for cross-feature access
 
   // 캐시 설정
   static const Duration _cacheExpiry = Duration(minutes: 30);
@@ -28,8 +31,10 @@ class NotificationRepositoryImpl implements INotificationRepository {
   NotificationRepositoryImpl({
     required IRemoteNotificationDatasource remoteDatasource,
     required ILocalNotificationDatasource localDatasource,
+    PostContract? postContract,
   })  : _remoteDatasource = remoteDatasource,
-        _localDatasource = localDatasource;
+        _localDatasource = localDatasource,
+        _postContract = postContract;
 
   // ===== 조회 Operations =====
 
@@ -664,8 +669,16 @@ class NotificationRepositoryImpl implements INotificationRepository {
   @override
   Future<Map<String, dynamic>?> getPostData({required String postId}) async {
     try {
-      // Cross-feature 데이터 접근을 위한 datasource 메서드 호출
-      final postData = await _remoteDatasource.getPostData(postId);
+      // PostContract를 통한 cross-feature 데이터 접근
+      Map<String, dynamic>? postData;
+
+      if (_postContract != null) {
+        // Contract를 통한 직접 접근 (권장)
+        postData = await _postContract.getPost(postId);
+      } else {
+        // Fallback: datasource를 통한 접근 (마이그레이션 중)
+        postData = await _remoteDatasource.getPostData(postId);
+      }
       
       if (postData == null) {
         print('[NotificationRepository] Post not found: $postId');
@@ -754,5 +767,118 @@ class NotificationRepositoryImpl implements INotificationRepository {
     }
 
     return filtered;
+  }
+
+  // ================== NotificationContract 구현 ==================
+  // 다른 Feature들이 Notification 기능을 사용할 때 호출하는 메서드들
+
+  @override
+  Future<void> createNotification({
+    required String userId,
+    required String type,
+    required Map<String, dynamic> data,
+  }) async {
+    try {
+      // 알림 생성
+      final notificationData = {
+        'userId': userId,
+        'type': type,
+        'data': data,
+        'createdAt': DateTime.now().toIso8601String(),
+        'isRead': false,
+      };
+
+      await _remoteDatasource.createNotification(notificationData);
+    } catch (e) {
+      print('[NotificationContract] Failed to create notification: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> createVoteRequestNotification({
+    required String postId,
+    required List<String> targetUserIds,
+    required Map<String, dynamic> targetAudience,
+  }) async {
+    try {
+      // 투표 요청 알림 생성
+      for (final userId in targetUserIds) {
+        final notificationData = {
+          'userId': userId,
+          'type': 'vote_request',
+          'data': {
+            'postId': postId,
+            'targetAudience': targetAudience,
+          },
+          'createdAt': DateTime.now().toIso8601String(),
+          'isRead': false,
+        };
+
+        await _remoteDatasource.createNotification(notificationData);
+      }
+    } catch (e) {
+      print('[NotificationContract] Failed to create vote request: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Stream<List<Map<String, dynamic>>> getUserNotifications(String userId) {
+    try {
+      // Stream으로 실시간 알림 목록 반환
+      return _remoteDatasource.getNotificationStream(userId).map((notifications) {
+        return notifications.map((notif) {
+          // DTO를 Map으로 변환하여 반환
+          return notif as Map<String, dynamic>;
+        }).toList();
+      });
+    } catch (e) {
+      print('[NotificationContract] Failed to get user notifications stream: $e');
+      return Stream.value([]);
+    }
+  }
+
+  @override
+  Stream<Map<String, dynamic>> getRealTimeNotifications(String userId) {
+    try {
+      // 실시간 알림 스트림
+      return _remoteDatasource.getRealTimeNotificationStream(userId);
+    } catch (e) {
+      print('[NotificationContract] Failed to get real-time notifications: $e');
+      return Stream.empty();
+    }
+  }
+
+  @override
+  Future<Map<String, bool>> getNotificationSettings(String userId) async {
+    try {
+      // 알림 설정 조회
+      final settings = await _localDatasource.getNotificationSettings(userId);
+      return settings ?? {
+        'pushEnabled': true,
+        'emailEnabled': false,
+        'voteRequests': true,
+        'socialUpdates': true,
+        'systemAlerts': true,
+      };
+    } catch (e) {
+      print('[NotificationContract] Failed to get notification settings: $e');
+      return {};
+    }
+  }
+
+  @override
+  Future<void> updateNotificationSettings({
+    required String userId,
+    required Map<String, bool> settings,
+  }) async {
+    try {
+      // 알림 설정 업데이트
+      await _localDatasource.saveNotificationSettings(userId, settings);
+    } catch (e) {
+      print('[NotificationContract] Failed to update notification settings: $e');
+      rethrow;
+    }
   }
 }

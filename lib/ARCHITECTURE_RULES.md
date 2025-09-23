@@ -1,10 +1,10 @@
-# 🏗️ Clean Architecture 규칙 문서 v4.0 (Direct Migration)
+# 🏗️ Clean Architecture 규칙 문서 v5.0 (Contract Pattern)
 
-> **최종 업데이트**: 2025-01-19
+> **최종 업데이트**: 2025-01-21
 > **상태**: 🔴 엄격 적용 중
 > **위치**: `/lib/ARCHITECTURE_RULES.md`
 > **목적**: 아키텍처 일관성 유지 및 의존성 규칙 강제
-> **전략**: 직접 마이그레이션 (Facade 패턴 없음)
+> **전략**: 계약 패턴 (Contract Pattern) 기반 아키텍처
 
 ---
 
@@ -20,27 +20,29 @@
 5. **직접 전환 (Direct)**: Facade 없이 즉시 Clean Architecture 적용
 
 ### 절대 규칙
-1. **Core에 구현체 금지** - 인터페이스와 유틸리티만
-2. **Feature 간 의존 금지** - 각 Feature는 완전 독립
-3. **역방향 의존 금지** - 내부에서 외부로만 의존
-4. **기존 코드 우선** - 있는 것은 이동, 없는 것만 생성
+1. **Core에 구현체 금지** - 기술 인터페이스와 유틸리티만
+2. **Feature 간 직접 의존 금지** - Contract을 통한 간접 통신만 허용
+3. **역방향 의존 금지** - Presentation → Domain → Data → Contract
+4. **계약 중립성** - Contract은 app/contracts에만 정의
+5. **기존 코드 우선** - 있는 것은 이동, 없는 것만 생성
 
 ---
 
-## 🏛️ 3계층 아키텍처 구조
+## 🏛️ 아키텍처 구조
 
 ```
 lib/
-├── app/           # 🚀 앱 조립 및 구현체
-├── core/          # 📜 인터페이스 및 유틸리티
+├── app/           # 🚀 앱 조립 및 설정
+│   └── contracts/ # 🤝 Feature 간 통신 계약
+├── core/          # 🛠️ 기술 유틸리티 (비즈니스 무관)
 └── features/      # 📦 독립 기능 모듈
 ```
 
 ### 의존성 방향
 ```
-Presentation → Domain → Data → Core (interfaces)
-     ↓           ↓        ↓
-    App/DI로 모든 구현체 조립
+Presentation → Domain → Data → Contract
+                              ↘
+app/contracts (중립 지대)    ←  다른 Feature도 사용
 ```
 
 ---
@@ -52,8 +54,14 @@ Presentation → Domain → Data → Core (interfaces)
 lib/app/
 ├── main.dart                        # 앱 진입점
 ├── app.dart                         # MaterialApp 설정
+├── contracts/                       # 🤝 Feature 간 통신 계약 (중립 지대)
+│   ├── auth_contract.dart          # Auth Feature가 제공하는 계약
+│   ├── post_contract.dart          # Posts Feature가 제공하는 계약
+│   ├── user_contract.dart          # User Feature가 제공하는 계약
+│   ├── vote_contract.dart          # Voting Feature가 제공하는 계약
+│   └── notification_contract.dart  # Notifications Feature가 제공하는 계약
 ├── router/                          # 라우팅
-├── implementations/                 # 🔴 Core 인터페이스 구현체
+├── implementations/                 # Core 기술 인터페이스 구현체
 │   ├── cache_service_impl.dart
 │   ├── logger_service_impl.dart
 │   └── network_service_impl.dart
@@ -65,22 +73,28 @@ lib/app/
 
 ### ✅ DO
 ```dart
-// app/implementations/cache_service_impl.dart
-class CacheServiceImpl implements ICacheService {
-  @override
-  Future<T?> get<T>(String key) async { /* 구현 */ }
+// app/contracts/post_contract.dart
+abstract class PostContract {
+  // 다른 Feature가 필요한 메서드만 공개
+  Future<Map<String, dynamic>?> getPost(String postId);
+  Future<bool> postExists(String postId);
+  // createPost, deletePost 등은 공개하지 않음
 }
 
 // app/di/injection.dart
-GetIt.I.registerLazySingleton<ICacheService>(
-  () => CacheServiceImpl(),
-);
+final postRepo = PostRepositoryImpl();
+GetIt.I.registerSingleton<IPostRepository>(postRepo);  // 내부용
+GetIt.I.registerSingleton<PostContract>(postRepo);     // 외부용 (같은 인스턴스)
 ```
 
 ### ❌ DON'T
 ```dart
-// ❌ Feature의 구현체 직접 import
-import 'package:versus_space/features/auth/data/repositories/auth_repository_impl.dart';
+// ❌ Feature 간 직접 import
+import 'package:versus_space/features/posts/domain/models/post.dart';
+
+// ❌ Contract을 Feature 안에 정의
+// features/notifications/data/datasources/i_post_datasource.dart
+abstract class IPostDatasource { }  // NO! app/contracts에 정의해야 함
 ```
 
 ---
@@ -90,15 +104,19 @@ import 'package:versus_space/features/auth/data/repositories/auth_repository_imp
 ### 구조
 ```dart
 lib/core/
-├── interfaces/                      # 🔴 인터페이스만!
-│   ├── i_cache_service.dart
-│   ├── i_logger_service.dart
-│   └── i_network_service.dart
+├── interfaces/                      # 🛠️ 기술 인터페이스만 (비즈니스 무관)
+│   ├── i_cache_service.dart        # 캐싱 서비스 인터페이스
+│   ├── i_logger_service.dart       # 로깅 서비스 인터페이스
+│   └── i_network_service.dart      # 네트워크 서비스 인터페이스
 ├── models/                          # 공통 모델
 │   ├── result.dart                 # Result<T> 타입
 │   └── use_case.dart               # UseCase<I,O> 제네릭
 ├── utils/                           # 순수 유틸리티
-└── widgets/                         # 비즈니스 무관 위젯
+│   ├── date_formatter.dart         # 날짜 포맷 유틸
+│   └── validators.dart             # 입력 검증 유틸
+└── widgets/                         # 비즈니스 무관 공통 위젯
+    ├── loading_indicator.dart       # 로딩 표시 위젯
+    └── error_widget.dart           # 에러 표시 위젯
 ```
 
 ### ✅ DO
@@ -124,6 +142,9 @@ class Success<T> extends Result<T> {
 // ❌ Core에 구현체
 class CacheService implements ICacheService { /* 구현 NO! */ }
 
+// ❌ Core에 비즈니스 인터페이스
+abstract class IVoteService { }  // NO! 비즈니스 로직은 Core에 없어야 함
+
 // ❌ Core가 Feature 의존
 import 'package:versus_space/features/auth/domain/models/user.dart';
 ```
@@ -132,46 +153,84 @@ import 'package:versus_space/features/auth/domain/models/user.dart';
 
 ## 3️⃣ Features Layer
 
-### 구조
+### 구조 및 파일명 규칙
 ```dart
-lib/features/[feature]/
+lib/features/[feature_name]/
 ├── domain/                          # 비즈니스 로직
 │   ├── models/                     # 도메인 모델
-│   ├── repositories/               # Repository 인터페이스
+│   │   ├── user.dart               # User 엔티티
+│   │   └── auth_token.dart         # AuthToken 엔티티
+│   ├── repositories/               # Repository 인터페이스 (내부용)
+│   │   └── i_[feature]_repository.dart
+│   │       └── i_auth_repository.dart  # 예: Auth 리포지토리 인터페이스
 │   └── usecases/                   # 1 UseCase = 1 파일
+│       ├── sign_in_usecase.dart    # 로그인 유스케이스
+│       ├── sign_out_usecase.dart   # 로그아웃 유스케이스
+│       └── get_current_user_usecase.dart
 ├── data/                            # 데이터 레이어
-│   ├── repositories/               # Repository 구현
+│   ├── repositories/               # Repository 구현 (Contract도 구현)
+│   │   └── [feature]_repository_impl.dart
+│   │       └── auth_repository_impl.dart  # 예: AuthRepositoryImpl
 │   ├── datasources/                # 외부 데이터 소스
-│   ├── models/                     # DTO (Firebase 1:1)
-│   ├── mappers/                    # DTO ↔ Domain 변환
-│   └── adapters/                   # 외부 서비스 연동
+│   │   ├── i_[feature]_remote_datasource.dart
+│   │   ├── [feature]_remote_datasource_impl.dart
+│   │   └── [feature]_local_datasource_impl.dart
+│   ├── dto/                        # Data Transfer Objects
+│   │   ├── user_dto.dart           # Firebase와 1:1 매핑
+│   │   └── auth_response_dto.dart
+│   └── mappers/                    # DTO ↔ Domain 변환
+│       ├── user_mapper.dart
+│       └── auth_token_mapper.dart
 ├── presentation/                    # UI 레이어
 │   ├── screens/
+│   │   ├── login_screen.dart       # 로그인 화면
+│   │   └── profile_screen.dart     # 프로필 화면
 │   ├── widgets/
+│   │   ├── login_form_widget.dart
+│   │   └── user_avatar_widget.dart
 │   └── providers/                  # 상태관리
+│       └── auth_provider.dart
 └── di/                              # Feature DI 모듈
-    └── [feature]_di_module.dart
+    └── auth_di_module.dart
 ```
 
 ### ✅ DO
 ```dart
-// domain/repositories/i_auth_repository.dart
+// app/contracts/auth_contract.dart (중립 지대)
+abstract class AuthContract {
+  Future<String?> getCurrentUserId();
+  Future<bool> isAuthenticated();
+  Stream<bool> authStateChanges();
+}
+
+// features/auth/domain/repositories/i_auth_repository.dart (내부용)
 abstract class IAuthRepository {
   Future<Result<User>> signIn(String email, String password);
+  Future<void> signOut();
+  // ... 모든 Auth 기능
 }
 
-// data/repositories/auth_repository_impl.dart
-class AuthRepositoryImpl implements IAuthRepository {
-  final AuthRemoteDataSource remoteDataSource;
-  final AuthLocalDataSource localDataSource;
+// features/auth/data/repositories/auth_repository_impl.dart
+class AuthRepositoryImpl implements IAuthRepository, AuthContract {
+  // IAuthRepository 메서드들 (내부용)
+  @override
+  Future<Result<User>> signIn(String email, String password) { ... }
+
+  // AuthContract 메서드들 (외부 Feature용)
+  @override
+  Future<String?> getCurrentUserId() async {
+    final user = await getCurrentUser();
+    return user?.uid;
+  }
 }
 
-// domain/usecases/sign_in_use_case.dart (1파일 1UseCase)
-class SignInUseCase {
-  final IAuthRepository repository;
+// features/voting/domain/usecases/submit_vote_usecase.dart
+class SubmitVoteUseCase {
+  final AuthContract authContract;  // Contract 사용
 
-  Future<Result<User>> execute(String email, String password) {
-    return repository.signIn(email, password);
+  Future<void> execute(String postId) async {
+    final userId = await authContract.getCurrentUserId();
+    // ...
   }
 }
 
@@ -205,8 +264,16 @@ class PlaceOrderUseCase {
 
 ### ❌ DON'T
 ```dart
-// ❌ Feature 간 의존
+// ❌ Feature 간 직접 의존
 import 'package:versus_space/features/posts/domain/models/post.dart';
+
+// ❌ Contract을 Feature 안에 정의
+// features/notifications/data/datasources/i_post_datasource.dart
+abstract class IPostDatasource { }  // NO! app/contracts/post_contract.dart에!
+
+// ❌ Port/Adapter 패턴 (제거됨)
+// features/voting/domain/ports/i_vote_service.dart  // NO! 사용하지 않음
+// features/voting/data/adapters/vote_adapter.dart   // NO! Repository가 직접 구현
 
 // ❌ 여러 UseCase 한 파일에
 class AuthUseCases {  // NO! 분리하세요
@@ -229,18 +296,128 @@ class SignInAndUpdateStatsUseCase {
 
 ---
 
-## 🔄 마이그레이션 가이드 (Direct Migration)
+## 🤝 계약 패턴 (Contract Pattern)
 
-### 레거시 코드 처리 3단계
+### 개념
+Feature 간 통신을 위한 최소한의 인터페이스를 중립 지대(app/contracts)에 정의
 
-#### 1단계: 기존 코드 완전 분석
-```bash
-# 모든 사용처 파악 (필수!)
-grep -r "getUserEmail\|currentUser\|userEmail" lib/
-# 의존성 트리 작성 및 영향 범위 확인
+### 원칙
+1. **최소 공개**: 필요한 메서드만 Contract에 포함
+2. **중립성**: app/contracts에만 정의 (Feature 안 X)
+3. **단방향**: Contract 제공자는 사용자를 모름
+4. **타입 안전**: 컴파일 타임에 오류 체크
+
+### 구현 예제
+
+#### Step 1: Contract 정의
+```dart
+// app/contracts/post_contract.dart
+abstract class PostContract {
+  // Voting, Notifications가 필요한 것만
+  Future<Map<String, dynamic>?> getPost(String postId);
+  Future<bool> postExists(String postId);
+  // createPost, deletePost 등은 공개 안 함
+}
+
+// app/contracts/vote_contract.dart
+abstract class VoteContract {
+  Future<void> submitVote(String postId, String userId, String choice);
+  Future<bool> hasUserVoted(String postId, String userId);
+}
 ```
 
-#### 2단계: UseCase 생성 및 테스트
+#### Step 2: Repository에서 Contract 구현
+```dart
+// features/posts/data/repositories/post_repository_impl.dart
+class PostRepositoryImpl implements IPostRepository, PostContract {
+  // IPostRepository 메서드들 (내부용 - 모든 기능)
+  @override
+  Future<void> createPost(...) { }
+
+  @override
+  Future<void> deletePost(...) { }
+
+  // PostContract 메서드들 (외부용 - 선택적 공개)
+  @override
+  Future<Map<String, dynamic>?> getPost(String postId) { }
+
+  @override
+  Future<bool> postExists(String postId) { }
+}
+```
+
+#### Step 3: DI 설정
+```dart
+// app/di/injection.dart
+void configureDependencies() {
+  // Repository 인스턴스 생성
+  final postRepo = PostRepositoryImpl();
+  final voteRepo = VoteRepositoryImpl();
+
+  // 내부용 등록
+  getIt.registerSingleton<IPostRepository>(postRepo);
+  getIt.registerSingleton<IVoteRepository>(voteRepo);
+
+  // 외부용 Contract 등록 (같은 인스턴스)
+  getIt.registerSingleton<PostContract>(postRepo);
+  getIt.registerSingleton<VoteContract>(voteRepo);
+}
+```
+
+#### Step 4: 다른 Feature에서 사용
+```dart
+// features/voting/domain/usecases/submit_vote_usecase.dart
+class SubmitVoteUseCase {
+  final PostContract postContract;  // Contract만 의존
+
+  Future<void> execute(String postId) async {
+    // Contract에 정의된 메서드만 사용 가능
+    if (await postContract.postExists(postId)) {
+      final post = await postContract.getPost(postId);
+      // 투표 로직...
+    }
+  }
+}
+```
+
+---
+
+## 🔄 마이그레이션 가이드 (Contract Pattern Migration)
+
+### Port/Adapter → Contract 마이그레이션
+
+#### Before (Port/Adapter)
+```dart
+features/voting/
+├── domain/ports/          # 제거 대상
+│   └── i_vote_service.dart
+├── data/adapters/         # 제거 대상
+│   └── vote_service_impl.dart
+```
+
+#### After (Contract Pattern)
+```dart
+app/contracts/
+└── vote_contract.dart     # 새로 생성
+
+features/voting/
+├── data/repositories/
+│   └── vote_repository_impl.dart  # Contract 구현 추가
+```
+
+### 마이그레이션 단계
+
+#### 1단계: Contract 생성
+```dart
+// app/contracts/vote_contract.dart
+abstract class VoteContract {
+  // 외부에서 필요한 메서드만
+  Future<void> submitVote(...);
+  Future<bool> hasUserVoted(...);
+}
+```
+
+#### 2단계: Repository 수정
 ```dart
 // 원본: auth_util.dart
 String get currentUserEmail => currentUser?.email ?? '';

@@ -7,6 +7,7 @@ import '../../domain/models/auth_user.dart';
 import '../../domain/repositories/i_auth_repository.dart';
 import '../datasources/i_auth_remote_datasource.dart';
 import '../datasources/i_auth_local_datasource.dart';
+import '/app/contracts/auth_contract.dart';
 import '../dto/auth_user_dto.dart';
 import '../dto/user_profile_dto.dart';
 import '../mappers/auth_user_mapper.dart';
@@ -16,7 +17,7 @@ import '../mappers/auth_user_mapper.dart';
 /// Concrete implementation of IAuthRepository.
 /// Coordinates between remote and local data sources,
 /// handles caching, and maps DTOs to domain models.
-class AuthRepositoryImpl implements IAuthRepository {
+class AuthRepositoryImpl implements IAuthRepository, AuthContract {
   final IAuthRemoteDataSource _remoteDataSource;
   final IAuthLocalDataSource _localDataSource;
 
@@ -328,6 +329,47 @@ class AuthRepositoryImpl implements IAuthRepository {
   @override
   bool get isSignedIn {
     return _remoteDataSource.getCurrentFirebaseUser() != null;
+  }
+
+  // AuthContract 구현
+  @override
+  String? getCurrentUserId() {
+    return _remoteDataSource.getCurrentFirebaseUser()?.uid;
+  }
+
+  @override
+  String? getCurrentUserEmail() {
+    return _remoteDataSource.getCurrentFirebaseUser()?.email;
+  }
+
+  @override
+  Future<String?> getIdToken() async {
+    try {
+      final user = _remoteDataSource.getCurrentFirebaseUser();
+      if (user == null) return null;
+      // Firebase User의 getIdToken 메서드 호출이 필요함
+      // 현재 datasource에 이 메서드가 없으므로 추가 필요
+      return null; // TODO: Implement in datasource
+    } catch (e) {
+      debugPrint('Error getting ID token: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<String?> refreshToken() async {
+    // getIdToken(true)는 토큰을 강제로 갱신함
+    return getIdToken();
+  }
+
+  @override
+  bool get isEmailVerified {
+    return _remoteDataSource.getCurrentFirebaseUser()?.emailVerified ?? false;
+  }
+
+  @override
+  bool get isAnonymous {
+    return _remoteDataSource.getCurrentFirebaseUser()?.isAnonymous ?? false;
   }
 
   @override

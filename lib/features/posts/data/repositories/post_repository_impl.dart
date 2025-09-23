@@ -1,4 +1,5 @@
 import '/core_exports.dart';
+import 'package:flutter/foundation.dart';
 import '../../domain/models/post.dart';
 import '../../domain/models/vote_data.dart';
 import '../../domain/models/post_core.dart';
@@ -6,6 +7,7 @@ import '../../domain/models/post_content.dart';
 import '../../domain/models/post_voting.dart';
 import '../../domain/models/post_metrics.dart';
 import '../../domain/repositories/i_post_repository.dart';
+import '/app/contracts/post_contract.dart';
 import '../utils/firestore_util.dart'; // Posts feature-specific Firestore utils
 // Removed backend dependencies - using local query functions
 import '/features/posts/data/models/backend_post_models.dart'
@@ -16,7 +18,7 @@ import '/core/utils/migration_logger.dart';
 import '/features/posts/domain/models/ranked_posts_model.dart' as domain;
 
 /// Implementation of post repository using Firestore
-class PostRepositoryImpl implements IPostRepository {
+class PostRepositoryImpl implements IPostRepository, PostContract {
   static const String _collection = 'posts';
 
   // Singleton instance
@@ -669,5 +671,154 @@ class PostRepositoryImpl implements IPostRepository {
         return PostsModelAdapter.toDomainModels(postsModel);
       }).toList();
     });
+  }
+
+  // ================== PostContract 구현 ==================
+  // 다른 Feature들이 Posts 데이터에 접근할 때 사용하는 메서드들
+
+  @override
+  Future<Map<String, dynamic>?> getPost(String postId) async {
+    try {
+      final doc = await _postsCollection.doc(postId).get();
+      if (!doc.exists) return null;
+
+      final data = doc.data() as Map<String, dynamic>;
+      data['id'] = doc.id; // ID 포함
+      return data;
+    } catch (e) {
+      debugPrint('Error getting post: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<bool> postExists(String postId) async {
+    try {
+      final doc = await _postsCollection.doc(postId).get();
+      return doc.exists;
+    } catch (e) {
+      debugPrint('Error checking post existence: $e');
+      return false;
+    }
+  }
+
+  @override
+  Future<String?> getPostCreatorId(String postId) async {
+    try {
+      final doc = await _postsCollection.doc(postId).get();
+      if (!doc.exists) return null;
+
+      final data = doc.data() as Map<String, dynamic>;
+      // creatorInfo.userid 경로로 접근
+      final creatorInfo = data['creatorInfo'] as Map<String, dynamic>?;
+      return creatorInfo?['userid'] as String?;
+    } catch (e) {
+      debugPrint('Error getting post creator ID: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<void> updatePostVotes({
+    required String postId,
+    required int votesA,
+    required int votesB,
+  }) async {
+    try {
+      await _postsCollection.doc(postId).update({
+        'votesA': votesA,
+        'votesB': votesB,
+        'lastVoteUpdate': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('Error updating post votes: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<String> createPostWithTargetAudience({
+    required Map<String, dynamic> postData,
+    required Map<String, dynamic> targetAudience,
+  }) async {
+    try {
+      // targetAudience를 postData에 추가
+      postData['targetAudience'] = targetAudience;
+      postData['createdAt'] = FieldValue.serverTimestamp();
+
+      final docRef = await _postsCollection.add(postData);
+      return docRef.id;
+    } catch (e) {
+      debugPrint('Error creating post with target audience: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> updatePostNotificationStatus({
+    required String postId,
+    required bool notificationsSent,
+    DateTime? notificationsSentAt,
+  }) async {
+    try {
+      final updateData = <String, dynamic>{
+        'notificationsSent': notificationsSent,
+      };
+
+      if (notificationsSentAt != null) {
+        updateData['notificationsSentAt'] = Timestamp.fromDate(notificationsSentAt);
+      } else {
+        updateData['notificationsSentAt'] = FieldValue.serverTimestamp();
+      }
+
+      await _postsCollection.doc(postId).update(updateData);
+    } catch (e) {
+      debugPrint('Error updating post notification status: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getUserPosts(String userId) async {
+    try {
+      final querySnapshot = await _postsCollection
+          .where('creatorInfo.userid', isEqualTo: userId)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      return querySnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+    } catch (e) {
+      debugPrint('Error getting user posts: $e');
+      return [];
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getUserPostsWithTargetAudience({
+    required String userId,
+    int limit = 100,
+  }) async {
+    try {
+      final querySnapshot = await _postsCollection
+          .where('creatorInfo.userid', isEqualTo: userId)
+          .where('targetAudience', isNotEqualTo: null)
+          .orderBy('targetAudience')
+          .orderBy('createdAt', descending: true)
+          .limit(limit)
+          .get();
+
+      return querySnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+    } catch (e) {
+      debugPrint('Error getting user posts with target audience: $e');
+      return [];
+    }
   }
 }

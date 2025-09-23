@@ -4,11 +4,14 @@
 /// following Clean Architecture principles
 
 import 'package:get_it/get_it.dart';
-import '/features/voting/domain/repositories/i_voting_repository.dart';
-import '/features/posts/data/adapters/posts_data_source_impl.dart';
+import '/app/contracts/auth_contract.dart';
+import '/app/contracts/post_contract.dart';
+import '/app/contracts/notification_contract.dart';
+import '/app/contracts/vote_contract.dart';
+import '/app/contracts/user_contract.dart';
 
-// Voting Feature DI Module
-import '/features/voting/di/voting_di_module.dart';
+// Voting Feature DI Module - TODO: Remove after migration
+// import '/features/voting/di/voting_di_module.dart';
 import '/features/voting/domain/ports/i_vote_service.dart' as voting;
 
 // Auth Feature DI
@@ -67,10 +70,22 @@ Future<void> setupDependencyInjection() async {
   // SharedPreferences 인스턴스 초기화
   final sharedPreferences = await SharedPreferences.getInstance();
   getIt.registerSingleton<SharedPreferences>(sharedPreferences);
-  // Register Posts data source for Voting feature
-  getIt.registerLazySingleton<PostsDataSource>(
-    () => PostsDataSourceImpl.instance,
-  );
+  // ===== Contract 기반 Feature 간 통신 =====
+
+  // Posts Feature가 PostContract를 구현하면 등록:
+  // getIt.registerLazySingleton<PostContract>(
+  //   () => getIt<PostRepositoryImpl>(), // PostRepositoryImpl이 PostContract 구현
+  // );
+
+  // Auth Feature가 AuthContract를 구현하면 등록:
+  // getIt.registerLazySingleton<AuthContract>(
+  //   () => getIt<AuthRepositoryImpl>(), // AuthRepositoryImpl이 AuthContract 구현
+  // );
+
+  // Notification Feature가 NotificationContract를 구현하면 등록:
+  // getIt.registerLazySingleton<NotificationContract>(
+  //   () => getIt<NotificationRepositoryImpl>(),
+  // );
 
   // Register Auth service
   getIt.registerLazySingleton<IAuthService>(
@@ -172,7 +187,8 @@ Future<void> setupDependencyInjection() async {
   
   // Register all Voting feature dependencies
   // This will register voting.IVoteService internally
-  registerVotingModule(getIt);
+  // TODO: Remove after Voting feature migration to Contract pattern
+  // registerVotingModule(getIt);
 
   // ===== Core Interface Bindings for Cross-Feature Communication =====
   

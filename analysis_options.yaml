@@ -1,8 +1,0 @@
-
-
-
-analyzer:
-  exclude:
-    - lib/custom_code/**
-exclude:
-  - backup_*/**

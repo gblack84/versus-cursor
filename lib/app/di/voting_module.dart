@@ -4,7 +4,7 @@ import '../../features/voting/domain/repositories/i_voting_repository.dart';
 import '../../features/voting/domain/ports/i_vote_service.dart';
 import '../../features/voting/data/adapters/vote_service_impl.dart';
 import '../../features/voting/domain/ports/i_vote_status_service.dart';
-import '../../features/posts/data/adapters/vote/vote_status_service_adapter.dart';
+import '../../features/voting/data/adapters/vote_status_service_adapter.dart';
 import '../../features/voting/domain/ports/i_vote_ui_delegate.dart';
 import '../../features/voting/presentation/managers/vote_ui_manager.dart';
 import '../../core/domain/ports/i_user_service.dart';

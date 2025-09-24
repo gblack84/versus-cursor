@@ -77,7 +77,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Posts Feature - VoteTimerService
-import '/features/posts/data/adapters/vote/vote_timer_service.dart';
+import '/features/voting/domain/services/vote_timer_service.dart';
 
 // Voting Feature - Port and Adapter
 import '/features/voting/domain/ports/i_vote_timer_port.dart';

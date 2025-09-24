@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import '/features/posts/presentation/utils/debug_helper.dart';
+import '/core/utils/debug_helper.dart';
 
 /// 이미지 비율 계산을 위한 헬퍼 클래스
 class RatioCalculator {

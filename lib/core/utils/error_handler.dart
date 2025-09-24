@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bot_toast/bot_toast.dart';
-import '/features/posts/presentation/utils/debug_helper.dart';
+import '/core/utils/debug_helper.dart';
 
 /// 에러 타입 정의
 enum ErrorType {

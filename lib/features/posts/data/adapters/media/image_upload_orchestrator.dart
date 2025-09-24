@@ -6,9 +6,9 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '/app/state/app_state.dart';
 import '/services/moderation/models/image_moderation_model.dart';
 import 'media_upload_service.dart';
-import '/features/posts/data/adapters/cache/image_cache_helper.dart';
+import '/services/cache/image_cache_helper.dart';
 import '/features/posts/presentation/screens/create_post/in_put_post_image_model.dart';
-import '/features/posts/presentation/utils/debug_helper.dart';
+import '/core/utils/debug_helper.dart';
 
 /// 이미지 업로드 프로세스를 조율하는 서비스 클래스
 class ImageUploadOrchestrator {

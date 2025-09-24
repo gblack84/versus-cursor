@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '/features/posts/presentation/utils/debug_helper.dart';
+import '/core/utils/debug_helper.dart';
 
 /// 이미지 캐싱 헬퍼 클래스
 /// 이미지 캐싱 로직을 중앙에서 관리

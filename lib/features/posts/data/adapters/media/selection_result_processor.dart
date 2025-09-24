@@ -6,8 +6,8 @@ import 'package:bot_toast/bot_toast.dart';
 import '/app/state/app_state.dart';
 import '/services/moderation/image_moderation_service.dart';
 import 'image_reorder_service.dart';
-import '/features/posts/presentation/utils/debug_helper.dart';
-import '/features/posts/data/adapters/error/error_handler.dart';
+import '/core/utils/debug_helper.dart';
+import '/core/utils/error_handler.dart';
 
 /// 이미지 선택 결과 처리 서비스
 class SelectionResultProcessor {

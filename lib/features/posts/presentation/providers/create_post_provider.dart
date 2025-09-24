@@ -19,8 +19,8 @@ import '/features/posts/data/adapters/moderation/models/moderation_result.dart'
 import '/services/content/content_filter.dart';
 import '/core/types/layout_type.dart';
 import '/features/posts/domain/usecases/media/ratio_calculator.dart';
-import '/features/posts/data/adapters/error/error_handler.dart';
-import '/features/posts/presentation/utils/debug_helper.dart';
+import '/core/utils/error_handler.dart';
+import '/core/utils/debug_helper.dart';
 
 /// Provider for managing post creation business logic
 class CreatePostProvider extends ChangeNotifier {

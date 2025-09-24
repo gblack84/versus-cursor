@@ -1,5 +1,5 @@
 import 'package:firebase_storage/firebase_storage.dart';
-import '/features/posts/presentation/utils/debug_helper.dart';
+import '/core/utils/debug_helper.dart';
 
 /// Firebase Storage 관련 유틸리티 서비스
 class StorageService {

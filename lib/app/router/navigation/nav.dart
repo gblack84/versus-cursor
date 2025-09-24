@@ -10,7 +10,11 @@ import '/core_exports.dart';
 
 import '/features/chat/domain/models/chats_model.dart';
 import '/app/widgets/index.dart';
+import '/features/auth/presentation/index.dart';
 import '/app/widgets/navigation/main_navigation_shell.dart';
+
+// Non-Auth Feature imports from app/widgets/index.dart
+// (These are still needed until their respective features are migrated)
 
 // Import Voting Feature routes
 import '/features/voting/presentation/routes/voting_routes.dart';

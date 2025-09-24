@@ -1,4 +1,4 @@
-// Create Account With Email UseCase
+// Sign Up With Email UseCase
 // Clean Architecture - Domain Layer
 
 import 'package:flutter/foundation.dart';
@@ -6,20 +6,21 @@ import '../models/auth_user.dart';
 import '../repositories/i_auth_repository.dart';
 import '../failures/auth_failure.dart';
 
-/// CreateAccountWithEmailUseCase
+/// SignUpWithEmailUseCase
 ///
-/// Business logic for creating new user accounts with email and password.
-/// Includes validation and error handling.
-class CreateAccountWithEmailUseCase {
+/// Handles email/password account creation.
+/// This is separate from SignInWithEmailUseCase to maintain
+/// single responsibility principle.
+class SignUpWithEmailUseCase {
   final IAuthRepository _repository;
 
-  CreateAccountWithEmailUseCase({
+  SignUpWithEmailUseCase({
     required IAuthRepository repository,
   }) : _repository = repository;
 
-  /// Execute Account Creation
+  /// Execute Email Sign Up
   ///
-  /// Creates a new user account and returns the authenticated user
+  /// Creates a new user account with email and password
   Future<AuthUser?> execute({
     required String email,
     required String password,
@@ -35,9 +36,8 @@ class CreateAccountWithEmailUseCase {
       }
 
       // Validate password strength
-      final passwordError = _validatePassword(password);
-      if (passwordError != null) {
-        debugPrint('Password validation failed: $passwordError');
+      if (!_isValidPassword(password)) {
+        debugPrint('Password does not meet requirements');
         return null;
       }
 
@@ -54,12 +54,13 @@ class CreateAccountWithEmailUseCase {
 
       // Update display name if provided
       if (displayName != null && displayName.isNotEmpty) {
-        await _repository.updateUserProfile(displayName: displayName);
+        await _repository.updateUserProfile(
+          displayName: displayName,
+        );
       }
 
       // Send email verification
       await _repository.sendEmailVerification();
-      debugPrint('Verification email sent to: $email');
 
       debugPrint('Account created successfully: ${user.uid}');
       return user;
@@ -75,6 +76,7 @@ class CreateAccountWithEmailUseCase {
 
   /// Validate email format
   bool _isValidEmail(String email) {
+    // Basic email validation
     final emailRegex = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
@@ -82,21 +84,18 @@ class CreateAccountWithEmailUseCase {
   }
 
   /// Validate password strength
-  String? _validatePassword(String password) {
+  bool _isValidPassword(String password) {
+    // Minimum 6 characters (Firebase requirement)
     if (password.length < 6) {
-      return 'Password must be at least 6 characters';
+      return false;
     }
 
-    // Check for at least one letter
-    if (!password.contains(RegExp(r'[a-zA-Z]'))) {
-      return 'Password must contain at least one letter';
-    }
+    // Could add more requirements here:
+    // - Contains uppercase letter
+    // - Contains lowercase letter
+    // - Contains number
+    // - Contains special character
 
-    // Check for at least one number
-    if (!password.contains(RegExp(r'[0-9]'))) {
-      return 'Password must contain at least one number';
-    }
-
-    return null; // Valid password
+    return true;
   }
 }

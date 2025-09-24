@@ -384,4 +384,43 @@ class FirebaseAuthRemoteDataSource implements IAuthRemoteDataSource {
       rethrow;
     }
   }
+
+  @override
+  Future<String?> getIdToken({bool forceRefresh = false}) async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null) return null;
+
+      return await user.getIdToken(forceRefresh);
+    } catch (e) {
+      debugPrint('Error getting ID token: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<void> updatePassword(String newPassword) async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null) {
+        throw FirebaseAuthException(
+          code: 'no-current-user',
+          message: 'No user is currently signed in',
+        );
+      }
+
+      await user.updatePassword(newPassword);
+      debugPrint('Password updated successfully');
+    } on FirebaseAuthException catch (e) {
+      debugPrint('Firebase Auth Error: ${e.code} - ${e.message}');
+      // Re-authentication required error typically has code 'requires-recent-login'
+      if (e.code == 'requires-recent-login') {
+        debugPrint('User needs to re-authenticate before updating password');
+      }
+      rethrow;
+    } catch (e) {
+      debugPrint('Unexpected error updating password: $e');
+      rethrow;
+    }
+  }
 }

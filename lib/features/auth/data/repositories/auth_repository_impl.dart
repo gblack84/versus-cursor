@@ -2,6 +2,7 @@
 // Clean Architecture - Data Layer
 
 import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../domain/models/auth_user.dart';
 import '../../domain/repositories/i_auth_repository.dart';
@@ -345,11 +346,7 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
   @override
   Future<String?> getIdToken() async {
     try {
-      final user = _remoteDataSource.getCurrentFirebaseUser();
-      if (user == null) return null;
-      // Firebase User의 getIdToken 메서드 호출이 필요함
-      // 현재 datasource에 이 메서드가 없으므로 추가 필요
-      return null; // TODO: Implement in datasource
+      return await _remoteDataSource.getIdToken();
     } catch (e) {
       debugPrint('Error getting ID token: $e');
       return null;
@@ -358,8 +355,12 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
 
   @override
   Future<String?> refreshToken() async {
-    // getIdToken(true)는 토큰을 강제로 갱신함
-    return getIdToken();
+    try {
+      return await _remoteDataSource.getIdToken(forceRefresh: true);
+    } catch (e) {
+      debugPrint('Error refreshing token: $e');
+      return null;
+    }
   }
 
   @override
@@ -383,5 +384,38 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
 
       return AuthUserMapper.fromFirebaseUser(firebaseUser, profile: profile);
     });
+  }
+
+  @override
+  Future<bool> updatePassword(String newPassword) async {
+    try {
+      debugPrint('Attempting to update password...');
+
+      // Check if user is signed in
+      if (!isSignedIn) {
+        debugPrint('No user signed in');
+        return false;
+      }
+
+      // Call remote data source to update password
+      await _remoteDataSource.updatePassword(newPassword);
+
+      debugPrint('Password updated successfully');
+      return true;
+    } on FirebaseAuthException catch (e) {
+      debugPrint('Password update failed with Firebase error: ${e.code} - ${e.message}');
+
+      // Handle specific errors
+      if (e.code == 'requires-recent-login') {
+        debugPrint('User needs to re-authenticate before updating password');
+      } else if (e.code == 'weak-password') {
+        debugPrint('The password provided is too weak');
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint('Password update failed with unexpected error: $e');
+      return false;
+    }
   }
 }

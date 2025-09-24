@@ -1,8 +1,5 @@
-import '/features/auth/domain/usecases/verify_phone_otp_usecase.dart';
-import '/features/auth/domain/usecases/send_sms_otp_usecase.dart';
-import '/features/auth/domain/factories/auth_repository_factory.dart';
-import '/features/auth/data/adapters/auth_util.dart';
-import '/features/profile/domain/models/user_profile.dart';
+import 'package:get_it/get_it.dart';
+import '/features/auth/presentation/providers/auth_provider.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
@@ -11,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'phonelogeinpincode_model.dart';
+import 'phonemaximum/phonemaximum_widget.dart';
 export 'phonelogeinpincode_model.dart';
 
 class PhonelogeinpincodeWidget extends StatefulWidget {
@@ -31,25 +29,19 @@ class PhonelogeinpincodeWidget extends StatefulWidget {
 
 class _PhonelogeinpincodeWidgetState extends State<PhonelogeinpincodeWidget> {
   late PhonelogeinpincodeModel _model;
-  VerifyPhoneOtpUseCase? _verifyPhoneOtpUseCase;
-  SendSmsOtpUseCase? _sendSmsOtpUseCase;
+  late final AuthProvider _authProvider = GetIt.instance<AuthProvider>();
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
-
-  Future<void> _initializeUseCases() async {
-    // Factory를 통한 Repository 생성 (Clean Architecture 준수)
-    final repository = await AuthRepositoryFactory.create();
-
-    setState(() {
-      _verifyPhoneOtpUseCase = VerifyPhoneOtpUseCase(repository: repository);
-      _sendSmsOtpUseCase = SendSmsOtpUseCase(repository: repository);
-    });
-  }
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => PhonelogeinpincodeModel());
+
+    // AuthProvider 초기화 확인 (GetIt에서 가져온 Singleton)
+    if (!_authProvider.isInitialized) {
+      _authProvider.initialize();
+    }
 
     // On page load action.
     SchedulerBinding.instance.addPostFrameCallback((_) async {
@@ -61,10 +53,6 @@ class _PhonelogeinpincodeWidgetState extends State<PhonelogeinpincodeWidget> {
 
     _model.pinCodeFocusNode ??= FocusNode();
 
-    // UseCase 초기화
-    _initializeUseCases();
-
-    // Phone Auth 상태 변경 처리는 UseCase 내부에서 처리
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
@@ -350,7 +338,6 @@ Enter the 6-digit code sent t... */
                               controller: _model.pinCodeController,
                               onChanged: (_) {},
                               onCompleted: (_) async {
-                                GoRouter.of(context).prepareAuthEvent();
                                 final smsCodeVal =
                                     _model.pinCodeController!.text;
                                 if (smsCodeVal.isEmpty) {
@@ -362,30 +349,50 @@ Enter the 6-digit code sent t... */
                                   );
                                   return;
                                 }
-                                // UseCase가 초기화되지 않았으면 대기
-                                if (_verifyPhoneOtpUseCase == null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Initializing... Please wait.'),
-                                    ),
-                                  );
+
+                                // 로딩 중이면 리턴
+                                if (_authProvider.isLoading) {
                                   return;
                                 }
 
-                                final phoneVerified = await _verifyPhoneOtpUseCase!.execute(
+                                // 전화번호 인증
+                                final phoneVerified = await _authProvider.signInWithPhone(
                                   phoneNumber: widget.phoneNumberParam ?? '',
-                                  otpCode: smsCodeVal,
+                                  verificationCode: smsCodeVal,
                                 );
-                                if (!phoneVerified) {
-                                  return;
-                                }
 
-                                if (loggedIn) {
+                                if (phoneVerified) {
                                   _model.isVerified = true;
                                   setState(() {});
+
+                                  // 인증 성공 시 다음 페이지로 이동
+                                  if (context.mounted) {
+                                    context.pushNamedAuth(
+                                      UserInfoInputWidget.routeName,
+                                      context.mounted,
+                                      extra: <String, dynamic>{
+                                        kTransitionInfoKey: TransitionInfo(
+                                          hasTransition: true,
+                                          duration: Duration(milliseconds: 500),
+                                        ),
+                                      },
+                                    );
+                                  }
                                 } else {
                                   _model.isVerified = false;
                                   setState(() {});
+
+                                  // 에러 메시지 표시
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          _authProvider.errorMessage ?? '인증에 실패했습니다. 코드를 다시 확인해주세요.',
+                                        ),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
                                 }
                               },
                               autovalidateMode:
@@ -508,7 +515,7 @@ Enter the 6-digit code sent t... */
                                       ? null
                                       : () async {
                                           if (_model.canResendCount < 3) {
-                                            _model.canResendCount = 1;
+                                            _model.canResendCount++;
                                             setState(() {});
                                             _model.timerController.timer
                                                 .setPresetTime(
@@ -533,23 +540,36 @@ Enter the 6-digit code sent t... */
                                               );
                                               return;
                                             }
-                                            // UseCase가 초기화되지 않았으면 대기
-                                            if (_sendSmsOtpUseCase == null) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text('Initializing... Please wait.'),
-                                                ),
-                                              );
+                                            // 로딩 중이면 리턴
+                                            if (_authProvider.isLoading) {
                                               return;
                                             }
 
-                                            final smsSent = await _sendSmsOtpUseCase!.execute(
-                                              phoneNumber: phoneNumberVal,
-                                            );
+                                            // OTP 재전송
+                                            final smsSent = await _authProvider.resendPhoneOtp();
 
                                             if (smsSent) {
-                                              // 코드가 성공적으로 전송되면 현재 페이지를 유지
-                                              // (이미 PIN 입력 화면에 있으므로)
+                                              // 코드가 성공적으로 전송됨
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text('인증 코드가 재전송되었습니다.'),
+                                                    backgroundColor: Colors.green,
+                                                  ),
+                                                );
+                                              }
+                                            } else {
+                                              // 재전송 실패
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      _authProvider.errorMessage ?? '코드 재전송에 실패했습니다.',
+                                                    ),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                              }
                                             }
 
                                             ScaffoldMessenger.of(context)
@@ -569,15 +589,18 @@ Enter the 6-digit code sent t... */
                                               ),
                                             );
                                           } else {
-                                            context.pushNamed(
-                                              PhoneCreatAccountWidget.routeName,
-                                              queryParameters: {
-                                                'phoneNumberParam':
-                                                    serializeParam(
-                                                  '',
-                                                  ParamType.String,
-                                                ),
-                                              }.withoutNulls,
+                                            // 3회 재전송 제한 초과 시 경고 모달 표시
+                                            await showDialog(
+                                              context: context,
+                                              barrierDismissible: false,
+                                              builder: (BuildContext dialogContext) {
+                                                return Dialog(
+                                                  backgroundColor: Colors.transparent,
+                                                  elevation: 0,
+                                                  insetPadding: EdgeInsets.all(16.0),
+                                                  child: PhonemaximumWidget(),
+                                                );
+                                              },
                                             );
                                           }
                                         },
@@ -666,14 +689,10 @@ Enter the 6-digit code sent t... */
                     onPressed: (_model.isVerified != true)
                         ? null
                         : () async {
-                            await currentUserReference!
-                                .update(createUsersModelData(
-                              photoUrl:
-                                  'https://firebasestorage.googleapis.com/v0/b/versus-space-1lwwiw.appspot.com/o/characters%2Fdefault%2Fdefaultimage.jpg?alt=media&token=b485c8ad-c393-4ec7-bc1a-c1c3c93ec4ec',
-                            ));
-
-                            context.pushNamed(
+                            // 이미 인증이 성공한 경우 다음 페이지로 이동
+                            context.pushNamedAuth(
                               UserInfoInputWidget.routeName,
+                              context.mounted,
                               extra: <String, dynamic>{
                                 kTransitionInfoKey: TransitionInfo(
                                   hasTransition: true,

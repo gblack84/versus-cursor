@@ -1,11 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '/features/auth/domain/usecases/reset_password_usecase.dart';
-import '/features/auth/data/repositories/auth_repository_impl.dart';
-import '/features/auth/data/datasources/firebase_auth_remote_datasource.dart';
-import '/features/auth/data/datasources/auth_local_datasource.dart';
+import 'package:get_it/get_it.dart';
+import '/features/auth/presentation/providers/auth_provider.dart';
 import '/features/auth/presentation/screens/login/login_page/login_page_widget.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
@@ -26,39 +20,22 @@ class ForgotPasswordWidget extends StatefulWidget {
 
 class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget> {
   late ForgotPasswordModel _model;
-  ResetPasswordUseCase? _resetPasswordUseCase;
+  late final AuthProvider _authProvider = GetIt.instance<AuthProvider>();
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
-
-  Future<void> _initializeUseCases() async {
-    // Phase 2.6에서 DI로 대체 예정
-    final prefs = await SharedPreferences.getInstance();
-    final localDataSource = AuthLocalDataSource(prefs: prefs);
-
-    final repository = AuthRepositoryImpl(
-      remoteDataSource: FirebaseAuthRemoteDataSource(
-        firebaseAuth: FirebaseAuth.instance,
-        firestore: FirebaseFirestore.instance,
-        googleSignIn: GoogleSignIn(),
-      ),
-      localDataSource: localDataSource,
-    );
-
-    setState(() {
-      _resetPasswordUseCase = ResetPasswordUseCase(repository: repository);
-    });
-  }
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => ForgotPasswordModel());
 
+    // AuthProvider 초기화 확인 (GetIt에서 가져온 Singleton)
+    if (!_authProvider.isInitialized) {
+      _authProvider.initialize();
+    }
+
     _model.emailAddressTextController ??= TextEditingController();
     _model.emailAddressFocusNode ??= FocusNode();
-
-    // UseCase 초기화
-    _initializeUseCases();
 
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
@@ -332,61 +309,47 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              'Email required!',
+                              '이메일을 입력해주세요!',
                             ),
                           ),
                         );
                         return;
                       }
 
-                      // UseCase가 초기화되지 않았으면 대기
-                      if (_resetPasswordUseCase == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Initializing... Please wait.',
-                            ),
-                          ),
-                        );
+                      // 로딩 중이면 리턴
+                      if (_authProvider.isLoading) {
                         return;
                       }
 
-                      // Reset password using UseCase
-                      try {
-                        final result = await _resetPasswordUseCase!.execute(
-                          email: _model.emailAddressTextController.text.trim(),
-                        );
+                      // 비밀번호 재설정 이메일 발송
+                      final success = await _authProvider.sendPasswordResetEmail(
+                        _model.emailAddressTextController.text.trim(),
+                      );
 
-                        if (result) {
+                      if (success) {
+                        if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                'Password reset email sent. Please check your inbox.',
+                                '비밀번호 재설정 이메일을 발송했습니다. 이메일을 확인해주세요.',
                               ),
+                              backgroundColor: Colors.green,
                             ),
                           );
-
                           // Navigate back or to login page
-                          if (mounted) {
-                            context.pop();
-                          }
-                        } else {
+                          context.pop();
+                        }
+                      } else {
+                        if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                'Failed to send password reset email. Please try again.',
+                                _authProvider.errorMessage ?? '비밀번호 재설정 이메일 발송에 실패했습니다. 다시 시도해주세요.',
                               ),
+                              backgroundColor: Colors.red,
                             ),
                           );
                         }
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Error: ${e.toString()}',
-                            ),
-                          ),
-                        );
                       }
                     },
                     text: AppLocalizations.of(context).getText(

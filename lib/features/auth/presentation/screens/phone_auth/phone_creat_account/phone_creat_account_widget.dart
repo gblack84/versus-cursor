@@ -1,5 +1,5 @@
-import '/features/auth/domain/usecases/send_sms_otp_usecase.dart';
-import '/features/auth/domain/factories/auth_repository_factory.dart';
+import 'package:get_it/get_it.dart';
+import '/features/auth/presentation/providers/auth_provider.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
@@ -27,23 +27,19 @@ class PhoneCreatAccountWidget extends StatefulWidget {
 
 class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
   late PhoneCreatAccountModel _model;
-  SendSmsOtpUseCase? _sendSmsOtpUseCase;
+  late final AuthProvider _authProvider = GetIt.instance<AuthProvider>();
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
-
-  Future<void> _initializeUseCases() async {
-    // Factory를 통한 Repository 생성 (Clean Architecture 준수)
-    final repository = await AuthRepositoryFactory.create();
-
-    setState(() {
-      _sendSmsOtpUseCase = SendSmsOtpUseCase(repository: repository);
-    });
-  }
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => PhoneCreatAccountModel());
+
+    // AuthProvider 초기화 확인 (GetIt에서 가져온 Singleton)
+    if (!_authProvider.isInitialized) {
+      _authProvider.initialize();
+    }
 
     _model.codeCuntryTextController ??= TextEditingController();
     _model.codeCuntryFocusNode ??= FocusNode();
@@ -52,10 +48,7 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
     _model.phoneNumberTextController ??= TextEditingController();
     _model.phoneNumberFocusNode ??= FocusNode();
 
-    // UseCase 초기화
-    _initializeUseCases();
-
-    // Phone Auth 상태 변경 처리는 UseCase 내부에서 처리
+    // Phone Auth 상태 변경 처리는 Provider 내부에서 처리
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
@@ -446,44 +439,46 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                      'Phone Number is required and has to start with +.'),
-                                ),
-                              );
-                              return;
-                            }
-                            // UseCase가 초기화되지 않았으면 대기
-                            if (_sendSmsOtpUseCase == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Initializing... Please wait.'),
+                                      '전화번호는 필수이며 +로 시작해야 합니다.'),
                                 ),
                               );
                               return;
                             }
 
-                            final smsSent = await _sendSmsOtpUseCase!.execute(
-                              phoneNumber: phoneNumberVal,
+                            // 로딩 중이면 리턴
+                            if (_authProvider.isLoading) {
+                              return;
+                            }
+
+                            // OTP 발송
+                            final smsSent = await _authProvider.sendPhoneOtp(
+                              phoneNumberVal,
                             );
 
                             if (smsSent) {
                               // 코드가 성공적으로 전송되면 PIN 입력 화면으로 이동
-                              context.goNamedAuth(
-                                PhonelogeinpincodeWidget.routeName,
-                                context.mounted,
-                                queryParameters: {
-                                  'phoneNumberParam': serializeParam(
-                                    '${_model.codeCuntryTextController.text}${_model.phoneNumberTextController.text}',
-                                    ParamType.String,
-                                  ),
-                                }.withoutNulls,
-                                ignoreRedirect: true,
-                              );
+                              if (context.mounted) {
+                                context.goNamedAuth(
+                                  PhonelogeinpincodeWidget.routeName,
+                                  context.mounted,
+                                  queryParameters: {
+                                    'phoneNumberParam': serializeParam(
+                                      phoneNumberVal,
+                                      ParamType.String,
+                                    ),
+                                  }.withoutNulls,
+                                  ignoreRedirect: true,
+                                );
+                              }
                             } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Failed to send SMS code. Please try again.'),
-                                ),
-                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(_authProvider.errorMessage ?? 'SMS 코드 발송에 실패했습니다. 다시 시도해주세요.'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
                             }
                           },
                     text: AppLocalizations.of(context).getText(

@@ -50,6 +50,10 @@ abstract class IAuthRepository {
     String? photoURL,
   });
 
+  /// Update user password
+  /// Requires user to be recently authenticated
+  Future<bool> updatePassword(String newPassword);
+
   /// Check if user is signed in
   bool get isSignedIn;
 

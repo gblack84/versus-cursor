@@ -8,14 +8,81 @@ import '../failures/auth_failure.dart';
 
 /// SignInWithPhoneUseCase
 ///
-/// Business logic for phone number authentication.
-/// Handles phone verification and sign-in process.
+/// Comprehensive phone authentication use case that handles:
+/// - SMS OTP sending
+/// - OTP verification
+/// - Phone sign-in
+/// - Phone account creation
+/// - OTP resending with rate limiting
 class SignInWithPhoneUseCase {
   final IAuthRepository _repository;
+
+  // Rate limiting for OTP resend
+  DateTime? _lastOtpSentTime;
+  int _otpSendCount = 0;
+  static const int _maxOtpSends = 3;
+  static const Duration _otpResendDelay = Duration(seconds: 60);
 
   SignInWithPhoneUseCase({
     required IAuthRepository repository,
   }) : _repository = repository;
+
+  /// Send SMS OTP
+  ///
+  /// Sends OTP to the provided phone number
+  Future<bool> sendOtp(String phoneNumber) async {
+    try {
+      debugPrint('Sending OTP to phone number...');
+
+      // Validate phone number
+      if (!_isValidPhoneNumber(phoneNumber)) {
+        debugPrint('Invalid phone number format: $phoneNumber');
+        return false;
+      }
+
+      // Check rate limiting
+      if (!_canSendOtp()) {
+        debugPrint('OTP rate limit exceeded');
+        return false;
+      }
+
+      // Send OTP
+      final success = await _repository.sendSmsOtp(phoneNumber);
+
+      if (success) {
+        _lastOtpSentTime = DateTime.now();
+        _otpSendCount++;
+        debugPrint('OTP sent successfully');
+      }
+
+      return success;
+    } catch (e) {
+      debugPrint('Failed to send OTP: $e');
+      return false;
+    }
+  }
+
+  /// Resend SMS OTP
+  ///
+  /// Resends OTP with rate limiting
+  Future<bool> resendOtp(String phoneNumber) async {
+    debugPrint('Attempting to resend OTP...');
+
+    if (_otpSendCount >= _maxOtpSends) {
+      debugPrint('Maximum OTP sends reached');
+      return false;
+    }
+
+    if (_lastOtpSentTime != null) {
+      final timeSinceLastSend = DateTime.now().difference(_lastOtpSentTime!);
+      if (timeSinceLastSend < _otpResendDelay) {
+        debugPrint('Please wait before resending OTP');
+        return false;
+      }
+    }
+
+    return sendOtp(phoneNumber);
+  }
 
   /// Execute Phone Sign In
   ///
@@ -90,5 +157,27 @@ class SignInWithPhoneUseCase {
 
     // Check if all characters are digits
     return RegExp(r'^\d{6}$').hasMatch(code);
+  }
+
+  /// Check if OTP can be sent (rate limiting)
+  bool _canSendOtp() {
+    if (_otpSendCount >= _maxOtpSends) {
+      return false;
+    }
+
+    if (_lastOtpSentTime != null) {
+      final timeSinceLastSend = DateTime.now().difference(_lastOtpSentTime!);
+      if (timeSinceLastSend < _otpResendDelay) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /// Reset OTP send counter
+  void resetOtpCounter() {
+    _otpSendCount = 0;
+    _lastOtpSentTime = null;
   }
 }

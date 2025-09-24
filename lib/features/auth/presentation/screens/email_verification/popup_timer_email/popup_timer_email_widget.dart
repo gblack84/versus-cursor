@@ -1,11 +1,7 @@
-import '/features/auth/domain/usecases/send_email_verification_usecase.dart';
-import '/features/auth/domain/usecases/delete_user_usecase.dart';
-import '/features/auth/domain/factories/auth_repository_factory.dart';
+import 'package:get_it/get_it.dart';
+import '/features/auth/presentation/providers/auth_provider.dart';
 import '/features/auth/data/adapters/auth_util.dart';
 import '/features/profile/domain/models/user_profile.dart';
-import '/features/auth/presentation/screens/signup/create_account/create_account_widget.dart';
-import '/features/profile/presentation/screens/user_info_input/user_info_input_widget.dart';
-import '/features/auth/presentation/screens/start/start_page/start_page_widget.dart';
 import '/core/widgets/pickle_mark/pickle_mark_widget.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
@@ -25,18 +21,7 @@ class PopupTimerEmailWidget extends StatefulWidget {
 
 class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
   late PopupTimerEmailModel _model;
-  SendEmailVerificationUseCase? _sendEmailVerificationUseCase;
-  DeleteUserUseCase? _deleteUserUseCase;
-
-  Future<void> _initializeUseCases() async {
-    // Factory를 통한 Repository 생성 (Clean Architecture 준수)
-    final repository = await AuthRepositoryFactory.create();
-
-    setState(() {
-      _sendEmailVerificationUseCase = SendEmailVerificationUseCase(repository: repository);
-      _deleteUserUseCase = DeleteUserUseCase(repository: repository);
-    });
-  }
+  late final AuthProvider _authProvider = GetIt.instance<AuthProvider>();
 
   @override
   void setState(VoidCallback callback) {
@@ -49,8 +34,10 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
     super.initState();
     _model = createModel(context, () => PopupTimerEmailModel());
 
-    // UseCase 초기화
-    _initializeUseCases();
+    // AuthProvider 초기화 확인 (GetIt에서 가져온 Singleton)
+    if (!_authProvider.isInitialized) {
+      _authProvider.initialize();
+    }
 
     // On component load action.
     SchedulerBinding.instance.addPostFrameCallback((_) async {
@@ -276,13 +263,8 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                       onPressed: currentUserEmailVerified
                           ? null
                           : () async {
-                              // Firestore 사용자 문서 삭제
-                              await currentUserReference!.delete();
-
-                              // UseCase를 통한 사용자 계정 삭제
-                              if (_deleteUserUseCase != null) {
-                                await _deleteUserUseCase!.execute();
-                              }
+                              // 사용자 계정 삭제
+                              await _authProvider.deleteAccount();
 
                               Navigator.pop(context);
                               context.pushNamed(CreateAccountWidget.routeName);
@@ -332,17 +314,11 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
 
                                 _model.timerController.onStartTimer();
 
-                                // UseCase를 통한 이메일 인증 발송
-                                if (_sendEmailVerificationUseCase != null) {
-                                  await _sendEmailVerificationUseCase!.execute();
-                                }
+                                // 이메일 인증 재발송
+                                await _authProvider.sendEmailVerification();
                               } else {
-                                await currentUserReference!.delete();
-
-                                // UseCase를 통한 사용자 계정 삭제
-                                if (_deleteUserUseCase != null) {
-                                  await _deleteUserUseCase!.execute();
-                                }
+                                // 사용자 계정 삭제
+                                await _authProvider.deleteAccount();
 
                                 Navigator.pop(context);
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -440,10 +416,8 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                   if (shouldUpdate) setState(() {});
                 },
                 onEnded: () async {
-                  // UseCase를 통한 사용자 계정 삭제
-                  if (_deleteUserUseCase != null) {
-                    await _deleteUserUseCase!.execute();
-                  }
+                  // 시간 초과 - 사용자 계정 삭제
+                  await _authProvider.deleteAccount();
 
                   Navigator.pop(context);
                   context.pushNamed(StartPageWidget.routeName);

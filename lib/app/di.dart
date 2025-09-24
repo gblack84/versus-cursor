@@ -4,6 +4,10 @@
 /// following Clean Architecture principles
 
 import 'package:get_it/get_it.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '/app/contracts/auth_contract.dart';
 import '/app/contracts/post_contract.dart';
 import '/app/contracts/notification_contract.dart';
@@ -17,6 +21,25 @@ import '/features/voting/domain/ports/i_vote_service.dart' as voting;
 // Auth Feature DI
 import '/features/auth/domain/services/i_auth_service.dart';
 import '/features/auth/data/adapters/auth_service_impl.dart';
+import '/features/auth/data/datasources/i_auth_remote_datasource.dart';
+import '/features/auth/data/datasources/firebase_auth_remote_datasource.dart';
+import '/features/auth/data/datasources/i_auth_local_datasource.dart';
+import '/features/auth/data/datasources/auth_local_datasource.dart';
+import '/features/auth/domain/repositories/i_auth_repository.dart';
+import '/features/auth/data/repositories/auth_repository_impl.dart';
+// Auth UseCases
+import '/features/auth/domain/usecases/sign_in_with_email_usecase.dart';
+import '/features/auth/domain/usecases/sign_up_with_email_usecase.dart';
+import '/features/auth/domain/usecases/sign_in_with_google_usecase.dart';
+import '/features/auth/domain/usecases/sign_in_with_apple_usecase.dart';
+import '/features/auth/domain/usecases/sign_in_with_phone_usecase.dart';
+import '/features/auth/domain/usecases/sign_out_usecase.dart';
+import '/features/auth/domain/usecases/get_current_user_usecase.dart';
+import '/features/auth/domain/usecases/password_management_usecase.dart';
+import '/features/auth/domain/usecases/email_verification_usecase.dart';
+import '/features/auth/domain/usecases/account_management_usecase.dart';
+// Auth Provider
+import '/features/auth/presentation/providers/auth_provider.dart' as app_auth;
 
 // Notifications Feature DI
 import '/features/notifications/domain/repositories/i_notification_repository.dart';
@@ -70,6 +93,79 @@ Future<void> setupDependencyInjection() async {
   // SharedPreferences 인스턴스 초기화
   final sharedPreferences = await SharedPreferences.getInstance();
   getIt.registerSingleton<SharedPreferences>(sharedPreferences);
+
+  // ===== Auth Feature DI =====
+
+  // 1. DataSource 등록
+  getIt.registerLazySingleton<IAuthRemoteDataSource>(
+    () => FirebaseAuthRemoteDataSource(
+      firebaseAuth: FirebaseAuth.instance,
+      firestore: FirebaseFirestore.instance,
+      googleSignIn: GoogleSignIn(),
+    ),
+  );
+
+  getIt.registerLazySingleton<IAuthLocalDataSource>(
+    () => AuthLocalDataSource(
+      prefs: getIt<SharedPreferences>(),
+    ),
+  );
+
+  // 2. Repository 등록
+  getIt.registerLazySingleton<IAuthRepository>(
+    () => AuthRepositoryImpl(
+      remoteDataSource: getIt<IAuthRemoteDataSource>(),
+      localDataSource: getIt<IAuthLocalDataSource>(),
+    ),
+  );
+
+  // 3. AuthContract 등록
+  getIt.registerLazySingleton<AuthContract>(
+    () => getIt<IAuthRepository>() as AuthRepositoryImpl, // AuthRepositoryImpl이 AuthContract 구현
+  );
+
+  // 4. 핵심 UseCase 등록 (10개로 통합)
+  getIt.registerFactory(() => SignInWithEmailUseCase(
+    repository: getIt<IAuthRepository>()
+  ));
+  getIt.registerFactory(() => SignUpWithEmailUseCase(
+    repository: getIt<IAuthRepository>()
+  ));
+  getIt.registerFactory(() => SignInWithGoogleUseCase(
+    repository: getIt<IAuthRepository>()
+  ));
+  getIt.registerFactory(() => SignInWithAppleUseCase(
+    repository: getIt<IAuthRepository>()
+  ));
+  getIt.registerFactory(() => SignInWithPhoneUseCase(
+    repository: getIt<IAuthRepository>()
+  ));
+  getIt.registerFactory(() => SignOutUseCase(
+    repository: getIt<IAuthRepository>()
+  ));
+  getIt.registerFactory(() => GetCurrentUserUseCase(
+    getIt<IAuthRepository>()  // positional argument
+  ));
+  getIt.registerFactory(() => PasswordManagementUseCase(
+    repository: getIt<IAuthRepository>()
+  ));
+  getIt.registerFactory(() => EmailVerificationUseCase(
+    repository: getIt<IAuthRepository>()
+  ));
+  getIt.registerFactory(() => AccountManagementUseCase(
+    repository: getIt<IAuthRepository>()
+  ));
+
+  // 5. AuthProvider 등록 (싱글톤)
+  getIt.registerLazySingleton<app_auth.AuthProvider>(
+    () => app_auth.AuthProvider(),
+  );
+
+  // 6. Legacy Auth Service 유지 (점진적 마이그레이션)
+  getIt.registerLazySingleton<IAuthService>(
+    () => AuthServiceImpl(),
+  );
+
   // ===== Contract 기반 Feature 간 통신 =====
 
   // Posts Feature가 PostContract를 구현하면 등록:
@@ -77,20 +173,10 @@ Future<void> setupDependencyInjection() async {
   //   () => getIt<PostRepositoryImpl>(), // PostRepositoryImpl이 PostContract 구현
   // );
 
-  // Auth Feature가 AuthContract를 구현하면 등록:
-  // getIt.registerLazySingleton<AuthContract>(
-  //   () => getIt<AuthRepositoryImpl>(), // AuthRepositoryImpl이 AuthContract 구현
-  // );
-
   // Notification Feature가 NotificationContract를 구현하면 등록:
   // getIt.registerLazySingleton<NotificationContract>(
   //   () => getIt<NotificationRepositoryImpl>(),
   // );
-
-  // Register Auth service
-  getIt.registerLazySingleton<IAuthService>(
-    () => AuthServiceImpl(),
-  );
 
   // ===== Notifications Feature DI =====
 

@@ -1,13 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '/features/auth/domain/usecases/create_account_with_email_usecase.dart';
-import '/features/auth/domain/usecases/send_email_verification_usecase.dart';
-import '/features/auth/data/repositories/auth_repository_impl.dart';
-import '/features/auth/data/datasources/firebase_auth_remote_datasource.dart';
-import '/features/auth/data/datasources/auth_local_datasource.dart';
-import '/features/auth/data/adapters/auth_util.dart';
+import 'package:get_it/get_it.dart';
+import '/features/auth/presentation/providers/auth_provider.dart';
 import '/features/auth/presentation/screens/email_verification/popup_timer_email/popup_timer_email_widget.dart';
 import '/features/auth/presentation/screens/signup/components/header_section.dart';
 import '/features/auth/presentation/screens/signup/components/signup_form.dart';
@@ -35,35 +27,19 @@ class CreateAccountWidget extends StatefulWidget {
 
 class _CreateAccountWidgetState extends State<CreateAccountWidget> {
   late CreateAccountModel _model;
-  CreateAccountWithEmailUseCase? _createAccountWithEmailUseCase;
-  SendEmailVerificationUseCase? _sendEmailVerificationUseCase;
+  late final AuthProvider _authProvider = GetIt.instance<AuthProvider>();
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
-
-  Future<void> _initializeUseCases() async {
-    // Phase 2.6에서 DI로 대체 예정
-    final prefs = await SharedPreferences.getInstance();
-    final localDataSource = AuthLocalDataSource(prefs: prefs);
-
-    final repository = AuthRepositoryImpl(
-      remoteDataSource: FirebaseAuthRemoteDataSource(
-        firebaseAuth: FirebaseAuth.instance,
-        firestore: FirebaseFirestore.instance,
-        googleSignIn: GoogleSignIn(),
-      ),
-      localDataSource: localDataSource,
-    );
-
-    setState(() {
-      _createAccountWithEmailUseCase = CreateAccountWithEmailUseCase(repository: repository);
-      _sendEmailVerificationUseCase = SendEmailVerificationUseCase(repository: repository);
-    });
-  }
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => CreateAccountModel());
+
+    // AuthProvider 초기화 확인 (GetIt에서 가져온 Singleton)
+    if (!_authProvider.isInitialized) {
+      _authProvider.initialize();
+    }
 
     _model.emailAddressTextController ??= TextEditingController();
     _model.emailAddressFocusNode ??= FocusNode();
@@ -73,9 +49,6 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
 
     _model.passwordConfirmTextController ??= TextEditingController();
     _model.passwordConfirmFocusNode ??= FocusNode();
-
-    // UseCase 초기화
-    _initializeUseCases();
 
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
@@ -96,56 +69,57 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
         _model.passwordConfirmTextController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Passwords don\'t match!'),
+          content: Text('비밀번호가 일치하지 않습니다!'),
         ),
       );
       return;
     }
 
-    // UseCase가 초기화되지 않았으면 대기
-    if (_createAccountWithEmailUseCase == null || _sendEmailVerificationUseCase == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Initializing... Please wait.'),
-        ),
-      );
+    // 로딩 중이면 리턴
+    if (_authProvider.isLoading) {
       return;
     }
 
     // 계정 생성
-    final authUser = await _createAccountWithEmailUseCase!.execute(
+    final success = await _authProvider.signUpWithEmail(
       email: _model.emailAddressTextController.text,
       password: _model.passwordTextController.text,
     );
-    if (authUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to create account. Please try again.'),
-        ),
-      );
+
+    if (!success) {
+      // UI 피드백: 회원가입 실패 메시지 표시
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_authProvider.errorMessage ?? '계정 생성에 실패했습니다. 다시 시도해주세요.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
     }
 
     // 이메일 인증 발송
-    await _sendEmailVerificationUseCase!.execute();
-    await showDialog(
-      barrierDismissible: false,
-      context: context,
-      builder: (dialogContext) {
-        return Dialog(
-          elevation: 0,
-          insetPadding: EdgeInsets.zero,
-          backgroundColor: Colors.transparent,
-          alignment: AlignmentDirectional(0.0, 0.0)
-              .resolve(Directionality.of(context)),
-          child: WebViewAware(
-            child: PopupTimerEmailWidget(),
-          ),
-        );
-      },
-    );
+    await _authProvider.sendEmailVerification();
 
     if (context.mounted) {
+      await showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (dialogContext) {
+          return Dialog(
+            elevation: 0,
+            insetPadding: EdgeInsets.zero,
+            backgroundColor: Colors.transparent,
+            alignment: AlignmentDirectional(0.0, 0.0)
+                .resolve(Directionality.of(context)),
+            child: WebViewAware(
+              child: PopupTimerEmailWidget(),
+            ),
+          );
+        },
+      );
+
       context.pushNamedAuth(
         UserInfoInputWidget.routeName,
         context.mounted,

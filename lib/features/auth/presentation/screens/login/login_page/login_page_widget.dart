@@ -1,6 +1,6 @@
-import '/features/auth/domain/usecases/sign_in_with_email_usecase.dart';
-import '/features/auth/domain/usecases/create_test_account_usecase.dart';
-import '/features/auth/domain/factories/auth_repository_factory.dart';
+import 'package:provider/provider.dart';
+import 'package:get_it/get_it.dart';
+import '/features/auth/presentation/providers/auth_provider.dart';
 import '/features/auth/presentation/screens/login/components/email_login_form.dart';
 import '/features/auth/presentation/screens/login/components/test_account_buttons.dart';
 import '/features/auth/presentation/screens/login/components/login_buttons.dart';
@@ -28,31 +28,21 @@ class LoginPageWidget extends StatefulWidget {
 class _LoginPageWidgetState extends State<LoginPageWidget>
     with TickerProviderStateMixin {
   late LoginPageModel _model;
-  SignInWithEmailUseCase? _signInWithEmailUseCase;
-  CreateTestAccountUseCase? _createTestAccountUseCase;
+  late final AuthProvider _authProvider = GetIt.instance<AuthProvider>();
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   final animationsMap = <String, AnimationInfo>{};
-
-  Future<void> _initializeUseCases() async {
-    // Factory를 통한 Repository 생성 (Clean Architecture 준수)
-    final repository = await AuthRepositoryFactory.create();
-
-    // UseCase 초기화
-    setState(() {
-      _signInWithEmailUseCase = SignInWithEmailUseCase(repository: repository);
-      _createTestAccountUseCase = CreateTestAccountUseCase(repository: repository);
-    });
-  }
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => LoginPageModel());
 
-    // UseCase 초기화 (Phase 2.6에서 DI로 대체 예정)
-    _initializeUseCases();
+    // AuthProvider 초기화 확인 (GetIt에서 가져온 Singleton)
+    if (!_authProvider.isInitialized) {
+      _authProvider.initialize();
+    }
 
     _model.emailAddressLoginTextController ??= TextEditingController();
     _model.emailAddressLoginFocusNode ??= FocusNode();
@@ -100,32 +90,24 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
 
   // Helper method for email login
   Future<void> _handleEmailLogin() async {
-    // UseCase가 아직 초기화되지 않았으면 리턴
-    if (_signInWithEmailUseCase == null) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('시스템을 초기화 중입니다. 잠시 후 다시 시도해주세요.'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
+    // 로딩 중이면 리턴
+    if (_authProvider.isLoading) {
       return;
     }
 
     GoRouter.of(context).prepareAuthEvent();
 
-    final user = await _signInWithEmailUseCase!.execute(
+    final success = await _authProvider.signInWithEmail(
       email: _model.emailAddressLoginTextController.text,
       password: _model.passwordLoginTextController.text,
     );
 
-    if (user == null) {
+    if (!success) {
       // UI 피드백: 로그인 실패 메시지 표시
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.'),
+            content: Text(_authProvider.errorMessage ?? '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -155,47 +137,47 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
     required String role,
     String? platform,
   }) async {
-    // UseCase가 아직 초기화되지 않았으면 리턴
-    if (_createTestAccountUseCase == null) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('시스템을 초기화 중입니다. 잠시 후 다시 시도해주세요.'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
+    // 로딩 중이면 리턴
+    if (_authProvider.isLoading) {
       return;
     }
 
     GoRouter.of(context).prepareAuthEvent();
 
-    final result = await _createTestAccountUseCase!.execute(
+    // 테스트 계정은 일반 로그인으로 처리 (계정이 이미 존재한다고 가정)
+    // 실제 테스트 계정 생성 로직이 필요하면 별도 구현 필요
+    final success = await _authProvider.signInWithEmail(
       email: email,
       password: password,
-      displayName: displayName,
-      role: role,
-      platform: platform,
     );
 
     // UI 피드백: 결과에 따라 적절한 메시지 표시
-    if (!result.success) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.message ?? '테스트 계정 생성/로그인에 실패했습니다.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+    if (!success) {
+      // 계정이 없으면 회원가입 시도
+      final signUpSuccess = await _authProvider.signUpWithEmail(
+        email: email,
+        password: password,
+        displayName: displayName,
+      );
+
+      if (!signUpSuccess) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_authProvider.errorMessage ?? '테스트 계정 생성/로그인에 실패했습니다.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
       }
-      return;
     }
 
     // 성공 메시지 표시
-    if (context.mounted && result.message != null) {
+    if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(result.message!),
+          content: Text('테스트 계정으로 로그인되었습니다.'),
           backgroundColor: Colors.green,
         ),
       );

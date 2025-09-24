@@ -59,4 +59,11 @@ abstract class IAuthRemoteDataSource {
 
   /// Update user profile in Firestore
   Future<void> updateUserProfileData(String uid, Map<String, dynamic> data);
+
+  /// Get ID token for the current user
+  Future<String?> getIdToken({bool forceRefresh = false});
+
+  /// Update user password
+  /// Requires user to be recently authenticated
+  Future<void> updatePassword(String newPassword);
 }

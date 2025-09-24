@@ -35,7 +35,3 @@ abstract class BaseAuthUser {
   String? get photoUrl => authUserInfo.photoUrl;
   String? get phoneNumber => authUserInfo.phoneNumber;
 }
-
-// Global auth state - should be managed by DI in the future
-BaseAuthUser? currentUser;
-bool get loggedIn => currentUser?.loggedIn ?? false;

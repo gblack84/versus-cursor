@@ -1,6 +1,5 @@
-import '/features/auth/domain/usecases/sign_in_with_google_usecase.dart';
-import '/features/auth/domain/usecases/sign_in_with_apple_usecase.dart';
-import '/features/auth/domain/factories/auth_repository_factory.dart';
+import 'package:get_it/get_it.dart';
+import '/features/auth/presentation/providers/auth_provider.dart';
 import '/features/auth/data/adapters/auth_util.dart';
 import '/features/auth/presentation/screens/login/login_page/login_page_widget.dart';
 import '/testpage_select/testpage_select_widget.dart';
@@ -27,31 +26,22 @@ class StartPageWidget extends StatefulWidget {
 class _StartPageWidgetState extends State<StartPageWidget>
     with TickerProviderStateMixin {
   late StartPageModel _model;
-  SignInWithGoogleUseCase? _signInWithGoogleUseCase;
-  SignInWithAppleUseCase? _signInWithAppleUseCase;
+  late final AuthProvider _authProvider = GetIt.instance<AuthProvider>();
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
   var hasButtonTriggered1 = false;
   var hasButtonTriggered2 = false;
   final animationsMap = <String, AnimationInfo>{};
 
-  Future<void> _initializeUseCases() async {
-    // Factory를 통한 Repository 생성 (Clean Architecture 준수)
-    final repository = await AuthRepositoryFactory.create();
-
-    setState(() {
-      _signInWithGoogleUseCase = SignInWithGoogleUseCase(repository: repository);
-      _signInWithAppleUseCase = SignInWithAppleUseCase(repository: repository);
-    });
-  }
-
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => StartPageModel());
 
-    // UseCase 초기화
-    _initializeUseCases();
+    // AuthProvider 초기화 확인 (GetIt에서 가져온 Singleton)
+    if (!_authProvider.isInitialized) {
+      _authProvider.initialize();
+    }
 
     animationsMap.addAll({
       'columnOnPageLoadAnimation': AnimationInfo(
@@ -277,25 +267,31 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                           0.0, 0.0, 0.0, 8.0),
                                       child: AppButtonWidget(
                                         onPressed: () async {
-                                          // UseCase가 초기화되지 않았으면 대기
-                                          if (_signInWithAppleUseCase == null) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(
-                                                content: Text('초기화 중입니다. 잠시만 기다려주세요.'),
-                                              ),
-                                            );
+                                          // 로딩 중이면 리턴
+                                          if (_authProvider.isLoading) {
                                             return;
                                           }
 
                                           GoRouter.of(context).prepareAuthEvent();
-                                          final user = await _signInWithAppleUseCase!.execute();
-                                          if (user == null) {
+                                          final success = await _authProvider.signInWithApple();
+
+                                          if (!success) {
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(_authProvider.errorMessage ?? 'Apple 로그인에 실패했습니다.'),
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
+                                            }
                                             return;
                                           }
 
-                                          context.goNamedAuth(
-                                              TestpageSelectWidget.routeName,
-                                              context.mounted);
+                                          if (context.mounted) {
+                                            context.goNamedAuth(
+                                                TestpageSelectWidget.routeName,
+                                                context.mounted);
+                                          }
                                         },
                                         text: AppLocalizations.of(context)
                                             .getText(
@@ -350,34 +346,31 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                     0.0, 0.0, 0.0, 8.0),
                                 child: AppButtonWidget(
                                   onPressed: () async {
-                                    // UseCase가 초기화되지 않았으면 대기
-                                    if (_signInWithGoogleUseCase == null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('초기화 중입니다. 잠시만 기다려주세요.'),
-                                        ),
-                                      );
+                                    // 로딩 중이면 리턴
+                                    if (_authProvider.isLoading) {
                                       return;
                                     }
 
                                     GoRouter.of(context).prepareAuthEvent();
-                                    final user = await _signInWithGoogleUseCase!.execute();
-                                    if (user == null) {
+                                    final success = await _authProvider.signInWithGoogle();
+
+                                    if (!success) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(_authProvider.errorMessage ?? 'Google 로그인에 실패했습니다.'),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
                                       return;
                                     }
 
-                                    await currentUserReference!.update({
-                                      ...mapToFirestore(
-                                        {
-                                          'lastActive':
-                                              FieldValue.serverTimestamp(),
-                                        },
-                                      ),
-                                    });
-
-                                    context.goNamedAuth(
-                                        TestpageSelectWidget.routeName,
-                                        context.mounted);
+                                    if (context.mounted) {
+                                      context.goNamedAuth(
+                                          TestpageSelectWidget.routeName,
+                                          context.mounted);
+                                    }
                                   },
                                   text: AppLocalizations.of(context).getText(
                                     's24g5s5d' /* Continue with Google */,
@@ -425,34 +418,31 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                     0.0, 0.0, 0.0, 8.0),
                                 child: AppButtonWidget(
                                   onPressed: () async {
-                                    // UseCase가 초기화되지 않았으면 대기
-                                    if (_signInWithGoogleUseCase == null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('초기화 중입니다. 잠시만 기다려주세요.'),
-                                        ),
-                                      );
+                                    // 로딩 중이면 리턴
+                                    if (_authProvider.isLoading) {
                                       return;
                                     }
 
                                     GoRouter.of(context).prepareAuthEvent();
-                                    final user = await _signInWithGoogleUseCase!.execute();
-                                    if (user == null) {
+                                    final success = await _authProvider.signInWithGoogle();
+
+                                    if (!success) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(_authProvider.errorMessage ?? 'Google 로그인에 실패했습니다.'),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
                                       return;
                                     }
 
-                                    await currentUserReference!.update({
-                                      ...mapToFirestore(
-                                        {
-                                          'lastActive':
-                                              FieldValue.serverTimestamp(),
-                                        },
-                                      ),
-                                    });
-
-                                    context.goNamedAuth(
-                                        TestpageSelectWidget.routeName,
-                                        context.mounted);
+                                    if (context.mounted) {
+                                      context.goNamedAuth(
+                                          TestpageSelectWidget.routeName,
+                                          context.mounted);
+                                    }
                                   },
                                   text: AppLocalizations.of(context).getText(
                                     'ntv3cl1f' /* Continue with Facebook */,
@@ -498,34 +488,32 @@ class _StartPageWidgetState extends State<StartPageWidget>
                               ),
                               AppButtonWidget(
                                 onPressed: () async {
-                                  // UseCase가 초기화되지 않았으면 대기
-                                  if (_signInWithGoogleUseCase == null) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('초기화 중입니다. 잠시만 기다려주세요.'),
-                                      ),
-                                    );
+                                  // 로딩 중이면 리턴
+                                  if (_authProvider.isLoading) {
                                     return;
                                   }
 
+                                  // Instagram 로그인은 현재 Google로 대체 (추후 구현 예정)
                                   GoRouter.of(context).prepareAuthEvent();
-                                  final user = await _signInWithGoogleUseCase!.execute();
-                                  if (user == null) {
+                                  final success = await _authProvider.signInWithGoogle();
+
+                                  if (!success) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(_authProvider.errorMessage ?? 'Instagram 로그인에 실패했습니다.'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
                                     return;
                                   }
 
-                                  await currentUserReference!.update({
-                                    ...mapToFirestore(
-                                      {
-                                        'lastActive':
-                                            FieldValue.serverTimestamp(),
-                                      },
-                                    ),
-                                  });
-
-                                  context.goNamedAuth(
-                                      TestpageSelectWidget.routeName,
-                                      context.mounted);
+                                  if (context.mounted) {
+                                    context.goNamedAuth(
+                                        TestpageSelectWidget.routeName,
+                                        context.mounted);
+                                  }
                                 },
                                 text: AppLocalizations.of(context).getText(
                                   '4ssf49xr' /* Continue with Instagram */,

@@ -2,53 +2,50 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 
 // Migrated from backend.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/features/profile/domain/models/user_profile.dart';
 import 'package:stream_transform/stream_transform.dart';
 import '/core/interfaces/i_base_auth_user.dart';
-// FirebaseAuthManager는 더 이상 사용되지 않습니다 (Clean Architecture 마이그레이션 완료)
-// import 'firebase_auth_manager.dart';
+import '../../presentation/providers/auth_provider.dart' as app_auth;
 
 export 'base_auth_user_provider.dart';
 export 'firebase_user_provider.dart'
     show versusSpaceFirebaseUserStream, VersusSpaceFirebaseUser;
 
-// FirebaseAuthManager는 UseCase 패턴으로 대체되었습니다
-// final _authManager = FirebaseAuthManager();
-// FirebaseAuthManager get authManager => _authManager;
+// Get the singleton AuthProvider instance
+app_auth.AuthProvider get _authProvider => GetIt.instance<app_auth.AuthProvider>();
 
-String get currentUserEmail =>
-    currentUserDocument?.email ?? currentUser?.email ?? '';
+// Legacy global variables are now proxies to AuthProvider
+BaseAuthUser? get currentUser => _authProvider.baseAuthUser;
+bool get loggedIn => _authProvider.loggedIn;
 
-String get currentUserUid => currentUser?.uid ?? '';
+String get currentUserEmail => _authProvider.currentUserEmail;
 
-String get currentUserDisplayName =>
-    currentUserDocument?.displayName ?? currentUser?.displayName ?? '';
+String get currentUserUid => _authProvider.currentUserUid;
 
-String get currentUserPhoto =>
-    currentUserDocument?.photoUrl ?? currentUser?.photoUrl ?? '';
+String get currentUserDisplayName => _authProvider.currentUserDisplayName;
 
-String get currentPhoneNumber =>
-    currentUserDocument?.phoneNumber ?? currentUser?.phoneNumber ?? '';
+String get currentUserPhoto => _authProvider.currentUserPhoto;
 
-String get currentJwtToken => _currentJwtToken ?? '';
+String get currentPhoneNumber => _authProvider.currentPhoneNumber;
 
-bool get currentUserEmailVerified => currentUser?.emailVerified ?? false;
+String get currentJwtToken => _authProvider.currentJwtToken;
 
-/// Create a Stream that listens to the current user's JWT Token, since Firebase
-/// generates a new token every hour.
-String? _currentJwtToken;
+bool get currentUserEmailVerified => _authProvider.currentUserEmailVerified;
+
+DocumentReference? get currentUserReference => _authProvider.currentUserReference;
+
+UserProfile? get currentUserDocument => _authProvider.currentUserDocument;
+
+// Legacy streams - now managed by AuthProvider
 final jwtTokenStream = FirebaseAuth.instance
     .idTokenChanges()
-    .map((user) async => _currentJwtToken = await user?.getIdToken())
+    .map((user) async => await user?.getIdToken())
     .asBroadcastStream();
 
-DocumentReference? get currentUserReference =>
-    loggedIn ? UserProfile.collection.doc(currentUser!.uid) : null;
-
-UserProfile? currentUserDocument;
 final authenticatedUserStream = FirebaseAuth.instance
     .authStateChanges()
     .map<String>((user) => user?.uid ?? '')
@@ -58,11 +55,7 @@ final authenticatedUserStream = FirebaseAuth.instance
           : UserProfile.getDocument(UserProfile.collection.doc(uid))
               .handleError((_) {}),
     )
-    .map((user) {
-  currentUserDocument = user;
-
-  return currentUserDocument;
-}).asBroadcastStream();
+    .asBroadcastStream();
 
 class AuthUserStreamWidget extends StatelessWidget {
   const AuthUserStreamWidget({Key? key, required this.builder})

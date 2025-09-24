@@ -27,7 +27,7 @@ import '/features/posts/presentation/widgets/components/next_button.dart';
 import '/features/posts/presentation/widgets/components/simple_validated_field.dart';
 import '/features/posts/presentation/widgets/components/layout_debug_info.dart';
 import '/features/posts/presentation/widgets/components/warning_message.dart';
-import '/features/posts/data/adapters/validation_service.dart';
+import '/services/validation/validation_service.dart';
 import '/features/posts/presentation/widgets/components/input_field_builder.dart';
 import '/features/posts/presentation/widgets/media/media_selection_flow_widget.dart';
 import '/features/posts/presentation/widgets/dialogs/target_audience_dialog.dart';
@@ -39,9 +39,9 @@ import '/core/utils/error_handler.dart';
 import '/features/posts/domain/constants/dimensions.dart';
 import '/features/posts/domain/constants/animation_constants.dart';
 import '/features/posts/domain/constants/field_styles.dart';
-import '/features/posts/data/adapters/media/selection_result_processor.dart';
+import '/services/media/selection_result_processor.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
-import '/features/posts/data/adapters/moderation/models/moderation_result.dart' as ai;
+import '/services/moderation/models/moderation_result.dart' as ai;
 
 class InPutPostImageWidget extends StatefulWidget {
   const InPutPostImageWidget({super.key});

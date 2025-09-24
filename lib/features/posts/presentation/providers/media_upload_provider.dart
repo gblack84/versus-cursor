@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '/core_exports.dart';
 import '/services/media/media_upload_service.dart';
-import '/features/posts/data/adapters/media/selection_result_processor.dart';
+import '/services/media/selection_result_processor.dart';
 import '/core/utils/error_handler.dart';
 import '/core/utils/debug_helper.dart';
 import '/services/ui/models/enums.dart';

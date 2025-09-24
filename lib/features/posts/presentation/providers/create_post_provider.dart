@@ -13,8 +13,8 @@ import '/features/posts/domain/models/vote_data.dart';
 import '/features/posts/domain/models/post_stats.dart';
 import '/features/posts/data/models/poll_details_model.dart';
 import '/features/auth/data/adapters/auth_util.dart';
-import '/features/posts/data/adapters/validation_service.dart';
-import '/features/posts/data/adapters/moderation/models/moderation_result.dart'
+import '/services/validation/validation_service.dart';
+import '/services/moderation/models/moderation_result.dart'
     as ai;
 import '/services/content/content_filter.dart';
 import '/core/types/layout_type.dart';

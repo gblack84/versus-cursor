@@ -113,13 +113,32 @@ import '/features/voting/domain/services/vote_timer_service.dart';
 
 ### 2.5 미디어 관련 서비스들
 
-| 현재 파일 | 목표 위치 | 작업 |
+#### 이동 대상 (기술적 유틸리티)
+
+| 현재 파일 | 목표 위치 | 이유 |
 |----------|----------|------|
-| `asset_picker_service.dart` | `/lib/services/media/` | 이동 |
-| `image_download_service.dart` | `/lib/services/media/` | 이동 |
-| `image_reorder_service.dart` | Posts에 유지 | Posts 특화 로직 |
-| `selection_result_processor.dart` | `/lib/services/media/` | 이동 |
-| `image_upload_orchestrator*.dart` | Posts에 유지 | Posts 워크플로우 |
+| `asset_picker_service.dart` | `/lib/services/media/` | 범용 이미지 선택 서비스 |
+| `image_download_service.dart` | `/lib/services/media/` | Firebase Storage 다운로드 유틸리티 |
+| `selection_result_processor.dart` | `/lib/services/media/` | AssetEntity 처리 유틸리티 |
+| `media_selection_service.dart` | `/lib/services/media/` | 미디어 선택 관리 서비스 |
+| `image_editor_callback_handler.dart` | `/lib/services/media/` | ProImageEditor 콜백 처리 |
+
+#### Posts Feature에 유지 (비즈니스 로직)
+
+| 현재 파일 | 유지 이유 | 상태 |
+|----------|----------|------|
+| `image_upload_orchestrator_v2.dart` | Posts A/B 박스 워크플로우 전용 | 사용 중 (File 기반) |
+| `image_upload_orchestrator.dart` | 레거시 참조용 (MediaUploadService 호출) | 미사용 (Uint8List 기반) |
+| `image_reorder_service.dart` | Posts 특화 이미지 순서 관리 | 사용 중 |
+
+**Note**: `image_upload_orchestrator_v2.dart`는 Clean Architecture 위반 사항이 있으나 (UI, Domain, Data 혼재) Posts의 핵심 워크플로우이므로 현재 위치 유지. 향후 리팩토링 필요.
+
+#### 추가 이동 대상
+
+| 현재 파일 | 목표 위치 | 이유 |
+|----------|----------|------|
+| `validation_service.dart` | `/lib/services/validation/` | 범용 입력 검증 서비스 |
+| `posts_model_adapter.dart` | `/lib/features/posts/data/mappers/` | 데이터 매핑 로직 |
 
 ---
 
@@ -166,8 +185,14 @@ import '/features/voting/domain/services/vote_timer_service.dart';
 │   ├── datasources/
 │   │   ├── post_remote_datasource.dart
 │   │   └── post_local_datasource.dart
+│   ├── adapters/
+│   │   └── media/  # Posts 특화 미디어 워크플로우 유지
+│   │       ├── image_upload_orchestrator_v2.dart
+│   │       ├── image_upload_orchestrator.dart (레거시)
+│   │       └── image_reorder_service.dart
 │   └── mappers/
-│       └── post_mapper.dart
+│       ├── post_mapper.dart
+│       └── posts_model_adapter.dart (Phase 2.5에서 이동)
 └── presentation/
     ├── screens/
     │   ├── create_post/
@@ -182,9 +207,12 @@ import '/features/voting/domain/services/vote_timer_service.dart';
 
 ### 4.2 삭제 대상 디렉토리
 
-- `/lib/features/posts/data/adapters/vote/` (Voting으로 이동 후)
-- `/lib/features/posts/data/adapters/moderation/` (Services로 이동 후)
-- `/lib/features/posts/data/adapters/error/` (Core로 이동 후)
+- `/lib/features/posts/data/adapters/vote/` (Phase 1: Voting으로 이동 후)
+- `/lib/features/posts/data/adapters/moderation/` (Phase 3: Services로 이동 후)
+- `/lib/features/posts/data/adapters/error/` (Phase 2: Core로 이동 후)
+- `/lib/features/posts/data/adapters/storage/` (Phase 2: Services로 이동 후)
+- `/lib/features/posts/data/adapters/cache/` (Phase 2: 통합 후)
+- `/lib/features/posts/data/adapters/validation/` (Phase 2.5: Services로 이동 후)
 
 ---
 
@@ -197,9 +225,15 @@ import '/features/voting/domain/services/vote_timer_service.dart';
 | `/features/posts/data/adapters/vote/vote_timer_service` | `/features/voting/domain/services/vote_timer_service` |
 | `/features/posts/data/adapters/vote/vote_status_service` | `/features/voting/domain/services/vote_status_service` |
 | `/features/posts/data/adapters/media/media_upload_service` | `/services/media/media_upload_service` |
+| `/features/posts/data/adapters/media/asset_picker_service` | `/services/media/asset_picker_service` |
+| `/features/posts/data/adapters/media/image_download_service` | `/services/media/image_download_service` |
+| `/features/posts/data/adapters/media/selection_result_processor` | `/services/media/selection_result_processor` |
+| `/features/posts/data/adapters/media/media_selection_service` | `/services/media/media_selection_service` |
+| `/features/posts/data/adapters/media/image_editor_callback_handler` | `/services/media/image_editor_callback_handler` |
 | `/features/posts/data/adapters/storage/storage_service` | `/services/storage/firebase_storage_service` |
 | `/features/posts/data/adapters/error/error_handler` | `/core/utils/error_handler` |
 | `/features/posts/data/adapters/moderation/` | `/services/moderation/` |
+| `/features/posts/data/adapters/validation/validation_service` | `/services/validation/validation_service` |
 
 ### 5.2 Import 수정 스크립트 예시
 
@@ -266,6 +300,19 @@ sl.registerLazySingleton<MediaUploadService>(
 - [ ] ImageCacheHelper 통합
 - [ ] Import 경로 수정
 - [ ] DI 설정 업데이트
+
+### Phase 2.5: 미디어 서비스 정리
+- [ ] AssetPickerService → `/lib/services/media/` 이동
+- [ ] ImageDownloadService → `/lib/services/media/` 이동
+- [ ] SelectionResultProcessor → `/lib/services/media/` 이동
+- [ ] MediaSelectionService → `/lib/services/media/` 이동
+- [ ] ImageEditorCallbackHandler → `/lib/services/media/` 이동
+- [ ] ValidationService → `/lib/services/validation/` 이동
+- [ ] PostsModelAdapter → `/lib/features/posts/data/mappers/` 이동
+- [ ] ImageUploadOrchestratorV2 유지 확인 (Posts 워크플로우)
+- [ ] ImageUploadOrchestrator 유지 확인 (레거시 참조)
+- [ ] ImageReorderService 유지 확인 (Posts 특화)
+- [ ] Import 경로 수정
 
 ### Phase 3: Moderation 통합
 - [ ] 중복 파일 확인

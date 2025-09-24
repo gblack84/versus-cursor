@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:cloud_functions/cloud_functions.dart';
-import '../models/moderation_result.dart';
+import '/services/moderation/models/moderation_result.dart';
 
 /// Gemini AI를 활용한 콘텐츠 검증 서비스 (Cloud Functions 버전)
 class GeminiModerationService {

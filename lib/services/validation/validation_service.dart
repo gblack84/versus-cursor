@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '/features/posts/data/adapters/moderation/ai_moderation_service.dart';
-import '/features/posts/data/adapters/moderation/models/moderation_result.dart'
+import '/services/moderation/ai_moderation_service.dart';
+import '/services/moderation/models/moderation_result.dart'
     as ai;
 import '/features/posts/domain/constants/field_styles.dart';
 import '/features/auth/data/adapters/auth_util.dart';

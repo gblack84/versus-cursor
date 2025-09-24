@@ -5,7 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '/core_exports.dart';
-import '/features/posts/data/adapters/media/image_download_service.dart';
+import '/services/media/image_download_service.dart';
 import 'pro_image_editor_model.dart';
 export 'pro_image_editor_model.dart';
 

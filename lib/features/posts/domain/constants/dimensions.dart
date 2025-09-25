@@ -52,3 +52,24 @@ class Dimensions {
   static const double largeBorderRadius = 8.0;
   static const double largeBorderWidth = 3.0;
 }
+
+/// 미디어 박스 관련 치수 상수
+class MediaDimensions {
+  // 기본 박스 크기
+  static const double defaultBoxHeight = 200.0;
+  static const double defaultBoxWidth = double.infinity;
+
+  // 최대/최소 크기 제한
+  static const double maxBoxHeight = 500.0;
+  static const double minBoxHeight = 150.0;
+
+  // 패딩 및 간격
+  static const double boxSpacing = 8.0;
+  static const double contentPadding = 16.0;
+
+  // 이미지 관련
+  static const double thumbnailSize = 150.0;
+  static const double displayImageMaxWidth = 800.0;
+
+  MediaDimensions._();
+}

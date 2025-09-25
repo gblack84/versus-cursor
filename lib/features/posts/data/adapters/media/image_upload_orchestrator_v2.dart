@@ -7,6 +7,16 @@ import '/services/moderation/image_moderation_service.dart';
 import '/features/posts/presentation/screens/create_post/in_put_post_image_model.dart';
 
 /// 이미지 처리 프로세스를 조율하는 서비스 클래스 (File 기반)
+///
+/// @deprecated Use ImageUploadProvider instead for better architecture separation.
+/// This class violates Clean Architecture by mixing UI (BuildContext) with data layer.
+/// Migration path:
+/// 1. Use ImageUploadService for pure data operations
+/// 2. Use ImageUploadProvider for UI state management
+///
+/// 더 나은 아키텍처 분리를 위해 ImageUploadProvider를 사용하세요.
+/// 이 클래스는 UI(BuildContext)를 데이터 레이어와 혼합하여 클린 아키텍처를 위반합니다.
+@Deprecated('Use ImageUploadProvider and ImageUploadService instead')
 class ImageUploadOrchestratorV2 {
   final BuildContext context;
   final AppState appState;

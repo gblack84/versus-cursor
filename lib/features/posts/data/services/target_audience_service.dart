@@ -1,10 +1,10 @@
 import '/core_exports.dart';
-import '/features/posts/domain/models/target_audience_model.dart';
+import '/features/posts/domain/models/target_audience.dart';
 import '/features/notifications/data/datasources/i_post_datasource.dart';
 
 /// 타겟 오디언스 관련 서비스
 ///
-/// TargetAudienceModel을 Firebase Functions가 기대하는 형식으로 변환하고,
+/// TargetAudience를 Firebase Functions가 기대하는 형식으로 변환하고,
 /// 투표 생성 시 타겟 오디언스 정보를 저장합니다.
 ///
 /// Clean Architecture를 위해 Firebase 직접 호출 대신 IPostDatasource를 사용합니다.
@@ -18,65 +18,25 @@ class TargetAudienceService {
   /// PostDatasource 가져오기
   IPostDatasource get postDatasource => _postDatasource;
 
-  /// TargetAudienceModel을 Firestore 저장용 Map으로 변환
+  /// TargetAudience를 Firestore 저장용 Map으로 변환
   ///
   /// Firebase Functions의 targetMatcher.js가 기대하는 형식으로 변환합니다.
-  Map<String, dynamic> convertModelToFirestore(TargetAudienceModel model) {
-    final Map<String, dynamic> firestoreData = {
-      'type': model.collectionType, // quick, public, custom
-      'targetCount': model.targetCount,
-      'isPremium': model.isPremium,
-      'createdAt': FieldValue.serverTimestamp(),
-      'status': 'pending', // pending -> processing -> completed
-    };
+  Map<String, dynamic> convertModelToFirestore(TargetAudience model) {
+    // TargetAudience already has a toMap() method that's Firebase-compatible
+    final Map<String, dynamic> firestoreData = model.toMap();
 
-    // custom 타입일 때만 criteria 추가
-    if (model.collectionType == 'custom') {
-      final Map<String, dynamic> criteria = {};
-
-      // 관심사 (interest_record의 document IDs)
-      if (model.selectedInterests.isNotEmpty) {
-        criteria['interests'] = model.selectedInterests;
-      }
-
-      // 연령대
-      if (model.selectedAgeGroup != '전체') {
-        criteria['ageGroup'] =
-            _convertAgeGroupToFirestore(model.selectedAgeGroup);
-      }
-
-      // 성별
-      if (model.selectedGender != 'all') {
-        criteria['gender'] = model.selectedGender;
-      }
-
-      // 활성 사용자 필터
-      criteria['activeUserOnly'] = model.activeUserOnly;
-
-      firestoreData['criteria'] = criteria;
-    }
+    // Override createdAt with server timestamp for consistency
+    firestoreData['createdAt'] = FieldValue.serverTimestamp();
 
     return firestoreData;
   }
 
-  /// 한국어 연령대를 Firestore 형식으로 변환
-  String _convertAgeGroupToFirestore(String koreanAgeGroup) {
-    final Map<String, String> ageMapping = {
-      '10대': '10s',
-      '20대': '20s',
-      '30대': '30s',
-      '40대': '40s',
-      '50대 이상': '50s+',
-      '전체': 'all',
-    };
-
-    return ageMapping[koreanAgeGroup] ?? 'all';
-  }
+  // Age group conversion is now handled in TargetAudience domain model
 
   /// 타겟 오디언스 유효성 검사
   ///
   /// 투표 생성 전에 타겟 오디언스 설정이 유효한지 확인합니다.
-  ValidationResult validateTargetAudience(TargetAudienceModel model) {
+  ValidationResult validateTargetAudience(TargetAudience model) {
     // 기본 검증
     if (model.targetCount <= 0) {
       return ValidationResult(
@@ -92,19 +52,12 @@ class TargetAudienceService {
       );
     }
 
-    // Custom 타입 검증
-    if (model.collectionType == 'custom') {
-      // 최소 하나의 조건은 설정되어야 함
-      final hasInterests = model.selectedInterests.isNotEmpty;
-      final hasAgeGroup = model.selectedAgeGroup != '전체';
-      final hasGender = model.selectedGender != 'all';
-
-      if (!hasInterests && !hasAgeGroup && !hasGender) {
-        return ValidationResult(
-          isValid: false,
-          error: '맞춤 설정에서는 최소 하나의 조건을 선택해야 합니다.',
-        );
-      }
+    // Custom 타입 검증 - Use domain model's validation
+    if (model.collectionType == 'custom' && !model.isCustomCriteriaValid) {
+      return ValidationResult(
+        isValid: false,
+        error: '맞춤 설정에서는 최소 하나의 조건을 선택해야 합니다.',
+      );
     }
 
     return ValidationResult(isValid: true);
@@ -115,7 +68,7 @@ class TargetAudienceService {
   /// posts_record에 투표를 생성할 때 targetAudience 필드를 추가합니다.
   Future<String> createPostWithTargetAudience({
     required Map<String, dynamic> postData,
-    required TargetAudienceModel targetAudience,
+    required TargetAudience targetAudience,
   }) async {
     try {
       // 1. 타겟 오디언스 유효성 검사

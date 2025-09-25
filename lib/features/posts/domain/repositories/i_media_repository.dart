@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../data/models/media/images_model.dart';
 import '../../data/models/media/video_model.dart';
@@ -60,6 +61,10 @@ abstract class IMediaRepository {
   });
 
   Future<void> deleteMedia(String url);
+
+  // Batch upload operations
+  Future<List<String>> uploadImages(List<File> files);
+  Future<List<String>> uploadVideos(List<File> files);
 
   // Image operations
   Future<ImagesModel?> getImage(String imageId);

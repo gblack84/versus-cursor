@@ -2,6 +2,16 @@ import 'dart:io';
 import '/app/state/app_state.dart';
 
 /// 이미지 순서 재정렬 서비스
+///
+/// @deprecated Use ImageReorderProvider instead for better architecture separation.
+/// This class violates Clean Architecture by directly manipulating AppState.
+/// Migration path:
+/// 1. Use new ImageReorderService in data/services for pure operations
+/// 2. Use ImageReorderProvider for UI state management
+///
+/// 더 나은 아키텍처 분리를 위해 ImageReorderProvider를 사용하세요.
+/// 이 클래스는 AppState를 직접 조작하여 클린 아키텍처를 위반합니다.
+@Deprecated('Use ImageReorderProvider and new ImageReorderService instead')
 class ImageReorderService {
   /// 이미지 순서 재정렬
   static void reorderImages({

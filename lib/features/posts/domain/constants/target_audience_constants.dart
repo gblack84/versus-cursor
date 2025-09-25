@@ -63,14 +63,7 @@ class TargetAudienceConstants {
   static const int freeTimeLimit = 600; // 10분
   static const int premiumTimeLimit = 300; // 5분
 
-  // UI 관련 상수
-  static const double dialogWidth = 400.0;
-  static const double dialogMaxHeight = 600.0;
-  static const double stepIndicatorHeight = 60.0;
-  static const double contentPadding = 24.0;
-  static const double itemSpacing = 16.0;
-  static const double chipSpacing = 8.0;
-  static const double chipRunSpacing = 8.0;
+  // UI 관련 상수는 presentation/constants/target_audience_ui_constants.dart로 이동됨
 }
 
 /// 수집 방식 정보

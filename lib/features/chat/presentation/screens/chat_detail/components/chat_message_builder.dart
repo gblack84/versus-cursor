@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import '/core/design_system/design_system.dart';
 import '/features/chat/domain/models/chats_model.dart';
 import '/features/profile/domain/models/user_profile.dart';
-import '/features/posts/presentation/widgets/vote/vote_card_message.dart';
+import '/features/voting/presentation/widgets/chat_card/vote_card_message.dart';
 import '/features/chat/data/adapters/chat_message_lifecycle_service.dart';
 
 /// 메시지 빌더 컴포넌트

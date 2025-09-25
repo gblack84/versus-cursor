@@ -30,7 +30,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '/core/design_system/design_system.dart';
 import '/features/chat/domain/models/chats_model.dart';
 import '/features/auth/data/adapters/auth_util.dart';
-import '/features/posts/presentation/widgets/vote/vote_card_message.dart';
+import '/features/voting/presentation/widgets/chat_card/vote_card_message.dart';
 import '/features/chat/data/adapters/chat_message_lifecycle_service.dart';
 import '/features/chat/data/adapters/chat_message_service.dart';
 import '/features/profile/data/adapters/user_cache_service.dart';

@@ -30,22 +30,21 @@
 
 ## 📊 현재 상태 분석
 
-### 파일 분포 (정밀 분석 완료)
+### 파일 분포 (Phase 0 완료 후)
 ```
-전체 파일: 120개 (정확한 카운트)
-├── Creation 관련: 85개 (70.8%)
+전체 파일: 119개 (voting_usecases.dart 삭제 후)
+├── Creation 관련: 85개 (71.4%)
 │   ├── 작성 화면 및 위젯
 │   ├── 미디어 업로드/편집
 │   ├── AI 검열 시스템
 │   └── 타겟 오디언스
-├── Post 관련: 25개 (20.8%)
+├── Post 관련: 25개 (21.0%)
 │   ├── 피드 표시
 │   ├── Post 메트릭/통계
 │   ├── 댓글/좋아요
 │   └── 랭킹 시스템
-└── 기타: 10개 (8.4%)
+└── 공통/기타: 9개 (7.6%)
     ├── 공통 모델 (post.dart, posts_model.dart)
-    ├── Voting으로 이동 필요 (2개)
     └── 공통 컴포넌트 (viewer 등)
 ```
 
@@ -75,27 +74,28 @@ Feature     Feature     Feature     Feature   Feature   Feature
 
 ## 📝 실행 계획
 
-### Phase 0: 사전 준비 및 정리 (15분)
+### Phase 0: 사전 준비 및 정리 (15분) ✅ 완료
 ```bash
-# 0.1 Git 백업 커밋 생성
+# 0.1 Git 백업 커밋 생성 ✅
 git add -A
 git commit -m "backup: Before Posts feature separation"
 
-# 0.2 Voting Feature로 파일 이동
-mv lib/features/posts/domain/usecases/voting_usecases.dart \
-   lib/features/voting/domain/usecases/
+# 0.2 사용하지 않는 파일 정리 ✅
+# voting_usecases.dart 삭제 (사용되지 않는 오래된 파일)
+rm lib/features/posts/domain/usecases/voting_usecases.dart
 
-# 0.3 Poll 관련 파일 이동 (선택적 - Voting과 관련된 경우만)
-# mv lib/features/posts/data/models/poll_details_model.dart \
-#    lib/features/voting/data/models/
+# 0.3 Poll 관련 파일 유지 결정 ✅
+# poll_details_model.dart는 Posts에 유지 (현재 사용되지 않지만 향후 필요 가능)
 
-# 0.4 이동한 파일의 import 경로 수정
-find lib -name "*.dart" \
-  -exec sed -i 's|/posts/domain/usecases/voting_usecases|/voting/domain/usecases/voting_usecases|g' {} \;
-
-# 0.5 검증
+# 0.4 검증 ✅
 flutter analyze | grep -E "(voting_usecases|poll_details)"
+# voting_usecases 관련 에러 없음 확인
 ```
+
+**실행 결과**:
+- voting_usecases.dart: 삭제됨 (사용되지 않는 파일로 확인)
+- poll_details_model.dart: Posts에 유지
+- 검증: voting 관련 에러 해결됨
 
 ### Phase 1: Posts → Creation Rename (30분)
 ```bash
@@ -367,10 +367,10 @@ class PostModule {
 ## ✅ 검증 체크리스트
 
 ### Phase별 검증
-#### Phase 0 (사전 준비)
-- [ ] Voting 파일 이동 완료
-- [ ] Git 백업 커밋 생성
-- [ ] flutter analyze 통과
+#### Phase 0 (사전 준비) ✅
+- [x] Voting 파일 처리 완료 (voting_usecases.dart 삭제)
+- [x] Git 백업 커밋 생성 (commit: 2179896d)
+- [x] flutter analyze 검증 (voting 관련 에러 없음)
 
 #### Phase 1 (Rename)
 - [ ] posts → creation 폴더명 변경

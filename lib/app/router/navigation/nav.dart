@@ -21,7 +21,7 @@ import '/features/voting/presentation/routes/voting_routes.dart';
 // Import Notification Feature routes
 import '/features/notifications/presentation/routes/notification_routes.dart';
 // Phase 5 마이그레이션 imports
-import '/features/posts/presentation/screens/create_post/create_post_screen.dart';
+import '/features/creation/presentation/screens/create_post/create_post_screen.dart';
 
 export 'package:go_router/go_router.dart';
 export 'serialization_util.dart';

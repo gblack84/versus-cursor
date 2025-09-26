@@ -1,7 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'feature_modules.dart';
-import '../../features/posts/domain/repositories/i_post_repository.dart';
-import '../../features/posts/data/repositories/post_repository_impl.dart';
+import '../../features/creation/domain/repositories/i_post_repository.dart';
+import '../../features/creation/data/repositories/post_repository_impl.dart';
 import '../../features/voting/domain/services/vote_timer_service.dart';
 import '../../features/voting/domain/ports/i_vote_timer_port.dart';
 import '../../features/voting/data/adapters/vote_timer_adapter.dart';

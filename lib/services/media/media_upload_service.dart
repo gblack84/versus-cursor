@@ -6,9 +6,9 @@ import 'package:image/image.dart' as img;
 import '/services/moderation/cloud_image_moderation_service.dart';
 import '/services/storage/storage_service.dart';
 import '/core/utils/debug_helper.dart';
-import '/features/posts/domain/constants/image_constants.dart';
-import '/features/posts/domain/constants/strings.dart';
-import '/features/posts/domain/constants/config.dart';
+import '/features/creation/domain/constants/image_constants.dart';
+import '/features/creation/domain/constants/strings.dart';
+import '/features/creation/domain/constants/config.dart';
 
 class MediaUploadService {
   /// 이미지를 3가지 크기로 업로드 (original, display, thumbnail)

@@ -5,7 +5,7 @@ import 'cache_statistics.dart';
 // Domain models imports (migrated from backend.dart)
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/features/chat/domain/models/messages_model.dart';
-import '/features/posts/domain/models/posts_model.dart';
+import '/features/creation/domain/models/posts_model.dart';
 import '/features/auth/domain/models/auth_user.dart';
 
 /// 캐시 레이어 정의

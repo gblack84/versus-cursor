@@ -5,7 +5,7 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:bot_toast/bot_toast.dart';
 import '/app/state/app_state.dart';
 import '/services/moderation/image_moderation_service.dart';
-import 'image_reorder_service.dart';
+import '/features/creation/data/adapters/media/image_reorder_service.dart';
 import '/core/utils/debug_helper.dart';
 import '/core/utils/error_handler.dart';
 

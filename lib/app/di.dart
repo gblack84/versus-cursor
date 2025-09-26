@@ -63,7 +63,7 @@ import '/features/voting/domain/ports/i_vote_ui_delegate.dart';
 import '/features/voting/presentation/managers/vote_ui_manager.dart';
 import '/features/voting/presentation/handlers/vote_handler_impl.dart';
 import '/features/notifications/data/adapters/notification_service.dart';
-import '/features/posts/data/services/target_audience_service.dart';
+import '/features/creation/data/services/target_audience_service.dart';
 import '/features/notifications/data/datasources/i_remote_notification_datasource.dart';
 import '/features/notifications/data/datasources/remote/firebase_notification_datasource.dart';
 import '/features/notifications/data/datasources/i_local_notification_datasource.dart';

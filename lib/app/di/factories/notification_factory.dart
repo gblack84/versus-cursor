@@ -34,7 +34,7 @@ import '../../../features/notifications/data/datasources/i_post_datasource.dart'
 import '../../../features/notifications/data/datasources/cross/mock_post_datasource.dart';
 import '../../../features/notifications/data/datasources/i_chat_datasource.dart';
 import '../../../features/notifications/data/datasources/cross/mock_chat_datasource.dart';
-import '../../../features/posts/data/services/target_audience_service.dart';
+import '../../../features/creation/data/services/target_audience_service.dart';
 import '../../../core/domain/ports/i_user_service.dart';
 import '../../../features/voting/domain/ports/i_vote_service.dart';
 import '../../../features/auth/data/adapters/user_service_impl.dart';

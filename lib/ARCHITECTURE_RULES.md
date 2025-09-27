@@ -1,10 +1,10 @@
-# 🏗️ Clean Architecture 규칙 문서 v5.0 (Contract Pattern)
+# 🏗️ Clean Architecture 규칙 문서 v5.1 (책임 기반 아키텍처)
 
-> **최종 업데이트**: 2025-01-21
-> **상태**: 🔴 엄격 적용 중
+> **최종 업데이트**: 2025-01-27
+> **상태**: 🟡 유연한 적용 (책임 기반)
 > **위치**: `/lib/ARCHITECTURE_RULES.md`
 > **목적**: 아키텍처 일관성 유지 및 의존성 규칙 강제
-> **전략**: 계약 패턴 (Contract Pattern) 기반 아키텍처
+> **전략**: 책임 기반 분해 + 계약 패턴 (Contract Pattern)
 
 ---
 
@@ -12,12 +12,14 @@
 
 > **Decompose & Reorganize**: 레거시 코드를 작은 UseCase로 분해하고, Clean Architecture로 재구성
 
-### 핵심 원칙
-1. **분해 (Decompose)**: 300줄 이상 파일 → 여러 작은 UseCase로 분할
-2. **재사용 (Reuse)**: 새로 만들지 않고 기존 코드 이동/변환
-3. **재구성 (Reorganize)**: 3-Layer Clean Architecture로 재배치
-4. **보존 (Preserve)**: 모든 기능과 UI는 100% 유지
-5. **직접 전환 (Direct)**: Facade 없이 즉시 Clean Architecture 적용
+### 핵심 원칙 (v5.1 - 책임 기반)
+1. **책임 분해 (Responsibility-Based)**: 하나의 파일 = 하나의 명확한 책임
+2. **응집도 우선 (Cohesion First)**: 높은 응집도의 코드는 함께 유지 (400-500줄도 OK)
+3. **플로우 중심 (Flow-Oriented)**: 완전한 비즈니스 플로우 단위로 모듈화
+4. **재사용 (Reuse)**: 새로 만들지 않고 기존 코드 이동/변환
+5. **재구성 (Reorganize)**: 3-Layer Clean Architecture로 재배치
+6. **보존 (Preserve)**: 모든 기능과 UI는 100% 유지
+7. **직접 전환 (Direct)**: Facade 없이 즉시 Clean Architecture 적용
 
 ### 절대 규칙
 1. **Core에 구현체 금지** - 기술 인터페이스와 유틸리티만
@@ -454,45 +456,122 @@ git add -A && git commit -m "feat(auth): Migrate to Clean Architecture without F
 - ✅ **완전성**: 레거시 코드 100% 제거
 - 🧪 **테스트 필수**: 모든 UseCase에 단위 테스트
 
-### 파일 분할 기준 (v4.1 - 레이어별 차별 적용)
+### 📋 책임 기반 분해 원칙 (v5.1 - Responsibility-Based Decomposition)
 
-#### Domain Layer (비즈니스 로직)
-- **UseCase**: 비즈니스 트랜잭션 단위 (엄격)
-  - 1 UseCase = 1 비즈니스 트랜잭션 = 1 파일
-  - 하나의 유저 스토리/액션을 완성하는 단위
-  - 줄 수 참고: Simple(50-100줄), Normal(100-300줄), Complex(300-500줄)
+`★ Insight ─────────────────────────────────────`
+줄 수는 단순한 참고 지표입니다. 진정한 기준은 책임(Responsibility),
+응집도(Cohesion), 그리고 완전한 플로우(Complete Flow)입니다.
+`─────────────────────────────────────────────────`
 
-- **분할 기준** (하나라도 해당되면 분할 검토):
-  - ✅ 다른 Actor가 독립적으로 사용하는 기능
-  - ✅ 다른 시점에 호출되는 로직
-  - ✅ 메서드명에 "And"가 필요함 (예: processOrderAndSendEmail)
-  - ✅ 테스트 시나리오가 완전히 다름
+#### 🎯 우선순위 원칙
 
-- **통합 유지 기준** (이런 경우는 하나로):
-  - ✅ 트랜잭션으로 묶여야 하는 작업들
-  - ✅ 순서가 중요한 비즈니스 프로세스
-  - ✅ 일부만 실행되면 의미가 없는 흐름
-  - ✅ "회원가입", "주문하기" 같은 하나의 완전한 유저 액션
+1. **Single Responsibility (단일 책임)**
+   - 각 파일/클래스는 변경의 이유가 하나만 있어야 함
+   - 다른 Actor의 요구사항이 섞이지 않음
 
-- **Repository Interface**: 100-150줄
-- **Domain Model**: 150-200줄
+2. **High Cohesion (높은 응집도)**
+   - 관련된 기능은 함께 유지
+   - 400-500줄이어도 응집도가 높으면 분리하지 않음
 
-#### Data Layer (데이터 처리)
-- **Repository Implementation**: 200-300줄 (권장)
-  - 300줄 초과 시 DataSource로 분리
-- **DataSource**: 150-200줄
-- **Mapper/Adapter**: 100-150줄
-- **DTO**: Firebase 1:1 매핑 (줄 수 무관)
-- **분할 트리거**: 300줄 초과 또는 복합 데이터소스
+3. **Complete Flow (완전한 플로우)**
+   - 하나의 비즈니스 플로우는 분산시키지 않음
+   - 트랜잭션 경계 내의 작업은 함께 유지
 
-#### Presentation Layer (UI)
-- **Screen Widget**: 500-800줄 (유연)
-  - Flutter UI 특성상 허용
-  - 비즈니스 로직은 UseCase로 추출
-  - 800줄 초과 시 컴포넌트 분리 검토
-- **Component Widget**: 200-300줄
-- **Provider/Controller**: 150-200줄
-- **분할 트리거**: 800줄 초과 또는 재사용 가능 컴포넌트
+4. **Testability (테스트 가능성)**
+   - 독립적으로 테스트 가능한 단위로 분리
+   - 복잡한 의존성이 없어야 함
+
+#### ⚡ 분해 트리거 (언제 분리할 것인가?)
+
+**즉시 분리해야 할 경우:**
+- ❗ 2개 이상의 독립적인 책임이 명확히 존재
+- ❗ 서로 다른 Actor가 서로 다른 이유로 변경 요구
+- ❗ 재사용 가능한 컴포넌트가 포함되어 있음
+- ❗ 테스트 시나리오가 완전히 독립적임
+- ❗ 서로 다른 데이터 소스를 다루고 있음
+
+**분리를 고려해야 할 경우:**
+- ⚠️ 600줄을 초과하면서 여러 기능이 섞여 있음
+- ⚠️ 의존성 주입이 5개 이상 필요함
+- ⚠️ private 메서드가 10개 이상임
+- ⚠️ 코드 읽기가 어려워짐 (cognitive load 증가)
+
+#### ✅ 유지 조건 (언제 함께 둘 것인가?)
+
+**반드시 함께 유지:**
+- ✅ 하나의 완전한 비즈니스 트랜잭션
+- ✅ 원자적으로 실행되어야 하는 작업들
+- ✅ 순서가 중요한 단계적 프로세스
+- ✅ 높은 응집도의 관련 기능들
+- ✅ 500줄이어도 단일 책임이면 OK
+
+**예시:**
+```dart
+// ✅ GOOD: 450줄이지만 하나의 완전한 플로우
+class CreatePostFlow {
+  // 이미지 선택 → 편집 → 검증 → 업로드 → 게시
+  // 모든 단계가 "게시물 생성"이라는 단일 책임
+}
+
+// ❌ BAD: 200줄이지만 2개의 독립적 책임
+class PostAndStatsService {
+  // 게시물 CRUD (책임 1)
+  // 통계 업데이트 (책임 2) → 분리 필요!
+}
+```
+
+#### 🏗️ 플로우 기반 모듈화 패턴
+
+##### 사용자 플로우별 분해
+```yaml
+게시물 작성 플로우:
+  image_selection_flow.dart    # 선택 단계 (200-400줄 OK)
+  image_editing_flow.dart       # 편집 단계 (200-400줄 OK)
+  image_validation_flow.dart    # 검증 단계 (150-300줄 OK)
+  image_upload_flow.dart        # 업로드 단계 (200-400줄 OK)
+  → 각각 명확한 단계별 책임을 가짐
+```
+
+##### Domain Aggregate 경계별 분해
+```yaml
+Post Aggregate:
+  post_command_handler.dart     # 생성/수정/삭제 명령
+  post_query_service.dart        # 조회 전용
+  post_event_processor.dart     # 이벤트 처리
+  → Bounded Context 경계에 따라 분리
+```
+
+#### 📏 레이어별 가이드라인 (권장사항, 절대 규칙 아님)
+
+##### Domain Layer (비즈니스 로직)
+- **UseCase**:
+  - 비즈니스 트랜잭션 단위 (줄 수 무관)
+  - 참고: 50-500줄 (하지만 완전한 플로우면 700줄도 OK)
+  - 핵심: 단일 비즈니스 목적
+
+- **Repository Interface**:
+  - 100-200줄 권장
+  - 하지만 복잡한 도메인은 더 클 수 있음
+
+##### Data Layer (데이터 처리)
+- **Repository Implementation**:
+  - 200-500줄 권장
+  - 데이터 소스가 복잡하면 DataSource로 분리
+  - 단순 CRUD면 600줄도 허용
+
+- **DataSource**:
+  - 150-300줄 권장
+  - 외부 서비스별로 분리
+
+##### Presentation Layer (UI)
+- **Screen Widget**:
+  - 500-1000줄 허용 (Flutter 특성)
+  - UI 복잡도에 따라 유연하게
+  - 비즈니스 로직만 UseCase로 추출
+
+- **Component Widget**:
+  - 재사용 가능하면 분리
+  - 줄 수는 부차적
 
 #### 예외 및 제외 사항
 - ❌ 생성 코드 (*.g.dart, *.freezed.dart)

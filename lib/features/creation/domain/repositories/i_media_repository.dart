@@ -1,51 +1,48 @@
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../data/models/media/images_model.dart';
-import '../../data/models/media/video_model.dart';
-import '../models/encodings_model.dart';
+import '../entities/media_info.dart';
 
 /// Repository interface for Media-related operations
 /// This interface handles images, videos, and media encoding functionality
 abstract class IMediaRepository {
-  // Image queries
-  Stream<List<ImagesModel>> queryImages({
-    DocumentReference? parent,
-    Query Function(Query)? queryBuilder,
+  // Image queries - Clean Architecture compliant
+  Stream<List<ImageInfo>> queryImages({
+    String? parentId,
+    Map<String, dynamic>? filters,
     int limit = -1,
     bool singleRecord = false,
   });
 
   Future<int> queryImagesCount({
-    DocumentReference? parent,
-    Query Function(Query)? queryBuilder,
+    String? parentId,
+    Map<String, dynamic>? filters,
     int limit = -1,
   });
 
-  // Video queries
-  Stream<List<VideoModel>> queryVideos({
-    DocumentReference? parent,
-    Query Function(Query)? queryBuilder,
+  // Video queries - Clean Architecture compliant
+  Stream<List<VideoInfo>> queryVideos({
+    String? parentId,
+    Map<String, dynamic>? filters,
     int limit = -1,
     bool singleRecord = false,
   });
 
   Future<int> queryVideosCount({
-    DocumentReference? parent,
-    Query Function(Query)? queryBuilder,
+    String? parentId,
+    Map<String, dynamic>? filters,
     int limit = -1,
   });
 
-  // Encoding queries
-  Stream<List<EncodingsModel>> queryEncodings({
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  });
+  // Encoding queries - DEPRECATED: EncodingsModel removed due to Clean Architecture violation
+  // Stream<List<EncodingsModel>> queryEncodings({
+  //   Map<String, dynamic>? filters,
+  //   int limit = -1,
+  //   bool singleRecord = false,
+  // });
 
-  Future<int> queryEncodingsCount({
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-  });
+  // Future<int> queryEncodingsCount({
+  //   Map<String, dynamic>? filters,
+  //   int limit = -1,
+  // });
 
   // Media operations
   Future<String> uploadImage({
@@ -67,23 +64,23 @@ abstract class IMediaRepository {
   Future<List<String>> uploadVideos(List<File> files);
 
   // Image operations
-  Future<ImagesModel?> getImage(String imageId);
-  Future<void> createImage(ImagesModel image);
-  Future<void> updateImage(ImagesModel image);
+  Future<ImageInfo?> getImage(String imageId);
+  Future<void> createImage(ImageInfo image);
+  Future<void> updateImage(ImageInfo image);
   Future<void> deleteImage(String imageId);
 
   // Video operations
-  Future<VideoModel?> getVideo(String videoId);
-  Future<void> createVideo(VideoModel video);
-  Future<void> updateVideo(VideoModel video);
+  Future<VideoInfo?> getVideo(String videoId);
+  Future<void> createVideo(VideoInfo video);
+  Future<void> updateVideo(VideoInfo video);
   Future<void> deleteVideo(String videoId);
 
-  // Encoding operations
+  // Encoding operations - DEPRECATED: EncodingsModel removed due to Clean Architecture violation
   Future<void> requestEncoding({
     required String videoId,
     required String quality,
   });
 
-  Future<EncodingsModel?> getEncodingStatus(String videoId);
-  Future<void> updateEncodingStatus(String videoId, EncodingsModel encoding);
+  // Future<EncodingsModel?> getEncodingStatus(String videoId);
+  // Future<void> updateEncodingStatus(String videoId, EncodingsModel encoding);
 }

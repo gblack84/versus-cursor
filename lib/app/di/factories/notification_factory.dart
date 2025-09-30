@@ -37,7 +37,7 @@ import '../../../features/notifications/data/datasources/cross/mock_chat_datasou
 import '../../../features/creation/data/services/target_audience_service.dart';
 import '../../../core/domain/ports/i_user_service.dart';
 import '../../../features/voting/domain/ports/i_vote_service.dart';
-import '../../../features/auth/data/adapters/user_service_impl.dart';
+// UserServiceImpl removed - Phase 4 Auth service layer removed
 import '../../../features/voting/data/adapters/vote_service_impl.dart';
 import '../../../core/events/event_bus.dart';
 
@@ -101,8 +101,10 @@ class NotificationFactory {
   }
 
   /// Create User Service implementation
-  IUserService createUserService() {
-    return UserServiceImpl();
+  /// NOTE: Auth service layer removed in Phase 4 - return null for now
+  IUserService? createUserService() {
+    // TODO: Replace with proper implementation when User feature is migrated
+    return null;
   }
 
   /// Create Vote Service implementation

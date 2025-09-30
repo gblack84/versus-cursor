@@ -3,10 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../domain/usecases/create_post_usecase.dart';
 import '../../domain/usecases/moderate_content_usecase.dart';
-import '../../domain/entities/post.dart';
+import '../../domain/entities/post_creation.dart';
 import '../../domain/core/result.dart';
-import '../../domain/failures/post_failures.dart';
+import '../../domain/failures/creation_failures.dart';
 import '../../domain/models/target_audience.dart';
+import 'media/media_state_coordinator.dart';
 
 /// Form data model for post creation
 class PostFormData {
@@ -86,15 +87,19 @@ enum ModerationStatus {
 /// - No direct repository access
 /// - No AppState dependency
 /// - Pure state management
+/// - Phase 5: MediaStateCoordinator integration for media handling
 class CreatePostProviderV2 extends ChangeNotifier {
   final CreatePostUseCase _createPostUseCase;
   final ModerateContentUseCase _moderateContentUseCase;
+  final MediaStateCoordinator? _mediaCoordinator; // Phase 5: Optional for gradual migration
 
   CreatePostProviderV2({
     required CreatePostUseCase createPostUseCase,
     required ModerateContentUseCase moderateContentUseCase,
+    MediaStateCoordinator? mediaCoordinator, // Phase 5: Optional injection
   })  : _createPostUseCase = createPostUseCase,
-        _moderateContentUseCase = moderateContentUseCase;
+        _moderateContentUseCase = moderateContentUseCase,
+        _mediaCoordinator = mediaCoordinator;
 
   // State
   PostFormData _formData = PostFormData();
@@ -103,7 +108,7 @@ class CreatePostProviderV2 extends ChangeNotifier {
   double _uploadProgress = 0.0;
   String? _errorMessage;
   String? _moderationMessage;
-  Post? _createdPost;
+  PostCreation? _createdPost;
 
   // Getters
   PostFormData get formData => _formData;
@@ -112,7 +117,7 @@ class CreatePostProviderV2 extends ChangeNotifier {
   double get uploadProgress => _uploadProgress;
   String? get errorMessage => _errorMessage;
   String? get moderationMessage => _moderationMessage;
-  Post? get createdPost => _createdPost;
+  PostCreation? get createdPost => _createdPost;
   bool get isLoading => _loadingState == LoadingState.loading;
   bool get canSubmit => _formData.isValid && !isLoading;
 
@@ -209,37 +214,81 @@ class CreatePostProviderV2 extends ChangeNotifier {
         return false;
       }
 
-      // Moderate images if present
-      final allImages = [..._formData.imagesA, ..._formData.imagesB];
-      if (allImages.isNotEmpty) {
-        final imageResult = await _moderateContentUseCase.moderateImages(
-          imageFiles: allImages,
-          box: 'combined',
-          onProgress: (current, total) {
-            _moderationMessage = '이미지 검토 중... ($current/$total)';
-            notifyListeners();
-          },
-        );
+      // Phase 5: MediaStateCoordinator를 통한 이미지 검증
+      if (_mediaCoordinator != null) {
+        // MediaValidationProvider를 통한 이미지 검증
+        final coordinator = _mediaCoordinator!;
+        final imagesA = _formData.imagesA;
+        final imagesB = _formData.imagesB;
 
-        if (imageResult.isFailure) {
-          _moderationStatus = ModerationStatus.rejected;
-          _moderationMessage = imageResult.failureOrNull?.message ??
-              '이미지 검열 중 오류가 발생했습니다.';
-          notifyListeners();
-          return false;
+        if (imagesA.isNotEmpty) {
+          final resultA = await coordinator.validation.validateImages(
+            images: imagesA,
+            box: 'A',
+            onProgress: (current, total) {
+              _moderationMessage = 'A 박스 이미지 검토 중... ($current/$total)';
+              notifyListeners();
+            },
+          );
+
+          if (!resultA) {
+            _moderationStatus = ModerationStatus.rejected;
+            _moderationMessage = coordinator.validation.validationMessage ?? '이미지 검증 실패';
+            notifyListeners();
+            return false;
+          }
         }
 
-        final imageDecisions = imageResult.valueOrNull!;
-        final rejectedImages = imageDecisions
-            .where((decision) => !decision.isApproved)
-            .toList();
+        if (imagesB.isNotEmpty) {
+          final resultB = await coordinator.validation.validateImages(
+            images: imagesB,
+            box: 'B',
+            onProgress: (current, total) {
+              _moderationMessage = 'B 박스 이미지 검토 중... ($current/$total)';
+              notifyListeners();
+            },
+          );
 
-        if (rejectedImages.isNotEmpty) {
-          _moderationStatus = ModerationStatus.rejected;
-          _moderationMessage = '부적절한 이미지가 포함되어 있습니다: '
-              '${rejectedImages.map((d) => d.reason).join(', ')}';
-          notifyListeners();
-          return false;
+          if (!resultB) {
+            _moderationStatus = ModerationStatus.rejected;
+            _moderationMessage = coordinator.validation.validationMessage ?? '이미지 검증 실패';
+            notifyListeners();
+            return false;
+          }
+        }
+      } else {
+        // Fallback: 기존 방식 사용 (호환성 유지)
+        final allImages = [..._formData.imagesA, ..._formData.imagesB];
+        if (allImages.isNotEmpty) {
+          final imageResult = await _moderateContentUseCase.moderateImages(
+            imageFiles: allImages,
+            box: 'combined',
+            onProgress: (current, total) {
+              _moderationMessage = '이미지 검토 중... ($current/$total)';
+              notifyListeners();
+            },
+          );
+
+          if (imageResult.isFailure) {
+            _moderationStatus = ModerationStatus.rejected;
+            _moderationMessage = imageResult.failureOrNull?.message ??
+                '이미지 검열 중 오류가 발생했습니다.';
+            notifyListeners();
+            return false;
+          }
+
+          final imageDecisions = imageResult.valueOrNull!;
+          final rejectedImages = imageDecisions
+              .where((decision) => !decision.isApproved)
+              .toList();
+
+          if (rejectedImages.isNotEmpty) {
+            _moderationStatus = ModerationStatus.rejected;
+            _moderationMessage = '부적절한 이미지가 포함되어 있습니다: '
+                '${rejectedImages.map((d) => d.reason).join(', ')}';
+            notifyListeners();
+            return false;
+          }
         }
       }
 
@@ -262,11 +311,36 @@ class CreatePostProviderV2 extends ChangeNotifier {
       return;
     }
 
-    // Validate and moderate first
-    final isValid = await validateAndModerate();
-    if (!isValid) {
-      _setError(_moderationMessage ?? '콘텐츠 검증에 실패했습니다.');
-      return;
+    // Phase 5: MediaStateCoordinator를 사용한 미디어 처리
+    List<File> finalImagesA = _formData.imagesA;
+    List<File> finalImagesB = _formData.imagesB;
+
+    if (_mediaCoordinator != null) {
+      // Coordinator를 통해 최종 미디어 파일 가져오기
+      finalImagesA = _mediaCoordinator!.selection.selectedFilesA;
+      finalImagesB = _formData.isSingleMode ? [] : _mediaCoordinator!.selection.selectedFilesB;
+
+      // 검증 및 업로드 수행
+      final uploadSuccess = await _mediaCoordinator!.validateAndUploadAll(
+        title: _formData.title,
+        description: _formData.description,
+        onStatusUpdate: (status) {
+          _moderationMessage = status;
+          notifyListeners();
+        },
+      );
+
+      if (!uploadSuccess) {
+        _setError('미디어 검증 또는 업로드에 실패했습니다.');
+        return;
+      }
+    } else {
+      // Legacy: Validate and moderate first
+      final isValid = await validateAndModerate();
+      if (!isValid) {
+        _setError(_moderationMessage ?? '콘텐츠 검증에 실패했습니다.');
+        return;
+      }
     }
 
     _setLoading(true);
@@ -277,8 +351,8 @@ class CreatePostProviderV2 extends ChangeNotifier {
         userId: userId,
         title: _formData.title,
         description: _formData.description,
-        imagesA: _formData.imagesA,
-        imagesB: _formData.isSingleMode ? [] : _formData.imagesB,
+        imagesA: finalImagesA,
+        imagesB: finalImagesB,
         targetAudience: _formData.targetAudience,
         isAnonymous: _formData.isAnonymous,
         onProgress: (progress) {
@@ -343,9 +417,9 @@ class CreatePostProviderV2 extends ChangeNotifier {
   }
 
   String _getFailureMessage(Failure failure) {
-    if (failure is ValidationFailure) {
-      if (failure.fieldErrors != null && failure.fieldErrors!.isNotEmpty) {
-        return failure.fieldErrors!.values.first;
+    if (failure is CreationValidationFailure) {
+      if (failure.fieldErrors.isNotEmpty) {
+        return failure.fieldErrors.values.first;
       }
       return failure.message;
     } else if (failure is ImageUploadFailure) {

@@ -1,12 +1,14 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 import '/services/moderation/image_moderation_service.dart';
+import '/features/creation/domain/services/i_image_processing_service.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 /// Pure image upload and processing service without UI dependencies
 /// UI 의존성이 없는 순수한 이미지 업로드 및 처리 서비스
-class ImageUploadService {
+class ImageUploadService implements IImageProcessingService {
   /// Process edited image with moderation (for multi-image edit flow)
+  @override
   Future<SingleImageResult> processEditedImage({
     required File editedFile,
     required String box,
@@ -27,7 +29,7 @@ class ImageUploadService {
       onProgress?.call(1.0);
       return SingleImageResult(
         success: false,
-        moderationResult: moderationResult,
+        rejectionReason: moderationResult.reason,
       );
     }
 
@@ -41,11 +43,11 @@ class ImageUploadService {
       file: editedFile,
       aspectRatio: aspectRatio,
       assetId: assetId,
-      moderationResult: moderationResult,
     );
   }
 
   /// Process multiple images with moderation check
+  @override
   Future<ImageProcessingResult> processMultipleImages({
     required List<File> files,
     required String box,
@@ -120,7 +122,6 @@ class ImageUploadService {
       approvedFiles: approvedFiles,
       approvedRatios: approvedRatios,
       approvedAssetIds: approvedAssetIds,
-      rejectedIndices: rejectedIndices,
       rejectedReasons: rejectedReasons,
       allRejected: approvedFiles.isEmpty,
     );
@@ -147,7 +148,7 @@ class ImageUploadService {
       onProgress?.call(1.0);
       return SingleImageResult(
         success: false,
-        moderationResult: moderationResult,
+        rejectionReason: moderationResult.reason,
       );
     }
 
@@ -161,7 +162,6 @@ class ImageUploadService {
       file: file,
       aspectRatio: aspectRatio,
       assetId: assetId,
-      moderationResult: moderationResult,
     );
   }
 
@@ -204,42 +204,4 @@ class ImageUploadService {
   }
 }
 
-/// Result of processing multiple images
-class ImageProcessingResult {
-  final List<File> approvedFiles;
-  final List<double> approvedRatios;
-  final List<String> approvedAssetIds;
-  final List<int> rejectedIndices;
-  final Map<String, List<int>> rejectedReasons;
-  final bool allRejected;
-
-  ImageProcessingResult({
-    required this.approvedFiles,
-    required this.approvedRatios,
-    required this.approvedAssetIds,
-    required this.rejectedIndices,
-    required this.rejectedReasons,
-    required this.allRejected,
-  });
-
-  bool get hasRejections => rejectedIndices.isNotEmpty;
-  int get approvedCount => approvedFiles.length;
-  int get rejectedCount => rejectedIndices.length;
-}
-
-/// Result of processing single image
-class SingleImageResult {
-  final bool success;
-  final File? file;
-  final double? aspectRatio;
-  final String? assetId;
-  final ModerationResult moderationResult;
-
-  SingleImageResult({
-    required this.success,
-    this.file,
-    this.aspectRatio,
-    this.assetId,
-    required this.moderationResult,
-  });
-}
+// Types are imported from IImageProcessingService

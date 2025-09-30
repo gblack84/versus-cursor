@@ -15,6 +15,9 @@ class ImagesModel extends FirestoreRecord {
     _initializeFields();
   }
 
+  // "id" field for repository compatibility
+  String get id => reference.id;
+
   // "url" field.
   String? _url;
   String get url => _url ?? '';
@@ -56,6 +59,29 @@ class ImagesModel extends FirestoreRecord {
     DocumentReference reference,
   ) =>
       ImagesModel._(reference, mapFromFirestore(data));
+
+  // Factory constructor for fromMap (for MediaRepository compatibility)
+  factory ImagesModel.fromMap(Map<String, dynamic> map) {
+    // Create a reference if id is provided, otherwise use a temp reference
+    final String id = map['id'] ?? 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final docRef = FirebaseFirestore.instance
+        .collection('images')
+        .doc(id);
+
+    return ImagesModel._(docRef, {
+      'url': map['url'],
+      'option': map['option'],
+    });
+  }
+
+  // Convert to Map for MediaRepository compatibility
+  Map<String, dynamic> toMap() {
+    return {
+      'id': reference.id,
+      'url': url,
+      'option': option,
+    };
+  }
 
   @override
   String toString() =>

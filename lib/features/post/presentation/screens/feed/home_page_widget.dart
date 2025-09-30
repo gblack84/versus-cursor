@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import '/core_exports.dart';
 import '/features/notifications/presentation/providers/notification_badge_provider.dart';
-// TODO: PostsModel을 도메인 모델로 교체 필요
-import '/features/post/domain/models/posts_model.dart';
+import '/features/post/domain/models/post_display.dart';
+import '/features/post/domain/repositories/i_post_display_repository_v2.dart';
 import '/core/design_system/design_system.dart';
 import '/services/cache/unified_cache_service.dart';
 
@@ -18,6 +19,7 @@ class HomePageWidget extends StatefulWidget {
 
 class _HomePageWidgetState extends State<HomePageWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
+  late final IPostDisplayRepositoryV2 _postRepository;
 
   @override
   void initState() {
@@ -126,7 +128,7 @@ class _HomePageWidgetState extends State<HomePageWidget> {
     );
   }
 
-  Widget _buildVersusCard(BuildContext context, PostsModel post) {
+  Widget _buildVersusCard(BuildContext context, PostDisplay post) {
     return Padding(
       padding: EdgeInsets.symmetric(
           horizontal: VersusSpacing.md, vertical: VersusSpacing.sm),
@@ -226,7 +228,7 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                             ),
                             SizedBox(height: 4),
                             Text(
-                              (post.optionA['title'] as String?) ?? 'Option A',
+                              post.optionAText ?? 'Option A',
                               style: VersusTextStyles.bodySmall,
                               textAlign: TextAlign.center,
                               maxLines: 2,
@@ -270,7 +272,7 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                             ),
                             SizedBox(height: 4),
                             Text(
-                              (post.optionB['title'] as String?) ?? 'Option B',
+                              post.optionBText ?? 'Option B',
                               style: VersusTextStyles.bodySmall,
                               textAlign: TextAlign.center,
                               maxLines: 2,
@@ -297,7 +299,7 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                         ),
                         VersusSpacing.gapH(VersusSpacing.xs),
                         Text(
-                          '${post.participantcount}명 참여',
+                          '${post.totalVotes}명 참여',
                           style: VersusTextStyles.bodySmall.copyWith(
                             color: VersusColors.textSecondary,
                           ),
@@ -313,7 +315,7 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                         ),
                         VersusSpacing.gapH(VersusSpacing.xs),
                         Text(
-                          '${post.commentcount}',
+                          '${post.commentCount}',
                           style: VersusTextStyles.bodySmall.copyWith(
                             color: VersusColors.textSecondary,
                           ),
@@ -326,7 +328,7 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                         ),
                         VersusSpacing.gapH(VersusSpacing.xs),
                         Text(
-                          '${post.likecount}',
+                          '${post.likeCount}',
                           style: VersusTextStyles.bodySmall.copyWith(
                             color: VersusColors.textSecondary,
                           ),

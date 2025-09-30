@@ -9,18 +9,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '/app/contracts/auth_contract.dart';
-import '/app/contracts/post_contract.dart';
-import '/app/contracts/notification_contract.dart';
-import '/app/contracts/vote_contract.dart';
-import '/app/contracts/user_contract.dart';
 
 // Voting Feature DI Module - TODO: Remove after migration
 // import '/features/voting/di/voting_di_module.dart';
 import '/features/voting/domain/ports/i_vote_service.dart' as voting;
 
 // Auth Feature DI
-import '/features/auth/domain/services/i_auth_service.dart';
-import '/features/auth/data/adapters/auth_service_impl.dart';
 import '/features/auth/data/datasources/i_auth_remote_datasource.dart';
 import '/features/auth/data/datasources/firebase_auth_remote_datasource.dart';
 import '/features/auth/data/datasources/i_auth_local_datasource.dart';
@@ -73,8 +67,6 @@ import '/features/notifications/data/datasources/cross/mock_post_datasource.dart
 import '/features/notifications/data/datasources/i_chat_datasource.dart';
 import '/features/notifications/data/datasources/cross/mock_chat_datasource.dart';
 import '/features/notifications/data/mappers/notification_mapper.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 // Posts Feature - VoteTimerService
 import '/features/voting/domain/services/vote_timer_service.dart';
@@ -82,6 +74,16 @@ import '/features/voting/domain/services/vote_timer_service.dart';
 // Voting Feature - Port and Adapter
 import '/features/voting/domain/ports/i_vote_timer_port.dart';
 import '/features/voting/data/adapters/vote_timer_adapter.dart';
+
+// ===== Post Feature Clean Architecture DI =====
+import '/features/post/domain/datasources/i_post_display_datasource.dart';
+import '/features/post/data/datasources/firebase_post_display_datasource.dart';
+import '/features/post/domain/repositories/i_post_display_repository_v2.dart';
+import '/features/post/data/repositories/post_display_repository_v2_impl.dart';
+
+// ===== Creation Feature Clean Architecture DI =====
+import '/features/creation/domain/datasources/i_post_creation_datasource.dart';
+import '/features/creation/data/datasources/firebase_post_creation_datasource.dart';
 
 
 final getIt = GetIt.instance;
@@ -161,10 +163,42 @@ Future<void> setupDependencyInjection() async {
     () => app_auth.AuthProvider(),
   );
 
-  // 6. Legacy Auth Service 유지 (점진적 마이그레이션)
-  getIt.registerLazySingleton<IAuthService>(
-    () => AuthServiceImpl(),
+  // 6. Legacy Auth Service 제거 완료 (2025-01-29)
+
+  // ===== Post Feature DI (Clean Architecture V2) =====
+
+  // 1. DataSource 등록
+  getIt.registerLazySingleton<IPostDisplayDataSource>(
+    () => FirebasePostDisplayDataSource(
+      firestore: FirebaseFirestore.instance,
+    ),
   );
+
+  // 2. Repository 등록 (V2 - Clean Architecture)
+  getIt.registerLazySingleton<IPostDisplayRepositoryV2>(
+    () => PostDisplayRepositoryV2Impl(
+      dataSource: getIt<IPostDisplayDataSource>(),
+    ),
+  );
+
+  // ===== Creation Feature DI (Clean Architecture V2) =====
+
+  // 1. DataSource 등록
+  getIt.registerLazySingleton<IPostCreationDataSource>(
+    () => FirebasePostCreationDataSource(
+      firestore: FirebaseFirestore.instance,
+    ),
+  );
+
+  // 2. Repository는 posts_module.dart에서 등록됨
+
+  // TODO: Register UseCases when they are refactored to use V2 repositories
+  // getIt.registerFactory(() => CreatePostUseCase(
+  //   postRepository: getIt<IPostCreationRepositoryV2>(),
+  //   mediaRepository: getIt<IMediaRepository>(),
+  //   targetAudienceService: getIt<TargetAudienceService>(),
+  //   imageUploadService: getIt<ImageUploadService>(),
+  // ));
 
   // ===== Contract 기반 Feature 간 통신 =====
 

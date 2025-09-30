@@ -4,6 +4,9 @@ import 'package:provider/provider.dart';
 import '/core_exports.dart';
 import '../../adapters/create_post_adapter.dart';
 import '../../providers/create_post_provider_v2.dart';
+import '../../providers/media/media_selection_provider.dart';
+import '../../providers/media/media_state_coordinator.dart';
+import '/app/di/creation_module.dart';
 import '/features/creation/presentation/widgets/components/media_selection_box_multi.dart';
 import '/features/creation/presentation/widgets/media/media_selection_flow_widget.dart';
 import '/core/utils/media/aspect_ratio_analyzer.dart';
@@ -48,16 +51,17 @@ class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<AppState, CreatePostProviderV2>(
-      builder: (context, appState, cleanProvider, child) {
+    return Consumer3<AppState, CreatePostProviderV2, MediaSelectionProvider>(
+      builder: (context, appState, cleanProvider, mediaSelection, child) {
+        // Phase 5 Migration: MediaSelectionProvider 사용
         // Adapter를 통해 상태 연결
         final adapter = CreatePostAdapter(
           cleanProvider: cleanProvider,
           legacyState: appState,
         );
 
-        // 레이아웃 업데이트
-        _updateLayoutBasedOnImages(appState);
+        // 레이아웃 업데이트 - MediaSelectionProvider의 aspectRatio 사용 (Phase 5)
+        _updateLayoutBasedOnImages(appState); // 임시로 기존 메서드 유지
 
         return Column(
           children: [
@@ -151,13 +155,16 @@ class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
     required AppState appState,
     required CreatePostAdapter adapter,
   }) {
+    // Phase 5: MediaSelectionProvider 사용
+    final mediaSelection = Provider.of<MediaSelectionProvider>(context, listen: false);
+
     final images = box == 'A'
-        ? appState.tempImageFilesA
-        : appState.tempImageFilesB;
+        ? mediaSelection.selectedFilesA
+        : mediaSelection.selectedFilesB;
 
     final uploadedUrls = box == 'A'
-        ? appState.uploadImageA
-        : appState.uploadImageB;
+        ? mediaSelection.uploadedUrlsA
+        : mediaSelection.uploadedUrlsB;
 
     final boxWidth = box == 'A' ? _boxWidthA : _boxWidthB;
     final boxHeight = box == 'A' ? _boxHeightA : _boxHeightB;
@@ -165,27 +172,31 @@ class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
     return GestureDetector(
       onTap: () => _handleBoxTap(box, appState, adapter),
       child: MediaSelectionBoxMulti(
-        images: images.isNotEmpty
-            ? images
-            : uploadedUrls.map((url) => File(url)).toList(),
-        box: box,
-        isAbsellected: widget.absellected,
+        label: box,
+        isSelected: widget.absellected,
+        isVideoSelected: mediaSelection.isVideoSelectedA,
+        isHorizontal: _currentLayout == LayoutType.horizontal,
+        boxColor: box == 'A' ? Colors.blue.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+        imageUrls: uploadedUrls,
+        imageFiles: images.isNotEmpty ? images : null,
         dynamicHeight: boxHeight ?? post_dimensions.MediaDimensions.defaultBoxHeight,
         dynamicWidth: boxWidth,
         onTap: () => _handleBoxTap(box, appState, adapter),
-        onEdit: images.isNotEmpty
+        onEditTap: images.isNotEmpty
             ? () => _handleImageEdit(box, appState, adapter)
             : null,
-        onAddMore: images.isNotEmpty
+        onAddImageTap: images.isNotEmpty
             ? () => _handleAddMore(box, appState, adapter)
             : null,
-        onToggleB: box == 'A' && images.isNotEmpty
+        showPlusIcon: box == 'A' && !widget.absellected,
+        onPlusIconTap: box == 'A' && !widget.absellected
             ? () => setState(() {
                 // B박스 토글 로직
+                mediaSelection.toggleBoxBVisibility();
               })
             : null,
-        onCancel: () => _handleDeleteImages(box, appState, adapter),
-        validationSessionId: widget.validationSessionId,
+        onCancel: (index) => _handleDeleteImage(box, index, appState, adapter),
+        onCurrentIndexChanged: (index) => mediaSelection.updateCurrentIndex(box: box, index: index),
       ),
     );
   }
@@ -242,11 +253,37 @@ class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
     await _handleBoxTap(box, appState, adapter);
   }
 
+  void _handleDeleteImage(
+    String box,
+    int index,
+    AppState appState,
+    CreatePostAdapter adapter,
+  ) {
+    // Phase 5: MediaSelectionProvider 사용
+    final mediaSelection = Provider.of<MediaSelectionProvider>(context, listen: false);
+
+    // MediaSelectionProvider에서 직접 삭제
+    mediaSelection.removeAtIndex(box: box, index: index);
+
+    // Adapter도 업데이트 (backward compatibility)
+    if (box == 'A') {
+      adapter.updateTempImagesA(mediaSelection.selectedFilesA);
+      adapter.updateImagesA(mediaSelection.uploadedUrlsA);
+    } else {
+      adapter.updateTempImagesB(mediaSelection.selectedFilesB);
+      adapter.updateImagesB(mediaSelection.uploadedUrlsB);
+    }
+  }
+
   void _handleDeleteImages(
     String box,
     AppState appState,
     CreatePostAdapter adapter,
   ) {
+    // Phase 5: 전체 삭제
+    final mediaSelection = Provider.of<MediaSelectionProvider>(context, listen: false);
+    mediaSelection.clearBox(box);
+
     if (box == 'A') {
       adapter.updateTempImagesA([]);
       adapter.updateImagesA([]);
@@ -257,8 +294,11 @@ class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
   }
 
   void _updateLayoutBasedOnImages(AppState appState) {
+    // Phase 5: MediaSelectionProvider 사용
+    final mediaSelection = Provider.of<MediaSelectionProvider>(context, listen: false);
+
     // 이미지가 없으면 기본 레이아웃
-    if (appState.tempImageFilesA.isEmpty && appState.tempImageFilesB.isEmpty) {
+    if (mediaSelection.selectedFilesA.isEmpty && mediaSelection.selectedFilesB.isEmpty) {
       setState(() {
         _currentLayout = LayoutType.horizontal;
         _boxWidthA = null;
@@ -273,12 +313,12 @@ class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
     double? ratioA;
     double? ratioB;
 
-    if (appState.uploadImageAspectRatioA.isNotEmpty) {
-      ratioA = appState.uploadImageAspectRatioA.first;
+    if (mediaSelection.aspectRatiosA.isNotEmpty) {
+      ratioA = mediaSelection.aspectRatiosA.first;
     }
 
-    if (!widget.absellected && appState.uploadImageAspectRatioB.isNotEmpty) {
-      ratioB = appState.uploadImageAspectRatioB.first;
+    if (!widget.absellected && mediaSelection.aspectRatiosB.isNotEmpty) {
+      ratioB = mediaSelection.aspectRatiosB.first;
     }
 
     // 레이아웃 결정

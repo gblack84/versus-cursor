@@ -20,8 +20,6 @@ import '/app/widgets/navigation/main_navigation_shell.dart';
 import '/features/voting/presentation/routes/voting_routes.dart';
 // Import Notification Feature routes
 import '/features/notifications/presentation/routes/notification_routes.dart';
-// Phase 5 마이그레이션 imports
-import '/features/creation/presentation/screens/create_post/create_post_screen.dart';
 
 export 'package:go_router/go_router.dart';
 export 'serialization_util.dart';
@@ -133,14 +131,11 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
               ),
             ),
             GoRoute(
-              name: InPutPostImageWidget.routeName,
-              path: InPutPostImageWidget.routePath,
+              name: CreatePostScreen.routeName,
+              path: CreatePostScreen.routePath,
               pageBuilder: (context, state) => CustomTransitionPage(
-                // Phase 5 마이그레이션: 점진적 전환을 위한 플래그
-                // true로 설정하면 새로운 Clean Architecture 버전 사용
-                child: const bool.fromEnvironment('USE_NEW_CREATE_POST_SCREEN', defaultValue: false)
-                    ? CreatePostScreen()
-                    : InPutPostImageWidget(),
+                // Phase 3 마이그레이션 완료: Clean Architecture 버전으로 전환
+                child: CreatePostScreen(),
                 transitionsBuilder:
                     (context, animation, secondaryAnimation, child) => child,
               ),

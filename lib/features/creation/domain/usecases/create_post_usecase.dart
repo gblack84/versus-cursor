@@ -1,34 +1,35 @@
 import 'dart:io';
 import '../core/result.dart';
-import '../entities/post.dart';
-import '../failures/post_failures.dart';
+import '../entities/post_creation.dart';
+import '../failures/creation_failures.dart';
 import '../models/target_audience.dart';
-import '../repositories/i_post_repository.dart';
+import '../repositories/i_post_creation_repository_v2.dart';
 import '../repositories/i_media_repository.dart';
-import '../../data/services/target_audience_service.dart';
-import '../../data/services/image_upload_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/post_core.dart';
+import '../models/post_content.dart';
+import '../models/post_voting.dart';
+import '../models/post_metrics.dart';
+import '../models/media_content.dart';
+import '/app/contracts/models/post_bundle.dart';
+import '../services/i_target_audience_service.dart' as service;
+import '../services/i_image_processing_service.dart';
 
 /// UseCase for creating a new post
 /// 새로운 게시물을 생성하기 위한 UseCase
+///
+/// Phase 1.3: Service dependencies removed, now using Repository methods
 class CreatePostUseCase {
-  final IPostRepository _postRepository;
+  final IPostCreationRepositoryV2 _postRepository;
   final IMediaRepository _mediaRepository;
-  final TargetAudienceService _targetAudienceService;
-  final ImageUploadService _imageUploadService;
 
   CreatePostUseCase({
-    required IPostRepository postRepository,
+    required IPostCreationRepositoryV2 postRepository,
     required IMediaRepository mediaRepository,
-    required TargetAudienceService targetAudienceService,
-    required ImageUploadService imageUploadService,
   })  : _postRepository = postRepository,
-        _mediaRepository = mediaRepository,
-        _targetAudienceService = targetAudienceService,
-        _imageUploadService = imageUploadService;
+        _mediaRepository = mediaRepository;
 
   /// Execute the use case
-  Future<Result<Post>> execute({
+  Future<Result<PostCreation>> execute({
     required String userId,
     required String title,
     required String description,
@@ -99,13 +100,14 @@ class CreatePostUseCase {
       onProgress?.call(0.8);
 
       // 5. Validate target audience if provided
+      // Now using repository method instead of direct service dependency (Phase 1.3)
       if (targetAudience != null) {
-        final audienceValidation = _targetAudienceService.validateTargetAudience(
+        final audienceValidation = _postRepository.validateTargetAudience(
           targetAudience,
         );
         if (!audienceValidation.isValid) {
           return ResultFailure(
-            ValidationFailure(
+            CreationValidationFailure(
               audienceValidation.error ?? 'Invalid target audience',
             ),
           );
@@ -113,7 +115,7 @@ class CreatePostUseCase {
       }
 
       // 6. Create post entity
-      final post = Post(
+      final post = PostCreation(
         userId: userId,
         title: title,
         description: description,
@@ -133,16 +135,50 @@ class CreatePostUseCase {
 
       onProgress?.call(0.9);
 
-      // 7. Save to repository
-      // For now, we'll create a map and let the repository handle the conversion
-      final postMap = post.toFirestoreMap();
+      // 7. Create PostBundle for V2 repository
+      final postBundle = PostBundle(
+        core: PostCore(
+          id: '', // Will be set by repository
+          userId: userId,
+          title: title,
+          description: description,
+          isAnonymous: isAnonymous,
+          createdAt: DateTime.now(),
+        ),
+        content: PostContent(
+          optionA: MediaContent(
+            text: null, // Text is now in optionA/B properties of Post
+            imageUrls: uploadResultA.valueOrNull!,
+            videoUrls: [],
+            aspectRatios: resultA.valueOrNull!.approvedRatios,
+          ),
+          optionB: MediaContent(
+            text: null, // Text is now in optionA/B properties of Post
+            imageUrls: uploadResultB.valueOrNull!,
+            videoUrls: [],
+            aspectRatios: resultB.valueOrNull!.approvedRatios,
+          ),
+          contentType: 'versus',
+        ),
+        voting: PostVoting(
+          voteMode: targetAudience?.mode ?? 'public',
+          targetAudience: targetAudience?.toMap() ?? {},
+          voteStartTime: DateTime.now(),
+          voteEndTime: DateTime.now().add(const Duration(minutes: 10)),
+        ),
+        metrics: PostMetrics(
+          views: 0,
+          shares: 0,
+          likeCount: 0,
+          commentCount: 0,
+        ),
+      );
 
-      // Create a document reference for the new post
-      final docRef = FirebaseFirestore.instance.collection('posts').doc();
-      await docRef.set(postMap);
+      // Save using V2 repository
+      final postId = await _postRepository.createPost(postBundle);
 
       // Update the post with the generated ID
-      final savedPost = post.copyWith(id: docRef.id);
+      final savedPost = post.copyWith(id: postId);
 
       onProgress?.call(1.0);
 
@@ -151,11 +187,12 @@ class CreatePostUseCase {
       print('CreatePostUseCase Error: $error');
       print('StackTrace: $stackTrace');
 
-      if (error is FirebaseException) {
+      // Handle specific error types without Firebase dependency
+      if (error.toString().contains('permission-denied')) {
         return ResultFailure(
           ServerFailure(
-            'Failed to create post: ${error.message}',
-            code: error.code,
+            'Permission denied to create post',
+            code: 'permission-denied',
           ),
         );
       }
@@ -167,7 +204,7 @@ class CreatePostUseCase {
   }
 
   /// Validate inputs
-  ValidationFailure? _validateInputs({
+  CreationValidationFailure? _validateInputs({
     required String title,
     required String description,
     required List<File> imagesA,
@@ -200,7 +237,7 @@ class CreatePostUseCase {
     }
 
     if (errors.isNotEmpty) {
-      return ValidationFailure(
+      return CreationValidationFailure(
         'Validation failed',
         fieldErrors: errors,
       );
@@ -210,13 +247,14 @@ class CreatePostUseCase {
   }
 
   /// Process and moderate images
+  /// Now using repository method instead of direct service dependency (Phase 1.3)
   Future<Result<ImageProcessingResult>> _processImages({
     required List<File> images,
     required String box,
     Function(double)? onProgress,
   }) async {
     try {
-      final result = await _imageUploadService.processMultipleImages(
+      final result = await _postRepository.processImages(
         files: images,
         box: box,
         onProgress: onProgress,
@@ -251,30 +289,5 @@ class CreatePostUseCase {
         ImageUploadFailure('Failed to upload images: $error'),
       );
     }
-  }
-}
-
-/// Extension to convert domain Post to Firestore-compatible format
-extension PostToFirestore on Post {
-  /// Create PostsModel-compatible map
-  Map<String, dynamic> toFirestoreMap() {
-    return {
-      'userid': userId,
-      'content': description,
-      'title': title,
-      'optionA': optionA.toMap(),
-      'optionB': optionB.toMap(),
-      'targetAudience': targetAudience?.toMap(),
-      'createdAt': FieldValue.serverTimestamp(),
-      'status': status.name,
-      'likecount': likeCount,
-      'commentcount': commentCount,
-      'votesA': votesA,
-      'votesB': votesB,
-      'voteStartTime': voteStartTime,
-      'voteEndTime': voteEndTime,
-      'isAnonymous': isAnonymous,
-      'metadata': metadata,
-    };
   }
 }

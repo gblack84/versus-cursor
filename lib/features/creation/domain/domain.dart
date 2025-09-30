@@ -1,3 +1,3 @@
-// Posts Domain Layer Exports
-export 'models/models.dart';
-export 'repositories/i_post_repository.dart';
+// Creation Domain Layer Exports
+// Models are imported individually by each file that needs them
+// Repository interfaces are in individual files

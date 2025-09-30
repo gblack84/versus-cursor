@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/core_exports.dart';
-import '/features/creation/domain/models/target_audience_model.dart';
+import '/features/creation/presentation/providers/target_audience_provider.dart';
 import '/features/creation/domain/constants/target_audience_constants.dart';
 
 /// Step 3: 세부 타겟 설정 (맞춤 설정 선택 시)

@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:get_it/get_it.dart';
 import '/core_exports.dart';
 import '../../providers/create_post_provider_v2.dart';
+import '/app/di/creation_module.dart';
 import '../../adapters/create_post_adapter.dart';
-import '../../../domain/usecases/create_post_usecase.dart';
-import '../../../domain/usecases/moderate_content_usecase.dart';
 import '../../widgets/create_post/image_selection_widget.dart';
 import '../../widgets/create_post/text_input_widget.dart';
-import '/features/creation/presentation/screens/create_post/in_put_post_image_model.dart';
 import '/features/creation/presentation/widgets/components/next_button.dart';
-import '/services/validation/validation_service.dart';
 import '/core/utils/error_handler.dart';
 import 'package:bot_toast/bot_toast.dart';
 
@@ -30,7 +26,6 @@ class CreatePostScreen extends StatefulWidget {
 
 class _CreatePostScreenState extends State<CreatePostScreen>
     with SingleTickerProviderStateMixin {
-  late InPutPostImageModel _model;
   final ScrollController _scrollController = ScrollController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -46,7 +41,6 @@ class _CreatePostScreenState extends State<CreatePostScreen>
   @override
   void initState() {
     super.initState();
-    _model = InPutPostImageModel();
     _validationSessionId = '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch.toString().substring(10)}';
 
     // Animation setup
@@ -72,10 +66,15 @@ class _CreatePostScreenState extends State<CreatePostScreen>
   Future<void> _handleSubmit() async {
     final appState = context.read<AppState>();
     final cleanProvider = context.read<CreatePostProviderV2>();
+
+    // AppState의 데이터를 CreatePostProviderV2로 전달
     final adapter = CreatePostAdapter(
       cleanProvider: cleanProvider,
       legacyState: appState,
     );
+
+    // AppState 데이터를 Provider로 동기화
+    adapter.syncLegacyToClean();
 
     // 유효성 검사
     if (!_areRequiredFieldsFilled(appState)) {
@@ -94,40 +93,16 @@ class _CreatePostScreenState extends State<CreatePostScreen>
     });
 
     try {
-      // 이미지가 있으면 업로드
-      if (appState.tempImageFilesA.isNotEmpty || appState.tempImageFilesB.isNotEmpty) {
-        // 검열 및 업로드는 Provider에서 처리
-        await cleanProvider.validateAndModerate();
+      // CreatePostProviderV2를 직접 사용하여 포스트 생성
+      // TODO: 현재 userId는 하드코딩되어 있음 - 추후 실제 사용자 정보 연동 필요
+      await cleanProvider.createPost('test_user');
 
-        if (cleanProvider.errorMessage != null) {
-          BotToast.showText(
-            text: cleanProvider.errorMessage!,
-            duration: const Duration(seconds: 3),
-            contentColor: Colors.red.shade600,
-            textStyle: const TextStyle(color: Colors.white),
-          );
-          return;
-        }
-      }
-
-      // 포스트 생성
-      await cleanProvider.createPost();
-
-      if (cleanProvider.createdPost != null) {
-        // 성공 - 페이지 닫기
-        if (mounted) {
-          Navigator.of(context).pop(true);
-        }
-      } else if (cleanProvider.errorMessage != null) {
-        BotToast.showText(
-          text: cleanProvider.errorMessage!,
-          duration: const Duration(seconds: 3),
-          contentColor: Colors.red.shade600,
-          textStyle: const TextStyle(color: Colors.white),
-        );
+      // 성공 - 페이지 닫기
+      if (mounted) {
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
-      ErrorHandler.logError('CreatePostScreen._handleSubmit', e);
+      ErrorHandler.handle(e, type: ErrorType.unknown);
       BotToast.showText(
         text: '포스트 생성 중 오류가 발생했습니다',
         duration: const Duration(seconds: 3),
@@ -182,11 +157,17 @@ class _CreatePostScreenState extends State<CreatePostScreen>
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // Phase 5: MediaStateCoordinator 통합된 Provider
         ChangeNotifierProvider(
-          create: (_) => CreatePostProviderV2(
-            createPostUseCase: GetIt.I<CreatePostUseCase>(),
-            moderateContentUseCase: GetIt.I<ModerateContentUseCase>(),
-          ),
+          create: (_) => CreationModule.getCreatePostProvider(),
+        ),
+        // Phase 5: MediaSelectionProvider (UI 상태 관리용)
+        ChangeNotifierProvider(
+          create: (_) => CreationModule.getMediaSelectionProvider(),
+        ),
+        // Phase 5: MediaValidationProvider (검증 상태 관리용)
+        ChangeNotifierProvider(
+          create: (_) => CreationModule.getMediaValidationProvider(),
         ),
       ],
       child: Scaffold(
@@ -316,11 +297,10 @@ class _CreatePostScreenState extends State<CreatePostScreen>
                               final isValid = _areRequiredFieldsFilled(appState);
 
                               return NextButton(
+                                showButton: isValid,
                                 onPressed: isValid && !_isValidating
                                     ? _handleSubmit
                                     : null,
-                                text: _isValidating ? '처리 중...' : '게시하기',
-                                isEnabled: isValid && !_isValidating,
                               );
                             },
                           ),

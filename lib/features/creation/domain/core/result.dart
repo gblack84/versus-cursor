@@ -1,4 +1,4 @@
-import '../failures/post_failures.dart' as failures;
+import '../failures/creation_failures.dart' as failures;
 
 /// Result type for handling success and failure cases
 /// 성공과 실패 케이스를 처리하기 위한 Result 타입

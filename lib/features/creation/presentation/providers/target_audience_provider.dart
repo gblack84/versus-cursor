@@ -1,171 +1,178 @@
 import 'package:flutter/material.dart';
-import '../../domain/models/target_audience.dart';
 
-/// Provider for managing target audience UI state
-/// 타겟 오디언스 UI 상태 관리를 위한 Provider
-class TargetAudienceProvider extends ChangeNotifier {
-  // Domain model instance
-  TargetAudience _targetAudience = TargetAudience(
-    createdAt: DateTime.now(),
-  );
-
-  // UI-specific state
-  int _currentStep = 0;
-
-  /// Get current target audience configuration
-  TargetAudience get targetAudience => _targetAudience;
-
-  /// Get current UI step
-  int get currentStep => _currentStep;
-
-  /// Get collection type
-  String get collectionType => _targetAudience.collectionType;
-
-  /// Get target count
-  int get targetCount => _targetAudience.targetCount;
-
-  /// Get premium status
-  bool get isPremium => _targetAudience.isPremium;
-
-  /// Get selected interests
-  List<String> get selectedInterests => _targetAudience.selectedInterests;
-
-  /// Get selected age group
-  String get selectedAgeGroup => _targetAudience.selectedAgeGroup;
-
-  /// Get selected gender
-  String get selectedGender => _targetAudience.selectedGender;
-
-  /// Get active user only flag
-  bool get activeUserOnly => _targetAudience.activeUserOnly;
-
-  /// Set collection type
-  void setCollectionType(String type) {
-    _targetAudience = _targetAudience.copyWith(collectionType: type);
+/// 타겟 오디언스 설정을 위한 모델 클래스
+class TargetAudienceModel extends ChangeNotifier {
+  // 수집 방식
+  String _collectionType = 'quick'; // quick, public, custom
+  String get collectionType => _collectionType;
+  set collectionType(String value) {
+    _collectionType = value;
     notifyListeners();
   }
 
-  /// Set target count
-  void setTargetCount(int count) {
-    _targetAudience = _targetAudience.copyWith(targetCount: count);
+  // 목표 응답 수
+  int _targetCount = 100;
+  int get targetCount => _targetCount;
+  set targetCount(int value) {
+    _targetCount = value;
     notifyListeners();
   }
 
-  /// Set premium status
-  void setPremiumStatus(bool isPremium) {
-    _targetAudience = _targetAudience.copyWith(isPremium: isPremium);
+  // 프리미엄 여부
+  bool _isPremium = false;
+  bool get isPremium => _isPremium;
+  set isPremium(bool value) {
+    _isPremium = value;
     notifyListeners();
   }
 
-  /// Toggle interest selection
+  // Custom 설정 - 관심사
+  final List<String> _selectedInterests = [];
+  List<String> get selectedInterests => List.unmodifiable(_selectedInterests);
+
   void toggleInterest(String interest) {
-    final interests = List<String>.from(_targetAudience.selectedInterests);
-    if (interests.contains(interest)) {
-      interests.remove(interest);
+    if (_selectedInterests.contains(interest)) {
+      _selectedInterests.remove(interest);
     } else {
-      interests.add(interest);
+      _selectedInterests.add(interest);
     }
-    _targetAudience = _targetAudience.copyWith(selectedInterests: interests);
     notifyListeners();
   }
 
-  /// Clear all interests
   void clearInterests() {
-    _targetAudience = _targetAudience.copyWith(selectedInterests: []);
+    _selectedInterests.clear();
     notifyListeners();
   }
 
-  /// Set age group
-  void setAgeGroup(String ageGroup) {
-    _targetAudience = _targetAudience.copyWith(selectedAgeGroup: ageGroup);
+  // Custom 설정 - 연령대
+  String _selectedAgeGroup = '전체';
+  String get selectedAgeGroup => _selectedAgeGroup;
+  set selectedAgeGroup(String value) {
+    _selectedAgeGroup = value;
     notifyListeners();
   }
 
-  /// Set gender
-  void setGender(String gender) {
-    _targetAudience = _targetAudience.copyWith(selectedGender: gender);
+  // Custom 설정 - 성별
+  String _selectedGender = 'all';
+  String get selectedGender => _selectedGender;
+  set selectedGender(String value) {
+    _selectedGender = value;
     notifyListeners();
   }
 
-  /// Set active user only flag
-  void setActiveUserOnly(bool active) {
-    _targetAudience = _targetAudience.copyWith(activeUserOnly: active);
+  // Custom 설정 - 활성 사용자만
+  bool _activeUserOnly = true;
+  bool get activeUserOnly => _activeUserOnly;
+  set activeUserOnly(bool value) {
+    _activeUserOnly = value;
     notifyListeners();
   }
 
-  /// Update current UI step
-  void setCurrentStep(int step) {
-    _currentStep = step;
+  // UI 상태
+  int _currentStep = 0;
+  int get currentStep => _currentStep;
+  set currentStep(int value) {
+    _currentStep = value;
     notifyListeners();
   }
 
-  /// Move to next step
-  void nextStep() {
-    if (canGoNext) {
-      _currentStep++;
-      notifyListeners();
-    }
-  }
-
-  /// Move to previous step
-  void previousStep() {
-    if (_currentStep > 0) {
-      _currentStep--;
-      notifyListeners();
-    }
-  }
-
-  /// Check if current step is valid
+  // 유효성 검사
   bool get isValid {
-    // Step 1: Collection type is always valid
+    // Step 1: 수집 방식은 항상 선택됨
     if (_currentStep == 0) return true;
 
-    // Step 2: Target count must be positive
-    if (_currentStep == 1) return _targetAudience.targetCount > 0;
+    // Step 2: 목표 수는 항상 유효
+    if (_currentStep == 1) return _targetCount > 0;
 
-    // Step 3: Custom settings validation
-    if (_currentStep == 2 && _targetAudience.collectionType == 'custom') {
-      return _targetAudience.isCustomCriteriaValid;
+    // Step 3: Custom 설정일 때만 검사
+    if (_currentStep == 2 && _collectionType == 'custom') {
+      // 최소 하나의 조건은 설정해야 함
+      return _selectedInterests.isNotEmpty ||
+          _selectedAgeGroup != '전체' ||
+          _selectedGender != 'all';
     }
 
     return true;
   }
 
-  /// Check if can proceed to next step
+  // 예상 소요 시간 계산
+  String get estimatedTime {
+    if (_isPremium) {
+      return '약 3-5분';
+    } else {
+      if (_targetCount <= 50) {
+        return '약 5-10분';
+      } else if (_targetCount <= 100) {
+        return '약 10-15분';
+      } else {
+        return '약 15-30분';
+      }
+    }
+  }
+
+  // 다음 단계로 이동 가능 여부
   bool get canGoNext {
-    if (_currentStep == 2 && _targetAudience.collectionType != 'custom') {
-      return true; // Skip step 3 for non-custom types
+    if (_currentStep == 2 && _collectionType != 'custom') {
+      return true; // Custom이 아니면 Step 3 건너뜀
     }
     return isValid;
   }
 
-  /// Check if current step is final
+  // 최종 단계 여부
   bool get isFinalStep {
-    if (_targetAudience.collectionType != 'custom' && _currentStep == 1) {
-      return true; // Step 2 is final for non-custom types
+    if (_collectionType != 'custom' && _currentStep == 1) {
+      return true; // Custom이 아니면 Step 2가 마지막
     }
     return _currentStep == 2;
   }
 
-  /// Get estimated time from domain model
-  String get estimatedTime => _targetAudience.estimatedTime;
-
-  /// Update entire target audience configuration
-  void updateTargetAudience(TargetAudience audience) {
-    _targetAudience = audience;
-    notifyListeners();
-  }
-
-  /// Get Firestore-compatible map
+  // Firestore 저장용 Map 변환 (Firebase Functions 호환)
   Map<String, dynamic> toMap() {
-    return _targetAudience.toMap();
+    final Map<String, dynamic> data = {
+      'type': _collectionType, // 'collectionType' → 'type'으로 변경 (Functions 호환)
+      'targetCount': _targetCount,
+      'isPremium': _isPremium,
+      'createdAt': DateTime.now(),
+      'status': 'pending', // 단순화 (Functions에서 처리)
+    };
+
+    // Custom 설정인 경우 criteria 추가
+    if (_collectionType == 'custom') {
+      // 연령대 변환 (한국어 → 영어)
+      String convertedAgeGroup = _selectedAgeGroup;
+      if (_selectedAgeGroup != '전체') {
+        final ageMapping = {
+          '10대': '10s',
+          '20대': '20s',
+          '30대': '30s',
+          '40대': '40s',
+          '50대 이상': '50s+',
+        };
+        convertedAgeGroup = ageMapping[_selectedAgeGroup] ?? 'all';
+      } else {
+        convertedAgeGroup = 'all';
+      }
+
+      data['criteria'] = {
+        'interests': _selectedInterests,
+        'ageGroup': convertedAgeGroup,
+        'gender': _selectedGender,
+        'activeUserOnly': _activeUserOnly,
+      };
+    }
+
+    return data;
   }
 
-  /// Reset all settings to default
+  // 초기화
   void reset() {
-    _targetAudience = TargetAudience(
-      createdAt: DateTime.now(),
-    );
+    _collectionType = 'quick';
+    _targetCount = 100;
+    _isPremium = false;
+    _selectedInterests.clear();
+    _selectedAgeGroup = '전체';
+    _selectedGender = 'all';
+    _activeUserOnly = true;
     _currentStep = 0;
     notifyListeners();
   }

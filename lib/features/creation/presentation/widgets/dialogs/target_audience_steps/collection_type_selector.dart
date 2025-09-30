@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/core_exports.dart';
-import '/features/creation/domain/models/target_audience_model.dart';
+import '/features/creation/presentation/providers/target_audience_provider.dart';
 import '/features/creation/domain/constants/target_audience_constants.dart';
 
 /// Step 1: 수집 방식 선택

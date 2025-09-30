@@ -13,7 +13,8 @@ import '/features/creation/presentation/screens/thumbnail/thumbnail_selection_pa
 import '/features/creation/presentation/delegates/camera_floating_button_delegate.dart';
 import 'media_editor_widget.dart';
 import '/features/creation/presentation/utils/no_animation_page_route.dart';
-import '/features/creation/presentation/screens/create_post/in_put_post_image_model.dart';
+import '/features/creation/presentation/providers/media/media_selection_provider.dart';
+import '/features/creation/presentation/providers/media/media_state_coordinator.dart';
 
 /// 미디어 선택부터 편집까지 하나의 플로우로 처리하는 위젯
 class MediaSelectionFlowWidget extends StatefulWidget {
@@ -33,7 +34,7 @@ class MediaSelectionFlowWidget extends StatefulWidget {
     this.existingAssetIds,
     this.isAddMode = false,
     this.currentIndex,
-    this.model,
+    this.onImagesSelected, // Phase 5: MediaSelectionProvider 콜백
   });
 
   final String box; // 'A' or 'B'
@@ -50,7 +51,7 @@ class MediaSelectionFlowWidget extends StatefulWidget {
   final List<String>? existingAssetIds; // 기존 AssetEntity ID들
   final bool isAddMode; // 추가 모드인지 여부
   final int? currentIndex; // 현재 보고 있는 이미지 인덱스
-  final InPutPostImageModel? model; // 편집 모드 감지를 위해 추가
+  final Function(List<AssetEntity> assets)? onImagesSelected; // Phase 5: Provider 연동
 
   @override
   State<MediaSelectionFlowWidget> createState() =>
@@ -73,6 +74,9 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   void initState() {
     super.initState();
 
+    // Phase 5: MediaSelectionProvider에서 기존 선택 복원
+    _initializeFromProvider();
+
     // 기존 이미지가 있고 에디터로 바로 시작하는 경우
     if (widget.startWithEditor) {
       if (widget.initialImageFile != null) {
@@ -89,6 +93,36 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _openPicker();
       });
+    }
+  }
+
+  /// Phase 5: Provider에서 초기 상태 복원
+  Future<void> _initializeFromProvider() async {
+    final mediaSelection = context.read<MediaSelectionProvider>();
+
+    // 기존 AssetEntity ID 복원
+    final existingIds = widget.box == 'A'
+        ? mediaSelection.assetEntityIdsA
+        : mediaSelection.assetEntityIdsB;
+
+    if (existingIds.isNotEmpty) {
+      final restoredAssets = <AssetEntity>[];
+      for (String id in existingIds) {
+        try {
+          final asset = await AssetEntity.fromId(id);
+          if (asset != null) {
+            restoredAssets.add(asset);
+          }
+        } catch (e) {
+          print('[MediaSelectionFlow] AssetEntity 복원 실패: $e');
+        }
+      }
+
+      if (mounted && restoredAssets.isNotEmpty) {
+        setState(() {
+          _selectedAssets = restoredAssets;
+        });
+      }
     }
   }
 
@@ -172,18 +206,23 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         }
         return;
       }
-      // 기존에 선택된 AssetEntity 복원
+      // Phase 5: MediaSelectionProvider에서 기존 선택 복원
+      final mediaSelection = context.read<MediaSelectionProvider>();
       List<AssetEntity> selectedAssets = [];
 
       print('[AssetPicker] Opening picker...');
       print('[AssetPicker] Box: ${widget.box}');
       print('[AssetPicker] isAddMode: ${widget.isAddMode}');
-      print(
-          '[AssetPicker] existingAssetIds: ${widget.existingAssetIds?.length ?? 0}');
 
-      if (widget.existingAssetIds != null &&
-          widget.existingAssetIds!.isNotEmpty) {
-        for (String id in widget.existingAssetIds!) {
+      // Provider에서 AssetEntity ID 가져오기
+      final existingIds = widget.box == 'A'
+          ? mediaSelection.assetEntityIdsA
+          : mediaSelection.assetEntityIdsB;
+
+      print('[AssetPicker] existingAssetIds from Provider: ${existingIds.length}');
+
+      if (existingIds.isNotEmpty) {
+        for (String id in existingIds) {
           try {
             final asset = await AssetEntity.fromId(id);
             if (asset != null) {
@@ -294,6 +333,11 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
           '[AssetPicker] Picker result: ${result?.length ?? 0} items selected');
 
       if (result != null && result.isNotEmpty) {
+        // Phase 5: 선택 결과를 Provider에 저장
+        if (widget.onImagesSelected != null) {
+          widget.onImagesSelected!(result);
+        }
+
         // 추가 모드이거나 기존 이미지가 있는 경우 - diff 처리
         if (widget.isAddMode ||
             (widget.existingImageUrls != null &&
@@ -536,7 +580,7 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       selectedAssets: _selectedAssets,
       currentEditIndex: _currentEditIndex,
       box: widget.box,
-      model: widget.model,
+      model: null, // Phase 5: InPutPostImageModel 제거
       isAddMode: widget.isAddMode,
       currentIndex: widget.currentIndex,
       existingImageUrls: widget.existingImageUrls,
@@ -595,6 +639,11 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
   /// 선택 결과 처리 (diff 계산)
   Future<void> _processSelectionResult(List<AssetEntity> selectedAssets) async {
     try {
+      // Phase 5: Provider에 선택 결과 저장
+      if (widget.onImagesSelected != null) {
+        widget.onImagesSelected!(selectedAssets);
+      }
+
       // MediaSelectionFlow 모달 닫기 - processing 액션 전달
       if (mounted) {
         Navigator.pop(context,

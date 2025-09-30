@@ -15,6 +15,9 @@ class VideoModel extends FirestoreRecord {
     _initializeFields();
   }
 
+  // "id" field for repository compatibility
+  String get id => reference.id;
+
   // "url" field.
   String? _url;
   String get url => _url ?? '';
@@ -92,6 +95,45 @@ class VideoModel extends FirestoreRecord {
     DocumentReference reference,
   ) =>
       VideoModel._(reference, mapFromFirestore(data));
+
+  // Factory constructor for fromMap (for MediaRepository compatibility)
+  factory VideoModel.fromMap(Map<String, dynamic> map) {
+    // Create a reference if id is provided, otherwise use a temp reference
+    final String id = map['id'] ?? 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final docRef = FirebaseFirestore.instance
+        .collection('video')
+        .doc(id);
+
+    return VideoModel._(docRef, {
+      'url': map['url'],
+      'duration': map['duration'],
+      'params': map['params'],
+      'sourceVideoUrl': map['sourceVideoUrl'],
+      'thumbUrl': map['thumbUrl'],
+      'ownerUid': map['ownerUid'],
+      'status': map['status'],
+      'createdAt': map['createdAt'] is DateTime
+          ? map['createdAt']
+          : map['createdAt'] != null
+              ? DateTime.parse(map['createdAt'].toString())
+              : null,
+    });
+  }
+
+  // Convert to Map for MediaRepository compatibility
+  Map<String, dynamic> toMap() {
+    return {
+      'id': reference.id,
+      'url': url,
+      'duration': duration,
+      'params': params,
+      'sourceVideoUrl': sourceVideoUrl,
+      'thumbUrl': thumbUrl,
+      'ownerUid': ownerUid,
+      'status': status,
+      'createdAt': createdAt?.toIso8601String(),
+    };
+  }
 
   @override
   String toString() =>

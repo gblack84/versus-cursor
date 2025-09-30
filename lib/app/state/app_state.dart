@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import '/app/di/creation_module.dart';
 
+/// Global app state management
+/// Phase 5 Migration: 미디어 관련 상태는 MediaSelectionProvider로 이동
 class AppState extends ChangeNotifier {
   static AppState _instance = AppState._internal();
 
@@ -45,8 +48,18 @@ class AppState extends ChangeNotifier {
     _uploadTextB = value;
   }
 
+  // Phase 5 Migration: MediaSelectionProvider로 이동됨
+  @Deprecated('Use MediaSelectionProvider.uploadedUrlsA instead - Phase 5 Migration')
   List<String> _uploadImageA = [];
-  List<String> get uploadImageA => _uploadImageA;
+
+  @Deprecated('Use MediaSelectionProvider.uploadedUrlsA instead - Phase 5 Migration')
+  List<String> get uploadImageA {
+    // 호환성을 위해 임시로 유지
+    // TODO: Phase 5.2에서 MediaSelectionProvider 직접 참조로 변경
+    return _uploadImageA;
+  }
+
+  @Deprecated('Use MediaSelectionProvider.updateUploadedUrls() instead - Phase 5 Migration')
   set uploadImageA(List<String> value) {
     _uploadImageA = value;
   }
@@ -96,9 +109,14 @@ class AppState extends ChangeNotifier {
     uploadImageA.insert(index, value);
   }
 
-  // 임시 이미지 파일 저장 (게시 전까지 File 객체로 유지)
+  // Phase 5 Migration: MediaSelectionProvider로 이동됨
+  @Deprecated('Use MediaSelectionProvider.selectedFilesA instead - Phase 5 Migration')
   List<File> _tempImageFilesA = [];
+
+  @Deprecated('Use MediaSelectionProvider.selectedFilesA instead - Phase 5 Migration')
   List<File> get tempImageFilesA => _tempImageFilesA;
+
+  @Deprecated('Use MediaSelectionProvider instead - Phase 5 Migration')
   set tempImageFilesA(List<File> value) {
     _tempImageFilesA = value;
     notifyListeners();
@@ -318,8 +336,14 @@ class AppState extends ChangeNotifier {
   }
 
   // 이미지 비율 저장 (스마트 레이아웃 시스템용)
+  // Phase 5 Migration: MediaSelectionProvider로 이동됨
+  @Deprecated('Use MediaSelectionProvider.aspectRatiosA instead - Phase 5 Migration')
   List<double> _uploadImageAspectRatioA = [];
+
+  @Deprecated('Use MediaSelectionProvider.aspectRatiosA instead - Phase 5 Migration')
   List<double> get uploadImageAspectRatioA => _uploadImageAspectRatioA;
+
+  @Deprecated('Use MediaSelectionProvider instead - Phase 5 Migration')
   set uploadImageAspectRatioA(List<double> value) {
     _uploadImageAspectRatioA = value;
   }
@@ -355,8 +379,14 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  // Phase 5 Migration: MediaSelectionProvider로 이동됨
+  @Deprecated('Use MediaSelectionProvider.aspectRatiosB instead - Phase 5 Migration')
   List<double> _uploadImageAspectRatioB = [];
+
+  @Deprecated('Use MediaSelectionProvider.aspectRatiosB instead - Phase 5 Migration')
   List<double> get uploadImageAspectRatioB => _uploadImageAspectRatioB;
+
+  @Deprecated('Use MediaSelectionProvider instead - Phase 5 Migration')
   set uploadImageAspectRatioB(List<double> value) {
     _uploadImageAspectRatioB = value;
   }
@@ -441,9 +471,14 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // AssetEntity ID 저장 (피커에서 선택 상태 표시용)
+  // Phase 5 Migration: MediaSelectionProvider로 이동됨
+  @Deprecated('Use MediaSelectionProvider.assetEntityIdsA instead - Phase 5 Migration')
   List<String> _assetEntityIdsA = [];
+
+  @Deprecated('Use MediaSelectionProvider.assetEntityIdsA instead - Phase 5 Migration')
   List<String> get assetEntityIdsA => _assetEntityIdsA;
+
+  @Deprecated('Use MediaSelectionProvider instead - Phase 5 Migration')
   set assetEntityIdsA(List<String> value) {
     _assetEntityIdsA = value;
     notifyListeners();
@@ -466,8 +501,13 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  @Deprecated('Use MediaSelectionProvider.assetEntityIdsB instead - Phase 5 Migration')
   List<String> _assetEntityIdsB = [];
+
+  @Deprecated('Use MediaSelectionProvider.assetEntityIdsB instead - Phase 5 Migration')
   List<String> get assetEntityIdsB => _assetEntityIdsB;
+
+  @Deprecated('Use MediaSelectionProvider instead - Phase 5 Migration')
   set assetEntityIdsB(List<String> value) {
     _assetEntityIdsB = value;
     notifyListeners();

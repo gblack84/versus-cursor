@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+// Removed Firebase dependency - Clean Architecture
 
 /// PostCore Domain Model
 /// Clean Architecture - Domain Layer Entity
@@ -45,26 +45,32 @@ class PostCore {
   final bool isAnonymous;
   final bool premiumRequired;
 
-  // Location
-  final GeoPoint? location;
+  // Location - Using domain representation instead of Firebase GeoPoint
+  final Map<String, double>? location; // {latitude: double, longitude: double}
 
-  /// Create PostCore from Firestore document
-  factory PostCore.fromDocument(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  /// Create PostCore from data map (DataSource will handle Firebase conversion)
+  factory PostCore.fromMap(Map<String, dynamic> data, {String? id}) {
     return PostCore(
-      id: doc.id,
+      id: id ?? data['id'] ?? '',
       questionTitle: data['questionTitle'] ?? '',
       description: data['description'],
       content: data['content'],
       userId: data['userId'] ?? data['uid'] ?? '',
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+      createdAt: data['createdAt'] is DateTime
+          ? data['createdAt'] as DateTime
+          : DateTime.now(),
+      updatedAt: data['updatedAt'] as DateTime?,
       category: data['category'],
       tags: List<String>.from(data['tags'] ?? []),
       visibility: data['visibility'] ?? 'public',
       isAnonymous: data['isAnonymous'] ?? false,
       premiumRequired: data['premiumRequired'] ?? false,
-      location: data['location'] as GeoPoint?,
+      location: data['location'] != null && data['location'] is Map
+          ? {
+              'latitude': data['location']['latitude'] as double,
+              'longitude': data['location']['longitude'] as double,
+            }
+          : null,
     );
   }
 
@@ -86,22 +92,25 @@ class PostCore {
       visibility: json['visibility'] ?? 'public',
       isAnonymous: json['isAnonymous'] ?? false,
       premiumRequired: json['premiumRequired'] ?? false,
-      location: json['location'] != null
-          ? GeoPoint(
-              json['location']['latitude'], json['location']['longitude'])
+      location: json['location'] != null && json['location'] is Map
+          ? {
+              'latitude': json['location']['latitude'] as double,
+              'longitude': json['location']['longitude'] as double,
+            }
           : null,
     );
   }
 
-  /// Convert to Map for Firestore
-  Map<String, dynamic> toFirestore() {
+  /// Convert to Map (DataSource will handle Firebase-specific conversion)
+  Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'questionTitle': questionTitle,
       if (description != null) 'description': description,
       if (content != null) 'content': content,
       'userId': userId,
-      'createdAt': Timestamp.fromDate(createdAt),
-      if (updatedAt != null) 'updatedAt': Timestamp.fromDate(updatedAt!),
+      'createdAt': createdAt,
+      if (updatedAt != null) 'updatedAt': updatedAt,
       if (category != null) 'category': category,
       'tags': tags,
       'visibility': visibility,
@@ -127,10 +136,7 @@ class PostCore {
       'isAnonymous': isAnonymous,
       'premiumRequired': premiumRequired,
       if (location != null)
-        'location': {
-          'latitude': location!.latitude,
-          'longitude': location!.longitude,
-        },
+        'location': location,
     };
   }
 
@@ -148,7 +154,7 @@ class PostCore {
     String? visibility,
     bool? isAnonymous,
     bool? premiumRequired,
-    GeoPoint? location,
+    Map<String, double>? location,
   }) {
     return PostCore(
       id: id ?? this.id,

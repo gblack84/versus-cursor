@@ -1,6 +1,6 @@
 import 'dart:io';
 import '../core/result.dart';
-import '../failures/post_failures.dart';
+import '../failures/creation_failures.dart';
 import '/services/moderation/image_moderation_service.dart';
 
 /// UseCase for content moderation

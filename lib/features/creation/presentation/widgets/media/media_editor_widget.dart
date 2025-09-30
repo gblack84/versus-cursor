@@ -8,7 +8,7 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:path_provider/path_provider.dart';
 import '/app/state/app_state.dart';
-import '/features/creation/data/adapters/media/image_upload_orchestrator_v2.dart';
+import '/features/creation/data/services/image_upload_service.dart';
 import '/features/creation/presentation/screens/create_post/in_put_post_image_model.dart';
 import '/services/moderation/image_moderation_service.dart';
 
@@ -152,7 +152,7 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
   }
 
   /// 거부 메시지 생성
-  String _buildRejectionMessage(ImageProcessResult result,
+  String _buildRejectionMessage(dynamic result,
       {ModerationResult? moderationResult}) {
     print('[DEBUG] _buildRejectionMessage 호출됨');
     print('[DEBUG] rejectedCount: ${result.rejectedCount}');
@@ -212,13 +212,8 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
       // AppState 접근
       final appState = Provider.of<AppState>(context, listen: false);
 
-      // ImageUploadOrchestratorV2 생성
-      final orchestrator = ImageUploadOrchestratorV2(
-        context: context,
-        appState: appState,
-        box: widget.box,
-        model: widget.model,
-      );
+      // ImageUploadService 생성 (UI 의존성 없는 순수 서비스)
+      final uploadService = ImageUploadService();
 
       // 편집된 이미지를 File로 저장
       final editedFile = await _saveEditedImageAsFile(bytes);
@@ -229,27 +224,21 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
       // 멀티 이미지 처리
       if (widget.allSelectedFiles.isNotEmpty) {
         // 멀티 이미지 처리 (검열만 수행, 업로드 X)
-        final result = await orchestrator.handleMultiImageProcess(
-          editedImageFile: editedFile,
-          allFiles: widget.allSelectedFiles,
-          currentEditIndex: widget.currentEditIndex,
-          selectedAssets: widget.selectedAssets,
-          isAddMode: widget.isAddMode,
-          isEditMode: widget.startWithEditor, // 편집 모드 플래그 추가
-          currentIndex: widget.currentIndex,
-          existingImageUrls: widget.existingImageUrls,
-          existingAspectRatios: widget.existingAspectRatios,
-          existingAssetIds: widget.existingAssetIds,
+        final result = await uploadService.processMultipleImages(
+          files: widget.allSelectedFiles,
+          box: widget.box,
+          editedFile: editedFile,
+          editedFileIndex: widget.currentEditIndex,
+          assetEntities: widget.selectedAssets,
           onProgress: (progress) {
             widget.onProgressUpdate?.call(progress);
           },
           onModerationProgress: (current, total) {
             // 검열 진행 상황은 ProImageEditor의 loadingDialogMsg로 표시됨
           },
-          showToast: false, // 토스트는 여기서 통합 관리
         );
 
-        if (!result.success || result.allRejected) {
+        if (result.allRejected) {
           // 검열 실패
           if (mounted) {
             if (result.allRejected) {
@@ -266,14 +255,7 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
               widget.onBackToPicker?.call();
             } else {
               // 편집 모드에서 이미지가 거부된 경우
-              if (result.moderationResult != null &&
-                  !result.moderationResult!.isAppropriate) {
-                final detailedMessage = _buildRejectionMessage(result,
-                    moderationResult: result.moderationResult);
-                _showToast(detailedMessage, isError: true);
-              } else {
-                _showToast('이미지 처리 실패', isError: true);
-              }
+              _showToast('이미지 처리 실패', isError: true);
               Navigator.pop(context); // 에디터 닫기
             }
           }
@@ -313,16 +295,16 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
           // 일부 이미지가 거부된 경우 Toast 표시
           if (result.rejectedCount > 0) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              final rejectionMessage = _buildRejectionMessage(result,
-                  moderationResult: result.moderationResult);
+              final rejectionMessage = _buildRejectionMessage(result);
               _showToast(rejectionMessage, isError: true);
             });
           }
         }
       } else {
         // 단일 이미지 처리
-        final result = await orchestrator.handleSingleImageProcess(
-          imageFile: editedFile,
+        final result = await uploadService.processEditedImage(
+          editedFile: editedFile,
+          box: widget.box,
           assetId: widget.selectedAssets.isNotEmpty
               ? widget.selectedAssets.first.id
               : null,
@@ -331,7 +313,7 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
           },
         );
 
-        if (!result.success || result.allRejected) {
+        if (!result.success) {
           // 검열 실패
           if (mounted) {
             setState(() {
@@ -339,8 +321,7 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
             });
 
             // 거부 메시지 표시 (단일 이미지이므로 구체적인 이유 표시)
-            final rejectionMessage = _buildRejectionMessage(result,
-                moderationResult: result.moderationResult);
+            final rejectionMessage = '이미지가 부적절합니다: ${result.moderationResult.reason}';
             _showToast(rejectionMessage, isError: true);
 
             // 피커 열기 (모달은 닫지 않음)

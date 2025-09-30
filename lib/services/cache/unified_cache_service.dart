@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'simple_memory_cache.dart';
+import 'simple_memory_cache.dart' hide CacheKeys;
 import 'cache_statistics.dart';
+import '/app/contracts/cache_contract.dart';
 // Domain models imports (migrated from backend.dart)
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/features/chat/domain/models/messages_model.dart';
-import '/features/creation/domain/models/posts_model.dart';
 import '/features/auth/domain/models/auth_user.dart';
 
 /// 캐시 레이어 정의
@@ -19,7 +19,7 @@ enum CacheLayer {
 /// 통합 캐시 서비스
 ///
 /// 3-Layer 캐싱 아키텍처를 구현하여 앱 성능을 대폭 향상
-abstract class UnifiedCacheService {
+abstract class UnifiedCacheService implements CacheContract {
   // 싱글톤 인스턴스
   static late UnifiedCacheService _instance;
   static UnifiedCacheService get instance => _instance;
@@ -40,18 +40,36 @@ abstract class UnifiedCacheService {
   Future<void> invalidate(String pattern, {CacheLayer? layer});
   Future<void> clear({CacheLayer? layer});
 
-  // 도메인별 특화 메서드
+  // 도메인별 특화 메서드 (Legacy - for backward compatibility)
   Future<List<MessagesModel>> getChatMessages(String chatId);
   Future<void> setChatMessages(String chatId, List<MessagesModel> messages);
 
-  Future<List<PostsModel>> getFeedPosts({int limit = 20});
-  Future<void> setFeedPosts(List<PostsModel> posts);
-
-  Future<UserProfile?> getUserProfile(String userId);
-  Future<void> setUserProfile(String userId, UserProfile user);
-
-  // 프리페칭
+  // CacheContract implementation
+  @override
+  Future<List<Map<String, dynamic>>> getFeedPosts({int limit = 20});
+  @override
+  Future<void> setFeedPosts(List<Map<String, dynamic>> posts);
+  @override
+  Future<void> clearFeedPosts();
+  @override
+  Future<Map<String, dynamic>?> getUserProfile(String userId);
+  @override
+  Future<void> setUserProfile(String userId, Map<String, dynamic> profile);
+  @override
+  Future<void> clearUserProfile(String userId);
+  @override
+  Future<List<Map<String, dynamic>>> getChatMessages({required String chatId, int limit = 30});
+  @override
+  Future<void> setChatMessages({required String chatId, required List<Map<String, dynamic>> messages});
+  @override
+  Future<void> clearChatMessages(String chatId);
+  @override
+  Future<void> clearAll();
+  @override
+  Map<String, dynamic> getStatistics();
+  @override
   Future<void> preloadRecentChats();
+  @override
   Future<void> preloadPopularPosts();
 
   // 통계
@@ -382,11 +400,11 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
   // === 피드 관련 ===
 
   @override
-  Future<List<PostsModel>> getFeedPosts({int limit = 20}) async {
+  Future<List<Map<String, dynamic>>> getFeedPosts({int limit = 20}) async {
     final cacheKey = CacheKeys.feedPosts();
 
     // L1: Memory Cache
-    final cached = _memoryCache.get<List<PostsModel>>(cacheKey);
+    final cached = _memoryCache.get<List<Map<String, dynamic>>>(cacheKey);
     if (cached != null) {
       _logDebug('Feed posts from MEMORY');
       return cached;
@@ -401,8 +419,12 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           .limit(limit)
           .get(const GetOptions(source: Source.cache));
 
-      final posts =
-          snapshot.docs.map((doc) => PostsModel.fromSnapshot(doc)).toList();
+      final posts = snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id; // Add document ID
+        data['reference'] = doc.reference; // Add reference for compatibility
+        return data;
+      }).toList();
 
       _memoryCache.set(cacheKey, posts, ttl: const Duration(minutes: 10));
       return posts;
@@ -414,8 +436,12 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           .limit(limit)
           .get();
 
-      final posts =
-          snapshot.docs.map((doc) => PostsModel.fromSnapshot(doc)).toList();
+      final posts = snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id; // Add document ID
+        data['reference'] = doc.reference; // Add reference for compatibility
+        return data;
+      }).toList();
 
       _memoryCache.set(cacheKey, posts, ttl: const Duration(minutes: 10));
       return posts;
@@ -423,9 +449,15 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
   }
 
   @override
-  Future<void> setFeedPosts(List<PostsModel> posts) async {
+  Future<void> setFeedPosts(List<Map<String, dynamic>> posts) async {
     final cacheKey = CacheKeys.feedPosts();
     _memoryCache.set(cacheKey, posts, ttl: const Duration(minutes: 10));
+  }
+
+  @override
+  Future<void> clearFeedPosts() async {
+    final cacheKey = CacheKeys.feedPosts();
+    _memoryCache.remove(cacheKey);
   }
 
   // === 사용자 관련 ===

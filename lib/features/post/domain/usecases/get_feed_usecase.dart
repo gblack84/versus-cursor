@@ -1,81 +1,79 @@
-import '../core/result.dart';
-import '../entities/post.dart';
-import '../failures/post_failures.dart';
-import '../repositories/i_post_repository.dart';
-import '../models/posts_model.dart';
+import '../../../creation/domain/core/result.dart';
+import '../../../creation/domain/entities/post_creation.dart';
+import '../../../creation/domain/failures/creation_failures.dart';
+import '../repositories/i_post_display_repository_v2.dart';
+import '../models/post_display.dart';
 import '../models/target_audience.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// UseCase for getting feed posts
 /// 피드 게시물을 가져오기 위한 UseCase
 class GetFeedUseCase {
-  final IPostRepository _postRepository;
+  final IPostDisplayRepositoryV2 _postRepository;
 
   GetFeedUseCase({
-    required IPostRepository postRepository,
+    required IPostDisplayRepositoryV2 postRepository,
   }) : _postRepository = postRepository;
 
   /// Get feed posts with pagination
   Future<Result<FeedResult>> execute({
     int limit = 20,
-    DocumentSnapshot? lastDocument,
+    String? lastDocumentId,
     FeedSortBy sortBy = FeedSortBy.latest,
     FeedFilter? filter,
   }) async {
     try {
-      // Build query based on sort and filter options
-      Query Function(Query) queryBuilder = (query) {
-        Query result = query;
+      // Build query parameters for repository
+      Map<String, dynamic> Function(Map<String, dynamic>) queryBuilder = (params) {
+        final queryParams = <String, dynamic>{...params};
 
         // Apply sorting
         switch (sortBy) {
           case FeedSortBy.latest:
-            result = result.orderBy('createdAt', descending: true);
+            queryParams['orderBy'] = 'createdAt';
+            queryParams['descending'] = true;
             break;
           case FeedSortBy.popular:
-            result = result.orderBy('likecount', descending: true);
+            queryParams['orderBy'] = 'likecount';
+            queryParams['descending'] = true;
             break;
           case FeedSortBy.mostVoted:
-            result = result
-                .orderBy('votesA', descending: true)
-                .orderBy('votesB', descending: true);
+            queryParams['orderBy'] = ['votesA', 'votesB'];
+            queryParams['descending'] = true;
             break;
           case FeedSortBy.trending:
-            // Trending logic would be more complex in production
-            result = result
-                .orderBy('commentcount', descending: true)
-                .orderBy('createdAt', descending: true);
+            queryParams['orderBy'] = ['commentcount', 'createdAt'];
+            queryParams['descending'] = true;
             break;
         }
 
         // Apply filters
         if (filter != null) {
           if (filter.status != null) {
-            result = result.where('status', isEqualTo: filter.status!.name);
+            queryParams['status'] = filter.status!.name;
           }
           if (filter.userId != null) {
-            result = result.where('userid', isEqualTo: filter.userId);
+            queryParams['userid'] = filter.userId;
           }
           if (filter.hasImages == true) {
-            result = result.where('hasImages', isEqualTo: true);
+            queryParams['hasImages'] = true;
           }
           if (filter.isAnonymous != null) {
-            result = result.where('isAnonymous', isEqualTo: filter.isAnonymous);
+            queryParams['isAnonymous'] = filter.isAnonymous;
           }
           if (filter.startDate != null) {
-            result = result.where('createdAt', isGreaterThanOrEqualTo: filter.startDate);
+            queryParams['startDate'] = filter.startDate.toIso8601String();
           }
           if (filter.endDate != null) {
-            result = result.where('createdAt', isLessThanOrEqualTo: filter.endDate);
+            queryParams['endDate'] = filter.endDate.toIso8601String();
           }
         }
 
         // Apply pagination
-        if (lastDocument != null) {
-          result = result.startAfterDocument(lastDocument);
+        if (lastDocumentId != null) {
+          queryParams['startAfterId'] = lastDocumentId;
         }
 
-        return result;
+        return queryParams;
       };
 
       // Execute query
@@ -87,33 +85,35 @@ class GetFeedUseCase {
       // Convert stream to future for the first batch
       final posts = await stream.first;
 
-      // Convert PostsModel to domain Post entities
-      final domainPosts = posts.map((postModel) =>
-        _convertToDomainPost(postModel)
+      // Convert PostDisplay to domain Post entities
+      final domainPosts = posts.map((postDisplay) =>
+        _convertToDomainPost(postDisplay)
       ).toList();
 
-      // Get last document for pagination
-      DocumentSnapshot? nextLastDocument;
+      // Get last document ID for pagination
+      String? nextLastDocumentId = null;
       if (posts.isNotEmpty) {
-        nextLastDocument = posts.last.reference.get() as DocumentSnapshot?;
+        // Use the last post's ID for pagination
+        nextLastDocumentId = posts.last.postId;
       }
 
       return Success(
         FeedResult(
           posts: domainPosts,
           hasMore: posts.length >= limit,
-          lastDocument: nextLastDocument,
+          lastDocumentId: nextLastDocumentId,
           totalCount: posts.length,
         ),
       );
     } catch (error) {
       print('GetFeedUseCase Error: $error');
 
-      if (error is FirebaseException) {
+      // Handle errors without Firebase dependency
+      if (error.toString().contains('permission-denied')) {
         return ResultFailure(
           ServerFailure(
-            'Failed to load feed: ${error.message}',
-            code: error.code,
+            'Permission denied to load feed',
+            code: 'permission-denied',
           ),
         );
       }
@@ -131,41 +131,47 @@ class GetFeedUseCase {
     FeedFilter? filter,
   }) {
     try {
-      // Build query similar to execute method
-      Query Function(Query) queryBuilder = (query) {
-        Query result = query;
+      // Build query parameters similar to execute method
+      Map<String, dynamic> Function(Map<String, dynamic>) queryBuilder = (params) {
+        final queryParams = <String, dynamic>{...params};
 
         // Apply sorting
         switch (sortBy) {
           case FeedSortBy.latest:
-            result = result.orderBy('createdAt', descending: true);
+            queryParams['orderBy'] = 'createdAt';
+            queryParams['descending'] = true;
             break;
           case FeedSortBy.popular:
-            result = result.orderBy('likecount', descending: true);
+            queryParams['orderBy'] = 'likecount';
+            queryParams['descending'] = true;
             break;
           case FeedSortBy.mostVoted:
-            result = result
-                .orderBy('votesA', descending: true)
-                .orderBy('votesB', descending: true);
+            queryParams['orderBy'] = ['votesA', 'votesB'];
+            queryParams['descending'] = true;
             break;
           case FeedSortBy.trending:
-            result = result
-                .orderBy('commentcount', descending: true)
-                .orderBy('createdAt', descending: true);
+            queryParams['orderBy'] = ['commentcount', 'createdAt'];
+            queryParams['descending'] = true;
             break;
         }
 
-        // Apply filters (same as above)
+        // Apply filters
         if (filter != null) {
           if (filter.status != null) {
-            result = result.where('status', isEqualTo: filter.status!.name);
+            queryParams['status'] = filter.status!.name;
           }
           if (filter.userId != null) {
-            result = result.where('userid', isEqualTo: filter.userId);
+            queryParams['userid'] = filter.userId;
+          }
+          if (filter.hasImages == true) {
+            queryParams['hasImages'] = true;
+          }
+          if (filter.isAnonymous != null) {
+            queryParams['isAnonymous'] = filter.isAnonymous;
           }
         }
 
-        return result;
+        return queryParams;
       };
 
       // Get stream from repository
@@ -177,8 +183,8 @@ class GetFeedUseCase {
       // Transform stream to domain entities
       return stream.map((posts) {
         try {
-          final domainPosts = posts.map((postModel) =>
-            _convertToDomainPost(postModel)
+          final domainPosts = posts.map((postDisplay) =>
+            _convertToDomainPost(postDisplay)
           ).toList();
 
           return Success(domainPosts);
@@ -198,44 +204,38 @@ class GetFeedUseCase {
     }
   }
 
-  /// Convert PostsModel to domain Post entity
-  Post _convertToDomainPost(PostsModel model) {
-    // Extract data from PostsModel
-    final optionA = model.optionA as Map<String, dynamic>? ?? {};
-    final optionB = model.optionB as Map<String, dynamic>? ?? {};
-    final targetAudience = model.targetAudience as Map<String, dynamic>?;
-
+  /// Convert PostDisplay to domain Post entity
+  Post _convertToDomainPost(PostDisplay display) {
     return Post(
-      id: model.reference.id,
-      userId: model.userid,
-      title: model.content, // Using content as title for now
-      description: model.content,
+      id: display.postId,
+      userId: display.userId,
+      title: display.questionTitle,
+      description: display.questionTitle, // Using title as description for now
       optionA: PostOption(
-        text: optionA['text'],
-        imageUrls: List<String>.from(optionA['imageUrls'] ?? []),
-        aspectRatios: List<double>.from(
-          (optionA['aspectRatios'] ?? []).map((e) => e.toDouble()),
-        ),
+        text: display.optionAText,
+        imageUrls: display.optionAImages ?? [],
+        aspectRatios: display.optionAAspectRatios ?? [],
       ),
       optionB: PostOption(
-        text: optionB['text'],
-        imageUrls: List<String>.from(optionB['imageUrls'] ?? []),
-        aspectRatios: List<double>.from(
-          (optionB['aspectRatios'] ?? []).map((e) => e.toDouble()),
-        ),
+        text: display.optionBText,
+        imageUrls: display.optionBImages ?? [],
+        aspectRatios: display.optionBAspectRatios ?? [],
       ),
-      targetAudience: targetAudience != null
-          ? TargetAudience.fromMap(targetAudience)
+      targetAudience: display.targetAudience != null
+          ? TargetAudience.fromMap(display.targetAudience!)
           : null,
-      createdAt: model.createdAt ?? DateTime.now(),
-      status: PostStatus.published, // Default status for now
-      likeCount: model.likecount,
-      commentCount: model.commentcount,
-      votesA: model.votesA,
-      votesB: model.votesB,
-      voteStartTime: model.voteStartTime,
-      voteEndTime: model.voteEndTime,
-      isAnonymous: model.isAnonymous,
+      createdAt: display.createdAt,
+      status: PostStatus.values.firstWhere(
+        (s) => s.name == display.status,
+        orElse: () => PostStatus.published,
+      ),
+      likeCount: display.likeCount,
+      commentCount: display.commentCount,
+      votesA: display.votesA,
+      votesB: display.votesB,
+      voteStartTime: display.voteStartTime,
+      voteEndTime: display.voteEndTime,
+      isAnonymous: display.isAnonymous,
     );
   }
 
@@ -246,13 +246,13 @@ class GetFeedUseCase {
 class FeedResult {
   final List<Post> posts;
   final bool hasMore;
-  final DocumentSnapshot? lastDocument;
+  final String? lastDocumentId;
   final int totalCount;
 
   const FeedResult({
     required this.posts,
     required this.hasMore,
-    this.lastDocument,
+    this.lastDocumentId,
     required this.totalCount,
   });
 }

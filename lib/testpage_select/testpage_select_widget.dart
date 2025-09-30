@@ -614,7 +614,7 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                   AppButtonWidget(
                                     onPressed: () async {
                                       context.pushNamed(
-                                          InPutPostImageWidget.routeName);
+                                          CreatePostScreen.routeName);
                                     },
                                     text: AppLocalizations.of(context).getText(
                                       'un1ogy5i' /* image */,

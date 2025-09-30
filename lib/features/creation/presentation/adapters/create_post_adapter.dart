@@ -1,6 +1,9 @@
 import 'dart:io';
 import '/core_exports.dart';
 import '../providers/create_post_provider_v2.dart';
+import '../../domain/entities/post_creation.dart';
+import '../../domain/models/media_content.dart';
+import '../../domain/models/post_stats.dart';
 
 /// Adapter pattern implementation to bridge legacy AppState with Clean Architecture
 ///
@@ -125,6 +128,38 @@ class CreatePostAdapter {
     });
   }
 
+  /// Legacy AppState의 데이터를 CreatePostProviderV2로 동기화
+  void syncLegacyToClean() {
+    // 텍스트 필드 동기화
+    if (_legacyState.questionTitle.isNotEmpty) {
+      _cleanProvider.updateTitle(_legacyState.questionTitle);
+    }
+    if (_legacyState.questionDescription.isNotEmpty) {
+      _cleanProvider.updateDescription(_legacyState.questionDescription);
+    }
+    if (_legacyState.uploadTextA.isNotEmpty) {
+      _cleanProvider.updateTextA(_legacyState.uploadTextA);
+    }
+    if (_legacyState.uploadTextB.isNotEmpty) {
+      _cleanProvider.updateTextB(_legacyState.uploadTextB);
+    }
+
+    // 이미지 동기화 (임시 파일 우선, 없으면 업로드된 URL 사용)
+    if (_legacyState.tempImageFilesA.isNotEmpty) {
+      _cleanProvider.updateImagesA(_legacyState.tempImageFilesA);
+    } else if (_legacyState.uploadImageA.isNotEmpty) {
+      final files = _legacyState.uploadImageA.map((url) => File(url)).toList();
+      _cleanProvider.updateImagesA(files);
+    }
+
+    if (_legacyState.tempImageFilesB.isNotEmpty) {
+      _cleanProvider.updateImagesB(_legacyState.tempImageFilesB);
+    } else if (_legacyState.uploadImageB.isNotEmpty) {
+      final files = _legacyState.uploadImageB.map((url) => File(url)).toList();
+      _cleanProvider.updateImagesB(files);
+    }
+  }
+
   /// 익명 모드 토글
   void toggleAnonymous() {
     _cleanProvider.toggleAnonymous();
@@ -237,4 +272,100 @@ class CreatePostAdapter {
   bool get isLoading => _cleanProvider.isLoading;
   String? get errorMessage => _cleanProvider.errorMessage;
   double get uploadProgress => _cleanProvider.uploadProgress;
+
+  /// MediaContent를 PostOption으로 변환하는 helper 메서드
+  PostOption _mediaContentToPostOption(MediaContent mediaContent) {
+    return PostOption(
+      text: mediaContent.text,
+      imageUrls: mediaContent.imageUrls,
+      videoUrls: mediaContent.videoUrl.isNotEmpty ? [mediaContent.videoUrl] : null,
+      aspectRatios: mediaContent.aspectRatio != null ? [mediaContent.aspectRatio!] : [],
+      metadata: {
+        'mediaType': mediaContent.mediaType,
+        'layoutType': mediaContent.layoutType,
+        'thumbnailUrl': mediaContent.thumbnailUrl,
+        if (mediaContent.youtubeUrl.isNotEmpty) 'youtubeUrl': mediaContent.youtubeUrl,
+        if (mediaContent.duration != null) 'duration': mediaContent.duration,
+        if (mediaContent.fileSize != null) 'fileSize': mediaContent.fileSize,
+        if (mediaContent.dimensions.isNotEmpty) 'dimensions': mediaContent.dimensions,
+      },
+    );
+  }
+
+  /// Legacy State를 PostCreation 도메인 모델로 변환 (Phase 4)
+  PostCreation createPostFromLegacyState() {
+    // 옵션 A 미디어 컨텐츠 생성
+    final mediaContentA = MediaContent(
+      text: _legacyState.uploadTextA,
+      imageUrls: _legacyState.uploadImageA,
+      videoUrl: '', // 비디오는 나중에 추가
+      aspectRatio: _legacyState.uploadImageAspectRatioA.isNotEmpty
+          ? _legacyState.uploadImageAspectRatioA.first
+          : 1.0,
+    );
+
+    // 옵션 B 미디어 컨텐츠 생성
+    final mediaContentB = MediaContent(
+      text: _legacyState.uploadTextB,
+      imageUrls: _legacyState.uploadImageB,
+      videoUrl: '',
+      aspectRatio: _legacyState.uploadImageAspectRatioB.isNotEmpty
+          ? _legacyState.uploadImageAspectRatioB.first
+          : 1.0,
+    );
+
+    // MediaContent를 PostOption으로 변환
+    final optionA = _mediaContentToPostOption(mediaContentA);
+    final optionB = _mediaContentToPostOption(mediaContentB);
+
+    // 현재 사용자 정보 (TODO: 실제 사용자 정보 연동 필요)
+    const userId = 'test_user';
+    const displayName = 'Test User';
+    const photoUrl = 'https://storage.googleapis.com/flutterflow-io-6f20.appspot.com/projects/test-o1k5j9/assets/48cr6evvqdtw/Frame_5.png';
+
+    // 통계 데이터 초기화
+    final stats = PostStats(
+      participantCount: 0,
+      viewCount: 0,
+      likeCount: 0,
+      dislikeCount: 0,
+      shareCount: 0,
+      commentCount: 0,
+    );
+
+    // PostCreation 모델 생성
+    return PostCreation(
+      id: '', // Firestore에서 자동 생성될 예정
+      userId: userId,
+      title: _legacyState.questionTitle,
+      description: _legacyState.questionDescription,
+      optionA: optionA,
+      optionB: optionB,
+      createdAt: DateTime.now(),
+      status: PostStatus.draft,
+      likeCount: stats.likeCount ?? 0,
+      commentCount: stats.commentCount ?? 0,
+      voteConfig: VoteConfiguration(
+        startTime: DateTime.now(),
+        endTime: DateTime.now().add(const Duration(hours: 24)),
+        allowAnonymous: false,
+      ),
+      isAnonymous: false, // 기본값
+      category: 'general', // 기본 카테고리
+      tags: [], // 태그는 나중에 추가
+      metadata: {
+        'creatorInfo': {
+          'displayName': displayName,
+          'photoUrl': photoUrl,
+        },
+        'stats': {
+          'viewCount': stats.viewCount,
+          'shareCount': stats.shareCount,
+        },
+        'targetAudience': {
+          'mode': 'public', // 기본 공개 모드
+        },
+      },
+    );
+  }
 }

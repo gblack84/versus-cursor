@@ -22,8 +22,8 @@ export '/features/auth/presentation/screens/phone_auth/phone_creat_account/phone
     show PhoneCreatAccountWidget;
 export '/features/auth/presentation/screens/phone_auth/phonelogeinpincode_widget.dart'
     show PhonelogeinpincodeWidget;
-export '/features/creation/presentation/screens/create_post/in_put_post_image_widget.dart'
-    show InPutPostImageWidget;
+export '/features/creation/presentation/screens/create_post/create_post_screen.dart'
+    show CreatePostScreen;
 export '/features/creation/presentation/screens/editor/pro_image_editor_page.dart'
     show ProImageEditorPage;
 export '/features/creation/presentation/screens/viewer/image_viewer_page.dart'

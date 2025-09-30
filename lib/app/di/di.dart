@@ -23,3 +23,4 @@ export 'feature_modules.dart';
 
 // Feature modules
 export 'profile_module.dart';
+export 'creation_module.dart';

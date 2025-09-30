@@ -2,7 +2,7 @@
 // This file exports all public interfaces from the Creation feature
 
 // Domain Layer
-export 'domain/models/post.dart';
+export 'domain/entities/post_creation.dart';
 export 'domain/models/posts_model.dart';
 export 'domain/models/post_core.dart';
 export 'domain/models/post_content.dart';
@@ -15,9 +15,8 @@ export 'domain/usecases/create_post_usecase.dart';
 export 'domain/usecases/moderate_content_usecase.dart';
 
 // Data Layer
-export 'data/repositories/post_repository_impl.dart';
+// Legacy repository removed - using 6 new specialized repositories
 
 // Presentation Layer
-export 'presentation/screens/create_post/in_put_post_image_widget.dart';
 export 'presentation/screens/create_post/create_post_screen.dart';
-export 'presentation/screens/create_post/in_put_post_image_screen.dart';
+export 'presentation/screens/create_post/in_put_post_image_model.dart'; // Model still needed by CreatePostScreen

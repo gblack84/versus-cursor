@@ -1,5 +1,6 @@
 import '/core_exports.dart';
 import '/features/creation/domain/models/target_audience.dart';
+import '/features/creation/domain/services/i_target_audience_service.dart';
 import '/features/notifications/data/datasources/i_post_datasource.dart';
 
 /// 타겟 오디언스 관련 서비스
@@ -8,15 +9,15 @@ import '/features/notifications/data/datasources/i_post_datasource.dart';
 /// 투표 생성 시 타겟 오디언스 정보를 저장합니다.
 ///
 /// Clean Architecture를 위해 Firebase 직접 호출 대신 IPostDatasource를 사용합니다.
-class TargetAudienceService {
-  final IPostDatasource _postDatasource;
+class TargetAudienceService implements ITargetAudienceService {
+  final IPostDatasource? _postDatasource;
 
   TargetAudienceService({
-    required IPostDatasource postDatasource,
+    IPostDatasource? postDatasource,
   }) : _postDatasource = postDatasource;
 
   /// PostDatasource 가져오기
-  IPostDatasource get postDatasource => _postDatasource;
+  IPostDatasource? get postDatasource => _postDatasource;
 
   /// TargetAudience를 Firestore 저장용 Map으로 변환
   ///
@@ -36,6 +37,7 @@ class TargetAudienceService {
   /// 타겟 오디언스 유효성 검사
   ///
   /// 투표 생성 전에 타겟 오디언스 설정이 유효한지 확인합니다.
+  @override
   ValidationResult validateTargetAudience(TargetAudience model) {
     // 기본 검증
     if (model.targetCount <= 0) {
@@ -94,7 +96,7 @@ class TargetAudienceService {
       };
 
       // 4. PostDatasource를 통해 저장 (Firebase 직접 호출 제거)
-      final postId = await postDatasource.createPostWithTargetAudience(
+      final postId = await _postDatasource?.createPostWithTargetAudience(
         postData: completePostData,
         targetAudience: targetAudienceData,
       );
@@ -130,7 +132,7 @@ class TargetAudienceService {
       }
 
       // PostDatasource를 통해 업데이트 (Firebase 직접 호출 제거)
-      await postDatasource.updatePostNotificationStatus(
+      await _postDatasource?.updatePostNotificationStatus(
         postId: postId,
         notificationsSent: true,
         notificationsSentAt: DateTime.now(),
@@ -192,17 +194,38 @@ class TargetAudienceService {
       return TargetAudienceStats.empty();
     }
   }
-}
 
-/// 유효성 검사 결과
-class ValidationResult {
-  final bool isValid;
-  final String? error;
+  @override
+  Future<TargetAudience> createTargetAudience({
+    required String mode,
+    required int targetCount,
+    List<String>? selectedUserIds,
+    Map<String, dynamic>? filters,
+  }) async {
+    // Create and return a new TargetAudience instance
+    return TargetAudience(
+      collectionType: mode,
+      targetCount: targetCount,
+      testMode: mode == 'test',
+      // Handle filters for custom mode
+      selectedInterests: filters?['interests'] as List<String>? ?? [],
+      selectedAgeGroup: filters?['ageGroup'] as String?,
+      selectedGender: filters?['gender'] as String?,
+      activeUserOnly: filters?['activeUserOnly'] as bool? ?? false,
+      createdAt: DateTime.now(),
+    );
+  }
 
-  ValidationResult({
-    required this.isValid,
-    this.error,
-  });
+  @override
+  Future<List<String>> getRecommendedUsers({
+    required String contentId,
+    required int count,
+  }) async {
+    // This would typically call an AI service or recommendation engine
+    // For now, return an empty list
+    // TODO: Implement user recommendation logic
+    return [];
+  }
 }
 
 /// 타겟 오디언스 통계

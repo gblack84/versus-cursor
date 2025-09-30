@@ -2,9 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/usecases/get_feed_usecase.dart';
-import '../../domain/entities/post.dart';
-import '../../domain/core/result.dart';
-import '../../domain/failures/post_failures.dart';
+import '../../../creation/domain/entities/post_creation.dart';
+import '../../../creation/domain/core/result.dart';
+import '../../../creation/domain/failures/creation_failures.dart';
 
 /// Feed loading state
 enum FeedLoadingState {

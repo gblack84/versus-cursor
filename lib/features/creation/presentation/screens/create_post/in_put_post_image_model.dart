@@ -7,7 +7,13 @@ import '/core/types/layout_type.dart';
 class InPutPostImageModel extends AppModel<InPutPostImageWidget> {
   ///  Local state fields for this page.
 
-  bool absellected = false;
+  // Phase 5 Migration: B박스 표시 여부는 MediaSelectionProvider로 이동됨
+  @Deprecated('Use MediaSelectionProvider.isBoxBVisible instead - Phase 5 Migration')
+  bool _absellected = false;
+  bool get absellected => _absellected;
+  set absellected(bool value) {
+    _absellected = value;
+  }
 
   // 기존 토글 상태 (점진적 마이그레이션을 위해 유지)
   // 주의: isRatioVertical이 true면 UI에서 가로 배치(좌/우)를 표시
@@ -20,9 +26,20 @@ class InPutPostImageModel extends AppModel<InPutPostImageWidget> {
 
   bool showNextButton = false;
 
-  // 비디오 선택 상태
-  bool isVideoSelectedA = false;
-  bool isVideoSelectedB = false;
+  // Phase 5 Migration: 미디어 선택 상태는 MediaSelectionProvider로 이동됨
+  @Deprecated('Use MediaSelectionProvider.isVideoSelectedA instead - Phase 5 Migration')
+  bool _isVideoSelectedA = false;
+  bool get isVideoSelectedA => _isVideoSelectedA;
+  set isVideoSelectedA(bool value) {
+    _isVideoSelectedA = value;
+  }
+
+  @Deprecated('Use MediaSelectionProvider.isVideoSelectedB instead - Phase 5 Migration')
+  bool _isVideoSelectedB = false;
+  bool get isVideoSelectedB => _isVideoSelectedB;
+  set isVideoSelectedB(bool value) {
+    _isVideoSelectedB = value;
+  }
 
   // 금지어 감지 상태
   bool hasBlockedWordInTitle = false;
@@ -37,9 +54,20 @@ class InPutPostImageModel extends AppModel<InPutPostImageWidget> {
   bool hasValidationViolations = false;
   bool isShowingDialog = false; // 다이얼로그 표시 상태
 
-  // Vision API 검증 결과 저장
-  Map<String, dynamic>? visionResultA;
-  Map<String, dynamic>? visionResultB;
+  // Phase 5 Migration: Vision API 결과는 MediaValidationProvider로 이동됨
+  @Deprecated('Use MediaValidationProvider.visionResultA instead - Phase 5 Migration')
+  Map<String, dynamic>? _visionResultA;
+  Map<String, dynamic>? get visionResultA => _visionResultA;
+  set visionResultA(Map<String, dynamic>? value) {
+    _visionResultA = value;
+  }
+
+  @Deprecated('Use MediaValidationProvider.visionResultB instead - Phase 5 Migration')
+  Map<String, dynamic>? _visionResultB;
+  Map<String, dynamic>? get visionResultB => _visionResultB;
+  set visionResultB(Map<String, dynamic>? value) {
+    _visionResultB = value;
+  }
 
   // 필수 필드 비어있음 에러 상태
   bool isQuestionTitleEmpty = true;
@@ -53,9 +81,20 @@ class InPutPostImageModel extends AppModel<InPutPostImageWidget> {
   AnimationController? shakeController;
   Animation<double>? shakeAnimation;
 
-  // Current image index for each box
-  int currentImageIndexA = 0;
-  int currentImageIndexB = 0;
+  // Phase 5 Migration: 현재 이미지 인덱스는 MediaSelectionProvider로 이동됨
+  @Deprecated('Use MediaSelectionProvider.currentIndexA instead - Phase 5 Migration')
+  int _currentImageIndexA = 0;
+  int get currentImageIndexA => _currentImageIndexA;
+  set currentImageIndexA(int value) {
+    _currentImageIndexA = value;
+  }
+
+  @Deprecated('Use MediaSelectionProvider.currentIndexB instead - Phase 5 Migration')
+  int _currentImageIndexB = 0;
+  int get currentImageIndexB => _currentImageIndexB;
+  set currentImageIndexB(int value) {
+    _currentImageIndexB = value;
+  }
 
   // Edit mode detection
   bool isEditMode = false;

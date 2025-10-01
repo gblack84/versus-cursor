@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../domain/usecases/create_post_usecase.dart';
 import '../../domain/usecases/moderate_content_usecase.dart';
+import '../../domain/usecases/validation/validate_post_usecase.dart';
 import '../../domain/entities/post_creation.dart';
 import '../../domain/core/result.dart';
 import '../../domain/failures/creation_failures.dart';
@@ -91,14 +92,17 @@ enum ModerationStatus {
 class CreatePostProviderV2 extends ChangeNotifier {
   final CreatePostUseCase _createPostUseCase;
   final ModerateContentUseCase _moderateContentUseCase;
+  final ValidatePostUseCase _validatePostUseCase;
   final MediaStateCoordinator? _mediaCoordinator; // Phase 5: Optional for gradual migration
 
   CreatePostProviderV2({
     required CreatePostUseCase createPostUseCase,
     required ModerateContentUseCase moderateContentUseCase,
+    required ValidatePostUseCase validatePostUseCase,
     MediaStateCoordinator? mediaCoordinator, // Phase 5: Optional injection
   })  : _createPostUseCase = createPostUseCase,
         _moderateContentUseCase = moderateContentUseCase,
+        _validatePostUseCase = validatePostUseCase,
         _mediaCoordinator = mediaCoordinator;
 
   // State
@@ -120,6 +124,7 @@ class CreatePostProviderV2 extends ChangeNotifier {
   PostCreation? get createdPost => _createdPost;
   bool get isLoading => _loadingState == LoadingState.loading;
   bool get canSubmit => _formData.isValid && !isLoading;
+  ValidatePostUseCase get validatePostUseCase => _validatePostUseCase;
 
   // Form field updates
   void updateTitle(String value) {
@@ -177,10 +182,42 @@ class CreatePostProviderV2 extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Validate form fields using UseCase
+  Future<bool> validateFormFields() async {
+    // Title and description validation
+    final titleResult = await _validatePostUseCase.validateText(_formData.title);
+    if (!titleResult.isValid) {
+      _setError(titleResult.errorMessage ?? '제목이 올바르지 않습니다.');
+      return false;
+    }
+
+    final descriptionResult = await _validatePostUseCase.validateText(_formData.description);
+    if (!descriptionResult.isValid) {
+      _setError(descriptionResult.errorMessage ?? '설명이 올바르지 않습니다.');
+      return false;
+    }
+
+    // Option validation
+    if (_formData.textA.isEmpty && _formData.imagesA.isEmpty) {
+      _setError('A 옵션에 텍스트나 이미지가 필요합니다.');
+      return false;
+    }
+
+    if (!_formData.isSingleMode) {
+      if (_formData.textB.isEmpty && _formData.imagesB.isEmpty) {
+        _setError('B 옵션에 텍스트나 이미지가 필요합니다.');
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   /// Validate and moderate content before submission
   Future<bool> validateAndModerate() async {
-    if (!_formData.isValid) {
-      _setError('모든 필수 필드를 입력해주세요.');
+    // Use ValidatePostUseCase instead of internal validation
+    final isValid = await validateFormFields();
+    if (!isValid) {
       return false;
     }
 

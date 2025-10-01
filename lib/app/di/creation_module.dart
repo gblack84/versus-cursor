@@ -6,6 +6,7 @@ import '../../features/creation/domain/usecases/moderate_content_usecase.dart';
 // import '../../features/creation/domain/usecases/get_feed_usecase.dart'; // TODO: Implement in Phase 5
 import '../../features/creation/domain/usecases/media/upload_images_usecase.dart';
 import '../../features/creation/domain/usecases/audience/manage_target_audience_usecase.dart';
+import '../../features/creation/domain/usecases/validation/validate_post_usecase.dart';
 // import '../../features/creation/domain/repositories/i_post_repository.dart'; // Legacy - removed
 import '../../features/creation/domain/repositories/i_media_repository.dart';
 import '../../features/creation/domain/repositories/i_post_creation_repository_v2.dart';
@@ -239,6 +240,11 @@ class CreationModule implements FeatureModule {
       ),
     );
 
+    // Validate Post UseCase
+    sl.registerFactory<ValidatePostUseCase>(
+      () => const ValidatePostUseCase(),
+    );
+
     // TODO: Implement GetFeedUseCase in Phase 5
     // sl.registerFactory<GetFeedUseCase>(
     //   () => GetFeedUseCase(
@@ -289,6 +295,7 @@ class CreationModule implements FeatureModule {
       () => CreatePostProviderV2(
         createPostUseCase: sl<CreatePostUseCase>(),
         moderateContentUseCase: sl<ModerateContentUseCase>(),
+        validatePostUseCase: sl<ValidatePostUseCase>(),
         mediaCoordinator: sl<MediaStateCoordinator>(),
       ),
     );
@@ -428,6 +435,7 @@ class CreationModule implements FeatureModule {
       return CreatePostProviderV2(
         createPostUseCase: _getIt<CreatePostUseCase>(),
         moderateContentUseCase: _getIt<ModerateContentUseCase>(),
+        validatePostUseCase: _getIt<ValidatePostUseCase>(),
         mediaCoordinator: _getIt<MediaStateCoordinator>(),
       ) as T;
     }

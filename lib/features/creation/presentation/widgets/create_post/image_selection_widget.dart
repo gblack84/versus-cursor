@@ -1,8 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '/core_exports.dart';
-import '../../adapters/create_post_adapter.dart';
 import '../../providers/create_post_provider_v2.dart';
 import '../../providers/media/media_selection_provider.dart';
 import '../../providers/media/media_state_coordinator.dart';
@@ -51,17 +49,13 @@ class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<AppState, CreatePostProviderV2, MediaSelectionProvider>(
-      builder: (context, appState, cleanProvider, mediaSelection, child) {
+    return Consumer2<CreatePostProviderV2, MediaSelectionProvider>(
+      builder: (context, provider, mediaSelection, child) {
         // Phase 5 Migration: MediaSelectionProvider 사용
-        // Adapter를 통해 상태 연결
-        final adapter = CreatePostAdapter(
-          cleanProvider: cleanProvider,
-          legacyState: appState,
-        );
+        // 직접 Provider 사용으로 변경
 
         // 레이아웃 업데이트 - MediaSelectionProvider의 aspectRatio 사용 (Phase 5)
-        _updateLayoutBasedOnImages(appState); // 임시로 기존 메서드 유지
+        _updateLayoutBasedOnImages(provider); // Provider 직접 사용
 
         return Column(
           children: [
@@ -69,10 +63,10 @@ class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
             if (kDebugMode) _buildLayoutDebugInfo(),
 
             // 메인 미디어 섹션
-            _buildMediaSection(appState, adapter),
+            _buildMediaSection(provider),
 
             // 경고 메시지
-            if (_shouldShowWarning(appState))
+            if (_shouldShowWarning(provider))
               _buildWarningMessage(),
           ],
         );
@@ -365,10 +359,10 @@ class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
     }
   }
 
-  bool _shouldShowWarning(AppState appState) {
+  bool _shouldShowWarning(CreatePostProviderV2 provider) {
     // A박스가 비어있고 B박스에 이미지가 있는 경우
-    return appState.tempImageFilesA.isEmpty &&
-           appState.tempImageFilesB.isNotEmpty;
+    final formData = provider.formData;
+    return formData.imagesA.isEmpty && formData.imagesB.isNotEmpty;
   }
 
   Widget _buildWarningMessage() {

@@ -76,24 +76,26 @@ class _CreatePostScreenState extends State<CreatePostScreen>
     // AppState 데이터를 Provider로 동기화
     adapter.syncLegacyToClean();
 
-    // 유효성 검사
-    if (!_areRequiredFieldsFilled(appState)) {
-      _triggerShakeAnimation();
-      BotToast.showText(
-        text: '모든 필수 항목을 입력해주세요',
-        duration: const Duration(seconds: 3),
-        contentColor: Colors.red.shade600,
-        textStyle: const TextStyle(color: Colors.white),
-      );
-      return;
-    }
-
     setState(() {
       _isValidating = true;
     });
 
     try {
-      // CreatePostProviderV2를 직접 사용하여 포스트 생성
+      // Provider의 UseCase를 통한 유효성 검사
+      final isValid = await cleanProvider.validateFormFields();
+
+      if (!isValid) {
+        _triggerShakeAnimation();
+        BotToast.showText(
+          text: cleanProvider.errorMessage ?? '모든 필수 항목을 입력해주세요',
+          duration: const Duration(seconds: 3),
+          contentColor: Colors.red.shade600,
+          textStyle: const TextStyle(color: Colors.white),
+        );
+        return;
+      }
+
+      // CreatePostProviderV2를 통해 포스트 생성
       // TODO: 현재 userId는 하드코딩되어 있음 - 추후 실제 사용자 정보 연동 필요
       await cleanProvider.createPost('test_user');
 
@@ -118,34 +120,6 @@ class _CreatePostScreenState extends State<CreatePostScreen>
     }
   }
 
-  bool _areRequiredFieldsFilled(AppState appState) {
-    // 제목과 설명은 필수
-    if (appState.questionTitle.isEmpty || appState.questionDescription.isEmpty) {
-      return false;
-    }
-
-    // A박스에 컨텐츠가 있어야 함 (이미지 또는 텍스트)
-    final hasContentA = appState.tempImageFilesA.isNotEmpty ||
-                        appState.uploadImageA.isNotEmpty ||
-                        appState.uploadTextA.isNotEmpty;
-
-    if (!hasContentA) {
-      return false;
-    }
-
-    // B박스는 absellected가 false일 때만 체크
-    if (!_absellected) {
-      final hasContentB = appState.tempImageFilesB.isNotEmpty ||
-                          appState.uploadImageB.isNotEmpty ||
-                          appState.uploadTextB.isNotEmpty;
-
-      if (!hasContentB) {
-        return false;
-      }
-    }
-
-    return true;
-  }
 
   void _triggerShakeAnimation() {
     _shakeController.forward().then((_) {
@@ -292,13 +266,11 @@ class _CreatePostScreenState extends State<CreatePostScreen>
                               ),
                             ],
                           ),
-                          child: Consumer<AppState>(
-                            builder: (context, appState, child) {
-                              final isValid = _areRequiredFieldsFilled(appState);
-
+                          child: Consumer<CreatePostProviderV2>(
+                            builder: (context, provider, child) {
                               return NextButton(
-                                showButton: isValid,
-                                onPressed: isValid && !_isValidating
+                                showButton: provider.canSubmit,
+                                onPressed: provider.canSubmit && !_isValidating
                                     ? _handleSubmit
                                     : null,
                               );

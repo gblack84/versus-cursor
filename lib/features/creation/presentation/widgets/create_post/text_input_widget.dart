@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '/core_exports.dart';
-import '../../adapters/create_post_adapter.dart';
 import '../../providers/create_post_provider_v2.dart';
 import '/core/utils/debounce.dart';
 
@@ -82,83 +80,62 @@ class _TextInputWidgetState extends State<TextInputWidget> {
 
   void _onTitleChanged() {
     final text = _titleController.text;
+    final provider = context.read<CreatePostProviderV2>();
+
+    // Update provider directly
+    provider.updateTitle(text);
     widget.onTitleChanged?.call(text);
 
-    // Debounced validation
-    _titleDebounce?.run(() {
-      _validateTitle(text);
+    // Debounced validation using provider
+    _titleDebounce?.run(() async {
+      final result = await provider.validatePostUseCase.validateText(text);
+      setState(() {
+        _titleError = result.isValid ? null : result.errorMessage;
+      });
     });
   }
 
   void _onDescriptionChanged() {
     final text = _descriptionController.text;
+    final provider = context.read<CreatePostProviderV2>();
+
+    // Update provider directly
+    provider.updateDescription(text);
     widget.onDescriptionChanged?.call(text);
 
-    // Debounced validation
-    _descriptionDebounce?.run(() {
-      _validateDescription(text);
+    // Debounced validation using provider
+    _descriptionDebounce?.run(() async {
+      final result = await provider.validatePostUseCase.validateText(text);
+      setState(() {
+        _descriptionError = result.isValid ? null : result.errorMessage;
+      });
     });
   }
 
   void _onTextAChanged() {
     final text = _textAController.text;
+    final provider = context.read<CreatePostProviderV2>();
+
+    // Update provider directly
+    provider.updateTextA(text);
     widget.onTextAChanged?.call(text);
   }
 
   void _onTextBChanged() {
     final text = _textBController.text;
+    final provider = context.read<CreatePostProviderV2>();
+
+    // Update provider directly
+    provider.updateTextB(text);
     widget.onTextBChanged?.call(text);
   }
 
-  void _validateTitle(String text) {
-    if (text.isEmpty) {
-      setState(() {
-        _titleError = '제목을 입력해주세요';
-      });
-      return;
-    }
-
-    if (text.length < 2) {
-      setState(() {
-        _titleError = '제목은 최소 2자 이상이어야 합니다';
-      });
-      return;
-    }
-
-    setState(() {
-      _titleError = null;
-    });
-  }
-
-  void _validateDescription(String text) {
-    if (text.isEmpty) {
-      setState(() {
-        _descriptionError = '설명을 입력해주세요';
-      });
-      return;
-    }
-
-    if (text.length < 5) {
-      setState(() {
-        _descriptionError = '설명은 최소 5자 이상이어야 합니다';
-      });
-      return;
-    }
-
-    setState(() {
-      _descriptionError = null;
-    });
-  }
+  // Validation methods removed - now using Provider's ValidatePostUseCase
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<AppState, CreatePostProviderV2>(
-      builder: (context, appState, cleanProvider, child) {
-        final adapter = CreatePostAdapter(
-          cleanProvider: cleanProvider,
-          legacyState: appState,
-        );
-
+    return Consumer<CreatePostProviderV2>(
+      builder: (context, provider, child) {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
@@ -179,7 +156,7 @@ class _TextInputWidgetState extends State<TextInputWidget> {
                 focusNode: _textAFocus,
                 errorText: _textAError,
                 hintText: 'A 옵션에 대한 설명을 입력하세요',
-                onChanged: (text) => adapter.updateTextA(text),
+                onChanged: (text) => provider.updateTextA(text),
               ),
 
               // 옵션 텍스트 B
@@ -191,7 +168,7 @@ class _TextInputWidgetState extends State<TextInputWidget> {
                   focusNode: _textBFocus,
                   errorText: _textBError,
                   hintText: 'B 옵션에 대한 설명을 입력하세요',
-                  onChanged: (text) => adapter.updateTextB(text),
+                  onChanged: (text) => provider.updateTextB(text),
                 ),
               ],
             ],

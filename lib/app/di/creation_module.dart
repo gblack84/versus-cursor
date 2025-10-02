@@ -19,8 +19,9 @@ import '../../features/creation/domain/datasources/i_post_creation_datasource.da
 import '../../features/creation/domain/datasources/i_storage_datasource.dart';
 import '../../features/creation/domain/services/i_image_processing_service.dart';
 import '../../features/creation/domain/services/i_media_upload_service.dart';
+import '../../features/creation/domain/services/i_target_audience_service.dart';
 import '../../features/creation/data/repositories/media_repository_impl.dart';
-import '../../features/creation/data/services/media_upload_service_impl.dart';
+import '../../features/creation/data/repositories/media_upload_repository_impl.dart';
 import '../../features/creation/data/repositories/post_creation_repository_v2_impl.dart';
 import '../../features/creation/data/repositories/creation_command_repository_impl.dart';
 import '../../features/creation/data/repositories/content_metrics_repository_impl.dart';
@@ -29,8 +30,8 @@ import '../../features/creation/data/repositories/content_visibility_repository_
 // CreationQueryServiceImpl moved to Post Feature as PostQueryServiceImpl
 import '../../features/creation/data/datasources/firebase_post_creation_datasource.dart';
 import '../../features/creation/data/datasources/firebase_storage_datasource.dart';
-import '../../features/creation/data/services/target_audience_service.dart';
-import '../../features/creation/data/services/image_upload_service.dart';
+import '../../features/creation/data/repositories/target_audience_repository_impl.dart';
+import '../../features/creation/data/repositories/image_processing_repository_impl.dart';
 import '../../features/notifications/data/datasources/i_post_datasource.dart';
 // Firebase implementation is directly in creation module
 import '../../services/moderation/image_moderation_service.dart';
@@ -114,46 +115,38 @@ class CreationModule implements FeatureModule {
     }
   }
 
-  /// Register Service implementations
+  /// Register Service implementations (now Repository implementations)
   void _registerServices(GetIt sl) {
-    // Target Audience Service
-    if (!sl.isRegistered<TargetAudienceService>()) {
-      sl.registerLazySingleton<TargetAudienceService>(
-        // TODO: Fix TargetAudienceService dependencies
-        () => TargetAudienceService(
+    // Image Processing Service (implements IImageProcessingService)
+    if (!sl.isRegistered<IImageProcessingService>()) {
+      sl.registerLazySingleton<IImageProcessingService>(
+        () => ImageProcessingRepositoryImpl(),
+      );
+    }
+
+    // Media Upload Service (implements IMediaUploadService)
+    if (!sl.isRegistered<IMediaUploadService>()) {
+      sl.registerLazySingleton<IMediaUploadService>(
+        () => MediaUploadRepositoryImpl(
+          mediaRepository: sl<IMediaRepository>(),
+        ),
+      );
+    }
+
+    // Target Audience Service (implements ITargetAudienceService)
+    if (!sl.isRegistered<ITargetAudienceService>()) {
+      sl.registerLazySingleton<ITargetAudienceService>(
+        // TODO: Fix TargetAudienceRepositoryImpl dependencies after IPostDatasource migration
+        () => TargetAudienceRepositoryImpl(
           // postDatasource: sl<IPostDatasource>(),
         ),
       );
     }
 
-    // Image Processing Service (implements IImageProcessingService)
-    if (!sl.isRegistered<IImageProcessingService>()) {
-      sl.registerLazySingleton<IImageProcessingService>(
-        () => ImageUploadService(),
-      );
-    }
-
-    // Legacy Image Upload Service registration for backward compatibility
-    if (!sl.isRegistered<ImageUploadService>()) {
-      sl.registerLazySingleton<ImageUploadService>(
-        () => ImageUploadService(),
-      );
-    }
-
-    // Image Moderation Service
+    // Image Moderation Service (global service - TODO: refactor to DI)
     if (!sl.isRegistered<ImageModerationService>()) {
       sl.registerLazySingleton<ImageModerationService>(
         () => ImageModerationService(),
-      );
-    }
-
-    // Media Upload Service (IMediaUploadService implementation)
-    if (!sl.isRegistered<IMediaUploadService>()) {
-      sl.registerLazySingleton<IMediaUploadService>(
-        () => MediaUploadServiceImpl(
-          mediaRepository: sl<IMediaRepository>(),
-          imageProcessingService: sl<IImageProcessingService>(),
-        ),
       );
     }
   }
@@ -174,8 +167,8 @@ class CreationModule implements FeatureModule {
       sl.registerLazySingleton<IPostCreationRepositoryV2>(
         () => PostCreationRepositoryV2Impl(
           dataSource: sl<IPostCreationDataSource>(),
-          targetAudienceService: sl<TargetAudienceService>(),
-          imageUploadService: sl<ImageUploadService>(),
+          targetAudienceService: sl<ITargetAudienceService>(),
+          imageProcessingService: sl<IImageProcessingService>(),
         ),
       );
     }
@@ -246,7 +239,7 @@ class CreationModule implements FeatureModule {
     // Manage Target Audience UseCase
     sl.registerFactory<ManageTargetAudienceUseCase>(
       () => ManageTargetAudienceUseCase(
-        targetAudienceService: sl<TargetAudienceService>(),
+        targetAudienceService: sl<ITargetAudienceService>(),
       ),
     );
 
@@ -277,8 +270,7 @@ class CreationModule implements FeatureModule {
       sl.registerLazySingleton<MediaUploadProvider>(
         () => MediaUploadProvider(
           mediaRepository: sl<IMediaRepository>(),
-          mediaUploadService: sl<IMediaUploadService>(),
-          imageUploadService: sl<ImageUploadService>(),
+          imageProcessingService: sl<IImageProcessingService>(),
         ),
       );
     }
@@ -337,14 +329,14 @@ class CreationModule implements FeatureModule {
 
   /// Unregister Services
   void _unregisterServices(GetIt sl) {
-    if (sl.isRegistered<TargetAudienceService>()) {
-      sl.unregister<TargetAudienceService>();
-    }
     if (sl.isRegistered<IImageProcessingService>()) {
       sl.unregister<IImageProcessingService>();
     }
-    if (sl.isRegistered<ImageUploadService>()) {
-      sl.unregister<ImageUploadService>();
+    if (sl.isRegistered<IMediaUploadService>()) {
+      sl.unregister<IMediaUploadService>();
+    }
+    if (sl.isRegistered<ITargetAudienceService>()) {
+      sl.unregister<ITargetAudienceService>();
     }
     if (sl.isRegistered<ImageModerationService>()) {
       sl.unregister<ImageModerationService>();

@@ -5,9 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '../../../domain/repositories/i_media_repository.dart';
-import '../../../domain/services/i_media_upload_service.dart';
 import '../../../domain/services/i_image_processing_service.dart';
-import '../../../data/services/image_upload_service.dart';
 
 /// Upload task model
 class UploadTask {
@@ -66,14 +64,13 @@ class UploadError {
 /// - Parallel upload management (병렬 업로드 관리)
 class MediaUploadProvider extends ChangeNotifier {
   final IMediaRepository _mediaRepository;
-  final ImageUploadService _imageUploadService;
+  final IImageProcessingService _imageProcessingService;
 
   MediaUploadProvider({
     required IMediaRepository mediaRepository,
-    IMediaUploadService? mediaUploadService, // Kept for backward compatibility
-    required ImageUploadService imageUploadService,
+    required IImageProcessingService imageProcessingService,
   })  : _mediaRepository = mediaRepository,
-        _imageUploadService = imageUploadService;
+        _imageProcessingService = imageProcessingService;
 
   // ============= State =============
   // Active upload tasks
@@ -184,7 +181,7 @@ class MediaUploadProvider extends ChangeNotifier {
       notifyListeners();
 
       // Process images with moderation
-      final processResult = await _imageUploadService.processMultipleImages(
+      final processResult = await _imageProcessingService.processMultipleImages(
         files: task.files,
         box: task.box,
         onProgress: (progress) {
@@ -461,8 +458,8 @@ class MediaUploadProvider extends ChangeNotifier {
     String? assetId,
     Function(double)? onProgress,
   }) async {
-    // ImageUploadService 위임
-    final result = await _imageUploadService.processEditedImage(
+    // IImageProcessingService 위임
+    final result = await _imageProcessingService.processEditedImage(
       editedFile: editedFile,
       box: box,
       assetId: assetId,
@@ -475,7 +472,7 @@ class MediaUploadProvider extends ChangeNotifier {
   /// Process multiple images with moderation (MediaEditorWidget용)
   /// 멀티 이미지 검열 및 처리 - UI 레이어에서 호출
   ///
-  /// ImageUploadService를 Provider 레이어에서 위임하여
+  /// IImageProcessingService를 Provider 레이어에서 위임하여
   /// UI가 Data Layer에 직접 접근하지 않도록 합니다.
   ///
   /// [files]: 선택된 파일들
@@ -496,8 +493,8 @@ class MediaUploadProvider extends ChangeNotifier {
     Function(double)? onProgress,
     Function(int, int)? onModerationProgress,
   }) async {
-    // ImageUploadService 위임
-    final result = await _imageUploadService.processMultipleImages(
+    // IImageProcessingService 위임
+    final result = await _imageProcessingService.processMultipleImages(
       files: files,
       box: box,
       editedFile: editedFile,

@@ -6,18 +6,18 @@ import '../../domain/repositories/i_media_repository.dart';
 import '../../domain/services/i_image_processing_service.dart';
 import '../../domain/services/i_media_upload_service.dart';
 
-/// IMediaUploadService의 구현체
+/// Implementation of IMediaUploadService
 ///
-/// Phase 5 완성: 미디어 업로드 시스템의 Clean Architecture 구현
+/// Clean Architecture implementation - Domain service interface implemented in Data layer
 ///
 /// Responsibilities:
 /// - 3가지 크기 이미지 업로드 (original, display, thumbnail)
 /// - AI 검열과 업로드 통합 처리
 /// - Firebase Storage URL에서 이미지 다운로드
-class MediaUploadServiceImpl implements IMediaUploadService {
+class MediaUploadRepositoryImpl implements IMediaUploadService {
   final IMediaRepository _mediaRepository;
 
-  MediaUploadServiceImpl({
+  MediaUploadRepositoryImpl({
     required IMediaRepository mediaRepository,
     IImageProcessingService? imageProcessingService, // Kept for backward compatibility
   })  : _mediaRepository = mediaRepository;

@@ -1,12 +1,22 @@
 import 'dart:io';
 import 'dart:ui' as ui;
-import '/services/moderation/image_moderation_service.dart';
-import '/features/creation/domain/services/i_image_processing_service.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
+import '../../domain/services/i_image_processing_service.dart';
+import '/services/moderation/image_moderation_service.dart';
 
-/// Pure image upload and processing service without UI dependencies
-/// UI 의존성이 없는 순수한 이미지 업로드 및 처리 서비스
-class ImageUploadService implements IImageProcessingService {
+/// Implementation of IImageProcessingService
+///
+/// Clean Architecture implementation - Domain service interface implemented in Data layer
+///
+/// Responsibilities:
+/// - Image processing with AI moderation
+/// - Aspect ratio calculation
+/// - Multi-image batch processing
+/// - Edited image handling
+class ImageProcessingRepositoryImpl implements IImageProcessingService {
+  // TODO: Inject IImageModerationService instead of using static service
+  // For now, using global service until moderation service is refactored
+
   /// Process edited image with moderation (for multi-image edit flow)
   @override
   Future<SingleImageResult> processEditedImage({
@@ -35,7 +45,7 @@ class ImageUploadService implements IImageProcessingService {
     }
 
     // Calculate aspect ratio
-    final aspectRatio = await calculateAspectRatio(editedFile);
+    final aspectRatio = await _calculateAspectRatio(editedFile);
 
     onProgress?.call(1.0);
 
@@ -81,7 +91,7 @@ class ImageUploadService implements IImageProcessingService {
         _addRejectionReason(rejectedReasons, result.reason, editedFileIndex + 1);
       } else {
         approvedFiles.add(editedFile);
-        final ratio = await calculateAspectRatio(editedFile);
+        final ratio = await _calculateAspectRatio(editedFile);
         approvedRatios.add(ratio);
 
         if (assetEntities != null && editedFileIndex < assetEntities.length) {
@@ -103,7 +113,7 @@ class ImageUploadService implements IImageProcessingService {
 
       if (result.isAppropriate) {
         approvedFiles.add(files[i]);
-        final ratio = await calculateAspectRatio(files[i]);
+        final ratio = await _calculateAspectRatio(files[i]);
         approvedRatios.add(ratio);
 
         if (assetEntities != null && i < assetEntities.length) {
@@ -158,7 +168,7 @@ class ImageUploadService implements IImageProcessingService {
     }
 
     // Calculate aspect ratio
-    final aspectRatio = await calculateAspectRatio(file);
+    final aspectRatio = await _calculateAspectRatio(file);
 
     onProgress?.call(1.0);
 
@@ -171,8 +181,10 @@ class ImageUploadService implements IImageProcessingService {
     );
   }
 
+  // ========== Private Helper Methods ==========
+
   /// Calculate image aspect ratio
-  Future<double> calculateAspectRatio(File file) async {
+  Future<double> _calculateAspectRatio(File file) async {
     try {
       final bytes = await file.readAsBytes();
       final codec = await ui.instantiateImageCodec(bytes);
@@ -185,18 +197,14 @@ class ImageUploadService implements IImageProcessingService {
 
       image.dispose();
 
-      print('[ImageUploadService] Calculated aspect ratio:');
-      print('  - File: ${file.path}');
-      print('  - Size: ${width}x${height}');
-      print('  - Ratio: $ratio');
-
       return ratio;
     } catch (e) {
-      print('[ImageUploadService] Failed to calculate aspect ratio: $e');
-      return 1.0; // Default square ratio
+      // Return default square ratio on error
+      return 1.0;
     }
   }
 
+  /// Add rejection reason to map
   void _addRejectionReason(
     Map<String, List<int>> reasons,
     String reason,
@@ -209,5 +217,3 @@ class ImageUploadService implements IImageProcessingService {
     }
   }
 }
-
-// Types are imported from IImageProcessingService

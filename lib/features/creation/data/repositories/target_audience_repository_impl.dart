@@ -3,16 +3,18 @@ import '/features/creation/domain/models/target_audience.dart';
 import '/features/creation/domain/services/i_target_audience_service.dart';
 import '/features/notifications/data/datasources/i_post_datasource.dart';
 
-/// 타겟 오디언스 관련 서비스
+/// Implementation of ITargetAudienceService
 ///
-/// TargetAudience를 Firebase Functions가 기대하는 형식으로 변환하고,
-/// 투표 생성 시 타겟 오디언스 정보를 저장합니다.
+/// Clean Architecture implementation - Domain service interface implemented in Data layer
 ///
-/// Clean Architecture를 위해 Firebase 직접 호출 대신 IPostDatasource를 사용합니다.
-class TargetAudienceService implements ITargetAudienceService {
+/// Responsibilities:
+/// - TargetAudience를 Firebase Functions가 기대하는 형식으로 변환
+/// - 투표 생성 시 타겟 오디언스 정보를 저장
+/// - IPostDatasource를 통한 게시물 생성 및 알림 관리
+class TargetAudienceRepositoryImpl implements ITargetAudienceService {
   final IPostDatasource? _postDatasource;
 
-  TargetAudienceService({
+  TargetAudienceRepositoryImpl({
     IPostDatasource? postDatasource,
   }) : _postDatasource = postDatasource;
 

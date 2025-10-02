@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '/services/moderation/image_moderation_service.dart';
 
 /// Image processing service interface for Domain layer
@@ -10,7 +11,11 @@ abstract class IImageProcessingService {
   Future<ImageProcessingResult> processMultipleImages({
     required List<File> files,
     required String box,
+    File? editedFile,
+    int? editedFileIndex,
+    List<AssetEntity>? assetEntities,
     Function(double)? onProgress,
+    Function(int current, int total)? onModerationProgress,
   });
 
   /// Process a single edited image

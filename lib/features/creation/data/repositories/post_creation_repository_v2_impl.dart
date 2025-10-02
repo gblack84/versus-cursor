@@ -1,15 +1,16 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/models/post_core.dart';
-import '../../domain/models/post_content.dart';
+import '../../domain/models/post_content.dart' hide ValidationResult; // Hide to avoid conflict
 import '../../domain/models/target_audience.dart';
-import '../../domain/services/i_target_audience_service.dart' as service;
+import '../../domain/services/i_target_audience_service.dart';
 import '../../domain/services/i_image_processing_service.dart';
 import '../../domain/repositories/i_post_creation_repository_v2.dart';
 import '../../domain/datasources/i_post_creation_datasource.dart';
-import '../services/target_audience_service.dart';
-import '../services/image_upload_service.dart';
 import '../mappers/creation_firestore_mapper.dart';
+
+// Use ValidationResult from ITargetAudienceService (not from PostContent)
+export '../../domain/services/i_target_audience_service.dart' show ValidationResult;
 
 /// Implementation of IPostCreationRepositoryV2
 ///
@@ -34,19 +35,19 @@ import '../mappers/creation_firestore_mapper.dart';
 /// Phase 8: PostVoting/PostMetrics removed - Feature isolation complete
 class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   final IPostCreationDataSource _dataSource;
-  final TargetAudienceService? _targetAudienceService;
-  final ImageUploadService _imageUploadService;
+  final ITargetAudienceService? _targetAudienceService;
+  final IImageProcessingService _imageProcessingService;
   final CollectionReference<Map<String, dynamic>> _postsCollection;
   final CreationFirestoreMapper _mapper = CreationFirestoreMapper();
 
   PostCreationRepositoryV2Impl({
     required IPostCreationDataSource dataSource,
-    TargetAudienceService? targetAudienceService,
-    required ImageUploadService imageUploadService,
+    ITargetAudienceService? targetAudienceService,
+    required IImageProcessingService imageProcessingService,
     FirebaseFirestore? firestore,
   }) : _dataSource = dataSource,
        _targetAudienceService = targetAudienceService,
-       _imageUploadService = imageUploadService,
+       _imageProcessingService = imageProcessingService,
        _postsCollection = (firestore ?? FirebaseFirestore.instance).collection('posts');
 
   // ====== Creation Operations ======
@@ -305,14 +306,14 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // ====== Service Operations (Phase 1.3) ======
 
   @override
-  service.ValidationResult validateTargetAudience(TargetAudience targetAudience) {
+  ValidationResult validateTargetAudience(TargetAudience targetAudience) {
     // Delegate to internal service if available
     final audienceService = _targetAudienceService;
     if (audienceService != null) {
       return audienceService.validateTargetAudience(targetAudience);
     }
     // Return valid if no service available (temporary)
-    return service.ValidationResult(isValid: true);
+    return ValidationResult(isValid: true);
   }
 
   @override
@@ -322,7 +323,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     Function(double)? onProgress,
   }) async {
     // Delegate to internal service
-    final result = await _imageUploadService.processMultipleImages(
+    final result = await _imageProcessingService.processMultipleImages(
       files: files,
       box: box,
       onProgress: onProgress,
@@ -348,7 +349,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     Function(double)? onProgress,
   }) async {
     // Delegate to internal service
-    final result = await _imageUploadService.processEditedImage(
+    final result = await _imageProcessingService.processEditedImage(
       editedFile: editedFile,
       box: box,
       assetId: assetId,

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '/core_exports.dart';
 import '/features/creation/presentation/providers/target_audience_provider.dart';
 import '/features/creation/domain/constants/target_audience_constants.dart';
+import '/features/creation/presentation/constants/target_audience_ui_constants.dart';
 
 /// Step 2: 목표 응답 수 설정
 class TargetCountSelector extends StatelessWidget {
@@ -20,7 +21,7 @@ class TargetCountSelector extends StatelessWidget {
     return Consumer<TargetAudienceModel>(
       builder: (context, model, child) {
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(TargetAudienceConstants.contentPadding),
+          padding: const EdgeInsets.all(TargetAudienceUIConstants.contentPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

@@ -14,7 +14,6 @@ import '/features/creation/presentation/delegates/camera_floating_button_delegat
 import 'media_editor_widget.dart';
 import '/features/creation/presentation/utils/no_animation_page_route.dart';
 import '/features/creation/presentation/providers/media/media_selection_provider.dart';
-import '/features/creation/presentation/providers/media/media_state_coordinator.dart';
 
 /// 미디어 선택부터 편집까지 하나의 플로우로 처리하는 위젯
 class MediaSelectionFlowWidget extends StatefulWidget {
@@ -580,7 +579,6 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       selectedAssets: _selectedAssets,
       currentEditIndex: _currentEditIndex,
       box: widget.box,
-      model: null, // Phase 5: InPutPostImageModel 제거
       isAddMode: widget.isAddMode,
       currentIndex: widget.currentIndex,
       existingImageUrls: widget.existingImageUrls,

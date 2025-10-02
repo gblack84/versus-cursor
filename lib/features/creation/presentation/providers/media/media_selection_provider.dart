@@ -1,6 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
+import '/core/utils/media/aspect_ratio_analyzer.dart';
+import '/features/creation/domain/usecases/media/ratio_calculator.dart';
+import '/services/ui/unified_box_calculator.dart';
+import '/core/types/layout_type.dart';
 
 /// Media selection state management provider
 /// 미디어 선택 상태 관리 Provider - Clean Architecture Phase 5
@@ -44,6 +48,16 @@ class MediaSelectionProvider extends ChangeNotifier {
   // B박스 표시 여부
   bool _isBoxBVisible = false;
 
+  // ============= Layout State (Phase 5 - Clean Architecture) =============
+  // 현재 레이아웃 타입
+  LayoutType _currentLayout = LayoutType.horizontal;
+
+  // 박스 크기 (동적 계산)
+  double? _boxWidthA;
+  double? _boxHeightA;
+  double? _boxWidthB;
+  double? _boxHeightB;
+
   // ============= Getters =============
   List<File> get selectedFilesA => List.unmodifiable(_selectedFilesA);
   List<File> get selectedFilesB => List.unmodifiable(_selectedFilesB);
@@ -67,6 +81,13 @@ class MediaSelectionProvider extends ChangeNotifier {
   bool get isVideoSelectedB => _isVideoSelectedB;
 
   bool get isBoxBVisible => _isBoxBVisible;
+
+  // Layout getters (Phase 5 - Clean Architecture)
+  LayoutType get currentLayout => _currentLayout;
+  double? get boxWidthA => _boxWidthA;
+  double? get boxHeightA => _boxHeightA;
+  double? get boxWidthB => _boxWidthB;
+  double? get boxHeightB => _boxHeightB;
 
   // 선택된 미디어 개수
   int get countA => _selectedFilesA.length;
@@ -343,6 +364,98 @@ class MediaSelectionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Validate if adding to B box is allowed
+  /// B박스에 추가 가능한지 검증
+  bool canAddToBoxB() {
+    return _selectedFilesA.isNotEmpty;
+  }
+
+  /// Get validation message for B box
+  /// B박스 검증 메시지 가져오기
+  String? getBoxBValidationMessage() {
+    if (_selectedFilesA.isEmpty) {
+      return 'A 항목을 먼저 입력해주세요';
+    }
+    return null;
+  }
+
+  // ============= Layout Management (Phase 5 - Clean Architecture) =============
+
+  /// Update layout based on aspect ratios
+  /// 비율 기반 레이아웃 업데이트
+  void updateLayout({
+    required double containerWidth,
+    required bool absellected,
+  }) {
+    // 이미지가 없으면 기본 레이아웃
+    if (_selectedFilesA.isEmpty && _selectedFilesB.isEmpty) {
+      _currentLayout = LayoutType.horizontal;
+      _boxWidthA = null;
+      _boxHeightA = null;
+      _boxWidthB = null;
+      _boxHeightB = null;
+      notifyListeners();
+      return;
+    }
+
+    // Aspect ratios 가져오기 (RatioCalculator로 대표 비율 계산)
+    double? ratioA = _aspectRatiosA.isNotEmpty
+        ? RatioCalculator.getRatio(_aspectRatiosA, box: 'A')
+        : null;
+    double? ratioB = (!absellected && _aspectRatiosB.isNotEmpty)
+        ? RatioCalculator.getRatio(_aspectRatiosB, box: 'B')
+        : null;
+
+    // Provider가 Domain 정적 메서드 사용 (Widget이 아님)
+    final layoutType = AspectRatioAnalyzer.getOptimalLayout(ratioA, ratioB);
+
+    // Provider가 Service 정적 메서드 사용 (Widget이 아님)
+    if (layoutType == LayoutType.horizontal) {
+      final data = UnifiedBoxCalculator.calculateForQuestion(
+        containerWidth: containerWidth,
+        layoutType: LayoutType.horizontal,
+        aspectRatioA: ratioA,
+        aspectRatioB: ratioB,
+        hasImageA: _selectedFilesA.isNotEmpty,
+        hasImageB: _selectedFilesB.isNotEmpty,
+      );
+
+      _currentLayout = LayoutType.horizontal;
+      _boxWidthA = data.sizeA.width;
+      _boxHeightA = data.sizeA.height;
+      _boxWidthB = data.sizeB.width;
+      _boxHeightB = data.sizeB.height;
+    } else {
+      final data = UnifiedBoxCalculator.calculateForQuestion(
+        containerWidth: containerWidth,
+        layoutType: LayoutType.vertical,
+        aspectRatioA: ratioA,
+        aspectRatioB: ratioB,
+        hasImageA: _selectedFilesA.isNotEmpty,
+        hasImageB: _selectedFilesB.isNotEmpty,
+      );
+
+      _currentLayout = LayoutType.vertical;
+      _boxWidthA = data.sizeA.width;
+      _boxHeightA = data.sizeA.height;
+      _boxWidthB = data.sizeB.width;
+      _boxHeightB = data.sizeB.height;
+    }
+
+    notifyListeners();
+  }
+
+  /// Reset layout to default
+  /// 레이아웃 초기화
+  void resetLayout() {
+    _currentLayout = LayoutType.horizontal;
+    _boxWidthA = null;
+    _boxHeightA = null;
+    _boxWidthB = null;
+    _boxHeightB = null;
+    notifyListeners();
+  }
+
   /// Clear all media in a box
   /// 박스의 모든 미디어 제거
   void clearBox(String box) {
@@ -389,6 +502,34 @@ class MediaSelectionProvider extends ChangeNotifier {
   /// 피커에서 사용할 선택된 AssetEntity ID 가져오기
   List<String> getSelectedAssetIds(String box) {
     return box == 'A' ? List.from(_assetEntityIdsA) : List.from(_assetEntityIdsB);
+  }
+
+  // ============= Aspect Ratio Calculation (RatioCalculator Integration) =============
+
+  /// Get representative aspect ratio for box A
+  /// A박스의 대표 비율 계산 (RatioCalculator 사용)
+  ///
+  /// Returns:
+  /// - Calculated representative ratio for multiple images
+  /// - 1.0 if no images selected
+  ///
+  /// Uses RatioCalculator with caching for performance optimization
+  double getRepresentativeRatioA() {
+    if (_aspectRatiosA.isEmpty) return 1.0;
+    return RatioCalculator.getRatio(_aspectRatiosA, box: 'A');
+  }
+
+  /// Get representative aspect ratio for box B
+  /// B박스의 대표 비율 계산 (RatioCalculator 사용)
+  ///
+  /// Returns:
+  /// - Calculated representative ratio for multiple images
+  /// - 1.0 if no images selected
+  ///
+  /// Uses RatioCalculator with caching for performance optimization
+  double getRepresentativeRatioB() {
+    if (_aspectRatiosB.isEmpty) return 1.0;
+    return RatioCalculator.getRatio(_aspectRatiosB, box: 'B');
   }
 
   @override

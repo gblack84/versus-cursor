@@ -18,6 +18,9 @@ abstract class ITargetAudienceService {
     required String contentId,
     required int count,
   });
+
+  /// Convert TargetAudience domain model to Firestore format
+  Map<String, dynamic> convertModelToFirestore(TargetAudience model);
 }
 
 /// Validation result for target audience

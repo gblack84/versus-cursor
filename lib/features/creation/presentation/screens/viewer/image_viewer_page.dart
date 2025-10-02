@@ -2,8 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '/core_exports.dart';
-import 'image_viewer_model.dart';
-export 'image_viewer_model.dart';
 
 class ImageViewerPage extends StatefulWidget {
   const ImageViewerPage({
@@ -27,7 +25,7 @@ class ImageViewerPage extends StatefulWidget {
 }
 
 class _ImageViewerPageState extends State<ImageViewerPage> {
-  late ImageViewerModel _model;
+  int _currentIndex = 0;
   late PageController _pageController;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
@@ -35,8 +33,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
   @override
   void initState() {
     super.initState();
-    _model = createModel(context, () => ImageViewerModel());
-    _model.currentIndex = widget.initialIndex;
+    _currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: widget.initialIndex);
 
     // Validate that we have either URLs or paths
@@ -46,7 +43,6 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
 
   @override
   void dispose() {
-    _model.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -116,7 +112,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                 : widget.imageUrls.length,
             onPageChanged: (index) {
               setState(() {
-                _model.currentIndex = index;
+                _currentIndex = index;
               });
             },
             itemBuilder: (context, index) {
@@ -188,7 +184,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                                 borderRadius: BorderRadius.circular(20.0),
                               ),
                               child: Text(
-                                '${_model.currentIndex + 1} / $totalCount',
+                                '${_currentIndex + 1} / $totalCount',
                                 style: AppTheme.of(context).bodySmall.override(
                                       color: Colors.white,
                                     ),

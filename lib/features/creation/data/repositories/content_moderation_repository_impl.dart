@@ -61,8 +61,9 @@ class ContentModerationRepositoryImpl implements IContentModerationRepository {
     try {
       // Use existing ModerateContentUseCase if available
       if (_moderateUseCase != null) {
-        final result = await _moderateUseCase!.execute(
-          contentId: contentId,
+        final result = await _moderateUseCase!.moderateText(
+          text: contentId,
+          context: 'post_content',
         );
 
         return result.fold(
@@ -74,12 +75,12 @@ class ContentModerationRepositoryImpl implements IContentModerationRepository {
             blockReason: failure.message,
             moderatedAt: DateTime.now(),
           ),
-          (moderationData) => ModerationResult(
+          (decision) => ModerationResult(
             contentId: contentId,
-            isApproved: moderationData['isApproved'] ?? true,
-            violations: List<String>.from(moderationData['violations'] ?? []),
-            confidenceScore: moderationData['confidence'] ?? 1.0,
-            blockReason: moderationData['reason'],
+            isApproved: decision.isApproved,
+            violations: decision.reason != null ? [decision.reason!] : [],
+            confidenceScore: decision.confidence,
+            blockReason: decision.reason,
             moderatedAt: DateTime.now(),
           ),
         );

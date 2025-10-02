@@ -1,6 +1,6 @@
 // Migrated from backend.dart - Direct Firestore import
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/features/creation/presentation/utils/debug_helper.dart';
+import '/core/utils/debug_helper.dart';
 
 /// 투표 상태 관리를 위한 중앙 서비스
 class VoteStatusService {

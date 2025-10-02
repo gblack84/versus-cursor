@@ -4,7 +4,7 @@ import '../../../creation/domain/repositories/i_creation_command_repository.dart
 import '../../../creation/domain/repositories/i_content_metrics_repository.dart';
 import '../../../creation/domain/repositories/i_content_moderation_repository.dart';
 import '../../../creation/domain/repositories/i_content_visibility_repository.dart';
-import '../../../creation/domain/repositories/i_creation_query_service.dart';
+import '../../domain/repositories/i_post_query_service.dart';
 
 /// Aggregate Provider for Post Feature
 ///
@@ -20,7 +20,7 @@ class PostAggregateProvider extends ChangeNotifier {
   final IContentMetricsRepository _metricsRepository;
   final IContentModerationRepository _moderationRepository;
   final IContentVisibilityRepository _visibilityRepository;
-  final ICreationQueryService _queryService;
+  final IPostQueryService _queryService;
 
   // State variables
   bool _isLoading = false;
@@ -34,7 +34,7 @@ class PostAggregateProvider extends ChangeNotifier {
     required IContentMetricsRepository metricsRepository,
     required IContentModerationRepository moderationRepository,
     required IContentVisibilityRepository visibilityRepository,
-    required ICreationQueryService queryService,
+    required IPostQueryService queryService,
   })  : _commandRepository = commandRepository,
         _metricsRepository = metricsRepository,
         _moderationRepository = moderationRepository,

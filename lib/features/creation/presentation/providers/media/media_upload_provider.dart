@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '../../../domain/repositories/i_media_repository.dart';
+import '../../../domain/services/i_media_upload_service.dart';
+import '../../../domain/services/i_image_processing_service.dart';
 import '../../../data/services/image_upload_service.dart';
 
 /// Upload task model
@@ -66,6 +70,7 @@ class MediaUploadProvider extends ChangeNotifier {
 
   MediaUploadProvider({
     required IMediaRepository mediaRepository,
+    IMediaUploadService? mediaUploadService, // Kept for backward compatibility
     required ImageUploadService imageUploadService,
   })  : _mediaRepository = mediaRepository,
         _imageUploadService = imageUploadService;
@@ -395,6 +400,114 @@ class MediaUploadProvider extends ChangeNotifier {
   /// 태스크 상태 가져오기
   UploadStatus? getTaskStatus(String taskId) {
     return _activeTasks[taskId]?.status;
+  }
+
+  /// Upload edited image from bytes (ProImageEditor용)
+  /// 편집된 이미지를 Uint8List에서 직접 업로드
+  ///
+  /// ProImageEditor가 반환하는 Uint8List를 받아서
+  /// Firebase Storage에 업로드하고 URL을 반환합니다.
+  ///
+  /// [imageBytes]: 편집된 이미지의 바이트 데이터
+  /// [box]: 'A' 또는 'B' 박스 구분
+  /// [onProgress]: 업로드 진행률 콜백 (0.0 ~ 1.0)
+  ///
+  /// Returns: 업로드된 이미지의 Firebase Storage URL
+  Future<String> uploadEditedImage({
+    required Uint8List imageBytes,
+    required String box,
+    Function(double)? onProgress,
+  }) async {
+    try {
+      // 진행률 초기화
+      onProgress?.call(0.0);
+
+      // Repository를 통해 직접 업로드
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileName = 'edited_${timestamp}_$box.jpg';
+
+      final url = await _mediaRepository.uploadImage(
+        path: 'posts/$box',
+        fileName: fileName,
+        bytes: imageBytes,
+      );
+
+      // 업로드 완료
+      onProgress?.call(1.0);
+
+      debugPrint('✅ Edited image uploaded: $url');
+      return url;
+    } catch (e) {
+      debugPrint('❌ Failed to upload edited image: $e');
+      rethrow;
+    }
+  }
+
+  /// Process edited image with moderation (MediaEditorWidget용)
+  /// 편집된 이미지 검열 및 파일 처리 - UI 레이어에서 호출
+  ///
+  /// ImageUploadService를 Provider 레이어에서 위임하여
+  /// UI가 Data Layer에 직접 접근하지 않도록 합니다.
+  ///
+  /// [editedFile]: 편집된 이미지 파일
+  /// [box]: 'A' 또는 'B' 박스 구분
+  /// [assetId]: AssetEntity ID (선택사항)
+  /// [onProgress]: 진행률 콜백 (0.0 ~ 1.0)
+  ///
+  /// Returns: 처리 결과 (성공 여부, 파일, 비율, 검열 결과)
+  Future<SingleImageResult> processEditedImageForUI({
+    required File editedFile,
+    required String box,
+    String? assetId,
+    Function(double)? onProgress,
+  }) async {
+    // ImageUploadService 위임
+    final result = await _imageUploadService.processEditedImage(
+      editedFile: editedFile,
+      box: box,
+      assetId: assetId,
+      onProgress: onProgress,
+    );
+
+    return result;
+  }
+
+  /// Process multiple images with moderation (MediaEditorWidget용)
+  /// 멀티 이미지 검열 및 처리 - UI 레이어에서 호출
+  ///
+  /// ImageUploadService를 Provider 레이어에서 위임하여
+  /// UI가 Data Layer에 직접 접근하지 않도록 합니다.
+  ///
+  /// [files]: 선택된 파일들
+  /// [box]: 'A' 또는 'B' 박스 구분
+  /// [editedFile]: 편집된 파일 (선택사항)
+  /// [editedFileIndex]: 편집된 파일 인덱스 (선택사항)
+  /// [assetEntities]: AssetEntity 리스트 (선택사항)
+  /// [onProgress]: 진행률 콜백
+  /// [onModerationProgress]: 검열 진행률 콜백
+  ///
+  /// Returns: 처리 결과 (승인/거부된 파일, 인덱스, 비율)
+  Future<ImageProcessingResult> processMultipleImagesForUI({
+    required List<File> files,
+    required String box,
+    File? editedFile,
+    int? editedFileIndex,
+    List<AssetEntity>? assetEntities,
+    Function(double)? onProgress,
+    Function(int, int)? onModerationProgress,
+  }) async {
+    // ImageUploadService 위임
+    final result = await _imageUploadService.processMultipleImages(
+      files: files,
+      box: box,
+      editedFile: editedFile,
+      editedFileIndex: editedFileIndex,
+      assetEntities: assetEntities,
+      onProgress: onProgress,
+      onModerationProgress: onModerationProgress,
+    );
+
+    return result;
   }
 
   @override

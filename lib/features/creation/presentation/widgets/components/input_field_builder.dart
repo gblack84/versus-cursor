@@ -3,18 +3,30 @@ import 'package:google_fonts/google_fonts.dart';
 import '/core_exports.dart';
 import '/services/moderation/perspective_api_service.dart';
 import '../components/simple_validated_field.dart';
-import '/features/creation/presentation/screens/create_post/in_put_post_image_model.dart';
 import '/features/creation/domain/constants/field_styles.dart';
 
 /// 입력 필드 빌더 헬퍼
+///
+/// Clean Architecture 준수:
+/// - InPutPostImageModel 의존성 제거 (Phase 4에서 삭제됨)
+/// - 콜백 패턴으로 Provider와 통합
+/// - validationResult를 외부에서 주입받음
 class InputFieldBuilder {
   /// 제목 입력 필드 생성
+  ///
+  /// SimpleValidatedField를 사용하여 고급 기능 제공:
+  /// - 다국어 지원 (labelKey, hintKey)
+  /// - ContentFilter 통합
+  /// - Perspective API 검열
+  /// - maxLength 100 (vs TextFormField 기본 60)
   static Widget buildTitleField({
     required BuildContext context,
     required TextEditingController controller,
     required FocusNode focusNode,
-    required InPutPostImageModel model,
+    required Function(String value, String fieldName, bool isBlocked) onFieldChanged,
+    required Function() onFieldCleared,
     required Function() onRequiredFieldsCheck,
+    PerspectiveResult? validationResult,
   }) {
     return SimpleValidatedField(
       controller: controller,
@@ -23,25 +35,28 @@ class InputFieldBuilder {
       hintKey: 'a8xnk2go',
       fieldName: FieldStyles.questionTitle,
       maxLength: 100, // 오버라이드 (60→100)
-      validationResult: model.validationResults[FieldStyles.questionTitle],
-      onFieldChanged: (value, fieldName, isBlocked) {
-        // ContentFilter is handled in SimpleValidatedField
-      },
-      onFieldCleared: () {
-        model.validationResults.remove(FieldStyles.questionTitle);
-        onRequiredFieldsCheck();
-      },
+      validationResult: validationResult,
+      onFieldChanged: onFieldChanged,
+      onFieldCleared: onFieldCleared,
       onRequiredFieldsCheck: onRequiredFieldsCheck,
     );
   }
 
   /// 설명 입력 필드 생성
+  ///
+  /// SimpleValidatedField를 사용하여 고급 기능 제공:
+  /// - 다국어 지원
+  /// - ContentFilter 통합
+  /// - Perspective API 검열
+  /// - maxLength 2000 (vs TextFormField 기본 400)
   static Widget buildDescriptionField({
     required BuildContext context,
     required TextEditingController controller,
     required FocusNode focusNode,
-    required InPutPostImageModel model,
+    required Function(String value, String fieldName, bool isBlocked) onFieldChanged,
+    required Function() onFieldCleared,
     required Function() onRequiredFieldsCheck,
+    PerspectiveResult? validationResult,
   }) {
     return SimpleValidatedField(
       controller: controller,
@@ -50,14 +65,9 @@ class InputFieldBuilder {
       hintKey: 'pxj6gckn',
       fieldName: FieldStyles.description,
       maxLength: 2000, // 오버라이드 (200→2000)
-      validationResult: model.validationResults[FieldStyles.description],
-      onFieldChanged: (value, fieldName, isBlocked) {
-        // ContentFilter is handled in SimpleValidatedField
-      },
-      onFieldCleared: () {
-        model.validationResults.remove(FieldStyles.description);
-        onRequiredFieldsCheck();
-      },
+      validationResult: validationResult,
+      onFieldChanged: onFieldChanged,
+      onFieldCleared: onFieldCleared,
       onRequiredFieldsCheck: onRequiredFieldsCheck,
     );
   }
@@ -109,14 +119,23 @@ class InputFieldBuilder {
     );
   }
 
-  /// 질문 제목 필드 생성 (SimpleValidatedField 사용)
+  /// 질문 제목 필드 생성 (추가 플래그 관리)
+  ///
+  /// buildTitleField와 유사하지만 추가 상태 관리:
+  /// - hasBlockedWordInTitle 플래그
+  /// - isQuestionTitleEmpty 플래그
+  /// - hasValidationViolations 플래그
+  ///
+  /// 사용 시 주의: 이 메서드는 특정 UI 플로우에서만 사용
+  /// 일반적인 경우 buildTitleField() 사용 권장
   static Widget buildQuestionTitleField({
     required BuildContext context,
     required TextEditingController controller,
     required FocusNode focusNode,
-    required InPutPostImageModel model,
+    required Function(String value, String fieldName, bool isBlocked) onFieldChanged,
+    required Function() onFieldCleared,
     required Function() onRequiredFieldsCheck,
-    required Function(bool) onBlockedWordChanged,
+    PerspectiveResult? validationResult,
   }) {
     return SimpleValidatedField(
       controller: controller,
@@ -124,20 +143,9 @@ class InputFieldBuilder {
       labelKey: '5kzcbgop',
       hintKey: 'jr6l0zdb',
       fieldName: FieldStyles.questionTitle,
-      validationResult: model.validationResults[FieldStyles.questionTitle],
-      onFieldChanged: (value, fieldName, isBlocked) {
-        model.hasBlockedWordInTitle = isBlocked;
-        model.isQuestionTitleEmpty = value.trim().isEmpty;
-        onBlockedWordChanged(isBlocked);
-      },
-      onFieldCleared: () {
-        model.validationResults.remove(FieldStyles.questionTitle);
-        model.hasValidationViolations = false;
-        model.hasBlockedWordInTitle = false;
-        model.isQuestionTitleEmpty = true;
-        onBlockedWordChanged(false);
-        onRequiredFieldsCheck();
-      },
+      validationResult: validationResult,
+      onFieldChanged: onFieldChanged,
+      onFieldCleared: onFieldCleared,
       onRequiredFieldsCheck: onRequiredFieldsCheck,
     );
   }

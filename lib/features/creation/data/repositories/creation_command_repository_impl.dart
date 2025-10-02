@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/post_creation.dart';
 import '../../domain/models/post_core.dart';
@@ -63,7 +62,7 @@ class CreationCommandRepositoryImpl implements ICreationCommandRepository {
 
         for (final url in [...imageUrlsA, ...imageUrlsB]) {
           try {
-            await _storageDataSource.deleteImage(url);
+            await _storageDataSource?.deleteImage(url);
           } catch (e) {
             // Log but don't fail the deletion
             print('Failed to delete image: $url');

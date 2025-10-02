@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '/core_exports.dart';
 import '/features/creation/presentation/providers/target_audience_provider.dart';
 import '/features/creation/domain/constants/target_audience_constants.dart';
+import '/features/creation/presentation/constants/target_audience_ui_constants.dart';
 
 /// Step 3: 세부 타겟 설정 (맞춤 설정 선택 시)
 class DetailedTargetSelector extends StatelessWidget {
@@ -13,7 +14,7 @@ class DetailedTargetSelector extends StatelessWidget {
     return Consumer<TargetAudienceModel>(
       builder: (context, model, child) {
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(TargetAudienceConstants.contentPadding),
+          padding: const EdgeInsets.all(TargetAudienceUIConstants.contentPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -72,8 +73,8 @@ class DetailedTargetSelector extends StatelessWidget {
             ),
           ),
           child: Wrap(
-            spacing: TargetAudienceConstants.chipSpacing,
-            runSpacing: TargetAudienceConstants.chipRunSpacing,
+            spacing: TargetAudienceUIConstants.chipSpacing,
+            runSpacing: TargetAudienceUIConstants.chipRunSpacing,
             children: TargetAudienceConstants.interests.map((interest) {
               final isSelected = model.selectedInterests.contains(interest);
 

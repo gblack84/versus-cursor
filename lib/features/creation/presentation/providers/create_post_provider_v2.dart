@@ -5,10 +5,12 @@ import '../../domain/usecases/create_post_usecase.dart';
 import '../../domain/usecases/moderate_content_usecase.dart';
 import '../../domain/usecases/validation/validate_post_usecase.dart';
 import '../../domain/entities/post_creation.dart';
-import '../../domain/core/result.dart';
 import '../../domain/failures/creation_failures.dart';
 import '../../domain/models/target_audience.dart';
+import '../../data/dto/post_creation_dto.dart';
 import 'media/media_state_coordinator.dart';
+import '/services/moderation/perspective_api_service.dart';
+import '../../domain/constants/field_styles.dart';
 
 /// Form data model for post creation
 class PostFormData {
@@ -93,13 +95,13 @@ class CreatePostProviderV2 extends ChangeNotifier {
   final CreatePostUseCase _createPostUseCase;
   final ModerateContentUseCase _moderateContentUseCase;
   final ValidatePostUseCase _validatePostUseCase;
-  final MediaStateCoordinator? _mediaCoordinator; // Phase 5: Optional for gradual migration
+  final MediaStateCoordinator _mediaCoordinator; // Phase 5: Required injection
 
   CreatePostProviderV2({
     required CreatePostUseCase createPostUseCase,
     required ModerateContentUseCase moderateContentUseCase,
     required ValidatePostUseCase validatePostUseCase,
-    MediaStateCoordinator? mediaCoordinator, // Phase 5: Optional injection
+    required MediaStateCoordinator mediaCoordinator, // Phase 5: Required injection
   })  : _createPostUseCase = createPostUseCase,
         _moderateContentUseCase = moderateContentUseCase,
         _validatePostUseCase = validatePostUseCase,
@@ -114,6 +116,9 @@ class CreatePostProviderV2 extends ChangeNotifier {
   String? _moderationMessage;
   PostCreation? _createdPost;
 
+  // Validation results storage for InputFieldBuilder integration
+  final Map<String, PerspectiveResult> _validationResults = {};
+
   // Getters
   PostFormData get formData => _formData;
   LoadingState get loadingState => _loadingState;
@@ -125,6 +130,7 @@ class CreatePostProviderV2 extends ChangeNotifier {
   bool get isLoading => _loadingState == LoadingState.loading;
   bool get canSubmit => _formData.isValid && !isLoading;
   ValidatePostUseCase get validatePostUseCase => _validatePostUseCase;
+  Map<String, PerspectiveResult> get validationResults => _validationResults;
 
   // Form field updates
   void updateTitle(String value) {
@@ -252,80 +258,44 @@ class CreatePostProviderV2 extends ChangeNotifier {
       }
 
       // Phase 5: MediaStateCoordinator를 통한 이미지 검증
-      if (_mediaCoordinator != null) {
-        // MediaValidationProvider를 통한 이미지 검증
-        final coordinator = _mediaCoordinator!;
-        final imagesA = _formData.imagesA;
-        final imagesB = _formData.imagesB;
+      // MediaValidationProvider를 통한 이미지 검증
+      final coordinator = _mediaCoordinator;
+      final imagesA = _formData.imagesA;
+      final imagesB = _formData.imagesB;
 
-        if (imagesA.isNotEmpty) {
-          final resultA = await coordinator.validation.validateImages(
-            images: imagesA,
-            box: 'A',
-            onProgress: (current, total) {
-              _moderationMessage = 'A 박스 이미지 검토 중... ($current/$total)';
-              notifyListeners();
-            },
-          );
-
-          if (!resultA) {
-            _moderationStatus = ModerationStatus.rejected;
-            _moderationMessage = coordinator.validation.validationMessage ?? '이미지 검증 실패';
+      if (imagesA.isNotEmpty) {
+        final resultA = await coordinator.validation.validateImages(
+          images: imagesA,
+          box: 'A',
+          onProgress: (current, total) {
+            _moderationMessage = 'A 박스 이미지 검토 중... ($current/$total)';
             notifyListeners();
-            return false;
-          }
+          },
+        );
+
+        if (!resultA) {
+          _moderationStatus = ModerationStatus.rejected;
+          _moderationMessage = coordinator.validation.validationMessage ?? '이미지 검증 실패';
+          notifyListeners();
+          return false;
         }
+      }
 
-        if (imagesB.isNotEmpty) {
-          final resultB = await coordinator.validation.validateImages(
-            images: imagesB,
-            box: 'B',
-            onProgress: (current, total) {
-              _moderationMessage = 'B 박스 이미지 검토 중... ($current/$total)';
-              notifyListeners();
-            },
-          );
-
-          if (!resultB) {
-            _moderationStatus = ModerationStatus.rejected;
-            _moderationMessage = coordinator.validation.validationMessage ?? '이미지 검증 실패';
+      if (imagesB.isNotEmpty) {
+        final resultB = await coordinator.validation.validateImages(
+          images: imagesB,
+          box: 'B',
+          onProgress: (current, total) {
+            _moderationMessage = 'B 박스 이미지 검토 중... ($current/$total)';
             notifyListeners();
-            return false;
-          }
-        }
-      } else {
-        // Fallback: 기존 방식 사용 (호환성 유지)
-        final allImages = [..._formData.imagesA, ..._formData.imagesB];
-        if (allImages.isNotEmpty) {
-          final imageResult = await _moderateContentUseCase.moderateImages(
-            imageFiles: allImages,
-            box: 'combined',
-            onProgress: (current, total) {
-              _moderationMessage = '이미지 검토 중... ($current/$total)';
-              notifyListeners();
-            },
-          );
+          },
+        );
 
-          if (imageResult.isFailure) {
-            _moderationStatus = ModerationStatus.rejected;
-            _moderationMessage = imageResult.failureOrNull?.message ??
-                '이미지 검열 중 오류가 발생했습니다.';
-            notifyListeners();
-            return false;
-          }
-
-          final imageDecisions = imageResult.valueOrNull!;
-          final rejectedImages = imageDecisions
-              .where((decision) => !decision.isApproved)
-              .toList();
-
-          if (rejectedImages.isNotEmpty) {
-            _moderationStatus = ModerationStatus.rejected;
-            _moderationMessage = '부적절한 이미지가 포함되어 있습니다: '
-                '${rejectedImages.map((d) => d.reason).join(', ')}';
-            notifyListeners();
-            return false;
-          }
+        if (!resultB) {
+          _moderationStatus = ModerationStatus.rejected;
+          _moderationMessage = coordinator.validation.validationMessage ?? '이미지 검증 실패';
+          notifyListeners();
+          return false;
         }
       }
 
@@ -342,49 +312,46 @@ class CreatePostProviderV2 extends ChangeNotifier {
   }
 
   /// Create post with validation and moderation
-  Future<void> createPost(String userId) async {
+  Future<void> createPost(
+    String userId, {
+    Map<String, dynamic>? targetAudience,
+  }) async {
     if (!canSubmit) {
       _setError('양식을 올바르게 작성해주세요.');
       return;
     }
 
+    // targetAudience가 전달되면 formData에 업데이트
+    if (targetAudience != null) {
+      _formData.targetAudience = TargetAudience.fromMap(targetAudience);
+    }
+
     // Phase 5: MediaStateCoordinator를 사용한 미디어 처리
-    List<File> finalImagesA = _formData.imagesA;
-    List<File> finalImagesB = _formData.imagesB;
+    // Coordinator를 통해 최종 미디어 파일 가져오기
+    final List<File> finalImagesA = _mediaCoordinator.selection.selectedFilesA;
+    final List<File> finalImagesB = _formData.isSingleMode ? <File>[] : _mediaCoordinator.selection.selectedFilesB;
 
-    if (_mediaCoordinator != null) {
-      // Coordinator를 통해 최종 미디어 파일 가져오기
-      finalImagesA = _mediaCoordinator!.selection.selectedFilesA;
-      finalImagesB = _formData.isSingleMode ? [] : _mediaCoordinator!.selection.selectedFilesB;
+    // 검증 및 업로드 수행
+    final uploadSuccess = await _mediaCoordinator.validateAndUploadAll(
+      title: _formData.title,
+      description: _formData.description,
+      onStatusUpdate: (status) {
+        _moderationMessage = status;
+        notifyListeners();
+      },
+    );
 
-      // 검증 및 업로드 수행
-      final uploadSuccess = await _mediaCoordinator!.validateAndUploadAll(
-        title: _formData.title,
-        description: _formData.description,
-        onStatusUpdate: (status) {
-          _moderationMessage = status;
-          notifyListeners();
-        },
-      );
-
-      if (!uploadSuccess) {
-        _setError('미디어 검증 또는 업로드에 실패했습니다.');
-        return;
-      }
-    } else {
-      // Legacy: Validate and moderate first
-      final isValid = await validateAndModerate();
-      if (!isValid) {
-        _setError(_moderationMessage ?? '콘텐츠 검증에 실패했습니다.');
-        return;
-      }
+    if (!uploadSuccess) {
+      _setError('미디어 검증 또는 업로드에 실패했습니다.');
+      return;
     }
 
     _setLoading(true);
     _uploadProgress = 0.0;
 
     try {
-      final result = await _createPostUseCase.execute(
+      // Create DTO from form data
+      final dto = PostCreationDto(
         userId: userId,
         title: _formData.title,
         description: _formData.description,
@@ -392,6 +359,11 @@ class CreatePostProviderV2 extends ChangeNotifier {
         imagesB: finalImagesB,
         targetAudience: _formData.targetAudience,
         isAnonymous: _formData.isAnonymous,
+      );
+
+      // Execute UseCase with DTO
+      final result = await _createPostUseCase.execute(
+        dto: dto,
         onProgress: (progress) {
           _uploadProgress = progress;
           notifyListeners();
@@ -468,6 +440,82 @@ class CreatePostProviderV2 extends ChangeNotifier {
     } else {
       return failure.message;
     }
+  }
+
+  // ============================================
+  // InputFieldBuilder Integration Methods
+  // ============================================
+
+  /// Validate title field and store result
+  ///
+  /// Used by InputFieldBuilder.buildTitleField()
+  /// Stores PerspectiveResult in _validationResults Map
+  Future<void> validateTitle(String text) async {
+    try {
+      final result = await _validatePostUseCase.validateText(text);
+
+      // Convert ValidationResult to PerspectiveResult
+      // Note: ValidatePostUseCase returns ValidationResult, but we need PerspectiveResult
+      // For now, create a simple pass/fail PerspectiveResult
+      // TODO: Enhance ValidatePostUseCase to return detailed PerspectiveResult
+      if (result.isValid) {
+        _validationResults.remove(FieldStyles.questionTitle);
+      } else {
+        // Create a simple rejected result
+        _validationResults[FieldStyles.questionTitle] = PerspectiveResult(
+          isToxic: true,
+          toxicityScore: 0.9,
+          profanityScore: 0.0,
+          threatScore: 0.0,
+          insultScore: 0.0,
+          allScores: {'TOXICITY': 0.9},
+          toxicSpans: [],
+        );
+      }
+      notifyListeners();
+    } catch (e) {
+      // On error, clear validation result
+      _validationResults.remove(FieldStyles.questionTitle);
+      notifyListeners();
+    }
+  }
+
+  /// Validate description field and store result
+  ///
+  /// Used by InputFieldBuilder.buildDescriptionField()
+  /// Stores PerspectiveResult in _validationResults Map
+  Future<void> validateDescription(String text) async {
+    try {
+      final result = await _validatePostUseCase.validateText(text);
+
+      if (result.isValid) {
+        _validationResults.remove(FieldStyles.description);
+      } else {
+        // Create a simple rejected result
+        _validationResults[FieldStyles.description] = PerspectiveResult(
+          isToxic: true,
+          toxicityScore: 0.9,
+          profanityScore: 0.0,
+          threatScore: 0.0,
+          insultScore: 0.0,
+          allScores: {'TOXICITY': 0.9},
+          toxicSpans: [],
+        );
+      }
+      notifyListeners();
+    } catch (e) {
+      // On error, clear validation result
+      _validationResults.remove(FieldStyles.description);
+      notifyListeners();
+    }
+  }
+
+  /// Clear validation result for a specific field
+  ///
+  /// Called when user clears the field via InputFieldBuilder
+  void clearValidationResult(String fieldName) {
+    _validationResults.remove(fieldName);
+    notifyListeners();
   }
 
   @override

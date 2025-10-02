@@ -1,4 +1,5 @@
 import 'dart:io';
+import '/services/moderation/image_moderation_service.dart';
 
 /// Image processing service interface for Domain layer
 ///
@@ -27,6 +28,8 @@ class ImageProcessingResult {
   final List<double> approvedRatios;
   final List<String> approvedAssetIds;
   final Map<String, List<int>> rejectedReasons;
+  final List<int> rejectedIndices;
+  final int rejectedCount;
   final bool allRejected;
 
   const ImageProcessingResult({
@@ -34,6 +37,8 @@ class ImageProcessingResult {
     required this.approvedRatios,
     required this.approvedAssetIds,
     required this.rejectedReasons,
+    required this.rejectedIndices,
+    required this.rejectedCount,
     required this.allRejected,
   });
 }
@@ -45,6 +50,7 @@ class SingleImageResult {
   final double? aspectRatio;
   final String? assetId;
   final String? rejectionReason;
+  final ModerationResult? moderationResult;
 
   const SingleImageResult({
     required this.success,
@@ -52,5 +58,6 @@ class SingleImageResult {
     this.aspectRatio,
     this.assetId,
     this.rejectionReason,
+    this.moderationResult,
   });
 }

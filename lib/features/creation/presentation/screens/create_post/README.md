@@ -74,8 +74,8 @@ Components        Services      Helpers      Widgets
 
 #### 4. **Helper Layer** (유틸리티)
 - **AspectRatioAnalyzer**: 이미지 비율 분석 및 레이아웃 결정
-- **MediaBoxCallbacks**: 박스 상호작용 콜백 관리
 - **ImageCacheHelper**: 이미지 캐싱 최적화
+- ~~**MediaBoxCallbacks**~~: ✅ MediaSelectionProvider로 통합 완료 (Phase 5)
 
 #### 5. **Widget Layer** (복합 기능)
 - **MediaSelectionFlowWidget**: 갤러리/카메라 선택 플로우
@@ -120,13 +120,13 @@ lib/posts/in_put_post_image/
 │   ├── camera_floating_button_delegate.dart # 플로팅 버튼
 │   └── README.md ✅
 │
-├── 📁 helpers/                           # 헬퍼 클래스 (5개 파일)
+├── 📁 helpers/                           # 헬퍼 클래스 (4개 파일)
 │   ├── aspect_ratio_analyzer.dart       # 비율 분석
 │   ├── ratio_calculator.dart            # 비율 계산
-│   ├── media_box_callbacks.dart         # 콜백 관리
 │   ├── image_cache_helper.dart          # 캐시 헬퍼
 │   ├── input_field_builder.dart         # 필드 빌더
 │   └── README.md ✅
+│   # ⚠️ media_box_callbacks.dart → MediaSelectionProvider로 통합 완료 (Phase 5)
 │
 ├── 📁 models/                            # 데이터 모델 (1개 파일)
 │   ├── target_audience_model.dart       # 타겟 모델
@@ -270,9 +270,12 @@ class AspectRatioAnalyzer {
 }
 ```
 
-#### MediaBoxCallbacks
-- 이미지 선택, 편집, 삭제 콜백 중앙 관리
-- 박스 간 상호작용 조율
+#### ~~MediaBoxCallbacks~~ → MediaSelectionProvider (Phase 5)
+✅ **마이그레이션 완료**: 모든 기능이 MediaSelectionProvider로 통합되었습니다
+- `toggleBoxBVisibility()`: B박스 표시/숨김
+- `updateCurrentIndex()`: 현재 이미지 인덱스 관리
+- `canAddToBoxB()` + `getBoxBValidationMessage()`: B박스 검증 로직
+- `removeAtIndex()`: 이미지 삭제
 
 ### 5. Widget Layer (복합 기능)
 

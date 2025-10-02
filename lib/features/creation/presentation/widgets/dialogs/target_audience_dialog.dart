@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/core_exports.dart';
 import '/features/creation/presentation/providers/target_audience_provider.dart';
-import '/features/creation/domain/constants/target_audience_constants.dart';
+import '/features/creation/presentation/constants/target_audience_ui_constants.dart';
 import 'target_audience_steps/collection_type_selector.dart';
 import 'target_audience_steps/target_count_selector.dart';
 import 'target_audience_steps/detailed_target_selector.dart';
@@ -120,10 +120,10 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
             child: FadeTransition(
               opacity: _fadeAnimation,
               child: Container(
-                width: TargetAudienceConstants.dialogWidth,
+                width: TargetAudienceUIConstants.dialogWidth,
                 constraints: BoxConstraints(
-                  maxHeight: TargetAudienceConstants.dialogMaxHeight,
-                  maxWidth: TargetAudienceConstants.dialogWidth,
+                  maxHeight: TargetAudienceUIConstants.dialogMaxHeight,
+                  maxWidth: TargetAudienceUIConstants.dialogWidth,
                 ),
                 decoration: BoxDecoration(
                   color: AppTheme.of(context).secondaryBackground,
@@ -185,7 +185,7 @@ class _TargetAudienceDialogState extends State<TargetAudienceDialog>
     final totalSteps = model.collectionType == 'custom' ? 3 : 2;
 
     return Container(
-      height: TargetAudienceConstants.stepIndicatorHeight,
+      height: TargetAudienceUIConstants.stepIndicatorHeight,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
         color: AppTheme.of(context).primaryBackground,

@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '/core_exports.dart';
 import '../../providers/create_post_provider_v2.dart';
 import '/app/di/creation_module.dart';
-import '../../adapters/create_post_adapter.dart';
 import '../../widgets/create_post/image_selection_widget.dart';
 import '../../widgets/create_post/text_input_widget.dart';
 import '/features/creation/presentation/widgets/components/next_button.dart';
 import '/core/utils/error_handler.dart';
 import 'package:bot_toast/bot_toast.dart';
+import '../../widgets/dialogs/target_audience_dialog.dart';
 
 /// Main screen for post creation
 ///
 /// This screen orchestrates all post creation components using Clean Architecture.
-/// It bridges legacy code with new Clean Architecture implementation through the adapter pattern.
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
 
@@ -64,17 +62,7 @@ class _CreatePostScreenState extends State<CreatePostScreen>
   }
 
   Future<void> _handleSubmit() async {
-    final appState = context.read<AppState>();
-    final cleanProvider = context.read<CreatePostProviderV2>();
-
-    // AppState의 데이터를 CreatePostProviderV2로 전달
-    final adapter = CreatePostAdapter(
-      cleanProvider: cleanProvider,
-      legacyState: appState,
-    );
-
-    // AppState 데이터를 Provider로 동기화
-    adapter.syncLegacyToClean();
+    final provider = context.read<CreatePostProviderV2>();
 
     setState(() {
       _isValidating = true;
@@ -82,12 +70,12 @@ class _CreatePostScreenState extends State<CreatePostScreen>
 
     try {
       // Provider의 UseCase를 통한 유효성 검사
-      final isValid = await cleanProvider.validateFormFields();
+      final isValid = await provider.validateFormFields();
 
       if (!isValid) {
         _triggerShakeAnimation();
         BotToast.showText(
-          text: cleanProvider.errorMessage ?? '모든 필수 항목을 입력해주세요',
+          text: provider.errorMessage ?? '모든 필수 항목을 입력해주세요',
           duration: const Duration(seconds: 3),
           contentColor: Colors.red.shade600,
           textStyle: const TextStyle(color: Colors.white),
@@ -95,9 +83,20 @@ class _CreatePostScreenState extends State<CreatePostScreen>
         return;
       }
 
-      // CreatePostProviderV2를 통해 포스트 생성
+      // TargetAudienceDialog 표시
+      final targetAudienceData = await TargetAudienceDialog.show(context);
+
+      // 사용자가 취소한 경우 중단
+      if (targetAudienceData == null) {
+        return;
+      }
+
+      // CreatePostProviderV2를 통해 포스트 생성 (타겟 오디언스 포함)
       // TODO: 현재 userId는 하드코딩되어 있음 - 추후 실제 사용자 정보 연동 필요
-      await cleanProvider.createPost('test_user');
+      await provider.createPost(
+        'test_user',
+        targetAudience: targetAudienceData,
+      );
 
       // 성공 - 페이지 닫기
       if (mounted) {
@@ -158,14 +157,8 @@ class _CreatePostScreenState extends State<CreatePostScreen>
             ),
             onPressed: () async {
               // 데이터 정리
-              final appState = context.read<AppState>();
-              final cleanProvider = context.read<CreatePostProviderV2>();
-              final adapter = CreatePostAdapter(
-                cleanProvider: cleanProvider,
-                legacyState: appState,
-              );
-
-              adapter.clearAll();
+              final provider = context.read<CreatePostProviderV2>();
+              provider.resetForm();
               Navigator.of(context).pop();
             },
           ),

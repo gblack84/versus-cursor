@@ -1,6 +1,7 @@
 import '../../core/result.dart';
-import ../../failures/creation_failures.dart';
+import '../../failures/creation_failures.dart';
 import '../../models/target_audience.dart';
+import '../../../data/dto/target_audience_dto.dart';
 import '../../services/i_target_audience_service.dart';
 
 /// UseCase for managing target audience
@@ -14,30 +15,44 @@ class ManageTargetAudienceUseCase {
     required ITargetAudienceService targetAudienceService,
   }) : _targetAudienceService = targetAudienceService;
 
+  /// Create target audience from DTO (from Presentation layer)
+  /// This method provides a clean interface for Providers to use
+  Future<Result<TargetAudience>> createFromDto(
+    TargetAudienceDto dto,
+  ) async {
+    return createTargetAudience(
+      collectionType: dto.collectionType,
+      targetCount: dto.targetCount,
+      selectedInterests: dto.selectedInterests,
+      selectedAgeGroup: dto.selectedAgeGroup,
+      selectedGender: dto.selectedGender,
+      activeUserOnly: dto.activeUserOnly,
+      isPremium: dto.isPremium,
+    );
+  }
+
   /// Create and validate a target audience configuration
   Future<Result<TargetAudience>> createTargetAudience({
-    required String mode,
+    required String collectionType,
     required int targetCount,
-    int? minAge,
-    int? maxAge,
-    String? gender,
-    List<String>? interests,
-    List<String>? jobCategories,
+    List<String>? selectedInterests,
+    String? selectedAgeGroup,
+    String? selectedGender,
+    bool activeUserOnly = true,
     bool isPremium = false,
   }) async {
     try {
       // Create target audience model
       final targetAudience = TargetAudience(
-        mode: mode,
+        collectionType: collectionType,
         targetCount: targetCount,
-        ageMin: minAge,
-        ageMax: maxAge,
-        gender: gender,
-        interests: interests ?? [],
-        jobCategories: jobCategories ?? [],
+        selectedInterests: selectedInterests ?? [],
+        selectedAgeGroup: selectedAgeGroup ?? '전체',
+        selectedGender: selectedGender ?? 'all',
+        activeUserOnly: activeUserOnly,
         isPremium: isPremium,
-        isActive: true,
         createdAt: DateTime.now(),
+        status: 'pending',
       );
 
       // Validate target audience
@@ -45,7 +60,7 @@ class ManageTargetAudienceUseCase {
 
       if (!validationResult.isValid) {
         return ResultFailure(
-          ValidationFailure(
+          CreationValidationFailure(
             validationResult.error ?? 'Invalid target audience configuration',
           ),
         );
@@ -67,7 +82,8 @@ class ManageTargetAudienceUseCase {
 
   /// Convert target audience to Firestore format
   Map<String, dynamic> convertToFirestoreFormat(TargetAudience targetAudience) {
-    return _targetAudienceService.convertModelToFirestore(targetAudience);
+    // Use domain model's toMap() method for Firestore conversion
+    return targetAudience.toMap();
   }
 
   /// Get target audience recommendations based on post content
@@ -153,16 +169,6 @@ class ManageTargetAudienceUseCase {
   }
 }
 
-/// Validation result for target audience
-class ValidationResult {
-  final bool isValid;
-  final String? error;
-
-  ValidationResult({
-    required this.isValid,
-    this.error,
-  });
-}
 
 /// Target audience recommendations
 class TargetAudienceRecommendation {

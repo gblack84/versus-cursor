@@ -106,24 +106,14 @@ class ContentVisibilityRepositoryImpl implements IContentVisibilityRepository {
     TargetAudience audience,
   ) async {
     try {
-      // Use existing ManageTargetAudienceUseCase if available
-      if (_targetAudienceUseCase != null) {
-        final result = await _targetAudienceUseCase.execute(
-          postId: contentId,
-          targetAudience: _targetAudienceToMap(audience),
-        );
-
-        result.fold(
-          (failure) => throw Exception(failure.message),
-          (_) => null,
-        );
-      } else {
-        // Direct update
-        await _postsCollection.doc(contentId).update({
-          'targetAudience': _targetAudienceToMap(audience),
-          'targetAudienceUpdatedAt': FieldValue.serverTimestamp(),
-        });
-      }
+      // Phase 5 Restoration: Use _targetAudienceToMap()
+      // Note: This TargetAudience type is from i_content_visibility_repository.dart
+      // It's different from domain/models/target_audience.dart
+      // Validation is already done by ManageTargetAudienceUseCase in CreatePostUseCase
+      await _postsCollection.doc(contentId).update({
+        'targetAudience': _targetAudienceToMap(audience),
+        'targetAudienceUpdatedAt': FieldValue.serverTimestamp(),
+      });
     } catch (e) {
       throw Exception('Failed to update target audience: $e');
     }

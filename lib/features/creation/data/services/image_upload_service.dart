@@ -30,6 +30,7 @@ class ImageUploadService implements IImageProcessingService {
       return SingleImageResult(
         success: false,
         rejectionReason: moderationResult.reason,
+        moderationResult: moderationResult,
       );
     }
 
@@ -43,6 +44,7 @@ class ImageUploadService implements IImageProcessingService {
       file: editedFile,
       aspectRatio: aspectRatio,
       assetId: assetId,
+      moderationResult: moderationResult,
     );
   }
 
@@ -123,6 +125,8 @@ class ImageUploadService implements IImageProcessingService {
       approvedRatios: approvedRatios,
       approvedAssetIds: approvedAssetIds,
       rejectedReasons: rejectedReasons,
+      rejectedIndices: rejectedIndices,
+      rejectedCount: rejectedIndices.length,
       allRejected: approvedFiles.isEmpty,
     );
   }
@@ -149,6 +153,7 @@ class ImageUploadService implements IImageProcessingService {
       return SingleImageResult(
         success: false,
         rejectionReason: moderationResult.reason,
+        moderationResult: moderationResult,
       );
     }
 
@@ -162,6 +167,7 @@ class ImageUploadService implements IImageProcessingService {
       file: file,
       aspectRatio: aspectRatio,
       assetId: assetId,
+      moderationResult: moderationResult,
     );
   }
 

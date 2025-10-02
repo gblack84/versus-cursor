@@ -101,6 +101,10 @@ class TargetAudienceService implements ITargetAudienceService {
         targetAudience: targetAudienceData,
       );
 
+      if (postId == null) {
+        throw Exception('Failed to create post: PostDatasource returned null');
+      }
+
       print('[TargetAudienceService] 투표 생성 완료: $postId');
       print(
           '[TargetAudienceService] 타겟 오디언스: ${targetAudience.collectionType}, ${targetAudience.targetCount}명');
@@ -150,10 +154,10 @@ class TargetAudienceService implements ITargetAudienceService {
   Future<TargetAudienceStats> getUserStats(String userId) async {
     try {
       // Use injected datasource instead of direct Firebase call
-      final posts = await _postDatasource.getUserPostsWithTargetAudience(
+      final posts = await _postDatasource?.getUserPostsWithTargetAudience(
         userId: userId,
         limit: 100,
-      );
+      ) ?? [];
 
       int totalSent = 0;
       int totalCompleted = 0;
@@ -206,11 +210,10 @@ class TargetAudienceService implements ITargetAudienceService {
     return TargetAudience(
       collectionType: mode,
       targetCount: targetCount,
-      testMode: mode == 'test',
       // Handle filters for custom mode
       selectedInterests: filters?['interests'] as List<String>? ?? [],
-      selectedAgeGroup: filters?['ageGroup'] as String?,
-      selectedGender: filters?['gender'] as String?,
+      selectedAgeGroup: filters?['ageGroup'] as String? ?? '전체',
+      selectedGender: filters?['gender'] as String? ?? 'all',
       activeUserOnly: filters?['activeUserOnly'] as bool? ?? false,
       createdAt: DateTime.now(),
     );

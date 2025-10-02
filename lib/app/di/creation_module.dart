@@ -14,17 +14,19 @@ import '../../features/creation/domain/repositories/i_creation_command_repositor
 import '../../features/creation/domain/repositories/i_content_metrics_repository.dart';
 import '../../features/creation/domain/repositories/i_content_moderation_repository.dart';
 import '../../features/creation/domain/repositories/i_content_visibility_repository.dart';
-import '../../features/creation/domain/repositories/i_creation_query_service.dart';
+// ICreationQueryService moved to Post Feature as IPostQueryService
 import '../../features/creation/domain/datasources/i_post_creation_datasource.dart';
 import '../../features/creation/domain/datasources/i_storage_datasource.dart';
 import '../../features/creation/domain/services/i_image_processing_service.dart';
+import '../../features/creation/domain/services/i_media_upload_service.dart';
 import '../../features/creation/data/repositories/media_repository_impl.dart';
+import '../../features/creation/data/services/media_upload_service_impl.dart';
 import '../../features/creation/data/repositories/post_creation_repository_v2_impl.dart';
 import '../../features/creation/data/repositories/creation_command_repository_impl.dart';
 import '../../features/creation/data/repositories/content_metrics_repository_impl.dart';
 import '../../features/creation/data/repositories/content_moderation_repository_impl.dart';
 import '../../features/creation/data/repositories/content_visibility_repository_impl.dart';
-import '../../features/creation/data/repositories/creation_query_service_impl.dart';
+// CreationQueryServiceImpl moved to Post Feature as PostQueryServiceImpl
 import '../../features/creation/data/datasources/firebase_post_creation_datasource.dart';
 import '../../features/creation/data/datasources/firebase_storage_datasource.dart';
 import '../../features/creation/data/services/target_audience_service.dart';
@@ -144,6 +146,16 @@ class CreationModule implements FeatureModule {
         () => ImageModerationService(),
       );
     }
+
+    // Media Upload Service (IMediaUploadService implementation)
+    if (!sl.isRegistered<IMediaUploadService>()) {
+      sl.registerLazySingleton<IMediaUploadService>(
+        () => MediaUploadServiceImpl(
+          mediaRepository: sl<IMediaRepository>(),
+          imageProcessingService: sl<IImageProcessingService>(),
+        ),
+      );
+    }
   }
 
   /// Register Repository implementations
@@ -202,21 +214,19 @@ class CreationModule implements FeatureModule {
       );
     }
 
-    // Creation Query Service (CQRS Query side)
-    if (!sl.isRegistered<ICreationQueryService>()) {
-      sl.registerLazySingleton<ICreationQueryService>(
-        () => CreationQueryServiceImpl(),
-      );
-    }
+    // Creation Query Service (CQRS Query side) - Moved to Post Feature as IPostQueryService
+    // Registration now in PostsModule
   }
 
   /// Register UseCases
   void _registerUseCases(GetIt sl) {
     // Create Post UseCase
+    // Phase 5 Restoration: ManageTargetAudienceUseCase fully integrated
     sl.registerFactory<CreatePostUseCase>(
       () => CreatePostUseCase(
         postRepository: sl<IPostCreationRepositoryV2>(),
         mediaRepository: sl<IMediaRepository>(),
+        manageTargetAudienceUseCase: sl<ManageTargetAudienceUseCase>(),
       ),
     );
 
@@ -267,6 +277,7 @@ class CreationModule implements FeatureModule {
       sl.registerLazySingleton<MediaUploadProvider>(
         () => MediaUploadProvider(
           mediaRepository: sl<IMediaRepository>(),
+          mediaUploadService: sl<IMediaUploadService>(),
           imageUploadService: sl<ImageUploadService>(),
         ),
       );
@@ -360,9 +371,7 @@ class CreationModule implements FeatureModule {
     if (sl.isRegistered<IContentVisibilityRepository>()) {
       sl.unregister<IContentVisibilityRepository>();
     }
-    if (sl.isRegistered<ICreationQueryService>()) {
-      sl.unregister<ICreationQueryService>();
-    }
+    // ICreationQueryService moved to PostsModule as IPostQueryService
   }
 
   /// Unregister UseCases

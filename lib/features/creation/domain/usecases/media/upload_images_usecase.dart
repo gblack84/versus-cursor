@@ -1,8 +1,10 @@
 import 'dart:io';
+
 import '../../core/result.dart';
-import ../../failures/creation_failures.dart';
+import '../../failures/creation_failures.dart';
 import '../../repositories/i_media_repository.dart';
 import '../../services/i_image_processing_service.dart';
+import '../../../data/dto/image_upload_dto.dart';
 
 /// UseCase for uploading and processing images
 ///
@@ -18,17 +20,24 @@ class UploadImagesUseCase {
   })  : _mediaRepository = mediaRepository,
         _imageProcessingService = imageProcessingService;
 
-  /// Upload multiple images with processing and moderation
+  /// Upload multiple images with processing and moderation using DTO
+  ///
+  /// Simplified interface using ImageUploadDto to bundle parameters.
   Future<Result<UploadResult>> execute({
-    required List<File> images,
-    required String box,
-    required String userId,
+    required ImageUploadDto dto,
     Function(double)? onProgress,
   }) async {
     try {
-      if (images.isEmpty) {
+      if (dto.images.isEmpty) {
         return ResultFailure(
-          ValidationFailure('No images provided'),
+          CreationValidationFailure('No images provided'),
+        );
+      }
+
+      // Validate box parameter
+      if (!dto.isValidBox) {
+        return ResultFailure(
+          CreationValidationFailure('Invalid box parameter: ${dto.box}'),
         );
       }
 
@@ -36,8 +45,8 @@ class UploadImagesUseCase {
       onProgress?.call(0.2);
 
       final processingResult = await _imageProcessingService.processMultipleImages(
-        files: images,
-        box: box,
+        files: dto.images,
+        box: dto.box,
         onProgress: (progress) {
           // Map processing progress to 20-60% of total
           onProgress?.call(0.2 + (progress * 0.4));
@@ -48,7 +57,7 @@ class UploadImagesUseCase {
         return ResultFailure(
           ModerationFailure(
             'All images were rejected',
-            rejectedReasons: processingResult.rejectedReasons,
+            rejectedReasons: processingResult.rejectedReasons.keys.toList(),
           ),
         );
       }
@@ -66,8 +75,10 @@ class UploadImagesUseCase {
       final result = UploadResult(
         uploadedUrls: uploadedUrls,
         aspectRatios: processingResult.approvedRatios,
-        rejectedCount: processingResult.rejectedFiles.length,
-        rejectedReasons: processingResult.rejectedReasons,
+        rejectedCount: processingResult.rejectedCount,
+        rejectedReasons: processingResult.rejectedReasons.map(
+          (key, value) => MapEntry(key, value.join(', ')),
+        ),
       );
 
       onProgress?.call(1.0);
@@ -92,7 +103,7 @@ class UploadImagesUseCase {
   }) async {
     try {
       // Process with moderation
-      final processingResult = await _imageUploadService.processEditedImage(
+      final processingResult = await _imageProcessingService.processEditedImage(
         editedFile: editedFile,
         box: box,
         assetId: assetId,
@@ -105,9 +116,9 @@ class UploadImagesUseCase {
         return ResultFailure(
           ModerationFailure(
             'Image was rejected',
-            rejectedReasons: {
-              'edited': processingResult.moderationResult?.rejectionReason ?? 'Unknown reason',
-            },
+            rejectedReasons: [
+              processingResult.rejectionReason ?? 'Unknown reason',
+            ],
           ),
         );
       }

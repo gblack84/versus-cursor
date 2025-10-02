@@ -1,14 +1,10 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/app/contracts/models/post_bundle.dart';
 import '../../domain/models/post_core.dart';
 import '../../domain/models/post_content.dart';
-import '../../domain/models/media_content.dart';
 import '../../domain/models/target_audience.dart';
 import '../../domain/services/i_target_audience_service.dart' as service;
 import '../../domain/services/i_image_processing_service.dart';
-import '/features/voting/domain/models/chat/post_voting.dart';
-import '/features/post/domain/models/post_metrics.dart';
 import '../../domain/repositories/i_post_creation_repository_v2.dart';
 import '../../domain/datasources/i_post_creation_datasource.dart';
 import '../services/target_audience_service.dart';
@@ -18,24 +14,24 @@ import '../mappers/creation_firestore_mapper.dart';
 /// Implementation of IPostCreationRepositoryV2
 ///
 /// Uses DataSource to isolate Firebase dependencies and handles
-/// post creation with PostBundle and domain models for Clean Architecture.
+/// post creation with PostCore and PostContent only (Creation Feature responsibility).
 ///
 /// ## Mapper Usage
 /// - **CreationFirestoreMapper**: Handles all Creation Feature data (PostCore, PostContent)
-///   - ✅ createPostFromModels() - Creation part only
+///   - ✅ createPost() - Creation part only
 ///   - ✅ updatePostCore() - Full mapper usage
 ///   - ✅ updatePostContent() - Full mapper usage
-///   - ✅ updatePostContentOld() - Legacy method using mapper
 ///   - ✅ _extractPostCore() - Full mapper usage
 ///   - ✅ _extractPostContent() - Full mapper usage
 ///
 /// ## Feature Boundaries
 /// - **Creation Feature**: PostCore, PostContent (Using CreationFirestoreMapper)
-/// - **Voting Feature**: PostVoting (Manual conversion - temporary)
-/// - **Post Feature**: PostMetrics (Manual conversion - temporary)
+/// - **Voting Feature**: Will add PostVoting fields via onCreate trigger
+/// - **Post Feature**: Will add PostMetrics fields after voting completion
 ///
 /// Phase 1.3: Services are now internal dependencies
 /// Phase 2: CreationFirestoreMapper fully integrated
+/// Phase 8: PostVoting/PostMetrics removed - Feature isolation complete
 class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   final IPostCreationDataSource _dataSource;
   final TargetAudienceService? _targetAudienceService;
@@ -56,47 +52,18 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // ====== Creation Operations ======
 
   @override
-  Future<String> createPost(PostBundle bundle) {
-    return createPostFromModels(
-      core: bundle.core,
-      content: bundle.content,
-      voting: bundle.voting,
-      metrics: bundle.metrics,
-    );
-  }
-
-  @override
-  Future<String> createPostFromModels({
+  Future<String> createPost({
     required PostCore core,
     required PostContent content,
-    required PostVoting voting,
-    required PostMetrics metrics,
   }) async {
-    // Use CreationFirestoreMapper for Creation Feature fields
+    // Use CreationFirestoreMapper for Creation Feature fields only
     final data = _mapper.toCreateDocument(core, content);
 
-    // Add PostVoting fields (owned by Voting Feature)
-    if (voting.voteStartTime != null) data['voteStartTime'] = voting.voteStartTime;
-    if (voting.voteEndTime != null) data['voteEndTime'] = voting.voteEndTime;
-    data['voteStatus'] = voting.voteStatus;
-    data['voteCompleted'] = voting.voteCompleted;
-    data['votesA'] = voting.votesA;
-    data['votesB'] = voting.votesB;
-    data['votedUserIdsA'] = voting.votedUserIdsA;
-    data['votedUserIdsB'] = voting.votedUserIdsB;
-    data['notificationsSent'] = voting.notificationsSent;
+    // Additional default fields for backward compatibility
+    data['postCreatedDate'] = core.createdAt;
 
-    // Add PostMetrics fields (owned by Post Feature)
-    data['commentcount'] = metrics.commentCount;
-    data['likecount'] = metrics.likeCount;
-    data['sherecount'] = metrics.shareCount; // Preserve original typo
-    data['savecount'] = metrics.saveCount;
-    data['reportCount'] = metrics.reportCount;
-    data['participantcount'] = metrics.participantCount;
-    data['interestcount'] = metrics.interestCount;
-
-    // Additional default fields
-    data['postCreatedDate'] = core.createdAt; // For backward compatibility
+    // Note: PostVoting and PostMetrics fields will be added by their respective features
+    // through onCreate triggers or after post creation
 
     // Create the post using DataSource
     final result = await _dataSource.createPost(data);
@@ -135,52 +102,10 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     await updatePost(postId: postId, data: data);
   }
 
-  @override
-  Future<void> updatePostContentOld({
-    required String postId,
-    required PostContent content,
-  }) async {
-    // Legacy method for backward compatibility - now using mapper for consistency
-    final data = _mapper.toUpdateDocument(content: content);
-    await updatePost(postId: postId, data: data);
-  }
-
-  @override
-  Future<void> updatePostVoting({
-    required String postId,
-    required PostVoting voting,
-  }) async {
-    final data = {
-      if (voting.voteStartTime != null) 'voteStartTime': voting.voteStartTime,
-      if (voting.voteEndTime != null) 'voteEndTime': voting.voteEndTime,
-      'voteStatus': voting.voteStatus,
-      'voteCompleted': voting.voteCompleted,
-      'votesA': voting.votesA,
-      'votesB': voting.votesB,
-      'votedUserIdsA': voting.votedUserIdsA,
-      'votedUserIdsB': voting.votedUserIdsB,
-      'updatedAt': DateTime.now(),
-    };
-    await updatePost(postId: postId, data: data);
-  }
-
-  @override
-  Future<void> updatePostMetrics({
-    required String postId,
-    required PostMetrics metrics,
-  }) async {
-    final data = {
-      'commentcount': metrics.commentCount,
-      'likecount': metrics.likeCount,
-      'sherecount': metrics.shareCount,
-      'savecount': metrics.saveCount,
-      'reportCount': metrics.reportCount,
-      'participantcount': metrics.participantCount,
-      'interestcount': metrics.interestCount,
-      'updatedAt': DateTime.now(),
-    };
-    await updatePost(postId: postId, data: data);
-  }
+  // Note: updatePostContentOld, updatePostVoting, updatePostMetrics removed
+  // - updatePostContentOld: Legacy method no longer needed
+  // - updatePostVoting: Handled by Voting Feature
+  // - updatePostMetrics: Handled by Post Feature
 
   // ====== Delete Operations ======
 
@@ -262,25 +187,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   }
 
   // ====== Query Operations ======
-
-  @override
-  Future<PostBundle?> getPostBundle(String postId) async {
-    final core = await getPostCore(postId);
-    if (core == null) return null;
-
-    final content = await getPostContent(postId);
-    final voting = await getPostVoting(postId);
-    final metrics = await getPostMetrics(postId);
-
-    if (content == null || voting == null || metrics == null) return null;
-
-    return PostBundle(
-      core: core,
-      content: content,
-      voting: voting,
-      metrics: metrics,
-    );
-  }
+  // Note: getPostBundle removed - spans multiple features
 
   @override
   Future<PostCore?> getPostCore(String postId) async {
@@ -300,40 +207,11 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     return _extractPostContent(data, postId);
   }
 
-  @override
-  Future<PostVoting?> getPostVoting(String postId) async {
-    final doc = await _postsCollection.doc(postId).get();
-    if (!doc.exists) return null;
-
-    final data = doc.data() as Map<String, dynamic>;
-    return _extractPostVoting(data, postId);
-  }
-
-  @override
-  Future<PostMetrics?> getPostMetrics(String postId) async {
-    final doc = await _postsCollection.doc(postId).get();
-    if (!doc.exists) return null;
-
-    final data = doc.data() as Map<String, dynamic>;
-    return _extractPostMetrics(data, postId);
-  }
+  // Note: getPostVoting and getPostMetrics removed
+  // These are handled by Voting Feature and Post Feature respectively
 
   // ====== Stream Operations ======
-
-  @override
-  Stream<PostBundle> watchPostBundle(String postId) {
-    return _postsCollection.doc(postId).snapshots().map((doc) {
-      if (!doc.exists) throw Exception('Post not found');
-
-      final data = doc.data() as Map<String, dynamic>;
-      return PostBundle(
-        core: _extractPostCore(data, postId)!,
-        content: _extractPostContent(data, postId)!,
-        voting: _extractPostVoting(data, postId)!,
-        metrics: _extractPostMetrics(data, postId)!,
-      );
-    });
-  }
+  // Note: watchPostBundle removed - spans multiple features
 
   @override
   Stream<PostCore> watchPostCore(String postId) {
@@ -353,28 +231,13 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     });
   }
 
-  @override
-  Stream<PostVoting> watchPostVoting(String postId) {
-    return _postsCollection.doc(postId).snapshots().map((doc) {
-      if (!doc.exists) throw Exception('Post not found');
-      final data = doc.data() as Map<String, dynamic>;
-      return _extractPostVoting(data, postId)!;
-    });
-  }
-
-  @override
-  Stream<PostMetrics> watchPostMetrics(String postId) {
-    return _postsCollection.doc(postId).snapshots().map((doc) {
-      if (!doc.exists) throw Exception('Post not found');
-      final data = doc.data() as Map<String, dynamic>;
-      return _extractPostMetrics(data, postId)!;
-    });
-  }
+  // Note: watchPostVoting and watchPostMetrics removed
+  // These are handled by Voting Feature and Post Feature respectively
 
   // ====== User's Posts ======
 
   @override
-  Stream<List<PostBundle>> getUserCreatedPosts({
+  Stream<List<PostCore>> getUserCreatedPosts({
     required String userId,
     int limit = -1,
   }) {
@@ -391,12 +254,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
         final data = doc.data() as Map<String, dynamic>;
         final postId = doc.id;
 
-        return PostBundle(
-          core: _extractPostCore(data, postId)!,
-          content: _extractPostContent(data, postId)!,
-          voting: _extractPostVoting(data, postId)!,
-          metrics: _extractPostMetrics(data, postId)!,
-        );
+        return _extractPostCore(data, postId)!;
       }).toList();
     });
   }
@@ -413,14 +271,16 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // ====== Validation ======
 
   @override
-  Future<bool> validatePostData(PostBundle bundle) async {
+  Future<bool> validatePostData({
+    required PostCore core,
+    required PostContent content,
+  }) async {
     // Basic validation
-    if (bundle.core.questionTitle.isEmpty) return false;
-    if (bundle.core.userId.isEmpty) return false;
-    if (!bundle.isConsistent) return false;
+    if (core.questionTitle.isEmpty) return false;
+    if (core.userId.isEmpty) return false;
 
     // Check content
-    if (bundle.content.optionA.isEmpty && bundle.content.optionB.isEmpty) {
+    if (content.optionA.isEmpty && content.optionB.isEmpty) {
       return false;
     }
 
@@ -447,8 +307,9 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   @override
   service.ValidationResult validateTargetAudience(TargetAudience targetAudience) {
     // Delegate to internal service if available
-    if (_targetAudienceService != null) {
-      return _targetAudienceService.validateTargetAudience(targetAudience);
+    final audienceService = _targetAudienceService;
+    if (audienceService != null) {
+      return audienceService.validateTargetAudience(targetAudience);
     }
     // Return valid if no service available (temporary)
     return service.ValidationResult(isValid: true);
@@ -473,6 +334,8 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
       approvedRatios: result.approvedRatios,
       approvedAssetIds: result.approvedAssetIds,
       rejectedReasons: result.rejectedReasons,
+      rejectedIndices: result.rejectedIndices,
+      rejectedCount: result.rejectedCount,
       allRejected: result.allRejected,
     );
   }
@@ -505,8 +368,9 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   @override
   Map<String, dynamic> convertTargetAudienceToStorageFormat(TargetAudience targetAudience) {
     // Delegate to internal service if available
-    if (_targetAudienceService != null) {
-      return _targetAudienceService.convertModelToFirestore(targetAudience);
+    final audienceService = _targetAudienceService;
+    if (audienceService != null) {
+      return audienceService.convertModelToFirestore(targetAudience);
     }
     // Return basic conversion if no service available
     return targetAudience.toMap();
@@ -526,69 +390,12 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     return _mapper.extractPostContent(data, postId);
   }
 
-  // ====== Other Features Domain (Manual conversion - will be migrated to their own mappers) ======
+  // ====== Other Features Domain ======
+  // Note: _extractPostVoting and _extractPostMetrics removed
+  // These are handled by Voting Feature and Post Feature respectively
+  // Each feature will implement their own mappers to extract their domain models from Firestore
 
-  PostVoting? _extractPostVoting(Map<String, dynamic> data, String postId) {
-    // ⚠️ Voting Feature responsibility - Manual conversion
-    // TODO: Will be moved to VotingFirestoreMapper when Voting Feature is migrated
-    return PostVoting(
-      postId: postId,
-      voteStartTime: _parseDateTime(data['voteStartTime']),
-      voteEndTime: _parseDateTime(data['voteEndTime']),
-      voteStatus: data['voteStatus'] ?? 'pending',
-      voteCompleted: data['voteCompleted'] ?? false,
-      voteCompletedAt: _parseDateTime(data['voteCompletedAt']),
-      voteCancelledAt: _parseDateTime(data['voteCancelledAt']),
-      voteCancelledReason: data['voteCancelledReason'],
-      voteTimeout: const Duration(minutes: 10),
-      votesA: data['votesA'] ?? 0,
-      votesB: data['votesB'] ?? 0,
-      votedUserIdsA: List<String>.from(data['votedUserIdsA'] ?? []),
-      votedUserIdsB: List<String>.from(data['votedUserIdsB'] ?? []),
-      displayVotesA: data['displayVotesA'],
-      displayVotesB: data['displayVotesB'],
-      notificationsSent: data['notificationsSent'] ?? 0,
-      notificationsSentAt: _parseDateTime(data['notificationsSentAt']),
-      expansionPointsUsed: data['expansionPointsUsed'] ?? 0,
-      expandedUserCount: data['expandedUserCount'] ?? 0,
-      expansionStatus: data['expansionStatus'] ?? 'none',
-    );
-  }
-
-  PostMetrics? _extractPostMetrics(Map<String, dynamic> data, String postId) {
-    // ⚠️ Post Feature responsibility - Manual conversion
-    // TODO: Will be moved to PostFirestoreMapper when Post Feature is migrated
-    return PostMetrics(
-      postId: postId,
-      commentCount: data['commentcount'] ?? 0,
-      likeCount: data['likecount'] ?? 0,
-      shareCount: data['sherecount'] ?? 0,
-      saveCount: data['savecount'] ?? 0,
-      reportCount: data['reportCount'] ?? 0,
-      participantCount: data['participantcount'] ?? 0,
-      interestCount: data['interestcount'] ?? 0,
-      engagementRate: 0.0, // Will be calculated
-      qualityScore: 0.0, // Will be calculated
-      firstInteractionAt: _parseDateTime(data['createdAt']),
-      lastInteractionAt: data['updatedAt'] != null
-          ? _parseDateTime(data['updatedAt'])
-          : _parseDateTime(data['createdAt']),
-    );
-  }
-
-  DateTime _parseDateTime(dynamic value) {
-    if (value == null) return DateTime.now();
-    if (value is DateTime) return value;
-    if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
-
-    // Assume Firestore Timestamp
-    try {
-      return (value as dynamic).toDate();
-    } catch (_) {
-      return DateTime.now();
-    }
-  }
-
-  // Visibility conversion methods are no longer needed
-  // They are handled by CreationFirestoreMapper
+  // Note: _parseDateTime removed - no longer needed
+  // CreationFirestoreMapper handles all DateTime conversions for Creation Feature
+  // Other features will implement their own mappers with their own DateTime handling
 }

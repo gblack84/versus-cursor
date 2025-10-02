@@ -2,50 +2,49 @@ import 'dart:io';
 import '../core/result.dart';
 import '../entities/post_creation.dart';
 import '../failures/creation_failures.dart';
-import '../models/target_audience.dart';
 import '../repositories/i_post_creation_repository_v2.dart';
 import '../repositories/i_media_repository.dart';
 import '../models/post_core.dart';
 import '../models/post_content.dart';
-import '../models/post_voting.dart';
-import '../models/post_metrics.dart';
 import '../models/media_content.dart';
-import '/app/contracts/models/post_bundle.dart';
-import '../services/i_target_audience_service.dart' as service;
+import '../../data/dto/post_creation_dto.dart';
+import '../../data/dto/target_audience_dto.dart';
 import '../services/i_image_processing_service.dart';
+import 'audience/manage_target_audience_usecase.dart';
 
 /// UseCase for creating a new post
 /// 새로운 게시물을 생성하기 위한 UseCase
 ///
 /// Phase 1.3: Service dependencies removed, now using Repository methods
+/// Phase 5 Restoration: ManageTargetAudienceUseCase fully integrated
 class CreatePostUseCase {
   final IPostCreationRepositoryV2 _postRepository;
   final IMediaRepository _mediaRepository;
+  final ManageTargetAudienceUseCase _manageTargetAudienceUseCase;
 
   CreatePostUseCase({
     required IPostCreationRepositoryV2 postRepository,
     required IMediaRepository mediaRepository,
+    required ManageTargetAudienceUseCase manageTargetAudienceUseCase,
   })  : _postRepository = postRepository,
-        _mediaRepository = mediaRepository;
+        _mediaRepository = mediaRepository,
+        _manageTargetAudienceUseCase = manageTargetAudienceUseCase;
 
-  /// Execute the use case
+  /// Execute the use case with DTO
+  ///
+  /// Simplified interface using PostCreationDto to bundle all parameters.
+  /// This follows Clean Architecture by reducing coupling between layers.
   Future<Result<PostCreation>> execute({
-    required String userId,
-    required String title,
-    required String description,
-    required List<File> imagesA,
-    required List<File> imagesB,
-    TargetAudience? targetAudience,
-    bool isAnonymous = false,
+    required PostCreationDto dto,
     Function(double)? onProgress,
   }) async {
     try {
-      // 1. Validate inputs
+      // 1. Validate inputs from DTO
       final validationResult = _validateInputs(
-        title: title,
-        description: description,
-        imagesA: imagesA,
-        imagesB: imagesB,
+        title: dto.title,
+        description: dto.description,
+        imagesA: dto.imagesA,
+        imagesB: dto.imagesB,
       );
 
       if (validationResult != null) {
@@ -56,7 +55,7 @@ class CreatePostUseCase {
 
       // 2. Process and moderate images for option A
       final resultA = await _processImages(
-        images: imagesA,
+        images: dto.imagesA,
         box: 'A',
         onProgress: (progress) => onProgress?.call(0.1 + progress * 0.3),
       );
@@ -69,7 +68,7 @@ class CreatePostUseCase {
 
       // 3. Process and moderate images for option B
       final resultB = await _processImages(
-        images: imagesB,
+        images: dto.imagesB,
         box: 'B',
         onProgress: (progress) => onProgress?.call(0.4 + progress * 0.3),
       );
@@ -99,26 +98,42 @@ class CreatePostUseCase {
 
       onProgress?.call(0.8);
 
-      // 5. Validate target audience if provided
-      // Now using repository method instead of direct service dependency (Phase 1.3)
-      if (targetAudience != null) {
-        final audienceValidation = _postRepository.validateTargetAudience(
-          targetAudience,
+      // 5. Validate and process target audience if provided
+      // Phase 5 Restoration: Using ManageTargetAudienceUseCase for complete functionality
+      // - DTO conversion with validation
+      // - Model creation with proper defaults
+      // - ITargetAudienceService validation
+      // - Result pattern error handling
+      if (dto.targetAudience != null) {
+        // Convert to DTO for UseCase
+        final targetAudienceDto = TargetAudienceDto(
+          collectionType: dto.targetAudience!.collectionType,
+          targetCount: dto.targetAudience!.targetCount,
+          selectedInterests: dto.targetAudience!.selectedInterests,
+          selectedAgeGroup: dto.targetAudience!.selectedAgeGroup,
+          selectedGender: dto.targetAudience!.selectedGender,
+          activeUserOnly: dto.targetAudience!.activeUserOnly,
+          isPremium: dto.targetAudience!.isPremium,
         );
-        if (!audienceValidation.isValid) {
-          return ResultFailure(
-            CreationValidationFailure(
-              audienceValidation.error ?? 'Invalid target audience',
-            ),
-          );
+
+        // Use ManageTargetAudienceUseCase for creation and validation
+        final audienceResult = await _manageTargetAudienceUseCase.createFromDto(
+          targetAudienceDto,
+        );
+
+        if (audienceResult.isFailure) {
+          return ResultFailure(audienceResult.failureOrNull!);
         }
+
+        // Validated TargetAudience is now available for use
+        // (dto.targetAudience already contains the necessary data)
       }
 
-      // 6. Create post entity
+      // 6. Create post entity from DTO with uploaded media
       final post = PostCreation(
-        userId: userId,
-        title: title,
-        description: description,
+        userId: dto.userId,
+        title: dto.title,
+        description: dto.description,
         optionA: PostOption(
           imageUrls: uploadResultA.valueOrNull!,
           aspectRatios: resultA.valueOrNull!.approvedRatios,
@@ -127,55 +142,41 @@ class CreatePostUseCase {
           imageUrls: uploadResultB.valueOrNull!,
           aspectRatios: resultB.valueOrNull!.approvedRatios,
         ),
-        targetAudience: targetAudience,
+        targetAudience: dto.targetAudience,
         createdAt: DateTime.now(),
         status: PostStatus.published,
-        isAnonymous: isAnonymous,
+        isAnonymous: dto.isAnonymous,
       );
 
       onProgress?.call(0.9);
 
-      // 7. Create PostBundle for V2 repository
-      final postBundle = PostBundle(
-        core: PostCore(
-          id: '', // Will be set by repository
-          userId: userId,
-          title: title,
-          description: description,
-          isAnonymous: isAnonymous,
-          createdAt: DateTime.now(),
+      // 7. Create PostCore and PostContent (Creation Feature responsibility only)
+      final core = PostCore(
+        id: '', // Will be set by repository
+        userId: dto.userId,
+        questionTitle: dto.title,
+        description: dto.description,
+        isAnonymous: dto.isAnonymous,
+        createdAt: DateTime.now(),
+      );
+
+      final content = PostContent(
+        postId: '', // Will be set by repository
+        optionA: MediaContent(
+          imageUrls: uploadResultA.valueOrNull!,
+          aspectRatios: resultA.valueOrNull!.approvedRatios,
         ),
-        content: PostContent(
-          optionA: MediaContent(
-            text: null, // Text is now in optionA/B properties of Post
-            imageUrls: uploadResultA.valueOrNull!,
-            videoUrls: [],
-            aspectRatios: resultA.valueOrNull!.approvedRatios,
-          ),
-          optionB: MediaContent(
-            text: null, // Text is now in optionA/B properties of Post
-            imageUrls: uploadResultB.valueOrNull!,
-            videoUrls: [],
-            aspectRatios: resultB.valueOrNull!.approvedRatios,
-          ),
-          contentType: 'versus',
-        ),
-        voting: PostVoting(
-          voteMode: targetAudience?.mode ?? 'public',
-          targetAudience: targetAudience?.toMap() ?? {},
-          voteStartTime: DateTime.now(),
-          voteEndTime: DateTime.now().add(const Duration(minutes: 10)),
-        ),
-        metrics: PostMetrics(
-          views: 0,
-          shares: 0,
-          likeCount: 0,
-          commentCount: 0,
+        optionB: MediaContent(
+          imageUrls: uploadResultB.valueOrNull!,
+          aspectRatios: resultB.valueOrNull!.approvedRatios,
         ),
       );
 
-      // Save using V2 repository
-      final postId = await _postRepository.createPost(postBundle);
+      // Save using V2 repository (PostCore + PostContent only)
+      final postId = await _postRepository.createPost(
+        core: core,
+        content: content,
+      );
 
       // Update the post with the generated ID
       final savedPost = post.copyWith(id: postId);

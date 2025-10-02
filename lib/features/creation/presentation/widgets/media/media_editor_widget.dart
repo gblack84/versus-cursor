@@ -7,10 +7,9 @@ import 'package:provider/provider.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:path_provider/path_provider.dart';
-import '/app/state/app_state.dart';
-import '/features/creation/data/services/image_upload_service.dart';
-import '/features/creation/presentation/screens/create_post/in_put_post_image_model.dart';
 import '/services/moderation/image_moderation_service.dart';
+import '../../providers/media/media_selection_provider.dart';
+import '../../providers/media/media_upload_provider.dart';
 
 /// 이미지 에디터 페이지 위젯
 class MediaEditorWidget extends StatefulWidget {
@@ -32,7 +31,6 @@ class MediaEditorWidget extends StatefulWidget {
   final VoidCallback? onBackToPicker;
   final VoidCallback? onCloseModal;
   final Function(double)? onProgressUpdate;
-  final InPutPostImageModel? model;
 
   const MediaEditorWidget({
     super.key,
@@ -54,7 +52,6 @@ class MediaEditorWidget extends StatefulWidget {
     this.onBackToPicker,
     this.onCloseModal,
     this.onProgressUpdate,
-    this.model,
   });
 
   @override
@@ -209,11 +206,9 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
     await Future.delayed(const Duration(milliseconds: 100));
 
     try {
-      // AppState 접근
-      final appState = Provider.of<AppState>(context, listen: false);
-
-      // ImageUploadService 생성 (UI 의존성 없는 순수 서비스)
-      final uploadService = ImageUploadService();
+      // Provider 접근 (Clean Architecture)
+      final uploadProvider = context.read<MediaUploadProvider>();
+      final selectionProvider = context.read<MediaSelectionProvider>();
 
       // 편집된 이미지를 File로 저장
       final editedFile = await _saveEditedImageAsFile(bytes);
@@ -223,8 +218,8 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
 
       // 멀티 이미지 처리
       if (widget.allSelectedFiles.isNotEmpty) {
-        // 멀티 이미지 처리 (검열만 수행, 업로드 X)
-        final result = await uploadService.processMultipleImages(
+        // 멀티 이미지 처리 (검열만 수행, 업로드 X) - Provider를 통해 간접 호출
+        final result = await uploadProvider.processMultipleImagesForUI(
           files: widget.allSelectedFiles,
           box: widget.box,
           editedFile: editedFile,
@@ -266,21 +261,14 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
         if (mounted) {
           print('[MediaEditor] 멀티 이미지 처리 완료');
 
-          // 비율 업데이트 (편집된 이미지의 인덱스에 해당하는 비율 업데이트)
-          if (aspectRatio != null &&
-              widget.currentEditIndex <
-                  (widget.box == 'A'
-                      ? appState.uploadImageAspectRatioA.length
-                      : appState.uploadImageAspectRatioB.length)) {
-            appState.update(() {
-              if (widget.box == 'A') {
-                appState.uploadImageAspectRatioA[widget.currentEditIndex] =
-                    aspectRatio;
-              } else {
-                appState.uploadImageAspectRatioB[widget.currentEditIndex] =
-                    aspectRatio;
-              }
-            });
+          // 비율 업데이트 - Provider 메서드 사용 (Clean Architecture)
+          if (aspectRatio != null) {
+            selectionProvider.replaceFileAtIndex(
+              box: widget.box,
+              index: widget.currentEditIndex,
+              file: editedFile,
+              aspectRatio: aspectRatio,
+            );
           }
 
           print('[MediaEditor] Navigator.pop 호출 전');
@@ -301,8 +289,8 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
           }
         }
       } else {
-        // 단일 이미지 처리
-        final result = await uploadService.processEditedImage(
+        // 단일 이미지 처리 - Provider를 통해 간접 호출 (Clean Architecture)
+        final result = await uploadProvider.processEditedImageForUI(
           editedFile: editedFile,
           box: widget.box,
           assetId: widget.selectedAssets.isNotEmpty
@@ -321,7 +309,7 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
             });
 
             // 거부 메시지 표시 (단일 이미지이므로 구체적인 이유 표시)
-            final rejectionMessage = '이미지가 부적절합니다: ${result.moderationResult.reason}';
+            final rejectionMessage = '이미지가 부적절합니다: ${result.moderationResult?.reason ?? result.rejectionReason ?? '커뮤니티 가이드라인 위반'}';
             _showToast(rejectionMessage, isError: true);
 
             // 피커 열기 (모달은 닫지 않음)
@@ -332,32 +320,27 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
 
         // 성공: 모달 닫기
         if (mounted) {
-          // 비율 업데이트 (startWithEditor인 경우)
-          if (aspectRatio != null && widget.startWithEditor) {
-            appState.update(() {
-              if (widget.box == 'A') {
-                // 현재 인덱스의 비율 업데이트
-                final currentIndex = widget.currentIndex ?? 0;
-                if (currentIndex < appState.uploadImageAspectRatioA.length) {
-                  appState.uploadImageAspectRatioA[currentIndex] = aspectRatio;
-                }
-              } else {
-                // 현재 인덱스의 비율 업데이트
-                final currentIndex = widget.currentIndex ?? 0;
-                if (currentIndex < appState.uploadImageAspectRatioB.length) {
-                  appState.uploadImageAspectRatioB[currentIndex] = aspectRatio;
-                }
-              }
-            });
-          } else if (aspectRatio != null) {
-            // 새 이미지인 경우 비율 추가
-            appState.update(() {
-              if (widget.box == 'A') {
-                appState.addToUploadImageAspectRatioA(aspectRatio);
-              } else {
-                appState.addToUploadImageAspectRatioB(aspectRatio);
-              }
-            });
+          // 비율 업데이트 - Provider 메서드 사용 (Clean Architecture)
+          if (aspectRatio != null) {
+            if (widget.startWithEditor) {
+              // 기존 이미지 교체
+              selectionProvider.replaceFileAtIndex(
+                box: widget.box,
+                index: widget.currentIndex ?? 0,
+                file: editedFile,
+                aspectRatio: aspectRatio,
+              );
+            } else {
+              // 새 이미지 추가
+              selectionProvider.addFile(
+                box: widget.box,
+                file: editedFile,
+                aspectRatio: aspectRatio,
+                assetId: widget.selectedAssets.isNotEmpty
+                    ? widget.selectedAssets.first.id
+                    : null,
+              );
+            }
           }
 
           Navigator.pop(context);

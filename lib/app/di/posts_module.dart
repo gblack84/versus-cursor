@@ -14,8 +14,8 @@ import '../../features/creation/domain/repositories/i_content_moderation_reposit
 import '../../features/creation/data/repositories/content_moderation_repository_impl.dart';
 import '../../features/creation/domain/repositories/i_content_visibility_repository.dart';
 import '../../features/creation/data/repositories/content_visibility_repository_impl.dart';
-import '../../features/creation/domain/repositories/i_creation_query_service.dart';
-import '../../features/creation/data/repositories/creation_query_service_impl.dart';
+import '../../features/post/domain/repositories/i_post_query_service.dart';
+import '../../features/post/data/repositories/post_query_service_impl.dart';
 import '../../features/creation/domain/repositories/i_media_repository.dart';
 import '../../features/creation/data/repositories/media_repository_impl.dart';
 import '../../features/creation/domain/repositories/i_post_creation_repository_v2.dart';
@@ -98,10 +98,10 @@ class PostsModule implements FeatureModule {
       );
     }
 
-    // 6. CreationQueryService
-    if (!sl.isRegistered<ICreationQueryService>()) {
-      sl.registerLazySingleton<ICreationQueryService>(
-        () => CreationQueryServiceImpl(),
+    // 6. PostQueryService (moved from Creation to Post Feature)
+    if (!sl.isRegistered<IPostQueryService>()) {
+      sl.registerLazySingleton<IPostQueryService>(
+        () => PostQueryServiceImpl(),
       );
     }
 
@@ -165,8 +165,8 @@ class PostsModule implements FeatureModule {
     if (sl.isRegistered<IMediaRepository>()) {
       sl.unregister<IMediaRepository>();
     }
-    if (sl.isRegistered<ICreationQueryService>()) {
-      sl.unregister<ICreationQueryService>();
+    if (sl.isRegistered<IPostQueryService>()) {
+      sl.unregister<IPostQueryService>();
     }
     if (sl.isRegistered<IContentVisibilityRepository>()) {
       sl.unregister<IContentVisibilityRepository>();

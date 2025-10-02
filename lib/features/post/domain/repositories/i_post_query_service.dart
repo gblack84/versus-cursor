@@ -1,8 +1,8 @@
-import '../entities/post_creation.dart';
+import '../../../creation/domain/entities/post_creation.dart';
 
-/// Service interface for complex content queries
-/// 읽기 전용 복잡한 조회 처리 서비스
-abstract class ICreationQueryService {
+/// Service interface for complex post queries
+/// 읽기 전용 복잡한 게시물 조회 처리 서비스
+abstract class IPostQueryService {
   /// Search content with various criteria
   Future<List<PostCreation>> searchContent(SearchCriteria criteria);
 

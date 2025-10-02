@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/create_post_provider_v2.dart';
 import '/core/utils/debounce.dart';
+import '../components/input_field_builder.dart';
+import '/features/creation/domain/constants/field_styles.dart';
 
 /// Text input component for post creation
 ///
 /// Handles title, description, and option text inputs with validation
+/// - Uses InputFieldBuilder for Title and Description (SimpleValidatedField)
+/// - Uses basic TextFormField for Option A/B
 class TextInputWidget extends StatefulWidget {
   final Function(String)? onTitleChanged;
   final Function(String)? onDescriptionChanged;
@@ -41,9 +45,7 @@ class _TextInputWidgetState extends State<TextInputWidget> {
   final FocusNode _textAFocus = FocusNode();
   final FocusNode _textBFocus = FocusNode();
 
-  // Validation
-  String? _titleError;
-  String? _descriptionError;
+  // Validation (only for Option fields - Title/Description use InputFieldBuilder)
   String? _textAError;
   String? _textBError;
 
@@ -59,57 +61,23 @@ class _TextInputWidgetState extends State<TextInputWidget> {
   }
 
   void _initializeControllers() {
-    final appState = Provider.of<AppState>(context, listen: false);
+    final provider = Provider.of<CreatePostProviderV2>(context, listen: false);
 
-    _titleController = TextEditingController(text: appState.questionTitle);
-    _descriptionController = TextEditingController(text: appState.questionDescription);
-    _textAController = TextEditingController(text: appState.uploadTextA);
-    _textBController = TextEditingController(text: appState.uploadTextB);
+    _titleController = TextEditingController(text: provider.formData.title);
+    _descriptionController = TextEditingController(text: provider.formData.description);
+    _textAController = TextEditingController(text: provider.formData.textA);
+    _textBController = TextEditingController(text: provider.formData.textB);
 
-    // Add listeners
-    _titleController.addListener(_onTitleChanged);
-    _descriptionController.addListener(_onDescriptionChanged);
+    // Add listeners only for Option fields
+    // Title/Description are handled by InputFieldBuilder callbacks
     _textAController.addListener(_onTextAChanged);
     _textBController.addListener(_onTextBChanged);
   }
 
   void _setupDebounce() {
+    // Debounce instances for Title/Description validation
     _titleDebounce = Debounce(milliseconds: 500);
     _descriptionDebounce = Debounce(milliseconds: 500);
-  }
-
-  void _onTitleChanged() {
-    final text = _titleController.text;
-    final provider = context.read<CreatePostProviderV2>();
-
-    // Update provider directly
-    provider.updateTitle(text);
-    widget.onTitleChanged?.call(text);
-
-    // Debounced validation using provider
-    _titleDebounce?.run(() async {
-      final result = await provider.validatePostUseCase.validateText(text);
-      setState(() {
-        _titleError = result.isValid ? null : result.errorMessage;
-      });
-    });
-  }
-
-  void _onDescriptionChanged() {
-    final text = _descriptionController.text;
-    final provider = context.read<CreatePostProviderV2>();
-
-    // Update provider directly
-    provider.updateDescription(text);
-    widget.onDescriptionChanged?.call(text);
-
-    // Debounced validation using provider
-    _descriptionDebounce?.run(() async {
-      final result = await provider.validatePostUseCase.validateText(text);
-      setState(() {
-        _descriptionError = result.isValid ? null : result.errorMessage;
-      });
-    });
   }
 
   void _onTextAChanged() {
@@ -142,11 +110,11 @@ class _TextInputWidgetState extends State<TextInputWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 제목 입력
-              _buildTitleField(adapter),
+              _buildTitleField(provider),
               const SizedBox(height: 16),
 
               // 설명 입력
-              _buildDescriptionField(adapter),
+              _buildDescriptionField(provider),
               const SizedBox(height: 16),
 
               // 옵션 텍스트 A
@@ -178,73 +146,59 @@ class _TextInputWidgetState extends State<TextInputWidget> {
     );
   }
 
-  Widget _buildTitleField(CreatePostAdapter adapter) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '질문 제목 *',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: _titleController,
-          focusNode: _titleFocus,
-          maxLength: 60,
-          decoration: InputDecoration(
-            hintText: '어떤 선택을 물어보고 싶으신가요?',
-            errorText: _titleError,
-            counterText: '${_titleController.text.length}/60',
-            border: UnderlineInputBorder(
-              borderSide: BorderSide(
-                color: Theme.of(context).dividerColor,
-              ),
-            ),
-          ),
-          onChanged: (text) {
-            adapter.updateTitle(text);
-            _onTitleChanged();
-          },
-        ),
-      ],
+  Widget _buildTitleField(CreatePostProviderV2 provider) {
+    return InputFieldBuilder.buildTitleField(
+      context: context,
+      controller: _titleController,
+      focusNode: _titleFocus,
+      onFieldChanged: (value, fieldName, isBlocked) {
+        // Update provider
+        provider.updateTitle(value);
+
+        // Trigger debounced validation
+        _titleDebounce?.run(() async {
+          await provider.validateTitle(value);
+        });
+
+        // Call external callback
+        widget.onTitleChanged?.call(value);
+      },
+      onFieldCleared: () {
+        provider.clearValidationResult(FieldStyles.questionTitle);
+        widget.onTitleChanged?.call('');
+      },
+      onRequiredFieldsCheck: () {
+        // Optional: Can trigger form validation check
+      },
+      validationResult: provider.validationResults[FieldStyles.questionTitle],
     );
   }
 
-  Widget _buildDescriptionField(CreatePostAdapter adapter) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '설명 *',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: _descriptionController,
-          focusNode: _descriptionFocus,
-          maxLength: 400,
-          maxLines: 3,
-          decoration: InputDecoration(
-            hintText: '자세한 설명을 작성해주세요',
-            errorText: _descriptionError,
-            counterText: '${_descriptionController.text.length}/400',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: Theme.of(context).dividerColor,
-              ),
-            ),
-          ),
-          onChanged: (text) {
-            adapter.updateDescription(text);
-            _onDescriptionChanged();
-          },
-        ),
-      ],
+  Widget _buildDescriptionField(CreatePostProviderV2 provider) {
+    return InputFieldBuilder.buildDescriptionField(
+      context: context,
+      controller: _descriptionController,
+      focusNode: _descriptionFocus,
+      onFieldChanged: (value, fieldName, isBlocked) {
+        // Update provider
+        provider.updateDescription(value);
+
+        // Trigger debounced validation
+        _descriptionDebounce?.run(() async {
+          await provider.validateDescription(value);
+        });
+
+        // Call external callback
+        widget.onDescriptionChanged?.call(value);
+      },
+      onFieldCleared: () {
+        provider.clearValidationResult(FieldStyles.description);
+        widget.onDescriptionChanged?.call('');
+      },
+      onRequiredFieldsCheck: () {
+        // Optional: Can trigger form validation check
+      },
+      validationResult: provider.validationResults[FieldStyles.description],
     );
   }
 

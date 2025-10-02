@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '/core_exports.dart';
 import '/features/creation/presentation/providers/target_audience_provider.dart';
 import '/features/creation/domain/constants/target_audience_constants.dart';
+import '/features/creation/presentation/constants/target_audience_ui_constants.dart';
 
 /// Step 1: 수집 방식 선택
 class CollectionTypeSelector extends StatefulWidget {
@@ -27,7 +28,7 @@ class _CollectionTypeSelectorState extends State<CollectionTypeSelector> {
             TargetAudienceConstants.collectionTypes.entries.toList();
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(TargetAudienceConstants.contentPadding),
+          padding: const EdgeInsets.all(TargetAudienceUIConstants.contentPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

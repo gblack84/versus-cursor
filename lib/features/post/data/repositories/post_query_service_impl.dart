@@ -1,17 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:algolia/algolia.dart';
-import '../../domain/entities/post_creation.dart';
-import '../../domain/repositories/i_creation_query_service.dart';
-import '../utils/firestore_util.dart';
+import '../../../creation/domain/entities/post_creation.dart';
+import '../../domain/repositories/i_post_query_service.dart';
+import '../../../creation/data/utils/firestore_util.dart';
 
-/// Implementation of creation query service
-/// 읽기 전용 복잡한 조회 처리 서비스 구현체
-class CreationQueryServiceImpl implements ICreationQueryService {
+/// Implementation of post query service
+/// 읽기 전용 복잡한 게시물 조회 처리 서비스 구현체
+class PostQueryServiceImpl implements IPostQueryService {
   final FirebaseFirestore _firestore;
   final Algolia? _algolia;
   static const String _collection = 'posts';
 
-  CreationQueryServiceImpl({
+  PostQueryServiceImpl({
     FirebaseFirestore? firestore,
     Algolia? algolia,
   })  : _firestore = firestore ?? FirebaseFirestore.instance,
@@ -273,8 +273,11 @@ class CreationQueryServiceImpl implements ICreationQueryService {
       final postsByCategory = <String, int>{};
 
       for (final doc in categoriesSnapshot.docs) {
-        final category = doc.data()['category'] as String? ?? 'uncategorized';
-        postsByCategory[category] = (postsByCategory[category] ?? 0) + 1;
+        final data = doc.data() as Map<String, dynamic>?;
+        if (data != null) {
+          final category = data['category'] as String? ?? 'uncategorized';
+          postsByCategory[category] = (postsByCategory[category] ?? 0) + 1;
+        }
       }
 
       // Calculate average participation
@@ -282,10 +285,13 @@ class CreationQueryServiceImpl implements ICreationQueryService {
       int postCount = 0;
 
       for (final doc in categoriesSnapshot.docs) {
-        final participantCount =
-            doc.data()['stats']?['participantcount'] as int? ?? 0;
-        totalParticipation += participantCount;
-        postCount++;
+        final data = doc.data() as Map<String, dynamic>?;
+        if (data != null) {
+          final participantCount =
+              (data['stats'] as Map<String, dynamic>?)?['participantcount'] as int? ?? 0;
+          totalParticipation += participantCount;
+          postCount++;
+        }
       }
 
       final averageParticipation = postCount > 0

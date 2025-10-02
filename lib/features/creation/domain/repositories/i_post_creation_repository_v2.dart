@@ -1,31 +1,24 @@
 import 'dart:io';
-import '/app/contracts/models/post_bundle.dart';
 import '../models/post_core.dart';
 import '../models/post_content.dart';
 import '../models/target_audience.dart';
 import '../services/i_target_audience_service.dart' as service;
 import '../services/i_image_processing_service.dart';
-import '/features/voting/domain/models/chat/post_voting.dart';
-import '/features/post/domain/models/post_metrics.dart';
 
 /// Repository interface for Post creation operations (V2 - Clean Architecture)
 ///
-/// This V2 interface uses PostBundle and domain models instead of PostsModel,
-/// removing ALL Firebase dependencies from the domain layer.
+/// This V2 interface uses domain models (PostCore, PostContent) from Creation Feature only.
+/// Voting and Metrics will be added by their respective features after post creation.
 abstract class IPostCreationRepositoryV2 {
   // ====== Creation Operations ======
 
-  /// Create a new post using PostBundle
+  /// Create a new post with PostCore and PostContent (Creation Feature responsibility)
   /// Returns the created post ID
-  Future<String> createPost(PostBundle bundle);
-
-  /// Create a new post using individual domain models
-  /// Returns the created post ID
-  Future<String> createPostFromModels({
+  ///
+  /// Voting Feature and Post Feature will add their fields later through onCreate triggers.
+  Future<String> createPost({
     required PostCore core,
     required PostContent content,
-    required PostVoting voting,
-    required PostMetrics metrics,
   });
 
   // ====== Update Operations ======
@@ -48,17 +41,8 @@ abstract class IPostCreationRepositoryV2 {
     required PostContent content,
   });
 
-  /// Update post voting state
-  Future<void> updatePostVoting({
-    required String postId,
-    required PostVoting voting,
-  });
-
-  /// Update post metrics
-  Future<void> updatePostMetrics({
-    required String postId,
-    required PostMetrics metrics,
-  });
+  // Note: updatePostVoting and updatePostMetrics removed
+  // These are now handled by Voting Feature and Post Feature respectively
 
   // ====== Delete Operations ======
 
@@ -93,28 +77,21 @@ abstract class IPostCreationRepositoryV2 {
 
   // ====== Query Operations ======
 
-  /// Get post as PostBundle
-  Future<PostBundle?> getPostBundle(String postId);
-
-  /// Get individual post models
+  /// Get individual post models (Creation Feature responsibility only)
   Future<PostCore?> getPostCore(String postId);
   Future<PostContent?> getPostContent(String postId);
-  Future<PostVoting?> getPostVoting(String postId);
-  Future<PostMetrics?> getPostMetrics(String postId);
 
-  /// Stream post changes as PostBundle
-  Stream<PostBundle> watchPostBundle(String postId);
-
-  /// Stream individual model changes
+  /// Stream individual model changes (Creation Feature responsibility only)
   Stream<PostCore> watchPostCore(String postId);
   Stream<PostContent> watchPostContent(String postId);
-  Stream<PostVoting> watchPostVoting(String postId);
-  Stream<PostMetrics> watchPostMetrics(String postId);
+
+  // Note: PostBundle, PostVoting, PostMetrics queries removed
+  // These span multiple features and should be handled at app/contracts level
 
   // ====== User's Posts ======
 
-  /// Get user's created posts as PostBundles
-  Stream<List<PostBundle>> getUserCreatedPosts({
+  /// Get user's created posts (PostCore + PostContent only)
+  Stream<List<PostCore>> getUserCreatedPosts({
     required String userId,
     int limit = -1,
   });
@@ -124,8 +101,11 @@ abstract class IPostCreationRepositoryV2 {
 
   // ====== Validation ======
 
-  /// Validate post data before creation
-  Future<bool> validatePostData(PostBundle bundle);
+  /// Validate post data before creation (PostCore + PostContent only)
+  Future<bool> validatePostData({
+    required PostCore core,
+    required PostContent content,
+  });
 
   /// Check if user can create post (rate limiting, etc.)
   Future<bool> canUserCreatePost(String userId);

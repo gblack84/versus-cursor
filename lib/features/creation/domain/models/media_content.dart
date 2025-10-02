@@ -8,6 +8,7 @@ class MediaContent extends Equatable {
     this.videoUrl = '',
     this.youtubeUrl = '',
     this.aspectRatio,
+    this.aspectRatios = const [],
     this.layoutType = '',
     this.thumbnailUrl = '',
     this.mediaType = 'text',
@@ -20,7 +21,8 @@ class MediaContent extends Equatable {
   final List<String> imageUrls;
   final String videoUrl;
   final String youtubeUrl;
-  final double? aspectRatio;
+  final double? aspectRatio; // Single aspect ratio (backward compatibility)
+  final List<double> aspectRatios; // Multiple aspect ratios for multi-image support
   final String layoutType;
   final String thumbnailUrl;
   final String mediaType;
@@ -35,6 +37,7 @@ class MediaContent extends Equatable {
     String? videoUrl,
     String? youtubeUrl,
     double? aspectRatio,
+    List<double>? aspectRatios,
     String? layoutType,
     String? thumbnailUrl,
     String? mediaType,
@@ -48,6 +51,7 @@ class MediaContent extends Equatable {
       videoUrl: videoUrl ?? this.videoUrl,
       youtubeUrl: youtubeUrl ?? this.youtubeUrl,
       aspectRatio: aspectRatio ?? this.aspectRatio,
+      aspectRatios: aspectRatios ?? this.aspectRatios,
       layoutType: layoutType ?? this.layoutType,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       mediaType: mediaType ?? this.mediaType,
@@ -65,6 +69,7 @@ class MediaContent extends Equatable {
       'videoUrl': videoUrl,
       'youtubeUrl': youtubeUrl,
       'aspectRatio': aspectRatio,
+      'aspectRatios': aspectRatios,
       'layoutType': layoutType,
       'thumbnailUrl': thumbnailUrl,
       'mediaType': mediaType,
@@ -82,6 +87,10 @@ class MediaContent extends Equatable {
       videoUrl: json['videoUrl'] ?? '',
       youtubeUrl: json['youtubeUrl'] ?? '',
       aspectRatio: json['aspectRatio']?.toDouble(),
+      aspectRatios: json['aspectRatios'] != null
+          ? List<double>.from(
+              (json['aspectRatios'] as List).map((e) => (e as num).toDouble()))
+          : [],
       layoutType: json['layoutType'] ?? '',
       thumbnailUrl: json['thumbnailUrl'] ?? '',
       mediaType: json['mediaType'] ?? 'text',
@@ -125,6 +134,7 @@ class MediaContent extends Equatable {
         videoUrl,
         youtubeUrl,
         aspectRatio,
+        aspectRatios,
         layoutType,
         thumbnailUrl,
         mediaType,

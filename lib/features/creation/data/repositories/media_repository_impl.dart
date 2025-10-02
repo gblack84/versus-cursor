@@ -3,9 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/repositories/i_media_repository.dart';
 import '../../domain/datasources/i_storage_datasource.dart';
 import '../../domain/entities/media_info.dart';
-import '../models/media/images_model.dart';
-import '../models/media/video_model.dart';
-// import '../models/media/encodings_model.dart'; // Removed - Clean Architecture violation
+import '../dto/image_result_dto.dart';
+import '../dto/video_result_dto.dart';
 
 /// Implementation of Media Repository using Clean Architecture
 ///
@@ -23,42 +22,43 @@ class MediaRepositoryImpl implements IMediaRepository {
 
   // ========== Helper Methods for Conversion ==========
 
-  /// Convert ImagesModel to ImageInfo domain entity
-  ImageInfo _imagesToImageInfo(ImagesModel model) {
+  /// Convert ImageResultDto to ImageInfo domain entity
+  ImageInfo _dtoToImageInfo(ImageResultDto dto) {
     return ImageInfo(
-      id: model.id,
-      url: model.url,
-      parentId: model.parentReference.id,
-      width: null,  // ImagesModel doesn't have width field
-      height: null,  // ImagesModel doesn't have height field
-      size: null,  // ImagesModel doesn't have size field
-      mimeType: null,  // ImagesModel doesn't have mimeType field
-      createdAt: null,  // ImagesModel doesn't have createdAt field
-      thumbnailUrl: null,  // ImagesModel doesn't have thumbnailUrl field
+      id: dto.id,
+      url: dto.url,
+      parentId: dto.parentId,
+      width: null,  // DTO doesn't have width field
+      height: null,  // DTO doesn't have height field
+      size: null,  // DTO doesn't have size field
+      mimeType: null,  // DTO doesn't have mimeType field
+      createdAt: null,  // DTO doesn't have createdAt field
+      thumbnailUrl: null,  // DTO doesn't have thumbnailUrl field
       metadata: {
-        'option': model.option,
+        'option': dto.option,
       },
     );
   }
 
-  /// Convert VideoModel to VideoInfo domain entity
-  VideoInfo _videoToVideoInfo(VideoModel model) {
+  /// Convert VideoResultDto to VideoInfo domain entity
+  VideoInfo _dtoToVideoInfo(VideoResultDto dto) {
     return VideoInfo(
-      id: model.id,
-      url: model.url,
-      parentId: model.parentReference.id,
-      width: null,  // VideoModel doesn't have width field
-      height: null,  // VideoModel doesn't have height field
-      duration: model.duration.toDouble(),
-      size: null,  // VideoModel doesn't have size field
-      mimeType: null,  // VideoModel doesn't have mimeType field
-      createdAt: null,  // VideoModel doesn't have createdAt field
-      thumbnailUrl: model.thumbUrl.isNotEmpty ? model.thumbUrl : null,
+      id: dto.id,
+      url: dto.url,
+      parentId: dto.parentId,
+      width: null,  // DTO doesn't have width field
+      height: null,  // DTO doesn't have height field
+      duration: dto.duration.toDouble(),
+      size: null,  // DTO doesn't have size field
+      mimeType: null,  // DTO doesn't have mimeType field
+      createdAt: dto.createdAt,
+      thumbnailUrl: dto.thumbUrl?.isNotEmpty == true ? dto.thumbUrl : null,
       aspectRatio: null,
       metadata: {
-        'params': model.params,
-        'sourceVideoUrl': model.sourceVideoUrl,
-        'ownerUid': model.ownerUid,
+        'params': dto.params,
+        'sourceVideoUrl': dto.sourceVideoUrl,
+        'ownerUid': dto.ownerUid,
+        'status': dto.status,
       },
     );
   }
@@ -89,8 +89,8 @@ class MediaRepositoryImpl implements IMediaRepository {
 
     return query.snapshots().map((snapshot) {
       return snapshot.docs
-          .map((doc) => ImagesModel.fromMap({...doc.data(), 'id': doc.id}))
-          .map((model) => _imagesToImageInfo(model))
+          .map((doc) => ImageResultDto.fromFirestore(doc.data(), doc.id))
+          .map((dto) => _dtoToImageInfo(dto))
           .toList();
     });
   }
@@ -135,8 +135,8 @@ class MediaRepositoryImpl implements IMediaRepository {
 
     return query.snapshots().map((snapshot) {
       return snapshot.docs
-          .map((doc) => VideoModel.fromMap({...doc.data(), 'id': doc.id}))
-          .map((model) => _videoToVideoInfo(model))
+          .map((doc) => VideoResultDto.fromFirestore(doc.data(), doc.id))
+          .map((dto) => _dtoToVideoInfo(dto))
           .toList();
     });
   }
@@ -272,8 +272,8 @@ class MediaRepositoryImpl implements IMediaRepository {
   Future<ImageInfo?> getImage(String imageId) async {
     final doc = await _firestore.collection('images').doc(imageId).get();
     if (!doc.exists) return null;
-    final model = ImagesModel.fromMap({...doc.data()!, 'id': doc.id});
-    return _imagesToImageInfo(model);
+    final dto = ImageResultDto.fromFirestore(doc.data()!, doc.id);
+    return _dtoToImageInfo(dto);
   }
 
   @override
@@ -317,8 +317,8 @@ class MediaRepositoryImpl implements IMediaRepository {
   Future<VideoInfo?> getVideo(String videoId) async {
     final doc = await _firestore.collection('videos').doc(videoId).get();
     if (!doc.exists) return null;
-    final model = VideoModel.fromMap({...doc.data()!, 'id': doc.id});
-    return _videoToVideoInfo(model);
+    final dto = VideoResultDto.fromFirestore(doc.data()!, doc.id);
+    return _dtoToVideoInfo(dto);
   }
 
   @override

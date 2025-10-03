@@ -1,351 +1,649 @@
-# 📝 Posts 모듈 - Versus Space 게시물 관리 시스템
+# 🎨 Creation Feature
+> **Clean Architecture v4.0** | **Phase 5 MediaStateCoordinator** | **Feature-First Design**
 
-> Versus Space 앱의 핵심 콘텐츠인 A/B 비교 게시물의 생성, 관리, 표시를 담당하는 통합 모듈
+## 📋 개요
 
-## 📊 모듈 메타정보
+**Creation Feature**는 Versus Space 앱의 핵심 기능으로, 사용자가 A vs B 형식의 비교 질문을 작성하고 멀티미디어 콘텐츠를 업로드하며, AI 기반 검열과 타겟 오디언스 설정을 통해 안전하고 효과적인 콘텐츠를 발행하는 모듈입니다. Clean Architecture v4.0과 Phase 5 MediaStateCoordinator를 적용하여 확장 가능하고 유지보수가 용이한 구조로 설계되었습니다.
 
-| 항목 | 상태 | 상세 |
-|------|------|------|
-| **모듈명** | Posts | 게시물 관리 시스템 |
-| **버전** | v2.5.0 | 2025-08-23 기준 |
-| **하위 모듈** | 1개 | InPutPostImage (콘텐츠 생성) |
-| **총 파일 수** | 50+ | 컴포넌트, 서비스, 헬퍼 포함 |
-| **문서화 진행률** | 100% | 모든 하위 디렉토리 문서화 완료 ✅ |
+### 🎯 핵심 특징
 
-## 🎯 개요
+**Phase 5 MediaStateCoordinator 아키텍처**
+- 3개 Provider 조정 패턴으로 미디어 상태 중앙 집중 관리
+- MediaSelectionProvider (선택), MediaUploadProvider (업로드), MediaValidationProvider (검증) 통합
+- 단일 진입점(`processMediaSelection`)으로 복잡한 미디어 워크플로우 간소화
+- GetIt 의존성 주입으로 완벽한 테스트 가능성 확보
 
-Posts 모듈은 Versus Space의 핵심 기능인 **"A vs B" 비교 형식**의 게시물을 관리하는 최상위 모듈입니다. 사용자가 두 가지 옵션을 제시하고 커뮤니티가 투표하는 독특한 소셜 미디어 경험을 제공합니다.
+**3단계 AI 검열 시스템**
+- 1단계: Perspective API로 텍스트 유해성 검사 (욕설, 혐오 표현)
+- 2단계: Cloud Vision API로 이미지 안전성 검사 (성인 콘텐츠, 폭력)
+- 3단계: Gemini AI로 로직 검증 (얼굴 평가 BLOCK 등)
+- 동적 거부 메시지로 구체적 피드백 제공
 
-### 핵심 가치
-- 🎭 **대립 구조**: 모든 콘텐츠는 A vs B 형식으로 구성
-- 🗳️ **민주적 참여**: 커뮤니티 투표를 통한 의견 수렴
-- 🎨 **리치 미디어**: 텍스트, 이미지, 비디오 모두 지원
-- 🤖 **AI 기반**: 콘텐츠 검열, 타겟팅, 레이아웃 최적화
+**스마트 레이아웃 시스템**
+- AspectRatioAnalyzer로 이미지 비율 자동 분석
+- DynamicBoxCalculator로 최적 박스 크기 계산
+- 가로/세로 레이아웃 자동 전환으로 화면 공간 최적화
 
-## 📐 네이밍 컨벤션
+**멀티미디어 지원**
+- 최대 4개 이미지 업로드 (wechat_assets_picker v9.5.1)
+- ProImageEditor v5.4.2 통합 (필터, 자르기, 그리기, 텍스트)
+- 3단계 이미지 리사이징 (original, display 800px, thumbnail 150px)
+- 드래그 앤 드롭 이미지 재배치
 
-| 구분 | 규칙 | 예시 |
-|------|------|------|
-| **디렉토리** | snake_case | `in_put_post_image/` |
-| **파일명** | snake_case | `post_manager.dart` |
-| **클래스명** | PascalCase | `PostManager` |
-| **Firebase 필드** | camelCase | `votesA`, `createdAt` |
-| **라우트명** | camelCase | `createPost`, `viewPost` |
+**타겟 오디언스 시스템**
+- Quick Collection (AI): Gemini 기반 최적 사용자 추천
+- Public (랜덤): 활성 사용자에게 무작위 배포
+- Custom (조건): 관심사, 연령, 성별 필터링
+- Test (개발): Admin/Tester 역할 전용 테스트 모드
 
-> 상세 규칙은 [프로젝트 네이밍 컨벤션](../../NAMING_CONVENTION.md) 참조
+## 🏗️ 전체 아키텍처 구조도
 
-## 🏗️ 아키텍처
-
-### 모듈 계층 구조
 ```
-posts/
-├── 게시물 생성 (Creation)
-│   └── in_put_post_image/      # A/B 비교 콘텐츠 생성
-│       ├── components/          # UI 컴포넌트
-│       ├── services/           # 비즈니스 로직
-│       ├── widgets/            # 복합 위젯
-│       └── helpers/            # 유틸리티
+lib/features/creation/
+├── data/                           # 데이터 레이어 (27개 파일)
+│   ├── repositories/              # 8개 Repository 구현체
+│   │   ├── content_metrics_repository_impl.dart
+│   │   ├── content_moderation_repository_impl.dart
+│   │   ├── content_visibility_repository_impl.dart
+│   │   ├── media_repository_impl.dart
+│   │   ├── post_creation_repository_v2_impl.dart
+│   │   └── target_audience_repository_impl.dart
+│   │
+│   ├── datasources/               # 4개 DataSource (2 인터페이스 + 2 구현)
+│   │   ├── interfaces/
+│   │   │   ├── i_post_creation_datasource.dart
+│   │   │   └── i_storage_datasource.dart
+│   │   ├── firebase_post_creation_datasource.dart
+│   │   └── firebase_storage_datasource.dart
+│   │
+│   ├── dto/                       # 6개 DTO
+│   │   ├── media_dto.dart
+│   │   ├── post_content_dto.dart
+│   │   ├── post_core_dto.dart
+│   │   ├── post_creation_dto.dart
+│   │   ├── post_stats_dto.dart
+│   │   └── target_audience_dto.dart
+│   │
+│   └── mappers/                   # 3개 Mapper
+│       ├── creation_firestore_mapper.dart
+│       ├── post_creation_mapper.dart
+│       └── target_audience_mapper.dart
 │
-├── 게시물 표시 (Display) - 예정
-│   └── post_viewer/            # 게시물 뷰어
+├── domain/                         # 도메인 레이어 (35개 파일)
+│   ├── models/                    # 14개 도메인 모델
+│   │   ├── core/                 # 핵심 엔티티
+│   │   │   ├── post_core.dart
+│   │   │   ├── post_content.dart
+│   │   │   └── post_stats.dart
+│   │   ├── value_objects/        # Value Objects
+│   │   │   ├── media_content.dart
+│   │   │   └── target_audience.dart
+│   │   └── aggregates/           # Aggregates
+│   │       └── post_creation.dart
+│   │
+│   ├── usecases/                  # 6개 UseCase
+│   │   ├── create_post_usecase.dart
+│   │   ├── moderate_content_usecase.dart
+│   │   ├── audience/
+│   │   │   └── manage_target_audience_usecase.dart
+│   │   └── media/
+│   │       └── upload_images_usecase.dart
+│   │
+│   ├── repositories/              # 6개 Repository 인터페이스
+│   │   ├── specialized/
+│   │   │   ├── i_content_metrics_repository.dart
+│   │   │   ├── i_content_moderation_repository.dart
+│   │   │   └── i_content_visibility_repository.dart
+│   │   ├── i_media_repository.dart
+│   │   ├── i_post_creation_repository_v2.dart
+│   │   └── i_target_audience_repository.dart
+│   │
+│   ├── services/                  # 3개 Service 인터페이스
+│   │   └── i_target_audience_service.dart
+│   │
+│   ├── failures/                  # 10개 Phase 3 Failure 클래스
+│   │   ├── creation_failures.dart
+│   │   ├── firestore_write_failure.dart
+│   │   ├── ai_moderation_failure.dart
+│   │   ├── media_processing_failure.dart
+│   │   ├── network_failure.dart
+│   │   ├── post_validation_failure.dart
+│   │   ├── post_creation_repository_failure.dart
+│   │   ├── server_failure.dart
+│   │   ├── target_audience_failure.dart
+│   │   └── validation_error.dart
+│   │
+│   └── constants/                 # 3개 상수 파일
+│       └── image_constants.dart
 │
-├── 게시물 관리 (Management) - 예정
-│   └── post_manager/           # CRUD 작업
-│
-└── 게시물 분석 (Analytics) - 예정
-    └── post_analytics/         # 통계 및 분석
+└── presentation/                   # 프레젠테이션 레이어 (100+ 파일)
+    ├── screens/                   # 4개 주요 화면
+    │   ├── create_post/
+    │   │   └── create_post_screen.dart
+    │   ├── editor/
+    │   │   └── pro_image_editor_page.dart
+    │   ├── thumbnail/
+    │   │   └── thumbnail_selection_page.dart
+    │   └── viewer/
+    │       └── full_image_viewer_page.dart
+    │
+    ├── providers/                 # Phase 5 MediaStateCoordinator (4개 Provider)
+    │   ├── create_post_provider_v2.dart          # 중앙 상태 관리
+    │   ├── media_state_coordinator.dart          # 조정자
+    │   ├── media_selection_provider.dart         # 선택 상태
+    │   ├── media_upload_provider.dart            # 업로드 상태
+    │   └── media_validation_provider.dart        # 검증 상태
+    │
+    ├── widgets/                   # 50+ 위젯
+    │   ├── create_post/          # Post 작성 위젯
+    │   ├── media/                # 미디어 관련 위젯
+    │   ├── components/           # 재사용 가능 컴포넌트
+    │   └── dialogs/              # 다이얼로그
+    │
+    ├── delegates/                 # 3개 Korean 델리게이트
+    │   ├── korean_asset_picker_text_delegate.dart
+    │   ├── korean_editor_text_delegate.dart
+    │   └── camera_floating_button_delegate.dart
+    │
+    └── constants/                 # 7개 상수 파일
+        ├── field_styles.dart     # 필드 스타일 중앙 집중
+        ├── dimensions.dart
+        ├── colors.dart
+        ├── animation_constants.dart
+        ├── image_constants.dart
+        ├── strings.dart
+        └── text_limits.dart
 ```
 
-### 데이터 플로우
-```mermaid
-graph TD
-    A[사용자 입력] --> B[InPutPostImage]
-    B --> C[AI 검열]
-    C --> D[이미지 업로드]
-    D --> E[타겟 오디언스 설정]
-    E --> F[Firestore 저장]
-    F --> G[알림 전송]
-    G --> H[투표 수집]
-    H --> I[결과 집계]
+### 📊 파일 통계
+
+- **총 파일**: 162개 이상
+- **Data Layer**: 27개 파일 (Repositories 8, DataSources 4, DTOs 6, Mappers 3)
+- **Domain Layer**: 35개 파일 (Models 14, UseCases 6, Services 3, Failures 10)
+- **Presentation Layer**: 100개 이상 (Screens 4, Providers 5, Widgets 50+, Delegates 3, Constants 7)
+
+## 🔄 데이터 플로우
+
+### Post 생성 플로우
+```
+1. UI Layer
+   CreatePostScreen → TextInputWidget + ImageSelectionWidget
+   └─ Consumer<CreatePostProviderV2>
+      └─ NextButton (canSubmit 기반)
+
+2. Provider Layer (Phase 5 MediaStateCoordinator)
+   CreatePostProviderV2.createPost()
+   └─ MediaStateCoordinator.processMediaSelection()
+      ├─ MediaSelectionProvider.selectImages()
+      ├─ MediaValidationProvider.validateImages()  → AI 검열
+      └─ MediaUploadProvider.uploadImages()        → Firebase Storage
+
+3. UseCase Layer
+   CreatePostUseCase.execute()
+   ├─ 입력 검증 (10%)
+   ├─ 이미지 A 처리 (10-40%)
+   ├─ 이미지 B 처리 (40-70%)
+   ├─ 타겟 오디언스 검증 (70-80%)
+   ├─ PostCore/PostContent 생성 (80-90%)
+   └─ Repository 저장 (90-100%)
+
+4. Repository Layer
+   IPostCreationRepositoryV2 (인터페이스)
+   └─ PostCreationRepositoryV2Impl (구현)
+      └─ CreationFirestoreMapper.toCreateDocument()
+
+5. DataSource Layer
+   IPostCreationDataSource (인터페이스)
+   └─ FirebasePostCreationDataSource (구현)
+      └─ FirebaseFirestore.instance.collection('posts').add()
 ```
 
-## 🔧 주요 구성요소
-
-### 1. InPutPostImage (콘텐츠 생성 모듈)
-현재 Posts 모듈의 유일한 구현체로, A/B 비교 콘텐츠 생성의 전체 플로우를 담당합니다.
-
-#### 주요 기능
-- **미디어 선택**: WeChat 스타일 갤러리/카메라 통합
-- **이미지 편집**: ProImageEditor 통합
-- **AI 검열**: 3단계 검증 시스템
-- **스마트 레이아웃**: 이미지 비율 기반 자동 배치
-- **타겟 오디언스**: AI 기반 사용자 매칭
-
-#### 디렉토리 구조
+### AI 검열 플로우
 ```
-in_put_post_image/
-├── components/      # 재사용 가능한 UI 컴포넌트
-├── constants/       # 상수 정의
-├── delegates/       # 커스텀 델리게이트
-├── helpers/        # 헬퍼 유틸리티
-├── models/         # 데이터 모델
-├── services/       # 비즈니스 로직
-├── utils/          # 공통 유틸리티
-└── widgets/        # 복합 위젯
+1. 텍스트 검열 (Perspective API)
+   ModerationService.checkText()
+   └─ 유해성 점수 분석 (욕설, 혐오 표현)
+
+2. 이미지 검열 (Cloud Vision API)
+   ModerationService.checkImages()
+   └─ 안전성 점수 분석 (성인 콘텐츠, 폭력)
+
+3. 로직 검증 (Gemini AI)
+   ModerationService.validateLogic()
+   └─ 얼굴 평가 BLOCK, 부적절한 비교 차단
+
+결과 처리:
+- 통과 → TargetAudienceDialog 표시
+- 실패 → 동적 거부 메시지 + 재시도 유도
 ```
 
-상세 내용은 [InPutPostImage README](./in_put_post_image/README.md) 참조
+### 이미지 처리 플로우
+```
+1. 이미지 선택
+   wechat_assets_picker (Korean 델리게이트)
+   └─ AssetEntity 리스트 반환
 
-### 2. 향후 확장 예정 모듈
+2. 이미지 편집 (선택적)
+   ProImageEditor (Korean i18n)
+   └─ 필터, 자르기, 그리기, 텍스트 적용
 
-#### PostViewer (게시물 표시)
-- 피드 뷰어
-- 상세 페이지
-- 투표 인터페이스
-- 실시간 업데이트
+3. 이미지 리사이징
+   MediaUploadService.uploadImages()
+   ├─ original (원본)
+   ├─ display (800px, JPEG 85%)
+   └─ thumbnail (150px, JPEG 85%)
 
-#### PostManager (게시물 관리)
-- CRUD 작업
-- 수정/삭제
-- 상태 관리
-- 권한 처리
+4. Firebase Storage 업로드
+   FirebaseStorageDatasource.uploadImage()
+   └─ user_uploads/{userId}/{postId}/{size}_{index}.jpg
 
-#### PostAnalytics (게시물 분석)
-- 투표 통계
-- 참여율 분석
-- 트렌드 파악
-- 리포트 생성
+5. URL 저장 및 프리캐싱
+   AppState.uploadImageA/B 업데이트
+   └─ CachedNetworkImage 프리캐싱 (memCacheWidth)
+```
 
-## 💡 핵심 개념
+## 💻 빠른 시작 가이드
 
-### A/B 비교 형식
-모든 게시물은 두 가지 옵션을 제시하는 구조:
-- **Option A**: 첫 번째 선택지 (텍스트 + 이미지)
-- **Option B**: 두 번째 선택지 (텍스트 + 이미지)
-- **Question**: 비교의 맥락을 제공하는 질문
+### 1. 초기 설정
 
-### 투표 시스템
+**의존성 주입 등록** (`lib/app/di/creation_module.dart`):
 ```dart
-// 투표 데이터 구조
-class PostVoting {
-  final int votesA;        // A 옵션 투표 수
-  final int votesB;        // B 옵션 투표 수
-  final DateTime voteEndTime; // 투표 종료 시간
-  final String voteStatus;    // pending/active/completed
+class CreationModule {
+  static void registerDependencies(GetIt getIt) {
+    // DataSources
+    getIt.registerLazySingleton<IPostCreationDataSource>(
+      () => FirebasePostCreationDataSource(),
+    );
+
+    // Repositories
+    getIt.registerLazySingleton<IPostCreationRepositoryV2>(
+      () => PostCreationRepositoryV2Impl(
+        dataSource: getIt(),
+        mapper: getIt(),
+      ),
+    );
+
+    // UseCases
+    getIt.registerFactory(() => CreatePostUseCase(repository: getIt()));
+
+    // Phase 5 Providers
+    getIt.registerLazySingleton(() => MediaStateCoordinator(
+      selectionProvider: getIt(),
+      uploadProvider: getIt(),
+      validationProvider: getIt(),
+    ));
+  }
 }
 ```
 
-### AI 통합
-1. **콘텐츠 검열**: 부적절한 콘텐츠 자동 차단
-2. **타겟 매칭**: 관련성 높은 사용자 자동 선택
-3. **레이아웃 최적화**: 이미지 비율 기반 최적 배치
+### 2. Post 생성 화면 통합
 
-## 📦 Firebase 통합
-
-### Firestore 컬렉션
-```
-posts/
-├── postId/
-│   ├── question: string
-│   ├── optionA: Map
-│   │   ├── title: string
-│   │   ├── imageUrls: List<string>
-│   │   └── aspectRatio: double
-│   ├── optionB: Map
-│   ├── votesA: int
-│   ├── votesB: int
-│   ├── voteEndTime: Timestamp
-│   ├── targetAudience: Map
-│   └── createdAt: Timestamp
-```
-
-### Storage 구조
-```
-posts/
-├── {userId}/
-│   ├── {postId}/
-│   │   ├── optionA/
-│   │   │   ├── original/
-│   │   │   ├── display/
-│   │   │   └── thumbnail/
-│   │   └── optionB/
-```
-
-## 🚀 사용 예시
-
-### 게시물 생성 플로우
+**Provider 설정**:
 ```dart
-// 1. 페이지 진입
-Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (context) => InPutPostImageWidget(),
-  ),
+return MultiProvider(
+  providers: [
+    ChangeNotifierProvider(
+      create: (_) => CreationModule.getCreatePostProvider(),
+    ),
+    ChangeNotifierProvider(
+      create: (_) => CreationModule.getMediaSelectionProvider(),
+    ),
+    ChangeNotifierProvider(
+      create: (_) => CreationModule.getMediaValidationProvider(),
+    ),
+  ],
+  child: CreatePostScreen(),
+);
+```
+
+**Submit 로직**:
+```dart
+Future<void> _handleSubmit() async {
+  final provider = context.read<CreatePostProviderV2>();
+
+  // 1. 유효성 검사
+  final isValid = await provider.validateFormFields();
+  if (!isValid) {
+    BotToast.showText(text: provider.errorMessage ?? '모든 필수 항목을 입력해주세요');
+    return;
+  }
+
+  // 2. 타겟 오디언스 선택
+  final targetAudienceData = await TargetAudienceDialog.show(context);
+  if (targetAudienceData == null) return;
+
+  // 3. Post 생성 (AI 검열 포함)
+  try {
+    await provider.createPost('userId', targetAudience: targetAudienceData);
+    Navigator.of(context).pop(true);
+  } catch (e) {
+    if (e is AIModerationFailure) {
+      BotToast.showText(text: e.getUserMessage());
+    } else if (e is MediaProcessingFailure) {
+      BotToast.showText(text: e.getUserMessage());
+    }
+  }
+}
+```
+
+### 3. 미디어 선택 사용 예제
+
+**이미지 선택**:
+```dart
+final provider = context.read<MediaSelectionProvider>();
+
+// 이미지 선택 (Korean 델리게이트 자동 적용)
+await provider.selectImages(
+  box: 'A',
+  maxAssets: 4,
+  context: context,
 );
 
-// 2. 내부 플로우 (자동 처리)
-// - 텍스트 입력
-// - 이미지 선택
-// - AI 검열
-// - 타겟 설정
-// - 게시물 생성
+// 선택된 이미지 접근
+final selectedImages = provider.selectedFilesA;
+final aspectRatios = provider.aspectRatiosA;
 ```
 
-### 데이터 구조
+**이미지 편집**:
 ```dart
-// 게시물 모델
-class PostModel {
-  final String question;
-  final OptionModel optionA;
-  final OptionModel optionB;
-  final TargetAudience targetAudience;
-  final VotingData voting;
-  final DateTime createdAt;
-  
-  // 투표 관련
-  bool get isVotingActive => 
-    voting.voteStatus == 'active';
-  
-  double get votePercentageA => 
-    votesA / (votesA + votesB);
+// ProImageEditor로 이동
+final editedBytes = await Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (_) => ProImageEditorPage(
+      imageUrl: imageUrl,
+      onSave: (bytes) async {
+        // 편집된 이미지 처리
+        await provider.updateImage(box: 'A', index: 0, bytes: bytes);
+      },
+    ),
+  ),
+);
+```
+
+### 4. AI 검열 통합
+
+**검열 서비스 사용**:
+```dart
+final moderationService = getIt<ModerationService>();
+
+// 텍스트 검열
+final textResult = await moderationService.checkText(
+  title: titleA,
+  description: descriptionA,
+);
+
+if (!textResult.isApproved) {
+  throw AIModerationFailure(
+    detectedCategories: textResult.categories,
+    message: textResult.reason,
+  );
 }
-```
 
-## 🔄 생명주기
+// 이미지 검열
+final imageResult = await moderationService.checkImages(
+  images: [imageA, imageB],
+);
 
-### 게시물 생성 생명주기
-1. **입력 단계**: 질문과 옵션 텍스트 입력
-2. **미디어 단계**: 이미지 선택 및 편집
-3. **검증 단계**: AI 기반 콘텐츠 검열
-4. **타겟팅 단계**: 대상 사용자 설정
-5. **생성 단계**: Firestore 저장 및 알림 발송
-
-### 투표 생명주기
-1. **알림 수신**: 타겟 사용자에게 알림
-2. **투표 참여**: 10분 타이머 내 투표
-3. **집계**: 실시간 투표 수 업데이트
-4. **완료**: 타이머 종료 또는 목표 달성
-
-## 📊 성능 최적화
-
-### 이미지 처리
-- **3단계 리사이징**: original, display(800px), thumbnail(150px)
-- **병렬 업로드**: Future.wait으로 동시 처리
-- **프리캐싱**: 업로드 직후 이미지 프리로드
-
-### 메모리 관리
-- **LRU 캐시**: 100개 제한, 5분 TTL
-- **동적 memCacheWidth**: 400-1600px 자동 조절
-- **Provider 패턴**: 효율적인 상태 관리
-
-## 🐛 디버깅
-
-### 로그 패턴
-```dart
-// 디버그 로그 형식
-debugPrint('[Posts] 작업: 상세 내용');
-debugPrint('[InPutPostImage] 단계: 진행 상황');
-```
-
-### 에러 처리
-```dart
-// 표준 에러 처리
-try {
-  // 게시물 생성 로직
-} catch (e) {
-  ErrorHandler.handle(
-    error: e,
-    context: context,
-    fallback: '게시물 생성 실패',
+if (!imageResult.isApproved) {
+  throw AIModerationFailure(
+    detectedCategories: imageResult.rejectedIndices.toString(),
+    message: imageResult.reason,
   );
 }
 ```
 
-## 📈 통계 및 메트릭
+## 🔒 보안 기능
 
-### 주요 지표
-- **생성 성공률**: 95%+ 목표
-- **AI 검열 통과율**: 90%+
-- **평균 투표 참여**: 50명+
-- **투표 완료율**: 80%+
+### AI 검열 시스템
+- **3단계 검증**: Perspective API → Cloud Vision → Gemini AI
+- **얼굴 평가 BLOCK**: 얼굴 평가 관련 콘텐츠 자동 차단
+- **거부 이유 추적**: `detectedCategories`로 구체적 거부 사유 제공
+- **재시도 플로우**: 거부된 이미지만 재선택 유도
 
-### 모니터링 포인트
-- 이미지 업로드 시간
-- AI 검열 응답 시간
-- 투표 알림 전달률
-- 사용자 참여도
+### Firebase Security Rules
+```javascript
+// posts 컬렉션 보안 규칙
+match /posts/{postId} {
+  allow read: if true;  // 공개 읽기
+  allow create: if request.auth != null
+    && request.resource.data.userId == request.auth.uid
+    && request.resource.data.keys().hasAll(['questionTitle', 'userId', 'createdAt']);
+  allow update, delete: if request.auth != null
+    && resource.data.userId == request.auth.uid;
+}
+```
 
-## 🔄 버전 히스토리
+### 이미지 처리 보안
+- **3단계 리사이징**: original, display (800px), thumbnail (150px)
+- **JPEG 압축**: 85% 품질로 최적화
+- **Firebase Storage 보안**: 사용자별 경로 분리 (`user_uploads/{userId}/`)
+- **URL 만료 처리**: Firestore에 영구 URL 저장
 
-### v2.5.0 (2025-08-23)
-- InPutPostImage 모듈 완성
-- AI 검열 시스템 통합
-- 스마트 레이아웃 구현
-- 타겟 오디언스 시스템
+### 타겟 오디언스 보안
+- **역할 검증**: Admin/Tester 역할 확인 (Test 모드)
+- **중복 알림 방지**: NotificationManager 큐 시스템
+- **AI 매칭 안전성**: Gemini AI로 부적절한 타게팅 차단
 
-### v2.0.0 (2025-07-20)
-- 멀티 이미지 지원 추가
-- ProImageEditor 통합
-- WeChat 스타일 피커
+## 📁 레이어별 책임
 
-### v1.0.0 (2025-07-01)
-- 초기 버전 릴리즈
-- 기본 A/B 게시물 생성
+### Data Layer
+**역할**: 외부 데이터 소스와의 통신 및 데이터 변환
+- **Repositories**: 도메인 Repository 인터페이스 구현
+- **DataSources**: Firebase Firestore, Storage와 직접 통신
+- **DTOs**: Firestore 문서 구조에 맞춘 데이터 전송 객체
+- **Mappers**: DTO ↔ Domain Model 양방향 변환
 
-## 🚀 향후 계획
+**핵심 파일**:
+- `post_creation_repository_v2_impl.dart`: Post 생성 로직
+- `firebase_post_creation_datasource.dart`: Firestore 통신
+- `creation_firestore_mapper.dart`: DTO ↔ Model 변환
 
-### 단기 (1-2개월)
-- [ ] PostViewer 모듈 구현
-- [ ] 비디오 업로드 지원
-- [ ] 실시간 투표 그래프
+**상세 문서**: [Data Layer README](./data/README.md)
 
-### 중기 (3-6개월)
-- [ ] PostManager 모듈 구현
-- [ ] 게시물 수정 기능
-- [ ] 댓글 시스템 통합
+### Domain Layer
+**역할**: 비즈니스 로직과 규칙 정의 (프레임워크 독립적)
+- **Models**: 순수 Dart 객체 (Firebase 의존성 제거)
+  - `PostCore`: 핵심 엔티티 (id, title, userId, timestamps)
+  - `PostContent`: 콘텐츠 데이터 (optionA/B, images, layout)
+  - `MediaContent`: 미디어 정보 (urls, aspectRatios, thumbnails)
+- **UseCases**: 단일 비즈니스 작업 (CreatePostUseCase, UploadImagesUseCase)
+- **Repositories**: 데이터 접근 인터페이스 (구현은 Data Layer)
+- **Failures**: Phase 3 Failure 패턴 (`getUserMessage()` 지원)
 
-### 장기 (6개월+)
-- [ ] PostAnalytics 모듈 구현
-- [ ] AI 기반 트렌드 분석
-- [ ] 게시물 추천 시스템
+**핵심 파일**:
+- `create_post_usecase.dart`: Post 생성 UseCase (진행률 추적)
+- `post_core.dart`: 핵심 도메인 모델
+- `creation_failures.dart`: 10개 Failure 클래스
 
-## 📚 참고 자료
+**상세 문서**: [Domain Layer README](./domain/README.md)
 
-### 하위 모듈 문서
-- [InPutPostImage 상세 문서](./in_put_post_image/README.md)
-- [Components 문서](./in_put_post_image/components/README.md)
-- [Services 문서](./in_put_post_image/services/README.md)
-- [Widgets 문서](./in_put_post_image/widgets/README.md)
+### Presentation Layer
+**역할**: UI 표시 및 사용자 상호작용
+- **Screens**: 4개 주요 화면 (CreatePost, Editor, Thumbnail, Viewer)
+- **Providers**: Phase 5 MediaStateCoordinator (4개 Provider 통합)
+- **Widgets**: 재사용 가능 UI 컴포넌트 (50+개)
+- **Delegates**: wechat_assets_picker, ProImageEditor 한국어 델리게이트
+- **Constants**: 중앙 집중식 스타일 관리 (FieldStyles, Dimensions, Colors)
 
-### 프로젝트 문서
-- [프로젝트 아키텍처](../../ARCHITECTURE.md)
-- [네이밍 컨벤션](../../NAMING_CONVENTION.md)
-- [Firebase 구조](../../firebase/README.md)
+**핵심 파일**:
+- `create_post_screen.dart`: 메인 Post 작성 화면
+- `create_post_provider_v2.dart`: 중앙 상태 관리
+- `media_state_coordinator.dart`: Phase 5 조정자
+
+**상세 문서**: [Presentation Layer README](./presentation/README.md)
+
+## 🚀 주요 화면 구성
+
+### 1. CreatePostScreen
+**경로**: `lib/features/creation/presentation/screens/create_post/`
+- 질문 작성 메인 화면
+- TextInputWidget + ImageSelectionWidget 통합
+- NextButton (canSubmit 기반 활성화)
+- Phase 5 MediaStateCoordinator 통합
+
+### 2. ProImageEditorPage
+**경로**: `lib/features/creation/presentation/screens/editor/`
+- ProImageEditor v5.4.2 통합
+- 필터, 자르기, 그리기, 텍스트 편집
+- Korean i18n 델리게이트 적용
+- Firebase URL → 편집 → 재업로드 플로우
+
+### 3. ThumbnailSelectionPage
+**경로**: `lib/features/creation/presentation/screens/thumbnail/`
+- 편집할 대표 이미지 선택
+- 썸네일 그리드 표시
+- 선택 후 ProImageEditor로 이동
+
+### 4. FullImageViewerPage
+**경로**: `lib/features/creation/presentation/screens/viewer/`
+- 전체화면 이미지 뷰어
+- 줌/스와이프 지원
+- PageView로 멀티 이미지 탐색
+
+## 🔧 기술 스택
+
+### Core Architecture
+- **Clean Architecture v4.0**: 완전한 레이어 분리 (Presentation → Domain ← Data)
+- **Phase 5 MediaStateCoordinator**: 3개 Provider 조정 패턴
+- **Phase 3 Creation Failures**: 10개 도메인별 Failure 클래스 (`getUserMessage()`)
+- **Repository Pattern**: 인터페이스 기반 데이터 접근 추상화
+- **UseCase Pattern**: 단일 비즈니스 작업 캡슐화
+
+### State Management
+- **Provider Pattern**: ChangeNotifier 기반
+- **GetIt**: 의존성 주입 (Service Locator)
+- **MediaStateCoordinator**: 중앙 집중식 미디어 상태 관리
+
+### Backend & AI
+- **Firebase**:
+  - Firestore: 데이터베이스
+  - Storage: 이미지/비디오 저장
+  - Functions: AI 검열 (Genkit 프레임워크)
+- **AI Services**:
+  - Perspective API: 텍스트 유해성 검사
+  - Cloud Vision API: 이미지 안전성 검사
+  - Gemini AI: 로직 검증 (Genkit 통합)
+
+### Media Processing
+- **wechat_assets_picker v9.5.1**: 이미지 피커
+  - Korean 커스텀 델리게이트 (`KoreanAssetPickerTextDelegate`)
+  - 최대 4개 멀티 선택 지원
+  - AssetEntity 기반 선택 상태 추적
+- **ProImageEditor v5.4.2**: 이미지 편집
+  - Korean i18n 설정
+  - 필터, 자르기, 그리기, 텍스트 기능
+  - Blur/Rectangle/Polygon 메뉴 비활성화
+- **CachedNetworkImage**: 이미지 캐싱 및 프리로딩
+  - 동적 memCacheWidth 계산
+  - fadeIn 150ms 애니메이션
+
+### UI Components
+- **Smart Layout System**:
+  - AspectRatioAnalyzer: 이미지 비율 자동 분석
+  - DynamicBoxCalculator: 최적 박스 크기 계산
+- **Centralized Styling**:
+  - FieldStyles: 필드 스타일 중앙 집중
+  - Dimensions, Colors, AnimationConstants 등 7개 상수 파일
+
+## 📚 관련 문서
+
+### Layer READMEs
+- [Data Layer README](./data/README.md) - Repository, DataSource, DTO, Mapper 세부 가이드
+- [Domain Layer README](./domain/README.md) - Model, UseCase, Failure 세부 가이드
+- [Presentation Layer README](./presentation/README.md) - Provider, Screen, Widget 세부 가이드
+
+### Feature Documentation
+- [FEATURE_OVERVIEW.md](./docs/FEATURE_OVERVIEW.md) - Creation Feature 전체 개요
+- [API_REFERENCE.md](./docs/API_REFERENCE.md) - Public API 레퍼런스
+- [USAGE_GUIDE.md](./docs/USAGE_GUIDE.md) - 사용 가이드 및 예제
+
+### Migration Guides
+- [Clean Architecture Migration Guide](./CLEAN_ARCHITECTURE_MIGRATION_GUIDE.md)
+- [Phase 5 MediaStateCoordinator Guide](./PHASE5_MEDIA_STATE_DECOMPOSITION.md)
+
+### Project Documentation
+- [Project CLAUDE.md](/CLAUDE.md) - 프로젝트 전체 구조
+- [System ARCHITECTURE.md](/ARCHITECTURE.md) - 시스템 아키텍처
 
 ## 🤝 기여 가이드
 
-### 코드 스타일
-- Dart 표준 스타일 가이드 준수
-- 의미 있는 변수명 사용
-- 충분한 주석 작성
+### 코드 추가 시 체크리스트
 
-### 커밋 메시지
+**새로운 Repository 추가**:
+- [ ] Domain Layer에 인터페이스 추가 (`domain/repositories/`)
+- [ ] Data Layer에 구현체 추가 (`data/repositories/`)
+- [ ] DataSource 인터페이스 및 구현 추가 (`data/datasources/`)
+- [ ] GetIt 의존성 주입 등록 (`app/di/creation_module.dart`)
+
+**새로운 UseCase 추가**:
+- [ ] Domain Layer에 UseCase 클래스 생성 (`domain/usecases/`)
+- [ ] Repository 인터페이스 의존성 주입
+- [ ] Failure 처리 추가 (`domain/failures/`)
+- [ ] GetIt 의존성 주입 등록
+
+**새로운 화면 추가**:
+- [ ] Presentation Layer에 Screen 위젯 생성 (`presentation/screens/`)
+- [ ] Provider 생성 및 ChangeNotifier 구현 (`presentation/providers/`)
+- [ ] GoRouter 경로 등록 (`app/router/`)
+- [ ] Constants 파일 업데이트 (필요 시)
+
+### 테스트 작성 가이드
+
+**Unit Test** (Repository, UseCase):
+```dart
+// Example: CreatePostUseCase 테스트
+test('should create post successfully', () async {
+  // Arrange
+  final mockRepository = MockIPostCreationRepositoryV2();
+  final useCase = CreatePostUseCase(repository: mockRepository);
+
+  // Act
+  final result = await useCase.execute(dto: testDto);
+
+  // Assert
+  expect(result.isSuccess, true);
+  verify(mockRepository.createPost(...)).called(1);
+});
 ```
-feat: 새로운 기능 추가
-fix: 버그 수정
-docs: 문서 업데이트
-refactor: 코드 리팩토링
-test: 테스트 추가
+
+**Widget Test** (Provider, Screen):
+```dart
+// Example: CreatePostProviderV2 테스트
+testWidgets('should enable submit button when all fields valid', (tester) async {
+  // Arrange
+  final provider = CreatePostProviderV2(...);
+
+  // Act
+  await provider.updateTitle('A', 'Test Title');
+  await provider.uploadImages('A', [testImage]);
+
+  // Assert
+  expect(provider.canSubmit, true);
+});
 ```
 
-## 📝 변경 이력
+### 코드 스타일 가이드
 
-- **2025-08-23**: Posts 모듈 통합 문서 작성
-- **2025-08-22**: InPutPostImage 모듈 문서화 완료
-- **2025-08-15**: 하위 디렉토리 구조 확립
-- **2025-07-01**: 초기 모듈 생성
+**Naming Conventions**:
+- Repository 구현: `{Entity}RepositoryImpl`
+- DataSource 구현: `Firebase{Entity}DataSource`
+- DTO: `{Entity}Dto`
+- UseCase: `{Action}{Entity}UseCase`
+- Provider: `{Feature}Provider` or `{Feature}ProviderV2`
+
+**File Organization**:
+- 한 파일당 하나의 클래스 원칙
+- 관련 파일은 서브디렉토리로 그룹화
+- constants 파일은 feature별로 분리
+
+**Documentation**:
+- 모든 public 메서드에 Dart doc 주석 추가
+- README 파일은 각 레이어/서브디렉토리마다 유지
+- 복잡한 로직은 inline 주석으로 설명
 
 ---
 
-*이 문서는 Versus Space Posts 모듈의 전체 구조와 기능을 설명합니다.*
-*최종 업데이트: 2025-08-23*
+**마지막 업데이트**: 2025-01-20
+**버전**: v4.0 (Phase 5 MediaStateCoordinator)
+**유지관리자**: Creation Feature Team

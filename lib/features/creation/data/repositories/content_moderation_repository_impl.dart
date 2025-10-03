@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/repositories/i_content_moderation_repository.dart';
+import '../../domain/repositories/specialized/i_moderation_repository.dart';
 import '../../domain/usecases/moderate_content_usecase.dart';
 
 /// Implementation of content moderation repository

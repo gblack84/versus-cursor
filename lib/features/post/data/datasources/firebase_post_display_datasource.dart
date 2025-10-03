@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/datasources/i_post_display_datasource.dart';
+import 'interfaces/i_post_display_datasource.dart';
 
 /// Firebase implementation of Post Display DataSource
 /// This is the ONLY place where Firebase dependencies should exist for Post Display

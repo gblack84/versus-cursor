@@ -1,5 +1,5 @@
-import '/features/creation/domain/models/post_core.dart';
-import '/features/creation/domain/models/post_content.dart';
+import '/features/creation/domain/models/core/post_core.dart';
+import '/features/creation/domain/models/core/post_content.dart';
 import '/features/voting/domain/models/chat/post_voting.dart';
 import '/features/post/domain/models/post_metrics.dart';
 

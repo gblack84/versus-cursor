@@ -1,4 +1,4 @@
-import '../models/target_audience.dart';
+import '../models/value_objects/target_audience.dart';
 
 /// Domain service interface for target audience operations
 abstract class ITargetAudienceService {

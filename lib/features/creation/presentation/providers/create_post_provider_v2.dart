@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import '../../domain/usecases/create_post_usecase.dart';
 import '../../domain/usecases/moderate_content_usecase.dart';
 import '../../domain/usecases/validation/validate_post_usecase.dart';
-import '../../domain/entities/post_creation.dart';
+import '../../domain/models/aggregates/post_creation.dart';
 import '../../domain/failures/creation_failures.dart';
-import '../../domain/models/target_audience.dart';
+import '../../domain/models/value_objects/target_audience.dart';
 import '../../data/dto/post_creation_dto.dart';
 import 'media/media_state_coordinator.dart';
 import '/services/moderation/perspective_api_service.dart';
-import '../../domain/constants/field_styles.dart';
+import '../constants/field_styles.dart';
 
 /// Form data model for post creation
 class PostFormData {

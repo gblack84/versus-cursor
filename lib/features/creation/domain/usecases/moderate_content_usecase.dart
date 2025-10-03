@@ -1,5 +1,5 @@
 import 'dart:io';
-import '../core/result.dart';
+import '/core/types/result.dart';
 import '../failures/creation_failures.dart';
 import '/services/moderation/image_moderation_service.dart';
 

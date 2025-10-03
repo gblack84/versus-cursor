@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/models/post_core.dart';
-import '../../domain/models/post_content.dart';
-import '../../domain/models/media_content.dart';
+import '../../domain/models/core/post_core.dart';
+import '../../domain/models/core/post_content.dart';
+import '../../domain/models/value_objects/media_content.dart';
 
 /// CreationFirestoreMapper - Handles Firebase ↔ Domain model conversion for Creation Feature
 ///

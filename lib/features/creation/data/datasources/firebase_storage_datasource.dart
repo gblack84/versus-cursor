@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
-import '../../domain/datasources/i_storage_datasource.dart';
+import 'interfaces/i_storage_datasource.dart';
 
 /// Firebase implementation of Storage DataSource
 ///

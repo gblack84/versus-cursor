@@ -34,7 +34,7 @@ import '../../../features/notifications/data/datasources/i_post_datasource.dart'
 import '../../../features/notifications/data/datasources/cross/mock_post_datasource.dart';
 import '../../../features/notifications/data/datasources/i_chat_datasource.dart';
 import '../../../features/notifications/data/datasources/cross/mock_chat_datasource.dart';
-import '../../../features/creation/data/services/target_audience_service.dart';
+import '../../../features/creation/domain/services/i_target_audience_service.dart';
 import '../../../core/domain/ports/i_user_service.dart';
 import '../../../features/voting/domain/ports/i_vote_service.dart';
 // UserServiceImpl removed - Phase 4 Auth service layer removed
@@ -86,9 +86,9 @@ class NotificationFactory {
       // Repository Layer (Clean Architecture: Data Layer)
       'INotificationRepository': 'NotificationRepositoryImpl(remoteDatasource, localDatasource) - Data aggregation and caching',
       
-      // Service/Adapter Layer (Clean Architecture: Application Layer) 
+      // Service/Adapter Layer (Clean Architecture: Application Layer)
       'NotificationService': 'NotificationService(repository, chatDatasource) - Real-time notification streaming',
-      'TargetAudienceService': 'TargetAudienceService(postDatasource) - AI-powered user targeting',
+      'ITargetAudienceService': 'ITargetAudienceService - AI-powered user targeting (registered in creation_module.dart)',
       
       // Global Manager (Clean Architecture: Application Layer)
       'GlobalNotificationManager': 'GlobalNotificationManager(handler, repository, datasources, services) - Notification orchestration',
@@ -158,12 +158,11 @@ class NotificationFactory {
     );
   }
 
-  /// Create Target Audience Service
-  /// Requires: IPostDatasource
-  TargetAudienceService createTargetAudienceService(GetIt sl) {
-    return TargetAudienceService(
-      postDatasource: sl<IPostDatasource>(),
-    );
+  /// Get Target Audience Service
+  /// Note: This service is registered in creation_module.dart as ITargetAudienceService
+  /// We just retrieve it from GetIt, not create it here
+  ITargetAudienceService getTargetAudienceService(GetIt sl) {
+    return sl<ITargetAudienceService>();
   }
 
   /// Create Global Notification Manager
@@ -279,9 +278,8 @@ class NotificationFactory {
       () => createNotificationService(sl),
     );
 
-    sl.registerLazySingleton<TargetAudienceService>(
-      () => createTargetAudienceService(sl),
-    );
+    // Note: TargetAudienceService is registered in creation_module.dart as ITargetAudienceService
+    // No need to register it here again
 
     // 6. Global Manager (Register LAST - depends on all other services)
     // Note: INotificationHandler must be registered elsewhere to avoid circular dependency
@@ -335,9 +333,8 @@ class NotificationFactory {
     if (sl.isRegistered<GlobalNotificationManager>()) {
       sl.unregister<GlobalNotificationManager>();
     }
-    if (sl.isRegistered<TargetAudienceService>()) {
-      sl.unregister<TargetAudienceService>();
-    }
+    // Note: TargetAudienceService is managed by creation_module.dart
+    // No need to unregister it here
     if (sl.isRegistered<NotificationService>()) {
       sl.unregister<NotificationService>();
     }

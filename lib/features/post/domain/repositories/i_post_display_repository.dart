@@ -1,5 +1,5 @@
 // Removed Firebase dependency - Clean Architecture
-import '/features/creation/domain/entities/post_creation.dart';
+import '/features/creation/domain/models/aggregates/post_creation.dart';
 import '../models/comments_model.dart';
 import '../models/likes_model.dart';
 import '../models/dislikes_model.dart';

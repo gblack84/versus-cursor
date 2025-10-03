@@ -1,12 +1,14 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/models/post_core.dart';
-import '../../domain/models/post_content.dart' hide ValidationResult; // Hide to avoid conflict
-import '../../domain/models/target_audience.dart';
+import '../../domain/models/aggregates/post_creation.dart';
+import '../../domain/models/core/post_core.dart';
+import '../../domain/models/core/post_content.dart' hide ValidationResult; // Hide to avoid conflict
+import '../../domain/models/value_objects/media_content.dart';
+import '../../domain/models/value_objects/target_audience.dart';
 import '../../domain/services/i_target_audience_service.dart';
 import '../../domain/services/i_image_processing_service.dart';
 import '../../domain/repositories/i_post_creation_repository_v2.dart';
-import '../../domain/datasources/i_post_creation_datasource.dart';
+import '../datasources/interfaces/i_post_creation_datasource.dart';
 import '../mappers/creation_firestore_mapper.dart';
 
 // Use ValidationResult from ITargetAudienceService (not from PostContent)
@@ -399,4 +401,96 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // Note: _parseDateTime removed - no longer needed
   // CreationFirestoreMapper handles all DateTime conversions for Creation Feature
   // Other features will implement their own mappers with their own DateTime handling
+
+  // ====== Additional Command Operations (from ICreationCommandRepository) ======
+
+  @override
+  Future<String> createContent(PostCreation post) async {
+    // Extract PostCore and PostContent from the aggregate
+    // Note: PostCreation aggregate will be enhanced to provide proper core/content separation
+    final core = PostCore(
+      id: post.id ?? '',
+      questionTitle: post.title,
+      description: post.description,
+      content: null,
+      userId: post.userId,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
+      category: post.category,
+      tags: post.tags ?? [],
+      visibility: 'public', // Default visibility
+      isAnonymous: post.isAnonymous,
+      premiumRequired: false,
+      location: null,
+    );
+
+    final content = PostContent(
+      postId: post.id ?? '',
+      optionA: _postOptionToMediaContent(post.optionA),
+      optionB: _postOptionToMediaContent(post.optionB),
+      layoutType: 'vertical', // Default layout
+      processingStatus: 'pending',
+    );
+
+    return createPost(core: core, content: content);
+  }
+
+  @override
+  Future<void> updateContent(String contentId, PostCreation post) async {
+    // Extract and update both core and content
+    final core = PostCore(
+      id: contentId,
+      questionTitle: post.title,
+      description: post.description,
+      content: null,
+      userId: post.userId,
+      createdAt: post.createdAt,
+      updatedAt: DateTime.now(),
+      category: post.category,
+      tags: post.tags ?? [],
+      visibility: 'public',
+      isAnonymous: post.isAnonymous,
+      premiumRequired: false,
+      location: null,
+    );
+
+    final content = PostContent(
+      postId: contentId,
+      optionA: _postOptionToMediaContent(post.optionA),
+      optionB: _postOptionToMediaContent(post.optionB),
+      layoutType: 'vertical',
+      processingStatus: 'completed',
+    );
+
+    await updatePostCore(postId: contentId, core: core);
+    await updatePostContent(postId: contentId, content: content);
+  }
+
+  @override
+  Future<void> deleteContent(String contentId) async {
+    await deletePost(contentId);
+  }
+
+  @override
+  Future<void> publishContent(String contentId) async {
+    await updatePostStatus(postId: contentId, status: 'published');
+  }
+
+  @override
+  Future<void> saveDraft(String contentId, PostCore core, PostContent content) async {
+    await updatePostCore(postId: contentId, core: core);
+    await updatePostContent(postId: contentId, content: content);
+    await updatePostStatus(postId: contentId, status: 'draft');
+  }
+
+  // Helper: Convert PostOption to MediaContent
+  MediaContent _postOptionToMediaContent(PostOption option) {
+    return MediaContent(
+      text: option.text ?? '',
+      imageUrls: option.imageUrls,
+      videoUrl: option.videoUrls?.isNotEmpty == true ? option.videoUrls!.first : '',
+      aspectRatio: option.aspectRatios.isNotEmpty ? option.aspectRatios.first : null,
+      aspectRatios: option.aspectRatios,
+    );
+  }
 }

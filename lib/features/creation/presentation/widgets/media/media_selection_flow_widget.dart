@@ -12,7 +12,7 @@ import '/services/media/image_download_service.dart';
 import '/features/creation/presentation/screens/thumbnail/thumbnail_selection_page.dart';
 import '/features/creation/presentation/delegates/camera_floating_button_delegate.dart';
 import 'media_editor_widget.dart';
-import '/features/creation/presentation/utils/no_animation_page_route.dart';
+import '/core/utils/navigation/no_animation_page_route.dart';
 import '/features/creation/presentation/providers/media/media_selection_provider.dart';
 
 /// 미디어 선택부터 편집까지 하나의 플로우로 처리하는 위젯

@@ -1,4 +1,4 @@
-import 'media_content.dart';
+import '../value_objects/media_content.dart';
 
 /// PostContent Domain Model
 /// Clean Architecture - Domain Layer Entity

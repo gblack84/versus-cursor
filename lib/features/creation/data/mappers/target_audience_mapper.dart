@@ -1,5 +1,5 @@
 import '../dto/target_audience_dto.dart';
-import '../../domain/models/target_audience.dart';
+import '../../domain/models/value_objects/target_audience.dart';
 
 /// Mapper for converting between TargetAudience DTO and Domain model
 ///

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/datasources/i_post_creation_datasource.dart';
+import 'interfaces/i_post_creation_datasource.dart';
+import '../../domain/failures/creation_failures.dart';
 
 /// Firebase implementation of Post Creation DataSource
 /// This is the ONLY place where Firebase dependencies should exist for Post Creation
@@ -31,9 +32,43 @@ class FirebasePostCreationDataSource implements IPostCreationDataSource {
         // Convert server timestamp to DateTime for consistency
         'createdAt': (data['createdAt'] as Timestamp?)?.toDate().toIso8601String(),
       };
+    } on FirebaseException catch (e) {
+      print('FirebaseException creating post: ${e.code} - ${e.message}');
+
+      // Firebase 에러를 구체적 Failure로 변환
+      if (e.code == 'permission-denied') {
+        throw FirestoreWriteFailure(
+          collectionPath: 'posts',
+          operation: 'add',
+          attemptedData: postData,
+          message: 'Permission denied to create post',
+          code: 'FIRESTORE_PERMISSION_DENIED',
+        );
+      } else if (e.code == 'unavailable') {
+        throw const NetworkFailure(message: 'Firestore service unavailable');
+      } else if (e.code == 'quota-exceeded') {
+        throw ServerFailure(
+          'Firestore quota exceeded',
+          statusCode: 429,
+          code: 'QUOTA_EXCEEDED',
+        );
+      } else if (e.code == 'resource-exhausted') {
+        throw ServerFailure(
+          'Firestore resources exhausted',
+          statusCode: 503,
+          code: 'RESOURCE_EXHAUSTED',
+        );
+      } else {
+        throw FirestoreWriteFailure(
+          collectionPath: 'posts',
+          operation: 'add',
+          message: e.message ?? 'Unknown Firestore error',
+          code: e.code,
+        );
+      }
     } catch (e) {
       print('Error creating post: $e');
-      throw Exception('Failed to create post: $e');
+      throw CreateContentFailure('Unexpected error creating post: $e');
     }
   }
 
@@ -44,9 +79,38 @@ class FirebasePostCreationDataSource implements IPostCreationDataSource {
       postData['updatedAt'] = FieldValue.serverTimestamp();
 
       await _firestore.collection('posts').doc(postId).update(postData);
+    } on FirebaseException catch (e) {
+      print('FirebaseException updating post: ${e.code} - ${e.message}');
+
+      // Firebase 에러를 구체적 Failure로 변환
+      if (e.code == 'permission-denied') {
+        throw FirestoreWriteFailure(
+          collectionPath: 'posts',
+          operation: 'update',
+          attemptedData: postData,
+          message: 'Permission denied to update post',
+          code: 'FIRESTORE_PERMISSION_DENIED',
+        );
+      } else if (e.code == 'not-found') {
+        throw PostCreationRepositoryFailure(
+          operation: 'update',
+          postId: postId,
+          message: 'Post not found',
+          code: 'POST_NOT_FOUND',
+        );
+      } else if (e.code == 'unavailable') {
+        throw const NetworkFailure(message: 'Firestore service unavailable');
+      } else {
+        throw FirestoreWriteFailure(
+          collectionPath: 'posts',
+          operation: 'update',
+          message: e.message ?? 'Unknown Firestore error',
+          code: e.code,
+        );
+      }
     } catch (e) {
       print('Error updating post: $e');
-      throw Exception('Failed to update post: $e');
+      throw CreateContentFailure('Unexpected error updating post: $e');
     }
   }
 
@@ -60,9 +124,31 @@ class FirebasePostCreationDataSource implements IPostCreationDataSource {
       });
 
       return docRef.id;
+    } on FirebaseException catch (e) {
+      print('FirebaseException uploading metadata: ${e.code} - ${e.message}');
+
+      // Firebase 에러를 구체적 Failure로 변환
+      if (e.code == 'permission-denied') {
+        throw FirestoreWriteFailure(
+          collectionPath: 'postMetadata',
+          operation: 'add',
+          attemptedData: metadata,
+          message: 'Permission denied to upload metadata',
+          code: 'FIRESTORE_PERMISSION_DENIED',
+        );
+      } else if (e.code == 'unavailable') {
+        throw const NetworkFailure(message: 'Firestore service unavailable');
+      } else {
+        throw FirestoreWriteFailure(
+          collectionPath: 'postMetadata',
+          operation: 'add',
+          message: e.message ?? 'Unknown Firestore error',
+          code: e.code,
+        );
+      }
     } catch (e) {
       print('Error uploading post metadata: $e');
-      throw Exception('Failed to upload post metadata: $e');
+      throw CreateContentFailure('Unexpected error uploading metadata: $e');
     }
   }
 

@@ -1,12 +1,12 @@
 import 'dart:io';
-import '../core/result.dart';
-import '../entities/post_creation.dart';
+import '/core/types/result.dart';
+import '../models/aggregates/post_creation.dart';
 import '../failures/creation_failures.dart';
 import '../repositories/i_post_creation_repository_v2.dart';
 import '../repositories/i_media_repository.dart';
-import '../models/post_core.dart';
-import '../models/post_content.dart';
-import '../models/media_content.dart';
+import '../models/core/post_core.dart';
+import '../models/core/post_content.dart';
+import '../models/value_objects/media_content.dart';
 import '../../data/dto/post_creation_dto.dart';
 import '../../data/dto/target_audience_dto.dart';
 import '../services/i_image_processing_service.dart';
@@ -199,7 +199,7 @@ class CreatePostUseCase {
       }
 
       return ResultFailure(
-        UnknownFailure('Failed to create post: $error'),
+        UnknownFailure(message: 'Failed to create post: $error'),
       );
     }
   }

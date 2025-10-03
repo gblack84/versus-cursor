@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 
 // Re-export all modules for backward compatibility
-export 'text_size/constants/text_size_constants.dart';
-export 'text_size/constants/breakpoint_constants.dart';
-export 'text_size/calculators/text_size_calculator.dart';
-export 'text_size/calculators/responsive_calculator.dart';
-export 'text_size/calculators/scale_factor_calculator.dart';
-export 'text_size/helpers/text_style_helpers.dart';
-export 'text_size/helpers/device_helpers.dart';
+export 'constants/text_size_constants.dart';
+export 'constants/breakpoint_constants.dart';
+export 'calculators/text_size_calculator.dart';
+export 'calculators/responsive_calculator.dart';
+export 'calculators/scale_factor_calculator.dart';
+export 'helpers/text_style_helpers.dart';
+export 'helpers/device_helpers.dart';
 
 // Import necessary modules
-import 'text_size/constants/text_size_constants.dart';
-import 'text_size/calculators/text_size_calculator.dart';
-import 'text_size/calculators/responsive_calculator.dart';
-import 'text_size/helpers/text_style_helpers.dart';
+import 'constants/text_size_constants.dart';
+import 'calculators/text_size_calculator.dart';
+import 'calculators/responsive_calculator.dart';
+import 'helpers/text_style_helpers.dart';
 
 /// 투표 알림에서 박스 크기에 따른 적응형 텍스트 크기 계산 유틸리티
 ///

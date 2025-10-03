@@ -7,7 +7,7 @@ import '../../providers/media/media_selection_provider.dart';
 import '/features/creation/presentation/widgets/components/media_selection_box_multi.dart';
 import '/features/creation/presentation/widgets/media/media_selection_flow_widget.dart';
 import '/core/types/layout_type.dart'; // Phase 5: Provider의 LayoutType 읽기용 (직접 생성 안 함)
-import '/features/creation/domain/constants/dimensions.dart' as post_dimensions;
+import '/features/creation/presentation/constants/dimensions.dart' as post_dimensions;
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 /// Image selection component extracted from InPutPostImageWidget

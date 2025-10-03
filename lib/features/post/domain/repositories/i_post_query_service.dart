@@ -1,4 +1,4 @@
-import '../../../creation/domain/entities/post_creation.dart';
+import '../../../creation/domain/models/aggregates/post_creation.dart';
 
 /// Service interface for complex post queries
 /// 읽기 전용 복잡한 게시물 조회 처리 서비스

@@ -240,3 +240,81 @@ Future<List<T>> queryCollectionOnce<T>(
       .map((d) => d!)
       .toList());
 }
+
+// ============================================================================
+// Query Extensions (migrated from creation/data/utils)
+// Added: 2025-01-20 - Utility consolidation
+// ============================================================================
+
+/// Extension for safe query parameter handling
+extension QueryExtension on Query {
+  /// Safe whereIn that handles empty lists
+  Query whereIn(String field, List? list) => (list?.isEmpty ?? true)
+      ? where(field, whereIn: null)
+      : where(field, whereIn: list);
+
+  /// Safe whereNotIn that handles empty lists
+  Query whereNotIn(String field, List? list) => (list?.isEmpty ?? true)
+      ? where(field, whereNotIn: null)
+      : where(field, whereNotIn: list);
+
+  /// Safe whereArrayContainsAny that handles empty lists
+  Query whereArrayContainsAny(String field, List? list) =>
+      (list?.isEmpty ?? true)
+          ? where(field, arrayContainsAny: null)
+          : where(field, arrayContainsAny: list);
+}
+
+/// Overloaded query functions for collections that take parent parameter
+/// Count documents with parent parameter
+Future<int> queryCollectionCountWithParent(
+  Query<Map<String, dynamic>> Function([DocumentReference?]) collectionBuilder, {
+  DocumentReference? parent,
+  Query Function(Query)? queryBuilder,
+  int limit = -1,
+}) {
+  final collection = collectionBuilder(parent);
+  return queryCollectionCount(
+    collection,
+    queryBuilder: queryBuilder,
+    limit: limit,
+  );
+}
+
+/// Stream query with parent parameter
+Stream<List<T>> queryCollectionWithParent<T>(
+  Query<Map<String, dynamic>> Function([DocumentReference?]) collectionBuilder,
+  RecordBuilder<T> recordBuilder, {
+  DocumentReference? parent,
+  Query Function(Query)? queryBuilder,
+  int limit = -1,
+  bool singleRecord = false,
+}) {
+  final collection = collectionBuilder(parent);
+  return queryCollection<T>(
+    collection,
+    recordBuilder,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
+}
+
+/// One-time query with parent parameter
+Future<List<T>> queryCollectionOnceWithParent<T>(
+  Query<Map<String, dynamic>> Function([DocumentReference?]) collectionBuilder,
+  RecordBuilder<T> recordBuilder, {
+  DocumentReference? parent,
+  Query Function(Query)? queryBuilder,
+  int limit = -1,
+  bool singleRecord = false,
+}) {
+  final collection = collectionBuilder(parent);
+  return queryCollectionOnce<T>(
+    collection,
+    recordBuilder,
+    queryBuilder: queryBuilder,
+    limit: limit,
+    singleRecord: singleRecord,
+  );
+}

@@ -23,7 +23,7 @@ import '../../features/creation/data/repositories/post_creation_repository_v2_im
 // Post Display Repository
 import '../../features/post/domain/repositories/i_post_display_repository_v2.dart';
 import '../../features/post/data/repositories/post_display_repository_v2_impl.dart';
-import '../../features/post/domain/datasources/i_post_display_datasource.dart';
+import '../../features/post/data/datasources/interfaces/i_post_display_datasource.dart';
 import '../../features/post/data/datasources/firebase_post_display_datasource.dart';
 import '../../features/voting/domain/services/vote_timer_service.dart';
 import '../../features/voting/domain/ports/i_vote_timer_port.dart';

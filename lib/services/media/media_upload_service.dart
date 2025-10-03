@@ -7,8 +7,8 @@ import '/services/moderation/cloud_image_moderation_service.dart';
 import '/services/storage/storage_service.dart';
 import '/core/utils/debug_helper.dart';
 import '/features/creation/domain/constants/image_constants.dart';
-import '/features/creation/domain/constants/strings.dart';
-import '/features/creation/domain/constants/config.dart';
+import '/features/creation/presentation/constants/strings.dart';
+import '/features/creation/presentation/constants/config.dart';
 
 class MediaUploadService {
   /// 이미지를 3가지 크기로 업로드 (original, display, thumbnail)
@@ -57,14 +57,14 @@ class MediaUploadService {
       );
 
       // 2. Display 이미지 생성 및 업로드 (너비가 800px보다 큰 경우만)
-      if (originalImage.width > ImageConstants.displayMaxWidth) {
+      if (originalImage.width > ImageProcessingConstants.displayMaxWidth) {
         final displayImage = img.copyResize(
           originalImage,
-          width: ImageConstants.displayMaxWidth,
+          width: ImageProcessingConstants.displayMaxWidth,
           maintainAspect: true,
         );
         final displayBytes = Uint8List.fromList(
-          img.encodeJpg(displayImage, quality: ImageConstants.jpegQuality),
+          img.encodeJpg(displayImage, quality: ImageProcessingConstants.jpegQuality),
         );
 
         futures['display'] = _uploadToFirebase(
@@ -85,9 +85,9 @@ class MediaUploadService {
 
       // 3. Thumbnail 생성 및 업로드
       final thumbnailImage =
-          _createSquareThumbnail(originalImage, ImageConstants.thumbnailSize);
+          _createSquareThumbnail(originalImage, ImageProcessingConstants.thumbnailSize);
       final thumbnailBytes = Uint8List.fromList(
-        img.encodeJpg(thumbnailImage, quality: ImageConstants.jpegQuality),
+        img.encodeJpg(thumbnailImage, quality: ImageProcessingConstants.jpegQuality),
       );
 
       futures['thumbnail'] = _uploadToFirebase(
@@ -97,9 +97,9 @@ class MediaUploadService {
           ConfigConstants.boxMetadataKey: box,
           ConfigConstants.typeMetadataKey: ConfigConstants.thumbnailType,
           ConfigConstants.widthMetadataKey:
-              ImageConstants.thumbnailSize.toString(),
+              ImageProcessingConstants.thumbnailSize.toString(),
           ConfigConstants.heightMetadataKey:
-              ImageConstants.thumbnailSize.toString(),
+              ImageProcessingConstants.thumbnailSize.toString(),
           if (sessionId != null) 'sessionId': sessionId,
         },
       );

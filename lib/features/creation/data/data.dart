@@ -3,13 +3,19 @@
 // PostsModelAdapter removed - Using CreationFirestoreMapper instead (Feature-First principle)
 export 'mappers/creation_firestore_mapper.dart';
 
-// Repositories (Phase 5: All services migrated to repositories)
+// Repositories (Phase 2: Repository consolidation complete)
+// Main Repository
+export 'repositories/post_creation_repository_v2_impl.dart'; // Includes command operations
+
+// Media Repository
 export 'repositories/media_repository_impl.dart';
-export 'repositories/post_creation_repository_v2_impl.dart';
-export 'repositories/creation_command_repository_impl.dart';
+
+// Specialized Repositories
 export 'repositories/content_metrics_repository_impl.dart';
 export 'repositories/content_moderation_repository_impl.dart';
 export 'repositories/content_visibility_repository_impl.dart';
+
+// Service Implementations (will be refactored to proper services in Phase 5)
 export 'repositories/media_upload_repository_impl.dart';
 export 'repositories/image_processing_repository_impl.dart';
 export 'repositories/target_audience_repository_impl.dart';

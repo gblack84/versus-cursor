@@ -10,20 +10,18 @@ import '../../features/creation/domain/usecases/validation/validate_post_usecase
 // import '../../features/creation/domain/repositories/i_post_repository.dart'; // Legacy - removed
 import '../../features/creation/domain/repositories/i_media_repository.dart';
 import '../../features/creation/domain/repositories/i_post_creation_repository_v2.dart';
-import '../../features/creation/domain/repositories/i_creation_command_repository.dart';
-import '../../features/creation/domain/repositories/i_content_metrics_repository.dart';
-import '../../features/creation/domain/repositories/i_content_moderation_repository.dart';
-import '../../features/creation/domain/repositories/i_content_visibility_repository.dart';
+import '../../features/creation/domain/repositories/specialized/i_metrics_repository.dart';
+import '../../features/creation/domain/repositories/specialized/i_moderation_repository.dart';
+import '../../features/creation/domain/repositories/specialized/i_visibility_repository.dart';
 // ICreationQueryService moved to Post Feature as IPostQueryService
-import '../../features/creation/domain/datasources/i_post_creation_datasource.dart';
-import '../../features/creation/domain/datasources/i_storage_datasource.dart';
+import '../../features/creation/data/datasources/interfaces/i_post_creation_datasource.dart';
+import '../../features/creation/data/datasources/interfaces/i_storage_datasource.dart';
 import '../../features/creation/domain/services/i_image_processing_service.dart';
 import '../../features/creation/domain/services/i_media_upload_service.dart';
 import '../../features/creation/domain/services/i_target_audience_service.dart';
 import '../../features/creation/data/repositories/media_repository_impl.dart';
 import '../../features/creation/data/repositories/media_upload_repository_impl.dart';
 import '../../features/creation/data/repositories/post_creation_repository_v2_impl.dart';
-import '../../features/creation/data/repositories/creation_command_repository_impl.dart';
 import '../../features/creation/data/repositories/content_metrics_repository_impl.dart';
 import '../../features/creation/data/repositories/content_moderation_repository_impl.dart';
 import '../../features/creation/data/repositories/content_visibility_repository_impl.dart';
@@ -162,7 +160,7 @@ class CreationModule implements FeatureModule {
       );
     }
 
-    // Post Creation Repository V2
+    // Post Creation Repository V2 (includes command operations)
     if (!sl.isRegistered<IPostCreationRepositoryV2>()) {
       sl.registerLazySingleton<IPostCreationRepositoryV2>(
         () => PostCreationRepositoryV2Impl(
@@ -173,23 +171,14 @@ class CreationModule implements FeatureModule {
       );
     }
 
-    // Creation Command Repository (CQRS Command side)
-    if (!sl.isRegistered<ICreationCommandRepository>()) {
-      sl.registerLazySingleton<ICreationCommandRepository>(
-        () => CreationCommandRepositoryImpl(
-          storageDataSource: sl<IStorageDataSource>(),
-        ),
-      );
-    }
-
-    // Content Metrics Repository
+    // Content Metrics Repository (Specialized)
     if (!sl.isRegistered<IContentMetricsRepository>()) {
       sl.registerLazySingleton<IContentMetricsRepository>(
         () => ContentMetricsRepositoryImpl(),
       );
     }
 
-    // Content Moderation Repository
+    // Content Moderation Repository (Specialized)
     if (!sl.isRegistered<IContentModerationRepository>()) {
       sl.registerLazySingleton<IContentModerationRepository>(
         () => ContentModerationRepositoryImpl(
@@ -198,7 +187,7 @@ class CreationModule implements FeatureModule {
       );
     }
 
-    // Content Visibility Repository
+    // Content Visibility Repository (Specialized)
     if (!sl.isRegistered<IContentVisibilityRepository>()) {
       sl.registerLazySingleton<IContentVisibilityRepository>(
         () => ContentVisibilityRepositoryImpl(
@@ -350,9 +339,6 @@ class CreationModule implements FeatureModule {
     }
     if (sl.isRegistered<IPostCreationRepositoryV2>()) {
       sl.unregister<IPostCreationRepositoryV2>();
-    }
-    if (sl.isRegistered<ICreationCommandRepository>()) {
-      sl.unregister<ICreationCommandRepository>();
     }
     if (sl.isRegistered<IContentMetricsRepository>()) {
       sl.unregister<IContentMetricsRepository>();

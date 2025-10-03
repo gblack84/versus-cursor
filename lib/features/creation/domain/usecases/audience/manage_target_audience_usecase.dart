@@ -1,6 +1,6 @@
-import '../../core/result.dart';
+import '/core/types/result.dart';
 import '../../failures/creation_failures.dart';
-import '../../models/target_audience.dart';
+import '../../models/value_objects/target_audience.dart';
 import '../../../data/dto/target_audience_dto.dart';
 import '../../services/i_target_audience_service.dart';
 
@@ -70,7 +70,7 @@ class ManageTargetAudienceUseCase {
     } catch (error) {
       print('ManageTargetAudienceUseCase Error: $error');
       return ResultFailure(
-        UnknownFailure('Failed to create target audience: $error'),
+        UnknownFailure(message: 'Failed to create target audience: $error'),
       );
     }
   }
@@ -104,7 +104,7 @@ class ManageTargetAudienceUseCase {
     } catch (error) {
       print('GetRecommendations Error: $error');
       return ResultFailure(
-        UnknownFailure('Failed to get recommendations: $error'),
+        UnknownFailure(message: 'Failed to get recommendations: $error'),
       );
     }
   }

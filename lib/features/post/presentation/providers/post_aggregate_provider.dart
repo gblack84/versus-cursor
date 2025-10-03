@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../creation/domain/entities/post_creation.dart';
-import '../../../creation/domain/repositories/i_creation_command_repository.dart';
-import '../../../creation/domain/repositories/i_content_metrics_repository.dart';
-import '../../../creation/domain/repositories/i_content_moderation_repository.dart';
-import '../../../creation/domain/repositories/i_content_visibility_repository.dart';
+import '../../../creation/domain/models/aggregates/post_creation.dart';
+import '../../../creation/domain/repositories/i_post_creation_repository_v2.dart';
+import '../../../creation/domain/repositories/specialized/i_metrics_repository.dart'
+    show IContentMetricsRepository, ContentMetrics, MetricsUpdate, InteractionType;
+import '../../../creation/domain/repositories/specialized/i_moderation_repository.dart'
+    show IContentModerationRepository, ModerationResult, ReportReason;
+import '../../../creation/domain/repositories/specialized/i_visibility_repository.dart'
+    show IContentVisibilityRepository, VisibilityLevel, TargetAudience;
 import '../../domain/repositories/i_post_query_service.dart';
 
 /// Aggregate Provider for Post Feature
@@ -16,7 +19,7 @@ import '../../domain/repositories/i_post_query_service.dart';
 /// Note: Previously CreationAggregateProvider, moved from Creation to Post feature
 /// as it handles post lifecycle management rather than just creation.
 class PostAggregateProvider extends ChangeNotifier {
-  final ICreationCommandRepository _commandRepository;
+  final IPostCreationRepositoryV2 _creationRepository;
   final IContentMetricsRepository _metricsRepository;
   final IContentModerationRepository _moderationRepository;
   final IContentVisibilityRepository _visibilityRepository;
@@ -30,12 +33,12 @@ class PostAggregateProvider extends ChangeNotifier {
   Map<String, ContentMetrics> _metricsCache = {};
 
   PostAggregateProvider({
-    required ICreationCommandRepository commandRepository,
+    required IPostCreationRepositoryV2 creationRepository,
     required IContentMetricsRepository metricsRepository,
     required IContentModerationRepository moderationRepository,
     required IContentVisibilityRepository visibilityRepository,
     required IPostQueryService queryService,
-  })  : _commandRepository = commandRepository,
+  })  : _creationRepository = creationRepository,
         _metricsRepository = metricsRepository,
         _moderationRepository = moderationRepository,
         _visibilityRepository = visibilityRepository,
@@ -64,7 +67,7 @@ class PostAggregateProvider extends ChangeNotifier {
       }
 
       // Create the post
-      final postId = await _commandRepository.createContent(post);
+      final postId = await _creationRepository.createContent(post);
 
       // Set initial visibility
       await _visibilityRepository.setVisibility(
@@ -90,7 +93,7 @@ class PostAggregateProvider extends ChangeNotifier {
   Future<bool> updateContent(String contentId, PostCreation post) async {
     _setLoading(true);
     try {
-      await _commandRepository.updateContent(contentId, post);
+      await _creationRepository.updateContent(contentId, post);
       _clearError();
       notifyListeners();
       return true;
@@ -106,7 +109,7 @@ class PostAggregateProvider extends ChangeNotifier {
   Future<bool> deleteContent(String contentId) async {
     _setLoading(true);
     try {
-      await _commandRepository.deleteContent(contentId);
+      await _creationRepository.deleteContent(contentId);
       _posts.removeWhere((p) => p.id == contentId);
       _clearError();
       notifyListeners();

@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../models/target_audience.dart';
+import '../value_objects/target_audience.dart';
 
 /// Pure domain entity for PostCreation
 /// 순수한 도메인 엔티티 - PostCreation

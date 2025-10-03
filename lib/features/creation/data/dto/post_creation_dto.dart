@@ -1,5 +1,5 @@
 import 'dart:io';
-import '../../domain/models/target_audience.dart';
+import '../../domain/models/value_objects/target_audience.dart';
 
 /// Data Transfer Object for post creation from Presentation layer
 /// Simplifies CreatePostUseCase interface by bundling all creation parameters

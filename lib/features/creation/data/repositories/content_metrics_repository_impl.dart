@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/repositories/i_content_metrics_repository.dart';
+import '../../domain/repositories/specialized/i_metrics_repository.dart';
 
 /// Implementation of content metrics repository
 /// CQRS 패턴 - Query 모델로 읽기 전용 통계 관리 구현체

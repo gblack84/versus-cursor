@@ -1,5 +1,5 @@
 import '/core_exports.dart';
-import '/features/creation/domain/models/target_audience.dart';
+import '/features/creation/domain/models/value_objects/target_audience.dart';
 import '/features/creation/domain/services/i_target_audience_service.dart';
 import '/features/notifications/data/datasources/i_post_datasource.dart';
 

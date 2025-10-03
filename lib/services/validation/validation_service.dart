@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '/services/moderation/ai_moderation_service.dart';
 import '/services/moderation/models/moderation_result.dart'
     as ai;
-import '/features/creation/domain/constants/field_styles.dart';
+import '/features/creation/presentation/constants/field_styles.dart';
 import '/features/auth/data/adapters/auth_util.dart';
 import 'package:provider/provider.dart';
 import '/core_exports.dart';

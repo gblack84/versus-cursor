@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/create_post_provider_v2.dart';
 import '/core/utils/debounce.dart';
 import '../components/input_field_builder.dart';
-import '/features/creation/domain/constants/field_styles.dart';
+import '/features/creation/presentation/constants/field_styles.dart';
 
 /// Text input component for post creation
 ///

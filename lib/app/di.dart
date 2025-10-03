@@ -57,7 +57,6 @@ import '/features/voting/domain/ports/i_vote_ui_delegate.dart';
 import '/features/voting/presentation/managers/vote_ui_manager.dart';
 import '/features/voting/presentation/handlers/vote_handler_impl.dart';
 import '/features/notifications/data/adapters/notification_service.dart';
-import '/features/creation/data/services/target_audience_service.dart';
 import '/features/notifications/data/datasources/i_remote_notification_datasource.dart';
 import '/features/notifications/data/datasources/remote/firebase_notification_datasource.dart';
 import '/features/notifications/data/datasources/i_local_notification_datasource.dart';
@@ -76,13 +75,13 @@ import '/features/voting/domain/ports/i_vote_timer_port.dart';
 import '/features/voting/data/adapters/vote_timer_adapter.dart';
 
 // ===== Post Feature Clean Architecture DI =====
-import '/features/post/domain/datasources/i_post_display_datasource.dart';
+import '/features/post/data/datasources/interfaces/i_post_display_datasource.dart';
 import '/features/post/data/datasources/firebase_post_display_datasource.dart';
 import '/features/post/domain/repositories/i_post_display_repository_v2.dart';
 import '/features/post/data/repositories/post_display_repository_v2_impl.dart';
 
 // ===== Creation Feature Clean Architecture DI =====
-import '/features/creation/domain/datasources/i_post_creation_datasource.dart';
+import '/features/creation/data/datasources/interfaces/i_post_creation_datasource.dart';
 import '/features/creation/data/datasources/firebase_post_creation_datasource.dart';
 
 
@@ -288,12 +287,6 @@ Future<void> setupDependencyInjection() async {
     () => NotificationService(
       repository: getIt<INotificationRepository>(),
       chatDatasource: getIt<IChatDatasource>(),
-    ),
-  );
-
-  getIt.registerLazySingleton<TargetAudienceService>(
-    () => TargetAudienceService(
-      postDatasource: getIt<IPostDatasource>(),
     ),
   );
 

@@ -5,7 +5,7 @@ import '/core_exports.dart';
 import '/services/moderation/perspective_api_service.dart';
 import '/core/widgets/highlighted_text_field.dart';
 import '/services/content/content_filter.dart';
-import '/features/creation/domain/constants/field_styles.dart';
+import '/features/creation/presentation/constants/field_styles.dart';
 
 /// 통합된 입력 필드 위젯
 /// ValidatedInputField와 SimpleValidatedField를 하나로 통합

@@ -1,5 +1,5 @@
 import '../../../creation/domain/core/result.dart';
-import '../../../creation/domain/entities/post_creation.dart';
+import '../../../creation/domain/models/aggregates/post_creation.dart';
 import '../../../creation/domain/failures/creation_failures.dart';
 import '../repositories/i_post_display_repository_v2.dart';
 import '../models/post_display.dart';

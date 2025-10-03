@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/repositories/i_content_visibility_repository.dart';
+import '../../domain/repositories/specialized/i_visibility_repository.dart';
 import '../../domain/usecases/audience/manage_target_audience_usecase.dart';
 
 /// Implementation of content visibility repository

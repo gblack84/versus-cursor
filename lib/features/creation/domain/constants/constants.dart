@@ -1,9 +1,4 @@
-/// 모든 상수 파일 export
-export 'animation_constants.dart';
-export 'colors.dart';
-export 'config.dart';
-export 'dimensions.dart';
-export 'field_styles.dart';
+/// Domain layer 상수 파일 export
+/// 비즈니스 로직 관련 상수만 포함 (UI 의존성 없음)
 export 'image_constants.dart';
-export 'strings.dart';
-export 'text_limits.dart';
+export 'target_audience_constants.dart';

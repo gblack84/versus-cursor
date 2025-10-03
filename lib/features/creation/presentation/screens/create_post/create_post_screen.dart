@@ -8,6 +8,7 @@ import '/features/creation/presentation/widgets/components/next_button.dart';
 import '/core/utils/error_handler.dart';
 import 'package:bot_toast/bot_toast.dart';
 import '../../widgets/dialogs/target_audience_dialog.dart';
+import '/features/creation/domain/failures/creation_failures.dart';
 
 /// Main screen for post creation
 ///
@@ -103,9 +104,36 @@ class _CreatePostScreenState extends State<CreatePostScreen>
         Navigator.of(context).pop(true);
       }
     } catch (e) {
+      // 에러 타입별로 다른 메시지 표시
+      String errorMessage = '포스트 생성 중 오류가 발생했습니다'; // 기본값
+
+      if (e is FirestoreWriteFailure) {
+        errorMessage = e.getUserMessage();
+        // '데이터베이스 접근 권한이 없습니다. 다시 로그인해주세요.'
+        // '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.'
+        // '요청한 게시물을 찾을 수 없습니다.'
+      } else if (e is AIModerationFailure) {
+        errorMessage = e.getUserMessage();
+        // 'AI 검열에서 다음 문제가 감지되었습니다: 선정적 콘텐츠, 폭력적 내용'
+      } else if (e is MediaProcessingFailure) {
+        errorMessage = e.getUserMessage();
+        // '이미지 압축 중 오류가 발생했습니다. 다른 이미지를 선택해주세요.'
+        // '이미지 업로드에 실패했습니다. 인터넷 연결을 확인해주세요.'
+      } else if (e is NetworkFailure) {
+        errorMessage = '인터넷 연결을 확인하고 다시 시도해주세요';
+      } else if (e is PostValidationFailure) {
+        errorMessage = e.getUserMessage();
+        // '필수 항목을 입력해주세요: 제목, 설명'
+      } else if (e is PostCreationRepositoryFailure) {
+        errorMessage = '게시물 저장에 실패했습니다. 잠시 후 다시 시도해주세요.';
+      } else if (e is ServerFailure) {
+        errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      }
+
+      // 기존 BotToast 패턴 그대로 사용 ✅
       ErrorHandler.handle(e, type: ErrorType.unknown);
       BotToast.showText(
-        text: '포스트 생성 중 오류가 발생했습니다',
+        text: errorMessage, // 구체적 메시지로 교체
         duration: const Duration(seconds: 3),
         contentColor: Colors.red.shade600,
         textStyle: const TextStyle(color: Colors.white),

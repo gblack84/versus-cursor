@@ -1,7 +1,8 @@
 import 'dart:io';
-import '../models/post_core.dart';
-import '../models/post_content.dart';
-import '../models/target_audience.dart';
+import '../models/aggregates/post_creation.dart';
+import '../models/core/post_core.dart';
+import '../models/core/post_content.dart';
+import '../models/value_objects/target_audience.dart';
 import '../services/i_target_audience_service.dart' as service;
 import '../services/i_image_processing_service.dart';
 
@@ -134,4 +135,26 @@ abstract class IPostCreationRepositoryV2 {
 
   /// Convert target audience to storage format
   Map<String, dynamic> convertTargetAudienceToStorageFormat(TargetAudience targetAudience);
+
+  // ====== Additional Command Operations (from ICreationCommandRepository) ======
+
+  /// Create content using PostCreation aggregate
+  /// Convenience method that extracts PostCore and PostContent from the aggregate
+  Future<String> createContent(PostCreation post);
+
+  /// Update existing content using PostCreation aggregate
+  /// Convenience method that extracts updated data from the aggregate
+  Future<void> updateContent(String contentId, PostCreation post);
+
+  /// Delete content
+  /// Removes the post and all associated data
+  Future<void> deleteContent(String contentId);
+
+  /// Publish content (change visibility to public)
+  /// This is a convenience method that updates post status and visibility
+  Future<void> publishContent(String contentId);
+
+  /// Save as draft
+  /// This saves the post with draft status for later editing
+  Future<void> saveDraft(String contentId, PostCore core, PostContent content);
 }

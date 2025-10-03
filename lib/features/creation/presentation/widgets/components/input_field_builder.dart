@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '/core_exports.dart';
 import '/services/moderation/perspective_api_service.dart';
 import '../components/simple_validated_field.dart';
-import '/features/creation/domain/constants/field_styles.dart';
+import '/features/creation/presentation/constants/field_styles.dart';
 
 /// 입력 필드 빌더 헬퍼
 ///

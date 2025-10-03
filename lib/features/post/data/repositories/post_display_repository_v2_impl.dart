@@ -1,6 +1,6 @@
 import '../../domain/models/post_display.dart';
 import '../../domain/repositories/i_post_display_repository_v2.dart';
-import '../../domain/datasources/i_post_display_datasource.dart';
+import '../datasources/interfaces/i_post_display_datasource.dart';
 
 /// Implementation of IPostDisplayRepositoryV2
 ///

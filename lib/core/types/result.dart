@@ -1,10 +1,13 @@
-import '../failures/creation_failures.dart' as failures;
+import '/core/errors/failures.dart';
 
 /// Result type for handling success and failure cases
 /// 성공과 실패 케이스를 처리하기 위한 Result 타입
 ///
 /// Similar to Either<Failure, T> from dartz/fpdart
 /// dartz/fpdart의 Either<Failure, T>와 유사
+///
+/// Migrated from creation/domain/core/result.dart (2025-01-20)
+/// Now available globally for all features
 sealed class Result<T> {
   const Result();
 
@@ -21,14 +24,14 @@ sealed class Result<T> {
   };
 
   /// Get the failure if failed, otherwise null
-  failures.Failure? get failureOrNull => switch (this) {
+  Failure? get failureOrNull => switch (this) {
     Success<T> _ => null,
     ResultFailure<T> failure => failure.failure,
   };
 
   /// Fold the result - apply one of the two functions based on the result
   R fold<R>(
-    R Function(failures.Failure failure) onFailure,
+    R Function(Failure failure) onFailure,
     R Function(T value) onSuccess,
   ) {
     return switch (this) {
@@ -94,7 +97,7 @@ class Success<T> extends Result<T> {
 /// Failure case of Result
 /// Result의 실패 케이스
 class ResultFailure<T> extends Result<T> {
-  final failures.Failure failure;
+  final Failure failure;
 
   const ResultFailure(this.failure);
 
@@ -119,7 +122,7 @@ extension ResultExtensions<T> on T {
   Result<T> toSuccess() => Success(this);
 }
 
-extension FailureExtensions on failures.Failure {
+extension FailureExtensions on Failure {
   /// Convert a Failure to Failure Result
   Result<T> toFailure<T>() => ResultFailure<T>(this);
 }

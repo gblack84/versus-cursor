@@ -337,14 +337,14 @@ domain/failures/
 └── permission_denied_failure.dart     # 권한 거부
 ```
 
-### Phase 3 Failure 패턴 (Creation 참조)
+### Failure 패턴 (Domain Layer)
 
 **파일**: `domain/failures/profile_failures.dart`
 
 ```dart
 /// Profile Feature의 모든 Failure 기본 클래스
 ///
-/// **Phase 3 패턴**: `getUserMessage()` 메서드로 사용자 친화적 에러 메시지 제공
+/// **Failure 패턴**: `getUserMessage()` 메서드로 사용자 친화적 에러 메시지 제공
 abstract class ProfileFailure implements Exception {
   final String message;
 
@@ -2231,9 +2231,9 @@ lib/features/profile/                         # Profile Feature 루트
 - [ ] 각 레이어별 README 생성
 
 ### Phase 2: Domain Layer (Day 2-3)
-- [ ] 10개 UseCase 생성
-- [ ] 8개 Failure 클래스 생성
-- [ ] Repository 인터페이스 정리 (6개)
+- [x] 10개 UseCase 생성
+- [x] 8개 Failure 클래스 생성
+- [x] Domain Models 정리 (실용적 접근 - 일단 유지)
 
 ### Phase 3: Data Layer (Day 4-5)
 - [ ] 8개 DataSource 생성 (4 인터페이스 + 4 구현)

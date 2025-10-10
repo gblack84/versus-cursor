@@ -1,9 +1,7 @@
-import '../../../creation/domain/core/result.dart';
-import '../../../creation/domain/models/aggregates/post_creation.dart';
-import '../../../creation/domain/failures/creation_failures.dart';
+import '/core/types/result.dart';
+import '/core/errors/failures.dart';
 import '../repositories/i_post_display_repository_v2.dart';
 import '../models/post_display.dart';
-import '../models/target_audience.dart';
 
 /// UseCase for getting feed posts
 /// 피드 게시물을 가져오기 위한 UseCase
@@ -22,84 +20,108 @@ class GetFeedUseCase {
     FeedFilter? filter,
   }) async {
     try {
-      // Build query parameters for repository
-      Map<String, dynamic> Function(Map<String, dynamic>) queryBuilder = (params) {
-        final queryParams = <String, dynamic>{...params};
+      Stream<List<PostDisplay>> stream;
 
-        // Apply sorting
+      // Use specialized repository methods when possible
+      if (lastDocumentId == null && filter == null) {
+        // First page without filters - use direct repository methods
         switch (sortBy) {
           case FeedSortBy.latest:
-            queryParams['orderBy'] = 'createdAt';
-            queryParams['descending'] = true;
+            stream = _postRepository.queryPosts(
+              queryBuilder: (params) => {
+                ...params,
+                'orderBy': 'createdAt',
+                'descending': true,
+              },
+              limit: limit,
+            );
             break;
           case FeedSortBy.popular:
-            queryParams['orderBy'] = 'likecount';
-            queryParams['descending'] = true;
+            stream = _postRepository.getPopularPosts(limit: limit);
             break;
           case FeedSortBy.mostVoted:
-            queryParams['orderBy'] = ['votesA', 'votesB'];
-            queryParams['descending'] = true;
+            stream = _postRepository.queryPosts(
+              queryBuilder: (params) => {
+                ...params,
+                'orderBy': 'votesA',
+                'descending': true,
+              },
+              limit: limit,
+            );
             break;
           case FeedSortBy.trending:
-            queryParams['orderBy'] = ['commentcount', 'createdAt'];
-            queryParams['descending'] = true;
+            stream = _postRepository.getTrendingPosts(limit: limit);
             break;
         }
-
-        // Apply filters
+      } else {
+        // With pagination or filters - use getPostsAfter or getPostsWithFilters
         if (filter != null) {
-          if (filter.status != null) {
-            queryParams['status'] = filter.status!.name;
-          }
-          if (filter.userId != null) {
-            queryParams['userid'] = filter.userId;
-          }
-          if (filter.hasImages == true) {
-            queryParams['hasImages'] = true;
-          }
-          if (filter.isAnonymous != null) {
-            queryParams['isAnonymous'] = filter.isAnonymous;
-          }
-          if (filter.startDate != null) {
-            queryParams['startDate'] = filter.startDate.toIso8601String();
-          }
-          if (filter.endDate != null) {
-            queryParams['endDate'] = filter.endDate.toIso8601String();
-          }
+          stream = _postRepository.getPostsWithFilters(
+            userId: filter.userId,
+            status: filter.status,
+            isAnonymous: filter.isAnonymous,
+            createdAfter: filter.startDate,
+            createdBefore: filter.endDate,
+            limit: limit,
+          );
+        } else if (lastDocumentId != null) {
+          // Build query builder for pagination
+          Map<String, dynamic> Function(Map<String, dynamic>) queryBuilder = (params) {
+            final queryParams = <String, dynamic>{...params};
+
+            // Apply sorting
+            switch (sortBy) {
+              case FeedSortBy.latest:
+                queryParams['orderBy'] = 'createdAt';
+                queryParams['descending'] = true;
+                break;
+              case FeedSortBy.popular:
+                queryParams['orderBy'] = 'likecount';
+                queryParams['descending'] = true;
+                break;
+              case FeedSortBy.mostVoted:
+                queryParams['orderBy'] = 'votesA';
+                queryParams['descending'] = true;
+                break;
+              case FeedSortBy.trending:
+                queryParams['orderBy'] = 'commentcount';
+                queryParams['descending'] = true;
+                break;
+            }
+
+            return queryParams;
+          };
+
+          stream = _postRepository.getPostsAfter(
+            lastPostId: lastDocumentId,
+            limit: limit,
+            queryBuilder: queryBuilder,
+          );
+        } else {
+          // Fallback to generic query
+          stream = _postRepository.queryPosts(
+            queryBuilder: (params) => {
+              ...params,
+              'orderBy': 'createdAt',
+              'descending': true,
+            },
+            limit: limit,
+          );
         }
-
-        // Apply pagination
-        if (lastDocumentId != null) {
-          queryParams['startAfterId'] = lastDocumentId;
-        }
-
-        return queryParams;
-      };
-
-      // Execute query
-      final stream = _postRepository.queryPosts(
-        queryBuilder: queryBuilder,
-        limit: limit,
-      );
+      }
 
       // Convert stream to future for the first batch
       final posts = await stream.first;
 
-      // Convert PostDisplay to domain Post entities
-      final domainPosts = posts.map((postDisplay) =>
-        _convertToDomainPost(postDisplay)
-      ).toList();
-
       // Get last document ID for pagination
-      String? nextLastDocumentId = null;
+      String? nextLastDocumentId;
       if (posts.isNotEmpty) {
-        // Use the last post's ID for pagination
-        nextLastDocumentId = posts.last.postId;
+        nextLastDocumentId = posts.last.id;
       }
 
       return Success(
         FeedResult(
-          posts: domainPosts,
+          posts: posts,
           hasMore: posts.length >= limit,
           lastDocumentId: nextLastDocumentId,
           totalCount: posts.length,
@@ -112,20 +134,20 @@ class GetFeedUseCase {
       if (error.toString().contains('permission-denied')) {
         return ResultFailure(
           ServerFailure(
-            'Permission denied to load feed',
+            message: 'Permission denied to load feed',
             code: 'permission-denied',
           ),
         );
       }
 
       return ResultFailure(
-        UnknownFailure('Failed to load feed: $error'),
+        AppFailure(message: 'Failed to load feed: $error'),
       );
     }
   }
 
   /// Get feed stream for real-time updates
-  Stream<Result<List<Post>>> getFeedStream({
+  Stream<Result<List<PostDisplay>>> getFeedStream({
     int limit = 20,
     FeedSortBy sortBy = FeedSortBy.latest,
     FeedFilter? filter,
@@ -158,7 +180,7 @@ class GetFeedUseCase {
         // Apply filters
         if (filter != null) {
           if (filter.status != null) {
-            queryParams['status'] = filter.status!.name;
+            queryParams['status'] = filter.status;
           }
           if (filter.userId != null) {
             queryParams['userid'] = filter.userId;
@@ -180,17 +202,13 @@ class GetFeedUseCase {
         limit: limit,
       );
 
-      // Transform stream to domain entities
+      // Transform stream to Result wrapper
       return stream.map((posts) {
         try {
-          final domainPosts = posts.map((postDisplay) =>
-            _convertToDomainPost(postDisplay)
-          ).toList();
-
-          return Success(domainPosts);
+          return Success(posts);
         } catch (error) {
-          return ResultFailure<List<Post>>(
-            UnknownFailure('Failed to convert posts: $error'),
+          return ResultFailure<List<PostDisplay>>(
+            AppFailure(message: 'Failed to load posts: $error'),
           );
         }
       });
@@ -198,45 +216,10 @@ class GetFeedUseCase {
       // Return error stream
       return Stream.value(
         ResultFailure(
-          UnknownFailure('Failed to create feed stream: $error'),
+          AppFailure(message: 'Failed to create feed stream: $error'),
         ),
       );
     }
-  }
-
-  /// Convert PostDisplay to domain Post entity
-  Post _convertToDomainPost(PostDisplay display) {
-    return Post(
-      id: display.postId,
-      userId: display.userId,
-      title: display.questionTitle,
-      description: display.questionTitle, // Using title as description for now
-      optionA: PostOption(
-        text: display.optionAText,
-        imageUrls: display.optionAImages ?? [],
-        aspectRatios: display.optionAAspectRatios ?? [],
-      ),
-      optionB: PostOption(
-        text: display.optionBText,
-        imageUrls: display.optionBImages ?? [],
-        aspectRatios: display.optionBAspectRatios ?? [],
-      ),
-      targetAudience: display.targetAudience != null
-          ? TargetAudience.fromMap(display.targetAudience!)
-          : null,
-      createdAt: display.createdAt,
-      status: PostStatus.values.firstWhere(
-        (s) => s.name == display.status,
-        orElse: () => PostStatus.published,
-      ),
-      likeCount: display.likeCount,
-      commentCount: display.commentCount,
-      votesA: display.votesA,
-      votesB: display.votesB,
-      voteStartTime: display.voteStartTime,
-      voteEndTime: display.voteEndTime,
-      isAnonymous: display.isAnonymous,
-    );
   }
 
 }
@@ -244,7 +227,7 @@ class GetFeedUseCase {
 /// Feed result with pagination info
 /// 페이지네이션 정보를 포함한 피드 결과
 class FeedResult {
-  final List<Post> posts;
+  final List<PostDisplay> posts;
   final bool hasMore;
   final String? lastDocumentId;
   final int totalCount;
@@ -269,7 +252,7 @@ enum FeedSortBy {
 /// Feed filter options
 /// 피드 필터 옵션
 class FeedFilter {
-  final PostStatus? status;
+  final String? status;  // e.g., 'published', 'draft', 'archived'
   final String? userId;
   final bool? hasImages;
   final bool? isAnonymous;

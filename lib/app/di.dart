@@ -75,10 +75,7 @@ import '/features/voting/domain/ports/i_vote_timer_port.dart';
 import '/features/voting/data/adapters/vote_timer_adapter.dart';
 
 // ===== Post Feature Clean Architecture DI =====
-import '/features/post/data/datasources/interfaces/i_post_display_datasource.dart';
-import '/features/post/data/datasources/firebase_post_display_datasource.dart';
-import '/features/post/domain/repositories/i_post_display_repository_v2.dart';
-import '/features/post/data/repositories/post_display_repository_v2_impl.dart';
+// Note: Post Feature DI는 PostsModule에서 관리됩니다 (lib/app/di/posts_module.dart)
 
 // ===== Creation Feature Clean Architecture DI =====
 import '/features/creation/data/datasources/interfaces/i_post_creation_datasource.dart';
@@ -164,21 +161,10 @@ Future<void> setupDependencyInjection() async {
 
   // 6. Legacy Auth Service 제거 완료 (2025-01-29)
 
-  // ===== Post Feature DI (Clean Architecture V2) =====
-
-  // 1. DataSource 등록
-  getIt.registerLazySingleton<IPostDisplayDataSource>(
-    () => FirebasePostDisplayDataSource(
-      firestore: FirebaseFirestore.instance,
-    ),
-  );
-
-  // 2. Repository 등록 (V2 - Clean Architecture)
-  getIt.registerLazySingleton<IPostDisplayRepositoryV2>(
-    () => PostDisplayRepositoryV2Impl(
-      dataSource: getIt<IPostDisplayDataSource>(),
-    ),
-  );
+  // ===== Post Feature DI =====
+  // Note: Post Feature의 모든 DI는 PostsModule에서 관리됩니다
+  // - DataSource, Repository, UseCases, Provider
+  // - /lib/app/di/posts_module.dart 참조
 
   // ===== Creation Feature DI (Clean Architecture V2) =====
 

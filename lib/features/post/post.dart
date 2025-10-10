@@ -1,26 +1,35 @@
 // Post Feature Exports
 // This file exports all public interfaces from the Post feature
+// following Clean Architecture v4.0 principles
 
-// Domain Layer
-export 'domain/models/post_metrics.dart';
-export 'domain/models/post_stats.dart';
-export 'domain/models/comments_model.dart';
-export 'domain/models/likes_model.dart';
-export 'domain/models/dislikes_model.dart';
-export 'domain/models/ranked_posts_model.dart';
+// ===== Domain Layer =====
 
-export 'domain/repositories/i_post_display_repository.dart';
+// Domain Models
+export 'domain/models/post_display.dart';
 
+// Domain Repositories (Interfaces)
+export 'domain/repositories/i_post_display_repository_v2.dart';
+export 'domain/repositories/i_post_query_service.dart';
+
+// Domain UseCases
 export 'domain/usecases/get_feed_usecase.dart';
+export 'domain/usecases/get_trending_posts_usecase.dart';
+export 'domain/usecases/get_popular_posts_usecase.dart';
+export 'domain/usecases/get_user_posts_usecase.dart';
+export 'domain/usecases/get_post_detail_usecase.dart';
 
-// Data Layer
-export 'data/models/comments_model.dart';
-export 'data/models/likes_model.dart';
-export 'data/models/dislikes_model.dart';
-export 'data/models/shares_model.dart';
-export 'data/models/feed_details_model.dart';
-export 'data/models/ranked_posts_model.dart';
+// ===== Data Layer =====
 
-// Presentation Layer
+// Data DTOs (Data Transfer Objects)
+export 'data/dto/post_display_dto.dart';
+
+// Data Mappers
+export 'data/mappers/post_display_mapper.dart';
+
+// ===== Presentation Layer =====
+
+// Presentation Screens
 export 'presentation/screens/feed/home_page_widget.dart';
+
+// Presentation Providers
 export 'presentation/providers/feed_provider.dart';

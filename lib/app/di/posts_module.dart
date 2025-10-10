@@ -25,6 +25,19 @@ import '../../features/post/domain/repositories/i_post_display_repository_v2.dar
 import '../../features/post/data/repositories/post_display_repository_v2_impl.dart';
 import '../../features/post/data/datasources/interfaces/i_post_display_datasource.dart';
 import '../../features/post/data/datasources/firebase_post_display_datasource.dart';
+// Post Display UseCases
+import '../../features/post/domain/usecases/get_feed_usecase.dart';
+import '../../features/post/domain/usecases/get_trending_posts_usecase.dart';
+import '../../features/post/domain/usecases/get_popular_posts_usecase.dart';
+import '../../features/post/domain/usecases/get_user_posts_usecase.dart';
+import '../../features/post/domain/usecases/get_post_detail_usecase.dart';
+// Post Display Providers
+import '../../features/post/presentation/providers/feed_provider.dart';
+import '../../features/post/presentation/providers/post_detail_provider.dart';
+import '../../features/post/presentation/providers/trending_posts_provider.dart';
+import '../../features/post/presentation/providers/popular_posts_provider.dart';
+import '../../features/post/presentation/providers/user_posts_provider.dart';
+// Voting Integration
 import '../../features/voting/domain/services/vote_timer_service.dart';
 import '../../features/voting/domain/ports/i_vote_timer_port.dart';
 import '../../features/voting/data/adapters/vote_timer_adapter.dart';
@@ -141,6 +154,86 @@ class PostsModule implements FeatureModule {
       );
     }
 
+    // ====== Post Display UseCases ======
+
+    // 1. GetFeedUseCase
+    if (!sl.isRegistered<GetFeedUseCase>()) {
+      sl.registerLazySingleton<GetFeedUseCase>(
+        () => GetFeedUseCase(postRepository: sl<IPostDisplayRepositoryV2>()),
+      );
+    }
+
+    // 2. GetTrendingPostsUseCase
+    if (!sl.isRegistered<GetTrendingPostsUseCase>()) {
+      sl.registerLazySingleton<GetTrendingPostsUseCase>(
+        () => GetTrendingPostsUseCase(postRepository: sl<IPostDisplayRepositoryV2>()),
+      );
+    }
+
+    // 3. GetPopularPostsUseCase
+    if (!sl.isRegistered<GetPopularPostsUseCase>()) {
+      sl.registerLazySingleton<GetPopularPostsUseCase>(
+        () => GetPopularPostsUseCase(postRepository: sl<IPostDisplayRepositoryV2>()),
+      );
+    }
+
+    // 4. GetUserPostsUseCase
+    if (!sl.isRegistered<GetUserPostsUseCase>()) {
+      sl.registerLazySingleton<GetUserPostsUseCase>(
+        () => GetUserPostsUseCase(postRepository: sl<IPostDisplayRepositoryV2>()),
+      );
+    }
+
+    // 5. GetPostDetailUseCase
+    if (!sl.isRegistered<GetPostDetailUseCase>()) {
+      sl.registerLazySingleton<GetPostDetailUseCase>(
+        () => GetPostDetailUseCase(postRepository: sl<IPostDisplayRepositoryV2>()),
+      );
+    }
+
+    // ====== Post Display Provider ======
+
+    // FeedProvider (Factory - 매번 새 인스턴스)
+    if (!sl.isRegistered<FeedProvider>()) {
+      sl.registerFactory<FeedProvider>(
+        () => FeedProvider(getFeedUseCase: sl<GetFeedUseCase>()),
+      );
+    }
+
+    // PostDetailProvider (Factory - 매번 새 인스턴스)
+    if (!sl.isRegistered<PostDetailProvider>()) {
+      sl.registerFactory<PostDetailProvider>(
+        () => PostDetailProvider(getPostDetailUseCase: sl<GetPostDetailUseCase>()),
+      );
+    }
+
+    // TrendingPostsProvider (Factory - 매번 새 인스턴스)
+    if (!sl.isRegistered<TrendingPostsProvider>()) {
+      sl.registerFactory<TrendingPostsProvider>(
+        () => TrendingPostsProvider(
+          getTrendingPostsUseCase: sl<GetTrendingPostsUseCase>(),
+        ),
+      );
+    }
+
+    // PopularPostsProvider (Factory - 매번 새 인스턴스)
+    if (!sl.isRegistered<PopularPostsProvider>()) {
+      sl.registerFactory<PopularPostsProvider>(
+        () => PopularPostsProvider(
+          getPopularPostsUseCase: sl<GetPopularPostsUseCase>(),
+        ),
+      );
+    }
+
+    // UserPostsProvider (Factory - 매번 새 인스턴스)
+    if (!sl.isRegistered<UserPostsProvider>()) {
+      sl.registerFactory<UserPostsProvider>(
+        () => UserPostsProvider(
+          getUserPostsUseCase: sl<GetUserPostsUseCase>(),
+        ),
+      );
+    }
+
     // Register VoteTimerService (owned by posts feature)
     if (!sl.isRegistered<VoteTimerService>()) {
       sl.registerLazySingleton<VoteTimerService>(
@@ -196,6 +289,40 @@ class PostsModule implements FeatureModule {
     }
     if (sl.isRegistered<IPostCreationRepositoryV2>()) {
       sl.unregister<IPostCreationRepositoryV2>();
+    }
+
+    // Unregister UseCases
+    if (sl.isRegistered<GetPostDetailUseCase>()) {
+      sl.unregister<GetPostDetailUseCase>();
+    }
+    if (sl.isRegistered<GetUserPostsUseCase>()) {
+      sl.unregister<GetUserPostsUseCase>();
+    }
+    if (sl.isRegistered<GetPopularPostsUseCase>()) {
+      sl.unregister<GetPopularPostsUseCase>();
+    }
+    if (sl.isRegistered<GetTrendingPostsUseCase>()) {
+      sl.unregister<GetTrendingPostsUseCase>();
+    }
+    if (sl.isRegistered<GetFeedUseCase>()) {
+      sl.unregister<GetFeedUseCase>();
+    }
+
+    // Unregister Providers
+    if (sl.isRegistered<UserPostsProvider>()) {
+      sl.unregister<UserPostsProvider>();
+    }
+    if (sl.isRegistered<PopularPostsProvider>()) {
+      sl.unregister<PopularPostsProvider>();
+    }
+    if (sl.isRegistered<TrendingPostsProvider>()) {
+      sl.unregister<TrendingPostsProvider>();
+    }
+    if (sl.isRegistered<PostDetailProvider>()) {
+      sl.unregister<PostDetailProvider>();
+    }
+    if (sl.isRegistered<FeedProvider>()) {
+      sl.unregister<FeedProvider>();
     }
 
     // Unregister voting adapters

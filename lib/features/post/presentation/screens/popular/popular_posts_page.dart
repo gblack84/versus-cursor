@@ -1,159 +1,160 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/core_exports.dart';
-import '/features/notifications/presentation/providers/notification_badge_provider.dart';
 import '/features/post/domain/models/post_display.dart';
-import '/features/post/presentation/providers/feed_provider.dart';
+import '/features/post/presentation/providers/popular_posts_provider.dart';
 import '/core/design_system/design_system.dart';
-import '/services/cache/unified_cache_service.dart';
+import 'package:get_it/get_it.dart';
 
-class HomePageWidget extends StatefulWidget {
-  const HomePageWidget({super.key});
+class PopularPostsPage extends StatefulWidget {
+  const PopularPostsPage({super.key});
 
-  static String routeName = 'homePage';
-  static String routePath = '/home';
+  static String routeName = 'popularPosts';
+  static String routePath = '/popular';
 
   @override
-  State<HomePageWidget> createState() => _HomePageWidgetState();
+  State<PopularPostsPage> createState() => _PopularPostsPageState();
 }
 
-class _HomePageWidgetState extends State<HomePageWidget> {
-  final scaffoldKey = GlobalKey<ScaffoldState>();
+class _PopularPostsPageState extends State<PopularPostsPage> {
+  late final PopularPostsProvider _provider;
 
   @override
   void initState() {
     super.initState();
 
-    // FeedProvider 초기화
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<FeedProvider>();
-      provider.initializeFeed();
-    });
+    // Get provider from DI
+    _provider = GetIt.instance<PopularPostsProvider>();
 
-    // 백그라운드에서 인기 게시물 프리로드
-    Future.microtask(() async {
-      try {
-        await UnifiedCacheService.instance.preloadPopularPosts();
-        debugPrint('[HomePage] Popular posts preloaded successfully');
-      } catch (e) {
-        debugPrint('[HomePage] Failed to preload popular posts: $e');
-      }
+    // Load popular posts
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _provider.loadPopularPosts();
     });
   }
 
   @override
+  void dispose() {
+    _provider.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: scaffoldKey,
-      backgroundColor: VersusColors.backgroundPrimary,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        automaticallyImplyLeading: false,
-        title: Text(
-          'Versus Space',
-          style: VersusTextStyles.headingSmall,
+    return ChangeNotifierProvider.value(
+      value: _provider,
+      child: Scaffold(
+        backgroundColor: VersusColors.backgroundPrimary,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: VersusColors.textPrimary),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: Text(
+            '인기 게시물',
+            style: VersusTextStyles.headingSmall,
+          ),
+          centerTitle: true,
+          elevation: 0.0,
         ),
-        actions: [
-          NotificationAppBarAction(
-            onPressed: () {
-              context.pushNamed('notificationsList');
+        body: SafeArea(
+          top: true,
+          child: Consumer<PopularPostsProvider>(
+            builder: (context, provider, child) {
+              // 로딩 상태
+              if (provider.loadingState == PopularLoadingState.loading) {
+                return Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      VersusColors.primary,
+                    ),
+                  ),
+                );
+              }
+
+              // 에러 상태
+              if (provider.loadingState == PopularLoadingState.error) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: VersusColors.error,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        provider.errorMessage ?? '오류가 발생했습니다',
+                        style: VersusTextStyles.bodyMedium.copyWith(
+                          color: VersusColors.textSecondary,
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () => provider.refresh(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: VersusColors.primary,
+                        ),
+                        child: Text('다시 시도'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              // 게시물 없음 상태
+              if (provider.loadingState == PopularLoadingState.empty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.stars,
+                        size: 64,
+                        color: VersusColors.textSecondary,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        '인기 게시물이 없습니다',
+                        style: VersusTextStyles.headingMedium.copyWith(
+                          color: VersusColors.textSecondary,
+                        ),
+                      ),
+                      VersusSpacing.gapSM,
+                      Text(
+                        '새로운 게시물을 작성해보세요!',
+                        style: VersusTextStyles.bodyMedium.copyWith(
+                          color: VersusColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              final posts = provider.posts;
+
+              // 게시물 목록
+              return RefreshIndicator(
+                onRefresh: () => provider.refresh(),
+                child: ListView.builder(
+                  padding: EdgeInsets.symmetric(vertical: VersusSpacing.sm),
+                  itemCount: posts.length,
+                  itemBuilder: (context, index) {
+                    final post = posts[index];
+                    return _buildPopularCard(context, post, index);
+                  },
+                ),
+              );
             },
           ),
-        ],
-        centerTitle: true,
-        elevation: 0.0,
-      ),
-      body: SafeArea(
-        top: true,
-        child: Consumer<FeedProvider>(
-          builder: (context, provider, child) {
-            // 로딩 상태
-            if (provider.loadingState == FeedLoadingState.loading) {
-              return Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    VersusColors.primary,
-                  ),
-                ),
-              );
-            }
-
-            // 에러 상태
-            if (provider.loadingState == FeedLoadingState.error) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: VersusColors.error,
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      provider.errorMessage ?? '오류가 발생했습니다',
-                      style: VersusTextStyles.bodyMedium.copyWith(
-                        color: VersusColors.textSecondary,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () => provider.refresh(),
-                      child: Text('다시 시도'),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            final posts = provider.posts;
-
-            // 게시물이 없을 때
-            if (provider.loadingState == FeedLoadingState.empty || posts.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.post_add,
-                      size: 64,
-                      color: VersusColors.textSecondary,
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      '아직 게시물이 없습니다',
-                      style: VersusTextStyles.headingMedium.copyWith(
-                        color: VersusColors.textSecondary,
-                      ),
-                    ),
-                    VersusSpacing.gapSM,
-                    Text(
-                      '첫 번째 질문을 작성해보세요!',
-                      style: VersusTextStyles.bodyMedium.copyWith(
-                        color: VersusColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            // 게시물 목록
-            return ListView.builder(
-              padding: EdgeInsets.symmetric(vertical: VersusSpacing.sm),
-              itemCount: posts.length,
-              itemBuilder: (context, index) {
-                final post = posts[index];
-                return _buildVersusCard(context, post);
-              },
-            );
-          },
         ),
       ),
     );
   }
 
-  Widget _buildVersusCard(BuildContext context, PostDisplay post) {
+  Widget _buildPopularCard(BuildContext context, PostDisplay post, int index) {
     return Padding(
       padding: EdgeInsets.symmetric(
           horizontal: VersusSpacing.md, vertical: VersusSpacing.sm),
@@ -216,6 +217,28 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                             ),
                           ),
                         ],
+                      ),
+                    ),
+                    // 순위 뱃지
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getRankColor(index).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _getRankColor(index).withValues(alpha: 0.5),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        '#${index + 1}',
+                        style: VersusTextStyles.labelMedium.copyWith(
+                          color: _getRankColor(index),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -371,5 +394,12 @@ class _HomePageWidgetState extends State<HomePageWidget> {
         ),
       ),
     );
+  }
+
+  Color _getRankColor(int index) {
+    if (index == 0) return Color(0xFFFFD700); // Gold
+    if (index == 1) return Color(0xFFC0C0C0); // Silver
+    if (index == 2) return Color(0xFFCD7F32); // Bronze
+    return VersusColors.primary;
   }
 }

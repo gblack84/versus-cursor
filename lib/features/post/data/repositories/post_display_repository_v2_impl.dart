@@ -1,6 +1,8 @@
 import '../../domain/models/post_display.dart';
 import '../../domain/repositories/i_post_display_repository_v2.dart';
 import '../datasources/interfaces/i_post_display_datasource.dart';
+import '../dto/post_display_dto.dart';
+import '../mappers/post_display_mapper.dart';
 
 /// Implementation of IPostDisplayRepositoryV2
 ///
@@ -25,7 +27,8 @@ class PostDisplayRepositoryV2Impl implements IPostDisplayRepositoryV2 {
     ).map((dataList) {
       return dataList.map((data) {
         final id = data['id'] as String;
-        return PostDisplay.fromMap(data, id);
+        final dto = PostDisplayDto.fromFirestore(data, id);
+        return PostDisplayMapper.toDomain(dto);
       }).toList();
     });
   }
@@ -36,7 +39,8 @@ class PostDisplayRepositoryV2Impl implements IPostDisplayRepositoryV2 {
     if (data == null) return null;
 
     final id = data['id'] as String;
-    return PostDisplay.fromMap(data, id);
+    final dto = PostDisplayDto.fromFirestore(data, id);
+    return PostDisplayMapper.toDomain(dto);
   }
 
   @override
@@ -53,7 +57,8 @@ class PostDisplayRepositoryV2Impl implements IPostDisplayRepositoryV2 {
 
       final data = dataList.first;
       final id = data['id'] as String;
-      return PostDisplay.fromMap(data, id);
+      final dto = PostDisplayDto.fromFirestore(data, id);
+      return PostDisplayMapper.toDomain(dto);
     });
   }
 
@@ -70,7 +75,8 @@ class PostDisplayRepositoryV2Impl implements IPostDisplayRepositoryV2 {
     ).map((dataList) {
       final posts = dataList.map((data) {
         final id = data['id'] as String;
-        return PostDisplay.fromMap(data, id);
+        final dto = PostDisplayDto.fromFirestore(data, id);
+        return PostDisplayMapper.toDomain(dto);
       }).toList();
 
       // Sort by engagement (likes + comments + shares)
@@ -101,7 +107,8 @@ class PostDisplayRepositoryV2Impl implements IPostDisplayRepositoryV2 {
     ).map((dataList) {
       return dataList.map((data) {
         final id = data['id'] as String;
-        return PostDisplay.fromMap(data, id);
+        final dto = PostDisplayDto.fromFirestore(data, id);
+        return PostDisplayMapper.toDomain(dto);
       }).toList();
     });
   }
@@ -122,7 +129,8 @@ class PostDisplayRepositoryV2Impl implements IPostDisplayRepositoryV2 {
     ).map((dataList) {
       return dataList.map((data) {
         final id = data['id'] as String;
-        return PostDisplay.fromMap(data, id);
+        final dto = PostDisplayDto.fromFirestore(data, id);
+        return PostDisplayMapper.toDomain(dto);
       }).toList();
     });
   }
@@ -140,7 +148,8 @@ class PostDisplayRepositoryV2Impl implements IPostDisplayRepositoryV2 {
     ).map((dataList) {
       return dataList.map((data) {
         final id = data['id'] as String;
-        return PostDisplay.fromMap(data, id);
+        final dto = PostDisplayDto.fromFirestore(data, id);
+        return PostDisplayMapper.toDomain(dto);
       }).toList();
     });
   }
@@ -163,7 +172,8 @@ class PostDisplayRepositoryV2Impl implements IPostDisplayRepositoryV2 {
 
     final posts = dataList.map((data) {
       final id = data['id'] as String;
-      return PostDisplay.fromMap(data, id);
+      final dto = PostDisplayDto.fromFirestore(data, id);
+      return PostDisplayMapper.toDomain(dto);
     }).where((post) {
       final searchLower = query.toLowerCase();
       final titleMatch = post.questionTitle.toLowerCase().contains(searchLower);
@@ -202,11 +212,172 @@ class PostDisplayRepositoryV2Impl implements IPostDisplayRepositoryV2 {
 
     final posts = dataList.map((data) {
       final id = data['id'] as String;
-      return PostDisplay.fromMap(data, id);
+      final dto = PostDisplayDto.fromFirestore(data, id);
+      return PostDisplayMapper.toDomain(dto);
     }).toList();
 
     // Shuffle and return limited results for variety
     posts.shuffle();
     return posts.take(limit).toList();
+  }
+
+  @override
+  Future<List<PostDisplay>> getPostsByIds(List<String> postIds) async {
+    if (postIds.isEmpty) return [];
+
+    final dataList = await _dataSource.getPostsByIds(postIds);
+    return dataList.map((data) {
+      final id = data['id'] as String;
+      final dto = PostDisplayDto.fromFirestore(data, id);
+      return PostDisplayMapper.toDomain(dto);
+    }).toList();
+  }
+
+  @override
+  Stream<List<PostDisplay>> getCompletedVotingPosts({int limit = -1}) {
+    return _dataSource.queryPosts(
+      queryBuilder: (params) => {
+        ...params,
+        'where': {'voteStatus': 'completed'},
+        'orderBy': 'voteEndTime',
+        'descending': true,
+      },
+      limit: limit > 0 ? limit : null,
+    ).map((dataList) {
+      return dataList.map((data) {
+        final id = data['id'] as String;
+        final dto = PostDisplayDto.fromFirestore(data, id);
+        return PostDisplayMapper.toDomain(dto);
+      }).toList();
+    });
+  }
+
+  @override
+  Stream<List<PostDisplay>> getPopularPosts({
+    int limit = 20,
+    Duration? timeWindow,
+  }) {
+    return _dataSource.queryPosts(
+      queryBuilder: (params) {
+        final queryParams = <String, dynamic>{
+          ...params,
+          'orderBy': 'likecount',
+          'descending': true,
+        };
+
+        // If time window specified, add date filter
+        if (timeWindow != null) {
+          final cutoffDate = DateTime.now().subtract(timeWindow);
+          queryParams['where'] = {
+            'createdAt': {
+              'operator': 'isGreaterThan',
+              'value': cutoffDate,
+            },
+          };
+        }
+
+        return queryParams;
+      },
+      limit: limit,
+    ).map((dataList) {
+      return dataList.map((data) {
+        final id = data['id'] as String;
+        final dto = PostDisplayDto.fromFirestore(data, id);
+        return PostDisplayMapper.toDomain(dto);
+      }).toList();
+    });
+  }
+
+  @override
+  Stream<List<PostDisplay>> getPostsAfter({
+    required String lastPostId,
+    int limit = 20,
+    Map<String, dynamic> Function(Map<String, dynamic>)? queryBuilder,
+  }) {
+    return _dataSource.queryPosts(
+      queryBuilder: (params) {
+        final baseQuery = queryBuilder?.call(params) ?? params;
+        return {
+          ...baseQuery,
+          'startAfterId': lastPostId,
+        };
+      },
+      limit: limit,
+    ).map((dataList) {
+      return dataList.map((data) {
+        final id = data['id'] as String;
+        final dto = PostDisplayDto.fromFirestore(data, id);
+        return PostDisplayMapper.toDomain(dto);
+      }).toList();
+    });
+  }
+
+  @override
+  Stream<List<PostDisplay>> getPostsWithFilters({
+    String? userId,
+    String? status,
+    bool? isAnonymous,
+    DateTime? createdAfter,
+    DateTime? createdBefore,
+    int limit = 20,
+  }) {
+    return _dataSource.queryPosts(
+      queryBuilder: (params) {
+        final queryParams = <String, dynamic>{...params};
+        final whereConditions = <String, dynamic>{};
+
+        if (userId != null) {
+          whereConditions['userid'] = userId;
+        }
+
+        if (status != null) {
+          whereConditions['status'] = status;
+        }
+
+        if (isAnonymous != null) {
+          whereConditions['isAnonymous'] = isAnonymous;
+        }
+
+        if (createdAfter != null) {
+          whereConditions['createdAt'] = {
+            'operator': 'isGreaterThan',
+            'value': createdAfter,
+          };
+        }
+
+        if (createdBefore != null) {
+          // If createdAfter already exists, we need to handle range query
+          if (createdAfter != null) {
+            // Firebase limitation: use createdBefore as secondary filter
+            // This would require compound query support in DataSource
+            whereConditions['createdAt'] = {
+              'operator': 'isGreaterThan',
+              'value': createdAfter,
+            };
+          } else {
+            whereConditions['createdAt'] = {
+              'operator': 'isLessThan',
+              'value': createdBefore,
+            };
+          }
+        }
+
+        if (whereConditions.isNotEmpty) {
+          queryParams['where'] = whereConditions;
+        }
+
+        queryParams['orderBy'] = 'createdAt';
+        queryParams['descending'] = true;
+
+        return queryParams;
+      },
+      limit: limit,
+    ).map((dataList) {
+      return dataList.map((data) {
+        final id = data['id'] as String;
+        final dto = PostDisplayDto.fromFirestore(data, id);
+        return PostDisplayMapper.toDomain(dto);
+      }).toList();
+    });
   }
 }

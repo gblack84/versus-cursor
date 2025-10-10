@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/usecases/get_feed_usecase.dart';
-import '../../../creation/domain/models/aggregates/post_creation.dart';
-import '../../../creation/domain/core/result.dart';
-import '../../../creation/domain/failures/creation_failures.dart';
+import '../../domain/models/post_display.dart';
+import '/core/types/result.dart';
+import '/core/errors/failures.dart';
+import 'base_list_mixin.dart';
 
 /// Feed loading state
 enum FeedLoadingState {
@@ -18,7 +18,7 @@ enum FeedLoadingState {
 
 /// Feed filter model
 class FeedFilterModel {
-  final PostStatus? status;
+  final String? status;
   final String? userId;
   final bool? hasImages;
   final bool? isAnonymous;
@@ -46,7 +46,7 @@ class FeedFilterModel {
   }
 
   FeedFilterModel copyWith({
-    PostStatus? status,
+    String? status,
     String? userId,
     bool? hasImages,
     bool? isAnonymous,
@@ -86,7 +86,8 @@ class FeedFilterModel {
 /// - Pagination support
 /// - Sorting and filtering
 /// - Optimistic UI updates
-class FeedProvider extends ChangeNotifier {
+class FeedProvider extends ChangeNotifier
+    with BaseListMixin<FeedLoadingState, PostDisplay> {
   final GetFeedUseCase _getFeedUseCase;
 
   FeedProvider({
@@ -94,39 +95,44 @@ class FeedProvider extends ChangeNotifier {
   }) : _getFeedUseCase = getFeedUseCase;
 
   // State
-  List<Post> _posts = [];
+  List<PostDisplay> _posts = [];
   FeedLoadingState _loadingState = FeedLoadingState.initial;
   bool _hasMore = true;
-  DocumentSnapshot? _lastDocument;
+  String? _lastDocumentId;
   FeedSortBy _sortBy = FeedSortBy.latest;
   FeedFilterModel _filter = const FeedFilterModel();
-  String? _errorMessage;
-  StreamSubscription<Result<List<Post>>>? _feedStreamSubscription;
+  StreamSubscription<Result<List<PostDisplay>>>? _feedStreamSubscription;
   int _currentPage = 0;
   static const int _pageSize = 20;
 
   // Getters
-  List<Post> get posts => _posts;
+  List<PostDisplay> get posts => _posts;
+  @override
   FeedLoadingState get loadingState => _loadingState;
   bool get hasMore => _hasMore;
   FeedSortBy get sortBy => _sortBy;
   FeedFilterModel get filter => _filter;
-  String? get errorMessage => _errorMessage;
   int get currentPage => _currentPage;
   bool get isLoading => _loadingState == FeedLoadingState.loading;
   bool get isLoadingMore => _loadingState == FeedLoadingState.loadingMore;
   bool get isEmpty => _posts.isEmpty && _loadingState == FeedLoadingState.loaded;
 
+  @override
+  void setLoadingState(FeedLoadingState state) {
+    _loadingState = state;
+    notifyListeners();
+  }
+
   /// Initialize feed - load first page
   Future<void> initializeFeed() async {
     if (_loadingState == FeedLoadingState.loading) return;
 
-    _setLoadingState(FeedLoadingState.loading);
+    setLoadingState(FeedLoadingState.loading);
     _posts = [];
-    _lastDocument = null;
+    _lastDocumentId = null;
     _hasMore = true;
     _currentPage = 0;
-    _errorMessage = null;
+    clearError();
 
     await _loadFeed();
   }
@@ -136,17 +142,17 @@ class FeedProvider extends ChangeNotifier {
     try {
       final result = await _getFeedUseCase.execute(
         limit: _pageSize,
-        lastDocument: _lastDocument,
+        lastDocumentId: _lastDocumentId,
         sortBy: _sortBy,
         filter: _filter.toFeedFilter(),
       );
 
       result.fold(
         (failure) {
-          _handleError(failure);
+          handleError(failure, FeedLoadingState.error);
         },
         (feedResult) {
-          if (_lastDocument == null) {
+          if (_lastDocumentId == null) {
             // First page
             _posts = feedResult.posts;
           } else {
@@ -155,17 +161,19 @@ class FeedProvider extends ChangeNotifier {
           }
 
           _hasMore = feedResult.hasMore;
-          _lastDocument = feedResult.lastDocument;
+          _lastDocumentId = feedResult.lastDocumentId;
           _currentPage++;
 
-          _setLoadingState(
+          setLoadingState(
             _posts.isEmpty ? FeedLoadingState.empty : FeedLoadingState.loaded,
           );
         },
       );
     } catch (e) {
-      _errorMessage = '피드를 불러오는 중 오류가 발생했습니다: $e';
-      _setLoadingState(FeedLoadingState.error);
+      handleError(
+        AppFailure(message: '피드를 불러오는 중 오류가 발생했습니다: $e'),
+        FeedLoadingState.error,
+      );
     }
   }
 
@@ -177,7 +185,7 @@ class FeedProvider extends ChangeNotifier {
       return;
     }
 
-    _setLoadingState(FeedLoadingState.loadingMore);
+    setLoadingState(FeedLoadingState.loadingMore);
     await _loadFeed();
   }
 
@@ -192,14 +200,13 @@ class FeedProvider extends ChangeNotifier {
     ).listen(
       (result) {
         result.fold(
-          (failure) => _handleStreamError(failure),
+          (failure) => handleStreamError(failure),
           (posts) => _updatePostsFromStream(posts),
         );
       },
       onError: (error) {
         debugPrint('Feed stream error: $error');
-        _errorMessage = '실시간 업데이트 오류: $error';
-        notifyListeners();
+        handleStreamError(AppFailure(message: '실시간 업데이트 오류: $error'));
       },
     );
   }
@@ -211,7 +218,7 @@ class FeedProvider extends ChangeNotifier {
   }
 
   /// Update posts from stream
-  void _updatePostsFromStream(List<Post> streamPosts) {
+  void _updatePostsFromStream(List<PostDisplay> streamPosts) {
     // Merge stream updates with existing posts
     // This is a simplified merge - in production, you might want
     // more sophisticated logic to handle updates, deletes, etc.
@@ -260,7 +267,7 @@ class FeedProvider extends ChangeNotifier {
   }
 
   /// Add post optimistically
-  void addPostOptimistically(Post post) {
+  void addPostOptimistically(PostDisplay post) {
     _posts = [post, ..._posts];
     _sortPosts();
     notifyListeners();
@@ -271,14 +278,14 @@ class FeedProvider extends ChangeNotifier {
     _posts = _posts.where((p) => p.id != postId).toList();
 
     if (_posts.isEmpty && _loadingState == FeedLoadingState.loaded) {
-      _setLoadingState(FeedLoadingState.empty);
+      setLoadingState(FeedLoadingState.empty);
     }
 
     notifyListeners();
   }
 
   /// Update post
-  void updatePost(Post updatedPost) {
+  void updatePost(PostDisplay updatedPost) {
     final index = _posts.indexWhere((p) => p.id == updatedPost.id);
     if (index != -1) {
       _posts[index] = updatedPost;
@@ -287,34 +294,6 @@ class FeedProvider extends ChangeNotifier {
   }
 
   // Private helper methods
-  void _setLoadingState(FeedLoadingState state) {
-    _loadingState = state;
-    notifyListeners();
-  }
-
-  void _handleError(Failure failure) {
-    _errorMessage = _getFailureMessage(failure);
-    _setLoadingState(FeedLoadingState.error);
-  }
-
-  void _handleStreamError(Failure failure) {
-    debugPrint('Feed stream error: ${failure.message}');
-    // Don't update loading state for stream errors
-    // to avoid disrupting the UI
-    _errorMessage = '실시간 업데이트 오류: ${failure.message}';
-    notifyListeners();
-  }
-
-  String _getFailureMessage(Failure failure) {
-    if (failure is ServerFailure) {
-      return '서버 오류: ${failure.message}';
-    } else if (failure is NetworkFailure) {
-      return '네트워크 연결을 확인해주세요.';
-    } else {
-      return failure.message;
-    }
-  }
-
   void _sortPosts() {
     switch (_sortBy) {
       case FeedSortBy.latest:
@@ -324,14 +303,10 @@ class FeedProvider extends ChangeNotifier {
         _posts.sort((a, b) => b.likeCount.compareTo(a.likeCount));
         break;
       case FeedSortBy.mostVoted:
-        _posts.sort((a, b) {
-          final totalA = a.votesA + a.votesB;
-          final totalB = b.votesA + b.votesB;
-          return totalB.compareTo(totalA);
-        });
+        _posts.sort((a, b) => b.totalVotes.compareTo(a.totalVotes));
         break;
       case FeedSortBy.trending:
-        // Simplified trending sort - in production, use more sophisticated algorithm
+        // Trending: comment count + likes * 2
         _posts.sort((a, b) {
           final scoreA = a.commentCount + (a.likeCount * 2);
           final scoreB = b.commentCount + (b.likeCount * 2);

@@ -8,6 +8,7 @@ import '/core/firebase/firebase_config.dart';
 import 'services/cache/unified_cache_service.dart';
 import 'features/notifications/data/adapters/notification_service.dart';
 import '/app/state/providers/navigation_provider.dart';
+import '/features/post/presentation/providers/feed_provider.dart';
 import '/app/di.dart';
 import 'package:get_it/get_it.dart';
 import 'core_exports.dart';
@@ -53,6 +54,7 @@ void main() async {
     providers: [
       ChangeNotifierProvider(create: (context) => appState),
       ChangeNotifierProvider(create: (context) => NavigationProvider()),
+      ChangeNotifierProvider(create: (context) => GetIt.instance<FeedProvider>()),
       Provider<NotificationService>(
           create: (context) => GetIt.instance<NotificationService>()),
     ],

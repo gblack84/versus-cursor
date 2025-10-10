@@ -292,9 +292,6 @@ class CreationModule implements FeatureModule {
       ),
     );
 
-    // Note: PostAggregateProvider moved to Post feature
-    // The creation feature now focuses solely on post creation
-
     // TODO: Implement FeedProvider in Phase 5
     // sl.registerFactory<FeedProvider>(
     //   () => FeedProvider(

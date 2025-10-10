@@ -50,4 +50,33 @@ abstract class IPostDisplayRepositoryV2 {
     required String userId,
     int limit = 20,
   });
+
+  // Get posts by multiple IDs (batch operation)
+  Future<List<PostDisplay>> getPostsByIds(List<String> postIds);
+
+  // Get completed voting posts
+  Stream<List<PostDisplay>> getCompletedVotingPosts({int limit = -1});
+
+  // Get popular posts (sorted by likes/engagement)
+  Stream<List<PostDisplay>> getPopularPosts({
+    int limit = 20,
+    Duration? timeWindow,
+  });
+
+  // Pagination support - get posts after a document
+  Stream<List<PostDisplay>> getPostsAfter({
+    required String lastPostId,
+    int limit = 20,
+    Map<String, dynamic> Function(Map<String, dynamic>)? queryBuilder,
+  });
+
+  // Get posts with complex filters
+  Stream<List<PostDisplay>> getPostsWithFilters({
+    String? userId,
+    String? status,
+    bool? isAnonymous,
+    DateTime? createdAfter,
+    DateTime? createdBefore,
+    int limit = 20,
+  });
 }

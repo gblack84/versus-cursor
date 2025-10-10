@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:get_it/get_it.dart';
 import '/core_exports.dart';
 import '/features/profile/domain/models/user_profile.dart';
 import '/features/auth/data/adapters/auth_util.dart';
@@ -11,6 +13,8 @@ import '/features/auth/data/repositories/auth_repository_impl.dart';
 import '/features/auth/data/datasources/firebase_auth_remote_datasource.dart';
 import '/features/auth/data/datasources/auth_local_datasource.dart';
 import '/core/design_system/design_system.dart';
+import '/features/post/presentation/providers/user_posts_provider.dart';
+import '/features/post/domain/models/post_display.dart';
 
 class ProfilePageWidget extends StatefulWidget {
   const ProfilePageWidget({super.key});
@@ -25,6 +29,7 @@ class ProfilePageWidget extends StatefulWidget {
 class _ProfilePageWidgetState extends State<ProfilePageWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
   SignOutUseCase? _signOutUseCase;
+  late final UserPostsProvider _userPostsProvider;
 
   Future<void> _initializeUseCases() async {
     // Phase 2.6에서 DI로 대체 예정
@@ -49,6 +54,15 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
   void initState() {
     super.initState();
     _initializeUseCases();
+
+    // Initialize UserPostsProvider from DI
+    _userPostsProvider = GetIt.instance<UserPostsProvider>();
+  }
+
+  @override
+  void dispose() {
+    _userPostsProvider.dispose();
+    super.dispose();
   }
 
   @override
@@ -250,6 +264,13 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                         ),
                         VersusSpacing.gapLG,
 
+                        // 내 게시물 섹션
+                        ChangeNotifierProvider.value(
+                          value: _userPostsProvider,
+                          child: _buildUserPostsSection(context, user.uid),
+                        ),
+                        VersusSpacing.gapLG,
+
                         // 로그아웃 버튼
                         VersusButton.error(
                           text: '로그아웃',
@@ -324,6 +345,189 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildUserPostsSection(BuildContext context, String userId) {
+    return Consumer<UserPostsProvider>(
+      builder: (context, provider, child) {
+        // Load posts on first build
+        if (provider.loadingState == UserPostsLoadingState.initial) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            provider.loadUserPosts(userId: userId, limit: 5);
+          });
+        }
+
+        return Container(
+          padding: VersusSpacing.paddingLG,
+          decoration: BoxDecoration(
+            color: VersusColors.backgroundSecondary,
+            borderRadius: VersusRadius.radiusMedium,
+            boxShadow: [
+              BoxShadow(
+                color: VersusColors.blackWithAlpha(0.05),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '내 게시물',
+                    style: VersusTextStyles.headingMedium,
+                  ),
+                  if (provider.hasPosts)
+                    TextButton(
+                      onPressed: () {
+                        // TODO: Navigate to full posts list
+                      },
+                      child: Text(
+                        '전체보기',
+                        style: VersusTextStyles.bodySmall.copyWith(
+                          color: VersusColors.primary,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              VersusSpacing.gapMD,
+
+              // Loading state
+              if (provider.loadingState == UserPostsLoadingState.loading)
+                Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(VersusSpacing.lg),
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        VersusColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
+
+              // Error state
+              if (provider.loadingState == UserPostsLoadingState.error)
+                Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(VersusSpacing.md),
+                    child: Text(
+                      provider.errorMessage ?? '오류가 발생했습니다',
+                      style: VersusTextStyles.bodyMedium.copyWith(
+                        color: VersusColors.error,
+                      ),
+                    ),
+                  ),
+                ),
+
+              // Empty state
+              if (provider.loadingState == UserPostsLoadingState.empty)
+                Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(VersusSpacing.lg),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.post_add,
+                          size: 48,
+                          color: VersusColors.textSecondary,
+                        ),
+                        VersusSpacing.gapSM,
+                        Text(
+                          '아직 작성한 게시물이 없습니다',
+                          style: VersusTextStyles.bodyMedium.copyWith(
+                            color: VersusColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // Loaded state
+              if (provider.hasPosts)
+                ...provider.posts.map((post) => _buildPostItem(context, post)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPostItem(BuildContext context, PostDisplay post) {
+    return InkWell(
+      onTap: () {
+        context.pushNamed(
+          'postDetail',
+          pathParameters: {'postId': post.id},
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.only(bottom: VersusSpacing.sm),
+        padding: VersusSpacing.paddingMD,
+        decoration: BoxDecoration(
+          color: VersusColors.backgroundPrimary,
+          borderRadius: VersusRadius.radiusSmall,
+          border: Border.all(
+            color: VersusColors.borderLight,
+            width: 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              post.questionTitle,
+              style: VersusTextStyles.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            VersusSpacing.gapSM,
+            Row(
+              children: [
+                Icon(
+                  Icons.how_to_vote,
+                  size: 14,
+                  color: VersusColors.textSecondary,
+                ),
+                VersusSpacing.gapH(4),
+                Text(
+                  '${post.totalVotes}명',
+                  style: VersusTextStyles.bodySmall.copyWith(
+                    color: VersusColors.textSecondary,
+                  ),
+                ),
+                VersusSpacing.gapH(VersusSpacing.sm),
+                Icon(
+                  Icons.comment,
+                  size: 14,
+                  color: VersusColors.textSecondary,
+                ),
+                VersusSpacing.gapH(4),
+                Text(
+                  '${post.commentCount}',
+                  style: VersusTextStyles.bodySmall.copyWith(
+                    color: VersusColors.textSecondary,
+                  ),
+                ),
+                Spacer(),
+                Text(
+                  dateTimeFormat('relative', post.createdAt),
+                  style: VersusTextStyles.bodySmall.copyWith(
+                    color: VersusColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

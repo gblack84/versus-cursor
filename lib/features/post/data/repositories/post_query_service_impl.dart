@@ -1,8 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:algolia/algolia.dart';
 import '../../../creation/domain/models/aggregates/post_creation.dart';
 import '../../domain/repositories/i_post_query_service.dart';
-import '../../../creation/data/utils/firestore_util.dart';
+import '/core/firebase/utils/firestore_util.dart';
 
 /// Implementation of post query service
 /// 읽기 전용 복잡한 게시물 조회 처리 서비스 구현체
@@ -94,7 +93,7 @@ class PostQueryServiceImpl implements IPostQueryService {
       final doc = await _postsCollection.doc(contentId).get();
       if (!doc.exists) return null;
 
-      final data = PostsFirestoreUtil.mapFromFirestore(
+      final data = mapFromFirestore(
         doc.data() as Map<String, dynamic>,
       );
       data['id'] = doc.id;
@@ -109,7 +108,7 @@ class PostQueryServiceImpl implements IPostQueryService {
     return _postsCollection.doc(contentId).snapshots().map((doc) {
       if (!doc.exists) return null;
 
-      final data = PostsFirestoreUtil.mapFromFirestore(
+      final data = mapFromFirestore(
         doc.data() as Map<String, dynamic>,
       );
       data['id'] = doc.id;
@@ -175,7 +174,7 @@ class PostQueryServiceImpl implements IPostQueryService {
 
       final hasMore = docs.length > pageSize;
       final items = docs.take(pageSize).map((doc) {
-        final data = PostsFirestoreUtil.mapFromFirestore(
+        final data = mapFromFirestore(
           doc.data() as Map<String, dynamic>,
         );
         data['id'] = doc.id;
@@ -383,7 +382,7 @@ class PostQueryServiceImpl implements IPostQueryService {
   // Helper methods
   List<PostCreation> _convertToPostList(QuerySnapshot snapshot) {
     return snapshot.docs.map((doc) {
-      final data = PostsFirestoreUtil.mapFromFirestore(
+      final data = mapFromFirestore(
         doc.data() as Map<String, dynamic>,
       );
       data['id'] = doc.id;

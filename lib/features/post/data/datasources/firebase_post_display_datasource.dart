@@ -14,7 +14,7 @@ class FirebasePostDisplayDataSource implements IPostDisplayDataSource {
   Stream<List<Map<String, dynamic>>> queryPosts({
     required Map<String, dynamic> Function(Map<String, dynamic>) queryBuilder,
     int? limit,
-  }) {
+  }) async* {
     // Start with posts collection
     Query query = _firestore.collection('posts');
 
@@ -50,6 +50,9 @@ class FirebasePostDisplayDataSource implements IPostDisplayDataSource {
             case 'arrayContains':
               query = query.where(field, arrayContains: operand);
               break;
+            case 'isNotEqualTo':
+              query = query.where(field, isNotEqualTo: operand);
+              break;
             default:
               query = query.where(field, isEqualTo: value);
           }
@@ -60,12 +63,27 @@ class FirebasePostDisplayDataSource implements IPostDisplayDataSource {
       });
     }
 
+    // Handle pagination cursor
+    if (queryParams.containsKey('startAfterId')) {
+      final startAfterId = queryParams['startAfterId'] as String;
+      try {
+        // Fetch the document to use as cursor
+        final cursorDoc = await _firestore.collection('posts').doc(startAfterId).get();
+        if (cursorDoc.exists) {
+          query = query.startAfterDocument(cursorDoc);
+        }
+      } catch (e) {
+        print('Error fetching cursor document: $e');
+        // Continue without cursor if it fails
+      }
+    }
+
     if (limit != null) {
       query = query.limit(limit);
     }
 
     // Convert Firebase snapshots to Map data
-    return query.snapshots().map((snapshot) {
+    yield* query.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
         // Include the document ID

@@ -1245,9 +1245,302 @@ class FriendsProvider extends ChangeNotifier {
 
 ---
 
-## 🎨 Phase 4: Presentation Layer 구축 (Day 6-7, 16시간)
+## 🧩 Phase 4.0: Domain Layer - UseCases 생성 (Day 6, 10-12시간)
 
-### 4.1. Providers 생성 (6개)
+### 개요
+
+**목표**: 비즈니스 로직을 담당하는 28개 UseCase 생성
+**의존성**: Phase 3 완료 (Repositories 78개 메서드 준비됨)
+**패턴**: 단일 책임 원칙 + Repository 추상화 + `Either<Failure, Result>` 반환
+
+**핵심 원칙**:
+- 각 UseCase는 단일 비즈니스 작업만 담당
+- Repository 인터페이스에만 의존 (구현체 독립)
+- `Either<ProfileFailure, T>` 패턴으로 에러 처리
+- UI/Framework 독립적인 순수 비즈니스 로직
+
+### 4.0.1. UseCase 파일 구조 (28개)
+
+```
+domain/usecases/
+├── profile/ (10개)
+│   ├── get_user_profile_usecase.dart
+│   ├── update_user_profile_usecase.dart
+│   ├── upload_profile_image_usecase.dart
+│   ├── delete_user_profile_usecase.dart
+│   ├── get_profile_info_usecase.dart           # 경량 조회
+│   ├── search_profiles_usecase.dart            # 복합 검색 (거리, 나이, 관심사)
+│   ├── get_suggested_profiles_usecase.dart     # 추천 알고리즘
+│   ├── block_user_usecase.dart                 # 사용자 차단
+│   ├── report_user_usecase.dart                # 사용자 신고
+│   └── get_profile_completion_usecase.dart     # 프로필 완성도 (%)
+│
+├── friends/ (9개)
+│   ├── get_friends_list_usecase.dart
+│   ├── send_friend_request_usecase.dart        # 친구 요청 전송
+│   ├── accept_friend_request_usecase.dart      # 친구 요청 수락
+│   ├── reject_friend_request_usecase.dart      # 친구 요청 거부
+│   ├── remove_friend_usecase.dart
+│   ├── get_friend_suggestions_usecase.dart     # 친구 추천 (상호 친구 기반)
+│   ├── get_mutual_friends_usecase.dart         # 상호 친구 목록
+│   ├── search_friends_usecase.dart             # 친구 검색
+│   └── get_online_friends_usecase.dart         # 온라인 친구 목록
+│
+├── interests/ (2개)
+│   ├── update_user_interests_usecase.dart      # validation 포함 (expertise ≤4, hobbies ≤8)
+│   └── get_user_interests_usecase.dart
+│
+├── characters/ (3개)
+│   ├── get_user_character_usecase.dart
+│   ├── set_user_character_usecase.dart
+│   └── get_available_characters_usecase.dart
+│
+└── settings/ (4개)
+    ├── get_user_settings_usecase.dart
+    ├── update_user_settings_usecase.dart
+    ├── get_notification_settings_usecase.dart
+    └── update_notification_settings_usecase.dart
+```
+
+**총 28개 UseCase**
+
+### 4.0.2. 핵심 UseCase 구현 예시
+
+#### GetUserProfileUseCase (기본 패턴)
+
+**파일**: `domain/usecases/profile/get_user_profile_usecase.dart`
+
+```dart
+import 'package:dartz/dartz.dart';
+import '../../repositories/i_profile_repository.dart';
+import '../../models/user_profile.dart';
+import '../../failures/profile_failures.dart';
+
+/// 사용자 프로필 조회 UseCase
+///
+/// **책임**: 단일 사용자의 전체 프로필 정보 조회
+/// **의존성**: IProfileRepository
+/// **반환**: Either<ProfileFailure, UserProfile>
+class GetUserProfileUseCase {
+  final IProfileRepository _repository;
+
+  GetUserProfileUseCase({required IProfileRepository repository})
+      : _repository = repository;
+
+  /// 사용자 프로필 조회
+  ///
+  /// **Parameters**:
+  /// - `userId`: 사용자 ID
+  ///
+  /// **Returns**:
+  /// - `Left(ProfileNotFoundFailure)`: 사용자가 존재하지 않음
+  /// - `Left(FirestoreReadFailure)`: Firestore 읽기 실패
+  /// - `Right(UserProfile)`: 프로필 조회 성공
+  Future<Either<ProfileFailure, UserProfile>> execute({
+    required String userId,
+  }) async {
+    return await _repository.getUserProfile(userId);
+  }
+}
+```
+
+#### SearchProfilesUseCase (복합 검색)
+
+**파일**: `domain/usecases/profile/search_profiles_usecase.dart`
+
+```dart
+import 'package:dartz/dartz.dart';
+import '../../repositories/i_profile_repository.dart';
+import '../../models/user_profile.dart';
+import '../../failures/profile_failures.dart';
+
+/// 사용자 프로필 복합 검색 UseCase
+///
+/// **책임**: 거리, 나이, 관심사 기반 사용자 검색
+/// **의존성**: IProfileRepository (Haversine 공식 사용)
+/// **반환**: Either<ProfileFailure, List<UserProfile>>
+class SearchProfilesUseCase {
+  final IProfileRepository _repository;
+
+  SearchProfilesUseCase({required IProfileRepository repository})
+      : _repository = repository;
+
+  /// 복합 검색 실행
+  ///
+  /// **Parameters**:
+  /// - `lat`: 기준 위도
+  /// - `lng`: 기준 경도
+  /// - `radiusKm`: 검색 반경 (km)
+  /// - `minAge`: 최소 나이 (선택)
+  /// - `maxAge`: 최대 나이 (선택)
+  /// - `interests`: 관심사 필터 (선택)
+  /// - `limit`: 최대 결과 수 (기본 20)
+  ///
+  /// **Returns**:
+  /// - `Left(ValidationFailure)`: 잘못된 파라미터 (lat/lng 범위 초과)
+  /// - `Left(FirestoreReadFailure)`: Firestore 쿼리 실패
+  /// - `Right(List<UserProfile>)`: 검색 결과 (거리순 정렬)
+  Future<Either<ProfileFailure, List<UserProfile>>> execute({
+    required double lat,
+    required double lng,
+    required double radiusKm,
+    int? minAge,
+    int? maxAge,
+    List<String>? interests,
+    int limit = 20,
+  }) async {
+    // 위도/경도 범위 검증
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      return Left(ValidationFailure(
+        message: '잘못된 위도/경도 값입니다.',
+      ));
+    }
+
+    // Repository 검색 메서드 호출
+    return await _repository.searchProfiles(
+      lat: lat,
+      lng: lng,
+      radiusKm: radiusKm,
+      minAge: minAge,
+      maxAge: maxAge,
+      interests: interests,
+      limit: limit,
+    );
+  }
+}
+```
+
+#### UpdateUserInterestsUseCase (Validation 로직 포함)
+
+**파일**: `domain/usecases/interests/update_user_interests_usecase.dart`
+
+```dart
+import 'package:dartz/dartz.dart';
+import '../../repositories/i_profile_repository.dart';
+import '../../models/interest.dart';
+import '../../failures/profile_failures.dart';
+
+/// 사용자 관심사 업데이트 UseCase
+///
+/// **책임**: 관심사 validation + Repository 업데이트
+/// **제약사항**: expertise ≤ 4개, hobbies ≤ 8개
+/// **의존성**: IProfileRepository
+class UpdateUserInterestsUseCase {
+  final IProfileRepository _repository;
+
+  UpdateUserInterestsUseCase({required IProfileRepository repository})
+      : _repository = repository;
+
+  /// 관심사 업데이트
+  ///
+  /// **Parameters**:
+  /// - `userId`: 사용자 ID
+  /// - `interests`: 업데이트할 관심사 리스트
+  ///
+  /// **Returns**:
+  /// - `Left(ValidationFailure)`: 제약 조건 위반
+  /// - `Left(FirestoreWriteFailure)`: Firestore 쓰기 실패
+  /// - `Right(void)`: 업데이트 성공
+  Future<Either<ProfileFailure, void>> execute({
+    required String userId,
+    required List<Interest> interests,
+  }) async {
+    // Validation: expertise 개수 확인
+    final expertiseCount = interests
+        .where((interest) => interest.category == 'expertise')
+        .length;
+    if (expertiseCount > 4) {
+      return Left(ValidationFailure(
+        message: '전문 분야는 최대 4개까지 선택 가능합니다.',
+      ));
+    }
+
+    // Validation: hobbies 개수 확인
+    final hobbiesCount = interests
+        .where((interest) => interest.category == 'hobby')
+        .length;
+    if (hobbiesCount > 8) {
+      return Left(ValidationFailure(
+        message: '취미는 최대 8개까지 선택 가능합니다.',
+      ));
+    }
+
+    // Repository 업데이트 호출
+    return await _repository.updateUserInterests(userId, interests);
+  }
+}
+```
+
+### 4.0.3. UseCase 작업 우선순위
+
+**P0 (필수 - Day 6 전반, 4-5시간)**:
+프로필 페이지 및 온보딩 화면에 필수적인 UseCase
+
+1. `GetUserProfileUseCase` - 프로필 메인 페이지
+2. `UpdateUserProfileUseCase` - 프로필 편집
+3. `GetUserSettingsUseCase` - 설정 화면
+4. `UpdateUserSettingsUseCase` - 설정 저장
+5. `GetUserInterestsUseCase` - 관심사 표시
+6. `UpdateUserInterestsUseCase` - 관심사 온보딩
+7. `GetUserCharacterUseCase` - 캐릭터 표시
+8. `SetUserCharacterUseCase` - 캐릭터 선택
+9. `GetAvailableCharactersUseCase` - 캐릭터 목록
+10. `UploadProfileImageUseCase` - 프로필 이미지 업로드
+
+**P1 (중요 - Day 6 후반, 3-4시간)**:
+친구 기능 및 추가 프로필 기능
+
+11. `GetFriendsListUseCase` - 친구 목록 표시
+12. `SendFriendRequestUseCase` - 친구 요청
+13. `AcceptFriendRequestUseCase` - 친구 수락
+14. `RejectFriendRequestUseCase` - 친구 거부
+15. `RemoveFriendUseCase` - 친구 삭제
+16. `GetProfileInfoUseCase` - 경량 프로필 조회
+17. `GetProfileCompletionUseCase` - 프로필 완성도
+18. `GetNotificationSettingsUseCase` - 알림 설정 조회
+19. `UpdateNotificationSettingsUseCase` - 알림 설정 저장
+
+**P2 (선택 - 필요 시, 2-3시간)**:
+고급 기능 및 소셜 기능
+
+20. `SearchProfilesUseCase` - 복합 검색 (거리, 나이, 관심사)
+21. `GetSuggestedProfilesUseCase` - 프로필 추천
+22. `GetFriendSuggestionsUseCase` - 친구 추천
+23. `GetMutualFriendsUseCase` - 상호 친구
+24. `SearchFriendsUseCase` - 친구 검색
+25. `GetOnlineFriendsUseCase` - 온라인 친구
+26. `BlockUserUseCase` - 사용자 차단
+27. `ReportUserUseCase` - 사용자 신고
+28. `DeleteUserProfileUseCase` - 프로필 삭제
+
+### 4.0.4. UseCase 구현 체크리스트
+
+- [ ] **P0 UseCase 10개 구현** (4-5시간)
+  - [ ] GetUserProfileUseCase
+  - [ ] UpdateUserProfileUseCase
+  - [ ] GetUserSettingsUseCase
+  - [ ] UpdateUserSettingsUseCase
+  - [ ] GetUserInterestsUseCase
+  - [ ] UpdateUserInterestsUseCase (validation 포함)
+  - [ ] GetUserCharacterUseCase
+  - [ ] SetUserCharacterUseCase
+  - [ ] GetAvailableCharactersUseCase
+  - [ ] UploadProfileImageUseCase
+
+- [ ] **P1 UseCase 9개 구현** (3-4시간)
+  - [ ] Friends UseCase 5개
+  - [ ] Profile 추가 기능 4개
+
+- [ ] **P2 UseCase 9개 구현** (2-3시간)
+  - [ ] 고급 검색 및 추천 기능
+
+**예상 총 작업 시간**: 10-12시간
+
+---
+
+## 🎨 Phase 4.1: Presentation Layer - Providers 생성 (Day 7, 12-14시간)
+
+### 4.1. Providers 생성 (7개)
 
 ```
 presentation/providers/
@@ -1256,65 +1549,119 @@ presentation/providers/
 ├── settings_provider.dart             # 설정 상태 관리
 ├── friends_provider.dart              # 친구 목록 상태
 ├── interests_provider.dart            # 관심사 선택 상태
-└── onboarding_coordinator.dart        # 온보딩 플로우 조정 (Phase 5 패턴)
+└── characters_provider.dart           # 캐릭터 선택 상태
 ```
 
-### Phase 5 Coordinator 패턴 (Creation 참조)
+### Characters Provider (캐릭터/아바타 관리)
 
-**파일**: `presentation/providers/onboarding_coordinator.dart`
+**파일**: `presentation/providers/characters_provider.dart`
 
 ```dart
 import 'package:flutter/foundation.dart';
-import 'interests_provider.dart';
-import 'profile_edit_provider.dart';
-import 'settings_provider.dart';
+import '../../domain/usecases/characters/get_user_character_usecase.dart';
+import '../../domain/usecases/characters/set_user_character_usecase.dart';
+import '../../domain/usecases/characters/get_available_characters_usecase.dart';
+import '../../domain/models/character.dart';
 
-/// 온보딩 플로우 조정자 (Phase 5 Coordinator 패턴)
+/// 캐릭터/아바타 선택 Provider
 ///
 /// **책임**:
-/// - 3개 Provider (Interests, ProfileEdit, Settings) 통합
-/// - 단일 진입점으로 복잡한 온보딩 플로우 관리
-/// - 진행률 추적 및 에러 처리
-class OnboardingCoordinator extends ChangeNotifier {
-  final InterestsProvider _interestsProvider;
-  final ProfileEditProvider _profileEditProvider;
-  final SettingsProvider _settingsProvider;
+/// - 사용자 캐릭터 상태 관리
+/// - 사용 가능한 캐릭터 목록 관리
+/// - UseCase를 통한 비즈니스 로직 실행
+class CharactersProvider extends ChangeNotifier {
+  final GetUserCharacterUseCase _getUserCharacterUseCase;
+  final SetUserCharacterUseCase _setUserCharacterUseCase;
+  final GetAvailableCharactersUseCase _getAvailableCharactersUseCase;
 
-  OnboardingCoordinator({
-    required InterestsProvider interestsProvider,
-    required ProfileEditProvider profileEditProvider,
-    required SettingsProvider settingsProvider,
-  })  : _interestsProvider = interestsProvider,
-        _profileEditProvider = profileEditProvider,
-        _settingsProvider = settingsProvider;
+  Character? _currentCharacter;
+  List<Character> _availableCharacters = [];
+  bool _isLoading = false;
+  String? _errorMessage;
 
-  /// 단일 진입점: 온보딩 완료 처리
-  ///
-  /// **Parameters**:
-  /// - `userId`: 사용자 ID
-  /// - `onProgress`: 진행률 콜백 (0-100)
-  Future<void> completeOnboarding({
-    required String userId,
-    required Function(int) onProgress,
-  }) async {
-    try {
-      // 1. 관심사 저장 (0-33%)
-      onProgress(0);
-      await _interestsProvider.saveInterests(userId);
-      onProgress(33);
+  CharactersProvider({
+    required GetUserCharacterUseCase getUserCharacterUseCase,
+    required SetUserCharacterUseCase setUserCharacterUseCase,
+    required GetAvailableCharactersUseCase getAvailableCharactersUseCase,
+  })  : _getUserCharacterUseCase = getUserCharacterUseCase,
+        _setUserCharacterUseCase = setUserCharacterUseCase,
+        _getAvailableCharactersUseCase = getAvailableCharactersUseCase;
 
-      // 2. 프로필 정보 저장 (33-66%)
-      await _profileEditProvider.saveProfile(userId);
-      onProgress(66);
+  // Getters
+  Character? get currentCharacter => _currentCharacter;
+  List<Character> get availableCharacters => _availableCharacters;
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
 
-      // 3. 설정 초기화 (66-100%)
-      await _settingsProvider.initializeSettings(userId);
-      onProgress(100);
+  /// 사용자 현재 캐릭터 로드
+  Future<void> loadUserCharacter(String userId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
 
-      notifyListeners();
-    } catch (e) {
-      rethrow;
-    }
+    final result = await _getUserCharacterUseCase.execute(userId: userId);
+
+    result.fold(
+      (failure) {
+        _errorMessage = failure.getUserMessage();
+        _currentCharacter = null;
+      },
+      (character) {
+        _currentCharacter = character;
+        _errorMessage = null;
+      },
+    );
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  /// 사용자 캐릭터 설정
+  Future<void> setUserCharacter(String userId, String characterId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    final result = await _setUserCharacterUseCase.execute(
+      userId: userId,
+      characterId: characterId,
+    );
+
+    result.fold(
+      (failure) {
+        _errorMessage = failure.getUserMessage();
+      },
+      (character) {
+        _currentCharacter = character;
+        _errorMessage = null;
+      },
+    );
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  /// 사용 가능한 캐릭터 목록 로드
+  Future<void> loadAvailableCharacters() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    final result = await _getAvailableCharactersUseCase.execute();
+
+    result.fold(
+      (failure) {
+        _errorMessage = failure.getUserMessage();
+        _availableCharacters = [];
+      },
+      (characters) {
+        _availableCharacters = characters;
+        _errorMessage = null;
+      },
+    );
+
+    _isLoading = false;
+    notifyListeners();
   }
 }
 ```
@@ -1856,11 +2203,11 @@ class InterestsProvider extends ChangeNotifier {
 
 ---
 
-## 🔄 Phase 4.5: 레거시 위젯 전환 및 하이브리드 운영 (Day 7.5-9.5, 12시간)
+## 🔄 Phase 4.5: 레거시 위젯 분석 및 전환 패턴 (Day 7.5, 4시간)
 
 ### 개요
 
-**목표**: 10개 레거시 위젯을 Clean Architecture v4.0으로 점진적 전환하면서 기존 시스템과 신규 시스템을 병렬 운영
+**목표**: 10개 레거시 위젯의 전환 순서 및 롤백 전략 수립
 
 **전환 원칙**:
 1. **무중단 마이그레이션**: 레거시 시스템 유지하면서 신규 Provider 추가
@@ -1868,7 +2215,71 @@ class InterestsProvider extends ChangeNotifier {
 3. **하이브리드 Provider**: Section 1.4의 UserProfileAdapter 활용
 4. **점진적 검증**: 위젯별 전환 후 즉시 테스트
 
-### 4.5.1. 하이브리드 운영 전략 (Week 1-7)
+### 4.5.1. 위젯별 전환 순서
+
+| 주차 | 위젯 | 작업 내용 | 상태 |
+|------|-----|----------|------|
+| **Week 1-2** | - | 하이브리드 Provider 구축 | 병렬 시스템 테스트 |
+| **Week 3** | profile_page_widget.dart (P0) | StreamBuilder → Consumer 전환 | 하이브리드 운영 |
+| **Week 3** | expertise_select_widget.dart (P0) | 직접 Firestore 쓰기 제거 | 하이브리드 운영 |
+| **Week 4** | hobbies_select_widget.dart (P1) | InterestsProvider 적용 | 신규 시스템 전환 |
+| **Week 4** | agreed_select_widget.dart (P1) | InterestsProvider 적용 | 신규 시스템 전환 |
+| **Week 5** | user_info_input_widget.dart (P1) | ProfileEditProvider 적용 | 신규 시스템 전환 |
+| **Week 5** | character_detail_page_widget.dart (P2) | CharactersProvider 적용 | 신규 시스템 전환 |
+| **Week 6** | language_selector_widget.dart (P2) | SettingsProvider 적용 | 신규 시스템 전환 |
+| **Week 6** | 3개 ViewModel (P2-P3) | Provider로 완전 대체 | 신규 시스템 전환 |
+| **Week 7** | - | 레거시 코드 완전 제거 | 마이그레이션 완료 |
+
+### 4.5.2. 롤백 시나리오
+
+**상황별 롤백 전략**:
+
+**시나리오 1: P0 위젯 전환 실패**
+- **원인**: Consumer<ProfileProvider>가 예상대로 작동하지 않음
+- **조치**:
+  1. 하이브리드 코드에서 StreamBuilder만 남기고 Consumer 제거
+  2. `watchProfileLegacy()` 메서드 유지
+  3. 문제 분석 후 재시도
+
+**시나리오 2: InterestsProvider 버그 발견**
+- **원인**: addExpertise() 메서드 에러 처리 누락
+- **조치**:
+  1. 직접 Firestore 쓰기 코드로 임시 복원
+  2. InterestsProvider 수정 후 재배포
+  3. expertise_select_widget 재전환
+
+**시나리오 3: 데이터 불일치 발견**
+- **원인**: Legacy와 New 시스템 출력이 다름
+- **조치**:
+  1. 병렬 테스트 코드로 차이점 로깅
+  2. UserProfileAdapter 매핑 로직 수정
+  3. 데이터 일관성 검증 후 재시작
+
+### 4.5.3. Phase 4.5 체크리스트
+
+- [ ] **위젯 전환 우선순위 분석**
+  - [ ] P0 위젯 2개 식별 (profile_page, expertise_select)
+  - [ ] P1 위젯 3개 식별 (hobbies, agreed, user_info_input)
+  - [ ] P2/P3 위젯 5개 식별 (character_detail, language, 3 ViewModel)
+
+- [ ] **전환 패턴 문서화**
+  - [ ] StreamBuilder → Consumer 전환 패턴 작성
+  - [ ] 직접 Firestore 쓰기 → Provider 전환 패턴 작성
+  - [ ] ViewModel → Provider 전환 패턴 작성
+
+- [ ] **롤백 전략 수립**
+  - [ ] 3가지 롤백 시나리오 문서화 완료
+  - [ ] 각 시나리오별 복구 절차 검증
+
+---
+
+## 🔀 Phase 4.6: 하이브리드 운영 전략 (Day 8-9.5, 8시간)
+
+### 개요
+
+**목표**: 레거시 시스템과 신규 Clean Architecture 시스템을 병렬 운영하면서 점진적 전환
+
+### 4.6.1. 하이브리드 운영 전략 (Week 1-7)
 
 #### Week 1-2: 하이브리드 Provider 구축 및 병렬 시스템 테스트
 
@@ -2034,70 +2445,6 @@ Stream<UserProfile> watchProfileLegacy(String userId) {
 }
 ```
 
-### 4.5.2. 위젯별 전환 순서
-
-| 주차 | 위젯 | 작업 내용 | 상태 |
-|------|-----|----------|------|
-| **Week 1-2** | - | 하이브리드 Provider 구축 | 병렬 시스템 테스트 |
-| **Week 3** | profile_page_widget.dart (P0) | StreamBuilder → Consumer 전환 | 하이브리드 운영 |
-| **Week 3** | expertise_select_widget.dart (P0) | 직접 Firestore 쓰기 제거 | 하이브리드 운영 |
-| **Week 4** | hobbies_select_widget.dart (P1) | InterestsProvider 적용 | 신규 시스템 전환 |
-| **Week 4** | agreed_select_widget.dart (P1) | InterestsProvider 적용 | 신규 시스템 전환 |
-| **Week 5** | user_info_input_widget.dart (P1) | ProfileEditProvider 적용 | 신규 시스템 전환 |
-| **Week 5** | character_detail_page_widget.dart (P2) | CharactersProvider 적용 | 신규 시스템 전환 |
-| **Week 6** | language_selector_widget.dart (P2) | SettingsProvider 적용 | 신규 시스템 전환 |
-| **Week 6** | 3개 ViewModel (P2-P3) | Provider로 완전 대체 | 신규 시스템 전환 |
-| **Week 7** | - | 레거시 코드 완전 제거 | 마이그레이션 완료 |
-
-### 4.5.3. 롤백 시나리오
-
-**상황별 롤백 전략**:
-
-**시나리오 1: P0 위젯 전환 실패**
-- **원인**: Consumer<ProfileProvider>가 예상대로 작동하지 않음
-- **조치**:
-  1. 하이브리드 코드에서 StreamBuilder만 남기고 Consumer 제거
-  2. `watchProfileLegacy()` 메서드 유지
-  3. 문제 분석 후 재시도
-
-**시나리오 2: InterestsProvider 버그 발견**
-- **원인**: addExpertise() 메서드 에러 처리 누락
-- **조치**:
-  1. 직접 Firestore 쓰기 코드로 임시 복원
-  2. InterestsProvider 수정 후 재배포
-  3. expertise_select_widget 재전환
-
-**시나리오 3: 데이터 불일치 발견**
-- **원인**: Legacy와 New 시스템 출력이 다름
-- **조치**:
-  1. 병렬 테스트 코드로 차이점 로깅
-  2. UserProfileAdapter 매핑 로직 수정
-  3. 데이터 일관성 검증 후 재시작
-
-### 4.5.4. Phase 4.5 체크리스트
-
-- [ ] **Week 1-2: 하이브리드 Provider 구축**
-  - [ ] ProfileProvider에 watchProfileLegacy() 추가
-  - [ ] InterestsProvider 생성 (UseCase 기반)
-  - [ ] 병렬 시스템 테스트 코드 작성
-  - [ ] 데이터 일관성 검증 (레거시 vs 신규)
-
-- [ ] **Week 3-4: P0 위젯 전환**
-  - [ ] profile_page_widget.dart 하이브리드 운영
-  - [ ] expertise_select_widget.dart 전환
-  - [ ] 두 위젯 기능 동일성 확인
-
-- [ ] **Week 5-6: P1/P2 위젯 전환**
-  - [ ] 3개 P1 위젯 전환 (hobbies, agreed, user_info_input)
-  - [ ] 4개 P2 위젯 전환 (character_detail, language, 2개 ViewModel)
-  - [ ] 모든 위젯 기능 검증
-
-- [ ] **Week 7: 레거시 코드 제거**
-  - [ ] watchProfileLegacy() 메서드 삭제
-  - [ ] StreamBuilder 모두 제거
-  - [ ] 수동 UseCase 초기화 제거
-  - [ ] 최종 통합 테스트
-
 ---
 
 ## 🔗 Phase 5: 의존성 주입 및 통합 (Day 10, 4시간)
@@ -2192,17 +2539,46 @@ class ProfileModule {
       ),
     );
 
-    // UseCases
+    // UseCases (28개)
+    // Profile UseCases (10개)
     getIt.registerFactory(() => GetUserProfileUseCase(repository: getIt()));
     getIt.registerFactory(() => UpdateUserProfileUseCase(repository: getIt()));
     getIt.registerFactory(() => UploadProfileImageUseCase(repository: getIt()));
-    getIt.registerFactory(() => GetUserSettingsUseCase(repository: getIt()));
-    getIt.registerFactory(() => UpdateUserSettingsUseCase(repository: getIt()));
+    getIt.registerFactory(() => DeleteUserProfileUseCase(repository: getIt()));
+    getIt.registerFactory(() => GetProfileInfoUseCase(repository: getIt()));
+    getIt.registerFactory(() => SearchProfilesUseCase(repository: getIt()));
+    getIt.registerFactory(() => GetSuggestedProfilesUseCase(repository: getIt()));
+    getIt.registerFactory(() => BlockUserUseCase(repository: getIt()));
+    getIt.registerFactory(() => ReportUserUseCase(repository: getIt()));
+    getIt.registerFactory(() => GetProfileCompletionUseCase(repository: getIt()));
+
+    // Friends UseCases (9개)
     getIt.registerFactory(() => GetFriendsListUseCase(repository: getIt()));
     getIt.registerFactory(() => AddFriendUseCase(repository: getIt()));
     getIt.registerFactory(() => RemoveFriendUseCase(repository: getIt()));
+    getIt.registerFactory(() => SearchFriendsUseCase(repository: getIt()));
+    getIt.registerFactory(() => GetPendingFriendRequestsUseCase(repository: getIt()));
+    getIt.registerFactory(() => AcceptFriendRequestUseCase(repository: getIt()));
+    getIt.registerFactory(() => DeclineFriendRequestUseCase(repository: getIt()));
+    getIt.registerFactory(() => GetMutualFriendsUseCase(repository: getIt()));
+    getIt.registerFactory(() => GetFriendDetailsUseCase(repository: getIt()));
 
-    // Providers
+    // Interests UseCases (2개)
+    getIt.registerFactory(() => GetUserInterestsUseCase(repository: getIt()));
+    getIt.registerFactory(() => UpdateUserInterestsUseCase(repository: getIt()));
+
+    // Characters UseCases (3개)
+    getIt.registerFactory(() => GetUserCharacterUseCase(repository: getIt()));
+    getIt.registerFactory(() => SetUserCharacterUseCase(repository: getIt()));
+    getIt.registerFactory(() => GetAvailableCharactersUseCase(repository: getIt()));
+
+    // Settings UseCases (4개)
+    getIt.registerFactory(() => GetUserSettingsUseCase(repository: getIt()));
+    getIt.registerFactory(() => UpdateUserSettingsUseCase(repository: getIt()));
+    getIt.registerFactory(() => GetNotificationSettingsUseCase(repository: getIt()));
+    getIt.registerFactory(() => UpdateNotificationSettingsUseCase(repository: getIt()));
+
+    // Providers (7개)
     getIt.registerFactory(() => ProfileProvider(
       getProfileUseCase: getIt(),
       updateProfileUseCase: getIt(),
@@ -2217,16 +2593,17 @@ class ProfileModule {
       addFriendUseCase: getIt(),
       removeFriendUseCase: getIt(),
     ));
-    getIt.registerFactory(() => InterestsProvider());
+    getIt.registerFactory(() => InterestsProvider(
+      getUserInterestsUseCase: getIt(),
+      updateUserInterestsUseCase: getIt(),
+    ));
     getIt.registerFactory(() => ProfileEditProvider(
       updateProfileUseCase: getIt(),
     ));
-
-    // Phase 5 Coordinator
-    getIt.registerFactory(() => OnboardingCoordinator(
-      interestsProvider: getIt(),
-      profileEditProvider: getIt(),
-      settingsProvider: getIt(),
+    getIt.registerFactory(() => CharactersProvider(
+      getUserCharacterUseCase: getIt(),
+      setUserCharacterUseCase: getIt(),
+      getAvailableCharactersUseCase: getIt(),
     ));
   }
 }
@@ -2254,7 +2631,80 @@ void main() async {
 }
 ```
 
-### 5.3. 중복 Repository 통합 전략
+### 5.3. Coordinators 생성 (Phase 5 패턴)
+
+#### OnboardingCoordinator
+
+**파일**: `presentation/providers/onboarding_coordinator.dart`
+
+```dart
+import 'package:flutter/foundation.dart';
+import 'interests_provider.dart';
+import 'profile_edit_provider.dart';
+import 'settings_provider.dart';
+
+/// 온보딩 플로우 조정자 (Phase 5 Coordinator 패턴)
+///
+/// **책임**:
+/// - 3개 Provider (Interests, ProfileEdit, Settings) 통합
+/// - 단일 진입점으로 복잡한 온보딩 플로우 관리
+/// - 진행률 추적 및 에러 처리
+class OnboardingCoordinator extends ChangeNotifier {
+  final InterestsProvider _interestsProvider;
+  final ProfileEditProvider _profileEditProvider;
+  final SettingsProvider _settingsProvider;
+
+  OnboardingCoordinator({
+    required InterestsProvider interestsProvider,
+    required ProfileEditProvider profileEditProvider,
+    required SettingsProvider settingsProvider,
+  })  : _interestsProvider = interestsProvider,
+        _profileEditProvider = profileEditProvider,
+        _settingsProvider = settingsProvider;
+
+  /// 단일 진입점: 온보딩 완료 처리
+  ///
+  /// **Parameters**:
+  /// - `userId`: 사용자 ID
+  /// - `onProgress`: 진행률 콜백 (0-100)
+  Future<void> completeOnboarding({
+    required String userId,
+    required Function(int) onProgress,
+  }) async {
+    try {
+      // 1. 관심사 저장 (0-33%)
+      onProgress(0);
+      await _interestsProvider.saveInterests(userId);
+      onProgress(33);
+
+      // 2. 프로필 정보 저장 (33-66%)
+      await _profileEditProvider.saveProfile(userId);
+      onProgress(66);
+
+      // 3. 설정 초기화 (66-100%)
+      await _settingsProvider.initializeSettings(userId);
+      onProgress(100);
+
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+}
+```
+
+#### DI 등록 (profile_module.dart에 추가)
+
+```dart
+// Coordinators
+getIt.registerFactory(() => OnboardingCoordinator(
+  interestsProvider: getIt(),
+  profileEditProvider: getIt(),
+  settingsProvider: getIt(),
+));
+```
+
+### 5.4. 중복 Repository 통합 전략
 
 **발견된 문제**: Phase 3.4에서 6개 Repository를 생성하지만, 기존 `user_repository_impl.dart`와 신규 `profile_repository_impl.dart` 간 기능 중복 존재
 
@@ -2601,7 +3051,7 @@ lib/features/profile/                         # Profile Feature 루트
     │       ├── user_info_input_widget.dart
     │       └── user_info_input_model.dart
     │
-    ├── providers/                           # 6개 Provider (Phase 5 Coordinator 포함)
+    ├── providers/                           # 7개 Provider + Coordinators (Phase 5)
     │   ├── profile_provider.dart
     │   ├── profile_edit_provider.dart
     │   ├── settings_provider.dart
@@ -2683,7 +3133,7 @@ lib/features/profile/                         # Profile Feature 루트
 - [ ] 6개 Repository 구현체 생성
 
 ### Phase 4: Presentation Layer (Day 6-7)
-- [ ] 6개 Provider 생성 (Phase 5 Coordinator 포함)
+- [ ] 7개 Provider 생성 + Coordinators (Phase 5)
 - [ ] 15개 Screen 생성/리팩토링
 - [ ] 25개 Widget 생성
 - [ ] 5개 Constants 파일 생성

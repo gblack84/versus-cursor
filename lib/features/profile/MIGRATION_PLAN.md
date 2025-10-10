@@ -2226,8 +2226,8 @@ lib/features/profile/                         # Profile Feature 루트
 ## ✅ 체크리스트
 
 ### Phase 1: 구조 정리 (Day 1)
-- [ ] data/models 5개 파일 삭제
-- [ ] IUserRepository SettingsModel 제거
+- [x] data/models 5개 파일 삭제
+- [x] IUserRepository SettingsModel 제거
 - [ ] 각 레이어별 README 생성
 
 ### Phase 2: Domain Layer (Day 2-3)

@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_profile.dart';
 import '../models/friends_list_model.dart';
-import '../models/settings_model.dart';
+import '../models/user_settings.dart';
 import '../models/characters_model.dart';
 
 /// Repository interface for User-related operations
@@ -37,7 +37,7 @@ abstract class IUserRepository {
   });
 
   // Settings queries
-  Stream<List<SettingsModel>> querySettings({
+  Stream<List<UserSettings>> querySettings({
     DocumentReference? parent,
     Query Function(Query)? queryBuilder,
     int limit = -1,
@@ -69,8 +69,8 @@ abstract class IUserRepository {
   Future<void> deleteUser(String userId);
 
   // Settings operations
-  Future<SettingsModel?> getUserSettings(String userId);
-  Future<void> updateUserSettings(String userId, SettingsModel settings);
+  Future<UserSettings?> getUserSettings(String userId);
+  Future<void> updateUserSettings(String userId, UserSettings settings);
 
   // Character operations
   Future<CharactersModel?> getUserCharacter(String userId);

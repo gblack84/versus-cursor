@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// UserProfile DTO
+/// UserProfile DTO (Clean Architecture v4.0)
 ///
 /// **책임**: Firestore 문서 구조와 Dart 객체 간 변환
-/// UserProfile의 44개 필드 전체 지원
+/// UserProfile의 45개 필드 전체 지원 (hobbies, jobCategory, jobName 추가)
 class UserProfileDto {
   // Core Identity Fields
   final String? uid;
@@ -33,6 +33,9 @@ class UserProfileDto {
   // Interests and Expertise
   final List<String>? interests;
   final List<String>? expertise;
+  final List<String>? hobbies;
+  final String? jobCategory;
+  final String? jobName;
 
   // Premium Status
   final bool? isPremiumUser;
@@ -87,6 +90,9 @@ class UserProfileDto {
     this.totalQPoints,
     this.interests,
     this.expertise,
+    this.hobbies,
+    this.jobCategory,
+    this.jobName,
     this.isPremiumUser,
     this.anonymousPostsCount,
     this.anonymousCommentsCount,
@@ -132,6 +138,9 @@ class UserProfileDto {
       totalQPoints: data['totalQPoints'] as int?,
       interests: (data['interests'] as List<dynamic>?)?.cast<String>(),
       expertise: (data['expertise'] as List<dynamic>?)?.cast<String>(),
+      hobbies: (data['hobbies'] as List<dynamic>?)?.cast<String>(),
+      jobCategory: data['jobCategory'] as String?,
+      jobName: data['jobName'] as String?,
       isPremiumUser: data['isPremiumUser'] as bool?,
       anonymousPostsCount: data['anonymousPostsCount'] as int?,
       anonymousCommentsCount: data['anonymousCommentsCount'] as int?,
@@ -182,6 +191,9 @@ class UserProfileDto {
       if (totalQPoints != null) 'totalQPoints': totalQPoints,
       if (interests != null) 'interests': interests,
       if (expertise != null) 'expertise': expertise,
+      if (hobbies != null) 'hobbies': hobbies,
+      if (jobCategory != null) 'jobCategory': jobCategory,
+      if (jobName != null) 'jobName': jobName,
       if (isPremiumUser != null) 'isPremiumUser': isPremiumUser,
       if (anonymousPostsCount != null)
         'anonymousPostsCount': anonymousPostsCount,

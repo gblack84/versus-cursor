@@ -1,117 +1,71 @@
-import 'dart:async';
-import 'package:collection/collection.dart';
-import '/core_exports.dart';
+/// ChatInterestJops pure domain model (Clean Architecture v4.0)
+///
+/// **변경사항** (2025-01-20):
+/// - FirestoreRecord 상속 제거 → 순수 Dart 클래스
+/// - Private 필드 + Getter → Final public 필드
+/// - has*() 메서드 제거 → Null check 직접 사용
+/// - fromSnapshot(), collection 등 Firebase 메서드 제거 → DTO로 이동
+/// - createChatInterestJopsModelData() 제거 → ChatInterestJopsDto.toFirestore()로 이동
+/// - ChatInterestJopsModelDocumentEquality 제거 → == operator 사용
+/// - parentReference 제거 (Firebase-specific)
+///
+/// Represents chat interest/job categories with timestamp
+class ChatInterestJops {
+  // ============= Core Fields =============
+  final String categoryA;
+  final String categoryB;
+  final String categoryC;
+  final DateTime? timeStamp;
 
-class ChatInterestJopsModel extends FirestoreRecord {
-  ChatInterestJopsModel._(
-    DocumentReference reference,
-    Map<String, dynamic> data,
-  ) : super(reference, data) {
-    _initializeFields();
+  const ChatInterestJops({
+    this.categoryA = '',
+    this.categoryB = '',
+    this.categoryC = '',
+    this.timeStamp,
+  });
+
+  /// Create a copy of this ChatInterestJops with updated fields
+  ChatInterestJops copyWith({
+    String? categoryA,
+    String? categoryB,
+    String? categoryC,
+    DateTime? timeStamp,
+  }) {
+    return ChatInterestJops(
+      categoryA: categoryA ?? this.categoryA,
+      categoryB: categoryB ?? this.categoryB,
+      categoryC: categoryC ?? this.categoryC,
+      timeStamp: timeStamp ?? this.timeStamp,
+    );
   }
 
-  // "categoryA" field.
-  String? _categoryA;
-  String get categoryA => _categoryA ?? '';
-  bool hasCategoryA() => _categoryA != null;
+  @override
+  String toString() => 'ChatInterestJops('
+      'categoryA: $categoryA, '
+      'categoryB: $categoryB, '
+      'categoryC: $categoryC, '
+      'timeStamp: $timeStamp'
+      ')';
 
-  // "categoryB" field.
-  String? _categoryB;
-  String get categoryB => _categoryB ?? '';
-  bool hasCategoryB() => _categoryB != null;
-
-  // "categoryC" field.
-  String? _categoryC;
-  String get categoryC => _categoryC ?? '';
-  bool hasCategoryC() => _categoryC != null;
-
-  // "timeStamp" field.
-  DateTime? _timeStamp;
-  DateTime? get timeStamp => _timeStamp;
-  bool hasTimeStamp() => _timeStamp != null;
-
-  DocumentReference get parentReference => reference.parent.parent!;
-
-  void _initializeFields() {
-    _categoryA = snapshotData['categoryA'] as String?;
-    _categoryB = snapshotData['categoryB'] as String?;
-    _categoryC = snapshotData['categoryC'] as String?;
-    _timeStamp = snapshotData['timeStamp'] as DateTime?;
-  }
-
-  static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
-      parent != null
-          ? parent.collection('chatInterestJops')
-          : FirebaseFirestore.instance.collectionGroup('chatInterestJops');
-
-  static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
-      parent.collection('chatInterestJops').doc(id);
-
-  static Stream<ChatInterestJopsModel> getDocument(DocumentReference ref) =>
-      ref.snapshots().map((s) => ChatInterestJopsModel.fromSnapshot(s));
-
-  static Future<ChatInterestJopsModel> getDocumentOnce(DocumentReference ref) =>
-      ref.get().then((s) => ChatInterestJopsModel.fromSnapshot(s));
-
-  static ChatInterestJopsModel fromSnapshot(DocumentSnapshot snapshot) =>
-      ChatInterestJopsModel._(
-        snapshot.reference,
-        mapFromFirestore(snapshot.data() as Map<String, dynamic>),
+  @override
+  int get hashCode => Object.hash(
+        categoryA,
+        categoryB,
+        categoryC,
+        timeStamp,
       );
 
-  static ChatInterestJopsModel getDocumentFromData(
-    Map<String, dynamic> data,
-    DocumentReference reference,
-  ) =>
-      ChatInterestJopsModel._(reference, mapFromFirestore(data));
-
   @override
-  String toString() =>
-      'ChatInterestJopsModel(reference: ${reference.path}, data: $snapshotData)';
-
-  @override
-  int get hashCode => reference.path.hashCode;
-
-  @override
-  bool operator ==(other) =>
-      other is ChatInterestJopsModel &&
-      reference.path.hashCode == other.reference.path.hashCode;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ChatInterestJops &&
+          runtimeType == other.runtimeType &&
+          categoryA == other.categoryA &&
+          categoryB == other.categoryB &&
+          categoryC == other.categoryC &&
+          timeStamp == other.timeStamp;
 }
 
-Map<String, dynamic> createChatInterestJopsModelData({
-  String? categoryA,
-  String? categoryB,
-  String? categoryC,
-  DateTime? timeStamp,
-}) {
-  final firestoreData = mapToFirestore(
-    <String, dynamic>{
-      'categoryA': categoryA,
-      'categoryB': categoryB,
-      'categoryC': categoryC,
-      'timeStamp': timeStamp,
-    }.withoutNulls,
-  );
-
-  return firestoreData;
-}
-
-class ChatInterestJopsModelDocumentEquality
-    implements Equality<ChatInterestJopsModel> {
-  const ChatInterestJopsModelDocumentEquality();
-
-  @override
-  bool equals(ChatInterestJopsModel? e1, ChatInterestJopsModel? e2) {
-    return e1?.categoryA == e2?.categoryA &&
-        e1?.categoryB == e2?.categoryB &&
-        e1?.categoryC == e2?.categoryC &&
-        e1?.timeStamp == e2?.timeStamp;
-  }
-
-  @override
-  int hash(ChatInterestJopsModel? e) => const ListEquality()
-      .hash([e?.categoryA, e?.categoryB, e?.categoryC, e?.timeStamp]);
-
-  @override
-  bool isValidKey(Object? o) => o is ChatInterestJopsModel;
-}
+// Backward compatibility aliases
+@Deprecated('Use ChatInterestJops instead')
+typedef ChatInterestJopsModel = ChatInterestJops;

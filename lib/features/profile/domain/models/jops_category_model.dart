@@ -1,140 +1,80 @@
-import 'dart:async';
-import 'package:collection/collection.dart';
-import '/features/search/data/adapters/algolia_manager.dart';
-import '/core_exports.dart';
+/// JopsCategory pure domain model (Clean Architecture v4.0)
+///
+/// **변경사항** (2025-01-20):
+/// - FirestoreRecord 상속 제거 → 순수 Dart 클래스
+/// - Private 필드 + Getter → Final public 필드
+/// - has*() 메서드 제거 → Null check 직접 사용
+/// - fromSnapshot(), collection 등 Firebase 메서드 제거 → DTO로 이동
+/// - fromAlgolia(), search() 메서드 제거 → Repository로 이동
+/// - createJopsCategoryModelData() 제거 → JopsCategoryDto.toFirestore()로 이동
+/// - JopsCategoryModelDocumentEquality 제거 → == operator 사용
+///
+/// Represents a job category with searchable tags
+class JopsCategory {
+  // ============= Core Fields =============
+  final String jopName;
+  final String categoryRefA;
+  final String categoryRefB;
+  final List<String> searchTags;
 
-class JopsCategoryModel extends FirestoreRecord {
-  JopsCategoryModel._(
-    DocumentReference reference,
-    Map<String, dynamic> data,
-  ) : super(reference, data) {
-    _initializeFields();
+  const JopsCategory({
+    required this.jopName,
+    required this.categoryRefA,
+    required this.categoryRefB,
+    this.searchTags = const [],
+  });
+
+  /// Create a copy of this JopsCategory with updated fields
+  JopsCategory copyWith({
+    String? jopName,
+    String? categoryRefA,
+    String? categoryRefB,
+    List<String>? searchTags,
+  }) {
+    return JopsCategory(
+      jopName: jopName ?? this.jopName,
+      categoryRefA: categoryRefA ?? this.categoryRefA,
+      categoryRefB: categoryRefB ?? this.categoryRefB,
+      searchTags: searchTags ?? this.searchTags,
+    );
   }
 
-  // "jopName" field.
-  String? _jopName;
-  String get jopName => _jopName ?? '';
-  bool hasJopName() => _jopName != null;
+  @override
+  String toString() => 'JopsCategory('
+      'jopName: $jopName, '
+      'categoryRefA: $categoryRefA, '
+      'categoryRefB: $categoryRefB, '
+      'searchTags: ${searchTags.length} tags'
+      ')';
 
-  // "categoryRefA" field.
-  String? _categoryRefA;
-  String get categoryRefA => _categoryRefA ?? '';
-  bool hasCategoryRefA() => _categoryRefA != null;
-
-  // "categoryRefB" field.
-  String? _categoryRefB;
-  String get categoryRefB => _categoryRefB ?? '';
-  bool hasCategoryRefB() => _categoryRefB != null;
-
-  // "searchTags" field.
-  List<String>? _searchTags;
-  List<String> get searchTags => _searchTags ?? const [];
-  bool hasSearchTags() => _searchTags != null;
-
-  void _initializeFields() {
-    _jopName = snapshotData['jopName'] as String?;
-    _categoryRefA = snapshotData['categoryRefA'] as String?;
-    _categoryRefB = snapshotData['categoryRefB'] as String?;
-    _searchTags = getDataList(snapshotData['searchTags']);
-  }
-
-  static CollectionReference get collection =>
-      FirebaseFirestore.instance.collection('jopsCategory');
-
-  static Stream<JopsCategoryModel> getDocument(DocumentReference ref) =>
-      ref.snapshots().map((s) => JopsCategoryModel.fromSnapshot(s));
-
-  static Future<JopsCategoryModel> getDocumentOnce(DocumentReference ref) =>
-      ref.get().then((s) => JopsCategoryModel.fromSnapshot(s));
-
-  static JopsCategoryModel fromSnapshot(DocumentSnapshot snapshot) =>
-      JopsCategoryModel._(
-        snapshot.reference,
-        mapFromFirestore(snapshot.data() as Map<String, dynamic>),
+  @override
+  int get hashCode => Object.hash(
+        jopName,
+        categoryRefA,
+        categoryRefB,
+        Object.hashAll(searchTags),
       );
 
-  static JopsCategoryModel getDocumentFromData(
-    Map<String, dynamic> data,
-    DocumentReference reference,
-  ) =>
-      JopsCategoryModel._(reference, mapFromFirestore(data));
-
-  static JopsCategoryModel fromAlgolia(AlgoliaObjectSnapshot snapshot) =>
-      JopsCategoryModel.getDocumentFromData(
-        {
-          'jopName': snapshot.data['jopName'],
-          'categoryRefA': snapshot.data['categoryRefA'],
-          'categoryRefB': snapshot.data['categoryRefB'],
-          'searchTags': safeGet(
-            () => snapshot.data['searchTags'].toList(),
-          ),
-        },
-        JopsCategoryModel.collection.doc(snapshot.objectID),
-      );
-
-  static Future<List<JopsCategoryModel>> search({
-    String? term,
-    FutureOr<LatLng>? location,
-    int? maxResults,
-    double? searchRadiusMeters,
-    bool useCache = false,
-  }) =>
-      AppAlgoliaManager.instance
-          .algoliaQuery(
-            index: 'jopsCategory',
-            term: term,
-            maxResults: maxResults,
-            location: location,
-            searchRadiusMeters: searchRadiusMeters,
-            useCache: useCache,
-          )
-          .then((r) => r.map(fromAlgolia).toList());
-
   @override
-  String toString() =>
-      'JopsCategoryModel(reference: ${reference.path}, data: $snapshotData)';
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is JopsCategory &&
+          runtimeType == other.runtimeType &&
+          jopName == other.jopName &&
+          categoryRefA == other.categoryRefA &&
+          categoryRefB == other.categoryRefB &&
+          _listEquals(searchTags, other.searchTags);
 
-  @override
-  int get hashCode => reference.path.hashCode;
-
-  @override
-  bool operator ==(other) =>
-      other is JopsCategoryModel &&
-      reference.path.hashCode == other.reference.path.hashCode;
-}
-
-Map<String, dynamic> createJopsCategoryModelData({
-  String? jopName,
-  String? categoryRefA,
-  String? categoryRefB,
-}) {
-  final firestoreData = mapToFirestore(
-    <String, dynamic>{
-      'jopName': jopName,
-      'categoryRefA': categoryRefA,
-      'categoryRefB': categoryRefB,
-    }.withoutNulls,
-  );
-
-  return firestoreData;
-}
-
-class JopsCategoryModelDocumentEquality implements Equality<JopsCategoryModel> {
-  const JopsCategoryModelDocumentEquality();
-
-  @override
-  bool equals(JopsCategoryModel? e1, JopsCategoryModel? e2) {
-    const listEquality = ListEquality();
-    return e1?.jopName == e2?.jopName &&
-        e1?.categoryRefA == e2?.categoryRefA &&
-        e1?.categoryRefB == e2?.categoryRefB &&
-        listEquality.equals(e1?.searchTags, e2?.searchTags);
+  // Helper method for list equality comparison
+  static bool _listEquals(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
-
-  @override
-  int hash(JopsCategoryModel? e) => const ListEquality()
-      .hash([e?.jopName, e?.categoryRefA, e?.categoryRefB, e?.searchTags]);
-
-  @override
-  bool isValidKey(Object? o) => o is JopsCategoryModel;
 }
+
+// Backward compatibility aliases
+@Deprecated('Use JopsCategory instead')
+typedef JopsCategoryModel = JopsCategory;

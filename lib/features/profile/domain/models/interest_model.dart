@@ -1,106 +1,79 @@
-import 'dart:async';
-import 'package:collection/collection.dart';
-import '/core_exports.dart';
+/// Interest pure domain model (Clean Architecture v4.0)
+///
+/// **변경사항** (2025-01-20):
+/// - FirestoreRecord 상속 제거 → 순수 Dart 클래스
+/// - Private 필드 + Getter → Final public 필드
+/// - has*() 메서드 제거 → Null check 직접 사용
+/// - fromSnapshot(), collection 등 Firebase 메서드 제거 → DTO로 이동
+/// - createInterestModelData() 제거 → InterestDto.toFirestore()로 이동
+/// - InterestModelDocumentEquality 제거 → == operator 사용
+///
+/// Represents an interest category that users can select
+class Interest {
+  // ============= Core Fields =============
+  final String interestId;
+  final String nameInterest;
+  final List<String> userIds;
+  final List<String> subCategories;
 
-class InterestModel extends FirestoreRecord {
-  InterestModel._(
-    DocumentReference reference,
-    Map<String, dynamic> data,
-  ) : super(reference, data) {
-    _initializeFields();
+  const Interest({
+    required this.interestId,
+    required this.nameInterest,
+    this.userIds = const [],
+    this.subCategories = const [],
+  });
+
+  /// Create a copy of this Interest with updated fields
+  Interest copyWith({
+    String? interestId,
+    String? nameInterest,
+    List<String>? userIds,
+    List<String>? subCategories,
+  }) {
+    return Interest(
+      interestId: interestId ?? this.interestId,
+      nameInterest: nameInterest ?? this.nameInterest,
+      userIds: userIds ?? this.userIds,
+      subCategories: subCategories ?? this.subCategories,
+    );
   }
 
-  // "interestId" field.
-  String? _interestId;
-  String get interestId => _interestId ?? '';
-  bool hasInterestId() => _interestId != null;
+  @override
+  String toString() => 'Interest('
+      'interestId: $interestId, '
+      'nameInterest: $nameInterest, '
+      'userIds: ${userIds.length} users, '
+      'subCategories: ${subCategories.length} items'
+      ')';
 
-  // "nameInterest" field.
-  String? _nameInterest;
-  String get nameInterest => _nameInterest ?? '';
-  bool hasNameInterest() => _nameInterest != null;
-
-  // "userIds" field.
-  List<String>? _userIds;
-  List<String> get userIds => _userIds ?? const [];
-  bool hasUserIds() => _userIds != null;
-
-  // "subCategories" field.
-  List<String>? _subCategories;
-  List<String> get subCategories => _subCategories ?? const [];
-  bool hasSubCategories() => _subCategories != null;
-
-  void _initializeFields() {
-    _interestId = snapshotData['interestId'] as String?;
-    _nameInterest = snapshotData['nameInterest'] as String?;
-    _userIds = getDataList(snapshotData['userIds']);
-    _subCategories = getDataList(snapshotData['subCategories']);
-  }
-
-  static CollectionReference get collection =>
-      FirebaseFirestore.instance.collection('interest');
-
-  static Stream<InterestModel> getDocument(DocumentReference ref) =>
-      ref.snapshots().map((s) => InterestModel.fromSnapshot(s));
-
-  static Future<InterestModel> getDocumentOnce(DocumentReference ref) =>
-      ref.get().then((s) => InterestModel.fromSnapshot(s));
-
-  static InterestModel fromSnapshot(DocumentSnapshot snapshot) =>
-      InterestModel._(
-        snapshot.reference,
-        mapFromFirestore(snapshot.data() as Map<String, dynamic>),
+  @override
+  int get hashCode => Object.hash(
+        interestId,
+        nameInterest,
+        Object.hashAll(userIds),
+        Object.hashAll(subCategories),
       );
 
-  static InterestModel getDocumentFromData(
-    Map<String, dynamic> data,
-    DocumentReference reference,
-  ) =>
-      InterestModel._(reference, mapFromFirestore(data));
-
   @override
-  String toString() =>
-      'InterestModel(reference: ${reference.path}, data: $snapshotData)';
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Interest &&
+          runtimeType == other.runtimeType &&
+          interestId == other.interestId &&
+          nameInterest == other.nameInterest &&
+          _listEquals(userIds, other.userIds) &&
+          _listEquals(subCategories, other.subCategories);
 
-  @override
-  int get hashCode => reference.path.hashCode;
-
-  @override
-  bool operator ==(other) =>
-      other is InterestModel &&
-      reference.path.hashCode == other.reference.path.hashCode;
-}
-
-Map<String, dynamic> createInterestModelData({
-  String? interestId,
-  String? nameInterest,
-}) {
-  final firestoreData = mapToFirestore(
-    <String, dynamic>{
-      'interestId': interestId,
-      'nameInterest': nameInterest,
-    }.withoutNulls,
-  );
-
-  return firestoreData;
-}
-
-class InterestModelDocumentEquality implements Equality<InterestModel> {
-  const InterestModelDocumentEquality();
-
-  @override
-  bool equals(InterestModel? e1, InterestModel? e2) {
-    const listEquality = ListEquality();
-    return e1?.interestId == e2?.interestId &&
-        e1?.nameInterest == e2?.nameInterest &&
-        listEquality.equals(e1?.userIds, e2?.userIds) &&
-        listEquality.equals(e1?.subCategories, e2?.subCategories);
+  // Helper method for list equality comparison
+  static bool _listEquals(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
-
-  @override
-  int hash(InterestModel? e) => const ListEquality()
-      .hash([e?.interestId, e?.nameInterest, e?.userIds, e?.subCategories]);
-
-  @override
-  bool isValidKey(Object? o) => o is InterestModel;
 }
+
+// Backward compatibility aliases
+@Deprecated('Use Interest instead')
+typedef InterestModel = Interest;

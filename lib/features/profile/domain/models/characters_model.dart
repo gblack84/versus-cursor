@@ -1,91 +1,53 @@
-import 'dart:async';
-import 'package:collection/collection.dart';
-import '/core_exports.dart';
+/// Characters pure domain model (Clean Architecture v4.0)
+///
+/// **변경사항** (2025-01-20):
+/// - FirestoreRecord 상속 제거 → 순수 Dart 클래스
+/// - Private 필드 + Getter → Final public 필드
+/// - has*() 메서드 제거 → Null check 직접 사용
+/// - fromSnapshot(), collection 등 Firebase 메서드 제거 → DTO로 이동
+/// - createCharactersModelData() 제거 → CharactersDto.toFirestore()로 이동
+/// - CharactersModelDocumentEquality 제거 → == operator 사용
+///
+/// Represents a character/avatar that users can select for their profile
+class Characters {
+  // ============= Core Fields =============
+  final String charactersName;
+  final String charactersImageUrl;
 
-class CharactersModel extends FirestoreRecord {
-  CharactersModel._(
-    DocumentReference reference,
-    Map<String, dynamic> data,
-  ) : super(reference, data) {
-    _initializeFields();
-  }
+  const Characters({
+    required this.charactersName,
+    required this.charactersImageUrl,
+  });
 
-  // "CharactersName" field.
-  String? _charactersName;
-  String get charactersName => _charactersName ?? '';
-  bool hasCharactersName() => _charactersName != null;
-
-  // "CharactersImageUrl" field.
-  String? _charactersImageUrl;
-  String get charactersImageUrl => _charactersImageUrl ?? '';
-  bool hasCharactersImageUrl() => _charactersImageUrl != null;
-
-  void _initializeFields() {
-    _charactersName = snapshotData['CharactersName'] as String?;
-    _charactersImageUrl = snapshotData['CharactersImageUrl'] as String?;
-  }
-
-  static CollectionReference get collection =>
-      FirebaseFirestore.instance.collection('characters');
-
-  static Stream<CharactersModel> getDocument(DocumentReference ref) =>
-      ref.snapshots().map((s) => CharactersModel.fromSnapshot(s));
-
-  static Future<CharactersModel> getDocumentOnce(DocumentReference ref) =>
-      ref.get().then((s) => CharactersModel.fromSnapshot(s));
-
-  static CharactersModel fromSnapshot(DocumentSnapshot snapshot) =>
-      CharactersModel._(
-        snapshot.reference,
-        mapFromFirestore(snapshot.data() as Map<String, dynamic>),
-      );
-
-  static CharactersModel getDocumentFromData(
-    Map<String, dynamic> data,
-    DocumentReference reference,
-  ) =>
-      CharactersModel._(reference, mapFromFirestore(data));
-
-  @override
-  String toString() =>
-      'CharactersModel(reference: ${reference.path}, data: $snapshotData)';
-
-  @override
-  int get hashCode => reference.path.hashCode;
-
-  @override
-  bool operator ==(other) =>
-      other is CharactersModel &&
-      reference.path.hashCode == other.reference.path.hashCode;
-}
-
-Map<String, dynamic> createCharactersModelData({
-  String? charactersName,
-  String? charactersImageUrl,
-}) {
-  final firestoreData = mapToFirestore(
-    <String, dynamic>{
-      'CharactersName': charactersName,
-      'CharactersImageUrl': charactersImageUrl,
-    }.withoutNulls,
-  );
-
-  return firestoreData;
-}
-
-class CharactersModelDocumentEquality implements Equality<CharactersModel> {
-  const CharactersModelDocumentEquality();
-
-  @override
-  bool equals(CharactersModel? e1, CharactersModel? e2) {
-    return e1?.charactersName == e2?.charactersName &&
-        e1?.charactersImageUrl == e2?.charactersImageUrl;
+  /// Create a copy of this Characters with updated fields
+  Characters copyWith({
+    String? charactersName,
+    String? charactersImageUrl,
+  }) {
+    return Characters(
+      charactersName: charactersName ?? this.charactersName,
+      charactersImageUrl: charactersImageUrl ?? this.charactersImageUrl,
+    );
   }
 
   @override
-  int hash(CharactersModel? e) =>
-      const ListEquality().hash([e?.charactersName, e?.charactersImageUrl]);
+  String toString() => 'Characters('
+      'charactersName: $charactersName, '
+      'charactersImageUrl: $charactersImageUrl'
+      ')';
 
   @override
-  bool isValidKey(Object? o) => o is CharactersModel;
+  int get hashCode => Object.hash(charactersName, charactersImageUrl);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Characters &&
+          runtimeType == other.runtimeType &&
+          charactersName == other.charactersName &&
+          charactersImageUrl == other.charactersImageUrl;
 }
+
+// Backward compatibility aliases
+@Deprecated('Use Characters instead')
+typedef CharactersModel = Characters;

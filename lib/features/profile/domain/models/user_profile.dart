@@ -1,10 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
-
 import 'package:collection/collection.dart';
-
-import '../../../../core/firebase/utils/firestore_util.dart';
-import '../../../../core/firebase/utils/schema_util.dart';
 import '../../../../core_exports.dart';
 
 /// UserProfile domain model for the profile feature
@@ -293,6 +288,8 @@ Map<String, dynamic> createUserProfileData({
   int? pointsA,
   int? pointsQ,
   DateTime? lastActive,
+  List<String>? interests,
+  List<String>? expertise,
   String? displayName,
   DateTime? createdTime,
   String? photoUrl,
@@ -329,6 +326,8 @@ Map<String, dynamic> createUserProfileData({
       'pointsA': pointsA,
       'pointsQ': pointsQ,
       'lastActive': lastActive,
+      'interests': interests,
+      'expertise': expertise,
       'displayName': displayName,
       'createdTime': createdTime,
       'photoUrl': photoUrl,
@@ -471,6 +470,8 @@ Map<String, dynamic> createUsersModelData({
   int? pointsA,
   int? pointsQ,
   DateTime? lastActive,
+  List<String>? interests,
+  List<String>? expertise,
   String? displayName,
   DateTime? createdTime,
   String? photoUrl,
@@ -506,6 +507,8 @@ Map<String, dynamic> createUsersModelData({
       pointsA: pointsA,
       pointsQ: pointsQ,
       lastActive: lastActive,
+      interests: interests,
+      expertise: expertise,
       displayName: displayName,
       createdTime: createdTime,
       photoUrl: photoUrl,

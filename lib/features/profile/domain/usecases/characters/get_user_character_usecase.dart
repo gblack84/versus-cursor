@@ -24,9 +24,14 @@ class GetUserCharacterUseCase {
   /// - `Left(CharacterNotFoundFailure)`: 캐릭터 미설정
   /// - `Left(FirestoreReadFailure)`: Firestore 읽기 실패
   /// - `Right(Character)`: 캐릭터 정보
-  Future<Either<ProfileFailure, Character>> execute({
-    required String userId,
-  }) async {
-    return await _repository.getUserCharacter(userId);
+  Future<Either<ProfileFailure, Character>> execute(String userId) async {
+    final result = await _repository.getUserCharacter(userId);
+
+    return result.fold(
+      (failure) => Left(failure),
+      (character) => character != null
+          ? Right(character)
+          : Left(ProfileNotFoundFailure(userId: userId)),
+    );
   }
 }

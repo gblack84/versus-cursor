@@ -24,10 +24,10 @@ class SendFriendRequestUseCase {
   /// - `Left(AlreadyFriendsFailure)`: 이미 친구 관계
   /// - `Left(FirestoreWriteFailure)`: Firestore 쓰기 실패
   /// - `Right(void)`: 요청 전송 성공
-  Future<Either<ProfileFailure, void>> execute({
-    required String userId,
-    required String targetUserId,
-  }) async {
+  Future<Either<ProfileFailure, void>> execute(
+    String userId,
+    String targetUserId,
+  ) async {
     // 자기 자신에게 요청 방지
     if (userId == targetUserId) {
       return Left(ValidationFailure(
@@ -35,9 +35,11 @@ class SendFriendRequestUseCase {
       ));
     }
 
-    return await _repository.sendFriendRequest(
-      userId: userId,
-      targetUserId: targetUserId,
-    );
+    try {
+      await _repository.sendFriendRequest(userId, targetUserId);
+      return const Right(null);
+    } catch (e) {
+      return Left(UnknownProfileFailure(message: e.toString()));
+    }
   }
 }

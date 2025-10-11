@@ -24,9 +24,7 @@ class GetUserSettingsUseCase {
   /// **Returns**:
   /// - `Right(UserSettings)`: 조회 성공
   /// - `Left(ProfileFailure)`: 조회 실패
-  Future<Either<ProfileFailure, UserSettings>> execute({
-    required String userId,
-  }) async {
+  Future<Either<ProfileFailure, UserSettings>> execute(String userId) async {
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {

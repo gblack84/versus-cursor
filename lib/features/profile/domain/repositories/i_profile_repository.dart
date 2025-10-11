@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/profile_info.dart';
 import '../models/user_settings.dart';
 import '../models/user_stats.dart';
+import '../models/interest_model.dart';
 
 /// Repository interface for profile operations
 /// Extends IUserRepository functionality with profile-specific operations
@@ -50,6 +51,12 @@ abstract class IProfileRepository {
 
   /// Get profile completion percentage
   Future<double> getProfileCompletionPercentage(String userId);
+
+  /// Get user interests
+  Future<List<InterestModel>> getUserInterests(String userId);
+
+  /// Get profile completion status
+  Future<Map<String, dynamic>> getProfileCompletion(String userId);
 
   /// Search profiles by criteria
   Future<List<ProfileInfo>> searchProfiles({

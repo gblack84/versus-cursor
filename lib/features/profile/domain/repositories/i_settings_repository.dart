@@ -17,4 +17,13 @@ abstract class ISettingsRepository {
 
   /// 사용자 설정 실시간 감시
   Stream<UserSettings> watchUserSettings(String userId);
+
+  /// 알림 설정 조회
+  Future<Either<ProfileFailure, Map<String, dynamic>>> getNotificationSettings(String userId);
+
+  /// 알림 설정 업데이트
+  Future<Either<ProfileFailure, void>> updateNotificationSettings(
+    String userId,
+    Map<String, dynamic> settings,
+  );
 }

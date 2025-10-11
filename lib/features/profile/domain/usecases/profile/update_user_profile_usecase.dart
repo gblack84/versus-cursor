@@ -24,9 +24,7 @@ class UpdateUserProfileUseCase {
   /// **Returns**:
   /// - `Right(void)`: 업데이트 성공
   /// - `Left(ProfileFailure)`: 업데이트 실패
-  Future<Either<ProfileFailure, void>> execute({
-    required UserProfile profile,
-  }) async {
+  Future<Either<ProfileFailure, void>> execute(UserProfile profile) async {
     try {
       // 1. 프로필 검증
       if (profile.uid.isEmpty) {
@@ -37,7 +35,7 @@ class UpdateUserProfileUseCase {
       }
 
       // 2. Repository 호출
-      await _repository.updateUser(profile);
+      await _repository.updateUserProfile(profile);
 
       return const Right(null);
     } on FirebaseException catch (e) {

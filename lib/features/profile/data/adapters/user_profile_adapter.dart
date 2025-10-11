@@ -22,12 +22,12 @@ class UserProfileAdapter {
       uid: legacy.uid,
       email: legacy.email,
       displayName: legacy.displayName,
-      photoURL: legacy.photoUrl,
+      photoUrl: legacy.photoUrl,
       phoneNumber: legacy.phoneNumber,
       isEmailVerified: false, // Not available in UserProfile
       isAnonymous: false, // Not available in UserProfile
-      createdTime: legacy.createdTime,
-      lastActive: legacy.lastActive,
+      createdAt: legacy.createdTime,
+      lastLoginAt: legacy.lastActive,
     );
 
     // Convert to ProfileInfo (display data)
@@ -115,10 +115,10 @@ class UserProfileAdapter {
       'uid': auth.uid,
       'email': auth.email,
       'displayName': auth.displayName ?? profile.displayName,
-      'photoUrl': auth.photoURL ?? profile.photoUrl,
+      'photoUrl': auth.photoUrl ?? profile.photoUrl,
       'phoneNumber': auth.phoneNumber,
-      'createdTime': auth.createdTime,
-      'lastActive': auth.lastActive,
+      'createdTime': auth.createdAt,
+      'lastActive': auth.lastLoginAt,
 
       // Profile Information (from ProfileInfo)
       'shortDescription': profile.shortDescription,

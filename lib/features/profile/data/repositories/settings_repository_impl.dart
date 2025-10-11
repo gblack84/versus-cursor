@@ -63,4 +63,50 @@ class SettingsRepositoryImpl implements ISettingsRepository {
       return UserSettings.fromMap(data, userId);
     });
   }
+
+  @override
+  Future<Either<ProfileFailure, Map<String, dynamic>>> getNotificationSettings(
+      String userId) async {
+    try {
+      final data = await _dataSource.getSettings(userId);
+      if (data == null) {
+        return Left(ProfileNotFoundFailure(userId: userId));
+      }
+
+      // 알림 관련 설정만 추출
+      final notificationSettings = <String, dynamic>{
+        'receiveVoteNotifications':
+            data['receiveVoteNotifications'] as bool? ?? true,
+        'receiveCommentNotifications':
+            data['receiveCommentNotifications'] as bool? ?? true,
+        'receiveFriendNotifications':
+            data['receiveFriendNotifications'] as bool? ?? true,
+        'receiveRankUpdateNotifications':
+            data['receiveRankUpdateNotifications'] as bool? ?? true,
+        'receiveTitleUpdateNotifications':
+            data['receiveTitleUpdateNotifications'] as bool? ?? true,
+      };
+
+      return Right(notificationSettings);
+    } catch (e) {
+      return Left(FirestoreReadFailure(
+        message: 'Failed to get notification settings: $e',
+      ));
+    }
+  }
+
+  @override
+  Future<Either<ProfileFailure, void>> updateNotificationSettings(
+    String userId,
+    Map<String, dynamic> settings,
+  ) async {
+    try {
+      await _dataSource.updateSettings(userId, settings);
+      return const Right(null);
+    } catch (e) {
+      return Left(FirestoreWriteFailure(
+        message: 'Failed to update notification settings: $e',
+      ));
+    }
+  }
 }

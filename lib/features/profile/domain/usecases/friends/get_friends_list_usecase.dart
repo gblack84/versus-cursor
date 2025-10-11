@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import '../../repositories/i_user_repository.dart';
-import '../../models/friends_list_model.dart';
+import '../../models/user_profile.dart';
 import '../../failures/profile_failures.dart';
 
 /// 친구 목록 조회 UseCase
@@ -22,11 +22,11 @@ class GetFriendsListUseCase {
   /// - `userId`: 조회할 사용자 ID
   ///
   /// **Returns**:
-  /// - `Right(List<FriendsListModel>)`: 조회 성공
+  /// - `Right(List<UserProfile>)`: 조회 성공
   /// - `Left(ProfileFailure)`: 조회 실패
-  Future<Either<ProfileFailure, List<FriendsListModel>>> execute({
-    required String userId,
-  }) async {
+  Future<Either<ProfileFailure, List<UserProfile>>> execute(
+    String userId,
+  ) async {
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {

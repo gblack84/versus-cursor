@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '../../repositories/i_profile_repository.dart';
-import '../../models/user_profile.dart';
+import '../../models/profile_info.dart';
 import '../../failures/profile_failures.dart';
 
 /// 추천 프로필 조회 UseCase
@@ -23,14 +23,16 @@ class GetSuggestedProfilesUseCase {
   /// **Returns**:
   /// - `Left(ProfileNotFoundFailure)`: 사용자가 존재하지 않음
   /// - `Left(FirestoreReadFailure)`: Firestore 읽기 실패
-  /// - `Right(List<UserProfile>)`: 추천 프로필 목록
-  Future<Either<ProfileFailure, List<UserProfile>>> execute({
-    required String userId,
+  /// - `Right(List<ProfileInfo>)`: 추천 프로필 목록
+  Future<Either<ProfileFailure, List<ProfileInfo>>> execute(
+    String userId, {
     int limit = 10,
   }) async {
-    return await _repository.getSuggestedProfiles(
-      userId: userId,
-      limit: limit,
-    );
+    try {
+      final result = await _repository.getSuggestedProfiles(userId, limit: limit);
+      return Right(result);
+    } catch (e) {
+      return Left(UnknownProfileFailure(message: e.toString()));
+    }
   }
 }

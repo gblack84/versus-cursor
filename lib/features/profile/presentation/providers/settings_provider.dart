@@ -34,7 +34,7 @@ class SettingsProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    final result = await _getSettingsUseCase.execute(userId: userId);
+    final result = await _getSettingsUseCase.execute(userId);
 
     result.fold(
       (failure) {
@@ -58,16 +58,16 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
 
     final result = await _updateSettingsUseCase.execute(
-      userId: userId,
-      settings: newSettings,
+      userId,
+      newSettings.toFirestore(),
     );
 
     result.fold(
       (failure) {
         _errorMessage = failure.getUserMessage();
       },
-      (settings) {
-        _settings = settings;
+      (_) {
+        _settings = newSettings;
         _errorMessage = null;
       },
     );

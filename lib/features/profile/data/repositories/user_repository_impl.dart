@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/core/firebase/utils/firestore_util.dart'
     show queryCollection, queryCollectionOnce, queryCollectionCount;
+import '/core/utils/app_utils.dart';
 import '../../domain/models/user_profile.dart';
 import '../../domain/models/profile_info.dart';
 import '../../domain/models/user_settings.dart';
@@ -44,11 +45,26 @@ class UserRepositoryImpl implements IUserRepository {
   }
 
   @override
+  Future<UserProfile?> getUser(String userId) => getUserByUid(userId);
+
+  @override
   Stream<UserProfile?> getUserStreamByUid(String uid) {
     return usersCollection
         .doc(uid)
         .snapshots()
         .map((doc) => doc.exists ? UserProfile.fromSnapshot(doc) : null);
+  }
+
+  @override
+  Stream<List<UserProfile>> queryFriendsList() {
+    // TODO: Implement proper friends list query
+    // For now, return empty stream
+    return Stream.value([]);
+  }
+
+  @override
+  Future<void> updateUserSettings(String userId, Map<String, dynamic> settings) {
+    return updateUser(userId, settings);
   }
 
   @override

@@ -1,6 +1,5 @@
 import 'package:dartz/dartz.dart';
 import '../../repositories/i_characters_repository.dart';
-import '../../models/character.dart';
 import '../../failures/profile_failures.dart';
 
 /// 사용자 캐릭터 설정 UseCase
@@ -24,14 +23,11 @@ class SetUserCharacterUseCase {
   /// - `Left(ProfileNotFoundFailure)`: 사용자가 존재하지 않음
   /// - `Left(CharacterNotFoundFailure)`: 캐릭터가 존재하지 않음
   /// - `Left(FirestoreWriteFailure)`: Firestore 쓰기 실패
-  /// - `Right(Character)`: 설정된 캐릭터 정보
-  Future<Either<ProfileFailure, Character>> execute({
-    required String userId,
-    required String characterId,
-  }) async {
-    return await _repository.setUserCharacter(
-      userId: userId,
-      characterId: characterId,
-    );
+  /// - `Right(void)`: 설정 완료
+  Future<Either<ProfileFailure, void>> execute(
+    String userId,
+    String characterId,
+  ) async {
+    return await _repository.setUserCharacter(userId, characterId);
   }
 }

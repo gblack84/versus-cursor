@@ -23,10 +23,10 @@ class BlockUserUseCase {
   /// - `Left(ValidationFailure)`: 자기 자신 차단 시도
   /// - `Left(FirestoreWriteFailure)`: Firestore 쓰기 실패
   /// - `Right(void)`: 차단 성공
-  Future<Either<ProfileFailure, void>> execute({
-    required String userId,
-    required String targetUserId,
-  }) async {
+  Future<Either<ProfileFailure, void>> execute(
+    String userId,
+    String targetUserId,
+  ) async {
     // 자기 자신 차단 방지
     if (userId == targetUserId) {
       return Left(ValidationFailure(
@@ -34,9 +34,11 @@ class BlockUserUseCase {
       ));
     }
 
-    return await _repository.blockUser(
-      userId: userId,
-      targetUserId: targetUserId,
-    );
+    try {
+      await _repository.blockUser(userId, targetUserId);
+      return const Right(null);
+    } catch (e) {
+      return Left(UnknownProfileFailure(message: e.toString()));
+    }
   }
 }

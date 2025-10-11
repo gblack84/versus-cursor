@@ -9,8 +9,3 @@ export '../../domain/models/interest_model.dart';
 export '../../domain/models/jops_name_model.dart';
 export '../../domain/models/jops_category_model.dart';
 export '../../domain/models/chat_interest_jops_model.dart';
-// Data Models (moved from backend)
-export '../models/point_model.dart';
-export '../models/transactions_model.dart';
-export '../models/settings_model.dart';
-export '../models/contents_interests_model.dart';

@@ -15,6 +15,7 @@ import '../../domain/models/user_profile.dart';
 /// - UseCase를 통한 친구 관계 처리
 class FriendsProvider extends ChangeNotifier {
   final GetFriendsListUseCase _getFriendsListUseCase;
+  // ignore: unused_field - 향후 직접 친구 추가 기능에 사용 예정
   final AddFriendUseCase _addFriendUseCase;
   final RemoveFriendUseCase _removeFriendUseCase;
   final SendFriendRequestUseCase _sendFriendRequestUseCase;
@@ -50,7 +51,7 @@ class FriendsProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    final result = await _getFriendsListUseCase.execute(userId: userId);
+    final result = await _getFriendsListUseCase.execute(userId);
 
     result.fold(
       (failure) {
@@ -74,8 +75,8 @@ class FriendsProvider extends ChangeNotifier {
     notifyListeners();
 
     final result = await _sendFriendRequestUseCase.execute(
-      userId: userId,
-      targetUserId: targetUserId,
+      userId,
+      targetUserId,
     );
 
     bool success = false;
@@ -101,8 +102,8 @@ class FriendsProvider extends ChangeNotifier {
     notifyListeners();
 
     final result = await _acceptFriendRequestUseCase.execute(
-      userId: userId,
-      requesterId: requesterId,
+      userId,
+      requesterId,
     );
 
     bool success = false;
@@ -130,8 +131,8 @@ class FriendsProvider extends ChangeNotifier {
     notifyListeners();
 
     final result = await _rejectFriendRequestUseCase.execute(
-      userId: userId,
-      requesterId: requesterId,
+      userId,
+      requesterId,
     );
 
     bool success = false;

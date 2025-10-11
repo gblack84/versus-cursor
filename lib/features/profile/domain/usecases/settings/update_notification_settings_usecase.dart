@@ -1,6 +1,5 @@
 import 'package:dartz/dartz.dart';
 import '../../repositories/i_settings_repository.dart';
-import '../../models/user_settings.dart';
 import '../../failures/profile_failures.dart';
 
 /// 알림 설정 업데이트 UseCase
@@ -23,14 +22,11 @@ class UpdateNotificationSettingsUseCase {
   /// **Returns**:
   /// - `Left(ProfileNotFoundFailure)`: 사용자가 존재하지 않음
   /// - `Left(FirestoreWriteFailure)`: Firestore 쓰기 실패
-  /// - `Right(UserSettings)`: 업데이트된 설정 정보
-  Future<Either<ProfileFailure, UserSettings>> execute({
-    required String userId,
-    required UserSettings settings,
-  }) async {
-    return await _repository.updateNotificationSettings(
-      userId: userId,
-      settings: settings,
-    );
+  /// - `Right(void)`: 업데이트 성공
+  Future<Either<ProfileFailure, void>> execute(
+    String userId,
+    Map<String, dynamic> settings,
+  ) async {
+    return await _repository.updateNotificationSettings(userId, settings);
   }
 }

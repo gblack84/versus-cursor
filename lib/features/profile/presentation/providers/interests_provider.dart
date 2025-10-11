@@ -47,7 +47,7 @@ class InterestsProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    final result = await _getUserInterestsUseCase.execute(userId: userId);
+    final result = await _getUserInterestsUseCase.execute(userId);
 
     result.fold(
       (failure) {
@@ -97,9 +97,20 @@ class InterestsProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
+    // Interest를 expertise/hobbies로 분리
+    final expertise = _interests
+        .where((i) => i.category == 'expertise')
+        .map((i) => i.name)
+        .toList();
+    final hobbies = _interests
+        .where((i) => i.category == 'hobby')
+        .map((i) => i.name)
+        .toList();
+
     final result = await _updateUserInterestsUseCase.execute(
       userId: userId,
-      interests: _interests,
+      expertise: expertise,
+      hobbies: hobbies,
     );
 
     bool success = false;

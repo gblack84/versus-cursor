@@ -3,6 +3,7 @@ import '../../domain/repositories/i_profile_repository.dart';
 import '../../domain/models/profile_info.dart';
 import '../../domain/models/user_settings.dart';
 import '../../domain/models/user_stats.dart';
+import '../../domain/models/interest_model.dart';
 import '../datasources/interfaces/i_profile_datasource.dart';
 import '../datasources/interfaces/i_storage_datasource.dart';
 
@@ -251,6 +252,40 @@ class ProfileRepositoryImpl implements IProfileRepository {
   @override
   Future<double> getProfileCompletionPercentage(String userId) async {
     return await _dataSource.getProfileCompletionPercentage(userId);
+  }
+
+  @override
+  Future<Map<String, dynamic>> getProfileCompletion(String userId) async {
+    // 프로필 완성도 상세 정보 반환
+    try {
+      final data = await _dataSource.getProfile(userId);
+      if (data == null) return {};
+
+      final completion = <String, dynamic>{};
+      completion['percentage'] = await getProfileCompletionPercentage(userId);
+      completion['missingFields'] = <String>[];
+
+      if (data['displayName'] == null || (data['displayName'] as String).isEmpty) {
+        (completion['missingFields'] as List<String>).add('displayName');
+      }
+      if (data['photoUrl'] == null || (data['photoUrl'] as String).isEmpty) {
+        (completion['missingFields'] as List<String>).add('photoUrl');
+      }
+      if (data['dateOfBirth'] == null) {
+        (completion['missingFields'] as List<String>).add('dateOfBirth');
+      }
+
+      return completion;
+    } catch (e) {
+      return {};
+    }
+  }
+
+  @override
+  Future<List<InterestModel>> getUserInterests(String userId) async {
+    // @Deprecated - IInterestsRepository 사용 권장
+    // InterestModel은 Firestore 레코드이므로 여기서는 빈 리스트 반환
+    return [];
   }
 
   // ============= 검색 및 추천 =============

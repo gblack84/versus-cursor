@@ -40,7 +40,7 @@ class CharactersProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    final result = await _getUserCharacterUseCase.execute(userId: userId);
+    final result = await _getUserCharacterUseCase.execute(userId);
 
     result.fold(
       (failure) {
@@ -64,16 +64,17 @@ class CharactersProvider extends ChangeNotifier {
     notifyListeners();
 
     final result = await _setUserCharacterUseCase.execute(
-      userId: userId,
-      characterId: characterId,
+      userId,
+      characterId,
     );
 
     result.fold(
       (failure) {
         _errorMessage = failure.getUserMessage();
       },
-      (character) {
-        _currentCharacter = character;
+      (_) {
+        // Character 설정 성공 - 다시 로드
+        loadUserCharacter(userId);
         _errorMessage = null;
       },
     );

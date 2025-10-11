@@ -1,5 +1,5 @@
 import '/features/auth/data/adapters/auth_util.dart';
-import '/features/profile/presentation/providers/profile_provider.dart';
+import '/features/profile/domain/usecases/interests/update_user_interests_usecase.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
 import 'package:easy_debounce/easy_debounce.dart';
@@ -23,7 +23,7 @@ class HobbiesSelectWidget extends StatefulWidget {
 
 class _HobbiesSelectWidgetState extends State<HobbiesSelectWidget> {
   late HobbiesSelectModel _model;
-  late final ProfileProvider _profileProvider;
+  late final UpdateUserInterestsUseCase _updateInterestsUseCase;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -36,8 +36,8 @@ class _HobbiesSelectWidgetState extends State<HobbiesSelectWidget> {
     _model.hobbiesFocusNode ??= FocusNode();
     _model.hobbiesFocusNode!.addListener(() => setState(() {}));
 
-    // Phase 4.5 하이브리드: ProfileProvider 인스턴스 가져오기
-    _profileProvider = GetIt.instance<ProfileProvider>();
+    // Week 7: Initialize UpdateUserInterestsUseCase from DI
+    _updateInterestsUseCase = GetIt.instance<UpdateUserInterestsUseCase>();
 
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
@@ -472,17 +472,29 @@ We’ll tailor recommendations ... */
                                             },
                                           );
                                         } else {
-                                          // Phase 4.5 하이브리드: ProfileProvider의 addInterestLegacy() 사용
-                                          final success = await _profileProvider.addInterestLegacy(
-                                            currentUserReference!,
-                                            _model.hobbiesTextController.text,
+                                          // Week 7: UpdateUserInterestsUseCase로 전환
+                                          final result = await _updateInterestsUseCase.addInterest(
+                                            userId: currentUserUid,
+                                            interest: _model.hobbiesTextController.text,
+                                            category: 'hobby',
                                           );
 
-                                          if (success) {
-                                            setState(() {
-                                              _model.hobbiesTextController?.clear();
-                                            });
-                                          }
+                                          result.fold(
+                                            (failure) {
+                                              // 실패 처리
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(content: Text(failure.message)),
+                                              );
+                                            },
+                                            (_) {
+                                              // 성공 처리
+                                              setState(() {
+                                                _model.hobbiesTextController?.clear();
+                                              });
+                                              // AppState 갱신
+                                              AppState().update(() {});
+                                            },
+                                          );
                                         }
                                       },
                                 text: AppLocalizations.of(context).getText(
@@ -657,10 +669,23 @@ We’ll tailor recommendations ... */
                                                   size: 15.0,
                                                 ),
                                                 onPressed: () async {
-                                                  // Phase 4.5 하이브리드: ProfileProvider의 removeInterestLegacy() 사용
-                                                  await _profileProvider.removeInterestLegacy(
-                                                    currentUserReference!,
-                                                    authenticatedUserItem,
+                                                  // Week 7: UpdateUserInterestsUseCase로 전환
+                                                  final result = await _updateInterestsUseCase.removeInterest(
+                                                    userId: currentUserUid,
+                                                    interest: authenticatedUserItem,
+                                                    category: 'hobby',
+                                                  );
+
+                                                  result.fold(
+                                                    (failure) {
+                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                        SnackBar(content: Text(failure.message)),
+                                                      );
+                                                    },
+                                                    (_) {
+                                                      // AppState 갱신
+                                                      AppState().update(() {});
+                                                    },
                                                   );
                                                 },
                                               ),

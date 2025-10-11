@@ -22,9 +22,12 @@ class GetProfileCompletionUseCase {
   /// - `Left(ProfileNotFoundFailure)`: 사용자가 존재하지 않음
   /// - `Left(FirestoreReadFailure)`: Firestore 읽기 실패
   /// - `Right(double)`: 완성도 (0.0 ~ 100.0)
-  Future<Either<ProfileFailure, double>> execute({
-    required String userId,
-  }) async {
-    return await _repository.getProfileCompletion(userId);
+  Future<Either<ProfileFailure, double>> execute(String userId) async {
+    try {
+      final percentage = await _repository.getProfileCompletionPercentage(userId);
+      return Right(percentage);
+    } catch (e) {
+      return Left(UnknownProfileFailure(message: e.toString()));
+    }
   }
 }

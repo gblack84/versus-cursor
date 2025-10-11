@@ -5,7 +5,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:get_it/get_it.dart';
 import '/core_exports.dart';
-import '/features/profile/domain/models/user_profile.dart';
 import '/features/profile/presentation/providers/profile_provider.dart';
 import '/features/auth/data/adapters/auth_util.dart';
 import '/features/auth/domain/usecases/sign_out_usecase.dart';
@@ -59,6 +58,12 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
     // Initialize providers from DI
     _userPostsProvider = GetIt.instance<UserPostsProvider>();
     _profileProvider = GetIt.instance<ProfileProvider>();
+
+    // Load profile data
+    final userId = currentUser?.uid;
+    if (userId != null) {
+      _profileProvider.loadProfile(userId);
+    }
   }
 
   @override
@@ -114,11 +119,10 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                   ],
                 ),
               )
-            : StreamBuilder<UserProfile>(
-                // Phase 4.5 하이브리드: ProfileProvider의 watchProfileLegacy() 사용
-                stream: _profileProvider.watchProfileLegacy(currentUserReference!),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
+            : Consumer<ProfileProvider>(
+                builder: (context, provider, child) {
+                  // Loading state
+                  if (provider.isLoading || provider.profile == null) {
                     return Center(
                       child: CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(
@@ -128,7 +132,34 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                     );
                   }
 
-                  final user = snapshot.data!;
+                  // Error state
+                  if (provider.errorMessage != null) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            provider.errorMessage!,
+                            style: VersusTextStyles.bodyMedium.copyWith(
+                              color: VersusColors.error,
+                            ),
+                          ),
+                          VersusSpacing.gapMD,
+                          VersusButton.primary(
+                            text: '다시 시도',
+                            onPressed: () {
+                              final userId = currentUser?.uid;
+                              if (userId != null) {
+                                provider.loadProfile(userId);
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final user = provider.profile!;
 
                   return SingleChildScrollView(
                     padding: VersusSpacing.paddingMD,

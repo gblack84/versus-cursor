@@ -1,13 +1,13 @@
 import 'package:dartz/dartz.dart';
 import '../../repositories/i_friends_repository.dart';
-import '../../models/user_profile.dart';
+import '../../models/profile_info.dart';
 import '../../failures/profile_failures.dart';
 
 /// 친구 검색 UseCase
 ///
 /// **책임**: 친구 목록 내 이름 기반 검색
 /// **의존성**: IFriendsRepository
-/// **반환**: Either<ProfileFailure, List<UserProfile>>
+/// **반환**: Either<ProfileFailure, List<ProfileInfo>>
 class SearchFriendsUseCase {
   final IFriendsRepository _repository;
 
@@ -23,11 +23,11 @@ class SearchFriendsUseCase {
   /// **Returns**:
   /// - `Left(ValidationFailure)`: 검색어가 비어있음
   /// - `Left(FirestoreReadFailure)`: Firestore 읽기 실패
-  /// - `Right(List<UserProfile>)`: 검색 결과
-  Future<Either<ProfileFailure, List<UserProfile>>> execute({
-    required String userId,
-    required String query,
-  }) async {
+  /// - `Right(List<ProfileInfo>)`: 검색 결과
+  Future<Either<ProfileFailure, List<ProfileInfo>>> execute(
+    String userId,
+    String query,
+  ) async {
     // 검색어 검증
     if (query.trim().isEmpty) {
       return Left(ValidationFailure(
@@ -35,9 +35,11 @@ class SearchFriendsUseCase {
       ));
     }
 
-    return await _repository.searchFriends(
-      userId: userId,
-      query: query.trim(),
-    );
+    try {
+      final result = await _repository.searchFriends(userId, query.trim());
+      return Right(result);
+    } catch (e) {
+      return Left(UnknownProfileFailure(message: e.toString()));
+    }
   }
 }

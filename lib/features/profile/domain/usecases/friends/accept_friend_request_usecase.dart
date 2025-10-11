@@ -23,13 +23,15 @@ class AcceptFriendRequestUseCase {
   /// - `Left(RequestNotFoundFailure)`: 요청이 존재하지 않음
   /// - `Left(FirestoreWriteFailure)`: Firestore 쓰기 실패
   /// - `Right(void)`: 수락 성공
-  Future<Either<ProfileFailure, void>> execute({
-    required String userId,
-    required String requesterId,
-  }) async {
-    return await _repository.acceptFriendRequest(
-      userId: userId,
-      requesterId: requesterId,
-    );
+  Future<Either<ProfileFailure, void>> execute(
+    String userId,
+    String requesterId,
+  ) async {
+    try {
+      await _repository.acceptFriendRequest(userId, requesterId);
+      return const Right(null);
+    } catch (e) {
+      return Left(UnknownProfileFailure(message: e.toString()));
+    }
   }
 }

@@ -25,12 +25,11 @@ class ReportUserUseCase {
   /// - `Left(ValidationFailure)`: 자기 자신 신고 시도 또는 사유 누락
   /// - `Left(FirestoreWriteFailure)`: Firestore 쓰기 실패
   /// - `Right(void)`: 신고 성공
-  Future<Either<ProfileFailure, void>> execute({
-    required String userId,
-    required String targetUserId,
-    required String reason,
-    String? description,
-  }) async {
+  Future<Either<ProfileFailure, void>> execute(
+    String userId,
+    String targetUserId,
+    String reason,
+  ) async {
     // 자기 자신 신고 방지
     if (userId == targetUserId) {
       return Left(ValidationFailure(
@@ -45,11 +44,11 @@ class ReportUserUseCase {
       ));
     }
 
-    return await _repository.reportUser(
-      userId: userId,
-      targetUserId: targetUserId,
-      reason: reason,
-      description: description,
-    );
+    try {
+      await _repository.reportUser(userId, targetUserId, reason);
+      return const Right(null);
+    } catch (e) {
+      return Left(UnknownProfileFailure(message: e.toString()));
+    }
   }
 }

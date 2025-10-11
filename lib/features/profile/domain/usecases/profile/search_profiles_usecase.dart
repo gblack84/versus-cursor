@@ -1,6 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import '../../repositories/i_profile_repository.dart';
-import '../../models/user_profile.dart';
+import '../../models/profile_info.dart';
 import '../../failures/profile_failures.dart';
 
 /// 사용자 프로필 복합 검색 UseCase
@@ -28,8 +29,8 @@ class SearchProfilesUseCase {
   /// **Returns**:
   /// - `Left(ValidationFailure)`: 잘못된 파라미터 (lat/lng 범위 초과)
   /// - `Left(FirestoreReadFailure)`: Firestore 쿼리 실패
-  /// - `Right(List<UserProfile>)`: 검색 결과 (거리순 정렬)
-  Future<Either<ProfileFailure, List<UserProfile>>> execute({
+  /// - `Right(List<ProfileInfo>)`: 검색 결과 (거리순 정렬)
+  Future<Either<ProfileFailure, List<ProfileInfo>>> execute({
     required double lat,
     required double lng,
     required double radiusKm,
@@ -45,15 +46,23 @@ class SearchProfilesUseCase {
       ));
     }
 
-    // Repository 검색 메서드 호출
-    return await _repository.searchProfiles(
-      lat: lat,
-      lng: lng,
-      radiusKm: radiusKm,
-      minAge: minAge,
-      maxAge: maxAge,
-      interests: interests,
-      limit: limit,
-    );
+    try {
+      // GeoPoint 생성
+      final userLocation = GeoPoint(lat, lng);
+
+      // Repository 검색 메서드 호출
+      final result = await _repository.searchProfiles(
+        userLocation: userLocation,
+        maxDistance: radiusKm,
+        minAge: minAge,
+        maxAge: maxAge,
+        interests: interests,
+        limit: limit,
+      );
+
+      return Right(result);
+    } catch (e) {
+      return Left(UnknownProfileFailure(message: e.toString()));
+    }
   }
 }

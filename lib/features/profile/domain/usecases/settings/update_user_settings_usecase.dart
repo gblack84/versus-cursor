@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import '../../repositories/i_user_repository.dart';
-import '../../models/user_settings.dart';
 import '../../failures/profile_failures.dart';
 
 /// 사용자 설정 업데이트 UseCase
@@ -20,15 +19,15 @@ class UpdateUserSettingsUseCase {
   ///
   /// **Parameters**:
   /// - `userId`: 사용자 ID
-  /// - `settings`: 업데이트할 설정 객체
+  /// - `settings`: 업데이트할 설정 맵
   ///
   /// **Returns**:
   /// - `Right(void)`: 업데이트 성공
   /// - `Left(ProfileFailure)`: 업데이트 실패
-  Future<Either<ProfileFailure, void>> execute({
-    required String userId,
-    required UserSettings settings,
-  }) async {
+  Future<Either<ProfileFailure, void>> execute(
+    String userId,
+    Map<String, dynamic> settings,
+  ) async {
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {

@@ -77,4 +77,104 @@ class UpdateUserInterestsUseCase {
       return Left(UnknownProfileFailure(message: e.toString()));
     }
   }
+
+  /// Interest 추가 (개별 아이템)
+  ///
+  /// **Week 7**: @Deprecated 메서드 대체용
+  /// - ProfileProvider.addInterestLegacy() 대체
+  ///
+  /// **Parameters**:
+  /// - `userId`: 사용자 ID
+  /// - `interest`: 추가할 관심사/취미
+  /// - `category`: 'expertise' 또는 'hobby'
+  ///
+  /// **Returns**:
+  /// - `Right(void)`: 추가 성공
+  /// - `Left(ProfileFailure)`: 추가 실패
+  Future<Either<ProfileFailure, void>> addInterest({
+    required String userId,
+    required String interest,
+    required String category,
+  }) async {
+    try {
+      // 1. 입력 검증
+      if (userId.isEmpty) {
+        return Left(ValidationFailure(message: 'User ID is required'));
+      }
+      if (interest.isEmpty) {
+        return Left(ValidationFailure(message: 'Interest cannot be empty'));
+      }
+      if (category != 'expertise' && category != 'hobby') {
+        return Left(
+            ValidationFailure(message: 'Category must be expertise or hobby'));
+      }
+
+      // 2. Interest 객체 생성
+      final interestObj = Interest(
+        id: interest.toLowerCase().replaceAll(' ', '_'),
+        name: interest,
+        category: category,
+        weight: 0.5,
+        selectedAt: DateTime.now(),
+      );
+
+      // 3. Repository를 통한 추가
+      return await _repository.addInterest(
+        userId: userId,
+        interest: interestObj,
+      );
+    } catch (e) {
+      return Left(UnknownProfileFailure(message: e.toString()));
+    }
+  }
+
+  /// Interest 제거 (개별 아이템)
+  ///
+  /// **Week 7**: @Deprecated 메서드 대체용
+  /// - ProfileProvider.removeInterestLegacy() 대체
+  ///
+  /// **Parameters**:
+  /// - `userId`: 사용자 ID
+  /// - `interest`: 제거할 관심사/취미
+  /// - `category`: 'expertise' 또는 'hobby'
+  ///
+  /// **Returns**:
+  /// - `Right(void)`: 제거 성공
+  /// - `Left(ProfileFailure)`: 제거 실패
+  Future<Either<ProfileFailure, void>> removeInterest({
+    required String userId,
+    required String interest,
+    required String category,
+  }) async {
+    try {
+      // 1. 입력 검증
+      if (userId.isEmpty) {
+        return Left(ValidationFailure(message: 'User ID is required'));
+      }
+      if (interest.isEmpty) {
+        return Left(ValidationFailure(message: 'Interest cannot be empty'));
+      }
+      if (category != 'expertise' && category != 'hobby') {
+        return Left(
+            ValidationFailure(message: 'Category must be expertise or hobby'));
+      }
+
+      // 2. Interest 객체 생성
+      final interestObj = Interest(
+        id: interest.toLowerCase().replaceAll(' ', '_'),
+        name: interest,
+        category: category,
+        weight: 0.5,
+        selectedAt: DateTime.now(),
+      );
+
+      // 3. Repository를 통한 제거
+      return await _repository.removeInterest(
+        userId: userId,
+        interest: interestObj,
+      );
+    } catch (e) {
+      return Left(UnknownProfileFailure(message: e.toString()));
+    }
+  }
 }

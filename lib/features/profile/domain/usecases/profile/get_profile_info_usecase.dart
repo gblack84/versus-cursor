@@ -23,9 +23,17 @@ class GetProfileInfoUseCase {
   /// - `Left(ProfileNotFoundFailure)`: 사용자가 존재하지 않음
   /// - `Left(FirestoreReadFailure)`: Firestore 읽기 실패
   /// - `Right(ProfileInfo)`: 프로필 정보 조회 성공
-  Future<Either<ProfileFailure, ProfileInfo>> execute({
-    required String userId,
-  }) async {
-    return await _repository.getProfileInfo(userId);
+  Future<Either<ProfileFailure, ProfileInfo>> execute(String userId) async {
+    try {
+      final profileInfo = await _repository.getProfileInfo(userId);
+
+      if (profileInfo == null) {
+        return Left(ProfileNotFoundFailure(userId: userId));
+      }
+
+      return Right(profileInfo);
+    } catch (e) {
+      return Left(UnknownProfileFailure(message: e.toString()));
+    }
   }
 }

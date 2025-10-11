@@ -1,11 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
-
 import 'package:collection/collection.dart';
-
-import '/core/firebase/utils/firestore_util.dart';
-import '/core/firebase/utils/schema_util.dart';
-
 import '/core_exports.dart';
 
 class InterestModel extends FirestoreRecord {

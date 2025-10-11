@@ -1,5 +1,5 @@
 import '/features/auth/data/adapters/auth_util.dart';
-import '/features/profile/presentation/providers/profile_provider.dart';
+import '/features/profile/domain/usecases/interests/update_user_interests_usecase.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
 import 'package:easy_debounce/easy_debounce.dart';
@@ -23,7 +23,7 @@ class ExpertiseSelectWidget extends StatefulWidget {
 
 class _ExpertiseSelectWidgetState extends State<ExpertiseSelectWidget> {
   late ExpertiseSelectModel _model;
-  late final ProfileProvider _profileProvider;
+  late final UpdateUserInterestsUseCase _updateInterestsUseCase;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -32,8 +32,8 @@ class _ExpertiseSelectWidgetState extends State<ExpertiseSelectWidget> {
     super.initState();
     _model = createModel(context, () => ExpertiseSelectModel());
 
-    // Phase 4.5: Initialize ProfileProvider from DI
-    _profileProvider = GetIt.instance<ProfileProvider>();
+    // Week 7: Initialize UpdateUserInterestsUseCase from DI
+    _updateInterestsUseCase = GetIt.instance<UpdateUserInterestsUseCase>();
 
     _model.expertiseTextController ??= TextEditingController();
     _model.expertiseFocusNode ??= FocusNode();
@@ -471,17 +471,29 @@ we’ll send you better questio... */
                                             },
                                           );
                                         } else {
-                                          // Phase 4.5 하이브리드: ProfileProvider의 addExpertiseLegacy() 사용
-                                          final success = await _profileProvider.addExpertiseLegacy(
-                                            currentUserReference!,
-                                            _model.expertiseTextController.text,
+                                          // Week 7: UpdateUserInterestsUseCase로 전환
+                                          final result = await _updateInterestsUseCase.addInterest(
+                                            userId: currentUserUid,
+                                            interest: _model.expertiseTextController.text,
+                                            category: 'expertise',
                                           );
 
-                                          if (success) {
-                                            setState(() {
-                                              _model.expertiseTextController?.clear();
-                                            });
-                                          }
+                                          result.fold(
+                                            (failure) {
+                                              // 실패 처리
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(content: Text(failure.message)),
+                                              );
+                                            },
+                                            (_) {
+                                              // 성공 처리
+                                              setState(() {
+                                                _model.expertiseTextController?.clear();
+                                              });
+                                              // AppState 갱신
+                                              AppState().update(() {});
+                                            },
+                                          );
                                         }
                                       },
                                 text: AppLocalizations.of(context).getText(
@@ -656,10 +668,23 @@ we’ll send you better questio... */
                                                   size: 15.0,
                                                 ),
                                                 onPressed: () async {
-                                                  // Phase 4.5 하이브리드: ProfileProvider의 removeExpertiseLegacy() 사용
-                                                  await _profileProvider.removeExpertiseLegacy(
-                                                    currentUserReference!,
-                                                    authenticatedUserItem,
+                                                  // Week 7: UpdateUserInterestsUseCase로 전환
+                                                  final result = await _updateInterestsUseCase.removeInterest(
+                                                    userId: currentUserUid,
+                                                    interest: authenticatedUserItem,
+                                                    category: 'expertise',
+                                                  );
+
+                                                  result.fold(
+                                                    (failure) {
+                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                        SnackBar(content: Text(failure.message)),
+                                                      );
+                                                    },
+                                                    (_) {
+                                                      // AppState 갱신
+                                                      AppState().update(() {});
+                                                    },
                                                   );
                                                 },
                                               ),

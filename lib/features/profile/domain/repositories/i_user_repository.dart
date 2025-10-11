@@ -23,6 +23,9 @@ abstract class IUserRepository {
   /// 사용자 조회 (UserProfile)
   Future<UserProfile?> getUserByUid(String uid);
 
+  /// 사용자 조회 (alias for getUserByUid)
+  Future<UserProfile?> getUser(String userId);
+
   /// 사용자 스트림 (UserProfile)
   Stream<UserProfile?> getUserStreamByUid(String uid);
 
@@ -52,6 +55,9 @@ abstract class IUserRepository {
   /// 친구 목록 조회
   Future<List<UserProfile>> getUserFriends(String uid);
 
+  /// 친구 목록 스트림 조회
+  Stream<List<UserProfile>> queryFriendsList();
+
   // ============= Points & Ranking Operations =============
 
   /// 포인트 업데이트 (pointsA, pointsQ, total 자동 계산)
@@ -71,6 +77,9 @@ abstract class IUserRepository {
 
   /// UserSettings 조회
   Future<UserSettings?> getUserSettings(String uid);
+
+  /// UserSettings 업데이트
+  Future<void> updateUserSettings(String userId, Map<String, dynamic> settings);
 
   /// UserStats 조회
   Future<UserStats?> getUserStats(String uid);

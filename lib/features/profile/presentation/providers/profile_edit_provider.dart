@@ -188,9 +188,7 @@ class ProfileEditProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    final result = await _updateProfileUseCase.execute(
-      profile: _editingProfile!,
-    );
+    final result = await _updateProfileUseCase.execute(_editingProfile!);
 
     bool success = false;
     result.fold(

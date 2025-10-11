@@ -1,6 +1,5 @@
 import 'package:dartz/dartz.dart';
 import '../../repositories/i_settings_repository.dart';
-import '../../models/user_settings.dart';
 import '../../failures/profile_failures.dart';
 
 /// 알림 설정 조회 UseCase
@@ -22,10 +21,10 @@ class GetNotificationSettingsUseCase {
   /// **Returns**:
   /// - `Left(ProfileNotFoundFailure)`: 사용자가 존재하지 않음
   /// - `Left(FirestoreReadFailure)`: Firestore 읽기 실패
-  /// - `Right(UserSettings)`: 알림 설정 정보
-  Future<Either<ProfileFailure, UserSettings>> execute({
-    required String userId,
-  }) async {
+  /// - `Right(Map<String, dynamic>)`: 알림 설정 정보
+  Future<Either<ProfileFailure, Map<String, dynamic>>> execute(
+    String userId,
+  ) async {
     return await _repository.getNotificationSettings(userId);
   }
 }

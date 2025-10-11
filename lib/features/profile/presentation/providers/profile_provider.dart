@@ -178,6 +178,62 @@ class ProfileProvider extends ChangeNotifier {
     }
   }
 
+  // ========== Interests/Hobbies 하이브리드 메서드 (Week 4) ==========
+
+  /// Interests(Hobbies) 추가 (Legacy Firestore 직접 쓰기 방식)
+  ///
+  /// **사용 시기**: Week 4-6 hobbies_select_widget 하이브리드 운영
+  /// **제거 예정**: Week 7 (완전 전환 후)
+  ///
+  /// **목적**:
+  /// - 기존 FieldValue.arrayUnion 패턴과 호환
+  /// - 즉시 Firestore 업데이트 + AuthUserStreamWidget 실시간 반영
+  ///
+  /// **사용 예시**:
+  /// ```dart
+  /// await _profileProvider.addInterestLegacy(
+  ///   currentUserReference!,
+  ///   hobbyText,
+  /// );
+  /// ```
+  @Deprecated('Phase 4.5 하이브리드 전용. Week 7에 제거 예정.')
+  Future<bool> addInterestLegacy(
+    DocumentReference userRef,
+    String interest,
+  ) async {
+    try {
+      await userRef.update({
+        'interests': FieldValue.arrayUnion([interest]),
+      });
+      return true;
+    } catch (e) {
+      _errorMessage = '관심사 추가 실패: ${e.toString()}';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Interests(Hobbies) 삭제 (Legacy Firestore 직접 쓰기 방식)
+  ///
+  /// **사용 시기**: Week 4-6 hobbies_select_widget 하이브리드 운영
+  /// **제거 예정**: Week 7 (완전 전환 후)
+  @Deprecated('Phase 4.5 하이브리드 전용. Week 7에 제거 예정.')
+  Future<bool> removeInterestLegacy(
+    DocumentReference userRef,
+    String interest,
+  ) async {
+    try {
+      await userRef.update({
+        'interests': FieldValue.arrayRemove([interest]),
+      });
+      return true;
+    } catch (e) {
+      _errorMessage = '관심사 삭제 실패: ${e.toString()}';
+      notifyListeners();
+      return false;
+    }
+  }
+
   // ========== 병렬 테스트 메서드 (Week 1-2) ==========
 
   /// 하이브리드 운영 중 데이터 일관성 검증

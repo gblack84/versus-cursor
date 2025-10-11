@@ -1,5 +1,5 @@
 import '/features/auth/data/adapters/auth_util.dart';
-import '/features/profile/domain/repositories/i_user_repository.dart';
+import '/features/profile/presentation/providers/profile_provider.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
 import 'package:easy_debounce/easy_debounce.dart';
@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:webviewx_plus/webviewx_plus.dart';
+import 'package:get_it/get_it.dart';
 import 'hobbies_select_model.dart';
 export 'hobbies_select_model.dart';
 
@@ -22,6 +23,7 @@ class HobbiesSelectWidget extends StatefulWidget {
 
 class _HobbiesSelectWidgetState extends State<HobbiesSelectWidget> {
   late HobbiesSelectModel _model;
+  late final ProfileProvider _profileProvider;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -33,6 +35,10 @@ class _HobbiesSelectWidgetState extends State<HobbiesSelectWidget> {
     _model.hobbiesTextController ??= TextEditingController();
     _model.hobbiesFocusNode ??= FocusNode();
     _model.hobbiesFocusNode!.addListener(() => setState(() {}));
+
+    // Phase 4.5 하이브리드: ProfileProvider 인스턴스 가져오기
+    _profileProvider = GetIt.instance<ProfileProvider>();
+
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
@@ -466,21 +472,17 @@ We’ll tailor recommendations ... */
                                             },
                                           );
                                         } else {
-                                          await currentUserReference!.update({
-                                            ...mapToFirestore(
-                                              {
-                                                'interests':
-                                                    FieldValue.arrayUnion([
-                                                  _model.hobbiesTextController
-                                                      .text
-                                                ]),
-                                              },
-                                            ),
-                                          });
-                                          setState(() {
-                                            _model.hobbiesTextController
-                                                ?.clear();
-                                          });
+                                          // Phase 4.5 하이브리드: ProfileProvider의 addInterestLegacy() 사용
+                                          final success = await _profileProvider.addInterestLegacy(
+                                            currentUserReference!,
+                                            _model.hobbiesTextController.text,
+                                          );
+
+                                          if (success) {
+                                            setState(() {
+                                              _model.hobbiesTextController?.clear();
+                                            });
+                                          }
                                         }
                                       },
                                 text: AppLocalizations.of(context).getText(
@@ -655,17 +657,11 @@ We’ll tailor recommendations ... */
                                                   size: 15.0,
                                                 ),
                                                 onPressed: () async {
-                                                  await currentUserReference!
-                                                      .update({
-                                                    ...mapToFirestore(
-                                                      {
-                                                        'interests': FieldValue
-                                                            .arrayRemove([
-                                                          authenticatedUserItem
-                                                        ]),
-                                                      },
-                                                    ),
-                                                  });
+                                                  // Phase 4.5 하이브리드: ProfileProvider의 removeInterestLegacy() 사용
+                                                  await _profileProvider.removeInterestLegacy(
+                                                    currentUserReference!,
+                                                    authenticatedUserItem,
+                                                  );
                                                 },
                                               ),
                                             ],

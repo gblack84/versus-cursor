@@ -8,6 +8,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'character_detail_page_model.dart';
 export 'character_detail_page_model.dart';
 
+// Phase 4.5 하이브리드: CharactersProvider 추가
+import '/features/profile/presentation/providers/characters_provider.dart';
+import '/features/profile/domain/models/user_profile.dart';
+import 'package:get_it/get_it.dart';
+import 'package:provider/provider.dart';
+
 class CharacterDetailPageWidget extends StatefulWidget {
   const CharacterDetailPageWidget({super.key});
 
@@ -18,6 +24,8 @@ class CharacterDetailPageWidget extends StatefulWidget {
 
 class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
   late CharacterDetailPageModel _model;
+  // Phase 4.5 하이브리드: CharactersProvider 인스턴스
+  late final CharactersProvider _charactersProvider;
 
   @override
   void setState(VoidCallback callback) {
@@ -29,6 +37,10 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
   void initState() {
     super.initState();
     _model = createModel(context, () => CharacterDetailPageModel());
+
+    // Phase 4.5 하이브리드: CharactersProvider 초기화 및 캐릭터 목록 로드
+    _charactersProvider = GetIt.instance<CharactersProvider>();
+    _charactersProvider.loadAvailableCharacters();
 
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
@@ -87,11 +99,11 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                         padding: EdgeInsets.all(8.0),
                         child: Container(
                           decoration: BoxDecoration(),
-                          child: StreamBuilder<List<CharactersModel>>(
-                            stream: queryCharactersModel(),
-                            builder: (context, snapshot) {
-                              // Customize what your widget looks like when it's loading.
-                              if (!snapshot.hasData) {
+                          // Phase 4.5 하이브리드: StreamBuilder → Consumer<CharactersProvider>
+                          child: Consumer<CharactersProvider>(
+                            builder: (context, charactersProvider, _) {
+                              // 로딩 중일 때
+                              if (charactersProvider.isLoading) {
                                 return Center(
                                   child: SizedBox(
                                     width: 50.0,
@@ -103,8 +115,9 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                                   ),
                                 );
                               }
-                              List<CharactersModel>
-                                  gridViewCharactersModelList = snapshot.data!;
+
+                              final gridViewCharactersModelList =
+                                  charactersProvider.availableCharacters;
 
                               return GridView.builder(
                                 padding: EdgeInsets.fromLTRB(
@@ -135,7 +148,7 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                                       border: Border.all(
                                         color: _model.selectedCharacterUrl ==
                                                 gridViewCharactersModel
-                                                    .charactersImageUrl
+                                                    .imageUrl
                                             ? Color(0xFF6E6E6E)
                                             : Color(0x00FFFFFF),
                                       ),
@@ -148,7 +161,7 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                                       onTap: () async {
                                         _model.selectedCharacterUrl =
                                             gridViewCharactersModel
-                                                .charactersImageUrl;
+                                                .imageUrl;
                                         setState(() {});
                                       },
                                       child: Container(
@@ -164,7 +177,7 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                                           fadeOutDuration:
                                               Duration(milliseconds: 500),
                                           imageUrl:
-                                              '${gridViewCharactersModel.charactersImageUrl}',
+                                              '${gridViewCharactersModel.imageUrl}',
                                           fit: BoxFit.cover,
                                         ),
                                       ),

@@ -1,6 +1,8 @@
 import '/features/auth/data/adapters/auth_util.dart';
 // Replace backend imports with domain layer imports
-import '/features/profile/domain/repositories/i_user_repository.dart';
+import '/features/profile/presentation/providers/profile_provider.dart';
+import '/features/profile/domain/models/user_profile.dart';
+import 'package:get_it/get_it.dart';
 import '/core_exports.dart';
 import '/features/profile/presentation/screens/user_info/character_detail/character_detail_page_widget.dart';
 import '/features/profile/presentation/screens/user_info/language_selector/language_selector_widget.dart';
@@ -26,6 +28,7 @@ class UserInfoInputWidget extends StatefulWidget {
 
 class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
   late UserInfoInputModel _model;
+  late final ProfileProvider _profileProvider;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -34,10 +37,14 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
     super.initState();
     _model = createModel(context, () => UserInfoInputModel());
 
+    // Phase 4.5 하이브리드: ProfileProvider 인스턴스 가져오기
+    _profileProvider = GetIt.instance<ProfileProvider>();
+
     // On page load action.
     SchedulerBinding.instance.addPostFrameCallback((_) async {
-      _model.userDocument =
-          await UsersModel.getDocumentOnce(currentUserReference!);
+      // Phase 4.5 하이브리드: ProfileProvider의 loadProfile() UseCase 사용
+      await _profileProvider.loadProfile(currentUserUid);
+      _model.userDocument = _profileProvider.profile;
 
       setState(() {});
     });
@@ -942,6 +949,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                 return;
                                               }
 
+                                              // Phase 4.5 하이브리드: createUsersModelData는 이미 Clean Architecture 메서드
                                               await currentUserReference!
                                                   .update(createUsersModelData(
                                                 displayName: _model
@@ -952,12 +960,9 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                     AppLocalizations.of(context)
                                                         .languageCode,
                                               ));
-                                              AppState().selectedLang =
-                                                  AppLocalizations.of(context)
-                                                      .languageCode;
-                                              AppState().displayName = _model
-                                                  .displayNameTextController
-                                                  .text;
+
+                                              // ❌ AppState 직접 수정 제거 (Clean Architecture 위반)
+                                              // ProfileProvider와 AuthUserStreamWidget이 자동으로 상태 업데이트
                                               setState(() {});
 
                                               context.pushNamed(

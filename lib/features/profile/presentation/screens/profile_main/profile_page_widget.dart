@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:get_it/get_it.dart';
 import '/core_exports.dart';
 import '/features/profile/domain/models/user_profile.dart';
+import '/features/profile/presentation/providers/profile_provider.dart';
 import '/features/auth/data/adapters/auth_util.dart';
 import '/features/auth/domain/usecases/sign_out_usecase.dart';
 import '/features/auth/data/repositories/auth_repository_impl.dart';
@@ -30,6 +30,7 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
   SignOutUseCase? _signOutUseCase;
   late final UserPostsProvider _userPostsProvider;
+  late final ProfileProvider _profileProvider;
 
   Future<void> _initializeUseCases() async {
     // Phase 2.6에서 DI로 대체 예정
@@ -55,8 +56,9 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
     super.initState();
     _initializeUseCases();
 
-    // Initialize UserPostsProvider from DI
+    // Initialize providers from DI
     _userPostsProvider = GetIt.instance<UserPostsProvider>();
+    _profileProvider = GetIt.instance<ProfileProvider>();
   }
 
   @override
@@ -112,8 +114,9 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                   ],
                 ),
               )
-            : StreamBuilder<UsersModel>(
-                stream: UsersModel.getDocument(currentUserReference!),
+            : StreamBuilder<UserProfile>(
+                // Phase 4.5 하이브리드: ProfileProvider의 watchProfileLegacy() 사용
+                stream: _profileProvider.watchProfileLegacy(currentUserReference!),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return Center(

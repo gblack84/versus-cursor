@@ -84,6 +84,52 @@ class InterestsRepositoryImpl implements IInterestsRepository {
     });
   }
 
+  @override
+  Future<Either<ProfileFailure, void>> addInterest({
+    required String userId,
+    required Interest interest,
+  }) async {
+    try {
+      // 레거시 패턴: expertise_select_widget.dart line 370-380
+      // await currentUserReference!.update({
+      //   'expertise': FieldValue.arrayUnion([text])
+      // });
+
+      final field = interest.category == 'expertise' ? 'expertise' : 'interests';
+
+      await _dataSource.arrayUnion(userId, field, [interest.name]);
+
+      return const Right(null);
+    } catch (e) {
+      return Left(FirestoreWriteFailure(
+        message: 'Failed to add interest: $e',
+      ));
+    }
+  }
+
+  @override
+  Future<Either<ProfileFailure, void>> removeInterest({
+    required String userId,
+    required Interest interest,
+  }) async {
+    try {
+      // 레거시 패턴: expertise_select_widget.dart line 559-569
+      // await currentUserReference!.update({
+      //   'expertise': FieldValue.arrayRemove([authenticatedUserItem])
+      // });
+
+      final field = interest.category == 'expertise' ? 'expertise' : 'interests';
+
+      await _dataSource.arrayRemove(userId, field, [interest.name]);
+
+      return const Right(null);
+    } catch (e) {
+      return Left(FirestoreWriteFailure(
+        message: 'Failed to remove interest: $e',
+      ));
+    }
+  }
+
   // ============= 헬퍼 메서드 =============
 
   /// Firestore 데이터를 Interest 리스트로 변환

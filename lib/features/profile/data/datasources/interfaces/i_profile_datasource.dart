@@ -29,6 +29,20 @@ abstract class IProfileDataSource {
   /// 여러 필드 업데이트
   Future<void> updateFields(String userId, Map<String, dynamic> fields);
 
+  /// 배열에 값 추가 (FieldValue.arrayUnion)
+  ///
+  /// **레거시 패턴 지원**:
+  /// - expertise_select_widget.dart: line 370-380
+  /// - hobbies_select_widget.dart: line 130-140
+  Future<void> arrayUnion(String userId, String field, List<dynamic> values);
+
+  /// 배열에서 값 제거 (FieldValue.arrayRemove)
+  ///
+  /// **레거시 패턴 지원**:
+  /// - expertise_select_widget.dart: line 559-569
+  /// - hobbies_select_widget.dart: line 319-329
+  Future<void> arrayRemove(String userId, String field, List<dynamic> values);
+
   // ============= 검색 및 쿼리 =============
 
   /// 프로필 검색 (이름, 관심사, 위치 등)

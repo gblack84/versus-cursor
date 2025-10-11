@@ -29,7 +29,7 @@ class UpdateUserProfileUseCase {
   }) async {
     try {
       // 1. 프로필 검증
-      if (profile.userId.isEmpty) {
+      if (profile.uid.isEmpty) {
         return Left(ValidationFailure(message: 'User ID is required'));
       }
       if (profile.displayName.isEmpty) {

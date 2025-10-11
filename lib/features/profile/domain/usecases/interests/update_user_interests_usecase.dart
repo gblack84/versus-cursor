@@ -1,5 +1,7 @@
 import 'package:dartz/dartz.dart';
 import '../../failures/profile_failures.dart';
+import '../../repositories/i_interests_repository.dart';
+import '../../models/interest.dart';
 
 /// 사용자 관심사 업데이트 UseCase
 ///
@@ -8,10 +10,11 @@ import '../../failures/profile_failures.dart';
 /// - Repository를 통한 관심사 업데이트
 /// - 에러 처리 및 Failure 변환
 class UpdateUserInterestsUseCase {
-  // TODO: Phase 3에서 IInterestsRepository 추가 후 구현
-  // final IInterestsRepository _repository;
+  final IInterestsRepository _repository;
 
-  UpdateUserInterestsUseCase();
+  UpdateUserInterestsUseCase({
+    required IInterestsRepository repository,
+  }) : _repository = repository;
 
   /// 관심사 업데이트 실행
   ///
@@ -45,14 +48,31 @@ class UpdateUserInterestsUseCase {
         return Left(ValidationFailure(message: 'Maximum 8 hobbies allowed'));
       }
 
-      // TODO: Phase 3에서 실제 Repository 호출 구현
-      // await _repository.updateUserInterests(
-      //   userId: userId,
-      //   expertise: expertise,
-      //   hobbies: hobbies,
-      // );
+      // 4. Interest 객체로 변환
+      final expertiseInterests = expertise
+          .map((name) => Interest(
+                id: name.toLowerCase().replaceAll(' ', '_'),
+                name: name,
+                category: 'expertise',
+                weight: 0.5,
+                selectedAt: DateTime.now(),
+              ))
+          .toList();
 
-      return const Right(null);
+      final hobbiesInterests = hobbies
+          .map((name) => Interest(
+                id: name.toLowerCase().replaceAll(' ', '_'),
+                name: name,
+                category: 'hobby',
+                weight: 0.5,
+                selectedAt: DateTime.now(),
+              ))
+          .toList();
+
+      final allInterests = [...expertiseInterests, ...hobbiesInterests];
+
+      // 5. Repository를 통한 업데이트
+      return await _repository.updateUserInterests(userId, allInterests);
     } catch (e) {
       return Left(UnknownProfileFailure(message: e.toString()));
     }

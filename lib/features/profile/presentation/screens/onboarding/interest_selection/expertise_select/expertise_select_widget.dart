@@ -1,5 +1,5 @@
 import '/features/auth/data/adapters/auth_util.dart';
-import '/features/profile/domain/repositories/i_user_repository.dart';
+import '/features/profile/presentation/providers/profile_provider.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
 import 'package:easy_debounce/easy_debounce.dart';
@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:webviewx_plus/webviewx_plus.dart';
+import 'package:get_it/get_it.dart';
 import 'expertise_select_model.dart';
 export 'expertise_select_model.dart';
 
@@ -22,6 +23,7 @@ class ExpertiseSelectWidget extends StatefulWidget {
 
 class _ExpertiseSelectWidgetState extends State<ExpertiseSelectWidget> {
   late ExpertiseSelectModel _model;
+  late final ProfileProvider _profileProvider;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -29,6 +31,9 @@ class _ExpertiseSelectWidgetState extends State<ExpertiseSelectWidget> {
   void initState() {
     super.initState();
     _model = createModel(context, () => ExpertiseSelectModel());
+
+    // Phase 4.5: Initialize ProfileProvider from DI
+    _profileProvider = GetIt.instance<ProfileProvider>();
 
     _model.expertiseTextController ??= TextEditingController();
     _model.expertiseFocusNode ??= FocusNode();
@@ -466,21 +471,17 @@ we’ll send you better questio... */
                                             },
                                           );
                                         } else {
-                                          await currentUserReference!.update({
-                                            ...mapToFirestore(
-                                              {
-                                                'expertise':
-                                                    FieldValue.arrayUnion([
-                                                  _model.expertiseTextController
-                                                      .text
-                                                ]),
-                                              },
-                                            ),
-                                          });
-                                          setState(() {
-                                            _model.expertiseTextController
-                                                ?.clear();
-                                          });
+                                          // Phase 4.5 하이브리드: ProfileProvider의 addExpertiseLegacy() 사용
+                                          final success = await _profileProvider.addExpertiseLegacy(
+                                            currentUserReference!,
+                                            _model.expertiseTextController.text,
+                                          );
+
+                                          if (success) {
+                                            setState(() {
+                                              _model.expertiseTextController?.clear();
+                                            });
+                                          }
                                         }
                                       },
                                 text: AppLocalizations.of(context).getText(
@@ -655,17 +656,11 @@ we’ll send you better questio... */
                                                   size: 15.0,
                                                 ),
                                                 onPressed: () async {
-                                                  await currentUserReference!
-                                                      .update({
-                                                    ...mapToFirestore(
-                                                      {
-                                                        'expertise': FieldValue
-                                                            .arrayRemove([
-                                                          authenticatedUserItem
-                                                        ]),
-                                                      },
-                                                    ),
-                                                  });
+                                                  // Phase 4.5 하이브리드: ProfileProvider의 removeExpertiseLegacy() 사용
+                                                  await _profileProvider.removeExpertiseLegacy(
+                                                    currentUserReference!,
+                                                    authenticatedUserItem,
+                                                  );
                                                 },
                                               ),
                                             ],

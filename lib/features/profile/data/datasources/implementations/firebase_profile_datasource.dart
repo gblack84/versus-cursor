@@ -53,6 +53,24 @@ class FirebaseProfileDataSource implements IProfileDataSource {
     await _firestore.collection('users').doc(userId).update(fields);
   }
 
+  @override
+  Future<void> arrayUnion(String userId, String field, List<dynamic> values) async {
+    final userDoc = _firestore.collection('users').doc(userId);
+
+    await userDoc.update({
+      field: FieldValue.arrayUnion(values)
+    });
+  }
+
+  @override
+  Future<void> arrayRemove(String userId, String field, List<dynamic> values) async {
+    final userDoc = _firestore.collection('users').doc(userId);
+
+    await userDoc.update({
+      field: FieldValue.arrayRemove(values)
+    });
+  }
+
   // ============= 검색 및 쿼리 =============
 
   @override

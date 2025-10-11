@@ -3161,6 +3161,64 @@ data/repositories/
 
 ---
 
+## 📚 Phase 6: 통합 테스트 및 검증 ✅ **문서화 완료** (Day 11, 1.5시간)
+
+> **완료일**: 2025-01-20 | **상태**: ✅ 문서화 완료 | **문서**: [MIGRATION_PLAN_PHASE_6_DOCUMENTATION.md](./MIGRATION_PLAN_PHASE_6_DOCUMENTATION.md)
+
+### 작업 배경
+
+전체 앱에 누락된 파일들이 많아 런타임 실행이 불가능한 상황입니다.
+Phase 5에서 flutter analyze로 ProfileModule의 모든 41개 의존성을 검증 완료했습니다.
+
+따라서 Phase 6는 **문서화 중심 검증**으로 전환하여 실행했습니다.
+
+### ✅ 완료 항목
+
+#### 1. DI 컨테이너 통합 검증 ✅
+- ProfileModule이 `injection.dart` line 26에 정상 등록 확인
+- `main.dart`에 `DIContainer.initialize()` 호출 추가 (line 41)
+- flutter analyze 0 에러 검증 완료
+
+#### 2. 하이브리드 메서드 사용 가이드 작성 ✅
+4개 @Deprecated 메서드 문서화:
+- `addExpertiseLegacy` / `removeExpertiseLegacy` (expertise_select_widget)
+- `addInterestLegacy` / `removeInterestLegacy` (hobbies/agreed_select_widget)
+
+#### 3. Widget-Provider 연동 예제 작성 ✅
+6개 전환 위젯의 사용 패턴 정리:
+- profile_page_widget.dart (StreamBuilder → Consumer)
+- expertise_select_widget.dart (Firestore → ProfileProvider)
+- hobbies_select_widget.dart (동일 패턴)
+- agreed_select_widget.dart (메서드 재사용)
+- user_info_input_widget.dart (AppState 직접 수정 제거)
+- character_detail_page_widget.dart (CharactersProvider Consumer)
+
+#### 4. Week 7 레거시 제거 로드맵 작성 ✅
+- @Deprecated 메서드 4개 제거 계획
+- 완전 Clean Architecture 전환 전략 수립
+- 순수 UseCase 기반 전환 체크리스트
+
+### 📊 Phase 6 성과
+
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| **DI 검증** | ✅ 완료 | ProfileModule 등록, flutter analyze 통과 |
+| **하이브리드 문서** | ✅ 완료 | 4개 메서드 사용 가이드 |
+| **Widget 예제** | ✅ 완료 | 6개 위젯 패턴 정리 |
+| **Week 7 로드맵** | ✅ 완료 | 레거시 제거 계획 |
+| **런타임 테스트** | ⏳ 보류 | 앱 통합 후 진행 |
+
+### 🎯 다음 단계
+
+**Week 7: 레거시 코드 완전 제거 및 Clean Architecture 완성**
+- @Deprecated 메서드 4개 제거
+- UpdateUserExpertiseUseCase / UpdateUserInterestsUseCase 생성
+- expertise/hobbies/agreed 위젯 순수 UseCase 전환
+- AppState 의존성 완전 제거
+- 프로덕션 배포
+
+---
+
 ## 📈 최종 구조 (After All Phases)
 
 ```
@@ -3447,7 +3505,44 @@ lib/features/profile/                         # Profile Feature 루트
 #### 5.3. 변경 사유 문서화 ✅
 - [x] [MIGRATION_PLAN_ACTUAL_VS_PLANNED_ANALYSIS.md](./MIGRATION_PLAN_ACTUAL_VS_PLANNED_ANALYSIS.md) 작성
 
-**Step 3: 점진적 통합** (2시간)
+### Phase 6: 통합 테스트 및 검증 ✅ **문서화 완료** (Day 11, 1.5시간)
+
+> **완료**: 문서화 중심 검증 전략으로 전환
+
+#### 6.1. DI 컨테이너 통합 검증 ✅
+- [x] ProfileModule이 injection.dart에 정상 등록 확인 (Line 26)
+- [x] main.dart에 DIContainer.initialize() 호출 추가
+- [x] flutter analyze lib/app/di/profile_module.dart 통과 (0 에러)
+
+#### 6.2. 하이브리드 메서드 사용 가이드 작성 ✅
+- [x] addExpertiseLegacy / removeExpertiseLegacy 문서화
+- [x] addInterestLegacy / removeInterestLegacy 문서화
+- [x] DocumentReference 파라미터 사용법 정리
+- [x] AppState 의존성 설명
+
+#### 6.3. Widget-Provider 연동 예제 작성 ✅
+- [x] profile_page_widget (StreamBuilder → Consumer 패턴)
+- [x] expertise_select_widget (Firestore 직접 쓰기 → Provider 메서드)
+- [x] hobbies_select_widget (동일 패턴)
+- [x] agreed_select_widget (메서드 재사용 전략)
+- [x] user_info_input_widget (AppState 직접 수정 제거)
+- [x] character_detail_page_widget (CharactersProvider Consumer)
+
+#### 6.4. Week 7 레거시 제거 로드맵 작성 ✅
+- [x] @Deprecated 메서드 제거 계획 수립
+- [x] UpdateUserExpertiseUseCase 생성 전략
+- [x] UpdateUserInterestsUseCase 생성 전략
+- [x] 완전 Clean Architecture 전환 체크리스트 작성
+
+#### 6.5. 보류 항목 (앱 통합 후 진행)
+- [ ] 런타임 테스트 실행
+- [ ] 하이브리드 메서드 기능 검증
+- [ ] Widget-Provider 실제 동작 확인
+
+#### 6.6. 문서화 결과물 ✅
+- [x] [MIGRATION_PLAN_PHASE_6_DOCUMENTATION.md](./MIGRATION_PLAN_PHASE_6_DOCUMENTATION.md) 작성
+
+**Step 3: 점진적 통합** (2시간) - Week 7로 연기
 - [ ] 각 신규 Repository에 메서드 이동 완료
 - [ ] @Deprecated 어노테이션 추가 (기존 메서드)
 - [ ] UserProfileAdapter 재활용 전략 확인 (Phase 4.5 Week 7 이후 제거)

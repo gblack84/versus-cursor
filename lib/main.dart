@@ -10,6 +10,7 @@ import 'features/notifications/data/adapters/notification_service.dart';
 import '/app/state/providers/navigation_provider.dart';
 import '/features/post/presentation/providers/feed_provider.dart';
 import '/app/di.dart';
+import '/app/di/injection.dart'; // Feature Module DI Container
 import 'package:get_it/get_it.dart';
 import 'core_exports.dart';
 import 'app/app.dart';
@@ -33,8 +34,12 @@ void main() async {
 
   await initFirebase();
 
-  // Initialize Dependency Injection
+  // Initialize Dependency Injection (Legacy System)
   await setupDependencyInjection();
+
+  // Initialize Feature Modules (New System - FeatureModule Pattern)
+  // This registers ProfileModule, PostsModule, etc.
+  await DIContainer.initialize();
 
   // Firestore 오프라인 캐시 활성화 - 앱 성능 대폭 개선
   FirebaseFirestore.instance.settings = const Settings(

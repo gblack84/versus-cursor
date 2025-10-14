@@ -9,6 +9,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '/app/contracts/auth_contract.dart';
+import '/app/contracts/user_contract.dart';
 
 // Voting Feature DI Module - TODO: Remove after migration
 // import '/features/voting/di/voting_di_module.dart';
@@ -81,6 +82,41 @@ import '/features/voting/data/adapters/vote_timer_adapter.dart';
 import '/features/creation/data/datasources/interfaces/i_post_creation_datasource.dart';
 import '/features/creation/data/datasources/firebase_post_creation_datasource.dart';
 
+// ===== Profile Feature Clean Architecture DI =====
+// DataSources
+import '/features/profile/data/datasources/profile_storage_datasource.dart';
+import '/features/profile/data/datasources/profile_storage_datasource_impl.dart';
+import '/features/profile/data/datasources/interfaces/i_profile_datasource.dart';
+import '/features/profile/data/datasources/implementations/firebase_profile_datasource.dart';
+// Repositories
+import '/features/profile/domain/repositories/i_user_repository.dart';
+import '/features/profile/data/repositories/user_repository_impl.dart';
+import '/features/profile/domain/repositories/i_characters_repository.dart';
+import '/features/profile/data/repositories/characters_repository_impl.dart';
+import '/features/profile/domain/repositories/i_interests_repository.dart';
+import '/features/profile/data/repositories/interests_repository_impl.dart';
+import '/features/profile/domain/repositories/i_profile_repository.dart';
+import '/features/profile/data/repositories/profile_repository_impl.dart';
+// UseCases
+import '/features/profile/domain/usecases/profile/get_user_profile_usecase.dart';
+import '/features/profile/domain/usecases/profile/get_current_user_profile_usecase.dart';
+import '/features/profile/domain/usecases/profile/update_user_profile_usecase.dart';
+import '/features/profile/domain/usecases/profile/upload_profile_image_usecase.dart';
+import '/features/profile/domain/usecases/settings/get_user_settings_usecase.dart';
+import '/features/profile/domain/usecases/settings/update_user_settings_usecase.dart';
+import '/features/profile/domain/usecases/characters/get_available_characters_usecase.dart';
+import '/features/profile/domain/usecases/interests/get_user_interests_usecase.dart';
+import '/features/profile/domain/usecases/interests/update_user_interests_usecase.dart';
+import '/features/profile/domain/usecases/profile/get_profile_completion_usecase.dart';
+import '/features/profile/domain/usecases/profile/get_profile_info_usecase.dart';
+import '/features/profile/domain/usecases/profile/delete_user_profile_usecase.dart';
+import '/features/profile/domain/usecases/profile/watch_user_profile_usecase.dart';
+// Providers
+import '/features/profile/presentation/providers/profile_provider.dart';
+import '/features/profile/presentation/providers/characters_provider.dart';
+import '/features/profile/presentation/providers/interests_provider.dart';
+import '/features/profile/presentation/providers/settings_provider.dart';
+
 
 final getIt = GetIt.instance;
 
@@ -110,10 +146,12 @@ Future<void> setupDependencyInjection() async {
   );
 
   // 2. Repository 등록
+  // Phase 5: UserContract 주입 필요 - Profile Feature 등록 후 해결됨
   getIt.registerLazySingleton<IAuthRepository>(
     () => AuthRepositoryImpl(
       remoteDataSource: getIt<IAuthRemoteDataSource>(),
       localDataSource: getIt<IAuthLocalDataSource>(),
+      userContract: getIt<UserContract>(),
     ),
   );
 
@@ -304,6 +342,128 @@ Future<void> setupDependencyInjection() async {
   getIt.registerLazySingleton<IPostService>(
     () => MockPostServiceAdapter(),
   );
+
+  // ===== Profile Feature DI =====
+
+  // 1. DataSource 등록
+  getIt.registerLazySingleton<IProfileStorageDataSource>(
+    () => ProfileStorageDataSourceImpl(),
+  );
+
+  getIt.registerLazySingleton<IProfileDataSource>(
+    () => FirebaseProfileDataSource(
+      firestore: FirebaseFirestore.instance,
+    ),
+  );
+
+  // 2. Repository 등록
+  getIt.registerLazySingleton<IUserRepository>(
+    () => UserRepositoryImpl.instance,
+  );
+
+  // Phase 5: UserContract 등록 (Auth Feature가 Profile 작업을 요청할 때 사용)
+  // Same instance as IUserRepository, different interface
+  getIt.registerLazySingleton<UserContract>(
+    () => UserRepositoryImpl.instance,
+  );
+
+  getIt.registerLazySingleton<ICharactersRepository>(
+    () => CharactersRepositoryImpl(
+      dataSource: getIt<IProfileDataSource>(),
+    ),
+  );
+
+  getIt.registerLazySingleton<IInterestsRepository>(
+    () => InterestsRepositoryImpl(
+      dataSource: getIt<IProfileDataSource>(),
+    ),
+  );
+
+  getIt.registerLazySingleton<IProfileRepository>(
+    () => ProfileRepositoryImpl(
+      dataSource: getIt<IProfileDataSource>(),
+    ),
+  );
+
+  // 3. UseCase 등록
+  getIt.registerFactory(() => GetUserProfileUseCase(
+    repository: getIt<IUserRepository>(),
+  ));
+
+  getIt.registerFactory(() => GetCurrentUserProfileUseCase(
+    repository: getIt<IUserRepository>(),
+  ));
+
+  getIt.registerFactory(() => UpdateUserProfileUseCase(
+    repository: getIt<IUserRepository>(),
+  ));
+
+  getIt.registerFactory(() => UploadProfileImageUseCase(
+    storageRepository: getIt<IProfileStorageDataSource>(),
+  ));
+
+  getIt.registerFactory(() => GetUserSettingsUseCase(
+    repository: getIt<IUserRepository>(),
+  ));
+
+  getIt.registerFactory(() => UpdateUserSettingsUseCase(
+    repository: getIt<IUserRepository>(),
+  ));
+
+  getIt.registerFactory(() => GetAvailableCharactersUseCase(
+    repository: getIt<ICharactersRepository>(),
+  ));
+
+  getIt.registerFactory(() => GetUserInterestsUseCase(
+    repository: getIt<IInterestsRepository>(),
+  ));
+
+  getIt.registerFactory(() => UpdateUserInterestsUseCase(
+    repository: getIt<IInterestsRepository>(),
+  ));
+
+  getIt.registerFactory(() => GetProfileCompletionUseCase(
+    repository: getIt<IProfileRepository>(),
+  ));
+
+  getIt.registerFactory(() => GetProfileInfoUseCase(
+    repository: getIt<IProfileRepository>(),
+  ));
+
+  getIt.registerFactory(() => DeleteUserProfileUseCase(
+    repository: getIt<IUserRepository>(),
+  ));
+
+  getIt.registerFactory(() => WatchUserProfileUseCase(
+    getIt<IUserRepository>(),
+  ));
+
+  // 4. Provider 등록
+  getIt.registerFactory(() => ProfileProvider(
+    getProfileUseCase: getIt<GetUserProfileUseCase>(),
+    getCurrentProfileUseCase: getIt<GetCurrentUserProfileUseCase>(),
+    updateProfileUseCase: getIt<UpdateUserProfileUseCase>(),
+    uploadImageUseCase: getIt<UploadProfileImageUseCase>(),
+    getProfileCompletionUseCase: getIt<GetProfileCompletionUseCase>(),
+    watchProfileUseCase: getIt<WatchUserProfileUseCase>(),
+  ));
+
+  getIt.registerFactory(() => CharactersProvider(
+    getAvailableCharactersUseCase: getIt<GetAvailableCharactersUseCase>(),
+  ));
+
+  getIt.registerFactory(() => InterestsProvider(
+    getUserInterestsUseCase: getIt<GetUserInterestsUseCase>(),
+    updateUserInterestsUseCase: getIt<UpdateUserInterestsUseCase>(),
+  ));
+
+  getIt.registerFactory(() => SettingsProvider(
+    getSettingsUseCase: getIt<GetUserSettingsUseCase>(),
+    updateSettingsUseCase: getIt<UpdateUserSettingsUseCase>(),
+    deleteProfileUseCase: getIt<DeleteUserProfileUseCase>(),
+  ));
+
+  // FriendsProvider removed - Friends feature not yet implemented
 
   // Add more dependency registrations here as needed
 }

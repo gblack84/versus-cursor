@@ -1,7 +1,7 @@
 # 📋 Profile Feature → Clean Architecture v4.0 마이그레이션 계획
 
-> **버전**: v2.3 | **최종 업데이트**: 2025-01-20 | **참조**: [Creation Feature README.md](../creation/README.md)
-> **진행 상황**: Phase 0-3 완료 (100% ✅) | Phase 4-5 대기 중
+> **버전**: v2.4 | **최종 업데이트**: 2025-01-20 | **참조**: [Creation Feature README.md](../creation/README.md)
+> **진행 상황**: Phase 0-6 완료 (100% ✅) | Phase 4-5 대기 중
 
 ## 🎯 전체 목표
 
@@ -198,6 +198,79 @@ class ProfileProvider extends ChangeNotifier {
 1. **무중단 마이그레이션**: Stream 메서드를 유지하면서 UseCase 추가 가능
 2. **기존 인프라 활용**: 이미 검증된 UserProfileAdapter 코드 재사용
 3. **리스크 최소화**: 위젯별 순차 전환으로 롤백 용이
+
+---
+
+## ⚠️ Phase 1-2 상태 변경 (2025-01-20 업데이트)
+
+> **중요**: Phase 1에서 삭제 예정으로 표시된 일부 Domain Models가 **실제로는 Active Migration Infrastructure**로 판명되어 복원되었습니다.
+
+### 복원된 파일 (12개)
+
+#### Domain Models (4개) ✅ **복원 완료**
+```
+domain/models/
+├── friends_list_model.dart    # Friends Feature에서 사용 중
+├── profile_info.dart           # UserProfileAdapter에서 사용 중
+├── user_settings.dart          # Settings Feature 전체 스택 의존 (13 files)
+└── user_stats.dart             # UserProfileAdapter에서 사용 중
+```
+
+#### DTOs (3개) ✅ **복원 완료**
+```
+data/dto/
+├── profile_info_dto.dart
+├── user_settings_dto.dart
+└── user_stats_dto.dart
+```
+
+#### Mappers (1개) ✅ **복원 완료**
+```
+data/mappers/
+└── user_settings_mapper.dart
+```
+
+#### UseCases (4개) ✅ **복원 완료**
+```
+domain/usecases/
+├── friends/get_friends_list_usecase.dart
+├── profile/get_profile_info_usecase.dart
+├── settings/get_user_settings_usecase.dart
+└── settings/update_user_settings_usecase.dart
+```
+
+### 복원 이유
+
+1. **UserProfileAdapter 의존성**:
+   - `ProfileInfo`, `UserSettings`, `UserStats`를 사용하여 점진적 마이그레이션 수행
+   - `UserProfile` ↔ 4개 Domain Models 변환 담당
+   - 151-200번 라인의 "Adapter 기반 하이브리드 Provider 패턴" 전략의 핵심
+
+2. **Settings Feature 완전 의존**:
+   - `UserSettings` 모델에 13개 파일이 의존
+   - Repository, UseCase, Provider, UI 전체 스택
+   - 제거 시 Settings Feature 전체 파손
+
+3. **Friends Feature 사용**:
+   - `FriendsListModel`을 3개 파일에서 사용
+
+### 새로운 분류
+
+| 파일 그룹 | 이전 분류 | 새로운 분류 | 상태 |
+|----------|----------|------------|------|
+| ProfileInfo, UserSettings, UserStats, FriendsListModel | Dead Code | **Active Migration Infrastructure** | ✅ 복원 완료 |
+| 관련 DTOs (3개) | Dead Code | **Active Migration Support** | ✅ 복원 완료 |
+| 관련 Mappers (1개) | Dead Code | **Active Migration Support** | ✅ 복원 완료 |
+| 관련 UseCases (4개) | Dead Code | **Active Features** | ✅ 복원 완료 |
+
+### 향후 계획
+
+- **현재**: Active Migration Infrastructure로 유지
+- **Settings Feature 리팩토링 후**: 점진적 제거 검토
+- **UserProfileAdapter 대체 후**: ProfileInfo, UserStats 제거 검토
+- **Friends Feature 리팩토링 후**: FriendsListModel 제거 검토
+
+**복원 커밋**: f6bbcef4 → 현재 (2025-01-20)
 
 ---
 
@@ -3680,8 +3753,29 @@ lib/features/profile/                         # Profile Feature 루트
 ---
 
 **마지막 업데이트**: 2025-01-20
-**버전**: v2.3 (Profile Feature Clean Architecture v4.0 Migration - Phase 3 Error Fix Complete)
+**버전**: v2.4 (Profile Feature Clean Architecture v4.0 Migration - Phase 6 AuthContract 통합 완료)
 **유지관리자**: Profile Feature Team
+
+**v2.4 변경 사항** (2025-01-20 - Phase 6 AuthContract 통합):
+- ✅ **AuthUser 의존성 완전 제거**: Domain/Data 레이어에서 Auth Feature 의존성 격리 완료
+  - IUserRepository: `getAuthUser()` → `getAuthUserData()` (Map<String, dynamic> 반환)
+  - UserRepositoryImpl: Auth 데이터를 Map 형식으로 반환하도록 수정
+  - UserProfileAdapter: AuthUser → Map<String, dynamic> 변환
+- ✅ **Domain 모델 타입 수정**: UserProfile과의 호환성 개선
+  - ProfileInfo.displayName: required String → nullable String?
+  - UserStats.currentRank/currentTitle: 기본값 '' → nullable String?
+  - language 필드 null coalescing 처리 (기본값 'en')
+- ✅ **Phase 1 변경사항 반영**: FirestoreRecord 제거 대응
+  - LatLng import 추가 (/app/models/lat_lng.dart)
+  - fromDomainModels(): getDocumentFromData → UserProfile 생성자 직접 호출
+  - UserProfileBundle: reference 필드를 nullable로 처리
+  - createBundle(): reference를 null로 전달 (UserProfile에 reference 필드 없음)
+- ✅ **Feature 독립성 달성**: Contract Pattern 준수
+  - Domain 레이어: AuthUser import 제거 ✅
+  - Data 레이어: AuthUser import 제거 ✅
+  - Presentation 레이어: AuthUserStreamWidget 사용 가능 (UI 레벨 의존성 허용) ✅
+- ✅ **결과**: Flutter analyze 0 에러, Auth Feature 완전 격리
+- ✅ **수정된 파일**: 5개 (IUserRepository, UserRepositoryImpl, UserProfileAdapter, ProfileInfo, UserStats)
 
 **v2.3 변경 사항** (2025-01-20 - Phase 3 Interface/Implementation 불일치 해결):
 - ✅ **Phase 1**: Repository 인터페이스 메서드 7개 추가 완료

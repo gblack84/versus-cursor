@@ -7,6 +7,8 @@ import 'package:get_it/get_it.dart';
 // Migrated from backend.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/features/profile/domain/models/user_profile.dart';
+import '/features/profile/data/dto/user_profile_dto.dart';
+import '/features/profile/data/mappers/user_profile_mapper.dart';
 import 'package:stream_transform/stream_transform.dart';
 import '/core/interfaces/i_base_auth_user.dart';
 import '../../presentation/providers/auth_provider.dart' as app_auth;
@@ -26,17 +28,19 @@ String get currentUserEmail => _authProvider.currentUserEmail;
 
 String get currentUserUid => _authProvider.currentUserUid;
 
-String get currentUserDisplayName => _authProvider.currentUserDisplayName;
+String? get currentUserDisplayName => _authProvider.currentUserDisplayName;
 
-String get currentUserPhoto => _authProvider.currentUserPhoto;
+String? get currentUserPhoto => _authProvider.currentUserPhoto;
 
-String get currentPhoneNumber => _authProvider.currentPhoneNumber;
+String? get currentPhoneNumber => _authProvider.currentPhoneNumber;
 
 String get currentJwtToken => _authProvider.currentJwtToken;
 
 bool get currentUserEmailVerified => _authProvider.currentUserEmailVerified;
 
-DocumentReference? get currentUserReference => _authProvider.currentUserReference;
+DocumentReference? get currentUserReference => loggedIn
+    ? FirebaseFirestore.instance.collection('users').doc(currentUserUid)
+    : null;
 
 UserProfile? get currentUserDocument => _authProvider.currentUserDocument;
 
@@ -52,7 +56,15 @@ final authenticatedUserStream = FirebaseAuth.instance
     .switchMap(
       (uid) => uid.isEmpty
           ? Stream.value(null)
-          : UserProfile.getDocument(UserProfile.collection.doc(uid))
+          : FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid)
+              .snapshots()
+              .map((doc) {
+                if (!doc.exists || doc.data() == null) return null;
+                final dto = UserProfileDto.fromFirestore(doc.data()!);
+                return UserProfileMapper.toDomain(dto, doc.reference);
+              })
               .handleError((_) {}),
     )
     .asBroadcastStream();

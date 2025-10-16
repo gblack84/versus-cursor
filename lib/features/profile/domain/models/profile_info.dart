@@ -1,7 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '/app/models/lat_lng.dart';
 
 /// ProfileInfo Domain Model
 /// Clean Architecture - Domain Layer Entity
+///
+/// **변경사항** (2025-01-20):
+/// - Firebase 의존성 제거: GeoPoint → LatLng
+/// - fromDocument(), toFirestore() 메서드 제거 → DTO로 이동 예정
 ///
 /// This model contains user profile display information,
 /// separated from authentication concerns (AuthUser) and
@@ -36,26 +40,7 @@ class ProfileInfo {
   final List<String> expertise;
 
   // Location
-  final GeoPoint? location;
-
-  /// Create ProfileInfo from Firestore document
-  factory ProfileInfo.fromDocument(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return ProfileInfo(
-      userId: doc.id,
-      displayName: data['displayName'] ?? '',
-      photoUrl: data['photoUrl'],
-      shortDescription: data['shortDescription'],
-      gender: data['gender'],
-      dateOfBirth: data['dateOfBirth'] != null
-          ? (data['dateOfBirth'] as Timestamp).toDate()
-          : null,
-      language: data['language'] ?? 'en',
-      interests: List<String>.from(data['interests'] ?? []),
-      expertise: List<String>.from(data['expertise'] ?? []),
-      location: data['location'] as GeoPoint?,
-    );
-  }
+  final LatLng? location;
 
   /// Create ProfileInfo from JSON (for caching)
   factory ProfileInfo.fromJson(Map<String, dynamic> json) {
@@ -72,25 +57,12 @@ class ProfileInfo {
       interests: List<String>.from(json['interests'] ?? []),
       expertise: List<String>.from(json['expertise'] ?? []),
       location: json['location'] != null
-          ? GeoPoint(
-              json['location']['latitude'], json['location']['longitude'])
+          ? LatLng(
+              json['location']['latitude'] as double,
+              json['location']['longitude'] as double,
+            )
           : null,
     );
-  }
-
-  /// Convert to Map for Firestore
-  Map<String, dynamic> toFirestore() {
-    return {
-      'displayName': displayName,
-      if (photoUrl != null) 'photoUrl': photoUrl,
-      if (shortDescription != null) 'shortDescription': shortDescription,
-      if (gender != null) 'gender': gender,
-      if (dateOfBirth != null) 'dateOfBirth': Timestamp.fromDate(dateOfBirth!),
-      'language': language,
-      'interests': interests,
-      'expertise': expertise,
-      if (location != null) 'location': location,
-    };
   }
 
   /// Convert to JSON for caching
@@ -124,7 +96,7 @@ class ProfileInfo {
     String? language,
     List<String>? interests,
     List<String>? expertise,
-    GeoPoint? location,
+    LatLng? location,
   }) {
     return ProfileInfo(
       userId: userId ?? this.userId,

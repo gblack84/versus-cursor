@@ -5,7 +5,6 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:bot_toast/bot_toast.dart';
 import '/app/state/app_state.dart';
 import '/services/moderation/image_moderation_service.dart';
-import '/features/creation/data/services/image_reorder_service.dart';
 import '/core/utils/debug_helper.dart';
 import '/core/utils/error_handler.dart';
 
@@ -62,15 +61,15 @@ class SelectionResultProcessor {
         await _handleNewAssets(newAssets);
       }
 
-      // 순서 재정렬 (선택된 순서대로)
-      if (selectedIds.length == appState.assetEntityIdsA.length ||
-          selectedIds.length == appState.assetEntityIdsB.length) {
-        ImageReorderService.reorderImages(
-          appState: appState,
-          box: box,
-          newOrder: selectedIds,
-        );
-      }
+      // TODO: 순서 재정렬 기능 (ImageReorderService 구현 필요)
+      // if (selectedIds.length == appState.assetEntityIdsA.length ||
+      //     selectedIds.length == appState.assetEntityIdsB.length) {
+      //   ImageReorderService.reorderImages(
+      //     appState: appState,
+      //     box: box,
+      //     newOrder: selectedIds,
+      //   );
+      // }
 
       onProgressUpdate(1.0);
 

@@ -20,14 +20,18 @@ import '../../domain/usecases/password_management_usecase.dart';
 import '../../domain/usecases/email_verification_usecase.dart';
 import '../../domain/usecases/account_management_usecase.dart';
 import '/features/profile/domain/models/user_profile.dart';
+import '/features/profile/data/dto/user_profile_dto.dart';
+import '/features/profile/data/mappers/user_profile_mapper.dart';
 import '/core/interfaces/i_base_auth_user.dart';
+import '/app/contracts/auth_contract.dart';
 import '../../data/adapters/firebase_user_provider.dart';
 
 /// AuthProvider
 ///
 /// Central state management for authentication in the Versus Space app.
 /// Manages user authentication state and provides methods for all auth operations.
-class AuthProvider extends ChangeNotifier {
+/// Implements AuthContract to provide auth information to other Features.
+class AuthProvider extends ChangeNotifier implements AuthContract {
   // Private instance for singleton
   static AuthProvider? _instance;
 
@@ -115,23 +119,61 @@ class AuthProvider extends ChangeNotifier {
   bool get isCodeSent => _isCodeSent;
   String? get phoneNumber => _phoneNumber;
 
-  // Legacy compatibility getters (replacing auth_util.dart global variables)
+  // ============= AuthContract Implementation =============
+
+  @override
+  String? getCurrentUserId() => currentUserUid;
+
+  @override
+  String? getCurrentUserEmail() => currentUserEmail;
+
+  @override
+  bool get isSignedIn => loggedIn;
+
+  @override
+  Future<String?> getIdToken() async {
+    try {
+      return await FirebaseAuth.instance.currentUser?.getIdToken();
+    } catch (e) {
+      debugPrint('getIdToken error: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<String?> refreshToken() async {
+    try {
+      return await FirebaseAuth.instance.currentUser?.getIdToken(true);
+    } catch (e) {
+      debugPrint('refreshToken error: $e');
+      return null;
+    }
+  }
+
+  @override
+  String? get currentUserDisplayName =>
+      _currentUserDocument?.displayName ?? _currentUser?.displayName ?? '';
+
+  @override
+  String? get currentUserPhoto =>
+      _currentUserDocument?.photoUrl ?? _currentUser?.photoUrl ?? '';
+
+  @override
+  String? get currentPhoneNumber =>
+      _currentUserDocument?.phoneNumber ?? _currentUser?.phoneNumber ?? '';
+
+  // ============= Legacy compatibility getters =============
+
   BaseAuthUser? get baseAuthUser => _firebaseUser;
   bool get loggedIn => _firebaseUser?.loggedIn ?? false;
   UserProfile? get currentUserDocument => _currentUserDocument;
   String get currentUserEmail =>
       _currentUserDocument?.email ?? _currentUser?.email ?? '';
   String get currentUserUid => _currentUser?.uid ?? '';
-  String get currentUserDisplayName =>
-      _currentUserDocument?.displayName ?? _currentUser?.displayName ?? '';
-  String get currentUserPhoto =>
-      _currentUserDocument?.photoUrl ?? _currentUser?.photoUrl ?? '';
-  String get currentPhoneNumber =>
-      _currentUserDocument?.phoneNumber ?? _currentUser?.phoneNumber ?? '';
   String get currentJwtToken => _currentJwtToken ?? '';
   bool get currentUserEmailVerified => _currentUser?.isEmailVerified ?? false;
   DocumentReference? get currentUserReference =>
-      loggedIn ? UserProfile.collection.doc(_currentUser!.uid) : null;
+      loggedIn ? FirebaseFirestore.instance.collection('users').doc(_currentUser!.uid) : null;
 
   // Initialize provider (call on app start)
   Future<void> initialize() async {
@@ -166,7 +208,15 @@ class AuthProvider extends ChangeNotifier {
         .switchMap(
           (uid) => uid.isEmpty
               ? Stream.value(null)
-              : UserProfile.getDocument(UserProfile.collection.doc(uid))
+              : FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(uid)
+                  .snapshots()
+                  .map((doc) {
+                    if (!doc.exists || doc.data() == null) return null;
+                    final dto = UserProfileDto.fromFirestore(doc.data()!);
+                    return UserProfileMapper.toDomain(dto, doc.reference);
+                  })
                   .handleError((_) {}),
         )
         .listen((userDoc) {

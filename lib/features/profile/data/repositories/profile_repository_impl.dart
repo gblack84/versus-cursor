@@ -1,246 +1,75 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/repositories/i_profile_repository.dart';
 import '../../domain/models/profile_info.dart';
-import '../../domain/models/user_settings.dart';
-import '../../domain/models/user_stats.dart';
-import '../../domain/models/interest_model.dart';
 import '../datasources/interfaces/i_profile_datasource.dart';
-import '../datasources/interfaces/i_storage_datasource.dart';
 
-/// ProfileRepository 구현
+/// ProfileRepository 구현 (Clean Architecture v4.0)
+///
+/// **Phase 6 대규모 정리** (2025-01-21):
+/// - 20개 → 3개 메서드로 축소 (85% 감소)
+/// - 프로필 완성도 + 경량 조회 메서드만 보존
+/// - IStorageDataSource 의존성 제거 (uploadProfilePhoto 삭제로 인해)
+///
+/// **Phase 6 복원** (2025-01-21):
+/// - getProfileInfo() 복원 (성능 최적화 필수 기능)
 ///
 /// **책임**:
-/// - DataSource를 통한 데이터 접근
-/// - Map<String, dynamic> → Domain Model 변환
+/// - DataSource를 통한 프로필 경량 조회
+/// - DataSource를 통한 프로필 완성도 확인
+/// - Map → Domain Model 변환
 /// - 에러 처리
 class ProfileRepositoryImpl implements IProfileRepository {
   final IProfileDataSource _dataSource;
-  final IStorageDataSource _storageDataSource;
 
   ProfileRepositoryImpl({
     required IProfileDataSource dataSource,
-    required IStorageDataSource storageDataSource,
-  })  : _dataSource = dataSource,
-        _storageDataSource = storageDataSource;
+  }) : _dataSource = dataSource;
 
   // ============= ProfileInfo 관리 =============
 
   @override
   Future<ProfileInfo?> getProfileInfo(String userId) async {
-    try {
-      final data = await _dataSource.getProfile(userId);
-      if (data == null) return null;
+    final data = await _dataSource.getProfileInfoData(userId);
+    if (data == null) return null;
 
-      return ProfileInfo(
-        userId: data['uid'] as String? ?? userId,
-        displayName: data['displayName'] as String? ?? '',
-        photoUrl: data['photoUrl'] as String?,
-        shortDescription: data['shortDescription'] as String?,
-        gender: data['gender'] as String?,
-        dateOfBirth: (data['dateOfBirth'] as Timestamp?)?.toDate(),
-        location: data['location'] as GeoPoint?,
-        interests: (data['interests'] as List<dynamic>?)?.cast<String>() ?? [],
-        expertise: (data['expertise'] as List<dynamic>?)?.cast<String>() ?? [],
-        language: data['language'] as String? ?? 'en',
-      );
-    } catch (e) {
-      return null;
-    }
+    // DataSource returns serialized Map compatible with fromJson
+    return ProfileInfo.fromJson(data);
   }
 
-  @override
-  Stream<ProfileInfo?> getProfileInfoStream(String userId) {
-    return _dataSource.watchProfile(userId).map((data) {
-      if (data == null) return null;
-
-      return ProfileInfo(
-        userId: data['uid'] as String? ?? userId,
-        displayName: data['displayName'] as String? ?? '',
-        photoUrl: data['photoUrl'] as String?,
-        shortDescription: data['shortDescription'] as String?,
-        gender: data['gender'] as String?,
-        dateOfBirth: (data['dateOfBirth'] as Timestamp?)?.toDate(),
-        location: data['location'] as GeoPoint?,
-        interests: (data['interests'] as List<dynamic>?)?.cast<String>() ?? [],
-        expertise: (data['expertise'] as List<dynamic>?)?.cast<String>() ?? [],
-        language: data['language'] as String? ?? 'en',
-      );
-    });
-  }
-
-  @override
-  Future<void> updateProfileInfo(String userId, ProfileInfo profile) async {
-    try {
-      final data = profile.toFirestore();
-      await _dataSource.updateProfile(userId, data);
-    } catch (e) {
-      rethrow;
-    }
-  }
+  // TODO: 2025-01-21 삭제됨 - 스트림 및 업데이트 메서드
+  //
+  // 삭제된 메서드 (2개, 호출처 0건):
+  //   - getProfileInfoStream() → 스트림 미사용, Future 조회만 사용
+  //   - updateProfileInfo() → UpdateUserProfileUseCase 생성 필요
 
   // ============= UserSettings 관리 =============
-
-  @override
-  Future<UserSettings?> getUserSettings(String userId) async {
-    try {
-      final data = await _dataSource.getProfile(userId);
-      if (data == null) return null;
-
-      return UserSettings(
-        userId: data['uid'] as String? ?? userId,
-        isPremiumUser: data['isPremiumUser'] as bool? ?? false,
-        receiveRankUpdateNotifications:
-            data['receiveRankUpdateNotifications'] as bool? ?? true,
-        receiveTitleUpdateNotifications:
-            data['receiveTitleUpdateNotifications'] as bool? ?? true,
-        receiveVoteNotifications:
-            data['receiveVoteNotifications'] as bool? ?? true,
-        receiveCommentNotifications:
-            data['receiveCommentNotifications'] as bool? ?? true,
-        receiveFriendNotifications:
-            data['receiveFriendNotifications'] as bool? ?? true,
-        subscription: Map<String, dynamic>.from(
-            data['subscription'] as Map<String, dynamic>? ?? {}),
-        stats: Map<String, dynamic>.from(
-            data['stats'] as Map<String, dynamic>? ?? {}),
-        privacySettings: Map<String, dynamic>.from(
-            data['privacySettings'] as Map<String, dynamic>? ?? {}),
-      );
-    } catch (e) {
-      return null;
-    }
-  }
-
-  @override
-  Stream<UserSettings?> getUserSettingsStream(String userId) {
-    return _dataSource.watchProfile(userId).map((data) {
-      if (data == null) return null;
-
-      return UserSettings(
-        userId: data['uid'] as String? ?? userId,
-        isPremiumUser: data['isPremiumUser'] as bool? ?? false,
-        receiveRankUpdateNotifications:
-            data['receiveRankUpdateNotifications'] as bool? ?? true,
-        receiveTitleUpdateNotifications:
-            data['receiveTitleUpdateNotifications'] as bool? ?? true,
-        receiveVoteNotifications:
-            data['receiveVoteNotifications'] as bool? ?? true,
-        receiveCommentNotifications:
-            data['receiveCommentNotifications'] as bool? ?? true,
-        receiveFriendNotifications:
-            data['receiveFriendNotifications'] as bool? ?? true,
-        subscription: Map<String, dynamic>.from(
-            data['subscription'] as Map<String, dynamic>? ?? {}),
-        stats: Map<String, dynamic>.from(
-            data['stats'] as Map<String, dynamic>? ?? {}),
-        privacySettings: Map<String, dynamic>.from(
-            data['privacySettings'] as Map<String, dynamic>? ?? {}),
-      );
-    });
-  }
-
-  @override
-  Future<void> updateUserSettings(
-      String userId, UserSettings settings) async {
-    try {
-      final data = settings.toFirestore();
-      await _dataSource.updateProfile(userId, data);
-    } catch (e) {
-      rethrow;
-    }
-  }
+  // TODO: 2025-01-21 삭제됨 - IUserRepository 사용 또는 UseCase 생성
+  //
+  // 삭제된 메서드 (3개, 호출처 0건):
+  //   - getUserSettings() → IUserRepository.getUserSettings() 사용
+  //   - getUserSettingsStream() → 스트림 미사용
+  //   - updateUserSettings() → UpdateUserSettingsUseCase 존재
 
   // ============= UserStats 관리 =============
-
-  @override
-  Future<UserStats?> getUserStats(String userId) async {
-    try {
-      final data = await _dataSource.getProfile(userId);
-      if (data == null) return null;
-
-      return UserStats.fromMap(data, userId);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  @override
-  Stream<UserStats?> getUserStatsStream(String userId) {
-    return _dataSource.watchProfile(userId).map((data) {
-      if (data == null) return null;
-      return UserStats.fromMap(data, userId);
-    });
-  }
-
-  @override
-  Future<void> updateUserStats(String userId, UserStats stats) async {
-    try {
-      final data = stats.toFirestore();
-      await _dataSource.updateProfile(userId, data);
-    } catch (e) {
-      rethrow;
-    }
-  }
+  // TODO: 2025-01-21 삭제됨 - IUserRepository 사용 또는 Voting Feature에서 구현 예정
+  //
+  // 삭제된 메서드 (3개, 호출처 0건):
+  //   - getUserStats() → IUserRepository.getUserStats() 중복
+  //   - getUserStatsStream() → 스트림 미사용
+  //   - updateUserStats() → Voting Feature에서 구현 예정
 
   // ============= 필드 업데이트 =============
-
-  @override
-  Future<void> updateProfileField(
-      String userId, String field, dynamic value) async {
-    try {
-      await _dataSource.updateField(userId, field, value);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<void> updateProfileFields(
-      String userId, Map<String, dynamic> fields) async {
-    try {
-      await _dataSource.updateFields(userId, fields);
-    } catch (e) {
-      rethrow;
-    }
-  }
+  // TODO: 2025-01-21 삭제됨 - 미래 기능
+  //
+  // 삭제된 메서드 (2개, 호출처 0건):
+  //   - updateProfileField() → 단일 필드 업데이트 미래 기능
+  //   - updateProfileFields() → 다중 필드 업데이트 미래 기능
 
   // ============= 프로필 사진 관리 =============
-
-  @override
-  Future<String> uploadProfilePhoto(String userId, String imagePath) async {
-    try {
-      final file = await _readFile(imagePath);
-      final fileName = 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
-
-      final downloadUrl = await _storageDataSource.uploadProfileImage(
-        userId: userId,
-        imageBytes: file,
-        fileName: fileName,
-      );
-
-      await _dataSource.updateField(userId, 'photoUrl', downloadUrl);
-
-      return downloadUrl;
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<void> deleteProfilePhoto(String userId) async {
-    try {
-      final data = await _dataSource.getProfile(userId);
-      if (data == null) return;
-
-      final photoUrl = data['photoUrl'] as String?;
-      if (photoUrl != null && photoUrl.isNotEmpty) {
-        await _storageDataSource.deleteProfileImage(photoUrl);
-        await _dataSource.updateField(userId, 'photoUrl', null);
-      }
-    } catch (e) {
-      rethrow;
-    }
-  }
+  // TODO: 2025-01-21 삭제됨 - UseCase 사용
+  //
+  // 삭제된 메서드 (2개, 호출처 0건):
+  //   - uploadProfilePhoto() → UploadProfileImageUseCase 사용 (IProfileStorageRepository)
+  //   - deleteProfilePhoto() → DeleteProfileImageUseCase 생성 필요
 
   // ============= 프로필 완성도 =============
 
@@ -254,160 +83,39 @@ class ProfileRepositoryImpl implements IProfileRepository {
     return await _dataSource.getProfileCompletionPercentage(userId);
   }
 
-  @override
-  Future<Map<String, dynamic>> getProfileCompletion(String userId) async {
-    // 프로필 완성도 상세 정보 반환
-    try {
-      final data = await _dataSource.getProfile(userId);
-      if (data == null) return {};
+  // TODO: 2025-01-21 삭제됨
+  // 삭제된 메서드 (1개, 호출처 0건):
+  //   - getProfileCompletion() → 미래 기능 (완성도 상세 정보)
 
-      final completion = <String, dynamic>{};
-      completion['percentage'] = await getProfileCompletionPercentage(userId);
-      completion['missingFields'] = <String>[];
-
-      if (data['displayName'] == null || (data['displayName'] as String).isEmpty) {
-        (completion['missingFields'] as List<String>).add('displayName');
-      }
-      if (data['photoUrl'] == null || (data['photoUrl'] as String).isEmpty) {
-        (completion['missingFields'] as List<String>).add('photoUrl');
-      }
-      if (data['dateOfBirth'] == null) {
-        (completion['missingFields'] as List<String>).add('dateOfBirth');
-      }
-
-      return completion;
-    } catch (e) {
-      return {};
-    }
-  }
-
-  @override
-  Future<List<InterestModel>> getUserInterests(String userId) async {
-    // @Deprecated - IInterestsRepository 사용 권장
-    // InterestModel은 Firestore 레코드이므로 여기서는 빈 리스트 반환
-    return [];
-  }
+  // TODO: 2025-01-21 삭제됨
+  // 삭제된 메서드 (1개, 호출처 0건):
+  //   - getUserInterests() → GetUserInterestsUseCase 사용 (IInterestsRepository)
 
   // ============= 검색 및 추천 =============
-
-  @override
-  Future<List<ProfileInfo>> searchProfiles({
-    String? query,
-    List<String>? interests,
-    String? gender,
-    int? minAge,
-    int? maxAge,
-    double? maxDistance,
-    GeoPoint? userLocation,
-    int limit = 20,
-  }) async {
-    try {
-      final results = await _dataSource.searchProfiles(
-        query: query,
-        interests: interests,
-        gender: gender,
-        minAge: minAge,
-        maxAge: maxAge,
-        maxDistance: maxDistance,
-        userLocation: userLocation,
-        limit: limit,
-      );
-
-      return results.map((data) {
-        return ProfileInfo(
-          userId: data['uid'] as String? ?? '',
-          displayName: data['displayName'] as String? ?? '',
-          photoUrl: data['photoUrl'] as String?,
-          shortDescription: data['shortDescription'] as String?,
-          gender: data['gender'] as String?,
-          dateOfBirth: (data['dateOfBirth'] as Timestamp?)?.toDate(),
-          location: data['location'] as GeoPoint?,
-          interests:
-              (data['interests'] as List<dynamic>?)?.cast<String>() ?? [],
-          expertise:
-              (data['expertise'] as List<dynamic>?)?.cast<String>() ?? [],
-          language: data['language'] as String? ?? 'en',
-        );
-      }).toList();
-    } catch (e) {
-      return [];
-    }
-  }
-
-  @override
-  Future<List<ProfileInfo>> getSuggestedProfiles(String userId,
-      {int limit = 10}) async {
-    try {
-      final results =
-          await _dataSource.getSuggestedProfiles(userId, limit: limit);
-
-      return results.map((data) {
-        return ProfileInfo(
-          userId: data['uid'] as String? ?? '',
-          displayName: data['displayName'] as String? ?? '',
-          photoUrl: data['photoUrl'] as String?,
-          shortDescription: data['shortDescription'] as String?,
-          gender: data['gender'] as String?,
-          dateOfBirth: (data['dateOfBirth'] as Timestamp?)?.toDate(),
-          location: data['location'] as GeoPoint?,
-          interests:
-              (data['interests'] as List<dynamic>?)?.cast<String>() ?? [],
-          expertise:
-              (data['expertise'] as List<dynamic>?)?.cast<String>() ?? [],
-          language: data['language'] as String? ?? 'en',
-        );
-      }).toList();
-    } catch (e) {
-      return [];
-    }
-  }
+  // TODO: 2025-01-21 삭제됨 - Search Feature 구현 시 재생성
+  //
+  // 삭제된 메서드 (2개 + UseCase 2개 삭제):
+  //   - searchProfiles() → SearchProfilesUseCase 삭제됨
+  //   - getSuggestedProfiles() → GetSuggestedProfilesUseCase 삭제됨
+  //
+  // **향후 재구현 시**:
+  //   - Search Feature 별도 구현
+  //   - Algolia 또는 Firestore Query 사용
+  //   - 거리 기반 검색 (GeoPoint + Haversine)
+  //   - 관심사/나이/성별 필터링
 
   // ============= 소셜 기능 =============
-
-  @override
-  Future<void> blockUser(String userId, String blockedUserId) async {
-    try {
-      await _dataSource.blockUser(userId, blockedUserId);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<void> unblockUser(String userId, String blockedUserId) async {
-    try {
-      await _dataSource.unblockUser(userId, blockedUserId);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<List<String>> getBlockedUsers(String userId) async {
-    try {
-      return await _dataSource.getBlockedUsers(userId);
-    } catch (e) {
-      return [];
-    }
-  }
-
-  @override
-  Future<void> reportUser(
-      String userId, String reportedUserId, String reason) async {
-    try {
-      await _dataSource.reportUser(userId, reportedUserId, reason);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  // ============= 헬퍼 메서드 =============
-
-  Future<List<int>> _readFile(String path) async {
-    // Import dart:io in production
-    // For now, throw UnimplementedError
-    throw UnimplementedError(
-      'File reading requires dart:io. Implement in production.',
-    );
-  }
+  // TODO: 2025-01-21 삭제됨 - Social Feature 구현 시 재생성
+  //
+  // 삭제된 메서드 (4개 + UseCase 2개 삭제):
+  //   - blockUser() → BlockUserUseCase 삭제됨
+  //   - unblockUser() → UseCase 미생성, 삭제됨
+  //   - getBlockedUsers() → UseCase 미생성, 삭제됨
+  //   - reportUser() → ReportUserUseCase 삭제됨
+  //
+  // **향후 재구현 시**:
+  //   - Social Feature 별도 구현
+  //   - Firestore 서브컬렉션 (blockedUsers, reports)
+  //   - 차단 사용자 필터링 로직
+  //   - 신고 사유 분류 시스템
 }

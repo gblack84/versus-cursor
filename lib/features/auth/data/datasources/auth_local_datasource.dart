@@ -7,7 +7,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'i_auth_local_datasource.dart';
 import '../dto/auth_user_dto.dart';
-import '../dto/user_profile_dto.dart';
 
 /// AuthLocalDataSource
 ///
@@ -18,7 +17,6 @@ class AuthLocalDataSource implements IAuthLocalDataSource {
 
   // Cache keys
   static const String _authUserKey = 'auth_user_cache';
-  static const String _userProfilePrefix = 'user_profile_';
   static const String _authTokenKey = 'auth_token';
   static const String _cacheTimestampPrefix = 'cache_timestamp_';
 
@@ -91,75 +89,11 @@ class AuthLocalDataSource implements IAuthLocalDataSource {
   }
 
   @override
-  Future<void> cacheUserProfile(UserProfileDto profile) async {
-    try {
-      if (profile.uid == null) {
-        debugPrint('Cannot cache profile without UID');
-        return;
-      }
-
-      final key = '$_userProfilePrefix${profile.uid}';
-      final jsonString = jsonEncode(profile.toJson());
-      await _prefs.setString(key, jsonString);
-
-      // Save timestamp
-      await _prefs.setInt(
-        '$_cacheTimestampPrefix$key',
-        DateTime.now().millisecondsSinceEpoch,
-      );
-
-      debugPrint('User profile cached for UID: ${profile.uid}');
-    } catch (e) {
-      debugPrint('Error caching user profile: $e');
-      rethrow;
-    }
-  }
-
-  @override
-  Future<UserProfileDto?> getCachedUserProfile(String uid) async {
-    try {
-      final key = '$_userProfilePrefix$uid';
-      final jsonString = _prefs.getString(key);
-      if (jsonString == null) {
-        return null;
-      }
-
-      // Check cache expiry (optional)
-      if (_isCacheExpired(key)) {
-        debugPrint('User profile cache expired for UID: $uid');
-        await clearCachedUserProfile(uid);
-        return null;
-      }
-
-      final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
-      return UserProfileDto.fromJson(jsonMap);
-    } catch (e) {
-      debugPrint('Error getting cached user profile: $e');
-      // If there's an error parsing, clear the corrupted cache
-      await clearCachedUserProfile(uid);
-      return null;
-    }
-  }
-
-  @override
-  Future<void> clearCachedUserProfile(String uid) async {
-    try {
-      final key = '$_userProfilePrefix$uid';
-      await _prefs.remove(key);
-      await _prefs.remove('$_cacheTimestampPrefix$key');
-      debugPrint('User profile cache cleared for UID: $uid');
-    } catch (e) {
-      debugPrint('Error clearing user profile cache: $e');
-    }
-  }
-
-  @override
   Future<void> clearAllCache() async {
     try {
       // Get all keys to find and remove cache-related items
       final keys = _prefs.getKeys();
       final cacheKeys = keys.where((key) =>
-        key.startsWith(_userProfilePrefix) ||
         key.startsWith(_cacheTimestampPrefix) ||
         key == _authUserKey ||
         key == _authTokenKey
@@ -179,11 +113,8 @@ class AuthLocalDataSource implements IAuthLocalDataSource {
   @override
   Future<bool> hasCache(String uid) async {
     try {
-      final profileKey = '$_userProfilePrefix$uid';
-      final hasProfile = _prefs.containsKey(profileKey);
       final hasAuthUser = _prefs.containsKey(_authUserKey);
-
-      return hasProfile || hasAuthUser;
+      return hasAuthUser;
     } catch (e) {
       debugPrint('Error checking cache existence: $e');
       return false;
@@ -262,15 +193,5 @@ class AuthLocalDataSource implements IAuthLocalDataSource {
     final now = DateTime.now();
 
     return now.difference(savedTime) > _cacheExpiry;
-  }
-
-  // Helper method to get all cached profile UIDs (for debugging/management)
-  List<String> getCachedProfileUids() {
-    final keys = _prefs.getKeys();
-    final profileKeys = keys.where((key) => key.startsWith(_userProfilePrefix));
-
-    return profileKeys
-        .map((key) => key.replaceFirst(_userProfilePrefix, ''))
-        .toList();
   }
 }

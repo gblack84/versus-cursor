@@ -24,11 +24,14 @@ services/
 │   └── preload_strategy.dart           # 프리로딩 전략
 │
 ├── chat/                                # 채팅 관련 서비스
-│   ├── chat_initialization_service.dart # 채팅방 초기화
 │   ├── chat_message_service.dart       # 메시지 관리
+│   ├── chat_message_lifecycle_service.dart # 메시지 라이프사이클
 │   ├── chat_scroll_service.dart        # 스크롤 동작
 │   ├── chat_animation_service.dart     # 애니메이션
-│   └── chat_media_upload_service.dart  # 미디어 업로드
+│   ├── chat_media_upload_service.dart  # 미디어 업로드
+│   ├── chat_image_cache_service.dart   # 이미지 캐싱
+│   ├── chat_file_size_service.dart     # 파일 크기 관리
+│   └── gemini_ai_service.dart          # Gemini AI 서비스
 │
 ├── vote/                                # 투표 관련 서비스
 │   ├── vote_state_coordinator.dart     # 투표 상태 조정
@@ -90,34 +93,7 @@ services/
 
 ## 📂 채팅 서비스
 
-### 1. ChatInitializationService
-
-**책임**: 채팅방 초기화 및 생성 관리
-
-**주요 메서드**:
-- `initializeChat(chatId, currentUserId)`: 채팅방 초기화
-- `createNewChat(participantIds, initialMessage, metadata)`: 새 채팅방 생성
-- `createAIChatRooms(userId)`: AI 채팅방 생성
-
-**초기화 프로세스**:
-1. 채팅 정보, 참여자, 초기 메시지 병렬 로드
-2. 읽음 상태 업데이트
-3. ChatInitializationResult 반환
-
-**AI 채팅방 타입**:
-- `ai_helper`: AI 도우미 채팅방
-- `ai_assistant`: AI 투표 도우미 채팅방
-
-**의존성**: ChatRepository, MessageRepository
-
-**반환 타입**: ChatInitializationResult
-- chat: ChatModel
-- participants: List<UserModel>
-- initialMessages: List<MessageModel>
-- success: bool
-- error: String?
-
-### 2. ChatMessageService
+### 1. ChatMessageService
 
 **책임**: 채팅 메시지 관리 및 처리
 

@@ -1,89 +1,61 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/chats_model.dart';
-import '../models/messages_model.dart';
-import '../models/group_chats_model.dart';
-import '../models/group_messages_model.dart';
-import '../models/chat_history_model.dart';
+import '../entities/chat.dart';
+import '../entities/message.dart';
 
-/// Repository interface for Chat-related operations
-/// This interface defines the contract for chat and messaging functionality
+/// Repository interface for Chat-related operations (Clean Architecture v4.0)
+///
+/// **Dependency Inversion Principle 적용**:
+/// - Firestore 의존성 완전 제거
+/// - 순수 Dart 타입만 사용
+/// - Infrastructure 구현 세부사항은 Data Layer에서 처리
 abstract class IChatRepository {
-  // Chat queries
-  Stream<List<ChatsModel>> queryChats({
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
+  // Chat queries (Clean Architecture v4.0: Pure Domain Entity 반환)
+  Stream<List<Chat>> queryChats({
+    required String userId,
+    int limit = 50,
+    String? orderBy,
+    bool descending = true,
   });
 
   Future<int> queryChatsCount({
-    Query Function(Query)? queryBuilder,
+    required String userId,
     int limit = -1,
   });
 
-  // Message queries
-  Stream<List<MessagesModel>> queryMessages({
-    required DocumentReference parent,
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
+  // Message queries (Clean Architecture v4.0: Pure Domain Entity 반환)
+  Stream<List<Message>> queryMessagesByChatId({
+    required String chatId,
+    int limit = 30,
+    String? orderBy,
+    bool descending = true,
+  });
+
+  /// Load more messages before a specific message (Clean Architecture v4.0)
+  ///
+  /// 페이지네이션을 위해 특정 메시지 이전의 메시지들을 로드
+  /// UseCase는 messageId만 전달, Repository에서 Firestore DocumentSnapshot 처리
+  /// Pure Domain Entity 반환
+  Future<List<Message>> queryMessagesBeforeMessageId({
+    required String chatId,
+    required String lastMessageId,
+    int limit = 30,
   });
 
   Future<int> queryMessagesCount({
-    required DocumentReference parent,
-    Query Function(Query)? queryBuilder,
+    required String chatId,
     int limit = -1,
   });
 
-  // Group chat queries
-  Stream<List<GroupChatsModel>> queryGroupChats({
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  });
+  // TODO: Group chat features - 향후 구현 예정
+  // Group chat, group messages, chat history는 별도 마이그레이션 필요
+  // 현재는 1:1 채팅만 Clean Architecture v4.0 마이그레이션 완료
 
-  Future<int> queryGroupChatsCount({
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-  });
-
-  // Group message queries
-  Stream<List<GroupMessagesModel>> queryGroupMessages({
-    required DocumentReference parent,
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  });
-
-  Future<int> queryGroupMessagesCount({
-    required DocumentReference parent,
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-  });
-
-  // Chat history queries
-  Stream<List<ChatHistoryModel>> queryChatHistory({
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  });
-
-  Future<int> queryChatHistoryCount({
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-  });
-
-  // CRUD operations
-  Future<ChatsModel?> getChat(String chatId);
-  Future<void> createChat(ChatsModel chat);
-  Future<void> updateChat(ChatsModel chat);
+  // CRUD operations (Clean Architecture v4.0: Pure Domain Entity 사용)
+  Future<Chat?> getChat(String chatId);
+  Future<void> createChat(Chat chat);
+  Future<void> updateChat(Chat chat);
   Future<void> deleteChat(String chatId);
 
-  // Message operations
-  Future<void> sendMessage(String chatId, MessagesModel message);
+  // Message operations (Clean Architecture v4.0: Pure Domain Entity 사용)
+  Future<void> sendMessage(String chatId, Message message);
   Future<void> deleteMessage(String chatId, String messageId);
-
-  // Group operations
-  Future<void> createGroupChat(GroupChatsModel group);
-  Future<void> addGroupMember(String groupId, String userId);
-  Future<void> removeGroupMember(String groupId, String userId);
 }

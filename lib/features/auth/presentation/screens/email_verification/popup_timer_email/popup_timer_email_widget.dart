@@ -131,10 +131,10 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                         ? null
                         : () async {
                             await currentUserReference!
-                                .update(createUsersModelData(
-                              photoUrl:
+                                .update({
+                              'photoUrl':
                                   'https://firebasestorage.googleapis.com/v0/b/versus-space-1lwwiw.appspot.com/o/characters%2Fdefault%2Fdefaultimage.jpg?alt=media&token=b485c8ad-c393-4ec7-bc1a-c1c3c93ec4ec',
-                            ));
+                            });
                             Navigator.pop(context);
 
                             context.pushNamed(

@@ -59,6 +59,9 @@ class UserProfileDto {
   final bool? receiveRankUpdateNotifications;
   final bool? receiveTitleUpdateNotifications;
 
+  // Character Selection
+  final String? characterId;
+
   // Social Connections
   final List<String>? friends;
   final List<String>? activeChats;
@@ -107,6 +110,7 @@ class UserProfileDto {
     this.titleHistory,
     this.receiveRankUpdateNotifications,
     this.receiveTitleUpdateNotifications,
+    this.characterId,
     this.friends,
     this.activeChats,
     this.groupChats,
@@ -157,6 +161,7 @@ class UserProfileDto {
           data['receiveRankUpdateNotifications'] as bool?,
       receiveTitleUpdateNotifications:
           data['receiveTitleUpdateNotifications'] as bool?,
+      characterId: data['characterId'] as String?,
       friends: (data['friends'] as List<dynamic>?)?.cast<String>(),
       activeChats: (data['activeChats'] as List<dynamic>?)?.cast<String>(),
       groupChats: (data['groupChats'] as List<dynamic>?)?.cast<String>(),
@@ -216,6 +221,7 @@ class UserProfileDto {
         'receiveRankUpdateNotifications': receiveRankUpdateNotifications,
       if (receiveTitleUpdateNotifications != null)
         'receiveTitleUpdateNotifications': receiveTitleUpdateNotifications,
+      if (characterId != null) 'characterId': characterId,
       if (friends != null) 'friends': friends,
       if (activeChats != null) 'activeChats': activeChats,
       if (groupChats != null) 'groupChats': groupChats,

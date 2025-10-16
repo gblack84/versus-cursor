@@ -1,13 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/core/firebase/utils/firestore_util.dart'
-    show queryCollection, queryCollectionOnce, queryCollectionCount;
+    show queryCollection, queryCollectionCount;
 import '../../domain/repositories/i_chat_repository.dart';
-import '/features/chat/domain/models/chats_model.dart';
-import '/features/chat/domain/models/chat_history_model.dart';
-import '/features/profile/domain/models/friends_list_model.dart';
-import '/features/chat/domain/models/messages_model.dart';
-import '/features/chat/domain/models/group_chats_model.dart';
-import '/features/chat/domain/models/group_messages_model.dart';
+import '../../domain/entities/chat.dart';
+import '../../domain/entities/message.dart';
+import '../dto/chat_dto.dart';
+import '../dto/message_dto.dart';
 
 /// Implementation of chat repository with migrated backend query functions
 class ChatRepositoryImpl implements IChatRepository {
@@ -17,247 +15,167 @@ class ChatRepositoryImpl implements IChatRepository {
 
   ChatRepositoryImpl._();
 
-  // MIGRATED: Chats queries (lines 493-528 from backend.dart)
+  // MIGRATED: Chats queries (Clean Architecture v4.0)
   @override
   Future<int> queryChatsCount({
-    Query Function(Query)? queryBuilder,
+    required String userId,
     int limit = -1,
   }) =>
       queryCollectionCount(
-        ChatsModel.collection,
-        queryBuilder: queryBuilder,
+        FirebaseFirestore.instance.collection('chats'),
+        queryBuilder: (query) => query
+            .where('participantIds', arrayContains: userId)
+            .limit(limit == -1 ? 999999 : limit),
         limit: limit,
       );
 
   @override
-  Stream<List<ChatsModel>> queryChats({
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
+  Stream<List<Chat>> queryChats({
+    required String userId,
+    int limit = 50,
+    String? orderBy,
+    bool descending = true,
   }) =>
       queryCollection(
-        ChatsModel.collection,
-        ChatsModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
+        FirebaseFirestore.instance.collection('chats'),
+        ChatDto.fromFirestore,
+        queryBuilder: (query) {
+          var q = query.where('participantIds', arrayContains: userId);
 
-  Future<List<ChatsModel>> queryChatsModelOnce({
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  }) =>
-      queryCollectionOnce(
-        ChatsModel.collection,
-        ChatsModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
+          if (orderBy != null) {
+            q = q.orderBy(orderBy, descending: descending);
+          }
 
-  // MIGRATED: FriendsList queries (lines 530-568 from backend.dart)
-  Future<int> queryFriendsListModelCount({
-    DocumentReference? parent,
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-  }) =>
-      queryCollectionCount(
-        FriendsListModel.collection(parent),
-        queryBuilder: queryBuilder,
-        limit: limit,
-      );
+          if (limit > 0) {
+            q = q.limit(limit);
+          }
 
-  Stream<List<FriendsListModel>> queryFriendsListModel({
-    DocumentReference? parent,
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  }) =>
-      queryCollection(
-        FriendsListModel.collection(parent),
-        FriendsListModel.fromSnapshot,
-        queryBuilder: queryBuilder,
+          return q;
+        },
         limit: limit,
-        singleRecord: singleRecord,
-      );
+        singleRecord: false,
+      ).map((dtos) => dtos.map((dto) => dto.toDomain()).toList());
 
-  Future<List<FriendsListModel>> queryFriendsListModelOnce({
-    DocumentReference? parent,
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  }) =>
-      queryCollectionOnce(
-        FriendsListModel.collection(parent),
-        FriendsListModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
-
-  // MIGRATED: Messages queries (lines 570-608 from backend.dart)
+  // MIGRATED: Messages queries (Clean Architecture v4.0)
   @override
   Future<int> queryMessagesCount({
-    DocumentReference? parent,
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-  }) =>
-      queryCollectionCount(
-        MessagesModel.collection(parent),
-        queryBuilder: queryBuilder,
-        limit: limit,
-      );
-
-  @override
-  Stream<List<MessagesModel>> queryMessages({
-    DocumentReference? parent,
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  }) =>
-      queryCollection(
-        MessagesModel.collection(parent),
-        MessagesModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
-
-  Future<List<MessagesModel>> queryMessagesModelOnce({
-    DocumentReference? parent,
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  }) =>
-      queryCollectionOnce(
-        MessagesModel.collection(parent),
-        MessagesModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
-
-  // MIGRATED: GroupChats queries (lines 610-645 from backend.dart)
-  @override
-  Future<int> queryGroupChatsCount({
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-  }) =>
-      queryCollectionCount(
-        GroupChatsModel.collection,
-        queryBuilder: queryBuilder,
-        limit: limit,
-      );
-
-  @override
-  Stream<List<GroupChatsModel>> queryGroupChats({
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  }) =>
-      queryCollection(
-        GroupChatsModel.collection,
-        GroupChatsModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
-
-  Future<List<GroupChatsModel>> queryGroupChatsModelOnce({
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  }) =>
-      queryCollectionOnce(
-        GroupChatsModel.collection,
-        GroupChatsModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
-
-  // MIGRATED: GroupMessages queries (lines 647-685 from backend.dart)
-  @override
-  Future<int> queryGroupMessagesCount({
-    DocumentReference? parent,
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-  }) =>
-      queryCollectionCount(
-        GroupMessagesModel.collection(parent),
-        queryBuilder: queryBuilder,
-        limit: limit,
-      );
-
-  @override
-  Stream<List<GroupMessagesModel>> queryGroupMessages({
-    DocumentReference? parent,
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  }) =>
-      queryCollection(
-        GroupMessagesModel.collection(parent),
-        GroupMessagesModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
-
-  Future<List<GroupMessagesModel>> queryGroupMessagesModelOnce({
-    DocumentReference? parent,
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  }) =>
-      queryCollectionOnce(
-        GroupMessagesModel.collection(parent),
-        GroupMessagesModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
-
-  // Chat history queries
-  @override
-  Stream<List<ChatHistoryModel>> queryChatHistory({
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  }) {
-    // TODO: Implement when ChatHistoryModel is ready
-    throw UnimplementedError('queryChatHistory not implemented');
-  }
-
-  @override
-  Future<int> queryChatHistoryCount({
-    Query Function(Query)? queryBuilder,
+    required String chatId,
     int limit = -1,
   }) {
-    // TODO: Implement when ChatHistoryModel is ready
-    throw UnimplementedError('queryChatHistoryCount not implemented');
+    final chatRef = FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chatId);
+
+    return queryCollectionCount(
+      chatRef.collection('messages'),
+      limit: limit,
+    );
   }
 
-  // CRUD operations
+  /// Query messages by chatId (Clean Architecture v4.0)
+  ///
+  /// Repository에서만 Firestore 의존성을 갖고,
+  /// UseCase는 chatId만 전달하도록 격리
+  /// Pure Domain Entity 반환
   @override
-  Future<ChatsModel?> getChat(String chatId) async {
+  Stream<List<Message>> queryMessagesByChatId({
+    required String chatId,
+    int limit = 30,
+    String? orderBy,
+    bool descending = true,
+  }) {
+    final chatRef = FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chatId);
+
+    return queryCollection(
+      chatRef.collection('messages'),
+      MessageDto.fromFirestore,
+      queryBuilder: (query) {
+        var q = query;
+
+        if (orderBy != null) {
+          q = q.orderBy(orderBy, descending: descending);
+        } else {
+          // 기본값: timeStamp 기준 내림차순 (최신순)
+          q = q.orderBy('timeStamp', descending: true);
+        }
+
+        if (limit > 0) {
+          q = q.limit(limit);
+        }
+
+        return q;
+      },
+      limit: limit,
+      singleRecord: false,
+    ).map((dtos) => dtos.map((dto) => dto.toDomain()).toList());
+  }
+
+  /// Load more messages before a specific message (Clean Architecture v4.0)
+  ///
+  /// 페이지네이션: messageId 이전의 메시지들을 로드
+  /// Repository 내부에서만 DocumentSnapshot 처리
+  /// Pure Domain Entity 반환
+  @override
+  Future<List<Message>> queryMessagesBeforeMessageId({
+    required String chatId,
+    required String lastMessageId,
+    int limit = 30,
+  }) async {
+    final chatRef = FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chatId);
+
+    // lastMessageId의 DocumentSnapshot을 먼저 가져옴
+    final lastMessageDoc = await chatRef
+        .collection('messages')
+        .doc(lastMessageId)
+        .get();
+
+    if (!lastMessageDoc.exists) {
+      return []; // 메시지가 존재하지 않으면 빈 리스트 반환
+    }
+
+    // endBeforeDocument를 사용한 페이지네이션
+    final messageDtos = await queryCollection(
+      chatRef.collection('messages'),
+      MessageDto.fromFirestore,
+      queryBuilder: (query) => query
+          .orderBy('timeStamp', descending: false)
+          .endBeforeDocument(lastMessageDoc)
+          .limitToLast(limit),
+      limit: limit,
+      singleRecord: false,
+    ).first;
+
+    return messageDtos.map((dto) => dto.toDomain()).toList();
+  }
+
+  // CRUD operations (Clean Architecture v4.0: Pure Domain Entity 사용)
+  @override
+  Future<Chat?> getChat(String chatId) async {
     final doc =
         await FirebaseFirestore.instance.collection('chats').doc(chatId).get();
-    return doc.exists ? ChatsModel.fromSnapshot(doc) : null;
+    return doc.exists ? ChatDto.fromFirestore(doc).toDomain() : null;
   }
 
   @override
-  Future<void> createChat(ChatsModel chat) async {
+  Future<void> createChat(Chat chat) async {
+    final chatDto = ChatDto.fromDomain(chat);
     await FirebaseFirestore.instance
         .collection('chats')
-        .doc(chat.reference?.id)
-        .set(chat.toJson());
+        .doc(chat.id)
+        .set(chatDto.toFirestore());
   }
 
   @override
-  Future<void> updateChat(ChatsModel chat) async {
-    await chat.reference?.update(chat.toJson());
+  Future<void> updateChat(Chat chat) async {
+    final chatDto = ChatDto.fromDomain(chat);
+    await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chat.id)
+        .update(chatDto.toFirestore());
   }
 
   @override
@@ -265,14 +183,15 @@ class ChatRepositoryImpl implements IChatRepository {
     await FirebaseFirestore.instance.collection('chats').doc(chatId).delete();
   }
 
-  // Message operations
+  // Message operations (Clean Architecture v4.0: Pure Domain Entity 사용)
   @override
-  Future<void> sendMessage(String chatId, MessagesModel message) async {
+  Future<void> sendMessage(String chatId, Message message) async {
+    final messageDto = MessageDto.fromDomain(message);
     await FirebaseFirestore.instance
         .collection('chats')
         .doc(chatId)
         .collection('messages')
-        .add(message.toJson());
+        .add(messageDto.toFirestore());
   }
 
   @override
@@ -283,34 +202,5 @@ class ChatRepositoryImpl implements IChatRepository {
         .collection('messages')
         .doc(messageId)
         .delete();
-  }
-
-  // Group operations
-  @override
-  Future<void> createGroupChat(GroupChatsModel group) async {
-    await FirebaseFirestore.instance
-        .collection('groupChats')
-        .doc(group.reference?.id)
-        .set(group.toJson());
-  }
-
-  @override
-  Future<void> addGroupMember(String groupId, String userId) async {
-    await FirebaseFirestore.instance
-        .collection('groupChats')
-        .doc(groupId)
-        .update({
-      'memberIds': FieldValue.arrayUnion([userId])
-    });
-  }
-
-  @override
-  Future<void> removeGroupMember(String groupId, String userId) async {
-    await FirebaseFirestore.instance
-        .collection('groupChats')
-        .doc(groupId)
-        .update({
-      'memberIds': FieldValue.arrayRemove([userId])
-    });
   }
 }

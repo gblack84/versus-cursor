@@ -1,3 +1,5 @@
+import '../../domain/models/interest_category.dart';
+
 /// Interest DTO
 ///
 /// **책임**: Firestore interest 컬렉션 문서 구조와 Dart 객체 간 변환
@@ -32,5 +34,23 @@ class InterestDto {
       if (category != null) 'category': category,
       if (weight != null) 'weight': weight,
     };
+  }
+
+  /// DTO → Domain Model
+  InterestCategory toDomain() {
+    return InterestCategory(
+      interestId: id ?? '',
+      nameInterest: name ?? '',
+      userIds: const [],
+      subCategories: const [],
+    );
+  }
+
+  /// Domain Model → DTO
+  factory InterestDto.fromDomain(InterestCategory model) {
+    return InterestDto(
+      id: model.interestId,
+      name: model.nameInterest,
+    );
   }
 }

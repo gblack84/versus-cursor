@@ -274,6 +274,51 @@ domain/usecases/
 
 ---
 
+## 🧹 FriendsListModel Cleanup (2025-01-20 업데이트)
+
+> **중요**: Friends Feature는 아직 Clean Architecture v4.0으로 마이그레이션되지 않았으므로, FriendsListModel과 관련 코드를 완전히 제거했습니다.
+
+### 제거된 파일 (3개)
+
+```
+lib/features/profile/domain/
+├── models/friends_list_model.dart                          # Legacy FirestoreRecord 모델 (140줄)
+└── usecases/friends/get_friends_list_usecase.dart         # 존재하지 않는 repository 메서드 호출 (58줄)
+
+lib/features/chat/presentation/screens/
+└── friends_list/friends_list_widget.dart                   # FriendsListModel 완전 의존 UI (308줄)
+```
+
+### 수정된 파일 (2개)
+
+**lib/features/chat/data/repositories/chat_repository_impl.dart**
+- import 문 제거 (line 7)
+- `queryFriendsListModelCount()` 제거 (12줄)
+- `queryFriendsListModel()` 제거 (15줄)
+- `queryFriendsListModelOnce()` 제거 (15줄)
+- 총 42줄 제거
+
+**lib/features/profile/data/exports/profile_models.dart**
+- friends_list_model export 제거 (line 6)
+
+### 제거 이유
+
+1. **Friends Feature 미구현**: Clean Architecture v4.0 구조로 아직 마이그레이션되지 않음
+2. **Legacy 패턴**: FirestoreRecord 상속 구조는 새 아키텍처와 호환 불가
+3. **에러 발생**: get_friends_list_usecase가 존재하지 않는 `queryFriendsList()` 메서드 호출
+4. **의존성 최소화**: Chat Feature에서 Friends 관련 쿼리 제거로 책임 분리
+
+### 향후 계획
+
+- **Friends Feature 구현 시**: Clean Architecture v4.0 패턴으로 새로 작성
+- **Domain Models**: Friend, FriendRequest, FriendSettings 등 명확한 도메인 모델
+- **Repository**: IFriendRepository 인터페이스 정의
+- **UseCases**: AddFriend, RemoveFriend, GetFriendsList 등 비즈니스 로직
+
+**제거 커밋**: 현재 (2025-01-20)
+
+---
+
 ## 🏗️ Phase 2: Domain Layer 완성 (Day 2-3, 12시간)
 
 ### 2.1. UseCases 생성 (10개)

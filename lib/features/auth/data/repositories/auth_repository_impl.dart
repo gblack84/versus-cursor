@@ -9,8 +9,8 @@ import '../../domain/repositories/i_auth_repository.dart';
 import '../datasources/i_auth_remote_datasource.dart';
 import '../datasources/i_auth_local_datasource.dart';
 import '/app/contracts/auth_contract.dart';
+import '/app/contracts/user_contract.dart';
 import '../dto/auth_user_dto.dart';
-import '../dto/user_profile_dto.dart';
 import '../mappers/auth_user_mapper.dart';
 
 /// AuthRepositoryImpl
@@ -21,36 +21,25 @@ import '../mappers/auth_user_mapper.dart';
 class AuthRepositoryImpl implements IAuthRepository, AuthContract {
   final IAuthRemoteDataSource _remoteDataSource;
   final IAuthLocalDataSource _localDataSource;
+  final UserContract _userContract;
 
   AuthRepositoryImpl({
     required IAuthRemoteDataSource remoteDataSource,
     required IAuthLocalDataSource localDataSource,
+    required UserContract userContract,
   })  : _remoteDataSource = remoteDataSource,
-        _localDataSource = localDataSource;
+        _localDataSource = localDataSource,
+        _userContract = userContract;
 
   @override
   Future<AuthUser?> getCurrentUser() async {
     try {
-      // 1. Check Firebase Auth for current user
+      // Get current Firebase Auth user
       final firebaseUser = _remoteDataSource.getCurrentFirebaseUser();
       if (firebaseUser == null) return null;
 
-      // 2. Try to get cached profile first
-      final cachedProfile = await _localDataSource.getCachedUserProfile(firebaseUser.uid);
-      if (cachedProfile != null) {
-        return AuthUserMapper.fromFirebaseUser(firebaseUser, profile: cachedProfile);
-      }
-
-      // 3. If no cache, fetch from Firestore
-      final profile = await _remoteDataSource.getUserProfile(firebaseUser.uid);
-
-      // 4. Cache the profile for future use
-      if (profile != null) {
-        await _localDataSource.cacheUserProfile(profile);
-      }
-
-      // 5. Convert to domain model
-      return AuthUserMapper.fromFirebaseUser(firebaseUser, profile: profile);
+      // Convert to domain model (Auth data only, no profile)
+      return AuthUserMapper.fromFirebaseUser(firebaseUser);
     } catch (e) {
       debugPrint('Error getting current user: $e');
       return null;
@@ -63,18 +52,12 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
       // 1. Sign in with Firebase
       final firebaseUser = await _remoteDataSource.signInWithEmailAndPassword(email, password);
 
-      // 2. Get user profile from Firestore
-      final profile = await _remoteDataSource.getUserProfile(firebaseUser.uid);
-
-      // 3. Cache user data
+      // 2. Cache auth data only
       final authDto = AuthUserDto.fromFirebaseUser(firebaseUser);
       await _localDataSource.cacheAuthUser(authDto);
-      if (profile != null) {
-        await _localDataSource.cacheUserProfile(profile);
-      }
 
-      // 4. Convert to domain model
-      return AuthUserMapper.fromFirebaseUser(firebaseUser, profile: profile);
+      // 3. Convert to domain model (Auth data only, no profile)
+      return AuthUserMapper.fromFirebaseUser(firebaseUser);
     } catch (e) {
       debugPrint('Error signing in with email/password: $e');
       rethrow;
@@ -87,31 +70,19 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
       // 1. Create user with Firebase Auth
       final firebaseUser = await _remoteDataSource.createUserWithEmailAndPassword(email, password);
 
-      // 2. Create initial user profile in Firestore
-      final profile = UserProfileDto(
+      // 2. Create profile via UserContract (Profile Feature)
+      await _userContract.createUserProfile(
         uid: firebaseUser.uid,
         email: firebaseUser.email,
         displayName: firebaseUser.displayName,
-        createdTime: DateTime.now(),
-        lastActive: DateTime.now(),
-        role: 'user',
-        isPremium: false,
-        pointsA: 0,
-        pointsQ: 0,
-        interests: [],
-        expertise: [],
-        hobbies: [],
       );
 
-      await _remoteDataSource.createUserProfile(firebaseUser.uid, profile);
-
-      // 3. Cache user data
+      // 3. Cache auth data only
       final authDto = AuthUserDto.fromFirebaseUser(firebaseUser);
       await _localDataSource.cacheAuthUser(authDto);
-      await _localDataSource.cacheUserProfile(profile);
 
-      // 4. Convert to domain model
-      return AuthUserMapper.fromFirebaseUser(firebaseUser, profile: profile);
+      // 4. Convert to domain model (Auth data only, no profile)
+      return AuthUserMapper.fromFirebaseUser(firebaseUser);
     } catch (e) {
       debugPrint('Error creating user with email/password: $e');
       rethrow;
@@ -124,36 +95,26 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
       // 1. Sign in with Google
       final firebaseUser = await _remoteDataSource.signInWithGoogle();
 
-      // 2. Check if user profile exists
-      var profile = await _remoteDataSource.getUserProfile(firebaseUser.uid);
-
-      // 3. Create profile if new user
-      if (profile == null) {
-        profile = UserProfileDto(
+      // 2. Check if user profile exists via UserContract
+      // Note: Profile Feature will handle profile existence check
+      try {
+        await _userContract.createUserProfile(
           uid: firebaseUser.uid,
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
-          profilePic: firebaseUser.photoURL,
-          createdTime: DateTime.now(),
-          lastActive: DateTime.now(),
-          role: 'user',
-          isPremium: false,
-          pointsA: 0,
-          pointsQ: 0,
-          interests: [],
-          expertise: [],
-          hobbies: [],
+          photoUrl: firebaseUser.photoURL,
         );
-        await _remoteDataSource.createUserProfile(firebaseUser.uid, profile);
+      } catch (e) {
+        // Profile already exists, ignore error
+        debugPrint('Profile creation skipped (may already exist): $e');
       }
 
-      // 4. Cache user data
+      // 3. Cache auth data only
       final authDto = AuthUserDto.fromFirebaseUser(firebaseUser);
       await _localDataSource.cacheAuthUser(authDto);
-      await _localDataSource.cacheUserProfile(profile);
 
-      // 5. Convert to domain model
-      return AuthUserMapper.fromFirebaseUser(firebaseUser, profile: profile);
+      // 4. Convert to domain model (Auth data only, no profile)
+      return AuthUserMapper.fromFirebaseUser(firebaseUser);
     } catch (e) {
       debugPrint('Error signing in with Google: $e');
       rethrow;
@@ -163,34 +124,27 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
   @override
   Future<AuthUser?> signInWithApple() async {
     try {
-      // Similar to Google sign in
+      // Sign in with Apple
       final firebaseUser = await _remoteDataSource.signInWithApple();
 
-      var profile = await _remoteDataSource.getUserProfile(firebaseUser.uid);
-
-      if (profile == null) {
-        profile = UserProfileDto(
+      // Create profile via UserContract if new user
+      try {
+        await _userContract.createUserProfile(
           uid: firebaseUser.uid,
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
-          createdTime: DateTime.now(),
-          lastActive: DateTime.now(),
-          role: 'user',
-          isPremium: false,
-          pointsA: 0,
-          pointsQ: 0,
-          interests: [],
-          expertise: [],
-          hobbies: [],
         );
-        await _remoteDataSource.createUserProfile(firebaseUser.uid, profile);
+      } catch (e) {
+        // Profile already exists, ignore error
+        debugPrint('Profile creation skipped (may already exist): $e');
       }
 
+      // Cache auth data only
       final authDto = AuthUserDto.fromFirebaseUser(firebaseUser);
       await _localDataSource.cacheAuthUser(authDto);
-      await _localDataSource.cacheUserProfile(profile);
 
-      return AuthUserMapper.fromFirebaseUser(firebaseUser, profile: profile);
+      // Convert to domain model (Auth data only, no profile)
+      return AuthUserMapper.fromFirebaseUser(firebaseUser);
     } catch (e) {
       debugPrint('Error signing in with Apple: $e');
       rethrow;
@@ -216,30 +170,23 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
     try {
       final firebaseUser = await _remoteDataSource.signInWithPhoneNumber(phoneNumber, verificationCode);
 
-      var profile = await _remoteDataSource.getUserProfile(firebaseUser.uid);
-
-      if (profile == null) {
-        profile = UserProfileDto(
+      // Create profile via UserContract if new user
+      try {
+        await _userContract.createUserProfile(
           uid: firebaseUser.uid,
           phoneNumber: phoneNumber,
-          createdTime: DateTime.now(),
-          lastActive: DateTime.now(),
-          role: 'user',
-          isPremium: false,
-          pointsA: 0,
-          pointsQ: 0,
-          interests: [],
-          expertise: [],
-          hobbies: [],
         );
-        await _remoteDataSource.createUserProfile(firebaseUser.uid, profile);
+      } catch (e) {
+        // Profile already exists, ignore error
+        debugPrint('Profile creation skipped (may already exist): $e');
       }
 
+      // Cache auth data only
       final authDto = AuthUserDto.fromFirebaseUser(firebaseUser);
       await _localDataSource.cacheAuthUser(authDto);
-      await _localDataSource.cacheUserProfile(profile);
 
-      return AuthUserMapper.fromFirebaseUser(firebaseUser, profile: profile);
+      // Convert to domain model (Auth data only, no profile)
+      return AuthUserMapper.fromFirebaseUser(firebaseUser);
     } catch (e) {
       debugPrint('Error signing in with phone number: $e');
       rethrow;
@@ -284,11 +231,25 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
   @override
   Future<bool> deleteUser() async {
     try {
-      // Clear local cache
+      // 0. Get user ID before deletion (Firebase Auth 삭제 전 필요)
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        debugPrint('Cannot delete user: No user signed in');
+        return false;
+      }
+
+      // 1. Clear local cache
       await _localDataSource.clearAllCache();
 
-      // Delete from Firebase
+      // 2. Delete Firestore profile document (Profile Feature via UserContract)
+      // ⚠️ Firebase Auth 삭제 전에 실행해야 함 (userId 필요)
+      await _userContract.deleteUserProfile(userId);
+      debugPrint('Firestore profile deleted for user: $userId');
+
+      // 3. Delete Firebase Auth account
       await _remoteDataSource.deleteUser();
+      debugPrint('Firebase Auth account deleted');
+
       return true;
     } catch (e) {
       debugPrint('Error deleting user: $e');
@@ -308,18 +269,14 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
         photoURL: photoURL,
       );
 
-      // Update Firestore profile
+      // Update Firestore profile via UserContract
       final currentUser = _remoteDataSource.getCurrentFirebaseUser();
       if (currentUser != null) {
         final updateData = <String, dynamic>{};
         if (displayName != null) updateData['displayName'] = displayName;
-        if (photoURL != null) updateData['profilePic'] = photoURL;
-        updateData['lastActive'] = DateTime.now();
+        if (photoURL != null) updateData['photoUrl'] = photoURL;
 
-        await _remoteDataSource.updateUserProfileData(currentUser.uid, updateData);
-
-        // Clear cache to force reload with new data
-        await _localDataSource.clearCachedUserProfile(currentUser.uid);
+        await _userContract.updateUserProfileData(currentUser.uid, updateData);
       }
     } catch (e) {
       debugPrint('Error updating user profile: $e');
@@ -374,15 +331,27 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
   }
 
   @override
+  String? get currentUserDisplayName {
+    return _remoteDataSource.getCurrentFirebaseUser()?.displayName;
+  }
+
+  @override
+  String? get currentUserPhoto {
+    return _remoteDataSource.getCurrentFirebaseUser()?.photoURL;
+  }
+
+  @override
+  String? get currentPhoneNumber {
+    return _remoteDataSource.getCurrentFirebaseUser()?.phoneNumber;
+  }
+
+  @override
   Stream<AuthUser?> get authStateChanges {
-    return _remoteDataSource.authStateChanges().asyncMap((firebaseUser) async {
+    return _remoteDataSource.authStateChanges().map((firebaseUser) {
       if (firebaseUser == null) return null;
 
-      // Try to get profile from cache or Firestore
-      var profile = await _localDataSource.getCachedUserProfile(firebaseUser.uid);
-      profile ??= await _remoteDataSource.getUserProfile(firebaseUser.uid);
-
-      return AuthUserMapper.fromFirebaseUser(firebaseUser, profile: profile);
+      // Convert to domain model (Auth data only, no profile)
+      return AuthUserMapper.fromFirebaseUser(firebaseUser);
     });
   }
 

@@ -67,6 +67,9 @@ class UserProfile {
   final bool receiveRankUpdateNotifications;
   final bool receiveTitleUpdateNotifications;
 
+  // ============= Character Selection =============
+  final String? characterId;
+
   // ============= Social Connections =============
   final List<String> friends;
   final List<String> activeChats;
@@ -115,6 +118,7 @@ class UserProfile {
     this.titleHistory = const [],
     this.receiveRankUpdateNotifications = false,
     this.receiveTitleUpdateNotifications = false,
+    this.characterId,
     this.friends = const [],
     this.activeChats = const [],
     this.groupChats = const [],
@@ -162,6 +166,7 @@ class UserProfile {
     List<String>? titleHistory,
     bool? receiveRankUpdateNotifications,
     bool? receiveTitleUpdateNotifications,
+    String? characterId,
     List<String>? friends,
     List<String>? activeChats,
     List<String>? groupChats,
@@ -207,6 +212,7 @@ class UserProfile {
       titleHistory: titleHistory ?? this.titleHistory,
       receiveRankUpdateNotifications: receiveRankUpdateNotifications ?? this.receiveRankUpdateNotifications,
       receiveTitleUpdateNotifications: receiveTitleUpdateNotifications ?? this.receiveTitleUpdateNotifications,
+      characterId: characterId ?? this.characterId,
       friends: friends ?? this.friends,
       activeChats: activeChats ?? this.activeChats,
       groupChats: groupChats ?? this.groupChats,
@@ -266,6 +272,7 @@ class UserProfile {
         titleHistory,
         receiveRankUpdateNotifications,
         receiveTitleUpdateNotifications,
+        characterId,
         friends,
         activeChats,
         groupChats,
@@ -316,6 +323,7 @@ class UserProfile {
           _listEquals(titleHistory, other.titleHistory) &&
           receiveRankUpdateNotifications == other.receiveRankUpdateNotifications &&
           receiveTitleUpdateNotifications == other.receiveTitleUpdateNotifications &&
+          characterId == other.characterId &&
           _listEquals(friends, other.friends) &&
           _listEquals(activeChats, other.activeChats) &&
           _listEquals(groupChats, other.groupChats) &&
@@ -341,7 +349,3 @@ class UserProfile {
     return true;
   }
 }
-
-// Backward compatibility aliases
-@Deprecated('Use UserProfile instead')
-typedef UsersModel = UserProfile;

@@ -3,6 +3,12 @@ import 'package:provider/provider.dart';
 import '/core_exports.dart';
 import '/features/profile/presentation/providers/profile_provider.dart';
 import '/features/profile/domain/models/user_profile.dart';
+import '/features/profile/presentation/widgets/profile/profile_header.dart';
+import '/features/profile/presentation/widgets/common/loading_indicator.dart';
+import '/features/profile/presentation/widgets/common/error_message.dart';
+import '/features/profile/presentation/widgets/interests/interest_chip.dart';
+import '/features/profile/domain/models/interest.dart';
+import '/features/profile/presentation/widgets/profile/profile_stats_card.dart';
 
 /// 사용자 정보 표시 화면
 ///
@@ -26,14 +32,15 @@ class UserInfoDisplayScreen extends StatefulWidget {
 }
 
 class _UserInfoDisplayScreenState extends State<UserInfoDisplayScreen> {
+  late Stream<UserProfile?> _profileStream;
+
   @override
   void initState() {
     super.initState();
-    // Provider에서 프로필 로드
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<ProfileProvider>();
-      provider.loadProfile(widget.userId);
-    });
+    // 🆕 Real-time Stream 시작
+    // Consumer 대신 StreamBuilder로 변경하여 실시간 동기화 구현
+    final provider = context.read<ProfileProvider>();
+    _profileStream = provider.watchOtherUserProfile(widget.userId);
   }
 
   @override
@@ -53,50 +60,33 @@ class _UserInfoDisplayScreenState extends State<UserInfoDisplayScreen> {
           ),
         ],
       ),
-      body: Consumer<ProfileProvider>(
-        builder: (context, provider, _) {
-          // 로딩 상태
-          if (provider.isLoading && provider.profile == null) {
-            return Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  AppTheme.of(context).primary,
-                ),
-              ),
+      body: StreamBuilder<UserProfile?>(
+        stream: _profileStream,
+        builder: (context, snapshot) {
+          // 로딩 상태 (초기 연결 대기 중)
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return ProfileLoadingIndicator(
+              size: LoadingSize.medium,
             );
           }
 
           // 에러 상태
-          if (provider.errorMessage != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: AppTheme.of(context).error,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    provider.errorMessage!,
-                    style: AppTheme.of(context).bodyMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => provider.loadProfile(widget.userId),
-                    child: Text(
-                      AppLocalizations.of(context).getText('retry' /* 다시 시도 */),
-                    ),
-                  ),
-                ],
-              ),
+          if (snapshot.hasError) {
+            return ProfileErrorMessage(
+              message: snapshot.error.toString(),
+              onRetry: () {
+                // Stream 재시작
+                setState(() {
+                  final provider = context.read<ProfileProvider>();
+                  _profileStream = provider.watchOtherUserProfile(widget.userId);
+                });
+              },
             );
           }
 
           // 프로필 표시
-          final profile = provider.profile;
+          // ⚠️ snapshot.data는 실시간으로 업데이트됩니다!
+          final profile = snapshot.data;
           if (profile == null) {
             return Center(
               child: Text(
@@ -109,7 +99,7 @@ class _UserInfoDisplayScreenState extends State<UserInfoDisplayScreen> {
             child: Column(
               children: [
                 // 프로필 헤더
-                _buildProfileHeader(profile),
+                ProfileHeader(profile: profile),
 
                 const SizedBox(height: 16),
 
@@ -124,26 +114,26 @@ class _UserInfoDisplayScreenState extends State<UserInfoDisplayScreen> {
                       AppLocalizations.of(context).getText('email' /* 이메일 */),
                       profile.email,
                     ),
-                    if (profile.phoneNumber.isNotEmpty)
+                    if (profile.phoneNumber?.isNotEmpty == true)
                       _buildInfoRow(
                         context,
                         Icons.phone,
                         AppLocalizations.of(context).getText('phone' /* 전화번호 */),
-                        profile.phoneNumber,
+                        profile.phoneNumber!,
                       ),
-                    if (profile.gender.isNotEmpty)
+                    if (profile.gender?.isNotEmpty == true)
                       _buildInfoRow(
                         context,
                         Icons.person,
                         AppLocalizations.of(context).getText('gender' /* 성별 */),
-                        profile.gender,
+                        profile.gender!,
                       ),
-                    if (profile.language.isNotEmpty)
+                    if (profile.language?.isNotEmpty == true)
                       _buildInfoRow(
                         context,
                         Icons.language,
                         AppLocalizations.of(context).getText('language' /* 언어 */),
-                        profile.language,
+                        profile.language!,
                       ),
                   ],
                 ),
@@ -160,10 +150,8 @@ class _UserInfoDisplayScreenState extends State<UserInfoDisplayScreen> {
                         spacing: 8,
                         runSpacing: 8,
                         children: profile.interests
-                            .map((interest) => Chip(
-                                  label: Text(interest),
-                                  backgroundColor:
-                                      AppTheme.of(context).secondaryBackground,
+                            .map((interest) => InterestChip(
+                                  interest: Interest.fromString(interest, 'hobby'),
                                 ))
                             .toList(),
                       ),
@@ -182,9 +170,8 @@ class _UserInfoDisplayScreenState extends State<UserInfoDisplayScreen> {
                         spacing: 8,
                         runSpacing: 8,
                         children: profile.expertise
-                            .map((exp) => Chip(
-                                  label: Text(exp),
-                                  backgroundColor: AppTheme.of(context).primary.withValues(alpha: 0.1),
+                            .map((exp) => InterestChip(
+                                  interest: Interest.fromString(exp, 'expertise'),
                                 ))
                             .toList(),
                       ),
@@ -198,24 +185,9 @@ class _UserInfoDisplayScreenState extends State<UserInfoDisplayScreen> {
                   context,
                   AppLocalizations.of(context).getText('points' /* 포인트 */),
                   [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildPointCard(
-                          context,
-                          'A Points',
-                          profile.pointsA,
-                          Icons.emoji_events,
-                          AppTheme.of(context).primary,
-                        ),
-                        _buildPointCard(
-                          context,
-                          'Q Points',
-                          profile.pointsQ,
-                          Icons.question_answer,
-                          AppTheme.of(context).secondary,
-                        ),
-                      ],
+                    ProfilePointsCard(
+                      pointsA: profile.pointsA,
+                      pointsQ: profile.pointsQ,
                     ),
                   ],
                 ),
@@ -223,24 +195,24 @@ class _UserInfoDisplayScreenState extends State<UserInfoDisplayScreen> {
                 const SizedBox(height: 16),
 
                 // 랭킹 정보
-                if (profile.currentRank.isNotEmpty || profile.currentTitle.isNotEmpty)
+                if (profile.currentRank?.isNotEmpty == true || profile.currentTitle?.isNotEmpty == true)
                   _buildInfoSection(
                     context,
                     AppLocalizations.of(context).getText('ranking' /* 랭킹 */),
                     [
-                      if (profile.currentRank.isNotEmpty)
+                      if (profile.currentRank?.isNotEmpty == true)
                         _buildInfoRow(
                           context,
                           Icons.military_tech,
                           AppLocalizations.of(context).getText('rank' /* 등급 */),
-                          profile.currentRank,
+                          profile.currentRank!,
                         ),
-                      if (profile.currentTitle.isNotEmpty)
+                      if (profile.currentTitle?.isNotEmpty == true)
                         _buildInfoRow(
                           context,
                           Icons.star,
                           AppLocalizations.of(context).getText('title' /* 칭호 */),
-                          profile.currentTitle,
+                          profile.currentTitle!,
                         ),
                     ],
                   ),
@@ -250,88 +222,6 @@ class _UserInfoDisplayScreenState extends State<UserInfoDisplayScreen> {
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildProfileHeader(UserProfile profile) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.of(context).primary,
-            AppTheme.of(context).secondary,
-          ],
-        ),
-      ),
-      child: Column(
-        children: [
-          // 프로필 이미지
-          CircleAvatar(
-            radius: 60,
-            backgroundColor: Colors.white,
-            backgroundImage:
-                profile.photoUrl.isNotEmpty ? NetworkImage(profile.photoUrl) : null,
-            child: profile.photoUrl.isEmpty
-                ? Icon(
-                    Icons.person,
-                    size: 60,
-                    color: AppTheme.of(context).secondaryText,
-                  )
-                : null,
-          ),
-          const SizedBox(height: 16),
-
-          // 표시 이름
-          Text(
-            profile.displayName,
-            style: AppTheme.of(context).headlineMedium.override(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-
-          // 한 줄 소개
-          if (profile.shortDescription.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              profile.shortDescription,
-              style: AppTheme.of(context).bodyMedium.override(
-                    color: Colors.white.withValues(alpha: 0.9),
-                  ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-
-          // 프리미엄 뱃지
-          if (profile.isPremiumUser) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.amber,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.star, size: 16, color: Colors.white),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Premium',
-                    style: AppTheme.of(context).bodySmall.override(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
       ),
     );
   }
@@ -395,42 +285,6 @@ class _UserInfoDisplayScreenState extends State<UserInfoDisplayScreen> {
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPointCard(
-    BuildContext context,
-    String label,
-    int points,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 32, color: color),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: AppTheme.of(context).bodySmall.override(
-                  color: AppTheme.of(context).secondaryText,
-                ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            points.toString(),
-            style: AppTheme.of(context).headlineMedium.override(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                ),
           ),
         ],
       ),

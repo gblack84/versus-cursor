@@ -18,7 +18,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ">=3.8.0 <4.0.0"
 
 dependencies:
   flutter:
@@ -171,7 +171,7 @@ dependencies:
   hive_flutter: ^1.1.0
 
   path: any
-  freezed_annotation: any
+  json_annotation: ^4.9.0
   google_generative_ai: any
   crypto: any
   http_parser: any
@@ -196,6 +196,8 @@ dev_dependencies:
   fake_cloud_firestore: ^3.0.6
   mockito: ^5.4.4
   build_runner: ^2.4.12
+  freezed: ^3.2.3
+  json_serializable: ^6.11.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

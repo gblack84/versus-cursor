@@ -6,13 +6,7 @@
 ///
 /// // 모든 상수에 접근 가능
 /// ProfileConstants.maxDisplayNameLength
-/// ProfileDimensions.spacingMedium
-/// ProfileColors.pointsAColor
-/// ProfileStrings.errorLoadingProfile
-/// ValidationRules.isValidEmail()
+/// ValidationRules.validateDisplayName()
 /// ```
 export 'profile_constants.dart';
-export 'dimensions.dart';
-export 'colors.dart';
-export 'strings.dart';
 export 'validation_rules.dart';

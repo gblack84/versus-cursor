@@ -2,7 +2,6 @@
 // Clean Architecture - Data Layer
 
 import 'package:firebase_auth/firebase_auth.dart';
-import '../dto/user_profile_dto.dart';
 
 /// IAuthRemoteDataSource
 ///
@@ -50,15 +49,6 @@ abstract class IAuthRemoteDataSource {
 
   /// Stream of auth state changes
   Stream<User?> authStateChanges();
-
-  /// Get user profile from Firestore
-  Future<UserProfileDto?> getUserProfile(String uid);
-
-  /// Create user profile in Firestore
-  Future<void> createUserProfile(String uid, UserProfileDto profile);
-
-  /// Update user profile in Firestore
-  Future<void> updateUserProfileData(String uid, Map<String, dynamic> data);
 
   /// Get ID token for the current user
   Future<String?> getIdToken({bool forceRefresh = false});

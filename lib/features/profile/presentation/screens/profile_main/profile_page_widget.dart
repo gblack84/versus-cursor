@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:get_it/get_it.dart';
 import '/core_exports.dart';
+// Phase 2: Clean Architecture - ProfileProvider만 사용
 import '/features/profile/presentation/providers/profile_provider.dart';
-import '/features/auth/data/adapters/auth_util.dart';
 import '/features/auth/domain/usecases/sign_out_usecase.dart';
-import '/features/auth/data/repositories/auth_repository_impl.dart';
-import '/features/auth/data/datasources/firebase_auth_remote_datasource.dart';
-import '/features/auth/data/datasources/auth_local_datasource.dart';
 import '/core/design_system/design_system.dart';
 import '/features/post/presentation/providers/user_posts_provider.dart';
 import '/features/post/domain/models/post_display.dart';
+import '/features/profile/presentation/screens/settings/settings_screen.dart';
+import '/features/profile/presentation/screens/user_posts_list/user_posts_list_screen.dart';
+import '/features/profile/presentation/widgets/common/loading_indicator.dart';
+import '/features/profile/presentation/widgets/common/error_message.dart';
+import '/features/profile/presentation/widgets/profile/profile_stats_card.dart';
+import '/features/profile/presentation/widgets/profile/profile_completion_card.dart';
 
 class ProfilePageWidget extends StatefulWidget {
   const ProfilePageWidget({super.key});
@@ -27,43 +27,27 @@ class ProfilePageWidget extends StatefulWidget {
 
 class _ProfilePageWidgetState extends State<ProfilePageWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
-  SignOutUseCase? _signOutUseCase;
+  late final SignOutUseCase _signOutUseCase;
   late final UserPostsProvider _userPostsProvider;
   late final ProfileProvider _profileProvider;
-
-  Future<void> _initializeUseCases() async {
-    // Phase 2.6에서 DI로 대체 예정
-    final prefs = await SharedPreferences.getInstance();
-    final localDataSource = AuthLocalDataSource(prefs: prefs);
-
-    final repository = AuthRepositoryImpl(
-      remoteDataSource: FirebaseAuthRemoteDataSource(
-        firebaseAuth: FirebaseAuth.instance,
-        firestore: FirebaseFirestore.instance,
-        googleSignIn: GoogleSignIn(),
-      ),
-      localDataSource: localDataSource,
-    );
-
-    setState(() {
-      _signOutUseCase = SignOutUseCase(repository: repository);
-    });
-  }
 
   @override
   void initState() {
     super.initState();
-    _initializeUseCases();
 
-    // Initialize providers from DI
+    // Initialize all dependencies from DI
+    _signOutUseCase = GetIt.instance<SignOutUseCase>();
     _userPostsProvider = GetIt.instance<UserPostsProvider>();
     _profileProvider = GetIt.instance<ProfileProvider>();
 
-    // Load profile data
-    final userId = currentUser?.uid;
-    if (userId != null) {
-      _profileProvider.loadProfile(userId);
-    }
+    // Phase 2: Clean Architecture - 현재 사용자 프로필 로드
+    _profileProvider.loadCurrentUserProfile().then((_) {
+      // Phase 6: 프로필 완성도 로드 (프로필 로드 완료 후)
+      final userId = _profileProvider.profile?.uid;
+      if (userId != null) {
+        _profileProvider.getProfileCompletion(userId);
+      }
+    });
   }
 
   @override
@@ -90,8 +74,14 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
           IconButton(
             icon: Icon(Icons.settings, color: Colors.black),
             onPressed: () {
-              // TODO: 설정 페이지로 이동
-              context.pushNamed('user_info_input');
+              // Phase 2: Clean Architecture - ProfileProvider 사용
+              final userId = _profileProvider.profile?.uid;
+              if (userId != null) {
+                context.pushNamed(
+                  SettingsScreen.routeName,
+                  pathParameters: {'userId': userId},
+                );
+              }
             },
           ),
         ],
@@ -100,62 +90,21 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
       ),
       body: SafeArea(
         top: true,
-        child: currentUser == null
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '로그인이 필요합니다',
-                      style: VersusTextStyles.headingMedium,
-                    ),
-                    VersusSpacing.gapMD,
-                    VersusButton.primary(
-                      text: '로그인',
-                      onPressed: () {
-                        context.pushNamed('login_page');
-                      },
-                    ),
-                  ],
-                ),
-              )
-            : Consumer<ProfileProvider>(
+        // Phase 2: Clean Architecture - ProfileProvider 사용
+        child: Consumer<ProfileProvider>(
                 builder: (context, provider, child) {
                   // Loading state
                   if (provider.isLoading || provider.profile == null) {
-                    return Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          VersusColors.primary,
-                        ),
-                      ),
+                    return ProfileLoadingIndicator(
+                      size: LoadingSize.medium,
                     );
                   }
 
                   // Error state
                   if (provider.errorMessage != null) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            provider.errorMessage!,
-                            style: VersusTextStyles.bodyMedium.copyWith(
-                              color: VersusColors.error,
-                            ),
-                          ),
-                          VersusSpacing.gapMD,
-                          VersusButton.primary(
-                            text: '다시 시도',
-                            onPressed: () {
-                              final userId = currentUser?.uid;
-                              if (userId != null) {
-                                provider.loadProfile(userId);
-                              }
-                            },
-                          ),
-                        ],
-                      ),
+                    return ProfileErrorMessage(
+                      message: provider.errorMessage!,
+                      onRetry: () => provider.loadCurrentUserProfile(),
                     );
                   }
 
@@ -186,10 +135,10 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                                 radius: 50,
                                 backgroundColor:
                                     VersusColors.primaryWithAlpha(0.2),
-                                backgroundImage: user.photoUrl.isNotEmpty
-                                    ? NetworkImage(user.photoUrl)
+                                backgroundImage: user.photoUrl?.isNotEmpty == true
+                                    ? NetworkImage(user.photoUrl!)
                                     : null,
-                                child: user.photoUrl.isEmpty
+                                child: user.photoUrl?.isEmpty ?? true
                                     ? Icon(Icons.person,
                                         color: VersusColors.primary, size: 50)
                                     : null,
@@ -198,8 +147,8 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
 
                               // 이름
                               Text(
-                                user.displayName.isNotEmpty
-                                    ? user.displayName
+                                user.displayName?.isNotEmpty == true
+                                    ? user.displayName!
                                     : '이름 없음',
                                 style: VersusTextStyles.headingSmall,
                               ),
@@ -215,31 +164,28 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                               VersusSpacing.gapMD,
 
                               // 포인트 정보
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  _buildPointInfo(
-                                    context,
-                                    '답변 포인트',
-                                    user.pointsA.toString(),
-                                    VersusColors.primary,
-                                  ),
-                                  Container(
-                                    width: 1,
-                                    height: 40,
-                                    color: VersusColors.borderLight,
-                                  ),
-                                  _buildPointInfo(
-                                    context,
-                                    '질문 포인트',
-                                    user.pointsQ.toString(),
-                                    VersusColors.secondary,
-                                  ),
-                                ],
+                              ProfilePointsCard(
+                                pointsA: user.pointsA,
+                                pointsQ: user.pointsQ,
                               ),
                             ],
                           ),
+                        ),
+                        VersusSpacing.gapLG,
+
+                        // Phase 6: 프로필 완성도 카드
+                        ProfileCompletionCard(
+                          userId: user.uid,
+                          onCompletePressed: () {
+                            // TODO: 프로필 편집 페이지로 이동
+                            // context.pushNamed(ProfileEditScreen.routeName);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('프로필 편집 기능은 곧 추가될 예정입니다'),
+                                backgroundColor: VersusColors.info,
+                              ),
+                            );
+                          },
                         ),
                         VersusSpacing.gapLG,
 
@@ -267,8 +213,8 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                               VersusSpacing.gapMD,
 
                               // 성별
-                              if (user.gender.isNotEmpty)
-                                _buildInfoRow(context, '성별', user.gender),
+                              if (user.gender?.isNotEmpty == true)
+                                _buildInfoRow(context, '성별', user.gender!),
 
                               // 가입일
                               if (user.createdTime != null)
@@ -311,17 +257,7 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                           isFullWidth: true,
                           size: VersusButtonSize.large,
                           onPressed: () async {
-                            // UseCase가 초기화되지 않았으면 대기
-                            if (_signOutUseCase == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('초기화 중입니다. 잠시만 기다려주세요.'),
-                                ),
-                              );
-                              return;
-                            }
-
-                            final success = await _signOutUseCase!.execute();
+                            final success = await _signOutUseCase.execute();
                             if (success) {
                               context.goNamed('startPage');
                             }
@@ -333,27 +269,6 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                 },
               ),
       ),
-    );
-  }
-
-  Widget _buildPointInfo(
-      BuildContext context, String label, String value, Color color) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: VersusTextStyles.headingLarge.copyWith(
-            color: color,
-          ),
-        ),
-        VersusSpacing.gapXS,
-        Text(
-          label,
-          style: VersusTextStyles.bodySmall.copyWith(
-            color: VersusColors.textSecondary,
-          ),
-        ),
-      ],
     );
   }
 
@@ -419,7 +334,11 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                   if (provider.hasPosts)
                     TextButton(
                       onPressed: () {
-                        // TODO: Navigate to full posts list
+                        // Phase 2: Clean Architecture - 파라미터로 받은 userId 사용
+                        context.pushNamed(
+                          UserPostsListScreen.routeName,
+                          pathParameters: {'userId': userId},
+                        );
                       },
                       child: Text(
                         '전체보기',
@@ -434,14 +353,10 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
 
               // Loading state
               if (provider.loadingState == UserPostsLoadingState.loading)
-                Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(VersusSpacing.lg),
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        VersusColors.primary,
-                      ),
-                    ),
+                Padding(
+                  padding: EdgeInsets.all(VersusSpacing.lg),
+                  child: ProfileLoadingIndicator(
+                    size: LoadingSize.small,
                   ),
                 ),
 

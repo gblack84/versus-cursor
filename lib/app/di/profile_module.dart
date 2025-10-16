@@ -2,6 +2,8 @@ import 'package:get_it/get_it.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'feature_modules.dart';
+import '../contracts/auth_contract.dart';
+import '../contracts/user_contract.dart';
 
 // ===== Repositories =====
 import '../../features/profile/domain/repositories/i_user_repository.dart';
@@ -12,8 +14,6 @@ import '../../features/profile/domain/repositories/i_characters_repository.dart'
 import '../../features/profile/data/repositories/characters_repository_impl.dart';
 import '../../features/profile/domain/repositories/i_settings_repository.dart';
 import '../../features/profile/data/repositories/settings_repository_impl.dart';
-import '../../features/profile/domain/repositories/i_friends_repository.dart';
-import '../../features/profile/data/repositories/friends_repository_impl.dart';
 import '../../features/profile/domain/repositories/i_interests_repository.dart';
 import '../../features/profile/data/repositories/interests_repository_impl.dart';
 
@@ -22,38 +22,33 @@ import '../../features/profile/data/datasources/interfaces/i_profile_datasource.
 import '../../features/profile/data/datasources/implementations/firebase_profile_datasource.dart';
 import '../../features/profile/data/datasources/interfaces/i_settings_datasource.dart';
 import '../../features/profile/data/datasources/implementations/firebase_settings_datasource.dart';
-import '../../features/profile/data/datasources/interfaces/i_friends_datasource.dart';
-import '../../features/profile/data/datasources/implementations/firebase_friends_datasource.dart';
 import '../../features/profile/data/datasources/interfaces/i_storage_datasource.dart';
 import '../../features/profile/data/datasources/implementations/firebase_storage_datasource.dart';
+import '../../features/profile/data/datasources/profile_storage_datasource_impl.dart';
+
+// ===== Domain Repositories (for Architecture fix) =====
+import '../../features/profile/domain/repositories/i_profile_storage_repository.dart';
 
 // ===== Profile UseCases =====
 import '../../features/profile/domain/usecases/profile/get_user_profile_usecase.dart';
+import '../../features/profile/domain/usecases/profile/get_current_user_profile_usecase.dart';
 import '../../features/profile/domain/usecases/profile/update_user_profile_usecase.dart';
 import '../../features/profile/domain/usecases/profile/upload_profile_image_usecase.dart';
-import '../../features/profile/domain/usecases/profile/get_profile_info_usecase.dart';
-import '../../features/profile/domain/usecases/profile/block_user_usecase.dart';
-import '../../features/profile/domain/usecases/profile/report_user_usecase.dart';
-import '../../features/profile/domain/usecases/profile/get_suggested_profiles_usecase.dart';
+import '../../features/profile/domain/usecases/profile/get_profile_completion_usecase.dart';
+import '../../features/profile/domain/usecases/profile/delete_user_profile_usecase.dart';
+import '../../features/profile/domain/usecases/profile/watch_user_profile_usecase.dart';
+// Phase 6: 미사용 UseCase 삭제 (2025-01-21)
+// - block_user_usecase.dart
+// - report_user_usecase.dart
+// - get_suggested_profiles_usecase.dart
+// - get_profile_info_usecase.dart (Phase 1에서 완전 제거)
 
 // ===== Characters UseCases =====
-import '../../features/profile/domain/usecases/characters/get_user_character_usecase.dart';
-import '../../features/profile/domain/usecases/characters/set_user_character_usecase.dart';
 import '../../features/profile/domain/usecases/characters/get_available_characters_usecase.dart';
 
 // ===== Settings UseCases =====
 import '../../features/profile/domain/usecases/settings/get_user_settings_usecase.dart';
 import '../../features/profile/domain/usecases/settings/update_user_settings_usecase.dart';
-import '../../features/profile/domain/usecases/settings/get_notification_settings_usecase.dart';
-import '../../features/profile/domain/usecases/settings/update_notification_settings_usecase.dart';
-
-// ===== Friends UseCases =====
-import '../../features/profile/domain/usecases/friends/get_friends_list_usecase.dart';
-import '../../features/profile/domain/usecases/friends/add_friend_usecase.dart';
-import '../../features/profile/domain/usecases/friends/remove_friend_usecase.dart';
-import '../../features/profile/domain/usecases/friends/send_friend_request_usecase.dart';
-import '../../features/profile/domain/usecases/friends/accept_friend_request_usecase.dart';
-import '../../features/profile/domain/usecases/friends/reject_friend_request_usecase.dart';
 
 // ===== Interests UseCases =====
 import '../../features/profile/domain/usecases/interests/get_user_interests_usecase.dart';
@@ -63,7 +58,6 @@ import '../../features/profile/domain/usecases/interests/update_user_interests_u
 import '../../features/profile/presentation/providers/profile_provider.dart';
 import '../../features/profile/presentation/providers/characters_provider.dart';
 import '../../features/profile/presentation/providers/settings_provider.dart';
-import '../../features/profile/presentation/providers/friends_provider.dart';
 import '../../features/profile/presentation/providers/interests_provider.dart';
 import '../../features/profile/presentation/providers/profile_edit_provider.dart';
 
@@ -103,14 +97,6 @@ class ProfileModule implements FeatureModule {
       );
     }
 
-    if (!sl.isRegistered<IFriendsDataSource>()) {
-      sl.registerLazySingleton<IFriendsDataSource>(
-        () => FirebaseFriendsDataSource(
-          firestore: FirebaseFirestore.instance,
-        ),
-      );
-    }
-
     if (!sl.isRegistered<IStorageDataSource>()) {
       sl.registerLazySingleton<IStorageDataSource>(
         () => FirebaseStorageDataSource(
@@ -119,10 +105,30 @@ class ProfileModule implements FeatureModule {
       );
     }
 
+    // Profile Storage DataSource (Architecture Fix: implements Domain Repository)
+    if (!sl.isRegistered<IProfileStorageRepository>()) {
+      sl.registerLazySingleton<IProfileStorageRepository>(
+        () => ProfileStorageDataSourceImpl(),
+      );
+    }
+
     // ===== 2. Repositories 등록 =====
 
     if (!sl.isRegistered<IUserRepository>()) {
+      // Phase 2: AuthContract 주입
+      // AuthModule이 ProfileModule보다 먼저 등록되어 있어야 함
+      final authContract = sl<AuthContract>();
+      UserRepositoryImpl.initialize(authContract);
+
       sl.registerLazySingleton<IUserRepository>(
+        () => UserRepositoryImpl.instance,
+      );
+    }
+
+    // Phase 5: UserContract 등록 (Auth Feature가 Profile 작업을 요청할 때 사용)
+    // Same instance as IUserRepository, different interface
+    if (!sl.isRegistered<UserContract>()) {
+      sl.registerLazySingleton<UserContract>(
         () => UserRepositoryImpl.instance,
       );
     }
@@ -131,7 +137,6 @@ class ProfileModule implements FeatureModule {
       sl.registerLazySingleton<IProfileRepository>(
         () => ProfileRepositoryImpl(
           dataSource: sl<IProfileDataSource>(),
-          storageDataSource: sl<IStorageDataSource>(),
         ),
       );
     }
@@ -149,14 +154,6 @@ class ProfileModule implements FeatureModule {
       sl.registerLazySingleton<ISettingsRepository>(
         () => SettingsRepositoryImpl(
           dataSource: sl<ISettingsDataSource>(),
-        ),
-      );
-    }
-
-    if (!sl.isRegistered<IFriendsRepository>()) {
-      sl.registerLazySingleton<IFriendsRepository>(
-        () => FriendsRepositoryImpl(
-          dataSource: sl<IFriendsDataSource>(),
         ),
       );
     }
@@ -179,6 +176,15 @@ class ProfileModule implements FeatureModule {
       );
     }
 
+    // Phase 2: 현재 사용자 프로필 조회 UseCase
+    if (!sl.isRegistered<GetCurrentUserProfileUseCase>()) {
+      sl.registerFactory(
+        () => GetCurrentUserProfileUseCase(
+          repository: sl<IUserRepository>(),
+        ),
+      );
+    }
+
     if (!sl.isRegistered<UpdateUserProfileUseCase>()) {
       sl.registerFactory(
         () => UpdateUserProfileUseCase(
@@ -189,59 +195,45 @@ class ProfileModule implements FeatureModule {
 
     if (!sl.isRegistered<UploadProfileImageUseCase>()) {
       sl.registerFactory(
-        () => UploadProfileImageUseCase(),
+        () => UploadProfileImageUseCase(
+          storageRepository: sl<IProfileStorageRepository>(),
+        ),
       );
     }
 
-    if (!sl.isRegistered<GetProfileInfoUseCase>()) {
+    // Phase 6: 프로필 완성도 조회 UseCase (2025-01-21)
+    if (!sl.isRegistered<GetProfileCompletionUseCase>()) {
       sl.registerFactory(
-        () => GetProfileInfoUseCase(
+        () => GetProfileCompletionUseCase(
           repository: sl<IProfileRepository>(),
         ),
       );
     }
 
-    if (!sl.isRegistered<BlockUserUseCase>()) {
+    // Phase 6 복원: 계정 삭제 UseCase (2025-01-21)
+    if (!sl.isRegistered<DeleteUserProfileUseCase>()) {
       sl.registerFactory(
-        () => BlockUserUseCase(
-          repository: sl<IProfileRepository>(),
+        () => DeleteUserProfileUseCase(
+          repository: sl<IUserRepository>(),
         ),
       );
     }
 
-    if (!sl.isRegistered<ReportUserUseCase>()) {
+    // 🆕 Real-time Sync: 사용자 프로필 실시간 감시 UseCase (2025-01-20)
+    if (!sl.isRegistered<WatchUserProfileUseCase>()) {
       sl.registerFactory(
-        () => ReportUserUseCase(
-          repository: sl<IProfileRepository>(),
+        () => WatchUserProfileUseCase(
+          sl<IUserRepository>(),
         ),
       );
     }
 
-    if (!sl.isRegistered<GetSuggestedProfilesUseCase>()) {
-      sl.registerFactory(
-        () => GetSuggestedProfilesUseCase(
-          repository: sl<IProfileRepository>(),
-        ),
-      );
-    }
+    // Phase 6: 미사용 UseCase 등록 제거 (2025-01-21)
+    // - BlockUserUseCase → Social Feature 구현 시 재생성
+    // - ReportUserUseCase → Social Feature 구현 시 재생성
+    // - GetSuggestedProfilesUseCase → Search Feature 구현 시 재생성
 
     // ===== 4. Characters UseCases 등록 =====
-
-    if (!sl.isRegistered<GetUserCharacterUseCase>()) {
-      sl.registerFactory(
-        () => GetUserCharacterUseCase(
-          repository: sl<ICharactersRepository>(),
-        ),
-      );
-    }
-
-    if (!sl.isRegistered<SetUserCharacterUseCase>()) {
-      sl.registerFactory(
-        () => SetUserCharacterUseCase(
-          repository: sl<ICharactersRepository>(),
-        ),
-      );
-    }
 
     if (!sl.isRegistered<GetAvailableCharactersUseCase>()) {
       sl.registerFactory(
@@ -269,74 +261,12 @@ class ProfileModule implements FeatureModule {
       );
     }
 
-    if (!sl.isRegistered<GetNotificationSettingsUseCase>()) {
-      sl.registerFactory(
-        () => GetNotificationSettingsUseCase(
-          repository: sl<ISettingsRepository>(),
-        ),
-      );
-    }
-
-    if (!sl.isRegistered<UpdateNotificationSettingsUseCase>()) {
-      sl.registerFactory(
-        () => UpdateNotificationSettingsUseCase(
-          repository: sl<ISettingsRepository>(),
-        ),
-      );
-    }
-
-    // ===== 6. Friends UseCases 등록 =====
-
-    if (!sl.isRegistered<GetFriendsListUseCase>()) {
-      sl.registerFactory(
-        () => GetFriendsListUseCase(
-          repository: sl<IUserRepository>(),
-        ),
-      );
-    }
-
-    if (!sl.isRegistered<AddFriendUseCase>()) {
-      sl.registerFactory(
-        () => AddFriendUseCase(),
-      );
-    }
-
-    if (!sl.isRegistered<RemoveFriendUseCase>()) {
-      sl.registerFactory(
-        () => RemoveFriendUseCase(),
-      );
-    }
-
-    if (!sl.isRegistered<SendFriendRequestUseCase>()) {
-      sl.registerFactory(
-        () => SendFriendRequestUseCase(
-          repository: sl<IFriendsRepository>(),
-        ),
-      );
-    }
-
-    if (!sl.isRegistered<AcceptFriendRequestUseCase>()) {
-      sl.registerFactory(
-        () => AcceptFriendRequestUseCase(
-          repository: sl<IFriendsRepository>(),
-        ),
-      );
-    }
-
-    if (!sl.isRegistered<RejectFriendRequestUseCase>()) {
-      sl.registerFactory(
-        () => RejectFriendRequestUseCase(
-          repository: sl<IFriendsRepository>(),
-        ),
-      );
-    }
-
-    // ===== 7. Interests UseCases 등록 =====
+    // ===== 6. Interests UseCases 등록 =====
 
     if (!sl.isRegistered<GetUserInterestsUseCase>()) {
       sl.registerFactory(
         () => GetUserInterestsUseCase(
-          repository: sl<IProfileRepository>(),
+          repository: sl<IInterestsRepository>(),
         ),
       );
     }
@@ -349,14 +279,17 @@ class ProfileModule implements FeatureModule {
       );
     }
 
-    // ===== 8. Providers 등록 (Singleton) =====
+    // ===== 7. Providers 등록 (Singleton) =====
 
     if (!sl.isRegistered<ProfileProvider>()) {
       sl.registerLazySingleton<ProfileProvider>(
         () => ProfileProvider(
           getProfileUseCase: sl<GetUserProfileUseCase>(),
+          getCurrentProfileUseCase: sl<GetCurrentUserProfileUseCase>(),  // Phase 2
           updateProfileUseCase: sl<UpdateUserProfileUseCase>(),
           uploadImageUseCase: sl<UploadProfileImageUseCase>(),
+          getProfileCompletionUseCase: sl<GetProfileCompletionUseCase>(),  // Phase 6
+          watchProfileUseCase: sl<WatchUserProfileUseCase>(),  // 🆕 Real-time Sync (2025-01-20)
         ),
       );
     }
@@ -364,8 +297,6 @@ class ProfileModule implements FeatureModule {
     if (!sl.isRegistered<CharactersProvider>()) {
       sl.registerLazySingleton<CharactersProvider>(
         () => CharactersProvider(
-          getUserCharacterUseCase: sl<GetUserCharacterUseCase>(),
-          setUserCharacterUseCase: sl<SetUserCharacterUseCase>(),
           getAvailableCharactersUseCase: sl<GetAvailableCharactersUseCase>(),
         ),
       );
@@ -376,22 +307,12 @@ class ProfileModule implements FeatureModule {
         () => SettingsProvider(
           getSettingsUseCase: sl<GetUserSettingsUseCase>(),
           updateSettingsUseCase: sl<UpdateUserSettingsUseCase>(),
+          deleteProfileUseCase: sl<DeleteUserProfileUseCase>(),  // Phase 6 복원
         ),
       );
     }
 
-    if (!sl.isRegistered<FriendsProvider>()) {
-      sl.registerLazySingleton<FriendsProvider>(
-        () => FriendsProvider(
-          getFriendsListUseCase: sl<GetFriendsListUseCase>(),
-          addFriendUseCase: sl<AddFriendUseCase>(),
-          removeFriendUseCase: sl<RemoveFriendUseCase>(),
-          sendFriendRequestUseCase: sl<SendFriendRequestUseCase>(),
-          acceptFriendRequestUseCase: sl<AcceptFriendRequestUseCase>(),
-          rejectFriendRequestUseCase: sl<RejectFriendRequestUseCase>(),
-        ),
-      );
-    }
+    // FriendsProvider removed - Friends feature not yet implemented
 
     if (!sl.isRegistered<InterestsProvider>()) {
       sl.registerLazySingleton<InterestsProvider>(
@@ -407,6 +328,7 @@ class ProfileModule implements FeatureModule {
         () => ProfileEditProvider(
           updateProfileUseCase: sl<UpdateUserProfileUseCase>(),
           getUserProfileUseCase: sl<GetUserProfileUseCase>(),
+          uploadImageUseCase: sl<UploadProfileImageUseCase>(),
         ),
       );
     }

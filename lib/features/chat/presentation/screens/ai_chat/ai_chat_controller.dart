@@ -1,62 +1,48 @@
-import 'dart:async';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 
-/// AI Chat Controller with Streaming Support
+/// AI Chat Controller - Clean Architecture v4.0
 ///
-/// This controller manages the chat state for AI conversations,
-/// including support for streaming messages using TextStreamMessage.
+/// **책임**: AI 채팅방의 UI State 관리만 담당
+/// **변경사항** (Clean Architecture 준수):
+/// - ❌ Gemini API 초기화 로직 제거 → GeminiAIService로 이동
+/// - ❌ API 스트리밍 로직 제거 → SendAIQueryUseCase로 이동
+/// - ✅ UI State 관리 로직만 유지 (InMemoryChatController)
+///
+/// **사용 예시**:
+/// ```dart
+/// final controller = AIChatController();
+/// await controller.addUserMessage('Hello AI', currentUserId);
+/// await controller.addAIStreamingPlaceholder();
+/// controller.updateStreamingMessage('AI response chunk');
+/// ```
 class AIChatController extends InMemoryChatController {
-  // Gemini AI model instance
-  GenerativeModel? _model;
-
-  // Current streaming subscription
-  StreamSubscription? _currentStreamSubscription;
-
-  // Current streaming message ID
-  String? _currentStreamMessageId;
-
   // User ID constants
   static const String aiUserId = 'ai_assistant';
   static const String aiUserName = 'AI 피클';
 
+  // Current streaming message tracking
+  String? _currentStreamMessageId;
+
   /// Initialize the controller with optional initial messages
   AIChatController({List<Message>? messages}) : super(messages: messages);
 
-  /// Initialize Gemini AI model
-  void initializeAI(String apiKey) {
-    _model = GenerativeModel(
-      model: 'gemini-1.5-flash',
-      apiKey: apiKey,
-      generationConfig: GenerationConfig(
-        temperature: 0.7,
-        maxOutputTokens: 2048,
-      ),
-    );
-  }
-
-  /// Send a query to AI and receive streaming response
-  Future<void> sendAIQuery({
-    required String query,
-    required String currentUserId,
-  }) async {
-    if (_model == null) {
-      throw Exception('AI model not initialized. Call initializeAI first.');
-    }
-
-    // Cancel any existing stream
-    await cancelStream();
-
-    // Add user message
+  /// Add user message to chat
+  ///
+  /// **Pure UI State Management** - Infrastructure 로직 없음
+  Future<void> addUserMessage(String text, String currentUserId) async {
     final userMessage = Message.text(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       authorId: currentUserId,
-      text: query,
+      text: text,
       createdAt: DateTime.now(),
     );
     await insertMessage(userMessage);
+  }
 
-    // Create streaming message placeholder
+  /// Create AI streaming message placeholder
+  ///
+  /// **Returns**: Message ID for streaming updates
+  Future<String> addAIStreamingPlaceholder() async {
     _currentStreamMessageId = 'stream_${DateTime.now().millisecondsSinceEpoch}';
     final streamMessage = Message.textStream(
       id: _currentStreamMessageId!,
@@ -65,125 +51,79 @@ class AIChatController extends InMemoryChatController {
       createdAt: DateTime.now(),
     );
     await insertMessage(streamMessage);
+    return _currentStreamMessageId!;
+  }
 
-    // Start AI streaming
-    try {
-      final content = [Content.text(query)];
-      final response = _model!.generateContentStream(content);
+  /// Update streaming message with accumulated text
+  ///
+  /// **Pure UI Update** - 외부 API 호출 없음
+  void updateStreamingMessage(String messageId, String accumulatedText) {
+    final messages = this.messages;
+    final streamMessage = messages.firstWhere(
+      (msg) => msg.id == messageId,
+      orElse: () => Message.unsupported(id: messageId, authorId: aiUserId),
+    );
 
-      String accumulatedText = '';
-
-      _currentStreamSubscription = response.listen(
-        (chunk) {
-          if (chunk.text != null) {
-            accumulatedText += chunk.text!;
-
-            // Update the message with accumulated text
-            updateMessage(
-              streamMessage,
-              Message.text(
-                id: _currentStreamMessageId!,
-                authorId: aiUserId,
-                text: accumulatedText,
-                createdAt: streamMessage.createdAt,
-              ),
-            );
-          }
-        },
-        onDone: () {
-          // Stream completed
-          _currentStreamSubscription = null;
-          _currentStreamMessageId = null;
-
-          // Finalize the message as a regular text message
-          if (accumulatedText.isNotEmpty) {
-            updateMessage(
-              streamMessage,
-              Message.text(
-                id: streamMessage.id,
-                authorId: aiUserId,
-                text: accumulatedText,
-                createdAt: streamMessage.createdAt,
-                sentAt: DateTime.now(),
-              ),
-            );
-          }
-        },
-        onError: (error) {
-          // Handle streaming error
-          _currentStreamSubscription = null;
-          _currentStreamMessageId = null;
-
-          // Update message with error state
-          updateMessage(
-            streamMessage,
-            Message.text(
-              id: streamMessage.id,
-              authorId: aiUserId,
-              text: '오류가 발생했습니다: ${error.toString()}',
-              createdAt: streamMessage.createdAt,
-              failedAt: DateTime.now(),
-            ),
-          );
-        },
-      );
-    } catch (e) {
-      // Handle initialization error
-      _currentStreamMessageId = null;
-
-      // Add error message
-      final errorMessage = Message.text(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+    updateMessage(
+      streamMessage,
+      Message.text(
+        id: messageId,
         authorId: aiUserId,
-        text: 'AI 응답 생성 중 오류가 발생했습니다: ${e.toString()}',
-        createdAt: DateTime.now(),
+        text: accumulatedText,
+        createdAt: streamMessage.createdAt,
+      ),
+    );
+  }
+
+  /// Finalize streaming message
+  void finalizeStreamingMessage(String messageId, String finalText) {
+    final messages = this.messages;
+    final streamMessage = messages.firstWhere(
+      (msg) => msg.id == messageId,
+      orElse: () => Message.unsupported(id: messageId, authorId: aiUserId),
+    );
+
+    updateMessage(
+      streamMessage,
+      Message.text(
+        id: messageId,
+        authorId: aiUserId,
+        text: finalText,
+        createdAt: streamMessage.createdAt,
+        sentAt: DateTime.now(),
+      ),
+    );
+
+    _currentStreamMessageId = null;
+  }
+
+  /// Mark streaming message as failed
+  void markStreamingMessageFailed(String messageId, String errorText) {
+    final messages = this.messages;
+    final streamMessage = messages.firstWhere(
+      (msg) => msg.id == messageId,
+      orElse: () => Message.unsupported(id: messageId, authorId: aiUserId),
+    );
+
+    updateMessage(
+      streamMessage,
+      Message.text(
+        id: messageId,
+        authorId: aiUserId,
+        text: errorText,
+        createdAt: streamMessage.createdAt,
         failedAt: DateTime.now(),
-      );
-      await insertMessage(errorMessage);
-    }
+      ),
+    );
+
+    _currentStreamMessageId = null;
   }
 
-  /// Cancel the current streaming operation
-  Future<void> cancelStream() async {
-    if (_currentStreamSubscription != null) {
-      await _currentStreamSubscription!.cancel();
-      _currentStreamSubscription = null;
+  /// Get current streaming message ID
+  String? get currentStreamMessageId => _currentStreamMessageId;
 
-      // Mark the streaming message as cancelled
-      if (_currentStreamMessageId != null) {
-        final messages = this.messages;
-        final streamMessage = messages.firstWhere(
-          (msg) => msg.id == _currentStreamMessageId,
-          orElse: () => Message.unsupported(
-            id: _currentStreamMessageId!,
-            authorId: aiUserId,
-          ),
-        );
-
-        if (streamMessage is TextStreamMessage) {
-          updateMessage(
-            streamMessage,
-            Message.text(
-              id: streamMessage.id,
-              authorId: aiUserId,
-              text: '[스트리밍 취소됨]',
-              createdAt: streamMessage.createdAt,
-              failedAt: DateTime.now(),
-            ),
-          );
-        }
-      }
-
-      _currentStreamMessageId = null;
-    }
-  }
-
-  /// Check if streaming is currently active
-  bool get isStreaming => _currentStreamSubscription != null;
-
-  @override
-  void dispose() {
-    cancelStream();
-    super.dispose();
+  /// Clear streaming message ID
+  void clearStreamMessageId() {
+    _currentStreamMessageId = null;
   }
 }

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '/core/design_system/design_system.dart';
-import '/features/chat/domain/models/chats_model.dart';
+import '/features/chat/domain/entities/chat.dart';
 
 /// 채팅 상세 페이지의 AppBar 컴포넌트
 class ChatDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final ChatsModel? chatDocument;
+  final Chat? chatDocument;
   final bool isAiChat;
   final bool isSearching;
   final VoidCallback onSearchToggle;

@@ -8,7 +8,6 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:flutter/foundation.dart';
 
 import 'i_auth_remote_datasource.dart';
-import '../dto/user_profile_dto.dart';
 
 /// FirebaseAuthRemoteDataSource
 ///
@@ -336,53 +335,6 @@ class FirebaseAuthRemoteDataSource implements IAuthRemoteDataSource {
   @override
   Stream<User?> authStateChanges() {
     return _firebaseAuth.authStateChanges();
-  }
-
-  @override
-  Future<UserProfileDto?> getUserProfile(String uid) async {
-    try {
-      final doc = await _firestore.collection('users').doc(uid).get();
-
-      if (!doc.exists) {
-        return null;
-      }
-
-      final data = doc.data();
-      if (data == null) {
-        return null;
-      }
-
-      return UserProfileDto.fromFirestore(data, uid);
-    } catch (e) {
-      debugPrint('Error getting user profile from Firestore: $e');
-      return null;
-    }
-  }
-
-  @override
-  Future<void> createUserProfile(String uid, UserProfileDto profile) async {
-    try {
-      await _firestore.collection('users').doc(uid).set(
-        profile.toFirestore(),
-        SetOptions(merge: false),
-      );
-    } catch (e) {
-      debugPrint('Error creating user profile in Firestore: $e');
-      rethrow;
-    }
-  }
-
-  @override
-  Future<void> updateUserProfileData(String uid, Map<String, dynamic> data) async {
-    try {
-      // Add timestamp for tracking
-      data['lastActive'] = FieldValue.serverTimestamp();
-
-      await _firestore.collection('users').doc(uid).update(data);
-    } catch (e) {
-      debugPrint('Error updating user profile in Firestore: $e');
-      rethrow;
-    }
   }
 
   @override

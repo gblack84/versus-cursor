@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 class CharacterDetailPageModel extends AppModel<CharacterDetailPageWidget> {
   ///  Local state fields for this component.
 
+  String? selectedCharacterId;
   String selectedCharacterUrl = '\" \"';
 
   ///  State fields for stateful widgets in this component.

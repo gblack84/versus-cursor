@@ -1,30 +1,80 @@
 import '../../domain/models/user_profile.dart';
 import '../dto/user_profile_dto.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core_exports.dart';
 
 /// UserProfile Mapper
 ///
 /// **책임**: DTO와 Domain Model 간 양방향 변환
 ///
-/// **Note**: UserProfile은 현재 FirestoreRecord를 상속하므로
-/// 실제 변환은 Phase 6에서 FirestoreRecord 제거 후 완전히 구현됩니다.
-/// 현재는 DTO의 toFirestore/fromFirestore를 통한 간접 변환을 지원합니다.
+/// **변경사항** (2025-01-20 Phase 1 & 6):
+/// - getDocumentFromData 제거 → UserProfile 생성자 직접 호출
+/// - nullable 필드에 null-safe 체크 추가
 class UserProfileMapper {
   /// DTO → Domain Model
   ///
-  /// **현재 제한사항**: UserProfile이 FirestoreRecord를 상속하므로
-  /// 직접 생성자를 사용할 수 없습니다.
-  /// fromSnapshot 또는 getDocumentFromData 사용 필요
+  /// **Phase 1 변경**: UserProfile 생성자를 직접 사용
   static UserProfile toDomain(
     UserProfileDto dto,
     DocumentReference reference,
   ) {
-    final firestoreData = dto.toFirestore();
-    return UserProfile.getDocumentFromData(firestoreData, reference);
+    // LatLng 변환을 위해 core_exports에서 가져옴
+    final LatLng? latLng = dto.location != null
+        ? LatLng(dto.location!.latitude, dto.location!.longitude)
+        : null;
+
+    return UserProfile(
+      uid: dto.uid ?? '',
+      email: dto.email ?? '',
+      displayName: dto.displayName,
+      photoUrl: dto.photoUrl,
+      phoneNumber: dto.phoneNumber,
+      location: latLng,
+      shortDescription: dto.shortDescription,
+      gender: dto.gender,
+      dateOfBirth: dto.dateOfBirth,
+      language: dto.language,
+      createdTime: dto.createdTime,
+      lastActive: dto.lastActive,
+      lastActiveTime: dto.lastActiveTime,
+      pointsA: dto.pointsA ?? 0,
+      pointsQ: dto.pointsQ ?? 0,
+      totalAPoints: dto.totalAPoints ?? 0,
+      totalQPoints: dto.totalQPoints ?? 0,
+      interests: dto.interests ?? const [],
+      expertise: dto.expertise ?? const [],
+      hobbies: dto.hobbies ?? const [],
+      jobCategory: dto.jobCategory,
+      jobName: dto.jobName,
+      isPremiumUser: dto.isPremiumUser ?? false,
+      anonymousPostsCount: dto.anonymousPostsCount ?? 0,
+      anonymousCommentsCount: dto.anonymousCommentsCount ?? 0,
+      anonymousQuestionCount: dto.anonymousQuestionCount ?? 0,
+      currentRank: dto.currentRank,
+      currentTitle: dto.currentTitle,
+      rankChangeDate: dto.rankChangeDate,
+      titleChangeDate: dto.titleChangeDate,
+      isRankEligible: dto.isRankEligible ?? false,
+      rankEvaluationCount: dto.rankEvaluationCount ?? 0,
+      rankHistory: dto.rankHistory ?? const [],
+      titleHistory: dto.titleHistory ?? const [],
+      receiveRankUpdateNotifications:
+          dto.receiveRankUpdateNotifications ?? false,
+      receiveTitleUpdateNotifications:
+          dto.receiveTitleUpdateNotifications ?? false,
+      characterId: dto.characterId,
+      friends: dto.friends ?? const [],
+      activeChats: dto.activeChats ?? const [],
+      groupChats: dto.groupChats ?? const [],
+      role: dto.role,
+      title: dto.title,
+      stats: dto.stats ?? const {},
+      subscription: dto.subscription ?? const {},
+    );
   }
 
   /// Domain Model → DTO
+  ///
+  /// **Phase 6 변경**: nullable 필드에 null-safe 체크 추가
   static UserProfileDto fromDomain(UserProfile profile) {
     // LatLng → GeoPoint 변환
     final GeoPoint? geoPoint = profile.location != null
@@ -35,16 +85,19 @@ class UserProfileMapper {
       uid: profile.uid,
       email: profile.email,
       displayName: profile.displayName,
-      photoUrl: profile.photoUrl.isNotEmpty ? profile.photoUrl : null,
-      phoneNumber:
-          profile.phoneNumber.isNotEmpty ? profile.phoneNumber : null,
+      photoUrl:
+          (profile.photoUrl?.isNotEmpty == true) ? profile.photoUrl : null,
+      phoneNumber: (profile.phoneNumber?.isNotEmpty == true)
+          ? profile.phoneNumber
+          : null,
       location: geoPoint,
-      shortDescription: profile.shortDescription.isNotEmpty
+      shortDescription: (profile.shortDescription?.isNotEmpty == true)
           ? profile.shortDescription
           : null,
-      gender: profile.gender.isNotEmpty ? profile.gender : null,
+      gender: (profile.gender?.isNotEmpty == true) ? profile.gender : null,
       dateOfBirth: profile.dateOfBirth,
-      language: profile.language.isNotEmpty ? profile.language : null,
+      language:
+          (profile.language?.isNotEmpty == true) ? profile.language : null,
       createdTime: profile.createdTime,
       lastActive: profile.lastActive,
       lastActiveTime: profile.lastActiveTime,
@@ -54,14 +107,19 @@ class UserProfileMapper {
       totalQPoints: profile.totalQPoints,
       interests: profile.interests.isNotEmpty ? profile.interests : null,
       expertise: profile.expertise.isNotEmpty ? profile.expertise : null,
+      hobbies: profile.hobbies.isNotEmpty ? profile.hobbies : null,
+      jobCategory: profile.jobCategory,
+      jobName: profile.jobName,
       isPremiumUser: profile.isPremiumUser,
       anonymousPostsCount: profile.anonymousPostsCount,
       anonymousCommentsCount: profile.anonymousCommentsCount,
       anonymousQuestionCount: profile.anonymousQuestionCount,
-      currentRank:
-          profile.currentRank.isNotEmpty ? profile.currentRank : null,
-      currentTitle:
-          profile.currentTitle.isNotEmpty ? profile.currentTitle : null,
+      currentRank: (profile.currentRank?.isNotEmpty == true)
+          ? profile.currentRank
+          : null,
+      currentTitle: (profile.currentTitle?.isNotEmpty == true)
+          ? profile.currentTitle
+          : null,
       rankChangeDate: profile.rankChangeDate,
       titleChangeDate: profile.titleChangeDate,
       isRankEligible: profile.isRankEligible,
@@ -72,12 +130,13 @@ class UserProfileMapper {
           profile.titleHistory.isNotEmpty ? profile.titleHistory : null,
       receiveRankUpdateNotifications: profile.receiveRankUpdateNotifications,
       receiveTitleUpdateNotifications: profile.receiveTitleUpdateNotifications,
+      characterId: (profile.characterId?.isNotEmpty == true) ? profile.characterId : null,
       friends: profile.friends.isNotEmpty ? profile.friends : null,
       activeChats:
           profile.activeChats.isNotEmpty ? profile.activeChats : null,
       groupChats: profile.groupChats.isNotEmpty ? profile.groupChats : null,
-      role: profile.role.isNotEmpty ? profile.role : null,
-      title: profile.title.isNotEmpty ? profile.title : null,
+      role: (profile.role?.isNotEmpty == true) ? profile.role : null,
+      title: (profile.title?.isNotEmpty == true) ? profile.title : null,
       stats: profile.stats.isNotEmpty ? profile.stats : null,
       subscription:
           profile.subscription.isNotEmpty ? profile.subscription : null,

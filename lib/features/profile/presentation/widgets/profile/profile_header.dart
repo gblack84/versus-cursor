@@ -39,7 +39,7 @@ class ProfileHeader extends StatelessWidget {
         children: [
           // 프로필 아바타
           ProfileAvatar(
-            photoUrl: profile.photoUrl,
+            photoUrl: profile.photoUrl ?? '',
             size: AvatarSize.extraLarge,
             editable: editable,
             onEditTap: onEditPhoto,
@@ -48,7 +48,7 @@ class ProfileHeader extends StatelessWidget {
 
           // 표시 이름
           Text(
-            profile.displayName,
+            profile.displayName ?? 'Unknown',
             style: AppTheme.of(context).headlineMedium.override(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -57,10 +57,10 @@ class ProfileHeader extends StatelessWidget {
           ),
 
           // 한 줄 소개
-          if (profile.shortDescription.isNotEmpty) ...[
+          if (profile.shortDescription?.isNotEmpty == true) ...[
             const SizedBox(height: 8),
             Text(
-              profile.shortDescription,
+              profile.shortDescription!,
               style: AppTheme.of(context).bodyMedium.override(
                     color: Colors.white.withValues(alpha: 0.9),
                   ),

@@ -2,7 +2,6 @@
 // Clean Architecture - Data Layer
 
 import '../dto/auth_user_dto.dart';
-import '../dto/user_profile_dto.dart';
 
 /// IAuthLocalDataSource
 ///
@@ -17,15 +16,6 @@ abstract class IAuthLocalDataSource {
 
   /// Clear cached auth user
   Future<void> clearCachedAuthUser();
-
-  /// Cache user profile data
-  Future<void> cacheUserProfile(UserProfileDto profile);
-
-  /// Get cached user profile
-  Future<UserProfileDto?> getCachedUserProfile(String uid);
-
-  /// Clear cached user profile
-  Future<void> clearCachedUserProfile(String uid);
 
   /// Clear all cached data
   Future<void> clearAllCache();

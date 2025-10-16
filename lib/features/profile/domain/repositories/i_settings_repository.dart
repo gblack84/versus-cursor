@@ -5,6 +5,11 @@ import '../failures/profile_failures.dart';
 /// Settings Repository 인터페이스
 ///
 /// **책임**: 사용자 설정 관리
+///
+/// **Phase 6 Cleanup**:
+/// - watchUserSettings 삭제 (Stream 미사용)
+/// - getNotificationSettings 삭제 (UserSettings.notificationSettings getter 사용)
+/// - updateNotificationSettings 삭제 (updateUserSettings로 충분)
 abstract class ISettingsRepository {
   /// 사용자 설정 조회
   Future<Either<ProfileFailure, UserSettings>> getUserSettings(String userId);
@@ -13,17 +18,5 @@ abstract class ISettingsRepository {
   Future<Either<ProfileFailure, void>> updateUserSettings(
     String userId,
     UserSettings settings,
-  );
-
-  /// 사용자 설정 실시간 감시
-  Stream<UserSettings> watchUserSettings(String userId);
-
-  /// 알림 설정 조회
-  Future<Either<ProfileFailure, Map<String, dynamic>>> getNotificationSettings(String userId);
-
-  /// 알림 설정 업데이트
-  Future<Either<ProfileFailure, void>> updateNotificationSettings(
-    String userId,
-    Map<String, dynamic> settings,
   );
 }

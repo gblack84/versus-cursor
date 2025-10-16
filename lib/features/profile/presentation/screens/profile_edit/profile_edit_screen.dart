@@ -1,15 +1,26 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '/core_exports.dart';
 import '/features/profile/presentation/providers/profile_edit_provider.dart';
+import '/app/di.dart';
+import '/features/profile/domain/usecases/profile/update_user_profile_usecase.dart';
+import '/features/profile/domain/usecases/profile/get_user_profile_usecase.dart';
+import '/features/profile/domain/usecases/profile/upload_profile_image_usecase.dart';
+import '/features/profile/presentation/widgets/common/loading_indicator.dart';
+import '/features/profile/presentation/widgets/common/error_message.dart';
+import '/features/profile/presentation/constants/validation_rules.dart';
+import '/features/profile/presentation/constants/profile_constants.dart';
 
-/// 프로필 편집 화면
+/// 프로필 편집 화면 Wrapper
 ///
 /// **Clean Architecture v4.0 준수**:
 /// - Provider 패턴으로 상태 관리
 /// - UseCase 통해 비즈니스 로직 처리
 /// - UI와 비즈니스 로직 완전 분리
-class ProfileEditScreen extends StatefulWidget {
+/// - GetIt을 통한 의존성 주입
+class ProfileEditScreen extends StatelessWidget {
   const ProfileEditScreen({
     super.key,
     required this.userId,
@@ -21,10 +32,31 @@ class ProfileEditScreen extends StatefulWidget {
   static String routePath = '/profile/edit';
 
   @override
-  State<ProfileEditScreen> createState() => _ProfileEditScreenState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => ProfileEditProvider(
+        updateProfileUseCase: getIt<UpdateUserProfileUseCase>(),
+        getUserProfileUseCase: getIt<GetUserProfileUseCase>(),
+        uploadImageUseCase: getIt<UploadProfileImageUseCase>(),
+      ),
+      child: _ProfileEditScreenContent(userId: userId),
+    );
+  }
 }
 
-class _ProfileEditScreenState extends State<ProfileEditScreen> {
+/// 프로필 편집 화면 내용
+class _ProfileEditScreenContent extends StatefulWidget {
+  const _ProfileEditScreenContent({
+    required this.userId,
+  });
+
+  final String userId;
+
+  @override
+  State<_ProfileEditScreenContent> createState() => _ProfileEditScreenContentState();
+}
+
+class _ProfileEditScreenContentState extends State<_ProfileEditScreenContent> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _displayNameController;
@@ -79,39 +111,16 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         builder: (context, provider, _) {
           // 로딩 상태
           if (provider.isLoading && provider.profile == null) {
-            return Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  AppTheme.of(context).primary,
-                ),
-              ),
+            return ProfileLoadingIndicator(
+              size: LoadingSize.medium,
             );
           }
 
           // 에러 상태
           if (provider.errorMessage != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: AppTheme.of(context).error,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    provider.errorMessage!,
-                    style: AppTheme.of(context).bodyMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => provider.loadProfile(widget.userId),
-                    child: Text('다시 시도'),
-                  ),
-                ],
-              ),
+            return ProfileErrorMessage(
+              message: provider.errorMessage!,
+              onRetry: () => provider.loadProfile(widget.userId),
             );
           }
 
@@ -122,11 +131,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           }
 
           // 초기값 설정 (한 번만)
-          if (_displayNameController.text.isEmpty && profile.displayName.isNotEmpty) {
-            _displayNameController.text = profile.displayName;
+          if (_displayNameController.text.isEmpty && profile.displayName?.isNotEmpty == true) {
+            _displayNameController.text = profile.displayName ?? '';
           }
-          if (_shortDescriptionController.text.isEmpty && profile.shortDescription.isNotEmpty) {
-            _shortDescriptionController.text = profile.shortDescription;
+          if (_shortDescriptionController.text.isEmpty && profile.shortDescription?.isNotEmpty == true) {
+            _shortDescriptionController.text = profile.shortDescription ?? '';
           }
 
           return SingleChildScrollView(
@@ -143,10 +152,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         CircleAvatar(
                           radius: 60,
                           backgroundColor: AppTheme.of(context).primaryBackground,
-                          backgroundImage: profile.photoUrl.isNotEmpty
-                              ? NetworkImage(profile.photoUrl)
+                          backgroundImage: profile.photoUrl?.isNotEmpty == true
+                              ? NetworkImage(profile.photoUrl!)
                               : null,
-                          child: profile.photoUrl.isEmpty
+                          child: profile.photoUrl?.isEmpty ?? true
                               ? Icon(
                                   Icons.person,
                                   size: 60,
@@ -166,14 +175,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                 size: 20,
                                 color: Colors.white,
                               ),
-                              onPressed: () {
-                                // TODO: 이미지 업로드 기능 구현
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('이미지 업로드 기능은 추후 구현 예정'),
-                                  ),
-                                );
-                              },
+                              onPressed: () => _pickAndUploadImage(context),
                             ),
                           ),
                         ),
@@ -200,15 +202,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       filled: true,
                       fillColor: AppTheme.of(context).secondaryBackground,
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '표시 이름을 입력해주세요';
-                      }
-                      if (value.length > 20) {
-                        return '20자 이내로 입력해주세요';
-                      }
-                      return null;
-                    },
+                    maxLength: ProfileConstants.maxDisplayNameLength,
+                    validator: ValidationRules.validateDisplayName,
                   ),
                   SizedBox(height: 24),
 
@@ -231,13 +226,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       fillColor: AppTheme.of(context).secondaryBackground,
                     ),
                     maxLines: 3,
-                    maxLength: 100,
-                    validator: (value) {
-                      if (value != null && value.length > 100) {
-                        return '100자 이내로 입력해주세요';
-                      }
-                      return null;
-                    },
+                    maxLength: ProfileConstants.maxShortDescriptionLength,
+                    validator: ValidationRules.validateShortDescription,
                   ),
                   SizedBox(height: 24),
 
@@ -285,12 +275,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
                   // 로딩 인디케이터
                   if (provider.isLoading)
-                    Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppTheme.of(context).primary,
-                        ),
-                      ),
+                    ProfileLoadingIndicator(
+                      size: LoadingSize.small,
                     ),
                 ],
               ),
@@ -326,6 +312,74 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           backgroundColor: AppTheme.of(context).error,
         ),
       );
+    }
+  }
+
+  /// 이미지 선택 및 업로드
+  ///
+  /// **Phase 3.1 구현**: ImagePicker를 통한 이미지 선택 및 업로드
+  Future<void> _pickAndUploadImage(BuildContext context) async {
+    final provider = context.read<ProfileEditProvider>();
+
+    // 1. 이미지 소스 선택 다이얼로그
+    final ImageSource? source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('프로필 사진 선택'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.camera_alt),
+              title: Text('카메라로 촬영'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: Icon(Icons.photo_library),
+              title: Text('갤러리에서 선택'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    // 2. 이미지 선택
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: source,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
+    );
+
+    if (image == null) return;
+
+    // 3. 파일 변환 및 업로드
+    final File imageFile = File(image.path);
+
+    // 4. Provider를 통해 업로드
+    final success = await provider.uploadProfileImage(imageFile);
+
+    // 5. 결과 메시지 표시
+    if (mounted) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('프로필 사진이 업데이트되었습니다'),
+            backgroundColor: AppTheme.of(context).success,
+          ),
+        );
+      } else if (provider.errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(provider.errorMessage!),
+            backgroundColor: AppTheme.of(context).error,
+          ),
+        );
+      }
     }
   }
 }

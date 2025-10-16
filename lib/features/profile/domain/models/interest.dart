@@ -29,6 +29,17 @@ class Interest {
   /// 선택된 날짜
   final DateTime? selectedAt;
 
+  /// String으로부터 간단한 Interest 객체 생성
+  ///
+  /// UI 표시 목적으로 String 리스트를 Interest로 변환할 때 사용
+  factory Interest.fromString(String name, String category) {
+    return Interest(
+      id: name.toLowerCase().replaceAll(' ', '_'),
+      name: name,
+      category: category,
+    );
+  }
+
   factory Interest.fromJson(Map<String, dynamic> json) {
     return Interest(
       id: json['id'] as String,

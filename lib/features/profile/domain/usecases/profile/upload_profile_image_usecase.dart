@@ -1,18 +1,24 @@
 import 'dart:io';
 import 'package:dartz/dartz.dart';
 import '../../failures/profile_failures.dart';
+import '../../repositories/i_profile_storage_repository.dart';
 
-/// 프로필 이미지 업로드 UseCase
+/// 프로필 이미지 업로드 UseCase (Clean Architecture v4.0)
 ///
 /// **책임**:
 /// - 이미지 파일 유효성 검증
-/// - Firebase Storage 업로드
+/// - Firebase Storage 업로드 (Repository를 통해)
 /// - 업로드된 URL 반환
+///
+/// **변경사항** (2025-01-20):
+/// - Domain Layer Repository 인터페이스 사용으로 변경
+/// - Data Layer DataSource 직접 의존 제거
 class UploadProfileImageUseCase {
-  // TODO: Phase 3에서 Storage DataSource 추가 후 구현
-  // final IStorageDataSource _storageDataSource;
+  final IProfileStorageRepository _storageRepository;
 
-  UploadProfileImageUseCase();
+  UploadProfileImageUseCase({
+    required IProfileStorageRepository storageRepository,
+  }) : _storageRepository = storageRepository;
 
   /// 프로필 이미지 업로드 실행
   ///
@@ -43,14 +49,13 @@ class UploadProfileImageUseCase {
             ValidationFailure(message: 'Image size must be less than 10MB'));
       }
 
-      // TODO: Phase 3에서 실제 Storage 업로드 구현
-      // final imageUrl = await _storageDataSource.uploadProfileImage(
-      //   userId: userId,
-      //   imageFile: imageFile,
-      // );
+      // 3. Storage 업로드 실행 (Repository를 통해)
+      final imageUrl = await _storageRepository.uploadProfileImage(
+        userId: userId,
+        imageFile: imageFile,
+      );
 
-      // 임시 반환값 (Phase 3에서 실제 구현으로 교체)
-      return Right('https://example.com/profile/$userId.jpg');
+      return Right(imageUrl);
     } catch (e) {
       return Left(StorageFailure(message: e.toString()));
     }

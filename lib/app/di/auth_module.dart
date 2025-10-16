@@ -7,6 +7,9 @@ import '../../features/auth/data/datasources/i_auth_remote_datasource.dart';
 import '../../features/auth/data/datasources/firebase_auth_remote_datasource.dart';
 import '../../features/auth/data/datasources/i_auth_local_datasource.dart';
 import '../../features/auth/data/datasources/auth_local_datasource.dart';
+import '../../features/auth/presentation/providers/auth_provider.dart';
+import '../contracts/auth_contract.dart';
+import '../contracts/user_contract.dart';
 
 /// Auth Feature DI Module
 ///
@@ -36,12 +39,23 @@ class AuthModule implements FeatureModule {
     }
 
     // Register IAuthRepository with DataSource dependencies
+    // Phase 5: UserContract 주입 (Profile Feature와 통신)
     if (!sl.isRegistered<IAuthRepository>()) {
       sl.registerLazySingleton<IAuthRepository>(
         () => AuthRepositoryImpl(
           remoteDataSource: sl<IAuthRemoteDataSource>(),
           localDataSource: sl<IAuthLocalDataSource>(),
+          userContract: sl<UserContract>(),
         ),
+      );
+    }
+
+    // Register AuthContract (Phase 2: Clean Architecture)
+    // AuthProvider is already registered in app/di/di.dart
+    // We just need to expose it as AuthContract for other Features
+    if (!sl.isRegistered<AuthContract>()) {
+      sl.registerFactory<AuthContract>(
+        () => sl<AuthProvider>(),  // Reuse existing AuthProvider instance
       );
     }
 

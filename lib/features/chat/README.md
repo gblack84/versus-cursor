@@ -20,14 +20,17 @@ Versus Space 앱의 **채팅 기능 모듈**입니다. Clean Architecture 원칙
 ```
 chat/
 ├── domain/                 # 비즈니스 로직 & 엔티티
-│   ├── models/            # 도메인 모델
+│   ├── entities/          # Freezed 불변 엔티티
+│   ├── enums/             # 열거형
 │   ├── usecases/          # 비즈니스 규칙
 │   └── repositories/      # Repository 인터페이스
 │
 ├── data/                   # 데이터 계층
 │   ├── datasources/       # 데이터 소스 (Remote/Local)
+│   ├── dto/               # 데이터 전송 객체
+│   ├── mappers/           # DTO ↔ Entity 변환
 │   ├── repositories/      # Repository 구현체
-│   └── services/          # 비즈니스 서비스
+│   └── adapters/          # 비즈니스 서비스
 │
 └── presentation/           # 프레젠테이션 계층
     ├── screens/           # 화면/페이지
@@ -40,27 +43,25 @@ chat/
 ### Domain Layer (비즈니스 핵심)
 ```
 domain/
-├── models/
-│   ├── entities/
-│   │   ├── chat_model.dart           # 채팅방 엔티티
-│   │   ├── message_model.dart        # 메시지 엔티티
-│   │   ├── notification_model.dart   # 알림 엔티티
-│   │   └── vote_model.dart           # 투표 엔티티
-│   │
-│   ├── value_objects/
-│   │   ├── message_type.dart         # 메시지 타입
-│   │   ├── vote_status.dart          # 투표 상태
-│   │   └── notification_priority.dart # 알림 우선순위
-│   │
-│   └── aggregates/
-│       ├── chat_aggregate.dart       # 채팅 집합체
-│       └── vote_aggregate.dart       # 투표 집합체
+├── entities/                          # Freezed 불변 엔티티
+│   ├── chat.dart                      # 채팅방 엔티티
+│   ├── chat.freezed.dart              # Freezed 생성 코드
+│   ├── message.dart                   # 메시지 엔티티
+│   └── message.freezed.dart           # Freezed 생성 코드
 │
-└── usecases/
-    ├── chat/                          # 채팅방 Use Cases
-    ├── message/                       # 메시지 Use Cases
-    ├── vote/                          # 투표 Use Cases
-    └── notification/                  # 알림 Use Cases
+├── enums/                             # 열거형
+│   └── message_delivery_status.dart   # 메시지 전송 상태
+│
+├── repositories/                      # Repository 인터페이스
+│   ├── i_chat_repository.dart         # 채팅방 Repository
+│   └── i_message_repository.dart      # 메시지 Repository
+│
+└── usecases/                          # 비즈니스 규칙
+    ├── get_chat_list_usecase.dart     # 채팅 목록 조회
+    ├── get_chat_messages_usecase.dart # 메시지 조회
+    ├── send_message_usecase.dart      # 메시지 전송
+    ├── load_more_messages_usecase.dart # 메시지 페이지네이션
+    └── search_messages_usecase.dart   # 메시지 검색
 ```
 
 ### Data Layer (데이터 처리)
@@ -294,7 +295,8 @@ flutter test --coverage
 ## 📚 참고 문서
 
 ### 내부 문서
-- [Domain Models](./domain/models/README.md)
+- [Domain Entities](./domain/entities/)
+- [Domain Enums](./domain/enums/)
 - [Use Cases](./domain/usecases/README.md)
 - [Repositories](./data/repositories/README.md)
 - [Data Sources](./data/datasources/README.md)

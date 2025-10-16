@@ -36,11 +36,11 @@ export '/features/search/presentation/screens/search_page/search_page_widget.dar
     show SearchPageWidget;
 export '/features/profile/presentation/screens/profile_main/profile_page_widget.dart'
     show ProfilePageWidget;
-export '/features/chat/presentation/screens/chat_list/chat_list_widget.dart'
-    show ChatListWidget;
-export '/features/chat/presentation/screens/friends_list/friends_list_widget.dart'
-    show FriendsListWidget;
+export '/features/chat/presentation/screens/chat_list/chat_list_widget_clean.dart'
+    show ChatListWidgetClean;
 export '/features/search/presentation/screens/chat_search/chat_search_widget.dart'
     show ChatSearchWidget;
-export '/features/chat/presentation/screens/chat_detail/chat_detail_widget_v2.dart'
-    show ChatDetailWidgetV2;
+export '/features/chat/presentation/screens/chat_detail/chat_detail_widget_clean.dart'
+    show ChatDetailWidgetClean;
+export '/features/chat/presentation/screens/ai_chat/ai_chat_page_clean.dart'
+    show AIChatPageClean;

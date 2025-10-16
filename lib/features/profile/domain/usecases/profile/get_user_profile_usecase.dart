@@ -1,15 +1,18 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import '../../repositories/i_user_repository.dart';
 import '../../models/user_profile.dart';
 import '../../failures/profile_failures.dart';
 
-/// 프로필 조회 UseCase
+/// 프로필 조회 UseCase (Clean Architecture v4.0)
 ///
 /// **책임**:
 /// - 사용자 ID 유효성 검증
 /// - Repository를 통한 프로필 데이터 조회
 /// - 에러 처리 및 Failure 변환
+///
+/// **변경사항** (2025-01-20 Phase 5):
+/// - Firebase import 제거 (Repository가 Firebase 처리)
+/// - FirebaseException catch 제거 (Repository 계층에서 처리)
 class GetUserProfileUseCase {
   final IUserRepository _repository;
 
@@ -42,8 +45,6 @@ class GetUserProfileUseCase {
       }
 
       return Right(profile);
-    } on FirebaseException catch (e) {
-      return Left(FirestoreReadFailure(message: e.message ?? 'Unknown error'));
     } catch (e) {
       return Left(UnknownProfileFailure(message: e.toString()));
     }

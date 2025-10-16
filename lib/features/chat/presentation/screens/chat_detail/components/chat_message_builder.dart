@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import 'package:intl/intl.dart';
 import '/core/design_system/design_system.dart';
-import '/features/chat/domain/models/chats_model.dart';
+import '/features/chat/domain/entities/chat.dart';
 import '/features/profile/domain/models/user_profile.dart';
 import '/features/voting/presentation/widgets/chat_card/vote_card_message.dart';
-import '/features/chat/data/adapters/chat_message_lifecycle_service.dart';
+import '/features/chat/domain/enums/message_delivery_status.dart';
 
 /// 메시지 빌더 컴포넌트
 ///
@@ -18,7 +18,7 @@ class ChatMessageBuilder {
     int index, {
     required bool isSentByMe,
     core.MessageGroupStatus? groupStatus,
-    ChatsModel? chatDocument,
+    Chat? chatDocument,
     UserProfile? currentUserRecord,
     String? searchQuery,
     bool isSearching = false,
@@ -57,7 +57,7 @@ class ChatMessageBuilder {
           isMe: isSentByMe,
           messageType: metadata['type'] ?? 'voteRequest',
           messageId: message.id,
-          chatId: chatDocument?.reference.id,
+          chatId: chatDocument?.id,
           currentUserName: currentUserRecord?.displayName ?? '사용자',
           senderDisplayName: metadata['authorName'] ?? '사용자',
           senderProfileImageUrl: metadata['authorPhotoUrl'],

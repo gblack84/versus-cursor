@@ -1,59 +1,57 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/models/profile_info.dart';
 import '../../domain/models/user_settings.dart';
-import '../../domain/models/user_stats.dart';
-import '../../../auth/domain/models/auth_user.dart';
 import '../../domain/models/user_profile.dart';
 
-/// Adapter to convert between legacy UserProfile and new domain models
+/// Adapter to convert between legacy UserProfile and new domain models (Clean Architecture v4.0)
+///
+/// **변경사항** (2025-01-20 Phase 6):
+/// - AuthUser 타입 제거 (Auth Feature 의존성 격리)
+/// - auth 필드를 Map<String, dynamic>으로 변경
+/// - Feature 간 의존성 완전 제거
+///
 /// This adapter enables gradual migration from monolithic UserProfile (526 lines)
-/// to 4 focused domain models following Single Responsibility Principle
+/// to 3 focused domain models following Single Responsibility Principle
 class UserProfileAdapter {
-  /// Converts legacy UserProfile to 4 domain models
-  /// Returns a tuple of (AuthUser, ProfileInfo, UserSettings, UserStats)
+  /// Converts legacy UserProfile to 3 domain models
+  /// Returns a tuple of (Map auth, ProfileInfo, UserSettings)
   static ({
-    AuthUser auth,
+    Map<String, dynamic> auth,
     ProfileInfo profile,
     UserSettings settings,
-    UserStats stats,
   }) toDomainModels(UserProfile legacy) {
-    // Convert to AuthUser (authentication data)
-    final authUser = AuthUser(
-      uid: legacy.uid,
-      email: legacy.email,
-      displayName: legacy.displayName,
-      photoUrl: legacy.photoUrl,
-      phoneNumber: legacy.phoneNumber,
-      isEmailVerified: false, // Not available in UserProfile
-      isAnonymous: false, // Not available in UserProfile
-      createdAt: legacy.createdTime,
-      lastLoginAt: legacy.lastActive,
-    );
+    // Convert to Auth data map (authentication data)
+    // 필드: uid, email, displayName, photoUrl, phoneNumber,
+    //       isEmailVerified, isAnonymous, createdAt, lastLoginAt
+    final authData = <String, dynamic>{
+      'uid': legacy.uid,
+      'email': legacy.email,
+      'displayName': legacy.displayName,
+      'photoUrl': legacy.photoUrl,
+      'phoneNumber': legacy.phoneNumber,
+      'isEmailVerified': false, // Not available in UserProfile
+      'isAnonymous': false, // Not available in UserProfile
+      'createdAt': legacy.createdTime,
+      'lastLoginAt': legacy.lastActive,
+    };
 
     // Convert to ProfileInfo (display data)
-    // Convert LatLng to GeoPoint if needed
-    GeoPoint? geoPoint;
-    if (legacy.location != null) {
-      geoPoint =
-          GeoPoint(legacy.location!.latitude, legacy.location!.longitude);
-    }
-
     final profileInfo = ProfileInfo(
-      userId: legacy.uid,
-      displayName: legacy.displayName,
+      userId: legacy.uid, // uid is non-null String
+      displayName: legacy.displayName ?? '',
       photoUrl: legacy.photoUrl,
       shortDescription: legacy.shortDescription,
       gender: legacy.gender,
       dateOfBirth: legacy.dateOfBirth,
-      language: legacy.language,
+      language: legacy.language ?? 'en', // Default to 'en' if null
       interests: legacy.interests,
       expertise: legacy.expertise,
-      location: geoPoint,
+      location: legacy.location, // Both use LatLng now
     );
 
     // Convert to UserSettings (preferences)
     final userSettings = UserSettings(
-      userId: legacy.uid,
+      userId: legacy.uid, // uid is non-null String
       isPremiumUser: legacy.isPremiumUser,
       receiveRankUpdateNotifications: legacy.receiveRankUpdateNotifications,
       receiveTitleUpdateNotifications: legacy.receiveTitleUpdateNotifications,
@@ -65,181 +63,83 @@ class UserProfileAdapter {
       privacySettings: const {}, // Not available in UserProfile
     );
 
-    // Convert to UserStats (gamification & metrics)
-    final userStats = UserStats(
-      userId: legacy.uid,
-      pointsA: legacy.pointsA,
-      pointsQ: legacy.pointsQ,
-      totalAPoints: legacy.totalAPoints,
-      totalQPoints: legacy.totalQPoints,
-      currentRank: legacy.currentRank,
-      currentTitle: legacy.currentTitle,
-      rankChangeDate: legacy.rankChangeDate,
-      titleChangeDate: legacy.titleChangeDate,
-      isRankEligible: legacy.isRankEligible,
-      rankEvaluationCount: legacy.rankEvaluationCount,
-      friends: legacy.friends,
-      activeChats: legacy.activeChats,
-      rankHistory: legacy.rankHistory,
-      titleHistory: legacy.titleHistory,
-      anonymousPostsCount: legacy.anonymousPostsCount,
-      anonymousCommentsCount: legacy.anonymousCommentsCount,
-    );
-
     return (
-      auth: authUser,
+      auth: authData,
       profile: profileInfo,
       settings: userSettings,
-      stats: userStats,
     );
   }
 
-  /// Converts 4 domain models back to legacy UserProfile
+  /// Converts 3 domain models back to legacy UserProfile
   /// Used for backward compatibility with existing code
+  ///
+  /// **변경사항** (2025-01-20 Phase 6):
+  /// - getDocumentFromData 제거 (Phase 1에서 FirestoreRecord 제거됨)
+  /// - 직접 UserProfile 생성자 사용
+  /// - reference 파라미터는 UserProfileBundle에서만 사용
+  ///
+  /// **변경사항** (2025-01-20 Phase 2):
+  /// - UserStats 파라미터 제거
+  /// - 포인트/랭킹 필드는 기본값 사용 (향후 필요시 재구현)
   static UserProfile fromDomainModels({
-    required AuthUser auth,
+    required Map<String, dynamic> auth,
     required ProfileInfo profile,
     required UserSettings settings,
-    required UserStats stats,
-    required DocumentReference reference,
+    required DocumentReference? reference,
   }) {
-    // Convert GeoPoint to LatLng if needed (UserProfile expects LatLng)
-    // For now, we'll pass the GeoPoint directly as UserProfile can handle it
-    dynamic location;
-    if (profile.location != null) {
-      location = profile.location;
-    }
-
-    final data = <String, dynamic>{
-      // Core Identity Fields (from AuthUser)
-      'uid': auth.uid,
-      'email': auth.email,
-      'displayName': auth.displayName ?? profile.displayName,
-      'photoUrl': auth.photoUrl ?? profile.photoUrl,
-      'phoneNumber': auth.phoneNumber,
-      'createdTime': auth.createdAt,
-      'lastActive': auth.lastLoginAt,
+    // Create UserProfile instance using the constructor
+    return UserProfile(
+      // Core Identity Fields (from Auth data)
+      uid: auth['uid'] as String,
+      email: auth['email'] as String,
+      displayName: (auth['displayName'] as String?) ?? profile.displayName,
+      photoUrl: (auth['photoUrl'] as String?) ?? profile.photoUrl,
+      phoneNumber: auth['phoneNumber'] as String?,
+      createdTime: auth['createdAt'] as DateTime?,
+      lastActive: auth['lastLoginAt'] as DateTime?,
 
       // Profile Information (from ProfileInfo)
-      'shortDescription': profile.shortDescription,
-      'gender': profile.gender,
-      'dateOfBirth': profile.dateOfBirth,
-      'language': profile.language,
-      'interests': profile.interests,
-      'expertise': profile.expertise,
-      'location': location,
+      shortDescription: profile.shortDescription,
+      gender: profile.gender,
+      dateOfBirth: profile.dateOfBirth,
+      language: profile.language,
+      interests: profile.interests,
+      expertise: profile.expertise,
+      location: profile.location, // Both use LatLng now
+      hobbies: const [], // Not in domain models
 
       // User Settings (from UserSettings)
-      'isPremiumUser': settings.isPremiumUser,
-      'receiveRankUpdateNotifications': settings.receiveRankUpdateNotifications,
-      'receiveTitleUpdateNotifications':
+      isPremiumUser: settings.isPremiumUser,
+      receiveRankUpdateNotifications: settings.receiveRankUpdateNotifications,
+      receiveTitleUpdateNotifications:
           settings.receiveTitleUpdateNotifications,
-      'subscription': settings.subscription,
-      'stats': settings.stats,
+      subscription: settings.subscription,
+      stats: settings.stats,
 
-      // User Stats (from UserStats)
-      'pointsA': stats.pointsA,
-      'pointsQ': stats.pointsQ,
-      'totalAPoints': stats.totalAPoints,
-      'totalQPoints': stats.totalQPoints,
-      'currentRank': stats.currentRank,
-      'currentTitle': stats.currentTitle,
-      'rankChangeDate': stats.rankChangeDate,
-      'titleChangeDate': stats.titleChangeDate,
-      'isRankEligible': stats.isRankEligible,
-      'rankEvaluationCount': stats.rankEvaluationCount,
-      'friends': stats.friends,
-      'activeChats': stats.activeChats,
-      'rankHistory': stats.rankHistory,
-      'titleHistory': stats.titleHistory,
-      'anonymousPostsCount': stats.anonymousPostsCount,
-      'anonymousCommentsCount': stats.anonymousCommentsCount,
-    };
-
-    // Create UserProfile instance using the factory method
-    return UserProfile.getDocumentFromData(data, reference);
-  }
-
-  /// Helper method to create a UserProfile bundle for convenience
-  static UserProfileBundle createBundle(UserProfile legacy) {
-    final models = toDomainModels(legacy);
-    return UserProfileBundle(
-      auth: models.auth,
-      profile: models.profile,
-      settings: models.settings,
-      stats: models.stats,
-      reference: legacy.reference,
+      // User Stats: 기본값 사용 (향후 Stats Feature 구현 시 복구)
+      // pointsA, pointsQ, totalAPoints, totalQPoints = 0
+      // currentRank, currentTitle = null
+      // isRankEligible = false
+      // rankEvaluationCount = 0
+      // rankHistory, titleHistory, friends, activeChats = []
+      // anonymousPostsCount, anonymousCommentsCount = 0
     );
   }
 
   /// Validates field mapping completeness
-  /// Used for testing to ensure all 44 fields are properly mapped
+  /// Used for testing to ensure core fields are properly mapped
   static bool validateMapping({
     required UserProfile legacy,
-    required AuthUser auth,
+    required Map<String, dynamic> auth,
     required ProfileInfo profile,
     required UserSettings settings,
-    required UserStats stats,
   }) {
     // Core validation checks
-    return legacy.uid == auth.uid &&
+    return legacy.uid == auth['uid'] &&
         legacy.uid == profile.userId &&
         legacy.uid == settings.userId &&
-        legacy.uid == stats.userId &&
-        legacy.email == auth.email &&
+        legacy.email == auth['email'] &&
         legacy.displayName == profile.displayName &&
-        legacy.isPremiumUser == settings.isPremiumUser &&
-        legacy.pointsA == stats.pointsA &&
-        legacy.pointsQ == stats.pointsQ;
-  }
-}
-
-/// Convenience class to bundle all 4 domain models together
-/// Used when operations need all user data at once
-class UserProfileBundle {
-  final AuthUser auth;
-  final ProfileInfo profile;
-  final UserSettings settings;
-  final UserStats stats;
-  final DocumentReference? reference;
-
-  const UserProfileBundle({
-    required this.auth,
-    required this.profile,
-    required this.settings,
-    required this.stats,
-    this.reference,
-  });
-
-  /// Convert bundle back to legacy UserProfile
-  UserProfile toLegacy() {
-    if (reference == null) {
-      throw ArgumentError(
-          'DocumentReference is required to create UserProfile');
-    }
-    return UserProfileAdapter.fromDomainModels(
-      auth: auth,
-      profile: profile,
-      settings: settings,
-      stats: stats,
-      reference: reference!,
-    );
-  }
-
-  /// Create a copy with updated fields
-  UserProfileBundle copyWith({
-    AuthUser? auth,
-    ProfileInfo? profile,
-    UserSettings? settings,
-    UserStats? stats,
-    DocumentReference? reference,
-  }) {
-    return UserProfileBundle(
-      auth: auth ?? this.auth,
-      profile: profile ?? this.profile,
-      settings: settings ?? this.settings,
-      stats: stats ?? this.stats,
-      reference: reference ?? this.reference,
-    );
+        legacy.isPremiumUser == settings.isPremiumUser;
   }
 }

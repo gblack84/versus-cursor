@@ -84,11 +84,11 @@ import '/features/creation/data/datasources/firebase_post_creation_datasource.da
 
 // ===== Profile Feature Clean Architecture DI =====
 // DataSources
-import '/features/profile/data/datasources/profile_storage_datasource.dart';
 import '/features/profile/data/datasources/profile_storage_datasource_impl.dart';
 import '/features/profile/data/datasources/interfaces/i_profile_datasource.dart';
 import '/features/profile/data/datasources/implementations/firebase_profile_datasource.dart';
 // Repositories
+import '/features/profile/domain/repositories/i_profile_storage_repository.dart';
 import '/features/profile/domain/repositories/i_user_repository.dart';
 import '/features/profile/data/repositories/user_repository_impl.dart';
 import '/features/profile/domain/repositories/i_characters_repository.dart';
@@ -116,6 +116,26 @@ import '/features/profile/presentation/providers/profile_provider.dart';
 import '/features/profile/presentation/providers/characters_provider.dart';
 import '/features/profile/presentation/providers/interests_provider.dart';
 import '/features/profile/presentation/providers/settings_provider.dart';
+
+// ===== Chat Feature Clean Architecture DI =====
+// Repositories
+import '/features/chat/domain/repositories/i_chat_repository.dart';
+import '/features/chat/data/repositories/chat_repository_impl.dart';
+// Ports (Interfaces)
+import '/features/chat/domain/ports/i_ai_service.dart';
+// Data Layer (Adapters)
+import '/features/chat/data/adapters/gemini_ai_service.dart';
+// UseCases
+import '/features/chat/domain/usecases/get_chat_messages_usecase.dart';
+import '/features/chat/domain/usecases/load_more_messages_usecase.dart';
+import '/features/chat/domain/usecases/send_message_usecase.dart';
+import '/features/chat/domain/usecases/search_messages_usecase.dart';
+import '/features/chat/domain/usecases/get_chat_list_usecase.dart';
+import '/features/chat/domain/usecases/send_ai_query_usecase.dart';
+// Providers
+import '/features/chat/presentation/providers/chat_detail_provider.dart';
+import '/features/chat/presentation/providers/ai_chat_provider.dart';
+import '/features/chat/presentation/providers/chat_list_provider.dart';
 
 
 final getIt = GetIt.instance;
@@ -346,7 +366,7 @@ Future<void> setupDependencyInjection() async {
   // ===== Profile Feature DI =====
 
   // 1. DataSource 등록
-  getIt.registerLazySingleton<IProfileStorageDataSource>(
+  getIt.registerLazySingleton<IProfileStorageRepository>(
     () => ProfileStorageDataSourceImpl(),
   );
 
@@ -399,7 +419,7 @@ Future<void> setupDependencyInjection() async {
   ));
 
   getIt.registerFactory(() => UploadProfileImageUseCase(
-    storageRepository: getIt<IProfileStorageDataSource>(),
+    storageRepository: getIt<IProfileStorageRepository>(),
   ));
 
   getIt.registerFactory(() => GetUserSettingsUseCase(
@@ -445,6 +465,7 @@ Future<void> setupDependencyInjection() async {
     updateProfileUseCase: getIt<UpdateUserProfileUseCase>(),
     uploadImageUseCase: getIt<UploadProfileImageUseCase>(),
     getProfileCompletionUseCase: getIt<GetProfileCompletionUseCase>(),
+    getProfileInfoUseCase: getIt<GetProfileInfoUseCase>(),
     watchProfileUseCase: getIt<WatchUserProfileUseCase>(),
   ));
 
@@ -464,6 +485,68 @@ Future<void> setupDependencyInjection() async {
   ));
 
   // FriendsProvider removed - Friends feature not yet implemented
+
+  // ===== Chat Feature DI =====
+
+  // 1. Repository 등록 (Singleton instance 사용)
+  getIt.registerLazySingleton<IChatRepository>(
+    () => ChatRepositoryImpl.instance,
+  );
+
+  // 2. Port & Adapter 등록 (Clean Architecture v4.0 Dependency Inversion)
+  // IAIService: Domain Layer 인터페이스 (Port)
+  // GeminiAIService: Data Layer 구현체 (Adapter)
+  // AI 제공자 교체 시 이 부분만 변경하면 됨
+  getIt.registerLazySingleton<IAIService>(
+    () => GeminiAIService(),
+  );
+
+  // 3. UseCase 등록
+  getIt.registerFactory(() => GetChatMessagesUseCase(
+    chatRepository: getIt<IChatRepository>(),
+  ));
+
+  getIt.registerFactory(() => LoadMoreMessagesUseCase(
+    chatRepository: getIt<IChatRepository>(),
+  ));
+
+  getIt.registerFactory(() => SendMessageUseCase(
+    chatRepository: getIt<IChatRepository>(),
+  ));
+
+  getIt.registerFactory(() => SearchMessagesUseCase());
+
+  getIt.registerFactory(() => GetChatListUseCase(
+    chatRepository: getIt<IChatRepository>(),
+  ));
+
+  // SendAIQueryUseCase: AI 쿼리 전송 비즈니스 로직 (Clean Architecture v4.0)
+  // IAIService 인터페이스에 의존하여 구현체 교체 가능
+  getIt.registerFactory(() => SendAIQueryUseCase(
+    aiService: getIt<IAIService>(),
+  ));
+
+  // 4. Provider 등록
+  getIt.registerFactory(() => ChatDetailProvider(
+    getMessagesUseCase: getIt<GetChatMessagesUseCase>(),
+    loadMoreUseCase: getIt<LoadMoreMessagesUseCase>(),
+    sendMessageUseCase: getIt<SendMessageUseCase>(),
+    searchUseCase: getIt<SearchMessagesUseCase>(),
+  ));
+
+  // AIChatProvider: Clean Architecture v4.0 (AI 기능 통합)
+  // IAIService 인터페이스에 의존하여 구현체 교체 가능
+  getIt.registerFactory(() => AIChatProvider(
+    getMessagesUseCase: getIt<GetChatMessagesUseCase>(),
+    loadMoreUseCase: getIt<LoadMoreMessagesUseCase>(),
+    searchUseCase: getIt<SearchMessagesUseCase>(),
+    sendAIQueryUseCase: getIt<SendAIQueryUseCase>(),
+    aiService: getIt<IAIService>(),
+  ));
+
+  getIt.registerFactory(() => ChatListProvider(
+    getChatListUseCase: getIt<GetChatListUseCase>(),
+  ));
 
   // Add more dependency registrations here as needed
 }

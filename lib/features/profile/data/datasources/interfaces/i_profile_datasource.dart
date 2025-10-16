@@ -81,6 +81,18 @@ abstract class IProfileDataSource {
     String reason,
   );
 
+  // ============= 경량 프로필 조회 =============
+
+  /// ProfileInfo 조회 (경량 - 10개 필드만)
+  ///
+  /// **사용처**: 친구 목록, 검색, 추천 등 UI 표시용
+  /// **성능**: UserProfile 대비 75% 대역폭 절감 (40개 → 10개 필드)
+  /// **반환 필드**:
+  /// - uid, displayName, photoUrl, shortDescription
+  /// - gender, dateOfBirth, location
+  /// - interests, expertise, language
+  Future<Map<String, dynamic>?> getProfileInfoData(String userId);
+
   // ============= 프로필 완성도 =============
 
   /// 프로필 완성도 확인

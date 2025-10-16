@@ -2,22 +2,22 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:wechat_camera_picker/wechat_camera_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:bot_toast/bot_toast.dart';
-import 'package:uuid/uuid.dart';
 import '/core/design_system/design_system.dart';
-import '/features/chat/data/adapters/chat_file_size_service.dart';
+import '/features/chat/data/adapters/chat_media_upload_service.dart';
 
 /// 채팅 미디어 피커 컴포넌트
 ///
-/// 갤러리 및 카메라에서 미디어를 선택하는 기능을 제공합니다.
+/// **Clean Architecture v4.0**:
+/// - Presentation Layer에서 Data Layer의 ChatMediaUploadService 사용
+/// - Firebase Storage 직접 호출 제거
+/// - 이미지 압축 및 비디오 썸네일 자동 생성
 class ChatMediaPicker {
-  static final _fileSizeService = ChatFileSizeService();
-  static const _uuid = Uuid();
-
   /// 미디어 옵션 다이얼로그 표시
   static Future<void> showMediaOptions(
     BuildContext context, {
+    required String chatId,
+    required String messageId,
     required Function(String url, String type) onMediaSelected,
   }) async {
     await showModalBottomSheet(
@@ -50,8 +50,12 @@ class ChatMediaPicker {
                 title: '갤러리에서 선택',
                 onTap: () async {
                   Navigator.pop(context);
-                  await pickMediaFromGallery(context,
-                      onMediaSelected: onMediaSelected);
+                  await pickMediaFromGallery(
+                    context,
+                    chatId: chatId,
+                    messageId: messageId,
+                    onMediaSelected: onMediaSelected,
+                  );
                 },
               ),
               _buildMediaOption(
@@ -60,8 +64,12 @@ class ChatMediaPicker {
                 title: '카메라로 촬영',
                 onTap: () async {
                   Navigator.pop(context);
-                  await pickMediaFromCamera(context,
-                      onMediaSelected: onMediaSelected);
+                  await pickMediaFromCamera(
+                    context,
+                    chatId: chatId,
+                    messageId: messageId,
+                    onMediaSelected: onMediaSelected,
+                  );
                 },
               ),
               const SizedBox(height: 20),
@@ -128,6 +136,8 @@ class ChatMediaPicker {
   /// 갤러리에서 미디어 선택
   static Future<void> pickMediaFromGallery(
     BuildContext context, {
+    required String chatId,
+    required String messageId,
     required Function(String url, String type) onMediaSelected,
   }) async {
     try {
@@ -143,6 +153,8 @@ class ChatMediaPicker {
       if (result != null && result.isNotEmpty) {
         await _uploadAndSendAsset(
           result.first,
+          chatId: chatId,
+          messageId: messageId,
           onMediaSelected: onMediaSelected,
         );
       }
@@ -157,6 +169,8 @@ class ChatMediaPicker {
   /// 카메라로 미디어 촬영
   static Future<void> pickMediaFromCamera(
     BuildContext context, {
+    required String chatId,
+    required String messageId,
     required Function(String url, String type) onMediaSelected,
   }) async {
     try {
@@ -171,6 +185,8 @@ class ChatMediaPicker {
       if (result != null) {
         await _uploadAndSendAsset(
           result,
+          chatId: chatId,
+          messageId: messageId,
           onMediaSelected: onMediaSelected,
         );
       }
@@ -183,8 +199,15 @@ class ChatMediaPicker {
   }
 
   /// 미디어 업로드 및 전송
+  ///
+  /// **Clean Architecture v4.0**: ChatMediaUploadService를 통한 미디어 업로드
+  /// - 이미지: 자동 압축 (2MB 이하)
+  /// - 비디오: 썸네일 자동 생성
+  /// - Firebase Storage 직접 호출 제거
   static Future<void> _uploadAndSendAsset(
     AssetEntity asset, {
+    required String chatId,
+    required String messageId,
     required Function(String url, String type) onMediaSelected,
   }) async {
     try {
@@ -197,37 +220,38 @@ class ChatMediaPicker {
         throw Exception('파일을 가져올 수 없습니다');
       }
 
-      // Check file size
-      if (!await _fileSizeService.checkFileSize(file)) {
-        BotToast.showText(
-          text: '파일 크기가 너무 큽니다 (최대 10MB)',
-          contentColor: VersusColors.error,
-        );
-        return;
-      }
+      // Initialize upload service
+      final uploadService = ChatMediaUploadService();
 
-      // Generate unique filename
-      final String extension = asset.mimeType?.split('/').last ?? 'jpg';
-      final String fileName = '${_uuid.v4()}.$extension';
-      final String storagePath = 'chat_media/$fileName';
-
-      // Upload to Firebase Storage
-      final Reference storageRef =
-          FirebaseStorage.instance.ref().child(storagePath);
-      final UploadTask uploadTask = storageRef.putFile(file);
-
-      // Wait for upload to complete
-      final TaskSnapshot snapshot = await uploadTask;
-      final String downloadUrl = await snapshot.ref.getDownloadURL();
-
-      // Determine media type
+      // Upload based on media type
       final String mediaType =
           asset.type == AssetType.video ? 'video' : 'image';
 
-      // Call callback with URL and type
-      onMediaSelected(downloadUrl, mediaType);
+      if (mediaType == 'image') {
+        // Upload image with auto compression
+        final result = await uploadService.uploadChatImage(
+          chatId: chatId,
+          messageId: messageId,
+          imageFile: file,
+        );
 
-      BotToast.showText(text: '업로드 완료!');
+        // Call callback with URL
+        onMediaSelected(result['url'] as String, 'image');
+
+        BotToast.showText(text: '이미지 업로드 완료!');
+      } else {
+        // Upload video with thumbnail generation
+        final result = await uploadService.uploadChatVideo(
+          chatId: chatId,
+          messageId: messageId,
+          videoFile: file,
+        );
+
+        // Call callback with URL (thumbnail URL is stored in result but not used here)
+        onMediaSelected(result['url'] as String, 'video');
+
+        BotToast.showText(text: '비디오 업로드 완료!');
+      }
     } catch (e) {
       BotToast.showText(
         text: '업로드 실패: ${e.toString()}',

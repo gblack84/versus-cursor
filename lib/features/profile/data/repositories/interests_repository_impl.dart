@@ -76,13 +76,7 @@ class InterestsRepositoryImpl implements IInterestsRepository {
     }
   }
 
-  @override
-  Stream<List<Interest>> watchUserInterests(String userId) {
-    return _dataSource.watchProfile(userId).map((data) {
-      if (data == null) return <Interest>[];
-      return _convertToInterestList(data);
-    });
-  }
+  // Phase 6 Cleanup: watchUserInterests 삭제 (Stream 미사용)
 
   @override
   Future<Either<ProfileFailure, void>> addInterest({

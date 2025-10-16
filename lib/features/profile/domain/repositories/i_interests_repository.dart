@@ -48,6 +48,5 @@ abstract class IInterestsRepository {
     String userId,
   );
 
-  /// 사용자 관심사 실시간 감시
-  Stream<List<Interest>> watchUserInterests(String userId);
+  // Phase 6 Cleanup: watchUserInterests 삭제 (Stream 미사용)
 }

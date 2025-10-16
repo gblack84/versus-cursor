@@ -1,28 +1,25 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import '../dto/auth_user_dto.dart';
-import '../dto/user_profile_dto.dart';
 import '../../domain/models/auth_user.dart';
 
 /// Mapper for converting between Auth DTOs and Domain Models
 ///
 /// Clean Architecture: Data Layer → Domain Layer 변환
 /// DTO(외부 데이터) → Domain Model(비즈니스 로직)
+///
+/// Phase 4: 프로필 관련 메서드 제거 완료
+/// Auth Feature는 Firebase Authentication 데이터만 처리
 class AuthUserMapper {
-  /// Firebase User를 Domain Model로 변환
-  static AuthUser fromFirebaseUser(User firebaseUser, {UserProfileDto? profile}) {
+  /// Firebase User를 Domain Model로 변환 (Auth 데이터만)
+  static AuthUser fromFirebaseUser(User firebaseUser) {
     // Firebase User를 DTO로 변환 후 Domain Model로 매핑
     final dto = AuthUserDto.fromFirebaseUser(firebaseUser);
-    return _fromDto(dto, profile: profile);
+    return _fromDto(dto);
   }
 
-  /// AuthUserDto를 Domain Model로 변환
-  static AuthUser fromDto(AuthUserDto dto, {UserProfileDto? profile}) {
-    return _fromDto(dto, profile: profile);
-  }
-
-  /// UserProfileDto를 포함한 통합 변환
-  static AuthUser fromDtoWithProfile(AuthUserDto authDto, UserProfileDto profileDto) {
-    return _fromDto(authDto, profile: profileDto);
+  /// AuthUserDto를 Domain Model로 변환 (Auth 데이터만)
+  static AuthUser fromDto(AuthUserDto dto) {
+    return _fromDto(dto);
   }
 
   /// Domain Model을 AuthUserDto로 변환
@@ -44,57 +41,33 @@ class AuthUserMapper {
     );
   }
 
-  /// Domain Model을 UserProfileDto로 변환
-  static UserProfileDto toProfileDto(AuthUser user) {
-    return UserProfileDto(
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName,
-      userName: user.userName,
-      profilePic: user.photoUrl,
-      bio: user.bio,
-      age: user.age,
-      gender: user.gender,
-      interests: user.interests,
-      expertise: user.expertise,
-      hobbies: user.hobbies,
-      pointsA: user.pointsA,
-      pointsQ: user.pointsQ,
-      role: user.role,
-      isPremium: user.isPremium,
-      createdTime: user.createdAt,
-      lastActive: user.lastLoginAt,
-      settings: user.settings,
-    );
-  }
-
-  /// Private helper method for DTO to Domain conversion
-  static AuthUser _fromDto(AuthUserDto dto, {UserProfileDto? profile}) {
+  /// Private helper method for DTO to Domain conversion (Auth data only)
+  static AuthUser _fromDto(AuthUserDto dto) {
     return AuthUser(
       uid: dto.uid,
       email: dto.email,
-      displayName: dto.displayName ?? profile?.displayName,
-      userName: profile?.userName,
-      photoUrl: dto.photoUrl ?? profile?.profilePic,
+      displayName: dto.displayName,
+      userName: null,  // Profile Feature에서 관리
+      photoUrl: dto.photoUrl,
       isEmailVerified: dto.emailVerified ?? false,
       phoneNumber: dto.phoneNumber,
       providerId: dto.providerId,
-      // Profile specific fields
-      bio: profile?.bio,
-      age: profile?.age,
-      gender: profile?.gender,
-      interests: profile?.interests ?? [],
-      expertise: profile?.expertise ?? [],
-      hobbies: profile?.hobbies ?? [],
-      pointsA: profile?.pointsA ?? 0,
-      pointsQ: profile?.pointsQ ?? 0,
-      role: profile?.role ?? 'user',
-      isPremium: profile?.isPremium ?? false,
+      // Profile specific fields - 기본값만 제공
+      bio: null,
+      age: null,
+      gender: null,
+      interests: [],
+      expertise: [],
+      hobbies: [],
+      pointsA: 0,
+      pointsQ: 0,
+      role: 'user',
+      isPremium: false,
       // Timestamps
-      createdAt: dto.createdAt ?? profile?.createdTime,
-      lastLoginAt: dto.lastLoginAt ?? profile?.lastActive,
+      createdAt: dto.createdAt,
+      lastLoginAt: dto.lastLoginAt,
       // Additional data
-      settings: profile?.settings ?? {},
+      settings: {},
     );
   }
 

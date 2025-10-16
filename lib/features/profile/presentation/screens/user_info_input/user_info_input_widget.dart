@@ -1,7 +1,8 @@
-import '/features/auth/data/adapters/auth_util.dart';
-// Replace backend imports with domain layer imports
+// Phase 2: Clean Architecture - ProfileProvider만 사용
 import '/features/profile/presentation/providers/profile_provider.dart';
-import '/features/profile/domain/models/user_profile.dart';
+import '/features/profile/domain/usecases/profile/update_user_profile_usecase.dart';
+import '/features/profile/presentation/constants/validation_rules.dart';
+import '/features/profile/presentation/constants/profile_constants.dart';
 import 'package:get_it/get_it.dart';
 import '/core_exports.dart';
 import '/features/profile/presentation/screens/user_info/character_detail/character_detail_page_widget.dart';
@@ -42,8 +43,8 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
 
     // On page load action.
     SchedulerBinding.instance.addPostFrameCallback((_) async {
-      // Phase 4.5 하이브리드: ProfileProvider의 loadProfile() UseCase 사용
-      await _profileProvider.loadProfile(currentUserUid);
+      // Phase 2: Clean Architecture - ProfileProvider의 loadCurrentUserProfile() 사용
+      await _profileProvider.loadCurrentUserProfile();
       _model.userDocument = _profileProvider.profile;
 
       setState(() {});
@@ -149,73 +150,72 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                             Align(
                                               alignment: AlignmentDirectional(
                                                   0.0, 0.0),
-                                              child: AuthUserStreamWidget(
-                                                builder: (context) => InkWell(
-                                                  splashColor:
-                                                      Colors.transparent,
-                                                  focusColor:
-                                                      Colors.transparent,
-                                                  hoverColor:
-                                                      Colors.transparent,
-                                                  highlightColor:
-                                                      Colors.transparent,
-                                                  onTap: () async {
-                                                    await showModalBottomSheet(
-                                                      isScrollControlled: true,
-                                                      backgroundColor:
-                                                          Colors.transparent,
-                                                      enableDrag: false,
-                                                      context: context,
-                                                      builder: (context) {
-                                                        return WebViewAware(
-                                                          child:
-                                                              GestureDetector(
-                                                            onTap: () {
-                                                              FocusScope.of(
-                                                                      context)
-                                                                  .unfocus();
-                                                              FocusManager
-                                                                  .instance
-                                                                  .primaryFocus
-                                                                  ?.unfocus();
-                                                            },
-                                                            child: Padding(
-                                                              padding: MediaQuery
-                                                                  .viewInsetsOf(
-                                                                      context),
-                                                              child: Container(
-                                                                height: 450.0,
-                                                                child:
-                                                                    CharacterDetailPageWidget(),
-                                                              ),
+                                              child: InkWell(
+                                                splashColor:
+                                                    Colors.transparent,
+                                                focusColor:
+                                                    Colors.transparent,
+                                                hoverColor:
+                                                    Colors.transparent,
+                                                highlightColor:
+                                                    Colors.transparent,
+                                                onTap: () async {
+                                                  await showModalBottomSheet(
+                                                    isScrollControlled: true,
+                                                    backgroundColor:
+                                                        Colors.transparent,
+                                                    enableDrag: false,
+                                                    context: context,
+                                                    builder: (context) {
+                                                      return WebViewAware(
+                                                        child:
+                                                            GestureDetector(
+                                                          onTap: () {
+                                                            FocusScope.of(
+                                                                    context)
+                                                                .unfocus();
+                                                            FocusManager
+                                                                .instance
+                                                                .primaryFocus
+                                                                ?.unfocus();
+                                                          },
+                                                          child: Padding(
+                                                            padding: MediaQuery
+                                                                .viewInsetsOf(
+                                                                    context),
+                                                            child: Container(
+                                                              height: 450.0,
+                                                              child:
+                                                                  CharacterDetailPageWidget(),
                                                             ),
                                                           ),
-                                                        );
-                                                      },
-                                                    ).then((value) =>
-                                                        setState(() {}));
-                                                  },
-                                                  child: Container(
-                                                    width: 200.0,
-                                                    height: 200.0,
-                                                    clipBehavior:
-                                                        Clip.antiAlias,
-                                                    decoration: BoxDecoration(
-                                                      shape: BoxShape.circle,
+                                                        ),
+                                                      );
+                                                    },
+                                                  ).then((value) =>
+                                                      setState(() {}));
+                                                },
+                                                child: Container(
+                                                  width: 200.0,
+                                                  height: 200.0,
+                                                  clipBehavior:
+                                                      Clip.antiAlias,
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: Image.network(
+                                                    valueOrDefault<String>(
+                                                      // Phase 2: Clean Architecture - ProfileProvider 사용
+                                                      _profileProvider.profile?.photoUrl,
+                                                      'https://firebasestorage.googleapis.com/v0/b/versus-space-1lwwiw.appspot.com/o/characters%2Fdefault%2Fdefaultimage.jpg?alt=media&token=b485c8ad-c393-4ec7-bc1a-c1c3c93ec4ec',
                                                     ),
-                                                    child: Image.network(
-                                                      valueOrDefault<String>(
-                                                        currentUserPhoto,
-                                                        'https://firebasestorage.googleapis.com/v0/b/versus-space-1lwwiw.appspot.com/o/characters%2Fdefault%2Fdefaultimage.jpg?alt=media&token=b485c8ad-c393-4ec7-bc1a-c1c3c93ec4ec',
-                                                      ),
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (context,
+                                                            error,
+                                                            stackTrace) =>
+                                                        Image.asset(
+                                                      'assets/images/error_image.png',
                                                       fit: BoxFit.cover,
-                                                      errorBuilder: (context,
-                                                              error,
-                                                              stackTrace) =>
-                                                          Image.asset(
-                                                        'assets/images/error_image.png',
-                                                        fit: BoxFit.cover,
-                                                      ),
                                                     ),
                                                   ),
                                                 ),
@@ -235,11 +235,12 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                       ),
                                     ),
                                   ),
-                                  if (currentUserEmail != '')
+                                  // Phase 2: Clean Architecture - ProfileProvider 사용
+                                  if ((_profileProvider.profile?.email ?? '') != '')
                                     Align(
                                       alignment: AlignmentDirectional(0.0, 0.0),
                                       child: Text(
-                                        currentUserEmail,
+                                        _profileProvider.profile?.email ?? '',
                                         style: AppTheme.of(context)
                                             .titleMedium
                                             .override(
@@ -263,46 +264,46 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                             ),
                                       ),
                                     ),
-                                  if (currentPhoneNumber != '')
+                                  // Phase 2: Clean Architecture - ProfileProvider 사용
+                                  if ((_profileProvider.profile?.phoneNumber ?? '') != '')
                                     Align(
                                       alignment: AlignmentDirectional(0.0, 0.0),
-                                      child: AuthUserStreamWidget(
-                                        builder: (context) => Text(
-                                          currentPhoneNumber,
-                                          style: AppTheme.of(context)
-                                              .titleMedium
-                                              .override(
-                                                font:
-                                                    GoogleFonts.plusJakartaSans(
-                                                  fontWeight:
-                                                      AppTheme.of(context)
-                                                          .titleMedium
-                                                          .fontWeight,
-                                                  fontStyle:
-                                                      AppTheme.of(context)
-                                                          .titleMedium
-                                                          .fontStyle,
-                                                ),
-                                                letterSpacing: 0.0,
-                                                fontWeight: AppTheme.of(context)
-                                                    .titleMedium
-                                                    .fontWeight,
-                                                fontStyle: AppTheme.of(context)
-                                                    .titleMedium
-                                                    .fontStyle,
-                                                decoration:
-                                                    TextDecoration.underline,
+                                      child: Text(
+                                        _profileProvider.profile?.phoneNumber ?? '',
+                                        style: AppTheme.of(context)
+                                            .titleMedium
+                                            .override(
+                                              font:
+                                                  GoogleFonts.plusJakartaSans(
+                                                fontWeight:
+                                                    AppTheme.of(context)
+                                                        .titleMedium
+                                                        .fontWeight,
+                                                fontStyle:
+                                                    AppTheme.of(context)
+                                                        .titleMedium
+                                                        .fontStyle,
                                               ),
-                                        ),
+                                              letterSpacing: 0.0,
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleMedium
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleMedium
+                                                  .fontStyle,
+                                              decoration:
+                                                  TextDecoration.underline,
+                                            ),
                                       ),
                                     ),
-                                  Align(
-                                    alignment: AlignmentDirectional(0.0, 0.0),
-                                    child: AuthUserStreamWidget(
-                                      builder: (context) => Text(
+                                  // Phase 2: Clean Architecture - ProfileProvider 사용
+                                  if (_profileProvider.profile?.createdTime != null)
+                                    Align(
+                                      alignment: AlignmentDirectional(0.0, 0.0),
+                                      child: Text(
                                         dateTimeFormat(
                                           "yMMMd",
-                                          currentUserDocument!.createdTime!,
+                                          _profileProvider.profile!.createdTime!,
                                           locale: AppLocalizations.of(context)
                                               .languageCode,
                                         ),
@@ -329,7 +330,6 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                             ),
                                       ),
                                     ),
-                                  ),
                                   Divider(
                                     thickness: 2.0,
                                     color: Color(0xFFB9B3B3),
@@ -523,11 +523,9 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                 .headlineMedium
                                                 .fontStyle,
                                           ),
-                                      maxLength: 20,
+                                      maxLength: ProfileConstants.maxDisplayNameLength,
                                       cursorColor: AppTheme.of(context).primary,
-                                      validator: _model
-                                          .displayNameTextControllerValidator
-                                          .asValidator(context),
+                                      validator: ValidationRules.validateDisplayName,
                                       inputFormatters: [
                                         if (!isAndroid && !isiOS)
                                           TextInputFormatter.withFunction(
@@ -949,25 +947,43 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                 return;
                                               }
 
-                                              // Phase 4.5 하이브리드: createUsersModelData는 이미 Clean Architecture 메서드
-                                              await currentUserReference!
-                                                  .update(createUsersModelData(
-                                                displayName: _model
-                                                    .displayNameTextController
-                                                    .text,
-                                                gender: _model.choiceChipsValue,
-                                                language:
-                                                    AppLocalizations.of(context)
-                                                        .languageCode,
-                                              ));
+                                              // Phase 1: UseCase를 통한 프로필 업데이트
+                                              if (_model.userDocument != null) {
+                                                final updateProfileUseCase =
+                                                    GetIt.instance<
+                                                        UpdateUserProfileUseCase>();
 
-                                              // ❌ AppState 직접 수정 제거 (Clean Architecture 위반)
-                                              // ProfileProvider와 AuthUserStreamWidget이 자동으로 상태 업데이트
-                                              setState(() {});
+                                                // UserProfile은 immutable이므로 copyWith()로 변경
+                                                final updatedProfile = _model.userDocument!.copyWith(
+                                                  displayName: _model.displayNameTextController.text,
+                                                  gender: _model.choiceChipsValue,
+                                                  language: AppLocalizations.of(context).languageCode,
+                                                );
 
-                                              context.pushNamed(
-                                                  ExpertiseSelectWidget
-                                                      .routeName);
+                                                // UseCase 실행
+                                                final result =
+                                                    await updateProfileUseCase
+                                                        .execute(updatedProfile);
+
+                                                result.fold(
+                                                  (failure) {
+                                                    // 에러 처리
+                                                    ScaffoldMessenger.of(context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                          content: Text(failure
+                                                              .getUserMessage())),
+                                                    );
+                                                  },
+                                                  (_) {
+                                                    // Phase 2: Clean Architecture - 프로필 새로고침 및 다음 페이지로 이동
+                                                    _profileProvider.loadCurrentUserProfile();
+                                                    context.pushNamed(
+                                                        ExpertiseSelectWidget
+                                                            .routeName);
+                                                  },
+                                                );
+                                              }
                                             },
                                       text:
                                           AppLocalizations.of(context).getText(

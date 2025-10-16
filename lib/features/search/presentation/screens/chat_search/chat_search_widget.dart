@@ -101,7 +101,7 @@ class _ChatSearchWidgetState extends State<ChatSearchWidget> {
       return _buildNotLoggedIn();
     }
 
-    return StreamBuilder<List<UsersModel>>(
+    return StreamBuilder<List<UserProfile>>(
       stream: queryUsersModel(
         queryBuilder: (usersRecord) => usersRecord
             .where('uid', isNotEqualTo: currentUserUid)
@@ -145,7 +145,7 @@ class _ChatSearchWidgetState extends State<ChatSearchWidget> {
   Widget _buildSearchResults() {
     final searchQuery = _searchController.text.toLowerCase();
 
-    return StreamBuilder<List<UsersModel>>(
+    return StreamBuilder<List<UserProfile>>(
       stream: queryUsersModel(
         queryBuilder: (usersRecord) => usersRecord
             .where('uid', isNotEqualTo: currentUserUid)
@@ -250,7 +250,7 @@ class _ChatSearchWidgetState extends State<ChatSearchWidget> {
     );
   }
 
-  Widget _buildUserItem(UsersModel user) {
+  Widget _buildUserItem(UserProfile user) {
     return InkWell(
       onTap: () {
         // 프로필 페이지로 이동

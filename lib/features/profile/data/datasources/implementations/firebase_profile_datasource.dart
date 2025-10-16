@@ -208,6 +208,39 @@ class FirebaseProfileDataSource implements IProfileDataSource {
     });
   }
 
+  // ============= 경량 프로필 조회 =============
+
+  @override
+  Future<Map<String, dynamic>?> getProfileInfoData(String userId) async {
+    final doc = await _firestore.collection('users').doc(userId).get();
+    if (!doc.exists) return null;
+
+    final data = doc.data()!;
+
+    // ProfileInfo 필드만 추출 (10개) - 75% 대역폭 절감
+    // Timestamp → ISO8601 String 변환 (ProfileInfo.fromJson 호환)
+    final dateOfBirth = data['dateOfBirth'];
+    final location = data['location'] as GeoPoint?;
+
+    return {
+      'userId': userId,  // ProfileInfo.fromJson expects 'userId', not 'uid'
+      'displayName': data['displayName'],
+      'photoUrl': data['photoUrl'],
+      'shortDescription': data['shortDescription'],
+      'gender': data['gender'],
+      if (dateOfBirth != null)
+        'dateOfBirth': (dateOfBirth as Timestamp).toDate().toIso8601String(),
+      if (location != null)
+        'location': {
+          'latitude': location.latitude,
+          'longitude': location.longitude,
+        },
+      'interests': data['interests'] ?? [],
+      'expertise': data['expertise'] ?? [],
+      'language': data['language'] ?? 'en',
+    };
+  }
+
   // ============= 프로필 완성도 =============
 
   @override

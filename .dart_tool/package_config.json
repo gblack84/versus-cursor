@@ -3,9 +3,9 @@
   "packages": [
     {
       "name": "_fe_analyzer_shared",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/_fe_analyzer_shared-88.0.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/_fe_analyzer_shared-85.0.0",
       "packageUri": "lib/",
-      "languageVersion": "3.7"
+      "languageVersion": "3.5"
     },
     {
       "name": "_flutterfire_internals",
@@ -21,9 +21,9 @@
     },
     {
       "name": "analyzer",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/analyzer-8.1.1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/analyzer-7.7.1",
       "packageUri": "lib/",
-      "languageVersion": "3.7"
+      "languageVersion": "3.5"
     },
     {
       "name": "antlr4",
@@ -69,15 +69,15 @@
     },
     {
       "name": "build",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/build-4.0.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/build-3.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "build_config",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/build_config-1.2.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/build_config-1.1.2",
       "packageUri": "lib/",
-      "languageVersion": "3.7"
+      "languageVersion": "3.6"
     },
     {
       "name": "build_daemon",
@@ -86,8 +86,20 @@
       "languageVersion": "3.6"
     },
     {
+      "name": "build_resolvers",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/build_resolvers-3.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
       "name": "build_runner",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/build_runner-2.8.0",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/build_runner-2.6.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
+      "name": "build_runner_core",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/build_runner_core-9.2.0",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
@@ -279,7 +291,7 @@
     },
     {
       "name": "dart_style",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/dart_style-3.1.2",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/dart_style-3.1.1",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
@@ -770,6 +782,12 @@
       "languageVersion": "3.0"
     },
     {
+      "name": "freezed",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/freezed-3.2.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.8"
+    },
+    {
       "name": "freezed_annotation",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/freezed_annotation-3.1.0",
       "packageUri": "lib/",
@@ -1010,6 +1028,12 @@
       "languageVersion": "3.0"
     },
     {
+      "name": "json_serializable",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/json_serializable-6.11.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.8"
+    },
+    {
       "name": "leak_tracker",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/leak_tracker-10.0.9",
       "packageUri": "lib/",
@@ -1107,7 +1131,7 @@
     },
     {
       "name": "mockito",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/mockito-5.5.1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/mockito-5.5.0",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
@@ -1491,9 +1515,15 @@
     },
     {
       "name": "source_gen",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/source_gen-4.0.1",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/source_gen-3.1.0",
       "packageUri": "lib/",
       "languageVersion": "3.7"
+    },
+    {
+      "name": "source_helper",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/source_helper-1.3.7",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
     },
     {
       "name": "source_span",
@@ -1596,6 +1626,12 @@
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/timeago-3.7.1",
       "packageUri": "lib/",
       "languageVersion": "2.12"
+    },
+    {
+      "name": "timing",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/timing-1.0.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
     },
     {
       "name": "transparent_image",
@@ -1865,7 +1901,7 @@
       "name": "versus_space",
       "rootUri": "../",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.8"
     }
   ],
   "generator": "pub",

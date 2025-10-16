@@ -1,4 +1,5 @@
 import '/core_exports.dart';
+import '/features/chat/domain/enums/message_delivery_status.dart';
 
 /// Service to handle message delivery and read status
 class ChatMessageLifecycleService {
@@ -229,12 +230,4 @@ class ChatMessageLifecycleService {
       return 0;
     }
   }
-}
-
-/// Message delivery status enum
-enum MessageDeliveryStatus {
-  sent, // Message sent from client
-  delivered, // Message delivered to server
-  seen, // Message seen by recipient
-  unknown, // Unknown status
 }

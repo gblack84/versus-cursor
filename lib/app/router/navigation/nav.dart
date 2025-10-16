@@ -20,6 +20,12 @@ import '/app/widgets/navigation/main_navigation_shell.dart';
 import '/features/voting/presentation/routes/voting_routes.dart';
 // Import Notification Feature routes
 import '/features/notifications/presentation/routes/notification_routes.dart';
+// Import Profile Feature screens
+import '/features/profile/presentation/screens/profile_edit/profile_edit_screen.dart';
+import '/features/profile/presentation/screens/settings/settings_screen.dart';
+import '/features/profile/presentation/screens/user_posts_list/user_posts_list_screen.dart';
+import '/features/profile/presentation/screens/onboarding/onboarding_flow_screen.dart';
+import '/features/profile/presentation/screens/user_info/user_info_display/user_info_display_screen.dart';
 
 export 'package:go_router/go_router.dart';
 export 'serialization_util.dart';
@@ -140,21 +146,12 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
                     (context, animation, secondaryAnimation, child) => child,
               ),
             ),
-            // Chat routes
+            // Chat routes - Clean Architecture v4.0
             GoRoute(
-              name: ChatListWidget.routeName,
-              path: ChatListWidget.routePath,
+              name: ChatListWidgetClean.routeName,
+              path: ChatListWidgetClean.routePath,
               pageBuilder: (context, state) => CustomTransitionPage(
-                child: ChatListWidget(),
-                transitionsBuilder:
-                    (context, animation, secondaryAnimation, child) => child,
-              ),
-            ),
-            GoRoute(
-              name: FriendsListWidget.routeName,
-              path: FriendsListWidget.routePath,
-              pageBuilder: (context, state) => CustomTransitionPage(
-                child: FriendsListWidget(),
+                child: ChatListWidgetClean(),
                 transitionsBuilder:
                     (context, animation, secondaryAnimation, child) => child,
               ),
@@ -207,11 +204,6 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, params) => ExpertiseSelectWidget(),
         ).toRoute(appStateNotifier),
         AppRoute(
-          name: TestalgoriaWidget.routeName,
-          path: TestalgoriaWidget.routePath,
-          builder: (context, params) => const TestalgoriaWidget(),
-        ).toRoute(appStateNotifier),
-        AppRoute(
           name: HobbiesSelectWidget.routeName,
           path: HobbiesSelectWidget.routePath,
           builder: (context, params) => HobbiesSelectWidget(),
@@ -220,6 +212,48 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           name: AgrredSelectWidget.routeName,
           path: AgrredSelectWidget.routePath,
           builder: (context, params) => AgrredSelectWidget(),
+        ).toRoute(appStateNotifier),
+        AppRoute(
+          name: ProfileEditScreen.routeName,
+          path: ProfileEditScreen.routePath,
+          requireAuth: true,
+          builder: (context, params) => ProfileEditScreen(
+            userId: params.getParam('userId', ParamType.String) ?? '',
+          ),
+        ).toRoute(appStateNotifier),
+        AppRoute(
+          name: SettingsScreen.routeName,
+          path: SettingsScreen.routePath,
+          requireAuth: true,
+          builder: (context, params) => SettingsScreen(
+            userId: params.getParam('userId', ParamType.String) ?? '',
+          ),
+        ).toRoute(appStateNotifier),
+        AppRoute(
+          name: UserPostsListScreen.routeName,
+          path: UserPostsListScreen.routePath,
+          requireAuth: true,
+          builder: (context, params) => UserPostsListScreen(
+            userId: params.getParam('userId', ParamType.String) ?? '',
+          ),
+        ).toRoute(appStateNotifier),
+        // OnboardingFlowScreen route
+        AppRoute(
+          name: OnboardingFlowScreen.routeName,
+          path: OnboardingFlowScreen.routePath,
+          requireAuth: true,
+          builder: (context, params) => OnboardingFlowScreen(
+            userId: params.getParam('userId', ParamType.String) ?? '',
+          ),
+        ).toRoute(appStateNotifier),
+        // UserInfoDisplayScreen route
+        AppRoute(
+          name: UserInfoDisplayScreen.routeName,
+          path: UserInfoDisplayScreen.routePath,
+          requireAuth: false,
+          builder: (context, params) => UserInfoDisplayScreen(
+            userId: params.getParam('userId', ParamType.String) ?? '',
+          ),
         ).toRoute(appStateNotifier),
         AppRoute(
           name: StartPageWidget.routeName,
@@ -288,17 +322,25 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           ),
         ).toRoute(appStateNotifier),
         AppRoute(
-          name: ChatDetailWidgetV2.routeName,
-          path: ChatDetailWidgetV2.routePath,
+          name: ChatDetailWidgetClean.routeName,
+          path: ChatDetailWidgetClean.routePath,
           requireAuth: true,
-          builder: (context, params) => ChatDetailWidgetV2(
+          builder: (context, params) => ChatDetailWidgetClean(
             chatDocument: params.state.extra != null
                 ? (params.state.extra as Map<String, dynamic>)['chatDocument']
                     as ChatsModel?
                 : null,
           ),
         ).toRoute(appStateNotifier),
-        
+        AppRoute(
+          name: AIChatPageClean.routeName,
+          path: AIChatPageClean.routePath,
+          requireAuth: true,
+          builder: (context, params) => AIChatPageClean(
+            aiChatId: params.getParam('aiChatId', ParamType.String),
+          ),
+        ).toRoute(appStateNotifier),
+
         // Notification Feature routes
         ...NotificationRoutes.routes,
         

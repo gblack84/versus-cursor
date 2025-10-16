@@ -158,7 +158,7 @@ class UserCacheService {
     // Firestore 조회 실패 시 전역 변수 사용
     final fallbackUser = core.User(
       id: userId,
-      name: currentUserDisplayName.isNotEmpty ? currentUserDisplayName : 'User',
+      name: (currentUserDisplayName?.isNotEmpty ?? false) ? currentUserDisplayName! : 'User',
       imageSource: currentUserPhoto,
       metadata: {
         'email': currentUserEmail,

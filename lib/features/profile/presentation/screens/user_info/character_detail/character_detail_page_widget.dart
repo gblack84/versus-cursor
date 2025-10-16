@@ -1,4 +1,3 @@
-import '/features/auth/data/adapters/auth_util.dart';
 import '/services/storage/firebase_storage_service.dart';
 import '/core_exports.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -8,9 +7,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'character_detail_page_model.dart';
 export 'character_detail_page_model.dart';
 
-// Phase 4.5 하이브리드: CharactersProvider 추가
+// Phase 2: Clean Architecture - ProfileProvider만 사용
 import '/features/profile/presentation/providers/characters_provider.dart';
-import '/features/profile/domain/models/user_profile.dart';
+import '/features/profile/presentation/providers/profile_provider.dart';
 import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
 
@@ -159,6 +158,9 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                                       hoverColor: Colors.transparent,
                                       highlightColor: Colors.transparent,
                                       onTap: () async {
+                                        _model.selectedCharacterId =
+                                            gridViewCharactersModel
+                                                .characterId;
                                         _model.selectedCharacterUrl =
                                             gridViewCharactersModel
                                                 .imageUrl;
@@ -196,9 +198,10 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
             ),
             AppButtonWidget(
               onPressed: () async {
-                await currentUserReference!.update(createUsersModelData(
+                await _updateProfileCharacter(
+                  characterId: _model.selectedCharacterId,
                   photoUrl: '${_model.selectedCharacterUrl}',
-                ));
+                );
                 Navigator.pop(context);
               },
               text: AppLocalizations.of(context).getText(
@@ -279,9 +282,10 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                     }
                   }
 
-                  await currentUserReference!.update(createUsersModelData(
+                  await _updateProfileCharacter(
+                    characterId: null,  // 사용자가 직접 업로드한 이미지는 characterId 없음
                     photoUrl: _model.uploadedFileUrl_userUploadProfileImage,
-                  ));
+                  );
                   Navigator.pop(context);
                 },
                 text: AppLocalizations.of(context).getText(
@@ -313,5 +317,43 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
         ),
       ),
     );
+  }
+
+  Future<void> _updateProfileCharacter({
+    required String? characterId,
+    required String photoUrl,
+  }) async {
+    final profileProvider = GetIt.instance<ProfileProvider>();
+
+    // Phase 2: Clean Architecture 완성
+    // UI는 AuthContract를 몰라도 됨
+    // ProfileProvider → UseCase → Repository → AuthContract 흐름
+    await profileProvider.loadCurrentUserProfile();
+    final currentProfile = profileProvider.profile;
+
+    if (currentProfile == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('프로필을 불러올 수 없습니다')),
+        );
+      }
+      return;
+    }
+
+    // Update profile with characterId and photoUrl using copyWith()
+    final updatedProfile = currentProfile.copyWith(
+      characterId: characterId,
+      photoUrl: photoUrl,
+    );
+
+    // Update via ProfileProvider (내부적으로 UseCase → Repository 호출)
+    await profileProvider.updateProfile(updatedProfile);
+
+    // 성공/실패 처리는 ProfileProvider의 errorMessage로 확인 가능
+    if (mounted && profileProvider.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(profileProvider.errorMessage!)),
+      );
+    }
   }
 }

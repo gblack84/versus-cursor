@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import '../entities/chat.dart';
 import '../entities/message.dart';
 
@@ -58,4 +60,27 @@ abstract class IChatRepository {
   // Message operations (Clean Architecture v4.0: Pure Domain Entity 사용)
   Future<void> sendMessage(String chatId, Message message);
   Future<void> deleteMessage(String chatId, String messageId);
+
+  // Media upload operations (Clean Architecture v4.0)
+  /// 채팅 미디어(이미지/비디오) 업로드
+  ///
+  /// **Parameters**:
+  /// - [chatId]: 채팅방 ID
+  /// - [messageId]: 메시지 ID
+  /// - [file]: 업로드할 파일 (이미지 또는 비디오)
+  /// - [mediaType]: 미디어 타입 ('image' or 'video')
+  ///
+  /// **Returns**:
+  /// - Firebase Storage에 업로드된 미디어의 다운로드 URL
+  ///
+  /// **Implementation**:
+  /// - Data Layer에서 ChatMediaUploadService 사용
+  /// - 이미지: 자동 압축 (2MB 이하)
+  /// - 비디오: 썸네일 자동 생성
+  Future<String> uploadMedia({
+    required String chatId,
+    required String messageId,
+    required File file,
+    required String mediaType,
+  });
 }

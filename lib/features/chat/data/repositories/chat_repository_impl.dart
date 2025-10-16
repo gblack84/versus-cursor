@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/core/firebase/utils/firestore_util.dart'
     show queryCollection, queryCollectionCount;
@@ -6,6 +8,7 @@ import '../../domain/entities/chat.dart';
 import '../../domain/entities/message.dart';
 import '../dto/chat_dto.dart';
 import '../dto/message_dto.dart';
+import '../adapters/chat_media_upload_service.dart';
 
 /// Implementation of chat repository with migrated backend query functions
 class ChatRepositoryImpl implements IChatRepository {
@@ -202,5 +205,37 @@ class ChatRepositoryImpl implements IChatRepository {
         .collection('messages')
         .doc(messageId)
         .delete();
+  }
+
+  // Media upload operations (Clean Architecture v4.0)
+  @override
+  Future<String> uploadMedia({
+    required String chatId,
+    required String messageId,
+    required File file,
+    required String mediaType,
+  }) async {
+    // ChatMediaUploadService를 Data Layer 내부에서만 사용
+    final uploadService = ChatMediaUploadService();
+
+    if (mediaType == 'image') {
+      // 이미지 업로드 (자동 압축 포함)
+      final result = await uploadService.uploadChatImage(
+        chatId: chatId,
+        messageId: messageId,
+        imageFile: file,
+      );
+      return result['url'] as String;
+    } else if (mediaType == 'video') {
+      // 비디오 업로드 (썸네일 자동 생성 포함)
+      final result = await uploadService.uploadChatVideo(
+        chatId: chatId,
+        messageId: messageId,
+        videoFile: file,
+      );
+      return result['url'] as String;
+    } else {
+      throw Exception('지원하지 않는 미디어 타입입니다: $mediaType');
+    }
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import '/core/types/result.dart';
 import '/core/errors/failures.dart';
 import '../repositories/i_chat_repository.dart';
@@ -28,21 +30,24 @@ class SendMessageUseCase {
   SendMessageUseCase({required IChatRepository chatRepository})
       : _chatRepository = chatRepository;
 
-  /// 메시지 전송
+  /// 메시지 전송 (미디어 업로드 포함)
   ///
   /// **Parameters**:
   /// - [chatId]: 채팅방 ID
   /// - [message]: 전송할 메시지 (Domain Entity - Message)
+  /// - [mediaFile]: 첨부할 미디어 파일 (optional - 이미지 또는 비디오)
   ///
   /// **Returns**:
   /// - `Result<void>`: 성공 시 Success(void), 실패 시 ResultFailure
   ///
   /// **Clean Architecture v4.0**:
-  /// - IChatRepository.sendMessage() 직접 호출
+  /// - IChatRepository.uploadMedia() + sendMessage() 호출
   /// - Pure Domain Entity (Message) 사용
+  /// - 미디어 파일이 있으면 먼저 업로드 후 URL을 Message에 추가
   Future<Result<void>> execute({
     required String chatId,
     required Message message,
+    File? mediaFile,
   }) async {
     try {
       // 입력 검증
@@ -52,14 +57,40 @@ class SendMessageUseCase {
         );
       }
 
-      if (message.content.isEmpty) {
+      // 텍스트 메시지는 content 필수, 미디어 메시지는 mediaFile 필수
+      if (message.content.isEmpty && mediaFile == null) {
         return ResultFailure(
-          ValidationFailure(message: '메시지 내용이 비어있습니다.'),
+          ValidationFailure(message: '메시지 내용 또는 미디어 파일이 필요합니다.'),
         );
       }
 
-      // 기존 Repository 메서드 호출
-      await _chatRepository.sendMessage(chatId, message);
+      Message finalMessage = message;
+
+      // 미디어 파일이 있으면 먼저 업로드
+      if (mediaFile != null) {
+        try {
+          final mediaUrl = await _chatRepository.uploadMedia(
+            chatId: chatId,
+            messageId: message.id,
+            file: mediaFile,
+            mediaType: message.mediaType,
+          );
+
+          // 업로드된 URL을 Message에 추가
+          if (message.mediaType == 'image') {
+            finalMessage = message.copyWith(imageUrl: mediaUrl);
+          } else if (message.mediaType == 'video') {
+            finalMessage = message.copyWith(videoUrl: mediaUrl);
+          }
+        } catch (e) {
+          return ResultFailure(
+            ServerFailure(message: '미디어 업로드 실패: ${e.toString()}'),
+          );
+        }
+      }
+
+      // 메시지 전송
+      await _chatRepository.sendMessage(chatId, finalMessage);
 
       return const Success(null);
     } catch (e) {

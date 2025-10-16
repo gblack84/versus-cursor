@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '/core/design_system/design_system.dart';
 import '/core/types/layout_type.dart';
 import '/features/voting/domain/models/versus_box_size_data.dart';
+import '/features/voting/domain/constants/voting_constants.dart';
 import '/features/voting/presentation/widgets/voting_box.dart';
 import '/services/ui/unified_box_calculator.dart';
 import '/core/utils/media/aspect_ratio_analyzer.dart';
@@ -188,7 +189,7 @@ class VotingDialogContent extends StatelessWidget {
       child: VotingBox.legacy(
         boxType: 'A',
         boxSize: UnifiedBoxCalculator.calculateForNotificationDialog(
-          dialogWidth: MediaQuery.of(context).size.width * 0.92,
+          dialogWidth: MediaQuery.of(context).size.width * VotingConstants.messageCardWidthRatio,
           layoutType: sizeData.layoutType,
           aspectRatioA: sizeData.aspectRatioA,
           aspectRatioB: sizeData.aspectRatioB,
@@ -246,7 +247,7 @@ class VotingDialogContent extends StatelessWidget {
   Widget _buildDefaultSingleBox(BuildContext context, bool hasOnlyTextB) {
     final screenWidth = MediaQuery.of(context).size.width;
     final votingSizes = UnifiedBoxCalculator.calculateForNotificationDialog(
-      dialogWidth: screenWidth * 0.92,
+      dialogWidth: screenWidth * VotingConstants.messageCardWidthRatio,
       layoutType: LayoutType.single,
       aspectRatioA: aspectRatioA,
       aspectRatioB: aspectRatioB,
@@ -287,7 +288,7 @@ class VotingDialogContent extends StatelessWidget {
         : LayoutType.horizontal;
 
     final votingSizes = UnifiedBoxCalculator.calculateForNotificationDialog(
-      dialogWidth: screenWidth * 0.92,
+      dialogWidth: screenWidth * VotingConstants.messageCardWidthRatio,
       layoutType: layoutType,
       aspectRatioA: aspectRatioA,
       aspectRatioB: aspectRatioB,

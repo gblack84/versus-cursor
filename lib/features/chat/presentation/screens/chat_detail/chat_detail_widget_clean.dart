@@ -26,6 +26,8 @@ import '/core/design_system/design_system.dart';
 import '/features/chat/domain/entities/chat.dart' as entities;
 import '/features/chat/presentation/providers/chat_detail_provider.dart';
 import '/features/profile/data/adapters/user_cache_service.dart';
+import '/services/image/unified_image_cache_service.dart';
+import '/features/auth/data/adapters/auth_util.dart' as auth_util;
 import 'chat_detail_controller_v2.dart';
 import 'components/chat_detail_app_bar.dart';
 import 'components/chat_message_builder.dart';
@@ -57,7 +59,7 @@ class _ChatDetailWidgetCleanState extends State<ChatDetailWidgetClean> {
   final _userCacheService = UserCacheService.instance;
 
   // 현재 사용자 정보 (auth_util에서 가져옴)
-  String get currentUserId => 'TODO_GET_FROM_AUTH'; // TODO: AuthUtil 통합
+  String get currentUserId => auth_util.currentUserUid;
 
   // AI 채팅 감지
   bool get isAiChat =>
@@ -78,9 +80,9 @@ class _ChatDetailWidgetCleanState extends State<ChatDetailWidgetClean> {
     // DI에서 Provider 가져오기 ← 핵심 연결 지점
     _provider = getIt<ChatDetailProvider>();
 
-    // 채팅 초기화
+    // 채팅 초기화 (ChatMessageLifecycleService 자동 읽음 처리 포함)
     if (widget.chatDocument != null) {
-      _provider.initializeChat(widget.chatDocument!.id);
+      _provider.initializeChat(widget.chatDocument!.id, currentUserId);
     }
 
     // Provider 메시지를 ChatController에 연결
@@ -97,10 +99,48 @@ class _ChatDetailWidgetCleanState extends State<ChatDetailWidgetClean> {
     super.dispose();
   }
 
+  /// 메시지 목록에서 이미지 URL 추출
+  ///
+  /// flutter_chat_core Message 타입을 파싱하여 투표 카드 이미지 URL을 추출합니다.
+  List<String> _extractImageUrlsFromMessages(List<core.Message> messages) {
+    final urls = <String>[];
+
+    for (final message in messages) {
+      // 투표 메시지 (CustomMessage)
+      if (message is core.CustomMessage) {
+        final metadata = message.metadata ?? {};
+
+        // 투표 이미지 추출
+        if (metadata['imageUrlA'] != null) {
+          urls.add(metadata['imageUrlA'] as String);
+        }
+        if (metadata['imageUrlB'] != null) {
+          urls.add(metadata['imageUrlB'] as String);
+        }
+        if (metadata['imageUrlsA'] != null) {
+          urls.addAll((metadata['imageUrlsA'] as List).cast<String>());
+        }
+        if (metadata['imageUrlsB'] != null) {
+          urls.addAll((metadata['imageUrlsB'] as List).cast<String>());
+        }
+      }
+    }
+
+    return urls;
+  }
+
   /// Provider의 메시지를 ChatController로 동기화
   void _updateChatControllerMessages() {
     if (_provider.messages.isNotEmpty) {
       _chatController.setMessages(_provider.messages);
+
+      // ✨ 메시지 이미지 프리로딩 (UnifiedImageCacheService)
+      if (mounted) {
+        final imageUrls = _extractImageUrlsFromMessages(_provider.messages);
+        if (imageUrls.isNotEmpty) {
+          UnifiedImageCacheService.instance.preloadImages(context, imageUrls);
+        }
+      }
     }
   }
 
@@ -185,26 +225,66 @@ class _ChatDetailWidgetCleanState extends State<ChatDetailWidgetClean> {
           ),
         ),
       ),
-      child: TextField(
-        controller: _searchController,
-        focusNode: _searchFocusNode,
-        maxLength: 20,
-        decoration: InputDecoration(
-          hintText: '검색...',
-          prefixIcon: Icon(Icons.search, color: VersusColors.primary),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: Icon(Icons.clear, color: VersusColors.textSecondary),
-                  onPressed: () {
-                    _searchController.clear();
-                    _provider.searchMessages('');
-                  },
-                )
-              : null,
-        ),
-        onChanged: (value) {
-          _provider.searchMessages(value);
-        },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 검색 입력창
+          TextField(
+            controller: _searchController,
+            focusNode: _searchFocusNode,
+            maxLength: 20,
+            decoration: InputDecoration(
+              hintText: '검색...',
+              prefixIcon: Icon(Icons.search, color: VersusColors.primary),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: Icon(Icons.clear, color: VersusColors.textSecondary),
+                      onPressed: () {
+                        _searchController.clear();
+                        _provider.searchMessages('');
+                      },
+                    )
+                  : null,
+            ),
+            onChanged: (value) {
+              _provider.searchMessages(value);
+            },
+          ),
+          // 검색 결과 네비게이션 (결과가 있을 때만 표시)
+          if (_provider.hasSearchResults) ...[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // 이전 결과 버튼
+                IconButton(
+                  icon: Icon(
+                    Icons.keyboard_arrow_up,
+                    color: VersusColors.primary,
+                  ),
+                  onPressed: _provider.goToPreviousSearchResult,
+                  tooltip: '이전 검색 결과',
+                ),
+                // 검색 결과 카운터
+                Text(
+                  '${_provider.currentSearchIndex + 1}/${_provider.searchResultCount}',
+                  style: VersusTextStyles.bodyMedium.copyWith(
+                    color: VersusColors.textSecondary,
+                  ),
+                ),
+                // 다음 결과 버튼
+                IconButton(
+                  icon: Icon(
+                    Icons.keyboard_arrow_down,
+                    color: VersusColors.primary,
+                  ),
+                  onPressed: _provider.goToNextSearchResult,
+                  tooltip: '다음 검색 결과',
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }

@@ -6,6 +6,8 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
+import 'chat_file_size_service.dart';
+
 class ChatMediaUploadService {
   static const int maxImageSize = 2 * 1024 * 1024; // 2MB
   static const int maxVideoSize = 10 * 1024 * 1024; // 10MB
@@ -21,14 +23,18 @@ class ChatMediaUploadService {
     required File imageFile,
   }) async {
     try {
-      // Check file size
-      final fileSize = await imageFile.length();
-      if (fileSize > maxImageSize) {
-        throw Exception('이미지 크기는 2MB를 초과할 수 없습니다.');
-      }
-
-      // Compress image
+      // Compress image first (always compress before checking size)
       final compressedImage = await _compressImage(imageFile);
+
+      // Check compressed file size using ChatFileSizeService
+      final fileSizeService = ChatFileSizeService();
+      if (compressedImage.length > maxImageSize) {
+        final formattedSize = fileSizeService.formatFileSize(compressedImage.length);
+        throw Exception(
+          '압축 후에도 이미지 크기($formattedSize)가 2MB를 초과합니다.\n'
+          '다른 이미지를 선택하거나 이미지를 편집해주세요.'
+        );
+      }
 
       // Generate storage path
       final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -48,6 +54,7 @@ class ChatMediaUploadService {
       return {
         'url': downloadUrl,
         'size': compressedImage.length,
+        'formattedSize': fileSizeService.formatFileSize(compressedImage.length),
         'width': image.width.toDouble(),
         'height': image.height.toDouble(),
         'path': storagePath,
@@ -64,10 +71,20 @@ class ChatMediaUploadService {
     required File videoFile,
   }) async {
     try {
-      // Check file size
+      // Check file size using ChatFileSizeService
+      final fileSizeService = ChatFileSizeService();
       final fileSize = await videoFile.length();
-      if (fileSize > maxVideoSize) {
-        throw Exception('비디오 크기는 10MB를 초과할 수 없습니다.');
+      final isValidSize = await fileSizeService.checkFileSize(
+        videoFile,
+        maxSizeInBytes: maxVideoSize,
+      );
+
+      if (!isValidSize) {
+        final formattedSize = fileSizeService.formatFileSize(fileSize);
+        throw Exception(
+          '비디오 크기($formattedSize)가 10MB를 초과합니다.\n'
+          '비디오는 압축되지 않으므로 10MB 이하 파일만 업로드 가능합니다.'
+        );
       }
 
       // Generate thumbnail
@@ -103,6 +120,7 @@ class ChatMediaUploadService {
         'url': videoUrl,
         'thumbnailUrl': thumbnailUrl,
         'size': fileSize,
+        'formattedSize': fileSizeService.formatFileSize(fileSize),
         'path': videoStoragePath,
       };
     } catch (e) {

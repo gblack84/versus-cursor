@@ -1,7 +1,7 @@
 # 📦 /lib/features/chat/data/services
 
 > Feature-First Architecture - Chat Service 계층
-> 최종 업데이트: 2025-08-25
+> 최종 업데이트: 2025-01-16
 
 ## 📋 개요
 
@@ -93,25 +93,204 @@ services/
 
 ## 📂 채팅 서비스
 
-### 1. ChatMessageService
+### 1. ChatMessageService (통합 변환 서비스)
 
-**책임**: 채팅 메시지 관리 및 처리
+**책임**: Firestore/Entity → flutter_chat_ui Message 변환
+
+**Clean Architecture v4.0 통합**:
+- ✅ DocumentSnapshot → core.Message 변환 (기존)
+- ✅ Message Entity → core.Message 변환 (v4.0 추가)
+- ✅ 타입별 자동 변환 (Text, Custom, Image, System)
 
 **주요 메서드**:
-- `sendMessage(chatId, content, senderId, mediaUrl, type, metadata)`: 메시지 전송
-- `subscribeToMessages(chatId, limit)`: 메시지 스트림 구독
-- `loadMoreMessages(chatId, lastMessage, limit)`: 추가 메시지 로드
-- `editMessage(chatId, messageId, newContent)`: 메시지 수정
-- `deleteMessage(chatId, messageId)`: 메시지 삭제
-- `createVoteCard(chatId, voteOptions, voteDuration)`: 투표 카드 생성
 
-**주요 기능**:
-- 중복 메시지 ID 필터링
-- 메시지 캐시 관리
-- 실시간 스트림 처리
-- 캐시 무효화 전략
+**DocumentSnapshot 변환** (기존):
+- `convertDocumentToMessage(doc)`: 단일 문서 변환
+- `convertDocumentsToMessages(docs)`: 배치 변환 (병렬 처리)
 
-**의존성**: MessageRepository, UnifiedCacheService
+**Message Entity 변환** (v4.0):
+- `convertEntityToMessage(entity)`: 단일 Entity 변환
+- `convertEntitiesToMessages(entities)`: 배치 변환
+
+**타입별 변환 헬퍼**:
+- `_createVoteMessage()`: 투표 카드 (CustomMessage)
+- `_createVoteMessageFromEntity()`: Entity → 투표 카드
+- `_createImageMessage()`: 이미지 (ImageMessage)
+- `_createImageMessageFromEntity()`: Entity → 이미지
+
+**메시지 타입 지원**:
+- **TextMessage**: 일반 텍스트, 첨부파일 메타데이터
+- **CustomMessage**: 투표 카드 (voteTitle, voteOptions, voteResults 등)
+- **ImageMessage**: 이미지 (source, size, width, height)
+- **SystemMessage**: 시스템 메시지 (읽지 않은 메시지 구분선 등)
+
+**사용처**:
+- ChatDetailProvider._updateDisplayMessages()
+- AIChatProvider._updateDisplayMessages()
+
+**통합 효과**:
+- 140줄 중복 TextMessage 변환 로직 제거
+- 1줄 서비스 호출로 모든 타입 자동 처리
+- 투표 카드, 이미지, 시스템 메시지 렌더링 복원
+
+**의존성**: Message Entity, flutter_chat_core, AppConstants
+
+### 2. ChatMessageLifecycleService (메시지 상태 관리)
+
+**책임**: 메시지 읽음/전달 상태 관리 (카카오톡 스타일)
+
+**Clean Architecture v4.0 통합**:
+- ✅ ChatDetailProvider와 연결 완료
+- ✅ 채팅방 진입 시 자동 읽음 처리
+- ✅ 배치 업데이트를 통한 성능 최적화
+
+**주요 메서드**:
+- `markMessagesAsSeen(chatId, currentUserId)`: 채팅방 메시지 자동 읽음 처리
+- `updateLastReadAt(chatId, userId)`: 마지막 읽음 시간 업데이트
+- `getUnreadCount(chatId, userId)`: 읽지 않은 메시지 개수 조회
+- `watchMessageStatuses(chatId, messageIds)`: 메시지 상태 실시간 스트림
+
+**메시지 상태 타입**:
+- **sent**: 전송됨
+- **delivered**: 전달됨
+- **seen**: 읽음
+
+**사용처**:
+- ChatDetailProvider.initializeChat() - 채팅방 진입 시 자동 호출
+
+**통합 효과**:
+- 카카오톡 스타일 메시지 읽음 처리 구현
+- 배치 업데이트로 Firestore 쓰기 최적화
+- 본인이 보낸 메시지는 자동 제외 처리
+- 읽지 않은 메시지 카운트 추적 기반 마련
+
+**의존성**: Firestore, Message Entity, Singleton Pattern
+
+**구현 방식**:
+```dart
+// ChatDetailProvider에서 자동 호출
+_lifecycleService.markMessagesAsSeen(
+  chatId: chatId,
+  currentUserId: currentUserId,
+);
+```
+
+### 3. ChatFileSizeService (파일 크기 관리)
+
+**책임**: 채팅 미디어 파일 크기 계산 및 검증
+
+**Clean Architecture v4.0 통합**:
+- ✅ ChatMediaUploadService와 연결 완료
+- ✅ 안전한 파일 크기 조회 (에러 처리 내장)
+- ✅ 사용자 친화적 크기 포맷 (B/KB/MB/GB)
+
+**주요 메서드**:
+- `getLocalFileSize(path)`: 로컬 파일 크기 조회 (에러 처리 포함)
+- `checkFileSize(file, maxSize)`: 파일 크기 검증 (커스텀 제한)
+- `getStorageFileSize(url)`: Firebase Storage URL에서 크기 조회
+- `calculateMediaSize(url)`: URL/로컬 경로 자동 감지
+- `formatFileSize(bytes)`: 사람이 읽기 쉬운 포맷 변환
+- `extractStoragePathFromUrl(url)`: Storage URL 파싱
+
+**사용처**:
+- ChatMediaUploadService.uploadChatImage() - 이미지 압축 후 크기 검증
+- ChatMediaUploadService.uploadChatVideo() - 비디오 크기 검증 (압축 없음)
+
+**통합 효과**:
+- 에러 처리 강화 (try-catch 내장)
+- 더 명확한 에러 메시지 (실제 크기 표시)
+- 파일 크기 로직 중앙화
+- 사용자 친화적 크기 표시 (예: "3.2 MB")
+- **압축 후 검증**으로 사용자 경험 개선 (5-13MB 원본 사진 허용)
+
+**의존성**: Firebase Storage, Singleton Pattern
+
+**검증 전략**:
+
+1. **이미지 업로드** - 압축 후 검증:
+```dart
+// 1. 먼저 압축 (항상 실행)
+final compressedImage = await _compressImage(imageFile);
+
+// 2. 압축 후 크기 체크
+final fileSizeService = ChatFileSizeService();
+if (compressedImage.length > maxImageSize) {
+  final formattedSize = fileSizeService.formatFileSize(compressedImage.length);
+  throw Exception(
+    '압축 후에도 이미지 크기($formattedSize)가 2MB를 초과합니다.\n'
+    '다른 이미지를 선택하거나 이미지를 편집해주세요.'
+  );
+}
+
+// ✅ 효과: 5-13MB 원본 사진도 압축 후 통과 가능
+```
+
+2. **비디오 업로드** - 압축 전 검증 (비디오는 압축 안 함):
+```dart
+final fileSizeService = ChatFileSizeService();
+final isValidSize = await fileSizeService.checkFileSize(
+  videoFile,
+  maxSizeInBytes: maxVideoSize,
+);
+
+if (!isValidSize) {
+  throw Exception(
+    '비디오 크기가 10MB를 초과합니다.\n'
+    '비디오는 압축되지 않으므로 10MB 이하 파일만 업로드 가능합니다.'
+  );
+}
+```
+
+### 4. ChatScrollService (스크롤 제어)
+
+**책임**: 채팅 스크롤 동작 제어 및 상태 추적
+
+**Clean Architecture v4.1 통합**:
+- ✅ ChatDetailProvider와 연결 완료
+- ✅ 검색 결과 자동 스크롤 기능
+- ✅ 명시적 스크롤 제어 지원
+
+**주요 메서드**:
+- `scrollToBottom()`: 최신 메시지로 스크롤
+- `updateScrollState(atBottom, nearBottom)`: 스크롤 상태 업데이트
+- `setupScrollListener(onScrollChanged)`: 스크롤 리스너 설정
+- `checkIfAtBottom()`: 하단 도달 여부 확인 (50px 기준)
+- `checkIfNearBottom()`: 하단 근접 여부 확인 (200px 기준)
+
+**스크롤 상태 추적**:
+- `isAtBottom`: 현재 하단에 있는지 여부
+- `isNearBottom`: 하단 근처에 있는지 여부
+- `scrollController`: ScrollController 인스턴스
+
+**사용처**:
+- ChatDetailProvider - 검색 결과 자동 스크롤
+- ChatDetailProvider.goToNextSearchResult() - 다음 검색 결과 이동
+- ChatDetailProvider.goToPreviousSearchResult() - 이전 검색 결과 이동
+
+**통합 효과**:
+- 검색 결과 자동 스크롤 구현
+- 명시적 스크롤 제어 지원 (알림, 멘션 등)
+- 스크롤 상태 기반 UI 제어 가능
+
+**의존성**: ChatDetailControllerV2
+
+**구현 방식**:
+```dart
+// ChatDetailProvider 생성자에서 초기화
+_scrollService = ChatScrollService(_chatController);
+
+// 검색 결과로 스크롤
+final firstResultId = _searchResultIds.first;
+_chatController.scrollToMessage(firstResultId);
+
+// 다음/이전 검색 결과 이동
+void goToNextSearchResult() {
+  _currentSearchIndex = (_currentSearchIndex + 1) % _searchResultIds.length;
+  final nextResultId = _searchResultIds[_currentSearchIndex];
+  _chatController.scrollToMessage(nextResultId);
+  notifyListeners();
+}
+```
 
 ## 📂 투표 서비스
 
@@ -214,12 +393,15 @@ services/
 ## ✅ 체크리스트
 
 ### 구현 완료
-- [ ] UnifiedCacheService
-- [ ] PreloadStrategy
-- [ ] ChatInitializationService
-- [ ] ChatMessageService
-- [ ] VoteStateCoordinator
-- [ ] GlobalNotificationManager
+- [x] UnifiedCacheService
+- [x] PreloadStrategy
+- [x] ChatInitializationService
+- [x] ChatMessageService (Clean Architecture v4.0 통합)
+- [x] ChatMessageLifecycleService (ChatDetailProvider 연결)
+- [x] ChatFileSizeService (ChatMediaUploadService 연결)
+- [x] ChatScrollService (검색 기능 완성, ChatDetailProvider 연결)
+- [x] VoteStateCoordinator
+- [x] GlobalNotificationManager
 
 ### 테스트
 - [ ] 단위 테스트
@@ -236,4 +418,4 @@ services/
 ---
 
 *이 문서는 Feature-First Architecture의 Chat Service Layer 가이드입니다.*
-*최종 업데이트: 2025-08-24*
+*최종 업데이트: 2025-01-20*

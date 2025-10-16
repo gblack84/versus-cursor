@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import '/services/image/unified_image_cache_service.dart';
 import 'image_viewer/components/image_viewer_app_bar.dart';
 import 'image_viewer/components/image_viewer_page_view.dart';
 import 'image_viewer/components/image_viewer_controls.dart';
@@ -296,6 +297,16 @@ class _VotingImageViewerState extends State<VotingImageViewer> {
               setState(() {
                 _currentIndexInBoxA = index;
               });
+
+              // ✨ 인접 이미지 프리로딩 (UnifiedImageCacheService)
+              if (mounted) {
+                UnifiedImageCacheService.instance.preloadAdjacentImages(
+                  context,
+                  _effectiveUrlsA,
+                  index,
+                  range: 2, // 앞뒤 2개씩
+                );
+              }
             },
           )
         : const SizedBox.shrink();
@@ -327,6 +338,16 @@ class _VotingImageViewerState extends State<VotingImageViewer> {
                         setState(() {
                           _currentIndexInBoxA = index;
                         });
+
+                        // ✨ 인접 이미지 프리로딩 (UnifiedImageCacheService)
+                        if (mounted) {
+                          UnifiedImageCacheService.instance.preloadAdjacentImages(
+                            context,
+                            _effectiveUrlsA,
+                            index,
+                            range: 2, // 앞뒤 2개씩
+                          );
+                        }
                       },
                     )
                   : const SizedBox.shrink(),
@@ -350,6 +371,16 @@ class _VotingImageViewerState extends State<VotingImageViewer> {
                         setState(() {
                           _currentIndexInBoxB = index;
                         });
+
+                        // ✨ 인접 이미지 프리로딩 (UnifiedImageCacheService)
+                        if (mounted) {
+                          UnifiedImageCacheService.instance.preloadAdjacentImages(
+                            context,
+                            _effectiveUrlsB,
+                            index,
+                            range: 2, // 앞뒤 2개씩
+                          );
+                        }
                       },
                     )
                   : const SizedBox.shrink(),

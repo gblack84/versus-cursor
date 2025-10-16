@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import '/features/voting/domain/constants/voting_constants.dart';
 
 /// 투표 알림 UI의 크기 제약 조건 및 스케일링 설정
 ///
@@ -87,7 +88,7 @@ class VotingDialogConstraints {
   /// 반환값: 화면 크기에 최적화된 알림 너비
   static double getNotificationWidth(double screenWidth) {
     // 화면의 92% 사용, 최대 500px로 제한
-    final dynamicWidth = screenWidth * 0.92;
+    final dynamicWidth = screenWidth * VotingConstants.messageCardWidthRatio;
     final padding = screenWidth > largeScreenThreshold
         ? largeScreenPadding
         : defaultNotificationPadding;

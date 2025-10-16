@@ -5,6 +5,7 @@ import '/features/post/domain/models/post_display.dart';
 import '/features/post/presentation/providers/trending_posts_provider.dart';
 import '/core/design_system/design_system.dart';
 import 'package:get_it/get_it.dart';
+import '/core/constants/app_constants.dart';
 
 class TrendingPostsPage extends StatefulWidget {
   const TrendingPostsPage({super.key});
@@ -187,7 +188,7 @@ class _TrendingPostsPageState extends State<TrendingPostsPage> {
                 Row(
                   children: [
                     CircleAvatar(
-                      radius: 20,
+                      radius: AppConstants.profileAvatarRadius,
                       backgroundColor: VersusColors.primaryWithAlpha(0.2),
                       backgroundImage: post.photoUrl.isNotEmpty
                           ? NetworkImage(post.photoUrl)

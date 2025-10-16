@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import '/core/constants/app_constants.dart';
 import '/core/design_system/design_system.dart';
+import '/features/voting/domain/constants/voting_constants.dart';
+import '/features/profile/presentation/widgets/profile/profile_avatar.dart';
 
 /// 투표 카드 메시지의 헤더 컴포넌트
 ///
@@ -25,7 +27,7 @@ class VoteCardHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     // isMe에 따라 표시할 이름과 프로필 결정
     final displayName =
-        isMe ? (currentUserName ?? '나') : (senderDisplayName ?? '알 수 없는 사용자');
+        isMe ? (currentUserName ?? '나') : (senderDisplayName ?? AppConstants.unknownUserText);
 
     // 프로필 이미지도 isMe에 따라 결정
     final hasProfileImage = senderProfileImageUrl?.isNotEmpty ?? false;
@@ -38,21 +40,9 @@ class VoteCardHeader extends StatelessWidget {
             // TODO: 프로필 페이지로 이동
             debugPrint('Navigate to profile: $displayName');
           },
-          child: CircleAvatar(
-            radius: 20,
-            backgroundImage: hasProfileImage && !isMe
-                ? CachedNetworkImageProvider(senderProfileImageUrl!)
-                : null,
-            backgroundColor: hasProfileImage && !isMe
-                ? Colors.transparent
-                : VersusColors.borderLight,
-            child: !hasProfileImage || isMe
-                ? Icon(
-                    Icons.person,
-                    size: 24,
-                    color: VersusColors.textSecondary,
-                  )
-                : null,
+          child: ProfileAvatar(
+            photoUrl: hasProfileImage && !isMe ? senderProfileImageUrl! : '',
+            size: AvatarSize.small,
           ),
         ),
         const SizedBox(width: 12),
@@ -125,7 +115,7 @@ class VoteCardHeader extends StatelessWidget {
             children: [
               Icon(
                 statusInfo['icon'] as IconData,
-                size: 12,
+                size: VotingConstants.multiImageIndicatorIconSize,
                 color: statusInfo['color'] as Color,
               ),
               const SizedBox(width: 4),

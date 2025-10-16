@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/ports/i_vote_status_service.dart';
 import '../../domain/repositories/i_voting_repository.dart';
+import '../../domain/constants/voting_constants.dart';
 
 /// Implementation of IVoteStatusService using the voting repository
 /// 
@@ -99,7 +100,7 @@ class VoteStatusServiceImpl implements IVoteStatusService {
       await _firestore.collection('posts').doc(postId).update({
         'voteCompleted': isCompleted,
         'voteCompletedAt': isCompleted ? FieldValue.serverTimestamp() : null,
-        'voteStatus': isCompleted ? 'completed' : 'active',
+        'voteStatus': isCompleted ? VotingConstants.cardStatusCompleted : VotingConstants.cardStatusVoting,
       });
     } catch (e) {
       throw Exception('Failed to update vote completion: $e');

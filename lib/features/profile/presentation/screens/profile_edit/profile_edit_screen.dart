@@ -12,6 +12,7 @@ import '/features/profile/presentation/widgets/common/loading_indicator.dart';
 import '/features/profile/presentation/widgets/common/error_message.dart';
 import '/features/profile/presentation/constants/validation_rules.dart';
 import '/features/profile/presentation/constants/profile_constants.dart';
+import '/core/constants/app_constants.dart';
 
 /// 프로필 편집 화면 Wrapper
 ///
@@ -168,7 +169,7 @@ class _ProfileEditScreenContentState extends State<_ProfileEditScreenContent> {
                           right: 0,
                           child: CircleAvatar(
                             backgroundColor: AppTheme.of(context).primary,
-                            radius: 20,
+                            radius: AppConstants.profileAvatarRadius,
                             child: IconButton(
                               icon: Icon(
                                 Icons.camera_alt,

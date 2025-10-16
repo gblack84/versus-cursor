@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '/core/design_system/design_system.dart';
+import '/features/voting/domain/constants/voting_constants.dart';
 import '/services/image/unified_image_cache_service.dart';
 
 /// 투표 카드의 옵션 박스 컴포넌트
@@ -123,8 +124,8 @@ class VoteOptionBox extends StatelessWidget {
                     Colors.transparent,
                   ],
             stops: isSingleImageMode
-                ? const [0.0, 0.3] // 단일: 30%까지
-                : const [0.0, 0.2], // 멀티: 20%까지
+                ? VotingConstants.singleImageGradientStops // 단일: 30%까지
+                : VotingConstants.multiImageGradientStops, // 멀티: 20%까지
           ),
         ),
       ),
@@ -165,7 +166,7 @@ class VoteOptionBox extends StatelessWidget {
                 vertical: 2,
               ),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF6B6B).withValues(alpha: 0.8),
+                color: VotingConstants.voteColorA.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -202,7 +203,7 @@ class VoteOptionBox extends StatelessWidget {
                 vertical: 2,
               ),
               decoration: BoxDecoration(
-                color: const Color(0xFF4ECDC4).withValues(alpha: 0.8),
+                color: VotingConstants.voteColorB.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -245,8 +246,8 @@ class VoteOptionBox extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: label == 'A'
-                  ? const Color(0xFFFF6B6B).withValues(alpha: 0.8)
-                  : const Color(0xFF4ECDC4).withValues(alpha: 0.8),
+                  ? VotingConstants.voteColorA.withValues(alpha: 0.8)
+                  : VotingConstants.voteColorB.withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
@@ -318,9 +319,9 @@ class VoteOptionBox extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.photo_library,
-              size: 12,
+              size: VotingConstants.multiImageIndicatorIconSize,
               color: Colors.white,
             ),
             const SizedBox(width: 2),
@@ -392,7 +393,7 @@ class VoteOptionBox extends StatelessWidget {
     final screenWidth = view.physicalSize.width / view.devicePixelRatio;
 
     // 메시지 카드는 화면 폭의 약 92% 사용
-    final cardWidth = screenWidth * 0.92;
+    final cardWidth = screenWidth * VotingConstants.messageCardWidthRatio;
 
     // 옵션 박스는 카드 폭의 약 절반 (가로 배치) 또는 전체 (세로 배치)
     // 여기서는 최대값 기준으로 계산

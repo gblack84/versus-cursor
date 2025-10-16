@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '/core/design_system/design_system.dart';
 import '/features/voting/domain/models/vote_state.dart';
+import '/features/voting/domain/constants/voting_constants.dart';
 
 /// 투표 카드 헬퍼 유틸리티
 /// 투표 카드에서 사용되는 공통 유틸리티 함수들을 제공합니다
@@ -64,15 +65,15 @@ class VoteCardHelpers {
   /// 문자열 상태를 VoteState enum으로 변환합니다
   static VoteState mapStatusToState(String status) {
     switch (status) {
-      case 'votingRequest':
+      case VotingConstants.cardStatusVotingRequest:
         return VoteState.votingRequest;
-      case 'completed':
+      case VotingConstants.cardStatusCompleted:
         return VoteState.completed;
       case 'expired':
         return VoteState.expired;
       case 'notParticipated':
         return VoteState.notParticipated;
-      case 'inProgress':
+      case VotingConstants.cardStatusVoting:
         return VoteState.inProgress;
       default:
         return VoteState.inProgress;

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:rxdart/rxdart.dart';
 import '../ports/i_vote_state_port.dart';
 import '../models/vote_state.dart';
+import '../constants/voting_constants.dart';
 
 /// 투표 상태 통합 관리 서비스
 ///
@@ -96,7 +97,7 @@ class VoteStateCoordinator {
         state = VoteState.completed;
       } else if (voteData['voteStatus'] == 'expired') {
         state = VoteState.expired;
-      } else if (voteData['voteStatus'] == 'votingRequest') {
+      } else if (voteData['voteStatus'] == VotingConstants.cardStatusVotingRequest) {
         state = VoteState.votingRequest;
       } else {
         state = VoteState.inProgress;
@@ -165,15 +166,15 @@ class VoteStateCoordinator {
   /// 문자열 상태를 Enum으로 변환
   VoteState _mapStatusToState(String? status) {
     switch (status) {
-      case 'votingRequest':
+      case VotingConstants.cardStatusVotingRequest:
         return VoteState.votingRequest;
-      case 'completed':
+      case VotingConstants.cardStatusCompleted:
         return VoteState.completed;
       case 'expired':
         return VoteState.expired;
       case 'notParticipated':
         return VoteState.notParticipated;
-      case 'inProgress':
+      case VotingConstants.cardStatusVoting:
       default:
         return VoteState.inProgress;
     }

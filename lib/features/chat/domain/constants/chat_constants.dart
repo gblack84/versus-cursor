@@ -1,120 +1,125 @@
-import 'package:flutter/material.dart';
-
-/// 채팅 시스템에서 사용되는 상수 모음
+/// 채팅 시스템 전용 상수
+///
+/// Chat Feature에서만 사용되는 상수들을 정의합니다.
+/// - 메시지 로딩 및 페이지네이션
+/// - 메시지 타입 정의
+/// - 채팅 UI 스타일
+/// - 사용자 캐시 관리
+///
+/// **전역 상수는 이동됨**:
+/// - AI 사용자 정보 → /core/constants/app_constants.dart
+/// - 투표 관련 상수 → /features/voting/domain/constants/voting_constants.dart
 class ChatConstants {
   ChatConstants._();
 
   // ==================== 메시지 로딩 관련 ====================
 
   /// 초기 메시지 로드 개수
+  ///
+  /// 채팅방 진입 시 최초로 가져오는 메시지 수
+  ///
+  /// 사용처:
+  /// - ChatDetailProvider.initializeChat()
+  /// - AIChatProvider.initializeChat()
   static const int initialMessageLoadCount = 30;
 
   /// 추가 메시지 로드 개수 (페이지네이션)
+  ///
+  /// 스크롤 시 추가로 로드할 메시지 수
+  ///
+  /// 사용처:
+  /// - ChatDetailProvider.loadMoreMessages()
+  /// - AIChatProvider.loadMoreMessages()
   static const int paginationMessageCount = 20;
 
-  /// 스크롤 임계값 (이 픽셀 이내일 때 추가 로드)
+  /// 스크롤 임계값 - 추가 메시지 로드 (픽셀)
+  ///
+  /// 화면 상단에서 이 거리 이내로 스크롤하면 이전 메시지 로드
+  ///
+  /// 사용처:
+  /// - ChatDetailWidgetV2 스크롤 리스너
   static const double loadMoreThreshold = 100;
 
-  /// 스크롤 임계값 (FAB 표시/숨김)
+  /// 스크롤 임계값 - FAB 표시/숨김 (픽셀)
+  ///
+  /// 화면 하단에서 이 거리 이상 떨어지면 "맨 아래로" FAB 표시
+  ///
+  /// 사용처:
+  /// - ChatDetailWidgetV2._handleScroll()
   static const double fabShowThreshold = 500;
 
   // ==================== 애니메이션 관련 ====================
 
-  /// FAB 애니메이션 시간
-  static const Duration fabAnimationDuration = Duration(milliseconds: 200);
-
   /// FAB 스케일 애니메이션 시간
+  ///
+  /// 300ms = "맨 아래로" 버튼의 크기 변화 애니메이션
+  ///
+  /// 사용처:
+  /// - ChatDetailWidgetV2 FAB 빌더
   static const Duration fabScaleAnimationDuration = Duration(milliseconds: 300);
-
-  /// 자동 스크롤 딜레이
-  static const Duration autoScrollDelay = Duration(milliseconds: 100);
-
-  /// 투표 상태 리셋 딜레이
-  static const Duration votingStateResetDelay = Duration(milliseconds: 500);
-
-  /// 스크롤 애니메이션 시간
-  static const Duration scrollAnimationDuration = Duration(milliseconds: 300);
-
-  // ==================== 투표 카드 관련 ====================
-
-  /// 투표 카드 색상 A
-  static const Color voteColorA = Color(0xFFFF6B6B);
-
-  /// 투표 카드 색상 B
-  static const Color voteColorB = Color(0xFF4ECDC4);
-
-  /// 투표 카드 모서리 반경
-  static const double voteCardBorderRadius = 10.0;
-
-  /// 투표 옵션 박스 모서리 반경
-  static const double voteOptionBorderRadius = 7.0;
-
-  /// 투표 카드 기본 높이
-  static const double voteCardDefaultHeight = 200.0;
 
   // ==================== 캐시 관련 ====================
 
   /// 사용자 캐시 유지 개수
+  ///
+  /// 메모리에 유지할 최대 사용자 정보 수
+  ///
+  /// 사용처:
+  /// - UserCacheService LRU 캐시
   static const int userCacheKeepCount = 100;
 
-  /// 사용자 로딩 타임아웃 (100ms x 50 = 5초)
+  /// 사용자 로딩 타임아웃 반복 횟수
+  ///
+  /// 100ms x 50 = 5초 최대 대기 시간
+  ///
+  /// 사용처:
+  /// - ChatDetailWidgetV2._loadChatParticipants()
   static const int userLoadingTimeoutIterations = 50;
+
+  /// 사용자 로딩 체크 간격
+  ///
+  /// 사용자 정보 로딩 상태를 100ms마다 확인
+  ///
+  /// 사용처:
+  /// - ChatDetailWidgetV2._loadChatParticipants()
   static const Duration userLoadingCheckInterval = Duration(milliseconds: 100);
 
   // ==================== 메시지 타입 ====================
 
+  /// 텍스트 메시지 타입
+  ///
+  /// 일반 텍스트 채팅 메시지
   static const String messageTypeText = 'text';
+
+  /// 이미지 메시지 타입
+  ///
+  /// 이미지가 포함된 메시지
   static const String messageTypeImage = 'image';
+
+  /// 투표 요청 메시지 타입
+  ///
+  /// 사용자에게 투표를 요청하는 메시지
   static const String messageTypeVoteRequest = 'voteRequest';
+
+  /// 투표 생성 메시지 타입
+  ///
+  /// 새 투표가 생성되었음을 알리는 메시지
   static const String messageTypeVoteCreated = 'voteCreated';
+
+  /// 시스템 메시지 타입
+  ///
+  /// 시스템 알림 메시지 (입장/퇴장 등)
   static const String messageTypeSystem = 'system';
 
-  // ==================== 투표 상태 ====================
+  // ==================== UI 텍스트 ====================
 
-  static const String cardStatusVotingRequest = 'votingRequest';
-  static const String cardStatusVoting = 'voting';
-  static const String cardStatusCompleted = 'completed';
-
-  // ==================== AI 사용자 정보 ====================
-
-  static const String aiUserId = 'ai_assistant';
-  static const String aiUserName = 'AI 피클';
-  static const String aiUserAvatar =
-      'https://picsum.photos/seed/ai_assistant/200';
-
-  // ==================== UI 사이즈 ====================
-
-  /// 메시지 카드 너비 비율 (화면 대비)
-  static const double messageCardWidthRatio = 0.92;
-
-  /// 프로필 아바타 반경
-  static const double profileAvatarRadius = 20.0;
-
-  /// 상태 배지 아이콘 크기
-  static const double statusBadgeIconSize = 12.0;
-
-  /// 멀티이미지 인디케이터 아이콘 크기
-  static const double multiImageIndicatorIconSize = 12.0;
-
-  // ==================== 그라데이션 설정 ====================
-
-  /// 싱글 이미지 모드 그라데이션 정지 지점
-  static const List<double> singleImageGradientStops = [0.0, 0.3];
-
-  /// 멀티 이미지 모드 그라데이션 정지 지점
-  static const List<double> multiImageGradientStops = [0.0, 0.2];
-
-  // ==================== 텍스트 설정 ====================
-
-  /// 읽지 않은 메시지 텍스트
-  static const String unreadMessagesText = '읽지 않은 메시지';
-
-  /// 투표 완료 메시지
+  /// 투표 완료 알림 텍스트
+  ///
+  /// 투표가 완료되었을 때 표시하는 축하 메시지
+  ///
+  /// 사용처:
+  /// - VoteCardMessage 완료 상태 표시
+  /// - VoteResultDisplay 결과 헤더
+  /// - VoteResultsWidget 완료 알림
   static const String voteCompletedText = '피클! 피클! 피클!';
-
-  /// 알 수 없는 사용자 텍스트
-  static const String unknownUserText = '알 수 없는 사용자';
-
-  /// 기본 사용자 이름
-  static const String defaultUserName = 'User';
 }

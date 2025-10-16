@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import 'package:intl/intl.dart';
+import '/core/constants/app_constants.dart';
 import '/core/design_system/design_system.dart';
 import '/features/chat/domain/entities/chat.dart';
 import '/features/profile/domain/models/user_profile.dart';
+import '/features/voting/domain/constants/voting_constants.dart';
 import '/features/voting/presentation/widgets/chat_card/vote_card_message.dart';
 import '/features/chat/domain/enums/message_delivery_status.dart';
 
@@ -27,8 +29,8 @@ class ChatMessageBuilder {
     final metadata = message.metadata ?? {};
 
     // Check if this is a vote message
-    if (metadata['type'] == 'voteRequest' ||
-        metadata['type'] == 'voteCreated') {
+    if (metadata['type'] == AppConstants.messageTypeVoteRequest ||
+        metadata['type'] == AppConstants.messageTypeVoteCreated) {
       // Build vote card
       final voteCard = KeyedSubtree(
         key: ValueKey(message.id),
@@ -46,7 +48,7 @@ class ChatMessageBuilder {
               (metadata['optionBImages'] as List<dynamic>?)?.cast<String>(),
           aspectRatioA: metadata['aspectRatioA'],
           aspectRatioB: metadata['aspectRatioB'],
-          cardStatus: metadata['cardStatus'] ?? 'votingRequest',
+          cardStatus: metadata['cardStatus'] ?? VotingConstants.cardStatusVotingRequest,
           voteEndTime: metadata['voteEndTime'] != null
               ? (metadata['voteEndTime'] is DateTime
                   ? metadata['voteEndTime']
@@ -55,7 +57,7 @@ class ChatMessageBuilder {
           userVotes: metadata['userVotes'],
           voteResults: metadata['voteResults'],
           isMe: isSentByMe,
-          messageType: metadata['type'] ?? 'voteRequest',
+          messageType: metadata['type'] ?? AppConstants.messageTypeVoteRequest,
           messageId: message.id,
           chatId: chatDocument?.id,
           currentUserName: currentUserRecord?.displayName ?? '사용자',
@@ -80,13 +82,13 @@ class ChatMessageBuilder {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             // AI 프로필 이미지 추가 (AI가 보낸 메시지일 때만)
-            if (!isSentByMe && message.authorId == 'ai_assistant') ...[
+            if (!isSentByMe && message.authorId == AppConstants.aiUserId) ...[
               Container(
                 margin: const EdgeInsets.only(right: 8, bottom: 20),
                 child: CircleAvatar(
                   radius: 16,
-                  backgroundImage: const NetworkImage(
-                      'https://picsum.photos/seed/ai_assistant/200'),
+                  backgroundImage: NetworkImage(
+                      AppConstants.aiUserAvatar),
                   backgroundColor: VersusColors.primary,
                   child: const Text(
                     'AI',

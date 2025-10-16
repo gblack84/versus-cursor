@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '/core/design_system/design_system.dart';
 import '/features/voting/domain/models/vote_state.dart';
+import '/features/chat/domain/constants/chat_constants.dart';
 
 /// 투표 결과 표시 위젯
 /// 투표가 완료되었을 때 결과를 표시합니다
@@ -40,7 +41,7 @@ class VoteResultsWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '피클! 피클! 피클!',
+              ChatConstants.voteCompletedText,
               style: TextStyle(
                 fontSize: 18,
                 color: VersusColors.textPrimary,

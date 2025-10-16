@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
+import '/features/voting/domain/constants/voting_constants.dart';
 
 /// 투표 메시지 관련 헬퍼 클래스
 class VoteMessageHelper {
   /// 투표 상태 아이콘 가져오기
   static IconData getStatusIcon(String status) {
     switch (status) {
-      case 'completed':
+      case VotingConstants.cardStatusCompleted:
         return Icons.check_circle;
-      case 'votingRequest':
+      case VotingConstants.cardStatusVotingRequest:
         return Icons.how_to_vote;
       case 'expired':
         return Icons.block;
       case 'notParticipated':
         return Icons.block;
-      case 'inProgress':
+      case VotingConstants.cardStatusVoting:
         return Icons.timer;
       default:
         return Icons.help;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '/core/design_system/design_system.dart';
+import '/features/voting/domain/constants/voting_constants.dart';
 
 /// 투표 카드의 액션 버튼 컴포넌트
 ///
@@ -25,7 +26,7 @@ class VoteActionButton extends StatelessWidget {
       buttonText = '투표 현황 보기';
     } else {
       // 남이 만든 투표
-      buttonText = cardStatus == 'votingRequest' ? '투표하기' : '투표 현황 보기';
+      buttonText = cardStatus == VotingConstants.cardStatusVotingRequest ? '투표하기' : '투표 현황 보기';
     }
 
     return SizedBox(

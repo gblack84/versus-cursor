@@ -3,7 +3,10 @@ import '/core/types/layout_type.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
+import '/core/constants/app_constants.dart';
 import '/core/design_system/design_system.dart';
+import '/features/voting/domain/constants/voting_constants.dart';
+import '/features/chat/domain/constants/chat_constants.dart';
 import '/features/voting/presentation/dialogs/voting_dialog.dart';
 import '/services/ui/responsive_breakpoints.dart';
 import '/core/utils/media/aspect_ratio_analyzer.dart';
@@ -94,6 +97,17 @@ class _VoteCardMessageState extends State<VoteCardMessage>
     if (_globalBoxSizesCache.containsKey(cacheKey)) {
       _cachedBoxSizes = _globalBoxSizesCache[cacheKey];
     }
+
+    // 투표 이미지 프리로딩 (UnifiedImageCacheService)
+    if (context.mounted) {
+      UnifiedImageCacheService.instance.preloadVoteMessageImages(
+        context,
+        imageUrlA: widget.optionAImage,
+        imageUrlB: widget.optionBImage,
+        imageUrlsA: widget.optionAImages,
+        imageUrlsB: widget.optionBImages,
+      );
+    }
   }
 
   @override
@@ -139,15 +153,15 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   String _mapStateToString(VoteState state) {
     switch (state) {
       case VoteState.votingRequest:
-        return 'votingRequest';
+        return VotingConstants.cardStatusVotingRequest;
       case VoteState.completed:
-        return 'completed';
+        return VotingConstants.cardStatusCompleted;
       case VoteState.expired:
         return 'expired';
       case VoteState.notParticipated:
         return 'notParticipated';
       case VoteState.inProgress:
-        return 'inProgress';
+        return VotingConstants.cardStatusVoting;
     }
   }
 
@@ -284,15 +298,15 @@ class _VoteCardMessageState extends State<VoteCardMessage>
   // 초기 상태를 VoteState enum으로 변환
   VoteState _mapInitialStatus(String status) {
     switch (status) {
-      case 'votingRequest':
+      case VotingConstants.cardStatusVotingRequest:
         return VoteState.votingRequest;
-      case 'completed':
+      case VotingConstants.cardStatusCompleted:
         return VoteState.completed;
       case 'expired':
         return VoteState.expired;
       case 'notParticipated':
         return VoteState.notParticipated;
-      case 'inProgress':
+      case VotingConstants.cardStatusVoting:
         return VoteState.inProgress;
       default:
         return VoteState.inProgress;
@@ -308,7 +322,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
         _getStatusInfoForState(stateData.state, stateData.hasUserVoted);
 
     // vote_request 타입일 때 상태 텍스트를 '대기중'으로 오버라이드
-    if (widget.messageType == 'voteRequest' &&
+    if (widget.messageType == AppConstants.messageTypeVoteRequest &&
         stateData.state == VoteState.votingRequest) {
       statusInfo['text'] = '대기중';
     }
@@ -410,7 +424,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
     // isMe에 따라 표시할 이름과 프로필 결정 (발신자 정보 표시)
     final displayName = widget.isMe
         ? (widget.currentUserName ?? '나')
-        : (widget.senderDisplayName ?? '알 수 없는 사용자');
+        : (widget.senderDisplayName ?? AppConstants.unknownUserText);
 
     // 프로필 이미지도 isMe에 따라 결정 (현재는 발신자 프로필만 있음)
     final hasProfileImage = widget.senderProfileImageUrl?.isNotEmpty ?? false;
@@ -510,7 +524,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
             children: [
               Icon(
                 statusInfo['icon'] as IconData,
-                size: 12,
+                size: VotingConstants.multiImageIndicatorIconSize,
                 color: statusInfo['color'] as Color,
               ),
               const SizedBox(width: 4),
@@ -603,7 +617,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
               text: widget.optionAText,
               imageUrl: widget.optionAImage,
               imageUrls: widget.effectiveImageUrlsA,
-              color: const Color(0xFFFF6B6B),
+              color: VotingConstants.voteColorA,
               aspectRatio: widget.aspectRatioA,
               isSingleImageMode: false,
               dualModeSecondTitle: null,
@@ -617,7 +631,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
               text: widget.optionBText,
               imageUrl: widget.optionBImage,
               imageUrls: widget.effectiveImageUrlsB,
-              color: const Color(0xFF4ECDC4),
+              color: VotingConstants.voteColorB,
               aspectRatio: widget.aspectRatioB,
               isSingleImageMode: false,
               dualModeSecondTitle: null,
@@ -641,7 +655,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
             text: widget.optionAText,
             imageUrl: widget.optionAImage,
             imageUrls: widget.effectiveImageUrlsA,
-            color: const Color(0xFFFF6B6B),
+            color: VotingConstants.voteColorA,
             aspectRatio: widget.aspectRatioA,
             isSingleImageMode: false,
             dualModeSecondTitle: null,
@@ -656,7 +670,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
             text: widget.optionBText,
             imageUrl: widget.optionBImage,
             imageUrls: widget.effectiveImageUrlsB,
-            color: const Color(0xFF4ECDC4),
+            color: VotingConstants.voteColorB,
             aspectRatio: widget.aspectRatioB,
             isSingleImageMode: false,
             dualModeSecondTitle: null,
@@ -750,8 +764,8 @@ class _VoteCardMessageState extends State<VoteCardMessage>
                               Colors.transparent,
                             ],
                       stops: isSingleImageMode
-                          ? const [0.0, 0.3] // 단일: 30%까지
-                          : const [0.0, 0.2], // 멀티: 20%까지
+                          ? VotingConstants.singleImageGradientStops // 단일: 30%까지
+                          : VotingConstants.multiImageGradientStops, // 멀티: 20%까지
                     ),
                   ),
                 ),
@@ -778,7 +792,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFF6B6B)
+                                color: VotingConstants.voteColorA
                                     .withValues(alpha: 0.8),
                                 borderRadius: BorderRadius.circular(4),
                               ),
@@ -816,7 +830,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF4ECDC4)
+                                color: VotingConstants.voteColorB
                                     .withValues(alpha: 0.8),
                                 borderRadius: BorderRadius.circular(4),
                               ),
@@ -859,9 +873,9 @@ class _VoteCardMessageState extends State<VoteCardMessage>
                             ),
                             decoration: BoxDecoration(
                               color: label == 'A'
-                                  ? const Color(0xFFFF6B6B)
+                                  ? VotingConstants.voteColorA
                                       .withValues(alpha: 0.8)
-                                  : const Color(0xFF4ECDC4)
+                                  : VotingConstants.voteColorB
                                       .withValues(alpha: 0.8),
                               borderRadius: BorderRadius.circular(4),
                             ),
@@ -944,9 +958,9 @@ class _VoteCardMessageState extends State<VoteCardMessage>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.photo_library,
-                        size: 12,
+                        size: VotingConstants.multiImageIndicatorIconSize,
                         color: Colors.white,
                       ),
                       const SizedBox(width: 2),
@@ -977,7 +991,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
         text: widget.optionAText,
         imageUrl: widget.optionAImage,
         imageUrls: widget.effectiveImageUrlsA,
-        color: const Color(0xFFFF6B6B),
+        color: VotingConstants.voteColorA,
         aspectRatio: widget.aspectRatioA,
         isSingleImageMode: true,
         dualModeSecondTitle: widget.optionBText, // B 옵션 텍스트도 함께 전달
@@ -1056,18 +1070,18 @@ class _VoteCardMessageState extends State<VoteCardMessage>
 
   // 타이머 표시 여부 판단
   bool _shouldShowTimer(String status, DateTime? endTime) {
-    return (status == 'votingRequest' || status == 'inProgress') &&
+    return (status == VotingConstants.cardStatusVotingRequest || status == VotingConstants.cardStatusVoting) &&
         endTime != null;
   }
 
   // 액션 버튼 표시 여부 판단
   bool _shouldShowAction(String status) {
-    return status == 'votingRequest' || status == 'inProgress';
+    return status == VotingConstants.cardStatusVotingRequest || status == VotingConstants.cardStatusVoting;
   }
 
   // 결과 표시 여부 판단
   bool _shouldShowResult(String status) {
-    return status == 'completed';
+    return status == VotingConstants.cardStatusCompleted;
   }
 
   // 타이머 위젯 빌드 (통합 상태의 남은 시간 사용)
@@ -1128,7 +1142,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
       buttonText = '투표 현황 보기';
     } else {
       // 남이 만든 투표
-      buttonText = status == 'votingRequest' ? '투표하기' : '투표 현황 보기';
+      buttonText = status == VotingConstants.cardStatusVotingRequest ? '투표하기' : '투표 현황 보기';
     }
 
     return SizedBox(
@@ -1169,7 +1183,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '피클! 피클! 피클!',
+              ChatConstants.voteCompletedText,
               style: TextStyle(
                 fontSize: 18,
                 color: VersusColors.textPrimary,
@@ -1200,7 +1214,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
       _isVoting = true;
     });
 
-    if (widget.cardStatus == 'votingRequest') {
+    if (widget.cardStatus == VotingConstants.cardStatusVotingRequest) {
       _showVotingDialog();
     } else {
       // 게시물 페이지로 이동
@@ -1227,7 +1241,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
       _isVoting = true;
     });
 
-    if (widget.cardStatus == 'votingRequest') {
+    if (widget.cardStatus == VotingConstants.cardStatusVotingRequest) {
       _showVotingDialog();
     } else {
       context.pushNamed(

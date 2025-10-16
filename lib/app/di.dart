@@ -125,6 +125,7 @@ import '/features/chat/data/repositories/chat_repository_impl.dart';
 import '/features/chat/domain/ports/i_ai_service.dart';
 // Data Layer (Adapters)
 import '/features/chat/data/adapters/gemini_ai_service.dart';
+import '/features/chat/data/adapters/chat_message_lifecycle_service.dart';
 // UseCases
 import '/features/chat/domain/usecases/get_chat_messages_usecase.dart';
 import '/features/chat/domain/usecases/load_more_messages_usecase.dart';
@@ -532,6 +533,7 @@ Future<void> setupDependencyInjection() async {
     loadMoreUseCase: getIt<LoadMoreMessagesUseCase>(),
     sendMessageUseCase: getIt<SendMessageUseCase>(),
     searchUseCase: getIt<SearchMessagesUseCase>(),
+    lifecycleService: ChatMessageLifecycleService(),
   ));
 
   // AIChatProvider: Clean Architecture v4.0 (AI 기능 통합)

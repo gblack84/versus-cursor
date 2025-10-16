@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '/core/design_system/design_system.dart';
+import '/features/chat/domain/constants/chat_constants.dart';
 
 /// 투표 카드의 결과 표시 컴포넌트
 ///
@@ -27,7 +28,7 @@ class VoteResultDisplay extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '피클! 피클! 피클!',
+              ChatConstants.voteCompletedText,
               style: TextStyle(
                 fontSize: 18,
                 color: VersusColors.textPrimary,

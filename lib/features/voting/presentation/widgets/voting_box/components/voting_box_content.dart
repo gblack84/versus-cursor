@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '/core/design_system/design_system.dart';
 import '/services/image/unified_image_cache_service.dart';
 import '/features/voting/presentation/constants/voting_dialog_constraints.dart';
+import '/features/voting/domain/constants/voting_constants.dart';
 
 /// Main content area component for voting box
 class VotingBoxContent extends StatelessWidget {
@@ -241,9 +242,9 @@ class VotingBoxContent extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.photo_library,
-              size: 12,
+              size: VotingConstants.multiImageIndicatorIconSize,
               color: Colors.white,
             ),
             const SizedBox(width: 2),

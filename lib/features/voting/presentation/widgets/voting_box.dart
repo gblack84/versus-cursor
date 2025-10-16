@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '/core/types/layout_type.dart';
 import '/core/design_system/design_system.dart';
 import '/features/voting/domain/models/versus_box_size_data.dart';
+import '/features/voting/domain/constants/voting_constants.dart';
 import '/services/ui/unified_box_calculator.dart';
 import '/features/voting/presentation/constants/voting_dialog_constraints.dart';
 
@@ -265,7 +266,7 @@ class VotingBoxBuilder {
   }) {
     // 투표용 크기 계산
     final votingSizes = UnifiedBoxCalculator.calculateForNotificationDialog(
-      dialogWidth: MediaQuery.of(context).size.width * 0.92,
+      dialogWidth: MediaQuery.of(context).size.width * VotingConstants.messageCardWidthRatio,
       layoutType: sizeData.layoutType,
       aspectRatioA: sizeData.aspectRatioA,
       aspectRatioB: sizeData.aspectRatioB,
@@ -329,7 +330,7 @@ class VotingBoxBuilder {
   }) {
     // 투표용 크기 계산
     // UnifiedBoxCalculator가 내부적으로 패딩과 간격을 처리함
-    final dialogTotalWidth = MediaQuery.of(context).size.width * 0.92;
+    final dialogTotalWidth = MediaQuery.of(context).size.width * VotingConstants.messageCardWidthRatio;
 
     final votingSizes = UnifiedBoxCalculator.calculateForNotificationDialog(
       dialogWidth: dialogTotalWidth, // 전체 다이얼로그 너비 전달

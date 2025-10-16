@@ -3,11 +3,16 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 
 import '/core/types/result.dart';
+import '/features/chat/domain/constants/chat_constants.dart';
 import '/features/chat/domain/usecases/get_chat_messages_usecase.dart';
 import '/features/chat/domain/usecases/load_more_messages_usecase.dart';
 import '/features/chat/domain/usecases/send_message_usecase.dart';
 import '/features/chat/domain/usecases/search_messages_usecase.dart';
 import '/features/chat/domain/entities/message.dart';
+import '/features/chat/data/adapters/chat_message_service.dart';
+import '/features/chat/data/adapters/chat_message_lifecycle_service.dart';
+import '/features/chat/data/adapters/chat_scroll_service.dart';
+import '/features/chat/presentation/screens/chat_detail/chat_detail_controller_v2.dart';
 
 /// 채팅 상태 열거형
 enum ChatDetailLoadingState {
@@ -41,22 +46,34 @@ class ChatDetailProvider extends ChangeNotifier {
   final LoadMoreMessagesUseCase _loadMoreUseCase;
   final SendMessageUseCase _sendMessageUseCase;
   final SearchMessagesUseCase _searchUseCase;
+  final ChatMessageLifecycleService _lifecycleService;
+  final ChatDetailControllerV2 _chatController;
+
+  late final ChatScrollService _scrollService;
 
   ChatDetailProvider({
     required GetChatMessagesUseCase getMessagesUseCase,
     required LoadMoreMessagesUseCase loadMoreUseCase,
     required SendMessageUseCase sendMessageUseCase,
     required SearchMessagesUseCase searchUseCase,
+    required ChatMessageLifecycleService lifecycleService,
+    required ChatDetailControllerV2 chatController,
   })  : _getMessagesUseCase = getMessagesUseCase,
         _loadMoreUseCase = loadMoreUseCase,
         _sendMessageUseCase = sendMessageUseCase,
-        _searchUseCase = searchUseCase;
+        _searchUseCase = searchUseCase,
+        _lifecycleService = lifecycleService,
+        _chatController = chatController {
+    // ChatScrollService 초기화
+    _scrollService = ChatScrollService(_chatController);
+  }
 
   // ========== State Variables ==========
   ChatDetailLoadingState _state = ChatDetailLoadingState.initial;
   String? _errorMessage;
 
   String? _chatId;
+  String? _currentUserId;
   StreamSubscription<Result<List<Message>>>? _messagesSubscription;
 
   // 원본 Message Entity 리스트 (캐싱용)
@@ -69,6 +86,10 @@ class ChatDetailProvider extends ChangeNotifier {
   String _searchQuery = '';
   bool get isSearching => _searchQuery.isNotEmpty;
 
+  // 검색 결과 추적 (검색 네비게이션용)
+  List<String> _searchResultIds = [];
+  int _currentSearchIndex = -1;
+
   // 페이지네이션 (Clean Architecture v4.0: messageId 사용)
   String? _lastMessageId;
   bool _hasMore = true;
@@ -79,15 +100,26 @@ class ChatDetailProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   List<core.Message> get messages => _displayMessages;
 
+  // 검색 결과 관련 Getters
+  int get searchResultCount => _searchResultIds.length;
+  int get currentSearchIndex => _currentSearchIndex;
+  bool get hasSearchResults => _searchResultIds.isNotEmpty;
+  String? get currentSearchResultId =>
+      _currentSearchIndex >= 0 && _currentSearchIndex < _searchResultIds.length
+          ? _searchResultIds[_currentSearchIndex]
+          : null;
+
   // ========== Public Methods ==========
 
   /// 채팅방 초기화 및 실시간 메시지 구독 시작
   ///
   /// **기존 _bootstrap() 로직 대체**
-  Future<void> initializeChat(String chatId) async {
+  /// **ChatMessageLifecycleService 통합**: 채팅방 진입 시 자동 읽음 처리
+  Future<void> initializeChat(String chatId, String currentUserId) async {
     if (_chatId == chatId) return; // 이미 초기화됨
 
     _chatId = chatId;
+    _currentUserId = currentUserId;
     _setState(ChatDetailLoadingState.loading);
 
     try {
@@ -95,7 +127,7 @@ class ChatDetailProvider extends ChangeNotifier {
       _messagesSubscription = _getMessagesUseCase
           .execute(
         chatId: chatId,
-        limit: 30,
+        limit: ChatConstants.initialMessageLoadCount,
       )
           .listen(
         (result) {
@@ -113,6 +145,12 @@ class ChatDetailProvider extends ChangeNotifier {
               if (messages.isNotEmpty) {
                 _lastMessageId = messages.first.id;
               }
+
+              // ChatMessageLifecycleService: 채팅방 진입 시 자동 읽음 처리
+              _lifecycleService.markMessagesAsSeen(
+                chatId: chatId,
+                currentUserId: currentUserId,
+              );
 
               _setState(ChatDetailLoadingState.success);
             },
@@ -139,7 +177,7 @@ class ChatDetailProvider extends ChangeNotifier {
     final result = await _loadMoreUseCase.execute(
       chatId: _chatId!,
       lastMessageId: _lastMessageId!,
-      limit: 30,
+      limit: ChatConstants.paginationMessageCount,
     );
 
     result.fold(
@@ -216,6 +254,14 @@ class ChatDetailProvider extends ChangeNotifier {
   // ========== Private Methods ==========
 
   /// 검색 필터 적용 및 flutter_chat_ui 변환
+  ///
+  /// **ChatMessageService 통합 (Clean Architecture v4.0):**
+  /// - Message Entity → core.Message 변환을 ChatMessageService에 위임
+  /// - 투표 카드, 이미지, 시스템 메시지 등 모든 타입 자동 처리
+  ///
+  /// **검색 결과 추적 (v4.1):**
+  /// - 검색 중일 때 필터링된 메시지 ID를 _searchResultIds에 저장
+  /// - 첫 번째 검색 결과로 자동 스크롤
   void _updateDisplayMessages() {
     final result = _searchUseCase.execute(
       allMessages: _cachedMessages,
@@ -227,20 +273,27 @@ class ChatDetailProvider extends ChangeNotifier {
         _setError(failure.message);
       },
       (filtered) {
-        // Message Entity → core.Message 변환
-        _displayMessages = filtered.map((msg) {
-          return core.TextMessage(
-            id: msg.id,
-            authorId: msg.senderId,
-            text: msg.content,
-            createdAt: msg.timeStamp, // DateTime? 타입이므로 직접 사용
-            metadata: {
-              'attachmentUrl': msg.attachmentUrl,
-              'attachmentType': msg.attachmentType,
-              'isRead': msg.isRead,
-            },
-          );
-        }).toList();
+        // ✨ ChatMessageService를 사용한 타입별 자동 변환
+        // - TextMessage: 일반 텍스트
+        // - CustomMessage: 투표 카드
+        // - ImageMessage: 이미지
+        // - SystemMessage: 시스템 메시지
+        _displayMessages = ChatMessageService.convertEntitiesToMessages(filtered);
+
+        // 🔍 검색 결과 추적 및 자동 스크롤
+        if (isSearching && filtered.isNotEmpty) {
+          // 검색 결과 ID 리스트 저장
+          _searchResultIds = filtered.map((msg) => msg.id).toList();
+          // 첫 번째 결과로 인덱스 설정
+          _currentSearchIndex = 0;
+          // 첫 번째 검색 결과로 스크롤
+          final firstResultId = _searchResultIds.first;
+          _chatController.scrollToMessage(firstResultId);
+        } else {
+          // 검색 종료 시 결과 초기화
+          _searchResultIds = [];
+          _currentSearchIndex = -1;
+        }
 
         notifyListeners();
       },
@@ -264,9 +317,40 @@ class ChatDetailProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ========== 검색 네비게이션 메서드 ==========
+
+  /// 다음 검색 결과로 이동
+  void goToNextSearchResult() {
+    if (!hasSearchResults) return;
+
+    // 다음 인덱스 계산 (순환)
+    _currentSearchIndex = (_currentSearchIndex + 1) % _searchResultIds.length;
+
+    // 다음 검색 결과로 스크롤
+    final nextResultId = _searchResultIds[_currentSearchIndex];
+    _chatController.scrollToMessage(nextResultId);
+
+    notifyListeners();
+  }
+
+  /// 이전 검색 결과로 이동
+  void goToPreviousSearchResult() {
+    if (!hasSearchResults) return;
+
+    // 이전 인덱스 계산 (순환)
+    _currentSearchIndex = (_currentSearchIndex - 1 + _searchResultIds.length) % _searchResultIds.length;
+
+    // 이전 검색 결과로 스크롤
+    final previousResultId = _searchResultIds[_currentSearchIndex];
+    _chatController.scrollToMessage(previousResultId);
+
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _messagesSubscription?.cancel();
+    _scrollService.dispose();
     super.dispose();
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 
+import '/core/constants/app_constants.dart';
+
 /// AI Chat Controller - Clean Architecture v4.0
 ///
 /// **책임**: AI 채팅방의 UI State 관리만 담당
@@ -16,10 +18,6 @@ import 'package:flutter_chat_core/flutter_chat_core.dart';
 /// controller.updateStreamingMessage('AI response chunk');
 /// ```
 class AIChatController extends InMemoryChatController {
-  // User ID constants
-  static const String aiUserId = 'ai_assistant';
-  static const String aiUserName = 'AI 피클';
-
   // Current streaming message tracking
   String? _currentStreamMessageId;
 
@@ -46,7 +44,7 @@ class AIChatController extends InMemoryChatController {
     _currentStreamMessageId = 'stream_${DateTime.now().millisecondsSinceEpoch}';
     final streamMessage = Message.textStream(
       id: _currentStreamMessageId!,
-      authorId: aiUserId,
+      authorId: AppConstants.aiUserId,
       streamId: 'stream_${DateTime.now().millisecondsSinceEpoch}',
       createdAt: DateTime.now(),
     );
@@ -61,14 +59,14 @@ class AIChatController extends InMemoryChatController {
     final messages = this.messages;
     final streamMessage = messages.firstWhere(
       (msg) => msg.id == messageId,
-      orElse: () => Message.unsupported(id: messageId, authorId: aiUserId),
+      orElse: () => Message.unsupported(id: messageId, authorId: AppConstants.aiUserId),
     );
 
     updateMessage(
       streamMessage,
       Message.text(
         id: messageId,
-        authorId: aiUserId,
+        authorId: AppConstants.aiUserId,
         text: accumulatedText,
         createdAt: streamMessage.createdAt,
       ),
@@ -80,14 +78,14 @@ class AIChatController extends InMemoryChatController {
     final messages = this.messages;
     final streamMessage = messages.firstWhere(
       (msg) => msg.id == messageId,
-      orElse: () => Message.unsupported(id: messageId, authorId: aiUserId),
+      orElse: () => Message.unsupported(id: messageId, authorId: AppConstants.aiUserId),
     );
 
     updateMessage(
       streamMessage,
       Message.text(
         id: messageId,
-        authorId: aiUserId,
+        authorId: AppConstants.aiUserId,
         text: finalText,
         createdAt: streamMessage.createdAt,
         sentAt: DateTime.now(),
@@ -102,14 +100,14 @@ class AIChatController extends InMemoryChatController {
     final messages = this.messages;
     final streamMessage = messages.firstWhere(
       (msg) => msg.id == messageId,
-      orElse: () => Message.unsupported(id: messageId, authorId: aiUserId),
+      orElse: () => Message.unsupported(id: messageId, authorId: AppConstants.aiUserId),
     );
 
     updateMessage(
       streamMessage,
       Message.text(
         id: messageId,
-        authorId: aiUserId,
+        authorId: AppConstants.aiUserId,
         text: errorText,
         createdAt: streamMessage.createdAt,
         failedAt: DateTime.now(),

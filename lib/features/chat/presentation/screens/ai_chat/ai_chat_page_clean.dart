@@ -22,10 +22,14 @@ import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import 'package:intl/intl.dart';
 
 import '/app/di.dart';
+import '/core/constants/app_constants.dart';
 import '/core/design_system/design_system.dart';
+import '/features/chat/domain/constants/chat_constants.dart';
 import '/features/profile/data/adapters/user_cache_service.dart';
+import '/features/voting/domain/constants/voting_constants.dart';
 import '/features/voting/presentation/widgets/chat_card/vote_card_message.dart';
 import '/features/auth/data/adapters/auth_util.dart';
+import '/services/image/unified_image_cache_service.dart';
 import 'ai_chat_controller.dart';
 import '../../providers/ai_chat_provider.dart';
 
@@ -98,7 +102,7 @@ class _AIChatPageCleanState extends State<AIChatPageClean>
 
     // 애니메이션 초기화
     _fabAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 200),
+      duration: AppConstants.fabAnimationDuration,
       vsync: this,
     );
     _fabBounceAnimation = Tween<double>(
@@ -110,7 +114,7 @@ class _AIChatPageCleanState extends State<AIChatPageClean>
     ));
 
     _fabScaleController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: ChatConstants.fabScaleAnimationDuration,
       vsync: this,
     );
     _fabScaleAnimation = Tween<double>(
@@ -133,10 +137,48 @@ class _AIChatPageCleanState extends State<AIChatPageClean>
     super.dispose();
   }
 
+  /// 메시지 목록에서 이미지 URL 추출
+  ///
+  /// flutter_chat_core Message 타입을 파싱하여 투표 카드 이미지 URL을 추출합니다.
+  List<String> _extractImageUrlsFromMessages(List<core.Message> messages) {
+    final urls = <String>[];
+
+    for (final message in messages) {
+      // 투표 메시지 (CustomMessage)
+      if (message is core.CustomMessage) {
+        final metadata = message.metadata ?? {};
+
+        // 투표 이미지 추출
+        if (metadata['imageUrlA'] != null) {
+          urls.add(metadata['imageUrlA'] as String);
+        }
+        if (metadata['imageUrlB'] != null) {
+          urls.add(metadata['imageUrlB'] as String);
+        }
+        if (metadata['imageUrlsA'] != null) {
+          urls.addAll((metadata['imageUrlsA'] as List).cast<String>());
+        }
+        if (metadata['imageUrlsB'] != null) {
+          urls.addAll((metadata['imageUrlsB'] as List).cast<String>());
+        }
+      }
+    }
+
+    return urls;
+  }
+
   /// Provider의 메시지를 ChatController로 동기화
   void _updateChatControllerMessages() {
     if (_provider.messages.isNotEmpty) {
       _chatController.setMessages(_provider.messages);
+
+      // ✨ 메시지 이미지 프리로딩 (UnifiedImageCacheService)
+      if (mounted) {
+        final imageUrls = _extractImageUrlsFromMessages(_provider.messages);
+        if (imageUrls.isNotEmpty) {
+          UnifiedImageCacheService.instance.preloadImages(context, imageUrls);
+        }
+      }
     }
   }
 
@@ -170,8 +212,8 @@ class _AIChatPageCleanState extends State<AIChatPageClean>
     final metadata = message.metadata ?? {};
 
     // 투표 메시지 체크
-    if (metadata['type'] == 'voteRequest' ||
-        metadata['type'] == 'voteCreated') {
+    if (metadata['type'] == AppConstants.messageTypeVoteRequest ||
+        metadata['type'] == AppConstants.messageTypeVoteCreated) {
       return KeyedSubtree(
         key: ValueKey(message.id),
         child: VoteCardMessage(
@@ -186,7 +228,7 @@ class _AIChatPageCleanState extends State<AIChatPageClean>
           optionBImages: metadata['optionBImages'],
           aspectRatioA: metadata['aspectRatioA'],
           aspectRatioB: metadata['aspectRatioB'],
-          cardStatus: metadata['cardStatus'] ?? 'votingRequest',
+          cardStatus: metadata['cardStatus'] ?? VotingConstants.cardStatusVotingRequest,
           voteEndTime: metadata['voteEndTime'] != null
               ? (metadata['voteEndTime'] is DateTime
                   ? metadata['voteEndTime']
@@ -195,7 +237,7 @@ class _AIChatPageCleanState extends State<AIChatPageClean>
           userVotes: metadata['userVotes'],
           voteResults: metadata['voteResults'],
           isMe: isSentByMe,
-          messageType: metadata['type'] ?? 'voteRequest',
+          messageType: metadata['type'] ?? AppConstants.messageTypeVoteRequest,
           messageId: message.id,
           chatId: widget.aiChatId,
           currentUserName: currentUserDisplayName,
@@ -282,7 +324,7 @@ class _AIChatPageCleanState extends State<AIChatPageClean>
     if (messages.isNotEmpty) {
       _chatController.scrollToMessage(
         messages.last.id,
-        duration: const Duration(milliseconds: 300),
+        duration: AppConstants.scrollAnimationDuration,
       );
     }
   }
@@ -302,15 +344,15 @@ class _AIChatPageCleanState extends State<AIChatPageClean>
       final maxScroll = notification.metrics.maxScrollExtent;
 
       // Check if near bottom
-      _isNearBottom = maxScroll - offset < 100;
+      _isNearBottom = maxScroll - offset < ChatConstants.loadMoreThreshold;
 
       // Show/hide FAB
-      if (offset > 500 && !_showFab) {
+      if (offset > ChatConstants.fabShowThreshold && !_showFab) {
         setState(() {
           _showFab = true;
         });
         _fabScaleController.forward();
-      } else if (offset <= 500 && _showFab) {
+      } else if (offset <= ChatConstants.fabShowThreshold && _showFab) {
         setState(() {
           _showFab = false;
         });
@@ -318,7 +360,7 @@ class _AIChatPageCleanState extends State<AIChatPageClean>
       }
 
       // Load more messages
-      if (offset <= 100 && _provider.hasMore) {
+      if (offset <= ChatConstants.loadMoreThreshold && _provider.hasMore) {
         _provider.loadMoreMessages();
       }
     }

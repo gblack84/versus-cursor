@@ -176,12 +176,29 @@ UnifiedImageCacheService.instance.clearOldCache(keepRecentCount: 50);
 
 ## 🔗 연관 시스템
 
-### 사용처
-- **채팅 컴포넌트**: VoteCardMessage, ChatDetailWidget
-- **피드 컴포넌트**: PostCard, FeedWidget
-- **프로필**: ProfilePage, UserAvatar
-- **갤러리**: ImageViewer, MediaSelectionFlow
-- **알림**: NotificationDialog, VotingNotificationWidget
+### 사용처 (9개 통합 완료)
+
+**Chat Feature** (2개):
+- ✅ `ChatDetailWidgetClean` - 메시지 목록 이미지 프리로딩 (직접 사용, line 140)
+- ✅ `AIChatPageClean` - AI 채팅방 이미지 프리로딩 (직접 사용, line 179)
+
+**Voting Feature** (4개):
+- ✅ `VoteCardMessage` - 투표 카드 이미지 프리로딩 (Phase 1.1)
+- ✅ `VotingDialog` - 투표 알림 이미지 프리로딩 (Phase 1.3)
+- ✅ `VotingImageViewer` - PageView 인접 이미지 프리로딩 (Phase 2)
+- ✅ `VoteCardHeader` - 투표 카드 헤더 아바타 캐싱 (Phase 3.3)
+
+**Profile Feature** (2개):
+- ✅ `ProfileAvatar` - 재사용 가능한 아바타 위젯 캐싱 (Phase 3.1)
+- ✅ `HomePageWidget` - 피드 카드 사용자 아바타 캐싱 (Phase 3.2)
+
+**Creation Feature** (1개):
+- ✅ `BaseMediaSelectionBox` - 이미지 선택 시 프리로딩 (기존)
+
+### 통합 상태
+- **완료**: 9개 컴포넌트 (Chat 2개 + Voting 4개 + Profile 2개 + Creation 1개)
+- **직접 사용**: Chat Feature는 UnifiedImageCacheService를 직접 호출
+- **Phase 3 완료**: Profile Feature 통합 (ProfileAvatar 중앙 집중식 캐싱)
 
 ### 의존성
 - `cached_network_image`: 네트워크 이미지 캐싱

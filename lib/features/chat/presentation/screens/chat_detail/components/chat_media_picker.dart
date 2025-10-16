@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:wechat_camera_picker/wechat_camera_picker.dart';
 import 'package:bot_toast/bot_toast.dart';
+import '/core/constants/app_constants.dart';
 import '/core/design_system/design_system.dart';
 import '/features/chat/data/adapters/chat_media_upload_service.dart';
 
@@ -225,9 +226,9 @@ class ChatMediaPicker {
 
       // Upload based on media type
       final String mediaType =
-          asset.type == AssetType.video ? 'video' : 'image';
+          asset.type == AssetType.video ? 'video' : AppConstants.messageTypeImage;
 
-      if (mediaType == 'image') {
+      if (mediaType == AppConstants.messageTypeImage) {
         // Upload image with auto compression
         final result = await uploadService.uploadChatImage(
           chatId: chatId,
@@ -236,7 +237,7 @@ class ChatMediaPicker {
         );
 
         // Call callback with URL
-        onMediaSelected(result['url'] as String, 'image');
+        onMediaSelected(result['url'] as String, AppConstants.messageTypeImage);
 
         BotToast.showText(text: '이미지 업로드 완료!');
       } else {

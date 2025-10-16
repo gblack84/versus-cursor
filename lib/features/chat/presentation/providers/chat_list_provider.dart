@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 
+import '/core/constants/app_constants.dart';
 import '/core/types/result.dart';
 import '/features/chat/domain/usecases/get_chat_list_usecase.dart';
 import '/features/chat/domain/entities/chat.dart';
@@ -60,7 +61,7 @@ class ChatListProvider extends ChangeNotifier {
   /// AI 채팅방 찾기
   Chat? get aiChat => _chats.firstWhere(
         (chat) =>
-            chat.participantIds.contains('ai_assistant') ||
+            chat.participantIds.contains(AppConstants.aiUserId) ||
             chat.chatType == 'aiChat',
         orElse: () => _chats.first, // Fallback to first chat if AI chat not found
       );

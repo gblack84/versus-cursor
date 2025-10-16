@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '/core/design_system/design_system.dart';
 import '/features/voting/domain/models/versus_box_size_data.dart';
+import '/services/image/unified_image_cache_service.dart';
 import '../constants/voting_dialog_constraints.dart';
 
 // Import decomposed components
@@ -122,6 +123,22 @@ class _VotingNotificationDialogState extends State<VotingNotificationDialog>
 
   void _startAnimations() {
     _animations.animateIn();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // ✨ 투표 이미지 프리로딩 (UnifiedImageCacheService)
+    if (mounted) {
+      UnifiedImageCacheService.instance.preloadVoteMessageImages(
+        context,
+        imageUrlA: widget.imageUrlA,
+        imageUrlB: widget.imageUrlB,
+        imageUrlsA: widget.imageUrlsA,
+        imageUrlsB: widget.imageUrlsB,
+      );
+    }
   }
 
   @override

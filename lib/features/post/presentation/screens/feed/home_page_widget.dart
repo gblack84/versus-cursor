@@ -6,6 +6,7 @@ import '/features/post/domain/models/post_display.dart';
 import '/features/post/presentation/providers/feed_provider.dart';
 import '/core/design_system/design_system.dart';
 import '/services/cache/unified_cache_service.dart';
+import '/features/profile/presentation/widgets/profile/profile_avatar.dart';
 
 class HomePageWidget extends StatefulWidget {
   const HomePageWidget({super.key});
@@ -185,16 +186,9 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                 // 사용자 정보
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: VersusColors.primaryWithAlpha(0.2),
-                      backgroundImage: post.photoUrl.isNotEmpty
-                          ? NetworkImage(post.photoUrl)
-                          : null,
-                      child: post.photoUrl.isEmpty
-                          ? Icon(Icons.person,
-                              color: VersusColors.primary, size: 20)
-                          : null,
+                    ProfileAvatar(
+                      photoUrl: post.photoUrl,
+                      size: AvatarSize.medium,
                     ),
                     VersusSpacing.gapH(VersusSpacing.sm),
                     Expanded(

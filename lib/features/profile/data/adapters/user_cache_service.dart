@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import '/features/auth/data/adapters/auth_util.dart';
+import '/core/constants/app_constants.dart';
 
 /// 사용자 정보 캐싱을 위한 통합 서비스
 ///
@@ -22,12 +23,6 @@ class UserCacheService {
   // Firebase Firestore 인스턴스
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // AI 사용자 상수
-  static const String aiUserId = 'ai_assistant';
-  static const String aiUserName = 'AI 피클';
-  static const String aiUserAvatar =
-      'https://picsum.photos/seed/ai_assistant/200';
-
   /// 단일 사용자 정보 가져오기
   Future<core.User?> getUser(String userId) async {
     // 캐시 확인
@@ -36,11 +31,11 @@ class UserCacheService {
     }
 
     // AI 사용자 처리
-    if (userId == aiUserId) {
+    if (userId == AppConstants.aiUserId) {
       final aiUser = core.User(
-        id: aiUserId,
-        name: aiUserName,
-        imageSource: aiUserAvatar,
+        id: AppConstants.aiUserId,
+        name: AppConstants.aiUserName,
+        imageSource: AppConstants.aiUserAvatar,
       );
       _cache[userId] = aiUser;
       return aiUser;

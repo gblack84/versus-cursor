@@ -3,12 +3,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 
 import '/core/types/result.dart';
+import '/features/chat/domain/constants/chat_constants.dart';
 import '/features/chat/domain/usecases/get_chat_messages_usecase.dart';
 import '/features/chat/domain/usecases/load_more_messages_usecase.dart';
 import '/features/chat/domain/usecases/search_messages_usecase.dart';
 import '/features/chat/domain/usecases/send_ai_query_usecase.dart';
 import '/features/chat/domain/entities/message.dart';
 import '/features/chat/domain/ports/i_ai_service.dart';
+import '/features/chat/data/adapters/chat_message_service.dart';
 import '../screens/ai_chat/ai_chat_controller.dart';
 
 /// AI 채팅 상태 열거형
@@ -101,7 +103,7 @@ class AIChatProvider extends ChangeNotifier {
       _messagesSubscription = _getMessagesUseCase
           .execute(
         chatId: chatId,
-        limit: 30,
+        limit: ChatConstants.initialMessageLoadCount,
       )
           .listen(
         (result) {
@@ -145,7 +147,7 @@ class AIChatProvider extends ChangeNotifier {
     final result = await _loadMoreUseCase.execute(
       chatId: _chatId!,
       lastMessageId: _lastMessageId!,
-      limit: 20,
+      limit: ChatConstants.paginationMessageCount,
     );
 
     result.fold(
@@ -282,6 +284,10 @@ class AIChatProvider extends ChangeNotifier {
   // ========== Private Methods ==========
 
   /// 검색 필터 적용 및 flutter_chat_ui 변환
+  ///
+  /// **ChatMessageService 통합 (Clean Architecture v4.0):**
+  /// - Message Entity → core.Message 변환을 ChatMessageService에 위임
+  /// - 투표 카드, 이미지, 시스템 메시지 등 모든 타입 자동 처리
   void _updateDisplayMessages() {
     final result = _searchUseCase.execute(
       allMessages: _cachedMessages,
@@ -293,20 +299,12 @@ class AIChatProvider extends ChangeNotifier {
         _setError(failure.message);
       },
       (filtered) {
-        // Message Entity → core.Message 변환
-        _displayMessages = filtered.map((msg) {
-          return core.TextMessage(
-            id: msg.id,
-            authorId: msg.senderId,
-            text: msg.content,
-            createdAt: msg.timeStamp, // DateTime? 타입이므로 직접 사용
-            metadata: {
-              'attachmentUrl': msg.attachmentUrl,
-              'attachmentType': msg.attachmentType,
-              'isRead': msg.isRead,
-            },
-          );
-        }).toList();
+        // ✨ ChatMessageService를 사용한 타입별 자동 변환
+        // - TextMessage: 일반 텍스트
+        // - CustomMessage: 투표 카드
+        // - ImageMessage: 이미지
+        // - SystemMessage: 시스템 메시지
+        _displayMessages = ChatMessageService.convertEntitiesToMessages(filtered);
 
         notifyListeners();
       },

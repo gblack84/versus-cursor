@@ -6,7 +6,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
-import 'chat_file_size_service.dart';
+import '/core/utils/file_size_utils.dart';
 
 class ChatMediaUploadService {
   static const int maxImageSize = 2 * 1024 * 1024; // 2MB
@@ -26,8 +26,8 @@ class ChatMediaUploadService {
       // Compress image first (always compress before checking size)
       final compressedImage = await _compressImage(imageFile);
 
-      // Check compressed file size using ChatFileSizeService
-      final fileSizeService = ChatFileSizeService();
+      // Check compressed file size using FileSizeUtils
+      final fileSizeService = FileSizeUtils();
       if (compressedImage.length > maxImageSize) {
         final formattedSize = fileSizeService.formatFileSize(compressedImage.length);
         throw Exception(
@@ -71,8 +71,8 @@ class ChatMediaUploadService {
     required File videoFile,
   }) async {
     try {
-      // Check file size using ChatFileSizeService
-      final fileSizeService = ChatFileSizeService();
+      // Check file size using FileSizeUtils
+      final fileSizeService = FileSizeUtils();
       final fileSize = await videoFile.length();
       final isValidSize = await fileSizeService.checkFileSize(
         videoFile,

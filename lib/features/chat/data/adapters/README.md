@@ -175,11 +175,14 @@ _lifecycleService.markMessagesAsSeen(
 );
 ```
 
-### 3. ChatFileSizeService (파일 크기 관리)
+### 3. FileSizeUtils (파일 크기 관리) - Core Utils
 
-**책임**: 채팅 미디어 파일 크기 계산 및 검증
+**책임**: 전역 파일 크기 계산 및 검증 유틸리티
+
+**위치**: `/lib/core/utils/file_size_utils.dart` (전역 재사용 가능)
 
 **Clean Architecture v4.0 통합**:
+- ✅ Core Utils로 중앙화 (Chat, Posts, Profile, Voting 공통 사용)
 - ✅ ChatMediaUploadService와 연결 완료
 - ✅ 안전한 파일 크기 조회 (에러 처리 내장)
 - ✅ 사용자 친화적 크기 포맷 (B/KB/MB/GB)
@@ -195,11 +198,12 @@ _lifecycleService.markMessagesAsSeen(
 **사용처**:
 - ChatMediaUploadService.uploadChatImage() - 이미지 압축 후 크기 검증
 - ChatMediaUploadService.uploadChatVideo() - 비디오 크기 검증 (압축 없음)
+- (향후) Posts Feature, Profile Feature, Voting Feature
 
 **통합 효과**:
 - 에러 처리 강화 (try-catch 내장)
 - 더 명확한 에러 메시지 (실제 크기 표시)
-- 파일 크기 로직 중앙화
+- **파일 크기 로직 전역 중앙화** (중복 코드 129줄 제거)
 - 사용자 친화적 크기 표시 (예: "3.2 MB")
 - **압축 후 검증**으로 사용자 경험 개선 (5-13MB 원본 사진 허용)
 
@@ -212,8 +216,8 @@ _lifecycleService.markMessagesAsSeen(
 // 1. 먼저 압축 (항상 실행)
 final compressedImage = await _compressImage(imageFile);
 
-// 2. 압축 후 크기 체크
-final fileSizeService = ChatFileSizeService();
+// 2. 압축 후 크기 체크 (Core Utils 사용)
+final fileSizeService = FileSizeUtils();
 if (compressedImage.length > maxImageSize) {
   final formattedSize = fileSizeService.formatFileSize(compressedImage.length);
   throw Exception(
@@ -227,7 +231,8 @@ if (compressedImage.length > maxImageSize) {
 
 2. **비디오 업로드** - 압축 전 검증 (비디오는 압축 안 함):
 ```dart
-final fileSizeService = ChatFileSizeService();
+// Core Utils 사용
+final fileSizeService = FileSizeUtils();
 final isValidSize = await fileSizeService.checkFileSize(
   videoFile,
   maxSizeInBytes: maxVideoSize,
@@ -398,7 +403,7 @@ void goToNextSearchResult() {
 - [x] ChatInitializationService
 - [x] ChatMessageService (Clean Architecture v4.0 통합)
 - [x] ChatMessageLifecycleService (ChatDetailProvider 연결)
-- [x] ChatFileSizeService (ChatMediaUploadService 연결)
+- [x] FileSizeUtils - Core Utils 전역 통합 (ChatMediaUploadService 연결)
 - [x] ChatScrollService (검색 기능 완성, ChatDetailProvider 연결)
 - [x] VoteStateCoordinator
 - [x] GlobalNotificationManager

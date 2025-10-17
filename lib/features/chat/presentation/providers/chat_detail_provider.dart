@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show ScrollController;
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 
 import '/core/types/result.dart';
@@ -108,6 +109,10 @@ class ChatDetailProvider extends ChangeNotifier {
       _currentSearchIndex >= 0 && _currentSearchIndex < _searchResultIds.length
           ? _searchResultIds[_currentSearchIndex]
           : null;
+
+  // 스크롤 상태 관련 Getters
+  bool get isAtBottom => _scrollService.isAtBottom;
+  bool get isNearBottom => _scrollService.isNearBottom;
 
   // ========== Public Methods ==========
 
@@ -344,6 +349,52 @@ class ChatDetailProvider extends ChangeNotifier {
     final previousResultId = _searchResultIds[_currentSearchIndex];
     _chatController.scrollToMessage(previousResultId);
 
+    notifyListeners();
+  }
+
+  // ========== 스크롤 관련 메서드 ==========
+
+  /// 스크롤 리스너 설정
+  ///
+  /// Chat 위젯의 스크롤 컨트롤러를 ChatScrollService에 연결하고
+  /// 스크롤 이벤트 발생 시 자동으로 isAtBottom/isNearBottom 상태 업데이트
+  void setupScrollListener(ScrollController controller) {
+    _scrollService.scrollController = controller;
+    _scrollService.setupScrollListener(() {
+      final wasAtBottom = _scrollService.isAtBottom;
+
+      _scrollService.updateScrollState(
+        atBottom: _scrollService.checkIfAtBottom(),
+        nearBottom: _scrollService.checkIfNearBottom(),
+      );
+
+      // 상태 변경 시에만 notifyListeners (FAB 애니메이션 트리거)
+      if (wasAtBottom != _scrollService.isAtBottom) {
+        notifyListeners();
+      }
+    });
+  }
+
+  /// 채팅 하단으로 스크롤
+  ///
+  /// FAB 버튼 클릭 시 호출되며 최신 메시지로 스크롤 이동
+  void scrollToBottom() {
+    _scrollService.scrollToBottom();
+  }
+
+  /// 스크롤 상태 업데이트
+  ///
+  /// NotificationListener에서 스크롤 위치 변경 시 호출되어 FAB 표시/숨김을 제어
+  void updateScrollState({
+    required bool isAtBottom,
+    required bool isNearBottom,
+  }) {
+    _scrollService.updateScrollState(
+      atBottom: isAtBottom,
+      nearBottom: isNearBottom,
+    );
+
+    // FAB 애니메이션 트리거를 위해 notifyListeners 호출
     notifyListeners();
   }
 

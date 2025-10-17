@@ -159,10 +159,7 @@ return voteReceived(_that);case StatusChanged():
 return statusChanged(_that);case DisplayUpdated():
 return displayUpdated(_that);case ExpansionTriggered():
 return expansionTriggered(_that);case NotificationSent():
-return notificationSent(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return notificationSent(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -233,10 +230,7 @@ return voteReceived(_that.postId,_that.userId,_that.option,_that.timestamp,_that
 return statusChanged(_that.postId,_that.newStatus,_that.timestamp,_that.reason);case DisplayUpdated():
 return displayUpdated(_that.postId,_that.displayVotesA,_that.displayVotesB,_that.displayPercentA,_that.displayPercentB,_that.timestamp);case ExpansionTriggered():
 return expansionTriggered(_that.postId,_that.pointsUsed,_that.additionalReach,_that.timestamp);case NotificationSent():
-return notificationSent(_that.postId,_that.recipientIds,_that.timestamp);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return notificationSent(_that.postId,_that.recipientIds,_that.timestamp);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///

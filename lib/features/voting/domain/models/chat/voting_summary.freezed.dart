@@ -125,10 +125,7 @@ return $default(_that);case _:
 final _that = this;
 switch (_that) {
 case _VotingSummary():
-return $default(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -187,10 +184,7 @@ return $default(_that.postId,_that.status,_that.votesA,_that.votesB,_that.percen
 @optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String postId,  VoteStatus status,  int votesA,  int votesB,  double percentA,  double percentB,  Duration remainingTime,  bool hasUserVoted,  VoteOption? userVote,  DateTime? endTime,  DateTime? completedAt)  $default,) {final _that = this;
 switch (_that) {
 case _VotingSummary():
-return $default(_that.postId,_that.status,_that.votesA,_that.votesB,_that.percentA,_that.percentB,_that.remainingTime,_that.hasUserVoted,_that.userVote,_that.endTime,_that.completedAt);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that.postId,_that.status,_that.votesA,_that.votesB,_that.percentA,_that.percentB,_that.remainingTime,_that.hasUserVoted,_that.userVote,_that.endTime,_that.completedAt);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///

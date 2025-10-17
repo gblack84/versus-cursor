@@ -6,7 +6,7 @@ part 'voting_update.g.dart';
 
 /// Real-time voting update event
 @freezed
-class VotingUpdate with _$VotingUpdate {
+sealed class VotingUpdate with _$VotingUpdate {
   const VotingUpdate._();
 
   const factory VotingUpdate.voteReceived({

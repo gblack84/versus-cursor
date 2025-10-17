@@ -19,7 +19,7 @@ part 'chat.g.dart';
 /// - Value Objects: 모든 필드 불변
 /// - No Infrastructure: Firestore 타입 없음
 @freezed
-class Chat with _$Chat {
+sealed class Chat with _$Chat {
   const Chat._();
 
   const factory Chat({

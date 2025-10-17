@@ -6,7 +6,7 @@ part 'voting_summary.g.dart';
 
 /// Simplified voting summary for UI display
 @freezed
-class VotingSummary with _$VotingSummary {
+sealed class VotingSummary with _$VotingSummary {
   const VotingSummary._();
 
   const factory VotingSummary({

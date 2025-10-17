@@ -201,10 +201,7 @@ return $default(_that);case _:
 final _that = this;
 switch (_that) {
 case _Message():
-return $default(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -263,10 +260,7 @@ return $default(_that.id,_that.parentPath,_that.messageId,_that.senderId,_that.c
 @optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String parentPath,  String messageId,  String senderId,  String content,  String attachmentUrl,  String attachmentType,  DateTime? timeStamp,  bool isRead,  String messageType,  String mediaType,  String imageUrl,  String videoUrl,  String thumbnailUrl,  int mediaSize,  double? mediaWidth,  double? mediaHeight,  DateTime? deliveredAt,  DateTime? seenAt,  String receiverId,  String votePostId,  String voteTitle,  String voteDescription,  String voteOptionAText,  String voteOptionBText,  String voteOptionAImage,  String voteOptionBImage,  List<String> voteOptionAImages,  List<String> voteOptionBImages,  String voteStatus,  String cardStatus,  DateTime? voteEndTime,  Map<String, dynamic> voteResults,  Map<String, dynamic> userVotes,  double? voteAspectRatioA,  double? voteAspectRatioB,  int voteResultsA,  int voteResultsB,  double votePercentA,  double votePercentB,  Map<String, dynamic> metadata)  $default,) {final _that = this;
 switch (_that) {
 case _Message():
-return $default(_that.id,_that.parentPath,_that.messageId,_that.senderId,_that.content,_that.attachmentUrl,_that.attachmentType,_that.timeStamp,_that.isRead,_that.messageType,_that.mediaType,_that.imageUrl,_that.videoUrl,_that.thumbnailUrl,_that.mediaSize,_that.mediaWidth,_that.mediaHeight,_that.deliveredAt,_that.seenAt,_that.receiverId,_that.votePostId,_that.voteTitle,_that.voteDescription,_that.voteOptionAText,_that.voteOptionBText,_that.voteOptionAImage,_that.voteOptionBImage,_that.voteOptionAImages,_that.voteOptionBImages,_that.voteStatus,_that.cardStatus,_that.voteEndTime,_that.voteResults,_that.userVotes,_that.voteAspectRatioA,_that.voteAspectRatioB,_that.voteResultsA,_that.voteResultsB,_that.votePercentA,_that.votePercentB,_that.metadata);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that.id,_that.parentPath,_that.messageId,_that.senderId,_that.content,_that.attachmentUrl,_that.attachmentType,_that.timeStamp,_that.isRead,_that.messageType,_that.mediaType,_that.imageUrl,_that.videoUrl,_that.thumbnailUrl,_that.mediaSize,_that.mediaWidth,_that.mediaHeight,_that.deliveredAt,_that.seenAt,_that.receiverId,_that.votePostId,_that.voteTitle,_that.voteDescription,_that.voteOptionAText,_that.voteOptionBText,_that.voteOptionAImage,_that.voteOptionBImage,_that.voteOptionAImages,_that.voteOptionBImages,_that.voteStatus,_that.cardStatus,_that.voteEndTime,_that.voteResults,_that.userVotes,_that.voteAspectRatioA,_that.voteAspectRatioB,_that.voteResultsA,_that.voteResultsB,_that.votePercentA,_that.votePercentB,_that.metadata);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///

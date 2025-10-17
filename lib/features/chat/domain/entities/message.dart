@@ -20,7 +20,7 @@ part 'message.g.dart';
 /// - DTO: Firestore ↔ Data 변환 (Infrastructure)
 /// - Entity: 비즈니스 로직 (Domain)
 @freezed
-class Message with _$Message {
+sealed class Message with _$Message {
   const Message._();
 
   const factory Message({

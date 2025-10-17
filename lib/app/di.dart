@@ -118,6 +118,9 @@ import '/features/profile/presentation/providers/interests_provider.dart';
 import '/features/profile/presentation/providers/settings_provider.dart';
 
 // ===== Chat Feature Clean Architecture DI =====
+// DataSources
+import '/features/chat/data/datasources/i_chat_remote_datasource.dart';
+import '/features/chat/data/datasources/firebase_chat_remote_datasource.dart';
 // Repositories
 import '/features/chat/domain/repositories/i_chat_repository.dart';
 import '/features/chat/data/repositories/chat_repository_impl.dart';
@@ -489,12 +492,21 @@ Future<void> setupDependencyInjection() async {
 
   // ===== Chat Feature DI =====
 
-  // 1. Repository 등록 (Singleton instance 사용)
-  getIt.registerLazySingleton<IChatRepository>(
-    () => ChatRepositoryImpl.instance,
+  // 1. DataSource 등록 (Clean Architecture v4.0)
+  getIt.registerLazySingleton<IChatRemoteDatasource>(
+    () => FirebaseChatRemoteDatasource(
+      firestore: FirebaseFirestore.instance,
+    ),
   );
 
-  // 2. Port & Adapter 등록 (Clean Architecture v4.0 Dependency Inversion)
+  // 2. Repository 등록 (Datasource 주입)
+  getIt.registerLazySingleton<IChatRepository>(
+    () => ChatRepositoryImpl(
+      remoteDatasource: getIt<IChatRemoteDatasource>(),
+    ),
+  );
+
+  // 3. Port & Adapter 등록 (Clean Architecture v4.0 Dependency Inversion)
   // IAIService: Domain Layer 인터페이스 (Port)
   // GeminiAIService: Data Layer 구현체 (Adapter)
   // AI 제공자 교체 시 이 부분만 변경하면 됨
@@ -502,7 +514,7 @@ Future<void> setupDependencyInjection() async {
     () => GeminiAIService(),
   );
 
-  // 3. UseCase 등록
+  // 4. UseCase 등록
   getIt.registerFactory(() => GetChatMessagesUseCase(
     chatRepository: getIt<IChatRepository>(),
   ));
@@ -527,7 +539,7 @@ Future<void> setupDependencyInjection() async {
     aiService: getIt<IAIService>(),
   ));
 
-  // 4. Provider 등록
+  // 5. Provider 등록
   getIt.registerFactory(() => ChatDetailProvider(
     getMessagesUseCase: getIt<GetChatMessagesUseCase>(),
     loadMoreUseCase: getIt<LoadMoreMessagesUseCase>(),

@@ -1,3 +1,0 @@
-[0;32m[analyze] Running flutter analyze...[0m
-Analyzing tools...                                              
-No issues found! (ran in 0.3s)

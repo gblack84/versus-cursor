@@ -5,8 +5,10 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '/core_exports.dart';
 import '/features/auth/data/adapters/auth_util.dart';
-import '/features/notifications/presentation/coordinators/notification_coordinator.dart';
+import '/app/contracts/notification_contract.dart';
+import '/features/notifications/presentation/providers/notification_overlay_provider.dart';
 import '/services/cache/preload_strategy.dart';
+import 'package:get_it/get_it.dart';
 
 class VersusApp extends StatefulWidget {
   const VersusApp({super.key});
@@ -34,6 +36,9 @@ class _VersusAppState extends State<VersusApp> {
   late Stream<BaseAuthUser> userStream;
   final authUserSub = authenticatedUserStream.listen((_) {});
 
+  // NotificationOverlayProvider for in-app notification dialogs
+  NotificationOverlayProvider? _overlayProvider;
+
   String getRoute([RouteMatchBase? routeMatch]) {
     final RouteMatchBase lastMatch =
         routeMatch ?? _router.routerDelegate.currentConfiguration.last;
@@ -59,13 +64,17 @@ class _VersusAppState extends State<VersusApp> {
       ..listen((user) async {
         _appStateNotifier.update(user);
 
-        // NotificationCoordinator를 통한 통합 알림 시스템 초기화
+        // NotificationContract를 통한 통합 알림 시스템 초기화
         if (user.loggedIn && user.uid != null && user.uid!.isNotEmpty) {
           // 사용자가 로그인하면 알림 시스템 초기화
-          await NotificationCoordinator.instance.initialize(
-            userId: user.uid!,
-            context: context,
-          );
+          final notificationContract = GetIt.instance<NotificationContract>();
+          await notificationContract.initializeNotifications(user.uid!);
+          await notificationContract.startNotificationListening(user.uid!);
+
+          // NotificationOverlayProvider 초기화 및 시작
+          _overlayProvider = GetIt.instance<NotificationOverlayProvider>();
+          _overlayProvider!.startListening();
+          debugPrint('[VersusApp] 알림 오버레이 프로바이더 시작');
 
           // lastActive 필드 업데이트
           try {
@@ -98,8 +107,16 @@ class _VersusAppState extends State<VersusApp> {
           }
         } else {
           // 사용자가 로그아웃하면 알림 시스템 종료
-          NotificationCoordinator.instance.dispose();
+          final notificationContract = GetIt.instance<NotificationContract>();
+          if (user.uid != null) {
+            await notificationContract.stopNotificationListening(user.uid!);
+          }
           debugPrint('[VersusApp] 알림 서비스 중지');
+
+          // NotificationOverlayProvider 정리
+          _overlayProvider?.stopListening();
+          _overlayProvider = null;
+          debugPrint('[VersusApp] 알림 오버레이 프로바이더 중지');
         }
       });
     jwtTokenStream.listen((_) {});
@@ -108,7 +125,9 @@ class _VersusAppState extends State<VersusApp> {
   @override
   void dispose() {
     authUserSub.cancel();
-    NotificationCoordinator.instance.dispose();
+    // NotificationContract는 stopNotificationListening으로 정리됨 (위에서 호출)
+    // NotificationOverlayProvider 안전한 정리
+    _overlayProvider?.stopListening();
     super.dispose();
   }
 

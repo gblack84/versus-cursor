@@ -10,8 +10,6 @@ export '/features/profile/presentation/screens/user_info_input/user_info_input_w
 export '/testpage_select/testpage_select_widget.dart' show TestpageSelectWidget;
 export '/features/profile/presentation/screens/onboarding/interest_selection/expertise_select/expertise_select_widget.dart'
     show ExpertiseSelectWidget;
-export '/features/search/test/widget_test/algolia_test_widget.dart'
-    show TestalgoriaWidget;
 export '/features/profile/presentation/screens/onboarding/interest_selection/hobbies_select/hobbies_select_widget.dart'
     show HobbiesSelectWidget;
 export '/features/profile/presentation/screens/onboarding/interest_selection/agreed_select/agrred_select_widget.dart'
@@ -38,8 +36,8 @@ export '/features/profile/presentation/screens/profile_main/profile_page_widget.
     show ProfilePageWidget;
 export '/features/chat/presentation/screens/chat_list/chat_list_widget_clean.dart'
     show ChatListWidgetClean;
-export '/features/search/presentation/screens/chat_search/chat_search_widget.dart'
-    show ChatSearchWidget;
+export '/features/chat/presentation/screens/friends/friends_widget.dart'
+    show FriendsWidget;
 export '/features/chat/presentation/screens/chat_detail/chat_detail_widget_clean.dart'
     show ChatDetailWidgetClean;
 export '/features/chat/presentation/screens/ai_chat/ai_chat_page_clean.dart'

@@ -126,7 +126,7 @@ class NotificationOverlay {
                 MediaQuery.of(context).size.width * 0.04, // 좌우 4%씩 여백 = 92% 사용
             vertical: 60.0),
         alignment:
-            Alignment.topCenter, // 상단 정렬로 변경 (GlobalNotificationManager와 동일)
+            Alignment.topCenter, // 상단 정렬로 변경 (NotificationQueueService와 동일)
         child: VotingNotificationDialog(
           question: question,
           optionA: optionA,

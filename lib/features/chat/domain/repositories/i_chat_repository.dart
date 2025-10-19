@@ -83,4 +83,70 @@ abstract class IChatRepository {
     required File file,
     required String mediaType,
   });
+
+  // Friends management operations (Clean Architecture v4.0)
+  /// 친구 추천 목록 조회
+  ///
+  /// **Parameters**:
+  /// - [currentUserId]: 현재 사용자 ID
+  /// - [sortBy]: 정렬 기준 필드 (기본: 'totalAPoints')
+  /// - [limit]: 조회할 최대 개수 (기본: 20)
+  ///
+  /// **Returns**:
+  /// - 추천 친구 목록 Stream (totalAPoints 기준 상위 랭킹)
+  Stream<List<dynamic>> getRecommendedFriends({
+    required String currentUserId,
+    String sortBy = 'totalAPoints',
+    int limit = 20,
+  });
+
+  /// 사용자 검색
+  ///
+  /// **Parameters**:
+  /// - [currentUserId]: 현재 사용자 ID
+  /// - [query]: 검색어 (displayName 검색)
+  ///
+  /// **Returns**:
+  /// - 검색된 사용자 목록 Stream
+  Stream<List<dynamic>> searchUsers({
+    required String currentUserId,
+    required String query,
+  });
+
+  /// 친구 요청 보내기
+  ///
+  /// **Parameters**:
+  /// - [fromUserId]: 요청 보내는 사용자 ID
+  /// - [toUserId]: 요청 받는 사용자 ID
+  ///
+  /// **Returns**:
+  /// - void (성공/실패는 Exception으로 처리)
+  Future<void> sendFriendRequest({
+    required String fromUserId,
+    required String toUserId,
+  });
+
+  /// 사용자 팔로우
+  ///
+  /// **Parameters**:
+  /// - [userId]: 팔로우하는 사용자 ID
+  /// - [targetUserId]: 팔로우 대상 사용자 ID
+  Future<void> followUser(String userId, String targetUserId);
+
+  /// 사용자 언팔로우
+  ///
+  /// **Parameters**:
+  /// - [userId]: 언팔로우하는 사용자 ID
+  /// - [targetUserId]: 언팔로우 대상 사용자 ID
+  Future<void> unfollowUser(String userId, String targetUserId);
+
+  /// 팔로우 여부 확인
+  ///
+  /// **Parameters**:
+  /// - [userId]: 확인하는 사용자 ID
+  /// - [targetUserId]: 확인 대상 사용자 ID
+  ///
+  /// **Returns**:
+  /// - true: 이미 팔로우 중, false: 팔로우 안 함
+  Future<bool> isFollowing(String userId, String targetUserId);
 }

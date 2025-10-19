@@ -2,63 +2,108 @@ import 'dart:async';
 import '/features/notifications/domain/models/notification.dart';
 import '/features/notifications/domain/value_objects/notification_filter.dart';
 import '/features/notifications/domain/services/i_notification_service.dart';
-import '/core/interfaces/common/i_content_model.dart';
-import '../../domain/repositories/i_notification_repository.dart';
-import '../datasources/i_chat_datasource.dart';
+import '../datasources/i_remote_notification_datasource.dart';
+import '../mappers/notification_mapper.dart';
+import '../models/notification_dto.dart';
+import '../models/system_notification_dto.dart';
+import '../models/social_notification_dto.dart';
 import '/core/utils/logger.dart';
+import '/app/contracts/notification_types.dart';
 
-/// 실시간 투표 알림을 관리하는 서비스
+/// 실시간 알림을 관리하는 범용 서비스
 ///
 /// Firebase Firestore의 notifications 컬렉션을 감시하여
-/// 새로운 투표 알림이 도착하면 UI에 표시합니다.
+/// 새로운 알림이 도착하면 UI에 표시합니다.
+///
+/// 지원하는 알림 타입:
+/// - voting_request: 투표 요청 알림 (Voting Feature)
+/// - post_liked: 게시물 좋아요 알림 (Social Feature)
+/// - comment_added: 댓글 추가 알림 (Social Feature)
+/// - friend_request: 친구 요청 알림 (Social Feature)
+/// - system_alert: 시스템 알림 (System Feature)
 class NotificationService implements INotificationService {
   NotificationService({
-    required INotificationRepository repository,
-    IChatDatasource? chatDatasource,
-  })  : _repository = repository,
-        _chatDatasource = chatDatasource;
+    required IRemoteNotificationDatasource remoteDatasource,
+  })  : _remoteDatasource = remoteDatasource;
 
-  // Repository 리스너
+  // Datasource 리스너
   StreamSubscription<List<Notification>>? _notificationListener;
 
-  // 알림 스트림 (GlobalNotificationManager를 위한)
+  // 알림 스트림 (NotificationQueueService를 위한)
   final StreamController<List<Notification>> _notificationsStreamController =
       StreamController<List<Notification>>.broadcast();
 
   Stream<List<Notification>> get notificationsStream =>
       _notificationsStreamController.stream;
 
-  // Repository 의존성
-  final INotificationRepository _repository;
-
-  // Chat datasource 의존성 (optional - Chat feature에서 제공)
-  final IChatDatasource? _chatDatasource;
+  // Datasource 의존성
+  final IRemoteNotificationDatasource _remoteDatasource;
 
   /// 알림 리스닝 시작
-  void startListening(String userId) {
+  ///
+  /// [userId] - 사용자 ID
+  /// [type] - 알림 타입 필터 (null이면 모든 타입)
+  ///
+  /// 사용 예시:
+  /// ```dart
+  /// // 투표 알림만 리스닝
+  /// service.startListening(userId, type: NotificationTypes.votingRequest);
+  ///
+  /// // 모든 타입 리스닝
+  /// service.startListening(userId);
+  /// ```
+  @override
+  void startListening(String userId, {String? type}) {
     // 기존 리스너 정리
     stopListening();
 
-    Logger.info('알림 리스닝 시작 - 사용자: ${Logger.maskSensitive(userId)}',
-        tag: 'NotificationService');
+    final typeInfo = type != null ? 'type=$type' : 'all types';
+    Logger.info(
+      '알림 리스닝 시작 - 사용자: ${Logger.maskSensitive(userId)}, $typeInfo',
+      tag: 'NotificationService',
+    );
 
-    // Repository를 통한 알림 스트림 구독
-    Logger.logOnce('notif_query_$userId',
-        '알림 쿼리 시작: userId=${Logger.maskSensitive(userId)}, type=voting_request',
-        tag: 'Repository', level: LogLevel.INFO);
+    // Datasource를 통한 알림 스트림 구독
+    Logger.logOnce(
+      'notif_query_${userId}_${type ?? "all"}',
+      '알림 쿼리 시작: userId=${Logger.maskSensitive(userId)}, $typeInfo',
+      tag: 'Datasource',
+      level: LogLevel.INFO,
+    );
 
-    _notificationListener = _repository
-        .watchUserNotifications(
+    final stream = _remoteDatasource.watchUserNotifications(
       userId: userId,
-      filter: NotificationFilter(
-        type: NotificationType.votingRequest,
-        unreadOnly: true,
-        excludeExpired: true,
-        sortBy: 'expiryTime',
-        sortOrder: SortOrder.ascending,
-      ),
-    )
-        .listen(
+      type: type, // null이면 모든 타입
+      unreadOnly: true,
+    );
+
+    // Map<String, dynamic> 리스트를 Notification 도메인 모델 리스트로 변환
+    _notificationListener = stream.map((dataList) {
+      final notifications = <Notification>[];
+      for (final data in dataList) {
+        try {
+          final dto = _createDtoFromMap(data);
+          final notification = NotificationMapper.toDomain(dto);
+
+          // excludeExpired 필터링
+          if (!notification.isExpired) {
+            notifications.add(notification);
+          }
+        } catch (e) {
+          Logger.error('알림 변환 실패', error: e, tag: 'NotificationService');
+        }
+      }
+
+      // expiryTime으로 정렬 (오름차순, null은 맨 뒤로)
+      notifications.sort((a, b) {
+        if (a.expiryTime == null && b.expiryTime == null) return 0;
+        if (a.expiryTime == null) return 1;
+        if (b.expiryTime == null) return -1;
+        return a.expiryTime!.compareTo(b.expiryTime!);
+      });
+
+      return notifications;
+    }).listen(
       _handleNotificationChanges,
       onError: (error) {
         Logger.error('리스너 오류', error: error, tag: 'NotificationService');
@@ -87,15 +132,15 @@ class NotificationService implements INotificationService {
           tag: 'NotificationService', level: LogLevel.INFO);
     }
 
-    // GlobalNotificationManager에 알림 전달
+    // NotificationQueueService에 알림 전달
     _notificationsStreamController.add(notifications);
-    Logger.debug('GlobalNotificationManager에 ${notifications.length}개 알림 전달',
+    Logger.debug('NotificationQueueService에 ${notifications.length}개 알림 전달',
         tag: 'NotificationService');
   }
 
   /// 사용자의 읽지 않은 알림 수 가져오기
   Stream<int> getUnreadNotificationCount(String userId) {
-    return _repository.watchUnreadCount(userId);
+    return _remoteDatasource.watchUnreadCount(userId: userId);
   }
 
   /// 디버그 정보
@@ -105,65 +150,12 @@ class NotificationService implements INotificationService {
     };
   }
 
-  /// 투표 요청을 채팅 메시지로 생성
-  /// Chat Feature가 등록된 경우에만 동작
-  Future<void> createVoteRequestChatMessage({
-    required String senderId,
-    required String recipientId,
-    required String postId,
-    required IContentModel post,
-  }) async {
-    if (_chatDatasource == null) {
-      Logger.warning('Chat datasource not available',
-          tag: 'NotificationService');
-      return;
-    }
-
-    try {
-      await _chatDatasource!.createVoteRequestMessage(
-        senderId: senderId,
-        recipientId: recipientId,
-        postId: postId,
-        post: post,
-      );
-      Logger.debug('투표 요청 메시지 생성 완료', tag: 'NotificationService');
-    } catch (e) {
-      Logger.error('투표 요청 메시지 생성 오류', error: e, tag: 'NotificationService');
-    }
-  }
-
-  /// AI 채팅 메시지의 투표 상태 업데이트
-  /// Chat Feature가 등록된 경우에만 동작
-  Future<void> updateVoteMessageStatus({
-    required String postId,
-    required String userId,
-    required String status,
-  }) async {
-    if (_chatDatasource == null) {
-      Logger.warning('Chat datasource not available',
-          tag: 'NotificationService');
-      return;
-    }
-
-    try {
-      await _chatDatasource!.updateVoteMessageStatus(
-        postId: postId,
-        userId: userId,
-        status: status,
-      );
-      Logger.debug('AI 채팅 메시지 상태 업데이트 완료: $status', tag: 'NotificationService');
-    } catch (e) {
-      Logger.error('AI 채팅 메시지 상태 업데이트 오류',
-          error: e, tag: 'NotificationService');
-    }
-  }
-
   // ===== INotificationService 구현 =====
 
   @override
   Future<void> markAsRead(String notificationId) async {
     try {
-      await _repository.markAsRead(notificationId);
+      await _remoteDatasource.markAsRead(notificationId);
       Logger.debug('알림 읽음 처리: $notificationId', tag: 'NotificationService');
     } catch (e) {
       Logger.error('알림 읽음 처리 오류', error: e, tag: 'NotificationService');
@@ -174,7 +166,7 @@ class NotificationService implements INotificationService {
   @override
   Future<void> reshowNotification(String notificationId) async {
     try {
-      await _repository.updateNotification(notificationId, {
+      await _remoteDatasource.updateNotification(notificationId, {
         'dismissed': false,
         'reshownAt': DateTime.now(),
       });
@@ -188,7 +180,7 @@ class NotificationService implements INotificationService {
   @override
   Future<void> deleteNotification(String notificationId) async {
     try {
-      await _repository.deleteNotification(notificationId);
+      await _remoteDatasource.deleteNotification(notificationId);
       Logger.debug('알림 삭제: $notificationId', tag: 'NotificationService');
     } catch (e) {
       Logger.error('알림 삭제 오류', error: e, tag: 'NotificationService');
@@ -199,7 +191,7 @@ class NotificationService implements INotificationService {
   @override
   Future<void> markAllAsRead(String userId) async {
     try {
-      await _repository.markAllAsRead(userId);
+      await _remoteDatasource.markAllAsRead(userId);
       Logger.debug('모든 알림 읽음 처리: $userId', tag: 'NotificationService');
     } catch (e) {
       Logger.error('모든 알림 읽음 처리 오류', error: e, tag: 'NotificationService');
@@ -210,7 +202,7 @@ class NotificationService implements INotificationService {
   @override
   Future<void> cleanupExpiredNotifications(String userId) async {
     try {
-      await _repository.cleanupExpiredNotifications(userId);
+      await _remoteDatasource.deleteExpiredNotifications(userId);
       Logger.debug('만료된 알림 정리: $userId', tag: 'NotificationService');
     } catch (e) {
       Logger.error('만료된 알림 정리 오류', error: e, tag: 'NotificationService');
@@ -221,7 +213,7 @@ class NotificationService implements INotificationService {
   @override
   void clearQueue() {
     // 알림 큐 비우기 - 메모리에서만 제거
-    // 실제로는 GlobalNotificationManager에서 큐를 관리하므로
+    // 실제로는 NotificationQueueService에서 큐를 관리하므로
     // 여기서는 스트림을 통해 빈 리스트를 전달합니다.
     _notificationsStreamController.add([]);
     Logger.debug('알림 큐 비움', tag: 'NotificationService');
@@ -232,5 +224,20 @@ class NotificationService implements INotificationService {
     stopListening();
     _notificationsStreamController.close();
     Logger.info('NotificationService 리소스 정리', tag: 'NotificationService');
+  }
+
+  /// Map 데이터를 적절한 DTO로 변환하는 헬퍼 메서드
+  NotificationDto _createDtoFromMap(Map<String, dynamic> data) {
+    final type = data['type'] as String?;
+
+    switch (type) {
+      case 'systemAlert':
+        return SystemNotificationDto.fromJson(data);
+      case 'social':
+        return SocialNotificationDto.fromJson(data);
+      default:
+        // Note: votingRequest type is now handled by Voting Feature
+        return NotificationDto.fromJson(data);
+    }
   }
 }

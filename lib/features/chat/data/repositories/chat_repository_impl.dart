@@ -153,4 +153,67 @@ class ChatRepositoryImpl implements IChatRepository {
       mediaType: mediaType,
     );
   }
+
+  // Friends management operations (Clean Architecture v4.0)
+  /// 친구 추천 목록 조회
+  ///
+  /// Datasource에 직접 위임 (DTO 변환 불필요, dynamic 타입 사용)
+  @override
+  Stream<List<dynamic>> getRecommendedFriends({
+    required String currentUserId,
+    String sortBy = 'totalAPoints',
+    int limit = 20,
+  }) =>
+      _remoteDatasource.getRecommendedFriends(
+        currentUserId: currentUserId,
+        sortBy: sortBy,
+        limit: limit,
+      );
+
+  /// 사용자 검색
+  ///
+  /// Datasource에 직접 위임 (DTO 변환 불필요, dynamic 타입 사용)
+  @override
+  Stream<List<dynamic>> searchUsers({
+    required String currentUserId,
+    required String query,
+  }) =>
+      _remoteDatasource.searchUsers(
+        currentUserId: currentUserId,
+        query: query,
+      );
+
+  /// 친구 요청 보내기
+  ///
+  /// Datasource에 직접 위임
+  @override
+  Future<void> sendFriendRequest({
+    required String fromUserId,
+    required String toUserId,
+  }) async =>
+      await _remoteDatasource.sendFriendRequest(
+        fromUserId: fromUserId,
+        toUserId: toUserId,
+      );
+
+  /// 사용자 팔로우
+  ///
+  /// Datasource에 직접 위임
+  @override
+  Future<void> followUser(String userId, String targetUserId) async =>
+      await _remoteDatasource.followUser(userId, targetUserId);
+
+  /// 사용자 언팔로우
+  ///
+  /// Datasource에 직접 위임
+  @override
+  Future<void> unfollowUser(String userId, String targetUserId) async =>
+      await _remoteDatasource.unfollowUser(userId, targetUserId);
+
+  /// 팔로우 여부 확인
+  ///
+  /// Datasource에 직접 위임
+  @override
+  Future<bool> isFollowing(String userId, String targetUserId) async =>
+      await _remoteDatasource.isFollowing(userId, targetUserId);
 }

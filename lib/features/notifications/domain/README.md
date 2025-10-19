@@ -1,617 +1,1305 @@
-# 🎯 Notifications Domain Layer
+# Notifications Feature - Domain Layer
 
-> **Version**: 2.0.0  
-> **Last Updated**: 2025-09-12  
-> **Architecture**: Clean Architecture Domain Layer  
-> **Status**: ✅ Production Ready | Zero External Dependencies
+> **Version:** 2.0.0
+> **Last Updated:** 2025-01-20
+> **Architecture:** Clean Architecture v4.0 (Feature-First + Layered)
 
-## 📋 목차
+## 📋 개요
 
-1. [개요](#개요)
-2. [아키텍처 원칙](#아키텍처-원칙)
-3. [디렉토리 구조](#디렉토리-구조)
-4. [핵심 컴포넌트](#핵심-컴포넌트)
-5. [비즈니스 규칙](#비즈니스-규칙)
-6. [Use Cases 목록](#use-cases-목록)
-7. [의존성 규칙](#의존성-규칙)
-8. [사용 가이드](#사용-가이드)
-9. [확장 가이드](#확장-가이드)
-10. [테스트 전략](#테스트-전략)
+Notifications Feature의 Domain Layer는 **Clean Architecture의 핵심 비즈니스 로직**을 담당하며, 프레임워크와 완전히 독립적인 순수 Dart 코드로 구성됩니다.
 
----
+### 핵심 원칙
 
-## 개요
-
-Notifications Domain Layer는 알림 시스템의 핵심 비즈니스 로직을 담당하는 레이어입니다. Clean Architecture의 중심부로서, 외부 프레임워크나 라이브러리에 대한 의존성이 전혀 없는 순수한 Dart 코드로 구성됩니다.
-
-### 🎯 핵심 책임
-- **비즈니스 규칙 정의**: 알림 처리, 우선순위, 필터링 로직
-- **도메인 모델 관리**: Notification, VoteNotification 등 핵심 엔티티
-- **Use Case 구현**: 비즈니스 시나리오별 실행 로직
-- **인터페이스 정의**: Repository, Service 등의 계약 정의
-
-### 🏆 설계 원칙
-- **독립성**: 외부 의존성 없음 (Flutter, Firebase 등)
-- **테스트 가능성**: 100% 단위 테스트 가능
-- **재사용성**: 플랫폼 독립적 비즈니스 로직
-- **명확성**: 비즈니스 용어와 일치하는 네이밍
-
----
-
-## 아키텍처 원칙
-
-### Clean Architecture 준수
-```
-┌─────────────────────────────────────┐
-│         Presentation Layer          │
-├─────────────────────────────────────┤
-│           Domain Layer              │ ← 현재 레이어
-│   (비즈니스 로직, 엔티티, 규칙)      │
-├─────────────────────────────────────┤
-│            Data Layer               │
-└─────────────────────────────────────┘
+```yaml
+프레임워크 독립성: Firebase, Flutter 의존성 완전 제거
+비즈니스 규칙 중심: 알림의 본질적 동작과 규칙만 정의
+테스트 가능성: 모든 로직이 단위 테스트 가능
+재사용성: 다른 플랫폼/프레임워크에서도 재사용 가능
 ```
 
-### 의존성 방향
-- **Presentation** → Domain (허용)
-- **Data** → Domain (허용)
-- **Domain** → 외부 (❌ 금지)
-- **Domain** → 순수 Dart (✅ 허용)
+### 핵심 기능
+
+1. **도메인 모델 정의**
+   - `Notification` 추상 클래스 (베이스 엔티티)
+   - `SystemNotification` (시스템 알림)
+   - `SocialNotification` (소셜 상호작용 알림)
+   - VoteNotification은 Voting Feature에서 관리
+
+2. **비즈니스 로직 캡슐화**
+   - 알림 만료 검증 (`isExpired`)
+   - 알림 읽음 처리 권한 검증
+   - 자동 삭제 규칙 (30일 경과)
+   - 그룹 알림 병합 로직
+
+3. **UseCase 패턴**
+   - 단일 책임 원칙에 따른 비즈니스 작업 분리
+   - `Result<T>` 타입으로 안전한 에러 처리
+   - 스트림 기반 실시간 알림 감시
+
+4. **Value Objects**
+   - `NotificationFilter` - 필터링 조건 캡슐화
+   - 불변성(Immutable) 보장
+   - 유효성 검증 내장
+
+### 계층 분리 원칙
+
+```
+Domain Layer (이 레이어)
+  ↓ 의존 (Interface)
+Data Layer (구현체)
+  ↓ 의존
+Infrastructure (Firebase, SharedPrefs 등)
+```
+
+**중요:** Domain은 상위 계층에만 의존하며, 하위 계층(Data, Presentation)은 Domain에 의존합니다.
 
 ---
 
-## 디렉토리 구조
+## 🗂️ 디렉토리 구조
 
 ```
 lib/features/notifications/domain/
+├── models/                           # 도메인 엔티티
+│   ├── notification.dart             # 추상 베이스 엔티티
+│   ├── system_notification.dart      # 시스템 알림 엔티티
+│   └── social_notification.dart      # 소셜 알림 엔티티
 │
-├── 📁 handlers/                    # 핸들러 인터페이스
-│   └── i_notification_handler.dart    # UI 표시 핸들러 계약
+├── repositories/                     # Repository 인터페이스
+│   └── i_notification_repository.dart  # CRUD 및 쿼리 계약
 │
-├── 📁 models/                      # 도메인 엔티티
-│   ├── notification.dart              # 기본 알림 모델
-│   ├── notification_display_data.dart # 표시용 데이터 모델
-│   ├── social_notification.dart       # 소셜 알림 모델
-│   ├── system_notification.dart       # 시스템 알림 모델
-│   └── vote_notification.dart         # 투표 알림 모델
-│
-├── 📁 repositories/                # Repository 인터페이스
-│   └── i_notification_repository.dart # 데이터 접근 계약
-│
-├── 📁 services/                    # 도메인 서비스
-│   └── i_notification_service.dart    # 알림 서비스 계약
-│
-├── 📁 usecases/                    # 비즈니스 Use Cases
-│   ├── 📁 base/                   # Use Case 추상 클래스
-│   │   ├── use_case.dart             # 기본 Use Case
-│   │   ├── no_param_use_case.dart    # 파라미터 없는 Use Case
-│   │   └── stream_use_case.dart      # Stream Use Case
+├── usecases/                         # 비즈니스 유스케이스
+│   ├── base/                         # 베이스 추상 클래스
+│   │   ├── use_case.dart             # UseCase<Input, Output>
+│   │   ├── stream_use_case.dart      # StreamUseCase<Input, Output>
+│   │   └── no_param_use_case.dart    # NoParamUseCase<Output>
 │   │
-│   ├── clear_queue_use_case.dart              # 큐 초기화
-│   ├── get_current_user_use_case.dart         # 현재 사용자 조회
-│   ├── get_post_data_use_case.dart            # 포스트 데이터 조회
-│   ├── get_processed_count_use_case.dart      # 처리된 알림 수
-│   ├── get_queue_status_use_case.dart         # 큐 상태 조회
-│   ├── get_unread_notification_count.dart     # 읽지 않은 알림 수
-│   ├── get_user_notifications_use_case.dart   # 사용자 알림 목록
-│   ├── initialize_notifications_use_case.dart # 알림 초기화
-│   ├── mark_as_read_use_case.dart            # 읽음 처리
-│   ├── process_vote_notification_use_case.dart # 투표 알림 처리
-│   ├── send_notification_use_case.dart        # 알림 전송
-│   ├── start_notification_listening_use_case.dart # 리스닝 시작
-│   ├── stop_notification_listening_use_case.dart  # 리스닝 중지
-│   └── watch_unread_count_use_case.dart      # 읽지 않은 수 감시
+│   ├── watch_user_notifications_use_case.dart   # 실시간 알림 감시
+│   ├── get_user_notifications_use_case.dart     # 알림 목록 조회
+│   ├── watch_unread_count_use_case.dart         # 읽지 않은 개수 감시
+│   ├── mark_as_read_use_case.dart               # 읽음 처리
+│   └── send_notification_use_case.dart          # 알림 발송
 │
-└── 📁 value_objects/               # 값 객체
-    ├── notification_filter.dart       # 필터링 조건
-    └── vote_options.dart              # 투표 옵션
+├── value_objects/                    # Value Objects
+│   └── notification_filter.dart      # 필터링 조건
+│
+└── services/                         # Domain Service 인터페이스
+    └── i_notification_service.dart   # 알림 서비스 계약
 ```
 
 ---
 
-## 핵심 컴포넌트
+## 🎯 Domain Models
 
-### 1. Domain Models (엔티티)
+### Notification (Abstract Base Class)
 
-#### Notification (기본 알림)
+**위치:** `models/notification.dart`
+
+**역할:** 모든 알림 타입의 공통 속성 및 비즈니스 로직 정의
+
+**핵심 필드:**
+
 ```dart
 abstract class Notification {
-  final String id;
-  final String userId;
-  final String title;
-  final String message;
-  final DateTime createdAt;
-  final bool isRead;
-  final NotificationType type;
-  
-  // 비즈니스 메서드
-  bool isExpired();
-  int getPriority();
-  bool shouldShowInUI();
+  final String id;              // 고유 식별자
+  final String userId;          // 수신자 ID
+  final String type;            // 알림 타입 ('systemAlert', 'social', 'votingRequest')
+  final String title;           // 제목
+  final String content;         // 내용
+  final DateTime createdAt;     // 생성 시간
+  final DateTime? readAt;       // 읽은 시간 (null이면 읽지 않음)
+  final bool isRead;            // 읽음 여부
+  final DateTime? expiryTime;   // 만료 시간 (null이면 만료 없음)
+  final Map<String, dynamic> metadata;  // 추가 메타데이터
 }
 ```
 
-#### VoteNotification (투표 알림)
+**비즈니스 로직 메서드:**
+
 ```dart
-class VoteNotification extends Notification {
-  final String postId;
-  final String senderId;
-  final VoteOptions options;
-  final DateTime voteDeadline;
-  
-  // 투표 관련 비즈니스 로직
-  bool isVotingOpen();
-  Duration getRemainingTime();
-  bool canUserVote(String userId);
+// 만료 여부 검증
+bool get isExpired {
+  if (expiryTime == null) return false;
+  return DateTime.now().isAfter(expiryTime!);
+}
+
+// 읽을 수 있는지 확인
+bool get canBeRead => !isRead && !isExpired;
+
+// 30일 경과 시 자동 삭제 대상
+bool get shouldAutoDelete {
+  final daysSinceCreation = DateTime.now().difference(createdAt).inDays;
+  return daysSinceCreation > 30;
+}
+
+// 알림의 나이
+Duration get age => DateTime.now().difference(createdAt);
+
+// 최근 알림인지 (24시간 이내)
+bool get isRecent => age.inHours < 24;
+
+// 오래된 알림인지 (7일 이상)
+bool get isOld => age.inDays >= 7;
+
+// 우선순위 계산 (기본 구현)
+int get priority {
+  if (!isRead) return 1;  // 읽지 않은 알림
+  return 0;               // 읽은 알림
+}
+
+// 읽음으로 표시 (각 구체 클래스에서 구현)
+Notification markAsRead();
+```
+
+**열거형:**
+
+```dart
+// 알림 우선순위
+enum NotificationPriority {
+  low(1),
+  medium(2),
+  high(3),
+  urgent(4);
+}
+
+// 알림 상태
+enum NotificationStatus {
+  pending,     // 대기 중
+  sent,        // 발송됨
+  delivered,   // 전달됨
+  read,        // 읽음
+  failed,      // 실패
+  expired,     // 만료됨
 }
 ```
 
-#### NotificationDisplayData (표시 데이터)
+### SystemNotification
+
+**위치:** `models/system_notification.dart`
+
+**역할:** 시스템 공지, 점검, 업데이트 등 시스템 관련 알림
+
+**추가 필드:**
+
 ```dart
-class NotificationDisplayData {
-  final String title;
-  final String subtitle;
-  final String? imageUrl;
-  final Map<String, dynamic> actionData;
-  final NotificationPriority priority;
-  
-  // UI 표시 관련 로직
-  Color getBackgroundColor();
-  IconData getIcon();
-  String getFormattedTime();
+class SystemNotification extends Notification {
+  final SystemAlertType alertType;   // 알림 유형
+  final String? actionUrl;            // 액션 버튼 URL
+  final String? actionLabel;          // 액션 버튼 레이블
+  final Map<String, String>? actionButtons;  // 여러 액션 버튼
+  final String? iconUrl;              // 아이콘 URL
+  final bool isDismissible;           // 해제 가능 여부
 }
 ```
 
-### 2. Repository Interface
+**비즈니스 로직:**
 
 ```dart
-abstract class INotificationRepository {
-  // 기본 CRUD
-  Future<void> createNotification(Notification notification);
-  Future<Notification?> getNotification(String id);
-  Future<List<Notification>> getNotifications(String userId);
-  Future<void> updateNotification(String id, Map<String, dynamic> data);
-  Future<void> deleteNotification(String id);
-  
-  // 비즈니스 연산
-  Future<List<Notification>> getUnreadNotifications(String userId);
-  Future<int> getUnreadCount(String userId);
-  Future<void> markAsRead(String notificationId);
-  Future<void> markAllAsRead(String userId);
-  
-  // 실시간 기능
-  Stream<List<Notification>> watchNotifications(String userId);
-  Stream<int> watchUnreadCount(String userId);
-  
-  // 필터링 및 검색
-  Future<List<Notification>> searchNotifications(
-    String userId,
-    NotificationFilter filter,
+// 액션이 필요한 알림인지
+bool get requiresAction {
+  return actionUrl != null || (actionButtons?.isNotEmpty ?? false);
+}
+
+// 중요도 레벨 (1-5)
+int get importanceLevel {
+  switch (alertType) {
+    case SystemAlertType.critical:     return 5;
+    case SystemAlertType.security:     return 4;
+    case SystemAlertType.maintenance:  return 3;
+    case SystemAlertType.update:       return 2;
+    case SystemAlertType.info:         return 1;
+  }
+}
+
+// 자동 해제 가능한지
+bool get canAutoDismiss {
+  return isDismissible && alertType != SystemAlertType.critical;
+}
+
+@override
+SystemNotification markAsRead() {
+  return SystemNotification(
+    // ... 모든 필드 복사 with isRead: true, readAt: DateTime.now()
   );
 }
 ```
 
-### 3. Service Interface
+**SystemAlertType 열거형:**
 
 ```dart
-abstract class INotificationService {
-  // 알림 처리
-  Future<void> processNotification(Notification notification);
-  Future<void> sendNotification(NotificationRequest request);
-  
-  // 투표 관련
-  Future<void> createVoteRequestChatMessage({
-    required String senderId,
-    required String recipientId,
-    required String postId,
-    required IContentModel post,
+enum SystemAlertType {
+  critical,      // 중요 시스템 알림
+  security,      // 보안 관련
+  maintenance,   // 점검 알림
+  update,        // 업데이트 알림
+  info,          // 일반 정보
+}
+```
+
+**사용 예시:**
+
+```dart
+final systemAlert = SystemNotification(
+  id: 'sys_001',
+  userId: 'user123',
+  createdAt: DateTime.now(),
+  isRead: false,
+  title: '서버 점검 안내',
+  content: '2025-01-21 02:00-04:00 정기 점검이 예정되어 있습니다.',
+  alertType: SystemAlertType.maintenance,
+  actionUrl: 'https://status.example.com',
+  actionLabel: '자세히 보기',
+  isDismissible: true,
+);
+
+// 비즈니스 로직 활용
+if (systemAlert.requiresAction) {
+  print('중요도: ${systemAlert.importanceLevel}');
+  print('자동 해제 가능: ${systemAlert.canAutoDismiss}');
+}
+```
+
+### SocialNotification
+
+**위치:** `models/social_notification.dart`
+
+**역할:** 좋아요, 댓글, 친구 요청 등 사용자 간 상호작용 알림
+
+**추가 필드:**
+
+```dart
+class SocialNotification extends Notification {
+  final SocialActionType actionType;  // 액션 타입
+  final String fromUserId;            // 액션 수행자 ID
+  final String fromUserName;          // 액션 수행자 이름
+  final String? fromUserProfileUrl;   // 프로필 이미지
+  final String? relatedPostId;        // 관련 포스트 ID
+  final String? relatedCommentId;     // 관련 댓글 ID
+  final String? relatedContent;       // 관련 콘텐츠
+  final int? interactionCount;        // 상호작용 수 (그룹 알림용)
+}
+```
+
+**비즈니스 로직:**
+
+```dart
+// 상호작용이 있는 알림인지
+bool get hasInteraction {
+  return relatedPostId != null || relatedCommentId != null;
+}
+
+// 프로필 이미지가 있는지
+bool get hasProfileImage {
+  return fromUserProfileUrl != null && fromUserProfileUrl!.isNotEmpty;
+}
+
+// 그룹 알림인지 (여러 사용자의 동일 액션)
+bool get isGroupNotification {
+  return (interactionCount ?? 0) > 1;
+}
+
+// 친구 관련 알림인지
+bool get isFriendRelated {
+  return actionType == SocialActionType.friendRequest ||
+         actionType == SocialActionType.friendAccepted;
+}
+
+// 포스트 관련 알림인지
+bool get isPostRelated {
+  return relatedPostId != null;
+}
+
+// 액션 버튼 텍스트
+String get actionButtonText {
+  switch (actionType) {
+    case SocialActionType.friendRequest: return '수락';
+    case SocialActionType.comment:       return '답글';
+    case SocialActionType.mention:       return '보기';
+    default:                             return '확인';
+  }
+}
+
+// 알림 설명 텍스트 생성
+String get descriptionText {
+  if (isGroupNotification) {
+    return '$fromUserName님 외 ${interactionCount! - 1}명이 ${_getActionText()}';
+  }
+  return '$fromUserName님이 ${_getActionText()}';
+}
+
+// 그룹 알림에 추가 상호작용 병합
+SocialNotification addInteraction() {
+  return SocialNotification(
+    // ... 모든 필드 복사 with interactionCount: (interactionCount ?? 1) + 1
+  );
+}
+
+@override
+SocialNotification markAsRead() {
+  return SocialNotification(
+    // ... 모든 필드 복사 with isRead: true, readAt: DateTime.now()
+  );
+}
+```
+
+**SocialActionType 열거형:**
+
+```dart
+enum SocialActionType {
+  like,             // 좋아요
+  comment,          // 댓글
+  friendRequest,    // 친구 요청
+  friendAccepted,   // 친구 수락
+  follow,           // 팔로우
+  mention,          // 언급
+  share,            // 공유
+}
+```
+
+**사용 예시:**
+
+```dart
+// 단일 알림
+final socialNotif = SocialNotification(
+  id: 'social_001',
+  userId: 'user123',
+  createdAt: DateTime.now(),
+  isRead: false,
+  title: '새 좋아요',
+  content: 'Alice님이 회원님의 게시물을 좋아합니다.',
+  actionType: SocialActionType.like,
+  fromUserId: 'alice_id',
+  fromUserName: 'Alice',
+  fromUserProfileUrl: 'https://...',
+  relatedPostId: 'post_456',
+);
+
+// 그룹 알림 (여러 사용자가 동일 포스트에 좋아요)
+final groupNotif = socialNotif.addInteraction();  // interactionCount: 2
+final moreGroupNotif = groupNotif.addInteraction();  // interactionCount: 3
+
+print(moreGroupNotif.descriptionText);
+// "Alice님 외 2명이 좋아요를 눌렀습니다"
+
+print(moreGroupNotif.actionButtonText);  // "확인"
+```
+
+---
+
+## 📡 Repository Interface
+
+### INotificationRepository
+
+**위치:** `repositories/i_notification_repository.dart`
+
+**역할:** Data Layer가 구현해야 할 계약 정의 (Dependency Inversion Principle)
+
+**메서드 카테고리:**
+
+#### 1. 조회 Operations
+
+```dart
+// 단일 알림 조회
+Future<Notification?> getNotification(String notificationId);
+
+// 사용자의 알림 목록 조회
+Future<List<Notification>> getUserNotifications({
+  required String userId,
+  NotificationFilter? filter,
+});
+
+// 실시간 알림 스트림 감시
+Stream<List<Notification>> watchUserNotifications({
+  required String userId,
+  NotificationFilter? filter,
+});
+
+// 읽지 않은 알림 개수 조회
+Future<int> getUnreadCount(String userId);
+
+// 읽지 않은 알림 개수 실시간 스트림
+Stream<int> watchUnreadCount(String userId);
+
+// 특정 타입의 알림만 조회
+Future<List<T>> getNotificationsByType<T extends Notification>({
+  required String userId,
+  required String type,
+  int? limit,
+});
+```
+
+#### 2. 생성/수정 Operations
+
+```dart
+// 새 알림 생성
+Future<String> createNotification(Notification notification);
+
+// 알림 업데이트
+Future<void> updateNotification(
+  String notificationId,
+  Map<String, dynamic> updates,
+);
+
+// 읽음 처리
+Future<void> markAsRead(String notificationId);
+
+// 모든 알림 읽음 처리
+Future<void> markAllAsRead(String userId);
+```
+
+#### 3. 삭제 Operations
+
+```dart
+// 단일 알림 삭제
+Future<void> deleteNotification(String notificationId);
+
+// 사용자의 모든 알림 삭제
+Future<void> deleteAllNotifications(String userId);
+
+// 특정 날짜 이전 알림 삭제
+Future<void> deleteOldNotifications({
+  required String userId,
+  required DateTime before,
+});
+
+// 만료된 알림 자동 삭제
+Future<void> deleteExpiredNotifications(String userId);
+Future<void> cleanupExpiredNotifications(String userId);  // 호환성 메서드
+```
+
+#### 4. 특수 Operations
+
+```dart
+// 시스템 알림 브로드캐스트 (전체 또는 특정 사용자들)
+Future<void> broadcastSystemNotification({
+  required SystemNotification notification,
+  List<String>? targetUserIds,  // null이면 전체 사용자
+});
+
+// 소셜 알림 그룹화 처리
+Future<void> groupSocialNotifications({
+  required String userId,
+  required SocialActionType actionType,
+  required String relatedPostId,
+});
+```
+
+#### 5. 통계 및 분석
+
+```dart
+// 알림 통계 조회
+Future<Map<String, dynamic>> getNotificationStats(String userId);
+
+// 알림 활동 로그
+Future<List<Map<String, dynamic>>> getNotificationActivityLog({
+  required String userId,
+  required DateTime from,
+  required DateTime to,
+});
+```
+
+#### 6. 시스템 초기화
+
+```dart
+// 알림 시스템 초기화
+Future<void> initializeNotificationSystem({
+  required String userId,
+});
+
+// 알림 리스너 시작
+Future<Stream<Notification>> startListening({
+  required String userId,
+});
+
+// 알림 리스너 중지
+Future<void> stopListening({
+  required String userId,
+});
+```
+
+**계약 준수 규칙:**
+
+```dart
+// ✅ Domain은 인터페이스만 정의
+// ✅ Data Layer가 구현체 제공
+// ✅ Presentation은 UseCase를 통해 사용
+// ❌ Domain이 직접 Firebase/SharedPrefs 접근 금지
+```
+
+---
+
+## 🎯 UseCases
+
+### UseCase 패턴 기본 구조
+
+**위치:** `usecases/base/use_case.dart`
+
+**개념:** 단일 비즈니스 작업을 캡슐화하는 클래스
+
+```dart
+abstract class UseCase<Input, Output> {
+  Future<Result<Output>> call(Input input);
+}
+
+class Result<T> {
+  final T? data;
+  final String? error;
+  final bool isSuccess;
+
+  const Result.success(this.data);
+  const Result.failure(this.error);
+
+  // 유틸리티 메서드
+  T getOrThrow();
+  T getOrElse(T defaultValue);
+  Result<R> map<R>(R Function(T data) mapper);
+  R fold<R>({
+    required R Function(T data) onSuccess,
+    required R Function(String error) onFailure,
   });
-  
-  // 큐 관리
-  void enqueueNotification(Notification notification);
-  Future<void> processQueue();
-  void clearQueue();
-  
-  // 리스닝
-  Stream<Notification> listenToNotifications(String userId);
-  void stopListening();
 }
 ```
 
-### 4. Handler Interface
+**StreamUseCase 패턴:**
 
 ```dart
-abstract class INotificationHandler {
-  // UI 표시
-  Future<void> showNotification(NotificationDisplayData data);
-  Future<void> hideNotification();
-  
-  // 사용자 액션
-  Future<void> handleNotificationTap(String notificationId);
-  Future<void> handleQuickAction(String action, Map<String, dynamic> data);
-  
-  // 상태 관리
-  bool isShowingNotification();
-  NotificationDisplayData? getCurrentNotification();
+abstract class StreamUseCase<Input, Output> {
+  Stream<Output> call(Input input);
 }
 ```
 
----
+### WatchUserNotificationsUseCase
 
-## 비즈니스 규칙
+**위치:** `usecases/watch_user_notifications_use_case.dart`
 
-### 알림 우선순위
+**역할:** 사용자의 실시간 알림 스트림 제공
+
+**구현:**
+
 ```dart
-enum NotificationPriority {
-  critical,  // 즉시 표시, 사용자 방해 허용
-  high,      // 빠른 표시, 큐 앞쪽 배치
-  normal,    // 일반 표시, 순서대로 처리
-  low,       // 지연 가능, 유휴 시간에 표시
-}
-```
+class WatchUserNotificationsUseCase
+    implements StreamUseCase<String, List<Notification>> {
+  final INotificationRepository _repository;
 
-### 알림 만료 규칙
-- **투표 알림**: 투표 마감 시간까지
-- **시스템 알림**: 30일
-- **소셜 알림**: 7일
-- **일반 알림**: 14일
+  WatchUserNotificationsUseCase(this._repository);
 
-### 표시 조건
-```dart
-bool shouldShowNotification(Notification notification) {
-  return !notification.isExpired() &&
-         !notification.isRead &&
-         notification.userId == currentUserId &&
-         !isUserInDoNotDisturbMode();
-}
-```
-
-### 큐 처리 규칙
-1. Critical 우선순위 먼저 처리
-2. 같은 우선순위면 시간순
-3. 최대 큐 크기: 100개
-4. 처리 간격: 최소 2초
-
----
-
-## Use Cases 목록
-
-### 조회 Use Cases
-| Use Case | 설명 | 파라미터 | 반환값 |
-|----------|------|----------|--------|
-| GetUserNotificationsUseCase | 사용자 알림 목록 조회 | userId, filter | List<Notification> |
-| GetUnreadNotificationCountUseCase | 읽지 않은 알림 수 | userId | int |
-| GetQueueStatusUseCase | 큐 상태 조회 | - | QueueStatus |
-| GetProcessedCountUseCase | 처리된 알림 수 | - | int |
-| GetCurrentUserUseCase | 현재 사용자 정보 | - | User |
-| GetPostDataUseCase | 포스트 데이터 조회 | postId | PostData |
-
-### 실행 Use Cases
-| Use Case | 설명 | 파라미터 | 반환값 |
-|----------|------|----------|--------|
-| SendNotificationUseCase | 알림 전송 | NotificationRequest | void |
-| ProcessVoteNotificationUseCase | 투표 알림 처리 | VoteNotification | void |
-| MarkAsReadUseCase | 읽음 처리 | notificationId | void |
-| ClearQueueUseCase | 큐 초기화 | - | void |
-| InitializeNotificationsUseCase | 알림 시스템 초기화 | userId | void |
-
-### Stream Use Cases
-| Use Case | 설명 | 파라미터 | 반환값 |
-|----------|------|----------|--------|
-| StartNotificationListeningUseCase | 실시간 리스닝 시작 | userId | Stream<Notification> |
-| WatchUnreadCountUseCase | 읽지 않은 수 감시 | userId | Stream<int> |
-| StopNotificationListeningUseCase | 리스닝 중지 | - | void |
-
----
-
-## 의존성 규칙
-
-### ✅ 허용된 의존성
-```dart
-// 순수 Dart 패키지
-import 'dart:async';
-import 'dart:collection';
-import 'dart:math';
-
-// 도메인 레이어 내부
-import 'models/notification.dart';
-import 'repositories/i_notification_repository.dart';
-import 'usecases/base/use_case.dart';
-
-// Core 도메인 (shared)
-import '/core/domain/models/result.dart';
-import '/core/domain/errors/failure.dart';
-```
-
-### ❌ 금지된 의존성
-```dart
-// 외부 프레임워크
-import 'package:flutter/material.dart';  // 금지!
-import 'package:firebase_core/firebase_core.dart';  // 금지!
-
-// 다른 레이어
-import '../data/...';  // 금지!
-import '../presentation/...';  // 금지!
-
-// 다른 피처
-import '/features/posts/...';  // 금지!
-import '/features/voting/...';  // 금지!
-```
-
----
-
-## 사용 가이드
-
-### 1. Use Case 실행
-```dart
-// Use Case 인스턴스 생성 (DI 사용)
-final getNotifications = getIt<GetUserNotificationsUseCase>();
-
-// 실행
-final result = await getNotifications.execute(
-  GetNotificationsParams(
-    userId: 'user123',
-    filter: NotificationFilter.unreadOnly(),
-  ),
-);
-
-// 결과 처리
-result.fold(
-  (failure) => print('Error: ${failure.message}'),
-  (notifications) => print('Got ${notifications.length} notifications'),
-);
-```
-
-### 2. Stream Use Case 사용
-```dart
-// Stream Use Case 실행
-final watchUnread = getIt<WatchUnreadCountUseCase>();
-
-// 구독
-final subscription = watchUnread.execute('user123').listen(
-  (count) => print('Unread count: $count'),
-  onError: (error) => print('Error: $error'),
-);
-
-// 정리
-await subscription.cancel();
-```
-
-### 3. 비즈니스 로직 활용
-```dart
-// 도메인 모델의 비즈니스 메서드 사용
-final notification = VoteNotification(...);
-
-if (notification.isVotingOpen()) {
-  final remaining = notification.getRemainingTime();
-  print('${remaining.inMinutes} minutes left to vote');
-}
-
-// 우선순위 기반 정렬
-notifications.sort((a, b) => b.getPriority().compareTo(a.getPriority()));
-```
-
----
-
-## 확장 가이드
-
-### 🎯 새로운 알림 타입 추가
-
-#### 1. 도메인 모델 정의
-```dart
-// models/event_notification.dart
-class EventNotification extends Notification {
-  final String eventId;
-  final DateTime eventDate;
-  final String location;
-  final List<String> attendees;
-  
-  EventNotification({
-    required super.id,
-    required super.userId,
-    required this.eventId,
-    required this.eventDate,
-    required this.location,
-    this.attendees = const [],
-  });
-  
-  // 비즈니스 로직
-  bool isEventPassed() => DateTime.now().isAfter(eventDate);
-  bool isUserAttending(String userId) => attendees.contains(userId);
-  Duration getTimeUntilEvent() => eventDate.difference(DateTime.now());
-}
-```
-
-#### 2. Use Case 구현
-```dart
-// usecases/process_event_notification_use_case.dart
-class ProcessEventNotificationUseCase extends UseCase<void, EventNotification> {
-  final INotificationRepository repository;
-  final INotificationService service;
-  
-  ProcessEventNotificationUseCase(this.repository, this.service);
-  
   @override
-  Future<Result<void>> execute(EventNotification params) async {
+  Stream<List<Notification>> call(String userId) {
+    // 비즈니스 규칙: 만료된 알림은 기본적으로 제외
+    return _repository.watchUserNotifications(
+      userId: userId,
+      filter: const NotificationFilter(
+        excludeExpired: true,
+      ),
+    );
+  }
+}
+```
+
+**사용 예시:**
+
+```dart
+final useCase = WatchUserNotificationsUseCase(repository);
+
+// 실시간 알림 감시
+useCase.call('user123').listen((notifications) {
+  print('받은 알림: ${notifications.length}개');
+  for (final notif in notifications) {
+    print('- ${notif.title}: ${notif.content}');
+  }
+});
+```
+
+### GetUserNotificationsUseCase
+
+**위치:** `usecases/get_user_notifications_use_case.dart`
+
+**역할:** 알림 목록 1회성 조회 (페이지네이션 지원)
+
+**구현:**
+
+```dart
+class GetUserNotificationsUseCase
+    implements UseCase<GetNotificationsParams, List<Notification>> {
+  final INotificationRepository _repository;
+
+  GetUserNotificationsUseCase(this._repository);
+
+  @override
+  Future<Result<List<Notification>>> call(GetNotificationsParams params) async {
     try {
-      // 비즈니스 규칙 검증
-      if (params.isEventPassed()) {
-        return Result.failure(
-          BusinessFailure('Cannot process notification for past event'),
-        );
+      // 비즈니스 규칙: 유효한 userId 검증
+      if (params.userId.isEmpty) {
+        return const Result.failure('User ID is required');
       }
-      
-      // 처리 로직
-      await repository.createNotification(params);
-      await service.processNotification(params);
-      
-      return Result.success(null);
+
+      // 비즈니스 규칙: limit 범위 검증
+      if (params.limit != null && params.limit! <= 0) {
+        return const Result.failure('Limit must be positive');
+      }
+
+      // Repository 호출
+      final notifications = await _repository.getUserNotifications(
+        userId: params.userId,
+        filter: params.filter,
+      );
+
+      return Result.success(notifications);
     } catch (e) {
-      return Result.failure(UnexpectedFailure(e.toString()));
+      return Result.failure('Failed to get notifications: $e');
     }
   }
 }
-```
 
-#### 3. Repository 메서드 추가
-```dart
-// Repository 인터페이스에 추가
-abstract class INotificationRepository {
-  // 기존 메서드들...
-  
-  // Event 관련 메서드
-  Future<List<EventNotification>> getUpcomingEvents(String userId);
-  Future<void> updateAttendance(String eventId, List<String> attendees);
+class GetNotificationsParams {
+  final String userId;
+  final NotificationFilter? filter;
+
+  const GetNotificationsParams({
+    required this.userId,
+    this.filter,
+  });
 }
 ```
 
-### 🔧 새로운 비즈니스 규칙 추가
+### MarkAsReadUseCase
+
+**위치:** `usecases/mark_as_read_use_case.dart`
+
+**역할:** 알림 읽음 처리 with 권한 검증
+
+**비즈니스 규칙:**
+
+1. ✅ userId와 notificationId는 필수
+2. ✅ 알림이 존재해야 함
+3. ✅ 본인의 알림만 읽음 처리 가능
+4. ✅ 이미 읽은 알림은 Idempotent 처리 (재호출 시 성공 반환)
+
+**구현:**
 
 ```dart
-// value_objects/notification_rules.dart
-class NotificationRules {
-  static const int maxNotificationsPerDay = 50;
-  static const Duration minIntervalBetweenNotifications = Duration(seconds: 5);
-  static const int maxRetryAttempts = 3;
-  
-  static bool canSendNotification(User user, DateTime lastSent) {
-    final now = DateTime.now();
-    final timeSinceLastSent = now.difference(lastSent);
-    
-    return timeSinceLastSent >= minIntervalBetweenNotifications &&
-           user.dailyNotificationCount < maxNotificationsPerDay &&
-           !user.isInQuietHours(now);
+class MarkAsReadUseCase implements UseCase<MarkAsReadParams, void> {
+  final INotificationRepository _repository;
+
+  MarkAsReadUseCase(this._repository);
+
+  @override
+  Future<Result<void>> call(MarkAsReadParams params) async {
+    try {
+      // 비즈니스 규칙 1: 파라미터 검증
+      if (params.userId.isEmpty || params.notificationId.isEmpty) {
+        return const Result.failure(
+          'Invalid parameters: userId and notificationId are required',
+        );
+      }
+
+      // 비즈니스 규칙 2: 알림 존재 확인
+      final notification = await _repository.getNotification(
+        params.notificationId,
+      );
+
+      if (notification == null) {
+        return const Result.failure('Notification not found');
+      }
+
+      // 비즈니스 규칙 3: 권한 검증
+      if (notification.userId != params.userId) {
+        return const Result.failure(
+          'Unauthorized: Cannot mark other user\'s notification as read',
+        );
+      }
+
+      // 비즈니스 규칙 4: Idempotent 처리
+      if (notification.isRead) {
+        return const Result.success(null);  // 이미 읽음
+      }
+
+      // Repository 호출
+      await _repository.markAsRead(params.notificationId);
+
+      return const Result.success(null);
+    } catch (e) {
+      return Result.failure('Failed to mark as read: $e');
+    }
+  }
+}
+
+class MarkAsReadParams {
+  final String notificationId;
+  final String userId;
+
+  const MarkAsReadParams({
+    required this.notificationId,
+    required this.userId,
+  });
+}
+```
+
+**사용 예시:**
+
+```dart
+final useCase = MarkAsReadUseCase(repository);
+
+final result = await useCase.call(
+  MarkAsReadParams(
+    notificationId: 'notif_123',
+    userId: 'user_456',
+  ),
+);
+
+result.fold(
+  onSuccess: (_) => print('읽음 처리 완료'),
+  onFailure: (error) => print('에러: $error'),
+);
+```
+
+### WatchUnreadCountUseCase
+
+**위치:** `usecases/watch_unread_count_use_case.dart`
+
+**역할:** 읽지 않은 알림 개수 실시간 추적 (뱃지 표시용)
+
+**구현:**
+
+```dart
+class WatchUnreadCountUseCase implements StreamUseCase<String, int> {
+  final INotificationRepository _repository;
+
+  WatchUnreadCountUseCase(this._repository);
+
+  @override
+  Stream<int> call(String userId) {
+    return _repository.watchUnreadCount(userId);
   }
 }
 ```
 
+**사용 예시:**
+
+```dart
+final useCase = WatchUnreadCountUseCase(repository);
+
+// NotificationBadgeProvider에서 사용
+useCase.call('user123').listen((count) {
+  print('읽지 않은 알림: $count개');
+  // UI 뱃지 업데이트
+});
+```
+
 ---
 
-## 테스트 전략
+## 📦 Value Objects
 
-### 단위 테스트
+### NotificationFilter
+
+**위치:** `value_objects/notification_filter.dart`
+
+**역할:** 알림 필터링 조건을 캡슐화하는 불변 객체
+
+**필드:**
+
 ```dart
-// test/domain/models/notification_test.dart
-void main() {
-  group('VoteNotification', () {
-    test('should calculate remaining time correctly', () {
-      final deadline = DateTime.now().add(Duration(hours: 2));
-      final notification = VoteNotification(
-        voteDeadline: deadline,
-        // ... other fields
-      );
-      
-      final remaining = notification.getRemainingTime();
-      
-      expect(remaining.inMinutes, closeTo(120, 1));
-    });
-    
-    test('should identify expired notifications', () {
-      final pastDeadline = DateTime.now().subtract(Duration(hours: 1));
-      final notification = VoteNotification(
-        voteDeadline: pastDeadline,
-        // ... other fields
-      );
-      
-      expect(notification.isVotingOpen(), isFalse);
-      expect(notification.isExpired(), isTrue);
-    });
-  });
+class NotificationFilter {
+  final String? type;             // 타입 필터
+  final bool? unreadOnly;         // 읽지 않은 것만
+  final DateTime? after;          // 이후 생성
+  final DateTime? before;         // 이전 생성
+  final int? limit;               // 최대 개수
+  final String? sortBy;           // 정렬 기준 (기본: 'createdAt')
+  final bool? excludeExpired;     // 만료된 것 제외
+  final String? userId;           // 사용자 ID
+  final SortOrder? sortOrder;     // 정렬 순서 (기본: descending)
 }
 ```
 
-### Use Case 테스트
+**팩토리 메서드:**
+
 ```dart
-// test/domain/usecases/send_notification_use_case_test.dart
-void main() {
-  late SendNotificationUseCase useCase;
+// 읽지 않은 + 활성 알림만
+factory NotificationFilter.unreadActive() {
+  return const NotificationFilter(
+    unreadOnly: true,
+    excludeExpired: true,
+    sortOrder: SortOrder.descending,
+  );
+}
+
+// 최근 N일 이내 알림
+factory NotificationFilter.recent({int days = 30, int limit = 50}) {
+  return NotificationFilter(
+    after: DateTime.now().subtract(Duration(days: days)),
+    sortOrder: SortOrder.descending,
+    limit: limit,
+  );
+}
+
+// 읽지 않은 알림만
+factory NotificationFilter.unreadOnly() {
+  return const NotificationFilter(unreadOnly: true);
+}
+
+// 특정 타입만
+factory NotificationFilter.byType(String type) {
+  return NotificationFilter(type: type);
+}
+```
+
+**비즈니스 로직:**
+
+```dart
+// 필터가 적용되었는지 확인
+bool get hasFilters {
+  return type != null ||
+         unreadOnly != null ||
+         after != null ||
+         before != null ||
+         limit != null ||
+         excludeExpired != null ||
+         userId != null;
+}
+
+// 날짜 범위 유효성 검증
+bool get isDateRangeValid {
+  if (after == null || before == null) return true;
+  return after!.isBefore(before!);
+}
+
+// 필터 복사 및 수정 (Immutable)
+NotificationFilter copyWith({
+  String? type,
+  bool? unreadOnly,
+  // ... 나머지 필드
+});
+```
+
+**사용 예시:**
+
+```dart
+// 최근 7일, 읽지 않은 시스템 알림만
+final filter = NotificationFilter.recent(days: 7).copyWith(
+  type: 'systemAlert',
+  unreadOnly: true,
+);
+
+// Repository에 전달
+final notifications = await repository.getUserNotifications(
+  userId: 'user123',
+  filter: filter,
+);
+```
+
+**SortOrder 열거형:**
+
+```dart
+enum SortOrder {
+  ascending('asc'),
+  descending('desc');
+}
+```
+
+---
+
+## 🔌 Domain Services
+
+### INotificationService
+
+**위치:** `services/i_notification_service.dart`
+
+**역할:** Domain에서 정의하는 알림 서비스 계약 (Data Layer에서 구현)
+
+**메서드:**
+
+```dart
+abstract class INotificationService {
+  /// 알림 스트림 (NotificationQueueService를 통해 실시간 전달)
+  Stream<List<Notification>> get notificationsStream;
+
+  /// 알림 리스닝 시작
+  void startListening(String userId, {String? type});
+
+  /// 알림 리스닝 중지
+  void stopListening();
+
+  /// 읽지 않은 알림 수 실시간 스트림
+  Stream<int> getUnreadNotificationCount(String userId);
+
+  /// 알림 읽음 처리
+  Future<void> markAsRead(String notificationId);
+
+  /// 알림 다시 표시 (답변 거부 시)
+  Future<void> reshowNotification(String notificationId);
+
+  /// 알림 삭제
+  Future<void> deleteNotification(String notificationId);
+
+  /// 모든 알림 읽음 처리
+  Future<void> markAllAsRead(String userId);
+
+  /// 만료된 알림 정리
+  Future<void> cleanupExpiredNotifications(String userId);
+
+  /// 알림 큐 비우기
+  void clearQueue();
+
+  /// 리소스 정리
+  void dispose();
+}
+```
+
+**사용 시나리오:**
+
+```dart
+// NotificationService (Data Layer 구현체)를 통해
+// NotificationQueueService와 Repository를 연결
+
+final notificationService = getIt<INotificationService>();
+
+// 리스닝 시작
+notificationService.startListening('user123', type: null);
+
+// 실시간 알림 스트림 구독
+notificationService.notificationsStream.listen((notifications) {
+  // UI로 알림 표시
+});
+
+// 리스닝 중지
+notificationService.stopListening();
+```
+
+**통합 구조:**
+
+```
+[INotificationService (Domain)]
+        ↓ 구현
+[NotificationService (Data/Adapters)]
+        ↓ 사용
+[NotificationQueueService (/services)]
+        ↓ 스트림 제공
+[Presentation Layer]
+```
+
+---
+
+## 📊 비즈니스 규칙 정리
+
+### 알림 생명주기 규칙
+
+```yaml
+생성:
+  - 모든 알림은 isRead: false로 시작
+  - createdAt은 자동 설정 (서버 시간)
+  - expiryTime은 선택적 (null이면 만료 없음)
+
+읽음 처리:
+  - 본인의 알림만 읽음 처리 가능 (권한 검증)
+  - 이미 읽은 알림 재호출 시 Idempotent 처리
+  - readAt 자동 설정
+
+만료 처리:
+  - expiryTime이 현재 시간보다 이전이면 만료
+  - 만료된 알림은 canBeRead: false
+  - 만료된 알림은 기본 필터에서 제외
+
+자동 삭제:
+  - 생성 후 30일 경과 시 shouldAutoDelete: true
+  - 백그라운드 작업으로 주기적 정리
+```
+
+### 소셜 알림 그룹화 규칙
+
+```yaml
+그룹화 조건:
+  - 동일 사용자, 동일 액션 타입, 동일 포스트
+  - 24시간 이내 발생한 알림
+
+그룹화 동작:
+  - interactionCount 증가
+  - 기존 알림 업데이트 (새 알림 생성 안 함)
+  - fromUserName은 최초 사용자 유지
+
+그룹 해제:
+  - 24시간 경과 시 새 알림으로 생성
+```
+
+### 시스템 알림 브로드캐스트 규칙
+
+```yaml
+전체 발송:
+  - targetUserIds: null → 모든 활성 사용자
+  - 비활성 사용자(30일 이상) 제외
+
+선택 발송:
+  - targetUserIds: ['user1', 'user2'] → 특정 사용자만
+  - 유효하지 않은 userId는 스킵
+
+우선순위:
+  - critical: 즉시 푸시 + 앱 내
+  - security: 즉시 푸시 + 앱 내
+  - maintenance: 앱 내만
+  - update: 앱 내만
+  - info: 앱 내만
+```
+
+### 읽지 않은 알림 카운트 규칙
+
+```yaml
+포함 조건:
+  - isRead: false
+  - !isExpired
+  - expiryTime == null || expiryTime > now
+
+제외 조건:
+  - isRead: true
+  - isExpired: true
+
+업데이트 타이밍:
+  - 새 알림 생성 시 +1
+  - 알림 읽음 처리 시 -1
+  - 알림 만료 시 -1
+  - 알림 삭제 시 -1
+```
+
+---
+
+## 🧪 테스트 전략
+
+### 도메인 모델 테스트
+
+```dart
+group('Notification Domain Model', () {
+  test('isExpired는 expiryTime 이후면 true를 반환한다', () {
+    final notification = SystemNotification(
+      id: 'test',
+      userId: 'user1',
+      createdAt: DateTime.now().subtract(Duration(hours: 2)),
+      isRead: false,
+      title: 'Test',
+      content: 'Test',
+      alertType: SystemAlertType.info,
+      expiryTime: DateTime.now().subtract(Duration(hours: 1)),
+    );
+
+    expect(notification.isExpired, true);
+  });
+
+  test('canBeRead는 읽지 않고 만료되지 않은 경우에만 true', () {
+    final notification = SystemNotification(
+      id: 'test',
+      userId: 'user1',
+      createdAt: DateTime.now(),
+      isRead: false,
+      title: 'Test',
+      content: 'Test',
+      alertType: SystemAlertType.info,
+      expiryTime: DateTime.now().add(Duration(hours: 1)),
+    );
+
+    expect(notification.canBeRead, true);
+  });
+
+  test('shouldAutoDelete는 30일 경과 시 true', () {
+    final notification = SystemNotification(
+      id: 'test',
+      userId: 'user1',
+      createdAt: DateTime.now().subtract(Duration(days: 31)),
+      isRead: false,
+      title: 'Test',
+      content: 'Test',
+      alertType: SystemAlertType.info,
+    );
+
+    expect(notification.shouldAutoDelete, true);
+  });
+});
+```
+
+### UseCase 테스트
+
+```dart
+group('MarkAsReadUseCase', () {
   late MockNotificationRepository mockRepository;
-  late MockNotificationService mockService;
-  
+  late MarkAsReadUseCase useCase;
+
   setUp(() {
     mockRepository = MockNotificationRepository();
-    mockService = MockNotificationService();
-    useCase = SendNotificationUseCase(mockRepository, mockService);
+    useCase = MarkAsReadUseCase(mockRepository);
   });
-  
-  test('should send notification successfully', () async {
+
+  test('본인 알림은 읽음 처리 성공', () async {
     // Arrange
-    final request = NotificationRequest(
-      userId: 'user123',
+    final notification = SystemNotification(
+      id: 'notif1',
+      userId: 'user1',
+      createdAt: DateTime.now(),
+      isRead: false,
       title: 'Test',
-      message: 'Test message',
+      content: 'Test',
+      alertType: SystemAlertType.info,
     );
-    
-    when(() => mockService.sendNotification(any()))
-        .thenAnswer((_) async => {});
-    
+
+    when(() => mockRepository.getNotification('notif1'))
+      .thenAnswer((_) async => notification);
+    when(() => mockRepository.markAsRead('notif1'))
+      .thenAnswer((_) async => {});
+
     // Act
-    final result = await useCase.execute(request);
-    
+    final result = await useCase.call(MarkAsReadParams(
+      notificationId: 'notif1',
+      userId: 'user1',
+    ));
+
     // Assert
-    expect(result.isSuccess, isTrue);
-    verify(() => mockService.sendNotification(request)).called(1);
+    expect(result.isSuccess, true);
+    verify(() => mockRepository.markAsRead('notif1')).called(1);
   });
-}
+
+  test('다른 사용자 알림은 권한 에러', () async {
+    // Arrange
+    final notification = SystemNotification(
+      id: 'notif1',
+      userId: 'user1',
+      createdAt: DateTime.now(),
+      isRead: false,
+      title: 'Test',
+      content: 'Test',
+      alertType: SystemAlertType.info,
+    );
+
+    when(() => mockRepository.getNotification('notif1'))
+      .thenAnswer((_) async => notification);
+
+    // Act
+    final result = await useCase.call(MarkAsReadParams(
+      notificationId: 'notif1',
+      userId: 'user2',  // 다른 사용자
+    ));
+
+    // Assert
+    expect(result.isFailure, true);
+    expect(result.error, contains('Unauthorized'));
+    verifyNever(() => mockRepository.markAsRead(any()));
+  });
+
+  test('이미 읽은 알림은 Idempotent 처리', () async {
+    // Arrange
+    final notification = SystemNotification(
+      id: 'notif1',
+      userId: 'user1',
+      createdAt: DateTime.now(),
+      isRead: true,  // 이미 읽음
+      readAt: DateTime.now(),
+      title: 'Test',
+      content: 'Test',
+      alertType: SystemAlertType.info,
+    );
+
+    when(() => mockRepository.getNotification('notif1'))
+      .thenAnswer((_) async => notification);
+
+    // Act
+    final result = await useCase.call(MarkAsReadParams(
+      notificationId: 'notif1',
+      userId: 'user1',
+    ));
+
+    // Assert
+    expect(result.isSuccess, true);
+    verifyNever(() => mockRepository.markAsRead(any()));  // 호출 안 함
+  });
+});
 ```
 
-### 비즈니스 규칙 테스트
+### Value Object 테스트
+
 ```dart
-// test/domain/value_objects/notification_rules_test.dart
-void main() {
-  group('NotificationRules', () {
-    test('should prevent sending when daily limit exceeded', () {
-      final user = User(
-        id: 'user123',
-        dailyNotificationCount: 50,
-      );
-      final lastSent = DateTime.now().subtract(Duration(minutes: 1));
-      
-      final canSend = NotificationRules.canSendNotification(user, lastSent);
-      
-      expect(canSend, isFalse);
-    });
+group('NotificationFilter', () {
+  test('hasFilters는 필터 적용 시 true', () {
+    final filter = NotificationFilter(unreadOnly: true);
+    expect(filter.hasFilters, true);
   });
-}
+
+  test('isDateRangeValid는 올바른 범위일 때 true', () {
+    final filter = NotificationFilter(
+      after: DateTime(2025, 1, 1),
+      before: DateTime(2025, 1, 31),
+    );
+    expect(filter.isDateRangeValid, true);
+  });
+
+  test('isDateRangeValid는 잘못된 범위일 때 false', () {
+    final filter = NotificationFilter(
+      after: DateTime(2025, 1, 31),
+      before: DateTime(2025, 1, 1),
+    );
+    expect(filter.isDateRangeValid, false);
+  });
+
+  test('copyWith는 불변성을 유지하며 복사한다', () {
+    final original = NotificationFilter.unreadActive();
+    final modified = original.copyWith(limit: 10);
+
+    expect(original.limit, null);
+    expect(modified.limit, 10);
+    expect(modified.unreadOnly, true);  // 기존 값 유지
+  });
+});
 ```
 
 ---
 
-## 🚀 Best Practices
+## 🔗 관련 문서
 
-### DO's ✅
-- 비즈니스 로직을 도메인 모델에 캡슐화
-- Use Case는 단일 책임 원칙 준수
-- 도메인 용어를 코드에 반영
-- 불변 객체(Immutable) 사용
-- 순수 함수 작성
+### Feature 내부 문서
+- [Data Layer](../data/README.md) - Repository 구현 및 DataSource
+- [Presentation Layer](../presentation/README.md) - UI 컴포넌트
+- [Feature Root](../README.md) - Notifications Feature 전체 개요
 
-### DON'ts ❌
-- UI 로직을 도메인에 포함시키지 마세요
-- 외부 라이브러리 의존성 추가 금지
-- 데이터 소스 직접 접근 금지
-- 플랫폼 특정 코드 작성 금지
-- 도메인 모델에 JSON 시리얼라이제이션 추가 금지
+### 다른 Feature와의 통합
+- [Voting Feature](../../voting/domain/README.md) - VoteNotification 타입 처리
+- [App Layer Contracts](../../../../app/contracts/README.md) - NotificationContract 인터페이스
 
----
-
-## 📞 연락처 및 지원
-
-- **Feature Owner**: Notifications Team
-- **Domain Expert**: Business Analysis Team
-- **아키텍처 질문**: Architecture Team
-- **문서 업데이트**: PR을 통해 제출
+### 프로젝트 전체 문서
+- [Clean Architecture Guide](../../../../docs/architecture/clean-architecture.md)
+- [Domain Layer Best Practices](../../../../docs/architecture/domain-layer.md)
+- [UseCase Pattern Guide](../../../../docs/patterns/use-case-pattern.md)
 
 ---
 
-## 📚 관련 문서
+## 📝 변경 이력
 
-- [Data Layer README](../data/README.md)
-- [Presentation Layer README](../presentation/README.md)
-- [Clean Architecture Guide](../../../../docs/ARCHITECTURE.md)
-- [Use Case Patterns](../../../../docs/patterns/USE_CASE_PATTERNS.md)
+### v2.0.0 (2025-01-20)
+- ✅ Domain Layer README.md 신규 작성
+- ✅ 모든 비즈니스 로직 문서화
+- ✅ UseCase 패턴 상세 설명
+- ✅ Value Object 활용 가이드
+- ✅ 테스트 전략 및 예시 추가
+
+### v1.3.0 (2025-01-18)
+- INotificationService 인터페이스 추가
+- NotificationQueueService 통합 준비
+- Domain Service 개념 도입
+
+### v1.2.0 (2025-01-15)
+- NotificationFilter Value Object 추가
+- 비즈니스 규칙 강화 (권한 검증, Idempotent 처리)
+- Result<T> 타입 도입으로 안전한 에러 처리
+
+### v1.1.0 (2025-01-10)
+- SystemNotification, SocialNotification 구체 클래스 추가
+- 비즈니스 로직 메서드 추가 (isExpired, canBeRead 등)
+- UseCase 패턴 적용
+
+### v1.0.0 (2025-01-05)
+- 초기 Domain Layer 구현
+- Notification 추상 클래스 정의
+- INotificationRepository 인터페이스 정의
 
 ---
 
-*이 문서는 Clean Architecture 마이그레이션 완료 후 작성되었습니다.*
-*Last reviewed: 2025-09-12*
+## 👥 기여자
+
+- Feature Owner: Backend Team
+- Architecture Lead: Clean Architecture Team
+- Domain Expert: Business Logic Team
+
+**마지막 업데이트:** 2025-01-20
+**문서 버전:** 2.0.0

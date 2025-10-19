@@ -1,5 +1,4 @@
 import '../models/notification.dart';
-import '../models/vote_notification.dart';
 import '../repositories/i_notification_repository.dart';
 import 'base/use_case.dart';
 
@@ -27,9 +26,7 @@ class SendNotificationUseCase
       }
 
       // 알림 타입별 처리
-      if (params.notification is VoteNotification) {
-        return await _sendVoteNotifications(params);
-      }
+      // Note: VoteNotification is now handled by Voting Feature
 
       // 일반 알림 처리
       final createdIds = <String>[];
@@ -48,38 +45,6 @@ class SendNotificationUseCase
     } catch (e) {
       return Result.failure('Failed to send notifications: ${e.toString()}');
     }
-  }
-
-  Future<Result<List<String>>> _sendVoteNotifications(
-      SendNotificationParams params) async {
-    final voteNotification = params.notification as VoteNotification;
-
-    // 비즈니스 로직: 타겟 오디언스에 따른 사용자 선택
-    List<String> finalTargetUsers = params.targetUserIds;
-
-    if (params.targetAudience == 'quick') {
-      // AI 기반 타겟팅 (실제 구현에서는 AI 서비스 호출)
-      // finalTargetUsers = await _aiService.selectBestUsers(voteNotification, params.targetUserIds);
-
-      // 비즈니스 규칙: Quick mode는 최대 10명
-      if (finalTargetUsers.length > 10) {
-        finalTargetUsers = finalTargetUsers.take(10).toList();
-      }
-    } else if (params.targetAudience == 'public') {
-      // 랜덤 선택 로직
-      finalTargetUsers.shuffle();
-      if (finalTargetUsers.length > 20) {
-        finalTargetUsers = finalTargetUsers.take(20).toList();
-      }
-    }
-
-    // Repository 호출
-    final createdIds = await _repository.createVoteNotifications(
-      baseNotification: voteNotification,
-      targetUserIds: finalTargetUsers,
-    );
-
-    return Result.success(createdIds);
   }
 
   Notification _createUserNotification(

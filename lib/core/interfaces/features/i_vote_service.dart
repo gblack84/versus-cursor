@@ -47,12 +47,12 @@ abstract class IVoteService {
     required bool optionA,
     String? notificationId,
   });
-  
+
   /// 투표 제출 (레거시 호환용)
-  /// 
-  /// GlobalNotificationManager에서 사용하는 메서드
+  ///
+  /// NotificationQueueService에서 사용하는 메서드
   /// [postId] - 투표할 포스트 ID
-  /// [userId] - 투표자 ID  
+  /// [userId] - 투표자 ID
   /// [choice] - 'A' 또는 'B'
   /// [messageId] - 메시지 ID (선택사항)
   /// [chatId] - 채팅 ID (선택사항)

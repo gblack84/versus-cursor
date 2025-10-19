@@ -1,19 +1,18 @@
 import 'dart:async';
 import '../../domain/repositories/i_notification_repository.dart';
 import '../../domain/models/notification.dart';
-import '../../domain/models/vote_notification.dart';
 import '../../domain/models/system_notification.dart';
 import '../../domain/models/social_notification.dart';
 import '../../domain/value_objects/notification_filter.dart';
 import '../datasources/i_remote_notification_datasource.dart';
 import '../datasources/i_local_notification_datasource.dart';
-import '/app/contracts/post_contract.dart';
 import '/app/contracts/notification_contract.dart';
+import '/app/contracts/notification_types.dart';
 import '../mappers/notification_mapper.dart';
 import '../models/notification_dto.dart';
-import '../models/vote_notification_dto.dart';
 import '../models/system_notification_dto.dart';
 import '../models/social_notification_dto.dart';
+import '/services/notification/notification_queue_service.dart';
 
 /// Clean Architecture 준수 Repository 구현체
 ///
@@ -22,7 +21,7 @@ import '../models/social_notification_dto.dart';
 class NotificationRepositoryImpl implements INotificationRepository, NotificationContract {
   final IRemoteNotificationDatasource _remoteDatasource;
   final ILocalNotificationDatasource _localDatasource;
-  final PostContract? _postContract; // Optional injection for cross-feature access
+  final NotificationQueueService _queueService;
 
   // 캐시 설정
   static const Duration _cacheExpiry = Duration(minutes: 30);
@@ -31,10 +30,10 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
   NotificationRepositoryImpl({
     required IRemoteNotificationDatasource remoteDatasource,
     required ILocalNotificationDatasource localDatasource,
-    PostContract? postContract,
+    required NotificationQueueService queueService,
   })  : _remoteDatasource = remoteDatasource,
         _localDatasource = localDatasource,
-        _postContract = postContract;
+        _queueService = queueService;
 
   // ===== 조회 Operations =====
 
@@ -89,7 +88,7 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
       // Remote에서 가져오기
       final remoteData = await _remoteDatasource.getNotifications(
         userId: userId,
-        type: filter?.type?.value,
+        type: filter?.type,
         unreadOnly: filter?.unreadOnly,
         after: filter?.after,
         before: filter?.before,
@@ -120,7 +119,7 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
     return _remoteDatasource
         .watchUserNotifications(
       userId: userId,
-      type: filter?.type?.value,
+      type: filter?.type,
       unreadOnly: filter?.unreadOnly,
       after: filter?.after,
       before: filter?.before,
@@ -173,13 +172,13 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
   @override
   Future<List<T>> getNotificationsByType<T extends Notification>({
     required String userId,
-    required NotificationType type,
+    required String type,
     int? limit,
   }) async {
     try {
       final remoteData = await _remoteDatasource.getNotifications(
         userId: userId,
-        type: type.value,
+        type: type,
         limit: limit,
       );
 
@@ -336,54 +335,7 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
     return deleteExpiredNotifications(userId);
   }
   // ===== 특수 Operations =====
-
-  @override
-  Future<List<String>> createVoteNotifications({
-    required VoteNotification baseNotification,
-    required List<String> targetUserIds,
-  }) async {
-    try {
-      final createdIds = <String>[];
-
-      for (final userId in targetUserIds) {
-        // 각 사용자별 알림 생성
-        final notification = VoteNotification(
-          id: '', // Remote에서 생성됨
-          userId: userId,
-          createdAt: baseNotification.createdAt,
-          isRead: false,
-          title: baseNotification.title,
-          content: baseNotification.content,
-          expiryTime: baseNotification.expiryTime,
-          metadata: baseNotification.metadata,
-          // VoteNotification 특화 필드
-          postId: baseNotification.postId,
-          postTitle: baseNotification.postTitle,
-          postContent: baseNotification.postContent,
-          postDescription: baseNotification.postDescription,
-          voteOptions: baseNotification.voteOptions,
-          voteStartTime: baseNotification.voteStartTime,
-          voteEndTime: baseNotification.voteEndTime,
-          targetAudience: baseNotification.targetAudience,
-          currentVotesA: baseNotification.currentVotesA,
-          currentVotesB: baseNotification.currentVotesB,
-          hasVoted: baseNotification.hasVoted,
-          userVoteChoice: baseNotification.userVoteChoice,
-          senderId: baseNotification.senderId,
-          senderName: baseNotification.senderName,
-          body: baseNotification.body,
-          notificationPriority: baseNotification.notificationPriority,
-        );
-
-        final id = await createNotification(notification);
-        createdIds.add(id);
-      }
-
-      return createdIds;
-    } catch (e) {
-      throw Exception('Failed to create vote notifications: $e');
-    }
-  }
+  // Note: Vote notification creation is now handled by Voting Feature
 
   @override
   Future<void> broadcastSystemNotification({
@@ -609,7 +561,7 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
   @override
   Future<void> initializeNotificationSystem({required String userId}) async {
     try {
-      // Initialize GlobalNotificationManager
+      // Initialize NotificationQueueService
       // Note: Actual implementation would initialize the notification system
       // For now, we'll just clear the cache and prepare for listening
       await _localDatasource.clearCache(userId);
@@ -666,44 +618,6 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
     }
   }
 
-  @override
-  Future<Map<String, dynamic>?> getPostData({required String postId}) async {
-    try {
-      // PostContract를 통한 cross-feature 데이터 접근
-      Map<String, dynamic>? postData;
-
-      if (_postContract != null) {
-        // Contract를 통한 직접 접근 (권장)
-        postData = await _postContract.getPost(postId);
-      } else {
-        // Fallback: datasource를 통한 접근 (마이그레이션 중)
-        postData = await _remoteDatasource.getPostData(postId);
-      }
-      
-      if (postData == null) {
-        print('[NotificationRepository] Post not found: $postId');
-        return null;
-      }
-      
-      // 필요한 필드만 추출하여 반환
-      return {
-        'postId': postData['postId'] ?? postId,
-        'title': postData['title'] ?? '',
-        'content': postData['content'] ?? '',
-        'optionA': postData['optionA'] ?? {},
-        'optionB': postData['optionB'] ?? {},
-        'createdBy': postData['createdBy'] ?? '',
-        'createdAt': postData['createdAt'],
-        'voteEndTime': postData['voteEndTime'],
-        'votesA': postData['votesA'] ?? 0,
-        'votesB': postData['votesB'] ?? 0,
-      };
-    } catch (e) {
-      print('[NotificationRepository] Failed to get post data: $e');
-      throw Exception('Failed to get post data: $e');
-    }
-  }
-
   // ===== Private Helper Methods =====
 
   /// Map 데이터를 적절한 DTO로 변환
@@ -711,13 +625,12 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
     final type = data['type'] as String?;
 
     switch (type) {
-      case 'votingRequest':
-        return VoteNotificationDto.fromJson(data);
       case 'systemAlert':
         return SystemNotificationDto.fromJson(data);
       case 'social':
         return SocialNotificationDto.fromJson(data);
       default:
+        // Note: votingRequest type is now handled by Voting Feature
         return NotificationDto.fromJson(data);
     }
   }
@@ -739,10 +652,10 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
     // 정렬
     if (filter.sortBy == 'priority') {
       filtered.sort((a, b) {
-        final aPriority =
-            (a is VoteNotification) ? a.notificationPriority.weight : 0;
-        final bPriority =
-            (b is VoteNotification) ? b.notificationPriority.weight : 0;
+        // Note: VoteNotification priority sorting is now handled by Voting Feature
+        // Default priority comparison for system and social notifications
+        final aPriority = 0;
+        final bPriority = 0;
 
         if (filter.sortOrder == SortOrder.descending) {
           return bPriority.compareTo(aPriority);
@@ -773,13 +686,13 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
   // 다른 Feature들이 Notification 기능을 사용할 때 호출하는 메서드들
 
   @override
-  Future<void> createNotification({
+  Future<void> sendNotification({
     required String userId,
     required String type,
     required Map<String, dynamic> data,
   }) async {
     try {
-      // 알림 생성
+      // 알림 생성 (Domain createNotification 재사용)
       final notificationData = {
         'userId': userId,
         'type': type,
@@ -790,51 +703,24 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
 
       await _remoteDatasource.createNotification(notificationData);
     } catch (e) {
-      print('[NotificationContract] Failed to create notification: $e');
+      print('[NotificationContract] Failed to send notification: $e');
       rethrow;
     }
   }
 
   @override
-  Future<void> createVoteRequestNotification({
-    required String postId,
-    required List<String> targetUserIds,
-    required Map<String, dynamic> targetAudience,
-  }) async {
+  Stream<List<Map<String, dynamic>>> streamUserNotifications(String userId) {
     try {
-      // 투표 요청 알림 생성
-      for (final userId in targetUserIds) {
-        final notificationData = {
-          'userId': userId,
-          'type': 'vote_request',
-          'data': {
-            'postId': postId,
-            'targetAudience': targetAudience,
-          },
-          'createdAt': DateTime.now().toIso8601String(),
-          'isRead': false,
-        };
-
-        await _remoteDatasource.createNotification(notificationData);
-      }
-    } catch (e) {
-      print('[NotificationContract] Failed to create vote request: $e');
-      rethrow;
-    }
-  }
-
-  @override
-  Stream<List<Map<String, dynamic>>> getUserNotifications(String userId) {
-    try {
-      // Stream으로 실시간 알림 목록 반환
-      return _remoteDatasource.getNotificationStream(userId).map((notifications) {
+      // Stream으로 실시간 알림 목록 반환 (Domain watchUserNotifications 재사용)
+      return watchUserNotifications(userId: userId).map((notifications) {
         return notifications.map((notif) {
-          // DTO를 Map으로 변환하여 반환
-          return notif as Map<String, dynamic>;
+          // Domain model을 Map으로 변환하여 반환
+          final dto = NotificationMapper.toDto(notif);
+          return dto.toJson();
         }).toList();
       });
     } catch (e) {
-      print('[NotificationContract] Failed to get user notifications stream: $e');
+      print('[NotificationContract] Failed to stream user notifications: $e');
       return Stream.value([]);
     }
   }
@@ -878,6 +764,61 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
       await _localDatasource.saveNotificationSettings(userId, settings);
     } catch (e) {
       print('[NotificationContract] Failed to update notification settings: $e');
+      rethrow;
+    }
+  }
+
+  // ===== NotificationContract 라이프사이클 메서드 구현 =====
+
+  @override
+  Future<void> initializeNotifications(String userId) async {
+    // InitializeNotificationsUseCase 로직 위임
+    await initializeNotificationSystem(userId: userId);
+  }
+
+  @override
+  Future<void> startNotificationListening(String userId) async {
+    // StartNotificationListeningUseCase 로직 위임
+    // 1. Repository의 startListening (Domain 모델 스트림)
+    await startListening(userId: userId);
+
+    // 2. NotificationQueueService 시작 (실시간 다이얼로그 표시)
+    // 현재는 투표 알림만 처리하므로 voting_request 타입으로 필터링
+    _queueService.startListening(
+      userId: userId,
+      type: NotificationTypes.votingRequest,
+    );
+  }
+
+  @override
+  Future<void> stopNotificationListening(String userId) async {
+    // StopNotificationListeningUseCase 로직 위임
+    await stopListening(userId: userId);
+  }
+
+  @override
+  Future<void> clearNotificationQueue(String userId) async {
+    // ClearQueueUseCase 로직 위임
+    try {
+      // 1. 읽지 않은 알림들을 모두 읽음 처리
+      final notifications = await getUserNotifications(userId: userId);
+      final unreadNotifications = notifications.where((n) => !n.isRead);
+
+      for (final notification in unreadNotifications) {
+        await updateNotification(
+          notification.id,
+          {
+            'isRead': true,
+            'readAt': DateTime.now(),
+            'updatedAt': DateTime.now(),
+          },
+        );
+      }
+
+      // 2. 만료된 알림 정리
+      await cleanupExpiredNotifications(userId);
+    } catch (e) {
+      print('[NotificationContract] Failed to clear notification queue: $e');
       rethrow;
     }
   }

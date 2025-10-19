@@ -54,4 +54,16 @@ abstract class ILocalNotificationDatasource {
     String notificationId,
     Map<String, dynamic> notification,
   );
+
+  // ===== Contract 지원 메서드 =====
+
+  /// Get notification settings (bool flags) for NotificationContract
+  /// Different from preferences - only stores on/off settings
+  Future<Map<String, bool>?> getNotificationSettings(String userId);
+
+  /// Save notification settings (bool flags)
+  Future<void> saveNotificationSettings(
+    String userId,
+    Map<String, bool> settings,
+  );
 }

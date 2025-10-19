@@ -251,4 +251,34 @@ class SharedPrefsNotificationDatasource
     // 다시 캐싱
     await cacheNotifications(userId, cachedNotifications);
   }
+
+  // ===== Contract 지원 메서드 구현 =====
+
+  static const String _settingsPrefix = 'notification_settings_';
+
+  @override
+  Future<Map<String, bool>?> getNotificationSettings(String userId) async {
+    final settingsKey = '$_settingsPrefix$userId';
+    final String? settingsJson = _prefs.getString(settingsKey);
+
+    if (settingsJson == null) return null;
+
+    try {
+      final Map<String, dynamic> decoded = json.decode(settingsJson);
+      // Convert Map<String, dynamic> to Map<String, bool>
+      return decoded.map((key, value) => MapEntry(key, value as bool));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> saveNotificationSettings(
+    String userId,
+    Map<String, bool> settings,
+  ) async {
+    final settingsKey = '$_settingsPrefix$userId';
+    final String jsonString = json.encode(settings);
+    await _prefs.setString(settingsKey, jsonString);
+  }
 }

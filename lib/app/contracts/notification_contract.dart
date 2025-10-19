@@ -4,22 +4,17 @@ import 'dart:async';
 ///
 /// Posts, Chat 등이 알림 기능을 사용할 때 접근
 abstract class NotificationContract {
-  /// 알림 생성
-  Future<void> createNotification({
+  /// 알림 전송 (Posts, Chat 등에서 사용)
+  /// Domain의 createNotification과 구분하기 위해 send prefix 사용
+  Future<void> sendNotification({
     required String userId,
     required String type,
     required Map<String, dynamic> data,
   });
 
-  /// 투표 요청 알림 생성 (Posts에서 사용)
-  Future<void> createVoteRequestNotification({
-    required String postId,
-    required List<String> targetUserIds,
-    required Map<String, dynamic> targetAudience,
-  });
-
-  /// 사용자 알림 목록 조회
-  Stream<List<Map<String, dynamic>>> getUserNotifications(String userId);
+  /// 사용자 알림 스트림 (실시간 업데이트)
+  /// Domain의 getUserNotifications와 구분하기 위해 stream prefix 사용
+  Stream<List<Map<String, dynamic>>> streamUserNotifications(String userId);
 
   /// 알림 읽음 처리
   Future<void> markAsRead(String notificationId);
@@ -41,4 +36,18 @@ abstract class NotificationContract {
     required String userId,
     required Map<String, bool> settings,
   });
+
+  // ===== 알림 시스템 라이프사이클 관리 =====
+
+  /// 알림 시스템 초기화 (앱 시작 시 호출)
+  Future<void> initializeNotifications(String userId);
+
+  /// 알림 리스닝 시작
+  Future<void> startNotificationListening(String userId);
+
+  /// 알림 리스닝 중지 (로그아웃 시 호출)
+  Future<void> stopNotificationListening(String userId);
+
+  /// 알림 큐 비우기
+  Future<void> clearNotificationQueue(String userId);
 }

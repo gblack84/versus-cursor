@@ -3,7 +3,7 @@ import '../models/notification.dart';
 /// 알림 필터 Value Object
 /// Clean Architecture - 도메인 값 객체
 class NotificationFilter {
-  final NotificationType? type;
+  final String? type;
   final bool? unreadOnly;
   final DateTime? after;
   final DateTime? before;
@@ -51,20 +51,6 @@ class NotificationFilter {
     );
   }
 
-  /// 투표 알림 전용 필터
-  factory NotificationFilter.votingRequests({
-    bool unreadOnly = true,
-    int? limit,
-  }) {
-    return NotificationFilter(
-      type: NotificationType.votingRequest,
-      unreadOnly: unreadOnly,
-      excludeExpired: true,
-      limit: limit,
-      sortOrder: SortOrder.descending,
-    );
-  }
-
   /// 최근 알림 필터 (24시간 이내)
   factory NotificationFilter.recent({int days = 30, int limit = 50}) {
     return NotificationFilter(
@@ -82,7 +68,7 @@ class NotificationFilter {
   }
 
   /// 타입별 필터
-  factory NotificationFilter.byType(NotificationType type) {
+  factory NotificationFilter.byType(String type) {
     return NotificationFilter(
       type: type,
     );
@@ -90,7 +76,7 @@ class NotificationFilter {
 
   /// 필터 복사 및 수정
   NotificationFilter copyWith({
-    NotificationType? type,
+    String? type,
     bool? unreadOnly,
     DateTime? after,
     DateTime? before,
@@ -116,7 +102,7 @@ class NotificationFilter {
   @override
   String toString() {
     final filters = <String>[];
-    if (type != null) filters.add('type=${type!.value}');
+    if (type != null) filters.add('type=$type');
     if (unreadOnly == true) filters.add('unreadOnly');
     if (after != null) filters.add('after=$after');
     if (before != null) filters.add('before=$before');

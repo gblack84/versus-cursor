@@ -3,6 +3,9 @@ import 'notification_dto.dart';
 
 /// DTO for social notification data
 class SocialNotificationDto extends NotificationDto {
+  // ===== TYPE 상수 정의 =====
+  static const String TYPE_SOCIAL = 'social';
+
   final String? actionType;
   final String? actorId;
   final String? actorName;

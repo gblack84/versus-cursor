@@ -32,7 +32,7 @@ Screens는 검색 기능의 전체 화면을 구성하는 위젯들입니다. �
 
 ```
 screens/
-├── search_page/         # 메인 검색 화면
+├── search_page/         # 메인 검색 화면 (Post/User 검색)
 │   ├── search_page_widget.dart
 │   └── search_page_model.dart
 │
@@ -40,31 +40,30 @@ screens/
 │   ├── search_results_widget.dart
 │   └── search_results_model.dart
 │
-├── chat_search/         # 채팅 검색 화면
-│   ├── chat_search_widget.dart
-│   └── chat_search_model.dart
-│
-├── advanced_search/     # 고급 검색 화면
+├── advanced_search/     # 고급 검색 화면 (예정)
 │   ├── advanced_search_widget.dart
 │   └── advanced_search_model.dart
 │
-└── search_history/      # 검색 기록 화면
+└── search_history/      # 검색 기록 화면 (예정)
     ├── search_history_widget.dart
     └── search_history_model.dart
 ```
 
-## 🔄 마이그레이션 대상
+**Note**:
+- Chat 내부 검색 기능은 `/features/chat/` ChatDetailWidget에서 처리
+- Friends 추천 기능은 `/features/chat/presentation/screens/friends/` FriendsWidget으로 이동 완료 (2025-01-20)
 
-### 이동할 파일
-```bash
-# 메인 검색 페이지 이동
-git mv lib/pages/search/search_page_widget.dart lib/features/search/presentation/screens/search_page/
-git mv lib/pages/search/search_page_model.dart lib/features/search/presentation/screens/search_page/
+## 🔄 마이그레이션 상태
 
-# 채팅 검색 페이지 이동
-git mv lib/pages/chat/chat_search/chat_search_widget.dart lib/features/search/presentation/screens/chat_search/
-git mv lib/pages/chat/chat_search/chat_search_model.dart lib/features/search/presentation/screens/chat_search/
-```
+✅ **완료된 마이그레이션**:
+- Friends 추천 기능 → Chat Feature로 이동 (2025-01-20)
+- 채팅 내부 검색 기능 → ChatDetailWidget에 통합
+
+⏳ **예정된 구현**:
+- Post 검색 기능
+- User 검색 기능
+- 고급 검색 옵션
+- 검색 기록 관리
 
 ## 💻 Screen 사양
 
@@ -106,23 +105,7 @@ git mv lib/pages/chat/chat_search/chat_search_model.dart lib/features/search/pre
 - 그리드 뷰 (이미지 중심)
 - 컴팩트 뷰 (텍스트 중심)
 
-### ChatSearchWidget (채팅 검색 화면)
-
-**라우트:** `/chat/search`
-
-**특별 기능:**
-- 채팅방 내 검색
-- 메시지 하이라이팅
-- 날짜별 그룹핑
-- 미디어 필터
-- 참가자 필터
-
-**UI 특징:**
-- 메시지 미리보기
-- 점프 투 메시지
-- 컨텍스트 표시
-
-### AdvancedSearchWidget (고급 검색 화면)
+### AdvancedSearchWidget (고급 검색 화면) - 예정
 
 **라우트:** `/search/advanced`
 
@@ -140,7 +123,7 @@ git mv lib/pages/chat/chat_search/chat_search_model.dart lib/features/search/pre
 - Date range picker
 - Custom dropdown menus
 
-### SearchHistoryWidget (검색 기록 화면)
+### SearchHistoryWidget (검색 기록 화면) - 예정
 
 **라우트:** `/search/history`
 
@@ -228,26 +211,26 @@ Desktop: > 840dp - 3 컬럼
 
 ### 라우팅 구조
 ```
-/search (메인)
+/search (메인 - Post/User 검색)
 ├── /search/results (결과)
-├── /search/advanced (고급)
-├── /search/history (기록)
-└── /chat/search (채팅 검색)
+├── /search/advanced (고급 - 예정)
+└── /search/history (기록 - 예정)
 ```
+
+**Note**: Chat 관련 검색은 `/chat/` 경로에서 처리 (ChatDetailWidget)
 
 ### 딥링크 지원
 - URL 파라미터 파싱
 - 쿼리 스트링 처리
 - 상태 복원
 
-## 📝 마이그레이션 체크리스트
+## 📝 구현 체크리스트
 
-- [ ] Screen 위젯 이동
-  - [ ] SearchPageWidget
-  - [ ] SearchResultsWidget
-  - [ ] ChatSearchWidget
-  - [ ] AdvancedSearchWidget
-  - [ ] SearchHistoryWidget
+- [x] Screen 위젯 이동 (Phase 1 완료)
+  - [x] SearchPageWidget (플레이스홀더)
+  - [x] SearchResultsWidget (플레이스홀더)
+  - [ ] AdvancedSearchWidget (예정)
+  - [ ] SearchHistoryWidget (예정)
 - [ ] Model 클래스 생성
   - [ ] BaseScreenModel
   - [ ] 각 Screen별 Model

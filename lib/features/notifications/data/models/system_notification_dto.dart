@@ -3,6 +3,9 @@ import 'notification_dto.dart';
 
 /// DTO for system notification data
 class SystemNotificationDto extends NotificationDto {
+  // ===== TYPE 상수 정의 =====
+  static const String TYPE_SYSTEM_ALERT = 'systemAlert';
+
   final String? alertType;
   final String? actionUrl;
   final String? actionLabel;

@@ -27,6 +27,72 @@ search/
     └── providers/       # SearchProvider 상태 관리
 ```
 
+## ✅ Structure Cleanup Status (2025-01-20)
+
+**현재 상태**: 기본 스켈레톤 구조 완료, 실제 구현 대기중
+
+### 완료 항목
+- [x] Clean Architecture v4.0 디렉토리 구조
+- [x] 4개 Domain Models 스켈레톤 (SearchQuery, SearchFilter, SearchResult, AlgoliaResult)
+- [x] SearchProvider 기본 구조 (상태 관리 프레임워크)
+- [x] DI 등록 (Repository Singleton, Provider Factory)
+
+### 구현 필요 항목 (31 TODO)
+
+#### Domain Layer (9개)
+- **UseCases** (5개):
+  - SearchPostsUseCase
+  - SearchUsersUseCase
+  - SearchHashtagsUseCase
+  - SaveSearchHistoryUseCase
+  - GetTrendingSearchesUseCase
+
+- **Models JSON Serialization** (4개):
+  - SearchQuery.toJson/fromJson
+  - SearchFilter.toJson/fromJson
+  - SearchResult.toJson/fromJson
+  - AlgoliaResult.fromJson
+
+#### Data Layer (7개)
+- **DataSources** (3개):
+  - AlgoliaDataSource (Algolia API 통합)
+  - FirestoreSearchDataSource (Firestore 쿼리)
+  - LocalSearchDataSource (로컬 검색 기록)
+
+- **Services/Adapters** (4개):
+  - SearchIndexService (인덱싱 관리)
+  - SearchCacheService (결과 캐싱)
+  - SearchFilterService (필터 처리)
+  - SearchAnalyticsService (분석)
+
+#### Presentation Layer (15개)
+- **Provider** (1개):
+  - SearchProvider에 UseCases 통합
+
+- **Screens** (3개):
+  - SearchPageWidget (기본 Scaffold만 존재)
+  - SearchResultsWidget
+  - TrendingSearchesWidget
+
+- **Widgets** (11개):
+  - SearchBarWidget
+  - SearchResultCardWidget
+  - SearchFilterWidget
+  - RecentSearchesWidget
+  - TrendingTagsWidget
+  - SearchSuggestionsWidget
+  - NoResultsWidget
+  - SearchLoadingWidget
+  - SearchErrorWidget
+  - FilterChipWidget
+  - SortOptionsWidget
+
+### 기술 노트
+- `SearchRepositoryImpl`: Singleton 패턴 사용 (private constructor)
+- SearchHistoryModel: 이미 구현 완료 (115줄)
+- AlgoliaManager: 이미 구현 완료 (90줄)
+- ChatSearchBar: 이미 구현 완료 (314줄, Chat Feature에서 사용)
+
 ## 🎯 주요 기능
 
 ### 검색 대상
@@ -170,8 +236,15 @@ flutter test test/features/search/algolia/
 
 ## 📝 변경 이력
 
-### v1.0.0 (2025-08-27)
-- Feature-First Architecture 마이그레이션 완료
-- Algolia 통합 완료
-- 실시간 검색 구현
-- 검색 필터 시스템 추가
+### v0.1.0 (2025-01-20) - Structure Cleanup
+- Clean Architecture v4.0 구조 확립
+- 4개 Domain Models 스켈레톤 생성
+- SearchProvider 기본 구조 구현
+- DI 등록 완료 (Singleton Repository, Factory Provider)
+- 31개 TODO 항목 문서화
+
+### v1.0.0 (예정)
+- Feature-First Architecture 마이그레이션 완료 예정
+- Algolia 통합 예정
+- 실시간 검색 구현 예정
+- 검색 필터 시스템 추가 예정

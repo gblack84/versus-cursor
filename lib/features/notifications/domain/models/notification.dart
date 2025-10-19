@@ -3,7 +3,7 @@
 abstract class Notification {
   final String id;
   final String userId;
-  final NotificationType type;
+  final String type;
   final String title;
   final String content;
   final DateTime createdAt;
@@ -42,17 +42,9 @@ abstract class Notification {
     return daysSinceCreation > 30;
   }
 
-  /// 알림의 우선순위 계산
+  /// 알림의 우선순위 계산 (기본 구현 - 각 Feature에서 override 가능)
   int get priority {
-    // 투표 요청이면서 읽지 않은 경우 가장 높은 우선순위
-    if (type == NotificationType.votingRequest && !isRead && !isExpired) {
-      return 3;
-    }
-    // 친구 요청이면서 읽지 않은 경우 높은 우선순위
-    if (type == NotificationType.friendRequest && !isRead) {
-      return 2;
-    }
-    // 그 외 읽지 않은 알림
+    // 읽지 않은 알림
     if (!isRead) {
       return 1;
     }
@@ -81,7 +73,7 @@ abstract class Notification {
 
   @override
   String toString() {
-    return '${type.name} Notification: $title (User: $userId, Read: $isRead)';
+    return '$type Notification: $title (User: $userId, Read: $isRead)';
   }
 
   @override
@@ -92,27 +84,6 @@ abstract class Notification {
 
   @override
   int get hashCode => id.hashCode;
-}
-
-/// 알림 타입 열거형
-enum NotificationType {
-  votingRequest('voting_request'),
-  postLiked('post_liked'),
-  commentAdded('comment_added'),
-  friendRequest('friend_request'),
-  systemAlert('system_alert'),
-  postCompleted('post_completed'),
-  achievementUnlocked('achievement_unlocked');
-
-  final String value;
-  const NotificationType(this.value);
-
-  static NotificationType fromString(String value) {
-    return NotificationType.values.firstWhere(
-      (type) => type.value == value,
-      orElse: () => NotificationType.systemAlert,
-    );
-  }
 }
 
 /// 알림 우선순위 열거형

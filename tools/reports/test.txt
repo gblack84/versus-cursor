@@ -1,2 +1,0 @@
-[0;32m[test] Running flutter test...[0m
-Test directory "test" not found.

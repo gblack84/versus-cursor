@@ -1,8 +1,14 @@
 import '../models/notification.dart';
+import '/app/contracts/notification_types.dart';
 
 /// 소셜 알림 도메인 모델
 /// Clean Architecture - 구체 도메인 엔티티
 class SocialNotification extends Notification {
+  // ===== TYPE 상수 정의 (Contract 참조) =====
+  static const String TYPE_POST_LIKED = NotificationTypes.postLiked;
+  static const String TYPE_COMMENT_ADDED = NotificationTypes.commentAdded;
+  static const String TYPE_FRIEND_REQUEST = NotificationTypes.friendRequest;
+
   final SocialActionType actionType;
   final String fromUserId;
   final String fromUserName;
@@ -11,11 +17,6 @@ class SocialNotification extends Notification {
   final String? relatedCommentId;
   final String? relatedContent;
   final int? interactionCount;
-
-  // Alternative field names for repository compatibility
-  String get actorId => fromUserId;
-  String get actorName => fromUserName;
-  String? get actorProfileUrl => fromUserProfileUrl;
 
   SocialNotification({
     required super.id,
@@ -39,21 +40,21 @@ class SocialNotification extends Notification {
           type: _mapActionTypeToNotificationType(actionType),
         );
 
-  /// 액션 타입을 알림 타입으로 매핑
-  static NotificationType _mapActionTypeToNotificationType(
+  /// 액션 타입을 알림 타입 String으로 매핑
+  static String _mapActionTypeToNotificationType(
       SocialActionType actionType) {
     switch (actionType) {
       case SocialActionType.like:
-        return NotificationType.postLiked;
+        return TYPE_POST_LIKED;
       case SocialActionType.comment:
-        return NotificationType.commentAdded;
+        return TYPE_COMMENT_ADDED;
       case SocialActionType.friendRequest:
       case SocialActionType.friendAccepted:
-        return NotificationType.friendRequest;
+        return TYPE_FRIEND_REQUEST;
       case SocialActionType.follow:
       case SocialActionType.mention:
       case SocialActionType.share:
-        return NotificationType.postLiked; // 임시 매핑
+        return TYPE_POST_LIKED; // 임시 매핑
     }
   }
 

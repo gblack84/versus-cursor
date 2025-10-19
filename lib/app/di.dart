@@ -10,9 +10,10 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '/app/contracts/auth_contract.dart';
 import '/app/contracts/user_contract.dart';
+import '/app/contracts/notification_contract.dart';
 
-// Voting Feature DI Module - TODO: Remove after migration
-// import '/features/voting/di/voting_di_module.dart';
+// Voting Feature DI Module
+import '/features/voting/di/voting_di_module.dart';
 import '/features/voting/domain/ports/i_vote_service.dart' as voting;
 
 // Auth Feature DI
@@ -39,16 +40,16 @@ import '/features/auth/presentation/providers/auth_provider.dart' as app_auth;
 // Notifications Feature DI
 import '/features/notifications/domain/repositories/i_notification_repository.dart';
 import '/features/notifications/data/repositories/notification_repository_impl.dart';
-import '/features/notifications/domain/handlers/i_notification_handler.dart';
-import '/features/notifications/presentation/adapters/notification_display_adapter.dart';
 import '/features/notifications/domain/services/i_notification_service.dart';
+import '/services/notification/notification_queue_service.dart';
+import '/services/notification/fcm_service.dart';
+import '/features/notifications/presentation/providers/notification_overlay_provider.dart';
+import '/features/notifications/domain/usecases/mark_as_read_use_case.dart';
 // NOTE: UseCases are imported and registered in NotificationFactory
 
 // Core Interface Implementations for Notifications
 import '/core/interfaces/features/i_vote_service.dart' as core;
-import '/core/interfaces/features/i_post_service.dart';
 import 'di/adapters/core_vote_service_adapter.dart';
-import '/features/notifications/data/adapters/mock_post_service_adapter.dart';
 
 // Core Ports
 import '/core/domain/ports/i_notification_display_port.dart';
@@ -57,15 +58,12 @@ import '/core/domain/ports/i_notification_display_port.dart';
 import '/features/voting/domain/ports/i_vote_ui_delegate.dart';
 import '/features/voting/presentation/managers/vote_ui_manager.dart';
 import '/features/voting/presentation/handlers/vote_handler_impl.dart';
+import '/features/voting/domain/usecases/submit_vote_use_case.dart';
 import '/features/notifications/data/adapters/notification_service.dart';
 import '/features/notifications/data/datasources/i_remote_notification_datasource.dart';
 import '/features/notifications/data/datasources/remote/firebase_notification_datasource.dart';
 import '/features/notifications/data/datasources/i_local_notification_datasource.dart';
 import '/features/notifications/data/datasources/local/shared_prefs_notification_datasource.dart';
-import '/features/notifications/data/datasources/i_post_datasource.dart';
-import '/features/notifications/data/datasources/cross/mock_post_datasource.dart';
-import '/features/notifications/data/datasources/i_chat_datasource.dart';
-import '/features/notifications/data/datasources/cross/mock_chat_datasource.dart';
 import '/features/notifications/data/mappers/notification_mapper.dart';
 
 // Posts Feature - VoteTimerService
@@ -136,10 +134,22 @@ import '/features/chat/domain/usecases/send_message_usecase.dart';
 import '/features/chat/domain/usecases/search_messages_usecase.dart';
 import '/features/chat/domain/usecases/get_chat_list_usecase.dart';
 import '/features/chat/domain/usecases/send_ai_query_usecase.dart';
+import '/features/chat/domain/usecases/get_recommended_friends_usecase.dart';
+import '/features/chat/domain/usecases/search_friends_usecase.dart';
+import '/features/chat/domain/usecases/send_friend_request_usecase.dart';
+import '/features/chat/domain/usecases/toggle_follow_usecase.dart';
 // Providers
 import '/features/chat/presentation/providers/chat_detail_provider.dart';
 import '/features/chat/presentation/providers/ai_chat_provider.dart';
 import '/features/chat/presentation/providers/chat_list_provider.dart';
+import '/features/chat/presentation/providers/friends_provider.dart';
+
+// ===== Search Feature Clean Architecture DI =====
+// Repositories
+import '/features/search/domain/repositories/i_search_repository.dart';
+import '/features/search/data/repositories/search_repository_impl.dart';
+// Providers
+import '/features/search/presentation/providers/search_provider.dart';
 
 
 final getIt = GetIt.instance;
@@ -254,11 +264,6 @@ Future<void> setupDependencyInjection() async {
   //   () => getIt<PostRepositoryImpl>(), // PostRepositoryImpl이 PostContract 구현
   // );
 
-  // Notification Feature가 NotificationContract를 구현하면 등록:
-  // getIt.registerLazySingleton<NotificationContract>(
-  //   () => getIt<NotificationRepositoryImpl>(),
-  // );
-
   // ===== Notifications Feature DI =====
 
   // DataSource 등록
@@ -274,22 +279,8 @@ Future<void> setupDependencyInjection() async {
     ),
   );
 
-  // Cross-feature DataSource (임시 Mock 구현)
-  getIt.registerLazySingleton<IPostDatasource>(
-    () => MockPostDatasource(),
-  );
-
-  getIt.registerLazySingleton<IChatDatasource>(
-    () => MockChatDatasource(),
-  );
-  
   // ===== Core Interface Adapters =====
   // NOTE: These must be registered AFTER Voting DI Module
-  
-  // Register Mock Post Service (until Posts feature is migrated)
-  getIt.registerLazySingleton<IPostService>(
-    () => MockPostServiceAdapter(),
-  );
   
   // Register Core Vote Service Adapter (will be registered after Voting module below)
 
@@ -306,20 +297,59 @@ Future<void> setupDependencyInjection() async {
     ),
   );
 
+  // Register NotificationContract (Cross-Feature Communication)
+  // Same instance as INotificationRepository, different interface
+  // Posts, Chat 등 다른 Feature가 알림 기능을 사용할 때 접근
+  getIt.registerLazySingleton<NotificationContract>(
+    () => getIt<INotificationRepository>() as NotificationRepositoryImpl,
+  );
+
   // NOTE: UseCases are now registered by NotificationFactory
   // See: /lib/app/di/factories/notification_factory.dart
 
-  // Register Port Implementation for cross-feature communication
-  // The VoteHandlerImpl now implements INotificationDisplayPort instead of INotificationHandler
-  getIt.registerLazySingleton<INotificationDisplayPort>(
-    () => VoteHandlerImpl(uiManager: VoteUIManager.instance),
+  // ===== Voting Feature DI (MUST BE REGISTERED BEFORE VoteHandlerImpl) =====
+
+  // Register VoteTimerPort adapter BEFORE the voting module
+  // This wraps the VoteTimerService from posts feature to avoid cross-feature dependency
+  getIt.registerLazySingleton<IVoteTimerPort>(
+    () => VoteTimerAdapter(VoteTimerService()),
   );
 
-  // Register Notification Handler with Adapter pattern
-  // This adapter delegates to the Port implementation to avoid circular dependencies
-  getIt.registerLazySingleton<INotificationHandler>(
-    () => NotificationDisplayAdapter(
-      port: getIt<INotificationDisplayPort>(),
+  // Register all Voting feature dependencies
+  // This will register voting.IVoteService and SubmitVoteUseCase internally
+  registerVotingModule(getIt);
+
+  // ===== Notification Feature DI (Depends on Voting Feature) =====
+
+  // Register Port Implementation for cross-feature communication
+  // The VoteHandlerImpl implements INotificationDisplayPort for voting feature
+  // NOTE: SubmitVoteUseCase is injected from Voting DI Module (registered above)
+  getIt.registerLazySingleton<INotificationDisplayPort>(
+    () => VoteHandlerImpl(
+      uiManager: VoteUIManager.instance,
+      submitVote: getIt<SubmitVoteUseCase>(),
+    ),
+  );
+
+  // Register Notification Queue Service
+  // Manages notification queue, duplicate prevention, and sequential display
+  // Integrates both Firestore and FCM push notifications
+  getIt.registerLazySingleton<NotificationQueueService>(
+    () => NotificationQueueService(
+      localDatasource: getIt<ILocalNotificationDatasource>(),
+      notificationService: getIt<INotificationService>(),
+      fcmService: FCMService(), // Singleton instance
+    ),
+  );
+
+  // Register Notification Overlay Provider (Presentation Layer)
+  // Subscribes to NotificationQueueService stream and displays dialogs
+  // NOTE: Vote submission is now handled by VoteHandlerImpl (Voting Feature)
+  getIt.registerLazySingleton<NotificationOverlayProvider>(
+    () => NotificationOverlayProvider(
+      queueService: getIt<NotificationQueueService>(),
+      markAsRead: getIt<MarkAsReadUseCase>(),
+      votingDisplayPort: getIt<INotificationDisplayPort>(),
     ),
   );
 
@@ -328,28 +358,14 @@ Future<void> setupDependencyInjection() async {
     () => VoteUIManager.instance,
   );
 
-  // GlobalNotificationManager is now registered in NotificationModule
+  // NotificationQueueService is now registered in NotificationModule
 
   // Register Services (인터페이스로 등록)
   getIt.registerLazySingleton<INotificationService>(
     () => NotificationService(
       repository: getIt<INotificationRepository>(),
-      chatDatasource: getIt<IChatDatasource>(),
     ),
   );
-
-  // ===== Voting Feature DI =====
-  
-  // Register VoteTimerPort adapter BEFORE the voting module
-  // This wraps the VoteTimerService from posts feature to avoid cross-feature dependency
-  getIt.registerLazySingleton<IVoteTimerPort>(
-    () => VoteTimerAdapter(VoteTimerService()),
-  );
-  
-  // Register all Voting feature dependencies
-  // This will register voting.IVoteService internally
-  // TODO: Remove after Voting feature migration to Contract pattern
-  // registerVotingModule(getIt);
 
   // ===== Core Interface Bindings for Cross-Feature Communication =====
   
@@ -359,12 +375,6 @@ Future<void> setupDependencyInjection() async {
     () => CoreVoteServiceAdapter(
       votingService: getIt<voting.IVoteService>(),
     ),
-  );
-  
-  // Register Core IPostService using mock implementation
-  // TODO: Replace with real implementation when Posts feature provides one
-  getIt.registerLazySingleton<IPostService>(
-    () => MockPostServiceAdapter(),
   );
 
   // ===== Profile Feature DI =====
@@ -561,6 +571,42 @@ Future<void> setupDependencyInjection() async {
   getIt.registerFactory(() => ChatListProvider(
     getChatListUseCase: getIt<GetChatListUseCase>(),
   ));
+
+  // Friends Management UseCases (Clean Architecture v4.0)
+  getIt.registerFactory(() => GetRecommendedFriendsUseCase(
+    chatRepository: getIt<IChatRepository>(),
+  ));
+
+  getIt.registerFactory(() => SearchFriendsUseCase(
+    chatRepository: getIt<IChatRepository>(),
+  ));
+
+  getIt.registerFactory(() => SendFriendRequestUseCase(
+    chatRepository: getIt<IChatRepository>(),
+  ));
+
+  getIt.registerFactory(() => ToggleFollowUseCase(
+    chatRepository: getIt<IChatRepository>(),
+  ));
+
+  // FriendsProvider (Clean Architecture v4.0)
+  getIt.registerFactory(() => FriendsProvider(
+    getRecommendedUseCase: getIt<GetRecommendedFriendsUseCase>(),
+    searchUseCase: getIt<SearchFriendsUseCase>(),
+    sendRequestUseCase: getIt<SendFriendRequestUseCase>(),
+    toggleFollowUseCase: getIt<ToggleFollowUseCase>(),
+  ));
+
+  // ===== Search Feature DI (Structure Cleanup - 2025-01-20) =====
+
+  // 1. Repository 등록 (Singleton 패턴 사용)
+  getIt.registerLazySingleton<ISearchRepository>(
+    () => SearchRepositoryImpl.instance,
+  );
+
+  // 2. Provider 등록 (기본 구조만, UseCases 통합은 TODO)
+  // TODO: Add UseCases when implemented
+  getIt.registerFactory(() => SearchProvider());
 
   // Add more dependency registrations here as needed
 }

@@ -518,6 +518,24 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "firebase_messaging",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_messaging-15.2.9",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "firebase_messaging_platform_interface",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_messaging_platform_interface-4.6.9",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "firebase_messaging_web",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_messaging_web-3.10.9",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
       "name": "firebase_performance",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/firebase_performance-0.10.1+9",
       "packageUri": "lib/",
@@ -1155,7 +1173,7 @@
     },
     {
       "name": "ollama_dart",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/ollama_dart-0.2.3",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/ollama_dart-0.2.5",
       "packageUri": "lib/",
       "languageVersion": "3.6"
     },

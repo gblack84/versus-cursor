@@ -226,4 +226,118 @@ class FirebaseChatRemoteDatasource implements IChatRemoteDatasource {
       throw Exception('지원하지 않는 미디어 타입입니다: $mediaType');
     }
   }
+
+  // ========== Friends Management Operations ==========
+
+  @override
+  Stream<List<dynamic>> getRecommendedFriends({
+    required String currentUserId,
+    String sortBy = 'totalAPoints',
+    int limit = 20,
+  }) {
+    return _firestore
+        .collection('users')
+        .where('uid', isNotEqualTo: currentUserId)
+        .orderBy('uid') // 복합 쿼리를 위한 보조 정렬
+        .orderBy(sortBy, descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  @override
+  Stream<List<dynamic>> searchUsers({
+    required String currentUserId,
+    required String query,
+  }) {
+    // Firestore는 부분 문자열 검색을 지원하지 않으므로
+    // 클라이언트 측에서 필터링하거나 Algolia/Elasticsearch 사용 권장
+    // 여기서는 간단히 displayName이 query로 시작하는 사용자 검색
+    return _firestore
+        .collection('users')
+        .where('uid', isNotEqualTo: currentUserId)
+        .orderBy('uid')
+        .orderBy('displayName')
+        .startAt([query])
+        .endAt(['$query\uf8ff']) // Unicode 최대값으로 범위 쿼리
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  @override
+  Future<void> sendFriendRequest({
+    required String fromUserId,
+    required String toUserId,
+  }) async {
+    // friendRequests 서브컬렉션에 요청 추가
+    await _firestore
+        .collection('users')
+        .doc(toUserId)
+        .collection('friendRequests')
+        .doc(fromUserId)
+        .set({
+      'fromUserId': fromUserId,
+      'toUserId': toUserId,
+      'status': 'pending',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  @override
+  Future<void> followUser(String userId, String targetUserId) async {
+    // following 서브컬렉션에 추가
+    await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('following')
+        .doc(targetUserId)
+        .set({
+      'userId': userId,
+      'targetUserId': targetUserId,
+      'followedAt': FieldValue.serverTimestamp(),
+    });
+
+    // followers 서브컬렉션에도 추가 (양방향)
+    await _firestore
+        .collection('users')
+        .doc(targetUserId)
+        .collection('followers')
+        .doc(userId)
+        .set({
+      'userId': targetUserId,
+      'followerId': userId,
+      'followedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  @override
+  Future<void> unfollowUser(String userId, String targetUserId) async {
+    // following 서브컬렉션에서 삭제
+    await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('following')
+        .doc(targetUserId)
+        .delete();
+
+    // followers 서브컬렉션에서도 삭제 (양방향)
+    await _firestore
+        .collection('users')
+        .doc(targetUserId)
+        .collection('followers')
+        .doc(userId)
+        .delete();
+  }
+
+  @override
+  Future<bool> isFollowing(String userId, String targetUserId) async {
+    final doc = await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('following')
+        .doc(targetUserId)
+        .get();
+
+    return doc.exists;
+  }
 }

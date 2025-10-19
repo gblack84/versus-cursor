@@ -48,21 +48,6 @@ abstract class IRemoteNotificationDatasource {
   /// Mark single notification as read
   Future<void> markAsRead(String notificationId);
 
-  /// Create vote request message in chat
-  Future<void> createVoteRequestMessage({
-    required String senderId,
-    required String recipientId,
-    required String postId,
-    required Map<String, dynamic> postData,
-  });
-
-  /// Update vote message status
-  Future<void> updateVoteMessageStatus({
-    required String postId,
-    required String userId,
-    required String status,
-  });
-
   // ===== P1 추가 메서드 =====
 
   /// Delete all notifications for a user
@@ -90,8 +75,11 @@ abstract class IRemoteNotificationDatasource {
     required DateTime to,
   });
 
-  /// Get post data (cross-feature)
-  Future<Map<String, dynamic>?> getPostData(String postId);
+  // ===== Contract 지원 메서드 =====
+
+  /// Get real-time notification stream for NotificationContract
+  /// Returns raw notification data stream for cross-feature usage
+  Stream<Map<String, dynamic>> getRealTimeNotificationStream(String userId);
 }
 
 /// Batch update request model

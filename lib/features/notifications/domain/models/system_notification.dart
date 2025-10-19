@@ -1,18 +1,20 @@
 import '../models/notification.dart';
+import '/app/contracts/notification_types.dart';
 
 /// 시스템 알림 도메인 모델
 /// Clean Architecture - 구체 도메인 엔티티
 class SystemNotification extends Notification {
+  // ===== TYPE 상수 정의 (Contract 참조) =====
+  static const String TYPE_SYSTEM_ALERT = NotificationTypes.systemAlert;
+  static const String TYPE_POST_COMPLETED = NotificationTypes.postCompleted;
+  static const String TYPE_ACHIEVEMENT_UNLOCKED = NotificationTypes.achievementUnlocked;
+
   final SystemAlertType alertType;
   final String? actionUrl;
   final String? actionLabel;
   final Map<String, String>? actionButtons;
   final String? iconUrl;
   final bool isDismissible;
-
-  // Alias for backward compatibility
-  SystemAlertLevel get alertLevel =>
-      SystemAlertLevel.fromString(alertType.value);
 
   const SystemNotification({
     required super.id,
@@ -30,7 +32,7 @@ class SystemNotification extends Notification {
     this.actionButtons,
     this.iconUrl,
     this.isDismissible = true,
-  }) : super(type: NotificationType.systemAlert);
+  }) : super(type: TYPE_SYSTEM_ALERT);
 
   /// 액션이 필요한 알림인지 확인
   bool get requiresAction {
@@ -100,25 +102,6 @@ enum SystemAlertType {
     return SystemAlertType.values.firstWhere(
       (type) => type.value == value,
       orElse: () => SystemAlertType.info,
-    );
-  }
-}
-
-/// Alias for backward compatibility with repository
-enum SystemAlertLevel {
-  critical('critical'),
-  security('security'),
-  maintenance('maintenance'),
-  update('update'),
-  info('info');
-
-  final String value;
-  const SystemAlertLevel(this.value);
-
-  static SystemAlertLevel fromString(String value) {
-    return SystemAlertLevel.values.firstWhere(
-      (level) => level.value == value,
-      orElse: () => SystemAlertLevel.info,
     );
   }
 }

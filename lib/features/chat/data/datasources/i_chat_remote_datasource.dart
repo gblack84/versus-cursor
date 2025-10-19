@@ -150,4 +150,72 @@ abstract class IChatRemoteDatasource {
     required File file,
     required String mediaType,
   });
+
+  // ========== Friends Management Operations (Clean Architecture v4.0) ==========
+
+  /// Get recommended friends (top ranked by totalAPoints)
+  ///
+  /// **Parameters**:
+  /// - [currentUserId]: Current user ID (excluded from results)
+  /// - [sortBy]: Field to sort by (default: 'totalAPoints')
+  /// - [limit]: Maximum number of users to retrieve
+  ///
+  /// **Returns**: Stream of user data (dynamic list)
+  ///
+  /// **Note**: Returns dynamic to avoid creating UserProfile DTO
+  /// Datasource layer returns raw Firestore data
+  Stream<List<dynamic>> getRecommendedFriends({
+    required String currentUserId,
+    String sortBy = 'totalAPoints',
+    int limit = 20,
+  });
+
+  /// Search users by displayName
+  ///
+  /// **Parameters**:
+  /// - [currentUserId]: Current user ID (excluded from results)
+  /// - [query]: Search query (matches displayName)
+  ///
+  /// **Returns**: Stream of user data (dynamic list)
+  Stream<List<dynamic>> searchUsers({
+    required String currentUserId,
+    required String query,
+  });
+
+  /// Send friend request
+  ///
+  /// **Parameters**:
+  /// - [fromUserId]: User sending the request
+  /// - [toUserId]: User receiving the request
+  ///
+  /// **Implementation**:
+  /// - Creates friend request document in Firestore
+  /// - Handles duplicate/existing friend checks
+  Future<void> sendFriendRequest({
+    required String fromUserId,
+    required String toUserId,
+  });
+
+  /// Follow a user
+  ///
+  /// **Parameters**:
+  /// - [userId]: User who is following
+  /// - [targetUserId]: User being followed
+  Future<void> followUser(String userId, String targetUserId);
+
+  /// Unfollow a user
+  ///
+  /// **Parameters**:
+  /// - [userId]: User who is unfollowing
+  /// - [targetUserId]: User being unfollowed
+  Future<void> unfollowUser(String userId, String targetUserId);
+
+  /// Check if user is following another user
+  ///
+  /// **Parameters**:
+  /// - [userId]: User checking follow status
+  /// - [targetUserId]: Target user to check
+  ///
+  /// **Returns**: true if following, false otherwise
+  Future<bool> isFollowing(String userId, String targetUserId);
 }

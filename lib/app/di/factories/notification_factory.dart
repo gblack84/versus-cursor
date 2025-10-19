@@ -4,18 +4,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Import notification domain interfaces
 import '../../../features/notifications/domain/repositories/i_notification_repository.dart';
-import '../../../features/notifications/domain/handlers/i_notification_handler.dart';
 
 /// Import notification use cases
 import '../../../features/notifications/domain/usecases/get_user_notifications_use_case.dart';
 import '../../../features/notifications/domain/usecases/mark_as_read_use_case.dart';
-import '../../../features/notifications/domain/usecases/process_vote_notification_use_case.dart';
 import '../../../features/notifications/domain/usecases/send_notification_use_case.dart';
 import '../../../features/notifications/domain/usecases/watch_unread_count_use_case.dart';
-import '../../../features/notifications/domain/usecases/initialize_notifications_use_case.dart';
-import '../../../features/notifications/domain/usecases/start_notification_listening_use_case.dart';
-import '../../../features/notifications/domain/usecases/stop_notification_listening_use_case.dart';
-import '../../../features/notifications/domain/usecases/get_post_data_use_case.dart';
+import '../../../features/notifications/domain/usecases/watch_user_notifications_use_case.dart';
+
+/// Import core use cases (shared across features)
+import '../../../core/domain/usecases/get_current_user_use_case.dart';
 
 /// Import notification data implementations
 import '../../../features/notifications/data/repositories/notification_repository_impl.dart';
@@ -27,18 +25,13 @@ import '../../../features/notifications/data/datasources/local/shared_prefs_noti
 /// Import notification services/adapters
 import '../../../features/notifications/domain/services/i_notification_service.dart';
 import '../../../features/notifications/data/adapters/notification_service.dart';
-import '../../../features/notifications/data/adapters/global_notification_manager.dart';
+import '../../../services/notification/notification_queue_service.dart';
 
 /// Import cross-feature dependencies
-import '../../../features/notifications/data/datasources/i_post_datasource.dart';
-import '../../../features/notifications/data/datasources/cross/mock_post_datasource.dart';
-import '../../../features/notifications/data/datasources/i_chat_datasource.dart';
-import '../../../features/notifications/data/datasources/cross/mock_chat_datasource.dart';
 import '../../../features/creation/domain/services/i_target_audience_service.dart';
 import '../../../core/domain/ports/i_user_service.dart';
-import '../../../features/voting/domain/ports/i_vote_service.dart';
 // UserServiceImpl removed - Phase 4 Auth service layer removed
-import '../../../features/voting/data/adapters/vote_service_impl.dart';
+// IVoteService removed - Now managed by Voting DI Module
 import '../../../core/events/event_bus.dart';
 
 /// Factory for creating and configuring notification feature dependencies
@@ -72,26 +65,25 @@ class NotificationFactory {
     return {
       // Core Infrastructure
       'EventBus': 'EventBus() - Event coordination system',
-      
-      // Cross-feature Service Implementations  
+
+      // Cross-feature Service Implementations
       'IUserService': 'UserServiceImpl() - User management operations',
-      'IVoteService': 'VoteServiceImpl(voteStatusService) - Voting operations',
-      
+      // IVoteService removed - Now managed by Voting DI Module
+
       // Data Source Layer (Clean Architecture: Outer Layer)
       'IRemoteNotificationDatasource': 'FirebaseNotificationDatasource(FirebaseFirestore.instance) - Remote data access',
       'ILocalNotificationDatasource': 'SharedPrefsNotificationDatasource(SharedPreferences) - Local cache access',
-      'IPostDatasource': 'MockPostDatasource() - Cross-feature post data access',
-      'IChatDatasource': 'MockChatDatasource() - Cross-feature chat data access',
-      
-      // Repository Layer (Clean Architecture: Data Layer)
-      'INotificationRepository': 'NotificationRepositoryImpl(remoteDatasource, localDatasource) - Data aggregation and caching',
-      
-      // Service/Adapter Layer (Clean Architecture: Application Layer)
-      'NotificationService': 'NotificationService(repository, chatDatasource) - Real-time notification streaming',
-      'ITargetAudienceService': 'ITargetAudienceService - AI-powered user targeting (registered in creation_module.dart)',
-      
-      // Global Manager (Clean Architecture: Application Layer)
-      'GlobalNotificationManager': 'GlobalNotificationManager(handler, repository, datasources, services) - Notification orchestration',
+
+      // NotificationService (depends on Datasources only - circular dependency resolved)
+      'INotificationService': 'NotificationService(remoteDatasource) - Real-time notification streaming with Firestore direct access',
+
+      // Queue Service (depends on NotificationService)
+      'NotificationQueueService': 'NotificationQueueService(localDatasource, notificationService) - Notification queue management and sequential display',
+
+      // Repository Layer (depends on DataSources + NotificationQueueService)
+      'INotificationRepository': 'NotificationRepositoryImpl(remoteDatasource, localDatasource, queueService) - Data aggregation and Contract implementation',
+
+      // Note: TargetAudienceService is registered in creation_module.dart as ITargetAudienceService
     };
   }
 
@@ -101,19 +93,14 @@ class NotificationFactory {
   }
 
   /// Create User Service implementation
-  /// NOTE: Auth service layer removed in Phase 4 - return null for now
-  IUserService? createUserService() {
+  /// NOTE: Auth service layer removed in Phase 4 - throw until User feature is migrated
+  IUserService createUserService() {
     // TODO: Replace with proper implementation when User feature is migrated
-    return null;
+    throw UnimplementedError(
+        'IUserService not yet implemented. User feature migration pending.');
   }
 
-  /// Create Vote Service implementation
-  /// Requires: voteStatusService (should be registered elsewhere)
-  IVoteService createVoteService(GetIt sl) {
-    return VoteServiceImpl(
-      voteStatusService: sl.get(), // Assumes VoteStatusService is registered elsewhere
-    );
-  }
+  // Vote Service removed - Now managed by Voting DI Module
 
   /// Create Remote Notification DataSource
   IRemoteNotificationDatasource createRemoteNotificationDatasource() {
@@ -130,31 +117,22 @@ class NotificationFactory {
     );
   }
 
-  /// Create Post DataSource (Mock for now)
-  IPostDatasource createPostDatasource() {
-    return MockPostDatasource();
-  }
-
-  /// Create Chat DataSource (Mock for now)
-  IChatDatasource createChatDatasource() {
-    return MockChatDatasource();
-  }
 
   /// Create Notification Repository
-  /// Requires: IRemoteNotificationDatasource, ILocalNotificationDatasource
+  /// Requires: IRemoteNotificationDatasource, ILocalNotificationDatasource, NotificationQueueService
   INotificationRepository createNotificationRepository(GetIt sl) {
     return NotificationRepositoryImpl(
       remoteDatasource: sl<IRemoteNotificationDatasource>(),
       localDatasource: sl<ILocalNotificationDatasource>(),
+      queueService: sl<NotificationQueueService>(),
     );
   }
 
   /// Create Notification Service
-  /// Requires: INotificationRepository, IChatDatasource
+  /// Requires: IRemoteNotificationDatasource
   INotificationService createNotificationService(GetIt sl) {
     return NotificationService(
-      repository: sl<INotificationRepository>(),
-      chatDatasource: sl<IChatDatasource>(),
+      remoteDatasource: sl<IRemoteNotificationDatasource>(),
     );
   }
 
@@ -165,17 +143,14 @@ class NotificationFactory {
     return sl<ITargetAudienceService>();
   }
 
-  /// Create Global Notification Manager
-  /// Requires: All notification-related dependencies
-  /// This should be registered LAST as it depends on all other services
-  GlobalNotificationManager createGlobalNotificationManager(GetIt sl) {
-    return GlobalNotificationManager(
-      notificationHandler: sl<INotificationHandler>(), // Registered elsewhere to avoid circular dependency
-      remoteDatasource: sl<IRemoteNotificationDatasource>(),
+  /// Create Notification Queue Service
+  /// Requires: Local datasource and NotificationService
+  /// Manages notification queue, duplicate prevention, and sequential display
+  /// Emits notifications via Stream for Presentation layer to display
+  NotificationQueueService createNotificationQueueService(GetIt sl) {
+    return NotificationQueueService(
       localDatasource: sl<ILocalNotificationDatasource>(),
       notificationService: sl<INotificationService>(),
-      userService: sl<IUserService>(),
-      voteService: sl<IVoteService>(),
     );
   }
 
@@ -191,10 +166,6 @@ class NotificationFactory {
     return MarkAsReadUseCase(sl<INotificationRepository>());
   }
 
-  /// Create ProcessVoteNotificationUseCase
-  ProcessVoteNotificationUseCase createProcessVoteNotificationUseCase(GetIt sl) {
-    return ProcessVoteNotificationUseCase(sl<INotificationRepository>());
-  }
 
   /// Create SendNotificationUseCase
   SendNotificationUseCase createSendNotificationUseCase(GetIt sl) {
@@ -206,35 +177,29 @@ class NotificationFactory {
     return WatchUnreadCountUseCase(sl<INotificationRepository>());
   }
 
-  /// Create InitializeNotificationsUseCase
-  InitializeNotificationsUseCase createInitializeNotificationsUseCase(GetIt sl) {
-    return InitializeNotificationsUseCase(sl<INotificationRepository>());
+  /// Create GetCurrentUserUseCase
+  /// Note: Moved to /lib/core/domain/usecases/ as shared across features
+  GetCurrentUserUseCase createGetCurrentUserUseCase(GetIt sl) {
+    return GetCurrentUserUseCase(sl<IUserService>());
   }
 
-  /// Create StartNotificationListeningUseCase
-  StartNotificationListeningUseCase createStartNotificationListeningUseCase(GetIt sl) {
-    return StartNotificationListeningUseCase(sl<INotificationRepository>());
-  }
-
-  /// Create StopNotificationListeningUseCase
-  StopNotificationListeningUseCase createStopNotificationListeningUseCase(GetIt sl) {
-    return StopNotificationListeningUseCase(sl<INotificationRepository>());
-  }
-
-  /// Create GetPostDataUseCase
-  GetPostDataUseCase createGetPostDataUseCase(GetIt sl) {
-    return GetPostDataUseCase(sl<INotificationRepository>());
+  /// Create WatchUserNotificationsUseCase
+  WatchUserNotificationsUseCase createWatchUserNotificationsUseCase(GetIt sl) {
+    return WatchUserNotificationsUseCase(sl<INotificationRepository>());
   }
 
   /// Register all notification dependencies using GetIt
-  /// 
-  /// Registration Order (Critical for dependency resolution):
+  ///
+  /// Registration Order (Critical for dependency resolution - UPDATED to fix circular dependency):
   /// 1. Core Infrastructure (EventBus)
-  /// 2. Cross-feature Services (IUserService, IVoteService) 
-  /// 3. DataSources (Remote, Local, Cross-feature)
-  /// 4. Repository (depends on DataSources)
-  /// 5. Services/Adapters (depends on Repository and DataSources)
-  /// 6. Global Manager (depends on everything else)
+  /// 2. Cross-feature Services (IUserService)
+  /// 3. DataSources (Remote, Local)
+  /// 4. NotificationService (depends on Datasources only)
+  /// 5. NotificationQueueService (depends on NotificationService)
+  /// 6. Repository (depends on DataSources + NotificationQueueService)
+  ///
+  /// Note: Circular dependency resolved by making NotificationService depend on
+  ///       Datasource instead of Repository
   void registerAll(GetIt sl) {
     // 1. Core Infrastructure
     sl.registerLazySingleton<EventBus>(
@@ -246,9 +211,7 @@ class NotificationFactory {
       () => createUserService(),
     );
 
-    sl.registerLazySingleton<IVoteService>(
-      () => createVoteService(sl),
-    );
+    // IVoteService removed - Now managed by Voting DI Module
 
     // 3. DataSources (Clean Architecture: Outer Layer)
     sl.registerLazySingleton<IRemoteNotificationDatasource>(
@@ -259,32 +222,21 @@ class NotificationFactory {
       () => createLocalNotificationDatasource(sl),
     );
 
-    // Cross-feature DataSources (Mock implementations)
-    sl.registerLazySingleton<IPostDatasource>(
-      () => createPostDatasource(),
-    );
-
-    sl.registerLazySingleton<IChatDatasource>(
-      () => createChatDatasource(),
-    );
-
-    // 4. Repository Layer (Clean Architecture: Data Layer)
-    sl.registerLazySingleton<INotificationRepository>(
-      () => createNotificationRepository(sl),
-    );
-
-    // 5. Service/Adapter Layer (Clean Architecture: Application Layer)
+    // 4. NotificationService (depends on Datasources only - no Repository dependency)
     sl.registerLazySingleton<INotificationService>(
       () => createNotificationService(sl),
     );
 
+    // 5. NotificationQueueService (depends on NotificationService)
     // Note: TargetAudienceService is registered in creation_module.dart as ITargetAudienceService
-    // No need to register it here again
+    sl.registerLazySingleton<NotificationQueueService>(
+      () => createNotificationQueueService(sl),
+    );
 
-    // 6. Global Manager (Register LAST - depends on all other services)
-    // Note: INotificationHandler must be registered elsewhere to avoid circular dependency
-    sl.registerLazySingleton<GlobalNotificationManager>(
-      () => createGlobalNotificationManager(sl),
+    // 6. Repository Layer (depends on DataSources + NotificationQueueService)
+    // Repository is registered LAST to avoid circular dependency
+    sl.registerLazySingleton<INotificationRepository>(
+      () => createNotificationRepository(sl),
     );
 
     // 7. Use Cases (Clean Architecture: Application Layer)
@@ -297,10 +249,6 @@ class NotificationFactory {
       () => createMarkAsReadUseCase(sl),
     );
 
-    sl.registerFactory<ProcessVoteNotificationUseCase>(
-      () => createProcessVoteNotificationUseCase(sl),
-    );
-
     sl.registerFactory<SendNotificationUseCase>(
       () => createSendNotificationUseCase(sl),
     );
@@ -309,56 +257,43 @@ class NotificationFactory {
       () => createWatchUnreadCountUseCase(sl),
     );
 
-    sl.registerFactory<InitializeNotificationsUseCase>(
-      () => createInitializeNotificationsUseCase(sl),
+    sl.registerFactory<GetCurrentUserUseCase>(
+      () => createGetCurrentUserUseCase(sl),
     );
 
-    sl.registerFactory<StartNotificationListeningUseCase>(
-      () => createStartNotificationListeningUseCase(sl),
-    );
-
-    sl.registerFactory<StopNotificationListeningUseCase>(
-      () => createStopNotificationListeningUseCase(sl),
-    );
-
-    sl.registerFactory<GetPostDataUseCase>(
-      () => createGetPostDataUseCase(sl),
+    sl.registerFactory<WatchUserNotificationsUseCase>(
+      () => createWatchUserNotificationsUseCase(sl),
     );
   }
 
   /// Unregister all notification dependencies
   /// Unregistration happens in REVERSE order to avoid dependency conflicts
   void unregisterAll(GetIt sl) {
-    // Unregister in reverse order
-    if (sl.isRegistered<GlobalNotificationManager>()) {
-      sl.unregister<GlobalNotificationManager>();
-    }
-    // Note: TargetAudienceService is managed by creation_module.dart
-    // No need to unregister it here
-    if (sl.isRegistered<NotificationService>()) {
-      sl.unregister<NotificationService>();
-    }
+    // Unregister in reverse order (opposite of registerAll)
+    // 6. Repository Layer
     if (sl.isRegistered<INotificationRepository>()) {
       sl.unregister<INotificationRepository>();
     }
-    if (sl.isRegistered<IChatDatasource>()) {
-      sl.unregister<IChatDatasource>();
+    // 5. NotificationQueueService
+    if (sl.isRegistered<NotificationQueueService>()) {
+      sl.unregister<NotificationQueueService>();
     }
-    if (sl.isRegistered<IPostDatasource>()) {
-      sl.unregister<IPostDatasource>();
+    // 4. NotificationService
+    if (sl.isRegistered<NotificationService>()) {
+      sl.unregister<NotificationService>();
     }
+    // 3. DataSources
     if (sl.isRegistered<ILocalNotificationDatasource>()) {
       sl.unregister<ILocalNotificationDatasource>();
     }
     if (sl.isRegistered<IRemoteNotificationDatasource>()) {
       sl.unregister<IRemoteNotificationDatasource>();
     }
-    if (sl.isRegistered<IVoteService>()) {
-      sl.unregister<IVoteService>();
-    }
+    // 2. Cross-feature Services
     if (sl.isRegistered<IUserService>()) {
       sl.unregister<IUserService>();
     }
+    // 1. Core Infrastructure
     if (sl.isRegistered<EventBus>()) {
       sl.unregister<EventBus>();
     }

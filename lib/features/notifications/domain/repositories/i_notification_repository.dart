@@ -1,5 +1,4 @@
 import '../models/notification.dart';
-import '../models/vote_notification.dart';
 import '../models/system_notification.dart';
 import '../models/social_notification.dart';
 import '../value_objects/notification_filter.dart';
@@ -36,7 +35,7 @@ abstract class INotificationRepository {
   /// 특정 타입의 알림 조회
   Future<List<T>> getNotificationsByType<T extends Notification>({
     required String userId,
-    required NotificationType type,
+    required String type,
     int? limit,
   });
 
@@ -75,12 +74,7 @@ abstract class INotificationRepository {
   Future<void> cleanupExpiredNotifications(String userId);
 
   // ===== 특수 Operations =====
-
-  /// 투표 알림 생성 (타겟 사용자 지정)
-  Future<List<String>> createVoteNotifications({
-    required VoteNotification baseNotification,
-    required List<String> targetUserIds,
-  });
+  // Note: Vote notification creation is now handled by Voting Feature
 
   /// 시스템 알림 브로드캐스트
   Future<void> broadcastSystemNotification({
@@ -122,10 +116,5 @@ abstract class INotificationRepository {
   /// 알림 리스너 중지
   Future<void> stopListening({
     required String userId,
-  });
-
-  /// Cross-feature post 데이터 조회를 위한 추상 메서드
-  Future<Map<String, dynamic>?> getPostData({
-    required String postId,
   });
 }

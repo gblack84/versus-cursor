@@ -5,6 +5,9 @@
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
+    <!-- FCM Push Notifications (Android 13+ requires explicit permission) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
     <!-- 안드로이드 12 이하를 위한 기존 권한 -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 

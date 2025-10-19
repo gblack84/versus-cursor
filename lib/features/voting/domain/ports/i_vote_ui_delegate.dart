@@ -4,7 +4,7 @@ import '/features/voting/domain/models/versus_box_size_data.dart';
 
 /// 투표 UI 처리를 위한 델리게이트 인터페이스
 ///
-/// GlobalNotificationManager와 UI 계층 간의 의존성을 분리하기 위한 추상화
+/// NotificationQueueService와 UI 계층 간의 의존성을 분리하기 위한 추상화
 abstract class IVoteUIDelegate {
   /// 투표 요청을 UI에 표시
   ///

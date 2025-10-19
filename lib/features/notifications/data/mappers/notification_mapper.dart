@@ -1,10 +1,7 @@
 import '../../domain/models/notification.dart';
-import '../../domain/models/vote_notification.dart';
 import '../../domain/models/system_notification.dart';
 import '../../domain/models/social_notification.dart';
-import '../../domain/value_objects/vote_options.dart';
 import '../models/notification_dto.dart';
-import '../models/vote_notification_dto.dart';
 import '../models/system_notification_dto.dart';
 import '../models/social_notification_dto.dart';
 import '../models/dto_extensions.dart';
@@ -17,73 +14,15 @@ class NotificationMapper {
     final type = dto.type ?? 'systemAlert';
 
     switch (type) {
-      case 'votingRequest':
-        return _toVoteNotification(dto);
       case 'systemAlert':
         return _toSystemNotification(dto);
       case 'social':
         return _toSocialNotification(dto);
       default:
         // Default to system notification for unknown types
+        // Note: VoteNotification is now handled by Voting Feature's mapper
         return _toSystemNotification(dto);
     }
-  }
-
-  /// Convert Vote DTO to Vote Domain Entity
-  static VoteNotification _toVoteNotification(NotificationDto dto) {
-    final voteDto = dto is VoteNotificationDto
-        ? dto
-        : VoteNotificationDto(
-            id: dto.id,
-            userId: dto.userId,
-            type: dto.type,
-            title: dto.title,
-            content: dto.content,
-            data: dto.data,
-            createdAt: dto.createdAt,
-            readAt: dto.readAt,
-            isRead: dto.isRead,
-            expiryTime: dto.expiryTime,
-            metadata: dto.metadata,
-            priority: dto.priority,
-          );
-
-    final createdAt =
-        DtoHelper.parseDateTime(voteDto.createdAt) ?? DateTime.now();
-
-    return VoteNotification(
-      id: voteDto.id ?? '',
-      userId: voteDto.userId ?? '',
-      title: voteDto.title ?? '',
-      content: voteDto.content ?? '',
-      createdAt: createdAt,
-      readAt: DtoHelper.parseDateTime(voteDto.readAt),
-      isRead: voteDto.isRead ?? false,
-      expiryTime: DtoHelper.parseDateTime(voteDto.expiryTime),
-      metadata: voteDto.metadata ?? {},
-      postId: voteDto.postId ?? '',
-      postTitle: voteDto.postTitle ?? voteDto.title ?? 'Vote Request',
-      postContent: voteDto.postContent ?? '',
-      voteOptions: VoteOptions(
-        optionATitle: voteDto.optionA?['text'] ?? '',
-        optionBTitle: voteDto.optionB?['text'] ?? '',
-        optionAImageUrls:
-            DtoHelper.parseStringList(voteDto.optionA?['imageUrls']) ?? [],
-        optionBImageUrls:
-            DtoHelper.parseStringList(voteDto.optionB?['imageUrls']) ?? [],
-      ),
-      voteStartTime:
-          DtoHelper.parseDateTime(voteDto.voteStartTime) ?? createdAt,
-      voteEndTime: DtoHelper.parseDateTime(voteDto.voteEndTime) ??
-          createdAt.add(const Duration(days: 7)),
-      currentVotesA: voteDto.votesA ?? 0,
-      currentVotesB: voteDto.votesB ?? 0,
-      senderId: voteDto.senderId,
-      senderName: voteDto.senderName,
-      body: voteDto.body,
-      notificationPriority:
-          NotificationPriority.fromWeight(voteDto.priority ?? 2),
-    );
   }
 
   /// Convert System DTO to System Domain Entity
@@ -164,18 +103,17 @@ class NotificationMapper {
 
   /// Convert Domain Entity to DTO
   static NotificationDto toDto(Notification entity) {
-    if (entity is VoteNotification) {
-      return _fromVoteNotification(entity);
-    } else if (entity is SystemNotification) {
+    if (entity is SystemNotification) {
       return _fromSystemNotification(entity);
     } else if (entity is SocialNotification) {
       return _fromSocialNotification(entity);
     } else {
       // Default base notification DTO
+      // Note: VoteNotification conversion is now handled by Voting Feature's mapper
       return NotificationDto(
         id: entity.id,
         userId: entity.userId,
-        type: entity.type.value,
+        type: entity.type,
         title: entity.title,
         content: entity.content,
         createdAt: entity.createdAt.toTimestamp(),
@@ -188,48 +126,13 @@ class NotificationMapper {
     }
   }
 
-  /// Convert VoteNotification to VoteNotificationDto
-  static VoteNotificationDto _fromVoteNotification(VoteNotification entity) {
-    return VoteNotificationDto(
-      id: entity.id,
-      userId: entity.userId,
-      type: entity.type.value,
-      title: entity.title,
-      content: entity.content,
-      createdAt: entity.createdAt.toTimestamp(),
-      readAt: entity.readAt?.toTimestamp(),
-      isRead: entity.isRead,
-      expiryTime: entity.expiryTime?.toTimestamp(),
-      metadata: entity.metadata,
-      priority: entity.notificationPriority.weight,
-      postId: entity.postId,
-      postTitle: entity.postTitle,
-      postContent: entity.postContent,
-      senderId: entity.senderId,
-      senderName: entity.senderName,
-      body: entity.body,
-      optionA: {
-        'text': entity.voteOptions.optionATitle,
-        'imageUrls': entity.voteOptions.optionAImageUrls,
-      },
-      optionB: {
-        'text': entity.voteOptions.optionBTitle,
-        'imageUrls': entity.voteOptions.optionBImageUrls,
-      },
-      voteStartTime: entity.voteStartTime.toTimestamp(),
-      voteEndTime: entity.voteEndTime.toTimestamp(),
-      votesA: entity.currentVotesA,
-      votesB: entity.currentVotesB,
-    );
-  }
-
   /// Convert SystemNotification to SystemNotificationDto
   static SystemNotificationDto _fromSystemNotification(
       SystemNotification entity) {
     return SystemNotificationDto(
       id: entity.id,
       userId: entity.userId,
-      type: entity.type.value,
+      type: entity.type,
       title: entity.title,
       content: entity.content,
       createdAt: entity.createdAt.toTimestamp(),
@@ -250,7 +153,7 @@ class NotificationMapper {
     return SocialNotificationDto(
       id: entity.id,
       userId: entity.userId,
-      type: entity.type.value,
+      type: entity.type,
       title: entity.title,
       content: entity.content,
       createdAt: entity.createdAt.toTimestamp(),

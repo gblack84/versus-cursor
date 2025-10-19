@@ -30,7 +30,6 @@ import '../../features/creation/data/datasources/firebase_post_creation_datasour
 import '../../features/creation/data/datasources/firebase_storage_datasource.dart';
 import '../../features/creation/data/repositories/target_audience_repository_impl.dart';
 import '../../features/creation/data/repositories/image_processing_repository_impl.dart';
-import '../../features/notifications/data/datasources/i_post_datasource.dart';
 // Firebase implementation is directly in creation module
 import '../../services/moderation/image_moderation_service.dart';
 import '../../features/creation/presentation/providers/create_post_provider_v2.dart';
@@ -94,15 +93,6 @@ class CreationModule implements FeatureModule {
       sl.registerLazySingleton<IStorageDataSource>(
         () => FirebaseStorageDataSource(),
       );
-    }
-
-    // Post DataSource (shared with Notifications feature)
-    if (!sl.isRegistered<IPostDatasource>()) {
-      // TODO: Implement proper FirebasePostDatasource in notifications feature
-      // For now, skip registration to avoid circular dependencies
-      // sl.registerLazySingleton<IPostDatasource>(
-      //   () => FirebasePostDatasource(),
-      // );
     }
 
     // Post Creation DataSource
@@ -304,9 +294,6 @@ class CreationModule implements FeatureModule {
   void _unregisterDataSources(GetIt sl) {
     if (sl.isRegistered<IStorageDataSource>()) {
       sl.unregister<IStorageDataSource>();
-    }
-    if (sl.isRegistered<IPostDatasource>()) {
-      sl.unregister<IPostDatasource>();
     }
     if (sl.isRegistered<IPostCreationDataSource>()) {
       sl.unregister<IPostCreationDataSource>();

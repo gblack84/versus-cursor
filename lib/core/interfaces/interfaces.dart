@@ -15,4 +15,3 @@ export 'common/i_content_model.dart';
 // ===== Feature Service Interfaces =====
 export 'features/i_post_service.dart';
 export 'features/i_vote_service.dart';
-export 'features/i_notification_content.dart';

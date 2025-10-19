@@ -1,7 +1,6 @@
 import '/core_exports.dart';
 import '/features/creation/domain/models/value_objects/target_audience.dart';
 import '/features/creation/domain/services/i_target_audience_service.dart';
-import '/features/notifications/data/datasources/i_post_datasource.dart';
 
 /// Implementation of ITargetAudienceService
 ///
@@ -10,16 +9,9 @@ import '/features/notifications/data/datasources/i_post_datasource.dart';
 /// Responsibilities:
 /// - TargetAudience를 Firebase Functions가 기대하는 형식으로 변환
 /// - 투표 생성 시 타겟 오디언스 정보를 저장
-/// - IPostDatasource를 통한 게시물 생성 및 알림 관리
+/// - Firestore를 통한 게시물 생성 및 알림 관리
 class TargetAudienceRepositoryImpl implements ITargetAudienceService {
-  final IPostDatasource? _postDatasource;
-
-  TargetAudienceRepositoryImpl({
-    IPostDatasource? postDatasource,
-  }) : _postDatasource = postDatasource;
-
-  /// PostDatasource 가져오기
-  IPostDatasource? get postDatasource => _postDatasource;
+  TargetAudienceRepositoryImpl();
 
   /// TargetAudience를 Firestore 저장용 Map으로 변환
   ///
@@ -97,15 +89,12 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
         },
       };
 
-      // 4. PostDatasource를 통해 저장 (Firebase 직접 호출 제거)
-      final postId = await _postDatasource?.createPostWithTargetAudience(
-        postData: completePostData,
-        targetAudience: targetAudienceData,
-      );
+      // 4. Firestore에 직접 저장
+      final docRef = await FirebaseFirestore.instance
+          .collection('posts')
+          .add(completePostData);
 
-      if (postId == null) {
-        throw Exception('Failed to create post: PostDatasource returned null');
-      }
+      final postId = docRef.id;
 
       print('[TargetAudienceService] 투표 생성 완료: $postId');
       print(
@@ -137,12 +126,11 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
         updateData['notificationStatus.completedCount'] = completedCount;
       }
 
-      // PostDatasource를 통해 업데이트 (Firebase 직접 호출 제거)
-      await _postDatasource?.updatePostNotificationStatus(
-        postId: postId,
-        notificationsSent: true,
-        notificationsSentAt: DateTime.now(),
-      );
+      // Firestore에 직접 업데이트
+      await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(postId)
+          .update(updateData);
 
       print('[TargetAudienceService] 알림 상태 업데이트: $postId, 발송: $sentCount명');
     } catch (e) {
@@ -155,11 +143,17 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
   /// 현재 사용자의 타겟 오디언스 사용 통계를 조회합니다.
   Future<TargetAudienceStats> getUserStats(String userId) async {
     try {
-      // Use injected datasource instead of direct Firebase call
-      final posts = await _postDatasource?.getUserPostsWithTargetAudience(
-        userId: userId,
-        limit: 100,
-      ) ?? [];
+      // Firestore에서 직접 조회
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('posts')
+          .where('userId', isEqualTo: userId)
+          .where('targetAudience', isNotEqualTo: null)
+          .limit(100)
+          .get();
+
+      final posts = querySnapshot.docs
+          .map((doc) => doc.data() as Map<String, dynamic>)
+          .toList();
 
       int totalSent = 0;
       int totalCompleted = 0;

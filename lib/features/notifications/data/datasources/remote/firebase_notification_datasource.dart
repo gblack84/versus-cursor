@@ -257,72 +257,6 @@ class FirebaseNotificationDatasource implements IRemoteNotificationDatasource {
     }
   }
 
-  @override
-  Future<void> createVoteRequestMessage({
-    required String senderId,
-    required String recipientId,
-    required String postId,
-    required Map<String, dynamic> postData,
-  }) async {
-    try {
-      // 채팅방 ID 생성 (정렬된 사용자 ID로)
-      final List<String> userIds = [senderId, recipientId]..sort();
-      final chatId = userIds.join('_');
-
-      // 메시지 데이터 구성
-      final messageData = {
-        'senderId': senderId,
-        'recipientId': recipientId,
-        'postId': postId,
-        'type': 'voteRequest',
-        'postData': postData,
-        'createdAt': FieldValue.serverTimestamp(),
-        'status': 'pending',
-      };
-
-      // 채팅 메시지로 저장
-      await _firestore
-          .collection('chats')
-          .doc(chatId)
-          .collection('messages')
-          .add(messageData);
-    } catch (e) {
-      throw Exception('Failed to create vote request message: $e');
-    }
-  }
-
-  @override
-  Future<void> updateVoteMessageStatus({
-    required String postId,
-    required String userId,
-    required String status,
-  }) async {
-    try {
-      // 해당 postId와 userId에 대한 메시지 찾기
-      final snapshot = await _firestore
-          .collectionGroup('messages')
-          .where('postId', isEqualTo: postId)
-          .where('recipientId', isEqualTo: userId)
-          .where('type', isEqualTo: 'voteRequest')
-          .get();
-
-      if (snapshot.docs.isEmpty) return;
-
-      // 모든 관련 메시지 상태 업데이트
-      final batch = _firestore.batch();
-      for (final doc in snapshot.docs) {
-        batch.update(doc.reference, {
-          'status': status,
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-      }
-
-      await batch.commit();
-    } catch (e) {
-      throw Exception('Failed to update vote message status: $e');
-    }
-  }
-
   /// 스트림 정리
   void _cleanupStream(String streamKey) {
     _subscriptions[streamKey]?.cancel();
@@ -536,37 +470,33 @@ class FirebaseNotificationDatasource implements IRemoteNotificationDatasource {
     }
   }
 
-  @override
-  Future<Map<String, dynamic>?> getPostData(String postId) async {
-    try {
-      // posts 컬렉션에서 데이터 조회
-      final doc = await _firestore.collection('posts').doc(postId).get();
-      
-      if (!doc.exists) {
-        print('[FirebaseNotificationDatasource] Post not found: $postId');
-        return null;
-      }
+  // ===== Contract 지원 메서드 구현 =====
 
-      final data = doc.data()!;
-      
-      // 필요한 필드만 반환
-      return {
-        'postId': doc.id,
-        'title': data['title'] ?? '',
-        'content': data['content'] ?? '',
-        'description': data['description'] ?? '',
-        'optionA': data['optionA'] ?? {},
-        'optionB': data['optionB'] ?? {},
-        'createdBy': data['createdBy'] ?? '',
-        'createdAt': data['createdAt'],
-        'voteStartTime': data['voteStartTime'],
-        'voteEndTime': data['voteEndTime'],
-        'votesA': data['votesA'] ?? 0,
-        'votesB': data['votesB'] ?? 0,
-        'targetAudience': data['targetAudience'] ?? {},
-      };
+  @override
+  Stream<Map<String, dynamic>> getRealTimeNotificationStream(String userId) {
+    try {
+      // 실시간 알림 스트림 - 단일 Map 형태로 최신 알림만 반환
+      return _firestore
+          .collection('notifications')
+          .where('userId', isEqualTo: userId)
+          .where('isRead', isEqualTo: false)
+          .orderBy('createdAt', descending: true)
+          .limit(1)
+          .snapshots()
+          .map((snapshot) {
+        if (snapshot.docs.isEmpty) {
+          return <String, dynamic>{};
+        }
+
+        final doc = snapshot.docs.first;
+        return {
+          'id': doc.id,
+          ...doc.data(),
+        };
+      });
     } catch (e) {
-      throw Exception('Failed to get post data: $e');
+      print('[FirebaseNotificationDatasource] Failed to get real-time stream: $e');
+      return Stream.value({});
     }
   }
 

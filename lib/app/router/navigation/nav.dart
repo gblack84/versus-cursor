@@ -157,10 +157,10 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
               ),
             ),
             GoRoute(
-              name: ChatSearchWidget.routeName,
-              path: ChatSearchWidget.routePath,
+              name: FriendsWidget.routeName,
+              path: FriendsWidget.routePath,
               pageBuilder: (context, state) => CustomTransitionPage(
-                child: ChatSearchWidget(),
+                child: FriendsWidget(),
                 transitionsBuilder:
                     (context, animation, secondaryAnimation, child) => child,
               ),

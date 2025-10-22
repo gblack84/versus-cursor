@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import '/services/moderation/image_moderation_service.dart';
 import '../../providers/media/media_selection_provider.dart';
 import '../../providers/media/media_upload_provider.dart';
+import '../../../domain/failures/creation_failures.dart';
 
 /// 이미지 에디터 페이지 위젯
 class MediaEditorWidget extends StatefulWidget {
@@ -148,7 +149,7 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
     }
   }
 
-  /// 거부 메시지 생성
+  /// 거부 메시지 생성 (Step 6: MediaProcessingFailure 사용)
   String _buildRejectionMessage(dynamic result,
       {ModerationResult? moderationResult}) {
     print('[DEBUG] _buildRejectionMessage 호출됨');
@@ -156,40 +157,32 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
     print(
         '[DEBUG] moderationResult: ${moderationResult != null ? "있음" : "없음"}');
 
-    // 단일 이미지 거부 시 더 구체적인 메시지 제공
+    // Step 6: MediaProcessingFailure 생성으로 중앙화된 메시지 사용
+    final failure = MediaProcessingFailure(
+      failedStep: MediaProcessingStep.moderationCheck,
+      affectedFiles: result.rejectedIndices
+          ?.map<String>((i) => 'image_$i')
+          ?.toList() ?? [],
+      details: moderationResult?.reason,
+    );
+
+    // getUserMessage()로 기본 한국어 메시지 가져오기
+    String baseMessage = failure.getUserMessage();
+
+    // 단일 이미지 거부 시 더 구체적인 이유 추가
     if (result.rejectedCount == 1 && moderationResult != null) {
-      // 텍스트 문제인지 이미지 문제인지 구분
-      if (moderationResult.hasText && moderationResult.reason.isNotEmpty) {
-        // 텍스트 관련 거부 이유들
-        final textReasons = [
-          '욕설',
-          '유해한 콘텐츠',
-          '심각한 유해 콘텐츠',
-          '혐오 표현',
-          '모욕적 표현',
-          '위협적 표현'
-        ];
-        if (textReasons.contains(moderationResult.reason)) {
-          return '편집된 텍스트가 부적절합니다: ${moderationResult.reason}';
-        }
+      if (moderationResult.reason.isNotEmpty) {
+        baseMessage = '$baseMessage: ${moderationResult.reason}';
       }
-
-      // 이미지 관련 거부 이유들
-      final imageReasons = ['성인 콘텐츠', '폭력적 콘텐츠', '선정적 콘텐츠'];
-      if (imageReasons.contains(moderationResult.reason)) {
-        return '이미지가 부적절합니다: ${moderationResult.reason}';
+    } else if (result.rejectedCount > 1) {
+      // 멀티 이미지 거부 시 인덱스 표시
+      final indices = result.rejectedIndices?.join(", ") ?? '';
+      if (indices.isNotEmpty) {
+        baseMessage = '$baseMessage (이미지 $indices)';
       }
-
-      // 기타 경우
-      return '콘텐츠가 부적절합니다: ${moderationResult.reason}';
     }
 
-    // 멀티 이미지 거부 시 기존 방식 유지
-    if (result.rejectedCount == 1) {
-      return '커뮤니티 가이드라인 위반';
-    } else {
-      return '커뮤니티 가이드라인 위반: ${result.rejectedIndices.join(", ")}';
-    }
+    return baseMessage;
   }
 
   /// 이미지 편집 완료 처리
@@ -249,8 +242,12 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
               // 피커 열기 (모달은 닫지 않음)
               widget.onBackToPicker?.call();
             } else {
-              // 편집 모드에서 이미지가 거부된 경우
-              _showToast('이미지 처리 실패', isError: true);
+              // Step 6: 편집 모드에서 이미지가 거부된 경우 - MediaProcessingFailure 사용
+              final failure = MediaProcessingFailure(
+                failedStep: MediaProcessingStep.moderationCheck,
+                affectedFiles: [widget.selectedFile.path],
+              );
+              _showToast(failure.getUserMessage(), isError: true);
               Navigator.pop(context); // 에디터 닫기
             }
           }
@@ -308,8 +305,16 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
               _isInRejectionRetryMode = true;
             });
 
-            // 거부 메시지 표시 (단일 이미지이므로 구체적인 이유 표시)
-            final rejectionMessage = '이미지가 부적절합니다: ${result.moderationResult?.reason ?? result.rejectionReason ?? '커뮤니티 가이드라인 위반'}';
+            // Step 6: 거부 메시지 표시 - MediaProcessingFailure 사용
+            final failure = MediaProcessingFailure(
+              failedStep: MediaProcessingStep.moderationCheck,
+              affectedFiles: [editedFile.path],
+              details: result.moderationResult?.reason ?? result.rejectionReason,
+            );
+            String rejectionMessage = failure.getUserMessage();
+            if (result.moderationResult?.reason != null) {
+              rejectionMessage = '$rejectionMessage: ${result.moderationResult!.reason}';
+            }
             _showToast(rejectionMessage, isError: true);
 
             // 피커 열기 (모달은 닫지 않음)
@@ -355,10 +360,15 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
         }
       }
     } catch (e) {
-      // 에러 처리
+      // Step 6: 에러 처리 - MediaProcessingFailure 사용
       print('이미지 업로드 에러: $e');
       if (mounted) {
-        _showToast('이미지 업로드 실패: $e', isError: true);
+        final failure = MediaProcessingFailure(
+          failedStep: MediaProcessingStep.upload,
+          affectedFiles: [widget.selectedFile.path],
+          details: e.toString(),
+        );
+        _showToast(failure.getUserMessage(), isError: true);
       }
     }
   }

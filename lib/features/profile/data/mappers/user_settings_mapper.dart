@@ -1,5 +1,5 @@
 import '../../domain/models/user_settings.dart';
-import '../dto/user_settings_dto.dart';
+import '../models/user_settings_dto.dart';
 
 /// UserSettings Mapper
 ///

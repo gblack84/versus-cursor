@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import '../dto/auth_user_dto.dart';
-import '../../domain/models/auth_user.dart';
+import '../models/auth_user_dto.dart';
+import '../../domain/entities/auth_user.dart';
+import '../../domain/enums/user_role.dart';
 
 /// Mapper for converting between Auth DTOs and Domain Models
 ///
@@ -61,7 +62,7 @@ class AuthUserMapper {
       hobbies: [],
       pointsA: 0,
       pointsQ: 0,
-      role: 'user',
+      role: UserRole.user,
       isPremium: false,
       // Timestamps
       createdAt: dto.createdAt,

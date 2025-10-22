@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '/core/types/result.dart';
-import '/core/errors/failures.dart';
+import '../failures/chat_failure.dart';
 import '../repositories/i_chat_repository.dart';
 import '../entities/message.dart';
 
@@ -52,15 +52,15 @@ class SendMessageUseCase {
     try {
       // 입력 검증
       if (chatId.isEmpty) {
-        return ResultFailure(
-          ValidationFailure(message: 'Chat ID가 필요합니다.'),
+        return const ResultFailure(
+          InvalidMessageContent(),
         );
       }
 
       // 텍스트 메시지는 content 필수, 미디어 메시지는 mediaFile 필수
       if (message.content.isEmpty && mediaFile == null) {
-        return ResultFailure(
-          ValidationFailure(message: '메시지 내용 또는 미디어 파일이 필요합니다.'),
+        return const ResultFailure(
+          InvalidMessageContent(),
         );
       }
 
@@ -83,8 +83,8 @@ class SendMessageUseCase {
             finalMessage = message.copyWith(videoUrl: mediaUrl);
           }
         } catch (e) {
-          return ResultFailure(
-            ServerFailure(message: '미디어 업로드 실패: ${e.toString()}'),
+          return const ResultFailure(
+            MessageSendFailed(),
           );
         }
       }
@@ -94,8 +94,8 @@ class SendMessageUseCase {
 
       return const Success(null);
     } catch (e) {
-      return ResultFailure(
-        ServerFailure(message: '메시지 전송 실패: ${e.toString()}'),
+      return const ResultFailure(
+        MessageSendFailed(),
       );
     }
   }

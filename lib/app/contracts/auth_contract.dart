@@ -33,4 +33,11 @@ abstract class AuthContract {
 
   /// 현재 로그인한 사용자 전화번호 조회
   String? get currentPhoneNumber;
+
+  // ============= 로그아웃 기능 =============
+
+  /// 로그아웃
+  ///
+  /// 캐시 정리 및 세션 종료
+  Future<void> signOut();
 }

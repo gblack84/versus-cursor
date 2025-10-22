@@ -1,5 +1,5 @@
 import '/core/types/result.dart';
-import '/core/errors/failures.dart';
+import '../failures/chat_failure.dart';
 import '../repositories/i_chat_repository.dart';
 import '../entities/message.dart';
 
@@ -51,8 +51,8 @@ class GetChatMessagesUseCase {
       // 입력 검증
       if (chatId.isEmpty) {
         return Stream.value(
-          ResultFailure(
-            ValidationFailure(message: 'Chat ID는 비어있을 수 없습니다.'),
+          const ResultFailure(
+            InvalidMessageContent(),
           ),
         );
       }
@@ -69,8 +69,8 @@ class GetChatMessagesUseCase {
       return messagesStream.map((messages) => Success(messages));
     } catch (e) {
       return Stream.value(
-        ResultFailure(
-          ServerFailure(message: '메시지 로드 실패: ${e.toString()}'),
+        const ResultFailure(
+          MessageLoadFailed(),
         ),
       );
     }

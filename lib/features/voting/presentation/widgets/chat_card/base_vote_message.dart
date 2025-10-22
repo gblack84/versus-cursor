@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '/core/design_system/design_system.dart';
-import '/features/auth/data/adapters/auth_util.dart';
+import 'package:get_it/get_it.dart';
+import '/app/contracts/auth_contract.dart';
 import '/features/voting/domain/services/vote_status_service.dart';
 
 /// 투표 메시지의 공통 로직을 담은 추상 클래스
@@ -60,26 +61,6 @@ abstract class BaseVoteMessage extends StatefulWidget {
   final String? senderId;
   final bool showSenderProfile;
 
-  /// 현재 사용자가 투표했는지 확인
-  bool get hasCurrentUserVoted {
-    if (userVotes == null) return false;
-    return userVotes!.containsKey(currentUserUid);
-  }
-
-  /// 현재 사용자의 투표 선택
-  String? get currentUserChoice {
-    if (userVotes == null) return null;
-    final vote = userVotes![currentUserUid] as Map<String, dynamic>?;
-    return vote?['option'] as String?;
-  }
-
-  /// 현재 사용자의 투표 시간
-  DateTime? get currentUserVoteTime {
-    if (userVotes == null) return null;
-    final vote = userVotes![currentUserUid] as Map<String, dynamic>?;
-    return vote?['votedAt'] as DateTime?;
-  }
-
   /// A박스의 이미지 URL 리스트 반환
   List<String> get effectiveImageUrlsA {
     if (optionAImages != null && optionAImages!.isNotEmpty) {
@@ -119,6 +100,29 @@ mixin BaseVoteMessageStateMixin<T extends BaseVoteMessage> on State<T> {
   @override
   void dispose() {
     super.dispose();
+  }
+
+  // AuthContract helper
+  String get currentUserUid => GetIt.instance<AuthContract>().getCurrentUserId() ?? '';
+
+  /// 현재 사용자가 투표했는지 확인
+  bool get hasCurrentUserVoted {
+    if (widget.userVotes == null) return false;
+    return widget.userVotes!.containsKey(currentUserUid);
+  }
+
+  /// 현재 사용자의 투표 선택
+  String? get currentUserChoice {
+    if (widget.userVotes == null) return null;
+    final vote = widget.userVotes![currentUserUid] as Map<String, dynamic>?;
+    return vote?['option'] as String?;
+  }
+
+  /// 현재 사용자의 투표 시간
+  DateTime? get currentUserVoteTime {
+    if (widget.userVotes == null) return null;
+    final vote = widget.userVotes![currentUserUid] as Map<String, dynamic>?;
+    return vote?['votedAt'] as DateTime?;
   }
 
   /// 시간 포맷팅

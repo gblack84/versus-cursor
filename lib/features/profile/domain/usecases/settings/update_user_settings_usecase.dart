@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dartz/dartz.dart';
+import '/core/types/result.dart';
 import '../../repositories/i_user_repository.dart';
-import '../../failures/profile_failures.dart';
+import '../../failures/profile_failure.dart';
 
 /// 사용자 설정 업데이트 UseCase
 ///
@@ -22,27 +22,28 @@ class UpdateUserSettingsUseCase {
   /// - `settings`: 업데이트할 설정 맵
   ///
   /// **Returns**:
-  /// - `Right(void)`: 업데이트 성공
-  /// - `Left(ProfileFailure)`: 업데이트 실패
-  Future<Either<ProfileFailure, void>> execute(
+  /// - `Success(void)`: 업데이트 성공
+  /// - `ResultFailure(ProfileFailure)`: 업데이트 실패
+  Future<Result<void>> execute(
     String userId,
     Map<String, dynamic> settings,
   ) async {
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {
-        return Left(ValidationFailure(message: 'User ID cannot be empty'));
+        return ResultFailure(ValidationFailure('userId'));
       }
 
       // 2. Repository 호출
       await _repository.updateUserSettings(userId, settings);
 
-      return const Right(null);
+      return const Success(null);
     } on FirebaseException catch (e) {
-      return Left(
-          FirestoreWriteFailure(message: e.message ?? 'Unknown error'));
+      return ResultFailure(FirestoreWrite(e.message ?? 'Unknown error'));
+    } on ProfileFailure catch (e) {
+      return ResultFailure(e);
     } catch (e) {
-      return Left(UnknownProfileFailure(message: e.toString()));
+      return ResultFailure(UnknownProfile(e.toString()));
     }
   }
 }

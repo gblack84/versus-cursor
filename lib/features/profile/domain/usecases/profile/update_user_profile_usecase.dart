@@ -1,7 +1,7 @@
-import 'package:dartz/dartz.dart';
+import '/core/types/result.dart';
 import '../../repositories/i_user_repository.dart';
 import '../../models/user_profile.dart';
-import '../../failures/profile_failures.dart';
+import '../../failures/profile_failure.dart';
 
 /// 프로필 업데이트 UseCase (Clean Architecture v4.0)
 ///
@@ -26,21 +26,23 @@ class UpdateUserProfileUseCase {
   /// - `profile`: 업데이트할 프로필 객체
   ///
   /// **Returns**:
-  /// - `Right(void)`: 업데이트 성공
-  /// - `Left(ProfileFailure)`: 업데이트 실패
-  Future<Either<ProfileFailure, void>> execute(UserProfile profile) async {
+  /// - `Success(void)`: 업데이트 성공
+  /// - `ResultFailure(ProfileFailure)`: 업데이트 실패
+  Future<Result<void>> execute(UserProfile profile) async {
     try {
       // 1. 프로필 검증
       if (profile.uid.isEmpty) {
-        return Left(ValidationFailure(message: 'User ID is required'));
+        return ResultFailure(ValidationFailure('uid'));
       }
 
       // 2. Repository 호출
       await _repository.updateUserProfile(profile);
 
-      return const Right(null);
+      return const Success(null);
+    } on ProfileFailure catch (e) {
+      return ResultFailure(e);
     } catch (e) {
-      return Left(UnknownProfileFailure(message: e.toString()));
+      return ResultFailure(UnknownProfile(e.toString()));
     }
   }
 }

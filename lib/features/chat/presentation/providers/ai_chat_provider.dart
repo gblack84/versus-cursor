@@ -10,7 +10,7 @@ import '/features/chat/domain/usecases/search_messages_usecase.dart';
 import '/features/chat/domain/usecases/send_ai_query_usecase.dart';
 import '/features/chat/domain/entities/message.dart';
 import '/features/chat/domain/ports/i_ai_service.dart';
-import '/features/chat/data/adapters/chat_message_service.dart';
+import '/features/chat/presentation/adapters/flutter_chat_adapter.dart';
 import '../screens/ai_chat/ai_chat_controller.dart';
 
 /// AI 채팅 상태 열거형
@@ -285,8 +285,8 @@ class AIChatProvider extends ChangeNotifier {
 
   /// 검색 필터 적용 및 flutter_chat_ui 변환
   ///
-  /// **ChatMessageService 통합 (Clean Architecture v4.0):**
-  /// - Message Entity → core.Message 변환을 ChatMessageService에 위임
+  /// **MessageMapper 통합 (Clean Architecture v4.0):**
+  /// - Message Entity → core.Message 변환을 MessageMapper에 위임
   /// - 투표 카드, 이미지, 시스템 메시지 등 모든 타입 자동 처리
   void _updateDisplayMessages() {
     final result = _searchUseCase.execute(
@@ -299,12 +299,12 @@ class AIChatProvider extends ChangeNotifier {
         _setError(failure.message);
       },
       (filtered) {
-        // ✨ ChatMessageService를 사용한 타입별 자동 변환
+        // ✨ FlutterChatAdapter를 사용한 타입별 자동 변환
         // - TextMessage: 일반 텍스트
         // - CustomMessage: 투표 카드
         // - ImageMessage: 이미지
         // - SystemMessage: 시스템 메시지
-        _displayMessages = ChatMessageService.convertEntitiesToMessages(filtered);
+        _displayMessages = FlutterChatAdapter.convertEntitiesToMessages(filtered);
 
         notifyListeners();
       },

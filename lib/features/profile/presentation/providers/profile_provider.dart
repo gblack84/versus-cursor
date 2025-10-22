@@ -71,7 +71,7 @@ class ProfileProvider extends ChangeNotifier {
 
     result.fold(
       (failure) {
-        _errorMessage = failure.getUserMessage();
+        _errorMessage = failure.message;
         _profile = null;
       },
       (profile) {
@@ -99,7 +99,7 @@ class ProfileProvider extends ChangeNotifier {
 
     result.fold(
       (failure) {
-        _errorMessage = failure.getUserMessage();
+        _errorMessage = failure.message;
         _profile = null;
       },
       (profile) {
@@ -122,7 +122,7 @@ class ProfileProvider extends ChangeNotifier {
 
     result.fold(
       (failure) {
-        _errorMessage = failure.getUserMessage();
+        _errorMessage = failure.message;
       },
       (_) {
         _profile = profile;
@@ -146,7 +146,7 @@ class ProfileProvider extends ChangeNotifier {
 
     result.fold(
       (failure) {
-        _errorMessage = failure.getUserMessage();
+        _errorMessage = failure.message;
       },
       (imageUrl) async {
         // UserProfile은 immutable이므로 copyWith()로 업데이트
@@ -217,7 +217,7 @@ class ProfileProvider extends ChangeNotifier {
 
     result.fold(
       (failure) {
-        debugPrint('Failed to get profile completion: ${failure.getUserMessage()}');
+        debugPrint('Failed to get profile completion: ${failure.message}');
         _completionPercentage = null;
       },
       (percentage) {
@@ -270,7 +270,7 @@ class ProfileProvider extends ChangeNotifier {
 
     result.fold(
       (failure) {
-        _errorMessage = failure.getUserMessage();
+        _errorMessage = failure.message;
         _profileInfo = null;
       },
       (profileInfo) {
@@ -364,7 +364,7 @@ class ProfileProvider extends ChangeNotifier {
         .map((result) => result.fold(
               (failure) {
                 // Either의 Left (에러)
-                _errorMessage = failure.getUserMessage();
+                _errorMessage = failure.message;
                 notifyListeners(); // Provider 리스너들에게 에러 알림
                 return null;
               },

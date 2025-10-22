@@ -1,14 +1,11 @@
 import 'dart:io';
-import '/core/types/result.dart';
+import 'package:versus_space/core/types/result.dart';
 import '../models/aggregates/post_creation.dart';
 import '../failures/creation_failures.dart';
 import '../repositories/i_post_creation_repository_v2.dart';
 import '../repositories/i_media_repository.dart';
-import '../models/core/post_core.dart';
-import '../models/core/post_content.dart';
-import '../models/value_objects/media_content.dart';
-import '../../data/dto/post_creation_dto.dart';
-import '../../data/dto/target_audience_dto.dart';
+import '../../data/models/post_creation_dto.dart';
+import '../../data/models/target_audience_dto.dart';
 import '../services/i_image_processing_service.dart';
 import 'audience/manage_target_audience_usecase.dart';
 
@@ -150,33 +147,8 @@ class CreatePostUseCase {
 
       onProgress?.call(0.9);
 
-      // 7. Create PostCore and PostContent (Creation Feature responsibility only)
-      final core = PostCore(
-        id: '', // Will be set by repository
-        userId: dto.userId,
-        questionTitle: dto.title,
-        description: dto.description,
-        isAnonymous: dto.isAnonymous,
-        createdAt: DateTime.now(),
-      );
-
-      final content = PostContent(
-        postId: '', // Will be set by repository
-        optionA: MediaContent(
-          imageUrls: uploadResultA.valueOrNull!,
-          aspectRatios: resultA.valueOrNull!.approvedRatios,
-        ),
-        optionB: MediaContent(
-          imageUrls: uploadResultB.valueOrNull!,
-          aspectRatios: resultB.valueOrNull!.approvedRatios,
-        ),
-      );
-
-      // Save using V2 repository (PostCore + PostContent only)
-      final postId = await _postRepository.createPost(
-        core: core,
-        content: content,
-      );
+      // 7. Save post using PostCreation aggregate (Phase 2 Migration)
+      final postId = await _postRepository.createPost(post: post);
 
       // Update the post with the generated ID
       final savedPost = post.copyWith(id: postId);

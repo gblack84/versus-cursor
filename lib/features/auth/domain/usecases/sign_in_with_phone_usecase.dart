@@ -2,7 +2,8 @@
 // Clean Architecture - Domain Layer
 
 import 'package:flutter/foundation.dart';
-import '../models/auth_user.dart';
+import '/core/types/result.dart';
+import '../entities/auth_user.dart';
 import '../repositories/i_auth_repository.dart';
 import '../failures/auth_failure.dart';
 
@@ -14,6 +15,10 @@ import '../failures/auth_failure.dart';
 /// - Phone sign-in
 /// - Phone account creation
 /// - OTP resending with rate limiting
+///
+/// **Clean Architecture v4.0 - Result Pattern**:
+/// - Returns Result<T> for type-safe error handling
+/// - Automatic Korean error messages via AuthFailure
 class SignInWithPhoneUseCase {
   final IAuthRepository _repository;
 
@@ -29,21 +34,21 @@ class SignInWithPhoneUseCase {
 
   /// Send SMS OTP
   ///
-  /// Sends OTP to the provided phone number
-  Future<bool> sendOtp(String phoneNumber) async {
+  /// Returns Result<void> with typed failures
+  Future<Result<void>> sendOtp(String phoneNumber) async {
     try {
       debugPrint('Sending OTP to phone number...');
 
       // Validate phone number
       if (!_isValidPhoneNumber(phoneNumber)) {
         debugPrint('Invalid phone number format: $phoneNumber');
-        return false;
+        return const ResultFailure(InvalidPhoneNumber());
       }
 
       // Check rate limiting
       if (!_canSendOtp()) {
         debugPrint('OTP rate limit exceeded');
-        return false;
+        return const ResultFailure(SmsCodeExpired());
       }
 
       // Send OTP
@@ -53,31 +58,35 @@ class SignInWithPhoneUseCase {
         _lastOtpSentTime = DateTime.now();
         _otpSendCount++;
         debugPrint('OTP sent successfully');
+        return const Success(null);
       }
 
-      return success;
+      return const ResultFailure(ServerError());
+    } on AuthFailure catch (e) {
+      debugPrint('Failed to send OTP with AuthFailure: ${e.message}');
+      return ResultFailure(e);
     } catch (e) {
       debugPrint('Failed to send OTP: $e');
-      return false;
+      return ResultFailure(Unexpected(e.toString()));
     }
   }
 
   /// Resend SMS OTP
   ///
   /// Resends OTP with rate limiting
-  Future<bool> resendOtp(String phoneNumber) async {
+  Future<Result<void>> resendOtp(String phoneNumber) async {
     debugPrint('Attempting to resend OTP...');
 
     if (_otpSendCount >= _maxOtpSends) {
       debugPrint('Maximum OTP sends reached');
-      return false;
+      return const ResultFailure(SmsCodeExpired());
     }
 
     if (_lastOtpSentTime != null) {
       final timeSinceLastSend = DateTime.now().difference(_lastOtpSentTime!);
       if (timeSinceLastSend < _otpResendDelay) {
         debugPrint('Please wait before resending OTP');
-        return false;
+        return const ResultFailure(SmsCodeExpired());
       }
     }
 
@@ -86,8 +95,8 @@ class SignInWithPhoneUseCase {
 
   /// Execute Phone Sign In
   ///
-  /// Returns authenticated user on success, null on failure
-  Future<AuthUser?> execute({
+  /// Returns Result<AuthUser> with automatic Korean error messages
+  Future<Result<AuthUser>> execute({
     required String phoneNumber,
     required String verificationCode,
   }) async {
@@ -97,13 +106,13 @@ class SignInWithPhoneUseCase {
       // Validate phone number format
       if (!_isValidPhoneNumber(phoneNumber)) {
         debugPrint('Invalid phone number format: $phoneNumber');
-        return null;
+        return const ResultFailure(InvalidPhoneNumber());
       }
 
       // Validate verification code
       if (!_isValidVerificationCode(verificationCode)) {
         debugPrint('Invalid verification code format');
-        return null;
+        return const ResultFailure(InvalidSmsCode());
       }
 
       // Sign in with phone number
@@ -114,18 +123,18 @@ class SignInWithPhoneUseCase {
 
       if (user == null) {
         debugPrint('Phone sign in failed');
-        return null;
+        return const ResultFailure(InvalidSmsCode());
       }
 
       debugPrint('Phone sign in successful: ${user.uid}');
-      return user;
+      return Success(user);
 
     } on AuthFailure catch (e) {
       debugPrint('Phone sign in failed with AuthFailure: ${e.message}');
-      return null;
+      return ResultFailure(e);
     } catch (e) {
       debugPrint('Phone sign in failed with unexpected error: $e');
-      return null;
+      return ResultFailure(Unexpected(e.toString()));
     }
   }
 

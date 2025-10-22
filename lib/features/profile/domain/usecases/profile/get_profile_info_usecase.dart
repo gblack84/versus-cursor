@@ -1,13 +1,13 @@
-import 'package:dartz/dartz.dart';
+import '/core/types/result.dart';
 import '../../repositories/i_profile_repository.dart';
 import '../../models/profile_info.dart';
-import '../../failures/profile_failures.dart';
+import '../../failures/profile_failure.dart';
 
 /// 프로필 경량 정보 조회 UseCase
 ///
 /// **책임**: 사용자 기본 정보만 조회 (이름, 사진, 상태 메시지)
 /// **의존성**: IProfileRepository
-/// **반환**: Either<ProfileFailure, ProfileInfo>
+/// **반환**: Result<ProfileInfo>
 class GetProfileInfoUseCase {
   final IProfileRepository _repository;
 
@@ -20,20 +20,22 @@ class GetProfileInfoUseCase {
   /// - `userId`: 사용자 ID
   ///
   /// **Returns**:
-  /// - `Left(ProfileNotFoundFailure)`: 사용자가 존재하지 않음
-  /// - `Left(FirestoreReadFailure)`: Firestore 읽기 실패
-  /// - `Right(ProfileInfo)`: 프로필 정보 조회 성공
-  Future<Either<ProfileFailure, ProfileInfo>> execute(String userId) async {
+  /// - `ResultFailure(ProfileNotFound)`: 사용자가 존재하지 않음
+  /// - `ResultFailure(FirestoreRead)`: Firestore 읽기 실패
+  /// - `Success(ProfileInfo)`: 프로필 정보 조회 성공
+  Future<Result<ProfileInfo>> execute(String userId) async {
     try {
       final profileInfo = await _repository.getProfileInfo(userId);
 
       if (profileInfo == null) {
-        return Left(ProfileNotFoundFailure(userId: userId));
+        return ResultFailure(ProfileNotFound(userId: userId));
       }
 
-      return Right(profileInfo);
+      return Success(profileInfo);
+    } on ProfileFailure catch (e) {
+      return ResultFailure(e);
     } catch (e) {
-      return Left(UnknownProfileFailure(message: e.toString()));
+      return ResultFailure(UnknownProfile(e.toString()));
     }
   }
 }

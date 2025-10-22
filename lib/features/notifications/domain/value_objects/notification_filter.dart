@@ -1,5 +1,3 @@
-import '../models/notification.dart';
-
 /// 알림 필터 Value Object
 /// Clean Architecture - 도메인 값 객체
 class NotificationFilter {

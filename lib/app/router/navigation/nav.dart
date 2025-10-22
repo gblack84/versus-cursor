@@ -8,7 +8,7 @@ import '/core/interfaces/i_base_auth_user.dart';
 
 import '/core_exports.dart';
 
-import '/features/chat/domain/models/chats_model.dart';
+import '/features/chat/domain/entities/chat.dart' as chat_entities;
 import '/app/widgets/index.dart';
 import '/features/auth/presentation/index.dart';
 import '/app/widgets/navigation/main_navigation_shell.dart';
@@ -328,7 +328,7 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, params) => ChatDetailWidgetClean(
             chatDocument: params.state.extra != null
                 ? (params.state.extra as Map<String, dynamic>)['chatDocument']
-                    as ChatsModel?
+                    as chat_entities.Chat?
                 : null,
           ),
         ).toRoute(appStateNotifier),

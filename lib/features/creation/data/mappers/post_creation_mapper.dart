@@ -1,4 +1,4 @@
-import '../dto/post_creation_dto.dart';
+import '../models/post_creation_dto.dart';
 import '../../domain/models/aggregates/post_creation.dart';
 
 /// Mapper for converting between PostCreation DTO and Domain entity

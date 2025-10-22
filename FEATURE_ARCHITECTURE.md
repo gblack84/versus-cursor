@@ -28,17 +28,24 @@
 ```
 lib/
 ├── features/              # 🎯 비즈니스 기능별 완전 독립 모듈 ✅
-│   ├── auth/             # ✅ 완전 마이그레이션 완료
+│   ├── auth/             # ✅ Clean Architecture v4.0 완료
 │   │   ├── data/
 │   │   │   ├── datasources/
 │   │   │   ├── repositories/
 │   │   │   │   └── auth_repository_impl.dart
-│   │   │   └── models/    # DTOs와 Firestore 모델
-│   │   │       └── users_model.dart
+│   │   │   ├── dto/       # DTOs와 Firestore 모델
+│   │   │   │   └── auth_user_dto.dart
+│   │   │   └── mappers/
+│   │   │       └── auth_user_mapper.dart
 │   │   ├── domain/
-│   │   │   ├── models/
+│   │   │   ├── entities/  # Freezed 도메인 모델
+│   │   │   │   └── auth_user.dart
+│   │   │   ├── failures/  # Sealed Class 에러 처리
+│   │   │   │   └── auth_failure.dart
+│   │   │   ├── enums/     # 타입 안전한 열거형
+│   │   │   │   └── user_role.dart
 │   │   │   ├── repositories/
-│   │   │   │   └── auth_repository.dart
+│   │   │   │   └── i_auth_repository.dart
 │   │   │   └── usecases/
 │   │   └── presentation/
 │   │       ├── screens/
@@ -54,11 +61,22 @@ lib/
 │   │   ├── domain/
 │   │   └── presentation/
 │   │
-│   ├── chat/              # ✅ 완전 마이그레이션 완료
+│   ├── chat/              # ✅ Clean Architecture v4.0 완료
 │   │   ├── data/
-│   │   │   └── models/
-│   │   │       ├── chats_model.dart
-│   │   │       └── messages_model.dart
+│   │   │   ├── datasources/
+│   │   │   ├── repositories/
+│   │   │   ├── dto/
+│   │   │   │   ├── chat_dto.dart
+│   │   │   │   └── message_dto.dart
+│   │   │   └── adapters/  # AI, Media Upload 어댑터
+│   │   ├── domain/
+│   │   │   ├── entities/  # Chat, Message Freezed 모델
+│   │   │   ├── failures/  # ChatFailure Sealed Class
+│   │   │   ├── enums/     # MessageDeliveryStatus
+│   │   │   ├── constants/ # ChatConstants
+│   │   │   ├── ports/     # IAIService 인터페이스
+│   │   │   ├── repositories/
+│   │   │   └── usecases/
 │   │   └── presentation/
 │   │
 │   ├── profile/           # ✅ 완전 마이그레이션 완료
@@ -119,12 +137,22 @@ features/posts/
 │       └── post_dto.g.dart                # Generated code
 │
 ├── domain/                        # 도메인 레이어 (비즈니스 로직)
-│   ├── models/
+│   ├── entities/                          # 도메인 엔티티 (Freezed 권장)
 │   │   ├── post.dart                      # 도메인 모델
+│   │   ├── post.freezed.dart              # Freezed 생성 코드
+│   │   ├── post.g.dart                    # JSON 직렬화 코드
 │   │   └── vote_result.dart
-│   ├── repositories/
-│   │   └── posts_repository.dart          # Repository 인터페이스
-│   └── usecases/
+│   ├── failures/                          # 타입 안전한 에러 처리 (필수)
+│   │   └── post_failure.dart              # Sealed Class로 실패 케이스 정의
+│   ├── enums/                             # 타입 안전한 상태 값 (선택)
+│   │   └── post_status.dart               # 예: draft, published, archived
+│   ├── constants/                         # 도메인 규칙 및 설정 (선택)
+│   │   └── post_constants.dart            # 3개 이상의 상수가 있을 때
+│   ├── ports/                             # 외부 서비스 인터페이스 (선택)
+│   │   └── i_content_moderation_service.dart  # 외부 의존성 추상화
+│   ├── repositories/                      # Repository 인터페이스 (필수)
+│   │   └── i_posts_repository.dart        # Repository 인터페이스 ('I' 접두사 권장)
+│   └── usecases/                          # 비즈니스 유스케이스 (필수)
 │       ├── create_post_usecase.dart       # 비즈니스 규칙
 │       ├── vote_on_post_usecase.dart
 │       └── get_posts_usecase.dart
@@ -140,6 +168,170 @@ features/posts/
     │   └── posts_provider.dart
     └── public.dart                        # Feature Public API (barrel export)
 ```
+
+## 📐 통일된 Domain Layer 표준
+
+> **최종 업데이트**: 2025-01-20 | **적용 Feature**: Auth, Chat (100%)
+
+### 필수 디렉토리
+
+**모든 Feature가 반드시 포함해야 하는 디렉토리**:
+
+1. **`entities/`** - Freezed 도메인 모델 (이전 `models/`에서 변경)
+   - 불변 객체 (Immutable)
+   - 비즈니스 로직 메서드 포함 (Rich Domain Model)
+   - Freezed로 자동 생성: copyWith, ==, hashCode, toString
+   - JSON 직렬화 지원 (.freezed.dart, .g.dart)
+
+2. **`failures/`** - Sealed Class 에러 처리
+   - 타입 안전한 예외 처리 (Type-safe)
+   - Pattern Matching으로 누락 케이스 컴파일 체크
+   - 중앙 집중식 에러 메시지 관리
+
+3. **`repositories/`** - Repository 인터페이스
+   - 데이터 접근 추상화
+   - 'I' 접두사 권장 (예: IAuthRepository)
+
+4. **`usecases/`** - 비즈니스 유스케이스
+   - 단일 책임 원칙 (Single Responsibility)
+   - 하나의 비즈니스 작업만 수행
+
+### 선택 디렉토리
+
+**Feature 요구사항에 따라 선택적으로 추가**:
+
+5. **`enums/`** - 타입 안전한 상태 값
+   - **추가 조건**: 상태/옵션 값이 존재할 때
+   - String 비교 대신 Enum 사용으로 타입 안전성 확보
+   - 예시: UserRole (admin, tester, user), MessageDeliveryStatus (sent, delivered, seen)
+
+6. **`constants/`** - 도메인 규칙 및 설정
+   - **추가 조건**: 3개 이상의 도메인 상수가 필요할 때
+   - Magic Number 제거
+   - 예시: ChatConstants (initialMessageLoadCount = 30)
+
+7. **`ports/`** - 외부 서비스 인터페이스 (Port & Adapter Pattern)
+   - **추가 조건**: 교체 가능한 외부 의존성이 있을 때
+   - AI 서비스, 결제 시스템 등 외부 기술 추상화
+   - ❌ **주의**: 다른 Feature나 Core는 외부 의존성이 아님
+   - 예시: IAIService (Gemini AI 교체 가능)
+
+### 코드 예시
+
+#### 1. Freezed Entity (필수)
+```dart
+// features/auth/domain/entities/auth_user.dart
+import 'package:freezed_annotation/freezed_annotation.dart';
+import '../enums/user_role.dart';
+
+part 'auth_user.freezed.dart';
+part 'auth_user.g.dart';
+
+@freezed
+sealed class AuthUser with _$AuthUser {
+  const AuthUser._();
+
+  const factory AuthUser({
+    required String uid,
+    String? email,
+    String? displayName,
+    @Default(UserRole.user) UserRole role,
+    @Default(0) int pointsA,
+    DateTime? createdAt,
+  }) = _AuthUser;
+
+  factory AuthUser.fromJson(Map<String, dynamic> json) =>
+      _$AuthUserFromJson(json);
+
+  // 비즈니스 로직 메서드
+  bool get isAdmin => role.isAdmin;
+  int get totalPoints => pointsA + pointsQ;
+}
+```
+
+#### 2. Sealed Class Failure (필수)
+```dart
+// features/auth/domain/failures/auth_failure.dart
+sealed class AuthFailure {
+  const AuthFailure();
+
+  String get message {
+    return switch (this) {
+      InvalidEmail() => 'Invalid email address',
+      WeakPassword() => 'Password is too weak',
+      UserNotFound() => 'User not found',
+      Unexpected(:final errorMessage) => errorMessage ?? 'Unexpected error',
+    };
+  }
+}
+
+class InvalidEmail extends AuthFailure {
+  const InvalidEmail();
+}
+
+class WeakPassword extends AuthFailure {
+  const WeakPassword();
+}
+
+class UserNotFound extends AuthFailure {
+  const UserNotFound();
+}
+
+class Unexpected extends AuthFailure {
+  final String? errorMessage;
+  const Unexpected([this.errorMessage]);
+}
+```
+
+#### 3. Type-Safe Enum (선택)
+```dart
+// features/auth/domain/enums/user_role.dart
+enum UserRole {
+  admin,
+  tester,
+  user;
+
+  bool get isAdmin => this == UserRole.admin;
+  bool get isTester => this == UserRole.tester || this == UserRole.admin;
+
+  String toValue() => switch (this) {
+    UserRole.admin => 'admin',
+    UserRole.tester => 'tester',
+    UserRole.user => 'user',
+  };
+
+  static UserRole fromValue(String value) => switch (value) {
+    'admin' => UserRole.admin,
+    'tester' => UserRole.tester,
+    'user' => UserRole.user,
+    _ => UserRole.user, // 기본값
+  };
+}
+```
+
+### 마이그레이션 가이드
+
+**기존 `models/`에서 `entities/`로 전환**:
+
+1. ✅ `domain/models/` → `domain/entities/` 디렉토리명 변경
+2. ✅ Freezed 패턴 적용 (`@freezed`, `sealed class`, part 파일)
+3. ✅ `build_runner` 실행으로 코드 생성
+4. ✅ `domain/failures/` 추가 (Sealed Class로 에러 타입 정의)
+5. ✅ String 상태 값을 `domain/enums/`로 전환 (필요 시)
+6. ✅ 모든 import 경로 업데이트
+
+**Chat Feature 사례** (v2.0.0):
+- models/ 제거, entities/ 추가 (Freezed)
+- failures/ 추가 (22개 ChatFailure 타입)
+- enums/ 추가 (MessageDeliveryStatus)
+- constants/ 추가 (ChatConstants)
+- ports/ 추가 (IAIService)
+
+**Auth Feature 사례** (v2.1.0):
+- models/auth_user.dart → entities/auth_user.dart (Freezed)
+- failures/auth_failure.dart 이미 존재 (Sealed Class)
+- enums/user_role.dart 추가 (admin, tester, user)
+- 코드 85% 감소 (140줄 → 20줄 actual code)
 
 ## 🔄 의존성 규칙
 

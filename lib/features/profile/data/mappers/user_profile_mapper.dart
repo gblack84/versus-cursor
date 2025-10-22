@@ -1,5 +1,5 @@
 import '../../domain/models/user_profile.dart';
-import '../dto/user_profile_dto.dart';
+import '../models/user_profile_dto.dart';
 import '../../../../core_exports.dart';
 
 /// UserProfile Mapper

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '../../../domain/repositories/i_media_repository.dart';
 import '../../../domain/services/i_image_processing_service.dart';
+import '../../../domain/failures/creation_failures.dart';
 
 /// Upload task model
 class UploadTask {
@@ -195,7 +196,13 @@ class MediaUploadProvider extends ChangeNotifier {
         final reasons = processResult.rejectedReasons.entries
             .map((e) => '${e.key}: ${e.value.join(", ")}')
             .join('; ');
-        throw Exception(reasons.isNotEmpty ? reasons : '이미지 검증에 실패했습니다.');
+
+        // Create MediaProcessingFailure with moderation check failure
+        throw MediaProcessingFailure(
+          failedStep: MediaProcessingStep.moderationCheck,
+          affectedFiles: task.files.map((f) => f.path).toList(),
+          details: reasons.isNotEmpty ? reasons : null,
+        );
       }
 
       // Upload approved images
@@ -225,7 +232,12 @@ class MediaUploadProvider extends ChangeNotifier {
       }
 
       if (uploadedUrls.isEmpty) {
-        throw Exception('모든 파일 업로드에 실패했습니다.');
+        // Create MediaProcessingFailure with upload failure
+        throw MediaProcessingFailure(
+          failedStep: MediaProcessingStep.upload,
+          affectedFiles: approvedFiles.map((f) => f.path).toList(),
+          details: '모든 파일 업로드에 실패했습니다.',
+        );
       }
 
       // Update task

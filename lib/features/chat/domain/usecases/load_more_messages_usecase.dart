@@ -1,5 +1,5 @@
 import '/core/types/result.dart';
-import '/core/errors/failures.dart';
+import '../failures/chat_failure.dart';
 import '../repositories/i_chat_repository.dart';
 import '../entities/message.dart';
 
@@ -59,14 +59,14 @@ class LoadMoreMessagesUseCase {
     try {
       // 입력 검증
       if (chatId.isEmpty) {
-        return ResultFailure(
-          ValidationFailure(message: 'Chat ID는 비어있을 수 없습니다.'),
+        return const ResultFailure(
+          InvalidMessageContent(),
         );
       }
 
       if (lastMessageId.isEmpty) {
-        return ResultFailure(
-          ValidationFailure(message: 'Message ID는 비어있을 수 없습니다.'),
+        return const ResultFailure(
+          InvalidMessageContent(),
         );
       }
 
@@ -79,8 +79,8 @@ class LoadMoreMessagesUseCase {
 
       return Success(messages);
     } catch (e) {
-      return ResultFailure(
-        ServerFailure(message: '이전 메시지 로드 실패: ${e.toString()}'),
+      return const ResultFailure(
+        MessageLoadFailed(),
       );
     }
   }

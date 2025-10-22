@@ -1,4 +1,6 @@
 import 'package:get_it/get_it.dart';
+import 'package:bot_toast/bot_toast.dart';
+import '/core/utils/error_handler.dart';
 import '/features/auth/presentation/providers/auth_provider.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
@@ -436,12 +438,7 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                                 '${_model.codeCuntryTextController.text}${_model.phoneNumberTextController.text}';
                             if (phoneNumberVal.isEmpty ||
                                 !phoneNumberVal.startsWith('+')) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                      '전화번호는 필수이며 +로 시작해야 합니다.'),
-                                ),
-                              );
+                              BotToast.showText(text: '전화번호는 필수이며 +로 시작해야 합니다.');
                               return;
                             }
 
@@ -472,11 +469,10 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                               }
                             } else {
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(_authProvider.errorMessage ?? 'SMS 코드 발송에 실패했습니다. 다시 시도해주세요.'),
-                                    backgroundColor: Colors.red,
-                                  ),
+                                ErrorHandler.handle(
+                                  _authProvider.errorMessage ?? 'SMS 코드 발송에 실패했습니다. 다시 시도해주세요.',
+                                  customMessage: _authProvider.errorMessage ?? 'SMS 코드 발송에 실패했습니다. 다시 시도해주세요.',
+                                  context: context,
                                 );
                               }
                             }

@@ -1,5 +1,5 @@
 import '/core/types/result.dart';
-import '/core/errors/failures.dart';
+import '../failures/chat_failure.dart';
 import '../entities/message.dart';
 
 /// AI 채팅방 메시지 검색 UseCase
@@ -54,8 +54,8 @@ class SearchMessagesUseCase {
 
       return Success(filtered);
     } catch (e) {
-      return ResultFailure(
-        AppFailure(message: '검색 실패: ${e.toString()}'),
+      return const ResultFailure(
+        SearchFailed(),
       );
     }
   }

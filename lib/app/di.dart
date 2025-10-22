@@ -4,152 +4,43 @@
 /// following Clean Architecture principles
 
 import 'package:get_it/get_it.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '/app/contracts/auth_contract.dart';
-import '/app/contracts/user_contract.dart';
-import '/app/contracts/notification_contract.dart';
+import '/app/contracts/vote_contract.dart';
+import '/app/contracts/creation_contract.dart';
 
-// Voting Feature DI Module
+// Feature DI Modules
+import '/features/post/di/post_di_module.dart';
 import '/features/voting/di/voting_di_module.dart';
-import '/features/voting/domain/ports/i_vote_service.dart' as voting;
+import '/features/voting/domain/repositories/i_voting_repository.dart';
+import '/features/voting/data/repositories/voting_repository_impl.dart';
+import '/features/voting/domain/services/i_vote_service.dart' as voting;
+import '/features/creation/domain/repositories/i_post_creation_repository_v2.dart';
+import '/features/creation/data/repositories/post_creation_repository_v2_impl.dart';
+import '/features/profile/di/profile_di_module.dart';
+import '/features/auth/di/auth_di_module.dart';
+import '/features/notifications/di/notification_di_module.dart';
+import '/features/chat/di/chat_di_module.dart';
+import '/features/creation/di/creation_di_module.dart';
+import '/features/search/di/search_di_module.dart';
 
-// Auth Feature DI
-import '/features/auth/data/datasources/i_auth_remote_datasource.dart';
-import '/features/auth/data/datasources/firebase_auth_remote_datasource.dart';
-import '/features/auth/data/datasources/i_auth_local_datasource.dart';
-import '/features/auth/data/datasources/auth_local_datasource.dart';
-import '/features/auth/domain/repositories/i_auth_repository.dart';
-import '/features/auth/data/repositories/auth_repository_impl.dart';
-// Auth UseCases
-import '/features/auth/domain/usecases/sign_in_with_email_usecase.dart';
-import '/features/auth/domain/usecases/sign_up_with_email_usecase.dart';
-import '/features/auth/domain/usecases/sign_in_with_google_usecase.dart';
-import '/features/auth/domain/usecases/sign_in_with_apple_usecase.dart';
-import '/features/auth/domain/usecases/sign_in_with_phone_usecase.dart';
-import '/features/auth/domain/usecases/sign_out_usecase.dart';
-import '/features/auth/domain/usecases/get_current_user_usecase.dart';
-import '/features/auth/domain/usecases/password_management_usecase.dart';
-import '/features/auth/domain/usecases/email_verification_usecase.dart';
-import '/features/auth/domain/usecases/account_management_usecase.dart';
-// Auth Provider
-import '/features/auth/presentation/providers/auth_provider.dart' as app_auth;
-
-// Notifications Feature DI
-import '/features/notifications/domain/repositories/i_notification_repository.dart';
-import '/features/notifications/data/repositories/notification_repository_impl.dart';
-import '/features/notifications/domain/services/i_notification_service.dart';
-import '/services/notification/notification_queue_service.dart';
-import '/services/notification/fcm_service.dart';
-import '/features/notifications/presentation/providers/notification_overlay_provider.dart';
-import '/features/notifications/domain/usecases/mark_as_read_use_case.dart';
-// NOTE: UseCases are imported and registered in NotificationFactory
-
-// Core Interface Implementations for Notifications
+// Core Interface Implementations for Cross-Feature Communication
 import '/core/interfaces/features/i_vote_service.dart' as core;
 import 'di/adapters/core_vote_service_adapter.dart';
 
-// Core Ports
-import '/core/domain/ports/i_notification_display_port.dart';
+// ===== Post Feature DI Module =====
+// Handled by /features/post/di/post_di_module.dart
 
-// Voting UI & Adapters
-import '/features/voting/domain/ports/i_vote_ui_delegate.dart';
-import '/features/voting/presentation/managers/vote_ui_manager.dart';
-import '/features/voting/presentation/handlers/vote_handler_impl.dart';
-import '/features/voting/domain/usecases/submit_vote_use_case.dart';
-import '/features/notifications/data/adapters/notification_service.dart';
-import '/features/notifications/data/datasources/i_remote_notification_datasource.dart';
-import '/features/notifications/data/datasources/remote/firebase_notification_datasource.dart';
-import '/features/notifications/data/datasources/i_local_notification_datasource.dart';
-import '/features/notifications/data/datasources/local/shared_prefs_notification_datasource.dart';
-import '/features/notifications/data/mappers/notification_mapper.dart';
+// ===== Creation Feature DI Module =====
+// Handled by /features/creation/di/creation_di_module.dart
 
-// Posts Feature - VoteTimerService
-import '/features/voting/domain/services/vote_timer_service.dart';
+// ===== Profile Feature DI Module =====
+// Handled by /features/profile/di/profile_di_module.dart
 
-// Voting Feature - Port and Adapter
-import '/features/voting/domain/ports/i_vote_timer_port.dart';
-import '/features/voting/data/adapters/vote_timer_adapter.dart';
+// ===== Chat Feature DI Module =====
+// Handled by /features/chat/di/chat_di_module.dart
 
-// ===== Post Feature Clean Architecture DI =====
-// Note: Post Feature DI는 PostsModule에서 관리됩니다 (lib/app/di/posts_module.dart)
-
-// ===== Creation Feature Clean Architecture DI =====
-import '/features/creation/data/datasources/interfaces/i_post_creation_datasource.dart';
-import '/features/creation/data/datasources/firebase_post_creation_datasource.dart';
-
-// ===== Profile Feature Clean Architecture DI =====
-// DataSources
-import '/features/profile/data/datasources/profile_storage_datasource_impl.dart';
-import '/features/profile/data/datasources/interfaces/i_profile_datasource.dart';
-import '/features/profile/data/datasources/implementations/firebase_profile_datasource.dart';
-// Repositories
-import '/features/profile/domain/repositories/i_profile_storage_repository.dart';
-import '/features/profile/domain/repositories/i_user_repository.dart';
-import '/features/profile/data/repositories/user_repository_impl.dart';
-import '/features/profile/domain/repositories/i_characters_repository.dart';
-import '/features/profile/data/repositories/characters_repository_impl.dart';
-import '/features/profile/domain/repositories/i_interests_repository.dart';
-import '/features/profile/data/repositories/interests_repository_impl.dart';
-import '/features/profile/domain/repositories/i_profile_repository.dart';
-import '/features/profile/data/repositories/profile_repository_impl.dart';
-// UseCases
-import '/features/profile/domain/usecases/profile/get_user_profile_usecase.dart';
-import '/features/profile/domain/usecases/profile/get_current_user_profile_usecase.dart';
-import '/features/profile/domain/usecases/profile/update_user_profile_usecase.dart';
-import '/features/profile/domain/usecases/profile/upload_profile_image_usecase.dart';
-import '/features/profile/domain/usecases/settings/get_user_settings_usecase.dart';
-import '/features/profile/domain/usecases/settings/update_user_settings_usecase.dart';
-import '/features/profile/domain/usecases/characters/get_available_characters_usecase.dart';
-import '/features/profile/domain/usecases/interests/get_user_interests_usecase.dart';
-import '/features/profile/domain/usecases/interests/update_user_interests_usecase.dart';
-import '/features/profile/domain/usecases/profile/get_profile_completion_usecase.dart';
-import '/features/profile/domain/usecases/profile/get_profile_info_usecase.dart';
-import '/features/profile/domain/usecases/profile/delete_user_profile_usecase.dart';
-import '/features/profile/domain/usecases/profile/watch_user_profile_usecase.dart';
-// Providers
-import '/features/profile/presentation/providers/profile_provider.dart';
-import '/features/profile/presentation/providers/characters_provider.dart';
-import '/features/profile/presentation/providers/interests_provider.dart';
-import '/features/profile/presentation/providers/settings_provider.dart';
-
-// ===== Chat Feature Clean Architecture DI =====
-// DataSources
-import '/features/chat/data/datasources/i_chat_remote_datasource.dart';
-import '/features/chat/data/datasources/firebase_chat_remote_datasource.dart';
-// Repositories
-import '/features/chat/domain/repositories/i_chat_repository.dart';
-import '/features/chat/data/repositories/chat_repository_impl.dart';
-// Ports (Interfaces)
-import '/features/chat/domain/ports/i_ai_service.dart';
-// Data Layer (Adapters)
-import '/features/chat/data/adapters/gemini_ai_service.dart';
-import '/features/chat/data/adapters/chat_message_lifecycle_service.dart';
-// UseCases
-import '/features/chat/domain/usecases/get_chat_messages_usecase.dart';
-import '/features/chat/domain/usecases/load_more_messages_usecase.dart';
-import '/features/chat/domain/usecases/send_message_usecase.dart';
-import '/features/chat/domain/usecases/search_messages_usecase.dart';
-import '/features/chat/domain/usecases/get_chat_list_usecase.dart';
-import '/features/chat/domain/usecases/send_ai_query_usecase.dart';
-import '/features/chat/domain/usecases/get_recommended_friends_usecase.dart';
-import '/features/chat/domain/usecases/search_friends_usecase.dart';
-import '/features/chat/domain/usecases/send_friend_request_usecase.dart';
-import '/features/chat/domain/usecases/toggle_follow_usecase.dart';
-// Providers
-import '/features/chat/presentation/providers/chat_detail_provider.dart';
-import '/features/chat/presentation/providers/ai_chat_provider.dart';
-import '/features/chat/presentation/providers/chat_list_provider.dart';
-import '/features/chat/presentation/providers/friends_provider.dart';
-
-// ===== Search Feature Clean Architecture DI =====
-// Repositories
-import '/features/search/domain/repositories/i_search_repository.dart';
-import '/features/search/data/repositories/search_repository_impl.dart';
-// Providers
-import '/features/search/presentation/providers/search_provider.dart';
+// ===== Search Feature DI Module =====
+// Handled by /features/search/di/search_di_module.dart
 
 
 final getIt = GetIt.instance;
@@ -163,209 +54,39 @@ Future<void> setupDependencyInjection() async {
   getIt.registerSingleton<SharedPreferences>(sharedPreferences);
 
   // ===== Auth Feature DI =====
+  // Note: Auth registration moved to after Profile Feature registration
+  // because Auth depends on UserContract (provided by Profile)
 
-  // 1. DataSource 등록
-  getIt.registerLazySingleton<IAuthRemoteDataSource>(
-    () => FirebaseAuthRemoteDataSource(
-      firebaseAuth: FirebaseAuth.instance,
-      firestore: FirebaseFirestore.instance,
-      googleSignIn: GoogleSignIn(),
-    ),
+  // ===== Creation Feature DI =====
+  registerCreationModule(getIt);
+
+  // Register CreationContract (Cross-Feature Communication)
+  // Same instance as IPostCreationRepositoryV2, different interface
+  // Notification, Chat, Profile 등 다른 Feature가 포스트 생성 기능을 사용할 때 접근
+  getIt.registerLazySingleton<CreationContract>(
+    () => getIt<IPostCreationRepositoryV2>() as PostCreationRepositoryV2Impl,
   );
 
-  getIt.registerLazySingleton<IAuthLocalDataSource>(
-    () => AuthLocalDataSource(
-      prefs: getIt<SharedPreferences>(),
-    ),
-  );
+  // ===== Post Feature DI (MUST BE REGISTERED BEFORE Voting) =====
+  // Note: Post Feature provides VoteTimerService that Voting Feature uses
+  registerPostModule(getIt);
 
-  // 2. Repository 등록
-  // Phase 5: UserContract 주입 필요 - Profile Feature 등록 후 해결됨
-  getIt.registerLazySingleton<IAuthRepository>(
-    () => AuthRepositoryImpl(
-      remoteDataSource: getIt<IAuthRemoteDataSource>(),
-      localDataSource: getIt<IAuthLocalDataSource>(),
-      userContract: getIt<UserContract>(),
-    ),
-  );
-
-  // 3. AuthContract 등록
-  getIt.registerLazySingleton<AuthContract>(
-    () => getIt<IAuthRepository>() as AuthRepositoryImpl, // AuthRepositoryImpl이 AuthContract 구현
-  );
-
-  // 4. 핵심 UseCase 등록 (10개로 통합)
-  getIt.registerFactory(() => SignInWithEmailUseCase(
-    repository: getIt<IAuthRepository>()
-  ));
-  getIt.registerFactory(() => SignUpWithEmailUseCase(
-    repository: getIt<IAuthRepository>()
-  ));
-  getIt.registerFactory(() => SignInWithGoogleUseCase(
-    repository: getIt<IAuthRepository>()
-  ));
-  getIt.registerFactory(() => SignInWithAppleUseCase(
-    repository: getIt<IAuthRepository>()
-  ));
-  getIt.registerFactory(() => SignInWithPhoneUseCase(
-    repository: getIt<IAuthRepository>()
-  ));
-  getIt.registerFactory(() => SignOutUseCase(
-    repository: getIt<IAuthRepository>()
-  ));
-  getIt.registerFactory(() => GetCurrentUserUseCase(
-    getIt<IAuthRepository>()  // positional argument
-  ));
-  getIt.registerFactory(() => PasswordManagementUseCase(
-    repository: getIt<IAuthRepository>()
-  ));
-  getIt.registerFactory(() => EmailVerificationUseCase(
-    repository: getIt<IAuthRepository>()
-  ));
-  getIt.registerFactory(() => AccountManagementUseCase(
-    repository: getIt<IAuthRepository>()
-  ));
-
-  // 5. AuthProvider 등록 (싱글톤)
-  getIt.registerLazySingleton<app_auth.AuthProvider>(
-    () => app_auth.AuthProvider(),
-  );
-
-  // 6. Legacy Auth Service 제거 완료 (2025-01-29)
-
-  // ===== Post Feature DI =====
-  // Note: Post Feature의 모든 DI는 PostsModule에서 관리됩니다
-  // - DataSource, Repository, UseCases, Provider
-  // - /lib/app/di/posts_module.dart 참조
-
-  // ===== Creation Feature DI (Clean Architecture V2) =====
-
-  // 1. DataSource 등록
-  getIt.registerLazySingleton<IPostCreationDataSource>(
-    () => FirebasePostCreationDataSource(
-      firestore: FirebaseFirestore.instance,
-    ),
-  );
-
-  // 2. Repository는 posts_module.dart에서 등록됨
-
-  // TODO: Register UseCases when they are refactored to use V2 repositories
-  // getIt.registerFactory(() => CreatePostUseCase(
-  //   postRepository: getIt<IPostCreationRepositoryV2>(),
-  //   mediaRepository: getIt<IMediaRepository>(),
-  //   targetAudienceService: getIt<TargetAudienceService>(),
-  //   imageUploadService: getIt<ImageUploadService>(),
-  // ));
-
-  // ===== Contract 기반 Feature 간 통신 =====
-
-  // Posts Feature가 PostContract를 구현하면 등록:
-  // getIt.registerLazySingleton<PostContract>(
-  //   () => getIt<PostRepositoryImpl>(), // PostRepositoryImpl이 PostContract 구현
-  // );
-
-  // ===== Notifications Feature DI =====
-
-  // DataSource 등록
-  getIt.registerLazySingleton<IRemoteNotificationDatasource>(
-    () => FirebaseNotificationDatasource(
-      firestore: FirebaseFirestore.instance,
-    ),
-  );
-
-  getIt.registerLazySingleton<ILocalNotificationDatasource>(
-    () => SharedPrefsNotificationDatasource(
-      prefs: getIt<SharedPreferences>(),
-    ),
-  );
-
-  // ===== Core Interface Adapters =====
-  // NOTE: These must be registered AFTER Voting DI Module
-  
-  // Register Core Vote Service Adapter (will be registered after Voting module below)
-
-  // Mapper 등록
-  getIt.registerLazySingleton<NotificationMapper>(
-    () => NotificationMapper(),
-  );
-
-  // Register Repository implementation
-  getIt.registerLazySingleton<INotificationRepository>(
-    () => NotificationRepositoryImpl(
-      remoteDatasource: getIt<IRemoteNotificationDatasource>(),
-      localDatasource: getIt<ILocalNotificationDatasource>(),
-    ),
-  );
-
-  // Register NotificationContract (Cross-Feature Communication)
-  // Same instance as INotificationRepository, different interface
-  // Posts, Chat 등 다른 Feature가 알림 기능을 사용할 때 접근
-  getIt.registerLazySingleton<NotificationContract>(
-    () => getIt<INotificationRepository>() as NotificationRepositoryImpl,
-  );
-
-  // NOTE: UseCases are now registered by NotificationFactory
-  // See: /lib/app/di/factories/notification_factory.dart
-
-  // ===== Voting Feature DI (MUST BE REGISTERED BEFORE VoteHandlerImpl) =====
-
-  // Register VoteTimerPort adapter BEFORE the voting module
-  // This wraps the VoteTimerService from posts feature to avoid cross-feature dependency
-  getIt.registerLazySingleton<IVoteTimerPort>(
-    () => VoteTimerAdapter(VoteTimerService()),
-  );
-
+  // ===== Voting Feature DI =====
+  // Note: Registered AFTER Post because uses VoteTimerService from Post Feature
   // Register all Voting feature dependencies
   // This will register voting.IVoteService and SubmitVoteUseCase internally
   registerVotingModule(getIt);
 
-  // ===== Notification Feature DI (Depends on Voting Feature) =====
-
-  // Register Port Implementation for cross-feature communication
-  // The VoteHandlerImpl implements INotificationDisplayPort for voting feature
-  // NOTE: SubmitVoteUseCase is injected from Voting DI Module (registered above)
-  getIt.registerLazySingleton<INotificationDisplayPort>(
-    () => VoteHandlerImpl(
-      uiManager: VoteUIManager.instance,
-      submitVote: getIt<SubmitVoteUseCase>(),
-    ),
+  // Register VoteContract (Cross-Feature Communication)
+  // Same instance as IVotingRepository, different interface
+  // Notifications, Posts 등 다른 Feature가 투표 기능을 사용할 때 접근
+  getIt.registerLazySingleton<VoteContract>(
+    () => getIt<IVotingRepository>() as VotingRepositoryImpl,
   );
 
-  // Register Notification Queue Service
-  // Manages notification queue, duplicate prevention, and sequential display
-  // Integrates both Firestore and FCM push notifications
-  getIt.registerLazySingleton<NotificationQueueService>(
-    () => NotificationQueueService(
-      localDatasource: getIt<ILocalNotificationDatasource>(),
-      notificationService: getIt<INotificationService>(),
-      fcmService: FCMService(), // Singleton instance
-    ),
-  );
-
-  // Register Notification Overlay Provider (Presentation Layer)
-  // Subscribes to NotificationQueueService stream and displays dialogs
-  // NOTE: Vote submission is now handled by VoteHandlerImpl (Voting Feature)
-  getIt.registerLazySingleton<NotificationOverlayProvider>(
-    () => NotificationOverlayProvider(
-      queueService: getIt<NotificationQueueService>(),
-      markAsRead: getIt<MarkAsReadUseCase>(),
-      votingDisplayPort: getIt<INotificationDisplayPort>(),
-    ),
-  );
-
-  // Register UI Delegate for Voting Feature
-  getIt.registerLazySingleton<IVoteUIDelegate>(
-    () => VoteUIManager.instance,
-  );
-
-  // NotificationQueueService is now registered in NotificationModule
-
-  // Register Services (인터페이스로 등록)
-  getIt.registerLazySingleton<INotificationService>(
-    () => NotificationService(
-      repository: getIt<INotificationRepository>(),
-    ),
-  );
+  // ===== Notifications Feature DI =====
+  // Note: Registered AFTER Voting because depends on SubmitVoteUseCase
+  registerNotificationModule(getIt);
 
   // ===== Core Interface Bindings for Cross-Feature Communication =====
   
@@ -378,235 +99,18 @@ Future<void> setupDependencyInjection() async {
   );
 
   // ===== Profile Feature DI =====
+  // Note: Registered before Auth because Auth depends on UserContract
+  registerProfileModule(getIt);
 
-  // 1. DataSource 등록
-  getIt.registerLazySingleton<IProfileStorageRepository>(
-    () => ProfileStorageDataSourceImpl(),
-  );
-
-  getIt.registerLazySingleton<IProfileDataSource>(
-    () => FirebaseProfileDataSource(
-      firestore: FirebaseFirestore.instance,
-    ),
-  );
-
-  // 2. Repository 등록
-  getIt.registerLazySingleton<IUserRepository>(
-    () => UserRepositoryImpl.instance,
-  );
-
-  // Phase 5: UserContract 등록 (Auth Feature가 Profile 작업을 요청할 때 사용)
-  // Same instance as IUserRepository, different interface
-  getIt.registerLazySingleton<UserContract>(
-    () => UserRepositoryImpl.instance,
-  );
-
-  getIt.registerLazySingleton<ICharactersRepository>(
-    () => CharactersRepositoryImpl(
-      dataSource: getIt<IProfileDataSource>(),
-    ),
-  );
-
-  getIt.registerLazySingleton<IInterestsRepository>(
-    () => InterestsRepositoryImpl(
-      dataSource: getIt<IProfileDataSource>(),
-    ),
-  );
-
-  getIt.registerLazySingleton<IProfileRepository>(
-    () => ProfileRepositoryImpl(
-      dataSource: getIt<IProfileDataSource>(),
-    ),
-  );
-
-  // 3. UseCase 등록
-  getIt.registerFactory(() => GetUserProfileUseCase(
-    repository: getIt<IUserRepository>(),
-  ));
-
-  getIt.registerFactory(() => GetCurrentUserProfileUseCase(
-    repository: getIt<IUserRepository>(),
-  ));
-
-  getIt.registerFactory(() => UpdateUserProfileUseCase(
-    repository: getIt<IUserRepository>(),
-  ));
-
-  getIt.registerFactory(() => UploadProfileImageUseCase(
-    storageRepository: getIt<IProfileStorageRepository>(),
-  ));
-
-  getIt.registerFactory(() => GetUserSettingsUseCase(
-    repository: getIt<IUserRepository>(),
-  ));
-
-  getIt.registerFactory(() => UpdateUserSettingsUseCase(
-    repository: getIt<IUserRepository>(),
-  ));
-
-  getIt.registerFactory(() => GetAvailableCharactersUseCase(
-    repository: getIt<ICharactersRepository>(),
-  ));
-
-  getIt.registerFactory(() => GetUserInterestsUseCase(
-    repository: getIt<IInterestsRepository>(),
-  ));
-
-  getIt.registerFactory(() => UpdateUserInterestsUseCase(
-    repository: getIt<IInterestsRepository>(),
-  ));
-
-  getIt.registerFactory(() => GetProfileCompletionUseCase(
-    repository: getIt<IProfileRepository>(),
-  ));
-
-  getIt.registerFactory(() => GetProfileInfoUseCase(
-    repository: getIt<IProfileRepository>(),
-  ));
-
-  getIt.registerFactory(() => DeleteUserProfileUseCase(
-    repository: getIt<IUserRepository>(),
-  ));
-
-  getIt.registerFactory(() => WatchUserProfileUseCase(
-    getIt<IUserRepository>(),
-  ));
-
-  // 4. Provider 등록
-  getIt.registerFactory(() => ProfileProvider(
-    getProfileUseCase: getIt<GetUserProfileUseCase>(),
-    getCurrentProfileUseCase: getIt<GetCurrentUserProfileUseCase>(),
-    updateProfileUseCase: getIt<UpdateUserProfileUseCase>(),
-    uploadImageUseCase: getIt<UploadProfileImageUseCase>(),
-    getProfileCompletionUseCase: getIt<GetProfileCompletionUseCase>(),
-    getProfileInfoUseCase: getIt<GetProfileInfoUseCase>(),
-    watchProfileUseCase: getIt<WatchUserProfileUseCase>(),
-  ));
-
-  getIt.registerFactory(() => CharactersProvider(
-    getAvailableCharactersUseCase: getIt<GetAvailableCharactersUseCase>(),
-  ));
-
-  getIt.registerFactory(() => InterestsProvider(
-    getUserInterestsUseCase: getIt<GetUserInterestsUseCase>(),
-    updateUserInterestsUseCase: getIt<UpdateUserInterestsUseCase>(),
-  ));
-
-  getIt.registerFactory(() => SettingsProvider(
-    getSettingsUseCase: getIt<GetUserSettingsUseCase>(),
-    updateSettingsUseCase: getIt<UpdateUserSettingsUseCase>(),
-    deleteProfileUseCase: getIt<DeleteUserProfileUseCase>(),
-  ));
-
-  // FriendsProvider removed - Friends feature not yet implemented
+  // ===== Auth Feature DI =====
+  // Note: Registered after Profile because Auth depends on UserContract
+  registerAuthModule(getIt);
 
   // ===== Chat Feature DI =====
+  registerChatModule(getIt);
 
-  // 1. DataSource 등록 (Clean Architecture v4.0)
-  getIt.registerLazySingleton<IChatRemoteDatasource>(
-    () => FirebaseChatRemoteDatasource(
-      firestore: FirebaseFirestore.instance,
-    ),
-  );
-
-  // 2. Repository 등록 (Datasource 주입)
-  getIt.registerLazySingleton<IChatRepository>(
-    () => ChatRepositoryImpl(
-      remoteDatasource: getIt<IChatRemoteDatasource>(),
-    ),
-  );
-
-  // 3. Port & Adapter 등록 (Clean Architecture v4.0 Dependency Inversion)
-  // IAIService: Domain Layer 인터페이스 (Port)
-  // GeminiAIService: Data Layer 구현체 (Adapter)
-  // AI 제공자 교체 시 이 부분만 변경하면 됨
-  getIt.registerLazySingleton<IAIService>(
-    () => GeminiAIService(),
-  );
-
-  // 4. UseCase 등록
-  getIt.registerFactory(() => GetChatMessagesUseCase(
-    chatRepository: getIt<IChatRepository>(),
-  ));
-
-  getIt.registerFactory(() => LoadMoreMessagesUseCase(
-    chatRepository: getIt<IChatRepository>(),
-  ));
-
-  getIt.registerFactory(() => SendMessageUseCase(
-    chatRepository: getIt<IChatRepository>(),
-  ));
-
-  getIt.registerFactory(() => SearchMessagesUseCase());
-
-  getIt.registerFactory(() => GetChatListUseCase(
-    chatRepository: getIt<IChatRepository>(),
-  ));
-
-  // SendAIQueryUseCase: AI 쿼리 전송 비즈니스 로직 (Clean Architecture v4.0)
-  // IAIService 인터페이스에 의존하여 구현체 교체 가능
-  getIt.registerFactory(() => SendAIQueryUseCase(
-    aiService: getIt<IAIService>(),
-  ));
-
-  // 5. Provider 등록
-  getIt.registerFactory(() => ChatDetailProvider(
-    getMessagesUseCase: getIt<GetChatMessagesUseCase>(),
-    loadMoreUseCase: getIt<LoadMoreMessagesUseCase>(),
-    sendMessageUseCase: getIt<SendMessageUseCase>(),
-    searchUseCase: getIt<SearchMessagesUseCase>(),
-    lifecycleService: ChatMessageLifecycleService(),
-  ));
-
-  // AIChatProvider: Clean Architecture v4.0 (AI 기능 통합)
-  // IAIService 인터페이스에 의존하여 구현체 교체 가능
-  getIt.registerFactory(() => AIChatProvider(
-    getMessagesUseCase: getIt<GetChatMessagesUseCase>(),
-    loadMoreUseCase: getIt<LoadMoreMessagesUseCase>(),
-    searchUseCase: getIt<SearchMessagesUseCase>(),
-    sendAIQueryUseCase: getIt<SendAIQueryUseCase>(),
-    aiService: getIt<IAIService>(),
-  ));
-
-  getIt.registerFactory(() => ChatListProvider(
-    getChatListUseCase: getIt<GetChatListUseCase>(),
-  ));
-
-  // Friends Management UseCases (Clean Architecture v4.0)
-  getIt.registerFactory(() => GetRecommendedFriendsUseCase(
-    chatRepository: getIt<IChatRepository>(),
-  ));
-
-  getIt.registerFactory(() => SearchFriendsUseCase(
-    chatRepository: getIt<IChatRepository>(),
-  ));
-
-  getIt.registerFactory(() => SendFriendRequestUseCase(
-    chatRepository: getIt<IChatRepository>(),
-  ));
-
-  getIt.registerFactory(() => ToggleFollowUseCase(
-    chatRepository: getIt<IChatRepository>(),
-  ));
-
-  // FriendsProvider (Clean Architecture v4.0)
-  getIt.registerFactory(() => FriendsProvider(
-    getRecommendedUseCase: getIt<GetRecommendedFriendsUseCase>(),
-    searchUseCase: getIt<SearchFriendsUseCase>(),
-    sendRequestUseCase: getIt<SendFriendRequestUseCase>(),
-    toggleFollowUseCase: getIt<ToggleFollowUseCase>(),
-  ));
-
-  // ===== Search Feature DI (Structure Cleanup - 2025-01-20) =====
-
-  // 1. Repository 등록 (Singleton 패턴 사용)
-  getIt.registerLazySingleton<ISearchRepository>(
-    () => SearchRepositoryImpl.instance,
-  );
-
-  // 2. Provider 등록 (기본 구조만, UseCases 통합은 TODO)
-  // TODO: Add UseCases when implemented
-  getIt.registerFactory(() => SearchProvider());
+  // ===== Search Feature DI =====
+  registerSearchModule(getIt);
 
   // Add more dependency registrations here as needed
 }

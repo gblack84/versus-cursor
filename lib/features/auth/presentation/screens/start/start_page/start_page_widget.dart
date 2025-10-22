@@ -1,10 +1,11 @@
 import 'package:get_it/get_it.dart';
+import 'package:bot_toast/bot_toast.dart';
 import '/features/auth/presentation/providers/auth_provider.dart';
-import '/features/auth/data/adapters/auth_util.dart';
 import '/features/auth/presentation/screens/login/login_page/login_page_widget.dart';
 import '/testpage_select/testpage_select_widget.dart';
 import '/core/widgets/pickle_mark/pickle_mark_widget.dart';
 import '/core_exports.dart';
+import '/core/utils/error_handler.dart';
 import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -277,11 +278,10 @@ class _StartPageWidgetState extends State<StartPageWidget>
 
                                           if (!success) {
                                             if (context.mounted) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text(_authProvider.errorMessage ?? 'Apple 로그인에 실패했습니다.'),
-                                                  backgroundColor: Colors.red,
-                                                ),
+                                              ErrorHandler.handle(
+                                                _authProvider.errorMessage ?? 'Apple 로그인에 실패했습니다.',
+                                                customMessage: _authProvider.errorMessage ?? 'Apple 로그인에 실패했습니다.',
+                                                context: context,
                                               );
                                             }
                                             return;
@@ -356,11 +356,10 @@ class _StartPageWidgetState extends State<StartPageWidget>
 
                                     if (!success) {
                                       if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(_authProvider.errorMessage ?? 'Google 로그인에 실패했습니다.'),
-                                            backgroundColor: Colors.red,
-                                          ),
+                                        ErrorHandler.handle(
+                                          _authProvider.errorMessage ?? 'Google 로그인에 실패했습니다.',
+                                          customMessage: _authProvider.errorMessage ?? 'Google 로그인에 실패했습니다.',
+                                          context: context,
                                         );
                                       }
                                       return;
@@ -428,11 +427,10 @@ class _StartPageWidgetState extends State<StartPageWidget>
 
                                     if (!success) {
                                       if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(_authProvider.errorMessage ?? 'Google 로그인에 실패했습니다.'),
-                                            backgroundColor: Colors.red,
-                                          ),
+                                        ErrorHandler.handle(
+                                          _authProvider.errorMessage ?? 'Google 로그인에 실패했습니다.',
+                                          customMessage: _authProvider.errorMessage ?? 'Google 로그인에 실패했습니다.',
+                                          context: context,
                                         );
                                       }
                                       return;
@@ -499,11 +497,10 @@ class _StartPageWidgetState extends State<StartPageWidget>
 
                                   if (!success) {
                                     if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(_authProvider.errorMessage ?? 'Instagram 로그인에 실패했습니다.'),
-                                          backgroundColor: Colors.red,
-                                        ),
+                                      ErrorHandler.handle(
+                                        _authProvider.errorMessage ?? 'Instagram 로그인에 실패했습니다.',
+                                        customMessage: _authProvider.errorMessage ?? 'Instagram 로그인에 실패했습니다.',
+                                        context: context,
                                       );
                                     }
                                     return;

@@ -25,9 +25,10 @@ import '/app/di.dart';
 import '/core/design_system/design_system.dart';
 import '/features/chat/domain/entities/chat.dart' as entities;
 import '/features/chat/presentation/providers/chat_detail_provider.dart';
-import '/features/profile/data/adapters/user_cache_service.dart';
+import '/features/chat/data/adapters/flutter_chat_user_adapter.dart';
 import '/services/image/unified_image_cache_service.dart';
-import '/features/auth/data/adapters/auth_util.dart' as auth_util;
+import 'package:get_it/get_it.dart';
+import '/app/contracts/auth_contract.dart';
 import 'chat_detail_controller_v2.dart';
 import 'components/chat_detail_app_bar.dart';
 import 'components/chat_detail_fab.dart';
@@ -57,10 +58,10 @@ class ChatDetailWidgetClean extends StatefulWidget {
 class _ChatDetailWidgetCleanState extends State<ChatDetailWidgetClean> with TickerProviderStateMixin {
   late final ChatDetailProvider _provider;
   late final ChatDetailControllerV2 _chatController;
-  final _userCacheService = UserCacheService.instance;
+  final _userCacheService = FlutterChatUserAdapter.instance;
 
-  // 현재 사용자 정보 (auth_util에서 가져옴)
-  String get currentUserId => auth_util.currentUserUid;
+  // AuthContract helper
+  String get currentUserId => GetIt.instance<AuthContract>().getCurrentUserId() ?? '';
 
   // AI 채팅 감지
   bool get isAiChat =>
@@ -178,7 +179,7 @@ class _ChatDetailWidgetCleanState extends State<ChatDetailWidgetClean> with Tick
 
   /// 사용자 ID로부터 User 객체 resolve
   ///
-  /// **Clean Architecture v4.0**: UserCacheService를 통해 사용자 정보 로드
+  /// **Clean Architecture v4.0**: FlutterChatUserAdapter를 통해 사용자 정보 로드
   /// - AI 사용자 자동 처리
   /// - Firestore 로드 및 캐싱
   /// - 에러 처리 포함

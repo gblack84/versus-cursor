@@ -4,7 +4,7 @@ import '/core/types/result.dart';
 import '../../failures/creation_failures.dart';
 import '../../repositories/i_media_repository.dart';
 import '../../services/i_image_processing_service.dart';
-import '../../../data/dto/image_upload_dto.dart';
+import '../../../data/models/image_upload_dto.dart';
 
 /// UseCase for uploading and processing images
 ///

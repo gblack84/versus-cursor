@@ -6,9 +6,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '/core/firebase/utils/firestore_util.dart'
     show queryCollection, queryCollectionCount;
 import 'i_chat_remote_datasource.dart';
-import '../dto/chat_dto.dart';
-import '../dto/message_dto.dart';
-import '../adapters/chat_media_upload_service.dart';
+import '../models/chat_dto.dart';
+import '../models/message_dto.dart';
+import '../services/chat_media_upload_service.dart';
 
 /// Firebase implementation of Chat Remote Datasource
 ///

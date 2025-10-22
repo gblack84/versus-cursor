@@ -2,8 +2,8 @@
 // Clean Architecture v4.0 - Data Layer
 
 import 'dart:io';
-import '../dto/chat_dto.dart';
-import '../dto/message_dto.dart';
+import '../models/chat_dto.dart';
+import '../models/message_dto.dart';
 
 /// IChatRemoteDatasource
 ///

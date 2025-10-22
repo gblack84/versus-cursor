@@ -3,8 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/repositories/i_media_repository.dart';
 import '../datasources/interfaces/i_storage_datasource.dart';
 import '../../domain/models/value_objects/media_info.dart';
-import '../dto/image_result_dto.dart';
-import '../dto/video_result_dto.dart';
+import '../models/image_result_dto.dart';
+import '../models/video_result_dto.dart';
 
 /// Implementation of Media Repository using Clean Architecture
 ///

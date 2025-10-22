@@ -4,6 +4,7 @@ import '/core_exports.dart';
 import '/services/moderation/perspective_api_service.dart';
 import '../components/simple_validated_field.dart';
 import '/features/creation/presentation/constants/field_styles.dart';
+import '/features/creation/domain/failures/creation_failures.dart';
 
 /// 입력 필드 빌더 헬퍼
 ///
@@ -90,6 +91,7 @@ class InputFieldBuilder {
   }
 
   /// 에러 메시지 표시
+  /// Step 9: AIModerationFailure로 중앙화된 메시지 사용
   static Widget? buildErrorMessage({
     required BuildContext context,
     required PerspectiveResult? validationResult,
@@ -98,14 +100,34 @@ class InputFieldBuilder {
       return null;
     }
 
-    // 에러 메시지 생성
-    List<String> issues = [];
-    if (validationResult.toxicityScore > 0.8) issues.add('독성 콘텐츠');
-    if (validationResult.profanityScore > 0.8) issues.add('욕설');
-    if (validationResult.threatScore > 0.8) issues.add('위협적 표현');
-    if (validationResult.insultScore > 0.8) issues.add('모욕적 표현');
+    // Step 9: Perspective API 점수를 AIModerationFailure 카테고리로 매핑
+    List<String> detectedCategories = [];
+    if (validationResult.toxicityScore > 0.8) detectedCategories.add('toxicity');
+    if (validationResult.profanityScore > 0.8) detectedCategories.add('profanity');
+    if (validationResult.threatScore > 0.8) detectedCategories.add('harassment');
+    if (validationResult.insultScore > 0.8) detectedCategories.add('hate');
 
-    final errorMessage = issues.isEmpty ? '부적절한 콘텐츠' : issues.join(', ');
+    // Step 9: detectedCategories가 비어있으면 generic 카테고리 사용
+    if (detectedCategories.isEmpty) {
+      detectedCategories.add('toxicity'); // 기본값
+    }
+
+    // Step 9: 최대 점수 계산
+    final maxScore = [
+      validationResult.toxicityScore,
+      validationResult.profanityScore,
+      validationResult.threatScore,
+      validationResult.insultScore,
+    ].reduce((a, b) => a > b ? a : b);
+
+    // Step 9: AIModerationFailure 생성 및 getUserMessage() 사용
+    final failure = AIModerationFailure(
+      aiProvider: 'perspective',
+      detectedCategories: detectedCategories,
+      confidenceScore: maxScore,
+    );
+
+    final errorMessage = failure.getUserMessage();
 
     return Padding(
       padding: const EdgeInsets.only(top: 4.0, left: 12.0, right: 12.0),

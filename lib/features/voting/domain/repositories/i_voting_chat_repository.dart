@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
-import '../models/post_voting.dart';
-import '../models/voting_update.dart';
+import '../models/chat/post_voting.dart';
+import '../models/chat/voting_update.dart';
+import '../models/voting_failure.dart';
 
 /// Repository interface for voting operations
 abstract class VotingRepository {
@@ -71,46 +72,6 @@ abstract class VotingRepository {
     required String postId,
     required String userId,
   });
-}
-
-/// Voting failure types
-abstract class VotingFailure {
-  final String message;
-  const VotingFailure(this.message);
-}
-
-class NetworkFailure extends VotingFailure {
-  const NetworkFailure([String message = 'Network error occurred'])
-      : super(message);
-}
-
-class ServerFailure extends VotingFailure {
-  const ServerFailure([String message = 'Server error occurred'])
-      : super(message);
-}
-
-class CacheFailure extends VotingFailure {
-  const CacheFailure([String message = 'Cache error occurred'])
-      : super(message);
-}
-
-class ValidationFailure extends VotingFailure {
-  const ValidationFailure(String message) : super(message);
-}
-
-class PermissionFailure extends VotingFailure {
-  const PermissionFailure([String message = 'Permission denied'])
-      : super(message);
-}
-
-class AlreadyVotedFailure extends VotingFailure {
-  const AlreadyVotedFailure([String message = 'User has already voted'])
-      : super(message);
-}
-
-class VotingNotActiveFailure extends VotingFailure {
-  const VotingNotActiveFailure([String message = 'Voting is not active'])
-      : super(message);
 }
 
 /// User voting statistics

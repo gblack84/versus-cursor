@@ -17,9 +17,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:bot_toast/bot_toast.dart';
 
 import '/app/di.dart';
-import '/features/auth/data/adapters/auth_util.dart';
+import 'package:get_it/get_it.dart';
+import '/app/contracts/auth_contract.dart';
 import '/core_exports.dart';
 import '/features/chat/domain/entities/chat.dart';
 import '/core/design_system/design_system.dart';
@@ -45,6 +47,9 @@ class ChatListWidgetClean extends StatefulWidget {
 class _ChatListWidgetCleanState extends State<ChatListWidgetClean> {
   late final ChatListProvider _provider;
   final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  // AuthContract helper
+  String get currentUserUid => GetIt.instance<AuthContract>().getCurrentUserId() ?? '';
 
   @override
   void initState() {
@@ -90,9 +95,7 @@ class _ChatListWidgetCleanState extends State<ChatListWidgetClean> {
               ),
               onPressed: () {
                 // 새 채팅 시작
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('새 채팅 시작 기능은 준비 중입니다.')),
-                );
+                BotToast.showText(text: '새 채팅 시작 기능은 준비 중입니다.');
               },
             ),
           ],

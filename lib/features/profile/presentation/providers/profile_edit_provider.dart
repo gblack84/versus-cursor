@@ -57,7 +57,7 @@ class ProfileEditProvider extends ChangeNotifier {
 
     result.fold(
       (failure) {
-        _errorMessage = failure.getUserMessage();
+        _errorMessage = failure.message;
         _editingProfile = null;
       },
       (profile) {
@@ -131,7 +131,7 @@ class ProfileEditProvider extends ChangeNotifier {
     bool success = false;
     result.fold(
       (failure) {
-        _errorMessage = failure.getUserMessage();
+        _errorMessage = failure.message;
       },
       (_) {
         _hasChanges = false;
@@ -177,7 +177,7 @@ class ProfileEditProvider extends ChangeNotifier {
     bool success = false;
     await uploadResult.fold(
       (failure) async {
-        _errorMessage = failure.getUserMessage();
+        _errorMessage = failure.message;
         _isLoading = false;
         notifyListeners();
       },
@@ -190,7 +190,7 @@ class ProfileEditProvider extends ChangeNotifier {
 
         saveResult.fold(
           (failure) {
-            _errorMessage = failure.getUserMessage();
+            _errorMessage = failure.message;
           },
           (_) {
             _hasChanges = false;

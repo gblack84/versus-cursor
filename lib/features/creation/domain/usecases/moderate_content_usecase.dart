@@ -24,11 +24,13 @@ class ModerateContentUseCase {
 
       for (final word in prohibitedWords) {
         if (lowerText.contains(word)) {
+          // Step 5: detectedCategories 추가로 AIModerationFailure와 연동
           return Success(
             ModerationDecision(
               isApproved: false,
-              reason: 'Contains prohibited content: $word',
+              reason: 'Contains prohibited content',
               confidence: 0.95,
+              detectedCategories: [word], // 감지된 금지 단어
             ),
           );
         }
@@ -41,8 +43,12 @@ class ModerateContentUseCase {
         ),
       );
     } catch (error) {
+      // Step 5: ModerationFailure 생성 (하드코딩 제거)
       return ResultFailure(
-        ModerationFailure('Failed to moderate text: $error'),
+        ModerationFailure(
+          'Text moderation error',
+          code: 'TEXT_MODERATION_ERROR',
+        ),
       );
     }
   }
@@ -70,8 +76,12 @@ class ModerateContentUseCase {
         ),
       );
     } catch (error) {
+      // Step 5: ModerationFailure 생성 (하드코딩 제거)
       return ResultFailure(
-        ModerationFailure('Failed to moderate image: $error'),
+        ModerationFailure(
+          'Image moderation error',
+          code: 'IMAGE_MODERATION_ERROR',
+        ),
       );
     }
   }
@@ -96,11 +106,13 @@ class ModerateContentUseCase {
         if (result.isSuccess) {
           decisions.add(result.valueOrNull!);
         } else {
+          // Step 5: 실패한 이미지에 대한 ModerationDecision 생성
           // Continue with other images even if one fails
+          final failure = result.failureOrNull;
           decisions.add(
             ModerationDecision(
               isApproved: false,
-              reason: 'Moderation failed',
+              reason: failure?.message ?? 'Image moderation failed',
               confidence: 0.0,
             ),
           );
@@ -109,8 +121,12 @@ class ModerateContentUseCase {
 
       return Success(decisions);
     } catch (error) {
+      // Step 5: ModerationFailure 생성 (하드코딩 제거)
       return ResultFailure(
-        ModerationFailure('Failed to moderate images: $error'),
+        ModerationFailure(
+          'Batch image moderation error',
+          code: 'BATCH_MODERATION_ERROR',
+        ),
       );
     }
   }
@@ -157,11 +173,23 @@ class ModerateContentUseCase {
           .toList();
 
       if (rejectedA.isNotEmpty) {
+        // Step 5: 거부된 이미지의 실제 이유와 카테고리 수집
+        final reasons = rejectedA
+            .where((d) => d.reason != null)
+            .map((d) => d.reason!)
+            .toSet()
+            .join('; ');
+        final categories = rejectedA
+            .expand((d) => d.detectedCategories)
+            .toSet()
+            .toList();
+
         return Success(
           ModerationDecision(
             isApproved: false,
-            reason: 'Option A contains inappropriate content',
+            reason: reasons.isNotEmpty ? 'Option A: $reasons' : 'Option A contains inappropriate content',
             confidence: rejectedA.first.confidence,
+            detectedCategories: categories,
           ),
         );
       }
@@ -180,11 +208,23 @@ class ModerateContentUseCase {
           .toList();
 
       if (rejectedB.isNotEmpty) {
+        // Step 5: 거부된 이미지의 실제 이유와 카테고리 수집
+        final reasons = rejectedB
+            .where((d) => d.reason != null)
+            .map((d) => d.reason!)
+            .toSet()
+            .join('; ');
+        final categories = rejectedB
+            .expand((d) => d.detectedCategories)
+            .toSet()
+            .toList();
+
         return Success(
           ModerationDecision(
             isApproved: false,
-            reason: 'Option B contains inappropriate content',
+            reason: reasons.isNotEmpty ? 'Option B: $reasons' : 'Option B contains inappropriate content',
             confidence: rejectedB.first.confidence,
+            detectedCategories: categories,
           ),
         );
       }
@@ -201,8 +241,12 @@ class ModerateContentUseCase {
         ),
       );
     } catch (error) {
+      // Step 5: ModerationFailure 생성 (하드코딩 제거)
       return ResultFailure(
-        ModerationFailure('Failed to moderate content combination: $error'),
+        ModerationFailure(
+          'Content combination moderation error',
+          code: 'COMBINATION_MODERATION_ERROR',
+        ),
       );
     }
   }
@@ -214,12 +258,14 @@ class ModerationDecision {
   final bool isApproved;
   final String? reason;
   final double confidence;
+  final List<String> detectedCategories; // Step 5: AI 검열 카테고리 (AIModerationFailure 연동)
   final Map<String, dynamic>? metadata;
 
   ModerationDecision({
     required this.isApproved,
     this.reason,
     required this.confidence,
+    this.detectedCategories = const [],
     this.metadata,
   });
 

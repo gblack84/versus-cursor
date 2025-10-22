@@ -1,304 +1,140 @@
-import 'package:equatable/equatable.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import '../value_objects/target_audience.dart';
+
+part 'post_creation.freezed.dart';
+part 'post_creation.g.dart';
 
 /// Pure domain entity for PostCreation
 /// 순수한 도메인 엔티티 - PostCreation
 ///
 /// Creation Feature는 Post 생성과 투표 초기 설정을 담당
 /// 실제 투표 실행과 결과는 Voting Feature가 담당
-class PostCreation extends Equatable {
-  final String? id;
-  final String userId;
-  final String title;
-  final String description;
-  final PostOption optionA;
-  final PostOption optionB;
-  final TargetAudience? targetAudience;
-  final DateTime createdAt;
-  final DateTime? updatedAt;
-  final PostStatus status;
+///
+/// **Freezed Migration**: Equatable에서 Freezed로 마이그레이션
+/// - 570+ 줄의 수동 boilerplate 제거
+/// - 불변성 자동 보장
+/// - copyWith, toJson, fromJson 자동 생성
+@freezed
+sealed class PostCreation with _$PostCreation {
+  const PostCreation._();
 
-  // Social interaction counts (managed by respective features)
-  final int likeCount;
-  final int commentCount;
-
-  // Vote configuration (Creation manages setup)
-  final VoteConfiguration? voteConfig;
-
-  final bool isAnonymous;
-  final String? category;
-  final List<String>? tags;
-  final Map<String, dynamic>? metadata;
-
-  const PostCreation({
-    this.id,
-    required this.userId,
-    required this.title,
-    required this.description,
-    required this.optionA,
-    required this.optionB,
-    this.targetAudience,
-    required this.createdAt,
-    this.updatedAt,
-    this.status = PostStatus.draft,
-    this.likeCount = 0,
-    this.commentCount = 0,
-    this.voteConfig,
-    this.isAnonymous = false,
-    this.category,
-    this.tags,
-    this.metadata,
-  });
-
-  @override
-  List<Object?> get props => [
-        id,
-        userId,
-        title,
-        description,
-        optionA,
-        optionB,
-        targetAudience,
-        createdAt,
-        updatedAt,
-        status,
-        likeCount,
-        commentCount,
-        voteConfig,
-        isAnonymous,
-        category,
-        tags,
-        metadata,
-      ];
-
-  PostCreation copyWith({
+  const factory PostCreation({
     String? id,
-    String? userId,
-    String? title,
-    String? description,
-    PostOption? optionA,
-    PostOption? optionB,
+    required String userId,
+    required String title,
+    required String description,
+    required PostOption optionA,
+    required PostOption optionB,
     TargetAudience? targetAudience,
-    DateTime? createdAt,
+    required DateTime createdAt,
     DateTime? updatedAt,
-    PostStatus? status,
-    int? likeCount,
-    int? commentCount,
+    @Default(PostStatus.draft) PostStatus status,
+    @Default(0) int likeCount,
+    @Default(0) int commentCount,
     VoteConfiguration? voteConfig,
-    bool? isAnonymous,
+    @Default(false) bool isAnonymous,
     String? category,
     List<String>? tags,
     Map<String, dynamic>? metadata,
-  }) {
-    return PostCreation(
-      id: id ?? this.id,
-      userId: userId ?? this.userId,
-      title: title ?? this.title,
-      description: description ?? this.description,
-      optionA: optionA ?? this.optionA,
-      optionB: optionB ?? this.optionB,
-      targetAudience: targetAudience ?? this.targetAudience,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      status: status ?? this.status,
-      likeCount: likeCount ?? this.likeCount,
-      commentCount: commentCount ?? this.commentCount,
-      voteConfig: voteConfig ?? this.voteConfig,
-      isAnonymous: isAnonymous ?? this.isAnonymous,
-      category: category ?? this.category,
-      tags: tags ?? this.tags,
-      metadata: metadata ?? this.metadata,
-    );
-  }
+  }) = _PostCreation;
 
-  /// Convert to Map for persistence
-  Map<String, dynamic> toMap() {
-    return {
-      if (id != null) 'id': id,
-      'userId': userId,
-      'title': title,
-      'description': description,
-      'optionA': optionA.toMap(),
-      'optionB': optionB.toMap(),
-      if (targetAudience != null) 'targetAudience': targetAudience!.toMap(),
-      'createdAt': createdAt.toIso8601String(),
-      if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
-      'status': status.name,
-      'likeCount': likeCount,
-      'commentCount': commentCount,
-      if (voteConfig != null) 'voteConfig': voteConfig!.toMap(),
-      'isAnonymous': isAnonymous,
-      if (category != null) 'category': category,
-      if (tags != null) 'tags': tags,
-      if (metadata != null) 'metadata': metadata,
-    };
-  }
+  factory PostCreation.fromJson(Map<String, dynamic> json) =>
+      _$PostCreationFromJson(json);
 
-  /// Create from Map
-  factory PostCreation.fromMap(Map<String, dynamic> map) {
-    return PostCreation(
-      id: map['id'],
-      userId: map['userId'] ?? '',
-      title: map['title'] ?? '',
-      description: map['description'] ?? '',
-      optionA: PostOption.fromMap(map['optionA'] ?? {}),
-      optionB: PostOption.fromMap(map['optionB'] ?? {}),
-      targetAudience: map['targetAudience'] != null
-          ? TargetAudience.fromMap(map['targetAudience'])
-          : null,
-      createdAt: DateTime.parse(map['createdAt']),
-      updatedAt: map['updatedAt'] != null ? DateTime.parse(map['updatedAt']) : null,
-      status: PostStatus.values.firstWhere(
-        (e) => e.name == map['status'],
-        orElse: () => PostStatus.draft,
-      ),
-      likeCount: map['likeCount'] ?? 0,
-      commentCount: map['commentCount'] ?? 0,
-      voteConfig: map['voteConfig'] != null
-          ? VoteConfiguration.fromMap(map['voteConfig'])
-          : null,
-      isAnonymous: map['isAnonymous'] ?? false,
-      category: map['category'],
-      tags: map['tags'] != null ? List<String>.from(map['tags']) : null,
-      metadata: map['metadata'],
-    );
-  }
+  /// Backward compatibility: fromMap delegates to fromJson
+  /// 하위 호환성: fromMap은 fromJson으로 위임
+  factory PostCreation.fromMap(Map<String, dynamic> map) =>
+      PostCreation.fromJson(map);
 
-  /// Convert to JSON for serialization
-  /// JSON 직렬화를 위한 변환
-  Map<String, dynamic> toJson() => toMap();
+  /// Backward compatibility: toMap delegates to toJson
+  /// 하위 호환성: toMap은 toJson으로 위임
+  Map<String, dynamic> toMap() => toJson();
 
-  /// Create from JSON
-  /// JSON에서 생성
-  factory PostCreation.fromJson(Map<String, dynamic> json) => PostCreation.fromMap(json);
+  // ============================================
+  // Business Logic (비즈니스 로직)
+  // ============================================
+
+  /// Check if post is published
+  bool get isPublished => status == PostStatus.published;
+
+  /// Check if post is draft
+  bool get isDraft => status == PostStatus.draft;
+
+  /// Check if post is in voting state
+  bool get isVoting => status == PostStatus.voting;
+
+  /// Check if voting is completed
+  bool get isCompleted => status == PostStatus.completed;
+
+  /// Check if post has any images
+  bool get hasImages =>
+      optionA.imageUrls.isNotEmpty || optionB.imageUrls.isNotEmpty;
+
+  /// Check if post has any videos
+  bool get hasVideos =>
+      (optionA.videoUrls?.isNotEmpty ?? false) ||
+      (optionB.videoUrls?.isNotEmpty ?? false);
+
+  /// Get total media count
+  int get totalMediaCount =>
+      optionA.imageUrls.length +
+      optionB.imageUrls.length +
+      (optionA.videoUrls?.length ?? 0) +
+      (optionB.videoUrls?.length ?? 0);
 }
 
 /// Post option (A or B)
 /// 게시물 옵션 (A 또는 B)
-class PostOption extends Equatable {
-  final String? text;
-  final List<String> imageUrls;
-  final List<String>? videoUrls;
-  final List<double> aspectRatios;
-  final Map<String, dynamic>? metadata;
-
-  const PostOption({
-    this.text,
-    this.imageUrls = const [],
-    this.videoUrls,
-    this.aspectRatios = const [],
-    this.metadata,
-  });
-
-  @override
-  List<Object?> get props => [text, imageUrls, videoUrls, aspectRatios, metadata];
-
-  PostOption copyWith({
+///
+/// **Freezed Migration**: Equatable에서 Freezed로 마이그레이션
+@freezed
+sealed class PostOption with _$PostOption {
+  const factory PostOption({
     String? text,
-    List<String>? imageUrls,
+    @Default([]) List<String> imageUrls,
     List<String>? videoUrls,
-    List<double>? aspectRatios,
+    @Default([]) List<double> aspectRatios,
     Map<String, dynamic>? metadata,
-  }) {
-    return PostOption(
-      text: text ?? this.text,
-      imageUrls: imageUrls ?? this.imageUrls,
-      videoUrls: videoUrls ?? this.videoUrls,
-      aspectRatios: aspectRatios ?? this.aspectRatios,
-      metadata: metadata ?? this.metadata,
-    );
-  }
+  }) = _PostOption;
 
-  Map<String, dynamic> toMap() {
-    return {
-      if (text != null) 'text': text,
-      'imageUrls': imageUrls,
-      if (videoUrls != null) 'videoUrls': videoUrls,
-      'aspectRatios': aspectRatios,
-      if (metadata != null) 'metadata': metadata,
-    };
-  }
+  factory PostOption.fromJson(Map<String, dynamic> json) =>
+      _$PostOptionFromJson(json);
 
-  factory PostOption.fromMap(Map<String, dynamic> map) {
-    return PostOption(
-      text: map['text'],
-      imageUrls: List<String>.from(map['imageUrls'] ?? []),
-      videoUrls: map['videoUrls'] != null
-          ? List<String>.from(map['videoUrls'])
-          : null,
-      aspectRatios: List<double>.from(
-        (map['aspectRatios'] ?? []).map((e) => e.toDouble()),
-      ),
-      metadata: map['metadata'],
-    );
-  }
-
-  /// Convert to JSON for serialization
-  Map<String, dynamic> toJson() => toMap();
-
-  /// Create from JSON
-  factory PostOption.fromJson(Map<String, dynamic> json) => PostOption.fromMap(json);
+  /// Backward compatibility: fromMap delegates to fromJson
+  factory PostOption.fromMap(Map<String, dynamic> map) =>
+      PostOption.fromJson(map);
 }
 
 /// Vote configuration for a post (managed by Creation)
 /// 게시물의 투표 설정 (Creation이 관리)
-class VoteConfiguration extends Equatable {
-  final DateTime? startTime;     // 투표 시작 시간
-  final DateTime? endTime;       // 투표 종료 시간
-  final int? duration;           // 투표 지속 시간 (분)
-  final bool allowAnonymous;     // 익명 투표 허용 여부
-  final bool requiresExpansion;  // 투표 확장 필요 여부
-  final Map<String, dynamic>? settings; // 추가 설정
+///
+/// **Freezed Migration**: Equatable에서 Freezed로 마이그레이션
+@freezed
+sealed class VoteConfiguration with _$VoteConfiguration {
+  const factory VoteConfiguration({
+    DateTime? startTime,
+    DateTime? endTime,
+    int? duration,
+    @Default(false) bool allowAnonymous,
+    @Default(false) bool requiresExpansion,
+    Map<String, dynamic>? settings,
+  }) = _VoteConfiguration;
 
-  const VoteConfiguration({
-    this.startTime,
-    this.endTime,
-    this.duration,
-    this.allowAnonymous = false,
-    this.requiresExpansion = false,
-    this.settings,
-  });
+  factory VoteConfiguration.fromJson(Map<String, dynamic> json) =>
+      _$VoteConfigurationFromJson(json);
 
-  @override
-  List<Object?> get props => [
-        startTime,
-        endTime,
-        duration,
-        allowAnonymous,
-        requiresExpansion,
-        settings,
-      ];
-
-  Map<String, dynamic> toMap() {
-    return {
-      if (startTime != null) 'startTime': startTime!.toIso8601String(),
-      if (endTime != null) 'endTime': endTime!.toIso8601String(),
-      if (duration != null) 'duration': duration,
-      'allowAnonymous': allowAnonymous,
-      'requiresExpansion': requiresExpansion,
-      if (settings != null) 'settings': settings,
-    };
-  }
-
-  factory VoteConfiguration.fromMap(Map<String, dynamic> map) {
-    return VoteConfiguration(
-      startTime: map['startTime'] != null ? DateTime.parse(map['startTime']) : null,
-      endTime: map['endTime'] != null ? DateTime.parse(map['endTime']) : null,
-      duration: map['duration'],
-      allowAnonymous: map['allowAnonymous'] ?? false,
-      requiresExpansion: map['requiresExpansion'] ?? false,
-      settings: map['settings'],
-    );
-  }
+  /// Backward compatibility: fromMap delegates to fromJson
+  factory VoteConfiguration.fromMap(Map<String, dynamic> map) =>
+      VoteConfiguration.fromJson(map);
 }
 
 /// Post status enum
 /// 게시물 상태 열거형
 enum PostStatus {
-  draft,      // 임시저장
-  published,  // 게시됨
-  voting,     // 투표중
-  completed,  // 투표완료
-  archived,   // 보관됨
-  deleted,    // 삭제됨
+  draft, // 임시저장
+  published, // 게시됨
+  voting, // 투표중
+  completed, // 투표완료
+  archived, // 보관됨
+  deleted, // 삭제됨
 }

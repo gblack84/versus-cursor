@@ -23,27 +23,32 @@ lib/features/auth/
 │
 ├── 📄 README.md                     # 📌 현재 문서
 │
-├── 🎯 domain/                       # [비즈니스 로직 계층] - 14개 파일
-│   ├── 📁 models/                  # 도메인 엔티티 (1개)
-│   │   └── auth_user.dart          # 사용자 도메인 모델
+├── 🎯 domain/                       # [비즈니스 로직 계층] - 17개 파일
+│   ├── 📁 entities/                 # 도메인 엔티티 (3개)
+│   │   ├── auth_user.dart           # 사용자 도메인 모델 (Freezed)
+│   │   ├── auth_user.freezed.dart   # Freezed 생성 코드
+│   │   └── auth_user.g.dart         # JSON 직렬화 코드
 │   │
-│   ├── 📁 repositories/            # Repository 인터페이스 (1개)
-│   │   └── i_auth_repository.dart  # 추상 Repository 계약
+│   ├── 📁 enums/                    # 타입 안전한 열거형 (1개)
+│   │   └── user_role.dart           # 사용자 역할 (admin, tester, user)
 │   │
-│   ├── 📁 usecases/               # 비즈니스 유스케이스 (10개)
-│   │   ├── sign_in_with_email_usecase.dart
-│   │   ├── sign_up_with_email_usecase.dart
-│   │   ├── sign_in_with_google_usecase.dart
-│   │   ├── sign_in_with_apple_usecase.dart
-│   │   ├── sign_in_with_phone_usecase.dart
-│   │   ├── sign_out_usecase.dart
-│   │   ├── get_current_user_usecase.dart
-│   │   ├── email_verification_usecase.dart
-│   │   ├── password_management_usecase.dart
-│   │   └── account_management_usecase.dart
+│   ├── 📁 failures/                 # 타입 안전한 에러 처리 (1개)
+│   │   └── auth_failure.dart        # Sealed Class로 인증 실패 케이스 정의
 │   │
-│   └── 📁 failures/                # 도메인 예외 (1개)
-│       └── auth_failure.dart       # 인증 실패 케이스
+│   ├── 📁 repositories/             # Repository 인터페이스 (1개)
+│   │   └── i_auth_repository.dart   # 추상 Repository 계약
+│   │
+│   └── 📁 usecases/                # 비즈니스 유스케이스 (10개)
+│       ├── sign_in_with_email_usecase.dart
+│       ├── sign_up_with_email_usecase.dart
+│       ├── sign_in_with_google_usecase.dart
+│       ├── sign_in_with_apple_usecase.dart
+│       ├── sign_in_with_phone_usecase.dart
+│       ├── sign_out_usecase.dart
+│       ├── get_current_user_usecase.dart
+│       ├── email_verification_usecase.dart
+│       ├── password_management_usecase.dart
+│       └── account_management_usecase.dart
 │
 ├── 📊 data/                         # [데이터 접근 계층] - 11개 파일
 │   ├── 📁 repositories/            # Repository 구현체 (1개)
@@ -83,8 +88,8 @@ lib/features/auth/
 ```
 
 ### 📊 파일 통계
-- **총 파일 수**: 58개
-- **Domain Layer**: 14개 (비즈니스 로직)
+- **총 파일 수**: 61개
+- **Domain Layer**: 17개 (Entities 3, Enums 1, Failures 1, Repositories 1, UseCases 10, Docs 1)
 - **Data Layer**: 11개 (데이터 접근)
 - **Presentation Layer**: 33개 (UI/상태관리)
 

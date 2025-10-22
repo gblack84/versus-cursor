@@ -1,9 +1,12 @@
+import '/features/profile/domain/models/user_profile.dart';
+
 /// Cache Contract - Service layer communication interface
 ///
 /// This contract defines how the Services layer (particularly UnifiedCacheService)
 /// communicates with Features without creating direct dependencies.
 ///
-/// Uses Map<String, dynamic> to avoid Firebase dependencies in the contract layer.
+/// Uses domain models (like UserProfile) for type safety while maintaining
+/// architecture boundaries.
 abstract class CacheContract {
   // === Feed Posts ===
 
@@ -21,10 +24,12 @@ abstract class CacheContract {
   // === User Profiles ===
 
   /// Get cached user profile
-  Future<Map<String, dynamic>?> getUserProfile(String userId);
+  /// Returns UserProfile domain model for type safety
+  Future<UserProfile?> getUserProfile(String userId);
 
   /// Cache user profile
-  Future<void> setUserProfile(String userId, Map<String, dynamic> profile);
+  /// Accepts UserProfile domain model for type safety
+  Future<void> setUserProfile(String userId, UserProfile profile);
 
   /// Clear specific user profile cache
   Future<void> clearUserProfile(String userId);

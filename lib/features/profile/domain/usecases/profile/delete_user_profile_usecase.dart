@@ -1,6 +1,6 @@
-import 'package:dartz/dartz.dart';
+import '/core/types/result.dart';
 import '../../repositories/i_user_repository.dart';
-import '../../failures/profile_failures.dart';
+import '../../failures/profile_failure.dart';
 
 /// 프로필 삭제 UseCase (Clean Architecture v4.0)
 ///
@@ -24,23 +24,25 @@ class DeleteUserProfileUseCase {
   /// - `userId`: 삭제할 사용자 ID
   ///
   /// **Returns**:
-  /// - `Right(void)`: 삭제 성공
-  /// - `Left(ProfileFailure)`: 삭제 실패
-  Future<Either<ProfileFailure, void>> execute({
+  /// - `Success(void)`: 삭제 성공
+  /// - `ResultFailure(ProfileFailure)`: 삭제 실패
+  Future<Result<void>> execute({
     required String userId,
   }) async {
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {
-        return Left(ValidationFailure(message: 'User ID cannot be empty'));
+        return ResultFailure(ValidationFailure('userId'));
       }
 
       // 2. Repository 호출
       await _repository.deleteUser(userId);
 
-      return const Right(null);
+      return const Success(null);
+    } on ProfileFailure catch (e) {
+      return ResultFailure(e);
     } catch (e) {
-      return Left(UnknownProfileFailure(message: e.toString()));
+      return ResultFailure(UnknownProfile(e.toString()));
     }
   }
 }

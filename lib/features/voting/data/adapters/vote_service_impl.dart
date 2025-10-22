@@ -1,5 +1,5 @@
-import '../../domain/ports/i_vote_service.dart';
-import '../../domain/ports/i_vote_status_service.dart';
+import '../../domain/services/i_vote_service.dart';
+import '../../domain/services/i_vote_status_service.dart';
 
 /// Vote service implementation for voting feature
 ///

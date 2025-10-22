@@ -33,7 +33,7 @@ class CharactersProvider extends ChangeNotifier {
 
     result.fold(
       (failure) {
-        _errorMessage = failure.getUserMessage();
+        _errorMessage = failure.message;
         _availableCharacters = [];
       },
       (characters) {

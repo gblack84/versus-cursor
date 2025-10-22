@@ -1,7 +1,7 @@
-import 'package:dartz/dartz.dart';
+import '/core/types/result.dart';
 import '../../domain/repositories/i_settings_repository.dart';
 import '../../domain/models/user_settings.dart';
-import '../../domain/failures/profile_failures.dart';
+import '../../domain/failures/profile_failure.dart';
 import '../datasources/interfaces/i_settings_datasource.dart';
 
 /// SettingsRepository 구현
@@ -20,36 +20,36 @@ class SettingsRepositoryImpl implements ISettingsRepository {
   // ============= 설정 관리 =============
 
   @override
-  Future<Either<ProfileFailure, UserSettings>> getUserSettings(
+  Future<Result<UserSettings>> getUserSettings(
       String userId) async {
     try {
       final data = await _dataSource.getSettings(userId);
       if (data == null) {
-        return Left(ProfileNotFoundFailure(userId: userId));
+        return ResultFailure(ProfileNotFound(userId: userId));
       }
 
       final settings = UserSettings.fromMap(data, userId);
-      return Right(settings);
+      return Success(settings);
+    } on ProfileFailure catch (e) {
+      return ResultFailure(e);
     } catch (e) {
-      return Left(FirestoreReadFailure(
-        message: 'Failed to get user settings: $e',
-      ));
+      return ResultFailure(FirestoreRead('Failed to get user settings: $e'));
     }
   }
 
   @override
-  Future<Either<ProfileFailure, void>> updateUserSettings(
+  Future<Result<void>> updateUserSettings(
     String userId,
     UserSettings settings,
   ) async {
     try {
       final data = settings.toFirestore();
       await _dataSource.updateSettings(userId, data);
-      return const Right(null);
+      return const Success(null);
+    } on ProfileFailure catch (e) {
+      return ResultFailure(e);
     } catch (e) {
-      return Left(FirestoreWriteFailure(
-        message: 'Failed to update user settings: $e',
-      ));
+      return ResultFailure(FirestoreWrite('Failed to update user settings: $e'));
     }
   }
 

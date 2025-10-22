@@ -25,10 +25,11 @@ import '/app/di.dart';
 import '/core/constants/app_constants.dart';
 import '/core/design_system/design_system.dart';
 import '/features/chat/domain/constants/chat_constants.dart';
-import '/features/profile/data/adapters/user_cache_service.dart';
+import '/features/chat/data/adapters/flutter_chat_user_adapter.dart';
 import '/features/voting/domain/constants/voting_constants.dart';
 import '/features/voting/presentation/widgets/chat_card/vote_card_message.dart';
-import '/features/auth/data/adapters/auth_util.dart';
+import 'package:get_it/get_it.dart';
+import '/app/contracts/auth_contract.dart';
 import '/services/image/unified_image_cache_service.dart';
 import 'ai_chat_controller.dart';
 import '../../providers/ai_chat_provider.dart';
@@ -59,7 +60,11 @@ class _AIChatPageCleanState extends State<AIChatPageClean>
     with TickerProviderStateMixin {
   late final AIChatProvider _provider;
   late final AIChatController _chatController;
-  final _userCacheService = UserCacheService.instance;
+  final _userCacheService = FlutterChatUserAdapter.instance;
+
+  // AuthContract helpers
+  String get currentUserUid => GetIt.instance<AuthContract>().getCurrentUserId() ?? '';
+  String? get currentUserDisplayName => GetIt.instance<AuthContract>().currentUserDisplayName;
 
   // 현재 사용자 정보
   String get currentUserId => currentUserUid.isNotEmpty ? currentUserUid : 'anonymous';
@@ -184,7 +189,7 @@ class _AIChatPageCleanState extends State<AIChatPageClean>
 
   /// 사용자 ID로부터 User 객체 resolve
   ///
-  /// **Clean Architecture v4.0**: UserCacheService를 통해 사용자 정보 로드
+  /// **Clean Architecture v4.0**: FlutterChatUserAdapter를 통해 사용자 정보 로드
   /// - AI 사용자 자동 처리
   /// - Firestore 로드 및 캐싱
   /// - 에러 처리 포함

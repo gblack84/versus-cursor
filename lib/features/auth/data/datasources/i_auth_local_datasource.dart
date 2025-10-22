@@ -1,7 +1,7 @@
 // Local DataSource Interface for Authentication
 // Clean Architecture - Data Layer
 
-import '../dto/auth_user_dto.dart';
+import '../models/auth_user_dto.dart';
 
 /// IAuthLocalDataSource
 ///

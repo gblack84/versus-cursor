@@ -79,7 +79,7 @@ lib/features/chat/data/
 │   ├── i_chat_remote_datasource.dart     # Interface (Domain Port)
 │   └── firebase_chat_remote_datasource.dart # Firebase 구현체
 │
-├── dto/                               # Data Transfer Objects
+├── models/                            # Data Transfer Objects (DTOs)
 │   ├── chat_dto.dart                     # Chat DTO (292 lines)
 │   └── message_dto.dart                  # Message DTO
 │
@@ -642,7 +642,7 @@ try {
 
 ### 📁 `chat_dto.dart`
 
-**Location**: `/Users/g_black/versus-cursor/lib/features/chat/data/dto/chat_dto.dart`
+**Location**: `/Users/g_black/versus-cursor/lib/features/chat/data/models/chat_dto.dart`
 
 #### Purpose
 - **Firestore ↔ Domain 변환**: DocumentSnapshot을 Domain Entity로 변환
@@ -798,7 +798,7 @@ factory ChatDto.fromDomain(Chat entity) {
 
 ### 📁 `message_dto.dart`
 
-**Location**: `/Users/g_black/versus-cursor/lib/features/chat/data/dto/message_dto.dart`
+**Location**: `/Users/g_black/versus-cursor/lib/features/chat/data/models/message_dto.dart`
 
 #### Purpose
 - **메시지 직렬화**: Firestore DocumentSnapshot ↔ Domain Message

@@ -1,45 +1,37 @@
 import 'dart:io';
 import '../models/aggregates/post_creation.dart';
-import '../models/core/post_core.dart';
-import '../models/core/post_content.dart';
 import '../models/value_objects/target_audience.dart';
 import '../services/i_target_audience_service.dart' as service;
 import '../services/i_image_processing_service.dart';
 
 /// Repository interface for Post creation operations (V2 - Clean Architecture)
 ///
-/// This V2 interface uses domain models (PostCore, PostContent) from Creation Feature only.
+/// **Phase 2 Migration**: PostCore/PostContent 제거, PostCreation 직접 사용
+/// This V2 interface uses PostCreation aggregate from Creation Feature only.
 /// Voting and Metrics will be added by their respective features after post creation.
 abstract class IPostCreationRepositoryV2 {
   // ====== Creation Operations ======
 
-  /// Create a new post with PostCore and PostContent (Creation Feature responsibility)
+  /// Create a new post using PostCreation aggregate
   /// Returns the created post ID
   ///
   /// Voting Feature and Post Feature will add their fields later through onCreate triggers.
   Future<String> createPost({
-    required PostCore core,
-    required PostContent content,
+    required PostCreation post,
   });
 
   // ====== Update Operations ======
 
-  /// Update post using partial data
+  /// Update post using PostCreation aggregate
   Future<void> updatePost({
     required String postId,
+    required PostCreation post,
+  });
+
+  /// Update post using partial data (for granular updates)
+  Future<void> updatePostPartial({
+    required String postId,
     required Map<String, dynamic> data,
-  });
-
-  /// Update post core information
-  Future<void> updatePostCore({
-    required String postId,
-    required PostCore core,
-  });
-
-  /// Update post content (media, layout)
-  Future<void> updatePostContent({
-    required String postId,
-    required PostContent content,
   });
 
   // Note: updatePostVoting and updatePostMetrics removed
@@ -78,21 +70,19 @@ abstract class IPostCreationRepositoryV2 {
 
   // ====== Query Operations ======
 
-  /// Get individual post models (Creation Feature responsibility only)
-  Future<PostCore?> getPostCore(String postId);
-  Future<PostContent?> getPostContent(String postId);
+  /// Get post as PostCreation aggregate (Creation Feature responsibility only)
+  Future<PostCreation?> getPost(String postId);
 
-  /// Stream individual model changes (Creation Feature responsibility only)
-  Stream<PostCore> watchPostCore(String postId);
-  Stream<PostContent> watchPostContent(String postId);
+  /// Stream post changes as PostCreation aggregate (Creation Feature responsibility only)
+  Stream<PostCreation> watchPost(String postId);
 
   // Note: PostBundle, PostVoting, PostMetrics queries removed
   // These span multiple features and should be handled at app/contracts level
 
   // ====== User's Posts ======
 
-  /// Get user's created posts (PostCore + PostContent only)
-  Stream<List<PostCore>> getUserCreatedPosts({
+  /// Get user's created posts as PostCreation aggregates
+  Stream<List<PostCreation>> getUserCreatedPosts({
     required String userId,
     int limit = -1,
   });
@@ -102,10 +92,9 @@ abstract class IPostCreationRepositoryV2 {
 
   // ====== Validation ======
 
-  /// Validate post data before creation (PostCore + PostContent only)
+  /// Validate post data before creation using PostCreation aggregate
   Future<bool> validatePostData({
-    required PostCore core,
-    required PostContent content,
+    required PostCreation post,
   });
 
   /// Check if user can create post (rate limiting, etc.)
@@ -139,11 +128,11 @@ abstract class IPostCreationRepositoryV2 {
   // ====== Additional Command Operations (from ICreationCommandRepository) ======
 
   /// Create content using PostCreation aggregate
-  /// Convenience method that extracts PostCore and PostContent from the aggregate
+  /// Convenience wrapper for createPost() with consistent naming
   Future<String> createContent(PostCreation post);
 
   /// Update existing content using PostCreation aggregate
-  /// Convenience method that extracts updated data from the aggregate
+  /// Convenience wrapper for updatePost() with consistent naming
   Future<void> updateContent(String contentId, PostCreation post);
 
   /// Delete content
@@ -156,5 +145,5 @@ abstract class IPostCreationRepositoryV2 {
 
   /// Save as draft
   /// This saves the post with draft status for later editing
-  Future<void> saveDraft(String contentId, PostCore core, PostContent content);
+  Future<void> saveDraft(String contentId, PostCreation post);
 }

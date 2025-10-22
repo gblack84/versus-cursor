@@ -1,9 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dartz/dartz.dart';
+import '/core/types/result.dart';
 import '../../domain/repositories/i_characters_repository.dart';
 import '../../domain/models/character.dart';
-import '../../domain/failures/profile_failures.dart';
-import '../datasources/interfaces/i_profile_datasource.dart';
+import '../../domain/failures/profile_failure.dart';
 
 /// CharactersRepository 구현
 ///
@@ -12,20 +11,17 @@ import '../datasources/interfaces/i_profile_datasource.dart';
 /// - users/{userId}/characterId 필드로 사용자 캐릭터 관리
 /// - CharactersModel ↔ Character 도메인 모델 변환
 class CharactersRepositoryImpl implements ICharactersRepository {
-  final IProfileDataSource _dataSource;
   final FirebaseFirestore _firestore;
 
   CharactersRepositoryImpl({
-    required IProfileDataSource dataSource,
     FirebaseFirestore? firestore,
-  })  : _dataSource = dataSource,
-        _firestore = firestore ?? FirebaseFirestore.instance;
+  }) : _firestore = firestore ?? FirebaseFirestore.instance;
 
   // ============= 이용 가능한 캐릭터 조회 =============
   // Phase 6 Cleanup: getUserCharacter, setUserCharacter, clearUserCharacter, watchUserCharacter 삭제
 
   @override
-  Future<Either<ProfileFailure, List<Character>>> getAvailableCharacters() async {
+  Future<Result<List<Character>>> getAvailableCharacters() async {
     try {
       final snapshot = await _firestore
           .collection('characters')
@@ -36,11 +32,11 @@ class CharactersRepositoryImpl implements ICharactersRepository {
           .map((doc) => _convertToCharacter(doc))
           .toList();
 
-      return Right(characters);
+      return Success(characters);
+    } on ProfileFailure catch (e) {
+      return ResultFailure(e);
     } catch (e) {
-      return Left(FirestoreReadFailure(
-        message: 'Failed to get available characters: $e',
-      ));
+      return ResultFailure(FirestoreRead('Failed to get available characters: $e'));
     }
   }
 

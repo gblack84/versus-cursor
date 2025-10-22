@@ -5,8 +5,7 @@ import 'cache_statistics.dart';
 import '/app/contracts/cache_contract.dart';
 // Domain models imports (migrated from backend.dart)
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/features/chat/domain/models/messages_model.dart';
-import '/features/auth/domain/models/auth_user.dart';
+import '/features/chat/data/models/message_dto.dart';
 import '/features/profile/domain/models/user_profile.dart';
 
 /// 캐시 레이어 정의
@@ -41,10 +40,6 @@ abstract class UnifiedCacheService implements CacheContract {
   Future<void> invalidate(String pattern, {CacheLayer? layer});
   Future<void> clear({CacheLayer? layer});
 
-  // 도메인별 특화 메서드 (Legacy - for backward compatibility)
-  Future<List<MessagesModel>> getChatMessages(String chatId);
-  Future<void> setChatMessages(String chatId, List<MessagesModel> messages);
-
   // CacheContract implementation
   @override
   Future<List<Map<String, dynamic>>> getFeedPosts({int limit = 20});
@@ -53,9 +48,9 @@ abstract class UnifiedCacheService implements CacheContract {
   @override
   Future<void> clearFeedPosts();
   @override
-  Future<Map<String, dynamic>?> getUserProfile(String userId);
+  Future<UserProfile?> getUserProfile(String userId);
   @override
-  Future<void> setUserProfile(String userId, Map<String, dynamic> profile);
+  Future<void> setUserProfile(String userId, UserProfile profile);
   @override
   Future<void> clearUserProfile(String userId);
   @override
@@ -236,7 +231,10 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
   // === 채팅 관련 ===
 
   @override
-  Future<List<MessagesModel>> getChatMessages(String chatId) async {
+  Future<List<Map<String, dynamic>>> getChatMessages({
+    required String chatId,
+    int limit = 30,
+  }) async {
     final cacheKey = CacheKeys.chatMessages(chatId);
     final stopwatch = Stopwatch()..start();
 
@@ -244,7 +242,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
     CacheStatistics.instance.recordRequest();
 
     // L1: Memory Cache
-    final cached = _memoryCache.get<List<MessagesModel>>(cacheKey);
+    final cached = _memoryCache.get<List<Map<String, dynamic>>>(cacheKey);
     if (cached != null) {
       stopwatch.stop();
       CacheStatistics.instance
@@ -261,15 +259,14 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       final hiveCached = await _localCache.get(cacheKey);
       if (hiveCached != null && hiveCached is List) {
         // 캐시 데이터 무결성 검증 및 복구
-        final validMessages = <MessagesModel>[];
+        final validMessages = <Map<String, dynamic>>[];
         bool hasCorruptedData = false;
 
         for (final item in hiveCached) {
           try {
             if (item is Map) {
-              final message =
-                  MessagesModel.fromJson(Map<String, dynamic>.from(item));
-              validMessages.add(message);
+              final messageMap = Map<String, dynamic>.from(item);
+              validMessages.add(messageMap);
             }
           } catch (e) {
             // 손상된 데이터 발견
@@ -314,17 +311,17 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           .doc(chatId)
           .collection('messages')
           .orderBy('timeStamp', descending: false)
-          .limitToLast(30)
+          .limitToLast(limit)
           .get(const GetOptions(source: Source.cache));
 
-      final messages =
-          snapshot.docs.map((doc) => MessagesModel.fromSnapshot(doc)).toList();
+      final messages = snapshot.docs
+          .map((doc) => MessageDto.fromFirestore(doc).toFirestore())
+          .toList();
 
       // 메모리 및 로컬 DB에 저장
       _memoryCache.set(cacheKey, messages, ttl: const Duration(minutes: 5));
       try {
-        final jsonList = messages.map((m) => m.toJson()).toList();
-        await _localCache.put(cacheKey, jsonList);
+        await _localCache.put(cacheKey, messages);
       } catch (e) {
         _logDebug('Failed to save to Hive: $e');
       }
@@ -342,17 +339,17 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           .doc(chatId)
           .collection('messages')
           .orderBy('timeStamp', descending: false)
-          .limitToLast(30)
+          .limitToLast(limit)
           .get();
 
-      final messages =
-          snapshot.docs.map((doc) => MessagesModel.fromSnapshot(doc)).toList();
+      final messages = snapshot.docs
+          .map((doc) => MessageDto.fromFirestore(doc).toFirestore())
+          .toList();
 
       // 캐시 업데이트 (메모리 및 로컬 DB)
       _memoryCache.set(cacheKey, messages, ttl: const Duration(minutes: 5));
       try {
-        final jsonList = messages.map((m) => m.toJson()).toList();
-        await _localCache.put(cacheKey, jsonList);
+        await _localCache.put(cacheKey, messages);
       } catch (e) {
         _logDebug('Failed to save to Hive: $e');
       }
@@ -367,8 +364,10 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
   }
 
   @override
-  Future<void> setChatMessages(
-      String chatId, List<MessagesModel> messages) async {
+  Future<void> setChatMessages({
+    required String chatId,
+    required List<Map<String, dynamic>> messages,
+  }) async {
     final cacheKey = CacheKeys.chatMessages(chatId);
     _memoryCache.set(cacheKey, messages, ttl: const Duration(minutes: 5));
   }
@@ -387,11 +386,11 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
             .get();
 
         final messages = snapshot.docs
-            .map((doc) => MessagesModel.fromSnapshot(doc))
+            .map((doc) => MessageDto.fromFirestore(doc).toFirestore())
             .toList();
 
         // 캐시 업데이트
-        await setChatMessages(chatId, messages);
+        await setChatMessages(chatId: chatId, messages: messages);
       } catch (e) {
         // 백그라운드 동기화 실패는 무시
       }
@@ -509,7 +508,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
 
       // 각 채팅방의 메시지 프리로드
       for (final chatDoc in chatsSnapshot.docs) {
-        await getChatMessages(chatDoc.id);
+        await getChatMessages(chatId: chatDoc.id);
       }
 
       _logDebug('Preloaded ${chatsSnapshot.docs.length} recent chats');
@@ -545,6 +544,41 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       _logDebug('Error getting Hive size: $e');
       return 0;
     }
+  }
+
+  // === CacheContract 필수 구현 메서드 ===
+
+  @override
+  Future<void> clearChatMessages(String chatId) async {
+    final cacheKey = CacheKeys.chatMessages(chatId);
+    await remove(cacheKey, layer: CacheLayer.all);
+  }
+
+  @override
+  Future<void> clearUserProfile(String userId) async {
+    final cacheKey = CacheKeys.userProfile(userId);
+    await remove(cacheKey, layer: CacheLayer.all);
+  }
+
+  @override
+  Future<void> clearAll() async {
+    await clear(layer: CacheLayer.all);
+  }
+
+  @override
+  Map<String, dynamic> getStatistics() {
+    final stats = CacheStatistics.instance;
+    return {
+      'overallHitRate': stats.overallHitRate,
+      'l1HitRate': stats.l1HitRate,
+      'l2HitRate': stats.l2HitRate,
+      'l3HitRate': stats.l3HitRate,
+      'networkHitRate': stats.networkHitRate,
+      'averageResponseTime': stats.averageResponseTime,
+      'minResponseTime': stats.minResponseTime,
+      'maxResponseTime': stats.maxResponseTime,
+      'estimatedCostSavings': stats.estimatedCostSavings,
+    };
   }
 
   /// 캐시 통계 출력

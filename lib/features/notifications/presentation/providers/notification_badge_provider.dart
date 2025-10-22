@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
 import '/core/domain/usecases/get_current_user_use_case.dart';
-import '/features/notifications/domain/usecases/watch_unread_count_use_case.dart';
+import '/features/notifications/domain/usecases/watch_unread_count_usecase.dart';
 import '/features/notifications/presentation/widgets/notification_badge.dart';
 
 /// 앱바에서 사용할 수 있는 알림 아이콘 액션

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '/features/profile/presentation/widgets/interest_selection/interest_selection_widget.dart';
-import '/features/profile/presentation/widgets/interest_selection/interest_category.dart';
 
 /// Agrred (interests) selection screen wrapper
 ///

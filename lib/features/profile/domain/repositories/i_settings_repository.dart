@@ -1,6 +1,5 @@
-import 'package:dartz/dartz.dart';
+import '/core/types/result.dart';
 import '../models/user_settings.dart';
-import '../failures/profile_failures.dart';
 
 /// Settings Repository 인터페이스
 ///
@@ -12,10 +11,10 @@ import '../failures/profile_failures.dart';
 /// - updateNotificationSettings 삭제 (updateUserSettings로 충분)
 abstract class ISettingsRepository {
   /// 사용자 설정 조회
-  Future<Either<ProfileFailure, UserSettings>> getUserSettings(String userId);
+  Future<Result<UserSettings>> getUserSettings(String userId);
 
   /// 사용자 설정 업데이트
-  Future<Either<ProfileFailure, void>> updateUserSettings(
+  Future<Result<void>> updateUserSettings(
     String userId,
     UserSettings settings,
   );

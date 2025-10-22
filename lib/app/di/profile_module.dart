@@ -35,13 +35,13 @@ import '../../features/profile/domain/usecases/profile/get_current_user_profile_
 import '../../features/profile/domain/usecases/profile/update_user_profile_usecase.dart';
 import '../../features/profile/domain/usecases/profile/upload_profile_image_usecase.dart';
 import '../../features/profile/domain/usecases/profile/get_profile_completion_usecase.dart';
+import '../../features/profile/domain/usecases/profile/get_profile_info_usecase.dart';
 import '../../features/profile/domain/usecases/profile/delete_user_profile_usecase.dart';
 import '../../features/profile/domain/usecases/profile/watch_user_profile_usecase.dart';
 // Phase 6: 미사용 UseCase 삭제 (2025-01-21)
 // - block_user_usecase.dart
 // - report_user_usecase.dart
 // - get_suggested_profiles_usecase.dart
-// - get_profile_info_usecase.dart (Phase 1에서 완전 제거)
 
 // ===== Characters UseCases =====
 import '../../features/profile/domain/usecases/characters/get_available_characters_usecase.dart';
@@ -144,7 +144,6 @@ class ProfileModule implements FeatureModule {
     if (!sl.isRegistered<ICharactersRepository>()) {
       sl.registerLazySingleton<ICharactersRepository>(
         () => CharactersRepositoryImpl(
-          dataSource: sl<IProfileDataSource>(),
           firestore: FirebaseFirestore.instance,
         ),
       );
@@ -289,6 +288,7 @@ class ProfileModule implements FeatureModule {
           updateProfileUseCase: sl<UpdateUserProfileUseCase>(),
           uploadImageUseCase: sl<UploadProfileImageUseCase>(),
           getProfileCompletionUseCase: sl<GetProfileCompletionUseCase>(),  // Phase 6
+          getProfileInfoUseCase: sl<GetProfileInfoUseCase>(),  // Phase 6.1
           watchProfileUseCase: sl<WatchUserProfileUseCase>(),  // 🆕 Real-time Sync (2025-01-20)
         ),
       );

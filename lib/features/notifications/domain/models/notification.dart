@@ -1,31 +1,83 @@
-/// 순수 도메인 모델 - Firebase 의존성 없음
-/// Clean Architecture 원칙에 따른 알림 도메인 엔티티
-abstract class Notification {
-  final String id;
-  final String userId;
-  final String type;
-  final String title;
-  final String content;
-  final DateTime createdAt;
-  final DateTime? readAt;
-  final bool isRead;
-  final DateTime? expiryTime;
-  final Map<String, dynamic> metadata;
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  const Notification({
-    required this.id,
-    required this.userId,
-    required this.type,
-    required this.title,
-    required this.content,
-    required this.createdAt,
-    this.readAt,
-    required this.isRead,
-    this.expiryTime,
-    this.metadata = const {},
-  });
+part 'notification.freezed.dart';
+part 'notification.g.dart';
 
-  // ===== 비즈니스 로직 메서드 =====
+/// 알림 도메인 모델 - Freezed Sealed Union
+/// Clean Architecture - 타입 안전한 알림 엔티티
+@freezed
+sealed class Notification with _$Notification {
+  const Notification._();  // Private constructor for custom getters
+
+  // ===== Social Notification =====
+  const factory Notification.social({
+    required String id,
+    required String userId,
+    required String type,
+    required String title,
+    required String content,
+    required DateTime createdAt,
+    DateTime? readAt,
+    required bool isRead,
+    DateTime? expiryTime,
+    @Default({}) Map<String, dynamic> metadata,
+    // Social 전용 필드
+    required SocialActionType actionType,
+    required String fromUserId,
+    required String fromUserName,
+    String? fromUserProfileUrl,
+    String? relatedPostId,
+    String? relatedCommentId,
+    String? relatedContent,
+    int? interactionCount,
+  }) = SocialNotification;
+
+  // ===== System Notification =====
+  const factory Notification.system({
+    required String id,
+    required String userId,
+    required String type,
+    required String title,
+    required String content,
+    required DateTime createdAt,
+    DateTime? readAt,
+    required bool isRead,
+    DateTime? expiryTime,
+    @Default({}) Map<String, dynamic> metadata,
+    // System 전용 필드
+    required SystemAlertType alertType,
+    String? actionUrl,
+    String? actionLabel,
+    Map<String, String>? actionButtons,
+    String? iconUrl,
+    @Default(true) bool isDismissible,
+  }) = SystemNotification;
+
+  // ===== Voting Notification =====
+  const factory Notification.voting({
+    required String id,
+    required String userId,
+    required String type,
+    required String title,
+    required String content,
+    required DateTime createdAt,
+    DateTime? readAt,
+    required bool isRead,
+    DateTime? expiryTime,
+    @Default({}) Map<String, dynamic> metadata,
+    // Voting 전용 필드
+    required String postId,
+    required String postTitle,
+    List<String>? imageUrlsA,
+    List<String>? imageUrlsB,
+    DateTime? voteDeadline,
+  }) = VotingNotification;
+
+  // ===== JSON Serialization =====
+  factory Notification.fromJson(Map<String, dynamic> json) =>
+      _$NotificationFromJson(json);
+
+  // ===== 공통 비즈니스 로직 (모든 타입에 적용) =====
 
   /// 알림이 만료되었는지 확인
   bool get isExpired {
@@ -36,54 +88,98 @@ abstract class Notification {
   /// 알림을 읽을 수 있는지 확인
   bool get canBeRead => !isRead && !isExpired;
 
-  /// 알림이 자동 삭제되어야 하는지 확인 (30일 이상 된 알림)
+  /// 알림이 자동 삭제되어야 하는지 확인 (30일 이상)
   bool get shouldAutoDelete {
     final daysSinceCreation = DateTime.now().difference(createdAt).inDays;
     return daysSinceCreation > 30;
-  }
-
-  /// 알림의 우선순위 계산 (기본 구현 - 각 Feature에서 override 가능)
-  int get priority {
-    // 읽지 않은 알림
-    if (!isRead) {
-      return 1;
-    }
-    // 읽은 알림
-    return 0;
-  }
-
-  /// 알림을 읽음으로 표시
-  Notification markAsRead() {
-    // 구체 클래스에서 구현해야 함
-    throw UnimplementedError('Subclass must implement markAsRead()');
   }
 
   /// 알림의 나이 (생성 후 경과 시간)
   Duration get age => DateTime.now().difference(createdAt);
 
   /// 알림이 최근 것인지 확인 (24시간 이내)
-  bool get isRecent {
-    return age.inHours < 24;
-  }
+  bool get isRecent => age.inHours < 24;
 
   /// 알림이 오래된 것인지 확인 (7일 이상)
-  bool get isOld {
-    return age.inDays >= 7;
-  }
+  bool get isOld => age.inDays >= 7;
 
-  @override
-  String toString() {
-    return '$type Notification: $title (User: $userId, Read: $isRead)';
+  /// 알림의 우선순위 계산
+  int get priority {
+    return when(
+      social: (id, userId, type, title, content, createdAt, readAt, isRead,
+               expiryTime, metadata, actionType, fromUserId, fromUserName,
+               fromUserProfileUrl, relatedPostId, relatedCommentId,
+               relatedContent, interactionCount) {
+        return isRead ? 0 : 1;
+      },
+      system: (id, userId, type, title, content, createdAt, readAt, isRead,
+               expiryTime, metadata, alertType, actionUrl, actionLabel,
+               actionButtons, iconUrl, isDismissible) {
+        if (!isRead) {
+          switch (alertType) {
+            case SystemAlertType.critical:
+              return 5;
+            case SystemAlertType.security:
+              return 4;
+            case SystemAlertType.maintenance:
+              return 3;
+            case SystemAlertType.update:
+              return 2;
+            case SystemAlertType.info:
+              return 1;
+          }
+        }
+        return 0;
+      },
+      voting: (id, userId, type, title, content, createdAt, readAt, isRead,
+               expiryTime, metadata, postId, postTitle, imageUrlsA,
+               imageUrlsB, voteDeadline) {
+        return isRead ? 0 : 2;  // 투표 알림은 더 높은 우선순위
+      },
+    );
   }
+}
 
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is Notification && other.id == id;
+// ===== Enums =====
+
+/// 소셜 액션 타입
+enum SocialActionType {
+  like('like'),
+  comment('comment'),
+  friendRequest('friend_request'),
+  friendAccepted('friend_accepted'),
+  follow('follow'),
+  mention('mention'),
+  share('share');
+
+  final String value;
+  const SocialActionType(this.value);
+
+  static SocialActionType fromString(String value) {
+    return SocialActionType.values.firstWhere(
+      (type) => type.value == value,
+      orElse: () => SocialActionType.like,
+    );
   }
+}
 
-  @override
-  int get hashCode => id.hashCode;
+/// 시스템 알림 타입
+enum SystemAlertType {
+  critical('critical'), // 중요 시스템 알림
+  security('security'), // 보안 관련 알림
+  maintenance('maintenance'), // 점검 알림
+  update('update'), // 업데이트 알림
+  info('info'); // 일반 정보
+
+  final String value;
+  const SystemAlertType(this.value);
+
+  static SystemAlertType fromString(String value) {
+    return SystemAlertType.values.firstWhere(
+      (type) => type.value == value,
+      orElse: () => SystemAlertType.info,
+    );
+  }
 }
 
 /// 알림 우선순위 열거형

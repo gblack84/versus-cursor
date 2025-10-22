@@ -2,7 +2,8 @@
 // Clean Architecture - Domain Layer
 
 import 'package:flutter/foundation.dart';
-import '../models/auth_user.dart';
+import '/core/types/result.dart';
+import '../entities/auth_user.dart';
 import '../repositories/i_auth_repository.dart';
 import '../failures/auth_failure.dart';
 
@@ -11,6 +12,10 @@ import '../failures/auth_failure.dart';
 /// Handles email/password account creation.
 /// This is separate from SignInWithEmailUseCase to maintain
 /// single responsibility principle.
+///
+/// **Clean Architecture v4.0 - Result Pattern**:
+/// - Returns Result<AuthUser> instead of AuthUser?
+/// - Type-safe error handling with AuthFailure sealed class
 class SignUpWithEmailUseCase {
   final IAuthRepository _repository;
 
@@ -21,7 +26,7 @@ class SignUpWithEmailUseCase {
   /// Execute Email Sign Up
   ///
   /// Creates a new user account with email and password
-  Future<AuthUser?> execute({
+  Future<Result<AuthUser>> execute({
     required String email,
     required String password,
     String? displayName,
@@ -32,13 +37,13 @@ class SignUpWithEmailUseCase {
       // Validate email format
       if (!_isValidEmail(email)) {
         debugPrint('Invalid email format: $email');
-        return null;
+        return const ResultFailure(InvalidEmail());
       }
 
       // Validate password strength
       if (!_isValidPassword(password)) {
         debugPrint('Password does not meet requirements');
-        return null;
+        return const ResultFailure(WeakPassword());
       }
 
       // Create user account
@@ -49,7 +54,7 @@ class SignUpWithEmailUseCase {
 
       if (user == null) {
         debugPrint('Account creation failed');
-        return null;
+        return const ResultFailure(EmailAlreadyInUse());
       }
 
       // Update display name if provided
@@ -63,14 +68,14 @@ class SignUpWithEmailUseCase {
       await _repository.sendEmailVerification();
 
       debugPrint('Account created successfully: ${user.uid}');
-      return user;
+      return Success(user);
 
     } on AuthFailure catch (e) {
       debugPrint('Account creation failed with AuthFailure: ${e.message}');
-      return null;
+      return ResultFailure(e);
     } catch (e) {
       debugPrint('Account creation failed with unexpected error: $e');
-      return null;
+      return ResultFailure(Unexpected(e.toString()));
     }
   }
 

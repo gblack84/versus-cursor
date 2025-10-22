@@ -1,7 +1,16 @@
+import '/core/errors/failures.dart';
+
 /// 투표 관련 실패를 나타내는 클래스
-abstract class VotingFailure {
-  const VotingFailure();
-  
+///
+/// Clean Architecture의 Failure 계층을 상속하여
+/// domain-specific 에러 정보를 제공합니다.
+abstract class VotingFailure extends Failure {
+  const VotingFailure({
+    String? message,
+    String? code,
+  }) : super(message: message ?? 'Voting error occurred', code: code);
+
+  /// Domain-specific 패턴 매칭을 위한 when 메서드
   T when<T>({
     required T Function() serverError,
     required T Function() networkError,
@@ -21,44 +30,46 @@ abstract class VotingFailure {
     if (this is VotingClosed) return votingClosed();
     if (this is InvalidData) return invalidData();
     if (this is CacheError) return cacheError();
-    if (this is Unexpected) return unexpected((this as Unexpected).message);
+    if (this is Unexpected) return unexpected((this as Unexpected).customMessage);
     throw UnimplementedError();
   }
 }
 
 class ServerError extends VotingFailure {
-  const ServerError();
+  const ServerError() : super(message: 'Server error occurred');
 }
 
 class NetworkError extends VotingFailure {
-  const NetworkError();
+  const NetworkError() : super(message: 'Network connection failed');
 }
 
 class NotFound extends VotingFailure {
-  const NotFound();
+  const NotFound() : super(message: 'Voting data not found');
 }
 
 class Unauthorized extends VotingFailure {
-  const Unauthorized();
+  const Unauthorized() : super(message: 'Unauthorized voting access');
 }
 
 class AlreadyVoted extends VotingFailure {
-  const AlreadyVoted();
+  const AlreadyVoted() : super(message: 'User has already voted');
 }
 
 class VotingClosed extends VotingFailure {
-  const VotingClosed();
+  const VotingClosed() : super(message: 'Voting session has ended');
 }
 
 class InvalidData extends VotingFailure {
-  const InvalidData();
+  const InvalidData() : super(message: 'Invalid voting data');
 }
 
 class CacheError extends VotingFailure {
-  const CacheError();
+  const CacheError() : super(message: 'Cache operation failed');
 }
 
 class Unexpected extends VotingFailure {
-  final String? message;
-  const Unexpected([this.message]);
+  final String? customMessage;
+
+  const Unexpected([this.customMessage])
+      : super(message: customMessage ?? 'Unexpected voting error');
 }

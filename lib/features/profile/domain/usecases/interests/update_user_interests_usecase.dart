@@ -1,5 +1,5 @@
-import 'package:dartz/dartz.dart';
-import '../../failures/profile_failures.dart';
+import '/core/types/result.dart';
+import '../../failures/profile_failure.dart';
 import '../../repositories/i_interests_repository.dart';
 import '../../models/interest.dart';
 
@@ -24,9 +24,9 @@ class UpdateUserInterestsUseCase {
   /// - `hobbies`: 취미 리스트 (최대 8개)
   ///
   /// **Returns**:
-  /// - `Right(void)`: 업데이트 성공
-  /// - `Left(ProfileFailure)`: 업데이트 실패
-  Future<Either<ProfileFailure, void>> execute({
+  /// - `Success(void)`: 업데이트 성공
+  /// - `ResultFailure(ProfileFailure)`: 업데이트 실패
+  Future<Result<void>> execute({
     required String userId,
     required List<String> expertise,
     required List<String> hobbies,
@@ -34,18 +34,17 @@ class UpdateUserInterestsUseCase {
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {
-        return Left(ValidationFailure(message: 'User ID cannot be empty'));
+        return ResultFailure(ValidationFailure('userId'));
       }
 
       // 2. 전문분야 검증 (최대 4개)
       if (expertise.length > 4) {
-        return Left(
-            ValidationFailure(message: 'Maximum 4 expertise areas allowed'));
+        return ResultFailure(ValidationFailure('expertise.length'));
       }
 
       // 3. 취미 검증 (최대 8개)
       if (hobbies.length > 8) {
-        return Left(ValidationFailure(message: 'Maximum 8 hobbies allowed'));
+        return ResultFailure(ValidationFailure('hobbies.length'));
       }
 
       // 4. Interest 객체로 변환
@@ -73,8 +72,10 @@ class UpdateUserInterestsUseCase {
 
       // 5. Repository를 통한 업데이트
       return await _repository.updateUserInterests(userId, allInterests);
+    } on ProfileFailure catch (e) {
+      return ResultFailure(e);
     } catch (e) {
-      return Left(UnknownProfileFailure(message: e.toString()));
+      return ResultFailure(UnknownProfile(e.toString()));
     }
   }
 
@@ -89,9 +90,9 @@ class UpdateUserInterestsUseCase {
   /// - `category`: 'expertise' 또는 'hobby'
   ///
   /// **Returns**:
-  /// - `Right(void)`: 추가 성공
-  /// - `Left(ProfileFailure)`: 추가 실패
-  Future<Either<ProfileFailure, void>> addInterest({
+  /// - `Success(void)`: 추가 성공
+  /// - `ResultFailure(ProfileFailure)`: 추가 실패
+  Future<Result<void>> addInterest({
     required String userId,
     required String interest,
     required String category,
@@ -99,14 +100,13 @@ class UpdateUserInterestsUseCase {
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {
-        return Left(ValidationFailure(message: 'User ID is required'));
+        return ResultFailure(ValidationFailure('userId'));
       }
       if (interest.isEmpty) {
-        return Left(ValidationFailure(message: 'Interest cannot be empty'));
+        return ResultFailure(ValidationFailure('interest'));
       }
       if (category != 'expertise' && category != 'hobby') {
-        return Left(
-            ValidationFailure(message: 'Category must be expertise or hobby'));
+        return ResultFailure(ValidationFailure('category'));
       }
 
       // 2. Interest 객체 생성
@@ -123,8 +123,10 @@ class UpdateUserInterestsUseCase {
         userId: userId,
         interest: interestObj,
       );
+    } on ProfileFailure catch (e) {
+      return ResultFailure(e);
     } catch (e) {
-      return Left(UnknownProfileFailure(message: e.toString()));
+      return ResultFailure(UnknownProfile(e.toString()));
     }
   }
 
@@ -139,9 +141,9 @@ class UpdateUserInterestsUseCase {
   /// - `category`: 'expertise' 또는 'hobby'
   ///
   /// **Returns**:
-  /// - `Right(void)`: 제거 성공
-  /// - `Left(ProfileFailure)`: 제거 실패
-  Future<Either<ProfileFailure, void>> removeInterest({
+  /// - `Success(void)`: 제거 성공
+  /// - `ResultFailure(ProfileFailure)`: 제거 실패
+  Future<Result<void>> removeInterest({
     required String userId,
     required String interest,
     required String category,
@@ -149,14 +151,13 @@ class UpdateUserInterestsUseCase {
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {
-        return Left(ValidationFailure(message: 'User ID is required'));
+        return ResultFailure(ValidationFailure('userId'));
       }
       if (interest.isEmpty) {
-        return Left(ValidationFailure(message: 'Interest cannot be empty'));
+        return ResultFailure(ValidationFailure('interest'));
       }
       if (category != 'expertise' && category != 'hobby') {
-        return Left(
-            ValidationFailure(message: 'Category must be expertise or hobby'));
+        return ResultFailure(ValidationFailure('category'));
       }
 
       // 2. Interest 객체 생성
@@ -173,8 +174,10 @@ class UpdateUserInterestsUseCase {
         userId: userId,
         interest: interestObj,
       );
+    } on ProfileFailure catch (e) {
+      return ResultFailure(e);
     } catch (e) {
-      return Left(UnknownProfileFailure(message: e.toString()));
+      return ResultFailure(UnknownProfile(e.toString()));
     }
   }
 }

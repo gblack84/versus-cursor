@@ -1,18 +1,22 @@
 import 'package:get_it/get_it.dart';
 import 'feature_modules.dart';
 import 'profile_module.dart';
-import 'posts_module.dart';
+// import 'posts_module.dart'; // REMOVED: Post Feature now uses post_di_module.dart
 import 'auth_module.dart';
 import 'chat_module.dart';
 import 'voting_module.dart';
 import 'notification_module.dart';
-import 'search_module.dart';
+// import 'search_module.dart'; // REMOVED: Search Feature now uses search_di_module.dart
 import '../../core/di/core_module.dart';
 
 /// Main Dependency Injection Container
 ///
 /// Centralizes all dependency registration and management
 /// following the Feature-First Clean Architecture pattern
+///
+/// NOTE: This is the LEGACY DI system. The new system uses
+/// setupDependencyInjection() from /app/di.dart
+@Deprecated('Use setupDependencyInjection() from /app/di.dart instead')
 class DIContainer {
   static final GetIt _serviceLocator = GetIt.instance;
   static bool _isInitialized = false;
@@ -24,12 +28,12 @@ class DIContainer {
   static final List<FeatureModule> _modules = [
     CoreModule(),
     ProfileModule(),
-    PostsModule(),
+    // PostsModule(), // REMOVED: Post Feature now uses registerPostModule()
     AuthModule(),
     ChatModule(),
     VotingModule(),
     NotificationModule(),
-    SearchModule(),
+    // SearchModule(), // REMOVED: Search Feature now uses registerSearchModule()
   ];
 
   /// Initialize all dependencies

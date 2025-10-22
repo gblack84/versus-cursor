@@ -1,6 +1,4 @@
 import '../../domain/models/notification.dart';
-import '../../domain/models/system_notification.dart';
-import '../../domain/models/social_notification.dart';
 import '../models/notification_dto.dart';
 import '../models/system_notification_dto.dart';
 import '../models/social_notification_dto.dart';
@@ -25,8 +23,8 @@ class NotificationMapper {
     }
   }
 
-  /// Convert System DTO to System Domain Entity
-  static SystemNotification _toSystemNotification(NotificationDto dto) {
+  /// Convert System DTO to System Domain Entity (returns Notification.system factory)
+  static Notification _toSystemNotification(NotificationDto dto) {
     final systemDto = dto is SystemNotificationDto
         ? dto
         : SystemNotificationDto(
@@ -44,9 +42,10 @@ class NotificationMapper {
             priority: dto.priority,
           );
 
-    return SystemNotification(
+    return Notification.system(
       id: systemDto.id ?? '',
       userId: systemDto.userId ?? '',
+      type: 'systemAlert',
       title: systemDto.title ?? '',
       content: systemDto.content ?? '',
       createdAt: DtoHelper.parseDateTime(systemDto.createdAt) ?? DateTime.now(),
@@ -60,8 +59,8 @@ class NotificationMapper {
     );
   }
 
-  /// Convert Social DTO to Social Domain Entity
-  static SocialNotification _toSocialNotification(NotificationDto dto) {
+  /// Convert Social DTO to Social Domain Entity (returns Notification.social factory)
+  static Notification _toSocialNotification(NotificationDto dto) {
     final socialDto = dto is SocialNotificationDto
         ? dto
         : SocialNotificationDto(
@@ -79,9 +78,10 @@ class NotificationMapper {
             priority: dto.priority,
           );
 
-    return SocialNotification(
+    return Notification.social(
       id: socialDto.id ?? '',
       userId: socialDto.userId ?? '',
+      type: 'social',
       title: socialDto.title ?? '',
       content: socialDto.content ?? '',
       createdAt: DtoHelper.parseDateTime(socialDto.createdAt) ?? DateTime.now(),
@@ -101,29 +101,40 @@ class NotificationMapper {
     );
   }
 
-  /// Convert Domain Entity to DTO
+  /// Convert Domain Entity to DTO (using Freezed when pattern)
   static NotificationDto toDto(Notification entity) {
-    if (entity is SystemNotification) {
-      return _fromSystemNotification(entity);
-    } else if (entity is SocialNotification) {
-      return _fromSocialNotification(entity);
-    } else {
-      // Default base notification DTO
-      // Note: VoteNotification conversion is now handled by Voting Feature's mapper
-      return NotificationDto(
-        id: entity.id,
-        userId: entity.userId,
-        type: entity.type,
-        title: entity.title,
-        content: entity.content,
-        createdAt: entity.createdAt.toTimestamp(),
-        readAt: entity.readAt?.toTimestamp(),
-        isRead: entity.isRead,
-        expiryTime: entity.expiryTime?.toTimestamp(),
-        metadata: entity.metadata,
-        priority: 2, // Default priority
-      );
-    }
+    return entity.when(
+      social: (id, userId, type, title, content, createdAt, readAt, isRead,
+              expiryTime, metadata, actionType, fromUserId, fromUserName,
+              fromUserProfileUrl, relatedPostId, relatedCommentId,
+              relatedContent, interactionCount) {
+        return _fromSocialNotification(entity as SocialNotification);
+      },
+      system: (id, userId, type, title, content, createdAt, readAt, isRead,
+              expiryTime, metadata, alertType, actionUrl, actionLabel,
+              actionButtons, iconUrl, isDismissible) {
+        return _fromSystemNotification(entity as SystemNotification);
+      },
+      voting: (id, userId, type, title, content, createdAt, readAt, isRead,
+              expiryTime, metadata, postId, postTitle, imageUrlsA,
+              imageUrlsB, voteDeadline) {
+        // VoteNotification conversion is handled by Voting Feature's mapper
+        // Fallback to base DTO
+        return NotificationDto(
+          id: id,
+          userId: userId,
+          type: type,
+          title: title,
+          content: content,
+          createdAt: createdAt.toTimestamp(),
+          readAt: readAt?.toTimestamp(),
+          isRead: isRead,
+          expiryTime: expiryTime?.toTimestamp(),
+          metadata: metadata,
+          priority: 2,
+        );
+      },
+    );
   }
 
   /// Convert SystemNotification to SystemNotificationDto

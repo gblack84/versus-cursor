@@ -10,7 +10,6 @@ export 'system_notification_dto.dart';
 export 'social_notification_dto.dart';
 export 'dto_extensions.dart';
 
-// Domain Models (for compatibility)
+// Domain Models (Freezed sealed union)
 export '../../domain/models/notification.dart';
-export '../../domain/models/system_notification.dart';
-export '../../domain/models/social_notification.dart';
+export '../../domain/models/notification_extensions.dart';

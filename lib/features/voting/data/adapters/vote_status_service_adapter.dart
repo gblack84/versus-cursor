@@ -1,4 +1,4 @@
-import '/features/voting/domain/ports/i_vote_status_service.dart';
+import '/features/voting/domain/services/i_vote_status_service.dart';
 import '/features/voting/domain/services/vote_status_service.dart';
 
 /// Adapter to make VoteStatusService compatible with IVoteStatusService

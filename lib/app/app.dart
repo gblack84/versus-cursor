@@ -4,7 +4,7 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '/core_exports.dart';
-import '/features/auth/data/adapters/auth_util.dart';
+import '/features/auth/data/adapters/firebase_user_adapter.dart';
 import '/app/contracts/notification_contract.dart';
 import '/features/notifications/presentation/providers/notification_overlay_provider.dart';
 import '/services/cache/preload_strategy.dart';
@@ -34,7 +34,6 @@ class _VersusAppState extends State<VersusApp> {
   late AppStateNotifier _appStateNotifier;
   late GoRouter _router;
   late Stream<BaseAuthUser> userStream;
-  final authUserSub = authenticatedUserStream.listen((_) {});
 
   // NotificationOverlayProvider for in-app notification dialogs
   NotificationOverlayProvider? _overlayProvider;
@@ -119,12 +118,10 @@ class _VersusAppState extends State<VersusApp> {
           debugPrint('[VersusApp] 알림 오버레이 프로바이더 중지');
         }
       });
-    jwtTokenStream.listen((_) {});
   }
 
   @override
   void dispose() {
-    authUserSub.cancel();
     // NotificationContract는 stopNotificationListening으로 정리됨 (위에서 호출)
     // NotificationOverlayProvider 안전한 정리
     _overlayProvider?.stopListening();

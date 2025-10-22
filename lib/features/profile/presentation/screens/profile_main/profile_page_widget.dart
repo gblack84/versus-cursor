@@ -4,7 +4,8 @@ import 'package:get_it/get_it.dart';
 import '/core_exports.dart';
 // Phase 2: Clean Architecture - ProfileProvider만 사용
 import '/features/profile/presentation/providers/profile_provider.dart';
-import '/features/auth/domain/usecases/sign_out_usecase.dart';
+// Phase 4: Contract 패턴으로 Feature 간 의존성 제거
+import '/app/contracts/auth_contract.dart';
 import '/core/design_system/design_system.dart';
 import '/features/post/presentation/providers/user_posts_provider.dart';
 import '/features/post/domain/models/post_display.dart';
@@ -27,7 +28,8 @@ class ProfilePageWidget extends StatefulWidget {
 
 class _ProfilePageWidgetState extends State<ProfilePageWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
-  late final SignOutUseCase _signOutUseCase;
+  // Phase 4: Contract 패턴으로 Feature 간 의존성 제거
+  late final AuthContract _authContract;
   late final UserPostsProvider _userPostsProvider;
   late final ProfileProvider _profileProvider;
 
@@ -36,7 +38,8 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
     super.initState();
 
     // Initialize all dependencies from DI
-    _signOutUseCase = GetIt.instance<SignOutUseCase>();
+    // Phase 4: Contract 패턴으로 Feature 간 의존성 제거
+    _authContract = GetIt.instance<AuthContract>();
     _userPostsProvider = GetIt.instance<UserPostsProvider>();
     _profileProvider = GetIt.instance<ProfileProvider>();
 
@@ -257,9 +260,21 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                           isFullWidth: true,
                           size: VersusButtonSize.large,
                           onPressed: () async {
-                            final success = await _signOutUseCase.execute();
-                            if (success) {
-                              context.goNamed('startPage');
+                            // Phase 4: Contract 패턴으로 Feature 간 의존성 제거
+                            try {
+                              await _authContract.signOut();
+                              if (mounted) {
+                                context.goNamed('startPage');
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('로그아웃 중 오류가 발생했습니다: $e'),
+                                    backgroundColor: VersusColors.error,
+                                  ),
+                                );
+                              }
                             }
                           },
                         ),

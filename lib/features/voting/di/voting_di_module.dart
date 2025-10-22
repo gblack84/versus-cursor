@@ -16,12 +16,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // ===== Domain Layer =====
 import '../domain/repositories/i_voting_repository.dart';
-import '../domain/ports/i_vote_service.dart';
-import '../domain/ports/i_vote_status_service.dart';
+import '../domain/services/i_vote_service.dart';
+import '../domain/services/i_vote_status_service.dart';
 import '../domain/ports/i_vote_state_port.dart';
 import '../domain/ports/i_notification_data_port.dart';
-import '../domain/ports/i_box_calculator_port.dart';
-import '../domain/ports/i_vote_timer_port.dart';
+import '../domain/ports/i_vote_ui_delegate.dart';
+import '../domain/services/i_box_calculator_service.dart';
+import '../domain/services/i_vote_timer_service.dart';
 
 // ===== Data Layer - DataSources =====
 import '../data/datasources/i_voting_remote_datasource.dart';
@@ -123,6 +124,10 @@ void _registerRepository(GetIt getIt) {
     () => VotingRepositoryImpl(
       remoteDataSource: getIt<IVotingRemoteDataSource>(),
       localDataSource: getIt<IVotingLocalDataSource>(),
+      // VoteContract implementation dependencies
+      voteStatePort: getIt<IVoteStatePort>(),
+      notificationDataPort: getIt<INotificationDataPort>(),
+      voteUIDelegate: getIt<IVoteUIDelegate>(),
     ),
   );
 }
@@ -236,21 +241,21 @@ void _registerPortsAndServices(GetIt getIt) {
     ),
   );
   
-  // Register VoteTimerPort adapter 
+  // Register VoteTimerService adapter
   // Note: VoteTimerService must be registered in app/di.dart
   // to avoid cross-feature dependency
-  if (!getIt.isRegistered<IVoteTimerPort>()) {
+  if (!getIt.isRegistered<IVoteTimerService>()) {
     throw StateError(
-      'IVoteTimerPort must be registered in app/di.dart before VotingDIModule.init()'
+      'IVoteTimerService must be registered in app/di.dart before VotingDIModule.init()'
     );
   }
-  
+
   // Register VoteStatePort implementation
   getIt.registerLazySingleton<IVoteStatePort>(
     () => VoteStateAdapter(
       firestore: FirebaseFirestore.instance,
       auth: FirebaseAuth.instance,
-      voteTimerPort: getIt<IVoteTimerPort>(),
+      voteTimerPort: getIt<IVoteTimerService>(),
     ),
   );
   
@@ -268,8 +273,8 @@ void _registerPortsAndServices(GetIt getIt) {
     ),
   );
   
-  // Register BoxCalculatorPort implementation
-  getIt.registerLazySingleton<IBoxCalculatorPort>(
+  // Register BoxCalculatorService implementation
+  getIt.registerLazySingleton<IBoxCalculatorService>(
     () => BoxCalculatorAdapter(),
   );
 }

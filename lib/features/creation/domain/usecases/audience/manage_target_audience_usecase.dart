@@ -1,7 +1,7 @@
 import '/core/types/result.dart';
 import '../../failures/creation_failures.dart';
 import '../../models/value_objects/target_audience.dart';
-import '../../../data/dto/target_audience_dto.dart';
+import '../../../data/models/target_audience_dto.dart';
 import '../../services/i_target_audience_service.dart';
 
 /// UseCase for managing target audience

@@ -4,7 +4,7 @@ import '../../domain/models/user_profile.dart';
 import '../../domain/models/user_settings.dart';
 import '../../domain/repositories/i_user_repository.dart';
 import '../adapters/user_profile_adapter.dart';
-import '../dto/user_profile_dto.dart';
+import '../models/user_profile_dto.dart';
 import '/app/contracts/auth_contract.dart';
 import '/app/contracts/user_contract.dart';
 

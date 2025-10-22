@@ -972,7 +972,7 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                         .showSnackBar(
                                                       SnackBar(
                                                           content: Text(failure
-                                                              .getUserMessage())),
+                                                              .message)),
                                                     );
                                                   },
                                                   (_) {

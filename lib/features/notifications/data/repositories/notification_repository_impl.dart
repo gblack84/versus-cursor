@@ -1,9 +1,9 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/repositories/i_notification_repository.dart';
 import '../../domain/models/notification.dart';
-import '../../domain/models/system_notification.dart';
-import '../../domain/models/social_notification.dart';
 import '../../domain/value_objects/notification_filter.dart';
+import '../../domain/failures/notification_failure.dart';
 import '../datasources/i_remote_notification_datasource.dart';
 import '../datasources/i_local_notification_datasource.dart';
 import '/app/contracts/notification_contract.dart';
@@ -220,8 +220,16 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
 
       print('Notification created with id: $id');
       return id;
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        throw const PermissionDenied();
+      } else if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
+        throw const NetworkError();
+      } else {
+        throw const ServerError();
+      }
     } catch (e) {
-      throw Exception('Failed to create notification: $e');
+      throw const NotificationCreateFailed();
     }
   }
 
@@ -233,8 +241,16 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
 
       // 캐시 무효화 - notificationId로부터 userId를 추출할 수 없으므로 전체 캐시 무효화
       await _localDatasource.clearAllCache();
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        throw const PermissionDenied();
+      } else if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
+        throw const NetworkError();
+      } else {
+        throw const ServerError();
+      }
     } catch (e) {
-      throw Exception('Failed to update notification: $e');
+      throw const NotificationUpdateFailed();
     }
   }
 
@@ -245,8 +261,16 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
 
       // 캐시 무효화
       await _localDatasource.clearAllCache();
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        throw const PermissionDenied();
+      } else if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
+        throw const NetworkError();
+      } else {
+        throw const ServerError();
+      }
     } catch (e) {
-      throw Exception('Failed to mark as read: $e');
+      throw const NotificationUpdateFailed();
     }
   }
 
@@ -257,8 +281,16 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
 
       // 캐시 무효화
       await _localDatasource.clearCache(userId);
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        throw const PermissionDenied();
+      } else if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
+        throw const NetworkError();
+      } else {
+        throw const ServerError();
+      }
     } catch (e) {
-      throw Exception('Failed to mark all as read: $e');
+      throw const NotificationUpdateFailed();
     }
   }
 
@@ -272,8 +304,16 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
 
       // 캐시에서도 제거
       await _localDatasource.clearAllCache();
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        throw const PermissionDenied();
+      } else if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
+        throw const NetworkError();
+      } else {
+        throw const ServerError();
+      }
     } catch (e) {
-      throw Exception('Failed to delete notification: $e');
+      throw const NotificationDeleteFailed();
     }
   }
 
@@ -346,9 +386,10 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
       if (targetUserIds != null && targetUserIds.isNotEmpty) {
         // 특정 사용자들에게만 브로드캐스트
         for (final userId in targetUserIds) {
-          final userNotification = SystemNotification(
+          final userNotification = Notification.system(
             id: '', // Remote에서 생성됨
             userId: userId,
+            type: 'systemAlert',
             createdAt: notification.createdAt,
             isRead: false,
             title: notification.title,
@@ -368,13 +409,14 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
       } else {
         // 모든 활성 사용자 ID 가져오기
         final userIds = await _remoteDatasource.getAllActiveUserIds();
-        
+
         print('[NotificationRepository] Broadcasting to ${userIds.length} active users');
-        
+
         for (final userId in userIds) {
-          final userNotification = SystemNotification(
+          final userNotification = Notification.system(
             id: '', // Remote에서 생성됨
             userId: userId,
+            type: 'systemAlert',
             createdAt: notification.createdAt,
             isRead: false,
             title: notification.title,
@@ -392,8 +434,16 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
           await createNotification(userNotification);
         }
       }
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        throw const PermissionDenied();
+      } else if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
+        throw const NetworkError();
+      } else {
+        throw const ServerError();
+      }
     } catch (e) {
-      throw Exception('Failed to broadcast system notification: $e');
+      throw const BroadcastFailed();
     }
   }
 
@@ -434,9 +484,10 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
         );
       } else {
         // 4. 새 소셜 알림 생성
-        final newNotification = SocialNotification(
+        final newNotification = Notification.social(
           id: '', // Remote에서 생성됨
           userId: userId,
+          type: 'social',
           createdAt: DateTime.now(),
           isRead: false,
           title: _generateSocialTitle(actionType),
@@ -453,8 +504,16 @@ class NotificationRepositoryImpl implements INotificationRepository, Notificatio
 
       // 5. 캐시 업데이트
       await _localDatasource.clearCache(userId);
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        throw const PermissionDenied();
+      } else if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
+        throw const NetworkError();
+      } else {
+        throw const ServerError();
+      }
     } catch (e) {
-      throw Exception('Failed to group social notifications: $e');
+      throw const GroupingFailed();
     }
   }
 

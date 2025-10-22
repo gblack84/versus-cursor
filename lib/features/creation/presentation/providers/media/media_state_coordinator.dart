@@ -3,6 +3,7 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'media_selection_provider.dart';
 import 'media_upload_provider.dart';
 import 'media_validation_provider.dart';
+import '../../../domain/failures/creation_failures.dart';
 
 /// Media state coordinator for orchestrating between providers
 /// Provider 간 조정을 위한 미디어 상태 코디네이터 - Clean Architecture Phase 5
@@ -54,9 +55,13 @@ class MediaStateCoordinator {
           : _selectionProvider.selectedFilesB;
 
       if (selectedFiles.isEmpty) {
+        // Step 8: CreationValidationFailure 사용
         return MediaProcessingResult(
           success: false,
-          errorMessage: '선택된 이미지가 없습니다.',
+          failure: CreationValidationFailure(
+            '미디어 선택이 필요합니다',
+            fieldErrors: {'images': '선택된 이미지가 없습니다'},
+          ),
         );
       }
 
@@ -70,12 +75,14 @@ class MediaStateCoordinator {
         );
 
         if (!isValid) {
-          final rejectionReasons = _validationProvider.parseRejectionReasons();
+          // Step 8: validationProvider.validationFailure 사용 (Step 4에서 추가됨)
           return MediaProcessingResult(
             success: false,
-            errorMessage: rejectionReasons.isNotEmpty
-                ? rejectionReasons
-                : '이미지 검증에 실패했습니다.',
+            failure: _validationProvider.validationFailure ??
+                MediaProcessingFailure(
+                  failedStep: MediaProcessingStep.moderationCheck,
+                  affectedFiles: selectedFiles.map((f) => f.path).toList(),
+                ),
           );
         }
       }
@@ -97,9 +104,13 @@ class MediaStateCoordinator {
         );
 
         if (!uploadResult) {
+          // Step 8: MediaProcessingFailure 사용
           return MediaProcessingResult(
             success: false,
-            errorMessage: '이미지 업로드에 실패했습니다.',
+            failure: MediaProcessingFailure(
+              failedStep: MediaProcessingStep.upload,
+              affectedFiles: selectedFiles.map((f) => f.path).toList(),
+            ),
           );
         }
 
@@ -122,9 +133,16 @@ class MediaStateCoordinator {
       );
     } catch (e) {
       debugPrint('MediaStateCoordinator: Error in processMediaSelection: $e');
+      // Step 8: MediaProcessingFailure 사용 (generic error)
       return MediaProcessingResult(
         success: false,
-        errorMessage: '처리 중 오류가 발생했습니다: $e',
+        failure: MediaProcessingFailure(
+          failedStep: MediaProcessingStep.upload, // 가장 근접한 단계
+          affectedFiles: box == 'A'
+              ? _selectionProvider.selectedFilesA.map((f) => f.path).toList()
+              : _selectionProvider.selectedFilesB.map((f) => f.path).toList(),
+          details: e.toString(),
+        ),
       );
     }
   }
@@ -360,14 +378,34 @@ class MediaStateCoordinator {
 /// 미디어 처리 워크플로우 결과
 class MediaProcessingResult {
   final bool success;
-  final String? errorMessage;
+  final Failure? failure; // Step 8: errorMessage를 Failure로 중앙화
   final List<String>? uploadedUrls;
   final Map<String, dynamic>? metadata;
 
   MediaProcessingResult({
     required this.success,
-    this.errorMessage,
+    this.failure,
     this.uploadedUrls,
     this.metadata,
   });
+
+  /// Convenience getter for error message
+  /// Step 8: 하위 호환성을 위한 편의 getter (필요시 제거 가능)
+  String? get errorMessage {
+    if (failure == null) return null;
+
+    // Creation-specific failures with getUserMessage()
+    if (failure is AIModerationFailure) {
+      return (failure as AIModerationFailure).getUserMessage();
+    }
+    if (failure is MediaProcessingFailure) {
+      return (failure as MediaProcessingFailure).getUserMessage();
+    }
+    if (failure is PostValidationFailure) {
+      return (failure as PostValidationFailure).getUserMessage();
+    }
+
+    // Core failures use .message directly
+    return failure!.message;
+  }
 }

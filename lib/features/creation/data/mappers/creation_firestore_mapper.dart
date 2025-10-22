@@ -1,12 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/models/core/post_core.dart';
-import '../../domain/models/core/post_content.dart';
+import '../../domain/models/aggregates/post_creation.dart';
 import '../../domain/models/value_objects/media_content.dart';
+import '../../domain/models/value_objects/target_audience.dart';
 
 /// CreationFirestoreMapper - Handles Firebase ↔ Domain model conversion for Creation Feature
 ///
 /// This mapper is responsible for converting between Firebase Firestore documents
-/// and Creation Feature's domain models (PostCore and PostContent).
+/// and Creation Feature's domain model (PostCreation).
+///
+/// **Phase 2 Migration**: PostCore/PostContent 제거, PostCreation 직접 사용
+/// - 447줄 제거 (PostCore 203줄 + PostContent 244줄)
+/// - 단순화된 플로우: PostCreation ↔ Firestore
+/// - MediaContent는 Firestore DTO로 유지
 ///
 /// Key principles:
 /// - Only handles fields that Creation Feature is responsible for
@@ -18,57 +23,51 @@ class CreationFirestoreMapper {
   // Firebase → Domain Conversion (READ)
   // ============================================
 
-  /// Extracts PostCore from Firestore document data
+  /// Extracts PostCreation from Firestore document data
   ///
-  /// Converts Firebase document fields into PostCore domain model.
+  /// Converts Firebase document fields into PostCreation domain model.
   /// Only extracts fields that belong to Creation Feature's responsibility.
-  PostCore extractPostCore(Map<String, dynamic> data, String postId) {
-    return PostCore(
+  PostCreation extractPostCreation(Map<String, dynamic> data, String postId) {
+    return PostCreation(
       id: postId,
       // Legacy field name: questionTitle (not title)
-      questionTitle: data['questionTitle'] ?? '',
-      description: data['description']?.toString().isNotEmpty == true
-          ? data['description']
-          : null,
-      content: data['content']?.toString().isNotEmpty == true
-          ? data['content']
-          : null,
+      title: data['questionTitle'] ?? '',
+      description: data['description'] ?? '',
       // Handle both 'userid' and 'uid' for backward compatibility
       userId: data['userid']?.toString() ?? data['uid']?.toString() ?? '',
       createdAt: _parseDateTime(data['createdAt']) ?? DateTime.now(),
       updatedAt: _parseDateTime(data['updatedAt']),
-      category: data['category']?.toString().isNotEmpty == true
-          ? data['category']
-          : null,
+      category: data['category']?.toString(),
       tags: _parseTags(data['tags']),
-      visibility: _convertVisibilityToString(data['visibility']),
       isAnonymous: data['isAnonymous'] ?? false,
-      premiumRequired: data['premiumRequired'] ?? false,
-      // location is stored as Map<String, dynamic> in Firestore, convert to Map<String, double>
-      location: data['location'] != null
-          ? (data['location'] as Map<String, dynamic>).map(
-              (key, value) => MapEntry(key, (value as num).toDouble()),
-            )
-          : null,
-    );
-  }
 
-  /// Extracts PostContent from Firestore document data
-  ///
-  /// Converts Firebase document fields into PostContent domain model.
-  /// Handles media content and layout information.
-  PostContent extractPostContent(Map<String, dynamic> data, String postId) {
-    return PostContent(
-      postId: postId,
-      // Media content for option A
-      optionA: MediaContent.fromMap(data['optionA'] as Map<String, dynamic>? ?? {}),
-      // Media content for option B
-      optionB: MediaContent.fromMap(data['optionB'] as Map<String, dynamic>? ?? {}),
-      layoutType: data['layoutType']?.toString() ?? 'vertical',
-      targetAudience: data['targetAudience'] as Map<String, dynamic>?,
-      moderation: data['moderation'] as Map<String, dynamic>?,
-      processingStatus: data['processingStatus']?.toString() ?? 'completed',
-      processedAt: _parseDateTime(data['processedAt']),
+      // Convert MediaContent to PostOption
+      optionA: _mediaContentToPostOption(
+        MediaContent.fromMap(data['optionA'] as Map<String, dynamic>? ?? {}),
+      ),
+      optionB: _mediaContentToPostOption(
+        MediaContent.fromMap(data['optionB'] as Map<String, dynamic>? ?? {}),
+      ),
+
+      // TargetAudience
+      targetAudience: data['targetAudience'] != null
+          ? TargetAudience.fromMap(data['targetAudience'] as Map<String, dynamic>)
+          : null,
+
+      // VoteConfiguration
+      voteConfig: data['voteConfig'] != null
+          ? VoteConfiguration.fromJson(data['voteConfig'] as Map<String, dynamic>)
+          : null,
+
+      // PostStatus from string
+      status: _parsePostStatus(data['status']),
+
+      // Metrics (default values, will be updated by other features)
+      likeCount: data['likecount'] ?? 0,
+      commentCount: data['commentcount'] ?? 0,
+
+      // Metadata
+      metadata: data['metadata'] as Map<String, dynamic>?,
     );
   }
 
@@ -79,26 +78,26 @@ class CreationFirestoreMapper {
   /// Creates a complete Firestore document for a new post
   ///
   /// Generates all necessary fields for post creation, including:
-  /// - Creation Feature fields from PostCore and PostContent
+  /// - Creation Feature fields from PostCreation
   /// - Default values for fields managed by other features
   /// - Legacy compatibility fields
-  Map<String, dynamic> toCreateDocument(PostCore core, PostContent content) {
+  Map<String, dynamic> toCreateDocument(PostCreation post) {
     final Map<String, dynamic> document = {
-      // ===== PostCore fields =====
-      'questionTitle': core.questionTitle,
-      'userid': core.userId,
-      'uid': core.userId, // Legacy compatibility
+      // ===== PostCreation fields =====
+      'questionTitle': post.title,
+      'description': post.description,
+      'userid': post.userId,
+      'uid': post.userId, // Legacy compatibility
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
-      'tags': core.tags,
-      'visibility': _convertVisibilityToInt(core.visibility),
-      'isAnonymous': core.isAnonymous,
-      'premiumRequired': core.premiumRequired,
+      'tags': post.tags ?? [],
+      'isAnonymous': post.isAnonymous,
+      'status': post.status.name,
 
-      // ===== PostContent fields =====
-      'optionA': content.optionA.toMap(),
-      'optionB': content.optionB.toMap(),
-      'layoutType': content.layoutType,
+      // ===== Media Content (PostOption → MediaContent) =====
+      'optionA': _postOptionToMediaContent(post.optionA).toMap(),
+      'optionB': _postOptionToMediaContent(post.optionB).toMap(),
+      'layoutType': 'vertical', // Default layout
       'processingStatus': 'pending',
 
       // ===== Default values for other features =====
@@ -122,29 +121,23 @@ class CreationFirestoreMapper {
       'phoneNumber': '',
       'createdTime': FieldValue.serverTimestamp(),
       'creatorInfo': {
-        'userid': core.userId,
-        'uid': core.userId,
+        'userid': post.userId,
+        'uid': post.userId,
       },
     };
 
     // Add optional fields only if they have values
-    if (core.description != null) {
-      document['description'] = core.description;
+    if (post.category != null) {
+      document['category'] = post.category;
     }
-    if (core.content != null) {
-      document['content'] = core.content;
+    if (post.targetAudience != null) {
+      document['targetAudience'] = post.targetAudience!.toMap();
     }
-    if (core.category != null) {
-      document['category'] = core.category;
+    if (post.voteConfig != null) {
+      document['voteConfig'] = post.voteConfig!.toJson();
     }
-    if (core.location != null) {
-      document['location'] = core.location;
-    }
-    if (content.targetAudience != null) {
-      document['targetAudience'] = content.targetAudience;
-    }
-    if (content.moderation != null) {
-      document['moderation'] = content.moderation;
+    if (post.metadata != null) {
+      document['metadata'] = post.metadata;
     }
 
     return document;
@@ -154,68 +147,43 @@ class CreationFirestoreMapper {
   ///
   /// Only includes fields that are being updated, preserving
   /// existing values for fields not included in the update.
-  Map<String, dynamic> toUpdateDocument({
-    PostCore? core,
-    PostContent? content,
-  }) {
+  Map<String, dynamic> toUpdateDocument(PostCreation post) {
     final Map<String, dynamic> updates = {
       'updatedAt': FieldValue.serverTimestamp(),
+      'questionTitle': post.title,
+      'description': post.description,
+      'tags': post.tags ?? [],
+      'isAnonymous': post.isAnonymous,
+      'status': post.status.name,
+
+      // Media content updates
+      'optionA': _postOptionToMediaContent(post.optionA).toMap(),
+      'optionB': _postOptionToMediaContent(post.optionB).toMap(),
     };
 
-    // Update PostCore fields if provided
-    if (core != null) {
-      updates['questionTitle'] = core.questionTitle;
-      updates['tags'] = core.tags;
-      updates['visibility'] = _convertVisibilityToInt(core.visibility);
-      updates['isAnonymous'] = core.isAnonymous;
-      updates['premiumRequired'] = core.premiumRequired;
-
-      // Handle optional fields
-      if (core.description != null) {
-        updates['description'] = core.description;
-      } else {
-        updates['description'] = FieldValue.delete();
-      }
-
-      if (core.content != null) {
-        updates['content'] = core.content;
-      } else {
-        updates['content'] = FieldValue.delete();
-      }
-
-      if (core.category != null) {
-        updates['category'] = core.category;
-      } else {
-        updates['category'] = FieldValue.delete();
-      }
-
-      if (core.location != null) {
-        updates['location'] = core.location;
-      } else {
-        updates['location'] = FieldValue.delete();
-      }
+    // Optional fields
+    if (post.category != null) {
+      updates['category'] = post.category;
+    } else {
+      updates['category'] = FieldValue.delete();
     }
 
-    // Update PostContent fields if provided
-    if (content != null) {
-      updates['optionA'] = content.optionA.toMap();
-      updates['optionB'] = content.optionB.toMap();
-      updates['layoutType'] = content.layoutType;
+    if (post.targetAudience != null) {
+      updates['targetAudience'] = post.targetAudience!.toMap();
+    } else {
+      updates['targetAudience'] = FieldValue.delete();
+    }
 
-      if (content.targetAudience != null) {
-        updates['targetAudience'] = content.targetAudience;
-      } else {
-        updates['targetAudience'] = FieldValue.delete();
-      }
+    if (post.voteConfig != null) {
+      updates['voteConfig'] = post.voteConfig!.toJson();
+    } else {
+      updates['voteConfig'] = FieldValue.delete();
+    }
 
-      if (content.moderation != null) {
-        updates['moderation'] = content.moderation;
-      } else {
-        updates['moderation'] = FieldValue.delete();
-      }
-
-      // processingStatus is always non-null
-      updates['processingStatus'] = content.processingStatus;
+    if (post.metadata != null) {
+      updates['metadata'] = post.metadata;
+    } else {
+      updates['metadata'] = FieldValue.delete();
     }
 
     return updates;
@@ -243,7 +211,36 @@ class CreationFirestoreMapper {
   }
 
   // ============================================
-  // Helper Methods
+  // Conversion Helper Methods
+  // ============================================
+
+  /// Converts PostOption (domain) to MediaContent (Firestore DTO)
+  MediaContent _postOptionToMediaContent(PostOption option) {
+    return MediaContent(
+      text: option.text ?? '',
+      imageUrls: option.imageUrls,
+      videoUrl: option.videoUrls?.isNotEmpty == true ? option.videoUrls!.first : '',
+      aspectRatio: option.aspectRatios.isNotEmpty ? option.aspectRatios.first : null,
+      aspectRatios: option.aspectRatios,
+      // Note: metadata from PostOption is stored in dimensions field
+      dimensions: option.metadata ?? {},
+    );
+  }
+
+  /// Converts MediaContent (Firestore DTO) to PostOption (domain)
+  PostOption _mediaContentToPostOption(MediaContent media) {
+    return PostOption(
+      text: media.text.isNotEmpty ? media.text : null,
+      imageUrls: media.imageUrls,
+      videoUrls: media.videoUrl.isNotEmpty ? [media.videoUrl] : null,
+      aspectRatios: media.aspectRatios,
+      // Note: dimensions field maps to PostOption metadata
+      metadata: media.dimensions,
+    );
+  }
+
+  // ============================================
+  // Parsing Helper Methods
   // ============================================
 
   /// Parses various date/time formats into DateTime
@@ -274,39 +271,24 @@ class CreationFirestoreMapper {
     return [];
   }
 
-  /// Converts visibility from int to string
-  String _convertVisibilityToString(dynamic value) {
-    if (value == null) return 'public';
+  /// Parses PostStatus from string
+  PostStatus _parsePostStatus(dynamic value) {
+    if (value == null) return PostStatus.draft;
 
-    if (value is String) return value;
-
-    if (value is int) {
-      switch (value) {
-        case 0:
-          return 'public';
-        case 1:
-          return 'friends';
-        case 2:
-          return 'private';
-        default:
-          return 'public';
-      }
-    }
-
-    return 'public';
-  }
-
-  /// Converts visibility from string to int
-  int _convertVisibilityToInt(String? visibility) {
-    switch (visibility) {
-      case 'public':
-        return 0;
-      case 'friends':
-        return 1;
-      case 'private':
-        return 2;
+    final statusStr = value.toString().toLowerCase();
+    switch (statusStr) {
+      case 'published':
+        return PostStatus.published;
+      case 'voting':
+        return PostStatus.voting;
+      case 'completed':
+        return PostStatus.completed;
+      case 'archived':
+        return PostStatus.archived;
+      case 'deleted':
+        return PostStatus.deleted;
       default:
-        return 0;
+        return PostStatus.draft;
     }
   }
 }

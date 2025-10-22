@@ -2,7 +2,8 @@
 // Clean Architecture - Domain Layer
 
 import 'package:flutter/foundation.dart';
-import '../models/auth_user.dart';
+import '/core/types/result.dart';
+import '../entities/auth_user.dart';
 import '../repositories/i_auth_repository.dart';
 import '../failures/auth_failure.dart';
 
@@ -10,6 +11,9 @@ import '../failures/auth_failure.dart';
 ///
 /// Business logic for Apple Sign In.
 /// Uses repository pattern to handle authentication.
+///
+/// **Clean Architecture v4.0 - Result Pattern**:
+/// - Returns Result<AuthUser> for type-safe error handling
 class SignInWithAppleUseCase {
   final IAuthRepository _repository;
 
@@ -19,9 +23,8 @@ class SignInWithAppleUseCase {
 
   /// Execute Apple Sign In
   ///
-  /// Returns AuthUser on success, null on failure
-  /// Handles all Apple Sign In related business logic
-  Future<AuthUser?> execute() async {
+  /// Returns Result<AuthUser> with automatic Korean error messages
+  Future<Result<AuthUser>> execute() async {
     try {
       debugPrint('Executing Apple Sign In...');
 
@@ -30,7 +33,7 @@ class SignInWithAppleUseCase {
 
       if (user == null) {
         debugPrint('Apple Sign In failed: No user returned');
-        return null;
+        return const ResultFailure(SocialSignInFailed());
       }
 
       // Apple specific business logic
@@ -40,16 +43,14 @@ class SignInWithAppleUseCase {
       }
 
       debugPrint('Apple Sign In successful: ${user.uid}');
-      return user;
+      return Success(user);
 
+    } on AuthFailure catch (e) {
+      debugPrint('Apple Sign In failed with AuthFailure: ${e.message}');
+      return ResultFailure(e);
     } catch (e) {
-      // Handle specific errors if needed
-      if (e is AuthFailure) {
-        debugPrint('Apple Sign In failed with AuthFailure: ${e.message}');
-      } else {
-        debugPrint('Apple Sign In failed with unexpected error: $e');
-      }
-      return null;
+      debugPrint('Apple Sign In failed with unexpected error: $e');
+      return ResultFailure(Unexpected(e.toString()));
     }
   }
 }

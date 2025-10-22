@@ -8,7 +8,7 @@ import 'package:get_it/get_it.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:stream_transform/stream_transform.dart';
-import '../../domain/models/auth_user.dart';
+import '../../domain/entities/auth_user.dart';
 import '../../domain/usecases/sign_in_with_email_usecase.dart';
 import '../../domain/usecases/sign_up_with_email_usecase.dart';
 import '../../domain/usecases/sign_in_with_google_usecase.dart';
@@ -20,11 +20,11 @@ import '../../domain/usecases/password_management_usecase.dart';
 import '../../domain/usecases/email_verification_usecase.dart';
 import '../../domain/usecases/account_management_usecase.dart';
 import '/features/profile/domain/models/user_profile.dart';
-import '/features/profile/data/dto/user_profile_dto.dart';
+import '/features/profile/data/models/user_profile_dto.dart';
 import '/features/profile/data/mappers/user_profile_mapper.dart';
 import '/core/interfaces/i_base_auth_user.dart';
 import '/app/contracts/auth_contract.dart';
-import '../../data/adapters/firebase_user_provider.dart';
+import '../../data/adapters/firebase_user_adapter.dart';
 
 /// AuthProvider
 ///
@@ -242,19 +242,22 @@ class AuthProvider extends ChangeNotifier implements AuthContract {
     _clearError();
 
     try {
-      final user = await _signInWithEmailUseCase.execute(
+      final result = await _signInWithEmailUseCase.execute(
         email: email,
         password: password,
       );
 
-      if (user != null) {
-        _currentUser = user;
-        notifyListeners();
-        return true;
-      } else {
-        _setError('Login failed. Please check your credentials.');
-        return false;
-      }
+      return result.fold(
+        (failure) {
+          _setError(failure.message);
+          return false;
+        },
+        (user) {
+          _currentUser = user;
+          notifyListeners();
+          return true;
+        },
+      );
     } catch (e) {
       _setError('An error occurred during login: $e');
       return false;
@@ -273,20 +276,23 @@ class AuthProvider extends ChangeNotifier implements AuthContract {
     _clearError();
 
     try {
-      final user = await _signUpWithEmailUseCase.execute(
+      final result = await _signUpWithEmailUseCase.execute(
         email: email,
         password: password,
         displayName: displayName,
       );
 
-      if (user != null) {
-        _currentUser = user;
-        notifyListeners();
-        return true;
-      } else {
-        _setError('Account creation failed. Please try again.');
-        return false;
-      }
+      return result.fold(
+        (failure) {
+          _setError(failure.message);
+          return false;
+        },
+        (user) {
+          _currentUser = user;
+          notifyListeners();
+          return true;
+        },
+      );
     } catch (e) {
       _setError('An error occurred during sign up: $e');
       return false;
@@ -301,16 +307,19 @@ class AuthProvider extends ChangeNotifier implements AuthContract {
     _clearError();
 
     try {
-      final user = await _signInWithGoogleUseCase.execute();
+      final result = await _signInWithGoogleUseCase.execute();
 
-      if (user != null) {
-        _currentUser = user;
-        notifyListeners();
-        return true;
-      } else {
-        _setError('Google sign in failed.');
-        return false;
-      }
+      return result.fold(
+        (failure) {
+          _setError(failure.message);
+          return false;
+        },
+        (user) {
+          _currentUser = user;
+          notifyListeners();
+          return true;
+        },
+      );
     } catch (e) {
       _setError('An error occurred during Google sign in: $e');
       return false;
@@ -325,16 +334,19 @@ class AuthProvider extends ChangeNotifier implements AuthContract {
     _clearError();
 
     try {
-      final user = await _signInWithAppleUseCase.execute();
+      final result = await _signInWithAppleUseCase.execute();
 
-      if (user != null) {
-        _currentUser = user;
-        notifyListeners();
-        return true;
-      } else {
-        _setError('Apple sign in failed.');
-        return false;
-      }
+      return result.fold(
+        (failure) {
+          _setError(failure.message);
+          return false;
+        },
+        (user) {
+          _currentUser = user;
+          notifyListeners();
+          return true;
+        },
+      );
     } catch (e) {
       _setError('An error occurred during Apple sign in: $e');
       return false;
@@ -349,17 +361,20 @@ class AuthProvider extends ChangeNotifier implements AuthContract {
     _clearError();
 
     try {
-      final success = await _signInWithPhoneUseCase.sendOtp(phoneNumber);
+      final result = await _signInWithPhoneUseCase.sendOtp(phoneNumber);
 
-      if (success) {
-        _isCodeSent = true;
-        _phoneNumber = phoneNumber;
-        notifyListeners();
-        return true;
-      } else {
-        _setError('Failed to send verification code.');
-        return false;
-      }
+      return result.fold(
+        (failure) {
+          _setError(failure.message);
+          return false;
+        },
+        (_) {
+          _isCodeSent = true;
+          _phoneNumber = phoneNumber;
+          notifyListeners();
+          return true;
+        },
+      );
     } catch (e) {
       _setError('An error occurred sending OTP: $e');
       return false;
@@ -376,13 +391,15 @@ class AuthProvider extends ChangeNotifier implements AuthContract {
     _clearError();
 
     try {
-      final success = await _signInWithPhoneUseCase.resendOtp(_phoneNumber!);
+      final result = await _signInWithPhoneUseCase.resendOtp(_phoneNumber!);
 
-      if (!success) {
-        _setError('Failed to resend verification code. Please wait and try again.');
-        return false;
-      }
-      return true;
+      return result.fold(
+        (failure) {
+          _setError(failure.message);
+          return false;
+        },
+        (_) => true,
+      );
     } catch (e) {
       _setError('An error occurred resending OTP: $e');
       return false;
@@ -400,21 +417,24 @@ class AuthProvider extends ChangeNotifier implements AuthContract {
     _clearError();
 
     try {
-      final user = await _signInWithPhoneUseCase.execute(
+      final result = await _signInWithPhoneUseCase.execute(
         phoneNumber: phoneNumber,
         verificationCode: verificationCode,
       );
 
-      if (user != null) {
-        _currentUser = user;
-        _isCodeSent = false;
-        _phoneNumber = null;
-        notifyListeners();
-        return true;
-      } else {
-        _setError('Phone sign in failed. Please check the verification code.');
-        return false;
-      }
+      return result.fold(
+        (failure) {
+          _setError(failure.message);
+          return false;
+        },
+        (user) {
+          _currentUser = user;
+          _isCodeSent = false;
+          _phoneNumber = null;
+          notifyListeners();
+          return true;
+        },
+      );
     } catch (e) {
       _setError('An error occurred during phone sign in: $e');
       return false;
@@ -493,13 +513,15 @@ class AuthProvider extends ChangeNotifier implements AuthContract {
     _clearError();
 
     try {
-      final success = await _emailVerificationUseCase.sendVerificationEmail();
+      final result = await _emailVerificationUseCase.sendVerificationEmail();
 
-      if (!success) {
-        _setError('Failed to send verification email.');
-        return false;
-      }
-      return true;
+      return result.fold(
+        (failure) {
+          _setError(failure.message);
+          return false;
+        },
+        (_) => true,
+      );
     } catch (e) {
       _setError('An error occurred: $e');
       return false;
@@ -534,20 +556,29 @@ class AuthProvider extends ChangeNotifier implements AuthContract {
     _clearError();
 
     try {
-      final success = await _accountManagementUseCase.updateProfile(
+      final result = await _accountManagementUseCase.updateProfile(
         displayName: displayName,
         photoURL: photoURL,
       );
 
-      if (success) {
-        // Reload user to get updated info
-        _currentUser = await _accountManagementUseCase.getCurrentUser();
-        notifyListeners();
-        return true;
-      } else {
-        _setError('Failed to update profile.');
-        return false;
-      }
+      return result.fold(
+        (failure) {
+          _setError(failure.message);
+          return false;
+        },
+        (_) async {
+          // Reload user to get updated info
+          final userResult = await _accountManagementUseCase.getCurrentUser();
+          userResult.fold(
+            (failure) => _setError(failure.message),
+            (user) {
+              _currentUser = user;
+              notifyListeners();
+            },
+          );
+          return true;
+        },
+      );
     } catch (e) {
       _setError('An error occurred: $e');
       return false;
@@ -562,16 +593,19 @@ class AuthProvider extends ChangeNotifier implements AuthContract {
     _clearError();
 
     try {
-      final success = await _accountManagementUseCase.deleteAccount();
+      final result = await _accountManagementUseCase.deleteAccount();
 
-      if (success) {
-        _currentUser = null;
-        notifyListeners();
-        return true;
-      } else {
-        _setError('Failed to delete account.');
-        return false;
-      }
+      return result.fold(
+        (failure) {
+          _setError(failure.message);
+          return false;
+        },
+        (_) {
+          _currentUser = null;
+          notifyListeners();
+          return true;
+        },
+      );
     } catch (e) {
       _setError('An error occurred: $e');
       return false;

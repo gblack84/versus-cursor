@@ -1,48 +1,57 @@
-import 'package:equatable/equatable.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import '../../../data/mappers/target_audience_mapper.dart';
+
+part 'target_audience.freezed.dart';
+part 'target_audience.g.dart';
 
 /// Pure domain model for target audience configuration
 /// 타겟 오디언스 설정을 위한 순수 도메인 모델
-class TargetAudience extends Equatable {
-  /// Collection type: 'quick', 'public', or 'custom'
-  final String collectionType;
+///
+/// **Freezed Migration**: Equatable에서 Freezed로 마이그레이션
+/// - 불변성 자동 보장
+/// - copyWith 자동 생성
+/// - 복잡한 Firestore 매핑 로직 보존 (criteria 중첩, 나이 그룹 변환)
+/// - 비즈니스 로직 getter 보존 (isCustomCriteriaValid, estimatedTime)
+@freezed
+sealed class TargetAudience with _$TargetAudience {
+  const TargetAudience._();
 
-  /// Target response count
-  final int targetCount;
+  const factory TargetAudience({
+    /// Collection type: 'quick', 'public', or 'custom'
+    @Default('quick') String collectionType,
 
-  /// Premium user flag
-  final bool isPremium;
+    /// Target response count
+    @Default(100) int targetCount,
 
-  /// Selected interests for custom targeting
-  final List<String> selectedInterests;
+    /// Premium user flag
+    @Default(false) bool isPremium,
 
-  /// Selected age group for custom targeting
-  final String selectedAgeGroup;
+    /// Selected interests for custom targeting
+    @Default([]) List<String> selectedInterests,
 
-  /// Selected gender for custom targeting: 'all', 'male', 'female'
-  final String selectedGender;
+    /// Selected age group for custom targeting (Korean format)
+    @Default('전체') String selectedAgeGroup,
 
-  /// Active users only flag for custom targeting
-  final bool activeUserOnly;
+    /// Selected gender for custom targeting: 'all', 'male', 'female'
+    @Default('all') String selectedGender,
 
-  /// Creation timestamp
-  final DateTime createdAt;
+    /// Active users only flag for custom targeting
+    @Default(true) bool activeUserOnly,
 
-  /// Current status: 'pending', 'active', 'completed'
-  final String status;
+    /// Creation timestamp
+    required DateTime createdAt,
 
-  const TargetAudience({
-    this.collectionType = 'quick',
-    this.targetCount = 100,
-    this.isPremium = false,
-    this.selectedInterests = const [],
-    this.selectedAgeGroup = '전체',
-    this.selectedGender = 'all',
-    this.activeUserOnly = true,
-    required this.createdAt,
-    this.status = 'pending',
-  });
+    /// Current status: 'pending', 'active', 'completed'
+    @Default('pending') String status,
+  }) = _TargetAudience;
 
-  /// Factory constructor for creating from map
+  /// Freezed's fromJson for JSON deserialization
+  /// Note: This handles simple JSON, complex Firestore logic is in fromMap
+  factory TargetAudience.fromJson(Map<String, dynamic> json) =>
+      _$TargetAudienceFromJson(json);
+
+  /// Factory constructor for creating from Firestore map
+  /// Handles complex Firebase structure with criteria nesting and age group conversion
   factory TargetAudience.fromMap(Map<String, dynamic> map) {
     return TargetAudience(
       collectionType: map['type'] ?? 'quick',
@@ -88,30 +97,9 @@ class TargetAudience extends Equatable {
     return data;
   }
 
-  /// Create a copy with updated fields
-  TargetAudience copyWith({
-    String? collectionType,
-    int? targetCount,
-    bool? isPremium,
-    List<String>? selectedInterests,
-    String? selectedAgeGroup,
-    String? selectedGender,
-    bool? activeUserOnly,
-    DateTime? createdAt,
-    String? status,
-  }) {
-    return TargetAudience(
-      collectionType: collectionType ?? this.collectionType,
-      targetCount: targetCount ?? this.targetCount,
-      isPremium: isPremium ?? this.isPremium,
-      selectedInterests: selectedInterests ?? this.selectedInterests,
-      selectedAgeGroup: selectedAgeGroup ?? this.selectedAgeGroup,
-      selectedGender: selectedGender ?? this.selectedGender,
-      activeUserOnly: activeUserOnly ?? this.activeUserOnly,
-      createdAt: createdAt ?? this.createdAt,
-      status: status ?? this.status,
-    );
-  }
+  // ============================================
+  // Business Logic (비즈니스 로직)
+  // ============================================
 
   /// Check if custom criteria is valid
   bool get isCustomCriteriaValid {
@@ -138,48 +126,22 @@ class TargetAudience extends Equatable {
     }
   }
 
+  // ============================================
+  // Age Group Conversion Helpers (Private)
+  // ============================================
+
   /// Convert age group from map (English to Korean)
+  /// Delegates to TargetAudienceMapper
   static String _convertAgeGroupFromMap(Map<String, dynamic>? criteria) {
     if (criteria == null) return '전체';
 
-    final ageGroup = criteria['ageGroup'] ?? 'all';
-    const ageMapping = {
-      'all': '전체',
-      '10s': '10대',
-      '20s': '20대',
-      '30s': '30대',
-      '40s': '40대',
-      '50s+': '50대 이상',
-    };
-
-    return ageMapping[ageGroup] ?? '전체';
+    final ageGroup = criteria['ageGroup'];
+    return TargetAudienceMapper.convertAgeGroupFromFirebase(ageGroup);
   }
 
   /// Convert age group to map (Korean to English)
+  /// Delegates to TargetAudienceMapper
   static String _convertAgeGroupToMap(String ageGroup) {
-    if (ageGroup == '전체') return 'all';
-
-    const ageMapping = {
-      '10대': '10s',
-      '20대': '20s',
-      '30대': '30s',
-      '40대': '40s',
-      '50대 이상': '50s+',
-    };
-
-    return ageMapping[ageGroup] ?? 'all';
+    return TargetAudienceMapper.convertAgeGroupToFirebase(ageGroup);
   }
-
-  @override
-  List<Object?> get props => [
-    collectionType,
-    targetCount,
-    isPremium,
-    selectedInterests,
-    selectedAgeGroup,
-    selectedGender,
-    activeUserOnly,
-    createdAt,
-    status,
-  ];
 }

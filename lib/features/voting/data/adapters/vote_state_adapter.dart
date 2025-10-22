@@ -3,24 +3,24 @@ import 'package:rxdart/rxdart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/ports/i_vote_state_port.dart';
-import '../../domain/ports/i_vote_timer_port.dart';
+import '../../domain/services/i_vote_timer_service.dart';
 import '../../domain/models/vote_state.dart';
 
 /// Firebase-based implementation of IVoteStatePort
-/// 
+///
 /// This adapter encapsulates all Firebase dependencies,
 /// keeping them isolated in the data layer.
 class VoteStateAdapter implements IVoteStatePort {
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
-  final IVoteTimerPort _voteTimerPort;
+  final IVoteTimerService _voteTimerPort;
   final Map<String, BehaviorSubject<VoteStateData>> _stateCache = {};
   final Map<String, StreamSubscription<DocumentSnapshot>> _subscriptions = {};
-  
+
   VoteStateAdapter({
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
-    required IVoteTimerPort voteTimerPort,
+    required IVoteTimerService voteTimerPort,
   }) : _firestore = firestore ?? FirebaseFirestore.instance,
        _auth = auth ?? FirebaseAuth.instance,
        _voteTimerPort = voteTimerPort;

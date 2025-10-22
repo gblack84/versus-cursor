@@ -51,7 +51,7 @@ class InterestsProvider extends ChangeNotifier {
 
     result.fold(
       (failure) {
-        _errorMessage = failure.getUserMessage();
+        _errorMessage = failure.message;
         _interests = [];
       },
       (interests) {
@@ -116,7 +116,7 @@ class InterestsProvider extends ChangeNotifier {
     bool success = false;
     result.fold(
       (failure) {
-        _errorMessage = failure.getUserMessage();
+        _errorMessage = failure.message;
       },
       (_) {
         _errorMessage = null;

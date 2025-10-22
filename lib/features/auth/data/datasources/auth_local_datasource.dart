@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'i_auth_local_datasource.dart';
-import '../dto/auth_user_dto.dart';
+import '../models/auth_user_dto.dart';
 
 /// AuthLocalDataSource
 ///

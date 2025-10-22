@@ -1,7 +1,7 @@
-import 'package:dartz/dartz.dart';
+import '/core/types/result.dart';
 import '../../repositories/i_user_repository.dart';
 import '../../models/user_profile.dart';
-import '../../failures/profile_failures.dart';
+import '../../failures/profile_failure.dart';
 
 /// 현재 사용자 프로필 조회 UseCase (Phase 2: Clean Architecture)
 ///
@@ -29,25 +29,27 @@ class GetCurrentUserProfileUseCase {
   /// **Parameters**: 없음 (Repository가 AuthContract로 ID 획득)
   ///
   /// **Returns**:
-  /// - `Right(UserProfile)`: 조회 성공
-  /// - `Left(ProfileFailure)`: 조회 실패
-  ///   - `ProfileNotFoundFailure`: 로그인하지 않았거나 프로필 없음
-  ///   - `UnknownProfileFailure`: 기타 에러
-  Future<Either<ProfileFailure, UserProfile>> execute() async {
+  /// - `Success(UserProfile)`: 조회 성공
+  /// - `ResultFailure(ProfileFailure)`: 조회 실패
+  ///   - `ProfileNotFound`: 로그인하지 않았거나 프로필 없음
+  ///   - `UnknownProfile`: 기타 에러
+  Future<Result<UserProfile>> execute() async {
     try {
       // Repository가 AuthContract를 사용하여 현재 사용자 ID 획득
       final profile = await _repository.getCurrentUserProfile();
 
       // 결과 검증
       if (profile == null) {
-        return Left(ProfileNotFoundFailure(
+        return ResultFailure(ProfileNotFound(
           userId: 'current_user'  // Repository가 AuthContract로 ID 획득 실패 또는 프로필 없음
         ));
       }
 
-      return Right(profile);
+      return Success(profile);
+    } on ProfileFailure catch (e) {
+      return ResultFailure(e);
     } catch (e) {
-      return Left(UnknownProfileFailure(message: e.toString()));
+      return ResultFailure(UnknownProfile(e.toString()));
     }
   }
 }

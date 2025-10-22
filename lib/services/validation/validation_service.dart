@@ -3,7 +3,8 @@ import '/services/moderation/ai_moderation_service.dart';
 import '/services/moderation/models/moderation_result.dart'
     as ai;
 import '/features/creation/presentation/constants/field_styles.dart';
-import '/features/auth/data/adapters/auth_util.dart';
+import '/app/contracts/auth_contract.dart';
+import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
 import '/core_exports.dart';
 
@@ -52,8 +53,10 @@ class ValidationService {
     }
 
     // 현재 사용자 확인
-    final currentUser = currentUserReference;
-    if (currentUser == null) {
+    final authContract = GetIt.instance<AuthContract>();
+    final userId = authContract.getCurrentUserId();
+
+    if (userId == null || userId.isEmpty) {
       return ValidationResult(
         isValid: false,
         emptyResult: emptyResult,
@@ -77,7 +80,7 @@ class ValidationService {
         imageUrlsB: appState?.uploadImageB,
         visionDataA: visionDataA,
         visionDataB: visionDataB,
-        userId: currentUser.id,
+        userId: userId,
         sessionId: sessionId,
         documentId: documentId,
         revisionCount: revisionCount,

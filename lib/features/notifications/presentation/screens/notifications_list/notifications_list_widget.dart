@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import '/app/contracts/auth_contract.dart';
 import '/features/notifications/domain/models/notification.dart' as domain;
-import '/features/notifications/domain/usecases/mark_as_read_use_case.dart';
-import '/features/notifications/domain/usecases/watch_user_notifications_use_case.dart';
+import '/features/notifications/domain/usecases/mark_as_read_usecase.dart';
+import '/features/notifications/domain/usecases/watch_user_notifications_usecase.dart';
 import '/features/notifications/presentation/helpers/notification_display_helper.dart';
 import '/core_exports.dart';
 

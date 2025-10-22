@@ -4,13 +4,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../../domain/models/auth_user.dart';
+import '../../domain/entities/auth_user.dart';
 import '../../domain/repositories/i_auth_repository.dart';
 import '../datasources/i_auth_remote_datasource.dart';
 import '../datasources/i_auth_local_datasource.dart';
 import '/app/contracts/auth_contract.dart';
 import '/app/contracts/user_contract.dart';
-import '../dto/auth_user_dto.dart';
+import '../models/auth_user_dto.dart';
 import '../mappers/auth_user_mapper.dart';
 
 /// AuthRepositoryImpl

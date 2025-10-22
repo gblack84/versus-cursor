@@ -1,5 +1,5 @@
 import '/core/types/result.dart';
-import '/core/errors/failures.dart';
+import '../failures/chat_failure.dart';
 import '../ports/i_ai_service.dart';
 
 /// AI에게 질문을 전송하는 UseCase (Clean Architecture v4.0)
@@ -51,8 +51,8 @@ class SendAIQueryUseCase {
     try {
       // 입력 검증
       if (query.trim().isEmpty) {
-        return ResultFailure(
-          ValidationFailure(message: 'AI에게 물어볼 내용을 입력해주세요.'),
+        return const ResultFailure(
+          InvalidMessageContent(),
         );
       }
 
@@ -61,8 +61,8 @@ class SendAIQueryUseCase {
 
       return Success(stream);
     } catch (e) {
-      return ResultFailure(
-        ServerFailure(message: 'AI 쿼리 전송 실패: ${e.toString()}'),
+      return const ResultFailure(
+        AIQueryFailed(),
       );
     }
   }

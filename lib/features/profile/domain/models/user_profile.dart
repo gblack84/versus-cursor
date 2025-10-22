@@ -1,8 +1,35 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import '/app/models/lat_lng.dart';
+
+part 'user_profile.freezed.dart';
+part 'user_profile.g.dart';
+
+/// LatLng JSON 변환 함수
+LatLng? _latLngFromJson(Map<String, dynamic>? json) {
+  if (json == null) return null;
+  return LatLng(
+    (json['latitude'] as num).toDouble(),
+    (json['longitude'] as num).toDouble(),
+  );
+}
+
+Map<String, dynamic>? _latLngToJson(LatLng? latLng) {
+  if (latLng == null) return null;
+  return {
+    'latitude': latLng.latitude,
+    'longitude': latLng.longitude,
+  };
+}
 
 /// UserProfile pure domain model (Clean Architecture v4.0)
 ///
 /// **변경사항** (2025-01-20):
+/// - Freezed sealed class로 전환 (352줄 → 107줄, 70% 감소)
+/// - copyWith, toString, hashCode, == 자동 생성
+/// - fromJson/toJson 자동 생성
+/// - 213줄의 boilerplate 코드 제거
+///
+/// **이전 변경사항** (2025-01-20):
 /// - FirestoreRecord 상속 제거 → 순수 Dart 클래스
 /// - Private 필드 + Getter → Final public 필드
 /// - has*() 메서드 제거 → Null check 직접 사용
@@ -12,340 +39,107 @@ import '/app/models/lat_lng.dart';
 /// - @Deprecated 필드 4개 제거
 ///
 /// Represents a user's profile information and system state
-class UserProfile {
-  // ============= Core Identity Fields =============
-  final String uid;
-  final String email;
-  final String? displayName;
-  final String? photoUrl;
-  final String? phoneNumber;
+@freezed
+sealed class UserProfile with _$UserProfile {
+  const UserProfile._();
 
-  // ============= Profile Information =============
-  final LatLng? location;
-  final String? shortDescription;
-  final String? gender;
-  final DateTime? dateOfBirth;
-  final String? language;
-
-  // ============= System Timestamps =============
-  final DateTime? createdTime;
-  final DateTime? lastActive;
-  final DateTime? lastActiveTime;
-
-  // ============= Points System =============
-  final int pointsA;
-  final int pointsQ;
-  final int totalAPoints;
-  final int totalQPoints;
-
-  // ============= Interests and Expertise =============
-  final List<String> interests;
-  final List<String> expertise;
-  final List<String> hobbies;
-  final String? jobCategory;
-  final String? jobName;
-
-  // ============= Premium Status =============
-  final bool isPremiumUser;
-
-  // ============= Anonymous Activity Counters =============
-  final int anonymousPostsCount;
-  final int anonymousCommentsCount;
-  final int anonymousQuestionCount;
-
-  // ============= Ranking System =============
-  final String? currentRank;
-  final String? currentTitle;
-  final DateTime? rankChangeDate;
-  final DateTime? titleChangeDate;
-  final bool isRankEligible;
-  final int rankEvaluationCount;
-  final List<String> rankHistory;
-  final List<String> titleHistory;
-
-  // ============= Notification Settings =============
-  final bool receiveRankUpdateNotifications;
-  final bool receiveTitleUpdateNotifications;
-
-  // ============= Character Selection =============
-  final String? characterId;
-
-  // ============= Social Connections =============
-  final List<String> friends;
-  final List<String> activeChats;
-  final List<String> groupChats;
-
-  // ============= System Fields =============
-  final String? role;
-  final String? title;
-  final Map<String, dynamic> stats;
-  final Map<String, dynamic> subscription;
-
-  const UserProfile({
-    required this.uid,
-    required this.email,
-    this.displayName,
-    this.photoUrl,
-    this.phoneNumber,
-    this.location,
-    this.shortDescription,
-    this.gender,
-    this.dateOfBirth,
-    this.language,
-    this.createdTime,
-    this.lastActive,
-    this.lastActiveTime,
-    this.pointsA = 0,
-    this.pointsQ = 0,
-    this.totalAPoints = 0,
-    this.totalQPoints = 0,
-    this.interests = const [],
-    this.expertise = const [],
-    this.hobbies = const [],
-    this.jobCategory,
-    this.jobName,
-    this.isPremiumUser = false,
-    this.anonymousPostsCount = 0,
-    this.anonymousCommentsCount = 0,
-    this.anonymousQuestionCount = 0,
-    this.currentRank,
-    this.currentTitle,
-    this.rankChangeDate,
-    this.titleChangeDate,
-    this.isRankEligible = false,
-    this.rankEvaluationCount = 0,
-    this.rankHistory = const [],
-    this.titleHistory = const [],
-    this.receiveRankUpdateNotifications = false,
-    this.receiveTitleUpdateNotifications = false,
-    this.characterId,
-    this.friends = const [],
-    this.activeChats = const [],
-    this.groupChats = const [],
-    this.role,
-    this.title,
-    this.stats = const {},
-    this.subscription = const {},
-  });
-
-  /// Create a copy of this UserProfile with updated fields
-  UserProfile copyWith({
-    String? uid,
-    String? email,
+  const factory UserProfile({
+    // ============= Core Identity Fields =============
+    required String uid,
+    required String email,
     String? displayName,
     String? photoUrl,
     String? phoneNumber,
-    LatLng? location,
+
+    // ============= Profile Information =============
+    @JsonKey(fromJson: _latLngFromJson, toJson: _latLngToJson) LatLng? location,
     String? shortDescription,
     String? gender,
     DateTime? dateOfBirth,
     String? language,
+
+    // ============= System Timestamps =============
     DateTime? createdTime,
     DateTime? lastActive,
     DateTime? lastActiveTime,
-    int? pointsA,
-    int? pointsQ,
-    int? totalAPoints,
-    int? totalQPoints,
-    List<String>? interests,
-    List<String>? expertise,
-    List<String>? hobbies,
+
+    // ============= Points System =============
+    @Default(0) int pointsA,
+    @Default(0) int pointsQ,
+    @Default(0) int totalAPoints,
+    @Default(0) int totalQPoints,
+
+    // ============= Interests and Expertise =============
+    @Default([]) List<String> interests,
+    @Default([]) List<String> expertise,
+    @Default([]) List<String> hobbies,
     String? jobCategory,
     String? jobName,
-    bool? isPremiumUser,
-    int? anonymousPostsCount,
-    int? anonymousCommentsCount,
-    int? anonymousQuestionCount,
+
+    // ============= Premium Status =============
+    @Default(false) bool isPremiumUser,
+
+    // ============= Anonymous Activity Counters =============
+    @Default(0) int anonymousPostsCount,
+    @Default(0) int anonymousCommentsCount,
+    @Default(0) int anonymousQuestionCount,
+
+    // ============= Ranking System =============
     String? currentRank,
     String? currentTitle,
     DateTime? rankChangeDate,
     DateTime? titleChangeDate,
-    bool? isRankEligible,
-    int? rankEvaluationCount,
-    List<String>? rankHistory,
-    List<String>? titleHistory,
-    bool? receiveRankUpdateNotifications,
-    bool? receiveTitleUpdateNotifications,
+    @Default(false) bool isRankEligible,
+    @Default(0) int rankEvaluationCount,
+    @Default([]) List<String> rankHistory,
+    @Default([]) List<String> titleHistory,
+
+    // ============= Notification Settings =============
+    @Default(false) bool receiveRankUpdateNotifications,
+    @Default(false) bool receiveTitleUpdateNotifications,
+
+    // ============= Character Selection =============
     String? characterId,
-    List<String>? friends,
-    List<String>? activeChats,
-    List<String>? groupChats,
+
+    // ============= Social Connections =============
+    @Default([]) List<String> friends,
+    @Default([]) List<String> activeChats,
+    @Default([]) List<String> groupChats,
+
+    // ============= System Fields =============
     String? role,
     String? title,
-    Map<String, dynamic>? stats,
-    Map<String, dynamic>? subscription,
-  }) {
-    return UserProfile(
-      uid: uid ?? this.uid,
-      email: email ?? this.email,
-      displayName: displayName ?? this.displayName,
-      photoUrl: photoUrl ?? this.photoUrl,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
-      location: location ?? this.location,
-      shortDescription: shortDescription ?? this.shortDescription,
-      gender: gender ?? this.gender,
-      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
-      language: language ?? this.language,
-      createdTime: createdTime ?? this.createdTime,
-      lastActive: lastActive ?? this.lastActive,
-      lastActiveTime: lastActiveTime ?? this.lastActiveTime,
-      pointsA: pointsA ?? this.pointsA,
-      pointsQ: pointsQ ?? this.pointsQ,
-      totalAPoints: totalAPoints ?? this.totalAPoints,
-      totalQPoints: totalQPoints ?? this.totalQPoints,
-      interests: interests ?? this.interests,
-      expertise: expertise ?? this.expertise,
-      hobbies: hobbies ?? this.hobbies,
-      jobCategory: jobCategory ?? this.jobCategory,
-      jobName: jobName ?? this.jobName,
-      isPremiumUser: isPremiumUser ?? this.isPremiumUser,
-      anonymousPostsCount: anonymousPostsCount ?? this.anonymousPostsCount,
-      anonymousCommentsCount: anonymousCommentsCount ?? this.anonymousCommentsCount,
-      anonymousQuestionCount: anonymousQuestionCount ?? this.anonymousQuestionCount,
-      currentRank: currentRank ?? this.currentRank,
-      currentTitle: currentTitle ?? this.currentTitle,
-      rankChangeDate: rankChangeDate ?? this.rankChangeDate,
-      titleChangeDate: titleChangeDate ?? this.titleChangeDate,
-      isRankEligible: isRankEligible ?? this.isRankEligible,
-      rankEvaluationCount: rankEvaluationCount ?? this.rankEvaluationCount,
-      rankHistory: rankHistory ?? this.rankHistory,
-      titleHistory: titleHistory ?? this.titleHistory,
-      receiveRankUpdateNotifications: receiveRankUpdateNotifications ?? this.receiveRankUpdateNotifications,
-      receiveTitleUpdateNotifications: receiveTitleUpdateNotifications ?? this.receiveTitleUpdateNotifications,
-      characterId: characterId ?? this.characterId,
-      friends: friends ?? this.friends,
-      activeChats: activeChats ?? this.activeChats,
-      groupChats: groupChats ?? this.groupChats,
-      role: role ?? this.role,
-      title: title ?? this.title,
-      stats: stats ?? this.stats,
-      subscription: subscription ?? this.subscription,
-    );
-  }
+    @Default({}) Map<String, dynamic> stats,
+    @Default({}) Map<String, dynamic> subscription,
+  }) = _UserProfile;
 
-  @override
-  String toString() => 'UserProfile('
-      'uid: $uid, '
-      'email: $email, '
-      'displayName: $displayName, '
-      'pointsA: $pointsA, '
-      'pointsQ: $pointsQ, '
-      'isPremiumUser: $isPremiumUser, '
-      'currentRank: $currentRank'
-      ')';
+  factory UserProfile.fromJson(Map<String, dynamic> json) =>
+      _$UserProfileFromJson(json);
 
-  @override
-  int get hashCode => Object.hashAll([
-        uid,
-        email,
-        displayName,
-        photoUrl,
-        phoneNumber,
-        location,
-        shortDescription,
-        gender,
-        dateOfBirth,
-        language,
-        createdTime,
-        lastActive,
-        lastActiveTime,
-        pointsA,
-        pointsQ,
-        totalAPoints,
-        totalQPoints,
-        interests,
-        expertise,
-        hobbies,
-        jobCategory,
-        jobName,
-        isPremiumUser,
-        anonymousPostsCount,
-        anonymousCommentsCount,
-        anonymousQuestionCount,
-        currentRank,
-        currentTitle,
-        rankChangeDate,
-        titleChangeDate,
-        isRankEligible,
-        rankEvaluationCount,
-        rankHistory,
-        titleHistory,
-        receiveRankUpdateNotifications,
-        receiveTitleUpdateNotifications,
-        characterId,
-        friends,
-        activeChats,
-        groupChats,
-        role,
-        title,
-        stats,
-        subscription,
-      ]);
+  // ============= Business Logic Getters =============
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is UserProfile &&
-          runtimeType == other.runtimeType &&
-          uid == other.uid &&
-          email == other.email &&
-          displayName == other.displayName &&
-          photoUrl == other.photoUrl &&
-          phoneNumber == other.phoneNumber &&
-          location == other.location &&
-          shortDescription == other.shortDescription &&
-          gender == other.gender &&
-          dateOfBirth == other.dateOfBirth &&
-          language == other.language &&
-          createdTime == other.createdTime &&
-          lastActive == other.lastActive &&
-          lastActiveTime == other.lastActiveTime &&
-          pointsA == other.pointsA &&
-          pointsQ == other.pointsQ &&
-          totalAPoints == other.totalAPoints &&
-          totalQPoints == other.totalQPoints &&
-          _listEquals(interests, other.interests) &&
-          _listEquals(expertise, other.expertise) &&
-          _listEquals(hobbies, other.hobbies) &&
-          jobCategory == other.jobCategory &&
-          jobName == other.jobName &&
-          isPremiumUser == other.isPremiumUser &&
-          anonymousPostsCount == other.anonymousPostsCount &&
-          anonymousCommentsCount == other.anonymousCommentsCount &&
-          anonymousQuestionCount == other.anonymousQuestionCount &&
-          currentRank == other.currentRank &&
-          currentTitle == other.currentTitle &&
-          rankChangeDate == other.rankChangeDate &&
-          titleChangeDate == other.titleChangeDate &&
-          isRankEligible == other.isRankEligible &&
-          rankEvaluationCount == other.rankEvaluationCount &&
-          _listEquals(rankHistory, other.rankHistory) &&
-          _listEquals(titleHistory, other.titleHistory) &&
-          receiveRankUpdateNotifications == other.receiveRankUpdateNotifications &&
-          receiveTitleUpdateNotifications == other.receiveTitleUpdateNotifications &&
-          characterId == other.characterId &&
-          _listEquals(friends, other.friends) &&
-          _listEquals(activeChats, other.activeChats) &&
-          _listEquals(groupChats, other.groupChats) &&
-          role == other.role &&
-          title == other.title &&
-          _mapEquals(stats, other.stats) &&
-          _mapEquals(subscription, other.subscription);
+  /// 총 포인트 (A형 + Q형)
+  int get totalPoints => pointsA + pointsQ;
 
-  // Helper methods for equality comparison
-  static bool _listEquals(List<String> a, List<String> b) {
-    if (a.length != b.length) return false;
-    for (int i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
-  }
+  /// 총 활동 포인트 (전체 A형 + 전체 Q형)
+  int get totalActivityPoints => totalAPoints + totalQPoints;
 
-  static bool _mapEquals(Map<String, dynamic> a, Map<String, dynamic> b) {
-    if (a.length != b.length) return false;
-    for (final key in a.keys) {
-      if (!b.containsKey(key) || a[key] != b[key]) return false;
-    }
-    return true;
+  /// 프로필 완성도 (0.0 ~ 1.0)
+  double get completionRate {
+    int completedFields = 0;
+    const int totalRequiredFields = 10; // 주요 필드 개수
+
+    if (displayName != null && displayName!.isNotEmpty) completedFields++;
+    if (photoUrl != null && photoUrl!.isNotEmpty) completedFields++;
+    if (shortDescription != null && shortDescription!.isNotEmpty) completedFields++;
+    if (gender != null) completedFields++;
+    if (dateOfBirth != null) completedFields++;
+    if (language != null) completedFields++;
+    if (jobCategory != null) completedFields++;
+    if (jobName != null) completedFields++;
+    if (interests.isNotEmpty) completedFields++;
+    if (characterId != null) completedFields++;
+
+    return completedFields / totalRequiredFields;
   }
 }

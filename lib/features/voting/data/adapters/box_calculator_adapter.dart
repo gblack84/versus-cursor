@@ -1,13 +1,13 @@
 import '/services/ui/unified_box_calculator.dart';
 import '/core/types/layout_type.dart';
-import '../../domain/ports/i_box_calculator_port.dart';
+import '../../domain/services/i_box_calculator_service.dart';
 
-/// Implementation of IBoxCalculatorPort that wraps UnifiedBoxCalculator
-/// 
+/// Implementation of IBoxCalculatorService that wraps UnifiedBoxCalculator
+///
 /// This adapter bridges the domain layer with the services layer,
 /// converting between different data structures while maintaining
 /// Clean Architecture boundaries.
-class BoxCalculatorAdapter implements IBoxCalculatorPort {
+class BoxCalculatorAdapter implements IBoxCalculatorService {
   @override
   BoxSizesData calculate({
     required double containerWidth,

@@ -1,7 +1,8 @@
 import 'package:get_it/get_it.dart';
+import 'package:bot_toast/bot_toast.dart';
 import '/features/auth/presentation/providers/auth_provider.dart';
-import '/features/auth/data/adapters/auth_util.dart';
-import '/features/profile/domain/models/user_profile.dart';
+import '/features/auth/presentation/widgets/auth_user_stream_widget.dart';
+import '/app/contracts/user_contract.dart';
 import '/core/widgets/pickle_mark/pickle_mark_widget.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
@@ -22,6 +23,11 @@ class PopupTimerEmailWidget extends StatefulWidget {
 class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
   late PopupTimerEmailModel _model;
   late final AuthProvider _authProvider = GetIt.instance<AuthProvider>();
+
+  // AuthProvider helper getters
+  bool get currentUserEmailVerified => _authProvider.currentUser?.isEmailVerified ?? false;
+  String? get currentUserEmail => _authProvider.currentUser?.email;
+  String get currentUserId => _authProvider.currentUserUid;
 
   @override
   void setState(VoidCallback callback) {
@@ -130,11 +136,13 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                     onPressed: !currentUserEmailVerified
                         ? null
                         : () async {
-                            await currentUserReference!
-                                .update({
-                              'photoUrl':
-                                  'https://firebasestorage.googleapis.com/v0/b/versus-space-1lwwiw.appspot.com/o/characters%2Fdefault%2Fdefaultimage.jpg?alt=media&token=b485c8ad-c393-4ec7-bc1a-c1c3c93ec4ec',
-                            });
+                            final userContract = GetIt.instance<UserContract>();
+                            await userContract.updateUserProfileData(
+                              currentUserId,
+                              {
+                                'photoUrl': 'https://firebasestorage.googleapis.com/v0/b/versus-space-1lwwiw.appspot.com/o/characters%2Fdefault%2Fdefaultimage.jpg?alt=media&token=b485c8ad-c393-4ec7-bc1a-c1c3c93ec4ec',
+                              },
+                            );
                             Navigator.pop(context);
 
                             context.pushNamed(
@@ -321,38 +329,9 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                                 await _authProvider.deleteAccount();
 
                                 Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'You’ve exceeded the 3 attempt limit. Please create a new email.',
-                                      style: AppTheme.of(context)
-                                          .headlineSmall
-                                          .override(
-                                            font: GoogleFonts.plusJakartaSans(
-                                              fontWeight: AppTheme.of(context)
-                                                  .headlineSmall
-                                                  .fontWeight,
-                                              fontStyle: AppTheme.of(context)
-                                                  .headlineSmall
-                                                  .fontStyle,
-                                            ),
-                                            color: Colors.white,
-                                            letterSpacing: 0.0,
-                                            fontWeight: AppTheme.of(context)
-                                                .headlineSmall
-                                                .fontWeight,
-                                            fontStyle: AppTheme.of(context)
-                                                .headlineSmall
-                                                .fontStyle,
-                                          ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    duration: Duration(milliseconds: 4000),
-                                    backgroundColor: Color(0xFFD2394E),
-                                  ),
+                                BotToast.showText(
+                                  text: 'You\'ve exceeded the 3 attempt limit. Please create a new email.',
                                 );
-                                await Future.delayed(
-                                    const Duration(milliseconds: 4000));
 
                                 context.pushNamed(
                                   CreateAccountWidget.routeName,

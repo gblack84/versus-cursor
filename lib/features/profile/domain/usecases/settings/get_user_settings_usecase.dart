@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dartz/dartz.dart';
+import '/core/types/result.dart';
 import '../../repositories/i_user_repository.dart';
 import '../../models/user_settings.dart';
-import '../../failures/profile_failures.dart';
+import '../../failures/profile_failure.dart';
 
 /// 사용자 설정 조회 UseCase
 ///
@@ -22,13 +22,13 @@ class GetUserSettingsUseCase {
   /// - `userId`: 조회할 사용자 ID
   ///
   /// **Returns**:
-  /// - `Right(UserSettings)`: 조회 성공
-  /// - `Left(ProfileFailure)`: 조회 실패
-  Future<Either<ProfileFailure, UserSettings>> execute(String userId) async {
+  /// - `Success(UserSettings)`: 조회 성공
+  /// - `ResultFailure(ProfileFailure)`: 조회 실패
+  Future<Result<UserSettings>> execute(String userId) async {
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {
-        return Left(ValidationFailure(message: 'User ID cannot be empty'));
+        return ResultFailure(ValidationFailure('userId'));
       }
 
       // 2. Repository 호출
@@ -37,7 +37,7 @@ class GetUserSettingsUseCase {
       // 3. 결과 검증
       if (settings == null) {
         // 설정이 없으면 기본 설정 반환
-        return Right(UserSettings(
+        return Success(UserSettings(
           userId: userId,
           receiveRankUpdateNotifications: true,
           receiveTitleUpdateNotifications: true,
@@ -47,11 +47,13 @@ class GetUserSettingsUseCase {
         ));
       }
 
-      return Right(settings);
+      return Success(settings);
     } on FirebaseException catch (e) {
-      return Left(FirestoreReadFailure(message: e.message ?? 'Unknown error'));
+      return ResultFailure(FirestoreRead(e.message ?? 'Unknown error'));
+    } on ProfileFailure catch (e) {
+      return ResultFailure(e);
     } catch (e) {
-      return Left(UnknownProfileFailure(message: e.toString()));
+      return ResultFailure(UnknownProfile(e.toString()));
     }
   }
 }

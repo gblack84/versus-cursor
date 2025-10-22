@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:bot_toast/bot_toast.dart';
 import '../../domain/models/notification.dart' as domain;
-import '../../domain/models/social_notification.dart' as domain;
-import '../../domain/models/system_notification.dart' as domain;
-import '../../domain/usecases/mark_as_read_use_case.dart';
+import '../../domain/usecases/mark_as_read_usecase.dart';
 import '/services/notification/notification_queue_service.dart';
 import '/core/utils/logger.dart';
 import '/app/router/navigation/nav.dart';
@@ -63,24 +62,37 @@ class NotificationOverlayProvider extends ChangeNotifier {
     _isInitialized = false;
   }
 
-  /// Handle incoming notification from stream
+  /// Handle incoming notification from stream (using Freezed when pattern)
   void _handleNotification(domain.Notification notification) {
     Logger.debug('Received notification: ${notification.id}, type: ${notification.type}',
         tag: 'NotificationOverlayProvider');
 
-    // Route to appropriate handler based on notification type
-    // Note: Using type String comparison instead of 'is' check for better feature isolation
-    if (notification.type == NotificationTypes.votingRequest) {
-      _showVotingDialog(notification);
-    } else if (notification is domain.SocialNotification) {
-      _showSocialDialog(notification);
-    } else if (notification is domain.SystemNotification) {
-      _showSystemDialog(notification);
-    } else {
-      Logger.warning('Unknown notification type: ${notification.type}',
-          tag: 'NotificationOverlayProvider');
-      _queueService.notificationClosed();
-    }
+    // Route to appropriate handler based on notification type using Freezed when pattern
+    notification.when(
+      social: (id, userId, type, title, content, createdAt, readAt, isRead,
+              expiryTime, metadata, actionType, fromUserId, fromUserName,
+              fromUserProfileUrl, relatedPostId, relatedCommentId,
+              relatedContent, interactionCount) {
+        _showSocialDialog(notification as domain.SocialNotification);
+      },
+      system: (id, userId, type, title, content, createdAt, readAt, isRead,
+              expiryTime, metadata, alertType, actionUrl, actionLabel,
+              actionButtons, iconUrl, isDismissible) {
+        _showSystemDialog(notification as domain.SystemNotification);
+      },
+      voting: (id, userId, type, title, content, createdAt, readAt, isRead,
+              expiryTime, metadata, postId, postTitle, imageUrlsA,
+              imageUrlsB, voteDeadline) {
+        // Check if it's a voting request notification
+        if (type == NotificationTypes.votingRequest) {
+          _showVotingDialog(notification);
+        } else {
+          Logger.warning('Unknown voting notification type: $type',
+              tag: 'NotificationOverlayProvider');
+          _queueService.notificationClosed();
+        }
+      },
+    );
   }
 
   /// Show voting notification dialog
@@ -126,20 +138,26 @@ class NotificationOverlayProvider extends ChangeNotifier {
     Logger.info('Vote callback received: $selectedOption for notification ${notification.id}',
         tag: 'NotificationOverlayProvider');
 
-    try {
-      // Mark notification as read (Notification Feature responsibility)
-      await _markAsRead.call(MarkAsReadParams(
-        notificationId: notification.id,
-        userId: notification.userId,
-      ));
+    // Mark notification as read (Notification Feature responsibility)
+    final result = await _markAsRead.call(MarkAsReadParams(
+      notificationId: notification.id,
+      userId: notification.userId,
+    ));
 
-      // Signal queue service to process next notification (300ms delay)
-      _queueService.notificationClosed(delayMilliseconds: 300);
-    } catch (e) {
-      Logger.error('Error handling vote callback', error: e,
-          tag: 'NotificationOverlayProvider');
-      _queueService.notificationClosed();
-    }
+    // Handle Result with fold pattern
+    result.fold(
+      (failure) {
+        // Show error toast to user
+        BotToast.showText(text: failure.message);
+        Logger.error('Error marking notification as read',
+            error: failure.message, tag: 'NotificationOverlayProvider');
+        _queueService.notificationClosed();
+      },
+      (_) {
+        // Success: Signal queue service to process next notification (300ms delay)
+        _queueService.notificationClosed(delayMilliseconds: 300);
+      },
+    );
   }
 
   /// Handle notification dismissal
@@ -147,20 +165,26 @@ class NotificationOverlayProvider extends ChangeNotifier {
     Logger.debug('Notification dismissed: ${notification.id}',
         tag: 'NotificationOverlayProvider');
 
-    try {
-      // Mark notification as read
-      await _markAsRead.call(MarkAsReadParams(
-        notificationId: notification.id,
-        userId: notification.userId,
-      ));
+    // Mark notification as read
+    final result = await _markAsRead.call(MarkAsReadParams(
+      notificationId: notification.id,
+      userId: notification.userId,
+    ));
 
-      // Signal queue service to process next notification (500ms delay)
-      _queueService.notificationClosed(delayMilliseconds: 500);
-    } catch (e) {
-      Logger.error('Error handling dismiss', error: e,
-          tag: 'NotificationOverlayProvider');
-      _queueService.notificationClosed();
-    }
+    // Handle Result with fold pattern
+    result.fold(
+      (failure) {
+        // Show error toast to user
+        BotToast.showText(text: failure.message);
+        Logger.error('Error marking notification as read',
+            error: failure.message, tag: 'NotificationOverlayProvider');
+        _queueService.notificationClosed();
+      },
+      (_) {
+        // Success: Signal queue service to process next notification (500ms delay)
+        _queueService.notificationClosed(delayMilliseconds: 500);
+      },
+    );
   }
 
   /// Show social notification dialog

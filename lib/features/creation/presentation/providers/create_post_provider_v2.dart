@@ -7,7 +7,7 @@ import '../../domain/usecases/validation/validate_post_usecase.dart';
 import '../../domain/models/aggregates/post_creation.dart';
 import '../../domain/failures/creation_failures.dart';
 import '../../domain/models/value_objects/target_audience.dart';
-import '../../data/dto/post_creation_dto.dart';
+import '../../data/models/post_creation_dto.dart';
 import 'media/media_state_coordinator.dart';
 import '/services/moderation/perspective_api_service.dart';
 import '../constants/field_styles.dart';
@@ -190,30 +190,47 @@ class CreatePostProviderV2 extends ChangeNotifier {
 
   /// Validate form fields using UseCase
   Future<bool> validateFormFields() async {
+    final List<String> invalidFields = [];
+    final List<String> missingFields = [];
+
     // Title and description validation
     final titleResult = await _validatePostUseCase.validateText(_formData.title);
     if (!titleResult.isValid) {
-      _setError(titleResult.errorMessage ?? '제목이 올바르지 않습니다.');
-      return false;
+      if (_formData.title.isEmpty) {
+        missingFields.add('title');
+      } else {
+        invalidFields.add('title');
+      }
     }
 
     final descriptionResult = await _validatePostUseCase.validateText(_formData.description);
     if (!descriptionResult.isValid) {
-      _setError(descriptionResult.errorMessage ?? '설명이 올바르지 않습니다.');
-      return false;
+      if (_formData.description.isEmpty) {
+        missingFields.add('description');
+      } else {
+        invalidFields.add('description');
+      }
     }
 
     // Option validation
     if (_formData.textA.isEmpty && _formData.imagesA.isEmpty) {
-      _setError('A 옵션에 텍스트나 이미지가 필요합니다.');
-      return false;
+      missingFields.add('optionA');
     }
 
     if (!_formData.isSingleMode) {
       if (_formData.textB.isEmpty && _formData.imagesB.isEmpty) {
-        _setError('B 옵션에 텍스트나 이미지가 필요합니다.');
-        return false;
+        missingFields.add('optionB');
       }
+    }
+
+    // If validation failed, create PostValidationFailure and return error
+    if (missingFields.isNotEmpty || invalidFields.isNotEmpty) {
+      final failure = PostValidationFailure(
+        missingFields: missingFields,
+        invalidFields: invalidFields,
+      );
+      _setError(failure.getUserMessage());
+      return false;
     }
 
     return true;
@@ -243,8 +260,14 @@ class CreatePostProviderV2 extends ChangeNotifier {
 
       if (textResult.isFailure) {
         _moderationStatus = ModerationStatus.rejected;
-        _moderationMessage = textResult.failureOrNull?.message ??
-            '텍스트 검열 중 오류가 발생했습니다.';
+        final failure = textResult.failureOrNull;
+
+        // Use getUserMessage() if failure has it
+        if (failure is AIModerationFailure) {
+          _moderationMessage = failure.getUserMessage();
+        } else {
+          _moderationMessage = failure?.message ?? '텍스트 검열 중 오류가 발생했습니다.';
+        }
         notifyListeners();
         return false;
       }
@@ -252,7 +275,15 @@ class CreatePostProviderV2 extends ChangeNotifier {
       final textDecision = textResult.valueOrNull!;
       if (!textDecision.isApproved) {
         _moderationStatus = ModerationStatus.rejected;
-        _moderationMessage = textDecision.reason ?? '부적절한 내용이 포함되어 있습니다.';
+        // Create AIModerationFailure with rejection details
+        // TODO(Step 5): Get detectedCategories from UseCase when implemented
+        final failure = AIModerationFailure(
+          aiProvider: 'perspective',
+          confidenceScore: textDecision.confidence,
+          detectedCategories: [], // Will be populated by UseCase in future
+          message: textDecision.reason,
+        );
+        _moderationMessage = failure.getUserMessage();
         notifyListeners();
         return false;
       }
@@ -275,6 +306,7 @@ class CreatePostProviderV2 extends ChangeNotifier {
 
         if (!resultA) {
           _moderationStatus = ModerationStatus.rejected;
+          // TODO(Step 4): Use coordinator.validation.validationFailure.getUserMessage()
           _moderationMessage = coordinator.validation.validationMessage ?? '이미지 검증 실패';
           notifyListeners();
           return false;
@@ -293,6 +325,7 @@ class CreatePostProviderV2 extends ChangeNotifier {
 
         if (!resultB) {
           _moderationStatus = ModerationStatus.rejected;
+          // TODO(Step 4): Use coordinator.validation.validationFailure.getUserMessage()
           _moderationMessage = coordinator.validation.validationMessage ?? '이미지 검증 실패';
           notifyListeners();
           return false;
@@ -342,7 +375,8 @@ class CreatePostProviderV2 extends ChangeNotifier {
     );
 
     if (!uploadSuccess) {
-      _setError('미디어 검증 또는 업로드에 실패했습니다.');
+      // TODO(Step 4): Use _mediaCoordinator.validation.validationFailure.getUserMessage()
+      _setError(_mediaCoordinator.validation.validationMessage ?? '미디어 검증 또는 업로드에 실패했습니다.');
       return;
     }
 
@@ -426,6 +460,18 @@ class CreatePostProviderV2 extends ChangeNotifier {
   }
 
   String _getFailureMessage(Failure failure) {
+    // Use getUserMessage() for advanced Failure types
+    if (failure is PostValidationFailure) {
+      return failure.getUserMessage();
+    } else if (failure is AIModerationFailure) {
+      return failure.getUserMessage();
+    } else if (failure is MediaProcessingFailure) {
+      return failure.getUserMessage();
+    } else if (failure is FirestoreWriteFailure) {
+      return failure.getUserMessage();
+    }
+
+    // Fallback for base Failure types
     if (failure is CreationValidationFailure) {
       if (failure.fieldErrors.isNotEmpty) {
         return failure.fieldErrors.values.first;

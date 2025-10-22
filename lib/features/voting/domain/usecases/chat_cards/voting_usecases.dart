@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import '/core/usecases/usecase.dart';
 import '../../models/chat/post_voting.dart';
 import '../../models/chat/voting_update.dart';
+import '../../models/voting_failure.dart';
 import '../../repositories/i_voting_chat_repository.dart';
 
 /// Cast a vote on a post

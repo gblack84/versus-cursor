@@ -1,7 +1,7 @@
-import 'package:dartz/dartz.dart';
+import '/core/types/result.dart';
 import '../../domain/repositories/i_interests_repository.dart';
 import '../../domain/models/interest.dart';
-import '../../domain/failures/profile_failures.dart';
+import '../../domain/failures/profile_failure.dart';
 import '../datasources/interfaces/i_profile_datasource.dart';
 
 /// InterestsRepository 구현
@@ -20,7 +20,7 @@ class InterestsRepositoryImpl implements IInterestsRepository {
   // ============= 관심사 관리 =============
 
   @override
-  Future<Either<ProfileFailure, void>> updateUserInterests(
+  Future<Result<void>> updateUserInterests(
     String userId,
     List<Interest> interests,
   ) async {
@@ -31,15 +31,11 @@ class InterestsRepositoryImpl implements IInterestsRepository {
       final hobbies = interests.where((i) => i.category == 'hobby').toList();
 
       if (expertise.length > 4) {
-        return const Left(ValidationFailure(
-          message: '전문성은 최대 4개까지 선택할 수 있습니다.',
-        ));
+        return ResultFailure(ValidationFailure('expertise'));
       }
 
       if (hobbies.length > 8) {
-        return const Left(ValidationFailure(
-          message: '취미는 최대 8개까지 선택할 수 있습니다.',
-        ));
+        return ResultFailure(ValidationFailure('hobbies'));
       }
 
       // Interest 리스트를 Firestore interests 배열로 변환
@@ -49,37 +45,37 @@ class InterestsRepositoryImpl implements IInterestsRepository {
         'interests': interestNames,
       });
 
-      return const Right(null);
+      return const Success(null);
+    } on ProfileFailure catch (e) {
+      return ResultFailure(e);
     } catch (e) {
-      return Left(FirestoreWriteFailure(
-        message: 'Failed to update user interests: $e',
-      ));
+      return ResultFailure(FirestoreWrite('Failed to update user interests: $e'));
     }
   }
 
   @override
-  Future<Either<ProfileFailure, List<Interest>>> getUserInterests(
+  Future<Result<List<Interest>>> getUserInterests(
     String userId,
   ) async {
     try {
       final data = await _dataSource.getProfile(userId);
       if (data == null) {
-        return Left(ProfileNotFoundFailure(userId: userId));
+        return ResultFailure(ProfileNotFound(userId: userId));
       }
 
       final interests = _convertToInterestList(data);
-      return Right(interests);
+      return Success(interests);
+    } on ProfileFailure catch (e) {
+      return ResultFailure(e);
     } catch (e) {
-      return Left(FirestoreReadFailure(
-        message: 'Failed to get user interests: $e',
-      ));
+      return ResultFailure(FirestoreRead('Failed to get user interests: $e'));
     }
   }
 
   // Phase 6 Cleanup: watchUserInterests 삭제 (Stream 미사용)
 
   @override
-  Future<Either<ProfileFailure, void>> addInterest({
+  Future<Result<void>> addInterest({
     required String userId,
     required Interest interest,
   }) async {
@@ -93,16 +89,16 @@ class InterestsRepositoryImpl implements IInterestsRepository {
 
       await _dataSource.arrayUnion(userId, field, [interest.name]);
 
-      return const Right(null);
+      return const Success(null);
+    } on ProfileFailure catch (e) {
+      return ResultFailure(e);
     } catch (e) {
-      return Left(FirestoreWriteFailure(
-        message: 'Failed to add interest: $e',
-      ));
+      return ResultFailure(FirestoreWrite('Failed to add interest: $e'));
     }
   }
 
   @override
-  Future<Either<ProfileFailure, void>> removeInterest({
+  Future<Result<void>> removeInterest({
     required String userId,
     required Interest interest,
   }) async {
@@ -116,11 +112,11 @@ class InterestsRepositoryImpl implements IInterestsRepository {
 
       await _dataSource.arrayRemove(userId, field, [interest.name]);
 
-      return const Right(null);
+      return const Success(null);
+    } on ProfileFailure catch (e) {
+      return ResultFailure(e);
     } catch (e) {
-      return Left(FirestoreWriteFailure(
-        message: 'Failed to remove interest: $e',
-      ));
+      return ResultFailure(FirestoreWrite('Failed to remove interest: $e'));
     }
   }
 

@@ -1,7 +1,7 @@
 // Auth Repository Interface
 // Clean Architecture - Domain Layer Interface
 
-import '../models/auth_user.dart';
+import '../entities/auth_user.dart';
 
 /// IAuthRepository
 ///

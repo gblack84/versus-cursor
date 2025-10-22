@@ -2,7 +2,7 @@
 // Clean Architecture - Domain Layer
 
 import 'package:flutter/foundation.dart';
-import '../models/auth_user.dart';
+import '/core/types/result.dart';
 import '../repositories/i_auth_repository.dart';
 import '../failures/auth_failure.dart';
 
@@ -12,6 +12,9 @@ import '../failures/auth_failure.dart';
 /// - Sending verification emails
 /// - Checking verification status
 /// - Resending verification emails with rate limiting
+///
+/// **Clean Architecture v4.0 - Result Pattern**:
+/// - Returns Result<T> for type-safe error handling
 class EmailVerificationUseCase {
   final IAuthRepository _repository;
 
@@ -25,8 +28,8 @@ class EmailVerificationUseCase {
 
   /// Send Verification Email
   ///
-  /// Sends verification email to current user
-  Future<bool> sendVerificationEmail() async {
+  /// Returns Result<void> with automatic Korean error messages
+  Future<Result<void>> sendVerificationEmail() async {
     try {
       debugPrint('Sending email verification...');
 
@@ -34,19 +37,19 @@ class EmailVerificationUseCase {
       final currentUser = await _repository.getCurrentUser();
       if (currentUser == null) {
         debugPrint('No user signed in');
-        return false;
+        return const ResultFailure(UserNotFound());
       }
 
       // Check if already verified
       if (currentUser.isEmailVerified) {
         debugPrint('Email already verified');
-        return true;
+        return const Success(null);
       }
 
       // Check rate limiting
       if (!_canSendVerification()) {
         debugPrint('Please wait before sending another verification email');
-        return false;
+        return ResultFailure(Unexpected('잠시 후 다시 시도해주세요'));
       }
 
       // Send verification email
@@ -55,23 +58,24 @@ class EmailVerificationUseCase {
       if (success) {
         _lastVerificationSentTime = DateTime.now();
         debugPrint('Verification email sent successfully');
+        return const Success(null);
       }
 
-      return success;
+      return const ResultFailure(ServerError());
 
     } on AuthFailure catch (e) {
       debugPrint('Send verification failed with AuthFailure: ${e.message}');
-      return false;
+      return ResultFailure(e);
     } catch (e) {
       debugPrint('Send verification failed with unexpected error: $e');
-      return false;
+      return ResultFailure(Unexpected(e.toString()));
     }
   }
 
   /// Resend Verification Email
   ///
   /// Resends verification email with rate limiting
-  Future<bool> resendVerificationEmail() async {
+  Future<Result<void>> resendVerificationEmail() async {
     debugPrint('Attempting to resend verification email...');
 
     if (_lastVerificationSentTime != null) {
@@ -79,7 +83,7 @@ class EmailVerificationUseCase {
       if (timeSinceLastSend < _resendDelay) {
         final secondsLeft = (_resendDelay - timeSinceLastSend).inSeconds;
         debugPrint('Please wait $secondsLeft seconds before resending');
-        return false;
+        return ResultFailure(Unexpected('$secondsLeft초 후에 다시 시도해주세요'));
       }
     }
 

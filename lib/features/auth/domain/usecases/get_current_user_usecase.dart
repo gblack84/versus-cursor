@@ -1,5 +1,5 @@
 import '../repositories/i_auth_repository.dart';
-import '../models/auth_user.dart';
+import '../entities/auth_user.dart';
 
 /// GetCurrentUserUseCase - 현재 인증된 사용자 조회
 ///

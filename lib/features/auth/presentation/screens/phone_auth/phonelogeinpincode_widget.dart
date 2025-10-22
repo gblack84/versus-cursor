@@ -1,4 +1,6 @@
 import 'package:get_it/get_it.dart';
+import 'package:bot_toast/bot_toast.dart';
+import '/core/utils/error_handler.dart';
 import '/features/auth/presentation/providers/auth_provider.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
@@ -341,12 +343,7 @@ Enter the 6-digit code sent t... */
                                 final smsCodeVal =
                                     _model.pinCodeController!.text;
                                 if (smsCodeVal.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content:
-                                          Text('Enter SMS verification code.'),
-                                    ),
-                                  );
+                                  BotToast.showText(text: 'Enter SMS verification code.');
                                   return;
                                 }
 
@@ -384,13 +381,10 @@ Enter the 6-digit code sent t... */
 
                                   // 에러 메시지 표시
                                   if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          _authProvider.errorMessage ?? '인증에 실패했습니다. 코드를 다시 확인해주세요.',
-                                        ),
-                                        backgroundColor: Colors.red,
-                                      ),
+                                    ErrorHandler.handle(
+                                      _authProvider.errorMessage ?? '인증에 실패했습니다. 코드를 다시 확인해주세요.',
+                                      customMessage: _authProvider.errorMessage ?? '인증에 실패했습니다. 코드를 다시 확인해주세요.',
+                                      context: context,
                                     );
                                   }
                                 }
@@ -531,13 +525,7 @@ Enter the 6-digit code sent t... */
                                                 phoneNumberVal.isEmpty ||
                                                 !phoneNumberVal
                                                     .startsWith('+')) {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                SnackBar(
-                                                  content: Text(
-                                                      'Phone Number is required and has to start with +.'),
-                                                ),
-                                              );
+                                              BotToast.showText(text: 'Phone Number is required and has to start with +.');
                                               return;
                                             }
                                             // 로딩 중이면 리턴
@@ -551,42 +539,21 @@ Enter the 6-digit code sent t... */
                                             if (smsSent) {
                                               // 코드가 성공적으로 전송됨
                                               if (context.mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text('인증 코드가 재전송되었습니다.'),
-                                                    backgroundColor: Colors.green,
-                                                  ),
-                                                );
+                                                ErrorHandler.showSuccessToast('인증 코드가 재전송되었습니다.');
                                               }
                                             } else {
                                               // 재전송 실패
                                               if (context.mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      _authProvider.errorMessage ?? '코드 재전송에 실패했습니다.',
-                                                    ),
-                                                    backgroundColor: Colors.red,
-                                                  ),
+                                                ErrorHandler.handle(
+                                                  _authProvider.errorMessage ?? '코드 재전송에 실패했습니다.',
+                                                  customMessage: _authProvider.errorMessage ?? '코드 재전송에 실패했습니다.',
+                                                  context: context,
                                                 );
                                               }
                                             }
 
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  'pMessage resent. After 3 attempts, you will be returned to the login screen.',
-                                                  style: TextStyle(
-                                                    color: AppTheme.of(context)
-                                                        .primaryText,
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                ),
-                                                duration: Duration(
-                                                    milliseconds: 4000),
-                                                backgroundColor: Colors.white,
-                                              ),
+                                            BotToast.showText(
+                                              text: 'pMessage resent. After 3 attempts, you will be returned to the login screen.',
                                             );
                                           } else {
                                             // 3회 재전송 제한 초과 시 경고 모달 표시

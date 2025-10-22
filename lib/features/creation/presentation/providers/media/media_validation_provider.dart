@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../domain/usecases/moderate_content_usecase.dart';
+import '../../../domain/failures/creation_failures.dart';
+import '/core/types/result.dart';
 
 /// Validation result model
 class ValidationResult {
@@ -45,6 +47,7 @@ class MediaValidationProvider extends ChangeNotifier {
   // Validation state
   bool _isValidating = false;
   String? _validationMessage;
+  Failure? _validationFailure;
 
   // Vision API results for compatibility
   Map<String, dynamic>? _visionResultA;
@@ -58,6 +61,7 @@ class MediaValidationProvider extends ChangeNotifier {
       Map.unmodifiable(_validationResults);
   bool get isValidating => _isValidating;
   String? get validationMessage => _validationMessage;
+  Failure? get validationFailure => _validationFailure;
   Map<String, dynamic>? get visionResultA => _visionResultA;
   Map<String, dynamic>? get visionResultB => _visionResultB;
 
@@ -91,7 +95,11 @@ class MediaValidationProvider extends ChangeNotifier {
       );
 
       if (result.isFailure) {
-        _validationMessage = '검증 실패: ${result.failureOrNull?.message}';
+        final failure = result.failureOrNull;
+        _validationFailure = failure;
+        _validationMessage = failure is MediaProcessingFailure
+            ? failure.getUserMessage()
+            : '검증 실패: ${failure?.message}';
         notifyListeners();
         return false;
       }
@@ -134,16 +142,33 @@ class MediaValidationProvider extends ChangeNotifier {
       }
 
       if (!allApproved) {
-        final rejectedNumbers = rejectedIndices.join(', ');
-        _validationMessage = '이미지 $rejectedNumbers번이 거부되었습니다.';
+        // Create MediaProcessingFailure for rejected images
+        final affectedFiles = rejectedIndices
+            .map((i) => images[i - 1].path)
+            .toList();
+        final failure = MediaProcessingFailure(
+          failedStep: MediaProcessingStep.moderationCheck,
+          affectedFiles: affectedFiles,
+          details: '이미지 ${rejectedIndices.join(", ")}번',
+        );
+        _validationFailure = failure;
+        _validationMessage = failure.getUserMessage();
       } else {
+        _validationFailure = null;
         _validationMessage = null;
       }
 
       return allApproved;
     } catch (e) {
       debugPrint('MediaValidationProvider: Error validating images: $e');
-      _validationMessage = '검증 중 오류가 발생했습니다.';
+      // Create generic MediaProcessingFailure for unexpected errors
+      final failure = MediaProcessingFailure(
+        failedStep: MediaProcessingStep.moderationCheck,
+        affectedFiles: images.map((f) => f.path).toList(),
+        details: e.toString(),
+      );
+      _validationFailure = failure;
+      _validationMessage = failure.getUserMessage();
       return false;
     } finally {
       _isValidating = false;

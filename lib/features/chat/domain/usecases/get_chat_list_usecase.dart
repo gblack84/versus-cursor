@@ -1,5 +1,5 @@
 import '/core/types/result.dart';
-import '/core/errors/failures.dart';
+import '../failures/chat_failure.dart';
 import '../repositories/i_chat_repository.dart';
 import '../entities/chat.dart';
 
@@ -48,8 +48,8 @@ class GetChatListUseCase {
       // 입력 검증
       if (userId.isEmpty) {
         return Stream.value(
-          ResultFailure(
-            ValidationFailure(message: 'User ID는 비어있을 수 없습니다.'),
+          const ResultFailure(
+            ChatNotFound(),
           ),
         );
       }
@@ -66,8 +66,8 @@ class GetChatListUseCase {
       return chatsStream.map((chats) => Success(chats));
     } catch (e) {
       return Stream.value(
-        ResultFailure(
-          ServerFailure(message: '채팅 목록 로드 실패: ${e.toString()}'),
+        const ResultFailure(
+          ChatLoadFailed(),
         ),
       );
     }

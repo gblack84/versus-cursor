@@ -14,6 +14,7 @@ import '/features/creation/presentation/delegates/camera_floating_button_delegat
 import 'media_editor_widget.dart';
 import '/core/utils/navigation/no_animation_page_route.dart';
 import '/features/creation/presentation/providers/media/media_selection_provider.dart';
+import '/features/creation/domain/failures/creation_failures.dart';
 
 /// 미디어 선택부터 편집까지 하나의 플로우로 처리하는 위젯
 class MediaSelectionFlowWidget extends StatefulWidget {
@@ -161,25 +162,22 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
       print('[AssetPicker] Permission state: $permission');
 
       if (permission.isAuth != true) {
-        // 권한이 거부된 경우
-        if (permission == PermissionState.denied) {
-          _showToast('사진 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.', isError: true);
-        } else if (permission == PermissionState.limited) {
-          _showToast('제한된 사진 접근만 허용되었습니다.\n모든 사진에 접근하려면 설정을 변경해주세요.');
-        }
+        // Step 7: 권한이 거부된 경우 - PermissionFailure 사용
+        final failure = PermissionFailure(
+          message: permission == PermissionState.denied
+              ? '사진 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.'
+              : '제한된 사진 접근만 허용되었습니다.\n모든 사진에 접근하려면 설정을 변경해주세요.',
+        );
+        _showToast(failure.message, isError: true);
 
-        // 설정으로 이동하는 다이얼로그 표시
+        // Step 7: 설정으로 이동하는 다이얼로그 표시 (PermissionFailure 메시지 재사용)
         if (mounted) {
           final bool? openSettings = await showDialog<bool>(
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
                 title: const Text('사진 접근 권한'),
-                content: Text(
-                  permission == PermissionState.denied
-                      ? '사진을 선택하려면 갤러리 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.'
-                      : '선택한 사진만 접근 가능합니다.\n모든 사진에 접근하려면 설정을 변경해주세요.',
-                ),
+                content: Text(failure.message),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(false),
@@ -396,8 +394,13 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         }
       }
     } catch (e) {
+      // Step 7: 이미지 선택 중 오류 - ImageUploadFailure 사용
       if (mounted) {
-        _showToast('이미지 선택 중 오류가 발생했습니다: $e', isError: true);
+        final failure = ImageUploadFailure(
+          '이미지 선택 실패',
+          'IMAGE_SELECTION_ERROR',
+        );
+        _showToast('${failure.message}: $e', isError: true);
         if (Navigator.canPop(context)) {
           Navigator.pop(context);
         }
@@ -452,7 +455,9 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
           await PhotoManager.requestPermissionExtend();
 
       if (cameraPermission.isAuth != true) {
-        _showToast('카메라 권한이 필요합니다.', isError: true);
+        // Step 7: 카메라 권한 오류 - PermissionFailure 사용
+        final failure = PermissionFailure(message: '카메라 권한이 필요합니다.');
+        _showToast(failure.message, isError: true);
         return null;
       }
 
@@ -472,8 +477,10 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         return null;
       }
     } catch (e) {
+      // Step 7: 카메라 오류 - ImageUploadFailure 사용
       print('[AssetPicker] Camera error: $e');
-      _showToast('카메라 오류가 발생했습니다.', isError: true);
+      final failure = ImageUploadFailure('카메라 오류', 'CAMERA_ERROR');
+      _showToast(failure.message, isError: true);
       return null;
     }
   }
@@ -534,9 +541,10 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         _selectedFile = file;
       });
     } catch (e) {
-      // 에러 발생 시 모달 닫기
+      // Step 7: 이미지 로드 실패 - ImageUploadFailure 사용
       if (mounted) {
-        _showToast('이미지를 불러올 수 없습니다: $e', isError: true);
+        final failure = ImageUploadFailure('이미지 로드 실패', 'IMAGE_LOAD_ERROR');
+        _showToast('${failure.message}: $e', isError: true);
         Navigator.pop(context);
       }
     }

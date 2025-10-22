@@ -1,6 +1,5 @@
-import 'package:dartz/dartz.dart';
+import '/core/types/result.dart';
 import '../models/character.dart';
-import '../failures/profile_failures.dart';
 
 /// Characters Repository 인터페이스
 ///
@@ -12,5 +11,5 @@ import '../failures/profile_failures.dart';
 /// - 현재 시스템: photoUrl 직접 저장 (characterId 추적 안 함)
 abstract class ICharactersRepository {
   /// 이용 가능한 모든 캐릭터 조회
-  Future<Either<ProfileFailure, List<Character>>> getAvailableCharacters();
+  Future<Result<List<Character>>> getAvailableCharacters();
 }

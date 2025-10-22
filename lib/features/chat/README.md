@@ -63,9 +63,12 @@ lib/features/chat/
 │   └── exports/                    # Public API
 │       └── data_exports.dart                 # Data layer exports
 │
-├── domain/                         # 도메인 레이어 (17개 파일)
+├── domain/                         # 도메인 레이어 (20개 파일)
 │   ├── constants/                  # 도메인 상수
 │   │   └── chat_constants.dart               # 채팅 시스템 상수
+│   │
+│   ├── failures/                   # 타입 안전한 에러 처리
+│   │   └── chat_failure.dart                 # Sealed Class로 22개 실패 케이스 정의
 │   │
 │   ├── entities/                   # 순수 도메인 엔티티
 │   │   ├── chat.dart                         # Chat 엔티티 (11개 메서드)
@@ -114,14 +117,14 @@ lib/features/chat/
             ├── ai_chat_page_clean.dart
             └── ai_chat_controller.dart
 
-총 파일: 41개 (Data 11, Domain 17, Presentation 13)
+총 파일: 44개 (Data 11, Domain 20, Presentation 13)
 ```
 
 ### 📊 파일 통계
 
-- **총 파일**: 41개
+- **총 파일**: 44개
 - **Data Layer**: 11개 파일 (Adapters 5, DataSources 2, DTOs 2, Repositories 1, Exports 1)
-- **Domain Layer**: 17개 파일 (Entities 6, UseCases 6, Repositories 1, Ports 1, Constants 1, Enums 1, Docs 1)
+- **Domain Layer**: 20개 파일 (Entities 6, UseCases 6, Repositories 1, Ports 1, Constants 1, Enums 1, Failures 3, Docs 1)
 - **Presentation Layer**: 13개 파일 (Providers 3, Screens 3, Components 7)
 
 ## 🔄 데이터 플로우
@@ -571,14 +574,19 @@ class _AIChatPageCleanState extends State<AIChatPageClean> {
 - **Entities**: 순수 Dart 객체 + 비즈니스 메서드 (Rich Domain Model)
   - `Chat`: 11개 메서드 (hasParticipant, hasUnreadMessages, getOtherUserId 등)
   - `Message`: 40+ 메서드 (isVoteRequest, voteRemainingSeconds, hasUserVoted 등)
+- **Failures**: Sealed Class로 타입 안전한 에러 처리 (22개 실패 케이스)
+  - Pattern Matching으로 누락 케이스 컴파일 시 체크
+  - 중앙 집중식 에러 메시지 관리
 - **UseCases**: 단일 비즈니스 작업 캡슐화 (6개 Use Cases)
 - **Repositories**: 데이터 접근 인터페이스 (IChatRepository)
 - **Ports**: 외부 서비스 인터페이스 (IAIService)
 - **Constants**: 도메인 규칙 및 설정 (ChatConstants)
+- **Enums**: 타입 안전한 상태 값 (MessageDeliveryStatus)
 
 **핵심 파일**:
 - `chat.dart`: Chat 엔티티 (참여자 관리, 읽음 상태, 타입 헬퍼)
 - `message.dart`: Message 엔티티 (메시지 타입, 투표 로직, 미디어 헬퍼)
+- `chat_failure.dart`: Sealed Class 에러 타입 (22개 실패 케이스, Pattern Matching)
 - `i_chat_repository.dart`: 데이터 접근 추상화 (15개 메서드)
 - `i_ai_service.dart`: AI 서비스 추상화 (Port & Adapter 패턴)
 - `send_message_usecase.dart`: 메시지 전송 UseCase (미디어 업로드 통합)

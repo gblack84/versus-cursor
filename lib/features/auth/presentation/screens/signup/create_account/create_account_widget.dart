@@ -1,4 +1,6 @@
 import 'package:get_it/get_it.dart';
+import 'package:bot_toast/bot_toast.dart';
+import '/core/utils/error_handler.dart';
 import '/features/auth/presentation/providers/auth_provider.dart';
 import '/features/auth/presentation/screens/email_verification/popup_timer_email/popup_timer_email_widget.dart';
 import '/features/auth/presentation/screens/signup/components/header_section.dart';
@@ -67,11 +69,7 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
     }
     if (_model.passwordTextController.text !=
         _model.passwordConfirmTextController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('비밀번호가 일치하지 않습니다!'),
-        ),
-      );
+      BotToast.showText(text: '비밀번호가 일치하지 않습니다!');
       return;
     }
 
@@ -89,11 +87,10 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
     if (!success) {
       // UI 피드백: 회원가입 실패 메시지 표시
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_authProvider.errorMessage ?? '계정 생성에 실패했습니다. 다시 시도해주세요.'),
-            backgroundColor: Colors.red,
-          ),
+        ErrorHandler.handle(
+          _authProvider.errorMessage ?? '계정 생성에 실패했습니다. 다시 시도해주세요.',
+          customMessage: _authProvider.errorMessage ?? '계정 생성에 실패했습니다. 다시 시도해주세요.',
+          context: context,
         );
       }
       return;

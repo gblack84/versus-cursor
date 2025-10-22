@@ -1,5 +1,6 @@
 import 'package:provider/provider.dart';
 import 'package:get_it/get_it.dart';
+import 'package:bot_toast/bot_toast.dart';
 import '/features/auth/presentation/providers/auth_provider.dart';
 import '/features/auth/presentation/screens/login/components/email_login_form.dart';
 import '/features/auth/presentation/screens/login/components/test_account_buttons.dart';
@@ -9,6 +10,7 @@ import '/testpage_select/testpage_select_widget.dart';
 import '/features/auth/presentation/screens/phone_auth/phone_creat_account/phone_creat_account_widget.dart';
 import '/features/auth/presentation/screens/signup/create_account/create_account_widget.dart';
 import '/core_exports.dart';
+import '/core/utils/error_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -105,11 +107,10 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
     if (!success) {
       // UI 피드백: 로그인 실패 메시지 표시
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_authProvider.errorMessage ?? '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.'),
-            backgroundColor: Colors.red,
-          ),
+        ErrorHandler.handle(
+          _authProvider.errorMessage ?? '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.',
+          customMessage: _authProvider.errorMessage ?? '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.',
+          context: context,
         );
       }
       return;
@@ -162,11 +163,10 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
 
       if (!signUpSuccess) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(_authProvider.errorMessage ?? '테스트 계정 생성/로그인에 실패했습니다.'),
-              backgroundColor: Colors.red,
-            ),
+          ErrorHandler.handle(
+            _authProvider.errorMessage ?? '테스트 계정 생성/로그인에 실패했습니다.',
+            customMessage: _authProvider.errorMessage ?? '테스트 계정 생성/로그인에 실패했습니다.',
+            context: context,
           );
         }
         return;
@@ -175,12 +175,7 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
 
     // 성공 메시지 표시
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('테스트 계정으로 로그인되었습니다.'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      ErrorHandler.showSuccessToast('테스트 계정으로 로그인되었습니다.');
     }
 
     if (context.mounted) {

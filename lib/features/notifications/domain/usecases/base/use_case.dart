@@ -1,70 +1,17 @@
+import '/core/types/result.dart';
+
 /// Base UseCase abstraction for all use cases
 /// Clean Architecture - Domain UseCase Pattern
+///
+/// **Clean Architecture v4.0 - UseCase Pattern**:
+/// - Uses Core Result<T> type for type-safe error handling
+/// - Returns Result<Success<T>, ResultFailure<Failure>>
+/// - Compatible with Failure sealed classes
 abstract class UseCase<Input, Output> {
   /// Execute the use case with given input
+  ///
+  /// Returns [Result<Output>] which is either:
+  /// - Success<Output> - successful operation with data
+  /// - ResultFailure<Failure> - failed operation with typed Failure
   Future<Result<Output>> call(Input input);
-}
-
-/// Result wrapper for UseCase responses
-class Result<T> {
-  final T? data;
-  final String? error;
-  final bool isSuccess;
-
-  const Result.success(this.data)
-      : isSuccess = true,
-        error = null;
-
-  const Result.failure(this.error)
-      : isSuccess = false,
-        data = null;
-
-  /// Check if result is successful
-  bool get isFailure => !isSuccess;
-
-  /// Map result to another type
-  Result<R> map<R>(R Function(T data) mapper) {
-    if (isSuccess && data != null) {
-      return Result.success(mapper(data!));
-    }
-    return Result.failure(error);
-  }
-
-  /// Get data or throw exception
-  T getOrThrow() {
-    if (isSuccess && data != null) {
-      return data!;
-    }
-    throw Exception(error ?? 'Unknown error');
-  }
-
-  /// Get data or return default value
-  T getOrElse(T defaultValue) {
-    return data ?? defaultValue;
-  }
-
-  /// Execute function if success
-  void ifSuccess(void Function(T data) action) {
-    if (isSuccess && data != null) {
-      action(data!);
-    }
-  }
-
-  /// Execute function if failure
-  void ifFailure(void Function(String error) action) {
-    if (isFailure && error != null) {
-      action(error!);
-    }
-  }
-
-  /// Fold result into single value
-  R fold<R>({
-    required R Function(T data) onSuccess,
-    required R Function(String error) onFailure,
-  }) {
-    if (isSuccess && data != null) {
-      return onSuccess(data!);
-    }
-    return onFailure(error ?? 'Unknown error');
-  }
 }

@@ -4,8 +4,9 @@ import '../../domain/repositories/i_chat_repository.dart';
 import '../../domain/entities/chat.dart';
 import '../../domain/entities/message.dart';
 import '../datasources/i_chat_remote_datasource.dart';
-import '../dto/chat_dto.dart';
-import '../dto/message_dto.dart';
+import '../mappers/chat_mapper.dart';
+import '../mappers/message_mapper.dart';
+import '/app/contracts/chat_contract.dart';
 
 /// Implementation of chat repository with Clean Architecture v4.0
 ///
@@ -18,7 +19,12 @@ import '../dto/message_dto.dart';
 /// - Removed Singleton pattern → DI manages instance
 /// - Removed Firestore direct access → Datasource layer
 /// - Simplified to DTO ↔ Domain conversion only
-class ChatRepositoryImpl implements IChatRepository {
+///
+/// **Dual Interface Pattern**:
+/// - Implements both IChatRepository (Port) and ChatContract
+/// - Same instance serves internal and external interfaces
+/// - Registered in DI with both types
+class ChatRepositoryImpl implements IChatRepository, ChatContract {
   final IChatRemoteDatasource _remoteDatasource;
 
   ChatRepositoryImpl({
@@ -50,7 +56,7 @@ class ChatRepositoryImpl implements IChatRepository {
             orderBy: orderBy,
             descending: descending,
           )
-          .map((dtos) => dtos.map((dto) => dto.toDomain()).toList());
+          .map((dtos) => ChatMapper.toEntityList(dtos));
 
   // MIGRATED: Messages queries (Clean Architecture v4.0)
   @override
@@ -81,7 +87,7 @@ class ChatRepositoryImpl implements IChatRepository {
             orderBy: orderBy,
             descending: descending,
           )
-          .map((dtos) => dtos.map((dto) => dto.toDomain()).toList());
+          .map((dtos) => MessageMapper.toEntityList(dtos));
 
   /// Load more messages before a specific message (Clean Architecture v4.0)
   ///
@@ -99,25 +105,25 @@ class ChatRepositoryImpl implements IChatRepository {
       limit: limit,
     );
 
-    return messageDtos.map((dto) => dto.toDomain()).toList();
+    return MessageMapper.toEntityList(messageDtos);
   }
 
   // CRUD operations (Clean Architecture v4.0: DTO ↔ Domain conversion)
   @override
   Future<Chat?> getChat(String chatId) async {
     final chatDto = await _remoteDatasource.getChat(chatId);
-    return chatDto?.toDomain();
+    return chatDto != null ? ChatMapper.toEntity(chatDto) : null;
   }
 
   @override
   Future<void> createChat(Chat chat) async {
-    final chatDto = ChatDto.fromDomain(chat);
+    final chatDto = ChatMapper.toDto(chat);
     await _remoteDatasource.createChat(chatDto);
   }
 
   @override
   Future<void> updateChat(Chat chat) async {
-    final chatDto = ChatDto.fromDomain(chat);
+    final chatDto = ChatMapper.toDto(chat);
     await _remoteDatasource.updateChat(chatDto);
   }
 
@@ -129,7 +135,7 @@ class ChatRepositoryImpl implements IChatRepository {
   // Message operations (Clean Architecture v4.0: DTO ↔ Domain conversion)
   @override
   Future<void> sendMessage(String chatId, Message message) async {
-    final messageDto = MessageDto.fromDomain(message);
+    final messageDto = MessageMapper.toDto(message);
     await _remoteDatasource.sendMessage(chatId, messageDto);
   }
 

@@ -1,6 +1,4 @@
 import '../models/notification.dart';
-import '../models/system_notification.dart';
-import '../models/social_notification.dart';
 import '../value_objects/notification_filter.dart';
 
 /// Repository interface for Notification-related operations

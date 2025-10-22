@@ -125,7 +125,7 @@ lib/features/chat/
 
 #### Step 1.1: DTO 생성 (3-4시간)
 ```dart
-// 📁 lib/features/chat/data/dto/message_dto.dart
+// 📁 lib/features/chat/data/models/message_dto.dart
 class MessageDTO {
   // Core Message Fields (10개)
   final String? messageId;
@@ -1796,7 +1796,7 @@ Provider:
 
 ### 즉시 시작 가능:
 1. **Phase 1.1 시작**: MessageDTO 클래스 생성 (3-4시간)
-   - 파일 생성: `/lib/features/chat/data/dto/message_dto.dart`
+   - 파일 생성: `/lib/features/chat/data/models/message_dto.dart`
    - 60+ 필드 정의 및 Firestore 변환 메서드 구현
 
 2. **백업 파일 정리** (선택적, 5분):

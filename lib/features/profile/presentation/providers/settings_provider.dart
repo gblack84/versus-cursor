@@ -44,7 +44,7 @@ class SettingsProvider extends ChangeNotifier {
 
     result.fold(
       (failure) {
-        _errorMessage = failure.getUserMessage();
+        _errorMessage = failure.message;
         _settings = null;
       },
       (settings) {
@@ -70,7 +70,7 @@ class SettingsProvider extends ChangeNotifier {
 
     result.fold(
       (failure) {
-        _errorMessage = failure.getUserMessage();
+        _errorMessage = failure.message;
       },
       (_) {
         _settings = newSettings;
@@ -121,7 +121,7 @@ class SettingsProvider extends ChangeNotifier {
     bool success = false;
     result.fold(
       (failure) {
-        _errorMessage = failure.getUserMessage();
+        _errorMessage = failure.message;
         success = false;
       },
       (_) {

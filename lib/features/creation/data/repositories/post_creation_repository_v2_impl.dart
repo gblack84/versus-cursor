@@ -1,9 +1,7 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '/app/contracts/creation_contract.dart';
 import '../../domain/models/aggregates/post_creation.dart';
-import '../../domain/models/core/post_core.dart';
-import '../../domain/models/core/post_content.dart' hide ValidationResult; // Hide to avoid conflict
-import '../../domain/models/value_objects/media_content.dart';
 import '../../domain/models/value_objects/target_audience.dart';
 import '../../domain/services/i_target_audience_service.dart';
 import '../../domain/services/i_image_processing_service.dart';
@@ -11,31 +9,31 @@ import '../../domain/repositories/i_post_creation_repository_v2.dart';
 import '../datasources/interfaces/i_post_creation_datasource.dart';
 import '../mappers/creation_firestore_mapper.dart';
 
-// Use ValidationResult from ITargetAudienceService (not from PostContent)
+// Use ValidationResult from ITargetAudienceService
 export '../../domain/services/i_target_audience_service.dart' show ValidationResult;
 
 /// Implementation of IPostCreationRepositoryV2
 ///
+/// **Phase 2 Migration**: PostCore/PostContent 제거, PostCreation 직접 사용
 /// Uses DataSource to isolate Firebase dependencies and handles
-/// post creation with PostCore and PostContent only (Creation Feature responsibility).
+/// post creation with PostCreation aggregate (Creation Feature responsibility).
 ///
 /// ## Mapper Usage
-/// - **CreationFirestoreMapper**: Handles all Creation Feature data (PostCore, PostContent)
-///   - ✅ createPost() - Creation part only
-///   - ✅ updatePostCore() - Full mapper usage
-///   - ✅ updatePostContent() - Full mapper usage
-///   - ✅ _extractPostCore() - Full mapper usage
-///   - ✅ _extractPostContent() - Full mapper usage
+/// - **CreationFirestoreMapper**: Handles all Creation Feature data (PostCreation aggregate)
+///   - ✅ createPost() - PostCreation → Firestore document
+///   - ✅ updatePost() - PostCreation → Firestore update document
+///   - ✅ getPost() - Firestore document → PostCreation
+///   - ✅ watchPost() - Firestore stream → PostCreation stream
 ///
 /// ## Feature Boundaries
-/// - **Creation Feature**: PostCore, PostContent (Using CreationFirestoreMapper)
+/// - **Creation Feature**: PostCreation aggregate (Using CreationFirestoreMapper)
 /// - **Voting Feature**: Will add PostVoting fields via onCreate trigger
 /// - **Post Feature**: Will add PostMetrics fields after voting completion
 ///
-/// Phase 1.3: Services are now internal dependencies
-/// Phase 2: CreationFirestoreMapper fully integrated
-/// Phase 8: PostVoting/PostMetrics removed - Feature isolation complete
-class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
+/// Phase 1: MediaContent Freezed conversion complete
+/// Phase 2: PostCore/PostContent removed, PostCreation direct usage (447 lines removed)
+/// Phase 3: Dual Interface Pattern - implements both IPostCreationRepositoryV2 and CreationContract
+class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2, CreationContract {
   final IPostCreationDataSource _dataSource;
   final ITargetAudienceService? _targetAudienceService;
   final IImageProcessingService _imageProcessingService;
@@ -56,14 +54,13 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
 
   @override
   Future<String> createPost({
-    required PostCore core,
-    required PostContent content,
+    required PostCreation post,
   }) async {
-    // Use CreationFirestoreMapper for Creation Feature fields only
-    final data = _mapper.toCreateDocument(core, content);
+    // Use CreationFirestoreMapper to convert PostCreation to Firestore document
+    final data = _mapper.toCreateDocument(post);
 
     // Additional default fields for backward compatibility
-    data['postCreatedDate'] = core.createdAt;
+    data['postCreatedDate'] = post.createdAt;
 
     // Note: PostVoting and PostMetrics fields will be added by their respective features
     // through onCreate triggers or after post creation
@@ -82,27 +79,19 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   @override
   Future<void> updatePost({
     required String postId,
-    required Map<String, dynamic> data,
+    required PostCreation post,
   }) async {
+    // Use CreationFirestoreMapper to convert PostCreation to Firestore update document
+    final data = _mapper.toUpdateDocument(post);
     await _dataSource.updatePost(postId, data);
   }
 
   @override
-  Future<void> updatePostCore({
+  Future<void> updatePostPartial({
     required String postId,
-    required PostCore core,
+    required Map<String, dynamic> data,
   }) async {
-    final data = _mapper.toUpdateDocument(core: core);
-    await updatePost(postId: postId, data: data);
-  }
-
-  @override
-  Future<void> updatePostContent({
-    required String postId,
-    required PostContent content,
-  }) async {
-    final data = _mapper.toUpdateDocument(content: content);
-    await updatePost(postId: postId, data: data);
+    await _dataSource.updatePost(postId, data);
   }
 
   // Note: updatePostContentOld, updatePostVoting, updatePostMetrics removed
@@ -114,9 +103,9 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
 
   @override
   Future<void> deletePost(String postId) async {
-    // For now, we can delegate to updatePost to mark as deleted
+    // For now, we can delegate to updatePostPartial to mark as deleted
     // or create a deletePost method in DataSource
-    await updatePost(postId: postId, data: {'deleted': true, 'deletedAt': DateTime.now()});
+    await updatePostPartial(postId: postId, data: {'deleted': true, 'deletedAt': DateTime.now()});
     // TODO: Add deletePost to DataSource interface and implementation
   }
 
@@ -172,7 +161,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     required String postId,
     required String status,
   }) async {
-    await updatePost(postId: postId, data: {
+    await updatePostPartial(postId: postId, data: {
       'status': status,
       'updatedAt': DateTime.now(),
     });
@@ -183,7 +172,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     required String postId,
     DateTime? processedAt,
   }) async {
-    await updatePost(postId: postId, data: {
+    await updatePostPartial(postId: postId, data: {
       'processingStatus': 'completed',
       'processedAt': processedAt ?? DateTime.now(),
     });
@@ -193,21 +182,12 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // Note: getPostBundle removed - spans multiple features
 
   @override
-  Future<PostCore?> getPostCore(String postId) async {
+  Future<PostCreation?> getPost(String postId) async {
     final doc = await _postsCollection.doc(postId).get();
     if (!doc.exists) return null;
 
     final data = doc.data() as Map<String, dynamic>;
-    return _extractPostCore(data, postId);
-  }
-
-  @override
-  Future<PostContent?> getPostContent(String postId) async {
-    final doc = await _postsCollection.doc(postId).get();
-    if (!doc.exists) return null;
-
-    final data = doc.data() as Map<String, dynamic>;
-    return _extractPostContent(data, postId);
+    return _mapper.extractPostCreation(data, postId);
   }
 
   // Note: getPostVoting and getPostMetrics removed
@@ -217,20 +197,11 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // Note: watchPostBundle removed - spans multiple features
 
   @override
-  Stream<PostCore> watchPostCore(String postId) {
+  Stream<PostCreation> watchPost(String postId) {
     return _postsCollection.doc(postId).snapshots().map((doc) {
       if (!doc.exists) throw Exception('Post not found');
       final data = doc.data() as Map<String, dynamic>;
-      return _extractPostCore(data, postId)!;
-    });
-  }
-
-  @override
-  Stream<PostContent> watchPostContent(String postId) {
-    return _postsCollection.doc(postId).snapshots().map((doc) {
-      if (!doc.exists) throw Exception('Post not found');
-      final data = doc.data() as Map<String, dynamic>;
-      return _extractPostContent(data, postId)!;
+      return _mapper.extractPostCreation(data, postId);
     });
   }
 
@@ -240,7 +211,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // ====== User's Posts ======
 
   @override
-  Stream<List<PostCore>> getUserCreatedPosts({
+  Stream<List<PostCreation>> getUserCreatedPosts({
     required String userId,
     int limit = -1,
   }) {
@@ -257,7 +228,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
         final data = doc.data() as Map<String, dynamic>;
         final postId = doc.id;
 
-        return _extractPostCore(data, postId)!;
+        return _mapper.extractPostCreation(data, postId);
       }).toList();
     });
   }
@@ -275,15 +246,21 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
 
   @override
   Future<bool> validatePostData({
-    required PostCore core,
-    required PostContent content,
+    required PostCreation post,
   }) async {
     // Basic validation
-    if (core.questionTitle.isEmpty) return false;
-    if (core.userId.isEmpty) return false;
+    if (post.title.isEmpty) return false;
+    if (post.userId.isEmpty) return false;
 
-    // Check content
-    if (content.optionA.isEmpty && content.optionB.isEmpty) {
+    // Check content (at least one option must have content)
+    final hasOptionA = post.optionA.text?.isNotEmpty == true ||
+                       post.optionA.imageUrls.isNotEmpty ||
+                       (post.optionA.videoUrls?.isNotEmpty ?? false);
+    final hasOptionB = post.optionB.text?.isNotEmpty == true ||
+                       post.optionB.imageUrls.isNotEmpty ||
+                       (post.optionB.videoUrls?.isNotEmpty ?? false);
+
+    if (!hasOptionA && !hasOptionB) {
       return false;
     }
 
@@ -380,90 +357,25 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   }
 
   // ====== Helper Methods ======
-
-  // ====== Creation Feature Domain (Using CreationFirestoreMapper) ======
-
-  PostCore? _extractPostCore(Map<String, dynamic> data, String postId) {
-    // ✅ Creation Feature responsibility - Using CreationFirestoreMapper
-    return _mapper.extractPostCore(data, postId);
-  }
-
-  PostContent? _extractPostContent(Map<String, dynamic> data, String postId) {
-    // ✅ Creation Feature responsibility - Using CreationFirestoreMapper
-    return _mapper.extractPostContent(data, postId);
-  }
-
-  // ====== Other Features Domain ======
-  // Note: _extractPostVoting and _extractPostMetrics removed
-  // These are handled by Voting Feature and Post Feature respectively
-  // Each feature will implement their own mappers to extract their domain models from Firestore
-
-  // Note: _parseDateTime removed - no longer needed
-  // CreationFirestoreMapper handles all DateTime conversions for Creation Feature
-  // Other features will implement their own mappers with their own DateTime handling
+  // Note: All extraction helpers removed - CreationFirestoreMapper handles all conversions
+  // - _extractPostCore: Replaced by _mapper.extractPostCreation()
+  // - _extractPostContent: Replaced by _mapper.extractPostCreation()
+  // - _extractPostVoting: Handled by Voting Feature
+  // - _extractPostMetrics: Handled by Post Feature
+  // - _parseDateTime: Handled by CreationFirestoreMapper
 
   // ====== Additional Command Operations (from ICreationCommandRepository) ======
 
   @override
   Future<String> createContent(PostCreation post) async {
-    // Extract PostCore and PostContent from the aggregate
-    // Note: PostCreation aggregate will be enhanced to provide proper core/content separation
-    final core = PostCore(
-      id: post.id ?? '',
-      questionTitle: post.title,
-      description: post.description,
-      content: null,
-      userId: post.userId,
-      createdAt: post.createdAt,
-      updatedAt: post.updatedAt,
-      category: post.category,
-      tags: post.tags ?? [],
-      visibility: 'public', // Default visibility
-      isAnonymous: post.isAnonymous,
-      premiumRequired: false,
-      location: null,
-    );
-
-    final content = PostContent(
-      postId: post.id ?? '',
-      optionA: _postOptionToMediaContent(post.optionA),
-      optionB: _postOptionToMediaContent(post.optionB),
-      layoutType: 'vertical', // Default layout
-      processingStatus: 'pending',
-    );
-
-    return createPost(core: core, content: content);
+    // Direct delegation to createPost - no conversion needed
+    return createPost(post: post);
   }
 
   @override
   Future<void> updateContent(String contentId, PostCreation post) async {
-    // Extract and update both core and content
-    final core = PostCore(
-      id: contentId,
-      questionTitle: post.title,
-      description: post.description,
-      content: null,
-      userId: post.userId,
-      createdAt: post.createdAt,
-      updatedAt: DateTime.now(),
-      category: post.category,
-      tags: post.tags ?? [],
-      visibility: 'public',
-      isAnonymous: post.isAnonymous,
-      premiumRequired: false,
-      location: null,
-    );
-
-    final content = PostContent(
-      postId: contentId,
-      optionA: _postOptionToMediaContent(post.optionA),
-      optionB: _postOptionToMediaContent(post.optionB),
-      layoutType: 'vertical',
-      processingStatus: 'completed',
-    );
-
-    await updatePostCore(postId: contentId, core: core);
-    await updatePostContent(postId: contentId, content: content);
+    // Direct delegation to updatePost - no conversion needed
+    await updatePost(postId: contentId, post: post);
   }
 
   @override
@@ -477,20 +389,12 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   }
 
   @override
-  Future<void> saveDraft(String contentId, PostCore core, PostContent content) async {
-    await updatePostCore(postId: contentId, core: core);
-    await updatePostContent(postId: contentId, content: content);
+  Future<void> saveDraft(String contentId, PostCreation post) async {
+    // Update post and set status to draft
+    await updatePost(postId: contentId, post: post);
     await updatePostStatus(postId: contentId, status: 'draft');
   }
 
-  // Helper: Convert PostOption to MediaContent
-  MediaContent _postOptionToMediaContent(PostOption option) {
-    return MediaContent(
-      text: option.text ?? '',
-      imageUrls: option.imageUrls,
-      videoUrl: option.videoUrls?.isNotEmpty == true ? option.videoUrls!.first : '',
-      aspectRatio: option.aspectRatios.isNotEmpty ? option.aspectRatios.first : null,
-      aspectRatios: option.aspectRatios,
-    );
-  }
+  // Note: _postOptionToMediaContent helper removed
+  // CreationFirestoreMapper now handles PostOption ↔ MediaContent conversion
 }

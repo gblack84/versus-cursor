@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '/features/auth/data/adapters/auth_util.dart';
+import 'package:get_it/get_it.dart';
+import 'package:bot_toast/bot_toast.dart';
+import '/app/contracts/auth_contract.dart';
 import '/features/profile/domain/models/user_profile.dart';
 import '/core/design_system/design_system.dart';
+import '/core/utils/error_handler.dart';
 import '../../providers/friends_provider.dart';
 
 /// Friends Screen Widget (Clean Architecture v4.0)
@@ -29,6 +32,9 @@ class FriendsWidget extends StatefulWidget {
 class _FriendsWidgetState extends State<FriendsWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
+
+  // AuthContract helper
+  String get currentUserUid => GetIt.instance<AuthContract>().getCurrentUserId() ?? '';
 
   @override
   void initState() {
@@ -239,9 +245,7 @@ class _FriendsWidgetState extends State<FriendsWidget> {
     return InkWell(
       onTap: () {
         // TODO: Phase 3에서 프로필 페이지 이동 구현 예정
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('프로필 페이지는 준비 중입니다.')),
-        );
+        BotToast.showText(text: '프로필 페이지는 준비 중입니다.');
       },
       child: Container(
         decoration: BoxDecoration(
@@ -328,9 +332,7 @@ class _FriendsWidgetState extends State<FriendsWidget> {
           size: VersusButtonSize.small,
           onPressed: () async {
             if (currentUserUid.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('로그인이 필요합니다.')),
-              );
+              BotToast.showText(text: '로그인이 필요합니다.');
               return;
             }
 
@@ -338,23 +340,18 @@ class _FriendsWidgetState extends State<FriendsWidget> {
               final newState = await provider.toggleFollow(user.uid);
 
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      newState
-                          ? '${user.displayName ?? "사용자"}님을 팔로우했습니다'
-                          : '언팔로우했습니다',
-                    ),
-                  ),
+                BotToast.showText(
+                  text: newState
+                      ? '${user.displayName ?? "사용자"}님을 팔로우했습니다'
+                      : '언팔로우했습니다',
                 );
               }
             } catch (e) {
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('오류가 발생했습니다: ${e.toString()}'),
-                    backgroundColor: VersusColors.error,
-                  ),
+                ErrorHandler.handle(
+                  e,
+                  customMessage: '오류가 발생했습니다: ${e.toString()}',
+                  context: context,
                 );
               }
             }

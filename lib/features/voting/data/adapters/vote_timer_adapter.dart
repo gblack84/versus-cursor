@@ -1,13 +1,13 @@
 import 'dart:async';
-import '/features/voting/domain/ports/i_vote_timer_port.dart';
+import '/features/voting/domain/services/i_vote_timer_service.dart';
 
 /// Adapter implementation for vote timer functionality
-/// 
+///
 /// This adapter wraps the VoteTimerService from posts feature
-/// to provide a clean abstraction through the port interface.
+/// to provide a clean abstraction through the service interface.
 /// The actual service is injected via dependency injection to avoid
 /// direct cross-feature dependencies.
-class VoteTimerAdapter implements IVoteTimerPort {
+class VoteTimerAdapter implements IVoteTimerService {
   final dynamic _voteTimerService; // Injected from DI container
 
   VoteTimerAdapter(this._voteTimerService);

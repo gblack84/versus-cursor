@@ -1,104 +1,48 @@
-import 'package:equatable/equatable.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'media_content.freezed.dart';
+part 'media_content.g.dart';
 
 /// Domain entity representing media content for post options A or B
-class MediaContent extends Equatable {
-  const MediaContent({
-    this.text = '',
-    this.imageUrls = const [],
-    this.videoUrl = '',
-    this.youtubeUrl = '',
-    this.aspectRatio,
-    this.aspectRatios = const [],
-    this.layoutType = '',
-    this.thumbnailUrl = '',
-    this.mediaType = 'text',
-    this.duration,
-    this.fileSize,
-    this.dimensions = const {},
-  });
+///
+/// **Freezed Migration**: Equatable에서 Freezed로 마이그레이션
+/// - 불변성 자동 보장
+/// - copyWith 자동 생성
+/// - 6개 비즈니스 로직 getter 보존
+@freezed
+sealed class MediaContent with _$MediaContent {
+  const MediaContent._();
 
-  final String text;
-  final List<String> imageUrls;
-  final String videoUrl;
-  final String youtubeUrl;
-  final double? aspectRatio; // Single aspect ratio (backward compatibility)
-  final List<double> aspectRatios; // Multiple aspect ratios for multi-image support
-  final String layoutType;
-  final String thumbnailUrl;
-  final String mediaType;
-  final int? duration;
-  final int? fileSize;
-  final Map<String, dynamic> dimensions;
-
-  /// Creates a copy of this media content with the given fields replaced with new values
-  MediaContent copyWith({
-    String? text,
-    List<String>? imageUrls,
-    String? videoUrl,
-    String? youtubeUrl,
-    double? aspectRatio,
-    List<double>? aspectRatios,
-    String? layoutType,
-    String? thumbnailUrl,
-    String? mediaType,
+  const factory MediaContent({
+    @Default('') String text,
+    @Default([]) List<String> imageUrls,
+    @Default('') String videoUrl,
+    @Default('') String youtubeUrl,
+    double? aspectRatio, // Single aspect ratio (backward compatibility)
+    @Default([]) List<double> aspectRatios, // Multiple aspect ratios for multi-image support
+    @Default('') String layoutType,
+    @Default('') String thumbnailUrl,
+    @Default('text') String mediaType,
     int? duration,
     int? fileSize,
-    Map<String, dynamic>? dimensions,
-  }) {
-    return MediaContent(
-      text: text ?? this.text,
-      imageUrls: imageUrls ?? this.imageUrls,
-      videoUrl: videoUrl ?? this.videoUrl,
-      youtubeUrl: youtubeUrl ?? this.youtubeUrl,
-      aspectRatio: aspectRatio ?? this.aspectRatio,
-      aspectRatios: aspectRatios ?? this.aspectRatios,
-      layoutType: layoutType ?? this.layoutType,
-      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
-      mediaType: mediaType ?? this.mediaType,
-      duration: duration ?? this.duration,
-      fileSize: fileSize ?? this.fileSize,
-      dimensions: dimensions ?? this.dimensions,
-    );
+    @Default({}) Map<String, dynamic> dimensions,
+  }) = _MediaContent;
+
+  /// Freezed's fromJson for JSON deserialization
+  factory MediaContent.fromJson(Map<String, dynamic> json) =>
+      _$MediaContentFromJson(json);
+
+  /// Create from Map (alias for fromJson for compatibility)
+  factory MediaContent.fromMap(Map<String, dynamic> map) {
+    return MediaContent.fromJson(map);
   }
 
-  /// Converts this media content to a map for Firestore storage
-  Map<String, dynamic> toJson() {
-    return {
-      'text': text,
-      'imageUrls': imageUrls,
-      'videoUrl': videoUrl,
-      'youtubeUrl': youtubeUrl,
-      'aspectRatio': aspectRatio,
-      'aspectRatios': aspectRatios,
-      'layoutType': layoutType,
-      'thumbnailUrl': thumbnailUrl,
-      'mediaType': mediaType,
-      'duration': duration,
-      'fileSize': fileSize,
-      'dimensions': dimensions,
-    };
-  }
+  /// Convert to Map (alias for toJson for compatibility)
+  Map<String, dynamic> toMap() => toJson();
 
-  /// Creates media content from a Firestore document
-  factory MediaContent.fromJson(Map<String, dynamic> json) {
-    return MediaContent(
-      text: json['text'] ?? '',
-      imageUrls: List<String>.from(json['imageUrls'] ?? []),
-      videoUrl: json['videoUrl'] ?? '',
-      youtubeUrl: json['youtubeUrl'] ?? '',
-      aspectRatio: json['aspectRatio']?.toDouble(),
-      aspectRatios: json['aspectRatios'] != null
-          ? List<double>.from(
-              (json['aspectRatios'] as List).map((e) => (e as num).toDouble()))
-          : [],
-      layoutType: json['layoutType'] ?? '',
-      thumbnailUrl: json['thumbnailUrl'] ?? '',
-      mediaType: json['mediaType'] ?? 'text',
-      duration: json['duration'],
-      fileSize: json['fileSize'],
-      dimensions: Map<String, dynamic>.from(json['dimensions'] ?? {}),
-    );
-  }
+  // ============================================
+  // Business Logic (비즈니스 로직)
+  // ============================================
 
   /// Checks if this media content has any media (images or videos)
   bool get hasMedia =>
@@ -118,32 +62,4 @@ class MediaContent extends Equatable {
 
   /// Check if has any content (text or media)
   bool get hasContent => text.isNotEmpty || hasMedia;
-
-  /// Create from Map (alias for fromJson for compatibility)
-  factory MediaContent.fromMap(Map<String, dynamic> map) {
-    return MediaContent.fromJson(map);
-  }
-
-  /// Convert to Map (alias for toJson for compatibility)
-  Map<String, dynamic> toMap() => toJson();
-
-  @override
-  List<Object?> get props => [
-        text,
-        imageUrls,
-        videoUrl,
-        youtubeUrl,
-        aspectRatio,
-        aspectRatios,
-        layoutType,
-        thumbnailUrl,
-        mediaType,
-        duration,
-        fileSize,
-        dimensions,
-      ];
-
-  @override
-  String toString() =>
-      'MediaContent(text: $text, hasImages: $hasImages, hasVideo: $hasVideo)';
 }

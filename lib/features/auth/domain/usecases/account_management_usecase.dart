@@ -2,7 +2,8 @@
 // Clean Architecture - Domain Layer
 
 import 'package:flutter/foundation.dart';
-import '../models/auth_user.dart';
+import '/core/types/result.dart';
+import '../entities/auth_user.dart';
 import '../repositories/i_auth_repository.dart';
 import '../failures/auth_failure.dart';
 
@@ -12,6 +13,9 @@ import '../failures/auth_failure.dart';
 /// - Account deletion
 /// - Profile updates
 /// - User information retrieval
+///
+/// **Clean Architecture v4.0 - Result Pattern**:
+/// - Returns Result<T> for type-safe error handling
 class AccountManagementUseCase {
   final IAuthRepository _repository;
 
@@ -27,7 +31,9 @@ class AccountManagementUseCase {
   /// Parameters:
   /// - [confirmationText]: Optional safety check - must match 'DELETE' if provided
   /// - [checkReAuth]: If true, checks if user needs re-authentication
-  Future<bool> deleteAccount({
+  ///
+  /// Returns Result<void> with automatic Korean error messages
+  Future<Result<void>> deleteAccount({
     String? confirmationText,
     bool checkReAuth = false,
   }) async {
@@ -37,26 +43,26 @@ class AccountManagementUseCase {
       // Safety check: Require confirmation text if provided
       if (confirmationText != null && confirmationText != 'DELETE') {
         debugPrint('Confirmation text does not match. Expected: DELETE, Got: $confirmationText');
-        return false;
+        return ResultFailure(Unexpected('확인 텍스트가 일치하지 않습니다'));
       }
 
       // Check if user is signed in
       if (!_repository.isSignedIn) {
         debugPrint('No user signed in to delete');
-        return false;
+        return const ResultFailure(UserNotFound());
       }
 
       // Get current user info for logging
       final currentUser = await _repository.getCurrentUser();
       if (currentUser == null) {
         debugPrint('Could not retrieve user information');
-        return false;
+        return const ResultFailure(UserNotFound());
       }
 
       // Check if re-authentication is needed
       if (checkReAuth && await needsReAuthentication()) {
         debugPrint('User needs to re-authenticate before deletion');
-        throw RequiresRecentLogin();
+        return const ResultFailure(RequiresRecentLogin());
       }
 
       debugPrint('Deleting account for user: ${currentUser.uid}');
@@ -66,23 +72,18 @@ class AccountManagementUseCase {
 
       if (success) {
         debugPrint('Account deleted successfully');
+        return const Success(null);
       } else {
         debugPrint('Account deletion failed');
+        return const ResultFailure(ServerError());
       }
-
-      return success;
 
     } on AuthFailure catch (e) {
       debugPrint('Account deletion failed with AuthFailure: ${e.message}');
-
-      // Re-throw RequiresRecentLogin so caller can handle it
-      if (e is RequiresRecentLogin) {
-        rethrow;
-      }
-      return false;
+      return ResultFailure(e);
     } catch (e) {
       debugPrint('Account deletion failed with unexpected error: $e');
-      return false;
+      return ResultFailure(Unexpected(e.toString()));
     }
   }
 
@@ -118,7 +119,9 @@ class AccountManagementUseCase {
   /// Update User Profile
   ///
   /// Updates user profile information such as display name and photo URL.
-  Future<bool> updateProfile({
+  ///
+  /// Returns Result<void> with automatic Korean error messages
+  Future<Result<void>> updateProfile({
     String? displayName,
     String? photoURL,
   }) async {
@@ -128,13 +131,13 @@ class AccountManagementUseCase {
       // Check if user is signed in
       if (!_repository.isSignedIn) {
         debugPrint('No user signed in');
-        return false;
+        return const ResultFailure(UserNotFound());
       }
 
       // Validate at least one field is being updated
       if (displayName == null && photoURL == null) {
         debugPrint('No profile information provided to update');
-        return false;
+        return const ResultFailure(ProfileIncomplete());
       }
 
       // Update profile
@@ -144,21 +147,23 @@ class AccountManagementUseCase {
       );
 
       debugPrint('Profile updated successfully');
-      return true;
+      return const Success(null);
 
     } on AuthFailure catch (e) {
       debugPrint('Profile update failed with AuthFailure: ${e.message}');
-      return false;
+      return ResultFailure(e);
     } catch (e) {
       debugPrint('Profile update failed with unexpected error: $e');
-      return false;
+      return ResultFailure(Unexpected(e.toString()));
     }
   }
 
   /// Get Current User
   ///
   /// Retrieves the currently authenticated user's information.
-  Future<AuthUser?> getCurrentUser() async {
+  ///
+  /// Returns Result<AuthUser> with automatic Korean error messages
+  Future<Result<AuthUser>> getCurrentUser() async {
     try {
       debugPrint('Retrieving current user...');
 
@@ -166,18 +171,18 @@ class AccountManagementUseCase {
 
       if (user != null) {
         debugPrint('Current user retrieved: ${user.uid}');
+        return Success(user);
       } else {
         debugPrint('No user currently signed in');
+        return const ResultFailure(UserNotFound());
       }
-
-      return user;
 
     } on AuthFailure catch (e) {
       debugPrint('Get user failed with AuthFailure: ${e.message}');
-      return null;
+      return ResultFailure(e);
     } catch (e) {
       debugPrint('Get user failed with unexpected error: $e');
-      return null;
+      return ResultFailure(Unexpected(e.toString()));
     }
   }
 
@@ -199,71 +204,91 @@ class AccountManagementUseCase {
   ///
   /// Quick method to get just the UID without full user data.
   Future<String?> getCurrentUserUid() async {
-    final user = await getCurrentUser();
-    return user?.uid;
+    final result = await getCurrentUser();
+    return result.fold(
+      (_) => null,
+      (user) => user.uid,
+    );
   }
 
   /// Get Current User Email
   ///
   /// Quick method to get just the email without full user data.
   Future<String?> getCurrentUserEmail() async {
-    final user = await getCurrentUser();
-    return user?.email;
+    final result = await getCurrentUser();
+    return result.fold(
+      (_) => null,
+      (user) => user.email,
+    );
   }
 
   /// Check if User is Anonymous
   ///
   /// Checks if the current user is signed in anonymously.
   Future<bool> isAnonymous() async {
-    final user = await getCurrentUser();
-    return user?.isAnonymous ?? false;
+    final result = await getCurrentUser();
+    return result.fold(
+      (_) => false,
+      (user) => user.isAnonymous,
+    );
   }
 
   /// Check if User is Premium
   ///
   /// Checks if the current user has premium status.
   Future<bool> isPremiumUser() async {
-    final user = await getCurrentUser();
-    return user?.isPremium ?? false;
+    final result = await getCurrentUser();
+    return result.fold(
+      (_) => false,
+      (user) => user.isPremium,
+    );
   }
 
   /// Check if User is Admin
   ///
   /// Checks if the current user has admin privileges.
   Future<bool> isAdmin() async {
-    final user = await getCurrentUser();
-    return user?.isAdmin ?? false;
+    final result = await getCurrentUser();
+    return result.fold(
+      (_) => false,
+      (user) => user.isAdmin,
+    );
   }
 
   /// Check if User is Tester
   ///
   /// Checks if the current user has tester privileges.
   Future<bool> isTester() async {
-    final user = await getCurrentUser();
-    return user?.isTester ?? false;
+    final result = await getCurrentUser();
+    return result.fold(
+      (_) => false,
+      (user) => user.isTester,
+    );
   }
 
   /// Check if Profile is Complete
   ///
   /// Checks if the user has completed their profile setup.
   Future<bool> isProfileComplete() async {
-    final user = await getCurrentUser();
-    return user?.isProfileComplete ?? false;
+    final result = await getCurrentUser();
+    return result.fold(
+      (_) => false,
+      (user) => user.isProfileComplete,
+    );
   }
 
   /// Get User Points
   ///
   /// Returns the user's points (answers, questions, total).
   Future<Map<String, int>> getUserPoints() async {
-    final user = await getCurrentUser();
-    if (user == null) {
-      return {'pointsA': 0, 'pointsQ': 0, 'total': 0};
-    }
-
-    return {
-      'pointsA': user.pointsA,
-      'pointsQ': user.pointsQ,
-      'total': user.totalPoints,
-    };
+    final result = await getCurrentUser();
+    return result.fold(
+      (_) => {'pointsA': 0, 'pointsQ': 0, 'total': 0},
+      (user) => {
+        'pointsA': user.pointsA,
+        'pointsQ': user.pointsQ,
+        'total': user.totalPoints,
+      },
+    );
   }
 }

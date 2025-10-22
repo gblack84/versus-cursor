@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/models/user_profile.dart';
 import '../../domain/models/user_settings.dart';
-import '../dto/user_profile_dto.dart';
-import '../dto/user_settings_dto.dart';
+import '../models/user_profile_dto.dart';
+import '../models/user_settings_dto.dart';
 import 'user_profile_mapper.dart';
 import 'user_settings_mapper.dart';
 

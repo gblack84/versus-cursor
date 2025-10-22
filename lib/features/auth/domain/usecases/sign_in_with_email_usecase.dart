@@ -2,7 +2,8 @@
 // Clean Architecture - Domain Layer
 
 import 'package:flutter/foundation.dart';
-import '../models/auth_user.dart';
+import '/core/types/result.dart';
+import '../entities/auth_user.dart';
 import '../repositories/i_auth_repository.dart';
 import '../failures/auth_failure.dart';
 
@@ -10,6 +11,11 @@ import '../failures/auth_failure.dart';
 ///
 /// Business logic for email and password authentication.
 /// Handles validation, authentication, and user session management.
+///
+/// **Clean Architecture v4.0 - Result Pattern**:
+/// - Returns Result<AuthUser> instead of AuthUser?
+/// - Type-safe error handling with AuthFailure sealed class
+/// - Automatic Korean error messages via AuthFailure.message
 class SignInWithEmailUseCase {
   final IAuthRepository _repository;
 
@@ -20,7 +26,7 @@ class SignInWithEmailUseCase {
   /// Execute Email Sign In
   ///
   /// Signs in a user with email and password credentials
-  Future<AuthUser?> execute({
+  Future<Result<AuthUser>> execute({
     required String email,
     required String password,
   }) async {
@@ -30,13 +36,13 @@ class SignInWithEmailUseCase {
       // Validate email format
       if (!_isValidEmail(email)) {
         debugPrint('Invalid email format: $email');
-        return null;
+        return const ResultFailure(InvalidEmail());
       }
 
       // Validate password is not empty
       if (password.isEmpty) {
         debugPrint('Password cannot be empty');
-        return null;
+        return const ResultFailure(WeakPassword());
       }
 
       // Attempt sign in through repository
@@ -47,7 +53,7 @@ class SignInWithEmailUseCase {
 
       if (user == null) {
         debugPrint('Sign in failed: Invalid credentials or user not found');
-        return null;
+        return const ResultFailure(InvalidCredentials());
       }
 
       // Check if email is verified (optional based on business requirements)
@@ -59,32 +65,15 @@ class SignInWithEmailUseCase {
 
       debugPrint('Sign in successful for user: ${user.uid}');
 
-      // Note: lastActive update should be handled by the repository/data layer
-      // or through a separate use case if needed
-
-      return user;
+      return Success(user);
 
     } on AuthFailure catch (e) {
       // Handle specific auth failures
-      if (e is InvalidEmail) {
-        debugPrint('Sign in failed: Invalid email format');
-      } else if (e is InvalidCredentials) {
-        debugPrint('Sign in failed: Invalid email or password');
-      } else if (e is UserNotFound) {
-        debugPrint('Sign in failed: User not found');
-      } else if (e is UserDisabled) {
-        debugPrint('Sign in failed: User account is disabled');
-      } else if (e is EmailNotVerified) {
-        debugPrint('Sign in failed: Email not verified');
-      } else if (e is RequiresRecentLogin) {
-        debugPrint('Sign in failed: Requires recent login');
-      } else {
-        debugPrint('Sign in failed with AuthFailure: ${e.message}');
-      }
-      return null;
+      debugPrint('Sign in failed with AuthFailure: ${e.message}');
+      return ResultFailure(e);
     } catch (e) {
       debugPrint('Sign in failed with unexpected error: $e');
-      return null;
+      return ResultFailure(Unexpected(e.toString()));
     }
   }
 

@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/ports/i_vote_status_service.dart';
+import '../../domain/services/i_vote_status_service.dart';
 import '../../domain/repositories/i_voting_repository.dart';
 import '../../domain/constants/voting_constants.dart';
 

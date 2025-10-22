@@ -1,7 +1,9 @@
 import 'package:get_it/get_it.dart';
+import 'package:bot_toast/bot_toast.dart';
 import '/features/auth/presentation/providers/auth_provider.dart';
 import '/features/auth/presentation/screens/login/login_page/login_page_widget.dart';
 import '/core_exports.dart';
+import '/core/utils/error_handler.dart';
 import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -306,13 +308,7 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget> {
                   child: AppButtonWidget(
                     onPressed: () async {
                       if (_model.emailAddressTextController.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              '이메일을 입력해주세요!',
-                            ),
-                          ),
-                        );
+                        BotToast.showText(text: '이메일을 입력해주세요!');
                         return;
                       }
 
@@ -328,26 +324,16 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget> {
 
                       if (success) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '비밀번호 재설정 이메일을 발송했습니다. 이메일을 확인해주세요.',
-                              ),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
+                          ErrorHandler.showSuccessToast('비밀번호 재설정 이메일을 발송했습니다. 이메일을 확인해주세요.');
                           // Navigate back or to login page
                           context.pop();
                         }
                       } else {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                _authProvider.errorMessage ?? '비밀번호 재설정 이메일 발송에 실패했습니다. 다시 시도해주세요.',
-                              ),
-                              backgroundColor: Colors.red,
-                            ),
+                          ErrorHandler.handle(
+                            _authProvider.errorMessage ?? '비밀번호 재설정 이메일 발송에 실패했습니다. 다시 시도해주세요.',
+                            customMessage: _authProvider.errorMessage ?? '비밀번호 재설정 이메일 발송에 실패했습니다. 다시 시도해주세요.',
+                            context: context,
                           );
                         }
                       }

@@ -1,6 +1,5 @@
 import 'dart:async';
 import '/features/notifications/domain/models/notification.dart';
-import '/features/notifications/domain/value_objects/notification_filter.dart';
 import '/features/notifications/domain/services/i_notification_service.dart';
 import '../datasources/i_remote_notification_datasource.dart';
 import '../mappers/notification_mapper.dart';
@@ -8,7 +7,6 @@ import '../models/notification_dto.dart';
 import '../models/system_notification_dto.dart';
 import '../models/social_notification_dto.dart';
 import '/core/utils/logger.dart';
-import '/app/contracts/notification_types.dart';
 
 /// 실시간 알림을 관리하는 범용 서비스
 ///

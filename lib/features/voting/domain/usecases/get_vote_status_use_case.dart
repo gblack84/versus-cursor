@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '/core/errors/failures.dart';
-import '../ports/i_vote_status_service.dart';
+import '../services/i_vote_status_service.dart';
 import 'base/use_case.dart';
 
 /// Parameters for getting vote status

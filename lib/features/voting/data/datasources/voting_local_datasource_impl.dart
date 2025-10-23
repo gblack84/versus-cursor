@@ -1,12 +1,10 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/models/vote_counts_model.dart';
-import '../../domain/models/rankings_model.dart';
 import '../../domain/models/vote_cache_state.dart';
 import 'i_voting_local_datasource.dart';
 import 'local/services/cache_management_service.dart';
 import 'local/services/vote_state_cache_service.dart';
 import 'local/services/vote_counts_cache_service.dart';
-import 'local/services/rankings_cache_service.dart';
 import 'local/services/vote_history_cache_service.dart';
 import 'local/services/pending_operations_service.dart';
 
@@ -20,17 +18,15 @@ class VotingLocalDataSourceImpl implements IVotingLocalDataSource {
   late final CacheManagementService _cacheManagement;
   late final VoteStateCacheService _voteStateCache;
   late final VoteCountsCacheService _voteCountsCache;
-  late final RankingsCacheService _rankingsCache;
   late final VoteHistoryCacheService _voteHistoryCache;
   late final PendingOperationsService _pendingOperations;
-  
-  VotingLocalDataSourceImpl({required SharedPreferences prefs}) 
+
+  VotingLocalDataSourceImpl({required SharedPreferences prefs})
       : _prefs = prefs {
     // Initialize services with dependency injection
     _cacheManagement = CacheManagementService(prefs: _prefs);
     _voteStateCache = VoteStateCacheService(prefs: _prefs);
     _voteCountsCache = VoteCountsCacheService(prefs: _prefs);
-    _rankingsCache = RankingsCacheService(prefs: _prefs);
     _voteHistoryCache = VoteHistoryCacheService(prefs: _prefs);
     _pendingOperations = PendingOperationsService(prefs: _prefs);
   }
@@ -56,7 +52,7 @@ class VotingLocalDataSourceImpl implements IVotingLocalDataSource {
   Future<void> cacheVoteState({
     required String postId,
     required String userId,
-    required VoteState voteState,
+    required VoteCacheState voteState,
   }) => _voteStateCache.cacheVoteState(
     postId: postId,
     userId: userId,
@@ -64,7 +60,7 @@ class VotingLocalDataSourceImpl implements IVotingLocalDataSource {
   );
   
   @override
-  Future<VoteState?> getCachedVoteState({
+  Future<VoteCacheState?> getCachedVoteState({
     required String postId,
     required String userId,
   }) => _voteStateCache.getCachedVoteState(
@@ -82,7 +78,7 @@ class VotingLocalDataSourceImpl implements IVotingLocalDataSource {
   );
   
   @override
-  Future<Map<String, VoteState>> getAllUserVoteStates(String userId) =>
+  Future<Map<String, VoteCacheState>> getAllUserVoteStates(String userId) =>
       _voteStateCache.getAllUserVoteStates(userId);
   
   // ============================================================================
@@ -120,32 +116,7 @@ class VotingLocalDataSourceImpl implements IVotingLocalDataSource {
   @override
   Future<DateTime?> getVoteCountsCacheTime(String postId) =>
       _voteCountsCache.getVoteCountsCacheTime(postId);
-  
-  // ============================================================================
-  // Rankings Cache - Delegated to RankingsCacheService
-  // ============================================================================
-  
-  @override
-  Future<void> cacheRankings({
-    required List<RankingsModel> rankings,
-    required String cacheKey,
-  }) => _rankingsCache.cacheRankings(
-    rankings: rankings,
-    cacheKey: cacheKey,
-  );
-  
-  @override
-  Future<List<RankingsModel>?> getCachedRankings(String cacheKey) =>
-      _rankingsCache.getCachedRankings(cacheKey);
-  
-  @override
-  Future<void> removeCachedRankings(String cacheKey) =>
-      _rankingsCache.removeCachedRankings(cacheKey);
-  
-  @override
-  Future<DateTime?> getRankingsCacheTime(String cacheKey) =>
-      _rankingsCache.getRankingsCacheTime(cacheKey);
-  
+
   // ============================================================================
   // Vote History Cache - Delegated to VoteHistoryCacheService
   // ============================================================================

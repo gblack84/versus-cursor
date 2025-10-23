@@ -1,51 +1,85 @@
 import 'package:flutter/material.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import '/core/types/layout_type.dart';
 import '/core/utils/media/aspect_ratio_analyzer.dart';
+
+part 'versus_box_size_data.freezed.dart';
+part 'versus_box_size_data.g.dart';
+
+// ============================================================================
+// Custom JSON Converters
+// ============================================================================
+
+/// Flutter Size 타입을 JSON으로 직렬화/역직렬화하는 컨버터
+class SizeConverter implements JsonConverter<Size, Map<String, dynamic>> {
+  const SizeConverter();
+
+  @override
+  Size fromJson(Map<String, dynamic> json) {
+    return Size(
+      (json['width'] as num).toDouble(),
+      (json['height'] as num).toDouble(),
+    );
+  }
+
+  @override
+  Map<String, dynamic> toJson(Size size) {
+    return {
+      'width': size.width,
+      'height': size.height,
+    };
+  }
+}
+
+// ============================================================================
+// Domain Entity
+// ============================================================================
 
 /// 질문 작성 페이지에서 생성된 A/B 박스 사이즈 데이터
 ///
 /// 투표 알림 UI에서 동일한 비율과 레이아웃을 재현하기 위해
 /// 원본 크기 정보를 저장합니다.
-class VersusBoxSizeData {
-  /// 레이아웃 타입 (가로/세로/단일 배치)
-  final LayoutType layoutType;
+///
+/// **Clean Architecture v4.0 - Freezed Domain Entity**:
+/// - Immutable value object with auto-generated copyWith
+/// - Custom SizeConverter for Flutter Size type
+/// - JSON serialization support for caching/persistence
+/// - 8 business logic getters (isValid, isAOnly, etc.)
+@freezed
+sealed class VersusBoxSizeData with _$VersusBoxSizeData {
+  const VersusBoxSizeData._();
 
-  /// A 이미지 비율 (width/height)
-  final double? aspectRatioA;
+  const factory VersusBoxSizeData({
+    /// 레이아웃 타입 (가로/세로/단일 배치)
+    required LayoutType layoutType,
 
-  /// B 이미지 비율 (width/height)
-  final double? aspectRatioB;
+    /// A 이미지 비율 (width/height)
+    double? aspectRatioA,
 
-  /// 질문 작성 시 A 박스 크기
-  final Size originalSizeA;
+    /// B 이미지 비율 (width/height)
+    double? aspectRatioB,
 
-  /// 질문 작성 시 B 박스 크기 (B박스가 없으면 Size.zero)
-  final Size originalSizeB;
+    /// 질문 작성 시 A 박스 크기
+    @SizeConverter() required Size originalSizeA,
 
-  /// 질문 작성 시 화면 너비
-  final double screenWidth;
+    /// 질문 작성 시 B 박스 크기 (B박스가 없으면 Size.zero)
+    @SizeConverter() required Size originalSizeB,
 
-  /// 데이터 생성 시간
-  final DateTime createdAt;
+    /// 질문 작성 시 화면 너비
+    required double screenWidth,
 
-  /// A박스에 이미지가 있는지 여부
-  final bool hasImageA;
+    /// 데이터 생성 시간
+    required DateTime createdAt,
 
-  /// B박스에 이미지가 있는지 여부
-  final bool hasImageB;
+    /// A박스에 이미지가 있는지 여부
+    @Default(false) bool hasImageA,
 
-  /// 생성자
-  const VersusBoxSizeData({
-    required this.layoutType,
-    this.aspectRatioA,
-    this.aspectRatioB,
-    required this.originalSizeA,
-    required this.originalSizeB,
-    required this.screenWidth,
-    required this.createdAt,
-    this.hasImageA = false,
-    this.hasImageB = false,
-  });
+    /// B박스에 이미지가 있는지 여부
+    @Default(false) bool hasImageB,
+  }) = _VersusBoxSizeData;
+
+  factory VersusBoxSizeData.fromJson(Map<String, dynamic> json) =>
+      _$VersusBoxSizeDataFromJson(json);
 
   /// 팩토리 생성자 - 질문 작성 페이지에서 현재 상태로 생성
   factory VersusBoxSizeData.fromCurrentState({
@@ -77,50 +111,9 @@ class VersusBoxSizeData {
     );
   }
 
-  /// JSON으로 직렬화
-  Map<String, dynamic> toJson() {
-    return {
-      'layoutType': layoutType.name,
-      'aspectRatioA': aspectRatioA,
-      'aspectRatioB': aspectRatioB,
-      'originalSizeA': {
-        'width': originalSizeA.width,
-        'height': originalSizeA.height,
-      },
-      'originalSizeB': {
-        'width': originalSizeB.width,
-        'height': originalSizeB.height,
-      },
-      'screenWidth': screenWidth,
-      'createdAt': createdAt.millisecondsSinceEpoch,
-      'hasImageA': hasImageA,
-      'hasImageB': hasImageB,
-    };
-  }
-
-  /// JSON에서 복원
-  factory VersusBoxSizeData.fromJson(Map<String, dynamic> json) {
-    return VersusBoxSizeData(
-      layoutType: LayoutType.values.firstWhere(
-        (e) => e.name == json['layoutType'],
-        orElse: () => LayoutType.horizontal,
-      ),
-      aspectRatioA: json['aspectRatioA']?.toDouble(),
-      aspectRatioB: json['aspectRatioB']?.toDouble(),
-      originalSizeA: Size(
-        json['originalSizeA']['width'].toDouble(),
-        json['originalSizeA']['height'].toDouble(),
-      ),
-      originalSizeB: Size(
-        json['originalSizeB']['width'].toDouble(),
-        json['originalSizeB']['height'].toDouble(),
-      ),
-      screenWidth: json['screenWidth'].toDouble(),
-      createdAt: DateTime.fromMillisecondsSinceEpoch(json['createdAt']),
-      hasImageA: json['hasImageA'] ?? false,
-      hasImageB: json['hasImageB'] ?? false,
-    );
-  }
+  // ============================================================================
+  // Business Logic
+  // ============================================================================
 
   /// 유효성 검사
   bool get isValid {
@@ -152,74 +145,5 @@ class VersusBoxSizeData {
   ImageOrientation? get orientationB {
     if (aspectRatioB == null) return null;
     return AspectRatioAnalyzer.getOrientation(aspectRatioB!);
-  }
-
-  /// 디버그용 문자열 표현
-  @override
-  String toString() {
-    return 'VersusBoxSizeData('
-        'layout: $layoutType, '
-        'ratioA: $aspectRatioA, '
-        'ratioB: $aspectRatioB, '
-        'sizeA: $originalSizeA, '
-        'sizeB: $originalSizeB, '
-        'screenWidth: $screenWidth, '
-        'hasImages: A=$hasImageA B=$hasImageB'
-        ')';
-  }
-
-  /// 두 VersusBoxSizeData가 같은지 비교
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-
-    return other is VersusBoxSizeData &&
-        other.layoutType == layoutType &&
-        other.aspectRatioA == aspectRatioA &&
-        other.aspectRatioB == aspectRatioB &&
-        other.originalSizeA == originalSizeA &&
-        other.originalSizeB == originalSizeB &&
-        other.screenWidth == screenWidth &&
-        other.hasImageA == hasImageA &&
-        other.hasImageB == hasImageB;
-  }
-
-  @override
-  int get hashCode {
-    return Object.hash(
-      layoutType,
-      aspectRatioA,
-      aspectRatioB,
-      originalSizeA,
-      originalSizeB,
-      screenWidth,
-      hasImageA,
-      hasImageB,
-    );
-  }
-
-  /// 데이터 복사 (일부 필드 수정용)
-  VersusBoxSizeData copyWith({
-    LayoutType? layoutType,
-    double? aspectRatioA,
-    double? aspectRatioB,
-    Size? originalSizeA,
-    Size? originalSizeB,
-    double? screenWidth,
-    DateTime? createdAt,
-    bool? hasImageA,
-    bool? hasImageB,
-  }) {
-    return VersusBoxSizeData(
-      layoutType: layoutType ?? this.layoutType,
-      aspectRatioA: aspectRatioA ?? this.aspectRatioA,
-      aspectRatioB: aspectRatioB ?? this.aspectRatioB,
-      originalSizeA: originalSizeA ?? this.originalSizeA,
-      originalSizeB: originalSizeB ?? this.originalSizeB,
-      screenWidth: screenWidth ?? this.screenWidth,
-      createdAt: createdAt ?? this.createdAt,
-      hasImageA: hasImageA ?? this.hasImageA,
-      hasImageB: hasImageB ?? this.hasImageB,
-    );
   }
 }

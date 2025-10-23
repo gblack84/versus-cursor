@@ -16,9 +16,6 @@ import '../../domain/usecases/check_user_vote_use_case.dart';
 import '../../domain/usecases/check_user_vote_status_use_case.dart';
 import '../../domain/usecases/get_vote_status_use_case.dart';
 import '../../domain/usecases/update_vote_status_use_case.dart';
-import '../../domain/usecases/get_rankings_use_case.dart';
-import '../../domain/usecases/stream_rankings_use_case.dart';
-import '../../domain/usecases/update_rankings_use_case.dart';
 import '../../domain/usecases/request_vote_expansion_use_case.dart';
 import '../../domain/usecases/get_vote_history_use_case.dart';
 
@@ -64,16 +61,6 @@ class VotingDependenciesImpl implements VotingDependencies {
 
   @override
   UpdateVoteStatusUseCase get updateVoteStatusUseCase => _getIt<UpdateVoteStatusUseCase>();
-
-  // ===== Rankings Operations =====
-  @override
-  GetRankingsUseCase get getRankingsUseCase => _getIt<GetRankingsUseCase>();
-
-  @override
-  StreamRankingsUseCase get streamRankingsUseCase => _getIt<StreamRankingsUseCase>();
-
-  @override
-  UpdateRankingsUseCase get updateRankingsUseCase => _getIt<UpdateRankingsUseCase>();
 
   // ===== Vote Expansion Operations =====
   @override

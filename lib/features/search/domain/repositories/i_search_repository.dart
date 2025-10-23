@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/search_history_model.dart';
+import '../models/ranking.dart';
 
 /// Repository interface for Search-related operations
 /// This interface defines the contract for search functionality
@@ -62,6 +63,20 @@ abstract class ISearchRepository {
     required String contentType, // 'posts', 'users', 'all'
     int limit = 20,
     Map<String, dynamic>? filters,
+  });
+
+  // Rankings - Content Discovery
+  /// Update rankings based on voting data
+  Future<void> updateRankings();
+
+  /// Get top-ranked posts by rank order
+  Future<List<Ranking>> getTopRankings({int limit = 10});
+
+  /// Stream rankings with optional query builder for filtering
+  Stream<List<Ranking>> queryRankings({
+    dynamic Function(dynamic)? queryBuilder,
+    int limit = -1,
+    bool singleRecord = false,
   });
 
   // Analytics

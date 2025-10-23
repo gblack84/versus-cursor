@@ -1,6 +1,5 @@
 // Legacy VotecountsModel import removed
 import '../../domain/models/vote_counts_model.dart';
-import '../../domain/models/rankings_model.dart';
 import '../../domain/models/vote_cache_state.dart';
 
 /// Local data source interface for voting feature
@@ -29,23 +28,23 @@ abstract class IVotingLocalDataSource {
   Future<void> cacheVoteState({
     required String postId,
     required String userId,
-    required VoteState voteState,
+    required VoteCacheState voteState,
   });
-  
+
   /// Get cached vote state for a post
-  Future<VoteState?> getCachedVoteState({
+  Future<VoteCacheState?> getCachedVoteState({
     required String postId,
     required String userId,
   });
-  
+
   /// Remove cached vote state
   Future<void> removeCachedVoteState({
     required String postId,
     required String userId,
   });
-  
+
   /// Get all cached vote states for a user
-  Future<Map<String, VoteState>> getAllUserVoteStates(String userId);
+  Future<Map<String, VoteCacheState>> getAllUserVoteStates(String userId);
   
   // ============================================================================
   // Vote Counts Cache
@@ -72,26 +71,7 @@ abstract class IVotingLocalDataSource {
   
   /// Get cache timestamp for vote counts
   Future<DateTime?> getVoteCountsCacheTime(String postId);
-  
-  // ============================================================================
-  // Rankings Cache
-  // ============================================================================
-  
-  /// Cache rankings list
-  Future<void> cacheRankings({
-    required List<RankingsModel> rankings,
-    required String cacheKey,
-  });
-  
-  /// Get cached rankings
-  Future<List<RankingsModel>?> getCachedRankings(String cacheKey);
-  
-  /// Remove cached rankings
-  Future<void> removeCachedRankings(String cacheKey);
-  
-  /// Get cache timestamp for rankings
-  Future<DateTime?> getRankingsCacheTime(String cacheKey);
-  
+
   // ============================================================================
   // Vote History Cache
   // ============================================================================

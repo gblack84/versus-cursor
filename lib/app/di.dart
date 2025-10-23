@@ -5,17 +5,11 @@
 
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '/app/contracts/vote_contract.dart';
-import '/app/contracts/creation_contract.dart';
 
 // Feature DI Modules
 import '/features/post/di/post_di_module.dart';
 import '/features/voting/di/voting_di_module.dart';
-import '/features/voting/domain/repositories/i_voting_repository.dart';
-import '/features/voting/data/repositories/voting_repository_impl.dart';
 import '/features/voting/domain/services/i_vote_service.dart' as voting;
-import '/features/creation/domain/repositories/i_post_creation_repository_v2.dart';
-import '/features/creation/data/repositories/post_creation_repository_v2_impl.dart';
 import '/features/profile/di/profile_di_module.dart';
 import '/features/auth/di/auth_di_module.dart';
 import '/features/notifications/di/notification_di_module.dart';
@@ -58,14 +52,8 @@ Future<void> setupDependencyInjection() async {
   // because Auth depends on UserContract (provided by Profile)
 
   // ===== Creation Feature DI =====
+  // Note: CreationContract is registered internally by Creation Feature
   registerCreationModule(getIt);
-
-  // Register CreationContract (Cross-Feature Communication)
-  // Same instance as IPostCreationRepositoryV2, different interface
-  // Notification, Chat, Profile 등 다른 Feature가 포스트 생성 기능을 사용할 때 접근
-  getIt.registerLazySingleton<CreationContract>(
-    () => getIt<IPostCreationRepositoryV2>() as PostCreationRepositoryV2Impl,
-  );
 
   // ===== Post Feature DI (MUST BE REGISTERED BEFORE Voting) =====
   // Note: Post Feature provides VoteTimerService that Voting Feature uses
@@ -73,16 +61,8 @@ Future<void> setupDependencyInjection() async {
 
   // ===== Voting Feature DI =====
   // Note: Registered AFTER Post because uses VoteTimerService from Post Feature
-  // Register all Voting feature dependencies
-  // This will register voting.IVoteService and SubmitVoteUseCase internally
+  // Note: VoteContract is registered internally by Voting Feature
   registerVotingModule(getIt);
-
-  // Register VoteContract (Cross-Feature Communication)
-  // Same instance as IVotingRepository, different interface
-  // Notifications, Posts 등 다른 Feature가 투표 기능을 사용할 때 접근
-  getIt.registerLazySingleton<VoteContract>(
-    () => getIt<IVotingRepository>() as VotingRepositoryImpl,
-  );
 
   // ===== Notifications Feature DI =====
   // Note: Registered AFTER Voting because depends on SubmitVoteUseCase

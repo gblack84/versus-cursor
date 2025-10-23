@@ -9,6 +9,7 @@ class VoteNotificationDto extends NotificationDto {
   final String? postId;
   final String? postTitle;
   final String? postContent;
+  final String? postDescription;  // 추가됨
   final String? senderId;
   final String? senderName;
   final String? body;
@@ -18,6 +19,9 @@ class VoteNotificationDto extends NotificationDto {
   final Timestamp? voteEndTime;
   final int? votesA;
   final int? votesB;
+  final bool? hasVoted;  // 추가됨
+  final String? userVoteChoice;  // 추가됨
+  final String? layoutType;  // 추가됨
   final Map<String, dynamic>? targetAudience;
 
   VoteNotificationDto({
@@ -38,6 +42,7 @@ class VoteNotificationDto extends NotificationDto {
     this.postId,
     this.postTitle,
     this.postContent,
+    this.postDescription,
     this.senderId,
     this.senderName,
     this.body,
@@ -47,6 +52,9 @@ class VoteNotificationDto extends NotificationDto {
     this.voteEndTime,
     this.votesA,
     this.votesB,
+    this.hasVoted,
+    this.userVoteChoice,
+    this.layoutType,
     this.targetAudience,
   });
 
@@ -73,6 +81,7 @@ class VoteNotificationDto extends NotificationDto {
       postId: data['postId'] as String?,
       postTitle: data['postTitle'] as String?,
       postContent: data['postContent'] as String?,
+      postDescription: data['postDescription'] as String?,
       senderId: data['senderId'] as String?,
       senderName: data['senderName'] as String?,
       body: data['body'] as String?,
@@ -82,6 +91,9 @@ class VoteNotificationDto extends NotificationDto {
       voteEndTime: data['voteEndTime'] as Timestamp?,
       votesA: data['votesA'] as int?,
       votesB: data['votesB'] as int?,
+      hasVoted: data['hasVoted'] as bool?,
+      userVoteChoice: data['userVoteChoice'] as String?,
+      layoutType: data['layoutType'] as String?,
       targetAudience: data['targetAudience'] as Map<String, dynamic>?,
     );
   }
@@ -106,6 +118,7 @@ class VoteNotificationDto extends NotificationDto {
       postId: json['postId'] as String?,
       postTitle: json['postTitle'] as String?,
       postContent: json['postContent'] as String?,
+      postDescription: json['postDescription'] as String?,
       senderId: json['senderId'] as String?,
       senderName: json['senderName'] as String?,
       body: json['body'] as String?,
@@ -115,6 +128,9 @@ class VoteNotificationDto extends NotificationDto {
       voteEndTime: _parseTimestamp(json['voteEndTime']),
       votesA: json['votesA'] as int?,
       votesB: json['votesB'] as int?,
+      hasVoted: json['hasVoted'] as bool?,
+      userVoteChoice: json['userVoteChoice'] as String?,
+      layoutType: json['layoutType'] as String?,
       targetAudience: json['targetAudience'] as Map<String, dynamic>?,
     );
   }
@@ -165,6 +181,7 @@ class VoteNotificationDto extends NotificationDto {
     String? postId,
     String? postTitle,
     String? postContent,
+    String? postDescription,
     String? senderId,
     String? senderName,
     String? body,
@@ -174,6 +191,9 @@ class VoteNotificationDto extends NotificationDto {
     Timestamp? voteEndTime,
     int? votesA,
     int? votesB,
+    bool? hasVoted,
+    String? userVoteChoice,
+    String? layoutType,
     Map<String, dynamic>? targetAudience,
   }) {
     return VoteNotificationDto(
@@ -192,6 +212,7 @@ class VoteNotificationDto extends NotificationDto {
       postId: postId ?? this.postId,
       postTitle: postTitle ?? this.postTitle,
       postContent: postContent ?? this.postContent,
+      postDescription: postDescription ?? this.postDescription,
       senderId: senderId ?? this.senderId,
       senderName: senderName ?? this.senderName,
       body: body ?? this.body,
@@ -201,6 +222,9 @@ class VoteNotificationDto extends NotificationDto {
       voteEndTime: voteEndTime ?? this.voteEndTime,
       votesA: votesA ?? this.votesA,
       votesB: votesB ?? this.votesB,
+      hasVoted: hasVoted ?? this.hasVoted,
+      userVoteChoice: userVoteChoice ?? this.userVoteChoice,
+      layoutType: layoutType ?? this.layoutType,
       targetAudience: targetAudience ?? this.targetAudience,
     );
   }

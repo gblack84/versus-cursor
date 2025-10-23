@@ -38,16 +38,6 @@ abstract class VotingDependencies {
   /// UseCase for updating vote status
   dynamic get updateVoteStatusUseCase;
 
-  // ===== Rankings Operations =====
-  /// UseCase for getting rankings
-  dynamic get getRankingsUseCase;
-
-  /// UseCase for streaming rankings
-  dynamic get streamRankingsUseCase;
-
-  /// UseCase for updating rankings
-  dynamic get updateRankingsUseCase;
-
   // ===== Vote Expansion Operations =====
   /// UseCase for requesting vote expansion
   dynamic get requestVoteExpansionUseCase;

@@ -140,15 +140,37 @@ VotingNotification _$VotingNotificationFromJson(Map<String, dynamic> json) =>
       metadata: json['metadata'] as Map<String, dynamic>? ?? const {},
       postId: json['postId'] as String,
       postTitle: json['postTitle'] as String,
-      imageUrlsA: (json['imageUrlsA'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-      imageUrlsB: (json['imageUrlsB'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-      voteDeadline: json['voteDeadline'] == null
-          ? null
-          : DateTime.parse(json['voteDeadline'] as String),
+      postContent: json['postContent'] as String,
+      postDescription: json['postDescription'] as String?,
+      voteStartTime: DateTime.parse(json['voteStartTime'] as String),
+      voteEndTime: DateTime.parse(json['voteEndTime'] as String),
+      targetAudience: json['targetAudience'] as String?,
+      currentVotesA: (json['currentVotesA'] as num?)?.toInt(),
+      currentVotesB: (json['currentVotesB'] as num?)?.toInt(),
+      hasVoted: json['hasVoted'] as bool? ?? false,
+      userVoteChoice: json['userVoteChoice'] as String?,
+      senderId: json['senderId'] as String?,
+      senderName: json['senderName'] as String?,
+      body: json['body'] as String?,
+      notificationPriority:
+          $enumDecodeNullable(
+            _$NotificationPriorityEnumMap,
+            json['notificationPriority'],
+          ) ??
+          NotificationPriority.medium,
+      imageUrlsA:
+          (json['imageUrlsA'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      imageUrlsB:
+          (json['imageUrlsB'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      aspectRatioA: (json['aspectRatioA'] as num?)?.toDouble(),
+      aspectRatioB: (json['aspectRatioB'] as num?)?.toDouble(),
+      layoutType: json['layoutType'] as String?,
       $type: json['runtimeType'] as String?,
     );
 
@@ -166,8 +188,31 @@ Map<String, dynamic> _$VotingNotificationToJson(VotingNotification instance) =>
       'metadata': instance.metadata,
       'postId': instance.postId,
       'postTitle': instance.postTitle,
+      'postContent': instance.postContent,
+      'postDescription': instance.postDescription,
+      'voteStartTime': instance.voteStartTime.toIso8601String(),
+      'voteEndTime': instance.voteEndTime.toIso8601String(),
+      'targetAudience': instance.targetAudience,
+      'currentVotesA': instance.currentVotesA,
+      'currentVotesB': instance.currentVotesB,
+      'hasVoted': instance.hasVoted,
+      'userVoteChoice': instance.userVoteChoice,
+      'senderId': instance.senderId,
+      'senderName': instance.senderName,
+      'body': instance.body,
+      'notificationPriority':
+          _$NotificationPriorityEnumMap[instance.notificationPriority]!,
       'imageUrlsA': instance.imageUrlsA,
       'imageUrlsB': instance.imageUrlsB,
-      'voteDeadline': instance.voteDeadline?.toIso8601String(),
+      'aspectRatioA': instance.aspectRatioA,
+      'aspectRatioB': instance.aspectRatioB,
+      'layoutType': instance.layoutType,
       'runtimeType': instance.$type,
     };
+
+const _$NotificationPriorityEnumMap = {
+  NotificationPriority.low: 'low',
+  NotificationPriority.medium: 'medium',
+  NotificationPriority.high: 'high',
+  NotificationPriority.urgent: 'urgent',
+};

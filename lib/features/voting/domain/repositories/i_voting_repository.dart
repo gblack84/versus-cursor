@@ -1,10 +1,9 @@
 import '../models/vote_counts_model.dart';
-import '../models/vote_expansion_requests_model.dart';
-import '../models/rankings_model.dart';
-import '../models/weights_model.dart';
+import '../models/vote_expansion_request.dart';
+import '../models/weight.dart';
 
 /// Repository interface for Voting-related operations
-/// This interface defines the contract for voting and ranking functionality
+/// This interface defines the contract for voting functionality
 abstract class IVotingRepository {
   // Vote counts queries
   Stream<List<VoteCounts>> queryVotecounts({
@@ -25,7 +24,7 @@ abstract class IVotingRepository {
   });
 
   // Vote expansion requests queries
-  Stream<List<VoteExpansionRequestsModel>> queryVoteExpansionRequests({
+  Stream<List<VoteExpansionRequest>> queryVoteExpansionRequests({
     dynamic queryBuilder,
     int limit = -1,
     bool singleRecord = false,
@@ -36,20 +35,8 @@ abstract class IVotingRepository {
     int limit = -1,
   });
 
-  // Rankings queries
-  Stream<List<RankingsModel>> queryRankings({
-    dynamic queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  });
-
-  Future<int> queryRankingsCount({
-    dynamic queryBuilder,
-    int limit = -1,
-  });
-
   // Weights queries
-  Stream<List<WeightsModel>> queryWeights({
+  Stream<List<Weight>> queryWeights({
     dynamic queryBuilder,
     int limit = -1,
     bool singleRecord = false,
@@ -79,10 +66,6 @@ abstract class IVotingRepository {
     required String postId,
     required String userId,
   });
-
-  // Ranking operations
-  Future<void> updateRankings();
-  Future<List<RankingsModel>> getTopRankings({int limit = 10});
 
   // Vote expansion operations
   Future<void> requestVoteExpansion({

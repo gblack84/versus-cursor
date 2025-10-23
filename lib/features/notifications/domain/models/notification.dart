@@ -1,5 +1,9 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+// NotificationPriority는 /app/contracts/notification_types.dart로 이동됨
+// Backward compatibility를 위해 re-export
+export '/app/contracts/notification_types.dart' show NotificationPriority;
+
 part 'notification.freezed.dart';
 part 'notification.g.dart';
 
@@ -54,7 +58,11 @@ sealed class Notification with _$Notification {
   }) = SystemNotification;
 
   // ===== Voting Notification =====
+  /// 투표 요청 알림
+  ///
+  /// VoteNotification에서 마이그레이션됨 - 모든 필드 포함
   const factory Notification.voting({
+    // Base notification 필드
     required String id,
     required String userId,
     required String type,
@@ -65,12 +73,32 @@ sealed class Notification with _$Notification {
     required bool isRead,
     DateTime? expiryTime,
     @Default({}) Map<String, dynamic> metadata,
-    // Voting 전용 필드
+
+    // Voting 전용 필드 (확장됨)
     required String postId,
     required String postTitle,
-    List<String>? imageUrlsA,
-    List<String>? imageUrlsB,
-    DateTime? voteDeadline,
+    required String postContent,
+    String? postDescription,
+    required DateTime voteStartTime,
+    required DateTime voteEndTime,
+    String? targetAudience,
+    int? currentVotesA,
+    int? currentVotesB,
+    @Default(false) bool hasVoted,
+    String? userVoteChoice,
+    String? senderId,
+    String? senderName,
+    String? body,
+    @Default(NotificationPriority.medium) NotificationPriority notificationPriority,
+
+    // 이미지 URL 리스트 (기존 필드 유지)
+    @Default([]) List<String> imageUrlsA,
+    @Default([]) List<String> imageUrlsB,
+
+    // Aspect Ratio (레이아웃 계산용)
+    double? aspectRatioA,
+    double? aspectRatioB,
+    String? layoutType,
   }) = VotingNotification;
 
   // ===== JSON Serialization =====
@@ -132,9 +160,16 @@ sealed class Notification with _$Notification {
         return 0;
       },
       voting: (id, userId, type, title, content, createdAt, readAt, isRead,
-               expiryTime, metadata, postId, postTitle, imageUrlsA,
-               imageUrlsB, voteDeadline) {
-        return isRead ? 0 : 2;  // 투표 알림은 더 높은 우선순위
+               expiryTime, metadata, postId, postTitle, postContent,
+               postDescription, voteStartTime, voteEndTime, targetAudience,
+               currentVotesA, currentVotesB, hasVoted, userVoteChoice,
+               senderId, senderName, body, notificationPriority,
+               imageUrlsA, imageUrlsB, aspectRatioA, aspectRatioB, layoutType) {
+        // 투표 요청이면서 읽지 않은 경우 가장 높은 우선순위
+        if (!isRead && (expiryTime == null || !DateTime.now().isAfter(expiryTime))) {
+          return 3;
+        }
+        return 0;  // 읽은 알림
       },
     );
   }
@@ -178,24 +213,6 @@ enum SystemAlertType {
     return SystemAlertType.values.firstWhere(
       (type) => type.value == value,
       orElse: () => SystemAlertType.info,
-    );
-  }
-}
-
-/// 알림 우선순위 열거형
-enum NotificationPriority {
-  low(1),
-  medium(2),
-  high(3),
-  urgent(4);
-
-  final int weight;
-  const NotificationPriority(this.weight);
-
-  static NotificationPriority fromWeight(int weight) {
-    return NotificationPriority.values.firstWhere(
-      (priority) => priority.weight == weight,
-      orElse: () => NotificationPriority.low,
     );
   }
 }

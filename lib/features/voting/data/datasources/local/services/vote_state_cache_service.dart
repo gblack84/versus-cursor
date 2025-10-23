@@ -7,7 +7,7 @@ import '../utils/cache_helpers.dart';
 /// Service for managing vote state caching
 class VoteStateCacheService {
   final SharedPreferences _prefs;
-  
+
   VoteStateCacheService({required SharedPreferences prefs}) 
       : _prefs = prefs;
   
@@ -15,7 +15,7 @@ class VoteStateCacheService {
   Future<void> cacheVoteState({
     required String postId,
     required String userId,
-    required VoteState voteState,
+    required VoteCacheState voteState,
   }) async {
     final key = CacheKeys.voteStateKey(userId, postId);
     final json = voteState.toJson();
@@ -27,18 +27,18 @@ class VoteStateCacheService {
   }
   
   /// Get cached vote state for a user and post
-  Future<VoteState?> getCachedVoteState({
+  Future<VoteCacheState?> getCachedVoteState({
     required String postId,
     required String userId,
   }) async {
     final key = CacheKeys.voteStateKey(userId, postId);
     final jsonString = _prefs.getString(key);
-    
+
     if (jsonString == null) return null;
-    
+
     try {
       final json = jsonDecode(jsonString) as Map<String, dynamic>;
-      return VoteState.fromJson(json);
+      return VoteCacheState.fromJson(json);
     } catch (e) {
       // If cache is corrupted, remove it
       await _prefs.remove(key);
@@ -56,11 +56,11 @@ class VoteStateCacheService {
   }
   
   /// Get all vote states for a user
-  Future<Map<String, VoteState>> getAllUserVoteStates(String userId) async {
-    final result = <String, VoteState>{};
+  Future<Map<String, VoteCacheState>> getAllUserVoteStates(String userId) async {
+    final result = <String, VoteCacheState>{};
     final keys = _prefs.getKeys();
     final prefix = '${CacheKeys.voteStatePrefix}${userId}_';
-    
+
     for (final key in keys) {
       if (key.startsWith(prefix)) {
         final postId = key.substring(prefix.length);
@@ -73,7 +73,7 @@ class VoteStateCacheService {
         }
       }
     }
-    
+
     return result;
   }
   
@@ -109,7 +109,7 @@ class VoteStateCacheService {
   /// Batch cache multiple vote states
   Future<void> batchCacheVoteStates({
     required String userId,
-    required Map<String, VoteState> voteStates,
+    required Map<String, VoteCacheState> voteStates,
   }) async {
     for (final entry in voteStates.entries) {
       await cacheVoteState(

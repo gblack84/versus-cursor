@@ -173,10 +173,7 @@ return $default(_that);case _:
 final _that = this;
 switch (_that) {
 case _PostCreation():
-return $default(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -235,10 +232,7 @@ return $default(_that.id,_that.userId,_that.title,_that.description,_that.option
 @optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? id,  String userId,  String title,  String description,  PostOption optionA,  PostOption optionB,  TargetAudience? targetAudience,  DateTime createdAt,  DateTime? updatedAt,  PostStatus status,  int likeCount,  int commentCount,  VoteConfiguration? voteConfig,  bool isAnonymous,  String? category,  List<String>? tags,  Map<String, dynamic>? metadata)  $default,) {final _that = this;
 switch (_that) {
 case _PostCreation():
-return $default(_that.id,_that.userId,_that.title,_that.description,_that.optionA,_that.optionB,_that.targetAudience,_that.createdAt,_that.updatedAt,_that.status,_that.likeCount,_that.commentCount,_that.voteConfig,_that.isAnonymous,_that.category,_that.tags,_that.metadata);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that.id,_that.userId,_that.title,_that.description,_that.optionA,_that.optionB,_that.targetAudience,_that.createdAt,_that.updatedAt,_that.status,_that.likeCount,_that.commentCount,_that.voteConfig,_that.isAnonymous,_that.category,_that.tags,_that.metadata);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -530,10 +524,7 @@ return $default(_that);case _:
 final _that = this;
 switch (_that) {
 case _PostOption():
-return $default(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -592,10 +583,7 @@ return $default(_that.text,_that.imageUrls,_that.videoUrls,_that.aspectRatios,_t
 @optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? text,  List<String> imageUrls,  List<String>? videoUrls,  List<double> aspectRatios,  Map<String, dynamic>? metadata)  $default,) {final _that = this;
 switch (_that) {
 case _PostOption():
-return $default(_that.text,_that.imageUrls,_that.videoUrls,_that.aspectRatios,_that.metadata);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that.text,_that.imageUrls,_that.videoUrls,_that.aspectRatios,_that.metadata);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -834,10 +822,7 @@ return $default(_that);case _:
 final _that = this;
 switch (_that) {
 case _VoteConfiguration():
-return $default(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -896,10 +881,7 @@ return $default(_that.startTime,_that.endTime,_that.duration,_that.allowAnonymou
 @optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( DateTime? startTime,  DateTime? endTime,  int? duration,  bool allowAnonymous,  bool requiresExpansion,  Map<String, dynamic>? settings)  $default,) {final _that = this;
 switch (_that) {
 case _VoteConfiguration():
-return $default(_that.startTime,_that.endTime,_that.duration,_that.allowAnonymous,_that.requiresExpansion,_that.settings);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that.startTime,_that.endTime,_that.duration,_that.allowAnonymous,_that.requiresExpansion,_that.settings);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///

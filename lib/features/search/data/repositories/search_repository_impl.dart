@@ -3,6 +3,9 @@ import '../../domain/repositories/i_search_repository.dart';
 import '/core/firebase/utils/firestore_util.dart'
     show queryCollection, queryCollectionOnce, queryCollectionCount;
 import '/features/search/domain/models/search_history_model.dart';
+import '../../domain/models/ranking.dart';
+import '../mappers/ranking_mapper.dart';
+import '../models/ranking_dto.dart';
 
 /// Implementation of search repository
 class SearchRepositoryImpl implements ISearchRepository {
@@ -130,5 +133,55 @@ class SearchRepositoryImpl implements ISearchRepository {
   }) async {
     // TODO: Implement search analytics
     throw UnimplementedError('getSearchAnalytics not implemented');
+  }
+
+  // Rankings - Content Discovery
+  @override
+  Future<void> updateRankings() async {
+    // TODO: Implement ranking update logic from voting data
+    // This will be implemented when we move the logic from VotingDataSource
+    throw UnimplementedError('updateRankings not implemented yet');
+  }
+
+  @override
+  Future<List<Ranking>> getTopRankings({int limit = 10}) async {
+    final firestore = FirebaseFirestore.instance;
+    final snapshot = await firestore
+        .collection('rankings')
+        .orderBy('rank')
+        .limit(limit)
+        .get();
+
+    final dtos = snapshot.docs
+        .map((doc) => RankingDto.fromFirestore(doc))
+        .toList();
+
+    return RankingMapper.toEntityList(dtos);
+  }
+
+  @override
+  Stream<List<Ranking>> queryRankings({
+    dynamic Function(dynamic)? queryBuilder,
+    int limit = -1,
+    bool singleRecord = false,
+  }) {
+    final firestore = FirebaseFirestore.instance;
+    Query query = firestore.collection('rankings');
+
+    if (queryBuilder != null) {
+      query = queryBuilder(query);
+    }
+
+    if (limit > 0) {
+      query = query.limit(limit);
+    }
+
+    return query.snapshots().map((snapshot) {
+      final dtos = snapshot.docs
+          .map((doc) => RankingDto.fromFirestore(doc))
+          .toList();
+
+      return RankingMapper.toEntityList(dtos);
+    });
   }
 }

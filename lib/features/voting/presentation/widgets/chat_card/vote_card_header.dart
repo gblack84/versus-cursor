@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '/core/constants/app_constants.dart';
 import '/core/design_system/design_system.dart';
 import '/features/voting/domain/constants/voting_constants.dart';
-import '/features/profile/presentation/widgets/profile/profile_avatar.dart';
+import '../common/simple_avatar.dart';
 
 /// 투표 카드 메시지의 헤더 컴포넌트
 ///
@@ -40,7 +40,7 @@ class VoteCardHeader extends StatelessWidget {
             // TODO: 프로필 페이지로 이동
             debugPrint('Navigate to profile: $displayName');
           },
-          child: ProfileAvatar(
+          child: SimpleAvatar(
             photoUrl: hasProfileImage && !isMe ? senderProfileImageUrl! : '',
             size: AvatarSize.small,
           ),

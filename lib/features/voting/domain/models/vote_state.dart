@@ -1,3 +1,8 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'vote_state.freezed.dart';
+part 'vote_state.g.dart';
+
 /// 투표 상태를 나타내는 열거형
 enum VoteState {
   /// 투표 요청 대기 중
@@ -17,41 +22,47 @@ enum VoteState {
 }
 
 /// 투표 상태 데이터를 담는 클래스
-class VoteStateData {
-  /// 현재 투표 상태
-  final VoteState state;
+///
+/// **Clean Architecture v4.0 - Freezed Domain Entity**:
+/// - Immutable value object with auto-generated copyWith
+/// - JSON serialization support for caching/persistence
+/// - Business logic in getters (statusText)
+@freezed
+sealed class VoteStateData with _$VoteStateData {
+  const VoteStateData._();
 
-  /// 남은 시간 (타이머가 있는 경우)
-  final Duration? remainingTime;
+  const factory VoteStateData({
+    /// 현재 투표 상태
+    required VoteState state,
 
-  /// 투표 결과 (완료된 경우)
-  final Map<String, dynamic>? voteResults;
+    /// 남은 시간 (타이머가 있는 경우)
+    Duration? remainingTime,
 
-  /// 타이머 만료 여부
-  final bool isTimerExpired;
+    /// 투표 결과 (완료된 경우)
+    Map<String, dynamic>? voteResults,
 
-  /// 투표 종료 시간
-  final DateTime? voteEndTime;
+    /// 타이머 만료 여부
+    @Default(false) bool isTimerExpired,
 
-  /// 에러 메시지 (에러 발생 시)
-  final String? errorMessage;
+    /// 투표 종료 시간
+    DateTime? voteEndTime,
 
-  /// 사용자가 이미 투표했는지 여부
-  final bool hasUserVoted;
+    /// 에러 메시지 (에러 발생 시)
+    String? errorMessage,
 
-  /// 사용자의 투표 선택 (A 또는 B)
-  final String? userChoice;
+    /// 사용자가 이미 투표했는지 여부
+    @Default(false) bool hasUserVoted,
 
-  const VoteStateData({
-    required this.state,
-    this.remainingTime,
-    this.voteResults,
-    this.isTimerExpired = false,
-    this.voteEndTime,
-    this.errorMessage,
-    this.hasUserVoted = false,
-    this.userChoice,
-  });
+    /// 사용자의 투표 선택 (A 또는 B)
+    String? userChoice,
+  }) = _VoteStateData;
+
+  factory VoteStateData.fromJson(Map<String, dynamic> json) =>
+      _$VoteStateDataFromJson(json);
+
+  // ============================================================================
+  // Business Logic
+  // ============================================================================
 
   /// 상태 텍스트 반환
   String get statusText {
@@ -67,28 +78,5 @@ class VoteStateData {
       case VoteState.notParticipated:
         return '미참여';
     }
-  }
-
-  /// 복사본 생성 메서드
-  VoteStateData copyWith({
-    VoteState? state,
-    Duration? remainingTime,
-    Map<String, dynamic>? voteResults,
-    bool? isTimerExpired,
-    DateTime? voteEndTime,
-    String? errorMessage,
-    bool? hasUserVoted,
-    String? userChoice,
-  }) {
-    return VoteStateData(
-      state: state ?? this.state,
-      remainingTime: remainingTime ?? this.remainingTime,
-      voteResults: voteResults ?? this.voteResults,
-      isTimerExpired: isTimerExpired ?? this.isTimerExpired,
-      voteEndTime: voteEndTime ?? this.voteEndTime,
-      errorMessage: errorMessage ?? this.errorMessage,
-      hasUserVoted: hasUserVoted ?? this.hasUserVoted,
-      userChoice: userChoice ?? this.userChoice,
-    );
   }
 }

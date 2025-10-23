@@ -38,3 +38,25 @@ class NotificationTypes {
   // Private constructor to prevent instantiation
   NotificationTypes._();
 }
+
+/// 알림 우선순위 열거형
+///
+/// Feature 간 공유되는 알림 우선순위 정의
+/// - Voting Feature: VoteNotification
+/// - Notifications Feature: Notification sealed class
+enum NotificationPriority {
+  low(1),
+  medium(2),
+  high(3),
+  urgent(4);
+
+  final int weight;
+  const NotificationPriority(this.weight);
+
+  static NotificationPriority fromWeight(int weight) {
+    return NotificationPriority.values.firstWhere(
+      (priority) => priority.weight == weight,
+      orElse: () => NotificationPriority.low,
+    );
+  }
+}

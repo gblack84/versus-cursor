@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
 import '/core/errors/failures.dart';
-import '../models/rankings_model.dart';
-import '../repositories/i_voting_repository.dart';
+import '../models/ranking.dart';
+import '../repositories/i_search_repository.dart';
 import 'base/use_case.dart';
 
 /// Parameters for getting rankings
@@ -12,13 +12,13 @@ class GetRankingsParams {
 }
 
 /// Use case for getting top rankings
-class GetRankingsUseCase extends UseCase<List<RankingsModel>, GetRankingsParams> {
-  final IVotingRepository repository;
+class GetRankingsUseCase extends UseCase<List<Ranking>, GetRankingsParams> {
+  final ISearchRepository repository;
 
   GetRankingsUseCase(this.repository);
 
   @override
-  Future<Either<Failure, List<RankingsModel>>> call(GetRankingsParams params) async {
+  Future<Either<Failure, List<Ranking>>> call(GetRankingsParams params) async {
     try {
       final result = await repository.getTopRankings(limit: params.limit);
       return Right(result);

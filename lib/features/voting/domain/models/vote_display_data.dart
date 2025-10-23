@@ -1,33 +1,37 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'vote_display_data.freezed.dart';
+part 'vote_display_data.g.dart';
+
 /// 투표 알림에서 추출된 데이터를 담는 클래스
-class VoteDisplayData {
-  final String question;
-  final String optionA;
-  final String optionB;
-  final String? imageUrlA;
-  final String? imageUrlB;
-  final List<String>? imageUrlsA;
-  final List<String>? imageUrlsB;
-  final String description;
-  final double? aspectRatioA;
-  final double? aspectRatioB;
-  final String? layoutType;
-  final String? authorName;
+///
+/// **Clean Architecture v4.0 - Freezed Domain Entity**:
+/// - Immutable value object with auto-generated copyWith
+/// - JSON serialization support for caching/persistence
+/// - Business logic in getters (isEmpty)
+@freezed
+sealed class VoteDisplayData with _$VoteDisplayData {
+  const VoteDisplayData._();
 
-  const VoteDisplayData({
-    required this.question,
-    required this.optionA,
-    required this.optionB,
-    this.imageUrlA,
-    this.imageUrlB,
-    this.imageUrlsA,
-    this.imageUrlsB,
-    this.description = '',
-    this.aspectRatioA,
-    this.aspectRatioB,
-    this.layoutType,
-    this.authorName,
-  });
+  const factory VoteDisplayData({
+    required String question,
+    required String optionA,
+    required String optionB,
+    String? imageUrlA,
+    String? imageUrlB,
+    List<String>? imageUrlsA,
+    List<String>? imageUrlsB,
+    @Default('') String description,
+    double? aspectRatioA,
+    double? aspectRatioB,
+    String? layoutType,
+    String? authorName,
+  }) = _VoteDisplayData;
 
+  factory VoteDisplayData.fromJson(Map<String, dynamic> json) =>
+      _$VoteDisplayDataFromJson(json);
+
+  /// Empty VoteDisplayData factory
   factory VoteDisplayData.empty() {
     return const VoteDisplayData(
       question: '',
@@ -37,5 +41,10 @@ class VoteDisplayData {
     );
   }
 
+  // ============================================================================
+  // Business Logic
+  // ============================================================================
+
+  /// 필수 필드가 모두 비어있는지 확인
   bool get isEmpty => question.isEmpty && optionA.isEmpty && optionB.isEmpty;
 }

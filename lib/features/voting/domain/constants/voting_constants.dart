@@ -115,6 +115,18 @@ class VotingConstants {
   /// - 투표 결과 표시
   static const String cardStatusCompleted = 'completed';
 
+  // ==================== UI 텍스트 ====================
+
+  /// 투표 완료 알림 텍스트
+  ///
+  /// 투표가 완료되었을 때 표시하는 축하 메시지
+  ///
+  /// 사용처:
+  /// - VoteCardMessage 완료 상태 표시
+  /// - VoteResultDisplay 결과 헤더
+  /// - VoteResultsWidget 완료 알림
+  static const String voteCompletedText = '피클! 피클! 피클!';
+
   // ==================== 애니메이션 Duration ====================
 
   /// 투표 상태 리셋 지연 시간

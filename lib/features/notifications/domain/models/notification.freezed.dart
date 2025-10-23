@@ -42,6 +42,7 @@ Notification _$NotificationFromJson(
 /// @nodoc
 mixin _$Notification {
 
+// Base notification 필드
  String get id; String get userId; String get type; String get title; String get content; DateTime get createdAt; DateTime? get readAt; bool get isRead; DateTime? get expiryTime; Map<String, dynamic> get metadata;
 /// Create a copy of Notification
 /// with the given fields replaced by the non-null parameter values.
@@ -192,12 +193,12 @@ return voting(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String id,  String userId,  String type,  String title,  String content,  DateTime createdAt,  DateTime? readAt,  bool isRead,  DateTime? expiryTime,  Map<String, dynamic> metadata,  SocialActionType actionType,  String fromUserId,  String fromUserName,  String? fromUserProfileUrl,  String? relatedPostId,  String? relatedCommentId,  String? relatedContent,  int? interactionCount)?  social,TResult Function( String id,  String userId,  String type,  String title,  String content,  DateTime createdAt,  DateTime? readAt,  bool isRead,  DateTime? expiryTime,  Map<String, dynamic> metadata,  SystemAlertType alertType,  String? actionUrl,  String? actionLabel,  Map<String, String>? actionButtons,  String? iconUrl,  bool isDismissible)?  system,TResult Function( String id,  String userId,  String type,  String title,  String content,  DateTime createdAt,  DateTime? readAt,  bool isRead,  DateTime? expiryTime,  Map<String, dynamic> metadata,  String postId,  String postTitle,  List<String>? imageUrlsA,  List<String>? imageUrlsB,  DateTime? voteDeadline)?  voting,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String id,  String userId,  String type,  String title,  String content,  DateTime createdAt,  DateTime? readAt,  bool isRead,  DateTime? expiryTime,  Map<String, dynamic> metadata,  SocialActionType actionType,  String fromUserId,  String fromUserName,  String? fromUserProfileUrl,  String? relatedPostId,  String? relatedCommentId,  String? relatedContent,  int? interactionCount)?  social,TResult Function( String id,  String userId,  String type,  String title,  String content,  DateTime createdAt,  DateTime? readAt,  bool isRead,  DateTime? expiryTime,  Map<String, dynamic> metadata,  SystemAlertType alertType,  String? actionUrl,  String? actionLabel,  Map<String, String>? actionButtons,  String? iconUrl,  bool isDismissible)?  system,TResult Function( String id,  String userId,  String type,  String title,  String content,  DateTime createdAt,  DateTime? readAt,  bool isRead,  DateTime? expiryTime,  Map<String, dynamic> metadata,  String postId,  String postTitle,  String postContent,  String? postDescription,  DateTime voteStartTime,  DateTime voteEndTime,  String? targetAudience,  int? currentVotesA,  int? currentVotesB,  bool hasVoted,  String? userVoteChoice,  String? senderId,  String? senderName,  String? body,  NotificationPriority notificationPriority,  List<String> imageUrlsA,  List<String> imageUrlsB,  double? aspectRatioA,  double? aspectRatioB,  String? layoutType)?  voting,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case SocialNotification() when social != null:
 return social(_that.id,_that.userId,_that.type,_that.title,_that.content,_that.createdAt,_that.readAt,_that.isRead,_that.expiryTime,_that.metadata,_that.actionType,_that.fromUserId,_that.fromUserName,_that.fromUserProfileUrl,_that.relatedPostId,_that.relatedCommentId,_that.relatedContent,_that.interactionCount);case SystemNotification() when system != null:
 return system(_that.id,_that.userId,_that.type,_that.title,_that.content,_that.createdAt,_that.readAt,_that.isRead,_that.expiryTime,_that.metadata,_that.alertType,_that.actionUrl,_that.actionLabel,_that.actionButtons,_that.iconUrl,_that.isDismissible);case VotingNotification() when voting != null:
-return voting(_that.id,_that.userId,_that.type,_that.title,_that.content,_that.createdAt,_that.readAt,_that.isRead,_that.expiryTime,_that.metadata,_that.postId,_that.postTitle,_that.imageUrlsA,_that.imageUrlsB,_that.voteDeadline);case _:
+return voting(_that.id,_that.userId,_that.type,_that.title,_that.content,_that.createdAt,_that.readAt,_that.isRead,_that.expiryTime,_that.metadata,_that.postId,_that.postTitle,_that.postContent,_that.postDescription,_that.voteStartTime,_that.voteEndTime,_that.targetAudience,_that.currentVotesA,_that.currentVotesB,_that.hasVoted,_that.userVoteChoice,_that.senderId,_that.senderName,_that.body,_that.notificationPriority,_that.imageUrlsA,_that.imageUrlsB,_that.aspectRatioA,_that.aspectRatioB,_that.layoutType);case _:
   return orElse();
 
 }
@@ -215,12 +216,12 @@ return voting(_that.id,_that.userId,_that.type,_that.title,_that.content,_that.c
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String id,  String userId,  String type,  String title,  String content,  DateTime createdAt,  DateTime? readAt,  bool isRead,  DateTime? expiryTime,  Map<String, dynamic> metadata,  SocialActionType actionType,  String fromUserId,  String fromUserName,  String? fromUserProfileUrl,  String? relatedPostId,  String? relatedCommentId,  String? relatedContent,  int? interactionCount)  social,required TResult Function( String id,  String userId,  String type,  String title,  String content,  DateTime createdAt,  DateTime? readAt,  bool isRead,  DateTime? expiryTime,  Map<String, dynamic> metadata,  SystemAlertType alertType,  String? actionUrl,  String? actionLabel,  Map<String, String>? actionButtons,  String? iconUrl,  bool isDismissible)  system,required TResult Function( String id,  String userId,  String type,  String title,  String content,  DateTime createdAt,  DateTime? readAt,  bool isRead,  DateTime? expiryTime,  Map<String, dynamic> metadata,  String postId,  String postTitle,  List<String>? imageUrlsA,  List<String>? imageUrlsB,  DateTime? voteDeadline)  voting,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String id,  String userId,  String type,  String title,  String content,  DateTime createdAt,  DateTime? readAt,  bool isRead,  DateTime? expiryTime,  Map<String, dynamic> metadata,  SocialActionType actionType,  String fromUserId,  String fromUserName,  String? fromUserProfileUrl,  String? relatedPostId,  String? relatedCommentId,  String? relatedContent,  int? interactionCount)  social,required TResult Function( String id,  String userId,  String type,  String title,  String content,  DateTime createdAt,  DateTime? readAt,  bool isRead,  DateTime? expiryTime,  Map<String, dynamic> metadata,  SystemAlertType alertType,  String? actionUrl,  String? actionLabel,  Map<String, String>? actionButtons,  String? iconUrl,  bool isDismissible)  system,required TResult Function( String id,  String userId,  String type,  String title,  String content,  DateTime createdAt,  DateTime? readAt,  bool isRead,  DateTime? expiryTime,  Map<String, dynamic> metadata,  String postId,  String postTitle,  String postContent,  String? postDescription,  DateTime voteStartTime,  DateTime voteEndTime,  String? targetAudience,  int? currentVotesA,  int? currentVotesB,  bool hasVoted,  String? userVoteChoice,  String? senderId,  String? senderName,  String? body,  NotificationPriority notificationPriority,  List<String> imageUrlsA,  List<String> imageUrlsB,  double? aspectRatioA,  double? aspectRatioB,  String? layoutType)  voting,}) {final _that = this;
 switch (_that) {
 case SocialNotification():
 return social(_that.id,_that.userId,_that.type,_that.title,_that.content,_that.createdAt,_that.readAt,_that.isRead,_that.expiryTime,_that.metadata,_that.actionType,_that.fromUserId,_that.fromUserName,_that.fromUserProfileUrl,_that.relatedPostId,_that.relatedCommentId,_that.relatedContent,_that.interactionCount);case SystemNotification():
 return system(_that.id,_that.userId,_that.type,_that.title,_that.content,_that.createdAt,_that.readAt,_that.isRead,_that.expiryTime,_that.metadata,_that.alertType,_that.actionUrl,_that.actionLabel,_that.actionButtons,_that.iconUrl,_that.isDismissible);case VotingNotification():
-return voting(_that.id,_that.userId,_that.type,_that.title,_that.content,_that.createdAt,_that.readAt,_that.isRead,_that.expiryTime,_that.metadata,_that.postId,_that.postTitle,_that.imageUrlsA,_that.imageUrlsB,_that.voteDeadline);}
+return voting(_that.id,_that.userId,_that.type,_that.title,_that.content,_that.createdAt,_that.readAt,_that.isRead,_that.expiryTime,_that.metadata,_that.postId,_that.postTitle,_that.postContent,_that.postDescription,_that.voteStartTime,_that.voteEndTime,_that.targetAudience,_that.currentVotesA,_that.currentVotesB,_that.hasVoted,_that.userVoteChoice,_that.senderId,_that.senderName,_that.body,_that.notificationPriority,_that.imageUrlsA,_that.imageUrlsB,_that.aspectRatioA,_that.aspectRatioB,_that.layoutType);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -234,12 +235,12 @@ return voting(_that.id,_that.userId,_that.type,_that.title,_that.content,_that.c
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String id,  String userId,  String type,  String title,  String content,  DateTime createdAt,  DateTime? readAt,  bool isRead,  DateTime? expiryTime,  Map<String, dynamic> metadata,  SocialActionType actionType,  String fromUserId,  String fromUserName,  String? fromUserProfileUrl,  String? relatedPostId,  String? relatedCommentId,  String? relatedContent,  int? interactionCount)?  social,TResult? Function( String id,  String userId,  String type,  String title,  String content,  DateTime createdAt,  DateTime? readAt,  bool isRead,  DateTime? expiryTime,  Map<String, dynamic> metadata,  SystemAlertType alertType,  String? actionUrl,  String? actionLabel,  Map<String, String>? actionButtons,  String? iconUrl,  bool isDismissible)?  system,TResult? Function( String id,  String userId,  String type,  String title,  String content,  DateTime createdAt,  DateTime? readAt,  bool isRead,  DateTime? expiryTime,  Map<String, dynamic> metadata,  String postId,  String postTitle,  List<String>? imageUrlsA,  List<String>? imageUrlsB,  DateTime? voteDeadline)?  voting,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String id,  String userId,  String type,  String title,  String content,  DateTime createdAt,  DateTime? readAt,  bool isRead,  DateTime? expiryTime,  Map<String, dynamic> metadata,  SocialActionType actionType,  String fromUserId,  String fromUserName,  String? fromUserProfileUrl,  String? relatedPostId,  String? relatedCommentId,  String? relatedContent,  int? interactionCount)?  social,TResult? Function( String id,  String userId,  String type,  String title,  String content,  DateTime createdAt,  DateTime? readAt,  bool isRead,  DateTime? expiryTime,  Map<String, dynamic> metadata,  SystemAlertType alertType,  String? actionUrl,  String? actionLabel,  Map<String, String>? actionButtons,  String? iconUrl,  bool isDismissible)?  system,TResult? Function( String id,  String userId,  String type,  String title,  String content,  DateTime createdAt,  DateTime? readAt,  bool isRead,  DateTime? expiryTime,  Map<String, dynamic> metadata,  String postId,  String postTitle,  String postContent,  String? postDescription,  DateTime voteStartTime,  DateTime voteEndTime,  String? targetAudience,  int? currentVotesA,  int? currentVotesB,  bool hasVoted,  String? userVoteChoice,  String? senderId,  String? senderName,  String? body,  NotificationPriority notificationPriority,  List<String> imageUrlsA,  List<String> imageUrlsB,  double? aspectRatioA,  double? aspectRatioB,  String? layoutType)?  voting,}) {final _that = this;
 switch (_that) {
 case SocialNotification() when social != null:
 return social(_that.id,_that.userId,_that.type,_that.title,_that.content,_that.createdAt,_that.readAt,_that.isRead,_that.expiryTime,_that.metadata,_that.actionType,_that.fromUserId,_that.fromUserName,_that.fromUserProfileUrl,_that.relatedPostId,_that.relatedCommentId,_that.relatedContent,_that.interactionCount);case SystemNotification() when system != null:
 return system(_that.id,_that.userId,_that.type,_that.title,_that.content,_that.createdAt,_that.readAt,_that.isRead,_that.expiryTime,_that.metadata,_that.alertType,_that.actionUrl,_that.actionLabel,_that.actionButtons,_that.iconUrl,_that.isDismissible);case VotingNotification() when voting != null:
-return voting(_that.id,_that.userId,_that.type,_that.title,_that.content,_that.createdAt,_that.readAt,_that.isRead,_that.expiryTime,_that.metadata,_that.postId,_that.postTitle,_that.imageUrlsA,_that.imageUrlsB,_that.voteDeadline);case _:
+return voting(_that.id,_that.userId,_that.type,_that.title,_that.content,_that.createdAt,_that.readAt,_that.isRead,_that.expiryTime,_that.metadata,_that.postId,_that.postTitle,_that.postContent,_that.postDescription,_that.voteStartTime,_that.voteEndTime,_that.targetAudience,_that.currentVotesA,_that.currentVotesB,_that.hasVoted,_that.userVoteChoice,_that.senderId,_that.senderName,_that.body,_that.notificationPriority,_that.imageUrlsA,_that.imageUrlsB,_that.aspectRatioA,_that.aspectRatioB,_that.layoutType);case _:
   return null;
 
 }
@@ -483,9 +484,10 @@ as bool,
 @JsonSerializable()
 
 class VotingNotification extends Notification {
-  const VotingNotification({required this.id, required this.userId, required this.type, required this.title, required this.content, required this.createdAt, this.readAt, required this.isRead, this.expiryTime, final  Map<String, dynamic> metadata = const {}, required this.postId, required this.postTitle, final  List<String>? imageUrlsA, final  List<String>? imageUrlsB, this.voteDeadline, final  String? $type}): _metadata = metadata,_imageUrlsA = imageUrlsA,_imageUrlsB = imageUrlsB,$type = $type ?? 'voting',super._();
+  const VotingNotification({required this.id, required this.userId, required this.type, required this.title, required this.content, required this.createdAt, this.readAt, required this.isRead, this.expiryTime, final  Map<String, dynamic> metadata = const {}, required this.postId, required this.postTitle, required this.postContent, this.postDescription, required this.voteStartTime, required this.voteEndTime, this.targetAudience, this.currentVotesA, this.currentVotesB, this.hasVoted = false, this.userVoteChoice, this.senderId, this.senderName, this.body, this.notificationPriority = NotificationPriority.medium, final  List<String> imageUrlsA = const [], final  List<String> imageUrlsB = const [], this.aspectRatioA, this.aspectRatioB, this.layoutType, final  String? $type}): _metadata = metadata,_imageUrlsA = imageUrlsA,_imageUrlsB = imageUrlsB,$type = $type ?? 'voting',super._();
   factory VotingNotification.fromJson(Map<String, dynamic> json) => _$VotingNotificationFromJson(json);
 
+// Base notification 필드
 @override final  String id;
 @override final  String userId;
 @override final  String type;
@@ -502,28 +504,42 @@ class VotingNotification extends Notification {
   return EqualUnmodifiableMapView(_metadata);
 }
 
-// Voting 전용 필드
+// Voting 전용 필드 (확장됨)
  final  String postId;
  final  String postTitle;
- final  List<String>? _imageUrlsA;
- List<String>? get imageUrlsA {
-  final value = _imageUrlsA;
-  if (value == null) return null;
+ final  String postContent;
+ final  String? postDescription;
+ final  DateTime voteStartTime;
+ final  DateTime voteEndTime;
+ final  String? targetAudience;
+ final  int? currentVotesA;
+ final  int? currentVotesB;
+@JsonKey() final  bool hasVoted;
+ final  String? userVoteChoice;
+ final  String? senderId;
+ final  String? senderName;
+ final  String? body;
+@JsonKey() final  NotificationPriority notificationPriority;
+// 이미지 URL 리스트 (기존 필드 유지)
+ final  List<String> _imageUrlsA;
+// 이미지 URL 리스트 (기존 필드 유지)
+@JsonKey() List<String> get imageUrlsA {
   if (_imageUrlsA is EqualUnmodifiableListView) return _imageUrlsA;
   // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(value);
+  return EqualUnmodifiableListView(_imageUrlsA);
 }
 
- final  List<String>? _imageUrlsB;
- List<String>? get imageUrlsB {
-  final value = _imageUrlsB;
-  if (value == null) return null;
+ final  List<String> _imageUrlsB;
+@JsonKey() List<String> get imageUrlsB {
   if (_imageUrlsB is EqualUnmodifiableListView) return _imageUrlsB;
   // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(value);
+  return EqualUnmodifiableListView(_imageUrlsB);
 }
 
- final  DateTime? voteDeadline;
+// Aspect Ratio (레이아웃 계산용)
+ final  double? aspectRatioA;
+ final  double? aspectRatioB;
+ final  String? layoutType;
 
 @JsonKey(name: 'runtimeType')
 final String $type;
@@ -542,16 +558,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is VotingNotification&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.type, type) || other.type == type)&&(identical(other.title, title) || other.title == title)&&(identical(other.content, content) || other.content == content)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.readAt, readAt) || other.readAt == readAt)&&(identical(other.isRead, isRead) || other.isRead == isRead)&&(identical(other.expiryTime, expiryTime) || other.expiryTime == expiryTime)&&const DeepCollectionEquality().equals(other._metadata, _metadata)&&(identical(other.postId, postId) || other.postId == postId)&&(identical(other.postTitle, postTitle) || other.postTitle == postTitle)&&const DeepCollectionEquality().equals(other._imageUrlsA, _imageUrlsA)&&const DeepCollectionEquality().equals(other._imageUrlsB, _imageUrlsB)&&(identical(other.voteDeadline, voteDeadline) || other.voteDeadline == voteDeadline));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is VotingNotification&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.type, type) || other.type == type)&&(identical(other.title, title) || other.title == title)&&(identical(other.content, content) || other.content == content)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.readAt, readAt) || other.readAt == readAt)&&(identical(other.isRead, isRead) || other.isRead == isRead)&&(identical(other.expiryTime, expiryTime) || other.expiryTime == expiryTime)&&const DeepCollectionEquality().equals(other._metadata, _metadata)&&(identical(other.postId, postId) || other.postId == postId)&&(identical(other.postTitle, postTitle) || other.postTitle == postTitle)&&(identical(other.postContent, postContent) || other.postContent == postContent)&&(identical(other.postDescription, postDescription) || other.postDescription == postDescription)&&(identical(other.voteStartTime, voteStartTime) || other.voteStartTime == voteStartTime)&&(identical(other.voteEndTime, voteEndTime) || other.voteEndTime == voteEndTime)&&(identical(other.targetAudience, targetAudience) || other.targetAudience == targetAudience)&&(identical(other.currentVotesA, currentVotesA) || other.currentVotesA == currentVotesA)&&(identical(other.currentVotesB, currentVotesB) || other.currentVotesB == currentVotesB)&&(identical(other.hasVoted, hasVoted) || other.hasVoted == hasVoted)&&(identical(other.userVoteChoice, userVoteChoice) || other.userVoteChoice == userVoteChoice)&&(identical(other.senderId, senderId) || other.senderId == senderId)&&(identical(other.senderName, senderName) || other.senderName == senderName)&&(identical(other.body, body) || other.body == body)&&(identical(other.notificationPriority, notificationPriority) || other.notificationPriority == notificationPriority)&&const DeepCollectionEquality().equals(other._imageUrlsA, _imageUrlsA)&&const DeepCollectionEquality().equals(other._imageUrlsB, _imageUrlsB)&&(identical(other.aspectRatioA, aspectRatioA) || other.aspectRatioA == aspectRatioA)&&(identical(other.aspectRatioB, aspectRatioB) || other.aspectRatioB == aspectRatioB)&&(identical(other.layoutType, layoutType) || other.layoutType == layoutType));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,type,title,content,createdAt,readAt,isRead,expiryTime,const DeepCollectionEquality().hash(_metadata),postId,postTitle,const DeepCollectionEquality().hash(_imageUrlsA),const DeepCollectionEquality().hash(_imageUrlsB),voteDeadline);
+int get hashCode => Object.hashAll([runtimeType,id,userId,type,title,content,createdAt,readAt,isRead,expiryTime,const DeepCollectionEquality().hash(_metadata),postId,postTitle,postContent,postDescription,voteStartTime,voteEndTime,targetAudience,currentVotesA,currentVotesB,hasVoted,userVoteChoice,senderId,senderName,body,notificationPriority,const DeepCollectionEquality().hash(_imageUrlsA),const DeepCollectionEquality().hash(_imageUrlsB),aspectRatioA,aspectRatioB,layoutType]);
 
 @override
 String toString() {
-  return 'Notification.voting(id: $id, userId: $userId, type: $type, title: $title, content: $content, createdAt: $createdAt, readAt: $readAt, isRead: $isRead, expiryTime: $expiryTime, metadata: $metadata, postId: $postId, postTitle: $postTitle, imageUrlsA: $imageUrlsA, imageUrlsB: $imageUrlsB, voteDeadline: $voteDeadline)';
+  return 'Notification.voting(id: $id, userId: $userId, type: $type, title: $title, content: $content, createdAt: $createdAt, readAt: $readAt, isRead: $isRead, expiryTime: $expiryTime, metadata: $metadata, postId: $postId, postTitle: $postTitle, postContent: $postContent, postDescription: $postDescription, voteStartTime: $voteStartTime, voteEndTime: $voteEndTime, targetAudience: $targetAudience, currentVotesA: $currentVotesA, currentVotesB: $currentVotesB, hasVoted: $hasVoted, userVoteChoice: $userVoteChoice, senderId: $senderId, senderName: $senderName, body: $body, notificationPriority: $notificationPriority, imageUrlsA: $imageUrlsA, imageUrlsB: $imageUrlsB, aspectRatioA: $aspectRatioA, aspectRatioB: $aspectRatioB, layoutType: $layoutType)';
 }
 
 
@@ -562,7 +578,7 @@ abstract mixin class $VotingNotificationCopyWith<$Res> implements $NotificationC
   factory $VotingNotificationCopyWith(VotingNotification value, $Res Function(VotingNotification) _then) = _$VotingNotificationCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String userId, String type, String title, String content, DateTime createdAt, DateTime? readAt, bool isRead, DateTime? expiryTime, Map<String, dynamic> metadata, String postId, String postTitle, List<String>? imageUrlsA, List<String>? imageUrlsB, DateTime? voteDeadline
+ String id, String userId, String type, String title, String content, DateTime createdAt, DateTime? readAt, bool isRead, DateTime? expiryTime, Map<String, dynamic> metadata, String postId, String postTitle, String postContent, String? postDescription, DateTime voteStartTime, DateTime voteEndTime, String? targetAudience, int? currentVotesA, int? currentVotesB, bool hasVoted, String? userVoteChoice, String? senderId, String? senderName, String? body, NotificationPriority notificationPriority, List<String> imageUrlsA, List<String> imageUrlsB, double? aspectRatioA, double? aspectRatioB, String? layoutType
 });
 
 
@@ -579,7 +595,7 @@ class _$VotingNotificationCopyWithImpl<$Res>
 
 /// Create a copy of Notification
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? type = null,Object? title = null,Object? content = null,Object? createdAt = null,Object? readAt = freezed,Object? isRead = null,Object? expiryTime = freezed,Object? metadata = null,Object? postId = null,Object? postTitle = null,Object? imageUrlsA = freezed,Object? imageUrlsB = freezed,Object? voteDeadline = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? type = null,Object? title = null,Object? content = null,Object? createdAt = null,Object? readAt = freezed,Object? isRead = null,Object? expiryTime = freezed,Object? metadata = null,Object? postId = null,Object? postTitle = null,Object? postContent = null,Object? postDescription = freezed,Object? voteStartTime = null,Object? voteEndTime = null,Object? targetAudience = freezed,Object? currentVotesA = freezed,Object? currentVotesB = freezed,Object? hasVoted = null,Object? userVoteChoice = freezed,Object? senderId = freezed,Object? senderName = freezed,Object? body = freezed,Object? notificationPriority = null,Object? imageUrlsA = null,Object? imageUrlsB = null,Object? aspectRatioA = freezed,Object? aspectRatioB = freezed,Object? layoutType = freezed,}) {
   return _then(VotingNotification(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -593,10 +609,25 @@ as bool,expiryTime: freezed == expiryTime ? _self.expiryTime : expiryTime // ign
 as DateTime?,metadata: null == metadata ? _self._metadata : metadata // ignore: cast_nullable_to_non_nullable
 as Map<String, dynamic>,postId: null == postId ? _self.postId : postId // ignore: cast_nullable_to_non_nullable
 as String,postTitle: null == postTitle ? _self.postTitle : postTitle // ignore: cast_nullable_to_non_nullable
-as String,imageUrlsA: freezed == imageUrlsA ? _self._imageUrlsA : imageUrlsA // ignore: cast_nullable_to_non_nullable
-as List<String>?,imageUrlsB: freezed == imageUrlsB ? _self._imageUrlsB : imageUrlsB // ignore: cast_nullable_to_non_nullable
-as List<String>?,voteDeadline: freezed == voteDeadline ? _self.voteDeadline : voteDeadline // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as String,postContent: null == postContent ? _self.postContent : postContent // ignore: cast_nullable_to_non_nullable
+as String,postDescription: freezed == postDescription ? _self.postDescription : postDescription // ignore: cast_nullable_to_non_nullable
+as String?,voteStartTime: null == voteStartTime ? _self.voteStartTime : voteStartTime // ignore: cast_nullable_to_non_nullable
+as DateTime,voteEndTime: null == voteEndTime ? _self.voteEndTime : voteEndTime // ignore: cast_nullable_to_non_nullable
+as DateTime,targetAudience: freezed == targetAudience ? _self.targetAudience : targetAudience // ignore: cast_nullable_to_non_nullable
+as String?,currentVotesA: freezed == currentVotesA ? _self.currentVotesA : currentVotesA // ignore: cast_nullable_to_non_nullable
+as int?,currentVotesB: freezed == currentVotesB ? _self.currentVotesB : currentVotesB // ignore: cast_nullable_to_non_nullable
+as int?,hasVoted: null == hasVoted ? _self.hasVoted : hasVoted // ignore: cast_nullable_to_non_nullable
+as bool,userVoteChoice: freezed == userVoteChoice ? _self.userVoteChoice : userVoteChoice // ignore: cast_nullable_to_non_nullable
+as String?,senderId: freezed == senderId ? _self.senderId : senderId // ignore: cast_nullable_to_non_nullable
+as String?,senderName: freezed == senderName ? _self.senderName : senderName // ignore: cast_nullable_to_non_nullable
+as String?,body: freezed == body ? _self.body : body // ignore: cast_nullable_to_non_nullable
+as String?,notificationPriority: null == notificationPriority ? _self.notificationPriority : notificationPriority // ignore: cast_nullable_to_non_nullable
+as NotificationPriority,imageUrlsA: null == imageUrlsA ? _self._imageUrlsA : imageUrlsA // ignore: cast_nullable_to_non_nullable
+as List<String>,imageUrlsB: null == imageUrlsB ? _self._imageUrlsB : imageUrlsB // ignore: cast_nullable_to_non_nullable
+as List<String>,aspectRatioA: freezed == aspectRatioA ? _self.aspectRatioA : aspectRatioA // ignore: cast_nullable_to_non_nullable
+as double?,aspectRatioB: freezed == aspectRatioB ? _self.aspectRatioB : aspectRatioB // ignore: cast_nullable_to_non_nullable
+as double?,layoutType: freezed == layoutType ? _self.layoutType : layoutType // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

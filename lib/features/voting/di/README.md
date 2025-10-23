@@ -1,7 +1,7 @@
 # Voting Feature - Dependency Injection Module
 
-> **최종 업데이트**: 2025-01-12  
-> **버전**: 2.0.0 (Clean Architecture Complete)  
+> **최종 업데이트**: 2025-01-20
+> **버전**: 2.2.0 (Contract 등록 Feature 격리 완료)
 > **DI Framework**: GetIt 7.6.0+
 
 ## 📋 개요
@@ -33,6 +33,9 @@ registerVotingModule(GetIt getIt)
 │
 ├── _registerRepository()        # Repository (1개)
 │   └── IVotingRepository → VotingRepositoryImpl
+│
+├── _registerContract()          # Contract (1개)
+│   └── VoteContract → VotingRepositoryImpl (Dual Interface)
 │
 ├── _registerUseCases()          # Use Cases (14개)
 │   ├── CastVoteUseCase
@@ -277,17 +280,74 @@ class VotingService {
 
 ## Notes
 
-### Cross-Feature Dependency Resolution
+### 🌐 Cross-Feature Communication Patterns
 
-The voting feature depends on `VoteTimerService` from the posts feature. To avoid direct cross-feature dependencies, we use the **Port-Adapter Pattern**:
+Voting Feature는 다른 Feature와 **3가지 통신 패턴**을 사용합니다:
 
+#### 1. Event-Driven Pattern (Creation ↔ Voting)
+
+**Firebase Functions를 통한 비동기 통신**:
+```
+Creation Feature (게시물 작성)
+  ↓
+Firebase Firestore onCreate Trigger
+  ↓
+Firebase Functions (onPostCreatedSendNotifications)
+  ↓
+Voting Feature (투표 알림 전송, 타이머 설정)
+```
+
+**장점**:
+- ✅ 완전한 Feature 격리 (의존성 없음)
+- ✅ 자연스러운 비동기 처리
+- ✅ 확장성 (리스너 추가 용이)
+
+**사용 이유**: 투표 생성은 비동기 워크플로우가 자연스럽고, Creation과 Voting이 독립적으로 배포 가능
+
+#### 2. Contract Pattern (Notifications ↔ Voting)
+
+**VoteContract를 통한 타입 안전 통신**:
+```
+Notifications Feature
+  ↓
+VoteContract (app/contracts/vote_contract.dart)
+  ↓
+VotingRepositoryImpl (Dual Interface)
+  ↓
+Voting Feature
+```
+
+**VoteContract 등록** (`voting_di_module.dart`에서 관리):
+```dart
+// VotingRepositoryImpl이 VoteContract와 IVotingRepository 모두 구현
+void _registerContract(GetIt getIt) {
+  getIt.registerLazySingleton<VoteContract>(
+    () => getIt<IVotingRepository>() as VotingRepositoryImpl,
+  );
+}
+```
+
+**장점**:
+- ✅ 타입 안전성 (Dart 타입 체크)
+- ✅ IDE 지원 (자동완성, 리팩토링)
+- ✅ 명시적 API 정의
+- ✅ Feature 격리 (Feature가 자신의 Contract 관리)
+
+**주의사항**:
+- ✅ VoteContract는 `voting_di_module.dart`에서 등록 (Feature 격리 준수)
+- ✅ Repository 등록 후, UseCases 등록 전에 호출
+- ⚠️ NotificationContract와 동일한 패턴 따름
+
+#### 3. Port-Adapter Pattern (Post ↔ Voting)
+
+**외부 의존성 추상화**:
 ```
 posts/VoteTimerService → voting/VoteTimerAdapter → voting/IVoteTimerPort
 ```
 
 **Key Points:**
 - `IVoteTimerPort` is an interface (port) defined in the voting domain
-- `VoteTimerAdapter` wraps the external `VoteTimerService` 
+- `VoteTimerAdapter` wraps the external `VoteTimerService`
 - The adapter is registered in `app/di.dart` BEFORE the voting module
 - This maintains Clean Architecture boundaries
 
@@ -301,6 +361,41 @@ registerVotingModule(getIt);
 registerVotingModule(getIt);
 getIt.registerLazySingleton<IVoteTimerPort>(...);
 ```
+
+### 🎯 공유 타입 및 상수 (Shared Types & Constants)
+
+#### NotificationPriority Enum
+**위치**: `/app/contracts/notification_types.dart`
+
+```dart
+// ✅ Good: 공유 타입 사용
+import '/app/contracts/notification_types.dart';
+
+// ❌ Bad: Feature 직접 import
+import '/features/notifications/domain/models/notification.dart';
+```
+
+**Backward Compatibility**: Notifications Feature는 re-export 제공:
+```dart
+// /features/notifications/domain/models/notification.dart
+export '/app/contracts/notification_types.dart' show NotificationPriority;
+```
+
+#### VotingConstants
+**위치**: `/features/voting/domain/constants/voting_constants.dart`
+
+```dart
+// 투표 완료 텍스트
+VotingConstants.voteCompletedText  // "피클! 피클! 피클!"
+
+// 투표 카드 상태
+VotingConstants.cardStatusVotingRequest
+VotingConstants.cardStatusVoting
+VotingConstants.cardStatusCompleted
+```
+
+**이전**: ChatConstants에서 voteCompletedText 사용 (안티패턴)
+**현재**: VotingConstants로 이동 (Feature 격리 원칙)
 
 ### VoteNotification Model Conversion
 

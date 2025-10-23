@@ -132,10 +132,7 @@ return $default(_that);case _:
 final _that = this;
 switch (_that) {
 case _TargetAudience():
-return $default(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -194,10 +191,7 @@ return $default(_that.collectionType,_that.targetCount,_that.isPremium,_that.sel
 @optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String collectionType,  int targetCount,  bool isPremium,  List<String> selectedInterests,  String selectedAgeGroup,  String selectedGender,  bool activeUserOnly,  DateTime createdAt,  String status)  $default,) {final _that = this;
 switch (_that) {
 case _TargetAudience():
-return $default(_that.collectionType,_that.targetCount,_that.isPremium,_that.selectedInterests,_that.selectedAgeGroup,_that.selectedGender,_that.activeUserOnly,_that.createdAt,_that.status);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that.collectionType,_that.targetCount,_that.isPremium,_that.selectedInterests,_that.selectedAgeGroup,_that.selectedGender,_that.activeUserOnly,_that.createdAt,_that.status);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///

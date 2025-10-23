@@ -1,8 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 // Legacy VotecountsModel import removed
-import '../../domain/models/vote_expansion_requests_model.dart';
-import '../../domain/models/rankings_model.dart';
-import '../../domain/models/weights_model.dart';
+import '../models/vote_expansion_request_dto.dart';
+import '../models/weight_dto.dart';
 
 /// Remote data source interface for voting feature
 /// 
@@ -57,36 +56,6 @@ abstract class IVotingRemoteDataSource {
   });
 
   // ============================================================================
-  // Rankings Operations
-  // ============================================================================
-  
-  /// Update rankings based on current vote data
-  Future<void> updateRankings();
-  
-  /// Get top rankings
-  Future<List<RankingsModel>> getTopRankings({int limit = 10});
-  
-  /// Get rankings once with optional query builder
-  Future<List<RankingsModel>> queryRankingsOnce({
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  });
-  
-  /// Stream rankings with optional query builder
-  Stream<List<RankingsModel>> queryRankings({
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  });
-
-  /// Get count of rankings documents
-  Future<int> queryRankingsCount({
-    Query Function(Query)? queryBuilder,
-    int limit = -1,
-  });
-
-  // ============================================================================
   // Vote Expansion Operations
   // ============================================================================
   
@@ -104,14 +73,14 @@ abstract class IVotingRemoteDataSource {
   Future<void> rejectVoteExpansion(String requestId);
   
   /// Stream vote expansion requests
-  Stream<List<VoteExpansionRequestsModel>> queryVoteExpansionRequests({
+  Stream<List<VoteExpansionRequestDto>> queryVoteExpansionRequests({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
   });
 
   /// Get vote expansion requests once
-  Future<List<VoteExpansionRequestsModel>> queryVoteExpansionRequestsOnce({
+  Future<List<VoteExpansionRequestDto>> queryVoteExpansionRequestsOnce({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
@@ -128,14 +97,14 @@ abstract class IVotingRemoteDataSource {
   // ============================================================================
   
   /// Stream weights with optional query builder
-  Stream<List<WeightsModel>> queryWeights({
+  Stream<List<WeightDto>> queryWeights({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
   });
 
   /// Get weights once with optional query builder
-  Future<List<WeightsModel>> queryWeightsOnce({
+  Future<List<WeightDto>> queryWeightsOnce({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,

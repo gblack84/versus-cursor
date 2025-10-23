@@ -1,5 +1,5 @@
 import 'package:dartz/dartz.dart';
-import '../models/vote_model.dart';
+import '../models/vote.dart';
 import '../repositories/i_voting_repository.dart';
 import 'base/use_case.dart';
 import '/core/errors/failures.dart';

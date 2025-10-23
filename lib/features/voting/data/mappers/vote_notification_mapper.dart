@@ -1,20 +1,24 @@
-import '../../domain/models/vote_notification.dart';
-import '../../domain/value_objects/vote_options.dart';
 import '/features/notifications/domain/models/notification.dart';
-import '../models/vote_notification_dto.dart';
 import '/features/notifications/data/models/dto_extensions.dart';
+import '../models/vote_notification_dto.dart';
 
-/// Mapper for converting between VoteNotification Domain entity and DTO
-/// This mapper is owned by Voting Feature
+/// Mapper for converting between VotingNotification and DTO
+///
+/// **Freezed Migration**: VoteNotification → Notification.voting() 사용
+/// - VoteNotification 클래스 삭제
+/// - Notification Union의 voting 케이스로 대체
 class VoteNotificationMapper {
   /// Convert DTO to Domain Entity
-  static VoteNotification toDomain(VoteNotificationDto dto) {
+  /// Returns Notification.voting() which is a VotingNotification instance
+  static Notification toDomain(VoteNotificationDto dto) {
     final createdAt =
         DtoHelper.parseDateTime(dto.createdAt) ?? DateTime.now();
 
-    return VoteNotification(
+    return Notification.voting(
+      // Base fields
       id: dto.id ?? '',
       userId: dto.userId ?? '',
+      type: 'votingRequest',
       title: dto.title ?? '',
       content: dto.content ?? '',
       createdAt: createdAt,
@@ -22,34 +26,43 @@ class VoteNotificationMapper {
       isRead: dto.isRead ?? false,
       expiryTime: DtoHelper.parseDateTime(dto.expiryTime),
       metadata: dto.metadata ?? {},
+
+      // Voting specific fields
       postId: dto.postId ?? '',
       postTitle: dto.postTitle ?? dto.title ?? 'Vote Request',
       postContent: dto.postContent ?? '',
-      voteOptions: VoteOptions(
-        optionATitle: dto.optionA?['text'] ?? '',
-        optionBTitle: dto.optionB?['text'] ?? '',
-        optionAImageUrls:
-            DtoHelper.parseStringList(dto.optionA?['imageUrls']) ?? [],
-        optionBImageUrls:
-            DtoHelper.parseStringList(dto.optionB?['imageUrls']) ?? [],
-      ),
-      voteStartTime:
-          DtoHelper.parseDateTime(dto.voteStartTime) ?? createdAt,
+      postDescription: dto.postDescription,
+      voteStartTime: DtoHelper.parseDateTime(dto.voteStartTime) ?? createdAt,
       voteEndTime: DtoHelper.parseDateTime(dto.voteEndTime) ??
           createdAt.add(const Duration(days: 7)),
+      targetAudience: dto.targetAudience != null
+          ? dto.targetAudience.toString()
+          : null,
       currentVotesA: dto.votesA ?? 0,
       currentVotesB: dto.votesB ?? 0,
+      hasVoted: dto.hasVoted ?? false,
+      userVoteChoice: dto.userVoteChoice,
       senderId: dto.senderId,
       senderName: dto.senderName,
       body: dto.body,
       notificationPriority:
           NotificationPriority.fromWeight(dto.priority ?? 2),
+
+      // Image URLs
+      imageUrlsA: DtoHelper.parseStringList(dto.optionA?['imageUrls']) ?? [],
+      imageUrlsB: DtoHelper.parseStringList(dto.optionB?['imageUrls']) ?? [],
+
+      // Aspect Ratios (레이아웃 계산용)
+      aspectRatioA: dto.optionA?['aspectRatio'] as double?,
+      aspectRatioB: dto.optionB?['aspectRatio'] as double?,
+      layoutType: dto.layoutType,
     );
   }
 
   /// Convert Domain Entity to DTO
-  static VoteNotificationDto toDto(VoteNotification entity) {
+  static VoteNotificationDto toDto(VotingNotification entity) {
     return VoteNotificationDto(
+      // Base fields
       id: entity.id,
       userId: entity.userId,
       type: entity.type,
@@ -61,24 +74,34 @@ class VoteNotificationMapper {
       expiryTime: entity.expiryTime?.toTimestamp(),
       metadata: entity.metadata,
       priority: entity.notificationPriority.weight,
+
+      // Voting specific fields
       postId: entity.postId,
       postTitle: entity.postTitle,
       postContent: entity.postContent,
+      postDescription: entity.postDescription,
       senderId: entity.senderId,
       senderName: entity.senderName,
       body: entity.body,
-      optionA: {
-        'text': entity.voteOptions.optionATitle,
-        'imageUrls': entity.voteOptions.optionAImageUrls,
-      },
-      optionB: {
-        'text': entity.voteOptions.optionBTitle,
-        'imageUrls': entity.voteOptions.optionBImageUrls,
-      },
       voteStartTime: entity.voteStartTime.toTimestamp(),
       voteEndTime: entity.voteEndTime.toTimestamp(),
       votesA: entity.currentVotesA,
       votesB: entity.currentVotesB,
+      hasVoted: entity.hasVoted,
+      userVoteChoice: entity.userVoteChoice,
+      layoutType: entity.layoutType,
+
+      // Options with images and aspect ratios
+      optionA: {
+        'text': entity.postTitle,  // Option A title from postTitle
+        'imageUrls': entity.imageUrlsA,
+        if (entity.aspectRatioA != null) 'aspectRatio': entity.aspectRatioA,
+      },
+      optionB: {
+        'text': entity.postContent,  // Option B title from postContent
+        'imageUrls': entity.imageUrlsB,
+        if (entity.aspectRatioB != null) 'aspectRatio': entity.aspectRatioB,
+      },
     );
   }
 }

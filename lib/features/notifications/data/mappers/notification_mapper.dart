@@ -115,11 +115,40 @@ class NotificationMapper {
               actionButtons, iconUrl, isDismissible) {
         return _fromSystemNotification(entity as SystemNotification);
       },
-      voting: (id, userId, type, title, content, createdAt, readAt, isRead,
-              expiryTime, metadata, postId, postTitle, imageUrlsA,
-              imageUrlsB, voteDeadline) {
-        // VoteNotification conversion is handled by Voting Feature's mapper
-        // Fallback to base DTO
+      voting: (
+        id,
+        userId,
+        type,
+        title,
+        content,
+        createdAt,
+        readAt,
+        isRead,
+        expiryTime,
+        metadata,
+        postId,
+        postTitle,
+        postContent,
+        postDescription,
+        voteStartTime,
+        voteEndTime,
+        targetAudience,
+        currentVotesA,
+        currentVotesB,
+        hasVoted,
+        userVoteChoice,
+        senderId,
+        senderName,
+        body,
+        notificationPriority,
+        imageUrlsA,
+        imageUrlsB,
+        aspectRatioA,
+        aspectRatioB,
+        layoutType,
+      ) {
+        // Note: VoteNotification conversion is handled by VoteNotificationMapper
+        // This is a fallback for generic Notification operations
         return NotificationDto(
           id: id,
           userId: userId,
@@ -131,7 +160,7 @@ class NotificationMapper {
           isRead: isRead,
           expiryTime: expiryTime?.toTimestamp(),
           metadata: metadata,
-          priority: 2,
+          priority: notificationPriority.weight,
         );
       },
     );

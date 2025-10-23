@@ -1,13 +1,28 @@
-import '/features/notifications/domain/models/notification.dart';
 import '/app/contracts/notification_types.dart';
 import '../value_objects/vote_options.dart';
 
 /// 투표 알림 도메인 모델
-/// Clean Architecture - 구체 도메인 엔티티
-class VoteNotification extends Notification {
+/// Clean Architecture - Voting Feature의 독립 도메인 엔티티
+///
+/// Note: Notification.voting()과는 별개의 타입
+/// - VoteNotification: Voting Feature의 비즈니스 로직 담당
+/// - Notification.voting(): Notifications Feature의 데이터 전송 타입
+class VoteNotification {
   // ===== TYPE 상수 정의 (Contract 참조) =====
   static const String TYPE = NotificationTypes.votingRequest;
 
+  // ===== 공통 알림 필드 (Notification에서 가져옴) =====
+  final String id;
+  final String userId;
+  final DateTime createdAt;
+  final bool isRead;
+  final String title;
+  final String content;
+  final DateTime? readAt;
+  final DateTime? expiryTime;
+  final Map<String, dynamic> metadata;
+
+  // ===== 투표 전용 필드 =====
   final String postId;
   final String postTitle;
   final String postContent;
@@ -26,15 +41,15 @@ class VoteNotification extends Notification {
   final NotificationPriority notificationPriority;
 
   const VoteNotification({
-    required super.id,
-    required super.userId,
-    required super.createdAt,
-    required super.isRead,
-    required super.title,
-    required super.content,
-    super.readAt,
-    super.expiryTime,
-    super.metadata,
+    required this.id,
+    required this.userId,
+    required this.createdAt,
+    required this.isRead,
+    required this.title,
+    required this.content,
+    this.readAt,
+    this.expiryTime,
+    this.metadata = const {},
     required this.postId,
     required this.postTitle,
     required this.postContent,
@@ -51,20 +66,27 @@ class VoteNotification extends Notification {
     this.senderName,
     this.body,
     this.notificationPriority = NotificationPriority.medium,
-  }) : super(type: TYPE);
+  });
 
-  // ===== 투표 관련 비즈니스 로직 =====
+  // ===== 공통 알림 비즈니스 로직 =====
+
+  /// 알림이 만료되었는지 확인
+  bool get isExpired {
+    if (expiryTime == null) return false;
+    return DateTime.now().isAfter(expiryTime!);
+  }
 
   /// 투표 알림의 우선순위 계산 (Voting Feature 책임)
-  @override
   int get priority {
     // 투표 요청이면서 읽지 않은 경우 가장 높은 우선순위
     if (!isRead && !isExpired) {
       return 3;
     }
     // 기본 우선순위 (읽은 알림)
-    return super.priority;
+    return 0;
   }
+
+  // ===== 투표 관련 비즈니스 로직 =====
 
   /// 투표가 활성 상태인지 확인
   bool get isVoteActive {
@@ -136,7 +158,7 @@ class VoteNotification extends Notification {
     }
   }
 
-  @override
+  /// 알림을 읽음으로 표시
   VoteNotification markAsRead() {
     return VoteNotification(
       id: id,

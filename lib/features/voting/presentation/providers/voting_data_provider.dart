@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../domain/models/vote_model.dart';
+import '../../domain/models/vote.dart';
 import '../../domain/models/vote_counts_model.dart';
-import '../../domain/models/rankings_model.dart';
 import '../../domain/usecases/stream_vote_counts_use_case.dart';
-import '../../domain/usecases/stream_rankings_use_case.dart';
 import '../../domain/usecases/get_vote_history_use_case.dart';
 
 /// 투표 데이터 캐싱 및 동기화를 관리하는 Provider
@@ -15,13 +13,11 @@ import '../../domain/usecases/get_vote_history_use_case.dart';
 /// - 오프라인 지원
 class VotingDataProvider extends ChangeNotifier {
   final StreamVoteCountsUseCase _streamVoteCountsUseCase;
-  final StreamRankingsUseCase _streamRankingsUseCase;
   final GetVoteHistoryUseCase _getVoteHistoryUseCase;
 
   // 캐시 저장소
   final Map<String, VoteCounts> _voteCountsCache = {};
   final Map<String, Vote> _userVotesCache = {};
-  final List<RankingsModel> _rankingsCache = [];
   final Map<String, List<Vote>> _voteHistoryCache = {};
   
   // 스트림 구독 관리
@@ -44,15 +40,13 @@ class VotingDataProvider extends ChangeNotifier {
     (_cacheHitCount + _cacheMissCount) > 0 
       ? _cacheHitCount / (_cacheHitCount + _cacheMissCount) 
       : 0.0;
-  int get cachedItemsCount => 
-    _voteCountsCache.length + _userVotesCache.length + _rankingsCache.length;
+  int get cachedItemsCount =>
+    _voteCountsCache.length + _userVotesCache.length;
 
   VotingDataProvider({
     required StreamVoteCountsUseCase streamVoteCountsUseCase,
-    required StreamRankingsUseCase streamRankingsUseCase,
     required GetVoteHistoryUseCase getVoteHistoryUseCase,
   })  : _streamVoteCountsUseCase = streamVoteCountsUseCase,
-        _streamRankingsUseCase = streamRankingsUseCase,
         _getVoteHistoryUseCase = getVoteHistoryUseCase;
 
   /// 투표 수 가져오기 (캐시 우선)
@@ -74,21 +68,9 @@ class VotingDataProvider extends ChangeNotifier {
       _cacheHitCount++;
       return _userVotesCache[key];
     }
-    
+
     _cacheMissCount++;
     return null;
-  }
-
-  /// 랭킹 데이터 가져오기
-  List<RankingsModel> getRankings() {
-    if (_rankingsCache.isNotEmpty && _isValidCache('rankings')) {
-      _cacheHitCount++;
-      return List.unmodifiable(_rankingsCache);
-    }
-    
-    _cacheMissCount++;
-    _subscribeToRankings();
-    return [];
   }
 
   /// 투표 이력 가져오기
@@ -130,21 +112,13 @@ class VotingDataProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 랭킹 캐시 업데이트
-  void updateRankingsCache(List<RankingsModel> rankings) {
-    _rankingsCache.clear();
-    _rankingsCache.addAll(rankings);
-    _updateCacheTimestamp('rankings');
-    notifyListeners();
-  }
-
   /// 투표 수 스트림 구독
   void _subscribeToVoteCounts(String postId) {
     if (_activeStreams.containsKey('counts_$postId')) return;
 
     final params = StreamVoteCountsParams(postId: postId);
     final stream = _streamVoteCountsUseCase(params);
-    
+
     _activeStreams['counts_$postId'] = stream.listen((result) {
       result.fold(
         (_) => {}, // 에러 무시
@@ -160,21 +134,6 @@ class VotingDataProvider extends ChangeNotifier {
             updateVoteCountsCache(postId, counts);
           }
         },
-      );
-    });
-  }
-
-  /// 랭킹 스트림 구독
-  void _subscribeToRankings() {
-    if (_activeStreams.containsKey('rankings')) return;
-
-    final params = StreamRankingsParams(limit: 100);
-    final stream = _streamRankingsUseCase(params);
-    
-    _activeStreams['rankings'] = stream.listen((result) {
-      result.fold(
-        (_) => {}, // 에러 무시
-        (rankings) => updateRankingsCache(rankings),
       );
     });
   }
@@ -201,9 +160,6 @@ class VotingDataProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 랭킹 데이터 동기화
-      _subscribeToRankings();
-      
       // 활성 투표 수 스트림 재구독
       final postIds = _voteCountsCache.keys.toList();
       for (final postId in postIds) {
@@ -230,11 +186,9 @@ class VotingDataProvider extends ChangeNotifier {
 
     for (final key in expiredKeys) {
       _cacheTimestamps.remove(key);
-      
+
       if (key.startsWith('history_')) {
         _voteHistoryCache.remove(key.substring(8));
-      } else if (key == 'rankings') {
-        _rankingsCache.clear();
       } else {
         _voteCountsCache.remove(key);
       }
@@ -273,7 +227,6 @@ class VotingDataProvider extends ChangeNotifier {
   void clearAllCache() {
     _voteCountsCache.clear();
     _userVotesCache.clear();
-    _rankingsCache.clear();
     _voteHistoryCache.clear();
     _cacheTimestamps.clear();
     resetCacheStatistics();

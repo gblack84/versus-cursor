@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '/core/constants/app_constants.dart';
 import '/core/design_system/design_system.dart';
 import '/features/voting/domain/constants/voting_constants.dart';
-import '/features/chat/domain/constants/chat_constants.dart';
 import '/features/voting/presentation/dialogs/voting_dialog.dart';
 import '/services/ui/responsive_breakpoints.dart';
 import '/core/utils/media/aspect_ratio_analyzer.dart';
@@ -1183,7 +1182,7 @@ class _VoteCardMessageState extends State<VoteCardMessage>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              ChatConstants.voteCompletedText,
+              VotingConstants.voteCompletedText,
               style: TextStyle(
                 fontSize: 18,
                 color: VersusColors.textPrimary,

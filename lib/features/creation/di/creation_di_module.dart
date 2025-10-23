@@ -12,6 +12,9 @@
 
 import 'package:get_it/get_it.dart';
 
+// ===== App Layer - Contracts =====
+import '/app/contracts/creation_contract.dart';
+
 // ===== Data Layer - DataSource Implementations =====
 import '../data/datasources/firebase_post_creation_datasource.dart';
 import '../data/datasources/firebase_storage_datasource.dart';
@@ -65,6 +68,9 @@ void registerCreationModule(GetIt getIt) {
 
   // ===== Repositories Registration =====
   _registerRepositories(getIt);
+
+  // ===== CreationContract Registration =====
+  _registerContract(getIt);
 
   // ===== UseCases Registration =====
   _registerUseCases(getIt);
@@ -140,6 +146,14 @@ void _registerRepositories(GetIt getIt) {
       dataSource: getIt<FirebasePostCreationDataSource>(),
       imageProcessingService: getIt<IImageProcessingService>(),
     ),
+  );
+}
+
+/// Register CreationContract (Cross-Feature Communication)
+/// PostCreationRepositoryV2Impl implements both IPostCreationRepositoryV2 and CreationContract (Dual Interface)
+void _registerContract(GetIt getIt) {
+  getIt.registerLazySingleton<CreationContract>(
+    () => getIt<IPostCreationRepositoryV2>() as PostCreationRepositoryV2Impl,
   );
 }
 

@@ -3,9 +3,10 @@ import 'package:rxdart/rxdart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/repositories/i_voting_repository.dart';
 import '../../domain/models/vote_counts_model.dart';
-import '../../domain/models/vote_expansion_requests_model.dart';
-import '../../domain/models/rankings_model.dart';
-import '../../domain/models/weights_model.dart';
+import '../../domain/models/vote_expansion_request.dart';
+import '../../domain/models/weight.dart';
+import '../mappers/vote_expansion_request_mapper.dart';
+import '../mappers/weight_mapper.dart';
 import '../../domain/models/vote_cache_state.dart' as cache;
 import '../../domain/models/vote_state.dart';
 import '../../domain/models/vote_notification.dart';
@@ -101,7 +102,7 @@ class VotingRepositoryImpl implements IVotingRepository, VoteContract {
   }
 
   @override
-  Stream<List<VoteExpansionRequestsModel>> queryVoteExpansionRequests({
+  Stream<List<VoteExpansionRequest>> queryVoteExpansionRequests({
     dynamic queryBuilder,
     int limit = -1,
     bool singleRecord = false,
@@ -110,57 +111,20 @@ class VotingRepositoryImpl implements IVotingRepository, VoteContract {
       queryBuilder: queryBuilder,
       limit: limit,
       singleRecord: singleRecord,
-    );
+    ).map((dtoList) => VoteExpansionRequestMapper.toDomainList(dtoList));
   }
 
-  Future<List<VoteExpansionRequestsModel>> queryVoteExpansionRequestsOnce({
+  Future<List<VoteExpansionRequest>> queryVoteExpansionRequestsOnce({
     dynamic queryBuilder,
     int limit = -1,
     bool singleRecord = false,
-  }) {
-    return _remoteDataSource.queryVoteExpansionRequestsOnce(
+  }) async {
+    final dtoList = await _remoteDataSource.queryVoteExpansionRequestsOnce(
       queryBuilder: queryBuilder,
       limit: limit,
       singleRecord: singleRecord,
     );
-  }
-
-  // ============================================================================
-  // Rankings Queries
-  // ============================================================================
-
-  @override
-  Future<int> queryRankingsCount({
-    dynamic queryBuilder,
-    int limit = -1,
-  }) {
-    return _remoteDataSource.queryRankingsCount(
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
-  }
-
-  @override
-  Stream<List<RankingsModel>> queryRankings({
-    dynamic queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  }) {
-    return _remoteDataSource.queryRankings(
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
-  }
-
-  Future<List<RankingsModel>> queryRankingsOnce({
-    dynamic queryBuilder,
-    int limit = -1,
-    bool singleRecord = false,
-  }) {
-    // This method is not in IVotingRepository interface, so we keep it as internal
-    // You may want to add it to the interface if needed
-    return _remoteDataSource.getTopRankings(limit: limit);
+    return VoteExpansionRequestMapper.toDomainList(dtoList);
   }
 
   // ============================================================================
@@ -179,7 +143,7 @@ class VotingRepositoryImpl implements IVotingRepository, VoteContract {
   }
 
   @override
-  Stream<List<WeightsModel>> queryWeights({
+  Stream<List<Weight>> queryWeights({
     dynamic queryBuilder,
     int limit = -1,
     bool singleRecord = false,
@@ -188,19 +152,20 @@ class VotingRepositoryImpl implements IVotingRepository, VoteContract {
       queryBuilder: queryBuilder,
       limit: limit,
       singleRecord: singleRecord,
-    );
+    ).map((dtoList) => WeightMapper.toDomainList(dtoList));
   }
 
-  Future<List<WeightsModel>> queryWeightsOnce({
+  Future<List<Weight>> queryWeightsOnce({
     dynamic queryBuilder,
     int limit = -1,
     bool singleRecord = false,
-  }) {
-    return _remoteDataSource.queryWeightsOnce(
+  }) async {
+    final dtoList = await _remoteDataSource.queryWeightsOnce(
       queryBuilder: queryBuilder,
       limit: limit,
       singleRecord: singleRecord,
     );
+    return WeightMapper.toDomainList(dtoList);
   }
 
   // ============================================================================
@@ -224,7 +189,7 @@ class VotingRepositoryImpl implements IVotingRepository, VoteContract {
     await _localDataSource.cacheVoteState(
       postId: postId,
       userId: userId,
-      voteState: cache.VoteState(
+      voteState: cache.VoteCacheState(
         option: voteOption,
         timestamp: DateTime.now(),
         completed: false,
@@ -308,42 +273,6 @@ class VotingRepositoryImpl implements IVotingRepository, VoteContract {
     }
     
     return null;
-  }
-
-  // ============================================================================
-  // Ranking Operations
-  // ============================================================================
-
-  @override
-  Future<void> updateRankings() async {
-    await _remoteDataSource.updateRankings();
-  }
-
-  @override
-  Future<List<RankingsModel>> getTopRankings({int limit = 10}) async {
-    // Try to get from cache first
-    final cacheKey = 'top_rankings_$limit';
-    final cached = await _localDataSource.getCachedRankings(cacheKey);
-    
-    if (cached != null) {
-      // Check if cache is still valid (e.g., less than 10 minutes old)
-      final cacheTime = await _localDataSource.getRankingsCacheTime(cacheKey);
-      if (cacheTime != null && 
-          DateTime.now().difference(cacheTime).inMinutes < 10) {
-        return cached;
-      }
-    }
-    
-    // Get from remote
-    final rankings = await _remoteDataSource.getTopRankings(limit: limit);
-    
-    // Cache the result
-    await _localDataSource.cacheRankings(
-      rankings: rankings,
-      cacheKey: cacheKey,
-    );
-    
-    return rankings;
   }
 
   // ============================================================================
@@ -507,33 +436,24 @@ class VotingRepositoryImpl implements IVotingRepository, VoteContract {
     String? category,
     int? limit,
   }) {
-    // Get ranked posts stream using queryRankings
-    return _remoteDataSource
-        .queryRankings(
-          queryBuilder: category != null
-              ? (query) => query.where('category', isEqualTo: category)
-              : null,
-          limit: limit ?? 10,
-        )
-        .map((rankingsList) => rankingsList
-            .map((ranking) => ranking.toJson())
-            .toList());
+    // TODO: Ranking functionality has been moved to Search Feature
+    // Posts feature should use Search feature's ranking functionality instead
+    // This method is kept for VoteContract compatibility but should be refactored
+    throw UnimplementedError(
+      'Ranking functionality has been migrated to Search Feature. '
+      'Please use Search feature\'s getRankings methods instead.'
+    );
   }
 
   @override
   Future<Map<String, dynamic>?> getRankedPostById(String postId) async {
-    // Get ranked post by ID using queryRankingsOnce
-    final rankings = await _remoteDataSource.queryRankingsOnce(
-      queryBuilder: (query) => query.where('postId', isEqualTo: postId),
-      limit: 1,
-      singleRecord: true,
+    // TODO: Ranking functionality has been moved to Search Feature
+    // Posts feature should use Search feature's ranking functionality instead
+    // This method is kept for VoteContract compatibility but should be refactored
+    throw UnimplementedError(
+      'Ranking functionality has been migrated to Search Feature. '
+      'Please use Search feature\'s getRankings methods instead.'
     );
-
-    if (rankings.isEmpty) {
-      return null;
-    }
-
-    return rankings.first.toJson();
   }
 
   // --- 13 New VoteContract Methods from Ports ---

@@ -12,6 +12,10 @@ import 'package:get_it/get_it.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+// ===== App Layer - Contracts =====
+import '/app/contracts/vote_contract.dart';
+
 // Cross-feature dependency removed - using port interface instead
 
 // ===== Domain Layer =====
@@ -38,7 +42,7 @@ import '../data/adapters/vote_state_adapter.dart';
 import '../data/adapters/notification_data_adapter.dart';
 import '../data/adapters/box_calculator_adapter.dart';
 
-// ===== Domain Layer - UseCases (14 total) =====
+// ===== Domain Layer - UseCases (11 total) =====
 import '../domain/usecases/cast_vote_use_case.dart';
 import '../domain/usecases/remove_vote_use_case.dart';
 import '../domain/usecases/get_vote_counts_use_case.dart';
@@ -48,9 +52,6 @@ import '../domain/usecases/check_user_vote_status_use_case.dart';
 import '../domain/usecases/get_vote_status_use_case.dart';
 import '../domain/usecases/update_vote_status_use_case.dart';
 import '../domain/usecases/submit_vote_use_case.dart';
-import '../domain/usecases/get_rankings_use_case.dart';
-import '../domain/usecases/stream_rankings_use_case.dart';
-import '../domain/usecases/update_rankings_use_case.dart';
 import '../domain/usecases/request_vote_expansion_use_case.dart';
 import '../domain/usecases/get_vote_history_use_case.dart';
 
@@ -78,25 +79,28 @@ import '../presentation/dependencies/voting_dependencies_impl.dart';
 void registerVotingModule(GetIt getIt) {
   // ===== DataSources Registration =====
   _registerDataSources(getIt);
-  
+
   // ===== Repository Registration =====
   _registerRepository(getIt);
-  
+
+  // ===== VoteContract Registration =====
+  _registerContract(getIt);
+
   // ===== UseCases Registration =====
   _registerUseCases(getIt);
-  
+
   // ===== Coordinators & Helpers =====
   _registerCoordinatorsAndHelpers(getIt);
-  
+
   // ===== Dependencies Abstraction Registration =====
   _registerDependenciesAbstraction(getIt);
-  
+
   // ===== Providers Registration =====
   _registerProviders(getIt);
-  
+
   // ===== State Manager Registration =====
   _registerStateManager(getIt);
-  
+
   // ===== Ports & Services Registration =====
   _registerPortsAndServices(getIt);
 }
@@ -129,6 +133,14 @@ void _registerRepository(GetIt getIt) {
       notificationDataPort: getIt<INotificationDataPort>(),
       voteUIDelegate: getIt<IVoteUIDelegate>(),
     ),
+  );
+}
+
+/// Register VoteContract (Cross-Feature Communication)
+/// VotingRepositoryImpl implements both IVotingRepository and VoteContract (Dual Interface)
+void _registerContract(GetIt getIt) {
+  getIt.registerLazySingleton<VoteContract>(
+    () => getIt<IVotingRepository>() as VotingRepositoryImpl,
   );
 }
 
@@ -173,19 +185,6 @@ void _registerUseCases(GetIt getIt) {
     () => UpdateVoteStatusUseCase(getIt<IVoteStatusService>()),
   );
 
-  // Rankings Operations
-  getIt.registerFactory<GetRankingsUseCase>(
-    () => GetRankingsUseCase(getIt<IVotingRepository>()),
-  );
-
-  getIt.registerFactory<StreamRankingsUseCase>(
-    () => StreamRankingsUseCase(getIt<IVotingRepository>()),
-  );
-
-  getIt.registerFactory<UpdateRankingsUseCase>(
-    () => UpdateRankingsUseCase(getIt<IVotingRepository>()),
-  );
-
   // Vote Expansion Operations
   getIt.registerFactory<RequestVoteExpansionUseCase>(
     () => RequestVoteExpansionUseCase(getIt<IVotingRepository>()),
@@ -219,7 +218,6 @@ void _registerProviders(GetIt getIt) {
   getIt.registerLazySingleton<VotingDataProvider>(
     () => VotingDataProvider(
       streamVoteCountsUseCase: getIt<StreamVoteCountsUseCase>(),
-      streamRankingsUseCase: getIt<StreamRankingsUseCase>(),
       getVoteHistoryUseCase: getIt<GetVoteHistoryUseCase>(),
     ),
   );

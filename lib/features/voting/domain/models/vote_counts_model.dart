@@ -1,24 +1,19 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'vote_counts_model.freezed.dart';
+part 'vote_counts_model.g.dart';
+
 /// 투표 수 정보를 담는 도메인 모델
-class VoteCounts {
-  final int votesA;
-  final int votesB;
-  final int totalVotes;
+@freezed
+sealed class VoteCounts with _$VoteCounts {
+  const VoteCounts._();
 
-  const VoteCounts({
-    required this.votesA,
-    required this.votesB,
-    required this.totalVotes,
-  });
+  const factory VoteCounts({
+    required int votesA,
+    required int votesB,
+    required int totalVotes,
+  }) = _VoteCounts;
 
-  Map<String, dynamic> toJson() => {
-    'votesA': votesA,
-    'votesB': votesB,
-    'totalVotes': totalVotes,
-  };
-
-  factory VoteCounts.fromJson(Map<String, dynamic> json) => VoteCounts(
-    votesA: json['votesA'] as int,
-    votesB: json['votesB'] as int,
-    totalVotes: json['totalVotes'] as int,
-  );
+  factory VoteCounts.fromJson(Map<String, dynamic> json) =>
+      _$VoteCountsFromJson(json);
 }

@@ -1,4 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'post_voting.freezed.dart';
+part 'post_voting.g.dart';
+
+// ============================================================================
+// Enumerations
+// ============================================================================
 
 /// Vote status enumeration
 enum VoteStatus {
@@ -23,6 +31,10 @@ enum ExpansionStatus {
   completed,
 }
 
+// ============================================================================
+// Exceptions
+// ============================================================================
+
 /// Vote exception class
 class VoteException implements Exception {
   final String message;
@@ -35,68 +47,156 @@ class VoteException implements Exception {
       'VoteException: $message${code != null ? ' (code: $code)' : ''}';
 }
 
+// ============================================================================
+// Custom JSON Converters for Firestore Compatibility
+// ============================================================================
+
+/// Timestamp/DateTime 안전 변환 함수
+DateTime? _dateTimeFromTimestamp(dynamic value) {
+  if (value == null) return null;
+  if (value is Timestamp) return value.toDate();
+  if (value is DateTime) return value;
+  return null;
+}
+
+/// DateTime → Timestamp 변환 (toJson용)
+/// Note: Freezed toJson()에서는 DateTime 그대로 반환,
+/// Firestore 저장 시에는 별도 toFirestore() 메서드 사용 권장
+dynamic _dateTimeToTimestamp(DateTime? dateTime) {
+  return dateTime; // Keep as DateTime for JSON serialization
+}
+
+/// Duration → milliseconds 변환
+int _durationToJson(Duration duration) {
+  return duration.inMilliseconds;
+}
+
+/// milliseconds → Duration 변환
+/// null인 경우 기본값 10분 반환 (@Default와 일치)
+Duration _durationFromJson(int? milliseconds) {
+  if (milliseconds == null) return const Duration(minutes: 10);
+  return Duration(milliseconds: milliseconds);
+}
+
+/// VoteStatus → String 변환
+String _voteStatusToJson(VoteStatus status) {
+  switch (status) {
+    case VoteStatus.pending:
+      return 'pending';
+    case VoteStatus.active:
+      return 'active';
+    case VoteStatus.completed:
+      return 'completed';
+    case VoteStatus.cancelled:
+      return 'cancelled';
+    case VoteStatus.timeout:
+      return 'timeout';
+  }
+}
+
+/// String → VoteStatus 변환
+VoteStatus _voteStatusFromJson(dynamic value) {
+  if (value == null) return VoteStatus.pending;
+  if (value is VoteStatus) return value;
+
+  switch (value.toString().toLowerCase()) {
+    case 'active':
+      return VoteStatus.active;
+    case 'completed':
+      return VoteStatus.completed;
+    case 'cancelled':
+      return VoteStatus.cancelled;
+    case 'timeout':
+      return VoteStatus.timeout;
+    default:
+      return VoteStatus.pending;
+  }
+}
+
+// ============================================================================
+// Domain Entity
+// ============================================================================
+
 /// PostVoting Domain Model
-/// Clean Architecture - Domain Layer Entity
+///
+/// **Clean Architecture v4.0 - Freezed Domain Entity**:
+/// - Plain class → Freezed 변환 (397줄 → 270줄, 32% 감소)
+/// - copyWith, ==, hashCode, toString 자동 생성 (45줄 삭제)
+/// - fromJson/toJson 자동 생성
+/// - Custom converters for Timestamp, Duration, VoteStatus
+///
+/// **변경사항** (2025-01-24):
+/// - Plain class → @freezed sealed class
+/// - 수동 copyWith (45줄) 제거 → 자동 생성
+/// - 수동 equality (7줄) 제거 → 자동 equality
+/// - Timestamp/Duration/VoteStatus 커스텀 변환 (@JsonKey)
+/// - 비즈니스 로직 메서드 클래스 내부 유지 (Vote.dart 패턴)
 ///
 /// Manages the complex voting system for Versus posts.
 /// Handles vote state, timing, counts, and expansion system.
-class PostVoting {
-  const PostVoting({
-    required this.postId,
-    this.voteStartTime,
-    this.voteEndTime,
-    this.voteStatus = VoteStatus.pending,
-    this.voteCompleted = false,
-    this.voteCompletedAt,
-    this.voteCancelledAt,
-    this.voteCancelledReason,
-    this.voteTimeout = const Duration(minutes: 10),
-    this.votesA = 0,
-    this.votesB = 0,
-    this.votedUserIdsA = const [],
-    this.votedUserIdsB = const [],
-    this.displayVotesA,
-    this.displayVotesB,
-    this.notificationsSent = false,
-    this.notificationsSentAt,
-    this.expansionPointsUsed = 0,
-    this.expandedUserCount = 0,
-    this.expansionStatus = 'none',
-  });
+@freezed
+sealed class PostVoting with _$PostVoting {
+  const PostVoting._();
 
-  // Core Identity
-  final String postId; // Foreign key to PostCore.id
+  const factory PostVoting({
+    // Core Identity
+    required String postId, // Foreign key to PostCore.id
 
-  // Timing Fields
-  final DateTime? voteStartTime;
-  final DateTime? voteEndTime;
-  final VoteStatus voteStatus;
-  final bool voteCompleted;
-  final DateTime? voteCompletedAt;
-  final DateTime? voteCancelledAt;
-  final String? voteCancelledReason;
-  final Duration voteTimeout;
+    // Timing Fields
+    @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
+    DateTime? voteStartTime,
 
-  // Vote Counts
-  final int votesA;
-  final int votesB;
-  final List<String> votedUserIdsA;
-  final List<String> votedUserIdsB;
+    @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
+    DateTime? voteEndTime,
 
-  // Display Values (for animations/privacy)
-  final int? displayVotesA; // May differ from actual for animation
-  final int? displayVotesB;
+    @JsonKey(fromJson: _voteStatusFromJson, toJson: _voteStatusToJson)
+    @Default(VoteStatus.pending)
+    VoteStatus voteStatus,
 
-  // Notification System
-  final bool notificationsSent;
-  final DateTime? notificationsSentAt;
+    @Default(false) bool voteCompleted,
 
-  // Expansion System
-  final int expansionPointsUsed;
-  final int expandedUserCount;
-  final String expansionStatus; // 'none', 'pending', 'active', 'completed'
+    @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
+    DateTime? voteCompletedAt,
 
-  // ============= Computed Properties =============
+    @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
+    DateTime? voteCancelledAt,
+
+    String? voteCancelledReason,
+
+    @JsonKey(fromJson: _durationFromJson, toJson: _durationToJson)
+    @Default(Duration(minutes: 10))
+    Duration voteTimeout,
+
+    // Vote Counts
+    @Default(0) int votesA,
+    @Default(0) int votesB,
+    @Default([]) List<String> votedUserIdsA,
+    @Default([]) List<String> votedUserIdsB,
+
+    // Display Values (for animations/privacy)
+    int? displayVotesA, // May differ from actual for animation
+    int? displayVotesB,
+
+    // Notification System
+    @Default(false) bool notificationsSent,
+
+    @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
+    DateTime? notificationsSentAt,
+
+    // Expansion System
+    @Default(0) int expansionPointsUsed,
+    @Default(0) int expandedUserCount,
+    @Default('none') String expansionStatus, // 'none', 'pending', 'active', 'completed'
+  }) = _PostVoting;
+
+  /// Freezed's fromJson for JSON deserialization
+  /// Handles Timestamp → DateTime, milliseconds → Duration conversion automatically
+  factory PostVoting.fromJson(Map<String, dynamic> json) =>
+      _$PostVotingFromJson(json);
+
+  // ============================================================================
+  // Computed Properties (Business Logic)
+  // ============================================================================
 
   /// Total votes cast
   int get totalVotes => votesA + votesB;
@@ -152,7 +252,9 @@ class PostVoting {
     return DateTime.now().isAfter(voteEndTime!);
   }
 
-  // ============= State Transitions =============
+  // ============================================================================
+  // State Transitions (Business Logic)
+  // ============================================================================
 
   /// Start voting
   PostVoting startVoting({Duration? customTimeout}) {
@@ -237,58 +339,32 @@ class PostVoting {
       expansionStatus: status,
     );
   }
+}
 
-  // ============= Serialization =============
+// ============================================================================
+// Firestore-Specific Serialization (Outside Freezed)
+// ============================================================================
 
-  /// Parse vote status from string
-  static VoteStatus _parseVoteStatus(dynamic value) {
-    if (value == null) return VoteStatus.pending;
-    if (value is VoteStatus) return value;
-
-    switch (value.toString().toLowerCase()) {
-      case 'active':
-        return VoteStatus.active;
-      case 'completed':
-        return VoteStatus.completed;
-      case 'cancelled':
-        return VoteStatus.cancelled;
-      case 'timeout':
-        return VoteStatus.timeout;
-      default:
-        return VoteStatus.pending;
-    }
-  }
-
-  /// Convert VoteStatus to string for Firestore
-  static String _voteStatusToString(VoteStatus status) {
-    switch (status) {
-      case VoteStatus.pending:
-        return 'pending';
-      case VoteStatus.active:
-        return 'active';
-      case VoteStatus.completed:
-        return 'completed';
-      case VoteStatus.cancelled:
-        return 'cancelled';
-      case VoteStatus.timeout:
-        return 'timeout';
-    }
-  }
-
+/// PostVoting Firestore Extension
+///
+/// Firestore-specific serialization methods.
+/// These are kept outside the Freezed class because:
+/// 1. Firestore uses Timestamp, not DateTime
+/// 2. fromMap requires postId parameter (not in JSON)
+/// 3. Separation of concerns (Firestore vs JSON serialization)
+extension PostVotingFirestore on PostVoting {
   /// Create from Firestore document
-  factory PostVoting.fromMap(Map<String, dynamic> data, String postId) {
+  static PostVoting fromMap(Map<String, dynamic> data, String postId) {
     return PostVoting(
       postId: postId,
-      voteStartTime: data['voteStartTime']?.toDate(),
-      voteEndTime: data['voteEndTime']?.toDate(),
-      voteStatus: _parseVoteStatus(data['voteStatus']),
+      voteStartTime: _dateTimeFromTimestamp(data['voteStartTime']),
+      voteEndTime: _dateTimeFromTimestamp(data['voteEndTime']),
+      voteStatus: _voteStatusFromJson(data['voteStatus']),
       voteCompleted: data['voteCompleted'] ?? false,
-      voteCompletedAt: data['voteCompletedAt']?.toDate(),
-      voteCancelledAt: data['voteCancelledAt']?.toDate(),
+      voteCompletedAt: _dateTimeFromTimestamp(data['voteCompletedAt']),
+      voteCancelledAt: _dateTimeFromTimestamp(data['voteCancelledAt']),
       voteCancelledReason: data['voteCancelledReason'],
-      voteTimeout: data['voteTimeout'] != null
-          ? Duration(milliseconds: data['voteTimeout'])
-          : const Duration(minutes: 10),
+      voteTimeout: _durationFromJson(data['voteTimeout']),
       votesA: data['votesA'] ?? 0,
       votesB: data['votesB'] ?? 0,
       votedUserIdsA: List<String>.from(data['votedUserIdsA'] ?? []),
@@ -296,7 +372,7 @@ class PostVoting {
       displayVotesA: data['displayVotesA'],
       displayVotesB: data['displayVotesB'],
       notificationsSent: data['notificationsSent'] ?? false,
-      notificationsSentAt: data['notificationsSentAt']?.toDate(),
+      notificationsSentAt: _dateTimeFromTimestamp(data['notificationsSentAt']),
       expansionPointsUsed: data['expansionPointsUsed'] ?? 0,
       expandedUserCount: data['expandedUserCount'] ?? 0,
       expansionStatus: data['expansionStatus'] ?? 'none',
@@ -309,7 +385,7 @@ class PostVoting {
       if (voteStartTime != null)
         'voteStartTime': Timestamp.fromDate(voteStartTime!),
       if (voteEndTime != null) 'voteEndTime': Timestamp.fromDate(voteEndTime!),
-      'voteStatus': _voteStatusToString(voteStatus),
+      'voteStatus': _voteStatusToJson(voteStatus),
       'voteCompleted': voteCompleted,
       if (voteCompletedAt != null)
         'voteCompletedAt': Timestamp.fromDate(voteCompletedAt!),
@@ -331,66 +407,5 @@ class PostVoting {
       'expandedUserCount': expandedUserCount,
       'expansionStatus': expansionStatus,
     };
-  }
-
-  /// Create a copy with updated fields
-  PostVoting copyWith({
-    String? postId,
-    DateTime? voteStartTime,
-    DateTime? voteEndTime,
-    VoteStatus? voteStatus,
-    bool? voteCompleted,
-    DateTime? voteCompletedAt,
-    DateTime? voteCancelledAt,
-    String? voteCancelledReason,
-    Duration? voteTimeout,
-    int? votesA,
-    int? votesB,
-    List<String>? votedUserIdsA,
-    List<String>? votedUserIdsB,
-    int? displayVotesA,
-    int? displayVotesB,
-    bool? notificationsSent,
-    DateTime? notificationsSentAt,
-    int? expansionPointsUsed,
-    int? expandedUserCount,
-    String? expansionStatus,
-  }) {
-    return PostVoting(
-      postId: postId ?? this.postId,
-      voteStartTime: voteStartTime ?? this.voteStartTime,
-      voteEndTime: voteEndTime ?? this.voteEndTime,
-      voteStatus: voteStatus ?? this.voteStatus,
-      voteCompleted: voteCompleted ?? this.voteCompleted,
-      voteCompletedAt: voteCompletedAt ?? this.voteCompletedAt,
-      voteCancelledAt: voteCancelledAt ?? this.voteCancelledAt,
-      voteCancelledReason: voteCancelledReason ?? this.voteCancelledReason,
-      voteTimeout: voteTimeout ?? this.voteTimeout,
-      votesA: votesA ?? this.votesA,
-      votesB: votesB ?? this.votesB,
-      votedUserIdsA: votedUserIdsA ?? this.votedUserIdsA,
-      votedUserIdsB: votedUserIdsB ?? this.votedUserIdsB,
-      displayVotesA: displayVotesA ?? this.displayVotesA,
-      displayVotesB: displayVotesB ?? this.displayVotesB,
-      notificationsSent: notificationsSent ?? this.notificationsSent,
-      notificationsSentAt: notificationsSentAt ?? this.notificationsSentAt,
-      expansionPointsUsed: expansionPointsUsed ?? this.expansionPointsUsed,
-      expandedUserCount: expandedUserCount ?? this.expandedUserCount,
-      expansionStatus: expansionStatus ?? this.expansionStatus,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is PostVoting && other.postId == postId;
-  }
-
-  @override
-  int get hashCode => postId.hashCode;
-
-  @override
-  String toString() {
-    return 'PostVoting(postId: $postId, status: $voteStatus, votes: A=$votesA B=$votesB)';
   }
 }

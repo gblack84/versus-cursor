@@ -1,3 +1,18 @@
+/// ⚠️ DEPRECATED - Firebase 최적화 후 삭제 예정 (마이그레이션 필요)
+///
+/// 이 파일은 레거시 DI 시스템의 일부입니다.
+/// 신규 시스템은 /features/creation/di/creation_di_module.dart를 사용합니다.
+///
+/// 삭제 전 필요 작업:
+/// - CreationModule.getXXX() 정적 메서드 사용처를 getIt<T>()로 마이그레이션
+/// - 현재 사용 위치: 여러 UI 컴포넌트에서 CreationModule.getCreatePostProvider() 등 사용중
+///
+/// 삭제 조건:
+/// - 모든 CreationModule.getXXX() 호출을 getIt<T>() 또는 Provider.of로 변경 완료 시
+/// - main.dart에서 DIContainer.initialize() 제거 완료 시
+///
+/// 관련 이슈: Firebase 최적화 마이그레이션
+
 import 'package:get_it/get_it.dart';
 import 'package:flutter/material.dart';
 import 'feature_modules.dart';

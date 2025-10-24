@@ -9,7 +9,7 @@ import 'package:go_router/go_router.dart';
 
 // Import Voting Feature screens and dialogs
 import '../overlays/in_app_notification_dialog.dart';
-import '../dialogs/voting_dialog_refactored.dart';
+import '../dialogs/voting_dialog.dart';
 
 /// Voting Feature route paths
 class VotingRoutePaths {

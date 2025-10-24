@@ -1,9 +1,27 @@
+/// ✅ KEEP - Feature 간 통신용 어댑터
+///
+/// 이 파일은 Feature 간 통신을 위한 어댑터 패턴 구현입니다.
+/// Clean Architecture에서 Feature 경계를 유지하면서 통신하기 위해 필요합니다.
+///
+/// 역할:
+/// - Core IVoteService 인터페이스와 Voting Feature IVoteService 연결
+/// - Notification Feature가 Voting Feature 기능을 사용 가능하게 함
+/// - 직접적인 Feature-to-Feature 의존성 제거
+///
+/// 보관 이유:
+/// - Feature 간 느슨한 결합 유지를 위해 필수
+/// - Adapter Pattern은 Clean Architecture의 핵심 패턴
+///
+/// 관련 파일:
+/// - /core/interfaces/features/i_vote_service.dart (Core 인터페이스)
+/// - /features/voting/domain/ports/i_vote_service.dart (Voting 포트)
+
 import 'package:flutter/material.dart';
 import '/core/interfaces/features/i_vote_service.dart' as core;
 import '/features/voting/domain/ports/i_vote_service.dart' as voting;
 
 /// Adapter that bridges Core IVoteService interface with Voting feature's IVoteService
-/// 
+///
 /// This adapter allows notifications feature to use voting functionality
 /// without direct feature-to-feature dependencies
 class CoreVoteServiceAdapter implements core.IVoteService {

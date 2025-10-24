@@ -6,9 +6,13 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'i_auth_local_datasource.dart';
-import '../models/auth_user_dto.dart';
+import '../../domain/entities/auth_user.dart';
 
 /// AuthLocalDataSource
+///
+/// **Firebase 최적화 v1.0 - DTO 제거**:
+/// - AuthUserDto 대신 Domain 모델 직접 사용
+/// - Freezed의 toJson/fromJson 활용
 ///
 /// Concrete implementation of IAuthLocalDataSource using SharedPreferences.
 /// Handles local caching of authentication data for offline support.
@@ -34,8 +38,9 @@ class AuthLocalDataSource implements IAuthLocalDataSource {
   }
 
   @override
-  Future<void> cacheAuthUser(AuthUserDto user) async {
+  Future<void> cacheAuthUser(AuthUser user) async {
     try {
+      // Freezed의 toJson() 사용
       final jsonString = jsonEncode(user.toJson());
       await _prefs.setString(_authUserKey, jsonString);
 
@@ -53,7 +58,7 @@ class AuthLocalDataSource implements IAuthLocalDataSource {
   }
 
   @override
-  Future<AuthUserDto?> getCachedAuthUser() async {
+  Future<AuthUser?> getCachedAuthUser() async {
     try {
       final jsonString = _prefs.getString(_authUserKey);
       if (jsonString == null) {
@@ -68,7 +73,8 @@ class AuthLocalDataSource implements IAuthLocalDataSource {
       }
 
       final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
-      return AuthUserDto.fromJson(jsonMap);
+      // Freezed의 fromJson() 사용
+      return AuthUser.fromJson(jsonMap);
     } catch (e) {
       debugPrint('Error getting cached auth user: $e');
       // If there's an error parsing, clear the corrupted cache

@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-// Legacy VotecountsModel import removed
-import '../models/vote_expansion_request_dto.dart';
-import '../models/weight_dto.dart';
+// Firebase Optimization: DTO removed, using Domain models directly
+import '../../domain/models/vote_expansion_request.dart';
+import '../../domain/models/weight.dart';
 
 /// Remote data source interface for voting feature
 /// 
@@ -73,14 +73,14 @@ abstract class IVotingRemoteDataSource {
   Future<void> rejectVoteExpansion(String requestId);
   
   /// Stream vote expansion requests
-  Stream<List<VoteExpansionRequestDto>> queryVoteExpansionRequests({
+  Stream<List<VoteExpansionRequest>> queryVoteExpansionRequests({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
   });
 
   /// Get vote expansion requests once
-  Future<List<VoteExpansionRequestDto>> queryVoteExpansionRequestsOnce({
+  Future<List<VoteExpansionRequest>> queryVoteExpansionRequestsOnce({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
@@ -97,14 +97,14 @@ abstract class IVotingRemoteDataSource {
   // ============================================================================
   
   /// Stream weights with optional query builder
-  Stream<List<WeightDto>> queryWeights({
+  Stream<List<Weight>> queryWeights({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
   });
 
   /// Get weights once with optional query builder
-  Future<List<WeightDto>> queryWeightsOnce({
+  Future<List<Weight>> queryWeightsOnce({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,

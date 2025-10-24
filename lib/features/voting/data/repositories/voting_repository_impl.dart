@@ -5,8 +5,6 @@ import '../../domain/repositories/i_voting_repository.dart';
 import '../../domain/models/vote_counts_model.dart';
 import '../../domain/models/vote_expansion_request.dart';
 import '../../domain/models/weight.dart';
-import '../mappers/vote_expansion_request_mapper.dart';
-import '../mappers/weight_mapper.dart';
 import '../../domain/models/vote_cache_state.dart' as cache;
 import '../../domain/models/vote_state.dart';
 import '../../domain/models/vote_notification.dart';
@@ -111,7 +109,7 @@ class VotingRepositoryImpl implements IVotingRepository, VoteContract {
       queryBuilder: queryBuilder,
       limit: limit,
       singleRecord: singleRecord,
-    ).map((dtoList) => VoteExpansionRequestMapper.toDomainList(dtoList));
+    );
   }
 
   Future<List<VoteExpansionRequest>> queryVoteExpansionRequestsOnce({
@@ -119,12 +117,11 @@ class VotingRepositoryImpl implements IVotingRepository, VoteContract {
     int limit = -1,
     bool singleRecord = false,
   }) async {
-    final dtoList = await _remoteDataSource.queryVoteExpansionRequestsOnce(
+    return await _remoteDataSource.queryVoteExpansionRequestsOnce(
       queryBuilder: queryBuilder,
       limit: limit,
       singleRecord: singleRecord,
     );
-    return VoteExpansionRequestMapper.toDomainList(dtoList);
   }
 
   // ============================================================================
@@ -152,7 +149,7 @@ class VotingRepositoryImpl implements IVotingRepository, VoteContract {
       queryBuilder: queryBuilder,
       limit: limit,
       singleRecord: singleRecord,
-    ).map((dtoList) => WeightMapper.toDomainList(dtoList));
+    );
   }
 
   Future<List<Weight>> queryWeightsOnce({
@@ -160,12 +157,11 @@ class VotingRepositoryImpl implements IVotingRepository, VoteContract {
     int limit = -1,
     bool singleRecord = false,
   }) async {
-    final dtoList = await _remoteDataSource.queryWeightsOnce(
+    return await _remoteDataSource.queryWeightsOnce(
       queryBuilder: queryBuilder,
       limit: limit,
       singleRecord: singleRecord,
     );
-    return WeightMapper.toDomainList(dtoList);
   }
 
   // ============================================================================

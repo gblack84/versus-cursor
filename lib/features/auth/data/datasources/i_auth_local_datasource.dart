@@ -1,18 +1,22 @@
 // Local DataSource Interface for Authentication
 // Clean Architecture - Data Layer
 
-import '../models/auth_user_dto.dart';
+import '../../domain/entities/auth_user.dart';
 
 /// IAuthLocalDataSource
+///
+/// **Firebase 최적화 v1.0 - DTO 제거**:
+/// - AuthUserDto 대신 Domain 모델 직접 사용
+/// - Extension으로 JSON 직렬화 처리
 ///
 /// Interface for local authentication data operations
 /// Handles caching and offline data persistence
 abstract class IAuthLocalDataSource {
-  /// Cache auth user data
-  Future<void> cacheAuthUser(AuthUserDto user);
+  /// Cache auth user data (Domain 모델 직접 사용)
+  Future<void> cacheAuthUser(AuthUser user);
 
-  /// Get cached auth user
-  Future<AuthUserDto?> getCachedAuthUser();
+  /// Get cached auth user (Domain 모델 반환)
+  Future<AuthUser?> getCachedAuthUser();
 
   /// Clear cached auth user
   Future<void> clearCachedAuthUser();

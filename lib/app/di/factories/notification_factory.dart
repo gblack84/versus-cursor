@@ -1,3 +1,18 @@
+/// ⚠️ DEPRECATED - Firebase 최적화 후 삭제 예정 (마이그레이션 필요)
+///
+/// 이 파일은 레거시 DI 시스템의 Factory 패턴 구현입니다.
+/// 신규 시스템은 /features/notifications/di/notification_di_module.dart를 사용합니다.
+///
+/// 삭제 전 필요 작업:
+/// - notification_module.dart에서 NotificationFactory 사용처 제거
+/// - Factory 패턴 대신 직접 DI 등록 방식으로 변경
+///
+/// 삭제 조건:
+/// - notification_module.dart 삭제 완료 시
+/// - main.dart에서 DIContainer.initialize() 제거 완료 시
+///
+/// 관련 이슈: Firebase 최적화 마이그레이션
+
 import 'package:get_it/get_it.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';

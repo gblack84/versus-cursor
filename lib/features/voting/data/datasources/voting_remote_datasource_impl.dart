@@ -1,11 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '/core/firebase/utils/firestore_util.dart';
-// Legacy VotecountsModel import removed - using clean architecture models
-import '../models/vote_expansion_request_dto.dart';
-import '../models/weight_dto.dart';
-import '../models/vote_dto.dart';
-import '../mappers/vote_mapper.dart';
+// Firebase Optimization: Domain models with extensions
+import '../../domain/models/vote.dart';
+import '../../domain/models/vote_expansion_request.dart';
+import '../../domain/models/weight.dart';
+import '../extensions/vote_extensions.dart';
+import '../extensions/vote_expansion_request_extensions.dart';
+import '../extensions/weight_extensions.dart';
 import 'i_voting_remote_datasource.dart';
 
 /// Implementation of remote data source for voting feature
@@ -127,16 +129,15 @@ class VotingRemoteDataSourceImpl implements IVotingRemoteDataSource {
         .collection('votes')
         .doc(userId);
 
-    // Create VoteDto and convert to Firestore format
-    final voteDto = VoteDto(
-      id: userId,
+    // Create Vote domain model and convert to Firestore
+    final vote = Vote(
       postId: postId,
       userId: userId,
       choice: voteOption,
       timestamp: DateTime.now(),
     );
 
-    await voteRef.set(voteDto.toFirestore());
+    await voteRef.set(vote.toFirestore());
 
     // Update vote counts
     final postRef = _firestore.collection('posts').doc(postId);
@@ -160,15 +161,15 @@ class VotingRemoteDataSourceImpl implements IVotingRemoteDataSource {
         .get();
 
     if (voteDoc.exists) {
-      // Convert to VoteDto to access choice
-      final voteDto = VoteDto.fromFirestore(voteDoc);
+      // Convert to Vote domain model to access choice
+      final vote = VoteFirestoreX.fromFirestore(voteDoc);
 
       // Delete the vote document
       await voteDoc.reference.delete();
 
       // Update vote counts
       final postRef = _firestore.collection('posts').doc(postId);
-      final voteField = voteDto.choice == 'A' ? 'votesA' : 'votesB';
+      final voteField = vote.choice == 'A' ? 'votesA' : 'votesB';
       await postRef.update({
         voteField: FieldValue.increment(-1),
       });
@@ -238,45 +239,70 @@ class VotingRemoteDataSourceImpl implements IVotingRemoteDataSource {
   }
 
   @override
-  Stream<List<VoteExpansionRequestDto>> queryVoteExpansionRequests({
+  Stream<List<VoteExpansionRequest>> queryVoteExpansionRequests({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
   }) {
-    return queryCollection(
-      VoteExpansionRequestDto.collection(null),
-      VoteExpansionRequestDto.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+    Query<Map<String, dynamic>> query =
+        _firestore.collectionGroup('voteExpansionRequests');
+
+    if (queryBuilder != null) {
+      query = queryBuilder(query) as Query<Map<String, dynamic>>;
+    }
+
+    if (limit > 0) {
+      query = query.limit(limit);
+    }
+
+    return query.snapshots().map((snapshot) {
+      return snapshot.docs
+          .map((doc) => VoteExpansionRequestFirestoreX.fromFirestore(doc))
+          .toList();
+    });
   }
 
   @override
-  Future<List<VoteExpansionRequestDto>> queryVoteExpansionRequestsOnce({
+  Future<List<VoteExpansionRequest>> queryVoteExpansionRequestsOnce({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
-  }) {
-    return queryCollectionOnce(
-      VoteExpansionRequestDto.collection(null),
-      VoteExpansionRequestDto.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+  }) async {
+    Query<Map<String, dynamic>> query =
+        _firestore.collectionGroup('voteExpansionRequests');
+
+    if (queryBuilder != null) {
+      query = queryBuilder(query) as Query<Map<String, dynamic>>;
+    }
+
+    if (limit > 0) {
+      query = query.limit(limit);
+    }
+
+    final snapshot = await query.get();
+    return snapshot.docs
+        .map((doc) => VoteExpansionRequestFirestoreX.fromFirestore(doc))
+        .toList();
   }
 
   @override
   Future<int> queryVoteExpansionRequestsCount({
     Query Function(Query)? queryBuilder,
     int limit = -1,
-  }) {
-    return queryCollectionCount(
-      VoteExpansionRequestDto.collection(null),
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+  }) async {
+    Query<Map<String, dynamic>> query =
+        _firestore.collectionGroup('voteExpansionRequests');
+
+    if (queryBuilder != null) {
+      query = queryBuilder(query) as Query<Map<String, dynamic>>;
+    }
+
+    if (limit > 0) {
+      query = query.limit(limit);
+    }
+
+    final snapshot = await query.count().get();
+    return snapshot.count ?? 0;
   }
 
   // ============================================================================
@@ -284,45 +310,67 @@ class VotingRemoteDataSourceImpl implements IVotingRemoteDataSource {
   // ============================================================================
 
   @override
-  Stream<List<WeightDto>> queryWeights({
+  Stream<List<Weight>> queryWeights({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
   }) {
-    return queryCollection(
-      WeightDto.collection(null),
-      WeightDto.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+    Query<Map<String, dynamic>> query = _firestore.collectionGroup('weights');
+
+    if (queryBuilder != null) {
+      query = queryBuilder(query) as Query<Map<String, dynamic>>;
+    }
+
+    if (limit > 0) {
+      query = query.limit(limit);
+    }
+
+    return query.snapshots().map((snapshot) {
+      return snapshot.docs
+          .map((doc) => WeightFirestoreX.fromFirestore(doc))
+          .toList();
+    });
   }
 
   @override
-  Future<List<WeightDto>> queryWeightsOnce({
+  Future<List<Weight>> queryWeightsOnce({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
-  }) {
-    return queryCollectionOnce(
-      WeightDto.collection(null),
-      WeightDto.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+  }) async {
+    Query<Map<String, dynamic>> query = _firestore.collectionGroup('weights');
+
+    if (queryBuilder != null) {
+      query = queryBuilder(query) as Query<Map<String, dynamic>>;
+    }
+
+    if (limit > 0) {
+      query = query.limit(limit);
+    }
+
+    final snapshot = await query.get();
+    return snapshot.docs
+        .map((doc) => WeightFirestoreX.fromFirestore(doc))
+        .toList();
   }
 
   @override
   Future<int> queryWeightsCount({
     Query Function(Query)? queryBuilder,
     int limit = -1,
-  }) {
-    return queryCollectionCount(
-      WeightDto.collection(null),
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+  }) async {
+    Query<Map<String, dynamic>> query = _firestore.collectionGroup('weights');
+
+    if (queryBuilder != null) {
+      query = queryBuilder(query) as Query<Map<String, dynamic>>;
+    }
+
+    if (limit > 0) {
+      query = query.limit(limit);
+    }
+
+    final snapshot = await query.count().get();
+    return snapshot.count ?? 0;
   }
 
   // ============================================================================
@@ -341,17 +389,14 @@ class VotingRemoteDataSourceImpl implements IVotingRemoteDataSource {
           .get();
 
       return votesQuery.docs.map((doc) {
-        // Convert to VoteDto (Clean Architecture DTO)
-        final voteDto = VoteDto.fromFirestore(doc);
-
-        // Convert to domain entity
-        final voteEntity = VoteMapper.toEntity(voteDto);
+        // Convert to Vote domain model (direct conversion via extension)
+        final vote = VoteFirestoreX.fromFirestore(doc);
 
         // Return as Map for interface compatibility
         return {
-          'postId': voteEntity.postId,
-          'voteOption': voteEntity.choice,
-          'votedAt': voteEntity.timestamp?.millisecondsSinceEpoch ??
+          'postId': vote.postId,
+          'voteOption': vote.choice,
+          'votedAt': vote.timestamp?.millisecondsSinceEpoch ??
                      DateTime.now().millisecondsSinceEpoch,
         };
       }).toList();

@@ -1,3 +1,13 @@
+/// ⚠️ DEPRECATED - Firebase 최적화 후 삭제 예정
+///
+/// 이 파일은 레거시 DI 시스템의 일부입니다.
+/// 신규 시스템은 /features/voting/di/voting_di_module.dart를 사용합니다.
+///
+/// 삭제 조건:
+/// - main.dart에서 DIContainer.initialize() 제거 완료 시
+///
+/// 관련 이슈: Firebase 최적화 마이그레이션
+
 import 'package:get_it/get_it.dart';
 import 'feature_modules.dart';
 import '../../features/voting/domain/repositories/i_voting_repository.dart';

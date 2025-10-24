@@ -10,8 +10,6 @@
 
 import 'package:get_it/get_it.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // ===== App Layer - Contracts =====
@@ -22,8 +20,6 @@ import '/app/contracts/user_contract.dart';
 import '../domain/repositories/i_auth_repository.dart';
 
 // ===== Data Layer - DataSources =====
-import '../data/datasources/i_auth_remote_datasource.dart';
-import '../data/datasources/firebase_auth_remote_datasource.dart';
 import '../data/datasources/i_auth_local_datasource.dart';
 import '../data/datasources/auth_local_datasource.dart';
 
@@ -64,17 +60,9 @@ void registerAuthModule(GetIt getIt) {
   _registerProviders(getIt);
 }
 
-/// Register Remote and Local DataSources
+/// Register Local DataSource
+/// Note: Remote DataSource removed - Repository uses FirebaseAuth directly
 void _registerDataSources(GetIt getIt) {
-  // Remote DataSource (Firebase Auth & Firestore)
-  getIt.registerLazySingleton<IAuthRemoteDataSource>(
-    () => FirebaseAuthRemoteDataSource(
-      firebaseAuth: FirebaseAuth.instance,
-      firestore: FirebaseFirestore.instance,
-      googleSignIn: GoogleSignIn(),
-    ),
-  );
-
   // Local DataSource (Cache/SharedPreferences)
   getIt.registerLazySingleton<IAuthLocalDataSource>(
     () => AuthLocalDataSource(
@@ -84,6 +72,7 @@ void _registerDataSources(GetIt getIt) {
 }
 
 /// Register Repository implementation
+/// Note: Repository uses FirebaseAuth directly instead of Remote DataSource
 void _registerRepository(GetIt getIt) {
   // Note: UserContract must be registered before this module
   // UserContract is registered in Profile Feature DI module
@@ -96,7 +85,7 @@ void _registerRepository(GetIt getIt) {
 
   getIt.registerLazySingleton<IAuthRepository>(
     () => AuthRepositoryImpl(
-      remoteDataSource: getIt<IAuthRemoteDataSource>(),
+      firebaseAuth: FirebaseAuth.instance,
       localDataSource: getIt<IAuthLocalDataSource>(),
       userContract: getIt<UserContract>(),
     ),

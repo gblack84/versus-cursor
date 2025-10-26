@@ -1,6 +1,6 @@
-import '../models/vote_counts_model.dart';
-import '../models/vote_expansion_request.dart';
-import '../models/weight.dart';
+import '../entities/dialog/vote_counts_model.dart';
+import '../entities/dialog/vote_expansion_request.dart';
+import '../entities/dialog/weight.dart';
 
 /// Repository interface for Voting-related operations
 /// This interface defines the contract for voting functionality

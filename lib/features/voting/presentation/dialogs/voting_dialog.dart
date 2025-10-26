@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/core/design_system/design_system.dart';
-import '/features/voting/domain/models/dialog/versus_box_size_data.dart';
+import '/features/voting/domain/entities/dialog/versus_box_size_data.dart';
 import '/services/image/unified_image_cache_service.dart';
 import 'voting_dialog_constraints.dart';
 

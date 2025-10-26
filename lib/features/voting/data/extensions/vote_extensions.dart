@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/models/vote.dart';
+import '../../domain/entities/dialog/vote.dart';
 
 /// Firebase Firestore extension for Vote domain model
 ///

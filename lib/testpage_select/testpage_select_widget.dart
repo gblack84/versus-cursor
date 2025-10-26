@@ -1,6 +1,8 @@
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
-import '/features/voting/presentation/dialogs/voting_overlay.dart';
+import '/features/voting/presentation/dialogs/vote_ui_manager.dart';
+import '/features/voting/domain/entities/dialog/vote_notification.dart';
+import '/features/voting/domain/entities/dialog/vote_options.dart';
 import '/features/notifications/presentation/providers/notification_badge_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -653,18 +655,35 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                   ),
                                   AppButtonWidget(
                                     onPressed: () {
-                                      VotingOverlay.showVotingNotification(
-                                        context,
+                                      VoteUIManager.instance.showVotingNotification(
+                                        context: context,
+                                        notification: VoteNotification(
+                                          id: 'test-notification',
+                                          userId: 'test-user',
+                                          createdAt: DateTime.now(),
+                                          isRead: false,
+                                          title: '새로운 투표',
+                                          content: '어떤 스마트폰을 선호하시나요?',
+                                          postId: 'test-post',
+                                          postTitle: '스마트폰 투표',
+                                          postContent: '어떤 스마트폰을 선호하시나요?',
+                                          voteOptions: VoteOptions(
+                                            optionATitle: 'iPhone 15 Pro',
+                                            optionBTitle: 'Galaxy S24 Ultra',
+                                          ),
+                                          voteStartTime: DateTime.now(),
+                                          voteEndTime: DateTime.now().add(Duration(minutes: 10)),
+                                        ),
                                         question: '어떤 스마트폰을 선호하시나요?',
                                         optionA: 'iPhone 15 Pro',
                                         optionB: 'Galaxy S24 Ultra',
-                                        imageUrlA:
-                                            'https://picsum.photos/200/200?random=1',
-                                        imageUrlB:
-                                            'https://picsum.photos/200/200?random=2',
-                                        onVote: (option) {
+                                        imageUrlA: 'https://picsum.photos/200/200?random=1',
+                                        imageUrlB: 'https://picsum.photos/200/200?random=2',
+                                        onVote: (option) async {
                                           print('투표 완료: $option 선택됨!');
-                                          // 나중에 실제 투표 제출 로직 구현
+                                        },
+                                        onDismiss: (hasVoted) {
+                                          print('다이얼로그 닫힘. 투표 여부: $hasVoted');
                                         },
                                       );
                                     },

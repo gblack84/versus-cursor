@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:rxdart/rxdart.dart';
-import '/features/voting/domain/models/chat/vote_state.dart';
-import '/features/voting/domain/models/dialog/vote_notification.dart';
-import '/features/voting/domain/models/dialog/versus_box_size_data.dart';
+import '/features/voting/domain/entities/chat/vote_state.dart';
+import '/features/voting/domain/entities/dialog/vote_notification.dart';
+import '/features/voting/domain/entities/dialog/versus_box_size_data.dart';
 
 /// Voting Feature가 다른 Feature들에게 제공하는 계약
 ///

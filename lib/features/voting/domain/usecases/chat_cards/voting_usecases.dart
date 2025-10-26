@@ -1,9 +1,8 @@
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 import '/core/usecases/usecase.dart';
-import '../../models/chat/post_voting.dart';
-import '../../models/chat/voting_update.dart';
-import '../../models/voting_failure.dart';
+import '../../entities/chat/post_voting.dart';
+import '../../failures/voting_failure.dart';
 import '../../repositories/i_voting_chat_repository.dart';
 
 /// Cast a vote on a post
@@ -74,17 +73,6 @@ class CompleteVotingUseCase implements UseCase<PostVoting, String> {
   @override
   Future<Either<VotingFailure, PostVoting>> call(String postId) {
     return repository.completeVoting(postId);
-  }
-}
-
-/// Watch real-time voting updates
-class WatchVotingUpdatesUseCase {
-  final VotingRepository repository;
-
-  WatchVotingUpdatesUseCase(this.repository);
-
-  Stream<VotingUpdate> call(String postId) {
-    return repository.watchVotingUpdates(postId);
   }
 }
 

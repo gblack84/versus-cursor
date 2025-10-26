@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '/core/errors/failures.dart';
-import '../models/vote_counts_model.dart';
+import '../entities/dialog/vote_counts_model.dart';
 import '../repositories/i_voting_repository.dart';
 import 'base/use_case.dart';
 

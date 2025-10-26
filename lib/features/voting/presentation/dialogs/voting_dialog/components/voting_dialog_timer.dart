@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import '../../../constants/voting_dialog_constraints.dart';
+import '../../voting_dialog_constraints.dart';
 
 /// Timer component for the voting dialog
 /// Manages countdown timer and auto-close functionality

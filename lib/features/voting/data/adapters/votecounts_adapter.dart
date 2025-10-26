@@ -1,4 +1,4 @@
-import '../../domain/models/vote_counts_model.dart';
+import '../../domain/entities/dialog/vote_counts_model.dart';
 
 /// Adapter for converting between Firestore data and VoteCounts domain model
 /// 

@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../domain/models/vote_counts_model.dart';
-import '../../domain/models/vote_cache_state.dart';
+import '../../domain/entities/dialog/vote_counts_model.dart';
+import '../../domain/entities/dialog/vote_cache_state.dart';
 import 'i_voting_local_datasource.dart';
 import 'local/services/cache_management_service.dart';
 import 'local/services/vote_state_cache_service.dart';

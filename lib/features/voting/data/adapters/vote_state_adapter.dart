@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/ports/i_vote_state_port.dart';
 import '../../domain/services/i_vote_timer_service.dart';
-import '../../domain/models/vote_state.dart';
+import '../../domain/entities/chat/vote_state.dart';
 
 /// Firebase-based implementation of IVoteStatePort
 ///

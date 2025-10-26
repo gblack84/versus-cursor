@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/models/weight.dart';
+import '../../domain/entities/dialog/weight.dart';
 
 /// Firebase Firestore extension for Weight domain model
 ///

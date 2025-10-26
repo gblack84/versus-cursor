@@ -2,9 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '/core/firebase/utils/firestore_util.dart';
 // Firebase Optimization: Domain models with extensions
-import '../../domain/models/vote.dart';
-import '../../domain/models/vote_expansion_request.dart';
-import '../../domain/models/weight.dart';
+import '../../domain/entities/dialog/vote.dart';
+import '../../domain/entities/dialog/vote_expansion_request.dart';
+import '../../domain/entities/dialog/weight.dart';
 import '../extensions/vote_extensions.dart';
 import '../extensions/vote_expansion_request_extensions.dart';
 import '../extensions/weight_extensions.dart';

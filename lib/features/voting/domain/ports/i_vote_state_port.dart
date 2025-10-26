@@ -1,5 +1,5 @@
 import 'package:rxdart/rxdart.dart';
-import '../models/vote_state.dart';
+import '../entities/chat/vote_state.dart';
 
 /// Vote state coordination port interface
 /// 

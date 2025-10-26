@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import '../../../../domain/models/vote_counts_model.dart';
+import '../../../../domain/entities/dialog/vote_counts_model.dart';
 import '../../../adapters/votecounts_adapter.dart';
 import '../utils/cache_keys.dart';
 import '../utils/cache_helpers.dart';

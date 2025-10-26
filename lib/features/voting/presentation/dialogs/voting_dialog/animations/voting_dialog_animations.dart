@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../constants/voting_dialog_constraints.dart';
+import '../../voting_dialog_constraints.dart';
 
 /// Animation configurations and builders for the voting dialog
 class VotingDialogAnimations {

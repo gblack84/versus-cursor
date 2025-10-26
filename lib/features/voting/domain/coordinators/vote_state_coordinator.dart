@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:rxdart/rxdart.dart';
 import '../ports/i_vote_state_port.dart';
-import '../models/vote_state.dart';
+import '../entities/chat/vote_state.dart';
 import '../constants/voting_constants.dart';
 
 /// 투표 상태 통합 관리 서비스

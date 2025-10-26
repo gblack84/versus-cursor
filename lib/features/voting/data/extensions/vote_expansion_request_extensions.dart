@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/models/vote_expansion_request.dart';
+import '../../domain/entities/dialog/vote_expansion_request.dart';
 
 /// Firebase Firestore extension for VoteExpansionRequest domain model
 ///

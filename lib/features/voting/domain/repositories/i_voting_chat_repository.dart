@@ -1,15 +1,20 @@
 import 'package:dartz/dartz.dart';
-import '../models/chat/post_voting.dart';
-import '../models/chat/voting_update.dart';
-import '../models/voting_failure.dart';
+import '../entities/chat/post_voting.dart';
+import '../failures/voting_failure.dart';
 
 /// Repository interface for voting operations
 abstract class VotingRepository {
   /// Get voting data for a post
   Future<Either<VotingFailure, PostVoting>> getVoting(String postId);
 
-  /// Stream real-time voting updates
-  Stream<VotingUpdate> watchVotingUpdates(String postId);
+  /// Watch real-time PostVoting state changes (state-based)
+  ///
+  /// Returns a stream of PostVoting for real-time UI updates in chat cards.
+  /// Converts Firestore snapshots to PostVoting domain model.
+  ///
+  /// Use this instead of watchVotingUpdates when you need the full voting state
+  /// rather than individual update events.
+  Stream<Either<VotingFailure, PostVoting>> watchPostVoting(String postId);
 
   /// Cast a vote
   Future<Either<VotingFailure, PostVoting>> castVote({

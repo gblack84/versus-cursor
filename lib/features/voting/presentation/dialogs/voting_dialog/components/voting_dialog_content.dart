@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '/core/design_system/design_system.dart';
 import '/core/types/layout_type.dart';
-import '/features/voting/domain/models/dialog/versus_box_size_data.dart';
+import '/features/voting/domain/entities/dialog/versus_box_size_data.dart';
 import '/features/voting/domain/constants/voting_constants.dart';
 import '../../voting_box.dart';
 import '/services/ui/unified_box_calculator.dart';

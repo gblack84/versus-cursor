@@ -1,6 +1,6 @@
 // Legacy VotecountsModel import removed
-import '../../domain/models/vote_counts_model.dart';
-import '../../domain/models/vote_cache_state.dart';
+import '../../domain/entities/dialog/vote_counts_model.dart';
+import '../../domain/entities/dialog/vote_cache_state.dart';
 
 /// Local data source interface for voting feature
 /// 

@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 // Firebase Optimization: DTO removed, using Domain models directly
-import '../../domain/models/vote_expansion_request.dart';
-import '../../domain/models/weight.dart';
+import '../../domain/entities/dialog/vote_expansion_request.dart';
+import '../../domain/entities/dialog/weight.dart';
 
 /// Remote data source interface for voting feature
 /// 

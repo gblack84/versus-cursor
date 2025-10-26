@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/models/vote_notification.dart';
-import '../../domain/value_objects/vote_options.dart';
+import '../../domain/entities/dialog/vote_notification.dart';
+import '../../domain/entities/dialog/vote_options.dart';
 import '/app/contracts/notification_types.dart';
 
 /// Firebase Firestore extension for VoteNotification domain model

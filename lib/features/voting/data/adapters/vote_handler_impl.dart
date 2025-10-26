@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import '/core/domain/ports/i_notification_display_port.dart';
 import '/core/utils/logger.dart';
 import '/features/voting/presentation/dialogs/vote_ui_manager.dart';
-import '/features/voting/domain/models/dialog/versus_box_size_data.dart';
+import '/features/voting/domain/entities/dialog/versus_box_size_data.dart';
 import '/features/voting/domain/usecases/submit_vote_use_case.dart';
-import '/features/voting/domain/models/dialog/vote_notification.dart';
+import '/features/voting/domain/entities/dialog/vote_notification.dart';
 
 /// Implementation of INotificationDisplayPort for the voting feature
 ///

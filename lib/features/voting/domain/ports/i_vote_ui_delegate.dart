@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '/features/voting/domain/models/dialog/vote_notification.dart';
-import '/features/voting/domain/models/dialog/versus_box_size_data.dart';
+import '/features/voting/domain/entities/dialog/vote_notification.dart';
+import '/features/voting/domain/entities/dialog/versus_box_size_data.dart';
 
 /// 투표 UI 처리를 위한 델리게이트 인터페이스
 ///

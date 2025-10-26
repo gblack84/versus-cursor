@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
 import '/core/errors/failures.dart';
 import '../entities/dialog/vote_counts_model.dart';
-import '../repositories/i_voting_repository.dart';
+import '../repositories/i_voting_dialog_repository.dart';
 import 'base/use_case.dart';
 
 /// Parameters for streaming vote counts
@@ -21,19 +21,26 @@ class StreamVoteCountsParams {
 
 /// Use case for streaming vote counts
 class StreamVoteCountsUseCase extends StreamUseCase<List<VoteCounts>, StreamVoteCountsParams> {
-  final IVotingRepository repository;
+  final IVotingDialogRepository repository;
 
   StreamVoteCountsUseCase(this.repository);
 
   @override
   Stream<Either<Failure, List<VoteCounts>>> call(StreamVoteCountsParams params) {
-    return repository.queryVotecounts(
+    return repository.streamVoteCounts(
       queryBuilder: params.queryBuilder,
       limit: params.limit,
       singleRecord: params.singleRecord,
-    ).map((data) => Right<Failure, List<VoteCounts>>(data))
-    .handleError((error) => Left<Failure, List<VoteCounts>>(
-      ServerFailure(message: error.toString())
-    ));
+    ).map((result) {
+      return result.fold(
+        (failure) => Left<Failure, List<VoteCounts>>(
+          ServerFailure(message: failure.toString())
+        ),
+        (voteCounts) {
+          final counts = voteCounts.map((data) => VoteCounts.fromJson(data)).toList();
+          return Right<Failure, List<VoteCounts>>(counts);
+        },
+      );
+    });
   }
 }

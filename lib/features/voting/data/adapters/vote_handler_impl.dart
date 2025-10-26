@@ -3,7 +3,7 @@ import '/core/domain/ports/i_notification_display_port.dart';
 import '/core/utils/logger.dart';
 import '/features/voting/presentation/dialogs/vote_ui_manager.dart';
 import '/features/voting/domain/entities/dialog/versus_box_size_data.dart';
-import '/features/voting/domain/usecases/submit_vote_use_case.dart';
+import '/features/voting/domain/coordinators/vote_state_coordinator.dart';
 import '/features/voting/domain/entities/dialog/vote_notification.dart';
 
 /// Implementation of INotificationDisplayPort for the voting feature
@@ -12,18 +12,15 @@ import '/features/voting/domain/entities/dialog/vote_notification.dart';
 /// operations specific to voting. It delegates UI operations to VoteUIManager
 /// while maintaining clean architecture boundaries.
 ///
-/// This handler now owns the complete voting responsibility including:
-/// - Vote submission via SubmitVoteUseCase
+/// **Clean Architecture v4.0**:
+/// - Vote submission via VoteStateCoordinator singleton
 /// - UI display via VoteUIManager
 class VoteHandlerImpl implements INotificationDisplayPort {
   final VoteUIManager _uiManager;
-  final SubmitVoteUseCase _submitVote;
 
   VoteHandlerImpl({
     VoteUIManager? uiManager,
-    required SubmitVoteUseCase submitVote,
-  })  : _uiManager = uiManager ?? VoteUIManager.instance,
-        _submitVote = submitVote;
+  }) : _uiManager = uiManager ?? VoteUIManager.instance;
 
   @override
   Future<BuildContext?> waitForUIContext() async {
@@ -72,22 +69,22 @@ class VoteHandlerImpl implements INotificationDisplayPort {
         );
 
         // 1. Submit vote first (Voting Feature responsibility)
-        final result = await _submitVote.call(SubmitVoteParams(
-          postId: voteNotif.postId,
-          userId: voteNotif.userId,
-          choice: selectedOption,
-        ));
+        try {
+          await VoteStateCoordinator.instance.submitVote(
+            postId: voteNotif.postId,
+            voteOption: selectedOption,
+          );
 
-        result.fold(
-          (failure) => Logger.warning(
-            'Vote submission failed: ${failure.message}',
-            tag: 'VoteHandlerImpl',
-          ),
-          (_) => Logger.info(
+          Logger.info(
             'Vote submitted successfully',
             tag: 'VoteHandlerImpl',
-          ),
-        );
+          );
+        } catch (e) {
+          Logger.warning(
+            'Vote submission failed: $e',
+            tag: 'VoteHandlerImpl',
+          );
+        }
 
         // 2. Then call notification callback (Notification Feature's concern)
         await onVote(selectedOption);

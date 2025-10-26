@@ -5,7 +5,7 @@ import '/core/design_system/design_system.dart';
 import '/features/voting/presentation/dialogs/voting_dialog.dart';
 import '/features/voting/domain/entities/chat/vote_state.dart';
 import '/services/ui/models/box_sizes.dart';
-import '/features/voting/presentation/providers/vote_state_providers.dart';
+import '/features/voting/domain/coordinators/vote_state_coordinator.dart';
 import 'components/vote_card_profile_header.dart';
 import 'components/vote_card_header.dart';
 import 'components/vote_card_body.dart';
@@ -82,19 +82,19 @@ class _VoteCardWidgetState extends ConsumerState<VoteCardWidget> {
     if (oldWidget.postId != widget.postId ||
         oldWidget.voteEndTime != widget.voteEndTime ||
         oldWidget.cardStatus != widget.cardStatus) {
-      ref.read(voteStateCoordinatorProvider).disposePost(oldWidget.postId);
+      VoteStateCoordinator.instance.dispose(oldWidget.postId);
       _initializeVoteStateStream();
     }
   }
 
   @override
   void dispose() {
-    ref.read(voteStateCoordinatorProvider).disposePost(widget.postId);
+    VoteStateCoordinator.instance.dispose(widget.postId);
     super.dispose();
   }
 
   void _initializeVoteStateStream() {
-    _voteStateStream = ref.read(voteStateCoordinatorProvider).getVoteStateStream(
+    _voteStateStream = VoteStateCoordinator.instance.getVoteStateStream(
       postId: widget.postId,
       voteEndTime: widget.voteEndTime,
       initialStatus: widget.cardStatus,

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import '/core/types/layout_type.dart';
 import '/core/design_system/design_system.dart';
 import '/features/voting/domain/entities/dialog/versus_box_size_data.dart';
 import '/features/voting/domain/constants/voting_constants.dart';
-import '/services/ui/unified_box_calculator.dart';
+import '/features/voting/domain/services/i_box_calculator_service.dart';
 import '/features/voting/presentation/dialogs/voting_dialog_constraints.dart';
 
 // Components
@@ -238,6 +239,10 @@ class VotingBox extends StatelessWidget {
 ///
 /// VersusBoxSizeData를 받아서 자동으로 VotingBox를 생성합니다.
 class VotingBoxBuilder {
+  /// Box calculator service (lazy-loaded from DI)
+  static IBoxCalculatorService get _boxCalculator =>
+    GetIt.instance<IBoxCalculatorService>();
+
   /// 사이즈 데이터를 기반으로 박스 위젯 생성
   static Widget buildFromSizeData({
     required BuildContext context,
@@ -265,7 +270,7 @@ class VotingBoxBuilder {
     bool enableImageTap = true,
   }) {
     // 투표용 크기 계산
-    final votingSizes = UnifiedBoxCalculator.calculateForNotificationDialog(
+    final votingSizes = _boxCalculator.calculateForNotificationDialog(
       dialogWidth: MediaQuery.of(context).size.width * VotingConstants.messageCardWidthRatio,
       layoutType: sizeData.layoutType,
       aspectRatioA: sizeData.aspectRatioA,
@@ -329,10 +334,10 @@ class VotingBoxBuilder {
     bool enableImageTap = true,
   }) {
     // 투표용 크기 계산
-    // UnifiedBoxCalculator가 내부적으로 패딩과 간격을 처리함
+    // BoxCalculator가 내부적으로 패딩과 간격을 처리함
     final dialogTotalWidth = MediaQuery.of(context).size.width * VotingConstants.messageCardWidthRatio;
 
-    final votingSizes = UnifiedBoxCalculator.calculateForNotificationDialog(
+    final votingSizes = _boxCalculator.calculateForNotificationDialog(
       dialogWidth: dialogTotalWidth, // 전체 다이얼로그 너비 전달
       layoutType: sizeData.layoutType,
       aspectRatioA: sizeData.aspectRatioA,

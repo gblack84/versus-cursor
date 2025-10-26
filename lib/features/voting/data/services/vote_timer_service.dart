@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '/core_exports.dart';
-import 'i_vote_timer_service.dart';
+import '/features/voting/domain/services/i_vote_timer_service.dart';
 
 /// 투표 타이머 동기화 서비스
 ///

@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'post_voting.freezed.dart';
@@ -51,11 +50,15 @@ class VoteException implements Exception {
 // Custom JSON Converters for Firestore Compatibility
 // ============================================================================
 
-/// Timestamp/DateTime 안전 변환 함수
+/// DateTime 안전 변환 함수
+///
+/// **Note:** Firestore Timestamp 처리는 Adapter 레이어로 이동
+/// Domain 레이어는 순수 DateTime만 사용
 DateTime? _dateTimeFromTimestamp(dynamic value) {
   if (value == null) return null;
-  if (value is Timestamp) return value.toDate();
   if (value is DateTime) return value;
+  if (value is String) return DateTime.tryParse(value);
+  if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
   return null;
 }
 
@@ -338,74 +341,5 @@ sealed class PostVoting with _$PostVoting {
       expandedUserCount: userCount,
       expansionStatus: status,
     );
-  }
-}
-
-// ============================================================================
-// Firestore-Specific Serialization (Outside Freezed)
-// ============================================================================
-
-/// PostVoting Firestore Extension
-///
-/// Firestore-specific serialization methods.
-/// These are kept outside the Freezed class because:
-/// 1. Firestore uses Timestamp, not DateTime
-/// 2. fromMap requires postId parameter (not in JSON)
-/// 3. Separation of concerns (Firestore vs JSON serialization)
-extension PostVotingFirestore on PostVoting {
-  /// Create from Firestore document
-  static PostVoting fromMap(Map<String, dynamic> data, String postId) {
-    return PostVoting(
-      postId: postId,
-      voteStartTime: _dateTimeFromTimestamp(data['voteStartTime']),
-      voteEndTime: _dateTimeFromTimestamp(data['voteEndTime']),
-      voteStatus: _voteStatusFromJson(data['voteStatus']),
-      voteCompleted: data['voteCompleted'] ?? false,
-      voteCompletedAt: _dateTimeFromTimestamp(data['voteCompletedAt']),
-      voteCancelledAt: _dateTimeFromTimestamp(data['voteCancelledAt']),
-      voteCancelledReason: data['voteCancelledReason'],
-      voteTimeout: _durationFromJson(data['voteTimeout']),
-      votesA: data['votesA'] ?? 0,
-      votesB: data['votesB'] ?? 0,
-      votedUserIdsA: List<String>.from(data['votedUserIdsA'] ?? []),
-      votedUserIdsB: List<String>.from(data['votedUserIdsB'] ?? []),
-      displayVotesA: data['displayVotesA'],
-      displayVotesB: data['displayVotesB'],
-      notificationsSent: data['notificationsSent'] ?? false,
-      notificationsSentAt: _dateTimeFromTimestamp(data['notificationsSentAt']),
-      expansionPointsUsed: data['expansionPointsUsed'] ?? 0,
-      expandedUserCount: data['expandedUserCount'] ?? 0,
-      expansionStatus: data['expansionStatus'] ?? 'none',
-    );
-  }
-
-  /// Convert to Map for Firestore
-  Map<String, dynamic> toFirestore() {
-    return {
-      if (voteStartTime != null)
-        'voteStartTime': Timestamp.fromDate(voteStartTime!),
-      if (voteEndTime != null) 'voteEndTime': Timestamp.fromDate(voteEndTime!),
-      'voteStatus': _voteStatusToJson(voteStatus),
-      'voteCompleted': voteCompleted,
-      if (voteCompletedAt != null)
-        'voteCompletedAt': Timestamp.fromDate(voteCompletedAt!),
-      if (voteCancelledAt != null)
-        'voteCancelledAt': Timestamp.fromDate(voteCancelledAt!),
-      if (voteCancelledReason != null)
-        'voteCancelledReason': voteCancelledReason,
-      'voteTimeout': voteTimeout.inMilliseconds,
-      'votesA': votesA,
-      'votesB': votesB,
-      'votedUserIdsA': votedUserIdsA,
-      'votedUserIdsB': votedUserIdsB,
-      if (displayVotesA != null) 'displayVotesA': displayVotesA,
-      if (displayVotesB != null) 'displayVotesB': displayVotesB,
-      'notificationsSent': notificationsSent,
-      if (notificationsSentAt != null)
-        'notificationsSentAt': Timestamp.fromDate(notificationsSentAt!),
-      'expansionPointsUsed': expansionPointsUsed,
-      'expandedUserCount': expandedUserCount,
-      'expansionStatus': expansionStatus,
-    };
   }
 }

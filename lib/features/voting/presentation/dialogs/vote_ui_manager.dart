@@ -5,15 +5,14 @@ import '/core/domain/ports/i_user_service.dart';
 import '/features/voting/domain/entities/dialog/vote_notification.dart';
 import '/features/voting/presentation/dialogs/voting_dialog.dart';
 import '/features/voting/domain/entities/dialog/versus_box_size_data.dart';
-import '/features/voting/domain/ports/i_vote_ui_delegate.dart';
 import '/core_exports.dart';
 import '/core/utils/debug_helper.dart';
 
 /// 투표 UI 관리자
 ///
 /// Presentation 레이어에서 투표 UI 표시를 담당합니다.
-/// IVoteUIDelegate 인터페이스를 구현하여 비즈니스 로직과 분리합니다.
-class VoteUIManager implements IVoteUIDelegate {
+/// Clean Architecture v4.0 - No Port dependencies
+class VoteUIManager {
   static VoteUIManager? _instance;
   static VoteUIManager get instance {
     _instance ??= VoteUIManager._internal(null);
@@ -58,14 +57,12 @@ class VoteUIManager implements IVoteUIDelegate {
     _isShowingDialog = false;
   }
 
-  @override
   bool isUIContextAvailable() {
     final context = appNavigatorKey.currentContext;
     final isAuthenticated = userService.isAuthenticated;
     return context != null && isAuthenticated;
   }
 
-  @override
   Future<BuildContext?> waitForUIContext(
       {Duration timeout = const Duration(seconds: 10)}) async {
     final endTime = DateTime.now().add(timeout);
@@ -84,7 +81,6 @@ class VoteUIManager implements IVoteUIDelegate {
     return null;
   }
 
-  @override
   Future<void> showVotingNotification({
     required VoteNotification notification,
     required BuildContext context,
@@ -209,7 +205,6 @@ class VoteUIManager implements IVoteUIDelegate {
     DebugHelper.info('투표 다이얼로그 닫힘', tag: 'VoteUIManager');
   }
 
-  @override
   Future<void> showSimpleNotification({
     required BuildContext context,
     required String title,

@@ -36,12 +36,6 @@ import '../presentation/providers/trending_posts_provider.dart';
 import '../presentation/providers/popular_posts_provider.dart';
 import '../presentation/providers/user_posts_provider.dart';
 
-// ===== Voting Integration =====
-// Post Feature owns VoteTimerService, but Voting Feature uses it via adapter
-import '/features/voting/domain/services/vote_timer_service.dart';
-import '/features/voting/domain/services/i_vote_timer_service.dart';
-import '/features/voting/data/adapters/vote_timer_adapter.dart';
-
 /// Register all Post feature dependencies
 /// Call this function from main setupDependencyInjection()
 void registerPostModule(GetIt getIt) {
@@ -56,9 +50,6 @@ void registerPostModule(GetIt getIt) {
 
   // ===== Providers Registration =====
   _registerProviders(getIt);
-
-  // ===== Voting Integration Registration =====
-  _registerVotingIntegration(getIt);
 }
 
 /// Register Remote DataSource
@@ -152,26 +143,6 @@ void _registerProviders(GetIt getIt) {
   getIt.registerFactory<UserPostsProvider>(
     () => UserPostsProvider(
       getUserPostsUseCase: getIt<GetUserPostsUseCase>(),
-    ),
-  );
-}
-
-/// Register Voting Integration
-///
-/// Post Feature owns VoteTimerService (timer is a Post concept),
-/// but Voting Feature uses it via IVoteTimerService adapter.
-/// This implements cross-feature communication with loose coupling.
-void _registerVotingIntegration(GetIt getIt) {
-  // VoteTimerService (owned by Post Feature)
-  getIt.registerLazySingleton<VoteTimerService>(
-    () => VoteTimerService(),
-  );
-
-  // IVoteTimerService Adapter (used by Voting Feature)
-  // This adapter bridges Post and Voting features without direct dependency
-  getIt.registerLazySingleton<IVoteTimerService>(
-    () => VoteTimerAdapter(
-      getIt<VoteTimerService>(),
     ),
   );
 }

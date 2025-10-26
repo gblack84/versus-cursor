@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import '/core/design_system/design_system.dart';
 import '/core/types/layout_type.dart';
 import '/features/voting/domain/entities/dialog/versus_box_size_data.dart';
 import '/features/voting/domain/constants/voting_constants.dart';
+import '/features/voting/domain/services/i_box_calculator_service.dart';
 import '../../voting_box.dart';
-import '/services/ui/unified_box_calculator.dart';
 import '/core/utils/media/aspect_ratio_analyzer.dart';
 
 /// Content component for the voting dialog
@@ -30,6 +31,7 @@ class VotingDialogContent extends StatelessWidget {
   final bool hasVoted;
   final Function(String option)? onVote;
   final AnimationController? animationController;
+  final IBoxCalculatorService? boxCalculator;
 
   const VotingDialogContent({
     super.key,
@@ -53,7 +55,12 @@ class VotingDialogContent extends StatelessWidget {
     this.hasVoted = false,
     this.onVote,
     this.animationController,
+    this.boxCalculator,
   });
+
+  /// Box calculator service (injected or lazy-loaded from DI)
+  IBoxCalculatorService get _boxCalculator =>
+    boxCalculator ?? GetIt.instance<IBoxCalculatorService>();
 
   /// Helper methods for multi-image support
   List<String> get effectiveImageUrlsA {
@@ -188,7 +195,7 @@ class VotingDialogContent extends StatelessWidget {
     return Center(
       child: VotingBox.legacy(
         boxType: 'A',
-        boxSize: UnifiedBoxCalculator.calculateForNotificationDialog(
+        boxSize: _boxCalculator.calculateForNotificationDialog(
           dialogWidth: MediaQuery.of(context).size.width * VotingConstants.messageCardWidthRatio,
           layoutType: sizeData.layoutType,
           aspectRatioA: sizeData.aspectRatioA,
@@ -246,7 +253,7 @@ class VotingDialogContent extends StatelessWidget {
 
   Widget _buildDefaultSingleBox(BuildContext context, bool hasOnlyTextB) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final votingSizes = UnifiedBoxCalculator.calculateForNotificationDialog(
+    final votingSizes = _boxCalculator.calculateForNotificationDialog(
       dialogWidth: screenWidth * VotingConstants.messageCardWidthRatio,
       layoutType: LayoutType.single,
       aspectRatioA: aspectRatioA,
@@ -287,7 +294,7 @@ class VotingDialogContent extends StatelessWidget {
         ? AspectRatioAnalyzer.getOptimalLayout(aspectRatioA, aspectRatioB)
         : LayoutType.horizontal;
 
-    final votingSizes = UnifiedBoxCalculator.calculateForNotificationDialog(
+    final votingSizes = _boxCalculator.calculateForNotificationDialog(
       dialogWidth: screenWidth * VotingConstants.messageCardWidthRatio,
       layoutType: layoutType,
       aspectRatioA: aspectRatioA,

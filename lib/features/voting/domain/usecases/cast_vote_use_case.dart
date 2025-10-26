@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '/core/errors/failures.dart';
-import '../repositories/i_voting_repository.dart';
+import '../repositories/i_voting_dialog_repository.dart';
 import 'base/use_case.dart';
 
 /// Parameters for casting a vote
@@ -18,7 +18,7 @@ class CastVoteParams {
 
 /// Use case for casting a vote
 class CastVoteUseCase extends UseCase<void, CastVoteParams> {
-  final IVotingRepository repository;
+  final IVotingDialogRepository repository;
 
   CastVoteUseCase(this.repository);
 

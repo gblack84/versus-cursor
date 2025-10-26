@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '/core/errors/failures.dart';
-import '../repositories/i_voting_repository.dart';
+import '../repositories/i_voting_dialog_repository.dart';
 import 'base/use_case.dart';
 
 /// Parameters for requesting vote expansion
@@ -18,7 +18,7 @@ class RequestVoteExpansionParams {
 
 /// Use case for requesting vote time expansion
 class RequestVoteExpansionUseCase extends UseCase<void, RequestVoteExpansionParams> {
-  final IVotingRepository repository;
+  final IVotingDialogRepository repository;
 
   RequestVoteExpansionUseCase(this.repository);
 

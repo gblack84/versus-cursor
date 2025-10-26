@@ -13,10 +13,15 @@ abstract class IVotingRemoteDataSource {
   // ============================================================================
   
   /// Cast a vote for a post
+  ///
+  /// Uses Firebase Transaction for atomic updates with duplicate vote prevention.
+  /// Optionally updates chat messages if messageId and chatId are provided.
   Future<void> castVote({
     required String postId,
     required String userId,
     required String voteOption,
+    String? messageId,
+    String? chatId,
   });
 
   /// Remove a vote from a post

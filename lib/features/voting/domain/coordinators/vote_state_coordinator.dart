@@ -1,47 +1,62 @@
 import 'package:flutter/foundation.dart';
 import 'package:rxdart/rxdart.dart';
-import '../ports/i_vote_state_port.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../repositories/i_voting_chat_repository.dart';
 import '../entities/chat/vote_state.dart';
+import '../entities/chat/post_voting.dart';
 import '../constants/voting_constants.dart';
 
 /// 투표 상태 통합 관리 서비스
 ///
-/// Port-Adapter 패턴을 통해 외부 의존성을 추상화하고
-/// 단일 진실의 소스(Single Source of Truth)를 제공합니다.
+/// **Clean Architecture v4.0 - Port 제거**:
+/// - Repository에 직접 의존 (Port 레이어 제거)
+/// - 단일 진실의 소스(Single Source of Truth) 제공
+/// - BehaviorSubject를 통한 상태 캐싱
 class VoteStateCoordinator {
   static VoteStateCoordinator? _instance;
   static VoteStateCoordinator get instance {
     _instance ??= VoteStateCoordinator._internal(
-      port: null, // DI에서 주입받아야 함
+      repository: null, // DI에서 주입받아야 함
+      auth: null,
     );
     return _instance!;
   }
 
-  final IVoteStatePort? _port;
+  final VotingRepository? _repository;
+  final FirebaseAuth? _auth;
   final _stateCache = <String, BehaviorSubject<VoteStateData>>{};
   final _subscriptions = <String, Stream<VoteStateData>>{};
 
-  VoteStateCoordinator._internal({IVoteStatePort? port}) : _port = port;
+  VoteStateCoordinator._internal({
+    VotingRepository? repository,
+    FirebaseAuth? auth,
+  }) : _repository = repository,
+       _auth = auth;
 
   /// DI를 통한 초기화
-  static void initialize(IVoteStatePort port) {
-    _instance = VoteStateCoordinator._internal(port: port);
+  static void initialize({
+    required VotingRepository repository,
+    FirebaseAuth? auth,
+  }) {
+    _instance = VoteStateCoordinator._internal(
+      repository: repository,
+      auth: auth ?? FirebaseAuth.instance,
+    );
   }
 
   /// 통합 상태 Stream 제공
   ///
-  /// Port를 통해 추상화된 데이터 소스들을 결합하여
-  /// 통합된 투표 상태를 제공합니다.
+  /// Repository를 통해 투표 상태를 통합하여 제공합니다.
   Stream<VoteStateData> getVoteStateStream({
     required String postId,
     required DateTime? voteEndTime,
     String? initialStatus,
     Map<String, dynamic>? userVotes,
   }) {
-    // Port가 없으면 에러 스트림 반환
-    if (_port == null) {
+    // Repository가 없으면 에러 스트림 반환
+    if (_repository == null) {
       if (kDebugMode) {
-        print('[VoteStateCoordinator] Port not initialized');
+        print('[VoteStateCoordinator] Repository not initialized');
       }
       return Stream.error('VoteStateCoordinator not properly initialized');
     }
@@ -52,20 +67,39 @@ class VoteStateCoordinator {
     }
 
     // 새 BehaviorSubject 생성 (마지막 값 캐싱)
-    final subject = _port!.getOrCreateStateStream(postId);
+    final subject = BehaviorSubject<VoteStateData>.seeded(
+      const VoteStateData(
+        state: VoteState.votingRequest,
+        hasUserVoted: false,
+        userChoice: null,
+        remainingTime: null,
+        voteResults: null,
+      ),
+    );
     _stateCache[postId] = subject;
 
     // 현재 사용자 ID
-    final currentUserId = _port!.getCurrentUserId();
+    final currentUserId = _auth?.currentUser?.uid;
 
-    // 투표 상태 모니터링 시작
-    _port!.startMonitoringVoteState(
-      postId: postId,
-      voteEndTime: voteEndTime,
-    );
-
-    // Port에서 업데이트 스트림 구독
-    final voteUpdatesStream = _port!.streamVoteUpdates(postId);
+    // Repository에서 업데이트 스트림 구독
+    final voteUpdatesStream = _repository!.watchPostVoting(postId)
+        .map((either) => either.fold(
+              (failure) {
+                if (kDebugMode) {
+                  print('[VoteStateCoordinator] Stream error: $failure');
+                }
+                return <String, dynamic>{};
+              },
+              (postVoting) => {
+                'voteStatus': postVoting.voteStatus.toString(),
+                'voteCompleted': postVoting.voteCompleted,
+                'votedUserIdsA': postVoting.votedUserIdsA,
+                'votedUserIdsB': postVoting.votedUserIdsB,
+                'votesA': postVoting.votesA,
+                'votesB': postVoting.votesB,
+                'voteEndTime': postVoting.voteEndTime,
+              },
+            ));
     
     // 스트림 결합 및 상태 계산
     final combinedStream = voteUpdatesStream.asyncMap((voteData) async {
@@ -75,8 +109,8 @@ class VoteStateCoordinator {
       
       if (currentUserId != null) {
         // 투표 데이터에서 사용자 투표 정보 확인
-        final votedUsersA = List<String>.from(voteData['votedUserIDsA'] ?? []);
-        final votedUsersB = List<String>.from(voteData['votedUserIDsB'] ?? []);
+        final votedUsersA = List<String>.from((voteData['votedUserIDsA'] ?? []) as List);
+        final votedUsersB = List<String>.from((voteData['votedUserIDsB'] ?? []) as List);
         
         if (votedUsersA.contains(currentUserId)) {
           hasUserVoted = true;
@@ -182,8 +216,7 @@ class VoteStateCoordinator {
 
   /// 특정 투표의 리소스 정리
   void dispose(String postId) {
-    // 모니터링 중지
-    _port?.stopMonitoringVoteState(postId);
+    // 구독 제거
     _subscriptions.remove(postId);
 
     // Subject 닫기
@@ -197,10 +230,7 @@ class VoteStateCoordinator {
 
   /// 전체 캐시 정리
   void disposeAll() {
-    // 모든 모니터링 중지
-    for (final postId in _subscriptions.keys) {
-      _port?.stopMonitoringVoteState(postId);
-    }
+    // 모든 구독 정리
     _subscriptions.clear();
 
     // 모든 Subject 닫기
@@ -229,36 +259,64 @@ class VoteStateCoordinator {
     required String postId,
     required String voteOption,
   }) async {
-    if (_port == null) {
+    if (_repository == null) {
       throw StateError('VoteStateCoordinator not properly initialized');
     }
-    
-    final userId = _port!.getCurrentUserId();
+
+    final userId = _auth?.currentUser?.uid;
     if (userId == null) {
       throw StateError('User not authenticated');
     }
-    
-    await _port!.submitVote(
+
+    final option = voteOption == 'A' ? VoteOption.A : VoteOption.B;
+
+    final result = await _repository!.castVote(
       postId: postId,
       userId: userId,
-      voteOption: voteOption,
+      option: option,
+    );
+
+    result.fold(
+      (failure) {
+        if (kDebugMode) {
+          print('[VoteStateCoordinator] submitVote failed: $failure');
+        }
+        throw Exception('Failed to submit vote: $failure');
+      },
+      (_) {
+        if (kDebugMode) {
+          print('[VoteStateCoordinator] submitVote success');
+        }
+      },
     );
   }
 
   /// 사용자 투표 여부 확인
   Future<bool> hasUserVoted(String postId) async {
-    if (_port == null) {
+    if (_repository == null) {
       return false;
     }
-    
-    final userId = _port!.getCurrentUserId();
+
+    final userId = _auth?.currentUser?.uid;
     if (userId == null) {
       return false;
     }
-    
-    return await _port!.hasUserVoted(
-      postId: postId,
-      userId: userId,
+
+    // TODO: VotingRepository에 hasUserVoted 메서드 추가 필요
+    // 임시: getVoting으로 대체하여 votedUserIds 확인
+    final result = await _repository!.getVoting(postId);
+
+    return result.fold(
+      (failure) {
+        if (kDebugMode) {
+          print('[VoteStateCoordinator] hasUserVoted failed: $failure');
+        }
+        return false;
+      },
+      (postVoting) {
+        return postVoting.votedUserIdsA.contains(userId) ||
+            postVoting.votedUserIdsB.contains(userId);
+      },
     );
   }
 }

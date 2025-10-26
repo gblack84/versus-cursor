@@ -6,6 +6,7 @@ import '../../domain/entities/chat/post_voting.dart';
 import '../../domain/failures/voting_failure.dart';
 import '../datasources/i_voting_remote_datasource.dart';
 import '../datasources/i_voting_local_datasource.dart';
+import '../adapters/post_voting_adapter.dart';
 
 /// Implementation of VotingRepository for chat card voting system
 ///
@@ -58,7 +59,7 @@ class VotingChatRepositoryImpl implements VotingRepository {
       }
 
       final data = doc.data()!;
-      final voting = PostVotingFirestore.fromMap(data, postId);
+      final voting = PostVotingAdapter.fromFirestore(data, postId);
 
       // Cache the result
       await _cacheVotingData(voting);
@@ -95,7 +96,7 @@ class VotingChatRepositoryImpl implements VotingRepository {
             return const Left(NotFound());
           }
 
-          final voting = PostVotingFirestore.fromMap(data, postId);
+          final voting = PostVotingAdapter.fromFirestore(data, postId);
           return Right(voting);
         } on FirebaseException catch (e) {
           if (kDebugMode) {
@@ -151,7 +152,7 @@ class VotingChatRepositoryImpl implements VotingRepository {
 
       // 4. Update Firestore
       await _firestore.collection('posts').doc(postId).update(
-            updatedVoting.toFirestore(),
+            PostVotingAdapter.toFirestore(updatedVoting),
           );
 
       // 5. Update local cache
@@ -198,7 +199,7 @@ class VotingChatRepositoryImpl implements VotingRepository {
 
       // 3. Update Firestore
       await _firestore.collection('posts').doc(postId).update(
-            updatedVoting.toFirestore(),
+            PostVotingAdapter.toFirestore(updatedVoting),
           );
 
       // 4. Update cache
@@ -229,7 +230,7 @@ class VotingChatRepositoryImpl implements VotingRepository {
 
       // 3. Update Firestore
       await _firestore.collection('posts').doc(postId).update(
-            updatedVoting.toFirestore(),
+            PostVotingAdapter.toFirestore(updatedVoting),
           );
 
       // 4. Update cache
@@ -258,7 +259,7 @@ class VotingChatRepositoryImpl implements VotingRepository {
       final updatedVoting = voting.cancelVoting(reason: reason);
 
       await _firestore.collection('posts').doc(postId).update(
-            updatedVoting.toFirestore(),
+            PostVotingAdapter.toFirestore(updatedVoting),
           );
 
       await _cacheVotingData(updatedVoting);
@@ -283,7 +284,7 @@ class VotingChatRepositoryImpl implements VotingRepository {
       final updatedVoting = voting.timeoutVoting();
 
       await _firestore.collection('posts').doc(postId).update(
-            updatedVoting.toFirestore(),
+            PostVotingAdapter.toFirestore(updatedVoting),
           );
 
       await _cacheVotingData(updatedVoting);
@@ -320,7 +321,7 @@ class VotingChatRepositoryImpl implements VotingRepository {
       );
 
       await _firestore.collection('posts').doc(postId).update(
-            updatedVoting.toFirestore(),
+            PostVotingAdapter.toFirestore(updatedVoting),
           );
 
       await _cacheVotingData(updatedVoting);
@@ -349,7 +350,7 @@ class VotingChatRepositoryImpl implements VotingRepository {
       final updatedVoting = voting.markNotificationsSent();
 
       await _firestore.collection('posts').doc(postId).update(
-            updatedVoting.toFirestore(),
+            PostVotingAdapter.toFirestore(updatedVoting),
           );
 
       await _cacheVotingData(updatedVoting);

@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '/core/firebase/utils/firestore_util.dart';
 // Firebase Optimization: Domain models with extensions
-import '../../domain/entities/dialog/vote.dart';
 import '../../domain/entities/dialog/vote_expansion_request.dart';
 import '../../domain/entities/dialog/weight.dart';
 import '../extensions/vote_extensions.dart';
@@ -122,29 +121,174 @@ class VotingRemoteDataSourceImpl implements IVotingRemoteDataSource {
     required String postId,
     required String userId,
     required String voteOption,
+    String? messageId,
+    String? chatId,
   }) async {
-    final voteRef = _firestore
-        .collection('posts')
-        .doc(postId)
-        .collection('votes')
-        .doc(userId);
+    try {
+      if (kDebugMode) {
+        print('[VotingRemoteDataSource] submitVote started: postId=$postId, choice=$voteOption');
+      }
 
-    // Create Vote domain model and convert to Firestore
-    final vote = Vote(
-      postId: postId,
-      userId: userId,
-      choice: voteOption,
-      timestamp: DateTime.now(),
-    );
+      // ✅ Firebase Transaction으로 atomic 업데이트 (중복 투표 방지)
+      await _firestore.runTransaction((transaction) async {
+        // 1. Posts 업데이트
+        final postRef = _firestore.collection('posts').doc(postId);
+        final postDoc = await transaction.get(postRef);
 
-    await voteRef.set(vote.toFirestore());
+        if (!postDoc.exists) {
+          throw Exception('게시물을 찾을 수 없습니다');
+        }
 
-    // Update vote counts
-    final postRef = _firestore.collection('posts').doc(postId);
-    final voteField = voteOption == 'A' ? 'votesA' : 'votesB';
-    await postRef.update({
-      voteField: FieldValue.increment(1),
-    });
+        // 중복 투표 확인 (Transaction 내부에서 안전)
+        final postData = postDoc.data() as Map<String, dynamic>;
+        final votedUsersA = List<String>.from(postData['votedUserIDsA'] ?? []);
+        final votedUsersB = List<String>.from(postData['votedUserIDsB'] ?? []);
+
+        if (votedUsersA.contains(userId) || votedUsersB.contains(userId)) {
+          throw Exception('이미 투표하셨습니다');
+        }
+
+        // 투표 필드 업데이트 (atomic)
+        final updates = <String, dynamic>{
+          'votedUserIDs$voteOption': FieldValue.arrayUnion([userId]),
+          'votes$voteOption': FieldValue.increment(1),
+          'totalVotes': FieldValue.increment(1),
+          'lastVoteAt': FieldValue.serverTimestamp(),
+        };
+
+        transaction.update(postRef, updates);
+
+        // 1.5 votes 서브컬렉션에 투표 문서 생성
+        final voteRef = postRef.collection('votes').doc();
+        transaction.set(voteRef, {
+          'user': _firestore.doc('users/$userId'),
+          'option': voteOption,
+          'createdAt': FieldValue.serverTimestamp(),
+          'fromChat': messageId != null && chatId != null,
+        });
+
+        // 2. Messages 업데이트 (있는 경우)
+        if (messageId != null && chatId != null) {
+          final messageRef = _firestore
+              .collection('chats')
+              .doc(chatId)
+              .collection('messages')
+              .doc(messageId);
+
+          final messageDoc = await transaction.get(messageRef);
+
+          if (messageDoc.exists) {
+            if (kDebugMode) {
+              print('[VotingRemoteDataSource] Updating message userVotes: messageId=$messageId, choice=$voteOption');
+            }
+
+            transaction.update(messageRef, {
+              'userVotes.$userId': {
+                'option': voteOption,
+                'votedAt': FieldValue.serverTimestamp(),
+              },
+              'lastVoteUpdate': FieldValue.serverTimestamp(),
+            });
+          } else {
+            if (kDebugMode) {
+              print('[VotingRemoteDataSource] Message not found: messageId=$messageId');
+            }
+          }
+        } else {
+          if (kDebugMode) {
+            print('[VotingRemoteDataSource] Skipping message update: messageId=$messageId, chatId=$chatId');
+          }
+        }
+      });
+
+      // 3. AI 채팅 업데이트 (트랜잭션 외부 - 실패해도 메인 플로우 계속)
+      await _updateAIChatMessage(postId, userId, voteOption);
+
+      if (kDebugMode) {
+        print('[VotingRemoteDataSource] Vote submitted successfully: postId=$postId, choice=$voteOption');
+      }
+    } catch (e) {
+      final errorMessage = e.toString().contains('이미 투표')
+          ? '이미 투표하셨습니다'
+          : e.toString().contains('찾을 수 없')
+              ? '게시물을 찾을 수 없습니다'
+              : '투표 처리 중 오류가 발생했습니다';
+
+      if (kDebugMode) {
+        print('[VotingRemoteDataSource] Vote submission failed: $e');
+      }
+
+      throw Exception(errorMessage);
+    }
+  }
+
+  /// AI 채팅 메시지 업데이트
+  ///
+  /// 트랜잭션 외부에서 실행되며, 실패해도 메인 투표 플로우에 영향 없음
+  Future<bool> _updateAIChatMessage(
+    String postId,
+    String userId,
+    String choice,
+  ) async {
+    try {
+      // 게시물 작성자 찾기
+      final postDoc = await _firestore.collection('posts').doc(postId).get();
+
+      if (!postDoc.exists) {
+        if (kDebugMode) {
+          print('[VotingRemoteDataSource] AI chat update skipped: post not found');
+        }
+        return false;
+      }
+
+      final postData = postDoc.data() as Map<String, dynamic>;
+      final authorId = postData['userId'] ?? postData['authorId'];
+      if (authorId == null) {
+        if (kDebugMode) {
+          print('[VotingRemoteDataSource] AI chat update skipped: author ID not found');
+        }
+        return false;
+      }
+
+      // AI 채팅 메시지 찾기
+      final aiChatId = 'ai_assistant_$authorId';
+      final messagesQuery = await _firestore
+          .collection('chats')
+          .doc(aiChatId)
+          .collection('messages')
+          .where('votePostId', isEqualTo: postId)
+          .where('messageType', isEqualTo: 'voteRequest')
+          .limit(1)
+          .get();
+
+      if (messagesQuery.docs.isEmpty) {
+        if (kDebugMode) {
+          print('[VotingRemoteDataSource] AI chat update skipped: message not found');
+        }
+        return false;
+      }
+
+      // userVotes 업데이트
+      final messageDoc = messagesQuery.docs.first;
+      await messageDoc.reference.update({
+        'userVotes.$userId': {
+          'option': choice,
+          'votedAt': FieldValue.serverTimestamp(),
+        },
+        'lastVoteUpdate': FieldValue.serverTimestamp(),
+      });
+
+      if (kDebugMode) {
+        print('[VotingRemoteDataSource] AI chat message updated successfully');
+      }
+      return true;
+    } catch (e) {
+      // 실패해도 메인 플로우는 계속
+      if (kDebugMode) {
+        print('[VotingRemoteDataSource] AI chat update failed (continuing): $e');
+      }
+      return false;
+    }
   }
 
   @override

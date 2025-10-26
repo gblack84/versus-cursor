@@ -1,9 +1,9 @@
 /// Voting Feature - Riverpod Providers
 ///
-/// **Phase 1: 프리젠테이션 레이어 전용**
+/// **Clean Architecture v4.0 - Repository-based**
 /// - UI 상태 관리만 담당
-/// - 도메인 레이어 연결은 Phase 2에서 진행
-/// - VoteStatusService를 직접 호출 (임시)
+/// - VoteStateCoordinator를 통한 도메인 레이어 연결
+/// - Service 레이어 제거됨
 ///
 /// **Provider 구조:**
 /// - VoteSubmissionProvider: 투표 제출 액션
@@ -11,7 +11,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import '/features/voting/domain/services/vote_status_service.dart';
+import '/features/voting/domain/coordinators/vote_state_coordinator.dart';
 
 // ============================================================================
 // Vote Submission Provider
@@ -44,8 +44,7 @@ class VoteSubmissionState {
 
 /// 투표 제출 Controller
 ///
-/// **Phase 1**: VoteStatusService 직접 호출
-/// **Phase 2**: UseCase로 교체 예정
+/// **Clean Architecture v4.0**: VoteStateCoordinator 사용
 class VoteSubmissionController {
   final Ref ref;
 
@@ -64,17 +63,10 @@ class VoteSubmissionController {
         const VoteSubmissionState(isLoading: true);
 
     try {
-      // Phase 1: VoteStatusService 직접 호출
-      await VoteStatusService.submitVote(
+      // VoteStateCoordinator를 통한 투표 제출
+      await VoteStateCoordinator.instance.submitVote(
         postId: postId,
-        userId: userId,
-        choice: choice,
-        messageId: messageId,
-        chatId: chatId,
-        onError: (error) {
-          ref.read(voteSubmissionStateProvider.notifier).state =
-              VoteSubmissionState(error: error);
-        },
+        voteOption: choice,
       );
 
       // 성공

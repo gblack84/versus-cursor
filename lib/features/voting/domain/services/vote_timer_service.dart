@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '/core_exports.dart';
+import 'i_vote_timer_service.dart';
 
 /// 투표 타이머 동기화 서비스
 ///
 /// 모든 투표 카드 위젯이 동일한 남은 시간을 표시하도록
 /// postId별로 단일 Timer를 관리하는 싱글톤 서비스
 /// 서버 시간 동기화를 통해 모든 기기에서 동일한 시간 표시
-class VoteTimerService extends ChangeNotifier {
+class VoteTimerService extends ChangeNotifier implements IVoteTimerService {
   // 싱글톤 인스턴스
   static final VoteTimerService _instance = VoteTimerService._internal();
   factory VoteTimerService() => _instance;

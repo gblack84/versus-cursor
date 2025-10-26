@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import '/app/contracts/notification_types.dart';
 
-// NotificationPriority는 /app/contracts/notification_types.dart로 이동됨
 // Backward compatibility를 위해 re-export
 export '/app/contracts/notification_types.dart' show NotificationPriority;
 
@@ -89,7 +89,12 @@ sealed class Notification with _$Notification {
     String? senderId,
     String? senderName,
     String? body,
-    @Default(NotificationPriority.medium) NotificationPriority notificationPriority,
+    @JsonKey(
+      fromJson: NotificationPriority.fromJson,
+      toJson: _notificationPriorityToJson,
+    )
+    @Default(NotificationPriority.medium)
+    NotificationPriority notificationPriority,
 
     // 이미지 URL 리스트 (기존 필드 유지)
     @Default([]) List<String> imageUrlsA,
@@ -236,3 +241,6 @@ enum NotificationStatus {
     );
   }
 }
+
+// JSON serialization helper for NotificationPriority
+int _notificationPriorityToJson(NotificationPriority priority) => priority.toJson();

@@ -59,9 +59,9 @@ import '../presentation/providers/notification_overlay_provider.dart';
 
 // ===== Voting Feature Dependencies (Cross-Feature) =====
 // NOTE: These must be registered by Voting Feature BEFORE this module
-import '/features/voting/presentation/managers/vote_ui_manager.dart';
+import '/features/voting/presentation/dialogs/vote_ui_manager.dart';
 import '/features/voting/domain/usecases/submit_vote_use_case.dart';
-import '/features/voting/presentation/handlers/vote_handler_impl.dart';
+import '/features/voting/data/adapters/vote_handler_impl.dart';
 import '/features/voting/domain/ports/i_vote_ui_delegate.dart';
 import '/core/domain/ports/i_notification_display_port.dart';
 

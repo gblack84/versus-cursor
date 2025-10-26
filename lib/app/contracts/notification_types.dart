@@ -44,6 +44,8 @@ class NotificationTypes {
 /// Feature 간 공유되는 알림 우선순위 정의
 /// - Voting Feature: VoteNotification
 /// - Notifications Feature: Notification sealed class
+///
+/// **JSON Serialization Support**: Use NotificationPriorityConverter
 enum NotificationPriority {
   low(1),
   medium(2),
@@ -59,4 +61,10 @@ enum NotificationPriority {
       orElse: () => NotificationPriority.low,
     );
   }
+
+  /// Convert to JSON (weight integer)
+  int toJson() => weight;
+
+  /// Create from JSON (weight integer)
+  static NotificationPriority fromJson(int json) => fromWeight(json);
 }

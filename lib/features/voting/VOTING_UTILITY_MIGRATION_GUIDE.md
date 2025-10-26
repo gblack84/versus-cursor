@@ -27,7 +27,7 @@
 | `/notifications/presentation/utils/adaptive_text_size.dart` | `/voting/presentation/utils/adaptive_text_size.dart` | 투표 UI 텍스트 크기 계산 |
 | `/notifications/presentation/managers/i_notification_ui_delegate.dart` | `/voting/domain/ports/i_vote_ui_delegate.dart` | 투표 UI 인터페이스 |
 | `/notifications/presentation/managers/notification_ui_manager.dart` | `/voting/presentation/managers/vote_ui_manager.dart` | 투표 UI 관리자 |
-| `/notifications/presentation/handlers/notification_handler_impl.dart` | `/voting/presentation/handlers/vote_handler_impl.dart` | 투표 알림 핸들러 |
+| `/notifications/presentation/handlers/notification_handler_impl.dart` | `/voting/data/adapters/vote_handler_impl.dart` | 투표 알림 핸들러 (Clean Architecture) |
 
 ### Phase 2: Domain Layer 파일 (1개)
 | 현재 위치 | 이동 위치 | 설명 |

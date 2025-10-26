@@ -16,8 +16,6 @@ import '/app/widgets/navigation/main_navigation_shell.dart';
 // Non-Auth Feature imports from app/widgets/index.dart
 // (These are still needed until their respective features are migrated)
 
-// Import Voting Feature routes
-import '/features/voting/presentation/routes/voting_routes.dart';
 // Import Notification Feature routes
 import '/features/notifications/presentation/routes/notification_routes.dart';
 // Import Profile Feature screens
@@ -343,9 +341,6 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
 
         // Notification Feature routes
         ...NotificationRoutes.routes,
-        
-        // Voting Feature routes
-        ...VotingRoutes.routes,
       ],
       observers: [routeObserver, BotToastNavigatorObserver()],
     );

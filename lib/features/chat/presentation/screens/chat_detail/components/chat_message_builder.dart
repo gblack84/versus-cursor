@@ -3,11 +3,15 @@ import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import 'package:intl/intl.dart';
 import '/core/constants/app_constants.dart';
 import '/core/design_system/design_system.dart';
+import '/core/types/layout_type.dart';
 import '/features/chat/domain/entities/chat.dart';
 import '/features/profile/domain/models/user_profile.dart';
 import '/features/voting/domain/constants/voting_constants.dart';
-import '/features/voting/presentation/widgets/chat_card/vote_card_message.dart';
+import '/features/voting/presentation/chat_vote_card/vote_card/vote_card_widget.dart';
 import '/features/chat/domain/enums/message_delivery_status.dart';
+import '/services/ui/unified_box_calculator.dart';
+import '/core/utils/media/aspect_ratio_analyzer.dart';
+import '/services/ui/responsive_breakpoints.dart';
 
 /// 메시지 빌더 컴포넌트
 ///
@@ -31,23 +35,44 @@ class ChatMessageBuilder {
     // Check if this is a vote message
     if (metadata['type'] == AppConstants.messageTypeVoteRequest ||
         metadata['type'] == AppConstants.messageTypeVoteCreated) {
+      // Extract image lists
+      final optionAImages =
+          (metadata['optionAImages'] as List<dynamic>?)?.cast<String>() ?? [];
+      final optionBImages =
+          (metadata['optionBImages'] as List<dynamic>?)?.cast<String>() ?? [];
+
+      // Determine layout type from aspect ratios
+      final aspectRatioA = metadata['aspectRatioA'] as double?;
+      final aspectRatioB = metadata['aspectRatioB'] as double?;
+      final layoutType = AspectRatioAnalyzer.getOptimalLayout(
+        aspectRatioA,
+        aspectRatioB,
+      );
+
+      // Calculate box sizes for message card
+      final maxMessageWidth = ResponsiveBreakpoints.getMaxMessageWidth(context);
+      final boxSizes = UnifiedBoxCalculator.calculateForMessageCard(
+        bubbleWidth: maxMessageWidth,
+        layoutType: layoutType,
+        aspectRatioA: aspectRatioA,
+        aspectRatioB: aspectRatioB,
+        hasImageA: optionAImages.isNotEmpty,
+        hasImageB: optionBImages.isNotEmpty,
+      );
+
       // Build vote card
       final voteCard = KeyedSubtree(
         key: ValueKey(message.id),
-        child: VoteCardMessage(
+        child: VoteCardWidget(
           postId: metadata['postId'] ?? '',
           title: metadata['title'] ?? '',
           description: metadata['description'],
           optionAText: metadata['optionAText'] ?? '',
           optionBText: metadata['optionBText'] ?? '',
-          optionAImage: metadata['optionAImage'],
-          optionBImage: metadata['optionBImage'],
-          optionAImages:
-              (metadata['optionAImages'] as List<dynamic>?)?.cast<String>(),
-          optionBImages:
-              (metadata['optionBImages'] as List<dynamic>?)?.cast<String>(),
-          aspectRatioA: metadata['aspectRatioA'],
-          aspectRatioB: metadata['aspectRatioB'],
+          optionAImages: optionAImages,
+          optionBImages: optionBImages,
+          boxSizes: boxSizes,
+          isHorizontal: layoutType == LayoutType.horizontal,
           cardStatus: metadata['cardStatus'] ?? VotingConstants.cardStatusVotingRequest,
           voteEndTime: metadata['voteEndTime'] != null
               ? (metadata['voteEndTime'] is DateTime
@@ -57,16 +82,10 @@ class ChatMessageBuilder {
           userVotes: metadata['userVotes'],
           voteResults: metadata['voteResults'],
           isMe: isSentByMe,
-          messageType: metadata['type'] ?? AppConstants.messageTypeVoteRequest,
-          messageId: message.id,
-          chatId: chatDocument?.id,
           currentUserName: currentUserRecord?.displayName ?? '사용자',
           senderDisplayName: metadata['authorName'] ?? '사용자',
           senderProfileImageUrl: metadata['authorPhotoUrl'],
-          senderId: message.authorId, // 추가: 메시지 작성자 ID 전달
-          showSenderProfile: true,
           searchQuery: isSearching ? searchQuery : null,
-          timestamp: message.createdAt,
         ),
       );
 

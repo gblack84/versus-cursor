@@ -27,7 +27,11 @@ import '/core/design_system/design_system.dart';
 import '/features/chat/domain/constants/chat_constants.dart';
 import '/features/chat/data/adapters/flutter_chat_user_adapter.dart';
 import '/features/voting/domain/constants/voting_constants.dart';
-import '/features/voting/presentation/widgets/chat_card/vote_card_message.dart';
+import '/features/voting/presentation/chat_vote_card/vote_card/vote_card_widget.dart';
+import '/core/types/layout_type.dart';
+import '/services/ui/unified_box_calculator.dart';
+import '/core/utils/media/aspect_ratio_analyzer.dart';
+import '/services/ui/responsive_breakpoints.dart';
 import 'package:get_it/get_it.dart';
 import '/app/contracts/auth_contract.dart';
 import '/services/image/unified_image_cache_service.dart';
@@ -219,20 +223,43 @@ class _AIChatPageCleanState extends State<AIChatPageClean>
     // 투표 메시지 체크
     if (metadata['type'] == AppConstants.messageTypeVoteRequest ||
         metadata['type'] == AppConstants.messageTypeVoteCreated) {
+      // Extract image lists
+      final optionAImages =
+          (metadata['optionAImages'] as List<dynamic>?)?.cast<String>() ?? [];
+      final optionBImages =
+          (metadata['optionBImages'] as List<dynamic>?)?.cast<String>() ?? [];
+
+      // Determine layout type from aspect ratios
+      final aspectRatioA = metadata['aspectRatioA'] as double?;
+      final aspectRatioB = metadata['aspectRatioB'] as double?;
+      final layoutType = AspectRatioAnalyzer.getOptimalLayout(
+        aspectRatioA,
+        aspectRatioB,
+      );
+
+      // Calculate box sizes for message card
+      final maxMessageWidth = ResponsiveBreakpoints.getMaxMessageWidth(context);
+      final boxSizes = UnifiedBoxCalculator.calculateForMessageCard(
+        bubbleWidth: maxMessageWidth,
+        layoutType: layoutType,
+        aspectRatioA: aspectRatioA,
+        aspectRatioB: aspectRatioB,
+        hasImageA: optionAImages.isNotEmpty,
+        hasImageB: optionBImages.isNotEmpty,
+      );
+
       return KeyedSubtree(
         key: ValueKey(message.id),
-        child: VoteCardMessage(
+        child: VoteCardWidget(
           postId: metadata['postId'] ?? '',
           title: metadata['title'] ?? '',
           description: metadata['description'],
           optionAText: metadata['optionAText'] ?? '',
           optionBText: metadata['optionBText'] ?? '',
-          optionAImage: metadata['optionAImage'],
-          optionBImage: metadata['optionBImage'],
-          optionAImages: metadata['optionAImages'],
-          optionBImages: metadata['optionBImages'],
-          aspectRatioA: metadata['aspectRatioA'],
-          aspectRatioB: metadata['aspectRatioB'],
+          optionAImages: optionAImages,
+          optionBImages: optionBImages,
+          boxSizes: boxSizes,
+          isHorizontal: layoutType == LayoutType.horizontal,
           cardStatus: metadata['cardStatus'] ?? VotingConstants.cardStatusVotingRequest,
           voteEndTime: metadata['voteEndTime'] != null
               ? (metadata['voteEndTime'] is DateTime
@@ -242,9 +269,6 @@ class _AIChatPageCleanState extends State<AIChatPageClean>
           userVotes: metadata['userVotes'],
           voteResults: metadata['voteResults'],
           isMe: isSentByMe,
-          messageType: metadata['type'] ?? AppConstants.messageTypeVoteRequest,
-          messageId: message.id,
-          chatId: widget.aiChatId,
           currentUserName: currentUserDisplayName,
           searchQuery: _provider.isSearching ? _searchController.text : '',
         ),

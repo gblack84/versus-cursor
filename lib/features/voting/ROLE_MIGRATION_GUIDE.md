@@ -63,7 +63,7 @@ Notifications feature가 비즈니스 로직(투표 UI, 타겟 선택)을 소유
 notification_overlay.dart → /voting/presentation/overlays/
 adaptive_text_size.dart → /voting/presentation/utils/
 notification_ui_manager.dart → /voting/presentation/managers/vote_ui_manager.dart
-notification_handler_impl.dart → /voting/presentation/handlers/vote_handler_impl.dart
+notification_handler_impl.dart → /voting/data/adapters/vote_handler_impl.dart (Clean Architecture fix)
 in_app_notification_dialog.dart → /voting/presentation/overlays/
 ```
 
@@ -175,9 +175,9 @@ mv lib/features/notifications/presentation/models/versus_box_size_data.dart \
 mv lib/features/notifications/presentation/managers/notification_ui_manager.dart \
    lib/features/voting/presentation/managers/vote_ui_manager.dart
 
-# Handler 이름 변경 및 이동
+# Handler 이름 변경 및 이동 (Clean Architecture 수정 적용)
 mv lib/features/notifications/data/services/notification_handler_impl.dart \
-   lib/features/voting/presentation/handlers/vote_handler_impl.dart
+   lib/features/voting/data/adapters/vote_handler_impl.dart
 ```
 
 ### ✅ Phase 9: 추가 UI 컴포넌트 이동

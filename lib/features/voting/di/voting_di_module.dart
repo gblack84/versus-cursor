@@ -42,7 +42,7 @@ import '../data/adapters/vote_state_adapter.dart';
 import '../data/adapters/notification_data_adapter.dart';
 import '../data/adapters/box_calculator_adapter.dart';
 
-// ===== Domain Layer - UseCases (11 total) =====
+// ===== Domain Layer - Dialog UseCases (11 total) =====
 import '../domain/usecases/cast_vote_use_case.dart';
 import '../domain/usecases/remove_vote_use_case.dart';
 import '../domain/usecases/get_vote_counts_use_case.dart';
@@ -55,24 +55,19 @@ import '../domain/usecases/submit_vote_use_case.dart';
 import '../domain/usecases/request_vote_expansion_use_case.dart';
 import '../domain/usecases/get_vote_history_use_case.dart';
 
+// ===== Domain Layer - Chat Card UseCases (11 total) =====
+// Imported with namespace to avoid class name conflicts with dialog usecases
+import '../domain/usecases/chat_cards/voting_usecases.dart' as chat_cards;
+import '../domain/usecases/chat_cards/watch_post_voting_use_case.dart';
+import '../domain/repositories/i_voting_chat_repository.dart';
+import '../data/repositories/voting_chat_repository_impl.dart';
+
 // ===== Presentation Layer - Providers =====
-import '../presentation/providers/voting_state_provider.dart';
-import '../presentation/providers/voting_ui_provider.dart';
-import '../presentation/providers/voting_data_provider.dart';
-
-// ===== Presentation Layer - Managers =====
-import '../presentation/managers/voting_state_manager.dart';
-
-// ===== Domain Layer - Services =====
-import '../domain/services/vote_data_extractor_service.dart';
+// Removed: Old ChangeNotifier providers replaced with Riverpod
 
 // ===== Coordinators & Helpers =====
 import '../domain/coordinators/vote_state_coordinator.dart';
 import '../data/adapters/vote_message_helper.dart';
-
-// ===== Dependencies Abstraction =====
-import '../presentation/dependencies/voting_dependencies.dart';
-import '../presentation/dependencies/voting_dependencies_impl.dart';
 
 /// Register all Voting feature dependencies
 /// Call this function from main setupDependencyInjection()
@@ -80,6 +75,7 @@ void registerVotingModule(GetIt getIt) {
   // ===== DataSources Registration =====
   _registerDataSources(getIt);
 
+  // ===== Dialog Voting System =====
   // ===== Repository Registration =====
   _registerRepository(getIt);
 
@@ -89,17 +85,18 @@ void registerVotingModule(GetIt getIt) {
   // ===== UseCases Registration =====
   _registerUseCases(getIt);
 
+  // ===== Chat Card Voting System =====
+  // ===== Chat Card Repository Registration =====
+  _registerChatCardRepository(getIt);
+
+  // ===== Chat Card UseCases Registration =====
+  _registerChatCardUseCases(getIt);
+
   // ===== Coordinators & Helpers =====
   _registerCoordinatorsAndHelpers(getIt);
 
-  // ===== Dependencies Abstraction Registration =====
-  _registerDependenciesAbstraction(getIt);
-
   // ===== Providers Registration =====
-  _registerProviders(getIt);
-
-  // ===== State Manager Registration =====
-  _registerStateManager(getIt);
+  // Removed: Old ChangeNotifier providers replaced with Riverpod
 
   // ===== Ports & Services Registration =====
   _registerPortsAndServices(getIt);
@@ -196,32 +193,7 @@ void _registerUseCases(GetIt getIt) {
   );
 }
 
-/// Register Presentation Layer Providers (3 total)
-void _registerProviders(GetIt getIt) {
-  // State Provider - manages voting states
-  getIt.registerLazySingleton<VotingStateProvider>(
-    () => VotingStateProvider(
-      castVoteUseCase: getIt<CastVoteUseCase>(),
-      removeVoteUseCase: getIt<RemoveVoteUseCase>(),
-      checkUserVoteUseCase: getIt<CheckUserVoteUseCase>(),
-      getVoteCountsUseCase: getIt<GetVoteCountsUseCase>(),
-      streamVoteCountsUseCase: getIt<StreamVoteCountsUseCase>(),
-    ),
-  );
-
-  // UI Provider - manages UI states and interactions
-  getIt.registerLazySingleton<VotingUIProvider>(
-    () => VotingUIProvider(),
-  );
-
-  // Data Provider - manages data operations and caching
-  getIt.registerLazySingleton<VotingDataProvider>(
-    () => VotingDataProvider(
-      streamVoteCountsUseCase: getIt<StreamVoteCountsUseCase>(),
-      getVoteHistoryUseCase: getIt<GetVoteHistoryUseCase>(),
-    ),
-  );
-}
+// Removed: _registerProviders function - replaced with Riverpod
 
 /// Register Port adapters and Services
 void _registerPortsAndServices(GetIt getIt) {
@@ -263,14 +235,7 @@ void _registerPortsAndServices(GetIt getIt) {
       firestore: FirebaseFirestore.instance,
     ),
   );
-  
-  // Register VoteDataExtractorService
-  getIt.registerLazySingleton<VoteDataExtractorService>(
-    () => VoteDataExtractorService(
-      notificationDataPort: getIt<INotificationDataPort>(),
-    ),
-  );
-  
+
   // Register BoxCalculatorService implementation
   getIt.registerLazySingleton<IBoxCalculatorService>(
     () => BoxCalculatorAdapter(),
@@ -293,25 +258,81 @@ void _registerCoordinatorsAndHelpers(GetIt getIt) {
   );
 }
 
-/// Register Dependencies Abstraction Layer
-void _registerDependenciesAbstraction(GetIt getIt) {
-  // Register VotingDependencies interface implementation
-  // This encapsulates all GetIt usage for the presentation layer
-  getIt.registerLazySingleton<VotingDependencies>(
-    () => VotingDependenciesImpl(getIt: getIt),
+// Removed: _registerStateManager function - replaced with Riverpod
+// Removed: _registerDependenciesAbstraction function - unused dead code (2025-01-24)
+
+// ============================================================================
+// Chat Card Voting System Registration
+// ============================================================================
+
+/// Register Chat Card Repository (VotingChatRepositoryImpl)
+///
+/// **Separation from Dialog System**:
+/// - Dialog: VotingRepositoryImpl implements IVotingRepository + VoteContract
+/// - Chat Card: VotingChatRepositoryImpl implements VotingRepository (PostVoting-based)
+void _registerChatCardRepository(GetIt getIt) {
+  getIt.registerLazySingleton<VotingRepository>(
+    () => VotingChatRepositoryImpl(
+      remoteDataSource: getIt<IVotingRemoteDataSource>(),
+      localDataSource: getIt<IVotingLocalDataSource>(),
+      firestore: FirebaseFirestore.instance,
+    ),
   );
 }
 
-/// Register Voting State Manager
-void _registerStateManager(GetIt getIt) {
-  // Register VotingStateManager as singleton
-  // This manages coordination between AppState and Voting providers
-  getIt.registerLazySingleton<VotingStateManager>(
-    () => VotingStateManager(
-      dependencies: getIt<VotingDependencies>(),
-      stateProvider: getIt<VotingStateProvider>(),
-      dataProvider: getIt<VotingDataProvider>(),
-      uiProvider: getIt<VotingUIProvider>(),
-    ),
+/// Register Chat Card UseCases (11 total)
+///
+/// **PostVoting-based UseCases for Chat Card Voting**:
+/// These UseCases use PostVoting domain model with rich business logic
+/// and are completely separate from Dialog voting system UseCases.
+void _registerChatCardUseCases(GetIt getIt) {
+  // 1. Watch PostVoting (Real-time state stream for chat cards)
+  getIt.registerFactory<WatchPostVotingUseCase>(
+    () => WatchPostVotingUseCase(getIt<VotingRepository>()),
+  );
+
+  // 2. Cast Vote
+  getIt.registerFactory<chat_cards.CastVoteUseCase>(
+    () => chat_cards.CastVoteUseCase(getIt<VotingRepository>()),
+  );
+
+  // 3. Start Voting
+  getIt.registerFactory<chat_cards.StartVotingUseCase>(
+    () => chat_cards.StartVotingUseCase(getIt<VotingRepository>()),
+  );
+
+  // 4. Complete Voting
+  getIt.registerFactory<chat_cards.CompleteVotingUseCase>(
+    () => chat_cards.CompleteVotingUseCase(getIt<VotingRepository>()),
+  );
+
+  // 5. Get Voting State
+  getIt.registerFactory<chat_cards.GetVotingUseCase>(
+    () => chat_cards.GetVotingUseCase(getIt<VotingRepository>()),
+  );
+
+  // 6. Has User Voted
+  getIt.registerFactory<chat_cards.HasUserVotedUseCase>(
+    () => chat_cards.HasUserVotedUseCase(getIt<VotingRepository>()),
+  );
+
+  // 7. Expand Voting Reach
+  getIt.registerFactory<chat_cards.ExpandVotingReachUseCase>(
+    () => chat_cards.ExpandVotingReachUseCase(getIt<VotingRepository>()),
+  );
+
+  // 8. Get User Voting Stats
+  getIt.registerFactory<chat_cards.GetUserVotingStatsUseCase>(
+    () => chat_cards.GetUserVotingStatsUseCase(getIt<VotingRepository>()),
+  );
+
+  // 10. Cancel Voting
+  getIt.registerFactory<chat_cards.CancelVotingUseCase>(
+    () => chat_cards.CancelVotingUseCase(getIt<VotingRepository>()),
+  );
+
+  // 11. Send Voting Notifications
+  getIt.registerFactory<chat_cards.SendVotingNotificationsUseCase>(
+    () => chat_cards.SendVotingNotificationsUseCase(getIt<VotingRepository>()),
   );
 }

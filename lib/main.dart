@@ -1,4 +1,5 @@
 import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as riverpod;
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -82,16 +83,20 @@ void main() async {
   final appState = AppState(); // Initialize AppState
   await appState.initializePersistedState();
 
-  runApp(MultiProvider(
-    providers: [
-      ChangeNotifierProvider(create: (context) => appState),
-      ChangeNotifierProvider(create: (context) => NavigationProvider()),
-      ChangeNotifierProvider(create: (context) => GetIt.instance<FeedProvider>()),
-      Provider<NotificationService>(
-          create: (context) => GetIt.instance<NotificationService>()),
-    ],
-    child: const VersusApp(),
-  ));
+  runApp(
+    riverpod.ProviderScope(
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (context) => appState),
+          ChangeNotifierProvider(create: (context) => NavigationProvider()),
+          ChangeNotifierProvider(create: (context) => GetIt.instance<FeedProvider>()),
+          Provider<NotificationService>(
+              create: (context) => GetIt.instance<NotificationService>()),
+        ],
+        child: const VersusApp(),
+      ),
+    ),
+  );
 }
 
 // For backward compatibility - MyApp is now in app/app.dart

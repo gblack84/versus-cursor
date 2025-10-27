@@ -1,6 +1,7 @@
 // Legacy VotecountsModel import removed
 import '../../domain/entities/dialog/vote_counts_model.dart';
 import '../../domain/entities/dialog/vote_cache_state.dart';
+import '../../domain/entities/chat/post_voting.dart';
 
 /// Local data source interface for voting feature
 /// 
@@ -125,6 +126,19 @@ abstract class IVotingLocalDataSource {
   
   /// Clear all pending operations
   Future<void> clearPendingOperations();
+
+  // ============================================================================
+  // PostVoting Cache Operations
+  // ============================================================================
+
+  /// Cache entire PostVoting data
+  Future<void> cachePostVoting(PostVoting voting);
+
+  /// Get cached PostVoting data with expiration check
+  Future<PostVoting?> getCachedPostVoting(String postId, {Duration? maxAge});
+
+  /// Remove cached PostVoting data
+  Future<void> removeCachedPostVoting(String postId);
 }
 
 /// Vote history entry model

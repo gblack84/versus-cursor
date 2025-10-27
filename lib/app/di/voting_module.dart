@@ -10,7 +10,6 @@
 
 import 'package:get_it/get_it.dart';
 import 'feature_modules.dart';
-import '../../features/voting/domain/repositories/i_voting_repository.dart';
 import '../../features/voting/domain/ports/i_vote_service.dart';
 import '../../features/voting/data/adapters/vote_service_impl.dart';
 import '../../features/voting/domain/ports/i_vote_status_service.dart';

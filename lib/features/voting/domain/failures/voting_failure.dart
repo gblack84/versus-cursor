@@ -73,3 +73,57 @@ class Unexpected extends VotingFailure {
   const Unexpected([this.customMessage])
       : super(message: customMessage ?? 'Unexpected voting error');
 }
+
+// ============================================================================
+// Firebase-Specific Failures (Firebase-Centric Architecture v1.0)
+// ============================================================================
+
+/// 권한 거부 (Firebase permission-denied)
+class PermissionDenied extends VotingFailure {
+  const PermissionDenied([String? message])
+      : super(message: message ?? 'Permission denied');
+}
+
+/// 인증되지 않은 사용자 (Firebase unauthenticated)
+class Unauthenticated extends VotingFailure {
+  const Unauthenticated() : super(message: 'User not authenticated');
+}
+
+/// 이미 존재함 (Firebase already-exists)
+class AlreadyExists extends VotingFailure {
+  const AlreadyExists([String? message])
+      : super(message: message ?? 'Data already exists');
+}
+
+/// 타임아웃 (Firebase deadline-exceeded)
+class Timeout extends VotingFailure {
+  const Timeout() : super(message: 'Request timeout');
+}
+
+/// 할당량 초과 (Firebase resource-exhausted)
+class QuotaExceeded extends VotingFailure {
+  const QuotaExceeded([String? message])
+      : super(message: message ?? 'Firestore quota exceeded');
+}
+
+/// 잘못된 인자 (Firebase invalid-argument)
+class InvalidArgument extends VotingFailure {
+  const InvalidArgument([String? message])
+      : super(message: message ?? 'Invalid argument');
+}
+
+/// 사전 조건 실패 (Firebase failed-precondition)
+class FailedPrecondition extends VotingFailure {
+  const FailedPrecondition([String? message])
+      : super(message: message ?? 'Precondition failed');
+}
+
+/// 작업 취소됨 (Firebase cancelled)
+class Cancelled extends VotingFailure {
+  const Cancelled() : super(message: 'Operation cancelled');
+}
+
+/// 작업 중단됨 (Firebase aborted)
+class Aborted extends VotingFailure {
+  const Aborted() : super(message: 'Operation aborted');
+}

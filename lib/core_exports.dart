@@ -24,7 +24,6 @@ export 'features/post/domain/repositories/i_post_display_repository.dart';
 export 'features/creation/domain/repositories/i_media_repository.dart';
 export 'features/profile/domain/repositories/i_user_repository.dart';
 export 'features/chat/domain/repositories/i_chat_repository.dart';
-export 'features/voting/domain/repositories/i_voting_repository.dart';
 export 'features/notifications/domain/repositories/i_notification_repository.dart';
 export 'features/search/domain/repositories/i_search_repository.dart';
 

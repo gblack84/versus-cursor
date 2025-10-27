@@ -1,6 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/entities/dialog/vote_counts_model.dart';
 import '../../domain/entities/dialog/vote_cache_state.dart';
+import '../../domain/entities/chat/post_voting.dart';
 import 'i_voting_local_datasource.dart';
 import 'local/services/cache_management_service.dart';
 import 'local/services/vote_state_cache_service.dart';
@@ -216,4 +217,23 @@ class VotingLocalDataSourceImpl implements IVotingLocalDataSource {
   @override
   Future<void> clearPendingOperations() =>
       _pendingOperations.clearPendingOperations();
+
+  // ============================================================================
+  // PostVoting Cache Operations (위임)
+  // ============================================================================
+
+  @override
+  Future<void> cachePostVoting(PostVoting voting) =>
+      _voteStateCache.cachePostVoting(voting);
+
+  @override
+  Future<PostVoting?> getCachedPostVoting(String postId, {Duration? maxAge}) =>
+      _voteStateCache.getCachedPostVoting(
+        postId,
+        maxAge: maxAge ?? const Duration(minutes: 5),
+      );
+
+  @override
+  Future<void> removeCachedPostVoting(String postId) =>
+      _voteStateCache.removeCachedPostVoting(postId);
 }

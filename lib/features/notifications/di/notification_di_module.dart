@@ -8,10 +8,11 @@
 /// - Contracts
 /// - UseCases
 /// - Providers
-/// - Ports (Cross-feature communication)
 ///
-/// IMPORTANT: Must be registered AFTER Voting Feature
-/// (depends on SubmitVoteUseCase from Voting)
+/// Firebase-Centric Architecture v1.0:
+/// - Direct Firebase SDK access (no cross-feature dependencies)
+/// - Communication through Firebase Firestore only
+/// - Feature independence with routing-based navigation
 
 import 'package:get_it/get_it.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -57,19 +58,8 @@ import '../domain/usecases/watch_unread_count_usecase.dart';
 // ===== Presentation Layer - Providers =====
 import '../presentation/providers/notification_overlay_provider.dart';
 
-// ===== Voting Feature Dependencies (Cross-Feature) =====
-// NOTE: These must be registered by Voting Feature BEFORE this module
-import '/features/voting/presentation/dialogs/vote_ui_manager.dart';
-import '/features/voting/domain/usecases/submit_vote_use_case.dart';
-import '/features/voting/data/adapters/vote_handler_impl.dart';
-import '/features/voting/domain/ports/i_vote_ui_delegate.dart';
-import '/core/domain/ports/i_notification_display_port.dart';
-
 /// Register all Notifications feature dependencies
 /// Call this function from main setupDependencyInjection()
-///
-/// IMPORTANT: Must be called AFTER registerVotingModule()
-/// (depends on SubmitVoteUseCase and VoteUIManager)
 void registerNotificationModule(GetIt getIt) {
   // ===== DataSources Registration =====
   _registerDataSources(getIt);
@@ -88,9 +78,6 @@ void registerNotificationModule(GetIt getIt) {
 
   // ===== UseCases Registration =====
   _registerUseCases(getIt);
-
-  // ===== Cross-Feature Ports Registration =====
-  _registerPorts(getIt);
 
   // ===== Providers Registration =====
   _registerProviders(getIt);
@@ -202,41 +189,14 @@ void _registerUseCases(GetIt getIt) {
   );
 }
 
-/// Register Cross-Feature Ports
-/// These enable Notifications to communicate with other Features
-void _registerPorts(GetIt getIt) {
-  // Vote Handler Implementation (Voting Feature Integration)
-  // Depends on: VoteUIManager (Voting), SubmitVoteUseCase (Voting)
-  // NOTE: Both dependencies must be registered by Voting Feature BEFORE this call
-  if (!getIt.isRegistered<SubmitVoteUseCase>()) {
-    throw StateError(
-      'SubmitVoteUseCase must be registered before NotificationModule.init()\n'
-      'Ensure Voting Feature DI module is initialized first.'
-    );
-  }
-
-  getIt.registerLazySingleton<INotificationDisplayPort>(
-    () => VoteHandlerImpl(
-      uiManager: VoteUIManager.instance,
-      submitVote: getIt<SubmitVoteUseCase>(),
-    ),
-  );
-
-  // UI Delegate for Voting Feature
-  getIt.registerLazySingleton<IVoteUIDelegate>(
-    () => VoteUIManager.instance,
-  );
-}
-
 /// Register Presentation Layer Providers
 void _registerProviders(GetIt getIt) {
   // Notification Overlay Provider
-  // Depends on: queueService, markAsRead, votingDisplayPort
+  // Depends on: queueService, markAsRead
   getIt.registerLazySingleton<NotificationOverlayProvider>(
     () => NotificationOverlayProvider(
       queueService: getIt<NotificationQueueService>(),
       markAsRead: getIt<MarkAsReadUseCase>(),
-      votingDisplayPort: getIt<INotificationDisplayPort>(),
     ),
   );
 }

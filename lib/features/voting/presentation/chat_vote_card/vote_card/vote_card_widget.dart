@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '/core/design_system/design_system.dart';
 import '/features/voting/presentation/dialogs/voting_dialog.dart';
 import '/features/voting/domain/entities/chat/vote_state.dart';
 import '/services/ui/models/box_sizes.dart';
-import '/features/voting/domain/coordinators/vote_state_coordinator.dart';
+import '/features/voting/presentation/providers/vote_state_providers.dart';
 import 'components/vote_card_profile_header.dart';
 import 'components/vote_card_header.dart';
 import 'components/vote_card_body.dart';
@@ -67,58 +68,30 @@ class VoteCardWidget extends ConsumerStatefulWidget {
 
 class _VoteCardWidgetState extends ConsumerState<VoteCardWidget> {
   bool _isVoting = false;
-  late Stream<VoteStateData> _voteStateStream;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeVoteStateStream();
-  }
-
-  @override
-  void didUpdateWidget(VoteCardWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (oldWidget.postId != widget.postId ||
-        oldWidget.voteEndTime != widget.voteEndTime ||
-        oldWidget.cardStatus != widget.cardStatus) {
-      VoteStateCoordinator.instance.dispose(oldWidget.postId);
-      _initializeVoteStateStream();
-    }
-  }
-
-  @override
-  void dispose() {
-    VoteStateCoordinator.instance.dispose(widget.postId);
-    super.dispose();
-  }
-
-  void _initializeVoteStateStream() {
-    _voteStateStream = VoteStateCoordinator.instance.getVoteStateStream(
-      postId: widget.postId,
-      voteEndTime: widget.voteEndTime,
-      initialStatus: widget.cardStatus,
-      userVotes: widget.userVotes,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<VoteStateData>(
-      stream: _voteStateStream,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return _buildErrorCard();
-        }
+    // StreamProvider 사용 (Coordinator 대체)
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final voteStateParams = VoteStateParams(
+      postId: widget.postId,
+      userId: userId,
+      voteEndTime: widget.voteEndTime,
+    );
 
-        final stateData = snapshot.data ??
-            VoteStateData(
-              state: VoteCardHelpers.mapStatusToState(widget.cardStatus),
-              voteEndTime: widget.voteEndTime,
-            );
+    final voteStateAsync = ref.watch(voteStateStreamProvider(voteStateParams));
 
-        return _buildCard(stateData);
+    return voteStateAsync.when(
+      loading: () {
+        // 로딩 중에는 기본 상태 표시
+        final defaultState = VoteStateData(
+          state: VoteCardHelpers.mapStatusToState(widget.cardStatus),
+          voteEndTime: widget.voteEndTime,
+        );
+        return _buildCard(defaultState);
       },
+      error: (error, stack) => _buildErrorCard(),
+      data: (stateData) => _buildCard(stateData),
     );
   }
 

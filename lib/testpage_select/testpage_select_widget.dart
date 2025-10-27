@@ -1,8 +1,9 @@
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
-import '/features/voting/presentation/dialogs/vote_ui_manager.dart';
-import '/features/voting/domain/entities/dialog/vote_notification.dart';
-import '/features/voting/domain/entities/dialog/vote_options.dart';
+// Removed unused imports after VoteNotification deletion:
+// - '/features/voting/presentation/dialogs/vote_ui_manager.dart'
+// - '/features/voting/domain/entities/dialog/vote_notification.dart'
+// - '/features/voting/domain/entities/dialog/vote_options.dart'
 import '/features/notifications/presentation/providers/notification_badge_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -629,73 +630,6 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
                                           EdgeInsetsDirectional.fromSTEB(
                                               0.0, 0.0, 0.0, 0.0),
                                       color: AppTheme.of(context).primary,
-                                      textStyle: AppTheme.of(context)
-                                          .titleSmall
-                                          .override(
-                                            font: GoogleFonts.plusJakartaSans(
-                                              fontWeight: AppTheme.of(context)
-                                                  .titleSmall
-                                                  .fontWeight,
-                                              fontStyle: AppTheme.of(context)
-                                                  .titleSmall
-                                                  .fontStyle,
-                                            ),
-                                            color: Colors.white,
-                                            letterSpacing: 0.0,
-                                            fontWeight: AppTheme.of(context)
-                                                .titleSmall
-                                                .fontWeight,
-                                            fontStyle: AppTheme.of(context)
-                                                .titleSmall
-                                                .fontStyle,
-                                          ),
-                                      elevation: 0.0,
-                                      borderRadius: BorderRadius.circular(8.0),
-                                    ),
-                                  ),
-                                  AppButtonWidget(
-                                    onPressed: () {
-                                      VoteUIManager.instance.showVotingNotification(
-                                        context: context,
-                                        notification: VoteNotification(
-                                          id: 'test-notification',
-                                          userId: 'test-user',
-                                          createdAt: DateTime.now(),
-                                          isRead: false,
-                                          title: '새로운 투표',
-                                          content: '어떤 스마트폰을 선호하시나요?',
-                                          postId: 'test-post',
-                                          postTitle: '스마트폰 투표',
-                                          postContent: '어떤 스마트폰을 선호하시나요?',
-                                          voteOptions: VoteOptions(
-                                            optionATitle: 'iPhone 15 Pro',
-                                            optionBTitle: 'Galaxy S24 Ultra',
-                                          ),
-                                          voteStartTime: DateTime.now(),
-                                          voteEndTime: DateTime.now().add(Duration(minutes: 10)),
-                                        ),
-                                        question: '어떤 스마트폰을 선호하시나요?',
-                                        optionA: 'iPhone 15 Pro',
-                                        optionB: 'Galaxy S24 Ultra',
-                                        imageUrlA: 'https://picsum.photos/200/200?random=1',
-                                        imageUrlB: 'https://picsum.photos/200/200?random=2',
-                                        onVote: (option) async {
-                                          print('투표 완료: $option 선택됨!');
-                                        },
-                                        onDismiss: (hasVoted) {
-                                          print('다이얼로그 닫힘. 투표 여부: $hasVoted');
-                                        },
-                                      );
-                                    },
-                                    text: '투표테스트',
-                                    options: AppButtonOptions(
-                                      height: 30.0,
-                                      padding: EdgeInsetsDirectional.fromSTEB(
-                                          5.0, 0.0, 5.0, 0.0),
-                                      iconPadding:
-                                          EdgeInsetsDirectional.fromSTEB(
-                                              0.0, 0.0, 0.0, 0.0),
-                                      color: Color(0xFFFF6B6B), // 다른 색상으로 구분
                                       textStyle: AppTheme.of(context)
                                           .titleSmall
                                           .override(

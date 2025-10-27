@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '/core/types/layout_type.dart';
 import '/core/domain/ports/i_user_service.dart';
-import '/features/voting/domain/entities/dialog/vote_notification.dart';
 import '/features/voting/presentation/dialogs/voting_dialog.dart';
 import '/features/voting/domain/entities/dialog/versus_box_size_data.dart';
 import '/core_exports.dart';
@@ -82,7 +81,7 @@ class VoteUIManager {
   }
 
   Future<void> showVotingNotification({
-    required VoteNotification notification,
+    required dynamic notification,
     required BuildContext context,
     required String question,
     required String optionA,
@@ -128,7 +127,7 @@ class VoteUIManager {
 
   /// 투표 다이얼로그 표시 (내부 메서드)
   Future<void> _showVotingDialog({
-    required VoteNotification notification,
+    required dynamic notification,
     required BuildContext context,
     required String question,
     required String optionA,

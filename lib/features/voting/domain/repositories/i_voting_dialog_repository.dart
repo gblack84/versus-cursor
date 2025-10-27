@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import '../failures/voting_failure.dart';
 import '../entities/dialog/vote_expansion_request.dart';
@@ -78,25 +77,38 @@ abstract class IVotingDialogRepository {
     String postId,
   );
 
-  /// Stream vote counts with optional query builder
+  /// Stream vote counts with optional filters
   ///
   /// **Use Case:** Real-time vote result updates in Dialog UI
+  /// **Parameters:**
+  /// - `postId`: Filter by specific post (optional)
+  /// - `limit`: Maximum number of results (-1 for no limit)
+  /// - `singleRecord`: Return only first result if true
   Stream<Either<VotingFailure, List<Map<String, dynamic>>>> streamVoteCounts({
-    Query Function(Query)? queryBuilder,
+    String? postId,
     int limit = -1,
     bool singleRecord = false,
   });
 
   /// Get vote counts once (no real-time updates)
+  ///
+  /// **Parameters:**
+  /// - `postId`: Filter by specific post (optional)
+  /// - `limit`: Maximum number of results (-1 for no limit)
+  /// - `singleRecord`: Return only first result if true
   Future<Either<VotingFailure, List<Map<String, dynamic>>>> getVoteCountsOnce({
-    Query Function(Query)? queryBuilder,
+    String? postId,
     int limit = -1,
     bool singleRecord = false,
   });
 
   /// Get count of vote counts documents
+  ///
+  /// **Parameters:**
+  /// - `postId`: Filter by specific post (optional)
+  /// - `limit`: Maximum number of results (-1 for no limit)
   Future<Either<VotingFailure, int>> getVoteCountsCount({
-    Query Function(Query)? queryBuilder,
+    String? postId,
     int limit = -1,
   });
 
@@ -136,24 +148,50 @@ abstract class IVotingDialogRepository {
   Future<Either<VotingFailure, void>> rejectVoteExpansion(String requestId);
 
   /// Stream vote expansion requests
+  ///
+  /// **Parameters:**
+  /// - `postId`: Filter by specific post (optional)
+  /// - `userId`: Filter by specific user (optional)
+  /// - `status`: Filter by status (pending, approved, rejected) (optional)
+  /// - `limit`: Maximum number of results (-1 for no limit)
+  /// - `singleRecord`: Return only first result if true
   Stream<Either<VotingFailure, List<VoteExpansionRequest>>>
       streamVoteExpansionRequests({
-    Query Function(Query)? queryBuilder,
+    String? postId,
+    String? userId,
+    String? status,
     int limit = -1,
     bool singleRecord = false,
   });
 
   /// Get vote expansion requests once
+  ///
+  /// **Parameters:**
+  /// - `postId`: Filter by specific post (optional)
+  /// - `userId`: Filter by specific user (optional)
+  /// - `status`: Filter by status (pending, approved, rejected) (optional)
+  /// - `limit`: Maximum number of results (-1 for no limit)
+  /// - `singleRecord`: Return only first result if true
   Future<Either<VotingFailure, List<VoteExpansionRequest>>>
       getVoteExpansionRequestsOnce({
-    Query Function(Query)? queryBuilder,
+    String? postId,
+    String? userId,
+    String? status,
     int limit = -1,
     bool singleRecord = false,
   });
 
   /// Get count of vote expansion requests
+  ///
+  /// **Parameters:**
+  /// - `postId`: Filter by specific post (optional)
+  /// - `userId`: Filter by specific user (optional)
+  /// - `status`: Filter by status (pending, approved, rejected) (optional)
+  /// - `limit`: Maximum number of results (-1 for no limit)
   Future<Either<VotingFailure, int>> getVoteExpansionRequestsCount({
-    Query Function(Query)? queryBuilder,
+    String? postId,
+    String? userId,
+    String? status,
     int limit = -1,
   });
 
@@ -161,23 +199,43 @@ abstract class IVotingDialogRepository {
   // Weights Operations
   // ============================================================================
 
-  /// Stream weights with optional query builder
+  /// Stream weights with optional filters
+  ///
+  /// **Parameters:**
+  /// - `userId`: Filter by specific user (optional)
+  /// - `postId`: Filter by specific post (optional)
+  /// - `limit`: Maximum number of results (-1 for no limit)
+  /// - `singleRecord`: Return only first result if true
   Stream<Either<VotingFailure, List<Weight>>> streamWeights({
-    Query Function(Query)? queryBuilder,
+    String? userId,
+    String? postId,
     int limit = -1,
     bool singleRecord = false,
   });
 
   /// Get weights once
+  ///
+  /// **Parameters:**
+  /// - `userId`: Filter by specific user (optional)
+  /// - `postId`: Filter by specific post (optional)
+  /// - `limit`: Maximum number of results (-1 for no limit)
+  /// - `singleRecord`: Return only first result if true
   Future<Either<VotingFailure, List<Weight>>> getWeightsOnce({
-    Query Function(Query)? queryBuilder,
+    String? userId,
+    String? postId,
     int limit = -1,
     bool singleRecord = false,
   });
 
   /// Get count of weights documents
+  ///
+  /// **Parameters:**
+  /// - `userId`: Filter by specific user (optional)
+  /// - `postId`: Filter by specific post (optional)
+  /// - `limit`: Maximum number of results (-1 for no limit)
   Future<Either<VotingFailure, int>> getWeightsCount({
-    Query Function(Query)? queryBuilder,
+    String? userId,
+    String? postId,
     int limit = -1,
   });
 }

@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:bot_toast/bot_toast.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/models/notification.dart' as domain;
 import '../../domain/usecases/mark_as_read_usecase.dart';
 import '/services/notification/notification_queue_service.dart';
 import '/core/utils/logger.dart';
 import '/app/router/navigation/nav.dart';
-import '/core/domain/ports/i_notification_display_port.dart';
 import '/app/contracts/notification_types.dart';
 
 /// Notification Overlay Provider - Presentation Layer
@@ -18,7 +18,6 @@ import '/app/contracts/notification_types.dart';
 class NotificationOverlayProvider extends ChangeNotifier {
   final NotificationQueueService _queueService;
   final MarkAsReadUseCase _markAsRead;
-  final INotificationDisplayPort _votingDisplayPort;
 
   StreamSubscription<domain.Notification>? _subscription;
   bool _isInitialized = false;
@@ -26,10 +25,8 @@ class NotificationOverlayProvider extends ChangeNotifier {
   NotificationOverlayProvider({
     required NotificationQueueService queueService,
     required MarkAsReadUseCase markAsRead,
-    required INotificationDisplayPort votingDisplayPort,
   })  : _queueService = queueService,
-        _markAsRead = markAsRead,
-        _votingDisplayPort = votingDisplayPort;
+        _markAsRead = markAsRead;
 
   /// Start listening to notification stream
   void startListening() {
@@ -81,8 +78,10 @@ class NotificationOverlayProvider extends ChangeNotifier {
         _showSystemDialog(notification as domain.SystemNotification);
       },
       voting: (id, userId, type, title, content, createdAt, readAt, isRead,
-              expiryTime, metadata, postId, postTitle, imageUrlsA,
-              imageUrlsB, voteDeadline) {
+              expiryTime, metadata, postId, postTitle, postContent, postDescription,
+              voteStartTime, voteEndTime, targetAudience, currentVotesA, currentVotesB,
+              hasVoted, userVoteChoice, senderId, senderName, body, notificationPriority,
+              imageUrlsA, imageUrlsB, aspectRatioA, aspectRatioB, layoutType) {
         // Check if it's a voting request notification
         if (type == NotificationTypes.votingRequest) {
           _showVotingDialog(notification);
@@ -130,7 +129,7 @@ class NotificationOverlayProvider extends ChangeNotifier {
   }
 
   /// Handle vote callback from voting feature
-  /// Note: Vote submission is handled by VoteHandlerImpl (Voting Feature)
+  /// Note: Vote submission is handled by routing to voting page
   Future<void> _handleVote(
     domain.Notification notification,
     String selectedOption,
@@ -207,27 +206,70 @@ class NotificationOverlayProvider extends ChangeNotifier {
     await _handleDismiss(notification);
   }
 
-  /// Show voting notification dialog using Port-Adapter pattern
-  /// Note: Delegates to Voting Feature via Port - the feature extracts its own data
+  /// Show voting notification dialog using Firebase + routing approach
+  /// Note: Reads data directly from Firebase and routes to voting page
   Future<void> _showVotingNotificationDialog({
     required BuildContext context,
     required domain.Notification notification,
     required Future<void> Function(String) onVote,
     required Future<void> Function() onDismiss,
   }) async {
-    // Voting Feature's Port를 통해 표시
-    // The notification is passed as dynamic - Voting Feature will handle casting and data extraction
-    await _votingDisplayPort.showVotingNotification(
-      notification: notification,
-      context: context,
-      displayData: {}, // Voting Feature extracts its own display data from notification
-      onVote: (selectedOption) async {
-        await onVote(selectedOption);
-      },
-      onDismiss: (hasVoted) async {
+    try {
+      // Cast to VotingNotification to access postId
+      final votingNotif = notification as domain.VotingNotification;
+
+      // 1. Read post data from Firebase
+      final postDoc = await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(votingNotif.postId)
+          .get();
+
+      if (!postDoc.exists) {
+        Logger.warning('Post not found: ${votingNotif.postId}',
+            tag: 'NotificationOverlayProvider');
         await onDismiss();
-      },
-    );
+        return;
+      }
+
+      final postData = postDoc.data()!;
+      final question = postData['question'] as String? ?? '질문 없음';
+
+      // 2. Show simple dialog with routing
+      final shouldNavigate = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('투표 요청'),
+          content: Text(question),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('닫기'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('투표하러 가기'),
+            ),
+          ],
+        ),
+      );
+
+      // 3. Route to voting page if user confirmed
+      if (shouldNavigate == true) {
+        // Navigate to chat page where voting happens
+        context.push(
+          '/chatDetail?chatId=ai_assistant_${notification.userId}',
+        );
+      }
+
+      // 4. Mark notification as read
+      await onDismiss();
+
+    } catch (e) {
+      Logger.error('Error showing voting dialog', error: e,
+          tag: 'NotificationOverlayProvider');
+      await onDismiss();
+    }
   }
 
   @override

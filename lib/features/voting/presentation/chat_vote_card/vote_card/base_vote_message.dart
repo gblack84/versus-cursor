@@ -46,11 +46,12 @@
 ///
 /// 📊 현재 투표 플로우 분석:
 ///
-/// ✅ 알림 플로우 (정상 작동):
+/// ✅ 알림 플로우 (Firebase-Centric 라우팅 방식):
 ///   NotificationOverlayProvider
-///     → VoteHandlerImpl
-///     → SubmitVoteUseCase
-///     → 투표 제출 완료!
+///     → Firebase에서 Post 데이터 읽기
+///     → AlertDialog 표시
+///     → context.push('/chatDetail?chatId=...') 라우팅
+///     → 투표 페이지에서 직접 투표 처리
 ///
 /// ❌ 채팅 플로우 (작동 안 함):
 ///   VoteCardWidget (onVote: null)

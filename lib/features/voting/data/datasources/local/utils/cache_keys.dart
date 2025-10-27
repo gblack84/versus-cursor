@@ -3,6 +3,7 @@ class CacheKeys {
   // Prefixes for different cache types
   static const String voteStatePrefix = 'vote_state_';
   static const String voteCountsPrefix = 'vote_counts_';
+  static const String postVotingPrefix = 'post_voting_';
   static const String rankingsPrefix = 'rankings_';
   static const String voteHistoryPrefix = 'vote_history_';
   static const String pendingVotesKey = 'pending_votes';
@@ -12,10 +13,13 @@ class CacheKeys {
   static String voteStateKey(String userId, String postId) => 
       '$voteStatePrefix${userId}_$postId';
   
-  static String voteCountsKey(String postId) => 
+  static String voteCountsKey(String postId) =>
       '$voteCountsPrefix$postId';
-  
-  static String rankingsKey(String cacheKey) => 
+
+  static String postVotingKey(String postId) =>
+      '$postVotingPrefix$postId';
+
+  static String rankingsKey(String cacheKey) =>
       '$rankingsPrefix$cacheKey';
   
   static String voteHistoryKey(String userId) => 
@@ -28,6 +32,7 @@ class CacheKeys {
   static bool isVotingCacheKey(String key) {
     return key.startsWith(voteStatePrefix) ||
            key.startsWith(voteCountsPrefix) ||
+           key.startsWith(postVotingPrefix) ||
            key.startsWith(rankingsPrefix) ||
            key.startsWith(voteHistoryPrefix) ||
            key.startsWith(cacheTimePrefix) ||

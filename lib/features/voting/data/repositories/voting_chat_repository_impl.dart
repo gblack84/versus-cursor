@@ -3,35 +3,34 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import '../../domain/repositories/i_voting_chat_repository.dart';
 import '../../domain/entities/chat/post_voting.dart';
+import '../../domain/entities/dialog/vote_counts_model.dart';
 import '../../domain/failures/voting_failure.dart';
-import '../datasources/i_voting_remote_datasource.dart';
 import '../datasources/i_voting_local_datasource.dart';
-import '../adapters/post_voting_adapter.dart';
+import '../extensions/post_voting_extensions.dart';
+import '../extensions/firestore_error_extensions.dart';
 
 /// Implementation of VotingRepository for chat card voting system
 ///
-/// **Clean Architecture v4.0 - Repository Implementation**:
+/// **Firebase-Centric Architecture v1.0 - Repository Implementation**:
 /// - Implements VotingRepository interface from domain layer
-/// - Uses DataSource pattern (Remote + Local)
+/// - Direct Firebase SDK access (no Port-Adapter abstraction)
+/// - Extension-based Firestore ↔ Domain conversion
 /// - Returns Either<VotingFailure, Success> for error handling
 /// - PostVoting domain model with business logic methods
-/// - Real-time Firestore streams converted to VotingUpdate events
+/// - Real-time Firestore streams with reactive updates
 ///
-/// **Separation from VotingRepositoryImpl**:
-/// - VotingRepositoryImpl: Dialog voting system (VoteContract)
+/// **Separation from VotingDialogRepositoryImpl**:
+/// - VotingDialogRepositoryImpl: Dialog voting system (VoteContract)
 /// - VotingChatRepositoryImpl: Chat card voting system (PostVoting)
 class VotingChatRepositoryImpl implements VotingRepository {
-  final IVotingRemoteDataSource _remoteDataSource;
-  final IVotingLocalDataSource _localDataSource;
   final FirebaseFirestore _firestore;
+  final IVotingLocalDataSource _localDataSource;
 
   VotingChatRepositoryImpl({
-    required IVotingRemoteDataSource remoteDataSource,
+    required FirebaseFirestore firestore,
     required IVotingLocalDataSource localDataSource,
-    FirebaseFirestore? firestore,
-  })  : _remoteDataSource = remoteDataSource,
-        _localDataSource = localDataSource,
-        _firestore = firestore ?? FirebaseFirestore.instance;
+  })  : _firestore = firestore,
+        _localDataSource = localDataSource;
 
   // ============================================================================
   // Core Voting Operations
@@ -40,18 +39,18 @@ class VotingChatRepositoryImpl implements VotingRepository {
   @override
   Future<Either<VotingFailure, PostVoting>> getVoting(String postId) async {
     try {
-      // Try cache first
-      final cachedData = await _localDataSource.getCachedVoteState(
-        postId: postId,
-        userId: '', // Not user-specific for post voting data
+      // ✅ PostVoting 캐시 확인
+      final cachedVoting = await _localDataSource.getCachedPostVoting(
+        postId,
+        maxAge: const Duration(minutes: 5),
       );
 
-      if (cachedData != null) {
-        // TODO: Convert cached data to PostVoting
-        // For now, fetch from remote
+      if (cachedVoting != null) {
+        // ✅ 캐시 히트: 즉시 반환
+        return Right(cachedVoting);
       }
 
-      // Fetch from Firestore
+      // 캐시 미스: Firestore에서 가져오기
       final doc = await _firestore.collection('posts').doc(postId).get();
 
       if (!doc.exists) {
@@ -59,7 +58,9 @@ class VotingChatRepositoryImpl implements VotingRepository {
       }
 
       final data = doc.data()!;
-      final voting = PostVotingAdapter.fromFirestore(data, postId);
+
+      // ✅ Extension-based conversion
+      final voting = PostVotingFirestoreExtension.fromFirestore(data, postId);
 
       // Cache the result
       await _cacheVotingData(voting);
@@ -69,18 +70,20 @@ class VotingChatRepositoryImpl implements VotingRepository {
       if (kDebugMode) {
         print('[VotingChatRepository] Firebase error: ${e.code} - ${e.message}');
       }
-      return Left(_mapFirebaseException(e));
+      // ✅ Extension-based error handling
+      return Left(e.toVotingFailure());
     } catch (e) {
       if (kDebugMode) {
         print('[VotingChatRepository] Unexpected error: $e');
       }
-      return Left(Unexpected(e.toString()));
+      return Left(e.toString().toVotingFailure());
     }
   }
 
   @override
   Stream<Either<VotingFailure, PostVoting>> watchPostVoting(String postId) {
     try {
+      // ✅ Real-time Firestore snapshot stream
       return _firestore
           .collection('posts')
           .doc(postId)
@@ -96,25 +99,27 @@ class VotingChatRepositoryImpl implements VotingRepository {
             return const Left(NotFound());
           }
 
-          final voting = PostVotingAdapter.fromFirestore(data, postId);
+          // ✅ Extension-based conversion
+          final voting = PostVotingFirestoreExtension.fromFirestore(data, postId);
           return Right(voting);
         } on FirebaseException catch (e) {
           if (kDebugMode) {
             print('[VotingChatRepository] Firebase error: ${e.code}');
           }
-          return Left(_mapFirebaseException(e));
+          // ✅ Extension-based error handling
+          return Left(e.toVotingFailure());
         } catch (e) {
           if (kDebugMode) {
             print('[VotingChatRepository] Unexpected error: $e');
           }
-          return Left(Unexpected(e.toString()));
+          return Left(e.toString().toVotingFailure());
         }
       });
     } catch (e) {
       if (kDebugMode) {
         print('[VotingChatRepository] Stream error: $e');
       }
-      return Stream.value(Left(Unexpected(e.toString())));
+      return Stream.value(Left(e.toString().toVotingFailure()));
     }
   }
 
@@ -133,7 +138,7 @@ class VotingChatRepositoryImpl implements VotingRepository {
 
       final voting = votingResult.getOrElse(() => throw UnimplementedError());
 
-      // 2. Check if user can vote
+      // 2. Check if user can vote (domain business logic)
       if (!voting.canUserVote(userId)) {
         if (voting.hasUserVoted(userId)) {
           return const Left(AlreadyVoted());
@@ -150,9 +155,9 @@ class VotingChatRepositoryImpl implements VotingRepository {
         choice: option,
       );
 
-      // 4. Update Firestore
+      // 4. ✅ Update Firestore with Extension method
       await _firestore.collection('posts').doc(postId).update(
-            PostVotingAdapter.toFirestore(updatedVoting),
+            updatedVoting.toFirestore(),
           );
 
       // 5. Update local cache
@@ -171,12 +176,13 @@ class VotingChatRepositoryImpl implements VotingRepository {
       if (kDebugMode) {
         print('[VotingChatRepository] Cast vote error: ${e.code}');
       }
-      return Left(_mapFirebaseException(e));
+      // ✅ Extension-based error handling
+      return Left(e.toVotingFailure());
     } catch (e) {
       if (kDebugMode) {
         print('[VotingChatRepository] Cast vote unexpected error: $e');
       }
-      return Left(Unexpected(e.toString()));
+      return Left(e.toString().toVotingFailure());
     }
   }
 
@@ -197,9 +203,9 @@ class VotingChatRepositoryImpl implements VotingRepository {
       // 2. Use domain model's business logic
       final updatedVoting = voting.startVoting(customTimeout: duration);
 
-      // 3. Update Firestore
+      // 3. ✅ Update Firestore with Extension method
       await _firestore.collection('posts').doc(postId).update(
-            PostVotingAdapter.toFirestore(updatedVoting),
+            updatedVoting.toFirestore(),
           );
 
       // 4. Update cache
@@ -207,9 +213,9 @@ class VotingChatRepositoryImpl implements VotingRepository {
 
       return Right(updatedVoting);
     } on FirebaseException catch (e) {
-      return Left(_mapFirebaseException(e));
+      return Left(e.toVotingFailure());
     } catch (e) {
-      return Left(Unexpected(e.toString()));
+      return Left(e.toString().toVotingFailure());
     }
   }
 
@@ -228,9 +234,9 @@ class VotingChatRepositoryImpl implements VotingRepository {
       // 2. Use domain model's business logic
       final updatedVoting = voting.completeVoting();
 
-      // 3. Update Firestore
+      // 3. ✅ Update Firestore with Extension method
       await _firestore.collection('posts').doc(postId).update(
-            PostVotingAdapter.toFirestore(updatedVoting),
+            updatedVoting.toFirestore(),
           );
 
       // 4. Update cache
@@ -238,9 +244,9 @@ class VotingChatRepositoryImpl implements VotingRepository {
 
       return Right(updatedVoting);
     } on FirebaseException catch (e) {
-      return Left(_mapFirebaseException(e));
+      return Left(e.toVotingFailure());
     } catch (e) {
-      return Left(Unexpected(e.toString()));
+      return Left(e.toString().toVotingFailure());
     }
   }
 
@@ -258,17 +264,18 @@ class VotingChatRepositoryImpl implements VotingRepository {
       final voting = votingResult.getOrElse(() => throw UnimplementedError());
       final updatedVoting = voting.cancelVoting(reason: reason);
 
+      // ✅ Update Firestore with Extension method
       await _firestore.collection('posts').doc(postId).update(
-            PostVotingAdapter.toFirestore(updatedVoting),
+            updatedVoting.toFirestore(),
           );
 
       await _cacheVotingData(updatedVoting);
 
       return Right(updatedVoting);
     } on FirebaseException catch (e) {
-      return Left(_mapFirebaseException(e));
+      return Left(e.toVotingFailure());
     } catch (e) {
-      return Left(Unexpected(e.toString()));
+      return Left(e.toString().toVotingFailure());
     }
   }
 
@@ -283,17 +290,18 @@ class VotingChatRepositoryImpl implements VotingRepository {
       final voting = votingResult.getOrElse(() => throw UnimplementedError());
       final updatedVoting = voting.timeoutVoting();
 
+      // ✅ Update Firestore with Extension method
       await _firestore.collection('posts').doc(postId).update(
-            PostVotingAdapter.toFirestore(updatedVoting),
+            updatedVoting.toFirestore(),
           );
 
       await _cacheVotingData(updatedVoting);
 
       return Right(updatedVoting);
     } on FirebaseException catch (e) {
-      return Left(_mapFirebaseException(e));
+      return Left(e.toVotingFailure());
     } catch (e) {
-      return Left(Unexpected(e.toString()));
+      return Left(e.toString().toVotingFailure());
     }
   }
 
@@ -320,17 +328,18 @@ class VotingChatRepositoryImpl implements VotingRepository {
         status: 'active',
       );
 
+      // ✅ Update Firestore with Extension method
       await _firestore.collection('posts').doc(postId).update(
-            PostVotingAdapter.toFirestore(updatedVoting),
+            updatedVoting.toFirestore(),
           );
 
       await _cacheVotingData(updatedVoting);
 
       return Right(updatedVoting);
     } on FirebaseException catch (e) {
-      return Left(_mapFirebaseException(e));
+      return Left(e.toVotingFailure());
     } catch (e) {
-      return Left(Unexpected(e.toString()));
+      return Left(e.toString().toVotingFailure());
     }
   }
 
@@ -349,17 +358,18 @@ class VotingChatRepositoryImpl implements VotingRepository {
       final voting = votingResult.getOrElse(() => throw UnimplementedError());
       final updatedVoting = voting.markNotificationsSent();
 
+      // ✅ Update Firestore with Extension method
       await _firestore.collection('posts').doc(postId).update(
-            PostVotingAdapter.toFirestore(updatedVoting),
+            updatedVoting.toFirestore(),
           );
 
       await _cacheVotingData(updatedVoting);
 
       return const Right(null);
     } on FirebaseException catch (e) {
-      return Left(_mapFirebaseException(e));
+      return Left(e.toVotingFailure());
     } catch (e) {
-      return Left(Unexpected(e.toString()));
+      return Left(e.toString().toVotingFailure());
     }
   }
 
@@ -383,6 +393,7 @@ class VotingChatRepositoryImpl implements VotingRepository {
         displayVotesB: displayB,
       );
 
+      // ✅ Direct Firebase update (specific fields only)
       await _firestore.collection('posts').doc(postId).update({
         'displayVotesA': displayA,
         'displayVotesB': displayB,
@@ -392,9 +403,9 @@ class VotingChatRepositoryImpl implements VotingRepository {
 
       return Right(updatedVoting);
     } on FirebaseException catch (e) {
-      return Left(_mapFirebaseException(e));
+      return Left(e.toVotingFailure());
     } catch (e) {
-      return Left(Unexpected(e.toString()));
+      return Left(e.toString().toVotingFailure());
     }
   }
 
@@ -406,7 +417,7 @@ class VotingChatRepositoryImpl implements VotingRepository {
   Future<Either<VotingFailure, VotingStats>> getUserVotingStats(
       String userId) async {
     try {
-      // Get user's vote history
+      // Get user's vote history from local cache
       final historyResult = await _localDataSource.getCachedVoteHistory(userId);
       final history = historyResult ?? [];
 
@@ -417,7 +428,7 @@ class VotingChatRepositoryImpl implements VotingRepository {
       int optionBVotes =
           history.where((v) => v['voteOption'] == 'B').length;
 
-      // Get participated polls count from Firestore
+      // ✅ Get participated polls count from Firestore (collectionGroup query)
       final userVotesQuery = await _firestore
           .collectionGroup('votes')
           .where('userId', isEqualTo: userId)
@@ -434,8 +445,10 @@ class VotingChatRepositoryImpl implements VotingRepository {
       );
 
       return Right(stats);
+    } on FirebaseException catch (e) {
+      return Left(e.toVotingFailure());
     } catch (e) {
-      return Left(Unexpected(e.toString()));
+      return Left(e.toString().toVotingFailure());
     }
   }
 
@@ -451,9 +464,13 @@ class VotingChatRepositoryImpl implements VotingRepository {
       }
 
       final voting = votingResult.getOrElse(() => throw UnimplementedError());
+
+      // Use domain model's business logic
       return Right(voting.hasUserVoted(userId));
+    } on FirebaseException catch (e) {
+      return Left(e.toVotingFailure());
     } catch (e) {
-      return Left(Unexpected(e.toString()));
+      return Left(e.toString().toVotingFailure());
     }
   }
 
@@ -469,9 +486,13 @@ class VotingChatRepositoryImpl implements VotingRepository {
       }
 
       final voting = votingResult.getOrElse(() => throw UnimplementedError());
+
+      // Use domain model's business logic
       return Right(voting.getUserVote(userId));
+    } on FirebaseException catch (e) {
+      return Left(e.toVotingFailure());
     } catch (e) {
-      return Left(Unexpected(e.toString()));
+      return Left(e.toString().toVotingFailure());
     }
   }
 
@@ -482,47 +503,23 @@ class VotingChatRepositoryImpl implements VotingRepository {
   /// Cache voting data locally
   Future<void> _cacheVotingData(PostVoting voting) async {
     try {
-      // Convert PostVoting to cache format
-      // Using vote state cache (temporary until dedicated cache is implemented)
-      await _localDataSource.cacheVoteState(
+      // ✅ PostVoting 전체 캐싱
+      await _localDataSource.cachePostVoting(voting);
+
+      // ✅ 추가: VoteCounts도 별도 캐싱 (빠른 접근용)
+      await _localDataSource.cacheVoteCounts(
         postId: voting.postId,
-        userId: '', // Post-level cache, not user-specific
-        voteState: _convertToVoteCacheState(voting),
+        voteCounts: VoteCounts(
+          votesA: voting.votesA,
+          votesB: voting.votesB,
+          totalVotes: voting.totalVotes,
+        ),
       );
     } catch (e) {
       if (kDebugMode) {
         print('[VotingChatRepository] Cache error: $e');
       }
       // Don't throw, caching is optional
-    }
-  }
-
-  /// Convert PostVoting to VoteCacheState (temporary adapter)
-  dynamic _convertToVoteCacheState(PostVoting voting) {
-    // TODO: Implement proper conversion
-    // For now, return a simple map representation
-    return {
-      'postId': voting.postId,
-      'voteStatus': voting.voteStatus.toString(),
-      'votesA': voting.votesA,
-      'votesB': voting.votesB,
-      'voteCompleted': voting.voteCompleted,
-      'timestamp': DateTime.now(),
-    };
-  }
-
-  /// Map FirebaseException to VotingFailure
-  VotingFailure _mapFirebaseException(FirebaseException e) {
-    switch (e.code) {
-      case 'permission-denied':
-        return const Unauthorized();
-      case 'not-found':
-        return const NotFound();
-      case 'unavailable':
-      case 'deadline-exceeded':
-        return const NetworkError();
-      default:
-        return ServerError();
     }
   }
 }

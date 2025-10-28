@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '/core_exports.dart';
-import '/app/widgets/index.dart';
 
 class LoginButtons extends StatelessWidget {
   final VoidCallback onEmailLogin;

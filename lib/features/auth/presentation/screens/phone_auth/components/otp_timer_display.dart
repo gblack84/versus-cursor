@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '/core_exports.dart';
-import '/app/widgets/index.dart';
 
 class OtpTimerDisplay extends StatelessWidget {
   final int initialTimeMs;

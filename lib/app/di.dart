@@ -6,6 +6,9 @@
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// Core Services
+import '/core/utils/idempotency_service.dart';
+
 // Feature DI Modules
 import '/features/post/di/post_di_module.dart';
 import '/features/voting/di/voting_di_module.dart';
@@ -46,6 +49,11 @@ Future<void> setupDependencyInjection() async {
   // SharedPreferences 인스턴스 초기화
   final sharedPreferences = await SharedPreferences.getInstance();
   getIt.registerSingleton<SharedPreferences>(sharedPreferences);
+
+  // IdempotencyService (for Auth, Voting, etc.)
+  getIt.registerSingleton<IdempotencyService>(
+    IdempotencyService(),
+  );
 
   // ===== Auth Feature DI =====
   // Note: Auth registration moved to after Profile Feature registration

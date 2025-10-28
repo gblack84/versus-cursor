@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:get_it/get_it.dart';
+import 'package:uuid/uuid.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/widgets/auth_user_stream_widget.dart';
 import '/app/contracts/user_contract.dart';
@@ -315,7 +316,10 @@ class _PopupTimerEmailWidgetState extends ConsumerState<PopupTimerEmailWidget> {
 
                                 // 이메일 인증 재발송
                                 final emailVerificationUseCase = ref.read(emailVerificationUseCaseProvider);
-                                await emailVerificationUseCase.sendVerificationEmail();
+                                await emailVerificationUseCase.sendVerificationEmail(
+                                  userId: currentUserId,
+                                  eventId: const Uuid().v4(),
+                                );
                               } else {
                                 // 사용자 계정 삭제
                                 final accountManagementUseCase = ref.read(accountManagementUseCaseProvider);

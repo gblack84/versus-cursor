@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
+import 'package:uuid/uuid.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/screens/login/login_page/login_page_widget.dart';
 import '/core_exports.dart';
@@ -315,7 +316,8 @@ class _ForgotPasswordWidgetState extends ConsumerState<ForgotPasswordWidget> {
                       // 비밀번호 재설정 이메일 발송
                       final passwordManagementUseCase = ref.read(passwordManagementUseCaseProvider);
                       final success = await passwordManagementUseCase.sendPasswordResetEmail(
-                        _model.emailAddressTextController.text.trim(),
+                        email: _model.emailAddressTextController.text.trim(),
+                        eventId: const Uuid().v4(),
                       );
 
                       if (success) {

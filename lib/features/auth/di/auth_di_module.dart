@@ -12,6 +12,9 @@ import 'package:get_it/get_it.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// ===== Core Services =====
+import '/core/utils/idempotency_service.dart';
+
 // ===== App Layer - Contracts =====
 import '/app/contracts/auth_contract.dart';
 import '/app/contracts/user_contract.dart';
@@ -131,6 +134,7 @@ void _registerUseCases(GetIt getIt) {
   getIt.registerFactory<SignUpWithEmailUseCase>(
     () => SignUpWithEmailUseCase(
       repository: getIt<IAuthRepository>(),
+      idempotencyService: getIt<IdempotencyService>(),
     ),
   );
 
@@ -151,12 +155,14 @@ void _registerUseCases(GetIt getIt) {
   getIt.registerFactory<PasswordManagementUseCase>(
     () => PasswordManagementUseCase(
       repository: getIt<IAuthRepository>(),
+      idempotencyService: getIt<IdempotencyService>(),
     ),
   );
 
   getIt.registerFactory<EmailVerificationUseCase>(
     () => EmailVerificationUseCase(
       repository: getIt<IAuthRepository>(),
+      idempotencyService: getIt<IdempotencyService>(),
     ),
   );
 

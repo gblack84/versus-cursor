@@ -1,6 +1,6 @@
-import 'package:get_it/get_it.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
-import '/features/auth/presentation/providers/auth_provider.dart';
+import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/screens/login/login_page/login_page_widget.dart';
 import '/testpage_select/testpage_select_widget.dart';
 import '/core/widgets/pickle_mark/pickle_mark_widget.dart';
@@ -14,20 +14,19 @@ import 'package:google_fonts/google_fonts.dart';
 import 'start_page_model.dart';
 export 'start_page_model.dart';
 
-class StartPageWidget extends StatefulWidget {
+class StartPageWidget extends ConsumerStatefulWidget {
   const StartPageWidget({super.key});
 
   static String routeName = 'startPage';
   static String routePath = '/startPage';
 
   @override
-  State<StartPageWidget> createState() => _StartPageWidgetState();
+  ConsumerState<StartPageWidget> createState() => _StartPageWidgetState();
 }
 
-class _StartPageWidgetState extends State<StartPageWidget>
+class _StartPageWidgetState extends ConsumerState<StartPageWidget>
     with TickerProviderStateMixin {
   late StartPageModel _model;
-  late final AuthProvider _authProvider = GetIt.instance<AuthProvider>();
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
   var hasButtonTriggered1 = false;
@@ -38,11 +37,6 @@ class _StartPageWidgetState extends State<StartPageWidget>
   void initState() {
     super.initState();
     _model = createModel(context, () => StartPageModel());
-
-    // AuthProvider 초기화 확인 (GetIt에서 가져온 Singleton)
-    if (!_authProvider.isInitialized) {
-      _authProvider.initialize();
-    }
 
     animationsMap.addAll({
       'columnOnPageLoadAnimation': AnimationInfo(
@@ -269,29 +263,38 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                       child: AppButtonWidget(
                                         onPressed: () async {
                                           // 로딩 중이면 리턴
-                                          if (_authProvider.isLoading) {
+                                          final isLoading = ref.read(authLoadingProvider);
+                                          if (isLoading) {
                                             return;
                                           }
 
                                           GoRouter.of(context).prepareAuthEvent();
-                                          final success = await _authProvider.signInWithApple();
 
-                                          if (!success) {
-                                            if (context.mounted) {
-                                              ErrorHandler.handle(
-                                                _authProvider.errorMessage ?? 'Apple 로그인에 실패했습니다.',
-                                                customMessage: _authProvider.errorMessage ?? 'Apple 로그인에 실패했습니다.',
-                                                context: context,
-                                              );
-                                            }
-                                            return;
-                                          }
+                                          ref.read(authLoadingProvider.notifier).state = true;
 
-                                          if (context.mounted) {
-                                            context.goNamedAuth(
-                                                TestpageSelectWidget.routeName,
-                                                context.mounted);
-                                          }
+                                          final signInWithAppleUseCase = ref.read(signInWithAppleUseCaseProvider);
+                                          final result = await signInWithAppleUseCase.execute();
+
+                                          result.fold(
+                                            (failure) {
+                                              ref.read(authLoadingProvider.notifier).state = false;
+                                              if (context.mounted) {
+                                                ErrorHandler.handle(
+                                                  failure.message,
+                                                  customMessage: 'Apple 로그인에 실패했습니다.',
+                                                  context: context,
+                                                );
+                                              }
+                                            },
+                                            (user) {
+                                              ref.read(authLoadingProvider.notifier).state = false;
+                                              if (context.mounted) {
+                                                context.goNamedAuth(
+                                                    TestpageSelectWidget.routeName,
+                                                    context.mounted);
+                                              }
+                                            },
+                                          );
                                         },
                                         text: AppLocalizations.of(context)
                                             .getText(
@@ -347,29 +350,38 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                 child: AppButtonWidget(
                                   onPressed: () async {
                                     // 로딩 중이면 리턴
-                                    if (_authProvider.isLoading) {
+                                    final isLoading = ref.read(authLoadingProvider);
+                                    if (isLoading) {
                                       return;
                                     }
 
                                     GoRouter.of(context).prepareAuthEvent();
-                                    final success = await _authProvider.signInWithGoogle();
 
-                                    if (!success) {
-                                      if (context.mounted) {
-                                        ErrorHandler.handle(
-                                          _authProvider.errorMessage ?? 'Google 로그인에 실패했습니다.',
-                                          customMessage: _authProvider.errorMessage ?? 'Google 로그인에 실패했습니다.',
-                                          context: context,
-                                        );
-                                      }
-                                      return;
-                                    }
+                                    ref.read(authLoadingProvider.notifier).state = true;
 
-                                    if (context.mounted) {
-                                      context.goNamedAuth(
-                                          TestpageSelectWidget.routeName,
-                                          context.mounted);
-                                    }
+                                    final signInWithGoogleUseCase = ref.read(signInWithGoogleUseCaseProvider);
+                                    final result = await signInWithGoogleUseCase.execute();
+
+                                    result.fold(
+                                      (failure) {
+                                        ref.read(authLoadingProvider.notifier).state = false;
+                                        if (context.mounted) {
+                                          ErrorHandler.handle(
+                                            failure.message,
+                                            customMessage: 'Google 로그인에 실패했습니다.',
+                                            context: context,
+                                          );
+                                        }
+                                      },
+                                      (user) {
+                                        ref.read(authLoadingProvider.notifier).state = false;
+                                        if (context.mounted) {
+                                          context.goNamedAuth(
+                                              TestpageSelectWidget.routeName,
+                                              context.mounted);
+                                        }
+                                      },
+                                    );
                                   },
                                   text: AppLocalizations.of(context).getText(
                                     's24g5s5d' /* Continue with Google */,
@@ -418,29 +430,38 @@ class _StartPageWidgetState extends State<StartPageWidget>
                                 child: AppButtonWidget(
                                   onPressed: () async {
                                     // 로딩 중이면 리턴
-                                    if (_authProvider.isLoading) {
+                                    final isLoading = ref.read(authLoadingProvider);
+                                    if (isLoading) {
                                       return;
                                     }
 
                                     GoRouter.of(context).prepareAuthEvent();
-                                    final success = await _authProvider.signInWithGoogle();
 
-                                    if (!success) {
-                                      if (context.mounted) {
-                                        ErrorHandler.handle(
-                                          _authProvider.errorMessage ?? 'Google 로그인에 실패했습니다.',
-                                          customMessage: _authProvider.errorMessage ?? 'Google 로그인에 실패했습니다.',
-                                          context: context,
-                                        );
-                                      }
-                                      return;
-                                    }
+                                    ref.read(authLoadingProvider.notifier).state = true;
 
-                                    if (context.mounted) {
-                                      context.goNamedAuth(
-                                          TestpageSelectWidget.routeName,
-                                          context.mounted);
-                                    }
+                                    final signInWithGoogleUseCase = ref.read(signInWithGoogleUseCaseProvider);
+                                    final result = await signInWithGoogleUseCase.execute();
+
+                                    result.fold(
+                                      (failure) {
+                                        ref.read(authLoadingProvider.notifier).state = false;
+                                        if (context.mounted) {
+                                          ErrorHandler.handle(
+                                            failure.message,
+                                            customMessage: 'Google 로그인에 실패했습니다.',
+                                            context: context,
+                                          );
+                                        }
+                                      },
+                                      (user) {
+                                        ref.read(authLoadingProvider.notifier).state = false;
+                                        if (context.mounted) {
+                                          context.goNamedAuth(
+                                              TestpageSelectWidget.routeName,
+                                              context.mounted);
+                                        }
+                                      },
+                                    );
                                   },
                                   text: AppLocalizations.of(context).getText(
                                     'ntv3cl1f' /* Continue with Facebook */,
@@ -487,30 +508,39 @@ class _StartPageWidgetState extends State<StartPageWidget>
                               AppButtonWidget(
                                 onPressed: () async {
                                   // 로딩 중이면 리턴
-                                  if (_authProvider.isLoading) {
+                                  final isLoading = ref.read(authLoadingProvider);
+                                  if (isLoading) {
                                     return;
                                   }
 
                                   // Instagram 로그인은 현재 Google로 대체 (추후 구현 예정)
                                   GoRouter.of(context).prepareAuthEvent();
-                                  final success = await _authProvider.signInWithGoogle();
 
-                                  if (!success) {
-                                    if (context.mounted) {
-                                      ErrorHandler.handle(
-                                        _authProvider.errorMessage ?? 'Instagram 로그인에 실패했습니다.',
-                                        customMessage: _authProvider.errorMessage ?? 'Instagram 로그인에 실패했습니다.',
-                                        context: context,
-                                      );
-                                    }
-                                    return;
-                                  }
+                                  ref.read(authLoadingProvider.notifier).state = true;
 
-                                  if (context.mounted) {
-                                    context.goNamedAuth(
-                                        TestpageSelectWidget.routeName,
-                                        context.mounted);
-                                  }
+                                  final signInWithGoogleUseCase = ref.read(signInWithGoogleUseCaseProvider);
+                                  final result = await signInWithGoogleUseCase.execute();
+
+                                  result.fold(
+                                    (failure) {
+                                      ref.read(authLoadingProvider.notifier).state = false;
+                                      if (context.mounted) {
+                                        ErrorHandler.handle(
+                                          failure.message,
+                                          customMessage: 'Instagram 로그인에 실패했습니다.',
+                                          context: context,
+                                        );
+                                      }
+                                    },
+                                    (user) {
+                                      ref.read(authLoadingProvider.notifier).state = false;
+                                      if (context.mounted) {
+                                        context.goNamedAuth(
+                                            TestpageSelectWidget.routeName,
+                                            context.mounted);
+                                      }
+                                    },
+                                  );
                                 },
                                 text: AppLocalizations.of(context).getText(
                                   '4ssf49xr' /* Continue with Instagram */,

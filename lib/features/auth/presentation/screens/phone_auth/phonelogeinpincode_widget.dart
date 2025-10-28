@@ -1,7 +1,7 @@
-import 'package:get_it/get_it.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
 import '/core/utils/error_handler.dart';
-import '/features/auth/presentation/providers/auth_provider.dart';
+import '/features/auth/presentation/providers/auth_providers.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
@@ -13,7 +13,7 @@ import 'phonelogeinpincode_model.dart';
 import 'phonemaximum/phonemaximum_widget.dart';
 export 'phonelogeinpincode_model.dart';
 
-class PhonelogeinpincodeWidget extends StatefulWidget {
+class PhonelogeinpincodeWidget extends ConsumerStatefulWidget {
   const PhonelogeinpincodeWidget({
     super.key,
     required this.phoneNumberParam,
@@ -25,13 +25,12 @@ class PhonelogeinpincodeWidget extends StatefulWidget {
   static String routePath = '/phonelogeinpincode';
 
   @override
-  State<PhonelogeinpincodeWidget> createState() =>
+  ConsumerState<PhonelogeinpincodeWidget> createState() =>
       _PhonelogeinpincodeWidgetState();
 }
 
-class _PhonelogeinpincodeWidgetState extends State<PhonelogeinpincodeWidget> {
+class _PhonelogeinpincodeWidgetState extends ConsumerState<PhonelogeinpincodeWidget> {
   late PhonelogeinpincodeModel _model;
-  late final AuthProvider _authProvider = GetIt.instance<AuthProvider>();
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -39,11 +38,6 @@ class _PhonelogeinpincodeWidgetState extends State<PhonelogeinpincodeWidget> {
   void initState() {
     super.initState();
     _model = createModel(context, () => PhonelogeinpincodeModel());
-
-    // AuthProvider 초기화 확인 (GetIt에서 가져온 Singleton)
-    if (!_authProvider.isInitialized) {
-      _authProvider.initialize();
-    }
 
     // On page load action.
     SchedulerBinding.instance.addPostFrameCallback((_) async {
@@ -348,46 +342,60 @@ Enter the 6-digit code sent t... */
                                 }
 
                                 // 로딩 중이면 리턴
-                                if (_authProvider.isLoading) {
+                                final isLoading = ref.read(authLoadingProvider);
+                                if (isLoading) {
                                   return;
                                 }
 
+                                // 로딩 시작
+                                ref.read(authLoadingProvider.notifier).state = true;
+
                                 // 전화번호 인증
-                                final phoneVerified = await _authProvider.signInWithPhone(
+                                final signInWithPhoneUseCase = ref.read(signInWithPhoneUseCaseProvider);
+                                final result = await signInWithPhoneUseCase.execute(
                                   phoneNumber: widget.phoneNumberParam ?? '',
                                   verificationCode: smsCodeVal,
                                 );
 
-                                if (phoneVerified) {
-                                  _model.isVerified = true;
-                                  setState(() {});
+                                // 결과 처리
+                                result.fold(
+                                  (failure) {
+                                    // 실패 처리
+                                    _model.isVerified = false;
+                                    ref.read(authErrorProvider.notifier).state = failure.message;
+                                    ref.read(authLoadingProvider.notifier).state = false;
+                                    setState(() {});
 
-                                  // 인증 성공 시 다음 페이지로 이동
-                                  if (context.mounted) {
-                                    context.pushNamedAuth(
-                                      UserInfoInputWidget.routeName,
-                                      context.mounted,
-                                      extra: <String, dynamic>{
-                                        kTransitionInfoKey: TransitionInfo(
-                                          hasTransition: true,
-                                          duration: Duration(milliseconds: 500),
-                                        ),
-                                      },
-                                    );
-                                  }
-                                } else {
-                                  _model.isVerified = false;
-                                  setState(() {});
+                                    // 에러 메시지 표시
+                                    if (context.mounted) {
+                                      ErrorHandler.handle(
+                                        failure.message,
+                                        customMessage: '인증에 실패했습니다. 코드를 다시 확인해주세요.',
+                                        context: context,
+                                      );
+                                    }
+                                  },
+                                  (user) {
+                                    // 성공 처리
+                                    _model.isVerified = true;
+                                    ref.read(authLoadingProvider.notifier).state = false;
+                                    setState(() {});
 
-                                  // 에러 메시지 표시
-                                  if (context.mounted) {
-                                    ErrorHandler.handle(
-                                      _authProvider.errorMessage ?? '인증에 실패했습니다. 코드를 다시 확인해주세요.',
-                                      customMessage: _authProvider.errorMessage ?? '인증에 실패했습니다. 코드를 다시 확인해주세요.',
-                                      context: context,
-                                    );
-                                  }
-                                }
+                                    // 인증 성공 시 다음 페이지로 이동
+                                    if (context.mounted) {
+                                      context.pushNamedAuth(
+                                        UserInfoInputWidget.routeName,
+                                        context.mounted,
+                                        extra: <String, dynamic>{
+                                          kTransitionInfoKey: TransitionInfo(
+                                            hasTransition: true,
+                                            duration: Duration(milliseconds: 500),
+                                          ),
+                                        },
+                                      );
+                                    }
+                                  },
+                                );
                               },
                               autovalidateMode:
                                   AutovalidateMode.onUserInteraction,
@@ -529,28 +537,42 @@ Enter the 6-digit code sent t... */
                                               return;
                                             }
                                             // 로딩 중이면 리턴
-                                            if (_authProvider.isLoading) {
+                                            final isLoading = ref.read(authLoadingProvider);
+                                            if (isLoading) {
                                               return;
                                             }
 
-                                            // OTP 재전송
-                                            final smsSent = await _authProvider.resendPhoneOtp();
+                                            // 로딩 시작
+                                            ref.read(authLoadingProvider.notifier).state = true;
 
-                                            if (smsSent) {
-                                              // 코드가 성공적으로 전송됨
-                                              if (context.mounted) {
-                                                ErrorHandler.showSuccessToast('인증 코드가 재전송되었습니다.');
-                                              }
-                                            } else {
-                                              // 재전송 실패
-                                              if (context.mounted) {
-                                                ErrorHandler.handle(
-                                                  _authProvider.errorMessage ?? '코드 재전송에 실패했습니다.',
-                                                  customMessage: _authProvider.errorMessage ?? '코드 재전송에 실패했습니다.',
-                                                  context: context,
-                                                );
-                                              }
-                                            }
+                                            // OTP 재전송
+                                            final signInWithPhoneUseCase = ref.read(signInWithPhoneUseCaseProvider);
+                                            final result = await signInWithPhoneUseCase.resendOtp(phoneNumberVal);
+
+                                            // 결과 처리
+                                            result.fold(
+                                              (failure) {
+                                                // 재전송 실패
+                                                ref.read(authErrorProvider.notifier).state = failure.message;
+                                                ref.read(authLoadingProvider.notifier).state = false;
+
+                                                if (context.mounted) {
+                                                  ErrorHandler.handle(
+                                                    failure.message,
+                                                    customMessage: '코드 재전송에 실패했습니다.',
+                                                    context: context,
+                                                  );
+                                                }
+                                              },
+                                              (_) {
+                                                // 코드가 성공적으로 전송됨
+                                                ref.read(authLoadingProvider.notifier).state = false;
+
+                                                if (context.mounted) {
+                                                  ErrorHandler.showSuccessToast('인증 코드가 재전송되었습니다.');
+                                                }
+                                              },
+                                            );
 
                                             BotToast.showText(
                                               text: 'pMessage resent. After 3 attempts, you will be returned to the login screen.',

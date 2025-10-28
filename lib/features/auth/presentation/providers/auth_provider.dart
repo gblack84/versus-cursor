@@ -28,9 +28,22 @@ import '../../data/adapters/firebase_user_adapter.dart';
 
 /// AuthProvider
 ///
+/// ⚠️ DEPRECATED: Migrating to Riverpod
+///
+/// This ChangeNotifier-based provider is being phased out in favor of
+/// Riverpod 2.x providers (auth_providers.dart).
+///
+/// **Migration Status**: Phase 3 in progress
+/// - ✅ New Riverpod providers created (auth_providers.dart)
+/// - ⏳ UI screens being converted to ConsumerStatefulWidget
+/// - ❌ This file will be removed after all UI screens are migrated
+///
+/// **For new code**: Use `auth_providers.dart` with Riverpod instead
+///
 /// Central state management for authentication in the Versus Space app.
 /// Manages user authentication state and provides methods for all auth operations.
 /// Implements AuthContract to provide auth information to other Features.
+@Deprecated('Use auth_providers.dart with Riverpod instead. This ChangeNotifier will be removed after UI migration is complete.')
 class AuthProvider extends ChangeNotifier implements AuthContract {
   // Private instance for singleton
   static AuthProvider? _instance;

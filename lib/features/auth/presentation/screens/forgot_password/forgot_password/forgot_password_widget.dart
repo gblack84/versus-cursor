@@ -1,6 +1,6 @@
-import 'package:get_it/get_it.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
-import '/features/auth/presentation/providers/auth_provider.dart';
+import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/screens/login/login_page/login_page_widget.dart';
 import '/core_exports.dart';
 import '/core/utils/error_handler.dart';
@@ -10,19 +10,18 @@ import 'package:google_fonts/google_fonts.dart';
 import 'forgot_password_model.dart';
 export 'forgot_password_model.dart';
 
-class ForgotPasswordWidget extends StatefulWidget {
+class ForgotPasswordWidget extends ConsumerStatefulWidget {
   const ForgotPasswordWidget({super.key});
 
   static String routeName = 'Forgot_Password';
   static String routePath = '/forgotPassword';
 
   @override
-  State<ForgotPasswordWidget> createState() => _ForgotPasswordWidgetState();
+  ConsumerState<ForgotPasswordWidget> createState() => _ForgotPasswordWidgetState();
 }
 
-class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget> {
+class _ForgotPasswordWidgetState extends ConsumerState<ForgotPasswordWidget> {
   late ForgotPasswordModel _model;
-  late final AuthProvider _authProvider = GetIt.instance<AuthProvider>();
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -30,11 +29,6 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget> {
   void initState() {
     super.initState();
     _model = createModel(context, () => ForgotPasswordModel());
-
-    // AuthProvider 초기화 확인 (GetIt에서 가져온 Singleton)
-    if (!_authProvider.isInitialized) {
-      _authProvider.initialize();
-    }
 
     _model.emailAddressTextController ??= TextEditingController();
     _model.emailAddressFocusNode ??= FocusNode();
@@ -313,26 +307,27 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget> {
                       }
 
                       // 로딩 중이면 리턴
-                      if (_authProvider.isLoading) {
+                      final isLoading = ref.read(authLoadingProvider);
+                      if (isLoading) {
                         return;
                       }
 
                       // 비밀번호 재설정 이메일 발송
-                      final success = await _authProvider.sendPasswordResetEmail(
+                      final passwordManagementUseCase = ref.read(passwordManagementUseCaseProvider);
+                      final success = await passwordManagementUseCase.sendPasswordResetEmail(
                         _model.emailAddressTextController.text.trim(),
                       );
 
                       if (success) {
                         if (context.mounted) {
                           ErrorHandler.showSuccessToast('비밀번호 재설정 이메일을 발송했습니다. 이메일을 확인해주세요.');
-                          // Navigate back or to login page
                           context.pop();
                         }
                       } else {
                         if (context.mounted) {
                           ErrorHandler.handle(
-                            _authProvider.errorMessage ?? '비밀번호 재설정 이메일 발송에 실패했습니다. 다시 시도해주세요.',
-                            customMessage: _authProvider.errorMessage ?? '비밀번호 재설정 이메일 발송에 실패했습니다. 다시 시도해주세요.',
+                            '비밀번호 재설정 이메일 발송에 실패했습니다. 다시 시도해주세요.',
+                            customMessage: '비밀번호 재설정 이메일 발송에 실패했습니다. 다시 시도해주세요.',
                             context: context,
                           );
                         }

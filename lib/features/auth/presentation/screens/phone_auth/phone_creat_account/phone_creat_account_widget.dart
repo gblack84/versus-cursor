@@ -1,7 +1,7 @@
-import 'package:get_it/get_it.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
 import '/core/utils/error_handler.dart';
-import '/features/auth/presentation/providers/auth_provider.dart';
+import '/features/auth/presentation/providers/auth_providers.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +11,7 @@ import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'phone_creat_account_model.dart';
 export 'phone_creat_account_model.dart';
 
-class PhoneCreatAccountWidget extends StatefulWidget {
+class PhoneCreatAccountWidget extends ConsumerStatefulWidget {
   const PhoneCreatAccountWidget({
     super.key,
     required this.phoneNumberParam,
@@ -23,13 +23,12 @@ class PhoneCreatAccountWidget extends StatefulWidget {
   static String routePath = '/phoneCreatAccount';
 
   @override
-  State<PhoneCreatAccountWidget> createState() =>
+  ConsumerState<PhoneCreatAccountWidget> createState() =>
       _PhoneCreatAccountWidgetState();
 }
 
-class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
+class _PhoneCreatAccountWidgetState extends ConsumerState<PhoneCreatAccountWidget> {
   late PhoneCreatAccountModel _model;
-  late final AuthProvider _authProvider = GetIt.instance<AuthProvider>();
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -37,11 +36,6 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
   void initState() {
     super.initState();
     _model = createModel(context, () => PhoneCreatAccountModel());
-
-    // AuthProvider 초기화 확인 (GetIt에서 가져온 Singleton)
-    if (!_authProvider.isInitialized) {
-      _authProvider.initialize();
-    }
 
     _model.codeCuntryTextController ??= TextEditingController();
     _model.codeCuntryFocusNode ??= FocusNode();
@@ -443,39 +437,53 @@ class _PhoneCreatAccountWidgetState extends State<PhoneCreatAccountWidget> {
                             }
 
                             // 로딩 중이면 리턴
-                            if (_authProvider.isLoading) {
+                            final isLoading = ref.read(authLoadingProvider);
+                            if (isLoading) {
                               return;
                             }
 
-                            // OTP 발송
-                            final smsSent = await _authProvider.sendPhoneOtp(
-                              phoneNumberVal,
-                            );
+                            // 로딩 시작
+                            ref.read(authLoadingProvider.notifier).state = true;
 
-                            if (smsSent) {
-                              // 코드가 성공적으로 전송되면 PIN 입력 화면으로 이동
-                              if (context.mounted) {
-                                context.goNamedAuth(
-                                  PhonelogeinpincodeWidget.routeName,
-                                  context.mounted,
-                                  queryParameters: {
-                                    'phoneNumberParam': serializeParam(
-                                      phoneNumberVal,
-                                      ParamType.String,
-                                    ),
-                                  }.withoutNulls,
-                                  ignoreRedirect: true,
-                                );
-                              }
-                            } else {
-                              if (context.mounted) {
-                                ErrorHandler.handle(
-                                  _authProvider.errorMessage ?? 'SMS 코드 발송에 실패했습니다. 다시 시도해주세요.',
-                                  customMessage: _authProvider.errorMessage ?? 'SMS 코드 발송에 실패했습니다. 다시 시도해주세요.',
-                                  context: context,
-                                );
-                              }
-                            }
+                            // OTP 발송
+                            final signInWithPhoneUseCase = ref.read(signInWithPhoneUseCaseProvider);
+                            final result = await signInWithPhoneUseCase.sendOtp(phoneNumberVal);
+
+                            // 결과 처리
+                            result.fold(
+                              (failure) {
+                                // 실패 처리
+                                ref.read(authErrorProvider.notifier).state = failure.message;
+                                ref.read(authLoadingProvider.notifier).state = false;
+
+                                if (context.mounted) {
+                                  ErrorHandler.handle(
+                                    failure.message,
+                                    customMessage: 'SMS 코드 발송에 실패했습니다.',
+                                    context: context,
+                                  );
+                                }
+                              },
+                              (_) {
+                                // 성공 처리
+                                ref.read(authLoadingProvider.notifier).state = false;
+
+                                // 코드가 성공적으로 전송되면 PIN 입력 화면으로 이동
+                                if (context.mounted) {
+                                  context.goNamedAuth(
+                                    PhonelogeinpincodeWidget.routeName,
+                                    context.mounted,
+                                    queryParameters: {
+                                      'phoneNumberParam': serializeParam(
+                                        phoneNumberVal,
+                                        ParamType.String,
+                                      ),
+                                    }.withoutNulls,
+                                    ignoreRedirect: true,
+                                  );
+                                }
+                              },
+                            );
                           },
                     text: AppLocalizations.of(context).getText(
                       'pqidvgqu' /* Send  Code */,

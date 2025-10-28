@@ -1,7 +1,7 @@
 import 'package:provider/provider.dart';
-import 'package:get_it/get_it.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
-import '/features/auth/presentation/providers/auth_provider.dart';
+import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/screens/login/components/email_login_form.dart';
 import '/features/auth/presentation/screens/login/components/test_account_buttons.dart';
 import '/features/auth/presentation/screens/login/components/login_buttons.dart';
@@ -17,20 +17,19 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'login_page_model.dart';
 export 'login_page_model.dart';
 
-class LoginPageWidget extends StatefulWidget {
+class LoginPageWidget extends ConsumerStatefulWidget {
   const LoginPageWidget({super.key});
 
   static String routeName = 'Login_page';
   static String routePath = '/loginPage';
 
   @override
-  State<LoginPageWidget> createState() => _LoginPageWidgetState();
+  ConsumerState<LoginPageWidget> createState() => _LoginPageWidgetState();
 }
 
-class _LoginPageWidgetState extends State<LoginPageWidget>
+class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
     with TickerProviderStateMixin {
   late LoginPageModel _model;
-  late final AuthProvider _authProvider = GetIt.instance<AuthProvider>();
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -40,11 +39,6 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
   void initState() {
     super.initState();
     _model = createModel(context, () => LoginPageModel());
-
-    // AuthProvider 초기화 확인 (GetIt에서 가져온 Singleton)
-    if (!_authProvider.isInitialized) {
-      _authProvider.initialize();
-    }
 
     _model.emailAddressLoginTextController ??= TextEditingController();
     _model.emailAddressLoginFocusNode ??= FocusNode();
@@ -90,47 +84,62 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
     super.dispose();
   }
 
-  // Helper method for email login
+  // Helper method for email login - Riverpod Pattern
   Future<void> _handleEmailLogin() async {
     // 로딩 중이면 리턴
-    if (_authProvider.isLoading) {
+    final isLoading = ref.read(authLoadingProvider);
+    if (isLoading) {
       return;
     }
 
     GoRouter.of(context).prepareAuthEvent();
 
-    final success = await _authProvider.signInWithEmail(
+    // 로딩 시작
+    ref.read(authLoadingProvider.notifier).state = true;
+
+    // UseCase 실행
+    final signInUseCase = ref.read(signInWithEmailUseCaseProvider);
+    final result = await signInUseCase.execute(
       email: _model.emailAddressLoginTextController.text,
       password: _model.passwordLoginTextController.text,
     );
 
-    if (!success) {
-      // UI 피드백: 로그인 실패 메시지 표시
-      if (context.mounted) {
-        ErrorHandler.handle(
-          _authProvider.errorMessage ?? '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.',
-          customMessage: _authProvider.errorMessage ?? '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.',
-          context: context,
-        );
-      }
-      return;
-    }
+    // 결과 처리
+    result.fold(
+      (failure) {
+        // 실패 처리
+        ref.read(authErrorProvider.notifier).state = failure.message;
+        ref.read(authLoadingProvider.notifier).state = false;
 
-    if (context.mounted) {
-      context.pushNamedAuth(
-        TestpageSelectWidget.routeName,
-        context.mounted,
-        extra: <String, dynamic>{
-          kTransitionInfoKey: TransitionInfo(
-            hasTransition: true,
-            duration: Duration(milliseconds: 500),
-          ),
-        },
-      );
-    }
+        if (context.mounted) {
+          ErrorHandler.handle(
+            failure.message,
+            customMessage: failure.message,
+            context: context,
+          );
+        }
+      },
+      (user) {
+        // 성공 처리
+        ref.read(authLoadingProvider.notifier).state = false;
+
+        if (context.mounted) {
+          context.pushNamedAuth(
+            TestpageSelectWidget.routeName,
+            context.mounted,
+            extra: <String, dynamic>{
+              kTransitionInfoKey: TransitionInfo(
+                hasTransition: true,
+                duration: Duration(milliseconds: 500),
+              ),
+            },
+          );
+        }
+      },
+    );
   }
 
-  // Helper method for test account login
+  // Helper method for test account login - Riverpod Pattern
   Future<void> _handleTestAccountLogin({
     required String email,
     required String password,
@@ -139,51 +148,73 @@ class _LoginPageWidgetState extends State<LoginPageWidget>
     String? platform,
   }) async {
     // 로딩 중이면 리턴
-    if (_authProvider.isLoading) {
+    final isLoading = ref.read(authLoadingProvider);
+    if (isLoading) {
       return;
     }
 
     GoRouter.of(context).prepareAuthEvent();
 
+    // 로딩 시작
+    ref.read(authLoadingProvider.notifier).state = true;
+
     // 테스트 계정은 일반 로그인으로 처리 (계정이 이미 존재한다고 가정)
-    // 실제 테스트 계정 생성 로직이 필요하면 별도 구현 필요
-    final success = await _authProvider.signInWithEmail(
+    final signInUseCase = ref.read(signInWithEmailUseCaseProvider);
+    final signInResult = await signInUseCase.execute(
       email: email,
       password: password,
     );
 
-    // UI 피드백: 결과에 따라 적절한 메시지 표시
-    if (!success) {
-      // 계정이 없으면 회원가입 시도
-      final signUpSuccess = await _authProvider.signUpWithEmail(
-        email: email,
-        password: password,
-        displayName: displayName,
-      );
+    // 로그인 실패 시 회원가입 시도
+    await signInResult.fold(
+      (failure) async {
+        // 계정이 없으면 회원가입 시도
+        final signUpUseCase = ref.read(signUpWithEmailUseCaseProvider);
+        final signUpResult = await signUpUseCase.execute(
+          email: email,
+          password: password,
+          displayName: displayName,
+        );
 
-      if (!signUpSuccess) {
+        signUpResult.fold(
+          (signUpFailure) {
+            ref.read(authErrorProvider.notifier).state = signUpFailure.message;
+            ref.read(authLoadingProvider.notifier).state = false;
+
+            if (context.mounted) {
+              ErrorHandler.handle(
+                signUpFailure.message,
+                customMessage: '테스트 계정 생성/로그인에 실패했습니다.',
+                context: context,
+              );
+            }
+          },
+          (user) {
+            ref.read(authLoadingProvider.notifier).state = false;
+
+            if (context.mounted) {
+              ErrorHandler.showSuccessToast('테스트 계정으로 로그인되었습니다.');
+              context.pushNamedAuth(
+                TestpageSelectWidget.routeName,
+                context.mounted,
+              );
+            }
+          },
+        );
+      },
+      (user) {
+        // 로그인 성공
+        ref.read(authLoadingProvider.notifier).state = false;
+
         if (context.mounted) {
-          ErrorHandler.handle(
-            _authProvider.errorMessage ?? '테스트 계정 생성/로그인에 실패했습니다.',
-            customMessage: _authProvider.errorMessage ?? '테스트 계정 생성/로그인에 실패했습니다.',
-            context: context,
+          ErrorHandler.showSuccessToast('테스트 계정으로 로그인되었습니다.');
+          context.pushNamedAuth(
+            TestpageSelectWidget.routeName,
+            context.mounted,
           );
         }
-        return;
-      }
-    }
-
-    // 성공 메시지 표시
-    if (context.mounted) {
-      ErrorHandler.showSuccessToast('테스트 계정으로 로그인되었습니다.');
-    }
-
-    if (context.mounted) {
-      context.pushNamedAuth(
-        TestpageSelectWidget.routeName,
-        context.mounted,
-      );
-    }
+      },
+    );
   }
 
   void _handlePhoneLogin() {

@@ -1,7 +1,7 @@
-import 'package:get_it/get_it.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
 import '/core/utils/error_handler.dart';
-import '/features/auth/presentation/providers/auth_provider.dart';
+import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/screens/email_verification/popup_timer_email/popup_timer_email_widget.dart';
 import '/features/auth/presentation/screens/signup/components/header_section.dart';
 import '/features/auth/presentation/screens/signup/components/signup_form.dart';
@@ -17,19 +17,18 @@ import 'package:webviewx_plus/webviewx_plus.dart';
 import 'create_account_model.dart';
 export 'create_account_model.dart';
 
-class CreateAccountWidget extends StatefulWidget {
+class CreateAccountWidget extends ConsumerStatefulWidget {
   const CreateAccountWidget({super.key});
 
   static String routeName = 'Create_Account';
   static String routePath = '/createAccount';
 
   @override
-  State<CreateAccountWidget> createState() => _CreateAccountWidgetState();
+  ConsumerState<CreateAccountWidget> createState() => _CreateAccountWidgetState();
 }
 
-class _CreateAccountWidgetState extends State<CreateAccountWidget> {
+class _CreateAccountWidgetState extends ConsumerState<CreateAccountWidget> {
   late CreateAccountModel _model;
-  late final AuthProvider _authProvider = GetIt.instance<AuthProvider>();
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -37,11 +36,6 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
   void initState() {
     super.initState();
     _model = createModel(context, () => CreateAccountModel());
-
-    // AuthProvider 초기화 확인 (GetIt에서 가져온 Singleton)
-    if (!_authProvider.isInitialized) {
-      _authProvider.initialize();
-    }
 
     _model.emailAddressTextController ??= TextEditingController();
     _model.emailAddressFocusNode ??= FocusNode();
@@ -74,54 +68,68 @@ class _CreateAccountWidgetState extends State<CreateAccountWidget> {
     }
 
     // 로딩 중이면 리턴
-    if (_authProvider.isLoading) {
+    final isLoading = ref.read(authLoadingProvider);
+    if (isLoading) {
       return;
     }
 
+    // 로딩 시작
+    ref.read(authLoadingProvider.notifier).state = true;
+
     // 계정 생성
-    final success = await _authProvider.signUpWithEmail(
+    final signUpUseCase = ref.read(signUpWithEmailUseCaseProvider);
+    final result = await signUpUseCase.execute(
       email: _model.emailAddressTextController.text,
       password: _model.passwordTextController.text,
     );
 
-    if (!success) {
-      // UI 피드백: 회원가입 실패 메시지 표시
-      if (context.mounted) {
-        ErrorHandler.handle(
-          _authProvider.errorMessage ?? '계정 생성에 실패했습니다. 다시 시도해주세요.',
-          customMessage: _authProvider.errorMessage ?? '계정 생성에 실패했습니다. 다시 시도해주세요.',
-          context: context,
-        );
-      }
-      return;
-    }
+    // 결과 처리
+    await result.fold(
+      (failure) async {
+        // 실패 처리
+        ref.read(authErrorProvider.notifier).state = failure.message;
+        ref.read(authLoadingProvider.notifier).state = false;
 
-    // 이메일 인증 발송
-    await _authProvider.sendEmailVerification();
-
-    if (context.mounted) {
-      await showDialog(
-        barrierDismissible: false,
-        context: context,
-        builder: (dialogContext) {
-          return Dialog(
-            elevation: 0,
-            insetPadding: EdgeInsets.zero,
-            backgroundColor: Colors.transparent,
-            alignment: AlignmentDirectional(0.0, 0.0)
-                .resolve(Directionality.of(context)),
-            child: WebViewAware(
-              child: PopupTimerEmailWidget(),
-            ),
+        if (context.mounted) {
+          ErrorHandler.handle(
+            failure.message,
+            customMessage: failure.message,
+            context: context,
           );
-        },
-      );
+        }
+      },
+      (user) async {
+        // 성공 처리 - 이메일 인증 발송
+        final emailVerificationUseCase = ref.read(emailVerificationUseCaseProvider);
+        await emailVerificationUseCase.sendVerificationEmail();
 
-      context.pushNamedAuth(
-        UserInfoInputWidget.routeName,
-        context.mounted,
-      );
-    }
+        ref.read(authLoadingProvider.notifier).state = false;
+
+        if (context.mounted) {
+          await showDialog(
+            barrierDismissible: false,
+            context: context,
+            builder: (dialogContext) {
+              return Dialog(
+                elevation: 0,
+                insetPadding: EdgeInsets.zero,
+                backgroundColor: Colors.transparent,
+                alignment: AlignmentDirectional(0.0, 0.0)
+                    .resolve(Directionality.of(context)),
+                child: WebViewAware(
+                  child: PopupTimerEmailWidget(),
+                ),
+              );
+            },
+          );
+
+          context.pushNamedAuth(
+            UserInfoInputWidget.routeName,
+            context.mounted,
+          );
+        }
+      },
+    );
   }
 
   // Helper method for phone signup navigation

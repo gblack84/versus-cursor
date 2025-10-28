@@ -1,6 +1,7 @@
-import 'package:get_it/get_it.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
-import '/features/auth/presentation/providers/auth_provider.dart';
+import 'package:get_it/get_it.dart';
+import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/widgets/auth_user_stream_widget.dart';
 import '/app/contracts/user_contract.dart';
 import '/core/widgets/pickle_mark/pickle_mark_widget.dart';
@@ -13,21 +14,15 @@ import 'package:google_fonts/google_fonts.dart';
 import 'popup_timer_email_model.dart';
 export 'popup_timer_email_model.dart';
 
-class PopupTimerEmailWidget extends StatefulWidget {
+class PopupTimerEmailWidget extends ConsumerStatefulWidget {
   const PopupTimerEmailWidget({super.key});
 
   @override
-  State<PopupTimerEmailWidget> createState() => _PopupTimerEmailWidgetState();
+  ConsumerState<PopupTimerEmailWidget> createState() => _PopupTimerEmailWidgetState();
 }
 
-class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
+class _PopupTimerEmailWidgetState extends ConsumerState<PopupTimerEmailWidget> {
   late PopupTimerEmailModel _model;
-  late final AuthProvider _authProvider = GetIt.instance<AuthProvider>();
-
-  // AuthProvider helper getters
-  bool get currentUserEmailVerified => _authProvider.currentUser?.isEmailVerified ?? false;
-  String? get currentUserEmail => _authProvider.currentUser?.email;
-  String get currentUserId => _authProvider.currentUserUid;
 
   @override
   void setState(VoidCallback callback) {
@@ -39,11 +34,6 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
   void initState() {
     super.initState();
     _model = createModel(context, () => PopupTimerEmailModel());
-
-    // AuthProvider 초기화 확인 (GetIt에서 가져온 Singleton)
-    if (!_authProvider.isInitialized) {
-      _authProvider.initialize();
-    }
 
     // On component load action.
     SchedulerBinding.instance.addPostFrameCallback((_) async {
@@ -272,7 +262,8 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                           ? null
                           : () async {
                               // 사용자 계정 삭제
-                              await _authProvider.deleteAccount();
+                              final accountManagementUseCase = ref.read(accountManagementUseCaseProvider);
+                              await accountManagementUseCase.deleteAccount();
 
                               Navigator.pop(context);
                               context.pushNamed(CreateAccountWidget.routeName);
@@ -323,10 +314,12 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                                 _model.timerController.onStartTimer();
 
                                 // 이메일 인증 재발송
-                                await _authProvider.sendEmailVerification();
+                                final emailVerificationUseCase = ref.read(emailVerificationUseCaseProvider);
+                                await emailVerificationUseCase.sendVerificationEmail();
                               } else {
                                 // 사용자 계정 삭제
-                                await _authProvider.deleteAccount();
+                                final accountManagementUseCase = ref.read(accountManagementUseCaseProvider);
+                                await accountManagementUseCase.deleteAccount();
 
                                 Navigator.pop(context);
                                 BotToast.showText(
@@ -396,7 +389,8 @@ class _PopupTimerEmailWidgetState extends State<PopupTimerEmailWidget> {
                 },
                 onEnded: () async {
                   // 시간 초과 - 사용자 계정 삭제
-                  await _authProvider.deleteAccount();
+                  final accountManagementUseCase = ref.read(accountManagementUseCaseProvider);
+                  await accountManagementUseCase.deleteAccount();
 
                   Navigator.pop(context);
                   context.pushNamed(StartPageWidget.routeName);

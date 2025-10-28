@@ -38,6 +38,9 @@ class VoteCardWidget extends ConsumerStatefulWidget {
     // Profile parameters for Phase 3
     this.senderDisplayName,
     this.senderProfileImageUrl,
+    // AspectRatio for smart layout
+    this.aspectRatioA,
+    this.aspectRatioB,
   });
 
   final String postId;
@@ -61,6 +64,10 @@ class VoteCardWidget extends ConsumerStatefulWidget {
   // Profile information
   final String? senderDisplayName;
   final String? senderProfileImageUrl;
+
+  // AspectRatio for smart layout
+  final double? aspectRatioA;
+  final double? aspectRatioB;
 
   @override
   ConsumerState<VoteCardWidget> createState() => _VoteCardWidgetState();
@@ -252,8 +259,8 @@ class _VoteCardWidgetState extends ConsumerState<VoteCardWidget> {
               : null,
           imageUrlsA: widget.optionAImages,
           imageUrlsB: widget.optionBImages,
-          aspectRatioA: null, // TODO: aspectRatio 전달 필요
-          aspectRatioB: null, // TODO: aspectRatio 전달 필요
+          aspectRatioA: widget.aspectRatioA,
+          aspectRatioB: widget.aspectRatioB,
           onVote: (option) async {
             if (widget.onVote != null) {
               await widget.onVote!(option);

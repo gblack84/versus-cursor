@@ -44,6 +44,7 @@ abstract class IVotingDialogRepository {
     required String voteOption,
     String? messageId,
     String? chatId,
+    String? eventId, // Idempotency를 위한 eventId (optional)
   });
 
   /// Remove a vote from a post

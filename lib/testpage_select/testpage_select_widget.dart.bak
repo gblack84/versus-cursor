@@ -1,0 +1,778 @@
+import '/core_exports.dart';
+import '/app/widgets/index.dart';
+import '/features/voting/presentation/dialogs/vote_ui_manager.dart';
+// import '/features/voting/domain/entities/dialog/vote_notification.dart'; // Removed - VoteNotification deleted
+// import '/features/voting/domain/entities/dialog/vote_options.dart'; // Removed - used with VoteNotification test
+import '/features/notifications/presentation/providers/notification_badge_provider.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'testpage_select_model.dart';
+export 'testpage_select_model.dart';
+
+class TestpageSelectWidget extends StatefulWidget {
+  const TestpageSelectWidget({super.key});
+
+  static String routeName = 'testpageSelect';
+  static String routePath = '/testpageSelect';
+
+  @override
+  State<TestpageSelectWidget> createState() => _TestpageSelectWidgetState();
+}
+
+class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
+  late TestpageSelectModel _model;
+
+  final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _model = createModel(context, () => TestpageSelectModel());
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _model.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      child: Scaffold(
+        key: scaffoldKey,
+        backgroundColor: Color(0xFFECECEC),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          automaticallyImplyLeading: true,
+          leading: InkWell(
+            splashColor: Colors.transparent,
+            focusColor: Colors.transparent,
+            hoverColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            onTap: () async {
+              context.pushNamed(LoginPageWidget.routeName);
+            },
+            child: Icon(
+              Icons.arrow_back,
+              color: Color(0xFF14181B),
+              size: 24.0,
+            ),
+          ),
+          title: Align(
+            alignment: AlignmentDirectional(-1.0, 1.0),
+            child: Text(
+              AppLocalizations.of(context).getText(
+                'rbd8xke9' /* versus space */,
+              ),
+              textAlign: TextAlign.end,
+              style: AppTheme.of(context).headlineSmall.override(
+                    font: GoogleFonts.plusJakartaSans(
+                      fontWeight: AppTheme.of(context).headlineSmall.fontWeight,
+                      fontStyle: AppTheme.of(context).headlineSmall.fontStyle,
+                    ),
+                    color: Colors.black,
+                    letterSpacing: 0.0,
+                    fontWeight: AppTheme.of(context).headlineSmall.fontWeight,
+                    fontStyle: AppTheme.of(context).headlineSmall.fontStyle,
+                  ),
+            ),
+          ),
+          actions: [
+            NotificationAppBarAction(
+              onPressed: () {
+                context.pushNamed('notificationsList');
+              },
+            ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8.0),
+              child: Image.asset(
+                'assets/images/versus-sign-black-white-symbol_679005-151@1x.png',
+                width: 100.0,
+                height: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ],
+          centerTitle: true,
+          elevation: 0.0,
+        ),
+        body: SafeArea(
+          top: true,
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: double.infinity,
+                height: 307.0,
+                decoration: BoxDecoration(),
+                child: Padding(
+                  padding: EdgeInsetsDirectional.fromSTEB(0.0, 30.0, 0.0, 0.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      Padding(
+                        padding:
+                            EdgeInsetsDirectional.fromSTEB(0.0, 20.0, 0.0, 0.0),
+                        child: Text(
+                          AppLocalizations.of(context).getText(
+                            'r6d1yxm7' /* Hello World */,
+                          ),
+                          style: AppTheme.of(context).headlineMedium.override(
+                                font: GoogleFonts.plusJakartaSans(
+                                  fontWeight: AppTheme.of(context)
+                                      .headlineMedium
+                                      .fontWeight,
+                                  fontStyle: AppTheme.of(context)
+                                      .headlineMedium
+                                      .fontStyle,
+                                ),
+                                color: Colors.black,
+                                letterSpacing: 0.0,
+                                fontWeight: AppTheme.of(context)
+                                    .headlineMedium
+                                    .fontWeight,
+                                fontStyle: AppTheme.of(context)
+                                    .headlineMedium
+                                    .fontStyle,
+                              ),
+                        ),
+                      ),
+                      Align(
+                        alignment: AlignmentDirectional(0.0, 0.0),
+                        child: Padding(
+                          padding: EdgeInsetsDirectional.fromSTEB(
+                              0.0, 40.0, 0.0, 0.0),
+                          child: Container(
+                            width: 521.0,
+                            height: 35.0,
+                            decoration: BoxDecoration(),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.max,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Wrap(
+                                  spacing: 5.0,
+                                  runSpacing: 0.0,
+                                  alignment: WrapAlignment.start,
+                                  crossAxisAlignment: WrapCrossAlignment.start,
+                                  direction: Axis.horizontal,
+                                  runAlignment: WrapAlignment.start,
+                                  verticalDirection: VerticalDirection.down,
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    AppButtonWidget(
+                                      onPressed: () {
+                                        print('Button pressed ...');
+                                      },
+                                      text:
+                                          AppLocalizations.of(context).getText(
+                                        'x79ae4w2' /* Button */,
+                                      ),
+                                      options: AppButtonOptions(
+                                        height: 30.0,
+                                        padding: EdgeInsetsDirectional.fromSTEB(
+                                            5.0, 0.0, 5.0, 0.0),
+                                        iconPadding:
+                                            EdgeInsetsDirectional.fromSTEB(
+                                                0.0, 0.0, 0.0, 0.0),
+                                        color: Color(0xFFB4B4B4),
+                                        textStyle: AppTheme.of(context)
+                                            .titleSmall
+                                            .override(
+                                              font: GoogleFonts.plusJakartaSans(
+                                                fontWeight: AppTheme.of(context)
+                                                    .titleSmall
+                                                    .fontWeight,
+                                                fontStyle: AppTheme.of(context)
+                                                    .titleSmall
+                                                    .fontStyle,
+                                              ),
+                                              letterSpacing: 0.0,
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
+                                            ),
+                                        elevation: 0.0,
+                                        borderRadius:
+                                            BorderRadius.circular(20.0),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ].cast<Widget>().divide(SizedBox(width: 4.0)),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: AlignmentDirectional(0.0, 0.0),
+                        child: Container(
+                          width: double.infinity,
+                          height: 35.0,
+                          decoration: BoxDecoration(),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.max,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Wrap(
+                                spacing: 5.0,
+                                runSpacing: 0.0,
+                                alignment: WrapAlignment.start,
+                                crossAxisAlignment: WrapCrossAlignment.start,
+                                direction: Axis.horizontal,
+                                runAlignment: WrapAlignment.start,
+                                verticalDirection: VerticalDirection.down,
+                                clipBehavior: Clip.none,
+                                children: [
+                                  AppButtonWidget(
+                                    onPressed: () async {
+                                      context
+                                          .pushNamed(LoginPageWidget.routeName);
+                                    },
+                                    text: AppLocalizations.of(context).getText(
+                                      'y5m4a7vm' /* login */,
+                                    ),
+                                    options: AppButtonOptions(
+                                      height: 30.0,
+                                      padding: EdgeInsetsDirectional.fromSTEB(
+                                          5.0, 0.0, 5.0, 0.0),
+                                      iconPadding:
+                                          EdgeInsetsDirectional.fromSTEB(
+                                              0.0, 0.0, 0.0, 0.0),
+                                      color: AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
+                                          .titleSmall
+                                          .override(
+                                            font: GoogleFonts.plusJakartaSans(
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
+                                            ),
+                                            color: Colors.white,
+                                            letterSpacing: 0.0,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
+                                          ),
+                                      elevation: 0.0,
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                  ),
+                                  AppButtonWidget(
+                                    onPressed: () async {
+                                      context.pushNamed(
+                                          CreateAccountWidget.routeName);
+                                    },
+                                    text: AppLocalizations.of(context).getText(
+                                      'df9krpqf' /* creat_ac */,
+                                    ),
+                                    options: AppButtonOptions(
+                                      height: 30.0,
+                                      padding: EdgeInsetsDirectional.fromSTEB(
+                                          5.0, 0.0, 5.0, 0.0),
+                                      iconPadding:
+                                          EdgeInsetsDirectional.fromSTEB(
+                                              0.0, 0.0, 0.0, 0.0),
+                                      color: AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
+                                          .titleSmall
+                                          .override(
+                                            font: GoogleFonts.plusJakartaSans(
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
+                                            ),
+                                            color: Colors.white,
+                                            letterSpacing: 0.0,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
+                                          ),
+                                      elevation: 0.0,
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                  ),
+                                  AppButtonWidget(
+                                    onPressed: () async {
+                                      context.pushNamed(
+                                          ForgotPasswordWidget.routeName);
+                                    },
+                                    text: AppLocalizations.of(context).getText(
+                                      'unrhe499' /* forgot_ps */,
+                                    ),
+                                    options: AppButtonOptions(
+                                      height: 30.0,
+                                      padding: EdgeInsetsDirectional.fromSTEB(
+                                          5.0, 0.0, 5.0, 0.0),
+                                      iconPadding:
+                                          EdgeInsetsDirectional.fromSTEB(
+                                              0.0, 0.0, 0.0, 0.0),
+                                      color: AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
+                                          .titleSmall
+                                          .override(
+                                            font: GoogleFonts.plusJakartaSans(
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
+                                            ),
+                                            color: Colors.white,
+                                            letterSpacing: 0.0,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
+                                          ),
+                                      elevation: 0.0,
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                  ),
+                                  AppButtonWidget(
+                                    onPressed: () async {
+                                      context.pushNamed(
+                                          UserInfoInputWidget.routeName);
+                                    },
+                                    text: AppLocalizations.of(context).getText(
+                                      'd4vvfi1v' /* user_info
+ */
+                                      ,
+                                    ),
+                                    options: AppButtonOptions(
+                                      height: 30.0,
+                                      padding: EdgeInsetsDirectional.fromSTEB(
+                                          5.0, 0.0, 5.0, 0.0),
+                                      iconPadding:
+                                          EdgeInsetsDirectional.fromSTEB(
+                                              0.0, 0.0, 0.0, 0.0),
+                                      color: AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
+                                          .titleSmall
+                                          .override(
+                                            font: GoogleFonts.plusJakartaSans(
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
+                                            ),
+                                            color: Colors.white,
+                                            letterSpacing: 0.0,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
+                                          ),
+                                      elevation: 0.0,
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                  ),
+                                  AppButtonWidget(
+                                    onPressed: () async {
+                                      context.pushNamed(
+                                          ExpertiseSelectWidget.routeName);
+                                    },
+                                    text: AppLocalizations.of(context).getText(
+                                      'e17ogwad' /* jopselect
+ */
+                                      ,
+                                    ),
+                                    options: AppButtonOptions(
+                                      height: 30.0,
+                                      padding: EdgeInsetsDirectional.fromSTEB(
+                                          5.0, 0.0, 5.0, 0.0),
+                                      iconPadding:
+                                          EdgeInsetsDirectional.fromSTEB(
+                                              0.0, 0.0, 0.0, 0.0),
+                                      color: AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
+                                          .titleSmall
+                                          .override(
+                                            font: GoogleFonts.plusJakartaSans(
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
+                                            ),
+                                            color: Colors.white,
+                                            letterSpacing: 0.0,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
+                                          ),
+                                      elevation: 0.0,
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ].cast<Widget>().divide(SizedBox(width: 4.0)),
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: AlignmentDirectional(0.0, 0.0),
+                        child: Container(
+                          width: double.infinity,
+                          height: 35.0,
+                          decoration: BoxDecoration(),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.max,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Wrap(
+                                spacing: 5.0,
+                                runSpacing: 0.0,
+                                alignment: WrapAlignment.start,
+                                crossAxisAlignment: WrapCrossAlignment.start,
+                                direction: Axis.horizontal,
+                                runAlignment: WrapAlignment.start,
+                                verticalDirection: VerticalDirection.down,
+                                clipBehavior: Clip.none,
+                                children: [
+                                  AppButtonWidget(
+                                    onPressed: () async {
+                                      context.pushNamed('testalgoria');
+                                    },
+                                    text: AppLocalizations.of(context).getText(
+                                      '4ffxgxck' /* testalgolia
+ */
+                                      ,
+                                    ),
+                                    options: AppButtonOptions(
+                                      height: 30.0,
+                                      padding: EdgeInsetsDirectional.fromSTEB(
+                                          5.0, 0.0, 5.0, 0.0),
+                                      iconPadding:
+                                          EdgeInsetsDirectional.fromSTEB(
+                                              0.0, 0.0, 0.0, 0.0),
+                                      color: AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
+                                          .titleSmall
+                                          .override(
+                                            font: GoogleFonts.plusJakartaSans(
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
+                                            ),
+                                            color: Colors.white,
+                                            letterSpacing: 0.0,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
+                                          ),
+                                      elevation: 0.0,
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                  ),
+                                  AppButtonWidget(
+                                    onPressed: () async {
+                                      context
+                                          .pushNamed(StartPageWidget.routeName);
+                                    },
+                                    text: AppLocalizations.of(context).getText(
+                                      '87ap5nug' /* start */,
+                                    ),
+                                    options: AppButtonOptions(
+                                      height: 30.0,
+                                      padding: EdgeInsetsDirectional.fromSTEB(
+                                          5.0, 0.0, 5.0, 0.0),
+                                      iconPadding:
+                                          EdgeInsetsDirectional.fromSTEB(
+                                              0.0, 0.0, 0.0, 0.0),
+                                      color: AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
+                                          .titleSmall
+                                          .override(
+                                            font: GoogleFonts.plusJakartaSans(
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
+                                            ),
+                                            color: Colors.white,
+                                            letterSpacing: 0.0,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
+                                          ),
+                                      elevation: 0.0,
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ].cast<Widget>().divide(SizedBox(width: 4.0)),
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: AlignmentDirectional(0.0, 0.0),
+                        child: Container(
+                          width: double.infinity,
+                          height: 35.0,
+                          decoration: BoxDecoration(),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.max,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Wrap(
+                                spacing: 5.0,
+                                runSpacing: 0.0,
+                                alignment: WrapAlignment.start,
+                                crossAxisAlignment: WrapCrossAlignment.start,
+                                direction: Axis.horizontal,
+                                runAlignment: WrapAlignment.start,
+                                verticalDirection: VerticalDirection.down,
+                                clipBehavior: Clip.none,
+                                children: [
+                                  AppButtonWidget(
+                                    onPressed: () {
+                                      print('phonelogin pressed ...');
+                                    },
+                                    text: AppLocalizations.of(context).getText(
+                                      'oadbd0gy' /* phonelogin */,
+                                    ),
+                                    options: AppButtonOptions(
+                                      height: 30.0,
+                                      padding: EdgeInsetsDirectional.fromSTEB(
+                                          5.0, 0.0, 5.0, 0.0),
+                                      iconPadding:
+                                          EdgeInsetsDirectional.fromSTEB(
+                                              0.0, 0.0, 0.0, 0.0),
+                                      color: AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
+                                          .titleSmall
+                                          .override(
+                                            font: GoogleFonts.plusJakartaSans(
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
+                                            ),
+                                            color: Colors.white,
+                                            letterSpacing: 0.0,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
+                                          ),
+                                      elevation: 0.0,
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                  ),
+                                  AppButtonWidget(
+                                    onPressed: () async {
+                                      context.pushNamed(
+                                          CreatePostScreen.routeName);
+                                    },
+                                    text: AppLocalizations.of(context).getText(
+                                      'un1ogy5i' /* image */,
+                                    ),
+                                    options: AppButtonOptions(
+                                      height: 30.0,
+                                      padding: EdgeInsetsDirectional.fromSTEB(
+                                          5.0, 0.0, 5.0, 0.0),
+                                      iconPadding:
+                                          EdgeInsetsDirectional.fromSTEB(
+                                              0.0, 0.0, 0.0, 0.0),
+                                      color: AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
+                                          .titleSmall
+                                          .override(
+                                            font: GoogleFonts.plusJakartaSans(
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
+                                            ),
+                                            color: Colors.white,
+                                            letterSpacing: 0.0,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
+                                          ),
+                                      elevation: 0.0,
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                  ),
+                                  AppButtonWidget(
+                                    onPressed: () {
+                                      VoteUIManager.instance.showVotingNotification(
+                                        context: context,
+                                        notification: VoteNotification(
+                                          id: 'test-notification',
+                                          userId: 'test-user',
+                                          createdAt: DateTime.now(),
+                                          isRead: false,
+                                          title: '새로운 투표',
+                                          content: '어떤 스마트폰을 선호하시나요?',
+                                          postId: 'test-post',
+                                          postTitle: '스마트폰 투표',
+                                          postContent: '어떤 스마트폰을 선호하시나요?',
+                                          voteOptions: VoteOptions(
+                                            optionATitle: 'iPhone 15 Pro',
+                                            optionBTitle: 'Galaxy S24 Ultra',
+                                          ),
+                                          voteStartTime: DateTime.now(),
+                                          voteEndTime: DateTime.now().add(Duration(minutes: 10)),
+                                        ),
+                                        question: '어떤 스마트폰을 선호하시나요?',
+                                        optionA: 'iPhone 15 Pro',
+                                        optionB: 'Galaxy S24 Ultra',
+                                        imageUrlA: 'https://picsum.photos/200/200?random=1',
+                                        imageUrlB: 'https://picsum.photos/200/200?random=2',
+                                        onVote: (option) async {
+                                          print('투표 완료: $option 선택됨!');
+                                        },
+                                        onDismiss: (hasVoted) {
+                                          print('다이얼로그 닫힘. 투표 여부: $hasVoted');
+                                        },
+                                      );
+                                    },
+                                    text: '투표테스트',
+                                    options: AppButtonOptions(
+                                      height: 30.0,
+                                      padding: EdgeInsetsDirectional.fromSTEB(
+                                          5.0, 0.0, 5.0, 0.0),
+                                      iconPadding:
+                                          EdgeInsetsDirectional.fromSTEB(
+                                              0.0, 0.0, 0.0, 0.0),
+                                      color: Color(0xFFFF6B6B), // 다른 색상으로 구분
+                                      textStyle: AppTheme.of(context)
+                                          .titleSmall
+                                          .override(
+                                            font: GoogleFonts.plusJakartaSans(
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
+                                            ),
+                                            color: Colors.white,
+                                            letterSpacing: 0.0,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
+                                          ),
+                                      elevation: 0.0,
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                  ),
+                                  AppButtonWidget(
+                                    onPressed: () {
+                                      print('Button pressed ...');
+                                    },
+                                    text: AppLocalizations.of(context).getText(
+                                      'ln1qokjg' /* Button */,
+                                    ),
+                                    options: AppButtonOptions(
+                                      height: 30.0,
+                                      padding: EdgeInsetsDirectional.fromSTEB(
+                                          5.0, 0.0, 5.0, 0.0),
+                                      iconPadding:
+                                          EdgeInsetsDirectional.fromSTEB(
+                                              0.0, 0.0, 0.0, 0.0),
+                                      color: AppTheme.of(context).primary,
+                                      textStyle: AppTheme.of(context)
+                                          .titleSmall
+                                          .override(
+                                            font: GoogleFonts.plusJakartaSans(
+                                              fontWeight: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontWeight,
+                                              fontStyle: AppTheme.of(context)
+                                                  .titleSmall
+                                                  .fontStyle,
+                                            ),
+                                            color: Colors.white,
+                                            letterSpacing: 0.0,
+                                            fontWeight: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .titleSmall
+                                                .fontStyle,
+                                          ),
+                                      elevation: 0.0,
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ].cast<Widget>().divide(SizedBox(width: 4.0)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

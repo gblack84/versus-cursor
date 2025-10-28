@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 import '../../domain/repositories/i_voting_dialog_repository.dart';
 import '../../domain/failures/voting_failure.dart';
 import '../../domain/entities/dialog/vote_expansion_request.dart';
@@ -10,6 +11,8 @@ import '../extensions/firestore_error_extensions.dart';
 import '../extensions/vote_expansion_request_extensions.dart';
 import '../extensions/weight_extensions.dart';
 import '../extensions/vote_extensions.dart';
+import '../../../../core/utils/idempotency_service.dart';
+import '../../../../core/utils/shard_utils.dart';
 
 /// Implementation of Dialog voting repository
 ///
@@ -32,12 +35,19 @@ import '../extensions/vote_extensions.dart';
 class VotingDialogRepositoryImpl implements IVotingDialogRepository {
   final FirebaseFirestore _firestore;
   final IVotingLocalDataSource _localDataSource;
+  final IdempotencyService _idempotencyService;
+  final ShardUtils _shardUtils;
 
   VotingDialogRepositoryImpl({
     required FirebaseFirestore firestore,
     required IVotingLocalDataSource localDataSource,
+    IdempotencyService? idempotencyService,
+    ShardUtils? shardUtils,
   })  : _firestore = firestore,
-        _localDataSource = localDataSource;
+        _localDataSource = localDataSource,
+        _idempotencyService =
+            idempotencyService ?? IdempotencyService(firestore: firestore),
+        _shardUtils = shardUtils ?? ShardUtils(firestore: firestore);
 
   // ============================================================================
   // Basic Vote Operations (CRUD)
@@ -50,77 +60,115 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
     required String voteOption,
     String? messageId,
     String? chatId,
+    String? eventId, // 🆕 Idempotency를 위한 eventId
   }) async {
     try {
+      // eventId가 없으면 자동 생성
+      final actualEventId = eventId ?? const Uuid().v4();
+
       if (kDebugMode) {
-        print('[DialogRepo] castVote started: postId=$postId, choice=$voteOption');
+        print(
+            '[DialogRepo] castVote started: postId=$postId, choice=$voteOption, eventId=$actualEventId');
       }
 
-      // ✅ Firebase Transaction으로 atomic 업데이트 (중복 투표 방지)
-      await _firestore.runTransaction((transaction) async {
-        // 1. Posts 업데이트
-        final postRef = _firestore.collection('posts').doc(postId);
-        final postDoc = await transaction.get(postRef);
+      // ✅ Idempotency + Sharded Counter 적용
+      await _idempotencyService.executeIdempotent<void>(
+        entityType: 'votes',
+        entityId: postId,
+        userId: userId,
+        eventId: actualEventId,
+        operation: (transaction) async {
+          // 1. Posts 업데이트
+          final postRef = _firestore.collection('posts').doc(postId);
+          final postDoc = await transaction.get(postRef);
 
-        if (!postDoc.exists) {
-          throw Exception('게시물을 찾을 수 없습니다');
-        }
-
-        // 중복 투표 확인 (Transaction 내부에서 안전)
-        final postData = postDoc.data() as Map<String, dynamic>;
-        final votedUsersA = List<String>.from(postData['votedUserIDsA'] ?? []);
-        final votedUsersB = List<String>.from(postData['votedUserIDsB'] ?? []);
-
-        if (votedUsersA.contains(userId) || votedUsersB.contains(userId)) {
-          throw Exception('이미 투표하셨습니다');
-        }
-
-        // 투표 필드 업데이트 (atomic)
-        final updates = <String, dynamic>{
-          'votedUserIDs$voteOption': FieldValue.arrayUnion([userId]),
-          'votes$voteOption': FieldValue.increment(1),
-          'totalVotes': FieldValue.increment(1),
-          'lastVoteAt': FieldValue.serverTimestamp(),
-        };
-
-        transaction.update(postRef, updates);
-
-        // 1.5 votes 서브컬렉션에 투표 문서 생성
-        final voteRef = postRef.collection('votes').doc();
-        transaction.set(voteRef, {
-          'user': _firestore.doc('users/$userId'),
-          'option': voteOption,
-          'createdAt': FieldValue.serverTimestamp(),
-          'fromChat': messageId != null && chatId != null,
-        });
-
-        // 2. Messages 업데이트 (있는 경우)
-        if (messageId != null && chatId != null) {
-          final messageRef = _firestore
-              .collection('chats')
-              .doc(chatId)
-              .collection('messages')
-              .doc(messageId);
-
-          final messageDoc = await transaction.get(messageRef);
-
-          if (messageDoc.exists) {
-            transaction.update(messageRef, {
-              'userVotes.$userId': {
-                'option': voteOption,
-                'votedAt': FieldValue.serverTimestamp(),
-              },
-              'lastVoteUpdate': FieldValue.serverTimestamp(),
-            });
+          if (!postDoc.exists) {
+            throw Exception('게시물을 찾을 수 없습니다');
           }
-        }
-      });
+
+          // 중복 투표 확인 (Transaction 내부에서 안전)
+          // Note: IdempotencyService가 이미 eventId 기반 체크를 했지만,
+          // 배열 중복도 확인 (backward compatibility)
+          final postData = postDoc.data() as Map<String, dynamic>;
+          final votedUsersA =
+              List<String>.from(postData['votedUserIDsA'] ?? []);
+          final votedUsersB =
+              List<String>.from(postData['votedUserIDsB'] ?? []);
+
+          if (votedUsersA.contains(userId) ||
+              votedUsersB.contains(userId)) {
+            throw Exception('이미 투표하셨습니다');
+          }
+
+          // 투표 필드 업데이트 (Backward Compatibility)
+          final updates = <String, dynamic>{
+            'votedUserIDs$voteOption': FieldValue.arrayUnion([userId]),
+            'lastVoteAt': FieldValue.serverTimestamp(),
+          };
+
+          transaction.update(postRef, updates);
+
+          // ✨ Sharded Counter 증가
+          final field = 'votes$voteOption';
+          _shardUtils.incrementShard(
+            transaction,
+            counterType: 'vote',
+            entityId: postId,
+            userId: userId,
+            field: field,
+          );
+          _shardUtils.incrementShard(
+            transaction,
+            counterType: 'vote',
+            entityId: postId,
+            userId: userId,
+            field: 'totalVotes',
+          );
+
+          // 1.5 votes 서브컬렉션에 투표 문서 생성
+          final voteRef = postRef.collection('votes').doc(userId);
+          transaction.set(voteRef, {
+            'user': _firestore.doc('users/$userId'),
+            'option': voteOption,
+            'eventId': actualEventId,
+            'createdAt': FieldValue.serverTimestamp(),
+            'fromChat': messageId != null && chatId != null,
+          });
+
+          // 2. Messages 업데이트 (있는 경우)
+          if (messageId != null && chatId != null) {
+            final messageRef = _firestore
+                .collection('chats')
+                .doc(chatId)
+                .collection('messages')
+                .doc(messageId);
+
+            final messageDoc = await transaction.get(messageRef);
+
+            if (messageDoc.exists) {
+              transaction.update(messageRef, {
+                'userVotes.$userId': {
+                  'option': voteOption,
+                  'votedAt': FieldValue.serverTimestamp(),
+                },
+                'lastVoteUpdate': FieldValue.serverTimestamp(),
+              });
+            }
+          }
+        },
+      );
 
       if (kDebugMode) {
-        print('[DialogRepo] castVote success: postId=$postId, choice=$voteOption');
+        print(
+            '[DialogRepo] castVote success: postId=$postId, choice=$voteOption');
       }
 
       return const Right(null);
+    } on IdempotencyViolation catch (e) {
+      if (kDebugMode) {
+        print('[DialogRepo] Idempotency violation: $e');
+      }
+      return const Left(AlreadyVoted());
     } on FirebaseException catch (e) {
       if (kDebugMode) {
         print('[DialogRepo] castVote Firebase error: $e');

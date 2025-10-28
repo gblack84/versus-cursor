@@ -28,7 +28,12 @@ abstract class IContentMetricsRepository {
   Stream<List<PopularContent>> getPopularByCategory(String category, {int limit = 10});
 
   /// Record user interaction
-  Future<void> recordInteraction(String contentId, String userId, InteractionType type);
+  Future<void> recordInteraction(
+    String contentId,
+    String userId,
+    InteractionType type, {
+    String? eventId, // Idempotency를 위한 eventId (optional)
+  });
 
   /// Get interaction history
   Future<List<UserInteraction>> getInteractionHistory(String contentId, String userId);

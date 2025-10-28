@@ -86,6 +86,8 @@ class ChatMessageBuilder {
           senderDisplayName: metadata['authorName'] ?? '사용자',
           senderProfileImageUrl: metadata['authorPhotoUrl'],
           searchQuery: isSearching ? searchQuery : null,
+          aspectRatioA: aspectRatioA,
+          aspectRatioB: aspectRatioB,
         ),
       );
 

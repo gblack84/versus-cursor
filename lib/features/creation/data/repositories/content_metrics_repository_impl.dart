@@ -1,15 +1,25 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
 import '../../domain/repositories/specialized/i_metrics_repository.dart';
+import '../../../../core/utils/idempotency_service.dart';
+import '../../../../core/utils/shard_utils.dart';
 
 /// Implementation of content metrics repository
 /// CQRS 패턴 - Query 모델로 읽기 전용 통계 관리 구현체
 class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
   final FirebaseFirestore _firestore;
+  final IdempotencyService _idempotencyService;
+  final ShardUtils _shardUtils;
   static const String _collection = 'posts';
 
   ContentMetricsRepositoryImpl({
     FirebaseFirestore? firestore,
-  }) : _firestore = firestore ?? FirebaseFirestore.instance;
+    IdempotencyService? idempotencyService,
+    ShardUtils? shardUtils,
+  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+        _idempotencyService =
+            idempotencyService ?? IdempotencyService(firestore: firestore ?? FirebaseFirestore.instance),
+        _shardUtils = shardUtils ?? ShardUtils(firestore: firestore ?? FirebaseFirestore.instance);
 
   CollectionReference get _postsCollection =>
       _firestore.collection(_collection);
@@ -165,29 +175,43 @@ class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
   Future<void> recordInteraction(
     String contentId,
     String userId,
-    InteractionType type,
-  ) async {
+    InteractionType type, {
+    String? eventId, // 🆕 Idempotency
+  }) async {
     try {
-      final batch = _firestore.batch();
-      final postRef = _postsCollection.doc(contentId);
+      final actualEventId = eventId ?? const Uuid().v4();
 
-      // Update interaction count
-      final statField = _getStatFieldForInteraction(type);
-      if (statField != null) {
-        batch.update(postRef, {
-          'stats.$statField': FieldValue.increment(1),
-        });
-      }
+      // ✅ Idempotency + Sharded Counter 적용
+      await _idempotencyService.executeIdempotent<void>(
+        entityType: 'interactions',
+        entityId: contentId,
+        userId: userId,
+        eventId: actualEventId,
+        operation: (transaction) async {
+          final postRef = _postsCollection.doc(contentId);
 
-      // Record interaction in subcollection
-      final interactionRef = postRef.collection('interactions').doc();
-      batch.set(interactionRef, {
-        'userId': userId,
-        'type': type.toString().split('.').last,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
+          // ✨ Sharded Counter 증가
+          final statField = _getStatFieldForInteraction(type);
+          if (statField != null) {
+            _shardUtils.incrementShard(
+              transaction,
+              counterType: 'interaction',
+              entityId: contentId,
+              userId: userId,
+              field: statField,
+            );
+          }
 
-      await batch.commit();
+          // Record interaction in subcollection
+          final interactionRef = postRef.collection('interactions').doc(userId);
+          transaction.set(interactionRef, {
+            'userId': userId,
+            'type': type.toString().split('.').last,
+            'eventId': actualEventId,
+            'timestamp': FieldValue.serverTimestamp(),
+          });
+        },
+      );
     } catch (e) {
       throw Exception('Failed to record interaction: $e');
     }

@@ -27,23 +27,45 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == resource.data.uid;
     }
 
+    // ============================================================================
+    // 🆕 Idempotency & Sharded Counter 시스템 (Server-Only)
+    // ============================================================================
+
+    // Idempotency 컬렉션 (Server-only)
+    // IdempotencyService가 중복 방지를 위해 사용
+    match /idempotency/{document} {
+      allow read: if false;
+      allow write: if false;
+    }
+
+    // Counters 컬렉션 (Server-only)
+    // ShardUtils가 샤드 카운터를 관리
+    // Cloud Function (incrementCounter)만 접근 가능
+    match /counters/{counterId}/shards/{shardId} {
+      allow read: if false;
+      allow write: if false;
+    }
+
+    // ============================================================================
+    // Posts 컬렉션
+    // ============================================================================
+
     match /posts/{postId} {
       allow create: if true;
       allow read: if true;
       allow update: if request.auth != null && (
-        // 투표 필드와 타이머 관련 필드 업데이트 허용
+        // 클라이언트가 업데이트 가능한 필드만 허용
+        // ⚠️ 카운터 필드는 제외 (votesA, votesB, totalVotes, counterLastUpdated)
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['votedUserIDsA', 'votedUserIDsB', 'votesA', 'votesB', 'voteCountA', 'voteCountB', 
-                    'totalVotes', 'lastVoteAt', 'timerStartedAt', 'timerExpiryAt', 'voteRequestStatus',
+          .hasOnly(['votedUserIDsA', 'votedUserIDsB', 'lastVoteAt',
+                    'timerStartedAt', 'timerExpiryAt', 'voteRequestStatus',
                     // AI 채팅 투표 관련 필드
                     'voteStartTime', 'voteEndTime', 'voteStatus', 'voteCompleted',
                     'voteCompletedAt', 'voteCancelledAt', 'voteCancelledReason',
                     // 알림 관련 필드
                     'notificationsSent', 'notificationsSentAt',
                     // 표시용 투표 수 (증폭된 수)
-                    'displayVotesA', 'displayVotesB', 'displayPercentA', 'displayPercentB',
-                    // 실제 투표 수
-                    'actualVotesA', 'actualVotesB', 'actualTotalVotes'])
+                    'displayVotesA', 'displayVotesB', 'displayPercentA', 'displayPercentB'])
         // 중복 투표 방지 (필드가 존재하는 경우에만 확인)
         && (
           (!('votedUserIDsA' in resource.data) || !(request.auth.uid in resource.data.votedUserIDsA))
@@ -76,11 +98,11 @@ service cloud.firestore {
     }
 
     match /posts/{parent}/votes/{document} {
-      allow create: if request.auth != null 
+      allow create: if request.auth != null
         && request.auth.uid != null
         && request.resource.data.user == /databases/$(database)/documents/users/$(request.auth.uid)
         && request.resource.data.keys().hasAll(['user', 'option', 'createdAt'])
-        && request.resource.data.keys().hasOnly(['user', 'option', 'createdAt', 'fromChat']);
+        && request.resource.data.keys().hasOnly(['user', 'option', 'createdAt', 'eventId', 'fromChat']);
       allow read: if true;
       allow write: if false;
       allow delete: if false;

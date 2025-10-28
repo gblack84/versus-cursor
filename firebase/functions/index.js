@@ -29,6 +29,9 @@ const { onMessageCreated } = require('./functions/firestore/onMessageCreated');
 // Scheduled 함수
 const { flushThrottleQueue } = require('./functions/scheduled/flushThrottleQueue');
 
+// Counter 함수
+const { incrementCounter } = require('./counters/incrementCounter');
+
 // 기존 함수들 (아직 이동되지 않은 경우 - 향후 제거 예정)
 const { getUserPostingHistory } = require('./ai/userHistoryAnalyzer');
 
@@ -59,7 +62,10 @@ module.exports = {
   
   // Scheduled
   flushThrottleQueue,
-  
+
+  // Counters
+  incrementCounter,
+
   // AI (임시)
   getUserPostingHistory
 };

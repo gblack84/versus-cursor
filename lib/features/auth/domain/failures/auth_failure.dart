@@ -1,126 +1,90 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import '/core/errors/failures.dart';
+
+part 'auth_failure.freezed.dart';
 
 /// Authentication Failure
 ///
 /// Domain Layer - 인증 관련 실패 케이스 정의
-/// Sealed Class for Functional Error Handling
+/// Freezed Sealed Class for Functional Error Handling
 ///
-/// **Clean Architecture v4.0 - Failure Pattern**:
-/// - Sealed Class 패턴으로 타입 안전성 보장
-/// - Core Failure 상속으로 Result<T> 호환성 확보
-/// - Pattern Matching으로 누락 케이스 컴파일 체크
-/// - 중앙 집중식 에러 메시지 관리
-sealed class AuthFailure extends Failure {
-  const AuthFailure() : super(message: '');
+/// **Clean Architecture v4.0 - Freezed Pattern**:
+/// - Freezed로 자동 생성되는 불변 Failure 클래스
+/// - when/map 메서드로 패턴 매칭 지원
+/// - copyWith, ==, hashCode 자동 구현
+/// - Core Failure 인터페이스 구현으로 Result<T> 호환성 확보
+@freezed
+sealed class AuthFailure with _$AuthFailure implements Failure {
+  const AuthFailure._();
 
-  /// Convert to user-friendly message (Override Failure.message)
+  // Equatable implementation (required by Failure interface)
+  @override
+  List<Object?> get props => [message, code];
+
+  @override
+  String? get code => null;
+
+  @override
+  bool? get stringify => true;
+
+  // Email & Password errors
+  const factory AuthFailure.invalidEmail() = InvalidEmail;
+  const factory AuthFailure.weakPassword() = WeakPassword;
+  const factory AuthFailure.emailAlreadyInUse() = EmailAlreadyInUse;
+  const factory AuthFailure.invalidCredentials() = InvalidCredentials;
+
+  // Phone auth errors
+  const factory AuthFailure.invalidPhoneNumber() = InvalidPhoneNumber;
+  const factory AuthFailure.invalidSmsCode() = InvalidSmsCode;
+  const factory AuthFailure.smsCodeExpired() = SmsCodeExpired;
+
+  // Social auth errors
+  const factory AuthFailure.cancelledByUser() = CancelledByUser;
+  const factory AuthFailure.socialSignInFailed() = SocialSignInFailed;
+
+  // Network errors
+  const factory AuthFailure.networkError() = NetworkError;
+  const factory AuthFailure.serverError() = ServerError;
+
+  // User state errors
+  const factory AuthFailure.userNotFound() = UserNotFound;
+  const factory AuthFailure.userDisabled() = UserDisabled;
+  const factory AuthFailure.emailNotVerified() = EmailNotVerified;
+
+  // Permission errors
+  const factory AuthFailure.insufficientPermission() = InsufficientPermission;
+  const factory AuthFailure.requiresRecentLogin() = RequiresRecentLogin;
+
+  // Profile errors
+  const factory AuthFailure.userNameAlreadyTaken() = UserNameAlreadyTaken;
+  const factory AuthFailure.profileIncomplete() = ProfileIncomplete;
+
+  // Generic error
+  const factory AuthFailure.unexpected([String? errorMessage]) = Unexpected;
+
+  /// Convert to user-friendly message (Implements Failure.message)
   @override
   String get message {
-    return switch (this) {
-      InvalidEmail() => '이메일 형식이 올바르지 않습니다',
-      WeakPassword() => '비밀번호가 너무 약합니다',
-      EmailAlreadyInUse() => '이미 사용 중인 이메일입니다',
-      InvalidCredentials() => '이메일 또는 비밀번호가 틀렸습니다',
-      InvalidPhoneNumber() => '전화번호 형식이 올바르지 않습니다',
-      InvalidSmsCode() => 'SMS 인증 코드가 올바르지 않습니다',
-      SmsCodeExpired() => 'SMS 인증 코드가 만료되었습니다',
-      CancelledByUser() => '사용자가 로그인을 취소했습니다',
-      SocialSignInFailed() => '소셜 로그인에 실패했습니다',
-      NetworkError() => '네트워크 연결 오류가 발생했습니다',
-      ServerError() => '서버 오류가 발생했습니다',
-      UserNotFound() => '사용자를 찾을 수 없습니다',
-      UserDisabled() => '사용자 계정이 비활성화되었습니다',
-      EmailNotVerified() => '이메일이 인증되지 않았습니다',
-      InsufficientPermission() => '권한이 부족합니다',
-      RequiresRecentLogin() => '계속하려면 다시 로그인해주세요',
-      UserNameAlreadyTaken() => '이미 사용 중인 사용자 이름입니다',
-      ProfileIncomplete() => '프로필이 완성되지 않았습니다',
-      Unexpected(:final errorMessage) => errorMessage ?? '알 수 없는 오류가 발생했습니다',
-    };
+    return when(
+      invalidEmail: () => '이메일 형식이 올바르지 않습니다',
+      weakPassword: () => '비밀번호가 너무 약합니다',
+      emailAlreadyInUse: () => '이미 사용 중인 이메일입니다',
+      invalidCredentials: () => '이메일 또는 비밀번호가 틀렸습니다',
+      invalidPhoneNumber: () => '전화번호 형식이 올바르지 않습니다',
+      invalidSmsCode: () => 'SMS 인증 코드가 올바르지 않습니다',
+      smsCodeExpired: () => 'SMS 인증 코드가 만료되었습니다',
+      cancelledByUser: () => '사용자가 로그인을 취소했습니다',
+      socialSignInFailed: () => '소셜 로그인에 실패했습니다',
+      networkError: () => '네트워크 연결 오류가 발생했습니다',
+      serverError: () => '서버 오류가 발생했습니다',
+      userNotFound: () => '사용자를 찾을 수 없습니다',
+      userDisabled: () => '사용자 계정이 비활성화되었습니다',
+      emailNotVerified: () => '이메일이 인증되지 않았습니다',
+      insufficientPermission: () => '권한이 부족합니다',
+      requiresRecentLogin: () => '계속하려면 다시 로그인해주세요',
+      userNameAlreadyTaken: () => '이미 사용 중인 사용자 이름입니다',
+      profileIncomplete: () => '프로필이 완성되지 않았습니다',
+      unexpected: (errorMessage) => errorMessage ?? '알 수 없는 오류가 발생했습니다',
+    );
   }
-}
-
-// Email & Password errors
-class InvalidEmail extends AuthFailure {
-  const InvalidEmail() : super();
-}
-
-class WeakPassword extends AuthFailure {
-  const WeakPassword() : super();
-}
-
-class EmailAlreadyInUse extends AuthFailure {
-  const EmailAlreadyInUse() : super();
-}
-
-class InvalidCredentials extends AuthFailure {
-  const InvalidCredentials() : super();
-}
-
-// Phone auth errors
-class InvalidPhoneNumber extends AuthFailure {
-  const InvalidPhoneNumber() : super();
-}
-
-class InvalidSmsCode extends AuthFailure {
-  const InvalidSmsCode() : super();
-}
-
-class SmsCodeExpired extends AuthFailure {
-  const SmsCodeExpired() : super();
-}
-
-// Social auth errors
-class CancelledByUser extends AuthFailure {
-  const CancelledByUser() : super();
-}
-
-class SocialSignInFailed extends AuthFailure {
-  const SocialSignInFailed() : super();
-}
-
-// Network errors
-class NetworkError extends AuthFailure {
-  const NetworkError() : super();
-}
-
-class ServerError extends AuthFailure {
-  const ServerError() : super();
-}
-
-// User state errors
-class UserNotFound extends AuthFailure {
-  const UserNotFound() : super();
-}
-
-class UserDisabled extends AuthFailure {
-  const UserDisabled() : super();
-}
-
-class EmailNotVerified extends AuthFailure {
-  const EmailNotVerified() : super();
-}
-
-// Permission errors
-class InsufficientPermission extends AuthFailure {
-  const InsufficientPermission() : super();
-}
-
-class RequiresRecentLogin extends AuthFailure {
-  const RequiresRecentLogin() : super();
-}
-
-// Profile errors
-class UserNameAlreadyTaken extends AuthFailure {
-  const UserNameAlreadyTaken() : super();
-}
-
-class ProfileIncomplete extends AuthFailure {
-  const ProfileIncomplete() : super();
-}
-
-// Generic error
-class Unexpected extends AuthFailure {
-  final String? errorMessage;
-  const Unexpected([this.errorMessage]) : super();
 }

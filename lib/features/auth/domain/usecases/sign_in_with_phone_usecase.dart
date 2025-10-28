@@ -1,8 +1,8 @@
 // Sign In With Phone UseCase
 // Clean Architecture - Domain Layer
 
+import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
-import '/core/types/result.dart';
 import '../entities/auth_user.dart';
 import '../repositories/i_auth_repository.dart';
 import '../failures/auth_failure.dart';
@@ -16,9 +16,10 @@ import '../failures/auth_failure.dart';
 /// - Phone account creation
 /// - OTP resending with rate limiting
 ///
-/// **Clean Architecture v4.0 - Result Pattern**:
-/// - Returns Result<T> for type-safe error handling
+/// **Clean Architecture v4.0 - Either Pattern**:
+/// - Returns Either<AuthFailure, T> for functional error handling
 /// - Automatic Korean error messages via AuthFailure
+/// - Consistent with Voting feature architecture
 class SignInWithPhoneUseCase {
   final IAuthRepository _repository;
 
@@ -34,21 +35,21 @@ class SignInWithPhoneUseCase {
 
   /// Send SMS OTP
   ///
-  /// Returns Result<void> with typed failures
-  Future<Result<void>> sendOtp(String phoneNumber) async {
+  /// Returns Either<AuthFailure, Unit> with typed failures
+  Future<Either<AuthFailure, Unit>> sendOtp(String phoneNumber) async {
     try {
       debugPrint('Sending OTP to phone number...');
 
       // Validate phone number
       if (!_isValidPhoneNumber(phoneNumber)) {
         debugPrint('Invalid phone number format: $phoneNumber');
-        return const ResultFailure(InvalidPhoneNumber());
+        return left(const AuthFailure.invalidPhoneNumber());
       }
 
       // Check rate limiting
       if (!_canSendOtp()) {
         debugPrint('OTP rate limit exceeded');
-        return const ResultFailure(SmsCodeExpired());
+        return left(const AuthFailure.smsCodeExpired());
       }
 
       // Send OTP
@@ -58,35 +59,35 @@ class SignInWithPhoneUseCase {
         _lastOtpSentTime = DateTime.now();
         _otpSendCount++;
         debugPrint('OTP sent successfully');
-        return const Success(null);
+        return right(unit);
       }
 
-      return const ResultFailure(ServerError());
+      return left(const AuthFailure.serverError());
     } on AuthFailure catch (e) {
       debugPrint('Failed to send OTP with AuthFailure: ${e.message}');
-      return ResultFailure(e);
+      return left(e);
     } catch (e) {
       debugPrint('Failed to send OTP: $e');
-      return ResultFailure(Unexpected(e.toString()));
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 
   /// Resend SMS OTP
   ///
   /// Resends OTP with rate limiting
-  Future<Result<void>> resendOtp(String phoneNumber) async {
+  Future<Either<AuthFailure, Unit>> resendOtp(String phoneNumber) async {
     debugPrint('Attempting to resend OTP...');
 
     if (_otpSendCount >= _maxOtpSends) {
       debugPrint('Maximum OTP sends reached');
-      return const ResultFailure(SmsCodeExpired());
+      return left(const AuthFailure.smsCodeExpired());
     }
 
     if (_lastOtpSentTime != null) {
       final timeSinceLastSend = DateTime.now().difference(_lastOtpSentTime!);
       if (timeSinceLastSend < _otpResendDelay) {
         debugPrint('Please wait before resending OTP');
-        return const ResultFailure(SmsCodeExpired());
+        return left(const AuthFailure.smsCodeExpired());
       }
     }
 
@@ -95,8 +96,8 @@ class SignInWithPhoneUseCase {
 
   /// Execute Phone Sign In
   ///
-  /// Returns Result<AuthUser> with automatic Korean error messages
-  Future<Result<AuthUser>> execute({
+  /// Returns Either<AuthFailure, AuthUser> with automatic Korean error messages
+  Future<Either<AuthFailure, AuthUser>> execute({
     required String phoneNumber,
     required String verificationCode,
   }) async {
@@ -106,13 +107,13 @@ class SignInWithPhoneUseCase {
       // Validate phone number format
       if (!_isValidPhoneNumber(phoneNumber)) {
         debugPrint('Invalid phone number format: $phoneNumber');
-        return const ResultFailure(InvalidPhoneNumber());
+        return left(const AuthFailure.invalidPhoneNumber());
       }
 
       // Validate verification code
       if (!_isValidVerificationCode(verificationCode)) {
         debugPrint('Invalid verification code format');
-        return const ResultFailure(InvalidSmsCode());
+        return left(const AuthFailure.invalidSmsCode());
       }
 
       // Sign in with phone number
@@ -123,18 +124,18 @@ class SignInWithPhoneUseCase {
 
       if (user == null) {
         debugPrint('Phone sign in failed');
-        return const ResultFailure(InvalidSmsCode());
+        return left(const AuthFailure.invalidSmsCode());
       }
 
       debugPrint('Phone sign in successful: ${user.uid}');
-      return Success(user);
+      return right(user);
 
     } on AuthFailure catch (e) {
       debugPrint('Phone sign in failed with AuthFailure: ${e.message}');
-      return ResultFailure(e);
+      return left(e);
     } catch (e) {
       debugPrint('Phone sign in failed with unexpected error: $e');
-      return ResultFailure(Unexpected(e.toString()));
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 

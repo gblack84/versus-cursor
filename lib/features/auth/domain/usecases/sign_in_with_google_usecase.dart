@@ -1,8 +1,8 @@
 // Sign In with Google UseCase
 // Clean Architecture - Domain Layer
 
+import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
-import '/core/types/result.dart';
 import '../entities/auth_user.dart';
 import '../repositories/i_auth_repository.dart';
 import '../failures/auth_failure.dart';
@@ -12,8 +12,9 @@ import '../failures/auth_failure.dart';
 /// Business logic for Google Sign In.
 /// Uses repository pattern to handle authentication.
 ///
-/// **Clean Architecture v4.0 - Result Pattern**:
-/// - Returns Result<AuthUser> for type-safe error handling
+/// **Clean Architecture v4.0 - Either Pattern**:
+/// - Returns Either<AuthFailure, AuthUser> for functional error handling
+/// - Consistent with Voting feature architecture
 class SignInWithGoogleUseCase {
   final IAuthRepository _repository;
 
@@ -23,8 +24,8 @@ class SignInWithGoogleUseCase {
 
   /// Execute Google Sign In
   ///
-  /// Returns Result<AuthUser> with automatic Korean error messages
-  Future<Result<AuthUser>> execute() async {
+  /// Returns Either<AuthFailure, AuthUser> with automatic Korean error messages
+  Future<Either<AuthFailure, AuthUser>> execute() async {
     try {
       debugPrint('Executing Google Sign In...');
 
@@ -33,18 +34,18 @@ class SignInWithGoogleUseCase {
 
       if (user == null) {
         debugPrint('Google Sign In failed: No user returned');
-        return const ResultFailure(SocialSignInFailed());
+        return left(const AuthFailure.socialSignInFailed());
       }
 
       debugPrint('Google Sign In successful: ${user.email}');
-      return Success(user);
+      return right(user);
 
     } on AuthFailure catch (e) {
       debugPrint('Google Sign In failed with AuthFailure: ${e.message}');
-      return ResultFailure(e);
+      return left(e);
     } catch (e) {
       debugPrint('Google Sign In failed with unexpected error: $e');
-      return ResultFailure(Unexpected(e.toString()));
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 }

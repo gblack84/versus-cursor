@@ -1,8 +1,8 @@
 // Sign In With Email UseCase
 // Clean Architecture - Domain Layer
 
+import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
-import '/core/types/result.dart';
 import '../entities/auth_user.dart';
 import '../repositories/i_auth_repository.dart';
 import '../failures/auth_failure.dart';
@@ -12,10 +12,11 @@ import '../failures/auth_failure.dart';
 /// Business logic for email and password authentication.
 /// Handles validation, authentication, and user session management.
 ///
-/// **Clean Architecture v4.0 - Result Pattern**:
-/// - Returns Result<AuthUser> instead of AuthUser?
+/// **Clean Architecture v4.0 - Either Pattern**:
+/// - Returns Either<AuthFailure, AuthUser> for functional error handling
 /// - Type-safe error handling with AuthFailure sealed class
 /// - Automatic Korean error messages via AuthFailure.message
+/// - Consistent with Voting feature architecture
 class SignInWithEmailUseCase {
   final IAuthRepository _repository;
 
@@ -26,7 +27,7 @@ class SignInWithEmailUseCase {
   /// Execute Email Sign In
   ///
   /// Signs in a user with email and password credentials
-  Future<Result<AuthUser>> execute({
+  Future<Either<AuthFailure, AuthUser>> execute({
     required String email,
     required String password,
   }) async {
@@ -36,13 +37,13 @@ class SignInWithEmailUseCase {
       // Validate email format
       if (!_isValidEmail(email)) {
         debugPrint('Invalid email format: $email');
-        return const ResultFailure(InvalidEmail());
+        return left(const AuthFailure.invalidEmail());
       }
 
       // Validate password is not empty
       if (password.isEmpty) {
         debugPrint('Password cannot be empty');
-        return const ResultFailure(WeakPassword());
+        return left(const AuthFailure.weakPassword());
       }
 
       // Attempt sign in through repository
@@ -53,7 +54,7 @@ class SignInWithEmailUseCase {
 
       if (user == null) {
         debugPrint('Sign in failed: Invalid credentials or user not found');
-        return const ResultFailure(InvalidCredentials());
+        return left(const AuthFailure.invalidCredentials());
       }
 
       // Check if email is verified (optional based on business requirements)
@@ -65,15 +66,15 @@ class SignInWithEmailUseCase {
 
       debugPrint('Sign in successful for user: ${user.uid}');
 
-      return Success(user);
+      return right(user);
 
     } on AuthFailure catch (e) {
       // Handle specific auth failures
       debugPrint('Sign in failed with AuthFailure: ${e.message}');
-      return ResultFailure(e);
+      return left(e);
     } catch (e) {
       debugPrint('Sign in failed with unexpected error: $e');
-      return ResultFailure(Unexpected(e.toString()));
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 

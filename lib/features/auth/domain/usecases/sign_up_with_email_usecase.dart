@@ -1,8 +1,8 @@
 // Sign Up With Email UseCase
 // Clean Architecture - Domain Layer
 
+import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
-import '/core/types/result.dart';
 import '../entities/auth_user.dart';
 import '../repositories/i_auth_repository.dart';
 import '../failures/auth_failure.dart';
@@ -13,9 +13,10 @@ import '../failures/auth_failure.dart';
 /// This is separate from SignInWithEmailUseCase to maintain
 /// single responsibility principle.
 ///
-/// **Clean Architecture v4.0 - Result Pattern**:
-/// - Returns Result<AuthUser> instead of AuthUser?
+/// **Clean Architecture v4.0 - Either Pattern**:
+/// - Returns Either<AuthFailure, AuthUser> for functional error handling
 /// - Type-safe error handling with AuthFailure sealed class
+/// - Consistent with Voting feature architecture
 class SignUpWithEmailUseCase {
   final IAuthRepository _repository;
 
@@ -26,7 +27,7 @@ class SignUpWithEmailUseCase {
   /// Execute Email Sign Up
   ///
   /// Creates a new user account with email and password
-  Future<Result<AuthUser>> execute({
+  Future<Either<AuthFailure, AuthUser>> execute({
     required String email,
     required String password,
     String? displayName,
@@ -37,13 +38,13 @@ class SignUpWithEmailUseCase {
       // Validate email format
       if (!_isValidEmail(email)) {
         debugPrint('Invalid email format: $email');
-        return const ResultFailure(InvalidEmail());
+        return left(const AuthFailure.invalidEmail());
       }
 
       // Validate password strength
       if (!_isValidPassword(password)) {
         debugPrint('Password does not meet requirements');
-        return const ResultFailure(WeakPassword());
+        return left(const AuthFailure.weakPassword());
       }
 
       // Create user account
@@ -54,7 +55,7 @@ class SignUpWithEmailUseCase {
 
       if (user == null) {
         debugPrint('Account creation failed');
-        return const ResultFailure(EmailAlreadyInUse());
+        return left(const AuthFailure.emailAlreadyInUse());
       }
 
       // Update display name if provided
@@ -68,14 +69,14 @@ class SignUpWithEmailUseCase {
       await _repository.sendEmailVerification();
 
       debugPrint('Account created successfully: ${user.uid}');
-      return Success(user);
+      return right(user);
 
     } on AuthFailure catch (e) {
       debugPrint('Account creation failed with AuthFailure: ${e.message}');
-      return ResultFailure(e);
+      return left(e);
     } catch (e) {
       debugPrint('Account creation failed with unexpected error: $e');
-      return ResultFailure(Unexpected(e.toString()));
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 

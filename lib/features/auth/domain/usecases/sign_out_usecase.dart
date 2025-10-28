@@ -1,8 +1,8 @@
 // Sign Out UseCase
 // Clean Architecture - Domain Layer
 
+import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
-import '/core/types/result.dart';
 import '../repositories/i_auth_repository.dart';
 import '../failures/auth_failure.dart';
 
@@ -11,8 +11,9 @@ import '../failures/auth_failure.dart';
 /// Business logic for signing out user.
 /// Handles cache clearing and session termination.
 ///
-/// **Clean Architecture v4.0 - Result Pattern**:
-/// - Returns Result<void> for type-safe error handling
+/// **Clean Architecture v4.0 - Either Pattern**:
+/// - Returns Either<AuthFailure, Unit> for functional error handling
+/// - Consistent with Voting feature architecture
 class SignOutUseCase {
   final IAuthRepository _repository;
 
@@ -22,9 +23,9 @@ class SignOutUseCase {
 
   /// Execute Sign Out
   ///
-  /// Returns Result<void> with automatic Korean error messages
+  /// Returns Either<AuthFailure, Unit> with automatic Korean error messages
   /// Clears all user-related data and terminates session
-  Future<Result<void>> execute() async {
+  Future<Either<AuthFailure, Unit>> execute() async {
     try {
       debugPrint('Executing Sign Out...');
 
@@ -44,14 +45,14 @@ class SignOutUseCase {
       // - Navigate to login screen
 
       debugPrint('Sign Out successful');
-      return const Success(null);
+      return right(unit);
 
     } on AuthFailure catch (e) {
       debugPrint('Sign Out failed with AuthFailure: ${e.message}');
-      return ResultFailure(e);
+      return left(e);
     } catch (e) {
       debugPrint('Sign Out failed with unexpected error: $e');
-      return ResultFailure(Unexpected(e.toString()));
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 }

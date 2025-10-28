@@ -1,8 +1,8 @@
 // Account Management UseCase
 // Clean Architecture - Domain Layer
 
+import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
-import '/core/types/result.dart';
 import '../entities/auth_user.dart';
 import '../repositories/i_auth_repository.dart';
 import '../failures/auth_failure.dart';
@@ -14,8 +14,9 @@ import '../failures/auth_failure.dart';
 /// - Profile updates
 /// - User information retrieval
 ///
-/// **Clean Architecture v4.0 - Result Pattern**:
-/// - Returns Result<T> for type-safe error handling
+/// **Clean Architecture v4.0 - Either Pattern**:
+/// - Returns Either<AuthFailure, T> for functional error handling
+/// - Consistent with Voting feature architecture
 class AccountManagementUseCase {
   final IAuthRepository _repository;
 
@@ -32,8 +33,8 @@ class AccountManagementUseCase {
   /// - [confirmationText]: Optional safety check - must match 'DELETE' if provided
   /// - [checkReAuth]: If true, checks if user needs re-authentication
   ///
-  /// Returns Result<void> with automatic Korean error messages
-  Future<Result<void>> deleteAccount({
+  /// Returns Either<AuthFailure, Unit> with automatic Korean error messages
+  Future<Either<AuthFailure, Unit>> deleteAccount({
     String? confirmationText,
     bool checkReAuth = false,
   }) async {
@@ -43,26 +44,26 @@ class AccountManagementUseCase {
       // Safety check: Require confirmation text if provided
       if (confirmationText != null && confirmationText != 'DELETE') {
         debugPrint('Confirmation text does not match. Expected: DELETE, Got: $confirmationText');
-        return ResultFailure(Unexpected('확인 텍스트가 일치하지 않습니다'));
+        return left(AuthFailure.unexpected('확인 텍스트가 일치하지 않습니다'));
       }
 
       // Check if user is signed in
       if (!_repository.isSignedIn) {
         debugPrint('No user signed in to delete');
-        return const ResultFailure(UserNotFound());
+        return left(const AuthFailure.userNotFound());
       }
 
       // Get current user info for logging
       final currentUser = await _repository.getCurrentUser();
       if (currentUser == null) {
         debugPrint('Could not retrieve user information');
-        return const ResultFailure(UserNotFound());
+        return left(const AuthFailure.userNotFound());
       }
 
       // Check if re-authentication is needed
       if (checkReAuth && await needsReAuthentication()) {
         debugPrint('User needs to re-authenticate before deletion');
-        return const ResultFailure(RequiresRecentLogin());
+        return left(const AuthFailure.requiresRecentLogin());
       }
 
       debugPrint('Deleting account for user: ${currentUser.uid}');
@@ -72,18 +73,18 @@ class AccountManagementUseCase {
 
       if (success) {
         debugPrint('Account deleted successfully');
-        return const Success(null);
+        return right(unit);
       } else {
         debugPrint('Account deletion failed');
-        return const ResultFailure(ServerError());
+        return left(const AuthFailure.serverError());
       }
 
     } on AuthFailure catch (e) {
       debugPrint('Account deletion failed with AuthFailure: ${e.message}');
-      return ResultFailure(e);
+      return left(e);
     } catch (e) {
       debugPrint('Account deletion failed with unexpected error: $e');
-      return ResultFailure(Unexpected(e.toString()));
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 
@@ -120,8 +121,8 @@ class AccountManagementUseCase {
   ///
   /// Updates user profile information such as display name and photo URL.
   ///
-  /// Returns Result<void> with automatic Korean error messages
-  Future<Result<void>> updateProfile({
+  /// Returns Either<AuthFailure, Unit> with automatic Korean error messages
+  Future<Either<AuthFailure, Unit>> updateProfile({
     String? displayName,
     String? photoURL,
   }) async {
@@ -131,13 +132,13 @@ class AccountManagementUseCase {
       // Check if user is signed in
       if (!_repository.isSignedIn) {
         debugPrint('No user signed in');
-        return const ResultFailure(UserNotFound());
+        return left(const AuthFailure.userNotFound());
       }
 
       // Validate at least one field is being updated
       if (displayName == null && photoURL == null) {
         debugPrint('No profile information provided to update');
-        return const ResultFailure(ProfileIncomplete());
+        return left(const AuthFailure.profileIncomplete());
       }
 
       // Update profile
@@ -147,14 +148,14 @@ class AccountManagementUseCase {
       );
 
       debugPrint('Profile updated successfully');
-      return const Success(null);
+      return right(unit);
 
     } on AuthFailure catch (e) {
       debugPrint('Profile update failed with AuthFailure: ${e.message}');
-      return ResultFailure(e);
+      return left(e);
     } catch (e) {
       debugPrint('Profile update failed with unexpected error: $e');
-      return ResultFailure(Unexpected(e.toString()));
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 
@@ -162,8 +163,8 @@ class AccountManagementUseCase {
   ///
   /// Retrieves the currently authenticated user's information.
   ///
-  /// Returns Result<AuthUser> with automatic Korean error messages
-  Future<Result<AuthUser>> getCurrentUser() async {
+  /// Returns Either<AuthFailure, AuthUser> with automatic Korean error messages
+  Future<Either<AuthFailure, AuthUser>> getCurrentUser() async {
     try {
       debugPrint('Retrieving current user...');
 
@@ -171,18 +172,18 @@ class AccountManagementUseCase {
 
       if (user != null) {
         debugPrint('Current user retrieved: ${user.uid}');
-        return Success(user);
+        return right(user);
       } else {
         debugPrint('No user currently signed in');
-        return const ResultFailure(UserNotFound());
+        return left(const AuthFailure.userNotFound());
       }
 
     } on AuthFailure catch (e) {
       debugPrint('Get user failed with AuthFailure: ${e.message}');
-      return ResultFailure(e);
+      return left(e);
     } catch (e) {
       debugPrint('Get user failed with unexpected error: $e');
-      return ResultFailure(Unexpected(e.toString()));
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 

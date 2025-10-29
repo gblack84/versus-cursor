@@ -27,8 +27,7 @@ import '/features/chat/domain/entities/chat.dart' as entities;
 import '/features/chat/presentation/providers/chat_detail_provider.dart';
 import '/features/chat/data/adapters/flutter_chat_user_adapter.dart';
 import '/services/image/unified_image_cache_service.dart';
-import 'package:get_it/get_it.dart';
-import '/app/contracts/auth_contract.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'chat_detail_controller_v2.dart';
 import 'components/chat_detail_app_bar.dart';
 import 'components/chat_detail_fab.dart';
@@ -60,8 +59,8 @@ class _ChatDetailWidgetCleanState extends State<ChatDetailWidgetClean> with Tick
   late final ChatDetailControllerV2 _chatController;
   final _userCacheService = FlutterChatUserAdapter.instance;
 
-  // AuthContract helper
-  String get currentUserId => GetIt.instance<AuthContract>().getCurrentUserId() ?? '';
+  // Firebase Auth helper
+  String get currentUserId => FirebaseAuth.instance.currentUser?.uid ?? '';
 
   // AI 채팅 감지
   bool get isAiChat =>

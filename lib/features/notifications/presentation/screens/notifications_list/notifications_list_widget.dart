@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import '/app/contracts/auth_contract.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '/features/notifications/domain/models/notification.dart' as domain;
 import '/features/notifications/domain/usecases/mark_as_read_usecase.dart';
 import '/features/notifications/domain/usecases/watch_user_notifications_usecase.dart';
@@ -19,14 +19,12 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
   late final WatchUserNotificationsUseCase _watchUserNotifications;
   late final MarkAsReadUseCase _markAsRead;
-  late final AuthContract _authContract;
 
   @override
   void initState() {
     super.initState();
     _watchUserNotifications = GetIt.instance<WatchUserNotificationsUseCase>();
     _markAsRead = GetIt.instance<MarkAsReadUseCase>();
-    _authContract = GetIt.instance<AuthContract>();
   }
 
   @override
@@ -53,7 +51,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
         top: true,
         child: StreamBuilder<List<domain.Notification>>(
           stream: _watchUserNotifications.call(
-            _authContract.getCurrentUserId() ?? '',
+            FirebaseAuth.instance.currentUser?.uid ?? '',
           ),
           builder: (context, snapshot) {
             // 로딩 중
@@ -114,7 +112,7 @@ class _NotificationsListWidgetState extends State<NotificationsListWidget> {
                         : () async {
                             // 읽음 처리
                             if (!notification.isRead) {
-                              final userId = _authContract.getCurrentUserId();
+                              final userId = FirebaseAuth.instance.currentUser?.uid;
                               if (userId != null) {
                                 await _markAsRead.call(
                                   MarkAsReadParams(

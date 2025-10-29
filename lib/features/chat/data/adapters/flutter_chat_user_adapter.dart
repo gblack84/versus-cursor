@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
-import 'package:get_it/get_it.dart';
-import '/app/contracts/auth_contract.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '/core/constants/app_constants.dart';
 import '/services/cache/unified_cache_service.dart';
 import '/features/profile/domain/models/user_profile.dart';
@@ -32,12 +31,11 @@ class FlutterChatUserAdapter {
   // 변환된 core.User 캐시 (메모리만, 타입 변환 결과 저장)
   final Map<String, core.User> _convertedCache = {};
 
-  // AuthContract helpers
-  AuthContract get _authContract => GetIt.instance<AuthContract>();
-  String get currentUserUid => _authContract.getCurrentUserId() ?? '';
-  String? get currentUserEmail => _authContract.getCurrentUserEmail();
-  String? get currentUserDisplayName => _authContract.currentUserDisplayName;
-  String? get currentUserPhoto => _authContract.currentUserPhoto;
+  // Firebase Auth helpers
+  String get currentUserUid => FirebaseAuth.instance.currentUser?.uid ?? '';
+  String? get currentUserEmail => FirebaseAuth.instance.currentUser?.email;
+  String? get currentUserDisplayName => FirebaseAuth.instance.currentUser?.displayName;
+  String? get currentUserPhoto => FirebaseAuth.instance.currentUser?.photoURL;
 
   /// 단일 사용자 정보 가져오기
   ///

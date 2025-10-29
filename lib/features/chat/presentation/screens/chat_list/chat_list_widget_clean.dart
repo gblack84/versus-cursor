@@ -18,10 +18,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bot_toast/bot_toast.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '/app/di.dart';
-import 'package:get_it/get_it.dart';
-import '/app/contracts/auth_contract.dart';
 import '/core_exports.dart';
 import '/features/chat/domain/entities/chat.dart';
 import '/core/design_system/design_system.dart';
@@ -48,8 +47,8 @@ class _ChatListWidgetCleanState extends State<ChatListWidgetClean> {
   late final ChatListProvider _provider;
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
-  // AuthContract helper
-  String get currentUserUid => GetIt.instance<AuthContract>().getCurrentUserId() ?? '';
+  // Firebase Auth helper
+  String get currentUserUid => FirebaseAuth.instance.currentUser?.uid ?? '';
 
   @override
   void initState() {

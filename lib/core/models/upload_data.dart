@@ -7,9 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mime_type/mime_type.dart';
 import 'package:video_player/video_player.dart';
-import 'package:get_it/get_it.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-import '/app/contracts/auth_contract.dart';
 import '/core_exports.dart';
 
 const allowedFormats = {'image/png', 'image/jpeg', 'video/mp4', 'image/gif'};
@@ -381,7 +380,6 @@ String? _removeTrailingSlash(String? path) => path != null && path.endsWith('/')
     : path;
 
 String _firebasePathPrefix() {
-  final authContract = GetIt.instance<AuthContract>();
-  final userId = authContract.getCurrentUserId() ?? 'anonymous';
+  final userId = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
   return 'users/$userId/uploads';
 }

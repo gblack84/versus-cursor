@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:get_it/get_it.dart';
 import 'package:bot_toast/bot_toast.dart';
-import '/app/contracts/auth_contract.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '/features/profile/domain/models/user_profile.dart';
 import '/core/design_system/design_system.dart';
 import '/core/utils/error_handler.dart';
@@ -33,8 +32,8 @@ class _FriendsWidgetState extends State<FriendsWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
 
-  // AuthContract helper
-  String get currentUserUid => GetIt.instance<AuthContract>().getCurrentUserId() ?? '';
+  // Firebase Auth helper
+  String get currentUserUid => FirebaseAuth.instance.currentUser?.uid ?? '';
 
   @override
   void initState() {

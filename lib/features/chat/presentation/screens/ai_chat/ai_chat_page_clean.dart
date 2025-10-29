@@ -32,8 +32,7 @@ import '/core/types/layout_type.dart';
 import '/services/ui/unified_box_calculator.dart';
 import '/core/utils/media/aspect_ratio_analyzer.dart';
 import '/services/ui/responsive_breakpoints.dart';
-import 'package:get_it/get_it.dart';
-import '/app/contracts/auth_contract.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '/services/image/unified_image_cache_service.dart';
 import 'ai_chat_controller.dart';
 import '../../providers/ai_chat_provider.dart';
@@ -66,9 +65,9 @@ class _AIChatPageCleanState extends State<AIChatPageClean>
   late final AIChatController _chatController;
   final _userCacheService = FlutterChatUserAdapter.instance;
 
-  // AuthContract helpers
-  String get currentUserUid => GetIt.instance<AuthContract>().getCurrentUserId() ?? '';
-  String? get currentUserDisplayName => GetIt.instance<AuthContract>().currentUserDisplayName;
+  // Firebase Auth helpers
+  String get currentUserUid => FirebaseAuth.instance.currentUser?.uid ?? '';
+  String? get currentUserDisplayName => FirebaseAuth.instance.currentUser?.displayName;
 
   // 현재 사용자 정보
   String get currentUserId => currentUserUid.isNotEmpty ? currentUserUid : 'anonymous';

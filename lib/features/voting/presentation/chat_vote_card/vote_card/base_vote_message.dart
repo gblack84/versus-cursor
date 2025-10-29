@@ -64,8 +64,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/core/design_system/design_system.dart';
-import 'package:get_it/get_it.dart';
-import '/app/contracts/auth_contract.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../providers/vote_providers.dart';
 
 /// 채팅 메시지로 표시되는 투표 카드의 기본 클래스
@@ -203,8 +202,8 @@ mixin BaseVoteMessageStateMixin<T extends BaseVoteMessage> on ConsumerState<T> {
     super.dispose();
   }
 
-  // AuthContract helper
-  String get currentUserUid => GetIt.instance<AuthContract>().getCurrentUserId() ?? '';
+  // Firebase Auth helper
+  String get currentUserUid => FirebaseAuth.instance.currentUser?.uid ?? '';
 
   /// 현재 사용자가 투표했는지 확인
   bool get hasCurrentUserVoted {

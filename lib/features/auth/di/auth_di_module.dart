@@ -41,9 +41,6 @@ import '../domain/usecases/password_management_usecase.dart';
 import '../domain/usecases/email_verification_usecase.dart';
 import '../domain/usecases/account_management_usecase.dart';
 
-// ===== Presentation Layer - Providers =====
-import '../presentation/providers/auth_provider.dart' as auth_feature;
-
 /// Register all Auth feature dependencies
 /// Call this function from main setupDependencyInjection()
 void registerAuthModule(GetIt getIt) {
@@ -58,9 +55,6 @@ void registerAuthModule(GetIt getIt) {
 
   // ===== UseCases Registration =====
   _registerUseCases(getIt);
-
-  // ===== Providers Registration =====
-  _registerProviders(getIt);
 }
 
 /// Register Local DataSource
@@ -170,13 +164,5 @@ void _registerUseCases(GetIt getIt) {
     () => AccountManagementUseCase(
       repository: getIt<IAuthRepository>(),
     ),
-  );
-}
-
-/// Register Presentation Layer Providers
-void _registerProviders(GetIt getIt) {
-  // AuthProvider - manages authentication state
-  getIt.registerLazySingleton<auth_feature.AuthProvider>(
-    () => auth_feature.AuthProvider(),
   );
 }

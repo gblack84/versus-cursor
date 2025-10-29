@@ -19,9 +19,6 @@ export 'screens/phone_auth/phonemaximum/phonemaximum_widget.dart' show Phonemaxi
 // Email Verification Screens
 export 'screens/email_verification/popup_timer_email/popup_timer_email_widget.dart' show PopupTimerEmailWidget;
 
-// Providers (for DI and State Management)
-export 'providers/auth_provider.dart' show AuthProvider;
-
 // Note: Models are intentionally not exported to maintain encapsulation
 // Only widgets and providers that need to be accessed from outside
 // the Auth feature are exported here

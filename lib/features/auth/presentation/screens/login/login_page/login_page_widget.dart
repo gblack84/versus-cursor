@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/screens/login/components/email_login_form.dart';
 import '/features/auth/presentation/screens/login/components/test_account_buttons.dart';
@@ -172,6 +173,7 @@ class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
           email: email,
           password: password,
           displayName: displayName,
+          eventId: const Uuid().v4(),
         );
 
         signUpResult.fold(

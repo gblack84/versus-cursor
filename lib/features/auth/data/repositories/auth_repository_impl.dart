@@ -3,6 +3,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
@@ -10,8 +11,6 @@ import '../../domain/entities/auth_user.dart';
 import '../../domain/entities/auth_user_extensions.dart';
 import '../../domain/repositories/i_auth_repository.dart';
 import '../datasources/i_auth_local_datasource.dart';
-import '/app/contracts/auth_contract.dart';
-import '/app/contracts/user_contract.dart';
 
 /// AuthRepositoryImpl
 ///
@@ -22,10 +21,9 @@ import '/app/contracts/user_contract.dart';
 ///
 /// Concrete implementation of IAuthRepository.
 /// Handles Firebase Authentication and local caching.
-class AuthRepositoryImpl implements IAuthRepository, AuthContract {
+class AuthRepositoryImpl implements IAuthRepository {
   final FirebaseAuth _firebaseAuth;
   final IAuthLocalDataSource _localDataSource;
-  final UserContract _userContract;
 
   // Google Sign-In 인스턴스
   final GoogleSignIn _googleSignIn = GoogleSignIn();
@@ -33,10 +31,8 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
   AuthRepositoryImpl({
     FirebaseAuth? firebaseAuth,
     required IAuthLocalDataSource localDataSource,
-    required UserContract userContract,
   })  : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
-        _localDataSource = localDataSource,
-        _userContract = userContract;
+        _localDataSource = localDataSource;
 
   @override
   Future<AuthUser?> getCurrentUser() async {
@@ -86,12 +82,16 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
       );
       final firebaseUser = credential.user!;
 
-      // 2. Create profile via UserContract (Profile Feature)
-      await _userContract.createUserProfile(
-        uid: firebaseUser.uid,
-        email: firebaseUser.email,
-        displayName: firebaseUser.displayName,
-      );
+      // 2. Create profile in Firestore users collection
+      await FirebaseFirestore.instance.collection('users').doc(firebaseUser.uid).set({
+        'uid': firebaseUser.uid,
+        'email': firebaseUser.email ?? '',
+        'displayName': firebaseUser.displayName ?? '',
+        'photoUrl': null,
+        'phoneNumber': null,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
 
       // 3. Convert to domain model using Extension
       final authUser = AuthUserFirestore.fromFirebaseUser(firebaseUser);
@@ -128,14 +128,17 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
       final userCredential = await _firebaseAuth.signInWithCredential(credential);
       final firebaseUser = userCredential.user!;
 
-      // 5. Create profile via UserContract if new user
+      // 5. Create profile in Firestore users collection if new user
       try {
-        await _userContract.createUserProfile(
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-          photoUrl: firebaseUser.photoURL,
-        );
+        await FirebaseFirestore.instance.collection('users').doc(firebaseUser.uid).set({
+          'uid': firebaseUser.uid,
+          'email': firebaseUser.email ?? '',
+          'displayName': firebaseUser.displayName ?? '',
+          'photoUrl': firebaseUser.photoURL,
+          'phoneNumber': null,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
       } catch (e) {
         // Profile already exists, ignore error
         debugPrint('Profile creation skipped (may already exist): $e');
@@ -175,13 +178,17 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
       final userCredential = await _firebaseAuth.signInWithCredential(oauthCredential);
       final firebaseUser = userCredential.user!;
 
-      // 4. Create profile via UserContract if new user
+      // 4. Create profile in Firestore users collection if new user
       try {
-        await _userContract.createUserProfile(
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-        );
+        await FirebaseFirestore.instance.collection('users').doc(firebaseUser.uid).set({
+          'uid': firebaseUser.uid,
+          'email': firebaseUser.email ?? '',
+          'displayName': firebaseUser.displayName ?? '',
+          'photoUrl': firebaseUser.photoURL,
+          'phoneNumber': null,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
       } catch (e) {
         // Profile already exists, ignore error
         debugPrint('Profile creation skipped (may already exist): $e');
@@ -250,12 +257,17 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
       final userCredential = await _firebaseAuth.signInWithCredential(credential);
       final firebaseUser = userCredential.user!;
 
-      // Create profile via UserContract if new user
+      // Create profile in Firestore users collection if new user
       try {
-        await _userContract.createUserProfile(
-          uid: firebaseUser.uid,
-          phoneNumber: phoneNumber,
-        );
+        await FirebaseFirestore.instance.collection('users').doc(firebaseUser.uid).set({
+          'uid': firebaseUser.uid,
+          'email': firebaseUser.email ?? '',
+          'displayName': '',
+          'photoUrl': null,
+          'phoneNumber': phoneNumber,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
       } catch (e) {
         // Profile already exists, ignore error
         debugPrint('Profile creation skipped (may already exist): $e');
@@ -327,7 +339,7 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
   Future<bool> deleteUser() async {
     try {
       // 0. Get user ID before deletion (Firebase Auth 삭제 전 필요)
-      final userId = getCurrentUserId();
+      final userId = _firebaseAuth.currentUser?.uid;
       if (userId == null) {
         debugPrint('Cannot delete user: No user signed in');
         return false;
@@ -336,9 +348,9 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
       // 1. Clear local cache
       await _localDataSource.clearAllCache();
 
-      // 2. Delete Firestore profile document (Profile Feature via UserContract)
+      // 2. Delete Firestore profile document
       // ⚠️ Firebase Auth 삭제 전에 실행해야 함 (userId 필요)
-      await _userContract.deleteUserProfile(userId);
+      await FirebaseFirestore.instance.collection('users').doc(userId).delete();
       debugPrint('Firestore profile deleted for user: $userId');
 
       // 3. Delete Firebase Auth account
@@ -370,12 +382,17 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
       await user.updateDisplayName(displayName);
       await user.updatePhotoURL(photoURL);
 
-      // Update Firestore profile via UserContract
-      final updateData = <String, dynamic>{};
+      // Update Firestore profile
+      final updateData = <String, dynamic>{
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
       if (displayName != null) updateData['displayName'] = displayName;
       if (photoURL != null) updateData['photoUrl'] = photoURL;
 
-      await _userContract.updateUserProfileData(user.uid, updateData);
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update(updateData);
     } catch (e) {
       debugPrint('Error updating user profile: $e');
       rethrow;
@@ -385,68 +402,6 @@ class AuthRepositoryImpl implements IAuthRepository, AuthContract {
   @override
   bool get isSignedIn {
     return _firebaseAuth.currentUser != null;
-  }
-
-  // AuthContract 구현
-  @override
-  String? getCurrentUserId() {
-    return _firebaseAuth.currentUser?.uid;
-  }
-
-  @override
-  String? getCurrentUserEmail() {
-    return _firebaseAuth.currentUser?.email;
-  }
-
-  @override
-  Future<String?> getIdToken() async {
-    try {
-      final user = _firebaseAuth.currentUser;
-      if (user == null) return null;
-
-      return await user.getIdToken();
-    } catch (e) {
-      debugPrint('Error getting ID token: $e');
-      return null;
-    }
-  }
-
-  @override
-  Future<String?> refreshToken() async {
-    try {
-      final user = _firebaseAuth.currentUser;
-      if (user == null) return null;
-
-      return await user.getIdToken(true); // forceRefresh = true
-    } catch (e) {
-      debugPrint('Error refreshing token: $e');
-      return null;
-    }
-  }
-
-  @override
-  bool get isEmailVerified {
-    return _firebaseAuth.currentUser?.emailVerified ?? false;
-  }
-
-  @override
-  bool get isAnonymous {
-    return _firebaseAuth.currentUser?.isAnonymous ?? false;
-  }
-
-  @override
-  String? get currentUserDisplayName {
-    return _firebaseAuth.currentUser?.displayName;
-  }
-
-  @override
-  String? get currentUserPhoto {
-    return _firebaseAuth.currentUser?.photoURL;
-  }
-
-  @override
-  String? get currentPhoneNumber {
-    return _firebaseAuth.currentUser?.phoneNumber;
   }
 
   @override

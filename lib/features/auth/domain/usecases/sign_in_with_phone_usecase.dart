@@ -37,39 +37,36 @@ class SignInWithPhoneUseCase {
   ///
   /// Returns Either<AuthFailure, Unit> with typed failures
   Future<Either<AuthFailure, Unit>> sendOtp(String phoneNumber) async {
-    try {
-      debugPrint('Sending OTP to phone number...');
+    debugPrint('Sending OTP to phone number...');
 
-      // Validate phone number
-      if (!_isValidPhoneNumber(phoneNumber)) {
-        debugPrint('Invalid phone number format: $phoneNumber');
-        return left(const AuthFailure.invalidPhoneNumber());
-      }
+    // 1. Validate phone number (Business Logic)
+    if (!_isValidPhoneNumber(phoneNumber)) {
+      debugPrint('Invalid phone number format: $phoneNumber');
+      return left(const AuthFailure.invalidPhoneNumber());
+    }
 
-      // Check rate limiting
-      if (!_canSendOtp()) {
-        debugPrint('OTP rate limit exceeded');
-        return left(const AuthFailure.smsCodeExpired());
-      }
+    // 2. Check rate limiting (Business Logic)
+    if (!_canSendOtp()) {
+      debugPrint('OTP rate limit exceeded');
+      return left(const AuthFailure.smsCodeExpired());
+    }
 
-      // Send OTP
-      final success = await _repository.sendSmsOtp(phoneNumber);
+    // 3. Repository call (already returns Either<AuthFailure, bool>)
+    final result = await _repository.sendSmsOtp(phoneNumber);
 
-      if (success) {
+    // 4. Process result and update state
+    return result.fold(
+      (failure) {
+        debugPrint('Failed to send OTP with AuthFailure: ${failure.message}');
+        return left(failure);
+      },
+      (success) {
         _lastOtpSentTime = DateTime.now();
         _otpSendCount++;
         debugPrint('OTP sent successfully');
         return right(unit);
-      }
-
-      return left(const AuthFailure.serverError());
-    } on AuthFailure catch (e) {
-      debugPrint('Failed to send OTP with AuthFailure: ${e.message}');
-      return left(e);
-    } catch (e) {
-      debugPrint('Failed to send OTP: $e');
-      return left(AuthFailure.unexpected(e.toString()));
-    }
+      },
+    );
   }
 
   /// Resend SMS OTP
@@ -101,42 +98,37 @@ class SignInWithPhoneUseCase {
     required String phoneNumber,
     required String verificationCode,
   }) async {
-    try {
-      debugPrint('Signing in with phone number...');
+    debugPrint('Signing in with phone number...');
 
-      // Validate phone number format
-      if (!_isValidPhoneNumber(phoneNumber)) {
-        debugPrint('Invalid phone number format: $phoneNumber');
-        return left(const AuthFailure.invalidPhoneNumber());
-      }
-
-      // Validate verification code
-      if (!_isValidVerificationCode(verificationCode)) {
-        debugPrint('Invalid verification code format');
-        return left(const AuthFailure.invalidSmsCode());
-      }
-
-      // Sign in with phone number
-      final user = await _repository.signInWithPhoneNumber(
-        phoneNumber,
-        verificationCode,
-      );
-
-      if (user == null) {
-        debugPrint('Phone sign in failed');
-        return left(const AuthFailure.invalidSmsCode());
-      }
-
-      debugPrint('Phone sign in successful: ${user.uid}');
-      return right(user);
-
-    } on AuthFailure catch (e) {
-      debugPrint('Phone sign in failed with AuthFailure: ${e.message}');
-      return left(e);
-    } catch (e) {
-      debugPrint('Phone sign in failed with unexpected error: $e');
-      return left(AuthFailure.unexpected(e.toString()));
+    // 1. Validate phone number format (Business Logic)
+    if (!_isValidPhoneNumber(phoneNumber)) {
+      debugPrint('Invalid phone number format: $phoneNumber');
+      return left(const AuthFailure.invalidPhoneNumber());
     }
+
+    // 2. Validate verification code (Business Logic)
+    if (!_isValidVerificationCode(verificationCode)) {
+      debugPrint('Invalid verification code format');
+      return left(const AuthFailure.invalidSmsCode());
+    }
+
+    // 3. Repository call (already returns Either<AuthFailure, AuthUser>)
+    final result = await _repository.signInWithPhoneNumber(
+      phoneNumber,
+      verificationCode,
+    );
+
+    // 4. Process result
+    return result.fold(
+      (failure) {
+        debugPrint('Phone sign in failed with AuthFailure: ${failure.message}');
+        return left(failure);
+      },
+      (user) {
+        debugPrint('Phone sign in successful: ${user.uid}');
+        return right(user);
+      },
+    );
   }
 
   /// Validate phone number format

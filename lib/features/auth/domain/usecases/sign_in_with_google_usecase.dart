@@ -26,26 +26,20 @@ class SignInWithGoogleUseCase {
   ///
   /// Returns Either<AuthFailure, AuthUser> with automatic Korean error messages
   Future<Either<AuthFailure, AuthUser>> execute() async {
-    try {
-      debugPrint('Executing Google Sign In...');
+    debugPrint('Executing Google Sign In...');
 
-      // Call repository method
-      final user = await _repository.signInWithGoogle();
+    // Repository already returns Either - just pass through with logging
+    final result = await _repository.signInWithGoogle();
 
-      if (user == null) {
-        debugPrint('Google Sign In failed: No user returned');
-        return left(const AuthFailure.socialSignInFailed());
-      }
-
-      debugPrint('Google Sign In successful: ${user.email}');
-      return right(user);
-
-    } on AuthFailure catch (e) {
-      debugPrint('Google Sign In failed with AuthFailure: ${e.message}');
-      return left(e);
-    } catch (e) {
-      debugPrint('Google Sign In failed with unexpected error: $e');
-      return left(AuthFailure.unexpected(e.toString()));
-    }
+    return result.fold(
+      (failure) {
+        debugPrint('Google Sign In failed with AuthFailure: ${failure.message}');
+        return left(failure);
+      },
+      (user) {
+        debugPrint('Google Sign In successful: ${user.email}');
+        return right(user);
+      },
+    );
   }
 }

@@ -315,24 +315,25 @@ class _ForgotPasswordWidgetState extends ConsumerState<ForgotPasswordWidget> {
 
                       // 비밀번호 재설정 이메일 발송
                       final passwordManagementUseCase = ref.read(passwordManagementUseCaseProvider);
-                      final success = await passwordManagementUseCase.sendPasswordResetEmail(
+                      final result = await passwordManagementUseCase.sendPasswordResetEmail(
                         email: _model.emailAddressTextController.text.trim(),
                         eventId: const Uuid().v4(),
                       );
 
-                      if (success) {
-                        if (context.mounted) {
-                          ErrorHandler.showSuccessToast('비밀번호 재설정 이메일을 발송했습니다. 이메일을 확인해주세요.');
-                          context.pop();
-                        }
-                      } else {
-                        if (context.mounted) {
-                          ErrorHandler.handle(
-                            '비밀번호 재설정 이메일 발송에 실패했습니다. 다시 시도해주세요.',
-                            customMessage: '비밀번호 재설정 이메일 발송에 실패했습니다. 다시 시도해주세요.',
-                            context: context,
-                          );
-                        }
+                      if (context.mounted) {
+                        result.fold(
+                          (failure) {
+                            ErrorHandler.handle(
+                              failure.message,
+                              customMessage: '비밀번호 재설정 이메일 발송에 실패했습니다. 다시 시도해주세요.',
+                              context: context,
+                            );
+                          },
+                          (_) {
+                            ErrorHandler.showSuccessToast('비밀번호 재설정 이메일을 발송했습니다. 이메일을 확인해주세요.');
+                            context.pop();
+                          },
+                        );
                       }
                     },
                     text: AppLocalizations.of(context).getText(

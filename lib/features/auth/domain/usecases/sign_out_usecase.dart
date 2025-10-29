@@ -26,33 +26,33 @@ class SignOutUseCase {
   /// Returns Either<AuthFailure, Unit> with automatic Korean error messages
   /// Clears all user-related data and terminates session
   Future<Either<AuthFailure, Unit>> execute() async {
-    try {
-      debugPrint('Executing Sign Out...');
+    debugPrint('Executing Sign Out...');
 
-      // Additional business logic before sign out
-      // For example:
-      // - Save any pending data
-      // - Cancel active subscriptions
-      // - Clear navigation stack
+    // Additional business logic before sign out
+    // For example:
+    // - Save any pending data
+    // - Cancel active subscriptions
+    // - Clear navigation stack
 
-      // Call repository method
-      await _repository.signOut();
+    // Repository call (already returns Either<AuthFailure, void>)
+    final result = await _repository.signOut();
 
-      // Additional cleanup after sign out
-      // For example:
-      // - Clear in-memory caches
-      // - Reset app state
-      // - Navigate to login screen
+    // Process result
+    return result.fold(
+      (failure) {
+        debugPrint('Sign Out failed with AuthFailure: ${failure.message}');
+        return left(failure);
+      },
+      (_) {
+        // Additional cleanup after sign out
+        // For example:
+        // - Clear in-memory caches
+        // - Reset app state
+        // - Navigate to login screen
 
-      debugPrint('Sign Out successful');
-      return right(unit);
-
-    } on AuthFailure catch (e) {
-      debugPrint('Sign Out failed with AuthFailure: ${e.message}');
-      return left(e);
-    } catch (e) {
-      debugPrint('Sign Out failed with unexpected error: $e');
-      return left(AuthFailure.unexpected(e.toString()));
-    }
+        debugPrint('Sign Out successful');
+        return right(unit);
+      },
+    );
   }
 }

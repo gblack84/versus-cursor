@@ -48,26 +48,29 @@ class EmailVerificationUseCase {
     try {
       debugPrint('Sending email verification (userId: $userId, eventId: $eventId)...');
 
-      // Check if user is signed in
-      final currentUser = await _repository.getCurrentUser();
-      if (currentUser == null) {
-        debugPrint('No user signed in');
-        return left(const AuthFailure.userNotFound());
-      }
+      // 1. Check if user is signed in (Repository returns Either)
+      final userResult = await _repository.getCurrentUser();
+      final currentUser = userResult.fold(
+        (failure) {
+          debugPrint('No user signed in');
+          throw failure;
+        },
+        (user) => user,
+      );
 
-      // Check if already verified
+      // 2. Check if already verified (Business Logic)
       if (currentUser.isEmailVerified) {
         debugPrint('Email already verified');
         return right(unit);
       }
 
-      // Check rate limiting (additional protection)
+      // 3. Check rate limiting (Business Logic - additional protection)
       if (!_canSendVerification()) {
         debugPrint('Rate limit check: Please wait before sending another verification email');
         return left(AuthFailure.unexpected('잠시 후 다시 시도해주세요'));
       }
 
-      // Execute with IdempotencyService
+      // 4. Execute with IdempotencyService
       await _idempotencyService.executeIdempotent<Unit>(
         entityType: 'auth_email_verify',
         entityId: userId,
@@ -76,16 +79,19 @@ class EmailVerificationUseCase {
         operation: (transaction) async {
           debugPrint('Idempotency check passed, sending verification email...');
 
-          // Send verification email
-          final success = await _repository.sendEmailVerification();
+          // Send verification email (Repository returns Either)
+          final verificationResult = await _repository.sendEmailVerification();
+          verificationResult.fold(
+            (failure) {
+              debugPrint('Failed to send verification email');
+              throw failure;
+            },
+            (_) {
+              _lastVerificationSentTime = DateTime.now();
+              debugPrint('Verification email sent successfully');
+            },
+          );
 
-          if (!success) {
-            debugPrint('Failed to send verification email');
-            throw const AuthFailure.serverError();
-          }
-
-          _lastVerificationSentTime = DateTime.now();
-          debugPrint('Verification email sent successfully');
           return unit;
         },
       );
@@ -133,40 +139,36 @@ class EmailVerificationUseCase {
   ///
   /// Returns true if email is verified, false otherwise
   Future<bool> isEmailVerified() async {
-    try {
-      // Get current user
-      final currentUser = await _repository.getCurrentUser();
-      if (currentUser == null) {
-        debugPrint('No user signed in');
+    // Get current user (Repository returns Either)
+    final userResult = await _repository.getCurrentUser();
+
+    return userResult.fold(
+      (failure) {
+        debugPrint('Check verification failed with AuthFailure: ${failure.message}');
         return false;
-      }
-
-      // Check verification status
-      final isVerified = currentUser.isEmailVerified;
-
-      debugPrint('Email verification status: $isVerified');
-      return isVerified;
-
-    } on AuthFailure catch (e) {
-      debugPrint('Check verification failed with AuthFailure: ${e.message}');
-      return false;
-    } catch (e) {
-      debugPrint('Check verification failed with unexpected error: $e');
-      return false;
-    }
+      },
+      (currentUser) {
+        final isVerified = currentUser.isEmailVerified;
+        debugPrint('Email verification status: $isVerified');
+        return isVerified;
+      },
+    );
   }
 
   /// Get Current User Email
   ///
   /// Returns the email of the current user
   Future<String?> getCurrentUserEmail() async {
-    try {
-      final currentUser = await _repository.getCurrentUser();
-      return currentUser?.email;
-    } catch (e) {
-      debugPrint('Failed to get user email: $e');
-      return null;
-    }
+    // Get current user (Repository returns Either)
+    final userResult = await _repository.getCurrentUser();
+
+    return userResult.fold(
+      (failure) {
+        debugPrint('Failed to get user email: ${failure.message}');
+        return null;
+      },
+      (currentUser) => currentUser.email,
+    );
   }
 
   /// Check if verification can be sent (rate limiting)

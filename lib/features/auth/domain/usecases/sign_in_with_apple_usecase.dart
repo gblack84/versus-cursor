@@ -26,32 +26,25 @@ class SignInWithAppleUseCase {
   ///
   /// Returns Either<AuthFailure, AuthUser> with automatic Korean error messages
   Future<Either<AuthFailure, AuthUser>> execute() async {
-    try {
-      debugPrint('Executing Apple Sign In...');
+    debugPrint('Executing Apple Sign In...');
 
-      // Call repository method
-      final user = await _repository.signInWithApple();
+    // Repository already returns Either - just pass through with logging
+    final result = await _repository.signInWithApple();
 
-      if (user == null) {
-        debugPrint('Apple Sign In failed: No user returned');
-        return left(const AuthFailure.socialSignInFailed());
-      }
-
-      // Apple specific business logic
-      // For example, Apple might not provide email on subsequent logins
-      if (user.email == null || user.email!.isEmpty) {
-        debugPrint('Warning: Apple Sign In returned no email address');
-      }
-
-      debugPrint('Apple Sign In successful: ${user.uid}');
-      return right(user);
-
-    } on AuthFailure catch (e) {
-      debugPrint('Apple Sign In failed with AuthFailure: ${e.message}');
-      return left(e);
-    } catch (e) {
-      debugPrint('Apple Sign In failed with unexpected error: $e');
-      return left(AuthFailure.unexpected(e.toString()));
-    }
+    return result.fold(
+      (failure) {
+        debugPrint('Apple Sign In failed with AuthFailure: ${failure.message}');
+        return left(failure);
+      },
+      (user) {
+        // Apple specific business logic
+        // Apple might not provide email on subsequent logins
+        if (user.email == null || user.email!.isEmpty) {
+          debugPrint('Warning: Apple Sign In returned no email address');
+        }
+        debugPrint('Apple Sign In successful: ${user.uid}');
+        return right(user);
+      },
+    );
   }
 }

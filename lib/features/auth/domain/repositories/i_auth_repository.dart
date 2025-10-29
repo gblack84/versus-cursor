@@ -1,7 +1,10 @@
 // Auth Repository Interface
 // Clean Architecture - Domain Layer Interface
 
+import 'package:dartz/dartz.dart';
+
 import '../entities/auth_user.dart';
+import '../failures/auth_failure.dart';
 
 /// IAuthRepository
 ///
@@ -10,49 +13,49 @@ import '../entities/auth_user.dart';
 /// data layer implementations.
 abstract class IAuthRepository {
   /// Get currently authenticated user
-  Future<AuthUser?> getCurrentUser();
+  Future<Either<AuthFailure, AuthUser>> getCurrentUser();
 
   /// Sign in with email and password
-  Future<AuthUser?> signInWithEmailAndPassword(String email, String password);
+  Future<Either<AuthFailure, AuthUser>> signInWithEmailAndPassword(String email, String password);
 
   /// Create user with email and password
-  Future<AuthUser?> createUserWithEmailAndPassword(
+  Future<Either<AuthFailure, AuthUser>> createUserWithEmailAndPassword(
       String email, String password);
 
   /// Sign in with Google
-  Future<AuthUser?> signInWithGoogle();
+  Future<Either<AuthFailure, AuthUser>> signInWithGoogle();
 
   /// Sign in with Apple
-  Future<AuthUser?> signInWithApple();
+  Future<Either<AuthFailure, AuthUser>> signInWithApple();
 
   /// Sign in with phone number
-  Future<AuthUser?> signInWithPhoneNumber(
+  Future<Either<AuthFailure, AuthUser>> signInWithPhoneNumber(
       String phoneNumber, String verificationCode);
 
   /// Send SMS OTP code for phone authentication
-  Future<bool> sendSmsOtp(String phoneNumber);
+  Future<Either<AuthFailure, bool>> sendSmsOtp(String phoneNumber);
 
   /// Sign out current user
-  Future<void> signOut();
+  Future<Either<AuthFailure, void>> signOut();
 
   /// Send password reset email
-  Future<void> sendPasswordResetEmail(String email);
+  Future<Either<AuthFailure, void>> sendPasswordResetEmail(String email);
 
   /// Send email verification
-  Future<bool> sendEmailVerification();
+  Future<Either<AuthFailure, bool>> sendEmailVerification();
 
   /// Delete current user account
-  Future<bool> deleteUser();
+  Future<Either<AuthFailure, bool>> deleteUser();
 
   /// Update user profile
-  Future<void> updateUserProfile({
+  Future<Either<AuthFailure, void>> updateUserProfile({
     String? displayName,
     String? photoURL,
   });
 
   /// Update user password
   /// Requires user to be recently authenticated
-  Future<bool> updatePassword(String newPassword);
+  Future<Either<AuthFailure, bool>> updatePassword(String newPassword);
 
   /// Check if user is signed in
   bool get isSignedIn;

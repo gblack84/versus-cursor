@@ -1,0 +1,611 @@
+# Auth Feature - 통합 문서
+
+> **최종 업데이트**: 2025-01-20
+> **아키텍처**: Clean Architecture v4.0 + Firebase-Centric v2.0
+> **에러 처리**: Either<AuthFailure, T> 패턴 (Voting Feature 100% 일관성) ⭐
+> **상태 관리**: Riverpod 2.x + GetIt DI
+
+## 📋 목차
+
+- [전체 디렉토리 구조](#-전체-디렉토리-구조)
+- [아키텍처 개요](#-아키텍처-개요)
+- [빠른 참조 가이드](#-빠른-참조-가이드)
+- [레이어별 README 안내](#-레이어별-readme-안내)
+- [주요 파일 위치](#-주요-파일-위치)
+- [DI (Dependency Injection)](#-di-dependency-injection)
+- [통계](#-통계)
+- [시작하기](#-시작하기)
+- [자주 찾는 질문](#-자주-찾는-질문)
+- [기여 가이드](#-기여-가이드)
+
+---
+
+## 🗂 전체 디렉토리 구조
+
+```
+lib/features/auth/
+├── 📂 data/                              # Data Layer (Firebase-Centric v2.0)
+│   ├── 📂 datasources/                   # 데이터 소스 (2개)
+│   │   ├── i_auth_local_datasource.dart
+│   │   └── auth_local_datasource.dart
+│   ├── 📂 repositories/                  # Repository 구현체 (1개)
+│   │   └── auth_repository_impl.dart    # [복잡] Firebase Auth/Firestore 통합
+│   └── 📄 README.md                      # Data Layer 상세 문서
+│
+├── 📂 domain/                             # Domain Layer (Clean Architecture v4.0)
+│   ├── 📂 entities/                      # 도메인 엔티티 (5개)
+│   │   ├── auth_user.dart               # [128 lines] Freezed 사용자 엔티티 (30+ 필드)
+│   │   ├── auth_user_extensions.dart    # [208 lines] Firebase User ↔ AuthUser 변환
+│   │   ├── user_role_converter.dart     # [36 lines] UserRole JSON 컨버터
+│   │   ├── auth_user.freezed.dart       # [자동 생성] Freezed 코드
+│   │   └── auth_user.g.dart            # [자동 생성] JSON 직렬화
+│   ├── 📂 enums/                         # 비즈니스 열거형 (1개)
+│   │   └── user_role.dart               # [39 lines] admin/tester/user 역할
+│   ├── 📂 failures/                      # 도메인 에러 (2개)
+│   │   ├── auth_failure.dart            # [90 lines] 18개 실패 타입 (Freezed sealed)
+│   │   └── auth_failure.freezed.dart    # [자동 생성] Freezed 코드
+│   ├── 📂 repositories/                  # Repository 인터페이스 (1개)
+│   │   └── i_auth_repository.dart       # [62 lines] 14개 인증 메서드 계약
+│   ├── 📂 usecases/                      # UseCase (비즈니스 로직, 10개)
+│   │   ├── sign_in_with_email_usecase.dart     # [88 lines] 이메일 로그인
+│   │   ├── sign_in_with_google_usecase.dart    # [50 lines] Google OAuth
+│   │   ├── sign_in_with_apple_usecase.dart     # [56 lines] Apple Sign In
+│   │   ├── sign_in_with_phone_usecase.dart     # [192 lines] 전화번호 인증
+│   │   ├── sign_up_with_email_usecase.dart     # [135 lines] 이메일 회원가입
+│   │   ├── sign_out_usecase.dart              # [57 lines] 로그아웃
+│   │   ├── get_current_user_usecase.dart      # [17 lines] 현재 사용자 조회
+│   │   ├── account_management_usecase.dart     # [294 lines] 계정 관리
+│   │   ├── email_verification_usecase.dart     # [200 lines] 이메일 인증
+│   │   └── password_management_usecase.dart    # [209 lines] 비밀번호 관리
+│   └── 📄 README.md                      # Domain Layer 상세 문서 (1861줄)
+│
+├── 📂 presentation/                       # Presentation Layer (Riverpod 2.x)
+│   ├── 📂 providers/                     # Riverpod Providers (1개)
+│   │   └── auth_providers.dart          # [194 lines] 10 UseCase Providers + Stream
+│   ├── 📂 screens/                       # 화면 (31개 파일, 6개 주요 화면)
+│   │   ├── 📂 login/login_page/         # 로그인 화면 (6개 파일)
+│   │   │   ├── login_page_widget.dart          # [355 lines] 메인 로그인 UI
+│   │   │   ├── login_page_model.dart           # [63 lines] 폼 상태 관리
+│   │   │   └── 📂 components/                  # 로그인 컴포넌트 (4개)
+│   │   │       ├── email_login_form.dart       # [181 lines] 이메일/비밀번호 입력
+│   │   │       ├── login_buttons.dart          # 로그인 버튼
+│   │   │       ├── test_account_buttons.dart   # 테스트 계정 버튼 (개발용)
+│   │   │       └── create_account_link.dart    # 회원가입 링크
+│   │   ├── 📂 signup/create_account/    # 회원가입 화면 (7개 파일)
+│   │   │   ├── create_account_widget.dart      # 메인 회원가입 UI
+│   │   │   ├── create_account_model.dart       # 폼 상태 관리
+│   │   │   └── 📂 components/                  # 회원가입 컴포넌트 (5개)
+│   │   │       ├── signup_form.dart
+│   │   │       ├── terms_section.dart
+│   │   │       ├── header_section.dart
+│   │   │       ├── login_link.dart
+│   │   │       └── signup_buttons.dart
+│   │   ├── 📂 phone_auth/               # 전화번호 인증 (9개 파일, 3개 화면)
+│   │   │   ├── phone_creat_account/            # 전화번호 입력
+│   │   │   ├── phonelogeinpincode/             # PIN 코드 입력
+│   │   │   ├── phonemaximum/                   # 재시도 초과 화면
+│   │   │   └── 📂 components/                  # 전화 인증 컴포넌트 (4개)
+│   │   │       ├── otp_input_field.dart
+│   │   │       ├── otp_timer_display.dart
+│   │   │       ├── resend_otp_button.dart
+│   │   │       └── verification_status_display.dart
+│   │   ├── 📂 forgot_password/forgot_password/  # 비밀번호 재설정 (2개 파일)
+│   │   │   ├── forgot_password_widget.dart
+│   │   │   └── forgot_password_model.dart
+│   │   ├── 📂 email_verification/popup_timer_email/  # 이메일 인증 (2개 파일)
+│   │   │   ├── popup_timer_email_widget.dart
+│   │   │   └── popup_timer_email_model.dart
+│   │   └── 📂 start/start_page/         # 시작 화면 (2개 파일)
+│   │       ├── start_page_widget.dart
+│   │       └── start_page_model.dart
+│   ├── 📂 widgets/                       # 공통 위젯 (1개)
+│   │   └── auth_user_stream_widget.dart # Firebase Auth 상태 Stream 위젯
+│   └── 📄 README.md                      # Presentation Layer 상세 문서 (2663줄)
+│
+├── 📂 di/
+│   └── auth_di_module.dart              # Dependency Injection 모듈
+│
+└── 📄 README.md                         # 👈 이 문서 (통합 가이드)
+```
+
+**총 파일 수**: 약 56개 (생성된 Freezed/JSON 파일 포함)
+- Data Layer: 3개
+- Domain Layer: 19개 (10 UseCases + 5 Entities + 2 Failures + 1 Repository + 1 Enum)
+- Presentation Layer: 33개 (6 screens + 31 components/models/widgets)
+- DI: 1개
+- 문서: 4개
+
+---
+
+## 🏗 아키텍처 개요
+
+### 3-Layer Clean Architecture 구조
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Presentation Layer                        │
+│  • Riverpod 2.x + GetIt DI 하이브리드                         │
+│  • 6개 주요 화면 (Login, Signup, Phone Auth...)              │
+│  • Widget + Model 패턴 (Form 상태 분리)                      │
+│  • Component-Driven Architecture (재사용성)                   │
+│  • 33개 파일 (~2,663줄)                                       │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ Provider 의존성 (ref.read/watch)
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Domain Layer                             │
+│  • Pure Dart (프레임워크 독립)                                 │
+│  • Freezed 불변 엔티티 (AuthUser)                             │
+│  • Either<AuthFailure, T> 패턴 (Voting Feature 100% 일관성)  │
+│  • Repository 인터페이스 (14 메서드 - Either 반환)            │
+│  • 10개 UseCase (fold() 패턴 적용)                           │
+│  • 18개 AuthFailure 타입 (한국어 자동 메시지)                  │
+│  • 19개 파일 (~1,861줄)                                       │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ Repository 인터페이스 의존성
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      Data Layer                              │
+│  • Firebase-Centric Architecture v2.0                        │
+│  • Direct Firebase SDK 사용 (Auth, Firestore)                │
+│  • Either 패턴 (11개 Firebase 에러 → AuthFailure 변환)        │
+│  • Extension Pattern (Firebase User ↔ AuthUser 변환)         │
+│  • Local DataSource (SharedPreferences 캐싱)                 │
+│  • 3개 파일                                                    │
+└─────────────────────────────────────────────────────────────┘
+                   │
+                   ▼
+              Firebase Services
+        (Auth, Firestore, Storage)
+```
+
+### 핵심 디자인 패턴
+
+| 패턴 | 레이어 | 목적 | 예시 파일 |
+|------|--------|------|-----------|
+| **Either Pattern** ⭐ | 전체 (Domain/Data/Presentation) | **타입 안전 에러 처리 - Voting Feature 100% 일관성** | `Either<AuthFailure, AuthUser>` + `fold()` |
+| **Freezed Pattern** | Domain | 불변 엔티티 + Sealed 에러 클래스 | `auth_user.dart`, `auth_failure.dart` |
+| **Extension Pattern** | Data/Domain | Firebase User ↔ AuthUser 변환 | `auth_user_extensions.dart` |
+| **Repository Pattern** | Domain/Data | 데이터 소스 추상화 (Either 반환) | `i_auth_repository.dart` (14 메서드) |
+| **UseCase Pattern** | Domain | 비즈니스 로직 + fold() 패턴 | `sign_in_with_email_usecase.dart` (10개) |
+| **Provider + GetIt** | Presentation | DI + 상태 관리 하이브리드 | `auth_providers.dart` |
+| **Widget + Model** | Presentation | UI와 Form 상태 분리 | `login_page_widget.dart` + `login_page_model.dart` |
+| **Component-Driven** | Presentation | UI 컴포넌트 재사용 | `components/` 디렉토리 |
+
+**⭐ Either Pattern 적용 범위**:
+- **Repository (Data)**: 11개 Firebase 에러 → AuthFailure 변환 후 Either 반환
+- **UseCase (Domain)**: fold()로 비즈니스 로직 처리, Either 전파
+- **Provider (Presentation)**: fold()로 UI 상태 업데이트, 한국어 에러 표시
+
+---
+
+## 🎯 빠른 참조 가이드
+
+### 찾고자 하는 것 → 참조할 README 섹션
+
+| 무엇을 찾을 때 | 어느 README | 어느 섹션 | 파일 위치 |
+|---------------|-------------|-----------|-----------|
+| **이메일 로그인 로직** | `domain/README.md` | UseCase 섹션 | `domain/usecases/sign_in_with_email_usecase.dart` |
+| **Google 로그인 구현** | `domain/README.md` | UseCase 섹션 | `domain/usecases/sign_in_with_google_usecase.dart` |
+| **Apple 로그인 구현** | `domain/README.md` | UseCase 섹션 | `domain/usecases/sign_in_with_apple_usecase.dart` |
+| **전화번호 인증 플로우** | `domain/README.md` | UseCase 섹션 | `domain/usecases/sign_in_with_phone_usecase.dart` |
+| **회원가입 로직** | `domain/README.md` | UseCase 섹션 | `domain/usecases/sign_up_with_email_usecase.dart` |
+| **로그아웃 구현** | `domain/README.md` | UseCase 섹션 | `domain/usecases/sign_out_usecase.dart` |
+| **비밀번호 재설정** | `domain/README.md` | UseCase 섹션 | `domain/usecases/password_management_usecase.dart` |
+| **이메일 인증 발송** | `domain/README.md` | UseCase 섹션 | `domain/usecases/email_verification_usecase.dart` |
+| **계정 관리 (삭제, 프로필)** | `domain/README.md` | UseCase 섹션 | `domain/usecases/account_management_usecase.dart` |
+| **AuthUser 엔티티 구조** | `domain/README.md` | Entity 섹션 | `domain/entities/auth_user.dart` |
+| **에러 타입 정의** | `domain/README.md` | Failure 섹션 | `domain/failures/auth_failure.dart` |
+| **Firebase 데이터 변환** | `domain/README.md` | Extension 섹션 | `domain/entities/auth_user_extensions.dart` |
+| **Repository 구현체** | `data/README.md` | Repository 구현 섹션 | `data/repositories/auth_repository_impl.dart` |
+| **로컬 캐싱 로직** | `data/README.md` | DataSource 섹션 | `data/datasources/auth_local_datasource.dart` |
+| **로그인 UI 화면** | `presentation/README.md` | Screens 섹션 | `presentation/screens/login/login_page/` |
+| **회원가입 UI 화면** | `presentation/README.md` | Screens 섹션 | `presentation/screens/signup/create_account/` |
+| **전화 인증 UI** | `presentation/README.md` | Screens 섹션 | `presentation/screens/phone_auth/` |
+| **Riverpod Provider** | `presentation/README.md` | Provider 섹션 | `presentation/providers/auth_providers.dart` |
+| **DI 설정** | `di/auth_di_module.dart` | - | `di/auth_di_module.dart` |
+
+---
+
+## 📚 레이어별 README 안내
+
+### 1. Domain Layer README (`domain/README.md` - 1861줄)
+
+**📌 핵심 내용**:
+- Clean Architecture v4.0 원칙
+- Firebase-Centric 아키텍처 (Port/Adapter 제거)
+- **Either<AuthFailure, T> 패턴 (Voting Feature 100% 일관성)** ⭐
+- 10개 UseCase (fold() 패턴으로 비즈니스 로직 처리)
+- 18개 AuthFailure 타입 (한국어 자동 메시지)
+- Freezed 불변 엔티티 (AuthUser)
+
+**📖 주요 섹션**:
+1. **Entity**: AuthUser (30+ 필드), UserRole 열거형
+2. **Repository Interface**: IAuthRepository (14개 메서드)
+3. **UseCase**: 10개 UseCase 상세 설명
+4. **Failure**: 18개 AuthFailure 타입 정의
+5. **Extensions**: Firebase User ↔ AuthUser 변환
+6. **Freezed Usage Guide**: 불변 엔티티 패턴
+
+**💡 언제 참조?**
+- 비즈니스 로직을 이해하고 싶을 때
+- 엔티티 구조를 확인하고 싶을 때
+- 에러 처리 방법을 알고 싶을 때
+- UseCase 패턴을 배우고 싶을 때
+
+**🔗 바로가기**: [domain/README.md](./domain/README.md)
+
+---
+
+### 2. Data Layer README (`data/README.md`)
+
+**📌 핵심 내용**:
+- Firebase-Centric Architecture v2.0
+- **Either 패턴 구현 (11개 Firebase 에러 → AuthFailure 변환)** ⭐
+- Direct Firebase SDK 사용 (Auth, Firestore)
+- Extension Pattern (Mapper 대체)
+- Repository 구현체 (AuthRepositoryImpl - 14개 메서드 Either 반환)
+- Local DataSource (SharedPreferences 캐싱)
+- AppStateNotifier 통합
+
+**📖 주요 섹션**:
+1. **Firebase-Centric Architecture**: Port/Adapter 제거 이유
+2. **Repository Implementation**: IAuthRepository 구현
+3. **DataSource**: 로컬 캐싱 전략
+4. **Extension Pattern**: Firebase 변환 로직
+5. **Error Handling**: Firebase 에러 → Domain Failure 변환
+6. **Migration History**: Adapter 패턴 제거 과정
+
+**💡 언제 참조?**
+- Firebase Auth 연동 방법을 알고 싶을 때
+- Repository 구현체를 확인하고 싶을 때
+- 로컬 캐싱 전략을 이해하고 싶을 때
+- Extension Pattern 사용법을 배우고 싶을 때
+
+**🔗 바로가기**: [data/README.md](./data/README.md)
+
+---
+
+### 3. Presentation Layer README (`presentation/README.md` - 2663줄)
+
+**📌 핵심 내용**:
+- **fold() 패턴 (Either 결과 처리 + UI 상태 업데이트)** ⭐
+- Riverpod 2.x + GetIt DI 하이브리드
+- Widget + Model 패턴 (Form 상태 분리)
+- Component-Driven Architecture
+- 6개 주요 화면 (Login, Signup, Phone Auth 등)
+- 한국어 에러 메시지 자동 표시 (AuthFailure.message)
+- Flutter Animate 통합
+- GoRouter 네비게이션
+
+**📖 주요 섹션**:
+1. **State Management**: Riverpod StreamProvider + GetIt 래핑
+2. **Screens**: 6개 화면 상세 설명
+3. **Provider Architecture**: UseCase Provider, Stream Provider
+4. **Widget Patterns**: ConsumerStatefulWidget, AppModel, Stateless Component
+5. **Dependency Structure**: Mermaid 다이어그램
+6. **UI/UX Features**: Flutter Animate, Form Validation, Error Handling
+7. **Best Practices**: DO/DON'T 예시
+
+**💡 언제 참조?**
+- UI 화면을 수정하고 싶을 때
+- Riverpod Provider 사용법을 알고 싶을 때
+- Form 상태 관리를 배우고 싶을 때
+- Component 패턴을 이해하고 싶을 때
+
+**🔗 바로가기**: [presentation/README.md](./presentation/README.md)
+
+---
+
+## 📍 주요 파일 위치
+
+### 이메일 로그인 플로우 추적
+
+```
+사용자 입력 → Presentation → Domain → Data → Firebase
+                    ↓           ↓        ↓
+           LoginPageWidget   UseCase  Repository
+```
+
+1. **UI 이벤트**: `presentation/screens/login/login_page/login_page_widget.dart:355`
+   - 사용자가 이메일/비밀번호 입력 후 로그인 버튼 클릭
+   - `_handleEmailLogin()` 메서드 호출
+
+2. **Provider 호출**: `presentation/providers/auth_providers.dart:194`
+   - `ref.read(signInWithEmailUseCaseProvider)` 호출
+   - GetIt에서 UseCase 인스턴스 가져오기
+
+3. **UseCase 실행**: `domain/usecases/sign_in_with_email_usecase.dart:88`
+   - 이메일/비밀번호 검증
+   - Repository 메서드 호출
+   - Either<AuthFailure, AuthUser> 반환
+
+4. **Repository 호출**: `domain/repositories/i_auth_repository.dart:62`
+   - `signInWithEmail()` 인터페이스 정의
+   - Data Layer 구현체로 위임
+
+5. **Data 구현**: `data/repositories/auth_repository_impl.dart`
+   - Firebase Auth SDK 직접 호출
+   - `FirebaseAuth.instance.signInWithEmailAndPassword()`
+   - Firebase User → AuthUser 변환
+
+6. **Extension 변환**: `domain/entities/auth_user_extensions.dart:208`
+   - `FirebaseUser.toAuthUser()` 확장 메서드
+   - Firestore에서 추가 사용자 정보 조회
+   - AuthUser 엔티티 생성
+
+7. **Firebase 호출**:
+   - Firebase Auth: 인증 처리
+   - Firestore: `users/{uid}` 문서 조회
+   - 실시간 Auth 상태 스트림 반환
+
+### Google OAuth 로그인 플로우
+
+```
+사용자 클릭 → GoogleSignIn → Firebase Auth → AuthUser
+```
+
+1. **UI 이벤트**: `presentation/screens/login/login_page/login_page_widget.dart`
+2. **Provider 호출**: `presentation/providers/auth_providers.dart`
+3. **UseCase 실행**: `domain/usecases/sign_in_with_google_usecase.dart:50`
+4. **Google OAuth**: GoogleSignIn SDK → OAuth Token
+5. **Firebase 연동**: `FirebaseAuth.signInWithCredential()`
+6. **Extension 변환**: `auth_user_extensions.dart`
+
+### 전화번호 인증 플로우 (3단계)
+
+```
+전화번호 입력 → SMS 발송 → PIN 입력 → 인증 완료
+     ↓            ↓          ↓          ↓
+ PhoneCreat  verifyPhone  PINcode   AuthUser
+```
+
+1. **1단계 (전화번호 입력)**: `presentation/screens/phone_auth/phone_creat_account/`
+2. **2단계 (SMS 발송)**: `domain/usecases/sign_in_with_phone_usecase.dart:192`
+3. **3단계 (PIN 입력)**: `presentation/screens/phone_auth/phonelogeinpincode/`
+4. **인증 완료**: Firebase Auth Phone Provider 사용
+
+---
+
+## 🔧 DI (Dependency Injection)
+
+**파일**: `di/auth_di_module.dart`
+
+**등록되는 의존성**:
+- **Repository**: `AuthRepositoryImpl` (IAuthRepository 구현체)
+- **DataSource**: `AuthLocalDataSource` (로컬 캐싱)
+- **10개 UseCase**:
+  - `SignInWithEmailUseCase`
+  - `SignInWithGoogleUseCase`
+  - `SignInWithAppleUseCase`
+  - `SignInWithPhoneUseCase`
+  - `SignUpWithEmailUseCase`
+  - `SignOutUseCase`
+  - `GetCurrentUserUseCase`
+  - `AccountManagementUseCase`
+  - `EmailVerificationUseCase`
+  - `PasswordManagementUseCase`
+
+**Provider에서 사용**:
+```dart
+// presentation/providers/auth_providers.dart
+final signInWithEmailUseCaseProvider = Provider<SignInWithEmailUseCase>((ref) {
+  return getIt<SignInWithEmailUseCase>(); // GetIt에서 주입
+});
+
+// 화면에서 사용
+final useCase = ref.read(signInWithEmailUseCaseProvider);
+final result = await useCase.execute(email: email, password: password);
+```
+
+---
+
+## 📊 통계
+
+| 구분 | 파일 수 | 총 라인 수 | 주요 패턴 |
+|------|---------|-----------|-----------|
+| **Domain** | 19 | ~1,861 | Freezed, Either, UseCase, Repository Interface |
+| **Data** | 3 | ~? | Extension, Firebase-Centric, Repository Implementation |
+| **Presentation** | 33 | ~2,663 | Riverpod + GetIt, Widget + Model, Component-Driven |
+| **DI** | 1 | ~150 | GetIt 등록 |
+| **문서** | 4 | ~5,000+ | 통합 가이드 + 레이어별 상세 문서 |
+| **총합** | **60** | **~10,000+** | Clean Architecture v4.0 |
+
+---
+
+## 🚀 시작하기
+
+### 1. 새로운 인증 방식 추가 시
+
+1. **Domain UseCase 생성**: `domain/usecases/sign_in_with_{provider}_usecase.dart`
+   ```dart
+   class SignInWith{Provider}UseCase {
+     final IAuthRepository _repository;
+
+     Future<Either<AuthFailure, AuthUser>> execute() async {
+       // 비즈니스 로직
+       return _repository.signInWith{Provider}();
+     }
+   }
+   ```
+
+2. **Repository 인터페이스 추가**: `domain/repositories/i_auth_repository.dart`
+   ```dart
+   abstract class IAuthRepository {
+     Future<Either<AuthFailure, AuthUser>> signInWith{Provider}();
+   }
+   ```
+
+3. **Repository 구현**: `data/repositories/auth_repository_impl.dart`
+   ```dart
+   @override
+   Future<Either<AuthFailure, AuthUser>> signInWith{Provider}() async {
+     try {
+       final credential = await {ProviderSDK}.signIn();
+       final result = await _firebaseAuth.signInWithCredential(credential);
+       return right(result.user!.toAuthUser());
+     } catch (e) {
+       return left(AuthFailure.serverError(e.toString()));
+     }
+   }
+   ```
+
+4. **Riverpod Provider 생성**: `presentation/providers/auth_providers.dart`
+   ```dart
+   final signInWith{Provider}UseCaseProvider = Provider<SignInWith{Provider}UseCase>((ref) {
+     return getIt<SignInWith{Provider}UseCase>();
+   });
+   ```
+
+5. **UI 화면 추가**: `presentation/screens/login/` 또는 새 화면 생성
+
+6. **DI 등록**: `di/auth_di_module.dart`
+   ```dart
+   getIt.registerLazySingleton(() => SignInWith{Provider}UseCase(getIt()));
+   ```
+
+### 2. 버그 수정 시
+
+1. **증상 파악**: 어느 레이어에서 발생? (UI/비즈니스/데이터)
+2. **해당 레이어 README 참조**: 섹션별 상세 설명 확인
+3. **파일 위치 찾기**: 위 "주요 파일 위치" 섹션 참조
+4. **플로우 추적**: 이메일 로그인 플로우 등 참조
+5. **에러 타입 확인**: `domain/failures/auth_failure.dart` (18개 타입)
+
+### 3. 성능 최적화 시
+
+1. **Provider 최적화**:
+   - `ref.read()` vs `ref.watch()` 올바른 사용
+   - `StreamProvider` 캐싱 (`keepAlive()` 사용)
+   - 불필요한 리빌드 방지
+
+2. **로컬 캐싱**:
+   - `data/datasources/auth_local_datasource.dart` 활용
+   - SharedPreferences 또는 Hive 사용
+   - TTL(Time To Live) 설정
+
+3. **Firebase 최적화**:
+   - Firestore 쿼리 최소화
+   - 필요한 필드만 조회
+   - Offline Persistence 활용
+
+---
+
+## 🔍 자주 찾는 질문
+
+<details>
+<summary><strong>Q1. 멀티 Provider 로그인 (Google + Email) 지원하나요?</strong></summary>
+
+**A**: 네, 지원합니다.
+- Firebase Auth는 하나의 계정에 여러 Provider 연결 가능
+- `linkWithCredential()` 메서드 사용
+- 예: Google 로그인 후 Email/Password 연결
+
+📖 상세: `data/README.md` > Firebase Auth 섹션
+</details>
+
+<details>
+<summary><strong>Q2. JWT Token은 어디서 관리하나요?</strong></summary>
+
+**A**: Firebase Auth SDK가 자동 관리합니다.
+- Token 자동 갱신 (1시간마다)
+- Token 만료 시 자동 로그아웃
+- `getIdToken()` 메서드로 현재 Token 조회 가능
+
+📖 상세: `data/README.md` > Token 관리 섹션
+</details>
+
+<details>
+<summary><strong>Q3. 로그아웃 플로우는 어떻게 되나요?</strong></summary>
+
+**A**: 3단계 플로우입니다.
+1. **UI 이벤트**: 로그아웃 버튼 클릭
+2. **UseCase 실행**: `SignOutUseCase.execute()`
+3. **Firebase 처리**: `FirebaseAuth.instance.signOut()`
+4. **상태 업데이트**: `authStateStreamProvider` 자동 업데이트 (null)
+
+📖 상세: `domain/README.md` > SignOutUseCase 섹션
+</details>
+
+<details>
+<summary><strong>Q4. Extension Pattern과 Mapper Pattern의 차이는?</strong></summary>
+
+**A**:
+- **Extension Pattern** (현재 사용): Dart Extension으로 Firebase User에 `toAuthUser()` 메서드 추가
+  - 간결함: 별도 Mapper 클래스 불필요
+  - 타입 안전: IDE 자동완성 지원
+  - 위치: `domain/entities/auth_user_extensions.dart`
+
+- **Mapper Pattern** (기존 방식): 별도의 Mapper 클래스 + DTO 클래스
+  - 보일러플레이트 많음
+  - Port/Adapter 패턴 필요
+
+📖 상세: `data/README.md` > Extension Pattern 섹션
+</details>
+
+<details>
+<summary><strong>Q5. 전화번호 인증 재시도 제한은 어떻게 구현하나요?</strong></summary>
+
+**A**: `SignInWithPhoneUseCase`에서 처리합니다.
+- 최대 3회 재시도 제한
+- 재시도 횟수는 Firestore에 저장
+- 초과 시 `PhoneMaximumWidget` 표시
+
+플로우:
+1. `phone_creat_account_widget.dart`: 전화번호 입력
+2. `SignInWithPhoneUseCase`: SMS 발송 및 재시도 카운트
+3. `phonelogeinpincode_widget.dart`: PIN 입력
+4. `phonemaximum_widget.dart`: 재시도 초과 화면
+
+📖 상세: `presentation/README.md` > Phone Auth 섹션
+</details>
+
+---
+
+## 📝 기여 가이드
+
+### 코드 수정 시
+
+1. **레이어 규칙 준수**:
+   - Presentation → Domain → Data 방향으로만 의존
+   - Domain은 프레임워크 독립 (Pure Dart)
+   - Data는 Firebase SDK 직접 사용
+
+2. **패턴 일관성**:
+   - Entity는 Freezed 사용
+   - Repository는 Either 패턴
+   - Extension으로 Firebase 변환
+   - Provider는 Riverpod 2.x + GetIt 래핑
+
+3. **문서 업데이트**:
+   - 파일 추가 시: 해당 레이어 README 업데이트
+   - 아키텍처 변경 시: 이 통합 README 업데이트
+   - 주요 변경사항: CHANGELOG 기록
+
+4. **테스트 작성**:
+   - UseCase는 Unit Test 필수
+   - UI는 Widget Test 권장
+   - 통합 테스트는 중요 플로우만
+
+---
+
+## 📞 문의 및 지원
+
+- **버그 리포트**: GitHub Issues
+- **아키텍처 질문**: 각 레이어 README의 "자주 찾는 질문" 섹션 참조
+- **기능 제안**: Feature Request 템플릿 사용
+
+---
+
+## 🔗 관련 문서
+
+- [Auth Domain Layer README](./domain/README.md) - 비즈니스 로직 및 엔티티
+- [Auth Data Layer README](./data/README.md) - Firebase 통합 및 Repository 구현
+- [Auth Presentation Layer README](./presentation/README.md) - UI 화면 및 Riverpod Provider
+- [프로젝트 루트 CLAUDE.md](../../../CLAUDE.md) - 전체 프로젝트 가이드
+
+---
+
+**마지막 업데이트**: 2025-01-20
+**버전**: v2.0.0 (Firebase-Centric + Riverpod 2.x)
+**작성자**: Auth Feature Team

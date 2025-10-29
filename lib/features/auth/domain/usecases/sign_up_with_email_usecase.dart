@@ -68,26 +68,28 @@ class SignUpWithEmailUseCase {
         operation: (transaction) async {
           debugPrint('Idempotency check passed, creating account...');
 
-          // Create user account
-          final user = await _repository.createUserWithEmailAndPassword(
-            email,
-            password,
+          // Create user account (Repository returns Either)
+          final userResult = await _repository.createUserWithEmailAndPassword(email, password);
+          final user = userResult.fold(
+            (failure) => throw failure,
+            (user) => user,
           );
 
-          if (user == null) {
-            debugPrint('Account creation failed');
-            throw const AuthFailure.emailAlreadyInUse();
-          }
-
-          // Update display name if provided
+          // Update display name if provided (Repository returns Either)
           if (displayName != null && displayName.isNotEmpty) {
-            await _repository.updateUserProfile(
-              displayName: displayName,
+            final updateResult = await _repository.updateUserProfile(displayName: displayName);
+            updateResult.fold(
+              (failure) => debugPrint('Failed to update display name: ${failure.message}'),
+              (_) => debugPrint('Display name updated'),
             );
           }
 
-          // Send email verification
-          await _repository.sendEmailVerification();
+          // Send email verification (Repository returns Either)
+          final verificationResult = await _repository.sendEmailVerification();
+          verificationResult.fold(
+            (failure) => debugPrint('Failed to send email verification: ${failure.message}'),
+            (_) => debugPrint('Email verification sent'),
+          );
 
           debugPrint('Account created successfully: ${user.uid}');
           return user;

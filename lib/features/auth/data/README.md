@@ -97,6 +97,7 @@ Auth Feature는 **Clean Architecture v4.0**를 따르며, 각 레이어는 명�
 ///    - Domain Layer의 IAuthRepository 구현
 ///    - Firebase Auth SDK 직접 사용
 ///    - 로컬 캐싱 조율
+///    - Either<AuthFailure, T> 패턴으로 에러 반환
 ///
 /// 2. 데이터 소스 관리
 ///    - IAuthLocalDataSource: 캐싱 전용 (SharedPreferences)
@@ -106,8 +107,10 @@ Auth Feature는 **Clean Architecture v4.0**를 따르며, 각 레이어는 명�
 ///    - AuthUserFirestore: Domain Entity ↔ Firestore 변환
 ///    - Type-safe 변환 로직
 ///
-/// 4. 에러 처리
-///    - FirebaseAuthException → Domain Exception 변환
+/// 4. 에러 처리 (Either Pattern)
+///    - FirebaseAuthException → AuthFailure 변환
+///    - 11개 Firebase 에러 코드 매핑
+///    - Either<AuthFailure, T>로 타입 안전한 에러 처리
 ///    - 네트워크 에러 복구 메커니즘
 ```
 
@@ -294,10 +297,12 @@ class AuthRepositoryImpl implements IAuthRepository {
 
 #### Key Implementation Details
 
+> **Note**: The code examples below show the internal implementation logic. All Repository methods now return `Either<AuthFailure, T>` instead of throwing exceptions. See the [Error Handling](#-error-handling) section for complete Either pattern implementation examples.
+
 **1. Sign In Methods (Firebase Direct)**
 
 ```dart
-/// Google 로그인 구현
+/// Google 로그인 구현 (Simplified - actual implementation returns Either)
 ///
 /// **Flow**:
 /// 1. GoogleSignIn.signIn() → Google OAuth 팝업
@@ -552,35 +557,95 @@ Stream<AuthUser?> get userChanges {
 }
 ```
 
-#### Error Handling
+#### Error Handling - Either Pattern
+
+**Repository는 FirebaseAuthException을 Domain AuthFailure로 변환**합니다. 이는 `_mapFirebaseAuthException()` 메서드에서 처리됩니다.
 
 ```dart
-/// FirebaseAuthException → Domain Exception 변환
-AuthException _handleFirebaseAuthException(FirebaseAuthException e) {
+/// FirebaseAuthException → Domain AuthFailure 변환
+///
+/// **Either Pattern**:
+/// - Firebase 에러를 Domain 실패 타입으로 변환
+/// - Repository 메서드는 Either<AuthFailure, T>를 반환
+/// - UseCases는 try-catch 없이 fold()만 사용
+///
+/// **완전성**:
+/// - 11개 Firebase 에러 코드 매핑
+/// - 사용자 친화적 한국어 메시지
+/// - 기타 모든 에러는 unexpected로 처리
+AuthFailure _mapFirebaseAuthException(FirebaseAuthException e) {
   switch (e.code) {
-    case 'user-not-found':
-      return AuthException('User not found');
-    case 'wrong-password':
-      return AuthException('Wrong password');
-    case 'email-already-in-use':
-      return AuthException('Email already in use');
     case 'invalid-email':
-      return AuthException('Invalid email');
+      return const AuthFailure.invalidEmail();
     case 'weak-password':
-      return AuthException('Password is too weak');
+      return const AuthFailure.weakPassword();
+    case 'email-already-in-use':
+      return const AuthFailure.emailAlreadyInUse();
+    case 'user-not-found':
+      return const AuthFailure.userNotFound();
+    case 'wrong-password':
+      return const AuthFailure.invalidCredentials();
+    case 'invalid-phone-number':
+      return const AuthFailure.invalidPhoneNumber();
+    case 'invalid-verification-code':
+      return const AuthFailure.invalidSmsCode();
+    case 'expired-action-code':
+      return const AuthFailure.smsCodeExpired();
     case 'user-disabled':
-      return AuthException('User account disabled');
-    case 'too-many-requests':
-      return AuthException('Too many requests. Try again later.');
-    case 'operation-not-allowed':
-      return AuthException('Operation not allowed');
+      return const AuthFailure.userDisabled();
+    case 'requires-recent-login':
+      return const AuthFailure.requiresRecentLogin();
     case 'network-request-failed':
-      return AuthException('Network error. Check your connection.');
+      return const AuthFailure.networkError();
     default:
-      return AuthException('Authentication error: ${e.message}');
+      return AuthFailure.unexpected(
+        e.message ?? 'Firebase Auth Error: ${e.code}',
+      );
   }
 }
 ```
+
+**Repository Method Example** (Either 패턴 적용):
+
+```dart
+@override
+Future<Either<AuthFailure, AuthUser>> signInWithEmailAndPassword(
+  String email,
+  String password,
+) async {
+  try {
+    final credential = await _firebaseAuth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    final firebaseUser = credential.user;
+
+    if (firebaseUser == null) {
+      return left(const AuthFailure.userNotFound());
+    }
+
+    // Extension pattern으로 Domain Entity 변환
+    final authUser = await firebaseUser.toDomainUser();
+
+    // 로컬 캐시 저장
+    await _localDataSource.cacheAuthUser(authUser);
+
+    return right(authUser);
+  } on FirebaseAuthException catch (e) {
+    // Firebase 에러를 Domain 실패로 변환
+    return left(_mapFirebaseAuthException(e));
+  } catch (e) {
+    debugPrint('Unexpected error during sign in: $e');
+    return left(AuthFailure.unexpected(e.toString()));
+  }
+}
+```
+
+**Benefits of Either Pattern**:
+1. **Type Safety**: 컴파일 타임에 모든 에러 케이스 검증
+2. **No Exceptions**: UseCases에서 try-catch 불필요
+3. **Consistency**: Voting Feature와 100% 일관된 패턴
+4. **User-Friendly**: 한국어 메시지로 사용자 경험 향상
 
 ---
 
@@ -987,11 +1052,15 @@ Exception
 
 ### Error Handling Strategy
 
-**1. Repository Level**
+**1. Repository Level (Either Pattern)**
 
 ```dart
+/// **Either Pattern Implementation**:
+/// - Repository는 Either<AuthFailure, T>를 반환
+/// - try-catch로 에러를 캐치하고 left(AuthFailure)로 변환
+/// - 성공 시 right(T)로 래핑하여 반환
 @override
-Future<AuthUser> signInWithEmailAndPassword({
+Future<Either<AuthFailure, AuthUser>> signInWithEmailAndPassword({
   required String email,
   required String password,
 }) async {
@@ -1003,63 +1072,100 @@ Future<AuthUser> signInWithEmailAndPassword({
 
     final firebaseUser = userCredential.user;
     if (firebaseUser == null) {
-      throw AuthException('Failed to get user from Firebase');
+      return left(const AuthFailure.userNotFound());
     }
 
-    return await firebaseUser.toAuthUser();
+    // Extension pattern으로 Domain Entity 변환
+    final authUser = await firebaseUser.toAuthUser();
+
+    return right(authUser);
   } on FirebaseAuthException catch (e) {
-    // Firebase 에러를 Domain 에러로 변환
-    throw _handleFirebaseAuthException(e);
+    // Firebase 에러를 Domain AuthFailure로 변환
+    return left(_mapFirebaseAuthException(e));
   } catch (e) {
-    // 예상치 못한 에러
-    throw AuthException('Sign in failed: $e');
+    debugPrint('Unexpected error during sign in: $e');
+    return left(AuthFailure.unexpected(e.toString()));
   }
 }
 ```
 
-**2. UseCase Level**
+**2. UseCase Level (fold() Pattern)**
 
 ```dart
+/// **fold() Pattern - No try-catch needed**:
+/// - Repository already returns Either<AuthFailure, AuthUser>
+/// - UseCase uses fold() to handle both success and failure
+/// - Business logic applied within fold()
+/// - Direct pass-through or additional validation
 class SignInWithEmailUseCase {
-  Future<Either<Failure, AuthUser>> execute({
+  Future<Either<AuthFailure, AuthUser>> execute({
     required String email,
     required String password,
   }) async {
-    try {
-      final user = await _repository.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      return Right(user);
-    } on AuthException catch (e) {
-      // Domain Exception을 Failure로 변환
-      return Left(AuthFailure(e.message));
-    } catch (e) {
-      return Left(UnexpectedFailure('Unexpected error: $e'));
+    debugPrint('Attempting to sign in with email...');
+
+    // 1. Validate email format (Business Logic)
+    if (!_isValidEmail(email)) {
+      return left(const AuthFailure.invalidEmail());
     }
+
+    // 2. Validate password (Business Logic)
+    if (password.isEmpty) {
+      return left(const AuthFailure.weakPassword());
+    }
+
+    // 3. Call repository (Returns Either)
+    final result = await _repository.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+
+    // 4. Use fold() for business logic
+    return result.fold(
+      (failure) {
+        debugPrint('Sign in failed with AuthFailure: ${failure.message}');
+        return left(failure);
+      },
+      (user) {
+        if (!user.isEmailVerified) {
+          debugPrint('Warning: User email is not verified');
+        }
+        debugPrint('Sign in successful for user: ${user.uid}');
+        return right(user);
+      },
+    );
   }
 }
 ```
 
-**3. Presentation Level**
+**3. Presentation Level (fold() for UI Logic)**
 
 ```dart
+/// **UI Error Handling with fold()**:
+/// - Provider receives Either<AuthFailure, AuthUser> from UseCase
+/// - fold() handles both failure and success branches
+/// - Update UI state in each branch
+/// - Show user-friendly error messages with Korean translations
 class AuthProvider extends ChangeNotifier {
   Future<void> signInWithEmail(String email, String password) async {
     _isLoading = true;
     notifyListeners();
 
+    // Call UseCase - returns Either
     final result = await _signInWithEmailUseCase.execute(
       email: email,
       password: password,
     );
 
+    // fold() for UI logic - no try-catch needed
     result.fold(
       (failure) {
-        _errorMessage = failure.message;
+        // Left: Handle failure
+        _errorMessage = failure.message;  // Korean error message
         _showErrorSnackBar(failure.message);
       },
       (user) {
+        // Right: Handle success
         _authUser = user;
         _errorMessage = null;
         _navigateToHome();

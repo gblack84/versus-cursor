@@ -6,10 +6,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:dartz/dartz.dart';
 
 import '../../domain/entities/auth_user.dart';
 import '../../domain/entities/auth_user_extensions.dart';
 import '../../domain/repositories/i_auth_repository.dart';
+import '../../domain/failures/auth_failure.dart';
 import '../datasources/i_auth_local_datasource.dart';
 
 /// AuthRepositoryImpl
@@ -35,29 +37,38 @@ class AuthRepositoryImpl implements IAuthRepository {
         _localDataSource = localDataSource;
 
   @override
-  Future<AuthUser?> getCurrentUser() async {
+  Future<Either<AuthFailure, AuthUser>> getCurrentUser() async {
     try {
       // Get current Firebase Auth user
       final firebaseUser = _firebaseAuth.currentUser;
-      if (firebaseUser == null) return null;
+      if (firebaseUser == null) {
+        return left(const AuthFailure.userNotFound());
+      }
 
       // Convert to domain model using Extension
-      return AuthUserFirestore.fromFirebaseUser(firebaseUser);
+      final authUser = AuthUserFirestore.fromFirebaseUser(firebaseUser);
+      return right(authUser);
+    } on FirebaseAuthException catch (e) {
+      return left(_mapFirebaseAuthException(e));
     } catch (e) {
       debugPrint('Error getting current user: $e');
-      return null;
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 
   @override
-  Future<AuthUser?> signInWithEmailAndPassword(String email, String password) async {
+  Future<Either<AuthFailure, AuthUser>> signInWithEmailAndPassword(String email, String password) async {
     try {
       // 1. Sign in with Firebase
       final credential = await _firebaseAuth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      final firebaseUser = credential.user!;
+      final firebaseUser = credential.user;
+
+      if (firebaseUser == null) {
+        return left(const AuthFailure.userNotFound());
+      }
 
       // 2. Convert to domain model using Extension
       final authUser = AuthUserFirestore.fromFirebaseUser(firebaseUser);
@@ -65,22 +76,28 @@ class AuthRepositoryImpl implements IAuthRepository {
       // 3. Cache auth data
       await _localDataSource.cacheAuthUser(authUser);
 
-      return authUser;
+      return right(authUser);
+    } on FirebaseAuthException catch (e) {
+      return left(_mapFirebaseAuthException(e));
     } catch (e) {
       debugPrint('Error signing in with email/password: $e');
-      rethrow;
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 
   @override
-  Future<AuthUser?> createUserWithEmailAndPassword(String email, String password) async {
+  Future<Either<AuthFailure, AuthUser>> createUserWithEmailAndPassword(String email, String password) async {
     try {
       // 1. Create user with Firebase Auth
       final credential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      final firebaseUser = credential.user!;
+      final firebaseUser = credential.user;
+
+      if (firebaseUser == null) {
+        return left(const AuthFailure.userNotFound());
+      }
 
       // 2. Create profile in Firestore users collection
       await FirebaseFirestore.instance.collection('users').doc(firebaseUser.uid).set({
@@ -99,20 +116,22 @@ class AuthRepositoryImpl implements IAuthRepository {
       // 4. Cache auth data
       await _localDataSource.cacheAuthUser(authUser);
 
-      return authUser;
+      return right(authUser);
+    } on FirebaseAuthException catch (e) {
+      return left(_mapFirebaseAuthException(e));
     } catch (e) {
       debugPrint('Error creating user with email/password: $e');
-      rethrow;
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 
   @override
-  Future<AuthUser?> signInWithGoogle() async {
+  Future<Either<AuthFailure, AuthUser>> signInWithGoogle() async {
     try {
       // 1. Trigger Google Sign-In
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
-        throw Exception('Google sign in aborted');
+        return left(const AuthFailure.cancelledByUser());
       }
 
       // 2. Obtain auth details
@@ -126,7 +145,11 @@ class AuthRepositoryImpl implements IAuthRepository {
 
       // 4. Sign in to Firebase
       final userCredential = await _firebaseAuth.signInWithCredential(credential);
-      final firebaseUser = userCredential.user!;
+      final firebaseUser = userCredential.user;
+
+      if (firebaseUser == null) {
+        return left(const AuthFailure.userNotFound());
+      }
 
       // 5. Create profile in Firestore users collection if new user
       try {
@@ -150,15 +173,17 @@ class AuthRepositoryImpl implements IAuthRepository {
       // 7. Cache auth data
       await _localDataSource.cacheAuthUser(authUser);
 
-      return authUser;
+      return right(authUser);
+    } on FirebaseAuthException catch (e) {
+      return left(_mapFirebaseAuthException(e));
     } catch (e) {
       debugPrint('Error signing in with Google: $e');
-      rethrow;
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 
   @override
-  Future<AuthUser?> signInWithApple() async {
+  Future<Either<AuthFailure, AuthUser>> signInWithApple() async {
     try {
       // 1. Trigger Apple Sign-In
       final appleCredential = await SignInWithApple.getAppleIDCredential(
@@ -176,7 +201,11 @@ class AuthRepositoryImpl implements IAuthRepository {
 
       // 3. Sign in to Firebase
       final userCredential = await _firebaseAuth.signInWithCredential(oauthCredential);
-      final firebaseUser = userCredential.user!;
+      final firebaseUser = userCredential.user;
+
+      if (firebaseUser == null) {
+        return left(const AuthFailure.userNotFound());
+      }
 
       // 4. Create profile in Firestore users collection if new user
       try {
@@ -200,10 +229,12 @@ class AuthRepositoryImpl implements IAuthRepository {
       // 6. Cache auth data
       await _localDataSource.cacheAuthUser(authUser);
 
-      return authUser;
+      return right(authUser);
+    } on FirebaseAuthException catch (e) {
+      return left(_mapFirebaseAuthException(e));
     } catch (e) {
       debugPrint('Error signing in with Apple: $e');
-      rethrow;
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 
@@ -211,7 +242,7 @@ class AuthRepositoryImpl implements IAuthRepository {
   String? _verificationId;
 
   @override
-  Future<bool> sendSmsOtp(String phoneNumber) async {
+  Future<Either<AuthFailure, bool>> sendSmsOtp(String phoneNumber) async {
     try {
       // Firebase Auth handles SMS OTP sending through verifyPhoneNumber
       await _firebaseAuth.verifyPhoneNumber(
@@ -233,18 +264,20 @@ class AuthRepositoryImpl implements IAuthRepository {
           _verificationId = verificationId;
         },
       );
-      return true;
+      return right(true);
+    } on FirebaseAuthException catch (e) {
+      return left(_mapFirebaseAuthException(e));
     } catch (e) {
       debugPrint('Error sending SMS OTP: $e');
-      return false;
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 
   @override
-  Future<AuthUser?> signInWithPhoneNumber(String phoneNumber, String verificationCode) async {
+  Future<Either<AuthFailure, AuthUser>> signInWithPhoneNumber(String phoneNumber, String verificationCode) async {
     try {
       if (_verificationId == null) {
-        throw Exception('Verification ID is null. Please call sendSmsOtp first.');
+        return left(const AuthFailure.invalidSmsCode());
       }
 
       // Create credential with verification code
@@ -255,7 +288,11 @@ class AuthRepositoryImpl implements IAuthRepository {
 
       // Sign in with credential
       final userCredential = await _firebaseAuth.signInWithCredential(credential);
-      final firebaseUser = userCredential.user!;
+      final firebaseUser = userCredential.user;
+
+      if (firebaseUser == null) {
+        return left(const AuthFailure.userNotFound());
+      }
 
       // Create profile in Firestore users collection if new user
       try {
@@ -282,15 +319,17 @@ class AuthRepositoryImpl implements IAuthRepository {
       // Clear verification ID
       _verificationId = null;
 
-      return authUser;
+      return right(authUser);
+    } on FirebaseAuthException catch (e) {
+      return left(_mapFirebaseAuthException(e));
     } catch (e) {
       debugPrint('Error signing in with phone number: $e');
-      rethrow;
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 
   @override
-  Future<void> signOut() async {
+  Future<Either<AuthFailure, void>> signOut() async {
     try {
       // Clear local cache first
       await _localDataSource.clearAllCache();
@@ -302,47 +341,54 @@ class AuthRepositoryImpl implements IAuthRepository {
 
       // Sign out from Firebase
       await _firebaseAuth.signOut();
+
+      return right(null);
+    } on FirebaseAuthException catch (e) {
+      return left(_mapFirebaseAuthException(e));
     } catch (e) {
       debugPrint('Error signing out: $e');
-      rethrow;
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 
   @override
-  Future<void> sendPasswordResetEmail(String email) async {
+  Future<Either<AuthFailure, void>> sendPasswordResetEmail(String email) async {
     try {
       await _firebaseAuth.sendPasswordResetEmail(email: email);
+      return right(null);
+    } on FirebaseAuthException catch (e) {
+      return left(_mapFirebaseAuthException(e));
     } catch (e) {
       debugPrint('Error sending password reset email: $e');
-      rethrow;
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 
   @override
-  Future<bool> sendEmailVerification() async {
+  Future<Either<AuthFailure, bool>> sendEmailVerification() async {
     try {
       final user = _firebaseAuth.currentUser;
       if (user == null) {
-        debugPrint('No user signed in');
-        return false;
+        return left(const AuthFailure.userNotFound());
       }
 
       await user.sendEmailVerification();
-      return true;
+      return right(true);
+    } on FirebaseAuthException catch (e) {
+      return left(_mapFirebaseAuthException(e));
     } catch (e) {
       debugPrint('Error sending email verification: $e');
-      return false;
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 
   @override
-  Future<bool> deleteUser() async {
+  Future<Either<AuthFailure, bool>> deleteUser() async {
     try {
       // 0. Get user ID before deletion (Firebase Auth 삭제 전 필요)
       final userId = _firebaseAuth.currentUser?.uid;
       if (userId == null) {
-        debugPrint('Cannot delete user: No user signed in');
-        return false;
+        return left(const AuthFailure.userNotFound());
       }
 
       // 1. Clear local cache
@@ -360,22 +406,24 @@ class AuthRepositoryImpl implements IAuthRepository {
         debugPrint('Firebase Auth account deleted');
       }
 
-      return true;
+      return right(true);
+    } on FirebaseAuthException catch (e) {
+      return left(_mapFirebaseAuthException(e));
     } catch (e) {
       debugPrint('Error deleting user: $e');
-      return false;
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 
   @override
-  Future<void> updateUserProfile({
+  Future<Either<AuthFailure, void>> updateUserProfile({
     String? displayName,
     String? photoURL,
   }) async {
     try {
       final user = _firebaseAuth.currentUser;
       if (user == null) {
-        throw Exception('No user signed in');
+        return left(const AuthFailure.userNotFound());
       }
 
       // Update Firebase Auth profile
@@ -393,9 +441,13 @@ class AuthRepositoryImpl implements IAuthRepository {
           .collection('users')
           .doc(user.uid)
           .update(updateData);
+
+      return right(null);
+    } on FirebaseAuthException catch (e) {
+      return left(_mapFirebaseAuthException(e));
     } catch (e) {
       debugPrint('Error updating user profile: $e');
-      rethrow;
+      return left(AuthFailure.unexpected(e.toString()));
     }
   }
 
@@ -415,14 +467,13 @@ class AuthRepositoryImpl implements IAuthRepository {
   }
 
   @override
-  Future<bool> updatePassword(String newPassword) async {
+  Future<Either<AuthFailure, bool>> updatePassword(String newPassword) async {
     try {
       debugPrint('Attempting to update password...');
 
       // Check if user is signed in
       if (!isSignedIn) {
-        debugPrint('No user signed in');
-        return false;
+        return left(const AuthFailure.userNotFound());
       }
 
       final user = _firebaseAuth.currentUser!;
@@ -431,21 +482,56 @@ class AuthRepositoryImpl implements IAuthRepository {
       await user.updatePassword(newPassword);
 
       debugPrint('Password updated successfully');
-      return true;
+      return right(true);
     } on FirebaseAuthException catch (e) {
       debugPrint('Password update failed with Firebase error: ${e.code} - ${e.message}');
-
-      // Handle specific errors
-      if (e.code == 'requires-recent-login') {
-        debugPrint('User needs to re-authenticate before updating password');
-      } else if (e.code == 'weak-password') {
-        debugPrint('The password provided is too weak');
-      }
-
-      return false;
+      return left(_mapFirebaseAuthException(e));
     } catch (e) {
       debugPrint('Password update failed with unexpected error: $e');
-      return false;
+      return left(AuthFailure.unexpected(e.toString()));
+    }
+  }
+
+  /// Map FirebaseAuthException to AuthFailure
+  ///
+  /// **Firebase-Centric v2.0 Pattern**: Repository는 Firebase 에러를 Domain Failure로 변환
+  AuthFailure _mapFirebaseAuthException(FirebaseAuthException e) {
+    switch (e.code) {
+      // Email & Password errors
+      case 'invalid-email':
+        return const AuthFailure.invalidEmail();
+      case 'weak-password':
+        return const AuthFailure.weakPassword();
+      case 'email-already-in-use':
+        return const AuthFailure.emailAlreadyInUse();
+      case 'user-not-found':
+        return const AuthFailure.userNotFound();
+      case 'wrong-password':
+        return const AuthFailure.invalidCredentials();
+
+      // Phone auth errors
+      case 'invalid-phone-number':
+        return const AuthFailure.invalidPhoneNumber();
+      case 'invalid-verification-code':
+        return const AuthFailure.invalidSmsCode();
+      case 'expired-action-code':
+        return const AuthFailure.smsCodeExpired();
+
+      // User state errors
+      case 'user-disabled':
+        return const AuthFailure.userDisabled();
+
+      // Permission errors
+      case 'requires-recent-login':
+        return const AuthFailure.requiresRecentLogin();
+
+      // Network errors
+      case 'network-request-failed':
+        return const AuthFailure.networkError();
+
+      // Default
+      default:
+        return AuthFailure.unexpected(e.message ?? 'Firebase Auth Error: ${e.code}');
     }
   }
 }

@@ -38,54 +38,64 @@ class AccountManagementUseCase {
     String? confirmationText,
     bool checkReAuth = false,
   }) async {
-    try {
-      debugPrint('Attempting to delete user account...');
+    debugPrint('Attempting to delete user account...');
 
-      // Safety check: Require confirmation text if provided
-      if (confirmationText != null && confirmationText != 'DELETE') {
-        debugPrint('Confirmation text does not match. Expected: DELETE, Got: $confirmationText');
-        return left(AuthFailure.unexpected('확인 텍스트가 일치하지 않습니다'));
-      }
+    // 1. Safety check: Require confirmation text if provided (Business Logic)
+    if (confirmationText != null && confirmationText != 'DELETE') {
+      debugPrint('Confirmation text does not match. Expected: DELETE, Got: $confirmationText');
+      return left(AuthFailure.unexpected('확인 텍스트가 일치하지 않습니다'));
+    }
 
-      // Check if user is signed in
-      if (!_repository.isSignedIn) {
-        debugPrint('No user signed in to delete');
-        return left(const AuthFailure.userNotFound());
-      }
+    // 2. Check if user is signed in (Business Logic)
+    if (!_repository.isSignedIn) {
+      debugPrint('No user signed in to delete');
+      return left(const AuthFailure.userNotFound());
+    }
 
-      // Get current user info for logging
-      final currentUser = await _repository.getCurrentUser();
-      if (currentUser == null) {
+    // 3. Get current user info for logging (Repository returns Either)
+    final userResult = await _repository.getCurrentUser();
+    final currentUserEither = userResult.fold(
+      (failure) {
         debugPrint('Could not retrieve user information');
-        return left(const AuthFailure.userNotFound());
-      }
+        return left(failure);
+      },
+      (user) {
+        debugPrint('Current user retrieved: ${user.uid}');
+        return right(user);
+      },
+    );
 
-      // Check if re-authentication is needed
-      if (checkReAuth && await needsReAuthentication()) {
-        debugPrint('User needs to re-authenticate before deletion');
-        return left(const AuthFailure.requiresRecentLogin());
-      }
+    // Early return if user retrieval failed
+    if (currentUserEither.isLeft()) {
+      return currentUserEither.fold(
+        (failure) => left(failure),
+        (_) => left(const AuthFailure.userNotFound()), // Should not reach here
+      );
+    }
 
-      debugPrint('Deleting account for user: ${currentUser.uid}');
+    final currentUser = currentUserEither.getOrElse(() => throw Exception('Unreachable'));
 
-      // Delete user account
-      final success = await _repository.deleteUser();
+    // 4. Check if re-authentication is needed (Business Logic)
+    if (checkReAuth && await needsReAuthentication()) {
+      debugPrint('User needs to re-authenticate before deletion');
+      return left(const AuthFailure.requiresRecentLogin());
+    }
 
-      if (success) {
+    debugPrint('Deleting account for user: ${currentUser.uid}');
+
+    // 5. Delete user account (Repository returns Either<AuthFailure, bool>)
+    final deleteResult = await _repository.deleteUser();
+
+    return deleteResult.fold(
+      (failure) {
+        debugPrint('Account deletion failed with AuthFailure: ${failure.message}');
+        return left(failure);
+      },
+      (success) {
         debugPrint('Account deleted successfully');
         return right(unit);
-      } else {
-        debugPrint('Account deletion failed');
-        return left(const AuthFailure.serverError());
-      }
-
-    } on AuthFailure catch (e) {
-      debugPrint('Account deletion failed with AuthFailure: ${e.message}');
-      return left(e);
-    } catch (e) {
-      debugPrint('Account deletion failed with unexpected error: $e');
-      return left(AuthFailure.unexpected(e.toString()));
-    }
+      },
+    );
   }
 
   /// Check if user needs to re-authenticate
@@ -93,28 +103,26 @@ class AccountManagementUseCase {
   /// Account deletion requires recent authentication.
   /// Returns true if re-authentication is needed.
   Future<bool> needsReAuthentication() async {
-    try {
-      // Check when user last signed in
-      final currentUser = await _repository.getCurrentUser();
-      if (currentUser == null) {
-        return true;
-      }
+    // Check when user last signed in (Repository returns Either)
+    final userResult = await _repository.getCurrentUser();
 
-      // If last login was more than 5 minutes ago, require re-auth
-      if (currentUser.lastLoginAt != null) {
-        final timeSinceLogin = DateTime.now().difference(currentUser.lastLoginAt!);
-        if (timeSinceLogin.inMinutes > 5) {
-          debugPrint('Last login was ${timeSinceLogin.inMinutes} minutes ago. Re-authentication required.');
-          return true;
+    return userResult.fold(
+      (failure) {
+        debugPrint('Could not retrieve user for re-auth check: ${failure.message}');
+        return true; // Err on the side of caution
+      },
+      (currentUser) {
+        // If last login was more than 5 minutes ago, require re-auth
+        if (currentUser.lastLoginAt != null) {
+          final timeSinceLogin = DateTime.now().difference(currentUser.lastLoginAt!);
+          if (timeSinceLogin.inMinutes > 5) {
+            debugPrint('Last login was ${timeSinceLogin.inMinutes} minutes ago. Re-authentication required.');
+            return true;
+          }
         }
-      }
-
-      return false;
-
-    } catch (e) {
-      debugPrint('Error checking re-authentication need: $e');
-      return true; // Err on the side of caution
-    }
+        return false;
+      },
+    );
   }
 
   /// Update User Profile
@@ -126,37 +134,36 @@ class AccountManagementUseCase {
     String? displayName,
     String? photoURL,
   }) async {
-    try {
-      debugPrint('Updating user profile...');
+    debugPrint('Updating user profile...');
 
-      // Check if user is signed in
-      if (!_repository.isSignedIn) {
-        debugPrint('No user signed in');
-        return left(const AuthFailure.userNotFound());
-      }
-
-      // Validate at least one field is being updated
-      if (displayName == null && photoURL == null) {
-        debugPrint('No profile information provided to update');
-        return left(const AuthFailure.profileIncomplete());
-      }
-
-      // Update profile
-      await _repository.updateUserProfile(
-        displayName: displayName,
-        photoURL: photoURL,
-      );
-
-      debugPrint('Profile updated successfully');
-      return right(unit);
-
-    } on AuthFailure catch (e) {
-      debugPrint('Profile update failed with AuthFailure: ${e.message}');
-      return left(e);
-    } catch (e) {
-      debugPrint('Profile update failed with unexpected error: $e');
-      return left(AuthFailure.unexpected(e.toString()));
+    // 1. Check if user is signed in (Business Logic)
+    if (!_repository.isSignedIn) {
+      debugPrint('No user signed in');
+      return left(const AuthFailure.userNotFound());
     }
+
+    // 2. Validate at least one field is being updated (Business Logic)
+    if (displayName == null && photoURL == null) {
+      debugPrint('No profile information provided to update');
+      return left(const AuthFailure.profileIncomplete());
+    }
+
+    // 3. Update profile (Repository returns Either<AuthFailure, void>)
+    final result = await _repository.updateUserProfile(
+      displayName: displayName,
+      photoURL: photoURL,
+    );
+
+    return result.fold(
+      (failure) {
+        debugPrint('Profile update failed with AuthFailure: ${failure.message}');
+        return left(failure);
+      },
+      (_) {
+        debugPrint('Profile updated successfully');
+        return right(unit);
+      },
+    );
   }
 
   /// Get Current User
@@ -165,26 +172,21 @@ class AccountManagementUseCase {
   ///
   /// Returns Either<AuthFailure, AuthUser> with automatic Korean error messages
   Future<Either<AuthFailure, AuthUser>> getCurrentUser() async {
-    try {
-      debugPrint('Retrieving current user...');
+    debugPrint('Retrieving current user...');
 
-      final user = await _repository.getCurrentUser();
+    // Repository already returns Either - direct pass-through with logging
+    final result = await _repository.getCurrentUser();
 
-      if (user != null) {
+    return result.fold(
+      (failure) {
+        debugPrint('Get user failed with AuthFailure: ${failure.message}');
+        return left(failure);
+      },
+      (user) {
         debugPrint('Current user retrieved: ${user.uid}');
         return right(user);
-      } else {
-        debugPrint('No user currently signed in');
-        return left(const AuthFailure.userNotFound());
-      }
-
-    } on AuthFailure catch (e) {
-      debugPrint('Get user failed with AuthFailure: ${e.message}');
-      return left(e);
-    } catch (e) {
-      debugPrint('Get user failed with unexpected error: $e');
-      return left(AuthFailure.unexpected(e.toString()));
-    }
+      },
+    );
   }
 
   /// Check if User is Signed In

@@ -16,8 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '/core/utils/idempotency_service.dart';
 
 // ===== App Layer - Contracts =====
-import '/app/contracts/auth_contract.dart';
-import '/app/contracts/user_contract.dart';
+// AuthContract & UserContract removed - Firebase-Centric Architecture
 
 // ===== Domain Layer - Repositories =====
 import '../domain/repositories/i_auth_repository.dart';
@@ -50,9 +49,6 @@ void registerAuthModule(GetIt getIt) {
   // ===== Repository Registration =====
   _registerRepository(getIt);
 
-  // ===== AuthContract Registration =====
-  _registerContract(getIt);
-
   // ===== UseCases Registration =====
   _registerUseCases(getIt);
 }
@@ -71,29 +67,11 @@ void _registerDataSources(GetIt getIt) {
 /// Register Repository implementation
 /// Note: Repository uses FirebaseAuth directly instead of Remote DataSource
 void _registerRepository(GetIt getIt) {
-  // Note: UserContract must be registered before this module
-  // UserContract is registered in Profile Feature DI module
-  if (!getIt.isRegistered<UserContract>()) {
-    throw StateError(
-      'UserContract must be registered before AuthModule.init()\n'
-      'Ensure Profile Feature DI module is initialized first.'
-    );
-  }
-
   getIt.registerLazySingleton<IAuthRepository>(
     () => AuthRepositoryImpl(
       firebaseAuth: FirebaseAuth.instance,
       localDataSource: getIt<IAuthLocalDataSource>(),
-      userContract: getIt<UserContract>(),
     ),
-  );
-}
-
-/// Register AuthContract
-/// AuthRepositoryImpl implements both IAuthRepository and AuthContract (Dual Interface)
-void _registerContract(GetIt getIt) {
-  getIt.registerLazySingleton<AuthContract>(
-    () => getIt<IAuthRepository>() as AuthRepositoryImpl,
   );
 }
 

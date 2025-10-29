@@ -3,14 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bot_toast/bot_toast.dart';
-
-import '/core/interfaces/i_base_auth_user.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '/core_exports.dart';
 
 import '/features/chat/domain/entities/chat.dart' as chat_entities;
 import '/app/widgets/index.dart';
-import '/features/auth/presentation/index.dart';
 import '/app/widgets/navigation/main_navigation_shell.dart';
 
 // Non-Auth Feature imports from app/widgets/index.dart
@@ -38,8 +36,8 @@ class AppStateNotifier extends ChangeNotifier {
   static AppStateNotifier? _instance;
   static AppStateNotifier get instance => _instance ??= AppStateNotifier._();
 
-  BaseAuthUser? initialUser;
-  BaseAuthUser? user;
+  User? initialUser;
+  User? user;
   bool showSplashImage = true;
   String? _redirectLocation;
 
@@ -51,8 +49,8 @@ class AppStateNotifier extends ChangeNotifier {
   bool notifyOnAuthChange = true;
 
   bool get loading => showSplashImage;
-  bool get loggedIn => user?.loggedIn ?? false;
-  bool get initiallyLoggedIn => initialUser?.loggedIn ?? false;
+  bool get loggedIn => user != null;
+  bool get initiallyLoggedIn => initialUser != null;
   bool get shouldRedirect => loggedIn && _redirectLocation != null;
 
   String getRedirectLocation() => _redirectLocation!;
@@ -64,9 +62,9 @@ class AppStateNotifier extends ChangeNotifier {
   /// to perform subsequent actions (such as navigation) afterwards.
   void updateNotifyOnAuthChange(bool notify) => notifyOnAuthChange = notify;
 
-  void update(BaseAuthUser newUser) {
+  void update(User? newUser) {
     final shouldUpdate =
-        user?.uid == null || newUser.uid == null || user?.uid != newUser.uid;
+        user?.uid == null || newUser?.uid == null || user?.uid != newUser?.uid;
     initialUser ??= newUser;
     user = newUser;
     // Refresh the app on auth change unless explicitly marked otherwise.

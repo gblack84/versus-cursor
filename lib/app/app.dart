@@ -2,9 +2,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '/core_exports.dart';
-import '/features/auth/data/adapters/firebase_user_adapter.dart';
 import '/app/contracts/notification_contract.dart';
 import '/features/notifications/presentation/providers/notification_overlay_provider.dart';
 import '/services/cache/preload_strategy.dart';
@@ -33,7 +33,7 @@ class _VersusAppState extends State<VersusApp> {
   ThemeMode _themeMode = AppTheme.themeMode;
   late AppStateNotifier _appStateNotifier;
   late GoRouter _router;
-  late Stream<BaseAuthUser> userStream;
+  late Stream<User?> userStream;
 
   // NotificationOverlayProvider for in-app notification dialogs
   NotificationOverlayProvider? _overlayProvider;
@@ -59,16 +59,16 @@ class _VersusAppState extends State<VersusApp> {
     _appStateNotifier = AppStateNotifier.instance;
     _router = createRouter(_appStateNotifier);
 
-    userStream = versusSpaceFirebaseUserStream()
+    userStream = FirebaseAuth.instance.authStateChanges()
       ..listen((user) async {
         _appStateNotifier.update(user);
 
         // NotificationContract를 통한 통합 알림 시스템 초기화
-        if (user.loggedIn && user.uid != null && user.uid!.isNotEmpty) {
+        if (user != null && user.uid.isNotEmpty) {
           // 사용자가 로그인하면 알림 시스템 초기화
           final notificationContract = GetIt.instance<NotificationContract>();
-          await notificationContract.initializeNotifications(user.uid!);
-          await notificationContract.startNotificationListening(user.uid!);
+          await notificationContract.initializeNotifications(user.uid);
+          await notificationContract.startNotificationListening(user.uid);
 
           // NotificationOverlayProvider 초기화 및 시작
           _overlayProvider = GetIt.instance<NotificationOverlayProvider>();
@@ -89,14 +89,12 @@ class _VersusAppState extends State<VersusApp> {
             // UI 렌더링이 완료된 후 시작하도록 지연시킴
             Future.delayed(const Duration(milliseconds: 500), () async {
               try {
-                if (user.uid != null) {
-                  // 프리로드를 순차적으로 수행하여 메인 스레드 부하 감소
-                  await PreloadStrategy().preloadRecentChats(user.uid!);
-                  // 추가 지연을 주어 UI 반응성 유지
-                  await Future.delayed(const Duration(milliseconds: 100));
-                  await PreloadStrategy().preloadHomeFeedPosts();
-                  debugPrint('[VersusApp] 프리로드 완료');
-                }
+                // 프리로드를 순차적으로 수행하여 메인 스레드 부하 감소
+                await PreloadStrategy().preloadRecentChats(user.uid);
+                // 추가 지연을 주어 UI 반응성 유지
+                await Future.delayed(const Duration(milliseconds: 100));
+                await PreloadStrategy().preloadHomeFeedPosts();
+                debugPrint('[VersusApp] 프리로드 완료');
               } catch (e) {
                 debugPrint('[VersusApp] 프리로드 실패: $e');
               }
@@ -107,8 +105,8 @@ class _VersusAppState extends State<VersusApp> {
         } else {
           // 사용자가 로그아웃하면 알림 시스템 종료
           final notificationContract = GetIt.instance<NotificationContract>();
-          if (user.uid != null) {
-            await notificationContract.stopNotificationListening(user.uid!);
+          if (user != null) {
+            await notificationContract.stopNotificationListening(user.uid);
           }
           debugPrint('[VersusApp] 알림 서비스 중지');
 

@@ -113,35 +113,56 @@ Auth Feature는 **Clean Architecture v4.0**를 따르며, 각 레이어는 명�
 
 ---
 
-## 📂 Directory Structure
-
-### Current Structure (v2.0.0)
+## 🏗️ 전체 구조도
 
 ```
 lib/features/auth/data/
+├── repositories/                            # 1개 - Firebase 직접 사용
+│   └── auth_repository_impl.dart            # Firebase-Centric Repository (451 lines)
+│                                            # - FirebaseAuth 직접 주입
+│                                            # - 10개 인증 메서드 구현
+│                                            # - Extension Pattern 활용
+│                                            # - Idempotency 보장
 │
-├── 📁 datasources/              # Data Sources
-│   ├── i_auth_local_datasource.dart      # 로컬 인터페이스 (160 lines)
-│   └── auth_local_datasource.dart        # SharedPreferences 구현 (109 lines)
-│
-└── 📁 repositories/             # Repository Implementations
-    └── auth_repository_impl.dart         # Firebase-Centric Repository (451 lines)
+└── datasources/                             # 2개 - Local cache only
+    ├── i_auth_local_datasource.dart         # Local cache 인터페이스 (160 lines)
+    │                                        # - 8개 메서드 정의
+    │                                        # - 자동 로그인 지원
+    │                                        # - 사용자 설정 관리
+    │
+    └── auth_local_datasource.dart           # SharedPreferences 구현 (109 lines)
+                                             # - UID 캐싱
+                                             # - Persistent login
+                                             # - User preferences
 
-Total: 3 files, ~720 lines of code
+총 파일 수: 3개
+총 라인 수: ~720줄
+
+Extensions: Domain Layer에 위치
+├── lib/features/auth/domain/entities/auth_user_extensions.dart
+│   └── AuthUserFirestore extension         # Firebase User ↔ AuthUser 변환
+│       ├── toAuthUser(): Firebase User → Domain AuthUser
+│       └── Firestore 통합 (users 컬렉션 조회)
 ```
 
-### Removed Directories (Migration v1.0.0 → v2.0.0)
+### ❌ 제거된 디렉토리 (Migration v1.0.0 → v2.0.0)
 
 ```diff
 - adapters/                      # ❌ Removed: Adapter pattern eliminated
--   ├── firebase_user_adapter.dart        # ❌ BaseAuthUser adapter (54 lines)
--   └── auth_stream_extensions.dart       # ❌ Unused stream extensions (32 lines)
+-   ├── firebase_user_adapter.dart        # BaseAuthUser adapter (54 lines)
+-   │   └── VersusSpaceFirebaseUser class  # Firebase User → BaseAuthUser 변환
+-   │
+-   └── auth_stream_extensions.dart       # Stream extensions (32 lines)
+-       └── BaseAuthUserStreamX extension  # 미사용 스트림 변환
 -
 - dto/                          # ❌ Not Created: Direct Firebase types
+-   └── auth_user_dto.dart                 # Firebase User를 직접 사용하므로 불필요
+-
 - mappers/                      # ❌ Not Created: Extension pattern instead
+    └── auth_user_mapper.dart              # Extension으로 대체 (toAuthUser())
 ```
 
-**Rationale**: Firebase-Centric 아키텍처는 중간 추상화를 제거하고, Firebase SDK 타입을 직접 사용합니다. 타입 변환은 Extension Pattern으로 처리합니다.
+**Rationale**: Firebase-Centric 아키텍처는 중간 추상화 레이어(DTO, Mapper, Remote DataSource)를 제거하고, Firebase SDK 타입을 직접 사용합니다. 타입 변환은 Domain Layer의 Extension Pattern으로 처리하여 코드 간결성과 유지보수성을 확보합니다.
 
 ---
 

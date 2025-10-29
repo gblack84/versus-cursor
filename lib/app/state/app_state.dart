@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
-import '/app/di/creation_module.dart';
 
 /// Global app state management
 /// Phase 5 Migration: 미디어 관련 상태는 MediaSelectionProvider로 이동

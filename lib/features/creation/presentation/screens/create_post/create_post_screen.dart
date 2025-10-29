@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:get_it/get_it.dart';
 import '../../providers/create_post_provider_v2.dart';
-import '/app/di/creation_module.dart';
+import '../../providers/media/media_selection_provider.dart';
+import '../../providers/media/media_validation_provider.dart';
 import '../../widgets/create_post/image_selection_widget.dart';
 import '../../widgets/create_post/text_input_widget.dart';
 import '/features/creation/presentation/widgets/components/next_button.dart';
@@ -160,15 +162,15 @@ class _CreatePostScreenState extends State<CreatePostScreen>
       providers: [
         // Phase 5: MediaStateCoordinator 통합된 Provider
         ChangeNotifierProvider(
-          create: (_) => CreationModule.getCreatePostProvider(),
+          create: (_) => GetIt.instance<CreatePostProviderV2>(),
         ),
         // Phase 5: MediaSelectionProvider (UI 상태 관리용)
         ChangeNotifierProvider(
-          create: (_) => CreationModule.getMediaSelectionProvider(),
+          create: (_) => GetIt.instance<MediaSelectionProvider>(),
         ),
         // Phase 5: MediaValidationProvider (검증 상태 관리용)
         ChangeNotifierProvider(
-          create: (_) => CreationModule.getMediaValidationProvider(),
+          create: (_) => GetIt.instance<MediaValidationProvider>(),
         ),
       ],
       child: Scaffold(

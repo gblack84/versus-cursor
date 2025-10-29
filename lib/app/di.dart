@@ -12,17 +12,12 @@ import '/core/utils/idempotency_service.dart';
 // Feature DI Modules
 import '/features/post/di/post_di_module.dart';
 import '/features/voting/di/voting_di_module.dart';
-import '/features/voting/domain/services/i_vote_service.dart' as voting;
 import '/features/profile/di/profile_di_module.dart';
 import '/features/auth/di/auth_di_module.dart';
 import '/features/notifications/di/notification_di_module.dart';
 import '/features/chat/di/chat_di_module.dart';
 import '/features/creation/di/creation_di_module.dart';
 import '/features/search/di/search_di_module.dart';
-
-// Core Interface Implementations for Cross-Feature Communication
-import '/core/interfaces/features/i_vote_service.dart' as core;
-import 'di/adapters/core_vote_service_adapter.dart';
 
 // ===== Post Feature DI Module =====
 // Handled by /features/post/di/post_di_module.dart
@@ -75,16 +70,6 @@ Future<void> setupDependencyInjection() async {
   // ===== Notifications Feature DI =====
   // Note: Registered AFTER Voting because depends on SubmitVoteUseCase
   registerNotificationModule(getIt);
-
-  // ===== Core Interface Bindings for Cross-Feature Communication =====
-  
-  // Register Core IVoteService using adapter pattern after voting module
-  // This allows notifications to use voting functionality without direct dependency
-  getIt.registerLazySingleton<core.IVoteService>(
-    () => CoreVoteServiceAdapter(
-      votingService: getIt<voting.IVoteService>(),
-    ),
-  );
 
   // ===== Profile Feature DI =====
   // Note: Registered before Auth because Auth depends on UserContract

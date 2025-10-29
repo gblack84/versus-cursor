@@ -37,7 +37,7 @@ mixin _$AuthUser {
  int get pointsA;/// Q 포인트 (질문으로 얻은 포인트)
  int get pointsQ;// ==================== Role & Premium ====================
 /// 사용자 역할 (admin, tester, user)
-@JsonKey(fromJson: _userRoleFromJson, toJson: _userRoleToJson) UserRole get role;/// 프리미엄 사용자 여부
+@UserRoleConverter() UserRole get role;/// 프리미엄 사용자 여부
  bool get isPremium;// ==================== Timestamps ====================
 /// 계정 생성 시간
  DateTime? get createdAt;/// 마지막 로그인 시간
@@ -76,7 +76,7 @@ abstract mixin class $AuthUserCopyWith<$Res>  {
   factory $AuthUserCopyWith(AuthUser value, $Res Function(AuthUser) _then) = _$AuthUserCopyWithImpl;
 @useResult
 $Res call({
- String uid, String? email, String? displayName, String? userName, String? photoUrl, String? phoneNumber, bool isEmailVerified, bool isAnonymous, String? providerId, String? bio, int? age, String? gender, List<String> interests, List<String> expertise, List<String> hobbies, int pointsA, int pointsQ,@JsonKey(fromJson: _userRoleFromJson, toJson: _userRoleToJson) UserRole role, bool isPremium, DateTime? createdAt, DateTime? lastLoginAt, Map<String, dynamic> settings
+ String uid, String? email, String? displayName, String? userName, String? photoUrl, String? phoneNumber, bool isEmailVerified, bool isAnonymous, String? providerId, String? bio, int? age, String? gender, List<String> interests, List<String> expertise, List<String> hobbies, int pointsA, int pointsQ,@UserRoleConverter() UserRole role, bool isPremium, DateTime? createdAt, DateTime? lastLoginAt, Map<String, dynamic> settings
 });
 
 
@@ -199,7 +199,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String uid,  String? email,  String? displayName,  String? userName,  String? photoUrl,  String? phoneNumber,  bool isEmailVerified,  bool isAnonymous,  String? providerId,  String? bio,  int? age,  String? gender,  List<String> interests,  List<String> expertise,  List<String> hobbies,  int pointsA,  int pointsQ, @JsonKey(fromJson: _userRoleFromJson, toJson: _userRoleToJson)  UserRole role,  bool isPremium,  DateTime? createdAt,  DateTime? lastLoginAt,  Map<String, dynamic> settings)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String uid,  String? email,  String? displayName,  String? userName,  String? photoUrl,  String? phoneNumber,  bool isEmailVerified,  bool isAnonymous,  String? providerId,  String? bio,  int? age,  String? gender,  List<String> interests,  List<String> expertise,  List<String> hobbies,  int pointsA,  int pointsQ, @UserRoleConverter()  UserRole role,  bool isPremium,  DateTime? createdAt,  DateTime? lastLoginAt,  Map<String, dynamic> settings)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AuthUser() when $default != null:
 return $default(_that.uid,_that.email,_that.displayName,_that.userName,_that.photoUrl,_that.phoneNumber,_that.isEmailVerified,_that.isAnonymous,_that.providerId,_that.bio,_that.age,_that.gender,_that.interests,_that.expertise,_that.hobbies,_that.pointsA,_that.pointsQ,_that.role,_that.isPremium,_that.createdAt,_that.lastLoginAt,_that.settings);case _:
@@ -220,7 +220,7 @@ return $default(_that.uid,_that.email,_that.displayName,_that.userName,_that.pho
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String uid,  String? email,  String? displayName,  String? userName,  String? photoUrl,  String? phoneNumber,  bool isEmailVerified,  bool isAnonymous,  String? providerId,  String? bio,  int? age,  String? gender,  List<String> interests,  List<String> expertise,  List<String> hobbies,  int pointsA,  int pointsQ, @JsonKey(fromJson: _userRoleFromJson, toJson: _userRoleToJson)  UserRole role,  bool isPremium,  DateTime? createdAt,  DateTime? lastLoginAt,  Map<String, dynamic> settings)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String uid,  String? email,  String? displayName,  String? userName,  String? photoUrl,  String? phoneNumber,  bool isEmailVerified,  bool isAnonymous,  String? providerId,  String? bio,  int? age,  String? gender,  List<String> interests,  List<String> expertise,  List<String> hobbies,  int pointsA,  int pointsQ, @UserRoleConverter()  UserRole role,  bool isPremium,  DateTime? createdAt,  DateTime? lastLoginAt,  Map<String, dynamic> settings)  $default,) {final _that = this;
 switch (_that) {
 case _AuthUser():
 return $default(_that.uid,_that.email,_that.displayName,_that.userName,_that.photoUrl,_that.phoneNumber,_that.isEmailVerified,_that.isAnonymous,_that.providerId,_that.bio,_that.age,_that.gender,_that.interests,_that.expertise,_that.hobbies,_that.pointsA,_that.pointsQ,_that.role,_that.isPremium,_that.createdAt,_that.lastLoginAt,_that.settings);}
@@ -237,7 +237,7 @@ return $default(_that.uid,_that.email,_that.displayName,_that.userName,_that.pho
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String uid,  String? email,  String? displayName,  String? userName,  String? photoUrl,  String? phoneNumber,  bool isEmailVerified,  bool isAnonymous,  String? providerId,  String? bio,  int? age,  String? gender,  List<String> interests,  List<String> expertise,  List<String> hobbies,  int pointsA,  int pointsQ, @JsonKey(fromJson: _userRoleFromJson, toJson: _userRoleToJson)  UserRole role,  bool isPremium,  DateTime? createdAt,  DateTime? lastLoginAt,  Map<String, dynamic> settings)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String uid,  String? email,  String? displayName,  String? userName,  String? photoUrl,  String? phoneNumber,  bool isEmailVerified,  bool isAnonymous,  String? providerId,  String? bio,  int? age,  String? gender,  List<String> interests,  List<String> expertise,  List<String> hobbies,  int pointsA,  int pointsQ, @UserRoleConverter()  UserRole role,  bool isPremium,  DateTime? createdAt,  DateTime? lastLoginAt,  Map<String, dynamic> settings)?  $default,) {final _that = this;
 switch (_that) {
 case _AuthUser() when $default != null:
 return $default(_that.uid,_that.email,_that.displayName,_that.userName,_that.photoUrl,_that.phoneNumber,_that.isEmailVerified,_that.isAnonymous,_that.providerId,_that.bio,_that.age,_that.gender,_that.interests,_that.expertise,_that.hobbies,_that.pointsA,_that.pointsQ,_that.role,_that.isPremium,_that.createdAt,_that.lastLoginAt,_that.settings);case _:
@@ -252,7 +252,7 @@ return $default(_that.uid,_that.email,_that.displayName,_that.userName,_that.pho
 @JsonSerializable()
 
 class _AuthUser extends AuthUser {
-  const _AuthUser({required this.uid, this.email, this.displayName, this.userName, this.photoUrl, this.phoneNumber, this.isEmailVerified = false, this.isAnonymous = false, this.providerId, this.bio, this.age, this.gender, final  List<String> interests = const [], final  List<String> expertise = const [], final  List<String> hobbies = const [], this.pointsA = 0, this.pointsQ = 0, @JsonKey(fromJson: _userRoleFromJson, toJson: _userRoleToJson) this.role = UserRole.user, this.isPremium = false, this.createdAt, this.lastLoginAt, final  Map<String, dynamic> settings = const {}}): _interests = interests,_expertise = expertise,_hobbies = hobbies,_settings = settings,super._();
+  const _AuthUser({required this.uid, this.email, this.displayName, this.userName, this.photoUrl, this.phoneNumber, this.isEmailVerified = false, this.isAnonymous = false, this.providerId, this.bio, this.age, this.gender, final  List<String> interests = const [], final  List<String> expertise = const [], final  List<String> hobbies = const [], this.pointsA = 0, this.pointsQ = 0, @UserRoleConverter() this.role = UserRole.user, this.isPremium = false, this.createdAt, this.lastLoginAt, final  Map<String, dynamic> settings = const {}}): _interests = interests,_expertise = expertise,_hobbies = hobbies,_settings = settings,super._();
   factory _AuthUser.fromJson(Map<String, dynamic> json) => _$AuthUserFromJson(json);
 
 // ==================== Authentication fields ====================
@@ -315,7 +315,7 @@ class _AuthUser extends AuthUser {
 @override@JsonKey() final  int pointsQ;
 // ==================== Role & Premium ====================
 /// 사용자 역할 (admin, tester, user)
-@override@JsonKey(fromJson: _userRoleFromJson, toJson: _userRoleToJson) final  UserRole role;
+@override@JsonKey()@UserRoleConverter() final  UserRole role;
 /// 프리미엄 사용자 여부
 @override@JsonKey() final  bool isPremium;
 // ==================== Timestamps ====================
@@ -368,7 +368,7 @@ abstract mixin class _$AuthUserCopyWith<$Res> implements $AuthUserCopyWith<$Res>
   factory _$AuthUserCopyWith(_AuthUser value, $Res Function(_AuthUser) _then) = __$AuthUserCopyWithImpl;
 @override @useResult
 $Res call({
- String uid, String? email, String? displayName, String? userName, String? photoUrl, String? phoneNumber, bool isEmailVerified, bool isAnonymous, String? providerId, String? bio, int? age, String? gender, List<String> interests, List<String> expertise, List<String> hobbies, int pointsA, int pointsQ,@JsonKey(fromJson: _userRoleFromJson, toJson: _userRoleToJson) UserRole role, bool isPremium, DateTime? createdAt, DateTime? lastLoginAt, Map<String, dynamic> settings
+ String uid, String? email, String? displayName, String? userName, String? photoUrl, String? phoneNumber, bool isEmailVerified, bool isAnonymous, String? providerId, String? bio, int? age, String? gender, List<String> interests, List<String> expertise, List<String> hobbies, int pointsA, int pointsQ,@UserRoleConverter() UserRole role, bool isPremium, DateTime? createdAt, DateTime? lastLoginAt, Map<String, dynamic> settings
 });
 
 

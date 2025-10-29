@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '../enums/user_role.dart';
+import 'user_role_converter.dart';
 
 part 'auth_user.freezed.dart';
 part 'auth_user.g.dart';
@@ -77,10 +78,7 @@ sealed class AuthUser with _$AuthUser {
 
     // ==================== Role & Premium ====================
     /// 사용자 역할 (admin, tester, user)
-    @JsonKey(
-      fromJson: _userRoleFromJson,
-      toJson: _userRoleToJson,
-    )
+    @UserRoleConverter()
     @Default(UserRole.user)
     UserRole role,
 
@@ -127,19 +125,4 @@ sealed class AuthUser with _$AuthUser {
 
   /// 총 포인트 (A 포인트 + Q 포인트)
   int get totalPoints => pointsA + pointsQ;
-}
-
-// ==================== JSON Converters ====================
-
-/// UserRole을 JSON에서 파싱
-UserRole _userRoleFromJson(dynamic json) {
-  if (json is String) {
-    return UserRole.fromValue(json);
-  }
-  return UserRole.user; // 기본값
-}
-
-/// UserRole을 JSON으로 변환
-String _userRoleToJson(UserRole role) {
-  return role.toValue();
 }

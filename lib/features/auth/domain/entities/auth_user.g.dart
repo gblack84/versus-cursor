@@ -30,7 +30,9 @@ _AuthUser _$AuthUserFromJson(Map<String, dynamic> json) => _AuthUser(
       const [],
   pointsA: (json['pointsA'] as num?)?.toInt() ?? 0,
   pointsQ: (json['pointsQ'] as num?)?.toInt() ?? 0,
-  role: json['role'] == null ? UserRole.user : _userRoleFromJson(json['role']),
+  role: json['role'] == null
+      ? UserRole.user
+      : const UserRoleConverter().fromJson(json['role'] as String),
   isPremium: json['isPremium'] as bool? ?? false,
   createdAt: json['createdAt'] == null
       ? null
@@ -59,7 +61,7 @@ Map<String, dynamic> _$AuthUserToJson(_AuthUser instance) => <String, dynamic>{
   'hobbies': instance.hobbies,
   'pointsA': instance.pointsA,
   'pointsQ': instance.pointsQ,
-  'role': _userRoleToJson(instance.role),
+  'role': const UserRoleConverter().toJson(instance.role),
   'isPremium': instance.isPremium,
   'createdAt': instance.createdAt?.toIso8601String(),
   'lastLoginAt': instance.lastLoginAt?.toIso8601String(),

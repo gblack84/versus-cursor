@@ -7,24 +7,30 @@ import 'package:google_fonts/google_fonts.dart';
 import 'character_detail_page_model.dart';
 export 'character_detail_page_model.dart';
 
-// Phase 2: Clean Architecture - ProfileProvider만 사용
-import '/features/profile/presentation/providers/characters_provider.dart';
-import '/features/profile/presentation/providers/profile_provider.dart';
+// Phase 3: Riverpod
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '/features/profile/presentation/providers/profile_providers.dart';
+import '/features/profile/domain/models/user_profile.dart';
+// Phase 4: Contract 패턴으로 Feature 간 의존성 제거
+import '/app/contracts/auth_contract.dart';
 import 'package:get_it/get_it.dart';
-import 'package:provider/provider.dart';
 
-class CharacterDetailPageWidget extends StatefulWidget {
+/// 캐릭터 선택 화면 (Riverpod)
+///
+/// **Clean Architecture v4.0 + Riverpod**:
+/// - ✅ ConsumerStatefulWidget으로 전환
+/// - ✅ charactersProvider 사용
+/// - ✅ ProfileActions.updateProfile() 사용
+class CharacterDetailPageWidget extends ConsumerStatefulWidget {
   const CharacterDetailPageWidget({super.key});
 
   @override
-  State<CharacterDetailPageWidget> createState() =>
+  ConsumerState<CharacterDetailPageWidget> createState() =>
       _CharacterDetailPageWidgetState();
 }
 
-class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
+class _CharacterDetailPageWidgetState extends ConsumerState<CharacterDetailPageWidget> {
   late CharacterDetailPageModel _model;
-  // Phase 4.5 하이브리드: CharactersProvider 인스턴스
-  late final CharactersProvider _charactersProvider;
 
   @override
   void setState(VoidCallback callback) {
@@ -37,10 +43,7 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
     super.initState();
     _model = createModel(context, () => CharacterDetailPageModel());
 
-    // Phase 4.5 하이브리드: CharactersProvider 초기화 및 캐릭터 목록 로드
-    _charactersProvider = GetIt.instance<CharactersProvider>();
-    _charactersProvider.loadAvailableCharacters();
-
+    // Phase 3: Riverpod - 캐릭터 목록은 charactersProvider가 자동 로드
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
@@ -98,12 +101,13 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                         padding: EdgeInsets.all(8.0),
                         child: Container(
                           decoration: BoxDecoration(),
-                          // Phase 4.5 하이브리드: StreamBuilder → Consumer<CharactersProvider>
-                          child: Consumer<CharactersProvider>(
-                            builder: (context, charactersProvider, _) {
-                              // 로딩 중일 때
-                              if (charactersProvider.isLoading) {
-                                return Center(
+                          // Phase 3: Riverpod - charactersProvider 사용
+                          child: Consumer(
+                            builder: (context, ref, _) {
+                              final charactersState = ref.watch(charactersProvider);
+
+                              return charactersState.when(
+                                loading: () => Center(
                                   child: SizedBox(
                                     width: 50.0,
                                     height: 50.0,
@@ -112,13 +116,15 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                                       size: 50.0,
                                     ),
                                   ),
-                                );
-                              }
-
-                              final gridViewCharactersModelList =
-                                  charactersProvider.availableCharacters;
-
-                              return GridView.builder(
+                                ),
+                                error: (error, stackTrace) => Center(
+                                  child: Text(
+                                    '캐릭터 목록을 불러올 수 없습니다',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                                data: (gridViewCharactersModelList) {
+                                  return GridView.builder(
                                 padding: EdgeInsets.fromLTRB(
                                   0,
                                   10.0,
@@ -187,10 +193,12 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
                                   );
                                 },
                               );
-                            },
-                          ),
-                        ),
-                      ),
+                                },  // data callback closing
+                              );    // when() closing
+                            },      // Consumer builder closing
+                          ),        // Consumer widget closing
+                        ),          // Container closing
+                      ),            // Padding closing
                     ],
                   ),
                 ),
@@ -319,17 +327,36 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
     );
   }
 
+  /// Phase 3: Riverpod - ProfileActions.updateProfile() 사용
   Future<void> _updateProfileCharacter({
     required String? characterId,
     required String photoUrl,
   }) async {
-    final profileProvider = GetIt.instance<ProfileProvider>();
+    // AuthContract에서 현재 userId 가져오기
+    final authContract = GetIt.instance<AuthContract>();
+    final userId = authContract.getCurrentUserId();
 
-    // Phase 2: Clean Architecture 완성
-    // UI는 AuthContract를 몰라도 됨
-    // ProfileProvider → UseCase → Repository → AuthContract 흐름
-    await profileProvider.loadCurrentUserProfile();
-    final currentProfile = profileProvider.profile;
+    if (userId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('로그인이 필요합니다')),
+        );
+      }
+      return;
+    }
+
+    // 현재 프로필 가져오기
+    final profileState = ref.read(profileStreamProvider(
+      ProfileStreamParams(userId: userId),
+    ));
+
+    // AsyncValue에서 현재 프로필 추출
+    UserProfile? currentProfile;
+    profileState.when(
+      loading: () => currentProfile = null,
+      error: (error, stackTrace) => currentProfile = null,
+      data: (profile) => currentProfile = profile,
+    );
 
     if (currentProfile == null) {
       if (mounted) {
@@ -340,20 +367,31 @@ class _CharacterDetailPageWidgetState extends State<CharacterDetailPageWidget> {
       return;
     }
 
-    // Update profile with characterId and photoUrl using copyWith()
-    final updatedProfile = currentProfile.copyWith(
+    // copyWith()로 업데이트된 프로필 생성 (null 체크 완료)
+    final updatedProfile = currentProfile!.copyWith(
       characterId: characterId,
       photoUrl: photoUrl,
     );
 
-    // Update via ProfileProvider (내부적으로 UseCase → Repository 호출)
-    await profileProvider.updateProfile(updatedProfile);
-
-    // 성공/실패 처리는 ProfileProvider의 errorMessage로 확인 가능
-    if (mounted && profileProvider.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(profileProvider.errorMessage!)),
-      );
-    }
+    // ProfileActions.updateProfile() 호출
+    await ProfileActions.updateProfile(
+      ref: ref,
+      userId: userId,
+      updatedProfile: updatedProfile,
+      onSuccess: () {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('프로필이 업데이트되었습니다')),
+          );
+        }
+      },
+      onError: (message) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(message)),
+          );
+        }
+      },
+    );
   }
 }

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/core_exports.dart';
-import '/features/profile/presentation/providers/profile_provider.dart';
-import '/features/profile/domain/models/user_profile.dart';
+import '/features/profile/presentation/providers/profile_providers.dart';
 import '/features/profile/presentation/widgets/profile/profile_header.dart';
 import '/features/profile/presentation/widgets/common/loading_indicator.dart';
 import '/features/profile/presentation/widgets/common/error_message.dart';
@@ -10,13 +9,13 @@ import '/features/profile/presentation/widgets/interests/interest_chip.dart';
 import '/features/profile/domain/models/interest.dart';
 import '/features/profile/presentation/widgets/profile/profile_stats_card.dart';
 
-/// 사용자 정보 표시 화면
+/// 사용자 정보 표시 화면 (Phase 3: Riverpod 마이그레이션 완료)
 ///
-/// **Clean Architecture v4.0 준수**:
-/// - Provider 패턴으로 상태 관리
-/// - UseCase 통해 비즈니스 로직 처리
+/// **Clean Architecture v4.0 + Riverpod**:
+/// - StreamProvider로 실시간 동기화
 /// - 읽기 전용 프로필 정보 표시
-class UserInfoDisplayScreen extends StatefulWidget {
+/// - AsyncValue.when()으로 상태 처리
+class UserInfoDisplayScreen extends ConsumerWidget {
   const UserInfoDisplayScreen({
     super.key,
     required this.userId,
@@ -28,23 +27,12 @@ class UserInfoDisplayScreen extends StatefulWidget {
   static String routePath = '/user/:userId/info';
 
   @override
-  State<UserInfoDisplayScreen> createState() => _UserInfoDisplayScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Riverpod: StreamProvider로 실시간 프로필 감시
+    final profileAsync = ref.watch(
+      profileStreamProvider(ProfileStreamParams(userId: userId)),
+    );
 
-class _UserInfoDisplayScreenState extends State<UserInfoDisplayScreen> {
-  late Stream<UserProfile?> _profileStream;
-
-  @override
-  void initState() {
-    super.initState();
-    // 🆕 Real-time Stream 시작
-    // Consumer 대신 StreamBuilder로 변경하여 실시간 동기화 구현
-    final provider = context.read<ProfileProvider>();
-    _profileStream = provider.watchOtherUserProfile(widget.userId);
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -60,33 +48,18 @@ class _UserInfoDisplayScreenState extends State<UserInfoDisplayScreen> {
           ),
         ],
       ),
-      body: StreamBuilder<UserProfile?>(
-        stream: _profileStream,
-        builder: (context, snapshot) {
-          // 로딩 상태 (초기 연결 대기 중)
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return ProfileLoadingIndicator(
-              size: LoadingSize.medium,
-            );
-          }
-
-          // 에러 상태
-          if (snapshot.hasError) {
-            return ProfileErrorMessage(
-              message: snapshot.error.toString(),
-              onRetry: () {
-                // Stream 재시작
-                setState(() {
-                  final provider = context.read<ProfileProvider>();
-                  _profileStream = provider.watchOtherUserProfile(widget.userId);
-                });
-              },
-            );
-          }
-
-          // 프로필 표시
-          // ⚠️ snapshot.data는 실시간으로 업데이트됩니다!
-          final profile = snapshot.data;
+      body: profileAsync.when(
+        loading: () => ProfileLoadingIndicator(
+          size: LoadingSize.medium,
+        ),
+        error: (error, stackTrace) => ProfileErrorMessage(
+          message: error.toString(),
+          onRetry: () {
+            // Riverpod: Stream 재시작
+            ref.invalidate(profileStreamProvider);
+          },
+        ),
+        data: (profile) {
           if (profile == null) {
             return Center(
               child: Text(

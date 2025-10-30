@@ -5,9 +5,9 @@ import '../../domain/repositories/i_voting_chat_repository.dart';
 import '../../domain/entities/chat/post_voting.dart';
 import '../../domain/entities/dialog/vote_counts_model.dart';
 import '../../domain/failures/voting_failure.dart';
-import '../datasources/i_voting_local_datasource.dart';
 import '../extensions/post_voting_extensions.dart';
 import '../extensions/firestore_error_extensions.dart';
+import '../../../../services/cache/unified_cache_service.dart';
 
 /// Implementation of VotingRepository for chat card voting system
 ///
@@ -18,19 +18,18 @@ import '../extensions/firestore_error_extensions.dart';
 /// - Returns Either<VotingFailure, Success> for error handling
 /// - PostVoting domain model with business logic methods
 /// - Real-time Firestore streams with reactive updates
+/// - UnifiedCacheService for 3-Layer caching
 ///
 /// **Separation from VotingDialogRepositoryImpl**:
 /// - VotingDialogRepositoryImpl: Dialog voting system (VoteContract)
 /// - VotingChatRepositoryImpl: Chat card voting system (PostVoting)
 class VotingChatRepositoryImpl implements VotingRepository {
   final FirebaseFirestore _firestore;
-  final IVotingLocalDataSource _localDataSource;
+  final UnifiedCacheService _cacheService = UnifiedCacheService.instance;
 
   VotingChatRepositoryImpl({
     required FirebaseFirestore firestore,
-    required IVotingLocalDataSource localDataSource,
-  })  : _firestore = firestore,
-        _localDataSource = localDataSource;
+  })  : _firestore = firestore;
 
   // ============================================================================
   // Core Voting Operations
@@ -39,18 +38,8 @@ class VotingChatRepositoryImpl implements VotingRepository {
   @override
   Future<Either<VotingFailure, PostVoting>> getVoting(String postId) async {
     try {
-      // ✅ PostVoting 캐시 확인
-      final cachedVoting = await _localDataSource.getCachedPostVoting(
-        postId,
-        maxAge: const Duration(minutes: 5),
-      );
-
-      if (cachedVoting != null) {
-        // ✅ 캐시 히트: 즉시 반환
-        return Right(cachedVoting);
-      }
-
-      // 캐시 미스: Firestore에서 가져오기
+      // Note: PostVoting 전체는 캐시하지 않고, VoteCounts만 캐시
+      // Real-time 업데이트가 중요하므로 항상 Firestore에서 가져옴
       final doc = await _firestore.collection('posts').doc(postId).get();
 
       if (!doc.exists) {
@@ -62,7 +51,7 @@ class VotingChatRepositoryImpl implements VotingRepository {
       // ✅ Extension-based conversion
       final voting = PostVotingFirestoreExtension.fromFirestore(data, postId);
 
-      // Cache the result
+      // Cache VoteCounts only
       await _cacheVotingData(voting);
 
       return Right(voting);
@@ -163,13 +152,22 @@ class VotingChatRepositoryImpl implements VotingRepository {
       // 5. Update local cache
       await _cacheVotingData(updatedVoting);
 
-      // 6. Add to vote history
-      await _localDataSource.cacheVoteHistory(
-        userId: userId,
-        postId: postId,
-        voteOption: option == VoteOption.A ? 'A' : 'B',
-        votedAt: DateTime.now(),
-      );
+      // 6. Add to vote history (3-Layer cache)
+      try {
+        final history = await _cacheService.getVoteHistory(userId) ?? [];
+        final newEntry = {
+          'postId': postId,
+          'voteOption': option == VoteOption.A ? 'A' : 'B',
+          'votedAt': DateTime.now().toIso8601String(),
+        };
+        history.add(newEntry);
+        await _cacheService.setVoteHistory(userId, history);
+      } catch (e) {
+        if (kDebugMode) {
+          print('[VotingChatRepository] Failed to cache vote history: $e');
+        }
+        // Don't fail the vote if caching fails
+      }
 
       return Right(updatedVoting);
     } on FirebaseException catch (e) {
@@ -417,9 +415,8 @@ class VotingChatRepositoryImpl implements VotingRepository {
   Future<Either<VotingFailure, VotingStats>> getUserVotingStats(
       String userId) async {
     try {
-      // Get user's vote history from local cache
-      final historyResult = await _localDataSource.getCachedVoteHistory(userId);
-      final history = historyResult ?? [];
+      // Get user's vote history from 3-Layer cache
+      final history = await _cacheService.getVoteHistory(userId) ?? [];
 
       // Calculate stats
       int totalVotes = history.length;
@@ -500,16 +497,14 @@ class VotingChatRepositoryImpl implements VotingRepository {
   // Helper Methods
   // ============================================================================
 
-  /// Cache voting data locally
+  /// Cache voting data to 3-Layer cache
   Future<void> _cacheVotingData(PostVoting voting) async {
     try {
-      // ✅ PostVoting 전체 캐싱
-      await _localDataSource.cachePostVoting(voting);
-
-      // ✅ 추가: VoteCounts도 별도 캐싱 (빠른 접근용)
-      await _localDataSource.cacheVoteCounts(
-        postId: voting.postId,
-        voteCounts: VoteCounts(
+      // ✅ VoteCounts만 캐싱 (PostVoting 전체는 캐시하지 않음)
+      // Real-time 업데이트가 중요하므로 VoteCounts만 캐시
+      await _cacheService.setVoteCounts(
+        voting.postId,
+        VoteCounts(
           votesA: voting.votesA,
           votesB: voting.votesB,
           totalVotes: voting.totalVotes,

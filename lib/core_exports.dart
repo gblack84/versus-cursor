@@ -49,6 +49,7 @@ export 'core/localization/app_localizations.dart';
 // Utilities
 export 'core/utils/app_utils.dart';
 export 'core/utils/app_timer.dart';
+export 'core/utils/batch_service.dart';
 export 'core/utils/custom_functions.dart';
 
 // Firebase utilities

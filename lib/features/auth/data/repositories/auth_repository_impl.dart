@@ -12,29 +12,29 @@ import '../../domain/entities/auth_user.dart';
 import '../../domain/entities/auth_user_extensions.dart';
 import '../../domain/repositories/i_auth_repository.dart';
 import '../../domain/failures/auth_failure.dart';
-import '../datasources/i_auth_local_datasource.dart';
+import '../../../../services/cache/unified_cache_service.dart';
 
 /// AuthRepositoryImpl
 ///
-/// **Firebase 최적화 v1.0 - Remote DataSource 제거**:
+/// **Firebase-Centric Architecture v2.0 - UnifiedCacheService 통합**:
 /// - FirebaseAuth 직접 사용
 /// - DTO/Mapper 제거
 /// - Extension으로 변환 처리
+/// - 3-Layer 캐싱 (Memory → Hive → Firestore)
 ///
 /// Concrete implementation of IAuthRepository.
-/// Handles Firebase Authentication and local caching.
+/// Handles Firebase Authentication and 3-Layer caching.
 class AuthRepositoryImpl implements IAuthRepository {
   final FirebaseAuth _firebaseAuth;
-  final IAuthLocalDataSource _localDataSource;
+  final UnifiedCacheService _cacheService = UnifiedCacheService.instance;
 
   // Google Sign-In 인스턴스
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   AuthRepositoryImpl({
     FirebaseAuth? firebaseAuth,
-    required IAuthLocalDataSource localDataSource,
-  })  : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
-        _localDataSource = localDataSource;
+    // localDataSource parameter 제거 - UnifiedCacheService는 싱글톤
+  }) : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
 
   @override
   Future<Either<AuthFailure, AuthUser>> getCurrentUser() async {
@@ -45,8 +45,20 @@ class AuthRepositoryImpl implements IAuthRepository {
         return left(const AuthFailure.userNotFound());
       }
 
-      // Convert to domain model using Extension
+      // ✅ Cache-first strategy
+      final cachedUser = await _cacheService.getAuthUser(firebaseUser.uid);
+      if (cachedUser != null) {
+        return right(cachedUser);
+      }
+
+      // Cache miss: Convert to domain model and cache
       final authUser = AuthUserFirestore.fromFirebaseUser(firebaseUser);
+      await _cacheService.setAuthUser(
+        authUser.uid,
+        authUser,
+        ttl: const Duration(hours: 24),
+      );
+
       return right(authUser);
     } on FirebaseAuthException catch (e) {
       return left(_mapFirebaseAuthException(e));
@@ -73,8 +85,12 @@ class AuthRepositoryImpl implements IAuthRepository {
       // 2. Convert to domain model using Extension
       final authUser = AuthUserFirestore.fromFirebaseUser(firebaseUser);
 
-      // 3. Cache auth data
-      await _localDataSource.cacheAuthUser(authUser);
+      // 3. Cache auth data (3-Layer)
+      await _cacheService.setAuthUser(
+        authUser.uid,
+        authUser,
+        ttl: const Duration(hours: 24),
+      );
 
       return right(authUser);
     } on FirebaseAuthException catch (e) {
@@ -113,8 +129,12 @@ class AuthRepositoryImpl implements IAuthRepository {
       // 3. Convert to domain model using Extension
       final authUser = AuthUserFirestore.fromFirebaseUser(firebaseUser);
 
-      // 4. Cache auth data
-      await _localDataSource.cacheAuthUser(authUser);
+      // 4. Cache auth data (3-Layer)
+      await _cacheService.setAuthUser(
+        authUser.uid,
+        authUser,
+        ttl: const Duration(hours: 24),
+      );
 
       return right(authUser);
     } on FirebaseAuthException catch (e) {
@@ -170,8 +190,12 @@ class AuthRepositoryImpl implements IAuthRepository {
       // 6. Convert to domain model using Extension
       final authUser = AuthUserFirestore.fromFirebaseUser(firebaseUser);
 
-      // 7. Cache auth data
-      await _localDataSource.cacheAuthUser(authUser);
+      // 7. Cache auth data (3-Layer)
+      await _cacheService.setAuthUser(
+        authUser.uid,
+        authUser,
+        ttl: const Duration(hours: 24),
+      );
 
       return right(authUser);
     } on FirebaseAuthException catch (e) {
@@ -226,8 +250,12 @@ class AuthRepositoryImpl implements IAuthRepository {
       // 5. Convert to domain model using Extension
       final authUser = AuthUserFirestore.fromFirebaseUser(firebaseUser);
 
-      // 6. Cache auth data
-      await _localDataSource.cacheAuthUser(authUser);
+      // 6. Cache auth data (3-Layer)
+      await _cacheService.setAuthUser(
+        authUser.uid,
+        authUser,
+        ttl: const Duration(hours: 24),
+      );
 
       return right(authUser);
     } on FirebaseAuthException catch (e) {
@@ -313,8 +341,12 @@ class AuthRepositoryImpl implements IAuthRepository {
       // Convert to domain model using Extension
       final authUser = AuthUserFirestore.fromFirebaseUser(firebaseUser);
 
-      // Cache auth data
-      await _localDataSource.cacheAuthUser(authUser);
+      // Cache auth data (3-Layer)
+      await _cacheService.setAuthUser(
+        authUser.uid,
+        authUser,
+        ttl: const Duration(hours: 24),
+      );
 
       // Clear verification ID
       _verificationId = null;
@@ -331,8 +363,12 @@ class AuthRepositoryImpl implements IAuthRepository {
   @override
   Future<Either<AuthFailure, void>> signOut() async {
     try {
-      // Clear local cache first
-      await _localDataSource.clearAllCache();
+      // Clear local cache first (3-Layer)
+      final userId = _firebaseAuth.currentUser?.uid;
+      if (userId != null) {
+        await _cacheService.clearAuthUser(userId);
+        await _cacheService.clearAuthToken(userId);
+      }
 
       // Sign out from Google if signed in
       if (await _googleSignIn.isSignedIn()) {
@@ -391,8 +427,9 @@ class AuthRepositoryImpl implements IAuthRepository {
         return left(const AuthFailure.userNotFound());
       }
 
-      // 1. Clear local cache
-      await _localDataSource.clearAllCache();
+      // 1. Clear local cache (3-Layer)
+      await _cacheService.clearAuthUser(userId);
+      await _cacheService.clearAuthToken(userId);
 
       // 2. Delete Firestore profile document
       // ⚠️ Firebase Auth 삭제 전에 실행해야 함 (userId 필요)

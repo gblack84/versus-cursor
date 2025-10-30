@@ -1,7 +1,8 @@
 # Voting Feature - 통합 문서
 
-> **최종 업데이트**: 2025-01-28
-> **아키텍처**: Clean Architecture v4.0 + Firebase-Centric v1.0
+> **최종 업데이트**: 2025-01-30
+> **아키텍처**: Clean Architecture v4.0 + Firebase-Centric v2.0
+> **캐싱**: UnifiedCacheService 3-Layer (Memory → Hive → Firestore)
 > **상태 관리**: Riverpod 2.x
 
 ## 📋 목차
@@ -18,23 +19,16 @@
 
 ```
 lib/features/voting/
-├── 📂 data/                              # Data Layer (Firebase-Centric v1.0)
+├── 📂 data/                              # Data Layer (Firebase-Centric v2.0)
 │   ├── 📂 repositories/                  # Repository 구현체
 │   │   ├── voting_dialog_repository_impl.dart
 │   │   └── voting_chat_repository_impl.dart
 │   ├── 📂 datasources/
-│   │   ├── i_voting_local_datasource.dart
-│   │   ├── voting_local_datasource_impl.dart
 │   │   └── 📂 local/
-│   │       ├── 📂 services/              # 로컬 캐시 서비스 (5개)
-│   │       │   ├── vote_state_cache_service.dart
-│   │       │   ├── vote_counts_cache_service.dart
-│   │       │   ├── vote_history_cache_service.dart
-│   │       │   ├── cache_management_service.dart
-│   │       │   └── pending_operations_service.dart
+│   │       ├── 📂 services/              # 독립 서비스
+│   │       │   └── pending_operations_service.dart  # 오프라인 큐 관리
 │   │       └── 📂 utils/
-│   │           ├── cache_helpers.dart
-│   │           └── cache_keys.dart
+│   │           └── cache_keys.dart       # 캐시 키 상수
 │   ├── 📂 extensions/                    # Firestore 변환 (6개)
 │   │   ├── vote_extensions.dart
 │   │   ├── vote_state_extensions.dart
@@ -163,8 +157,8 @@ lib/features/voting/
 └── 📄 README.md                         # 👈 이 문서 (통합 가이드)
 ```
 
-**총 파일 수**: 약 100개 (생성된 Freezed 파일 포함)
-- Data Layer: 19개
+**총 파일 수**: 약 93개 (생성된 Freezed 파일 포함)
+- Data Layer: 12개 (7개 레거시 캐시 파일 삭제 완료)
 - Domain Layer: 35개 (17개 주요 + 18개 생성)
 - Presentation Layer: 39개
 - DI: 1개
@@ -199,13 +193,16 @@ lib/features/voting/
                    ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                      Data Layer                              │
-│  • Firebase-Centric Architecture v1.0                        │
+│  • Firebase-Centric Architecture v2.0                        │
 │  • Direct Firebase SDK 사용                                   │
 │  • Extension Pattern (Mapper 대체)                           │
 │  • Sharded Counter (256 shards)                             │
 │  • Idempotency Service (UUID 기반)                           │
-│  • 3-Layer Cache (TTL 관리)                                   │
-│  • 19개 파일 (2,089줄)                                         │
+│  • UnifiedCacheService (3-Layer 캐싱)                        │
+│    - L1 Memory: <1ms (SimpleMemoryCache)                    │
+│    - L2 Hive: 10-30ms (영구 저장)                            │
+│    - L3 Firestore: 50-500ms (오프라인 지원)                  │
+│  • 12개 파일 (~1,400줄)                                       │
 └─────────────────────────────────────────────────────────────┘
                    │
                    ▼
@@ -239,7 +236,7 @@ lib/features/voting/
 | **투표 상태 실시간 추적** | `domain/README.md` | UseCase 섹션 | `domain/usecases/watch_vote_state_use_case.dart` |
 | **Firestore 데이터 변환** | `data/README.md` | Extension Pattern 섹션 | `data/extensions/vote_extensions.dart` |
 | **Firebase 저장 로직** | `data/README.md` | Repository 구현 섹션 | `data/repositories/voting_dialog_repository_impl.dart` |
-| **로컬 캐시 관리** | `data/README.md` | 캐시 서비스 섹션 | `data/datasources/local/services/` |
+| **3-Layer 캐싱** | `data/README.md` | UnifiedCacheService 섹션 | `/lib/services/cache/unified_cache_service.dart` |
 | **투표 타이머 구현** | `data/README.md` | 서버 동기화 섹션 | `data/services/vote_timer_service.dart` |
 | **에러 타입 정의** | `domain/README.md` | Failure 섹션 | `domain/failures/voting_failure.dart` |
 | **엔티티 구조** | `domain/README.md` | Entity 섹션 | `domain/entities/dialog/vote.dart` |
@@ -263,10 +260,10 @@ lib/features/voting/
 - 서버 시간 동기화 (VoteTimerService)
 
 **📖 주요 섹션**:
-1. **아키텍처 개요**: Firebase-Centric vs Clean Architecture
+1. **아키텍처 개요**: Firebase-Centric v2.0 vs Clean Architecture
 2. **Extension Pattern**: Firestore 직렬화 예시
 3. **Repository 구현**: 25+ 메서드 상세 설명
-4. **Local DataSource**: 5개 캐시 서비스 설명
+4. **UnifiedCacheService**: 3-Layer 캐싱 통합 (Memory → Hive → Firestore)
 5. **Adapter Pattern**: Legacy 호환성 (VoteCounts, BoxCalculator)
 6. **서버 동기화**: VoteTimerService 타임스탬프 처리
 
@@ -378,10 +375,9 @@ Firestore Stream → Data → Domain → Presentation → UI 업데이트
 
 **등록되는 의존성**:
 - Repository 구현체 (VotingDialogRepositoryImpl, VotingChatRepositoryImpl)
-- Local DataSource (VotingLocalDataSourceImpl)
 - UseCase (SubmitVoteUseCase, WatchVoteStateUseCase)
-- 캐시 서비스 (VoteStateCache, VoteCountsCache, VoteHistoryCache 등)
 - 공유 서비스 (VoteTimerService, ShardUtils, IdempotencyService)
+- UnifiedCacheService (전역 싱글톤, GetIt 등록 불필요)
 
 **Provider에서 사용**:
 ```dart
@@ -395,12 +391,12 @@ final useCase = GetIt.instance<SubmitVoteUseCase>();
 
 | 구분 | 파일 수 | 총 라인 수 | 주요 패턴 |
 |------|---------|-----------|-----------|
-| **Data** | 19 | ~2,089 | Extension, Sharded Counter, Idempotency |
+| **Data** | 12 | ~1,400 | Extension, Sharded Counter, UnifiedCache |
 | **Domain** | 35 | ~1,775 | Freezed, Either, UseCase, Repository Interface |
 | **Presentation** | 39 | ~4,500 | Riverpod, StreamProvider, Component-Driven |
-| **DI** | 1 | ~150 | GetIt 등록 |
-| **문서** | 4 | ~6,000 | 통합 가이드 + 레이어별 상세 문서 |
-| **총합** | **98** | **~14,514** | Clean Architecture v4.0 |
+| **DI** | 1 | ~100 | GetIt 등록 (DataSource 제거) |
+| **문서** | 4 | ~6,500 | 통합 가이드 + 레이어별 상세 문서 |
+| **총합** | **91** | **~14,275** | Clean Architecture v4.0 + Firebase-Centric v2.0 |
 
 ---
 
@@ -522,6 +518,6 @@ final useCase = GetIt.instance<SubmitVoteUseCase>();
 
 ---
 
-**마지막 업데이트**: 2025-01-28
-**버전**: v2.0.0
+**마지막 업데이트**: 2025-01-30
+**버전**: v2.1.0 (3-Layer 캐싱 마이그레이션 완료)
 **작성자**: Voting Feature Team

@@ -1,4 +1,6 @@
+import 'package:dartz/dartz.dart';
 import '../models/profile_info.dart';
+import '../failures/profile_failure.dart';
 
 /// Repository interface for profile operations (Clean Architecture v4.0)
 ///
@@ -17,13 +19,22 @@ abstract class IProfileRepository {
   ///
   /// **사용처**: AccountManagementUseCase (Auth Feature)
   /// **구현**: DataSource 레벨에서 필수 필드 체크
-  Future<bool> isProfileComplete(String userId);
+  ///
+  /// **Returns**:
+  /// - `Right(true)`: 프로필 완성
+  /// - `Right(false)`: 프로필 미완성
+  /// - `Left(ProfileFailure)`: 조회 실패
+  Future<Either<ProfileFailure, bool>> isProfileComplete(String userId);
 
   /// 프로필 완성도 퍼센트
   ///
   /// **사용처**: GetProfileCompletionUseCase, DataSource 내부
   /// **구현**: 필수 필드 개수 기반 계산
-  Future<double> getProfileCompletionPercentage(String userId);
+  ///
+  /// **Returns**:
+  /// - `Right(double)`: 완성도 퍼센트 (0.0 ~ 100.0)
+  /// - `Left(ProfileFailure)`: 조회 실패
+  Future<Either<ProfileFailure, double>> getProfileCompletionPercentage(String userId);
 
   // ============= 경량 프로필 조회 =============
 
@@ -37,10 +48,11 @@ abstract class IProfileRepository {
   /// - Lists: interests[], expertise[]
   /// - Location: location (LatLng)
   ///
-  /// **반환**:
-  /// - null: 사용자가 존재하지 않음
-  /// - ProfileInfo: 경량 프로필 정보
-  Future<ProfileInfo?> getProfileInfo(String userId);
+  /// **Returns**:
+  /// - `Right(ProfileInfo)`: 경량 프로필 정보
+  /// - `Left(ProfileFailure.profileNotFound)`: 사용자가 존재하지 않음
+  /// - `Left(ProfileFailure)`: 조회 실패
+  Future<Either<ProfileFailure, ProfileInfo>> getProfileInfo(String userId);
 
   // ============= 삭제된 메서드 (2025-01-21) =============
   // TODO: 향후 재구현 가이드

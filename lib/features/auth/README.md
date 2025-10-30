@@ -371,9 +371,10 @@ lib/features/auth/
 
 **파일**: `di/auth_di_module.dart`
 
-**등록되는 의존성**:
+**등록되는 의존성** (Simplified with UnifiedCacheService):
 - **Repository**: `AuthRepositoryImpl` (IAuthRepository 구현체)
-- **DataSource**: `AuthLocalDataSource` (로컬 캐싱)
+  - FirebaseAuth 직접 주입
+  - UnifiedCacheService 싱글톤 사용 (DI 등록 불필요)
 - **10개 UseCase**:
   - `SignInWithEmailUseCase`
   - `SignInWithGoogleUseCase`

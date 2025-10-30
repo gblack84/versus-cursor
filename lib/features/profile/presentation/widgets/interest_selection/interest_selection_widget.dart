@@ -1,5 +1,4 @@
-// Phase 2: Clean Architecture - ProfileProvider만 사용
-import '/features/profile/presentation/providers/profile_provider.dart';
+// Phase 3: Riverpod
 import '/features/profile/domain/usecases/interests/update_user_interests_usecase.dart';
 import '/features/profile/presentation/constants/profile_constants.dart';
 import '/core_exports.dart';
@@ -10,12 +9,21 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:webviewx_plus/webviewx_plus.dart';
 import 'package:get_it/get_it.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '/features/profile/presentation/providers/profile_providers.dart';
+import '/features/profile/domain/models/user_profile.dart';
+import '/app/contracts/auth_contract.dart';
 import 'interest_category.dart';
 import 'interest_selection_model.dart';
 export 'interest_selection_model.dart';
 export 'interest_category.dart';
 
-/// Generic interest selection widget for onboarding
+/// Generic interest selection widget for onboarding (Riverpod)
+///
+/// **Clean Architecture v4.0 + Riverpod**:
+/// - ✅ ConsumerStatefulWidget으로 전환
+/// - ✅ profileStreamProvider 사용
+/// - ✅ UpdateUserInterestsUseCase 유지
 ///
 /// Consolidates expertise_select, hobbies_select, and agrred_select into a single generic implementation.
 /// Category-specific behavior is controlled by the `category` parameter using InterestCategory enum.
@@ -26,7 +34,7 @@ export 'interest_category.dart';
 /// 3. ✅ Fixed: agrred Line 461 - Correct error message
 /// 4. ✅ Fixed: agrred Lines 540-542 - Correct field check
 /// 5. ✅ Fixed: agrred Lines 813-815 - Next button now navigates correctly
-class InterestSelectionWidget extends StatefulWidget {
+class InterestSelectionWidget extends ConsumerStatefulWidget {
   const InterestSelectionWidget({
     super.key,
     required this.category,
@@ -36,20 +44,43 @@ class InterestSelectionWidget extends StatefulWidget {
   final InterestCategory category;
 
   @override
-  State<InterestSelectionWidget> createState() =>
+  ConsumerState<InterestSelectionWidget> createState() =>
       _InterestSelectionWidgetState();
 }
 
-class _InterestSelectionWidgetState extends State<InterestSelectionWidget> {
+class _InterestSelectionWidgetState extends ConsumerState<InterestSelectionWidget> {
   late InterestSelectionModel _model;
   late final UpdateUserInterestsUseCase _updateInterestsUseCase;
-  late final ProfileProvider _profileProvider;
+  // Phase 3: ProfileProvider → profileStreamProvider로 전환
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
+  /// Phase 3: Riverpod - AuthContract를 통한 userId 가져오기
+  String? get _userId {
+    final authContract = GetIt.instance<AuthContract>();
+    return authContract.getCurrentUserId();
+  }
+
+  /// Phase 3: Riverpod - profileStreamProvider를 통한 프로필 가져오기
+  UserProfile? get _currentProfile {
+    if (_userId == null) return null;
+
+    final profileState = ref.read(profileStreamProvider(
+      ProfileStreamParams(userId: _userId!),
+    ));
+
+    UserProfile? profile;
+    profileState.when(
+      loading: () => profile = null,
+      error: (error, stackTrace) => profile = null,
+      data: (data) => profile = data,
+    );
+    return profile;
+  }
+
   /// Get the appropriate interest list based on category
   List<String> get _currentInterests {
-    final user = _profileProvider.profile;
+    final user = _currentProfile;
     if (user == null) return [];
 
     switch (widget.category) {
@@ -66,12 +97,8 @@ class _InterestSelectionWidgetState extends State<InterestSelectionWidget> {
     super.initState();
     _model = createModel(context, () => InterestSelectionModel());
 
-    // Phase 2: Clean Architecture - ProfileProvider와 UseCase 초기화
-    _profileProvider = GetIt.instance<ProfileProvider>();
+    // Phase 3: Riverpod - UseCase 초기화 (프로필은 profileStreamProvider가 자동 관리)
     _updateInterestsUseCase = GetIt.instance<UpdateUserInterestsUseCase>();
-
-    // Phase 2: 현재 사용자 프로필 로드
-    _profileProvider.loadCurrentUserProfile();
 
     _model.inputTextController ??= TextEditingController();
     _model.inputFocusNode ??= FocusNode();
@@ -170,8 +197,8 @@ class _InterestSelectionWidgetState extends State<InterestSelectionWidget> {
                                 text: TextSpan(
                                   children: [
                                     TextSpan(
-                                      // Phase 2: Clean Architecture - ProfileProvider 사용
-                                      text: _profileProvider.profile?.displayName ?? '사용자',
+                                      // Phase 3: Riverpod - _currentProfile 사용
+                                      text: _currentProfile?.displayName ?? '사용자',
                                       style: AppTheme.of(context)
                                           .bodyMedium
                                           .override(
@@ -498,8 +525,8 @@ we'll send you better questio... */
                                             },
                                           );
                                         } else {
-                                          // Phase 2: Clean Architecture - ProfileProvider 사용
-                                          final currentUserId = _profileProvider.profile?.uid;
+                                          // Phase 3: Riverpod - _userId 사용
+                                          final currentUserId = _userId;
                                           if (currentUserId == null) {
                                             ScaffoldMessenger.of(context).showSnackBar(
                                               const SnackBar(content: Text('사용자 정보를 불러올 수 없습니다')),
@@ -699,8 +726,8 @@ we'll send you better questio... */
                                                 size: 15.0,
                                               ),
                                               onPressed: () async {
-                                                // Phase 2: Clean Architecture - ProfileProvider 사용
-                                                final currentUserId = _profileProvider.profile?.uid;
+                                                // Phase 3: Riverpod - _userId 사용
+                                                final currentUserId = _userId;
                                                 if (currentUserId == null) {
                                                   ScaffoldMessenger.of(context).showSnackBar(
                                                     const SnackBar(content: Text('사용자 정보를 불러올 수 없습니다')),

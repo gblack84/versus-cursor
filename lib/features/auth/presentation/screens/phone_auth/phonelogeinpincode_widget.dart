@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
+import 'package:uuid/uuid.dart';
 import '/core/utils/error_handler.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
 import '/core_exports.dart';
@@ -355,6 +356,7 @@ Enter the 6-digit code sent t... */
                                 final result = await signInWithPhoneUseCase.execute(
                                   phoneNumber: widget.phoneNumberParam ?? '',
                                   verificationCode: smsCodeVal,
+                                  eventId: const Uuid().v4(),
                                 );
 
                                 // 결과 처리
@@ -547,7 +549,10 @@ Enter the 6-digit code sent t... */
 
                                             // OTP 재전송
                                             final signInWithPhoneUseCase = ref.read(signInWithPhoneUseCaseProvider);
-                                            final result = await signInWithPhoneUseCase.resendOtp(phoneNumberVal);
+                                            final result = await signInWithPhoneUseCase.resendOtp(
+                                              phoneNumber: phoneNumberVal,
+                                              eventId: const Uuid().v4(),
+                                            );
 
                                             // 결과 처리
                                             result.fold(

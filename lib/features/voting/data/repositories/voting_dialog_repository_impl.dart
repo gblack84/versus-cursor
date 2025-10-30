@@ -6,13 +6,13 @@ import '../../domain/repositories/i_voting_dialog_repository.dart';
 import '../../domain/failures/voting_failure.dart';
 import '../../domain/entities/dialog/vote_expansion_request.dart';
 import '../../domain/entities/dialog/weight.dart';
-import '../datasources/i_voting_local_datasource.dart';
 import '../extensions/firestore_error_extensions.dart';
 import '../extensions/vote_expansion_request_extensions.dart';
 import '../extensions/weight_extensions.dart';
 import '../extensions/vote_extensions.dart';
 import '../../../../core/utils/idempotency_service.dart';
 import '../../../../core/utils/shard_utils.dart';
+import '../../../../services/cache/unified_cache_service.dart';
 
 /// Implementation of Dialog voting repository
 ///
@@ -21,30 +21,29 @@ import '../../../../core/utils/shard_utils.dart';
 /// - Firebase SDK 직접 사용 (IVotingRemoteDataSource 제거)
 /// - Extension을 통한 Firestore ↔ Domain 변환
 /// - Either<Failure, T>로 에러 처리 통합
-/// - Local cache만 추상화 유지
+/// - UnifiedCacheService for 3-Layer caching
 ///
 /// **Dependencies**:
 /// - FirebaseFirestore: Firebase SDK 직접 주입
-/// - IVotingLocalDataSource: Local cache operations (SharedPreferences)
+/// - UnifiedCacheService: 3-Layer cache (Memory → Hive → Firestore)
 ///
 /// **Removed Dependencies** (from Clean Architecture v4.0):
 /// - ❌ IVotingRemoteDataSource: Firebase 직접 사용으로 대체
+/// - ❌ IVotingLocalDataSource: UnifiedCacheService로 대체 (Phase 2)
 /// - ❌ IVoteStatePort: Moved to Coordinator
 /// - ❌ INotificationDataPort: Moved to App layer
 /// - ❌ IVoteUIDelegate: Moved to Presentation layer
 class VotingDialogRepositoryImpl implements IVotingDialogRepository {
   final FirebaseFirestore _firestore;
-  final IVotingLocalDataSource _localDataSource;
+  final UnifiedCacheService _cacheService = UnifiedCacheService.instance;
   final IdempotencyService _idempotencyService;
   final ShardUtils _shardUtils;
 
   VotingDialogRepositoryImpl({
     required FirebaseFirestore firestore,
-    required IVotingLocalDataSource localDataSource,
     IdempotencyService? idempotencyService,
     ShardUtils? shardUtils,
   })  : _firestore = firestore,
-        _localDataSource = localDataSource,
         _idempotencyService =
             idempotencyService ?? IdempotencyService(firestore: firestore),
         _shardUtils = shardUtils ?? ShardUtils(firestore: firestore);
@@ -236,8 +235,8 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
     required String userId,
   }) async {
     try {
-      // Try local cache first
-      final cachedHistory = await _localDataSource.getCachedVoteHistory(userId);
+      // Try 3-Layer cache first
+      final cachedHistory = await _cacheService.getVoteHistory(userId);
 
       if (cachedHistory != null) {
         final userVote = cachedHistory.firstWhere(
@@ -276,8 +275,8 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
         return const Right(null);
       }
 
-      // Cache the complete history
-      await _localDataSource.cacheUserVoteHistory(userId, voteHistory);
+      // Cache the complete history to 3-Layer cache
+      await _cacheService.setVoteHistory(userId, voteHistory);
 
       return Right(userVote);
     } on FirebaseException catch (e) {

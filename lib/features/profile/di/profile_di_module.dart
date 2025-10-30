@@ -9,10 +9,14 @@
 /// - Contracts
 
 import 'package:get_it/get_it.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
+// ===== Core Services =====
+import '/core/utils/idempotency_service.dart';
+import '/services/cache/unified_cache_service.dart';
 
 // ===== App Layer - Contracts =====
 import '/app/contracts/user_contract.dart';
+import '/app/contracts/firebase_auth_contract_impl.dart';
 
 // ===== Domain Layer - Repository Interfaces (Ports) =====
 import '../domain/repositories/i_profile_storage_repository.dart';
@@ -21,13 +25,11 @@ import '../domain/repositories/i_characters_repository.dart';
 import '../domain/repositories/i_interests_repository.dart';
 import '../domain/repositories/i_profile_repository.dart';
 
-// ===== Data Layer - DataSource Interfaces (Ports) =====
-import '../data/datasources/interfaces/i_profile_datasource.dart';
-
 // ===== Data Layer - DataSource Implementations (Adapters) =====
+// Note: Profile DataSource removed in Phase 4 (Firebase-Centric v2.0)
+// Only Storage DataSource remains for file upload functionality
 import '../data/datasources/profile_storage_datasource.dart';
 import '../data/datasources/profile_storage_datasource_impl.dart';
-import '../data/datasources/implementations/firebase_profile_datasource.dart';
 
 // ===== Data Layer - Repository Implementations (Adapters) =====
 import '../data/repositories/user_repository_impl.dart';
@@ -59,10 +61,8 @@ import '../domain/usecases/interests/get_user_interests_usecase.dart';
 import '../domain/usecases/interests/update_user_interests_usecase.dart';
 
 // ===== Presentation Layer - Providers =====
-import '../presentation/providers/profile_provider.dart';
-import '../presentation/providers/characters_provider.dart';
-import '../presentation/providers/interests_provider.dart';
-import '../presentation/providers/settings_provider.dart';
+// Phase 3: Riverpod 마이그레이션 완료 - ChangeNotifier Providers 제거됨
+// 모든 UI 컴포넌트가 Riverpod 2.x의 profile_providers.dart 사용
 
 /// Register all Profile feature dependencies
 /// Call this function from main setupDependencyInjection()
@@ -83,7 +83,7 @@ void registerProfileModule(GetIt getIt) {
   _registerUseCases(getIt);
 
   // ===== Providers Registration =====
-  _registerProviders(getIt);
+  // Phase 3: Riverpod 마이그레이션 완료 - ChangeNotifier Providers 제거됨
 }
 
 /// Register Remote and Local DataSources
@@ -93,12 +93,8 @@ void _registerDataSources(GetIt getIt) {
     () => ProfileStorageDataSourceImpl(),
   );
 
-  // Profile DataSource (Firebase Firestore)
-  getIt.registerLazySingleton<IProfileDataSource>(
-    () => FirebaseProfileDataSource(
-      firestore: FirebaseFirestore.instance,
-    ),
-  );
+  // Profile DataSource (Firebase Firestore) - REMOVED in Phase 4
+  // Firebase-Centric v2.0: Repositories access FirebaseFirestore directly
 }
 
 /// Register Repository implementations
@@ -110,9 +106,16 @@ void _registerRepositories(GetIt getIt) {
     ),
   );
 
-  // User Repository (Singleton pattern)
-  // Note: UserRepositoryImpl.initialize() must be called first
-  // This happens automatically when the singleton instance is accessed
+  // ===== Phase 1.2: IdempotencyService Integration =====
+
+  // User Repository (Singleton pattern with explicit initialization)
+  // IMPORTANT: Initialize BEFORE registering the singleton
+  final authContract = FirebaseAuthContractImpl();
+  final idempotencyService = getIt<IdempotencyService>();
+  final cacheService = UnifiedCacheService.instance;
+
+  UserRepositoryImpl.initialize(authContract, idempotencyService, cacheService);
+
   getIt.registerLazySingleton<IUserRepository>(
     () => UserRepositoryImpl.instance,
   );
@@ -122,18 +125,16 @@ void _registerRepositories(GetIt getIt) {
     () => CharactersRepositoryImpl(),
   );
 
-  // Interests Repository
+  // Interests Repository (Firebase-Centric v2.0 + IdempotencyService)
   getIt.registerLazySingleton<IInterestsRepository>(
     () => InterestsRepositoryImpl(
-      dataSource: getIt<IProfileDataSource>(),
+      idempotencyService: getIt<IdempotencyService>(),
     ),
   );
 
-  // Profile Repository
+  // Profile Repository (Firebase-Centric v2.0)
   getIt.registerLazySingleton<IProfileRepository>(
-    () => ProfileRepositoryImpl(
-      dataSource: getIt<IProfileDataSource>(),
-    ),
+    () => ProfileRepositoryImpl(),
   );
 }
 
@@ -234,42 +235,3 @@ void _registerUseCases(GetIt getIt) {
   );
 }
 
-/// Register Presentation Layer Providers
-void _registerProviders(GetIt getIt) {
-  // ProfileProvider - manages user profile state
-  getIt.registerFactory(
-    () => ProfileProvider(
-      getProfileUseCase: getIt<GetUserProfileUseCase>(),
-      getCurrentProfileUseCase: getIt<GetCurrentUserProfileUseCase>(),
-      updateProfileUseCase: getIt<UpdateUserProfileUseCase>(),
-      uploadImageUseCase: getIt<UploadProfileImageUseCase>(),
-      getProfileCompletionUseCase: getIt<GetProfileCompletionUseCase>(),
-      getProfileInfoUseCase: getIt<GetProfileInfoUseCase>(),
-      watchProfileUseCase: getIt<WatchUserProfileUseCase>(),
-    ),
-  );
-
-  // CharactersProvider - manages character avatars
-  getIt.registerFactory(
-    () => CharactersProvider(
-      getAvailableCharactersUseCase: getIt<GetAvailableCharactersUseCase>(),
-    ),
-  );
-
-  // InterestsProvider - manages user interests
-  getIt.registerFactory(
-    () => InterestsProvider(
-      getUserInterestsUseCase: getIt<GetUserInterestsUseCase>(),
-      updateUserInterestsUseCase: getIt<UpdateUserInterestsUseCase>(),
-    ),
-  );
-
-  // SettingsProvider - manages user settings
-  getIt.registerFactory(
-    () => SettingsProvider(
-      getSettingsUseCase: getIt<GetUserSettingsUseCase>(),
-      updateSettingsUseCase: getIt<UpdateUserSettingsUseCase>(),
-      deleteProfileUseCase: getIt<DeleteUserProfileUseCase>(),
-    ),
-  );
-}

@@ -68,6 +68,8 @@ abstract class CacheContract {
 class CacheKeys {
   static String feedPosts() => 'feed_posts';
   static String userProfile(String userId) => 'user_profile_$userId';
+  static String userSettings(String userId) => 'user_settings_$userId';
+  static String userInterests(String userId) => 'user_interests_$userId';
   static String chatMessages(String chatId) => 'chat_messages_$chatId';
   static String chatParticipants(String chatId) => 'chat_participants_$chatId';
   static String postDetails(String postId) => 'post_details_$postId';

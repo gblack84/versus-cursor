@@ -1,12 +1,20 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'simple_memory_cache.dart' hide CacheKeys;
+import 'simple_memory_cache.dart';
 import 'cache_statistics.dart';
-import '/app/contracts/cache_contract.dart';
+import '/app/contracts/cache_contract.dart' hide CacheKeys;
+import '/app/models/lat_lng.dart';
 // Domain models imports (migrated from backend.dart)
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/features/chat/data/models/message_dto.dart';
 import '/features/profile/domain/models/user_profile.dart';
+import '/features/profile/domain/models/user_profile_extensions.dart';
+import '/features/profile/domain/models/user_settings.dart';
+import '/features/profile/domain/models/profile_info.dart';
+import '/features/profile/domain/models/character.dart';
+import '/features/voting/domain/entities/dialog/vote_counts_model.dart';
+import '/features/voting/domain/entities/dialog/vote_cache_state.dart';
+import '/features/auth/domain/entities/auth_user.dart';
 
 /// 캐시 레이어 정의
 enum CacheLayer {
@@ -53,6 +61,56 @@ abstract class UnifiedCacheService implements CacheContract {
   Future<void> setUserProfile(String userId, UserProfile profile);
   @override
   Future<void> clearUserProfile(String userId);
+
+  // UserSettings 캐싱
+  Future<UserSettings?> getUserSettings(String userId);
+  Future<void> setUserSettings(String userId, UserSettings settings);
+  Future<void> clearUserSettings(String userId);
+
+  // User Interests 캐싱
+  Future<List<String>?> getUserInterests(String userId);
+  Future<void> setUserInterests(String userId, List<String> interests);
+  Future<void> clearUserInterests(String userId);
+
+  // ProfileInfo 캐싱
+  Future<ProfileInfo?> getProfileInfo(String userId);
+  Future<void> setProfileInfo(String userId, ProfileInfo info);
+  Future<void> clearProfileInfo(String userId);
+
+  // Profile Completion 캐싱
+  Future<double?> getProfileCompletion(String userId);
+  Future<void> setProfileCompletion(String userId, double percentage);
+  Future<void> clearProfileCompletion(String userId);
+
+  // Available Characters 캐싱
+  Future<List<Character>?> getAvailableCharacters();
+  Future<void> setAvailableCharacters(List<Character> characters);
+  Future<void> clearAvailableCharacters();
+
+  // VoteCounts 캐싱
+  Future<VoteCounts?> getVoteCounts(String postId);
+  Future<void> setVoteCounts(String postId, VoteCounts counts);
+  Future<void> clearVoteCounts(String postId);
+
+  // VoteState 캐싱
+  Future<VoteCacheState?> getVoteState(String postId, String userId);
+  Future<void> setVoteState(String postId, String userId, VoteCacheState state);
+  Future<void> clearVoteState(String postId, String userId);
+
+  // Vote History 캐싱
+  Future<List<Map<String, dynamic>>?> getVoteHistory(String userId);
+  Future<void> setVoteHistory(String userId, List<Map<String, dynamic>> history);
+
+  // AuthUser 캐싱
+  Future<AuthUser?> getAuthUser(String userId);
+  Future<void> setAuthUser(String userId, AuthUser user, {Duration? ttl});
+  Future<void> clearAuthUser(String userId);
+
+  // AuthToken 캐싱
+  Future<String?> getAuthToken(String userId);
+  Future<void> setAuthToken(String userId, String token, {Duration? ttl});
+  Future<void> clearAuthToken(String userId);
+
   @override
   Future<List<Map<String, dynamic>>> getChatMessages({required String chatId, int limit = 30});
   @override
@@ -467,9 +525,24 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
     final cacheKey = CacheKeys.userProfile(userId);
 
     // L1: Memory Cache
-    final cached = _memoryCache.get<UserProfile>(cacheKey);
-    if (cached != null) {
-      return cached;
+    final memCached = _memoryCache.get<UserProfile>(cacheKey);
+    if (memCached != null) {
+      _logDebug('User profile from MEMORY: $userId');
+      return memCached;
+    }
+
+    // L2: Hive Cache
+    try {
+      final hiveData = await _localCache.get(cacheKey);
+      if (hiveData != null && hiveData is Map) {
+        final profile = UserProfile.fromJson(Map<String, dynamic>.from(hiveData));
+        // Promote to memory cache
+        _memoryCache.set(cacheKey, profile, ttl: const Duration(hours: 1));
+        _logDebug('User profile from HIVE: $userId');
+        return profile;
+      }
+    } catch (e) {
+      _logDebug('Hive read error for user profile $userId: $e');
     }
 
     // L3: Firestore
@@ -477,12 +550,22 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
       final doc = await _firestore.collection('users').doc(userId).get();
 
       if (doc.exists) {
-        final user = UserProfile.fromSnapshot(doc);
+        final user = UserProfileFirestore.fromFirestore(doc);
+
+        // Save to L1 + L2
         _memoryCache.set(cacheKey, user, ttl: const Duration(hours: 1));
+        try {
+          await _localCache.put(cacheKey, user.toJson());
+          _logDebug('Cached user profile to Hive: $userId');
+        } catch (e) {
+          _logDebug('Failed to save user profile to Hive: $e');
+        }
+
+        _logDebug('User profile from FIRESTORE: $userId');
         return user;
       }
     } catch (e) {
-      _logDebug('Failed to get user profile: $userId');
+      _logDebug('Failed to get user profile from Firestore: $userId');
     }
 
     return null;
@@ -491,7 +574,730 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
   @override
   Future<void> setUserProfile(String userId, UserProfile user) async {
     final cacheKey = CacheKeys.userProfile(userId);
+
+    // L1: Memory Cache
     _memoryCache.set(cacheKey, user, ttl: const Duration(hours: 1));
+
+    // L2: Hive Cache
+    try {
+      await _localCache.put(cacheKey, user.toJson());
+      _logDebug('Set user profile to L1+L2: $userId');
+    } catch (e) {
+      _logDebug('Failed to save user profile to Hive: $e');
+    }
+  }
+
+  // === UserSettings 캐싱 ===
+
+  @override
+  Future<UserSettings?> getUserSettings(String userId) async {
+    final cacheKey = CacheKeys.userSettings(userId);
+
+    // L1: Memory Cache
+    final memCached = _memoryCache.get<UserSettings>(cacheKey);
+    if (memCached != null) {
+      _logDebug('User settings from MEMORY: $userId');
+      return memCached;
+    }
+
+    // L2: Hive Cache
+    try {
+      final hiveData = await _localCache.get(cacheKey);
+      if (hiveData != null && hiveData is Map) {
+        final settings = UserSettings.fromJson(Map<String, dynamic>.from(hiveData));
+        // Promote to memory cache
+        _memoryCache.set(cacheKey, settings, ttl: const Duration(hours: 1));
+        _logDebug('User settings from HIVE: $userId');
+        return settings;
+      }
+    } catch (e) {
+      _logDebug('Hive read error for user settings $userId: $e');
+    }
+
+    // L3: Firestore
+    try {
+      final doc = await _firestore.collection('users').doc(userId).get();
+
+      if (doc.exists && doc.data() != null) {
+        final settings = UserSettings.fromMap(doc.data()!, userId);
+
+        // Save to L1 + L2
+        _memoryCache.set(cacheKey, settings, ttl: const Duration(hours: 1));
+        try {
+          await _localCache.put(cacheKey, settings.toJson());
+          _logDebug('Cached user settings to Hive: $userId');
+        } catch (e) {
+          _logDebug('Failed to save user settings to Hive: $e');
+        }
+
+        _logDebug('User settings from FIRESTORE: $userId');
+        return settings;
+      }
+    } catch (e) {
+      _logDebug('Failed to get user settings from Firestore: $userId');
+    }
+
+    return null;
+  }
+
+  @override
+  Future<void> setUserSettings(String userId, UserSettings settings) async {
+    final cacheKey = CacheKeys.userSettings(userId);
+
+    // L1: Memory Cache
+    _memoryCache.set(cacheKey, settings, ttl: const Duration(hours: 1));
+
+    // L2: Hive Cache
+    try {
+      await _localCache.put(cacheKey, settings.toJson());
+      _logDebug('Set user settings to L1+L2: $userId');
+    } catch (e) {
+      _logDebug('Failed to save user settings to Hive: $e');
+    }
+  }
+
+  @override
+  Future<void> clearUserSettings(String userId) async {
+    final cacheKey = CacheKeys.userSettings(userId);
+    await remove(cacheKey, layer: CacheLayer.all);
+  }
+
+  // === User Interests 캐싱 ===
+
+  @override
+  Future<List<String>?> getUserInterests(String userId) async {
+    final cacheKey = CacheKeys.userInterests(userId);
+
+    // L1: Memory Cache
+    final memCached = _memoryCache.get<List<String>>(cacheKey);
+    if (memCached != null) {
+      _logDebug('User interests from MEMORY: $userId');
+      return memCached;
+    }
+
+    // L2: Hive Cache
+    try {
+      final hiveData = await _localCache.get(cacheKey);
+      if (hiveData != null && hiveData is List) {
+        final interests = List<String>.from(hiveData);
+        // Promote to memory cache
+        _memoryCache.set(cacheKey, interests, ttl: const Duration(hours: 1));
+        _logDebug('User interests from HIVE: $userId');
+        return interests;
+      }
+    } catch (e) {
+      _logDebug('Hive read error for user interests $userId: $e');
+    }
+
+    // L3: Firestore
+    try {
+      final doc = await _firestore.collection('users').doc(userId).get();
+
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        final interests = data['interests'] != null
+            ? List<String>.from(data['interests'] as List)
+            : <String>[];
+
+        // Save to L1 + L2
+        _memoryCache.set(cacheKey, interests, ttl: const Duration(hours: 1));
+        try {
+          await _localCache.put(cacheKey, interests);
+          _logDebug('Cached user interests to Hive: $userId');
+        } catch (e) {
+          _logDebug('Failed to save user interests to Hive: $e');
+        }
+
+        _logDebug('User interests from FIRESTORE: $userId');
+        return interests;
+      }
+    } catch (e) {
+      _logDebug('Failed to get user interests from Firestore: $userId');
+    }
+
+    return null;
+  }
+
+  @override
+  Future<void> setUserInterests(String userId, List<String> interests) async {
+    final cacheKey = CacheKeys.userInterests(userId);
+
+    // L1: Memory Cache
+    _memoryCache.set(cacheKey, interests, ttl: const Duration(hours: 1));
+
+    // L2: Hive Cache
+    try {
+      await _localCache.put(cacheKey, interests);
+      _logDebug('Set user interests to L1+L2: $userId');
+    } catch (e) {
+      _logDebug('Failed to save user interests to Hive: $e');
+    }
+  }
+
+  @override
+  Future<void> clearUserInterests(String userId) async {
+    final cacheKey = CacheKeys.userInterests(userId);
+    await remove(cacheKey, layer: CacheLayer.all);
+  }
+
+  // === ProfileInfo 캐싱 ===
+
+  @override
+  Future<ProfileInfo?> getProfileInfo(String userId) async {
+    final cacheKey = CacheKeys.profileInfo(userId);
+
+    // L1: Memory Cache
+    final memCached = _memoryCache.get<ProfileInfo>(cacheKey);
+    if (memCached != null) {
+      _logDebug('ProfileInfo from MEMORY: $userId');
+      return memCached;
+    }
+
+    // L2: Hive Cache
+    try {
+      final hiveData = await _localCache.get(cacheKey);
+      if (hiveData != null && hiveData is Map) {
+        final profileInfo = ProfileInfo.fromJson(Map<String, dynamic>.from(hiveData));
+        // Promote to memory cache
+        _memoryCache.set(cacheKey, profileInfo, ttl: const Duration(hours: 1));
+        _logDebug('ProfileInfo from HIVE: $userId');
+        return profileInfo;
+      }
+    } catch (e) {
+      _logDebug('Hive read error for ProfileInfo $userId: $e');
+    }
+
+    // L3: Firestore
+    try {
+      final doc = await _firestore.collection('users').doc(userId).get();
+
+      if (doc.exists && doc.data() != null) {
+        // Convert Firestore document to ProfileInfo
+        final data = doc.data()!;
+        final profileInfo = ProfileInfo(
+          userId: userId,
+          displayName: data['displayName'] as String? ?? '',
+          photoUrl: data['photoUrl'] as String?,
+          shortDescription: data['shortDescription'] as String?,
+          gender: data['gender'] as String?,
+          dateOfBirth: data['dateOfBirth'] != null
+              ? (data['dateOfBirth'] as Timestamp).toDate()
+              : null,
+          language: data['language'] as String? ?? 'en',
+          interests: data['interests'] != null
+              ? List<String>.from(data['interests'] as List)
+              : [],
+          expertise: data['expertise'] != null
+              ? List<String>.from(data['expertise'] as List)
+              : [],
+          location: data['location'] != null
+              ? LatLng(
+                  (data['location']['latitude'] as num).toDouble(),
+                  (data['location']['longitude'] as num).toDouble(),
+                )
+              : null,
+        );
+
+        // Save to L1 + L2
+        _memoryCache.set(cacheKey, profileInfo, ttl: const Duration(hours: 1));
+        try {
+          await _localCache.put(cacheKey, profileInfo.toJson());
+          _logDebug('Cached ProfileInfo to Hive: $userId');
+        } catch (e) {
+          _logDebug('Failed to save ProfileInfo to Hive: $e');
+        }
+
+        _logDebug('ProfileInfo from FIRESTORE: $userId');
+        return profileInfo;
+      }
+    } catch (e) {
+      _logDebug('Failed to get ProfileInfo from Firestore: $userId');
+    }
+
+    return null;
+  }
+
+  @override
+  Future<void> setProfileInfo(String userId, ProfileInfo info) async {
+    final cacheKey = CacheKeys.profileInfo(userId);
+
+    // L1: Memory Cache
+    _memoryCache.set(cacheKey, info, ttl: const Duration(hours: 1));
+
+    // L2: Hive Cache
+    try {
+      await _localCache.put(cacheKey, info.toJson());
+      _logDebug('Set ProfileInfo to L1+L2: $userId');
+    } catch (e) {
+      _logDebug('Failed to save ProfileInfo to Hive: $e');
+    }
+  }
+
+  @override
+  Future<void> clearProfileInfo(String userId) async {
+    final cacheKey = CacheKeys.profileInfo(userId);
+    await remove(cacheKey, layer: CacheLayer.all);
+  }
+
+  // === Profile Completion 캐싱 ===
+
+  @override
+  Future<double?> getProfileCompletion(String userId) async {
+    final cacheKey = CacheKeys.profileCompletion(userId);
+
+    // L1: Memory Cache
+    final memCached = _memoryCache.get<double>(cacheKey);
+    if (memCached != null) {
+      _logDebug('Profile completion from MEMORY: $userId');
+      return memCached;
+    }
+
+    // L2: Hive Cache
+    try {
+      final hiveData = await _localCache.get(cacheKey);
+      if (hiveData != null && hiveData is double) {
+        // Promote to memory cache
+        _memoryCache.set(cacheKey, hiveData, ttl: const Duration(minutes: 30));
+        _logDebug('Profile completion from HIVE: $userId');
+        return hiveData;
+      }
+    } catch (e) {
+      _logDebug('Hive read error for profile completion $userId: $e');
+    }
+
+    // L3: 프로필 완성도는 계산된 값이므로 Firestore에서 직접 가져오지 않음
+    // 호출하는 쪽에서 UserProfile을 가져와서 completionRate를 계산한 후 setProfileCompletion 호출
+
+    return null;
+  }
+
+  @override
+  Future<void> setProfileCompletion(String userId, double percentage) async {
+    final cacheKey = CacheKeys.profileCompletion(userId);
+
+    // L1: Memory Cache (30분 TTL - 자주 변할 수 있음)
+    _memoryCache.set(cacheKey, percentage, ttl: const Duration(minutes: 30));
+
+    // L2: Hive Cache
+    try {
+      await _localCache.put(cacheKey, percentage);
+      _logDebug('Set profile completion to L1+L2: $userId');
+    } catch (e) {
+      _logDebug('Failed to save profile completion to Hive: $e');
+    }
+  }
+
+  @override
+  Future<void> clearProfileCompletion(String userId) async {
+    final cacheKey = CacheKeys.profileCompletion(userId);
+    await remove(cacheKey, layer: CacheLayer.all);
+  }
+
+  // === Available Characters 캐싱 ===
+
+  @override
+  Future<List<Character>?> getAvailableCharacters() async {
+    final cacheKey = CacheKeys.availableCharacters();
+
+    // L1: Memory Cache
+    final memCached = _memoryCache.get<List<Character>>(cacheKey);
+    if (memCached != null) {
+      _logDebug('Available characters from MEMORY');
+      return memCached;
+    }
+
+    // L2: Hive Cache
+    try {
+      final hiveData = await _localCache.get(cacheKey);
+      if (hiveData != null && hiveData is List) {
+        final characters = hiveData
+            .map((item) => Character.fromJson(Map<String, dynamic>.from(item as Map)))
+            .toList();
+        // Promote to memory cache (24시간 TTL - 거의 변하지 않음)
+        _memoryCache.set(cacheKey, characters, ttl: const Duration(hours: 24));
+        _logDebug('Available characters from HIVE');
+        return characters;
+      }
+    } catch (e) {
+      _logDebug('Hive read error for available characters: $e');
+    }
+
+    // L3: Firestore
+    try {
+      final snapshot = await _firestore
+          .collection('characters')
+          .where('isActive', isEqualTo: true)
+          .get();
+
+      final characters = snapshot.docs.map((doc) {
+        final data = doc.data();
+        return Character(
+          characterId: doc.id,
+          name: data['CharactersName'] as String? ?? '',
+          imageUrl: data['CharactersImageUrl'] as String? ?? '',
+          description: data['description'] as String?,
+          isActive: data['isActive'] as bool? ?? true,
+          characterType: data['characterType'] as String?,
+          createdAt: data['createdAt'] != null
+              ? (data['createdAt'] as Timestamp).toDate()
+              : null,
+        );
+      }).toList();
+
+      // Save to L1 + L2 (24시간 TTL)
+      _memoryCache.set(cacheKey, characters, ttl: const Duration(hours: 24));
+      try {
+        final serializedCharacters = characters.map((c) => c.toJson()).toList();
+        await _localCache.put(cacheKey, serializedCharacters);
+        _logDebug('Cached available characters to Hive');
+      } catch (e) {
+        _logDebug('Failed to save available characters to Hive: $e');
+      }
+
+      _logDebug('Available characters from FIRESTORE');
+      return characters;
+    } catch (e) {
+      _logDebug('Failed to get available characters from Firestore: $e');
+    }
+
+    return null;
+  }
+
+  @override
+  Future<void> setAvailableCharacters(List<Character> characters) async {
+    final cacheKey = CacheKeys.availableCharacters();
+
+    // L1: Memory Cache (24시간 TTL)
+    _memoryCache.set(cacheKey, characters, ttl: const Duration(hours: 24));
+
+    // L2: Hive Cache
+    try {
+      final serializedCharacters = characters.map((c) => c.toJson()).toList();
+      await _localCache.put(cacheKey, serializedCharacters);
+      _logDebug('Set available characters to L1+L2');
+    } catch (e) {
+      _logDebug('Failed to save available characters to Hive: $e');
+    }
+  }
+
+  @override
+  Future<void> clearAvailableCharacters() async {
+    final cacheKey = CacheKeys.availableCharacters();
+    await remove(cacheKey, layer: CacheLayer.all);
+  }
+
+  // ============= VoteCounts 캐싱 =============
+
+  @override
+  Future<VoteCounts?> getVoteCounts(String postId) async {
+    final cacheKey = CacheKeys.voteCounts(postId);
+
+    // L1: Memory Cache
+    final memCached = _memoryCache.get<VoteCounts>(cacheKey);
+    if (memCached != null) {
+      _logDebug('Vote counts from MEMORY: $postId');
+      return memCached;
+    }
+
+    // L2: Hive Cache
+    try {
+      final hiveData = await _localCache.get(cacheKey);
+      if (hiveData != null && hiveData is Map) {
+        final counts = VoteCounts.fromJson(Map<String, dynamic>.from(hiveData));
+        // Promote to memory cache
+        _memoryCache.set(cacheKey, counts, ttl: const Duration(minutes: 5));
+        _logDebug('Vote counts from HIVE: $postId');
+        return counts;
+      }
+    } catch (e) {
+      _logDebug('Hive read error for vote counts $postId: $e');
+    }
+
+    // L3: Firestore
+    try {
+      final doc = await _firestore.collection('posts').doc(postId).get();
+
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        final counts = VoteCounts(
+          votesA: data['votesA'] as int? ?? 0,
+          votesB: data['votesB'] as int? ?? 0,
+          totalVotes: data['totalVotes'] as int? ?? 0,
+        );
+
+        // Save to L1 + L2
+        _memoryCache.set(cacheKey, counts, ttl: const Duration(minutes: 5));
+        try {
+          await _localCache.put(cacheKey, counts.toJson());
+          _logDebug('Cached vote counts to Hive: $postId');
+        } catch (e) {
+          _logDebug('Failed to save vote counts to Hive: $e');
+        }
+
+        _logDebug('Vote counts from FIRESTORE: $postId');
+        return counts;
+      }
+    } catch (e) {
+      _logDebug('Failed to get vote counts from Firestore: $postId');
+    }
+
+    return null;
+  }
+
+  @override
+  Future<void> setVoteCounts(String postId, VoteCounts counts) async {
+    final cacheKey = CacheKeys.voteCounts(postId);
+
+    // L1: Memory Cache
+    _memoryCache.set(cacheKey, counts, ttl: const Duration(minutes: 5));
+
+    // L2: Hive Cache
+    try {
+      await _localCache.put(cacheKey, counts.toJson());
+      _logDebug('Set vote counts to L1+L2: $postId');
+    } catch (e) {
+      _logDebug('Failed to save vote counts to Hive: $e');
+    }
+  }
+
+  @override
+  Future<void> clearVoteCounts(String postId) async {
+    final cacheKey = CacheKeys.voteCounts(postId);
+    await remove(cacheKey, layer: CacheLayer.all);
+  }
+
+  // ============= VoteState 캐싱 =============
+
+  @override
+  Future<VoteCacheState?> getVoteState(String postId, String userId) async {
+    final cacheKey = CacheKeys.voteState(postId, userId);
+
+    // L1: Memory Cache
+    final memCached = _memoryCache.get<VoteCacheState>(cacheKey);
+    if (memCached != null) {
+      _logDebug('Vote state from MEMORY: $postId, $userId');
+      return memCached;
+    }
+
+    // L2: Hive Cache
+    try {
+      final hiveData = await _localCache.get(cacheKey);
+      if (hiveData != null && hiveData is Map) {
+        final state = VoteCacheState.fromJson(Map<String, dynamic>.from(hiveData));
+        // Promote to memory cache
+        _memoryCache.set(cacheKey, state, ttl: const Duration(hours: 1));
+        _logDebug('Vote state from HIVE: $postId, $userId');
+        return state;
+      }
+    } catch (e) {
+      _logDebug('Hive read error for vote state $postId/$userId: $e');
+    }
+
+    // L3: Firestore
+    try {
+      final doc = await _firestore
+          .collection('posts')
+          .doc(postId)
+          .collection('votes')
+          .doc(userId)
+          .get();
+
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        final state = VoteCacheState(
+          option: data['option'] as String?,
+          timestamp: (data['timestamp'] as Timestamp?)?.toDate(),
+          completed: data['completed'] as bool? ?? false,
+        );
+
+        // Save to L1 + L2
+        _memoryCache.set(cacheKey, state, ttl: const Duration(hours: 1));
+        try {
+          await _localCache.put(cacheKey, state.toJson());
+          _logDebug('Cached vote state to Hive: $postId/$userId');
+        } catch (e) {
+          _logDebug('Failed to save vote state to Hive: $e');
+        }
+
+        _logDebug('Vote state from FIRESTORE: $postId, $userId');
+        return state;
+      }
+    } catch (e) {
+      _logDebug('Failed to get vote state from Firestore: $postId/$userId');
+    }
+
+    return null;
+  }
+
+  @override
+  Future<void> setVoteState(String postId, String userId, VoteCacheState state) async {
+    final cacheKey = CacheKeys.voteState(postId, userId);
+
+    // L1: Memory Cache
+    _memoryCache.set(cacheKey, state, ttl: const Duration(hours: 1));
+
+    // L2: Hive Cache
+    try {
+      await _localCache.put(cacheKey, state.toJson());
+      _logDebug('Set vote state to L1+L2: $postId/$userId');
+    } catch (e) {
+      _logDebug('Failed to save vote state to Hive: $e');
+    }
+  }
+
+  @override
+  Future<void> clearVoteState(String postId, String userId) async {
+    final cacheKey = CacheKeys.voteState(postId, userId);
+    await remove(cacheKey, layer: CacheLayer.all);
+  }
+
+  // ============= Vote History 캐싱 =============
+
+  @override
+  Future<List<Map<String, dynamic>>?> getVoteHistory(String userId) async {
+    final cacheKey = CacheKeys.voteHistory(userId);
+
+    // L1: Memory Cache
+    final memCached = _memoryCache.get<List<Map<String, dynamic>>>(cacheKey);
+    if (memCached != null) {
+      _logDebug('Vote history from MEMORY: $userId');
+      return memCached;
+    }
+
+    // L2: Hive Cache
+    try {
+      final hiveData = await _localCache.get(cacheKey);
+      if (hiveData != null && hiveData is List) {
+        final history = hiveData.cast<Map<String, dynamic>>();
+        // Promote to memory cache
+        _memoryCache.set(cacheKey, history, ttl: const Duration(hours: 1));
+        _logDebug('Vote history from HIVE: $userId');
+        return history;
+      }
+    } catch (e) {
+      _logDebug('Hive read error for vote history $userId: $e');
+    }
+
+    // L3: Firestore
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('vote_history')
+          .orderBy('timestamp', descending: true)
+          .limit(50)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        final history = snapshot.docs
+            .map((doc) => {'id': doc.id, ...doc.data()})
+            .toList();
+
+        // Save to L1 + L2
+        _memoryCache.set(cacheKey, history, ttl: const Duration(hours: 1));
+        try {
+          await _localCache.put(cacheKey, history);
+          _logDebug('Cached vote history to Hive: $userId');
+        } catch (e) {
+          _logDebug('Failed to save vote history to Hive: $e');
+        }
+
+        _logDebug('Vote history from FIRESTORE: $userId');
+        return history;
+      }
+    } catch (e) {
+      _logDebug('Failed to get vote history from Firestore: $userId');
+    }
+
+    return null;
+  }
+
+  @override
+  Future<void> setVoteHistory(String userId, List<Map<String, dynamic>> history) async {
+    final cacheKey = CacheKeys.voteHistory(userId);
+
+    // L1: Memory Cache
+    _memoryCache.set(cacheKey, history, ttl: const Duration(hours: 1));
+
+    // L2: Hive Cache
+    try {
+      await _localCache.put(cacheKey, history);
+      _logDebug('Set vote history to L1+L2: $userId');
+    } catch (e) {
+      _logDebug('Failed to save vote history to Hive: $e');
+    }
+  }
+
+  // ============= AuthUser 캐싱 =============
+
+  @override
+  Future<AuthUser?> getAuthUser(String userId) async {
+    final cacheKey = CacheKeys.authUser(userId);
+
+    // L1: Memory Cache (<1ms)
+    final memCached = _memoryCache.get<AuthUser>(cacheKey);
+    if (memCached != null) {
+      _logDebug('Auth user from MEMORY: $userId');
+      return memCached;
+    }
+
+    // L2: Hive Cache (10-30ms)
+    try {
+      final hiveData = await _localCache.get(cacheKey);
+      if (hiveData != null && hiveData is Map) {
+        final user = AuthUser.fromJson(Map<String, dynamic>.from(hiveData));
+        // Promote to memory cache
+        _memoryCache.set(cacheKey, user, ttl: const Duration(hours: 1));
+        _logDebug('Auth user from HIVE: $userId');
+        return user;
+      }
+    } catch (e) {
+      _logDebug('Hive read error for auth user $userId: $e');
+    }
+
+    return null;
+  }
+
+  @override
+  Future<void> setAuthUser(String userId, AuthUser user, {Duration? ttl}) async {
+    final cacheKey = CacheKeys.authUser(userId);
+
+    // L1: Memory Cache
+    _memoryCache.set(cacheKey, user, ttl: ttl ?? const Duration(hours: 1));
+
+    // L2: Hive Cache
+    try {
+      await _localCache.put(cacheKey, user.toJson());
+      _logDebug('Set auth user to L1+L2: $userId');
+    } catch (e) {
+      _logDebug('Failed to save auth user to Hive: $e');
+    }
+  }
+
+  @override
+  Future<void> clearAuthUser(String userId) async {
+    final cacheKey = CacheKeys.authUser(userId);
+    await remove(cacheKey, layer: CacheLayer.all);
+  }
+
+  // ============= AuthToken 캐싱 =============
+
+  @override
+  Future<String?> getAuthToken(String userId) async {
+    final cacheKey = CacheKeys.authToken(userId);
+    return await get<String>(cacheKey);
+  }
+
+  @override
+  Future<void> setAuthToken(String userId, String token, {Duration? ttl}) async {
+    final cacheKey = CacheKeys.authToken(userId);
+    await set(cacheKey, token, ttl: ttl ?? const Duration(hours: 1));
+  }
+
+  @override
+  Future<void> clearAuthToken(String userId) async {
+    final cacheKey = CacheKeys.authToken(userId);
+    await remove(cacheKey, layer: CacheLayer.all);
   }
 
   // === 프리페칭 ===

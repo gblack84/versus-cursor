@@ -1,25 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/core_exports.dart';
-import '/app/di.dart';
-import '/features/profile/presentation/providers/settings_provider.dart';
-import '/features/profile/domain/usecases/settings/get_user_settings_usecase.dart';
-import '/features/profile/domain/usecases/settings/update_user_settings_usecase.dart';
-import '/features/profile/domain/usecases/profile/delete_user_profile_usecase.dart';
+import '/features/profile/presentation/providers/profile_providers.dart';
 import '/features/profile/presentation/widgets/settings/settings_section.dart';
 import '/features/profile/presentation/widgets/settings/settings_toggle.dart';
 import '/features/profile/presentation/widgets/settings/settings_list_tile.dart';
 import '/features/profile/presentation/widgets/common/loading_indicator.dart';
 import '/features/profile/presentation/widgets/common/error_message.dart';
 
-/// 설정 화면 Wrapper
+/// 설정 화면 (Phase 3: Riverpod 마이그레이션 완료)
 ///
-/// **Clean Architecture v4.0 준수**:
-/// - Provider 패턴으로 상태 관리
-/// - UseCase 통해 비즈니스 로직 처리
+/// **Clean Architecture v4.0 + Riverpod**:
+/// - StreamProvider로 실시간 동기화
+/// - ProfileActions로 업데이트 실행
 /// - UI와 비즈니스 로직 완전 분리
-/// - GetIt을 통한 의존성 주입
-class SettingsScreen extends StatelessWidget {
+/// - GetIt + Riverpod 통합
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({
     super.key,
     required this.userId,
@@ -31,44 +27,18 @@ class SettingsScreen extends StatelessWidget {
   static String routePath = '/settings';
 
   @override
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+
+  @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => SettingsProvider(
-        getSettingsUseCase: getIt<GetUserSettingsUseCase>(),
-        updateSettingsUseCase: getIt<UpdateUserSettingsUseCase>(),
-        deleteProfileUseCase: getIt<DeleteUserProfileUseCase>(),
-      ),
-      child: _SettingsScreenContent(userId: userId),
+    // Riverpod: StreamProvider로 실시간 동기화
+    final settingsAsync = ref.watch(
+      settingsStreamProvider(SettingsStreamParams(userId: widget.userId)),
     );
-  }
-}
 
-/// 설정 화면 내용
-class _SettingsScreenContent extends StatefulWidget {
-  const _SettingsScreenContent({
-    required this.userId,
-  });
-
-  final String userId;
-
-  @override
-  State<_SettingsScreenContent> createState() => _SettingsScreenContentState();
-}
-
-class _SettingsScreenContentState extends State<_SettingsScreenContent> {
-  @override
-  void initState() {
-    super.initState();
-
-    // Provider에서 설정 로드
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<SettingsProvider>();
-      provider.loadSettings(widget.userId);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.of(context).primaryBackground,
       appBar: AppBar(
@@ -83,25 +53,18 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
         centerTitle: true,
         elevation: 0.0,
       ),
-      body: Consumer<SettingsProvider>(
-        builder: (context, provider, child) {
-          // 로딩 상태
-          if (provider.isLoading && provider.settings == null) {
-            return ProfileLoadingIndicator(
-              size: LoadingSize.medium,
-            );
-          }
-
-          // 에러 상태
-          if (provider.errorMessage != null) {
-            return ProfileErrorMessage(
-              message: provider.errorMessage!,
-              onRetry: () => provider.loadSettings(widget.userId),
-            );
-          }
-
-          // 설정 로드 완료
-          final settings = provider.settings;
+      body: settingsAsync.when(
+        loading: () => ProfileLoadingIndicator(
+          size: LoadingSize.medium,
+        ),
+        error: (error, stackTrace) => ProfileErrorMessage(
+          message: error.toString(),
+          onRetry: () {
+            // 재시도: Stream을 다시 구독하도록 강제
+            ref.invalidate(settingsStreamProvider);
+          },
+        ),
+        data: (settings) {
           if (settings == null) {
             return Center(child: Text('설정을 찾을 수 없습니다'));
           }
@@ -165,11 +128,19 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                       description: '내 랭크가 변경되면 알림을 받습니다',
                       value: settings.receiveRankUpdateNotifications,
                       onChanged: (value) {
-                        provider.toggleSetting(
-                          widget.userId,
-                          (s) => s.copyWith(
-                            receiveRankUpdateNotifications: value,
-                          ),
+                        final newSettings = {
+                          'receiveRankUpdateNotifications': value,
+                        };
+                        ProfileActions.updateSettings(
+                          ref: ref,
+                          userId: widget.userId,
+                          settings: newSettings,
+                          onSuccess: () {},
+                          onError: (message) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(message)),
+                            );
+                          },
                         );
                       },
                     ),
@@ -180,11 +151,16 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                       description: '새로운 칭호를 획득하면 알림을 받습니다',
                       value: settings.receiveTitleUpdateNotifications,
                       onChanged: (value) {
-                        provider.toggleSetting(
-                          widget.userId,
-                          (s) => s.copyWith(
-                            receiveTitleUpdateNotifications: value,
-                          ),
+                        ProfileActions.updateSettings(
+                          ref: ref,
+                          userId: widget.userId,
+                          settings: {'receiveTitleUpdateNotifications': value},
+                          onSuccess: () {},
+                          onError: (message) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(message)),
+                            );
+                          },
                         );
                       },
                     ),
@@ -195,11 +171,16 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                       description: '내 게시물에 새로운 투표가 있으면 알림을 받습니다',
                       value: settings.receiveVoteNotifications,
                       onChanged: (value) {
-                        provider.toggleSetting(
-                          widget.userId,
-                          (s) => s.copyWith(
-                            receiveVoteNotifications: value,
-                          ),
+                        ProfileActions.updateSettings(
+                          ref: ref,
+                          userId: widget.userId,
+                          settings: {'receiveVoteNotifications': value},
+                          onSuccess: () {},
+                          onError: (message) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(message)),
+                            );
+                          },
                         );
                       },
                     ),
@@ -210,11 +191,16 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                       description: '내 게시물에 새로운 댓글이 달리면 알림을 받습니다',
                       value: settings.receiveCommentNotifications,
                       onChanged: (value) {
-                        provider.toggleSetting(
-                          widget.userId,
-                          (s) => s.copyWith(
-                            receiveCommentNotifications: value,
-                          ),
+                        ProfileActions.updateSettings(
+                          ref: ref,
+                          userId: widget.userId,
+                          settings: {'receiveCommentNotifications': value},
+                          onSuccess: () {},
+                          onError: (message) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(message)),
+                            );
+                          },
                         );
                       },
                     ),
@@ -225,11 +211,16 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                       description: '친구 요청 및 활동 알림을 받습니다',
                       value: settings.receiveFriendNotifications,
                       onChanged: (value) {
-                        provider.toggleSetting(
-                          widget.userId,
-                          (s) => s.copyWith(
-                            receiveFriendNotifications: value,
-                          ),
+                        ProfileActions.updateSettings(
+                          ref: ref,
+                          userId: widget.userId,
+                          settings: {'receiveFriendNotifications': value},
+                          onSuccess: () {},
+                          onError: (message) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(message)),
+                            );
+                          },
                         );
                       },
                     ),
@@ -271,7 +262,7 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
                     SettingsListTile(
                       icon: Icons.delete_forever,
                       title: '계정 삭제',
-                      onTap: () => _showDeleteConfirmationDialog(context, provider, widget.userId),
+                      onTap: () => _showDeleteConfirmationDialog(context, widget.userId),
                     ),
                   ],
                 ),
@@ -327,7 +318,6 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
   /// 계정 삭제 확인 다이얼로그
   void _showDeleteConfirmationDialog(
     BuildContext context,
-    SettingsProvider provider,
     String userId,
   ) {
     showDialog(
@@ -353,43 +343,32 @@ class _SettingsScreenContentState extends State<_SettingsScreenContent> {
               // 다이얼로그 닫기
               Navigator.of(dialogContext).pop();
 
-              // 로딩 표시
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (ctx) => Center(
-                  child: CircularProgressIndicator(),
-                ),
-              );
-
-              // 계정 삭제 실행
-              final success = await provider.deleteUserProfile(userId);
-
-              // 로딩 다이얼로그 닫기
-              Navigator.of(context).pop();
-
-              if (success) {
-                // 성공 메시지
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('계정이 삭제되었습니다'),
-                    backgroundColor: AppTheme.of(context).success,
-                  ),
-                );
-
-                // startPage로 이동
-                context.goNamed('startPage');
-              } else {
-                // 에러 메시지
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      provider.errorMessage ?? '계정 삭제에 실패했습니다',
+              // 계정 삭제 실행 (ProfileActions 사용)
+              await ProfileActions.deleteProfile(
+                ref: ref,
+                userId: userId,
+                onSuccess: () {
+                  // 성공 메시지
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('계정이 삭제되었습니다'),
+                      backgroundColor: AppTheme.of(context).success,
                     ),
-                    backgroundColor: AppTheme.of(context).error,
-                  ),
-                );
-              }
+                  );
+
+                  // startPage로 이동
+                  context.goNamed('startPage');
+                },
+                onError: (message) {
+                  // 에러 메시지
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(message),
+                      backgroundColor: AppTheme.of(context).error,
+                    ),
+                  );
+                },
+              );
             },
             child: Text(
               '삭제',

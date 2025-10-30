@@ -152,7 +152,23 @@ class CacheKeys {
 
   // 사용자 관련
   static String userProfile(String userId) => 'user_profile_$userId';
+  static String userSettings(String userId) => 'user_settings_$userId';
+  static String userInterests(String userId) => 'user_interests_$userId';
   static String userAvatar(String userId) => 'user_avatar_$userId';
+  static String profileInfo(String userId) => 'profile_info_$userId';
+  static String profileCompletion(String userId) => 'profile_completion_$userId';
+  static String availableCharacters() => 'available_characters';
+
+  // 투표 관련
+  static String voteCounts(String postId) => 'vote_counts_$postId';
+  static String voteState(String postId, String userId) =>
+      'vote_state_${postId}_$userId';
+  static String voteHistory(String userId) => 'vote_history_$userId';
+
+  // 인증 관련
+  static String authUser(String userId) => 'auth_user_$userId';
+  static String authToken(String userId) => 'auth_token_$userId';
+  static String authSession(String userId) => 'auth_session_$userId';
 
   // 미디어 관련
   static String mediaThumb(String url) => 'media_thumb_${url.hashCode}';

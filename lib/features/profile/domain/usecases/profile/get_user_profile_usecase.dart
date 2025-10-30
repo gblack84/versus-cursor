@@ -1,4 +1,4 @@
-import '/core/types/result.dart';
+import 'package:dartz/dartz.dart';
 import '../../repositories/i_user_repository.dart';
 import '../../models/user_profile.dart';
 import '../../failures/profile_failure.dart';
@@ -25,30 +25,23 @@ class GetUserProfileUseCase {
   /// - `userId`: 조회할 사용자 ID
   ///
   /// **Returns**:
-  /// - `Success(UserProfile)`: 조회 성공
-  /// - `ResultFailure(ProfileFailure)`: 조회 실패
-  Future<Result<UserProfile>> execute({
+  /// - `Right(UserProfile)`: 조회 성공
+  /// - `Left(ProfileFailure)`: 조회 실패
+  Future<Either<ProfileFailure, UserProfile>> execute({
     required String userId,
   }) async {
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {
-        return ResultFailure(ValidationFailure('userId'));
+        return left(ProfileFailure.validation('userId'));
       }
 
-      // 2. Repository 호출
-      final profile = await _repository.getUser(userId);
-
-      // 3. 결과 검증
-      if (profile == null) {
-        return ResultFailure(ProfileNotFound(userId: userId));
-      }
-
-      return Success(profile);
+      // 2. Repository 호출 (이미 Either 반환, null 체크 완료)
+      return await _repository.getUser(userId);
     } on ProfileFailure catch (e) {
-      return ResultFailure(e);
+      return left(e);
     } catch (e) {
-      return ResultFailure(UnknownProfile(e.toString()));
+      return left(ProfileFailure.unknown(e.toString()));
     }
   }
 }

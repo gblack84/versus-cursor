@@ -1,5 +1,6 @@
-import '/core/types/result.dart';
+import 'package:dartz/dartz.dart';
 import '../models/interest.dart';
+import '../failures/profile_failure.dart';
 
 /// Interests Repository 인터페이스
 ///
@@ -11,10 +12,21 @@ abstract class IInterestsRepository {
   /// **제약사항**:
   /// - expertise: 최대 4개
   /// - hobbies: 최대 8개
-  Future<Result<void>> updateUserInterests(
+  ///
+  /// **Parameters**:
+  /// - `userId`: 사용자 ID
+  /// - `interests`: 업데이트할 관심사 목록
+  /// - `eventId`: (Optional) 중복 방지를 위한 이벤트 ID
+  ///
+  /// **Returns**:
+  /// - `Right(unit)`: 업데이트 성공
+  /// - `Left(ProfileFailure)`: 업데이트 실패
+  /// - `Left(ProfileFailure.duplicateOperation)`: 이미 처리된 작업
+  Future<Either<ProfileFailure, Unit>> updateUserInterests(
     String userId,
-    List<Interest> interests,
-  );
+    List<Interest> interests, {
+    String? eventId,
+  });
 
   /// 관심사 개별 추가 (arrayUnion)
   ///
@@ -24,7 +36,11 @@ abstract class IInterestsRepository {
   ///
   /// [userId]: 사용자 ID
   /// [interest]: 추가할 관심사 (category: 'expertise' | 'hobby')
-  Future<Result<void>> addInterest({
+  ///
+  /// **Returns**:
+  /// - `Right(unit)`: 추가 성공
+  /// - `Left(ProfileFailure)`: 추가 실패
+  Future<Either<ProfileFailure, Unit>> addInterest({
     required String userId,
     required Interest interest,
   });
@@ -37,13 +53,21 @@ abstract class IInterestsRepository {
   ///
   /// [userId]: 사용자 ID
   /// [interest]: 제거할 관심사 (category: 'expertise' | 'hobby')
-  Future<Result<void>> removeInterest({
+  ///
+  /// **Returns**:
+  /// - `Right(unit)`: 제거 성공
+  /// - `Left(ProfileFailure)`: 제거 실패
+  Future<Either<ProfileFailure, Unit>> removeInterest({
     required String userId,
     required Interest interest,
   });
 
   /// 사용자 관심사 조회
-  Future<Result<List<Interest>>> getUserInterests(
+  ///
+  /// **Returns**:
+  /// - `Right(List<Interest>)`: 사용자 관심사 목록
+  /// - `Left(ProfileFailure)`: 조회 실패
+  Future<Either<ProfileFailure, List<Interest>>> getUserInterests(
     String userId,
   );
 

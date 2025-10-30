@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '/core/types/layout_type.dart';
-import '/core/domain/ports/i_user_service.dart';
+import '/app/contracts/auth_contract.dart';
 import '/features/voting/presentation/dialogs/voting_dialog.dart';
 import '/features/voting/domain/entities/dialog/versus_box_size_data.dart';
 import '/core_exports.dart';
@@ -19,12 +19,12 @@ class VoteUIManager {
   }
 
   /// Factory constructor for DI
-  factory VoteUIManager({IUserService? userService}) {
-    _instance ??= VoteUIManager._internal(userService);
+  factory VoteUIManager({AuthContract? authContract}) {
+    _instance ??= VoteUIManager._internal(authContract);
     return _instance!;
   }
 
-  VoteUIManager._internal(this._userService);
+  VoteUIManager._internal(this._authContract);
 
   /// 현재 표시 중인 다이얼로그
   bool _isShowingDialog = false;
@@ -32,13 +32,13 @@ class VoteUIManager {
   /// 컨텍스트 (Optional - Coordinator에서 설정)
   BuildContext? _context;
 
-  /// User Service (injected through constructor)
-  final IUserService? _userService;
-  IUserService get userService {
-    if (_userService == null) {
-      throw StateError('UserService not initialized. Please inject it through constructor.');
+  /// Auth Contract (injected through constructor)
+  final AuthContract? _authContract;
+  AuthContract get authContract {
+    if (_authContract == null) {
+      throw StateError('AuthContract not initialized. Please inject it through constructor.');
     }
-    return _userService;
+    return _authContract;
   }
 
   /// 컨텍스트 설정
@@ -58,7 +58,7 @@ class VoteUIManager {
 
   bool isUIContextAvailable() {
     final context = appNavigatorKey.currentContext;
-    final isAuthenticated = userService.isAuthenticated;
+    final isAuthenticated = authContract.isSignedIn;
     return context != null && isAuthenticated;
   }
 
@@ -68,7 +68,7 @@ class VoteUIManager {
 
     while (DateTime.now().isBefore(endTime)) {
       final context = appNavigatorKey.currentContext;
-      final isAuthenticated = userService.isAuthenticated;
+      final isAuthenticated = authContract.isSignedIn;
 
       if (context != null && isAuthenticated) {
         return context;

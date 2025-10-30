@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/core_exports.dart';
-import '/app/di.dart';
-import '/features/post/presentation/providers/user_posts_provider.dart';
-import '/features/post/domain/usecases/get_user_posts_usecase.dart';
-import '/features/post/domain/models/post_display.dart';
+import '/features/profile/domain/models/user_post_item.dart';
 import '/core/design_system/design_system.dart';
 import '/features/profile/presentation/widgets/common/loading_indicator.dart';
 import '/features/profile/presentation/widgets/common/error_message.dart';
+import '/features/profile/presentation/providers/profile_providers.dart';
 
-/// 사용자 게시물 전체 목록 화면
+/// 사용자 게시물 전체 목록 화면 (Riverpod)
 ///
-/// **Clean Architecture v4.0 준수**:
-/// - Provider 패턴으로 상태 관리
-/// - UseCase 통해 비즈니스 로직 처리
-/// - UI와 비즈니스 로직 완전 분리
-/// - GetIt을 통한 의존성 주입
-class UserPostsListScreen extends StatelessWidget {
+/// **Clean Architecture v4.0 + Riverpod 2.x**:
+/// - ✅ ConsumerWidget으로 전환
+/// - ✅ StreamProvider.autoDispose.family 사용
+/// - ✅ AsyncValue.when() 패턴
+/// - ✅ 실시간 동기화 (Firestore Stream)
+/// - ✅ 자동 dispose 및 keepAlive
+///
+/// **Phase 3 Riverpod Migration**: ChangeNotifier → Riverpod 완료
+class UserPostsListScreen extends ConsumerWidget {
   const UserPostsListScreen({
     super.key,
     required this.userId,
@@ -28,49 +29,17 @@ class UserPostsListScreen extends StatelessWidget {
   static String routePath = '/user/posts';
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => UserPostsProvider(
-        getUserPostsUseCase: getIt<GetUserPostsUseCase>(),
-      ),
-      child: _UserPostsListContent(userId: userId),
-    );
-  }
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    // userPostsStreamProvider 구독 (실시간 동기화)
+    final postsState = ref.watch(userPostsStreamProvider(userId));
 
-/// 게시물 목록 화면 내용
-class _UserPostsListContent extends StatefulWidget {
-  const _UserPostsListContent({
-    required this.userId,
-  });
-
-  final String userId;
-
-  @override
-  State<_UserPostsListContent> createState() => _UserPostsListContentState();
-}
-
-class _UserPostsListContentState extends State<_UserPostsListContent> {
-  @override
-  void initState() {
-    super.initState();
-
-    // Provider에서 게시물 로드
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<UserPostsProvider>();
-      provider.loadUserPosts(userId: widget.userId);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: VersusColors.backgroundPrimary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         automaticallyImplyLeading: true,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
@@ -82,31 +51,30 @@ class _UserPostsListContentState extends State<_UserPostsListContent> {
         centerTitle: true,
         elevation: 0.0,
       ),
-      body: Consumer<UserPostsProvider>(
-        builder: (context, provider, child) {
-          // Loading state
-          if (provider.loadingState == UserPostsLoadingState.loading ||
-              provider.loadingState == UserPostsLoadingState.initial) {
-            return ProfileLoadingIndicator(
-              size: LoadingSize.medium,
-            );
-          }
+      body: postsState.when(
+        // Loading state
+        loading: () => const ProfileLoadingIndicator(
+          size: LoadingSize.medium,
+        ),
 
-          // Error state
-          if (provider.loadingState == UserPostsLoadingState.error) {
-            return ProfileErrorMessage(
-              message: provider.errorMessage ?? '오류가 발생했습니다',
-              onRetry: () => provider.loadUserPosts(userId: widget.userId),
-            );
-          }
+        // Error state
+        error: (error, stackTrace) => ProfileErrorMessage(
+          message: error.toString(),
+          onRetry: () {
+            // Provider 새로고침으로 재시도
+            ref.invalidate(userPostsStreamProvider(userId));
+          },
+        ),
 
+        // Data state (성공)
+        data: (posts) {
           // Empty state
-          if (provider.loadingState == UserPostsLoadingState.empty) {
+          if (posts.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.post_add,
                     size: 64,
                     color: VersusColors.textSecondary,
@@ -123,17 +91,18 @@ class _UserPostsListContentState extends State<_UserPostsListContent> {
             );
           }
 
-          // Loaded state - Posts list
+          // Posts list with RefreshIndicator
           return RefreshIndicator(
             onRefresh: () async {
-              await provider.refresh(userId: widget.userId);
+              // Provider 새로고침
+              ref.invalidate(userPostsStreamProvider(userId));
             },
             child: ListView.separated(
               padding: VersusSpacing.paddingMD,
-              itemCount: provider.posts.length,
+              itemCount: posts.length,
               separatorBuilder: (context, index) => VersusSpacing.gapSM,
               itemBuilder: (context, index) {
-                final post = provider.posts[index];
+                final post = posts[index];
                 return _buildPostItem(context, post);
               },
             ),
@@ -143,7 +112,8 @@ class _UserPostsListContentState extends State<_UserPostsListContent> {
     );
   }
 
-  Widget _buildPostItem(BuildContext context, PostDisplay post) {
+  /// 게시물 아이템 빌더
+  Widget _buildPostItem(BuildContext context, UserPostItem post) {
     return InkWell(
       onTap: () {
         context.pushNamed(
@@ -178,7 +148,7 @@ class _UserPostsListContentState extends State<_UserPostsListContent> {
             // Stats row
             Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.how_to_vote,
                   size: 14,
                   color: VersusColors.textSecondary,
@@ -191,7 +161,7 @@ class _UserPostsListContentState extends State<_UserPostsListContent> {
                   ),
                 ),
                 VersusSpacing.gapH(VersusSpacing.sm),
-                Icon(
+                const Icon(
                   Icons.comment,
                   size: 14,
                   color: VersusColors.textSecondary,
@@ -203,7 +173,7 @@ class _UserPostsListContentState extends State<_UserPostsListContent> {
                     color: VersusColors.textSecondary,
                   ),
                 ),
-                Spacer(),
+                const Spacer(),
                 Text(
                   dateTimeFormat('relative', post.createdAt),
                   style: VersusTextStyles.bodySmall.copyWith(

@@ -10,7 +10,6 @@
 
 import 'package:get_it/get_it.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 // ===== Core Services =====
 import '/core/utils/idempotency_service.dart';
@@ -20,10 +19,6 @@ import '/core/utils/idempotency_service.dart';
 
 // ===== Domain Layer - Repositories =====
 import '../domain/repositories/i_auth_repository.dart';
-
-// ===== Data Layer - DataSources =====
-import '../data/datasources/i_auth_local_datasource.dart';
-import '../data/datasources/auth_local_datasource.dart';
 
 // ===== Data Layer - Repository Implementation =====
 import '../data/repositories/auth_repository_impl.dart';
@@ -43,9 +38,6 @@ import '../domain/usecases/account_management_usecase.dart';
 /// Register all Auth feature dependencies
 /// Call this function from main setupDependencyInjection()
 void registerAuthModule(GetIt getIt) {
-  // ===== DataSources Registration =====
-  _registerDataSources(getIt);
-
   // ===== Repository Registration =====
   _registerRepository(getIt);
 
@@ -53,24 +45,17 @@ void registerAuthModule(GetIt getIt) {
   _registerUseCases(getIt);
 }
 
-/// Register Local DataSource
-/// Note: Remote DataSource removed - Repository uses FirebaseAuth directly
-void _registerDataSources(GetIt getIt) {
-  // Local DataSource (Cache/SharedPreferences)
-  getIt.registerLazySingleton<IAuthLocalDataSource>(
-    () => AuthLocalDataSource(
-      prefs: getIt<SharedPreferences>(),
-    ),
-  );
-}
-
 /// Register Repository implementation
-/// Note: Repository uses FirebaseAuth directly instead of Remote DataSource
+///
+/// **Firebase-Centric Architecture v2.0**:
+/// - Direct FirebaseAuth.instance injection
+/// - UnifiedCacheService.instance for 3-Layer caching (singleton, no DI needed)
+/// - No Local DataSource abstraction layer
 void _registerRepository(GetIt getIt) {
   getIt.registerLazySingleton<IAuthRepository>(
     () => AuthRepositoryImpl(
       firebaseAuth: FirebaseAuth.instance,
-      localDataSource: getIt<IAuthLocalDataSource>(),
+      // UnifiedCacheService는 싱글톤으로 Repository 내부에서 직접 접근
     ),
   );
 }
@@ -87,18 +72,21 @@ void _registerUseCases(GetIt getIt) {
   getIt.registerFactory<SignInWithGoogleUseCase>(
     () => SignInWithGoogleUseCase(
       repository: getIt<IAuthRepository>(),
+      idempotencyService: getIt<IdempotencyService>(),
     ),
   );
 
   getIt.registerFactory<SignInWithAppleUseCase>(
     () => SignInWithAppleUseCase(
       repository: getIt<IAuthRepository>(),
+      idempotencyService: getIt<IdempotencyService>(),
     ),
   );
 
   getIt.registerFactory<SignInWithPhoneUseCase>(
     () => SignInWithPhoneUseCase(
       repository: getIt<IAuthRepository>(),
+      idempotencyService: getIt<IdempotencyService>(),
     ),
   );
 
@@ -141,6 +129,7 @@ void _registerUseCases(GetIt getIt) {
   getIt.registerFactory<AccountManagementUseCase>(
     () => AccountManagementUseCase(
       repository: getIt<IAuthRepository>(),
+      idempotencyService: getIt<IdempotencyService>(),
     ),
   );
 }

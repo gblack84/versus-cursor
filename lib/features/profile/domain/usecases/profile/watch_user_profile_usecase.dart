@@ -1,4 +1,4 @@
-import '/core/types/result.dart';
+import 'package:dartz/dartz.dart';
 import '../../models/user_profile.dart';
 import '../../failures/profile_failure.dart';
 import '../../repositories/i_user_repository.dart';
@@ -6,10 +6,10 @@ import '../../repositories/i_user_repository.dart';
 /// 사용자 프로필 실시간 감시 UseCase
 ///
 /// **Clean Architecture Layer**: Domain Layer
-/// **Pattern**: Stream-based UseCase with Result pattern error handling
+/// **Pattern**: Stream-based UseCase with Either pattern error handling
 ///
 /// **Responsibility**:
-/// - Repository의 Stream을 Result<T> 타입으로 래핑
+/// - Repository의 Stream을 Either<L, R> 타입으로 래핑
 /// - ProfileFailure 에러 처리 및 변환
 /// - 비즈니스 로직 레이어에서의 타입 안정성 보장
 ///
@@ -45,7 +45,7 @@ import '../../repositories/i_user_repository.dart';
 ///   Stream<UserProfile?> watchOtherUserProfile(String userId) {
 ///     return _watchProfileUseCase
 ///         .execute(userId: userId)
-///         .map((result) => result.fold(
+///         .map((either) => either.fold(
 ///               (failure) {
 ///                 _errorMessage = failure.getUserMessage();
 ///                 notifyListeners();
@@ -82,8 +82,8 @@ import '../../repositories/i_user_repository.dart';
 /// - 메모리 효율적 (StreamController 대신 native Firestore Stream 사용)
 ///
 /// **Error Handling**:
-/// - ProfileNotFoundFailure: 사용자가 존재하지 않거나 삭제됨
-/// - FirestoreReadFailure: Firestore 읽기 에러 (네트워크, 권한 등)
+/// - ProfileNotFound: 사용자가 존재하지 않거나 삭제됨
+/// - FirestoreRead: Firestore 읽기 에러 (네트워크, 권한 등)
 /// - 모든 에러는 Left로 래핑되어 UI에서 안전하게 처리 가능
 ///
 /// **Added**: 2025-01-20 Profile Feature Real-time Sync Implementation
@@ -97,16 +97,16 @@ class WatchUserProfileUseCase {
   /// **Parameters**:
   /// - [userId]: 감시할 사용자의 ID
   ///
-  /// **Returns**: Stream<Result<UserProfile>>
-  /// - ResultFailure(ProfileNotFound): 사용자가 존재하지 않음
-  /// - ResultFailure(FirestoreRead): Firestore 읽기 에러
-  /// - Success(UserProfile): 실시간 업데이트되는 프로필 데이터
+  /// **Returns**: Stream<Either<ProfileFailure, UserProfile>>
+  /// - Left(ProfileNotFound): 사용자가 존재하지 않음
+  /// - Left(FirestoreRead): Firestore 읽기 에러
+  /// - Right(UserProfile): 실시간 업데이트되는 프로필 데이터
   ///
   /// **Stream Behavior**:
   /// - 초기 진입 시: 현재 프로필 데이터 즉시 발행
   /// - 프로필 변경 시: 새 데이터 자동 발행
-  /// - 사용자 삭제 시: ResultFailure(ProfileNotFound) 발행
-  /// - 에러 발생 시: ResultFailure(FirestoreRead) 발행 후 스트림 계속 유지
+  /// - 사용자 삭제 시: Left(ProfileNotFound) 발행
+  /// - 에러 발생 시: Left(FirestoreRead) 발행 후 스트림 계속 유지
   ///
   /// **Example**:
   /// ```dart
@@ -118,11 +118,15 @@ class WatchUserProfileUseCase {
   ///   result.fold(
   ///     (failure) {
   ///       // 에러 처리
-  ///       if (failure is ProfileNotFound) {
-  ///         print('User not found: ${failure.userId}');
-  ///       } else if (failure is FirestoreRead) {
-  ///         print('Firestore error: ${failure.message}');
-  ///       }
+  ///       failure.when(
+  ///         profileNotFound: (userId) {
+  ///           print('User not found: $userId');
+  ///         },
+  ///         firestoreRead: (message) {
+  ///           print('Firestore error: $message');
+  ///         },
+  ///         orElse: () {},
+  ///       );
   ///     },
   ///     (profile) {
   ///       // 정상 데이터 처리
@@ -133,27 +137,27 @@ class WatchUserProfileUseCase {
   ///   );
   /// });
   /// ```
-  Stream<Result<UserProfile>> execute({
+  Stream<Either<ProfileFailure, UserProfile>> execute({
     required String userId,
   }) async* {
     // async generator를 사용한 Stream 에러 처리
-    // await for로 Repository Stream을 소비하면서 에러를 Result로 변환
+    // await for로 Repository Stream을 소비하면서 에러를 Either로 변환
     try {
       await for (final profile in _repository.watchUserProfile(userId)) {
         if (profile == null) {
           // 사용자가 존재하지 않거나 삭제됨
-          yield ResultFailure(ProfileNotFound(userId: userId));
+          yield left(ProfileFailure.profileNotFound(userId: userId));
         } else {
           // 정상 프로필 데이터
-          yield Success(profile);
+          yield right(profile);
         }
       }
     } on ProfileFailure catch (e) {
-      yield ResultFailure(e);
+      yield left(e);
     } catch (error) {
       // Firestore 에러 (네트워크, 권한 등)
-      // ResultFailure를 발행하고 스트림 종료 (재연결은 UI에서 처리)
-      yield ResultFailure(FirestoreRead('Failed to watch user profile: $error'));
+      // Left를 발행하고 스트림 종료 (재연결은 UI에서 처리)
+      yield left(ProfileFailure.firestoreRead('Failed to watch user profile: $error'));
     }
   }
 }

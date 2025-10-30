@@ -1,14 +1,17 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../i_voting_local_datasource.dart';
 import '../utils/cache_keys.dart';
-import '../utils/cache_helpers.dart';
 
 /// Service for managing pending operations (offline support)
+///
+/// **Phase 2 Migration Note**:
+/// - Standalone service (not part of cache migration)
+/// - Manages offline vote queue independently
+/// - Uses SharedPreferences for simple queue storage
 class PendingOperationsService {
   final SharedPreferences _prefs;
-  
-  PendingOperationsService({required SharedPreferences prefs}) 
+
+  PendingOperationsService({required SharedPreferences prefs})
       : _prefs = prefs;
   
   /// Cache a pending vote operation
@@ -70,7 +73,7 @@ class PendingOperationsService {
   
   /// Clear all pending operations
   Future<void> clearPendingOperations() async {
-    await CacheHelpers.safeRemove(_prefs, CacheKeys.pendingVotesKey);
+    await _prefs.remove(CacheKeys.pendingVotesKey);
   }
   
   /// Check if there are pending operations
@@ -118,11 +121,8 @@ class PendingOperationsService {
   // Helper methods
   Future<void> _savePendingVotes(List<PendingVoteOperation> votes) async {
     final jsonList = _serializePendingVotes(votes);
-    final encoded = CacheHelpers.encodeJson(jsonList);
-    
-    if (encoded != null) {
-      await _prefs.setString(CacheKeys.pendingVotesKey, encoded);
-    }
+    final encoded = jsonEncode(jsonList);
+    await _prefs.setString(CacheKeys.pendingVotesKey, encoded);
   }
   
   List<Map<String, dynamic>> _serializePendingVotes(
@@ -149,4 +149,28 @@ class PendingOperationsService {
       ),
     )).toList();
   }
+}
+
+/// Pending vote operation model for offline support
+class PendingVoteOperation {
+  final String postId;
+  final String userId;
+  final String voteOption;
+  final DateTime timestamp;
+  final OperationType type;
+
+  PendingVoteOperation({
+    required this.postId,
+    required this.userId,
+    required this.voteOption,
+    required this.timestamp,
+    required this.type,
+  });
+}
+
+/// Operation type for pending operations
+enum OperationType {
+  cast,
+  remove,
+  update,
 }

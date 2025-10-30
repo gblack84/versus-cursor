@@ -1,24 +1,20 @@
 /// Voting Feature Dependency Injection Module
 ///
-/// **Firebase-Centric Architecture v1.0 - DI Configuration**:
+/// **Firebase-Centric Architecture v2.0 - DI Configuration**:
 /// - Two Repository implementations:
 ///   * VotingDialogRepositoryImpl - Dialog voting system
 ///   * VotingChatRepositoryImpl - Chat card voting system (PostVoting-based)
 /// - Direct Firebase SDK injection (no remote DataSource abstraction)
+/// - UnifiedCacheService for 3-Layer caching (no local DataSource)
 /// - UseCase-based state management with StreamProvider
 /// - Extension-based Firestore ↔ Domain conversion
 
 import 'package:get_it/get_it.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 // ===== Domain Layer =====
 import '../domain/repositories/i_voting_dialog_repository.dart';
 import '../domain/repositories/i_voting_chat_repository.dart';
-
-// ===== Data Layer - DataSources =====
-import '../data/datasources/i_voting_local_datasource.dart';
-import '../data/datasources/voting_local_datasource_impl.dart';
 
 // ===== Data Layer - Repository Implementations =====
 import '../data/repositories/voting_dialog_repository_impl.dart';
@@ -43,9 +39,6 @@ import '../domain/usecases/submit_vote_use_case.dart';
 /// Register all Voting feature dependencies
 /// Call this function from main setupDependencyInjection()
 void registerVotingModule(GetIt getIt) {
-  // ===== DataSources Registration =====
-  _registerDataSources(getIt);
-
   // ===== Repository Registration =====
   _registerRepositories(getIt);
 
@@ -56,33 +49,18 @@ void registerVotingModule(GetIt getIt) {
   _registerCoordinatorsAndHelpers(getIt);
 }
 
-/// Register Local DataSource only
-///
-/// **Firebase-Centric Architecture v1.0**:
-/// - No remote DataSource abstraction
-/// - Repository directly uses FirebaseFirestore.instance
-/// - Local DataSource for caching only
-void _registerDataSources(GetIt getIt) {
-  // Local DataSource (Cache/SharedPreferences)
-  getIt.registerLazySingleton<IVotingLocalDataSource>(
-    () => VotingLocalDataSourceImpl(
-      prefs: getIt<SharedPreferences>(),
-    ),
-  );
-}
-
 /// Register Repository implementations
 ///
-/// **Firebase-Centric Architecture v1.0**:
+/// **Firebase-Centric Architecture v2.0**:
 /// - Direct FirebaseFirestore.instance injection
-/// - No remote DataSource abstraction layer
+/// - UnifiedCacheService.instance for 3-Layer caching
+/// - No local DataSource abstraction layer
 /// - Extension-based Firestore ↔ Domain conversion
 void _registerRepositories(GetIt getIt) {
   // Dialog Voting Repository (for voting dialogs)
   getIt.registerLazySingleton<IVotingDialogRepository>(
     () => VotingDialogRepositoryImpl(
       firestore: FirebaseFirestore.instance,
-      localDataSource: getIt<IVotingLocalDataSource>(),
     ),
   );
 
@@ -90,7 +68,6 @@ void _registerRepositories(GetIt getIt) {
   getIt.registerLazySingleton<VotingRepository>(
     () => VotingChatRepositoryImpl(
       firestore: FirebaseFirestore.instance,
-      localDataSource: getIt<IVotingLocalDataSource>(),
     ),
   );
 }

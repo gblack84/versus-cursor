@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/profile_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/profile_providers.dart';
+import '/features/profile/domain/models/user_profile.dart';
 
-/// 프로필 완성도 카드 위젯
+/// 프로필 완성도 카드 위젯 (Riverpod)
 ///
 /// **기능**:
 /// - 프로필 완성도 퍼센티지 표시 (0-100%)
@@ -14,7 +15,12 @@ import '../../providers/profile_provider.dart';
 /// - 빨간색 (< 50%): 기본 정보 부족
 /// - 주황색 (50-80%): 추가 정보 필요
 /// - 초록색 (80%+): 거의 완성
-class ProfileCompletionCard extends StatelessWidget {
+///
+/// **Architecture**: Clean Architecture v4.0 + Riverpod
+/// - ✅ ConsumerWidget으로 전환
+/// - ✅ profileCompletionProvider 사용
+/// - ✅ profileStreamProvider로 실시간 데이터
+class ProfileCompletionCard extends ConsumerWidget {
   final String userId;
   final VoidCallback? onCompletePressed;
 
@@ -25,21 +31,26 @@ class ProfileCompletionCard extends StatelessWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<ProfileProvider>(
-      builder: (context, provider, child) {
-        final percentage = provider.completionPercentage;
-        final isLoading = provider.isLoadingCompletion;
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Riverpod: profileCompletionProvider로 완성도 조회
+    final completionState = ref.watch(profileCompletionProvider(userId));
 
-        if (isLoading) {
-          return _buildLoadingCard(context);
-        }
+    // Riverpod: profileStreamProvider로 프로필 데이터 조회
+    final profileState = ref.watch(profileStreamProvider(
+      ProfileStreamParams(userId: userId),
+    ));
 
-        if (percentage == null) {
-          return _buildErrorCard(context);
-        }
-
-        return _buildCompletionCard(context, percentage, provider);
+    // AsyncValue.when으로 로딩/에러/데이터 상태 처리
+    return completionState.when(
+      loading: () => _buildLoadingCard(context),
+      error: (error, stackTrace) => _buildErrorCard(context, ref),
+      data: (percentage) {
+        // 프로필 데이터도 함께 확인
+        return profileState.when(
+          loading: () => _buildLoadingCard(context),
+          error: (error, stackTrace) => _buildErrorCard(context, ref),
+          data: (profile) => _buildCompletionCard(context, percentage, profile),
+        );
       },
     );
   }
@@ -62,7 +73,7 @@ class ProfileCompletionCard extends StatelessWidget {
   }
 
   /// 에러 카드
-  Widget _buildErrorCard(BuildContext context) {
+  Widget _buildErrorCard(BuildContext context, WidgetRef ref) {
     return Card(
       margin: const EdgeInsets.all(16),
       child: Padding(
@@ -76,7 +87,8 @@ class ProfileCompletionCard extends StatelessWidget {
             ),
             TextButton(
               onPressed: () {
-                context.read<ProfileProvider>().getProfileCompletion(userId);
+                // Riverpod: ref.invalidate로 재로드
+                ref.invalidate(profileCompletionProvider(userId));
               },
               child: const Text('다시 시도'),
             ),
@@ -90,10 +102,10 @@ class ProfileCompletionCard extends StatelessWidget {
   Widget _buildCompletionCard(
     BuildContext context,
     double percentage,
-    ProfileProvider provider,
+    UserProfile? profile,
   ) {
     final color = _getColorForPercentage(percentage);
-    final missingItems = _getMissingItems(provider.profile);
+    final missingItems = _getMissingItems(profile);
 
     return Card(
       margin: const EdgeInsets.all(16),
@@ -206,28 +218,28 @@ class ProfileCompletionCard extends StatelessWidget {
   }
 
   /// 미완성 항목 목록 생성
-  List<String> _getMissingItems(dynamic profile) {
+  List<String> _getMissingItems(UserProfile? profile) {
     if (profile == null) return [];
 
     final missingItems = <String>[];
 
     // displayName 체크
-    if (profile.displayName == null || profile.displayName.isEmpty) {
+    if (profile.displayName == null || profile.displayName!.isEmpty) {
       missingItems.add('표시 이름');
     }
 
     // photoUrl 체크
-    if (profile.photoUrl == null || profile.photoUrl.isEmpty) {
+    if (profile.photoUrl == null || profile.photoUrl!.isEmpty) {
       missingItems.add('프로필 사진');
     }
 
     // shortDescription 체크
-    if (profile.shortDescription == null || profile.shortDescription.isEmpty) {
+    if (profile.shortDescription == null || profile.shortDescription!.isEmpty) {
       missingItems.add('자기소개');
     }
 
     // gender 체크
-    if (profile.gender == null || profile.gender.isEmpty) {
+    if (profile.gender == null || profile.gender!.isEmpty) {
       missingItems.add('성별');
     }
 
@@ -242,17 +254,17 @@ class ProfileCompletionCard extends StatelessWidget {
     }
 
     // interests 체크
-    if (profile.interests == null || profile.interests.isEmpty) {
+    if (profile.interests.isEmpty) {
       missingItems.add('관심사');
     }
 
     // expertise 체크
-    if (profile.expertise == null || profile.expertise.isEmpty) {
+    if (profile.expertise.isEmpty) {
       missingItems.add('전문 분야');
     }
 
     // language 체크
-    if (profile.language == null || profile.language.isEmpty) {
+    if (profile.language == null || profile.language!.isEmpty) {
       missingItems.add('사용 언어');
     }
 

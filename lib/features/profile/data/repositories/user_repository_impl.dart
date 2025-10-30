@@ -1,32 +1,46 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 import '/core/utils/app_utils.dart';
+import '/core/utils/idempotency_service.dart';
+import '/services/cache/unified_cache_service.dart';
 import '../../domain/models/user_profile.dart';
+import '../../domain/models/user_profile_extensions.dart';
 import '../../domain/models/user_settings.dart';
+import '../../domain/failures/profile_failure.dart';
 import '../../domain/repositories/i_user_repository.dart';
-import '../adapters/user_profile_adapter.dart';
-import '../models/user_profile_dto.dart';
 import '/app/contracts/auth_contract.dart';
 import '/app/contracts/user_contract.dart';
 
-/// Implementation of user repository (Clean Architecture v4.0)
+/// UserRepository 구현 (Clean Architecture v4.0)
 ///
-/// **변경사항** (2025-01-20 Phase 4):
-/// - DTO 패턴 전면 도입: UserProfileDto, CharacterDto, InterestDto 사용
-/// - Firebase 의존성 Data Layer로 격리
-/// - fromSnapshot, createUserProfileData 등 레거시 메서드 제거
-/// - Interface 변경사항 100% 반영
-/// - CollectionReference를 private으로 관리
+/// **Phase 4: Firebase-Centric v2.0 전환** (2025-01-29):
+/// - DTO/Adapter 제거 → Extension 패턴 사용
+/// - FirebaseFirestore 직접 사용 (이미 적용됨)
+/// - _mapFirebaseException() 메서드 추가
+/// - debugPrint 로깅 추가
+/// - Auth Feature 패턴 100% 일치
 ///
-/// **Phase 2 추가 (2025-01-20)**:
+/// **Phase 2 (2025-01-20)**:
 /// - AuthContract 주입으로 현재 사용자 작업 지원
 /// - getCurrentUserProfile(), updateCurrentUserProfile() 구현
 /// - 싱글톤 패턴 유지하면서 의존성 주입 구조 적용
 ///
-/// **Phase 6 추가 (2025-01-21)**:
+/// **Phase 6 (2025-01-21)**:
 /// - UserContract 구현으로 다른 Feature들에게 프로필 접근 제공
 /// - Auth Feature의 프로필 생성/수정/삭제를 Profile Feature로 이관
+///
+/// **책임**:
+/// - Firebase SDK를 통한 직접 사용자 데이터 접근
+/// - Extension으로 Entity 변환
+/// - Firebase Exception → ProfileFailure 매핑
+/// - 싱글톤 패턴으로 전역 접근 제공
+/// - AuthContract를 통한 현재 사용자 관리
+/// - UserContract로 다른 Feature에 프로필 접근 제공
 class UserRepositoryImpl implements IUserRepository, UserContract {
   final AuthContract _authContract;
+  final IdempotencyService _idempotencyService;
+  final UnifiedCacheService _cacheService;
 
   static UserRepositoryImpl? _instance;
 
@@ -37,232 +51,311 @@ class UserRepositoryImpl implements IUserRepository, UserContract {
     if (_instance == null) {
       throw StateError(
         'UserRepositoryImpl not initialized. '
-        'Call UserRepositoryImpl.initialize(authContract) first in DI module.'
+        'Call UserRepositoryImpl.initialize(authContract, idempotencyService, cacheService) first in DI module.'
       );
     }
     return _instance!;
   }
 
-  UserRepositoryImpl._(this._authContract);
+  UserRepositoryImpl._(this._authContract, this._idempotencyService, this._cacheService);
 
   /// 싱글톤 초기화 (DI Module에서 호출)
   ///
   /// **사용 예시** (profile_module.dart):
   /// ```dart
   /// final authContract = sl<AuthContract>();
-  /// UserRepositoryImpl.initialize(authContract);
+  /// final idempotencyService = sl<IdempotencyService>();
+  /// final cacheService = UnifiedCacheService.instance;
+  /// UserRepositoryImpl.initialize(authContract, idempotencyService, cacheService);
   /// sl.registerLazySingleton<IUserRepository>(() => UserRepositoryImpl.instance);
   /// ```
-  static void initialize(AuthContract authContract) {
-    _instance = UserRepositoryImpl._(authContract);
+  static void initialize(
+    AuthContract authContract,
+    IdempotencyService idempotencyService,
+    UnifiedCacheService cacheService,
+  ) {
+    _instance = UserRepositoryImpl._(authContract, idempotencyService, cacheService);
   }
 
-  // ============= Private Collection References =============
-  CollectionReference get _usersCollection =>
-      FirebaseFirestore.instance.collection('users');
-
-  // ============= Helper Methods =============
-
-  /// Convert GeoPoint to LatLng
-  LatLng? _geoPointToLatLng(GeoPoint? geoPoint) {
-    if (geoPoint == null) return null;
-    return LatLng(geoPoint.latitude, geoPoint.longitude);
-  }
-
-  /// Convert LatLng to GeoPoint
-  GeoPoint? _latLngToGeoPoint(LatLng? latLng) {
-    if (latLng == null) return null;
-    return GeoPoint(latLng.latitude, latLng.longitude);
-  }
-
-  /// Convert UserProfileDto to UserProfile domain model
-  UserProfile _dtoToDomain(UserProfileDto dto) {
-    return UserProfile(
-      uid: dto.uid ?? '',
-      email: dto.email ?? '',
-      displayName: dto.displayName,
-      photoUrl: dto.photoUrl,
-      phoneNumber: dto.phoneNumber,
-      location: _geoPointToLatLng(dto.location),
-      shortDescription: dto.shortDescription,
-      gender: dto.gender,
-      dateOfBirth: dto.dateOfBirth,
-      language: dto.language,
-      createdTime: dto.createdTime,
-      lastActive: dto.lastActive,
-      lastActiveTime: dto.lastActiveTime,
-      pointsA: dto.pointsA ?? 0,
-      pointsQ: dto.pointsQ ?? 0,
-      totalAPoints: dto.totalAPoints ?? 0,
-      totalQPoints: dto.totalQPoints ?? 0,
-      interests: dto.interests ?? const [],
-      expertise: dto.expertise ?? const [],
-      hobbies: dto.hobbies ?? const [],
-      jobCategory: dto.jobCategory,
-      jobName: dto.jobName,
-      isPremiumUser: dto.isPremiumUser ?? false,
-      anonymousPostsCount: dto.anonymousPostsCount ?? 0,
-      anonymousCommentsCount: dto.anonymousCommentsCount ?? 0,
-      anonymousQuestionCount: dto.anonymousQuestionCount ?? 0,
-      currentRank: dto.currentRank,
-      currentTitle: dto.currentTitle,
-      rankChangeDate: dto.rankChangeDate,
-      titleChangeDate: dto.titleChangeDate,
-      isRankEligible: dto.isRankEligible ?? false,
-      rankEvaluationCount: dto.rankEvaluationCount ?? 0,
-      rankHistory: dto.rankHistory ?? const [],
-      titleHistory: dto.titleHistory ?? const [],
-      receiveRankUpdateNotifications: dto.receiveRankUpdateNotifications ?? false,
-      receiveTitleUpdateNotifications: dto.receiveTitleUpdateNotifications ?? false,
-      friends: dto.friends ?? const [],
-      activeChats: dto.activeChats ?? const [],
-      groupChats: dto.groupChats ?? const [],
-      role: dto.role,
-      title: dto.title,
-      stats: dto.stats ?? const {},
-      subscription: dto.subscription ?? const {},
-    );
-  }
-
-  /// Convert UserProfile domain model to UserProfileDto
-  UserProfileDto _domainToDto(UserProfile user) {
-    return UserProfileDto(
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName,
-      photoUrl: user.photoUrl,
-      phoneNumber: user.phoneNumber,
-      location: _latLngToGeoPoint(user.location),
-      shortDescription: user.shortDescription,
-      gender: user.gender,
-      dateOfBirth: user.dateOfBirth,
-      language: user.language,
-      createdTime: user.createdTime,
-      lastActive: user.lastActive,
-      lastActiveTime: user.lastActiveTime,
-      pointsA: user.pointsA,
-      pointsQ: user.pointsQ,
-      totalAPoints: user.totalAPoints,
-      totalQPoints: user.totalQPoints,
-      interests: user.interests,
-      expertise: user.expertise,
-      hobbies: user.hobbies,
-      jobCategory: user.jobCategory,
-      jobName: user.jobName,
-      isPremiumUser: user.isPremiumUser,
-      anonymousPostsCount: user.anonymousPostsCount,
-      anonymousCommentsCount: user.anonymousCommentsCount,
-      anonymousQuestionCount: user.anonymousQuestionCount,
-      currentRank: user.currentRank,
-      currentTitle: user.currentTitle,
-      rankChangeDate: user.rankChangeDate,
-      titleChangeDate: user.titleChangeDate,
-      isRankEligible: user.isRankEligible,
-      rankEvaluationCount: user.rankEvaluationCount,
-      rankHistory: user.rankHistory,
-      titleHistory: user.titleHistory,
-      receiveRankUpdateNotifications: user.receiveRankUpdateNotifications,
-      receiveTitleUpdateNotifications: user.receiveTitleUpdateNotifications,
-      friends: user.friends,
-      activeChats: user.activeChats,
-      groupChats: user.groupChats,
-      role: user.role,
-      title: user.title,
-      stats: user.stats,
-      subscription: user.subscription,
-    );
-  }
+  // ============= Private Firestore Instance =============
+  FirebaseFirestore get _firestore => FirebaseFirestore.instance;
 
   // ============= Basic CRUD Operations =============
 
   @override
-  Future<UserProfile?> getUserByUid(String uid) async {
+  Future<Either<ProfileFailure, UserProfile>> getUserByUid(String uid) async {
     try {
-      final doc = await _usersCollection.doc(uid).get();
-      if (!doc.exists) return null;
+      debugPrint('[UserRepository] Getting user by UID: $uid');
 
-      final data = doc.data() as Map<String, dynamic>;
-      final dto = UserProfileDto.fromFirestore(data);
-      return _dtoToDomain(dto);
+      // 🔥 3-Layer Cache 우선 조회
+      final cachedProfile = await _cacheService.getUserProfile(uid);
+      if (cachedProfile != null) {
+        debugPrint('[UserRepository] User loaded from CACHE: ${cachedProfile.displayName}');
+        return right(cachedProfile);
+      }
+
+      // Cache Miss - Firestore 조회
+      final doc = await _firestore.collection('users').doc(uid).get();
+
+      if (!doc.exists) {
+        debugPrint('[UserRepository] User not found: $uid');
+        return left(ProfileFailure.profileNotFound(userId: uid));
+      }
+
+      // Extension으로 변환
+      final profile = UserProfileFirestore.fromFirestore(doc);
+
+      // 🔥 캐시에 저장
+      await _cacheService.setUserProfile(uid, profile);
+
+      debugPrint('[UserRepository] User loaded from FIRESTORE: ${profile.displayName}');
+      return right(profile);
+    } on FirebaseException catch (e) {
+      debugPrint('[UserRepository] Firebase error: ${e.code} - ${e.message}');
+      return left(_mapFirebaseException(e));
+    } on ProfileFailure catch (e) {
+      return left(e);
     } catch (e) {
-      print('Error getting user by UID: $e');
-      return null;
+      debugPrint('[UserRepository] Unexpected error: $e');
+      return left(ProfileFailure.firestoreRead('Failed to get user by UID: $e'));
     }
   }
 
   @override
-  Future<UserProfile?> getUser(String userId) => getUserByUid(userId);
+  Future<Either<ProfileFailure, UserProfile>> getUser(String userId) => getUserByUid(userId);
 
   // ============= 🆕 Real-time Streaming Operations =============
 
   @override
   Stream<UserProfile?> watchUserProfile(String userId) {
     try {
+      debugPrint('[UserRepository] Starting to watch user profile: $userId');
+
       // Firestore snapshots()로 실시간 리스닝
       // 👇 이 메서드가 WebSocket 기반 실시간 동기화의 핵심!
-      return _usersCollection
+      return _firestore
+          .collection('users')
           .doc(userId)
           .snapshots()
           .map((snapshot) {
             if (!snapshot.exists) {
-              print('User not found: $userId');
+              debugPrint('[UserRepository] User not found in stream: $userId');
               return null;
             }
 
-            // Firestore Document → DTO → Domain Model 파이프라인
-            final data = snapshot.data() as Map<String, dynamic>;
-            final dto = UserProfileDto.fromFirestore(data);
-            return _dtoToDomain(dto);
+            // Extension으로 변환 (Firestore Document → Domain Model)
+            final profile = UserProfileFirestore.fromFirestore(snapshot);
+            debugPrint('[UserRepository] User profile updated in stream: ${profile.displayName}');
+            return profile;
           })
           .handleError((error) {
-            print('Stream error for user $userId: $error');
+            debugPrint('[UserRepository] Stream error for user $userId: $error');
             return null;
           });
     } catch (e) {
-      print('Error creating user stream for $userId: $e');
+      debugPrint('[UserRepository] Error creating user stream for $userId: $e');
       // 에러 발생 시에도 안정적인 Stream 반환
       return Stream.value(null);
     }
   }
 
   @override
-  Future<void> createUser(UserProfile user) async {
-    final dto = _domainToDto(user);
-    final data = dto.toFirestore();
+  Future<Either<ProfileFailure, Unit>> createUser(UserProfile user) async {
+    try {
+      debugPrint('[UserRepository] Creating user: ${user.uid}');
 
-    // Add createdTime if not present
-    if (!data.containsKey('createdTime')) {
-      data['createdTime'] = Timestamp.fromDate(getCurrentTimestamp());
+      // Extension으로 변환
+      final data = user.toFirestore();
+
+      // Add createdTime if not present
+      if (!data.containsKey('createdTime')) {
+        data['createdTime'] = Timestamp.fromDate(getCurrentTimestamp());
+      }
+
+      // 직접 Firebase SDK 사용
+      await _firestore.collection('users').doc(user.uid).set(data);
+
+      debugPrint('[UserRepository] User created successfully: ${user.displayName}');
+      return right(unit);
+    } on FirebaseException catch (e) {
+      debugPrint('[UserRepository] Firebase error: ${e.code} - ${e.message}');
+      return left(_mapFirebaseException(e));
+    } on ProfileFailure catch (e) {
+      return left(e);
+    } catch (e) {
+      debugPrint('[UserRepository] Unexpected error: $e');
+      return left(ProfileFailure.firestoreWrite('Failed to create user: $e'));
     }
-
-    await _usersCollection.doc(user.uid).set(data);
   }
 
   @override
-  Future<void> updateUser(String uid, Map<String, dynamic> data) async {
-    await _usersCollection.doc(uid).update(data);
+  Future<Either<ProfileFailure, Unit>> updateUser(
+    String uid,
+    Map<String, dynamic> data, {
+    String? eventId,
+  }) async {
+    try {
+      debugPrint('[UserRepository] Updating user: $uid');
+
+      // IdempotencyService로 래핑
+      if (eventId != null && eventId.isNotEmpty) {
+        await _idempotencyService.executeIdempotent<void>(
+          entityType: 'user_updates',
+          entityId: uid,
+          userId: uid,
+          eventId: eventId,
+          operation: (transaction) async {
+            // Transaction 내부에서 update
+            final docRef = _firestore.collection('users').doc(uid);
+            transaction.update(docRef, data);
+          },
+        );
+      } else {
+        // eventId 없으면 기존 로직 (backward compatibility)
+        await _firestore.collection('users').doc(uid).update(data);
+      }
+
+      // 🔥 캐시 무효화 (업데이트 후 캐시 클리어)
+      await _cacheService.clearUserProfile(uid);
+
+      debugPrint('[UserRepository] User updated successfully');
+      return right(unit);
+    } on IdempotencyViolation catch (e) {
+      debugPrint('[UserRepository] Idempotency violation: $e');
+      return left(ProfileFailure.duplicateOperation('User already updated: ${e.message}'));
+    } on FirebaseException catch (e) {
+      debugPrint('[UserRepository] Firebase error: ${e.code} - ${e.message}');
+      return left(_mapFirebaseException(e));
+    } on ProfileFailure catch (e) {
+      return left(e);
+    } catch (e) {
+      debugPrint('[UserRepository] Unexpected error: $e');
+      return left(ProfileFailure.firestoreWrite('Failed to update user: $e'));
+    }
   }
 
   @override
-  Future<void> updateUserProfile(UserProfile user) async {
-    final dto = _domainToDto(user);
-    final data = dto.toFirestore();
+  Future<Either<ProfileFailure, Unit>> updateUserProfile(
+    UserProfile user, {
+    String? eventId,
+  }) async {
+    try {
+      debugPrint('[UserRepository] Updating user profile: ${user.uid}');
 
-    // Add lastActiveTime
-    data['lastActiveTime'] = Timestamp.fromDate(getCurrentTimestamp());
+      // IdempotencyService로 래핑
+      if (eventId != null && eventId.isNotEmpty) {
+        await _idempotencyService.executeIdempotent<void>(
+          entityType: 'profile_updates',
+          entityId: user.uid,
+          userId: user.uid,
+          eventId: eventId,
+          operation: (transaction) async {
+            // Extension으로 변환
+            final data = user.toFirestore();
 
-    await _usersCollection.doc(user.uid).update(data);
+            // Add lastActiveTime
+            data['lastActiveTime'] = Timestamp.fromDate(getCurrentTimestamp());
+
+            // Transaction 내부에서 update
+            final docRef = _firestore.collection('users').doc(user.uid);
+            transaction.update(docRef, data);
+          },
+        );
+      } else {
+        // eventId 없으면 기존 로직 (backward compatibility)
+        // Extension으로 변환
+        final data = user.toFirestore();
+
+        // Add lastActiveTime
+        data['lastActiveTime'] = Timestamp.fromDate(getCurrentTimestamp());
+
+        // 직접 Firebase SDK 사용
+        await _firestore.collection('users').doc(user.uid).update(data);
+      }
+
+      // 🔥 캐시 무효화 (업데이트 후 캐시 클리어)
+      await _cacheService.clearUserProfile(user.uid);
+
+      debugPrint('[UserRepository] User profile updated successfully');
+      return right(unit);
+    } on IdempotencyViolation catch (e) {
+      debugPrint('[UserRepository] Idempotency violation: $e');
+      return left(ProfileFailure.duplicateOperation('Profile already updated: ${e.message}'));
+    } on FirebaseException catch (e) {
+      debugPrint('[UserRepository] Firebase error: ${e.code} - ${e.message}');
+      return left(_mapFirebaseException(e));
+    } on ProfileFailure catch (e) {
+      return left(e);
+    } catch (e) {
+      debugPrint('[UserRepository] Unexpected error: $e');
+      return left(ProfileFailure.firestoreWrite('Failed to update user profile: $e'));
+    }
   }
 
   @override
-  Future<void> deleteUser(String uid) async {
-    await _usersCollection.doc(uid).delete();
+  Future<Either<ProfileFailure, Unit>> deleteUser(
+    String uid, {
+    String? eventId,
+  }) async {
+    try {
+      debugPrint('[UserRepository] Deleting user: $uid');
+
+      // IdempotencyService로 래핑
+      if (eventId != null && eventId.isNotEmpty) {
+        await _idempotencyService.executeIdempotent<void>(
+          entityType: 'profile_deletions',
+          entityId: uid,
+          userId: uid,
+          eventId: eventId,
+          operation: (transaction) async {
+            // Transaction 내부에서 delete
+            final docRef = _firestore.collection('users').doc(uid);
+            transaction.delete(docRef);
+          },
+        );
+      } else {
+        // eventId 없으면 기존 로직 (backward compatibility)
+        await _firestore.collection('users').doc(uid).delete();
+      }
+
+      // 🔥 캐시 무효화 (삭제 후 캐시 클리어)
+      await _cacheService.clearUserProfile(uid);
+
+      debugPrint('[UserRepository] User deleted successfully');
+      return right(unit);
+    } on IdempotencyViolation catch (e) {
+      debugPrint('[UserRepository] Idempotency violation: $e');
+      return left(ProfileFailure.duplicateOperation('Profile already deleted: ${e.message}'));
+    } on FirebaseException catch (e) {
+      debugPrint('[UserRepository] Firebase error: ${e.code} - ${e.message}');
+      return left(_mapFirebaseException(e));
+    } on ProfileFailure catch (e) {
+      return left(e);
+    } catch (e) {
+      debugPrint('[UserRepository] Unexpected error: $e');
+      return left(ProfileFailure.firestoreWrite('Failed to delete user: $e'));
+    }
   }
 
   @override
-  Future<bool> userExists(String uid) async {
-    final doc = await _usersCollection.doc(uid).get();
-    return doc.exists;
+  Future<Either<ProfileFailure, bool>> userExists(String uid) async {
+    try {
+      debugPrint('[UserRepository] Checking user existence: $uid');
+
+      // 직접 Firebase SDK 사용
+      final doc = await _firestore.collection('users').doc(uid).get();
+
+      debugPrint('[UserRepository] User exists: ${doc.exists}');
+      return right(doc.exists);
+    } on FirebaseException catch (e) {
+      debugPrint('[UserRepository] Firebase error: ${e.code} - ${e.message}');
+      return left(_mapFirebaseException(e));
+    } on ProfileFailure catch (e) {
+      return left(e);
+    } catch (e) {
+      debugPrint('[UserRepository] Unexpected error: $e');
+      return left(ProfileFailure.firestoreRead('Failed to check user existence: $e'));
+    }
   }
 
   // ============= Search & Query Operations =============
@@ -319,16 +412,47 @@ class UserRepositoryImpl implements IUserRepository, UserContract {
   //   - getUserStats()
 
   @override
-  Future<UserSettings?> getUserSettings(String uid) async {
-    final userProfile = await getUserByUid(uid);
-    if (userProfile == null) return null;
-    final bundle = UserProfileAdapter.toDomainModels(userProfile);
-    return bundle.settings;
+  Future<Either<ProfileFailure, UserSettings>> getUserSettings(String uid) async {
+    try {
+      debugPrint('[UserRepository] Getting user settings for: $uid');
+
+      final userProfileResult = await getUserByUid(uid);
+      return userProfileResult.fold(
+        (failure) => left(failure),
+        (userProfile) {
+          // UserProfile에서 UserSettings 직접 생성 (Adapter 제거)
+          final settings = UserSettings(
+            userId: userProfile.uid,
+            isPremiumUser: userProfile.isPremiumUser,
+            receiveRankUpdateNotifications: userProfile.receiveRankUpdateNotifications,
+            receiveTitleUpdateNotifications: userProfile.receiveTitleUpdateNotifications,
+            receiveVoteNotifications: true, // UserProfile에 없는 필드는 기본값
+            receiveCommentNotifications: true,
+            receiveFriendNotifications: true,
+            subscription: userProfile.subscription,
+            stats: userProfile.stats,
+            privacySettings: {}, // UserProfile에 privacySettings 필드 없음
+          );
+
+          debugPrint('[UserRepository] User settings retrieved successfully');
+          return right(settings);
+        },
+      );
+    } on ProfileFailure catch (e) {
+      return left(e);
+    } catch (e) {
+      debugPrint('[UserRepository] Unexpected error: $e');
+      return left(ProfileFailure.firestoreRead('Failed to get user settings: $e'));
+    }
   }
 
   @override
-  Future<void> updateUserSettings(String userId, Map<String, dynamic> settings) {
-    return updateUser(userId, settings);
+  Future<Either<ProfileFailure, Unit>> updateUserSettings(
+    String userId,
+    Map<String, dynamic> settings, {
+    String? eventId,
+  }) {
+    return updateUser(userId, settings, eventId: eventId);
   }
 
   // ============= Auth 데이터 조회 =============
@@ -404,34 +528,34 @@ class UserRepositoryImpl implements IUserRepository, UserContract {
   // ============= Current User Operations (Phase 2) =============
 
   @override
-  Future<UserProfile?> getCurrentUserProfile() async {
+  Future<Either<ProfileFailure, UserProfile>> getCurrentUserProfile() async {
     final uid = _authContract.getCurrentUserId();
     if (uid == null || uid.isEmpty) {
-      print('getCurrentUserProfile: No current user ID');
-      return null;
+      return left(ProfileFailure.authenticationRequired());
     }
 
     try {
       return await getUserByUid(uid);
+    } on ProfileFailure catch (e) {
+      return left(e);
     } catch (e) {
-      print('Error getting current user profile: $e');
-      return null;
+      return left(ProfileFailure.firestoreRead('Failed to get current user profile: $e'));
     }
   }
 
   @override
-  Future<void> updateCurrentUserProfile(UserProfile user) async {
+  Future<Either<ProfileFailure, Unit>> updateCurrentUserProfile(UserProfile user) async {
     final currentUid = _authContract.getCurrentUserId();
 
     if (currentUid == null || currentUid.isEmpty) {
-      throw Exception('Cannot update profile: No current user logged in');
+      return left(ProfileFailure.authenticationRequired());
     }
 
     if (user.uid != currentUid) {
-      throw Exception(
-        'Security violation: Cannot update other user profile. '
-        'Current user: $currentUid, Target user: ${user.uid}'
-      );
+      return left(ProfileFailure.unauthorizedAccess(
+        message: 'Security violation: Cannot update other user profile. '
+                'Current user: $currentUid, Target user: ${user.uid}'
+      ));
     }
 
     return await updateUserProfile(user);
@@ -492,66 +616,127 @@ class UserRepositoryImpl implements IUserRepository, UserContract {
   }
 
   @override
-  Future<void> deleteUserProfile(String uid) {
+  Future<void> deleteUserProfile(String uid, {String? eventId}) {
     // ✅ 기존 deleteUser 메서드 활용
-    return deleteUser(uid);
+    return deleteUser(uid, eventId: eventId);
   }
 
   @override
   Future<Map<String, dynamic>?> getUserProfile(String userId) async {
-    // ✅ 기존 getUserByUid 활용 후 Map으로 변환
-    final user = await getUserByUid(userId);
-    if (user == null) return null;
-
-    final dto = _domainToDto(user);
-    return dto.toFirestore();
+    // ✅ 기존 getUserByUid 활용 후 Extension으로 Map 변환
+    final userResult = await getUserByUid(userId);
+    return userResult.fold(
+      (failure) => null,
+      (user) => user.toFirestore(),
+    );
   }
 
   @override
   Future<String?> getUserDisplayName(String userId) async {
-    final user = await getUserByUid(userId);
-    return user?.displayName;
+    final userResult = await getUserByUid(userId);
+    return userResult.fold(
+      (failure) => null,
+      (user) => user.displayName,
+    );
   }
 
   @override
   Future<String?> getUserPhotoUrl(String userId) async {
-    final user = await getUserByUid(userId);
-    return user?.photoUrl;
+    final userResult = await getUserByUid(userId);
+    return userResult.fold(
+      (failure) => null,
+      (user) => user.photoUrl,
+    );
   }
 
   @override
   Future<List<String>> getUserInterests(String userId) async {
-    final user = await getUserByUid(userId);
-    return user?.interests ?? const [];
+    final userResult = await getUserByUid(userId);
+    return userResult.fold(
+      (failure) => const [],
+      (user) => user.interests,
+    );
   }
 
   @override
   Future<List<String>> getUserExpertise(String userId) async {
-    final user = await getUserByUid(userId);
-    return user?.expertise ?? const [];
+    final userResult = await getUserByUid(userId);
+    return userResult.fold(
+      (failure) => const [],
+      (user) => user.expertise,
+    );
   }
 
   @override
   Future<Map<String, int>> getUserPoints(String userId) async {
-    final user = await getUserByUid(userId);
-    if (user == null) {
-      return {'pointsA': 0, 'pointsQ': 0};
-    }
-    return {
-      'pointsA': user.pointsA,
-      'pointsQ': user.pointsQ,
-    };
+    final userResult = await getUserByUid(userId);
+    return userResult.fold(
+      (failure) => {'pointsA': 0, 'pointsQ': 0},
+      (user) => {
+        'pointsA': user.pointsA,
+        'pointsQ': user.pointsQ,
+      },
+    );
   }
 
   @override
   Future<bool> isPremiumUser(String userId) async {
-    final user = await getUserByUid(userId);
-    return user?.isPremiumUser ?? false;
+    final userResult = await getUserByUid(userId);
+    return userResult.fold(
+      (failure) => false,
+      (user) => user.isPremiumUser,
+    );
   }
 
   @override
   Future<String?> getUserRole(String userId) async {
-    final user = await getUserByUid(userId);
-    return user?.role;
+    final userResult = await getUserByUid(userId);
+    return userResult.fold(
+      (failure) => null,
+      (user) => user.role,
+    );
+  }
+
+  // ============= Firebase Exception Mapping =============
+
+  /// Firebase Exception → ProfileFailure 매핑
+  ///
+  /// **Auth Feature 참조 패턴**:
+  /// ```dart
+  /// // lib/features/auth/data/repositories/auth_repository_impl.dart
+  /// AuthFailure _mapFirebaseAuthException(FirebaseAuthException e) {
+  ///   switch (e.code) {
+  ///     case 'user-not-found': return const AuthFailure.userNotFound();
+  ///     // ...
+  ///   }
+  /// }
+  /// ```
+  ProfileFailure _mapFirebaseException(FirebaseException e) {
+    switch (e.code) {
+      // 권한 에러
+      case 'permission-denied':
+        return ProfileFailure.permissionDenied('user profile');
+
+      // 찾을 수 없음
+      case 'not-found':
+        return ProfileFailure.profileNotFound(userId: 'unknown');
+
+      // 네트워크 에러
+      case 'unavailable':
+      case 'deadline-exceeded':
+        return const ProfileFailure.network();
+
+      // 잘못된 인수
+      case 'invalid-argument':
+        return ProfileFailure.firestoreWrite('Invalid user data format');
+
+      // 할당량 초과
+      case 'resource-exhausted':
+        return ProfileFailure.firestoreWrite('Firebase quota exceeded');
+
+      // 기타
+      default:
+        return ProfileFailure.unknown('Firebase: ${e.code} - ${e.message}');
+    }
   }
 }

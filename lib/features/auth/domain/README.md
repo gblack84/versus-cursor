@@ -2559,7 +2559,7 @@ try {
 
 ### Related Documentation
 
-- **Data Layer**: [auth/data/README.md](../data/README.md) - Repository 구현체, DataSource, Firebase 통합
+- **Data Layer**: [auth/data/README.md](../data/README.md) - Repository 구현체, UnifiedCacheService 통합, Firebase 직접 사용
 - **Presentation Layer**: [auth/presentation/README.md](../presentation/README.md) - Provider, Widget, UI
 - **DI Module**: [auth/di/auth_di_module.dart](../di/auth_di_module.dart) - Dependency Injection 설정
 - **Migration Plan**: [/specs/001-users-g-black/plan.md](/specs/001-users-g-black/plan.md) - Auth Feature 마이그레이션 계획

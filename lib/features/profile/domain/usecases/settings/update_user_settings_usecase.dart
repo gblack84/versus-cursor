@@ -1,5 +1,5 @@
+import 'package:dartz/dartz.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/core/types/result.dart';
 import '../../repositories/i_user_repository.dart';
 import '../../failures/profile_failure.dart';
 
@@ -20,30 +20,33 @@ class UpdateUserSettingsUseCase {
   /// **Parameters**:
   /// - `userId`: 사용자 ID
   /// - `settings`: 업데이트할 설정 맵
+  /// - `eventId`: (Optional) 중복 방지를 위한 이벤트 ID
   ///
   /// **Returns**:
-  /// - `Success(void)`: 업데이트 성공
-  /// - `ResultFailure(ProfileFailure)`: 업데이트 실패
-  Future<Result<void>> execute(
+  /// - `Right(Unit)`: 업데이트 성공
+  /// - `Left(ProfileFailure)`: 업데이트 실패
+  ///   - `ProfileFailure.duplicateOperation`: 이미 처리된 작업 (eventId 중복)
+  ///
+  /// **Phase 1.3**: IdempotencyService 지원 추가
+  Future<Either<ProfileFailure, Unit>> execute(
     String userId,
-    Map<String, dynamic> settings,
-  ) async {
+    Map<String, dynamic> settings, {
+    String? eventId,
+  }) async {
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {
-        return ResultFailure(ValidationFailure('userId'));
+        return left(ProfileFailure.validation('userId'));
       }
 
-      // 2. Repository 호출
-      await _repository.updateUserSettings(userId, settings);
-
-      return const Success(null);
+      // 2. Repository 호출 (이미 Either 반환)
+      return await _repository.updateUserSettings(userId, settings, eventId: eventId);
     } on FirebaseException catch (e) {
-      return ResultFailure(FirestoreWrite(e.message ?? 'Unknown error'));
+      return left(ProfileFailure.firestoreWrite(e.message ?? 'Unknown error'));
     } on ProfileFailure catch (e) {
-      return ResultFailure(e);
+      return left(e);
     } catch (e) {
-      return ResultFailure(UnknownProfile(e.toString()));
+      return left(ProfileFailure.unknown(e.toString()));
     }
   }
 }

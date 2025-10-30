@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'package:dartz/dartz.dart';
 import '../../domain/repositories/i_profile_storage_repository.dart';
+import '../../domain/failures/profile_failure.dart';
 import '../datasources/profile_storage_datasource.dart';
 
 /// Profile Storage Repository Implementation (Clean Architecture v4.0)
@@ -25,20 +27,34 @@ class ProfileStorageRepositoryImpl implements IProfileStorageRepository {
   }) : _dataSource = dataSource;
 
   @override
-  Future<String> uploadProfileImage({
+  Future<Either<ProfileFailure, String>> uploadProfileImage({
     required String userId,
     required File imageFile,
   }) async {
-    // DataSource에 위임 (현재는 추가 비즈니스 로직 없음)
-    return await _dataSource.uploadProfileImage(
-      userId: userId,
-      imageFile: imageFile,
-    );
+    try {
+      // DataSource에 위임 (현재는 추가 비즈니스 로직 없음)
+      final imageUrl = await _dataSource.uploadProfileImage(
+        userId: userId,
+        imageFile: imageFile,
+      );
+      return right(imageUrl);
+    } on ProfileFailure catch (e) {
+      return left(e);
+    } catch (e) {
+      return left(ProfileFailure.storage('Failed to upload profile image: $e'));
+    }
   }
 
   @override
-  Future<bool> deleteProfileImage(String imageUrl) async {
-    // DataSource에 위임 (현재는 추가 비즈니스 로직 없음)
-    return await _dataSource.deleteProfileImage(imageUrl);
+  Future<Either<ProfileFailure, bool>> deleteProfileImage(String imageUrl) async {
+    try {
+      // DataSource에 위임 (현재는 추가 비즈니스 로직 없음)
+      final success = await _dataSource.deleteProfileImage(imageUrl);
+      return right(success);
+    } on ProfileFailure catch (e) {
+      return left(e);
+    } catch (e) {
+      return left(ProfileFailure.storage('Failed to delete profile image: $e'));
+    }
   }
 }

@@ -1731,7 +1731,7 @@ graph TD
     subgraph "Data Layer"
         J[AuthRepositoryImpl]
         K[FirebaseAuth]
-        L[IAuthLocalDataSource]
+        L[UnifiedCacheService<br/>Singleton]
     end
 
     A -->|uses| B
@@ -1786,7 +1786,7 @@ User Action (Button Click)
         │               └─► Data Layer
         │                   ├─► AuthRepositoryImpl
         │                   ├─► FirebaseAuth (직접 주입)
-        │                   └─► IAuthLocalDataSource
+        │                   └─► UnifiedCacheService (싱글톤)
         │
         ├─► authLoadingProvider
         │   └─► StateProvider<bool>

@@ -1,5 +1,4 @@
-// Phase 2: Clean Architecture - ProfileProvider만 사용
-import '/features/profile/presentation/providers/profile_provider.dart';
+// Phase 3: Riverpod
 import '/features/profile/domain/usecases/profile/update_user_profile_usecase.dart';
 import '/features/profile/presentation/constants/validation_rules.dart';
 import '/features/profile/presentation/constants/profile_constants.dart';
@@ -14,38 +13,67 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:webviewx_plus/webviewx_plus.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '/features/profile/presentation/providers/profile_providers.dart';
+import '/features/profile/domain/models/user_profile.dart';
+import '/app/contracts/auth_contract.dart';
 import 'user_info_input_model.dart';
 export 'user_info_input_model.dart';
 
-class UserInfoInputWidget extends StatefulWidget {
+/// 사용자 정보 입력 화면 (Riverpod)
+///
+/// **Clean Architecture v4.0 + Riverpod**:
+/// - ✅ ConsumerStatefulWidget으로 전환
+/// - ✅ profileStreamProvider 사용
+/// - ✅ UpdateUserProfileUseCase 유지
+class UserInfoInputWidget extends ConsumerStatefulWidget {
   const UserInfoInputWidget({super.key});
 
   static String routeName = 'user_info_input';
   static String routePath = '/userInfoInput';
 
   @override
-  State<UserInfoInputWidget> createState() => _UserInfoInputWidgetState();
+  ConsumerState<UserInfoInputWidget> createState() => _UserInfoInputWidgetState();
 }
 
-class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
+class _UserInfoInputWidgetState extends ConsumerState<UserInfoInputWidget> {
   late UserInfoInputModel _model;
-  late final ProfileProvider _profileProvider;
+  // Phase 3: ProfileProvider → profileStreamProvider로 전환
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  /// Phase 3: Riverpod - AuthContract를 통한 userId 가져오기
+  String? get _userId {
+    final authContract = GetIt.instance<AuthContract>();
+    return authContract.getCurrentUserId();
+  }
+
+  /// Phase 3: Riverpod - profileStreamProvider를 통한 프로필 가져오기
+  UserProfile? get _currentProfile {
+    if (_userId == null) return null;
+
+    final profileState = ref.read(profileStreamProvider(
+      ProfileStreamParams(userId: _userId!),
+    ));
+
+    UserProfile? profile;
+    profileState.when(
+      loading: () => profile = null,
+      error: (error, stackTrace) => profile = null,
+      data: (data) => profile = data,
+    );
+    return profile;
+  }
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => UserInfoInputModel());
 
-    // Phase 4.5 하이브리드: ProfileProvider 인스턴스 가져오기
-    _profileProvider = GetIt.instance<ProfileProvider>();
-
     // On page load action.
     SchedulerBinding.instance.addPostFrameCallback((_) async {
-      // Phase 2: Clean Architecture - ProfileProvider의 loadCurrentUserProfile() 사용
-      await _profileProvider.loadCurrentUserProfile();
-      _model.userDocument = _profileProvider.profile;
+      // Phase 3: Riverpod - profileStreamProvider에서 프로필 로드
+      _model.userDocument = _currentProfile;
 
       setState(() {});
     });
@@ -205,8 +233,8 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                   ),
                                                   child: Image.network(
                                                     valueOrDefault<String>(
-                                                      // Phase 2: Clean Architecture - ProfileProvider 사용
-                                                      _profileProvider.profile?.photoUrl,
+                                                      // Phase 3: Riverpod - _currentProfile 사용
+                                                      _currentProfile?.photoUrl,
                                                       'https://firebasestorage.googleapis.com/v0/b/versus-space-1lwwiw.appspot.com/o/characters%2Fdefault%2Fdefaultimage.jpg?alt=media&token=b485c8ad-c393-4ec7-bc1a-c1c3c93ec4ec',
                                                     ),
                                                     fit: BoxFit.cover,
@@ -235,12 +263,12 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                       ),
                                     ),
                                   ),
-                                  // Phase 2: Clean Architecture - ProfileProvider 사용
-                                  if ((_profileProvider.profile?.email ?? '') != '')
+                                  // Phase 3: Riverpod - _currentProfile 사용
+                                  if ((_currentProfile?.email ?? '') != '')
                                     Align(
                                       alignment: AlignmentDirectional(0.0, 0.0),
                                       child: Text(
-                                        _profileProvider.profile?.email ?? '',
+                                        _currentProfile?.email ?? '',
                                         style: AppTheme.of(context)
                                             .titleMedium
                                             .override(
@@ -264,12 +292,12 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                             ),
                                       ),
                                     ),
-                                  // Phase 2: Clean Architecture - ProfileProvider 사용
-                                  if ((_profileProvider.profile?.phoneNumber ?? '') != '')
+                                  // Phase 3: Riverpod - _currentProfile 사용
+                                  if ((_currentProfile?.phoneNumber ?? '') != '')
                                     Align(
                                       alignment: AlignmentDirectional(0.0, 0.0),
                                       child: Text(
-                                        _profileProvider.profile?.phoneNumber ?? '',
+                                        _currentProfile?.phoneNumber ?? '',
                                         style: AppTheme.of(context)
                                             .titleMedium
                                             .override(
@@ -296,14 +324,14 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                             ),
                                       ),
                                     ),
-                                  // Phase 2: Clean Architecture - ProfileProvider 사용
-                                  if (_profileProvider.profile?.createdTime != null)
+                                  // Phase 3: Riverpod - _currentProfile 사용
+                                  if (_currentProfile?.createdTime != null)
                                     Align(
                                       alignment: AlignmentDirectional(0.0, 0.0),
                                       child: Text(
                                         dateTimeFormat(
                                           "yMMMd",
-                                          _profileProvider.profile!.createdTime!,
+                                          _currentProfile!.createdTime!,
                                           locale: AppLocalizations.of(context)
                                               .languageCode,
                                         ),
@@ -976,8 +1004,12 @@ class _UserInfoInputWidgetState extends State<UserInfoInputWidget> {
                                                     );
                                                   },
                                                   (_) {
-                                                    // Phase 2: Clean Architecture - 프로필 새로고침 및 다음 페이지로 이동
-                                                    _profileProvider.loadCurrentUserProfile();
+                                                    // Phase 3: Riverpod - profileStreamProvider 갱신 및 다음 페이지로 이동
+                                                    if (_userId != null) {
+                                                      ref.invalidate(profileStreamProvider(
+                                                        ProfileStreamParams(userId: _userId!),
+                                                      ));
+                                                    }
                                                     context.pushNamed(
                                                         ExpertiseSelectWidget
                                                             .routeName);

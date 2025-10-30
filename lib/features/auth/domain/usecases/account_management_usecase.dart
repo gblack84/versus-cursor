@@ -3,6 +3,7 @@
 
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
+import '/core/utils/idempotency_service.dart';
 import '../entities/auth_user.dart';
 import '../repositories/i_auth_repository.dart';
 import '../failures/auth_failure.dart';
@@ -17,28 +18,44 @@ import '../failures/auth_failure.dart';
 /// **Clean Architecture v4.0 - Either Pattern**:
 /// - Returns Either<AuthFailure, T> for functional error handling
 /// - Consistent with Voting feature architecture
+///
+/// **Phase 2**: IdempotencyService 통합
+/// - 계정 삭제 안전성 강화
+/// - 네트워크 재시도 시 중복 삭제 방지
 class AccountManagementUseCase {
   final IAuthRepository _repository;
+  final IdempotencyService _idempotencyService;
 
   AccountManagementUseCase({
     required IAuthRepository repository,
-  }) : _repository = repository;
+    required IdempotencyService idempotencyService,
+  })  : _repository = repository,
+        _idempotencyService = idempotencyService;
 
-  /// Delete User Account
+  /// Delete User Account (Phase 2: eventId 추가)
   ///
   /// Permanently deletes the current user's account.
   /// This action cannot be undone.
   ///
-  /// Parameters:
-  /// - [confirmationText]: Optional safety check - must match 'DELETE' if provided
-  /// - [checkReAuth]: If true, checks if user needs re-authentication
+  /// **Parameters**:
+  /// - `confirmationText`: Optional safety check - must match 'DELETE' if provided
+  /// - `checkReAuth`: If true, checks if user needs re-authentication
+  /// - `eventId`: 중복 작업 방지를 위한 이벤트 ID (UUID v4)
   ///
-  /// Returns Either<AuthFailure, Unit> with automatic Korean error messages
+  /// **Returns**:
+  /// - `Right(Unit)`: 계정 삭제 성공
+  /// - `Left(AuthFailure)`: 삭제 실패
+  ///
+  /// **IdempotencyService**:
+  /// - entityType: 'auth_delete_account'
+  /// - entityId: user UID
+  /// - userId: user UID
   Future<Either<AuthFailure, Unit>> deleteAccount({
     String? confirmationText,
     bool checkReAuth = false,
+    required String eventId,
   }) async {
-    debugPrint('Attempting to delete user account...');
+    debugPrint('Attempting to delete user account with eventId: $eventId');
 
     // 1. Safety check: Require confirmation text if provided (Business Logic)
     if (confirmationText != null && confirmationText != 'DELETE') {
@@ -52,7 +69,7 @@ class AccountManagementUseCase {
       return left(const AuthFailure.userNotFound());
     }
 
-    // 3. Get current user info for logging (Repository returns Either)
+    // 3. Get current user info (Repository returns Either)
     final userResult = await _repository.getCurrentUser();
     final currentUserEither = userResult.fold(
       (failure) {
@@ -69,7 +86,7 @@ class AccountManagementUseCase {
     if (currentUserEither.isLeft()) {
       return currentUserEither.fold(
         (failure) => left(failure),
-        (_) => left(const AuthFailure.userNotFound()), // Should not reach here
+        (_) => left(const AuthFailure.userNotFound()),
       );
     }
 
@@ -83,19 +100,43 @@ class AccountManagementUseCase {
 
     debugPrint('Deleting account for user: ${currentUser.uid}');
 
-    // 5. Delete user account (Repository returns Either<AuthFailure, bool>)
-    final deleteResult = await _repository.deleteUser();
+    try {
+      // 5. IdempotencyService로 중복 작업 방지
+      await _idempotencyService.executeIdempotent<Unit>(
+        entityType: 'auth_delete_account',
+        entityId: currentUser.uid,
+        userId: currentUser.uid,
+        eventId: eventId,
+        operation: (transaction) async {
+          // Repository 호출
+          final deleteResult = await _repository.deleteUser();
 
-    return deleteResult.fold(
-      (failure) {
-        debugPrint('Account deletion failed with AuthFailure: ${failure.message}');
-        return left(failure);
-      },
-      (success) {
-        debugPrint('Account deleted successfully');
-        return right(unit);
-      },
-    );
+          // Either를 throw/Unit으로 변환
+          return deleteResult.fold(
+            (failure) {
+              debugPrint('Account deletion failed: ${failure.message}');
+              throw failure;
+            },
+            (success) {
+              debugPrint('Account deleted successfully');
+              return unit;
+            },
+          );
+        },
+      );
+
+      return right(unit);
+    } on IdempotencyViolation {
+      // 이미 삭제됨 → 성공 처리 (계정 삭제가 목표 상태)
+      debugPrint('Account deletion already completed (idempotency violation)');
+      return right(unit);
+    } on AuthFailure catch (e) {
+      debugPrint('Account deletion failed with AuthFailure: ${e.message}');
+      return left(e);
+    } catch (e) {
+      debugPrint('Account deletion unexpected error: $e');
+      return left(AuthFailure.unexpected(e.toString()));
+    }
   }
 
   /// Check if user needs to re-authenticate

@@ -1,5 +1,7 @@
+import 'package:dartz/dartz.dart';
 import '../models/user_profile.dart';
 import '../models/user_settings.dart';
+import '../failures/profile_failure.dart';
 
 /// Repository interface for User-related operations (Clean Architecture v4.0)
 ///
@@ -12,10 +14,20 @@ abstract class IUserRepository {
   // ============= Basic CRUD Operations =============
 
   /// 사용자 조회 (UserProfile)
-  Future<UserProfile?> getUserByUid(String uid);
+  ///
+  /// **Returns**:
+  /// - `Right(UserProfile)`: 사용자 프로필
+  /// - `Left(ProfileFailure.profileNotFound)`: 사용자가 존재하지 않음
+  /// - `Left(ProfileFailure)`: 조회 실패
+  Future<Either<ProfileFailure, UserProfile>> getUserByUid(String uid);
 
   /// 사용자 조회 (alias for getUserByUid)
-  Future<UserProfile?> getUser(String userId);
+  ///
+  /// **Returns**:
+  /// - `Right(UserProfile)`: 사용자 프로필
+  /// - `Left(ProfileFailure.profileNotFound)`: 사용자가 존재하지 않음
+  /// - `Left(ProfileFailure)`: 조회 실패
+  Future<Either<ProfileFailure, UserProfile>> getUser(String userId);
 
   // ============= 🆕 Real-time Streaming Operations =============
 
@@ -62,19 +74,66 @@ abstract class IUserRepository {
   Stream<UserProfile?> watchUserProfile(String userId);
 
   /// 사용자 생성
-  Future<void> createUser(UserProfile user);
+  ///
+  /// **Returns**:
+  /// - `Right(unit)`: 생성 성공
+  /// - `Left(ProfileFailure)`: 생성 실패
+  Future<Either<ProfileFailure, Unit>> createUser(UserProfile user);
 
   /// 사용자 업데이트 (Map)
-  Future<void> updateUser(String uid, Map<String, dynamic> data);
+  ///
+  /// **Parameters**:
+  /// - `uid`: 사용자 ID
+  /// - `data`: 업데이트할 데이터
+  /// - `eventId`: (Optional) 중복 방지를 위한 이벤트 ID
+  ///
+  /// **Returns**:
+  /// - `Right(unit)`: 업데이트 성공
+  /// - `Left(ProfileFailure)`: 업데이트 실패
+  /// - `Left(ProfileFailure.duplicateOperation)`: 이미 처리된 작업
+  Future<Either<ProfileFailure, Unit>> updateUser(
+    String uid,
+    Map<String, dynamic> data, {
+    String? eventId,
+  });
 
   /// 사용자 프로필 업데이트 (UserProfile)
-  Future<void> updateUserProfile(UserProfile user);
+  ///
+  /// **Parameters**:
+  /// - `user`: 업데이트할 프로필
+  /// - `eventId`: (Optional) 중복 방지를 위한 이벤트 ID
+  ///
+  /// **Returns**:
+  /// - `Right(unit)`: 업데이트 성공
+  /// - `Left(ProfileFailure)`: 업데이트 실패
+  /// - `Left(ProfileFailure.duplicateOperation)`: 이미 처리된 작업
+  Future<Either<ProfileFailure, Unit>> updateUserProfile(
+    UserProfile user, {
+    String? eventId,
+  });
 
   /// 사용자 삭제
-  Future<void> deleteUser(String uid);
+  ///
+  /// **Parameters**:
+  /// - `uid`: 삭제할 사용자 ID
+  /// - `eventId`: (Optional) 중복 방지를 위한 이벤트 ID
+  ///
+  /// **Returns**:
+  /// - `Right(unit)`: 삭제 성공
+  /// - `Left(ProfileFailure)`: 삭제 실패
+  /// - `Left(ProfileFailure.duplicateOperation)`: 이미 처리된 작업
+  Future<Either<ProfileFailure, Unit>> deleteUser(
+    String uid, {
+    String? eventId,
+  });
 
   /// 사용자 존재 여부 확인
-  Future<bool> userExists(String uid);
+  ///
+  /// **Returns**:
+  /// - `Right(true)`: 사용자 존재
+  /// - `Right(false)`: 사용자 없음
+  /// - `Left(ProfileFailure)`: 조회 실패
+  Future<Either<ProfileFailure, bool>> userExists(String uid);
 
   // ============= Search & Query Operations =============
   // TODO: 2025-01-21 삭제됨 - Feature 책임 분리
@@ -130,10 +189,29 @@ abstract class IUserRepository {
   //   - getUserStats() → getUserStats() 사용
 
   /// UserSettings 조회
-  Future<UserSettings?> getUserSettings(String uid);
+  ///
+  /// **Returns**:
+  /// - `Right(UserSettings)`: 사용자 설정
+  /// - `Left(ProfileFailure.profileNotFound)`: 사용자가 존재하지 않음
+  /// - `Left(ProfileFailure)`: 조회 실패
+  Future<Either<ProfileFailure, UserSettings>> getUserSettings(String uid);
 
   /// UserSettings 업데이트
-  Future<void> updateUserSettings(String userId, Map<String, dynamic> settings);
+  ///
+  /// **Parameters**:
+  /// - `userId`: 사용자 ID
+  /// - `settings`: 업데이트할 설정
+  /// - `eventId`: (Optional) 중복 방지를 위한 이벤트 ID
+  ///
+  /// **Returns**:
+  /// - `Right(unit)`: 업데이트 성공
+  /// - `Left(ProfileFailure)`: 업데이트 실패
+  /// - `Left(ProfileFailure.duplicateOperation)`: 이미 처리된 작업
+  Future<Either<ProfileFailure, Unit>> updateUserSettings(
+    String userId,
+    Map<String, dynamic> settings, {
+    String? eventId,
+  });
 
   // ============= Auth 데이터 조회 =============
   // TODO: 2025-01-21 삭제됨 - AuthContract 사용 권장
@@ -194,12 +272,21 @@ abstract class IUserRepository {
   /// **Phase 2**: AuthContract를 통해 현재 사용자 ID 획득
   /// Repository Implementation에서 AuthContract 주입받아 사용
   /// Presentation 레이어는 이 메서드만 호출하면 됨
-  Future<UserProfile?> getCurrentUserProfile();
+  ///
+  /// **Returns**:
+  /// - `Right(UserProfile)`: 현재 사용자 프로필
+  /// - `Left(ProfileFailure.profileNotFound)`: 사용자가 존재하지 않음
+  /// - `Left(ProfileFailure)`: 조회 실패
+  Future<Either<ProfileFailure, UserProfile>> getCurrentUserProfile();
 
   /// 현재 로그인한 사용자 프로필 업데이트
   ///
   /// **Phase 2**: 보안 검증 포함
   /// - 현재 사용자 ID와 업데이트하려는 프로필 ID 일치 여부 검증
   /// - 불일치 시 Exception 발생
-  Future<void> updateCurrentUserProfile(UserProfile user);
+  ///
+  /// **Returns**:
+  /// - `Right(unit)`: 업데이트 성공
+  /// - `Left(ProfileFailure)`: 업데이트 실패
+  Future<Either<ProfileFailure, Unit>> updateCurrentUserProfile(UserProfile user);
 }

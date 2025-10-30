@@ -264,7 +264,9 @@ class _PopupTimerEmailWidgetState extends ConsumerState<PopupTimerEmailWidget> {
                           : () async {
                               // 사용자 계정 삭제
                               final accountManagementUseCase = ref.read(accountManagementUseCaseProvider);
-                              await accountManagementUseCase.deleteAccount();
+                              await accountManagementUseCase.deleteAccount(
+                                eventId: const Uuid().v4(),
+                              );
 
                               Navigator.pop(context);
                               context.pushNamed(CreateAccountWidget.routeName);
@@ -323,7 +325,9 @@ class _PopupTimerEmailWidgetState extends ConsumerState<PopupTimerEmailWidget> {
                               } else {
                                 // 사용자 계정 삭제
                                 final accountManagementUseCase = ref.read(accountManagementUseCaseProvider);
-                                await accountManagementUseCase.deleteAccount();
+                                await accountManagementUseCase.deleteAccount(
+                                  eventId: const Uuid().v4(),
+                                );
 
                                 Navigator.pop(context);
                                 BotToast.showText(
@@ -394,7 +398,9 @@ class _PopupTimerEmailWidgetState extends ConsumerState<PopupTimerEmailWidget> {
                 onEnded: () async {
                   // 시간 초과 - 사용자 계정 삭제
                   final accountManagementUseCase = ref.read(accountManagementUseCaseProvider);
-                  await accountManagementUseCase.deleteAccount();
+                  await accountManagementUseCase.deleteAccount(
+                    eventId: const Uuid().v4(),
+                  );
 
                   Navigator.pop(context);
                   context.pushNamed(StartPageWidget.routeName);

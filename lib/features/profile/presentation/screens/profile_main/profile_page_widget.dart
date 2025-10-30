@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart' as provider;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 import '/core_exports.dart';
-// Phase 2: Clean Architecture - ProfileProvider만 사용
-import '/features/profile/presentation/providers/profile_provider.dart';
+// Phase 3: Riverpod - profile_providers.dart 사용
+import '/features/profile/presentation/providers/profile_providers.dart';
 // Phase 4: Contract 패턴으로 Feature 간 의존성 제거
 import '/app/contracts/auth_contract.dart';
 import '/core/design_system/design_system.dart';
@@ -16,41 +17,39 @@ import '/features/profile/presentation/widgets/common/error_message.dart';
 import '/features/profile/presentation/widgets/profile/profile_stats_card.dart';
 import '/features/profile/presentation/widgets/profile/profile_completion_card.dart';
 
-class ProfilePageWidget extends StatefulWidget {
+/// 프로필 메인 페이지 (Riverpod)
+///
+/// **Architecture**: Clean Architecture v4.0 + Riverpod
+/// - ✅ ConsumerStatefulWidget으로 전환
+/// - ✅ profileStreamProvider로 실시간 프로필 동기화
+/// - ⚠️ UserPostsProvider는 Post Feature이므로 유지
+class ProfilePageWidget extends ConsumerStatefulWidget {
   const ProfilePageWidget({super.key});
 
   static String routeName = 'profile_page';
   static String routePath = '/profile';
 
   @override
-  State<ProfilePageWidget> createState() => _ProfilePageWidgetState();
+  ConsumerState<ProfilePageWidget> createState() => _ProfilePageWidgetState();
 }
 
-class _ProfilePageWidgetState extends State<ProfilePageWidget> {
+class _ProfilePageWidgetState extends ConsumerState<ProfilePageWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
   // Phase 4: Contract 패턴으로 Feature 간 의존성 제거
   late final AuthContract _authContract;
   late final UserPostsProvider _userPostsProvider;
-  late final ProfileProvider _profileProvider;
 
   @override
   void initState() {
     super.initState();
 
-    // Initialize all dependencies from DI
+    // Initialize dependencies from DI
     // Phase 4: Contract 패턴으로 Feature 간 의존성 제거
     _authContract = GetIt.instance<AuthContract>();
     _userPostsProvider = GetIt.instance<UserPostsProvider>();
-    _profileProvider = GetIt.instance<ProfileProvider>();
 
-    // Phase 2: Clean Architecture - 현재 사용자 프로필 로드
-    _profileProvider.loadCurrentUserProfile().then((_) {
-      // Phase 6: 프로필 완성도 로드 (프로필 로드 완료 후)
-      final userId = _profileProvider.profile?.uid;
-      if (userId != null) {
-        _profileProvider.getProfileCompletion(userId);
-      }
-    });
+    // Phase 3: Riverpod - ProfileProvider 제거
+    // 프로필 로드는 profileStreamProvider가 자동 처리
   }
 
   @override
@@ -77,8 +76,8 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
           IconButton(
             icon: Icon(Icons.settings, color: Colors.black),
             onPressed: () {
-              // Phase 2: Clean Architecture - ProfileProvider 사용
-              final userId = _profileProvider.profile?.uid;
+              // Phase 3: Riverpod - AuthContract로 userId 조회
+              final userId = _authContract.getCurrentUserId();
               if (userId != null) {
                 context.pushNamed(
                   SettingsScreen.routeName,
@@ -93,25 +92,46 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
       ),
       body: SafeArea(
         top: true,
-        // Phase 2: Clean Architecture - ProfileProvider 사용
-        child: Consumer<ProfileProvider>(
-                builder: (context, provider, child) {
-                  // Loading state
-                  if (provider.isLoading || provider.profile == null) {
-                    return ProfileLoadingIndicator(
-                      size: LoadingSize.medium,
-                    );
-                  }
+        // Phase 3: Riverpod - profileStreamProvider 사용
+        child: Builder(
+          builder: (context) {
+            // AuthContract로 userId 조회
+            final userId = _authContract.getCurrentUserId();
 
-                  // Error state
-                  if (provider.errorMessage != null) {
-                    return ProfileErrorMessage(
-                      message: provider.errorMessage!,
-                      onRetry: () => provider.loadCurrentUserProfile(),
-                    );
-                  }
+            if (userId == null) {
+              return ProfileErrorMessage(
+                message: '로그인이 필요합니다',
+                onRetry: () {},
+              );
+            }
 
-                  final user = provider.profile!;
+            // Riverpod: profileStreamProvider로 실시간 프로필 조회
+            final profileState = ref.watch(profileStreamProvider(
+              ProfileStreamParams(userId: userId),
+            ));
+
+            return profileState.when(
+              // Loading state
+              loading: () => ProfileLoadingIndicator(
+                size: LoadingSize.medium,
+              ),
+              // Error state
+              error: (error, stackTrace) => ProfileErrorMessage(
+                message: error.toString(),
+                onRetry: () => ref.invalidate(profileStreamProvider(
+                  ProfileStreamParams(userId: userId),
+                )),
+              ),
+              // Data state
+              data: (user) {
+                if (user == null) {
+                  return ProfileErrorMessage(
+                    message: '프로필을 찾을 수 없습니다',
+                    onRetry: () => ref.invalidate(profileStreamProvider(
+                      ProfileStreamParams(userId: userId),
+                    )),
+                  );
+                }
 
                   return SingleChildScrollView(
                     padding: VersusSpacing.paddingMD,
@@ -248,7 +268,7 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                         VersusSpacing.gapLG,
 
                         // 내 게시물 섹션
-                        ChangeNotifierProvider.value(
+                        provider.ChangeNotifierProvider.value(
                           value: _userPostsProvider,
                           child: _buildUserPostsSection(context, user.uid),
                         ),
@@ -281,10 +301,12 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                       ],
                     ),
                   );
-                },
-              ),
-      ),
-    );
+                },  // profileState.when data 닫기
+              );    // profileState.when 닫기
+            },      // Builder 닫기
+          ),        // Builder widget 닫기
+      ),            // SafeArea 닫기
+    );              // Scaffold 닫기
   }
 
   Widget _buildInfoRow(BuildContext context, String label, String value) {
@@ -314,12 +336,12 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
   }
 
   Widget _buildUserPostsSection(BuildContext context, String userId) {
-    return Consumer<UserPostsProvider>(
-      builder: (context, provider, child) {
+    return provider.Consumer<UserPostsProvider>(
+      builder: (context, postProvider, child) {
         // Load posts on first build
-        if (provider.loadingState == UserPostsLoadingState.initial) {
+        if (postProvider.loadingState == UserPostsLoadingState.initial) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            provider.loadUserPosts(userId: userId, limit: 5);
+            postProvider.loadUserPosts(userId: userId, limit: 5);
           });
         }
 
@@ -346,7 +368,7 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                     '내 게시물',
                     style: VersusTextStyles.headingMedium,
                   ),
-                  if (provider.hasPosts)
+                  if (postProvider.hasPosts)
                     TextButton(
                       onPressed: () {
                         // Phase 2: Clean Architecture - 파라미터로 받은 userId 사용
@@ -367,7 +389,7 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
               VersusSpacing.gapMD,
 
               // Loading state
-              if (provider.loadingState == UserPostsLoadingState.loading)
+              if (postProvider.loadingState == UserPostsLoadingState.loading)
                 Padding(
                   padding: EdgeInsets.all(VersusSpacing.lg),
                   child: ProfileLoadingIndicator(
@@ -376,12 +398,12 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                 ),
 
               // Error state
-              if (provider.loadingState == UserPostsLoadingState.error)
+              if (postProvider.loadingState == UserPostsLoadingState.error)
                 Center(
                   child: Padding(
                     padding: EdgeInsets.all(VersusSpacing.md),
                     child: Text(
-                      provider.errorMessage ?? '오류가 발생했습니다',
+                      postProvider.errorMessage ?? '오류가 발생했습니다',
                       style: VersusTextStyles.bodyMedium.copyWith(
                         color: VersusColors.error,
                       ),
@@ -390,7 +412,7 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                 ),
 
               // Empty state
-              if (provider.loadingState == UserPostsLoadingState.empty)
+              if (postProvider.loadingState == UserPostsLoadingState.empty)
                 Center(
                   child: Padding(
                     padding: EdgeInsets.all(VersusSpacing.lg),
@@ -414,8 +436,8 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                 ),
 
               // Loaded state
-              if (provider.hasPosts)
-                ...provider.posts.map((post) => _buildPostItem(context, post)),
+              if (postProvider.hasPosts)
+                ...postProvider.posts.map((post) => _buildPostItem(context, post)),
             ],
           ),
         );

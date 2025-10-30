@@ -1,27 +1,23 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '/core_exports.dart';
-import '/features/profile/presentation/providers/profile_edit_provider.dart';
-import '/app/di.dart';
-import '/features/profile/domain/usecases/profile/update_user_profile_usecase.dart';
-import '/features/profile/domain/usecases/profile/get_user_profile_usecase.dart';
-import '/features/profile/domain/usecases/profile/upload_profile_image_usecase.dart';
+import '/features/profile/domain/models/user_profile.dart';
+import '/features/profile/presentation/providers/profile_providers.dart';
 import '/features/profile/presentation/widgets/common/loading_indicator.dart';
 import '/features/profile/presentation/widgets/common/error_message.dart';
 import '/features/profile/presentation/constants/validation_rules.dart';
 import '/features/profile/presentation/constants/profile_constants.dart';
 import '/core/constants/app_constants.dart';
 
-/// 프로필 편집 화면 Wrapper
+/// 프로필 편집 화면 (Phase 3: Riverpod 마이그레이션 완료)
 ///
-/// **Clean Architecture v4.0 준수**:
-/// - Provider 패턴으로 상태 관리
-/// - UseCase 통해 비즈니스 로직 처리
-/// - UI와 비즈니스 로직 완전 분리
-/// - GetIt을 통한 의존성 주입
-class ProfileEditScreen extends StatelessWidget {
+/// **Clean Architecture v4.0 + Riverpod**:
+/// - ConsumerStatefulWidget으로 로컬 상태 관리 (Form)
+/// - ProfileActions로 업데이트 실행
+/// - StreamProvider로 실시간 동기화
+class ProfileEditScreen extends ConsumerStatefulWidget {
   const ProfileEditScreen({
     super.key,
     required this.userId,
@@ -33,47 +29,23 @@ class ProfileEditScreen extends StatelessWidget {
   static String routePath = '/profile/edit';
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ProfileEditProvider(
-        updateProfileUseCase: getIt<UpdateUserProfileUseCase>(),
-        getUserProfileUseCase: getIt<GetUserProfileUseCase>(),
-        uploadImageUseCase: getIt<UploadProfileImageUseCase>(),
-      ),
-      child: _ProfileEditScreenContent(userId: userId),
-    );
-  }
+  ConsumerState<ProfileEditScreen> createState() => _ProfileEditScreenState();
 }
 
-/// 프로필 편집 화면 내용
-class _ProfileEditScreenContent extends StatefulWidget {
-  const _ProfileEditScreenContent({
-    required this.userId,
-  });
-
-  final String userId;
-
-  @override
-  State<_ProfileEditScreenContent> createState() => _ProfileEditScreenContentState();
-}
-
-class _ProfileEditScreenContentState extends State<_ProfileEditScreenContent> {
+class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _displayNameController;
   late TextEditingController _shortDescriptionController;
+
+  // 로컬 상태: 성별 선택
+  String? _selectedGender;
 
   @override
   void initState() {
     super.initState();
     _displayNameController = TextEditingController();
     _shortDescriptionController = TextEditingController();
-
-    // Provider에서 프로필 로드
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<ProfileEditProvider>();
-      provider.loadProfile(widget.userId);
-    });
   }
 
   @override
@@ -85,6 +57,14 @@ class _ProfileEditScreenContentState extends State<_ProfileEditScreenContent> {
 
   @override
   Widget build(BuildContext context) {
+    // Riverpod: StreamProvider로 실시간 프로필 동기화
+    final profileAsync = ref.watch(
+      profileStreamProvider(ProfileStreamParams(userId: widget.userId)),
+    );
+
+    // 로딩 상태 체크
+    final isLoading = ref.watch(profileLoadingProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -92,41 +72,36 @@ class _ProfileEditScreenContentState extends State<_ProfileEditScreenContent> {
           style: AppTheme.of(context).headlineSmall,
         ),
         actions: [
-          Consumer<ProfileEditProvider>(
-            builder: (context, provider, _) {
-              return TextButton(
-                onPressed: provider.isLoading ? null : () => _saveProfile(provider),
-                child: Text(
-                  AppLocalizations.of(context).getText('save' /* 저장 */),
-                  style: AppTheme.of(context).bodyMedium.override(
-                    color: AppTheme.of(context).primary,
-                    fontWeight: FontWeight.w600,
-                  ),
+          profileAsync.when(
+            loading: () => SizedBox(),
+            error: (_, __) => SizedBox(),
+            data: (profile) => TextButton(
+              onPressed: isLoading || profile == null
+                  ? null
+                  : () => _saveProfile(profile),
+              child: Text(
+                AppLocalizations.of(context).getText('save' /* 저장 */),
+                style: AppTheme.of(context).bodyMedium.override(
+                  color: AppTheme.of(context).primary,
+                  fontWeight: FontWeight.w600,
                 ),
-              );
-            },
+              ),
+            ),
           ),
         ],
       ),
-      body: Consumer<ProfileEditProvider>(
-        builder: (context, provider, _) {
-          // 로딩 상태
-          if (provider.isLoading && provider.profile == null) {
-            return ProfileLoadingIndicator(
-              size: LoadingSize.medium,
-            );
-          }
-
-          // 에러 상태
-          if (provider.errorMessage != null) {
-            return ProfileErrorMessage(
-              message: provider.errorMessage!,
-              onRetry: () => provider.loadProfile(widget.userId),
-            );
-          }
-
-          // 프로필 로드 완료
-          final profile = provider.profile;
+      body: profileAsync.when(
+        loading: () => ProfileLoadingIndicator(
+          size: LoadingSize.medium,
+        ),
+        error: (error, stackTrace) => ProfileErrorMessage(
+          message: error.toString(),
+          onRetry: () {
+            // Riverpod: Stream 재시작
+            ref.invalidate(profileStreamProvider);
+          },
+        ),
+        data: (profile) {
           if (profile == null) {
             return Center(child: Text('프로필을 찾을 수 없습니다'));
           }
@@ -138,6 +113,8 @@ class _ProfileEditScreenContentState extends State<_ProfileEditScreenContent> {
           if (_shortDescriptionController.text.isEmpty && profile.shortDescription?.isNotEmpty == true) {
             _shortDescriptionController.text = profile.shortDescription ?? '';
           }
+          // 성별 초기값 설정
+          _selectedGender ??= profile.gender;
 
           return SingleChildScrollView(
             padding: EdgeInsets.all(16.0),
@@ -176,7 +153,7 @@ class _ProfileEditScreenContentState extends State<_ProfileEditScreenContent> {
                                 size: 20,
                                 color: Colors.white,
                               ),
-                              onPressed: () => _pickAndUploadImage(context),
+                              onPressed: () => _pickAndUploadImage(profile),
                             ),
                           ),
                         ),
@@ -245,28 +222,34 @@ class _ProfileEditScreenContentState extends State<_ProfileEditScreenContent> {
                     children: [
                       ChoiceChip(
                         label: Text('남성'),
-                        selected: profile.gender == 'Male',
+                        selected: _selectedGender == 'Male',
                         onSelected: (selected) {
                           if (selected) {
-                            provider.updateGender('Male');
+                            setState(() {
+                              _selectedGender = 'Male';
+                            });
                           }
                         },
                       ),
                       ChoiceChip(
                         label: Text('여성'),
-                        selected: profile.gender == 'Female',
+                        selected: _selectedGender == 'Female',
                         onSelected: (selected) {
                           if (selected) {
-                            provider.updateGender('Female');
+                            setState(() {
+                              _selectedGender = 'Female';
+                            });
                           }
                         },
                       ),
                       ChoiceChip(
                         label: Text('기타'),
-                        selected: profile.gender == 'Other',
+                        selected: _selectedGender == 'Other',
                         onSelected: (selected) {
                           if (selected) {
-                            provider.updateGender('Other');
+                            setState(() {
+                              _selectedGender = 'Other';
+                            });
                           }
                         },
                       ),
@@ -275,7 +258,7 @@ class _ProfileEditScreenContentState extends State<_ProfileEditScreenContent> {
                   SizedBox(height: 32),
 
                   // 로딩 인디케이터
-                  if (provider.isLoading)
+                  if (isLoading)
                     ProfileLoadingIndicator(
                       size: LoadingSize.small,
                     ),
@@ -288,40 +271,51 @@ class _ProfileEditScreenContentState extends State<_ProfileEditScreenContent> {
     );
   }
 
-  Future<void> _saveProfile(ProfileEditProvider provider) async {
+  Future<void> _saveProfile(UserProfile currentProfile) async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    final success = await provider.saveProfile(
+    // 업데이트된 프로필 생성
+    final updatedProfile = currentProfile.copyWith(
       displayName: _displayNameController.text.trim(),
       shortDescription: _shortDescriptionController.text.trim(),
+      gender: _selectedGender,
     );
 
-    if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('프로필이 저장되었습니다'),
-          backgroundColor: AppTheme.of(context).success,
-        ),
-      );
-      Navigator.pop(context);
-    } else if (mounted && provider.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(provider.errorMessage!),
-          backgroundColor: AppTheme.of(context).error,
-        ),
-      );
-    }
+    // ProfileActions로 업데이트 실행
+    await ProfileActions.updateProfile(
+      ref: ref,
+      userId: widget.userId,
+      updatedProfile: updatedProfile,
+      onSuccess: () {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('프로필이 저장되었습니다'),
+              backgroundColor: AppTheme.of(context).success,
+            ),
+          );
+          Navigator.pop(context);
+        }
+      },
+      onError: (message) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: AppTheme.of(context).error,
+            ),
+          );
+        }
+      },
+    );
   }
 
   /// 이미지 선택 및 업로드
   ///
-  /// **Phase 3.1 구현**: ImagePicker를 통한 이미지 선택 및 업로드
-  Future<void> _pickAndUploadImage(BuildContext context) async {
-    final provider = context.read<ProfileEditProvider>();
-
+  /// **Phase 3: Riverpod 구현**: ProfileActions를 통한 이미지 선택 및 업로드
+  Future<void> _pickAndUploadImage(UserProfile currentProfile) async {
     // 1. 이미지 소스 선택 다이얼로그
     final ImageSource? source = await showDialog<ImageSource>(
       context: context,
@@ -358,29 +352,34 @@ class _ProfileEditScreenContentState extends State<_ProfileEditScreenContent> {
 
     if (image == null) return;
 
-    // 3. 파일 변환 및 업로드
+    // 3. 파일 변환
     final File imageFile = File(image.path);
 
-    // 4. Provider를 통해 업로드
-    final success = await provider.uploadProfileImage(imageFile);
-
-    // 5. 결과 메시지 표시
-    if (mounted) {
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('프로필 사진이 업데이트되었습니다'),
-            backgroundColor: AppTheme.of(context).success,
-          ),
-        );
-      } else if (provider.errorMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(provider.errorMessage!),
-            backgroundColor: AppTheme.of(context).error,
-          ),
-        );
-      }
-    }
+    // 4. ProfileActions를 통해 업로드
+    await ProfileActions.uploadProfileImage(
+      ref: ref,
+      userId: widget.userId,
+      imageFile: imageFile,
+      onSuccess: (imageUrl) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('프로필 사진이 업데이트되었습니다'),
+              backgroundColor: AppTheme.of(context).success,
+            ),
+          );
+        }
+      },
+      onError: (message) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: AppTheme.of(context).error,
+            ),
+          );
+        }
+      },
+    );
   }
 }

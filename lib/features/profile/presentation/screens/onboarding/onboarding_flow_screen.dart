@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/core_exports.dart';
-import '/features/profile/presentation/providers/interests_provider.dart';
-import '/features/profile/domain/models/interest.dart';
+import '/features/profile/presentation/providers/profile_providers.dart';
 
-/// 온보딩 플로우 화면
+/// 온보딩 플로우 화면 (Riverpod)
 ///
-/// **Clean Architecture v4.0 준수**:
-/// - Provider 패턴으로 상태 관리
-/// - UseCase 통해 비즈니스 로직 처리
+/// **Clean Architecture v4.0 + Riverpod**:
+/// - ✅ ConsumerStatefulWidget으로 전환
+/// - ✅ ProfileActions.updateInterests() 사용
+/// - ✅ UseCase 통해 비즈니스 로직 처리
 /// - 3단계 온보딩 플로우 통합 (언어 → 전문분야 → 취미)
-class OnboardingFlowScreen extends StatefulWidget {
+class OnboardingFlowScreen extends ConsumerStatefulWidget {
   const OnboardingFlowScreen({
     super.key,
     required this.userId,
@@ -22,10 +22,10 @@ class OnboardingFlowScreen extends StatefulWidget {
   static String routePath = '/onboarding';
 
   @override
-  State<OnboardingFlowScreen> createState() => _OnboardingFlowScreenState();
+  ConsumerState<OnboardingFlowScreen> createState() => _OnboardingFlowScreenState();
 }
 
-class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
+class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen> {
   final PageController _pageController = PageController();
   int _currentStep = 0;
 
@@ -69,56 +69,36 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
   }
 
   Future<void> _completeOnboarding() async {
-    final interestsProvider = context.read<InterestsProvider>();
-
-    // 1. 전문분야를 Interest 객체로 변환 후 추가
-    for (final expertise in _selectedExpertise) {
-      final interest = Interest(
-        id: expertise.toLowerCase().replaceAll(' ', '_'),
-        name: expertise,
-        category: 'expertise',
-        weight: 0.5,
-        selectedAt: DateTime.now(),
-      );
-      interestsProvider.addInterest(interest);
-    }
-
-    // 2. 취미를 Interest 객체로 변환 후 추가
-    for (final hobby in _selectedHobbies) {
-      final interest = Interest(
-        id: hobby.toLowerCase().replaceAll(' ', '_'),
-        name: hobby,
-        category: 'hobby',
-        weight: 0.5,
-        selectedAt: DateTime.now(),
-      );
-      interestsProvider.addInterest(interest);
-    }
-
-    // 3. 관심사 저장
-    final success = await interestsProvider.saveInterests(widget.userId);
-
-    // 4. 온보딩 완료 처리
-    if (mounted) {
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('온보딩이 완료되었습니다'),
-            backgroundColor: AppTheme.of(context).success,
-          ),
-        );
-        // TODO: 온보딩 완료 후 메인 화면으로 이동
-        // 언어 설정은 ProfileEditScreen 또는 Settings에서 변경 가능
-        Navigator.of(context).pop();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(interestsProvider.errorMessage ?? '저장 실패'),
-            backgroundColor: AppTheme.of(context).error,
-          ),
-        );
-      }
-    }
+    // Riverpod: ProfileActions.updateInterests() 사용
+    await ProfileActions.updateInterests(
+      ref: ref,
+      userId: widget.userId,
+      expertise: _selectedExpertise,
+      hobbies: _selectedHobbies,
+      onSuccess: () {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('온보딩이 완료되었습니다'),
+              backgroundColor: AppTheme.of(context).success,
+            ),
+          );
+          // TODO: 온보딩 완료 후 메인 화면으로 이동
+          // 언어 설정은 ProfileEditScreen 또는 Settings에서 변경 가능
+          Navigator.of(context).pop();
+        }
+      },
+      onError: (message) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: AppTheme.of(context).error,
+            ),
+          );
+        }
+      },
+    );
   }
 
   @override

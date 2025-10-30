@@ -1,5 +1,5 @@
+import 'package:dartz/dartz.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/core/types/result.dart';
 import '../../repositories/i_user_repository.dart';
 import '../../models/user_settings.dart';
 import '../../failures/profile_failure.dart';
@@ -22,38 +22,23 @@ class GetUserSettingsUseCase {
   /// - `userId`: 조회할 사용자 ID
   ///
   /// **Returns**:
-  /// - `Success(UserSettings)`: 조회 성공
-  /// - `ResultFailure(ProfileFailure)`: 조회 실패
-  Future<Result<UserSettings>> execute(String userId) async {
+  /// - `Right(UserSettings)`: 조회 성공
+  /// - `Left(ProfileFailure)`: 조회 실패
+  Future<Either<ProfileFailure, UserSettings>> execute(String userId) async {
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {
-        return ResultFailure(ValidationFailure('userId'));
+        return left(ProfileFailure.validation('userId'));
       }
 
-      // 2. Repository 호출
-      final settings = await _repository.getUserSettings(userId);
-
-      // 3. 결과 검증
-      if (settings == null) {
-        // 설정이 없으면 기본 설정 반환
-        return Success(UserSettings(
-          userId: userId,
-          receiveRankUpdateNotifications: true,
-          receiveTitleUpdateNotifications: true,
-          receiveVoteNotifications: true,
-          receiveCommentNotifications: true,
-          receiveFriendNotifications: true,
-        ));
-      }
-
-      return Success(settings);
+      // 2. Repository 호출 (이미 Either 반환)
+      return await _repository.getUserSettings(userId);
     } on FirebaseException catch (e) {
-      return ResultFailure(FirestoreRead(e.message ?? 'Unknown error'));
+      return left(ProfileFailure.firestoreRead(e.message ?? 'Unknown error'));
     } on ProfileFailure catch (e) {
-      return ResultFailure(e);
+      return left(e);
     } catch (e) {
-      return ResultFailure(UnknownProfile(e.toString()));
+      return left(ProfileFailure.unknown(e.toString()));
     }
   }
 }

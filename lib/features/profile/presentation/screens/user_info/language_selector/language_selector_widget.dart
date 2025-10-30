@@ -1,17 +1,23 @@
 import '/core_exports.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'language_selector_model.dart';
 export 'language_selector_model.dart';
 
-class LanguageSelectorWidget extends StatefulWidget {
+/// 언어 선택 위젯 (Riverpod)
+///
+/// **Clean Architecture v4.0 + Riverpod**:
+/// - ✅ ConsumerStatefulWidget으로 전환
+/// - ✅ LanguageSelectorModel에 ref 전달 가능
+class LanguageSelectorWidget extends ConsumerStatefulWidget {
   const LanguageSelectorWidget({super.key});
 
   @override
-  State<LanguageSelectorWidget> createState() => _LanguageSelectorWidgetState();
+  ConsumerState<LanguageSelectorWidget> createState() => _LanguageSelectorWidgetState();
 }
 
-class _LanguageSelectorWidgetState extends State<LanguageSelectorWidget> {
+class _LanguageSelectorWidgetState extends ConsumerState<LanguageSelectorWidget> {
   late LanguageSelectorModel _model;
 
   @override

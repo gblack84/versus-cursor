@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:dartz/dartz.dart';
+import '../failures/profile_failure.dart';
 
 /// Profile Storage Repository 인터페이스 (Clean Architecture v4.0)
 ///
@@ -20,10 +22,10 @@ abstract class IProfileStorageRepository {
   /// - `userId`: 사용자 ID (Storage 경로에 사용)
   /// - `imageFile`: 업로드할 이미지 파일
   ///
-  /// **Returns**: 업로드된 이미지의 다운로드 URL
-  ///
-  /// **Throws**: 업로드 실패 시 Exception
-  Future<String> uploadProfileImage({
+  /// **Returns**:
+  /// - `Right(String)`: 업로드된 이미지의 다운로드 URL
+  /// - `Left(ProfileFailure.storage)`: 업로드 실패
+  Future<Either<ProfileFailure, String>> uploadProfileImage({
     required String userId,
     required File imageFile,
   });
@@ -33,6 +35,8 @@ abstract class IProfileStorageRepository {
   /// **Parameters**:
   /// - `imageUrl`: 삭제할 이미지 URL
   ///
-  /// **Returns**: 삭제 성공 여부
-  Future<bool> deleteProfileImage(String imageUrl);
+  /// **Returns**:
+  /// - `Right(true)`: 삭제 성공
+  /// - `Left(ProfileFailure.storage)`: 삭제 실패
+  Future<Either<ProfileFailure, bool>> deleteProfileImage(String imageUrl);
 }

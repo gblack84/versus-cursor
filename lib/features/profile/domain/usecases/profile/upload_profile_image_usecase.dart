@@ -1,5 +1,5 @@
 import 'dart:io';
-import '/core/types/result.dart';
+import 'package:dartz/dartz.dart';
 import '../../failures/profile_failure.dart';
 import '../../repositories/i_profile_storage_repository.dart';
 
@@ -27,38 +27,36 @@ class UploadProfileImageUseCase {
   /// - `imageFile`: 업로드할 이미지 파일
   ///
   /// **Returns**:
-  /// - `Success(String)`: 업로드된 이미지 URL
-  /// - `ResultFailure(ProfileFailure)`: 업로드 실패
-  Future<Result<String>> execute({
+  /// - `Right(String)`: 업로드된 이미지 URL
+  /// - `Left(ProfileFailure)`: 업로드 실패
+  Future<Either<ProfileFailure, String>> execute({
     required String userId,
     required File imageFile,
   }) async {
     try {
       // 1. 입력 검증
       if (userId.isEmpty) {
-        return ResultFailure(ValidationFailure('userId'));
+        return left(ProfileFailure.validation('userId'));
       }
       if (!imageFile.existsSync()) {
-        return ResultFailure(ValidationFailure('imageFile'));
+        return left(ProfileFailure.validation('imageFile'));
       }
 
       // 2. 파일 크기 검증 (10MB 제한)
       final fileSize = imageFile.lengthSync();
       if (fileSize > 10 * 1024 * 1024) {
-        return ResultFailure(ValidationFailure('imageFile.size'));
+        return left(ProfileFailure.validation('imageFile.size'));
       }
 
-      // 3. Storage 업로드 실행 (Repository를 통해)
-      final imageUrl = await _storageRepository.uploadProfileImage(
+      // 3. Storage 업로드 실행 (Repository가 이미 Either 반환)
+      return await _storageRepository.uploadProfileImage(
         userId: userId,
         imageFile: imageFile,
       );
-
-      return Success(imageUrl);
     } on ProfileFailure catch (e) {
-      return ResultFailure(e);
+      return left(e);
     } catch (e) {
-      return ResultFailure(StorageFailure(e.toString()));
+      return left(ProfileFailure.storage(e.toString()));
     }
   }
 }

@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // Core Services
 import '/core/utils/idempotency_service.dart';
+import '/core/utils/batch_service.dart';
 
 // Feature DI Modules
 import '/features/post/di/post_di_module.dart';
@@ -48,6 +49,11 @@ Future<void> setupDependencyInjection() async {
   // IdempotencyService (for Auth, Voting, etc.)
   getIt.registerSingleton<IdempotencyService>(
     IdempotencyService(),
+  );
+
+  // BatchService (for atomic Firestore operations across all features)
+  getIt.registerSingleton<BatchService>(
+    BatchService(),
   );
 
   // ===== Auth Feature DI =====

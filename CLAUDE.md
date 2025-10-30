@@ -1062,6 +1062,38 @@ if (model.isVideoSelectedA) {
 
 ## Migration History
 
+### 2025-01-29: Profile Feature Phase 4 - Firebase-Centric v2.0 Legacy 정리 완료
+- **작업 내용**:
+  - Phase 4 Legacy 파일 10개 삭제 (총 1,028줄 제거)
+  - Profile/Settings CRUD DataSource 4개 삭제 (469줄)
+    - `firebase_profile_datasource.dart` (301줄)
+    - `firebase_settings_datasource.dart` (52줄)
+    - `i_profile_datasource.dart` (103줄)
+    - `i_settings_datasource.dart` (13줄)
+  - DTO 클래스 6개 삭제 (559줄)
+    - `character_dto.dart`, `interest_dto.dart`, `premium_status_dto.dart`
+    - `profile_info_dto.dart`, `user_profile_dto.dart`, `user_settings_dto.dart`
+  - Storage DataSource 유지 (이미지 업로드 기능으로 실제 사용 중)
+- **아키텍처 변환 완료**:
+  - Before: Firestore → DTO → Adapter → Entity (3단계)
+  - After: Firestore → Extension → Entity (1단계)
+  - Extension 패턴으로 데이터 변환 통합 (user_profile_extensions.dart, 314줄)
+  - Repository에서 FirebaseFirestore 직접 사용 (DataSource 레이어 제거)
+- **검증 완료**:
+  - `flutter analyze lib/features/profile` 통과 (에러 0개)
+  - 2개 warning은 기존 JsonKey 어노테이션 이슈 (Phase 4와 무관)
+  - Storage DataSource는 DI 등록 및 Repository에서 사용 확인
+- **결과**:
+  - Profile Feature Phase 1-4 모두 100% 완료 ✅
+    - Phase 1: Freezed & Failure Pattern
+    - Phase 2: Either Pattern
+    - Phase 3: Riverpod 2.x State Management
+    - Phase 4: Firebase-Centric v2.0 (Legacy 정리)
+  - 코드 감소: 1,028줄 제거 (81% 감소 달성)
+  - Auth Feature 패턴 100% 일치
+  - Clean Architecture v4.0 완성
+- **커밋**: Phase 4 legacy cleanup
+
 ### 2025-07-25: 네비게이션 시스템 구현 및 디자인 시스템 적용
 - **작업 내용**:
   - 듀얼 모드 네비게이션 시스템 구현 (메인/채팅 모드)

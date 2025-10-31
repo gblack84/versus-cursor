@@ -1,6 +1,9 @@
+import 'package:dartz/dartz.dart';
+import '/features/profile/domain/entities/user_profile.dart';
 import '../repositories/i_chat_repository.dart';
+import '../failures/chat_failure.dart';
 
-/// UseCase: 친구 추천 목록 조회 (Clean Architecture v4.0)
+/// UseCase: 친구 추천 목록 조회 (Clean Architecture v4.0 + Phase 1: Either Pattern)
 ///
 /// **비즈니스 규칙**:
 /// - totalAPoints 기준 상위 랭킹 사용자 추천
@@ -11,7 +14,7 @@ import '../repositories/i_chat_repository.dart';
 /// - [IChatRepository]: 데이터 접근 추상화
 ///
 /// **Returns**:
-/// - Stream<List<UserProfile>>: 추천 친구 목록 실시간 스트림
+/// - Stream<Either<ChatFailure, List<UserProfile>>>: 추천 친구 목록 또는 실패
 class GetRecommendedFriendsUseCase {
   final IChatRepository _chatRepository;
 
@@ -19,33 +22,38 @@ class GetRecommendedFriendsUseCase {
     required IChatRepository chatRepository,
   }) : _chatRepository = chatRepository;
 
-  /// Execute: 친구 추천 목록 조회
+  /// Execute: 친구 추천 목록 조회 (Phase 1: Either Pattern)
   ///
   /// **Parameters**:
   /// - [currentUserId]: 현재 사용자 ID (필수)
   /// - [limit]: 조회할 최대 개수 (기본: 20)
   ///
   /// **Returns**:
-  /// - Stream<List<dynamic>>: 추천 친구 목록 (UserProfile)
+  /// - Stream<Either<ChatFailure, List<UserProfile>>>
+  ///   - Left: FriendLoadFailed (유효성 검사 실패 또는 로드 실패)
+  ///   - Right: List<UserProfile> (추천 친구 목록)
   ///
   /// **Implementation**:
-  /// 1. currentUserId가 빈 문자열이면 빈 Stream 반환
-  /// 2. Repository의 getRecommendedFriends() 호출
+  /// 1. Validation: currentUserId 확인
+  /// 2. Repository 호출 (이미 Either 반환)
   /// 3. totalAPoints 기준 정렬 (내림차순)
-  Stream<List<dynamic>> execute({
+  Stream<Either<ChatFailure, List<UserProfile>>> execute({
     required String currentUserId,
     int limit = 20,
-  }) {
+  }) async* {
     // Validation: 현재 사용자 ID 확인
     if (currentUserId.isEmpty) {
-      return Stream.value([]);
+      yield left(const FriendLoadFailed());
+      return;
     }
 
-    // Repository 호출
-    return _chatRepository.getRecommendedFriends(
+    // Repository 호출 - Either 반환, dynamic → UserProfile 변환
+    await for (final either in _chatRepository.getRecommendedFriends(
       currentUserId: currentUserId,
       sortBy: 'totalAPoints',
       limit: limit,
-    );
+    )) {
+      yield either.map((users) => users.cast<UserProfile>());
+    }
   }
 }

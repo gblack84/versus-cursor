@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '/core/constants/app_constants.dart';
 import '/core/design_system/design_system.dart';
 import '/core/types/layout_type.dart';
 import '/features/chat/domain/entities/chat.dart';
-import '/features/profile/domain/models/user_profile.dart';
+import '/features/profile/domain/entities/user_profile.dart';
 import '/features/voting/domain/constants/voting_constants.dart';
 import '/features/voting/presentation/chat_vote_card/vote_card/vote_card_widget.dart';
 import '/features/chat/domain/enums/message_delivery_status.dart';
 import '/services/ui/unified_box_calculator.dart';
 import '/core/utils/media/aspect_ratio_analyzer.dart';
 import '/services/ui/responsive_breakpoints.dart';
+import '/features/voting/domain/usecases/chat/submit_vote_use_case.dart';
+import '/app/di.dart';
+import '/core/utils/logger.dart';
 
 /// 메시지 빌더 컴포넌트
 ///
@@ -88,6 +92,30 @@ class ChatMessageBuilder {
           searchQuery: isSearching ? searchQuery : null,
           aspectRatioA: aspectRatioA,
           aspectRatioB: aspectRatioB,
+          // ✅ Phase 2: Submit vote using SubmitVoteUseCase (Clean Architecture v4.0)
+          onVote: (option) async {
+            final currentUser = FirebaseAuth.instance.currentUser;
+            if (currentUser == null) {
+              Logger.warning('Cannot submit vote: User not authenticated',
+                  tag: 'ChatMessageBuilder');
+              return;
+            }
+
+            final submitVote = getIt<SubmitVoteUseCase>();
+            final result = await submitVote(
+              postId: metadata['postId'] ?? '',
+              userId: currentUser.uid,
+              voteOption: option,
+            );
+
+            result.fold(
+              (failure) => Logger.error('Vote submission failed',
+                  error: failure.toString(), tag: 'ChatMessageBuilder'),
+              (postVoting) => Logger.info(
+                  'Vote submitted successfully for post ${metadata['postId']}',
+                  tag: 'ChatMessageBuilder'),
+            );
+          },
         ),
       );
 

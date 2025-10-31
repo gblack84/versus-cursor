@@ -15,7 +15,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:webviewx_plus/webviewx_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/features/profile/presentation/providers/profile_providers.dart';
-import '/features/profile/domain/models/user_profile.dart';
+import '/features/profile/domain/entities/user_profile.dart';
 import '/app/contracts/auth_contract.dart';
 import 'user_info_input_model.dart';
 export 'user_info_input_model.dart';

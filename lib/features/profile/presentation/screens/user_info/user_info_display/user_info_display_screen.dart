@@ -6,7 +6,7 @@ import '/features/profile/presentation/widgets/profile/profile_header.dart';
 import '/features/profile/presentation/widgets/common/loading_indicator.dart';
 import '/features/profile/presentation/widgets/common/error_message.dart';
 import '/features/profile/presentation/widgets/interests/interest_chip.dart';
-import '/features/profile/domain/models/interest.dart';
+import '/features/profile/domain/entities/interest.dart';
 import '/features/profile/presentation/widgets/profile/profile_stats_card.dart';
 
 /// 사용자 정보 표시 화면 (Phase 3: Riverpod 마이그레이션 완료)

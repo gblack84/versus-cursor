@@ -5,7 +5,7 @@ import '../../domain/repositories/i_voting_chat_repository.dart';
 import '../../domain/entities/chat/post_voting.dart';
 import '../../domain/entities/dialog/vote_counts_model.dart';
 import '../../domain/failures/voting_failure.dart';
-import '../extensions/post_voting_extensions.dart';
+import '../../domain/entities/post_voting_extensions.dart';
 import '../extensions/firestore_error_extensions.dart';
 import '../../../../services/cache/unified_cache_service.dart';
 
@@ -23,7 +23,7 @@ import '../../../../services/cache/unified_cache_service.dart';
 /// **Separation from VotingDialogRepositoryImpl**:
 /// - VotingDialogRepositoryImpl: Dialog voting system (VoteContract)
 /// - VotingChatRepositoryImpl: Chat card voting system (PostVoting)
-class VotingChatRepositoryImpl implements VotingRepository {
+class VotingChatRepositoryImpl implements IVotingChatRepository {
   final FirebaseFirestore _firestore;
   final UnifiedCacheService _cacheService = UnifiedCacheService.instance;
 
@@ -43,7 +43,7 @@ class VotingChatRepositoryImpl implements VotingRepository {
       final doc = await _firestore.collection('posts').doc(postId).get();
 
       if (!doc.exists) {
-        return const Left(NotFound());
+        return const Left(VotingFailure.notFound());
       }
 
       final data = doc.data()!;
@@ -80,12 +80,12 @@ class VotingChatRepositoryImpl implements VotingRepository {
           .map((snapshot) {
         try {
           if (!snapshot.exists) {
-            return const Left(NotFound());
+            return const Left(VotingFailure.notFound());
           }
 
           final data = snapshot.data();
           if (data == null) {
-            return const Left(NotFound());
+            return const Left(VotingFailure.notFound());
           }
 
           // ✅ Extension-based conversion
@@ -130,12 +130,12 @@ class VotingChatRepositoryImpl implements VotingRepository {
       // 2. Check if user can vote (domain business logic)
       if (!voting.canUserVote(userId)) {
         if (voting.hasUserVoted(userId)) {
-          return const Left(AlreadyVoted());
+          return const Left(VotingFailure.alreadyVoted());
         }
         if (!voting.isActive) {
-          return const Left(VotingClosed());
+          return const Left(VotingFailure.votingClosed());
         }
-        return const Left(Unauthorized());
+        return const Left(VotingFailure.unauthorized());
       }
 
       // 3. Use domain model's business logic

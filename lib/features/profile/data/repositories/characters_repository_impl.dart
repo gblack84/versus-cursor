@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import '../../domain/repositories/i_characters_repository.dart';
-import '../../domain/models/character.dart';
+import '../../domain/entities/character.dart';
 import '../../domain/failures/profile_failure.dart';
 import '/services/cache/unified_cache_service.dart';
 

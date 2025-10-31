@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:get_it/get_it.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/create_post_provider_v2.dart';
 import '../../providers/media/media_selection_provider.dart';
 import '../../providers/media/media_validation_provider.dart';
@@ -95,15 +97,26 @@ class _CreatePostScreenState extends State<CreatePostScreen>
       }
 
       // CreatePostProviderV2를 통해 포스트 생성 (타겟 오디언스 포함)
-      // TODO: 현재 userId는 하드코딩되어 있음 - 추후 실제 사용자 정보 연동 필요
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        BotToast.showText(text: '로그인이 필요합니다');
+        return;
+      }
+
       await provider.createPost(
-        'test_user',
+        currentUser.uid,
         targetAudience: targetAudienceData,
       );
 
-      // 성공 - 페이지 닫기
+      // 성공 - AI 채팅방으로 자동 이동 (투표 카드 즉시 표시)
       if (mounted) {
-        Navigator.of(context).pop(true);
+        final chatId = 'ai_assistant_${currentUser.uid}';
+
+        // AI 채팅방으로 이동
+        context.go('/chatDetail?chatId=$chatId');
+
+        // 성공 토스트
+        BotToast.showText(text: '질문이 등록되었습니다');
       }
     } catch (e) {
       // 에러 타입별로 다른 메시지 표시

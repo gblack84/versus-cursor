@@ -8,6 +8,8 @@ import '/services/notification/notification_queue_service.dart';
 import '/core/utils/logger.dart';
 import '/app/router/navigation/nav.dart';
 import '/app/contracts/notification_types.dart';
+import '/features/voting/domain/usecases/chat/submit_vote_use_case.dart';
+import '/app/di.dart';
 
 /// Notification Overlay Provider - Presentation Layer
 ///
@@ -129,7 +131,7 @@ class NotificationOverlayProvider extends ChangeNotifier {
   }
 
   /// Handle vote callback from voting feature
-  /// Note: Vote submission is handled by routing to voting page
+  /// Submits vote using SubmitVoteUseCase, then marks notification as read
   Future<void> _handleVote(
     domain.Notification notification,
     String selectedOption,
@@ -137,24 +139,50 @@ class NotificationOverlayProvider extends ChangeNotifier {
     Logger.info('Vote callback received: $selectedOption for notification ${notification.id}',
         tag: 'NotificationOverlayProvider');
 
-    // Mark notification as read (Notification Feature responsibility)
-    final result = await _markAsRead.call(MarkAsReadParams(
-      notificationId: notification.id,
-      userId: notification.userId,
-    ));
+    // Cast to VotingNotification to access postId
+    final votingNotif = notification as domain.VotingNotification;
 
-    // Handle Result with fold pattern
-    result.fold(
-      (failure) {
-        // Show error toast to user
-        BotToast.showText(text: failure.message);
-        Logger.error('Error marking notification as read',
-            error: failure.message, tag: 'NotificationOverlayProvider');
+    // 1. Submit vote using SubmitVoteUseCase (Clean Architecture v4.0)
+    final submitVote = getIt<SubmitVoteUseCase>();
+    final voteResult = await submitVote(
+      postId: votingNotif.postId,
+      userId: notification.userId,
+      voteOption: selectedOption,
+    );
+
+    // Handle vote submission result
+    await voteResult.fold(
+      (failure) async {
+        // Show error toast for vote submission failure
+        BotToast.showText(text: '투표 제출 실패');
+        Logger.error('Error submitting vote',
+            error: failure.toString(), tag: 'NotificationOverlayProvider');
         _queueService.notificationClosed();
       },
-      (_) {
-        // Success: Signal queue service to process next notification (300ms delay)
-        _queueService.notificationClosed(delayMilliseconds: 300);
+      (postVoting) async {
+        Logger.info('Vote submitted successfully for post ${votingNotif.postId}',
+            tag: 'NotificationOverlayProvider');
+
+        // 2. Mark notification as read (Notification Feature responsibility)
+        final markAsReadResult = await _markAsRead.call(MarkAsReadParams(
+          notificationId: notification.id,
+          userId: notification.userId,
+        ));
+
+        // Handle mark as read result
+        markAsReadResult.fold(
+          (failure) {
+            // Show error toast to user
+            BotToast.showText(text: failure.message);
+            Logger.error('Error marking notification as read',
+                error: failure.message, tag: 'NotificationOverlayProvider');
+            _queueService.notificationClosed();
+          },
+          (_) {
+            // Success: Signal queue service to process next notification (300ms delay)
+            _queueService.notificationClosed(delayMilliseconds: 300);
+          },
+        );
       },
     );
   }

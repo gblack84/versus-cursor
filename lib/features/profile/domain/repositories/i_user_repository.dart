@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
-import '../models/user_profile.dart';
-import '../models/user_settings.dart';
+import '../entities/user_profile.dart';
+import '../entities/user_settings.dart';
 import '../failures/profile_failure.dart';
 
 /// Repository interface for User-related operations (Clean Architecture v4.0)

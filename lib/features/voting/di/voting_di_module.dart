@@ -31,8 +31,8 @@ import '../domain/services/i_vote_timer_service.dart';
 import '../data/services/vote_timer_service.dart';
 
 // ===== Domain Layer - UseCases =====
-import '../domain/usecases/watch_vote_state_use_case.dart';
-import '../domain/usecases/submit_vote_use_case.dart';
+import '../domain/usecases/chat/watch_vote_state_use_case.dart';
+import '../domain/usecases/chat/submit_vote_use_case.dart';
 
 // ===== Coordinators & Helpers =====
 
@@ -65,7 +65,7 @@ void _registerRepositories(GetIt getIt) {
   );
 
   // Chat Card Voting Repository (PostVoting-based for chat cards)
-  getIt.registerLazySingleton<VotingRepository>(
+  getIt.registerLazySingleton<IVotingChatRepository>(
     () => VotingChatRepositoryImpl(
       firestore: FirebaseFirestore.instance,
     ),
@@ -81,12 +81,12 @@ void _registerRepositories(GetIt getIt) {
 void _registerChatCardUseCases(GetIt getIt) {
   // 1. Watch Vote State (Coordinator.getVoteStateStream 대체)
   getIt.registerFactory<WatchVoteStateUseCase>(
-    () => WatchVoteStateUseCase(getIt<VotingRepository>()),
+    () => WatchVoteStateUseCase(getIt<IVotingChatRepository>()),
   );
 
   // 2. Submit Vote (Coordinator.submitVote 대체)
   getIt.registerFactory<SubmitVoteUseCase>(
-    () => SubmitVoteUseCase(getIt<VotingRepository>()),
+    () => SubmitVoteUseCase(getIt<IVotingChatRepository>()),
   );
 }
 

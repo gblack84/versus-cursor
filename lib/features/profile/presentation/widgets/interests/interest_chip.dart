@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '/core_exports.dart';
-import '/features/profile/domain/models/interest.dart';
+import '/features/profile/domain/entities/interest.dart';
 
 /// 관심사 칩 위젯
 ///

@@ -33,55 +33,55 @@ extension FirebaseErrorExtension on FirebaseException {
     switch (code) {
       // 권한 관련 에러
       case 'permission-denied':
-        return PermissionDenied(
+        return VotingFailure.permissionDenied(
           message ?? '해당 작업을 수행할 권한이 없습니다',
         );
 
       case 'unauthenticated':
-        return const Unauthenticated();
+        return const VotingFailure.unauthenticated();
 
       // 데이터 관련 에러
       case 'not-found':
-        return const NotFound();
+        return const VotingFailure.notFound();
 
       case 'already-exists':
-        return AlreadyExists(
+        return VotingFailure.alreadyExists(
           message ?? '이미 존재하는 데이터입니다',
         );
 
       // 네트워크 관련 에러
       case 'unavailable':
-        return const NetworkError();
+        return const VotingFailure.networkError();
 
       case 'deadline-exceeded':
-        return const Timeout();
+        return const VotingFailure.timeout();
 
       // 할당량 관련 에러
       case 'resource-exhausted':
-        return QuotaExceeded(
+        return VotingFailure.quotaExceeded(
           message ?? 'Firestore 할당량을 초과했습니다',
         );
 
       // 입력 검증 에러
       case 'invalid-argument':
-        return InvalidArgument(
+        return VotingFailure.invalidArgument(
           message ?? '잘못된 요청 파라미터입니다',
         );
 
       case 'failed-precondition':
-        return FailedPrecondition(
+        return VotingFailure.failedPrecondition(
           message ?? '사전 조건이 충족되지 않았습니다',
         );
 
       // 기타 에러
       case 'cancelled':
-        return const Cancelled();
+        return const VotingFailure.cancelled();
 
       case 'aborted':
-        return const Aborted();
+        return const VotingFailure.aborted();
 
       default:
-        return Unexpected(
+        return VotingFailure.unexpected(
           message ?? 'Firebase 에러: $code',
         );
     }
@@ -104,18 +104,18 @@ extension StringErrorExtension on String {
 
     // 한국어 에러 메시지 패턴 매칭
     if (errorStr.contains('이미 투표')) {
-      return const AlreadyVoted();
+      return const VotingFailure.alreadyVoted();
     } else if (errorStr.contains('찾을 수 없')) {
-      return const NotFound();
+      return const VotingFailure.notFound();
     } else if (errorStr.contains('권한')) {
-      return PermissionDenied(this);
+      return VotingFailure.permissionDenied(this);
     } else if (errorStr.contains('네트워크') || errorStr.contains('연결')) {
-      return const NetworkError();
+      return const VotingFailure.networkError();
     } else if (errorStr.contains('시간 초과') || errorStr.contains('timeout')) {
-      return const Timeout();
+      return const VotingFailure.timeout();
     }
 
     // 기본: Unexpected
-    return Unexpected(this);
+    return VotingFailure.unexpected(this);
   }
 }

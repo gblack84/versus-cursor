@@ -1,5 +1,5 @@
 import 'package:dartz/dartz.dart';
-import '../models/profile_info.dart';
+import '../entities/profile_info.dart';
 import '../failures/profile_failure.dart';
 
 /// Repository interface for profile operations (Clean Architecture v4.0)

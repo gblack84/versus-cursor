@@ -1,5 +1,5 @@
 import 'package:dartz/dartz.dart';
-import '../models/user_settings.dart';
+import '../entities/user_settings.dart';
 import '../failures/profile_failure.dart';
 
 /// Settings Repository 인터페이스

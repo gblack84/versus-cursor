@@ -1,4 +1,5 @@
-import '/core/types/result.dart';
+import 'package:dartz/dartz.dart';
+
 import '../failures/chat_failure.dart';
 import '../entities/message.dart';
 
@@ -29,20 +30,20 @@ class SearchMessagesUseCase {
   /// - [query]: 검색어
   ///
   /// **Returns**:
-  /// - `Result<List<Message>>`: 필터링된 메시지 목록 (Domain Entity)
+  /// - `Either<ChatFailure, List<Message>>`: 필터링된 메시지 목록 (Domain Entity)
   ///
   /// **검색 로직**:
   /// 1. query가 비어있으면 전체 메시지 반환
   /// 2. 메시지 content에 query가 포함되는지 대소문자 구분 없이 검색
   /// 3. 필터링된 결과 반환
-  Result<List<Message>> execute({
+  Either<ChatFailure, List<Message>> execute({
     required List<Message> allMessages,
     required String query,
   }) {
     try {
       // 검색어가 비어있으면 전체 반환
       if (query.trim().isEmpty) {
-        return Success(allMessages);
+        return right(allMessages);
       }
 
       final lowerQuery = query.toLowerCase();
@@ -52,11 +53,9 @@ class SearchMessagesUseCase {
         return msg.content.toLowerCase().contains(lowerQuery);
       }).toList();
 
-      return Success(filtered);
+      return right(filtered);
     } catch (e) {
-      return const ResultFailure(
-        SearchFailed(),
-      );
+      return left(const SearchFailed());
     }
   }
 }

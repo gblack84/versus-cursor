@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '/core_exports.dart';
-import '/features/profile/domain/models/user_profile.dart';
+import '/features/profile/domain/entities/user_profile.dart';
 import '/features/profile/presentation/providers/profile_providers.dart';
 import '/features/profile/presentation/widgets/common/loading_indicator.dart';
 import '/features/profile/presentation/widgets/common/error_message.dart';

@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '../../repositories/i_user_repository.dart';
-import '../../models/user_profile.dart';
+import '../../entities/user_profile.dart';
 import '../../failures/profile_failure.dart';
 
 /// 프로필 업데이트 UseCase (Clean Architecture v4.0)

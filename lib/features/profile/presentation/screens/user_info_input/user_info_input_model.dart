@@ -1,4 +1,4 @@
-import '/features/profile/domain/models/user_profile.dart';
+import '/features/profile/domain/entities/user_profile.dart';
 import '/core_exports.dart';
 import '/features/profile/presentation/screens/user_info/language_selector/language_selector_widget.dart';
 import '/app/widgets/index.dart';

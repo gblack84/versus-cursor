@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/profile_providers.dart';
-import '/features/profile/domain/models/user_profile.dart';
+import '/features/profile/domain/entities/user_profile.dart';
 
 /// 프로필 완성도 카드 위젯 (Riverpod)
 ///

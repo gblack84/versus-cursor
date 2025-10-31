@@ -2,16 +2,15 @@ import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'simple_memory_cache.dart';
 import 'cache_statistics.dart';
-import '/app/contracts/cache_contract.dart' hide CacheKeys;
 import '/app/models/lat_lng.dart';
 // Domain models imports (migrated from backend.dart)
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/features/chat/data/models/message_dto.dart';
-import '/features/profile/domain/models/user_profile.dart';
-import '/features/profile/domain/models/user_profile_extensions.dart';
-import '/features/profile/domain/models/user_settings.dart';
-import '/features/profile/domain/models/profile_info.dart';
-import '/features/profile/domain/models/character.dart';
+import '/features/chat/domain/entities/message_extensions.dart';
+import '/features/profile/domain/entities/user_profile.dart';
+import '/features/profile/domain/entities/user_profile_extensions.dart';
+import '/features/profile/domain/entities/user_settings.dart';
+import '/features/profile/domain/entities/profile_info.dart';
+import '/features/profile/domain/entities/character.dart';
 import '/features/voting/domain/entities/dialog/vote_counts_model.dart';
 import '/features/voting/domain/entities/dialog/vote_cache_state.dart';
 import '/features/auth/domain/entities/auth_user.dart';
@@ -27,7 +26,7 @@ enum CacheLayer {
 /// 통합 캐시 서비스
 ///
 /// 3-Layer 캐싱 아키텍처를 구현하여 앱 성능을 대폭 향상
-abstract class UnifiedCacheService implements CacheContract {
+abstract class UnifiedCacheService {
   // 싱글톤 인스턴스
   static late UnifiedCacheService _instance;
   static UnifiedCacheService get instance => _instance;
@@ -49,17 +48,11 @@ abstract class UnifiedCacheService implements CacheContract {
   Future<void> clear({CacheLayer? layer});
 
   // CacheContract implementation
-  @override
   Future<List<Map<String, dynamic>>> getFeedPosts({int limit = 20});
-  @override
   Future<void> setFeedPosts(List<Map<String, dynamic>> posts);
-  @override
   Future<void> clearFeedPosts();
-  @override
   Future<UserProfile?> getUserProfile(String userId);
-  @override
   Future<void> setUserProfile(String userId, UserProfile profile);
-  @override
   Future<void> clearUserProfile(String userId);
 
   // UserSettings 캐싱
@@ -111,19 +104,12 @@ abstract class UnifiedCacheService implements CacheContract {
   Future<void> setAuthToken(String userId, String token, {Duration? ttl});
   Future<void> clearAuthToken(String userId);
 
-  @override
   Future<List<Map<String, dynamic>>> getChatMessages({required String chatId, int limit = 30});
-  @override
   Future<void> setChatMessages({required String chatId, required List<Map<String, dynamic>> messages});
-  @override
   Future<void> clearChatMessages(String chatId);
-  @override
   Future<void> clearAll();
-  @override
   Map<String, dynamic> getStatistics();
-  @override
   Future<void> preloadRecentChats();
-  @override
   Future<void> preloadPopularPosts();
 
   // 통계
@@ -373,7 +359,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           .get(const GetOptions(source: Source.cache));
 
       final messages = snapshot.docs
-          .map((doc) => MessageDto.fromFirestore(doc).toFirestore())
+          .map((doc) => MessageFirestore.fromFirestore(doc).toFirestore())
           .toList();
 
       // 메모리 및 로컬 DB에 저장
@@ -401,7 +387,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
           .get();
 
       final messages = snapshot.docs
-          .map((doc) => MessageDto.fromFirestore(doc).toFirestore())
+          .map((doc) => MessageFirestore.fromFirestore(doc).toFirestore())
           .toList();
 
       // 캐시 업데이트 (메모리 및 로컬 DB)
@@ -444,7 +430,7 @@ class UnifiedCacheServiceImpl extends UnifiedCacheService {
             .get();
 
         final messages = snapshot.docs
-            .map((doc) => MessageDto.fromFirestore(doc).toFirestore())
+            .map((doc) => MessageFirestore.fromFirestore(doc).toFirestore())
             .toList();
 
         // 캐시 업데이트

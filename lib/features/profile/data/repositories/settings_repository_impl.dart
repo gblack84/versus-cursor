@@ -2,8 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import '../../domain/repositories/i_settings_repository.dart';
-import '../../domain/models/user_settings.dart';
-import '../../domain/models/user_profile_extensions.dart';
+import '../../domain/entities/user_settings.dart';
+import '../../domain/entities/user_profile_extensions.dart';
 import '../../domain/failures/profile_failure.dart';
 import '/services/cache/unified_cache_service.dart';
 

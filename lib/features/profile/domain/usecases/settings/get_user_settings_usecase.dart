@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../repositories/i_user_repository.dart';
-import '../../models/user_settings.dart';
+import '../../entities/user_settings.dart';
 import '../../failures/profile_failure.dart';
 
 /// 사용자 설정 조회 UseCase

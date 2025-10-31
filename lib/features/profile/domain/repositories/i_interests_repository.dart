@@ -1,5 +1,5 @@
 import 'package:dartz/dartz.dart';
-import '../models/interest.dart';
+import '../entities/interest.dart';
 import '../failures/profile_failure.dart';
 
 /// Interests Repository 인터페이스

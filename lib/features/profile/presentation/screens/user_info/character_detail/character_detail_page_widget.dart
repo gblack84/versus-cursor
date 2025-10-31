@@ -10,7 +10,7 @@ export 'character_detail_page_model.dart';
 // Phase 3: Riverpod
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/features/profile/presentation/providers/profile_providers.dart';
-import '/features/profile/domain/models/user_profile.dart';
+import '/features/profile/domain/entities/user_profile.dart';
 // Phase 4: Contract 패턴으로 Feature 간 의존성 제거
 import '/app/contracts/auth_contract.dart';
 import 'package:get_it/get_it.dart';

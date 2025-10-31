@@ -12,16 +12,20 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '/app/di.dart';
 import '/features/auth/domain/entities/auth_user.dart';
-import '/features/auth/domain/usecases/sign_in_with_email_usecase.dart';
-import '/features/auth/domain/usecases/sign_up_with_email_usecase.dart';
-import '/features/auth/domain/usecases/sign_in_with_google_usecase.dart';
-import '/features/auth/domain/usecases/sign_in_with_apple_usecase.dart';
-import '/features/auth/domain/usecases/sign_in_with_phone_usecase.dart';
-import '/features/auth/domain/usecases/get_current_user_usecase.dart';
-import '/features/auth/domain/usecases/password_management_usecase.dart';
-import '/features/auth/domain/usecases/email_verification_usecase.dart';
-import '/features/auth/domain/usecases/account_management_usecase.dart';
-import '/features/auth/domain/usecases/sign_out_usecase.dart';
+// Sign In
+import '/features/auth/domain/usecases/sign_in/sign_in_with_email_usecase.dart';
+import '/features/auth/domain/usecases/sign_in/sign_in_with_google_usecase.dart';
+import '/features/auth/domain/usecases/sign_in/sign_in_with_apple_usecase.dart';
+import '/features/auth/domain/usecases/sign_in/sign_in_with_phone_usecase.dart';
+// Sign Up
+import '/features/auth/domain/usecases/sign_up/sign_up_with_email_usecase.dart';
+// Account Management
+import '/features/auth/domain/usecases/account/password_management_usecase.dart';
+import '/features/auth/domain/usecases/account/email_verification_usecase.dart';
+import '/features/auth/domain/usecases/account/account_management_usecase.dart';
+// Session
+import '/features/auth/domain/usecases/session/get_current_user_usecase.dart';
+import '/features/auth/domain/usecases/session/sign_out_usecase.dart';
 
 // ========================================
 // UseCase Providers (GetIt Wrapping)

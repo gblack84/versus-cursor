@@ -1,4 +1,5 @@
-import '/core/types/result.dart';
+import 'package:dartz/dartz.dart';
+
 import '../failures/chat_failure.dart';
 import '../repositories/i_chat_repository.dart';
 import '../entities/message.dart';
@@ -19,9 +20,9 @@ import '../entities/message.dart';
 ///   limit: 30,
 /// );
 ///
-/// result.when(
-///   success: (olderMessages) => print('${olderMessages.length}개 추가 로드'),
-///   failure: (error) => print('로드 실패: $error'),
+/// result.fold(
+///   (failure) => print('로드 실패: $failure'),
+///   (olderMessages) => print('${olderMessages.length}개 추가 로드'),
 /// );
 /// ```
 class LoadMoreMessagesUseCase {
@@ -38,7 +39,7 @@ class LoadMoreMessagesUseCase {
   /// - [limit]: 추가로 로드할 메시지 개수 (기본값: 30)
   ///
   /// **Returns**:
-  /// - `Result<List<Message>>`: 성공 시 이전 메시지 목록, 실패 시 에러 메시지
+  /// - `Either<ChatFailure, List<Message>>`: 성공 시 이전 메시지 목록, 실패 시 에러 메시지
   ///
   /// **Architecture Flow**:
   /// ```
@@ -51,7 +52,7 @@ class LoadMoreMessagesUseCase {
   /// **주의사항**:
   /// - 더 이상 로드할 메시지가 없으면 빈 리스트 반환
   /// - 빈 리스트를 Provider에서 감지하여 hasMore = false 처리
-  Future<Result<List<Message>>> execute({
+  Future<Either<ChatFailure, List<Message>>> execute({
     required String chatId,
     required String lastMessageId,
     int limit = 30,
@@ -59,15 +60,11 @@ class LoadMoreMessagesUseCase {
     try {
       // 입력 검증
       if (chatId.isEmpty) {
-        return const ResultFailure(
-          InvalidMessageContent(),
-        );
+        return left(const InvalidMessageContent());
       }
 
       if (lastMessageId.isEmpty) {
-        return const ResultFailure(
-          InvalidMessageContent(),
-        );
+        return left(const InvalidMessageContent());
       }
 
       // Clean Architecture v4.0: messageId만 전달, Repository에서 Firestore 처리
@@ -77,11 +74,9 @@ class LoadMoreMessagesUseCase {
         limit: limit,
       );
 
-      return Success(messages);
+      return right(messages);
     } catch (e) {
-      return const ResultFailure(
-        MessageLoadFailed(),
-      );
+      return left(const MessageLoadFailed());
     }
   }
 }

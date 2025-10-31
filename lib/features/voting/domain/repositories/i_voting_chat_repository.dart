@@ -3,7 +3,7 @@ import '../entities/chat/post_voting.dart';
 import '../failures/voting_failure.dart';
 
 /// Repository interface for voting operations
-abstract class VotingRepository {
+abstract class IVotingChatRepository {
   /// Get voting data for a post
   Future<Either<VotingFailure, PostVoting>> getVoting(String postId);
 

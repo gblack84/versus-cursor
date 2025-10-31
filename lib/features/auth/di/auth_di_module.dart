@@ -24,16 +24,20 @@ import '../domain/repositories/i_auth_repository.dart';
 import '../data/repositories/auth_repository_impl.dart';
 
 // ===== Domain Layer - UseCases (10 total) =====
-import '../domain/usecases/sign_in_with_email_usecase.dart';
-import '../domain/usecases/sign_up_with_email_usecase.dart';
-import '../domain/usecases/sign_in_with_google_usecase.dart';
-import '../domain/usecases/sign_in_with_apple_usecase.dart';
-import '../domain/usecases/sign_in_with_phone_usecase.dart';
-import '../domain/usecases/sign_out_usecase.dart';
-import '../domain/usecases/get_current_user_usecase.dart';
-import '../domain/usecases/password_management_usecase.dart';
-import '../domain/usecases/email_verification_usecase.dart';
-import '../domain/usecases/account_management_usecase.dart';
+// Sign In
+import '../domain/usecases/sign_in/sign_in_with_email_usecase.dart';
+import '../domain/usecases/sign_in/sign_in_with_google_usecase.dart';
+import '../domain/usecases/sign_in/sign_in_with_apple_usecase.dart';
+import '../domain/usecases/sign_in/sign_in_with_phone_usecase.dart';
+// Sign Up
+import '../domain/usecases/sign_up/sign_up_with_email_usecase.dart';
+// Account Management
+import '../domain/usecases/account/password_management_usecase.dart';
+import '../domain/usecases/account/email_verification_usecase.dart';
+import '../domain/usecases/account/account_management_usecase.dart';
+// Session
+import '../domain/usecases/session/sign_out_usecase.dart';
+import '../domain/usecases/session/get_current_user_usecase.dart';
 
 /// Register all Auth feature dependencies
 /// Call this function from main setupDependencyInjection()

@@ -3,7 +3,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import '/core/utils/idempotency_service.dart';
 import '../../domain/repositories/i_interests_repository.dart';
-import '../../domain/models/interest.dart';
+import '../../domain/entities/interest.dart';
 import '../../domain/failures/profile_failure.dart';
 import '/services/cache/unified_cache_service.dart';
 

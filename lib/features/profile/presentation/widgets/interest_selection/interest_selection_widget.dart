@@ -11,7 +11,7 @@ import 'package:webviewx_plus/webviewx_plus.dart';
 import 'package:get_it/get_it.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/features/profile/presentation/providers/profile_providers.dart';
-import '/features/profile/domain/models/user_profile.dart';
+import '/features/profile/domain/entities/user_profile.dart';
 import '/app/contracts/auth_contract.dart';
 import 'interest_category.dart';
 import 'interest_selection_model.dart';

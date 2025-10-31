@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '../../repositories/i_characters_repository.dart';
-import '../../models/character.dart';
+import '../../entities/character.dart';
 import '../../failures/profile_failure.dart';
 
 /// 사용 가능한 캐릭터 목록 조회 UseCase

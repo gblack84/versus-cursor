@@ -1,160 +1,134 @@
 /// ═══════════════════════════════════════════════════════════════════════════
-/// ChatListWidgetClean - Clean Architecture v4.0 버전
+/// ChatListWidgetClean - Clean Architecture v4.0 + Riverpod 2.x
 /// ═══════════════════════════════════════════════════════════════════════════
 ///
-/// **마이그레이션 완료**:
-/// - UI → Provider → UseCase → Repository 플로우
-/// - StreamBuilder → Consumer 패턴 전환
-/// - GetIt 직접 호출 제거 (DI 주입)
+/// **Phase 2 마이그레이션 완료**:
+/// - ChangeNotifier → Riverpod StreamProvider
+/// - StatefulWidget → ConsumerWidget
+/// - 수동 초기화 제거 (자동 Stream 시작)
+/// - AsyncValue.when() 패턴 적용
 ///
-/// **기존 chat_list_widget.dart와의 차이**:
-/// - 268줄 → ~150줄 (44% 감소)
-/// - Repository 직접 접근 제거
-/// - Provider 레이어 추가
-/// - 버그 수정: currentUserUid.orderBy() → queryChats(queryBuilder: ...)
+/// **코드 감소**:
+/// - 332줄 → ~250줄 (25% 감소)
+/// - initState/dispose 제거
+/// - State 관리 로직 제거
 ///
 /// ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '/app/di.dart';
 import '/core_exports.dart';
 import '/features/chat/domain/entities/chat.dart';
 import '/core/design_system/design_system.dart';
 import '/features/chat/presentation/screens/chat_detail/chat_detail_widget_clean.dart';
-import '../../providers/chat_list_provider.dart';
+import '../../providers/chat_providers.dart';
+import '../../providers/chat_params.dart';
 
-/// Clean Architecture 버전 Chat List Widget
+/// Clean Architecture + Riverpod 버전 Chat List Widget
 ///
 /// **Features**:
-/// - Provider 기반 상태 관리
-/// - UseCase 통한 비즈니스 로직 처리
+/// - Riverpod StreamProvider 기반 상태 관리
+/// - 자동 Stream 구독/해제 (autoDispose)
+/// - AsyncValue.when() 패턴으로 loading/error/data 자동 분기
 /// - 실시간 채팅 목록 구독
-class ChatListWidgetClean extends StatefulWidget {
+class ChatListWidgetClean extends ConsumerWidget {
   const ChatListWidgetClean({Key? key}) : super(key: key);
 
   static String routeName = 'chatList';
   static String routePath = '/chat/list';
 
-  @override
-  State<ChatListWidgetClean> createState() => _ChatListWidgetCleanState();
-}
-
-class _ChatListWidgetCleanState extends State<ChatListWidgetClean> {
-  late final ChatListProvider _provider;
-  final scaffoldKey = GlobalKey<ScaffoldState>();
-
   // Firebase Auth helper
   String get currentUserUid => FirebaseAuth.instance.currentUser?.uid ?? '';
 
   @override
-  void initState() {
-    super.initState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    // ✅ Riverpod: StreamProvider를 watch (자동 초기화, 자동 dispose)
+    final asyncChats = ref.watch(chatListStreamProvider(
+      ChatListParams(userId: currentUserUid, limit: 50),
+    ));
 
-    // DI에서 Provider 가져오기
-    _provider = getIt<ChatListProvider>();
-
-    // 채팅 목록 초기화
-    if (currentUserUid.isNotEmpty) {
-      _provider.initializeChatList(currentUserUid);
-    }
-  }
-
-  @override
-  void dispose() {
-    // Provider는 dispose하지 않음 (GetIt이 관리)
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: _provider,
-      child: Scaffold(
-        key: scaffoldKey,
-        backgroundColor: VersusColors.backgroundPrimary,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          automaticallyImplyLeading: false,
-          title: Text(
-            '채팅',
-            style: VersusTextStyles.headingSmall.copyWith(
-              color: Colors.black,
-            ),
+    return Scaffold(
+      backgroundColor: VersusColors.backgroundPrimary,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        automaticallyImplyLeading: false,
+        title: Text(
+          '채팅',
+          style: VersusTextStyles.headingSmall.copyWith(
+            color: Colors.black,
           ),
-          actions: [
-            IconButton(
-              icon: Icon(
-                Icons.add_comment_outlined,
-                color: Colors.black,
-                size: 24.0,
-              ),
-              onPressed: () {
-                // 새 채팅 시작
-                BotToast.showText(text: '새 채팅 시작 기능은 준비 중입니다.');
-              },
-            ),
-          ],
-          centerTitle: true,
-          elevation: 0.0,
         ),
-        body: SafeArea(
-          top: true,
-          child: Consumer<ChatListProvider>(
-            builder: (context, provider, _) {
-              // 로딩 상태 처리
-              if (provider.state == ChatListLoadingState.loading) {
-                return Center(
-                  child: SizedBox(
-                    width: 50.0,
-                    height: 50.0,
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        VersusColors.primary,
-                      ),
-                    ),
-                  ),
-                );
-              }
-
-              // 에러 상태 처리
-              if (provider.state == ChatListLoadingState.error) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline,
-                          size: 48, color: VersusColors.error),
-                      const SizedBox(height: 16),
-                      Text(
-                        '에러: ${provider.errorMessage}',
-                        style: VersusTextStyles.bodyLarge,
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              // 빈 목록 처리
-              if (provider.chats.isEmpty) {
-                return _buildEmptyState();
-              }
-
-              // 채팅 목록 표시
-              return ListView.builder(
-                padding: EdgeInsets.zero,
-                scrollDirection: Axis.vertical,
-                itemCount: provider.chats.length,
-                itemBuilder: (context, index) {
-                  final chatItem = provider.chats[index];
-                  return _buildChatItem(chatItem);
-                },
-              );
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.add_comment_outlined,
+              color: Colors.black,
+              size: 24.0,
+            ),
+            onPressed: () {
+              // 새 채팅 시작
+              BotToast.showText(text: '새 채팅 시작 기능은 준비 중입니다.');
             },
           ),
+        ],
+        centerTitle: true,
+        elevation: 0.0,
+      ),
+      body: SafeArea(
+        top: true,
+        // ✅ AsyncValue.when()으로 loading/error/data 자동 분기
+        child: asyncChats.when(
+          // Loading 상태
+          loading: () => Center(
+            child: SizedBox(
+              width: 50.0,
+              height: 50.0,
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  VersusColors.primary,
+                ),
+              ),
+            ),
+          ),
+          // Error 상태
+          error: (error, stack) {
+            final errorMessage = error.toString();
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline,
+                      size: 48, color: VersusColors.error),
+                  const SizedBox(height: 16),
+                  Text(
+                    '에러: $errorMessage',
+                    style: VersusTextStyles.bodyLarge,
+                  ),
+                ],
+              ),
+            );
+          },
+          // Success 상태
+          data: (chats) {
+            // 빈 목록 처리
+            if (chats.isEmpty) {
+              return _buildEmptyState();
+            }
+
+            // 채팅 목록 표시
+            return ListView.builder(
+              padding: EdgeInsets.zero,
+              scrollDirection: Axis.vertical,
+              itemCount: chats.length,
+              itemBuilder: (context, index) {
+                final chatItem = chats[index];
+                return _buildChatItem(context, chatItem);
+              },
+            );
+          },
         ),
       ),
     );
@@ -190,7 +164,7 @@ class _ChatListWidgetCleanState extends State<ChatListWidgetClean> {
     );
   }
 
-  Widget _buildChatItem(Chat chat) {
+  Widget _buildChatItem(BuildContext context, Chat chat) {
     // AI 채팅방인지 확인
     final isAIChat = chat.participantIds.contains('ai_assistant') ||
         chat.chatType == 'aiChat';

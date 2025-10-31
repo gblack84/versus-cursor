@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '../../repositories/i_profile_repository.dart';
-import '../../models/profile_info.dart';
+import '../../entities/profile_info.dart';
 import '../../failures/profile_failure.dart';
 
 /// 프로필 경량 정보 조회 UseCase

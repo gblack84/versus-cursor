@@ -1,5 +1,5 @@
 import 'package:dartz/dartz.dart';
-import '../models/character.dart';
+import '../entities/character.dart';
 import '../failures/profile_failure.dart';
 
 /// Characters Repository 인터페이스

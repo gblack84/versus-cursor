@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/features/voting/domain/entities/chat/vote_state.dart';
-import '/features/voting/domain/usecases/watch_vote_state_use_case.dart';
+import '/features/voting/domain/usecases/chat/watch_vote_state_use_case.dart';
 import '/app/di.dart';
 
 /// **VoteStateCoordinator._stateCache (BehaviorSubject) 완벽 대체**

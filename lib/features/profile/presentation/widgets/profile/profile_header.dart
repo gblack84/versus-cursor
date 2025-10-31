@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '/core_exports.dart';
-import '/features/profile/domain/models/user_profile.dart';
+import '/features/profile/domain/entities/user_profile.dart';
 import 'profile_avatar.dart';
 
 /// 프로필 헤더 위젯

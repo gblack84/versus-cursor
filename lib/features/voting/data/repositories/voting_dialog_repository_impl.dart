@@ -7,9 +7,9 @@ import '../../domain/failures/voting_failure.dart';
 import '../../domain/entities/dialog/vote_expansion_request.dart';
 import '../../domain/entities/dialog/weight.dart';
 import '../extensions/firestore_error_extensions.dart';
-import '../extensions/vote_expansion_request_extensions.dart';
-import '../extensions/weight_extensions.dart';
-import '../extensions/vote_extensions.dart';
+import '../../domain/entities/vote_expansion_request_extensions.dart';
+import '../../domain/entities/weight_extensions.dart';
+import '../../domain/entities/vote_extensions.dart';
 import '../../../../core/utils/idempotency_service.dart';
 import '../../../../core/utils/shard_utils.dart';
 import '../../../../services/cache/unified_cache_service.dart';
@@ -167,7 +167,7 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
       if (kDebugMode) {
         print('[DialogRepo] Idempotency violation: $e');
       }
-      return const Left(AlreadyVoted());
+      return const Left(VotingFailure.alreadyVoted());
     } on FirebaseException catch (e) {
       if (kDebugMode) {
         print('[DialogRepo] castVote Firebase error: $e');

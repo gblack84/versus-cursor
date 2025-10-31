@@ -12,7 +12,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import '/app/di.dart';
-import '/features/voting/domain/usecases/submit_vote_use_case.dart';
+import '/features/voting/domain/usecases/chat/submit_vote_use_case.dart';
 import '/features/voting/domain/failures/voting_failure.dart';
 
 // ============================================================================
@@ -94,15 +94,24 @@ class VoteSubmissionController {
   /// VotingFailure → 사용자 메시지 변환
   String _mapFailureToMessage(VotingFailure failure) {
     return failure.when(
-      serverError: () => '서버 오류가 발생했습니다',
-      networkError: () => '네트워크 연결을 확인해주세요',
-      notFound: () => '투표를 찾을 수 없습니다',
-      alreadyVoted: () => '이미 투표하셨습니다',
-      votingClosed: () => '투표가 종료되었습니다',
-      unauthorized: () => '권한이 없습니다',
-      invalidData: () => '잘못된 투표 데이터입니다',
-      cacheError: () => '캐시 오류가 발생했습니다',
-      unexpected: (message) => '투표 처리 중 오류가 발생했습니다: ${message ?? "알 수 없는 오류"}',
+      networkError: (_) => '네트워크 연결을 확인해주세요',
+      timeout: (_) => '요청 시간이 초과되었습니다',
+      serverError: (_) => '서버 오류가 발생했습니다',
+      notFound: (_) => '투표를 찾을 수 없습니다',
+      permissionDenied: (_) => '권한이 거부되었습니다',
+      unauthenticated: (_) => '인증이 필요합니다',
+      unauthorized: (_) => '권한이 없습니다',
+      alreadyExists: (_) => '이미 존재하는 데이터입니다',
+      quotaExceeded: (_) => '할당량을 초과했습니다',
+      cancelled: (_) => '작업이 취소되었습니다',
+      aborted: (_) => '작업이 중단되었습니다',
+      invalidArgument: (_) => '잘못된 요청입니다',
+      invalidData: (_) => '잘못된 투표 데이터입니다',
+      failedPrecondition: (_) => '사전 조건이 충족되지 않았습니다',
+      alreadyVoted: (_) => '이미 투표하셨습니다',
+      votingClosed: (_) => '투표가 종료되었습니다',
+      cacheError: (_) => '캐시 오류가 발생했습니다',
+      unexpected: (message) => '투표 처리 중 오류가 발생했습니다: $message',
     );
   }
 

@@ -4,7 +4,7 @@ import 'language_selector_widget.dart' show LanguageSelectorWidget;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/features/profile/presentation/providers/profile_providers.dart';
-import '/features/profile/domain/models/user_profile.dart';
+import '/features/profile/domain/entities/user_profile.dart';
 import '/app/contracts/auth_contract.dart';
 import 'package:get_it/get_it.dart';
 

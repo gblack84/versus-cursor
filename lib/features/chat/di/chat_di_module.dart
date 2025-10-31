@@ -1,21 +1,25 @@
 /// Chat Feature Dependency Injection Module
 ///
 /// This module configures dependency injection for the Chat feature
-/// following Clean Architecture principles with proper layering:
-/// - DataSources (Remote)
-/// - Repositories
+/// following Clean Architecture v4.0 with Firebase-Centric v2.0:
+/// - Repositories (Direct Firestore + Extension Pattern)
 /// - Ports & Adapters (AI Service)
 /// - UseCases
 /// - Providers
+///
+/// **PHASE 5 Complete**: Extension Pattern 100% 적용
+/// - DataSource/DTO/Mapper 제거 (1,790줄 삭제)
+/// - Extension Pattern으로 Firestore ↔ Entity 직접 변환
+/// - 코드 간소화 및 유지보수성 향상
 
 import 'package:get_it/get_it.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// ===== Data Layer - DataSource Interfaces =====
-import '../data/datasources/i_chat_remote_datasource.dart';
+// ===== Core Services =====
+import '/core/utils/idempotency_service.dart';
 
-// ===== Data Layer - DataSource Implementations =====
-import '../data/datasources/firebase_chat_remote_datasource.dart';
+// ===== PHASE 3: 3-Layer Caching =====
+// Note: UnifiedCacheService는 Repository에서 직접 사용 (싱글톤)
 
 // ===== Domain Layer - Repository Interfaces (Ports) =====
 import '../domain/repositories/i_chat_repository.dart';
@@ -51,10 +55,11 @@ import '../domain/usecases/send_friend_request_usecase.dart';
 import '../domain/usecases/toggle_follow_usecase.dart';
 
 // ===== Presentation Layer - Providers =====
-import '../presentation/providers/chat_detail_provider.dart';
-import '../presentation/providers/ai_chat_provider.dart';
-import '../presentation/providers/chat_list_provider.dart';
-import '../presentation/providers/friends_provider.dart';
+// Note: All ChangeNotifier-based providers removed (Phase 2 Riverpod migration완료)
+//       - ChatDetailProvider → Removed (Riverpod StreamProvider 사용)
+//       - AIChatProvider → Removed (Riverpod StreamProvider 사용)
+//       - ChatListProvider → Removed (Riverpod StreamProvider 사용)
+//       - FriendsProvider → Removed (Phase 2: Riverpod StreamProvider 사용)
 
 // ===== Presentation Layer - Controllers =====
 import '../presentation/screens/chat_detail/chat_detail_controller_v2.dart';
@@ -62,9 +67,6 @@ import '../presentation/screens/chat_detail/chat_detail_controller_v2.dart';
 /// Register all Chat feature dependencies
 /// Call this function from main setupDependencyInjection()
 void registerChatModule(GetIt getIt) {
-  // ===== DataSource Registration =====
-  _registerDataSource(getIt);
-
   // ===== Repository Registration =====
   _registerRepository(getIt);
 
@@ -74,6 +76,9 @@ void registerChatModule(GetIt getIt) {
   // ===== Port & Adapter Registration =====
   _registerPorts(getIt);
 
+  // ===== Services Registration =====
+  _registerServices(getIt);
+
   // ===== UseCases Registration =====
   _registerUseCases(getIt);
 
@@ -81,22 +86,17 @@ void registerChatModule(GetIt getIt) {
   _registerProviders(getIt);
 }
 
-/// Register Remote DataSource
-void _registerDataSource(GetIt getIt) {
-  // Remote DataSource (Firebase Firestore)
-  getIt.registerLazySingleton<IChatRemoteDatasource>(
-    () => FirebaseChatRemoteDatasource(
-      firestore: FirebaseFirestore.instance,
-    ),
-  );
-}
-
-/// Register Repository implementation
+/// Register Repository implementation with Extension Pattern
+///
+/// **Firebase-Centric v2.0**:
+/// - Direct Firestore access (no DataSource layer)
+/// - Extension Pattern for Entity ↔ Firestore conversion
+/// - Preserves PHASE 3 (3-Layer Caching) + PHASE 4 (Idempotency)
 void _registerRepository(GetIt getIt) {
-  // Chat Repository
   getIt.registerLazySingleton<IChatRepository>(
     () => ChatRepositoryImpl(
-      remoteDatasource: getIt<IChatRemoteDatasource>(),
+      idempotencyService: getIt<IdempotencyService>(),
+      firestore: FirebaseFirestore.instance,
     ),
   );
 }
@@ -123,6 +123,19 @@ void _registerPorts(GetIt getIt) {
   );
 }
 
+/// Register Services (Chat-specific services used across the feature)
+void _registerServices(GetIt getIt) {
+  // PHASE 3: 3-Layer Caching
+  // UnifiedCacheService.instance를 Repository에서 직접 사용 (싱글톤)
+  // ChatCacheService 래퍼 제거 - Auth/Voting/Profile과 동일한 패턴 사용
+
+  // ChatMessageLifecycleService: 메시지 생명주기 관리 (읽음 처리 등)
+  // Singleton으로 등록하여 전체 앱에서 공유
+  getIt.registerLazySingleton<ChatMessageLifecycleService>(
+    () => ChatMessageLifecycleService(),
+  );
+}
+
 /// Register all UseCases (10 total)
 void _registerUseCases(GetIt getIt) {
   // ===== Chat UseCases (6) =====
@@ -139,6 +152,7 @@ void _registerUseCases(GetIt getIt) {
     ),
   );
 
+  // PHASE 4: IdempotencyService removed (now in Repository)
   getIt.registerFactory(
     () => SendMessageUseCase(
       chatRepository: getIt<IChatRepository>(),
@@ -191,50 +205,20 @@ void _registerUseCases(GetIt getIt) {
 }
 
 /// Register Presentation Layer Providers
+///
+/// ✅ Phase 2 Riverpod Migration 100% 완료:
+/// - ChatDetailProvider → Removed (Riverpod StreamProvider 사용)
+/// - AIChatProvider → Removed (Riverpod StreamProvider 사용)
+/// - ChatListProvider → Removed (Riverpod StreamProvider 사용)
+/// - FriendsProvider → Removed (Phase 2: Riverpod StreamProvider 사용)
+///
+/// 모든 UseCases는 chat_providers.dart에서 Riverpod Provider로 래핑됨
+/// 모든 상태 관리는 Riverpod 2.x StreamProvider.autoDispose.family 사용
 void _registerProviders(GetIt getIt) {
   // ChatDetailControllerV2 - manages chat messages in memory
+  // ✅ 여전히 사용됨: ChatDetailWidget의 flutter_chat_ui 통합용
+  // Note: flutter_chat_ui 라이브러리가 InMemoryChatController를 요구함
   getIt.registerFactory(
     () => ChatDetailControllerV2(),
-  );
-
-  // ChatDetailProvider - manages chat detail screen state
-  getIt.registerFactory(
-    () => ChatDetailProvider(
-      getMessagesUseCase: getIt<GetChatMessagesUseCase>(),
-      loadMoreUseCase: getIt<LoadMoreMessagesUseCase>(),
-      sendMessageUseCase: getIt<SendMessageUseCase>(),
-      searchUseCase: getIt<SearchMessagesUseCase>(),
-      lifecycleService: ChatMessageLifecycleService(),
-      chatController: getIt<ChatDetailControllerV2>(),
-    ),
-  );
-
-  // AIChatProvider: Clean Architecture v4.0 (AI 기능 통합)
-  // IAIService 인터페이스에 의존하여 구현체 교체 가능
-  getIt.registerFactory(
-    () => AIChatProvider(
-      getMessagesUseCase: getIt<GetChatMessagesUseCase>(),
-      loadMoreUseCase: getIt<LoadMoreMessagesUseCase>(),
-      searchUseCase: getIt<SearchMessagesUseCase>(),
-      sendAIQueryUseCase: getIt<SendAIQueryUseCase>(),
-      aiService: getIt<IAIService>(),
-    ),
-  );
-
-  // ChatListProvider - manages chat list screen state
-  getIt.registerFactory(
-    () => ChatListProvider(
-      getChatListUseCase: getIt<GetChatListUseCase>(),
-    ),
-  );
-
-  // FriendsProvider - manages friends management screen state
-  getIt.registerFactory(
-    () => FriendsProvider(
-      getRecommendedUseCase: getIt<GetRecommendedFriendsUseCase>(),
-      searchUseCase: getIt<SearchFriendsUseCase>(),
-      sendRequestUseCase: getIt<SendFriendRequestUseCase>(),
-      toggleFollowUseCase: getIt<ToggleFollowUseCase>(),
-    ),
   );
 }

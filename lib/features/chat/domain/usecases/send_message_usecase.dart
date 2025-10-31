@@ -1,72 +1,86 @@
 import 'dart:io';
 
-import '/core/types/result.dart';
+import 'package:dartz/dartz.dart';
+
 import '../failures/chat_failure.dart';
 import '../repositories/i_chat_repository.dart';
 import '../entities/message.dart';
 
-/// 새 메시지를 전송하는 UseCase
+/// Send message UseCase (PHASE 4: Simplified)
 ///
-/// **Clean Architecture v4.0**:
-/// - IChatRepository.sendMessage() 직접 호출
-/// - 순수 Domain Entity (Message) 사용 (Firestore 의존성 완전 제거)
+/// **Clean Architecture v4.0 - Repository-Level Idempotency**:
+/// - IdempotencyService moved to Repository layer
+/// - UseCase simplified to business logic only
+/// - Media upload before message send
+/// - Pure Domain Entity (Message) usage
 ///
-/// **사용 예시**:
+/// **Migration from v3.0**:
+/// - Removed: IdempotencyService dependency (now in Repository)
+/// - Removed: Transaction handling (now in Repository)
+/// - Added: Media upload support
+///
+/// **Usage**:
 /// ```dart
 /// final useCase = SendMessageUseCase(chatRepository: repository);
 /// final result = await useCase.execute(
 ///   chatId: 'chat123',
-///   message: MessagesModel(text: 'Hello', userId: 'user123'),
+///   message: Message(text: 'Hello', senderId: 'user123'),
+///   eventId: 'uuid-v4-generated-by-client',
+///   mediaFile: File('path/to/image.jpg'), // optional
 /// );
 ///
 /// result.fold(
-///   (failure) => print('전송 실패: ${failure.message}'),
-///   (success) => print('전송 성공!'),
+///   (failure) => print('Failed: ${failure.message}'),
+///   (_) => print('Success!'),
 /// );
 /// ```
 class SendMessageUseCase {
   final IChatRepository _chatRepository;
 
-  SendMessageUseCase({required IChatRepository chatRepository})
-      : _chatRepository = chatRepository;
+  SendMessageUseCase({
+    required IChatRepository chatRepository,
+  }) : _chatRepository = chatRepository;
 
-  /// 메시지 전송 (미디어 업로드 포함)
+  /// Send message with optional media upload (PHASE 4: Simplified)
   ///
   /// **Parameters**:
-  /// - [chatId]: 채팅방 ID
-  /// - [message]: 전송할 메시지 (Domain Entity - Message)
-  /// - [mediaFile]: 첨부할 미디어 파일 (optional - 이미지 또는 비디오)
+  /// - [chatId]: Chat room ID
+  /// - [message]: Message entity to send
+  /// - [eventId]: UUID v4 (client-generated, for idempotency)
+  /// - [mediaFile]: Optional media file (image or video)
   ///
   /// **Returns**:
-  /// - `Result<void>`: 성공 시 Success(void), 실패 시 ResultFailure
+  /// - `Either<ChatFailure, Unit>`: Success or failure
   ///
-  /// **Clean Architecture v4.0**:
-  /// - IChatRepository.uploadMedia() + sendMessage() 호출
-  /// - Pure Domain Entity (Message) 사용
-  /// - 미디어 파일이 있으면 먼저 업로드 후 URL을 Message에 추가
-  Future<Result<void>> execute({
+  /// **PHASE 4 Changes**:
+  /// - IdempotencyService now in Repository layer
+  /// - UseCase only handles: validation → media upload → repository call
+  /// - Repository handles: Transaction + Idempotency + Cache
+  ///
+  /// **Business Logic**:
+  /// 1. Validate input (chatId, content/media required)
+  /// 2. Upload media if present
+  /// 3. Send message via repository
+  Future<Either<ChatFailure, Unit>> execute({
     required String chatId,
     required Message message,
+    required String eventId,
     File? mediaFile,
   }) async {
     try {
-      // 입력 검증
+      // 1. Input validation
       if (chatId.isEmpty) {
-        return const ResultFailure(
-          InvalidMessageContent(),
-        );
+        return left(const InvalidMessageContent());
       }
 
-      // 텍스트 메시지는 content 필수, 미디어 메시지는 mediaFile 필수
+      // Text message requires content, media message requires file
       if (message.content.isEmpty && mediaFile == null) {
-        return const ResultFailure(
-          InvalidMessageContent(),
-        );
+        return left(const InvalidMessageContent());
       }
 
       Message finalMessage = message;
 
-      // 미디어 파일이 있으면 먼저 업로드
+      // 2. Upload media if present
       if (mediaFile != null) {
         try {
           final mediaUrl = await _chatRepository.uploadMedia(
@@ -76,27 +90,25 @@ class SendMessageUseCase {
             mediaType: message.mediaType,
           );
 
-          // 업로드된 URL을 Message에 추가
+          // Add uploaded URL to message
           if (message.mediaType == 'image') {
             finalMessage = message.copyWith(imageUrl: mediaUrl);
           } else if (message.mediaType == 'video') {
             finalMessage = message.copyWith(videoUrl: mediaUrl);
           }
         } catch (e) {
-          return const ResultFailure(
-            MessageSendFailed(),
-          );
+          return left(const MessageSendFailed());
         }
       }
 
-      // 메시지 전송
-      await _chatRepository.sendMessage(chatId, finalMessage);
-
-      return const Success(null);
-    } catch (e) {
-      return const ResultFailure(
-        MessageSendFailed(),
+      // 3. Send message (Repository handles idempotency + transaction + cache)
+      return await _chatRepository.sendMessage(
+        chatId: chatId,
+        message: finalMessage,
+        eventId: eventId,
       );
+    } catch (e) {
+      return left(const MessageSendFailed());
     }
   }
 }

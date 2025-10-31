@@ -1,5 +1,5 @@
 import 'package:dartz/dartz.dart';
-import '../../models/user_profile.dart';
+import '../../entities/user_profile.dart';
 import '../../failures/profile_failure.dart';
 import '../../repositories/i_user_repository.dart';
 

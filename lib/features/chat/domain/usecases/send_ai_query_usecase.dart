@@ -1,4 +1,5 @@
-import '/core/types/result.dart';
+import 'package:dartz/dartz.dart';
+
 import '../failures/chat_failure.dart';
 import '../ports/i_ai_service.dart';
 
@@ -38,32 +39,28 @@ class SendAIQueryUseCase {
   /// - [query]: 사용자 질문 (필수, 비어있으면 안 됨)
   ///
   /// **Returns**:
-  /// - `Result<Stream<String>>`: 성공 시 AI 응답 스트림, 실패 시 Failure
+  /// - `Either<ChatFailure, Stream<String>>`: 성공 시 AI 응답 스트림, 실패 시 Failure
   ///
   /// **Validation**:
   /// - query가 비어있으면 ValidationFailure 반환
   ///
   /// **Error Handling**:
   /// - 모든 예외를 ServerFailure로 변환하여 반환
-  Future<Result<Stream<String>>> execute({
+  Future<Either<ChatFailure, Stream<String>>> execute({
     required String query,
   }) async {
     try {
       // 입력 검증
       if (query.trim().isEmpty) {
-        return const ResultFailure(
-          InvalidMessageContent(),
-        );
+        return left(const InvalidMessageContent());
       }
 
       // AI Service 호출
       final stream = _aiService.sendQuery(query.trim());
 
-      return Success(stream);
+      return right(stream);
     } catch (e) {
-      return const ResultFailure(
-        AIQueryFailed(),
-      );
+      return left(const AIQueryFailed());
     }
   }
 

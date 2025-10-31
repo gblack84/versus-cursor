@@ -1,4 +1,5 @@
-import '/core/types/result.dart';
+import 'package:dartz/dartz.dart';
+
 import '../failures/chat_failure.dart';
 import '../repositories/i_chat_repository.dart';
 import '../entities/message.dart';
@@ -14,10 +15,10 @@ import '../entities/message.dart';
 /// final useCase = GetChatMessagesUseCase(chatRepository: repository);
 /// final stream = useCase.execute(chatId: 'chat123', limit: 30);
 ///
-/// stream.listen((result) {
-///   result.when(
-///     success: (messages) => print('받은 메시지: ${messages.length}개'),
-///     failure: (error) => print('에러: $error'),
+/// stream.listen((either) {
+///   either.fold(
+///     (failure) => print('에러: $failure'),
+///     (messages) => print('받은 메시지: ${messages.length}개'),
 ///   );
 /// });
 /// ```
@@ -27,52 +28,43 @@ class GetChatMessagesUseCase {
   GetChatMessagesUseCase({required IChatRepository chatRepository})
       : _chatRepository = chatRepository;
 
-  /// 실시간 메시지 스트림 반환 (Clean Architecture v4.0)
+  /// 실시간 메시지 스트림 반환 (PHASE 1: Either Pattern 완료)
   ///
   /// **Parameters**:
   /// - [chatId]: 채팅방 ID
   /// - [limit]: 한 번에 로드할 메시지 개수 (기본값: 30)
   ///
   /// **Returns**:
-  /// - `Stream<Result<List<Message>>>`: 메시지 목록의 실시간 스트림
+  /// - `Stream<Either<ChatFailure, List<Message>>>`: 메시지 목록의 실시간 스트림
   ///
-  /// **Architecture Flow**:
-  /// ```
-  /// UseCase → Repository.queryMessagesByChatId() → Firestore
-  /// ```
-  /// - UseCase는 Firestore를 모름 (chatId만 전달)
-  /// - Repository에서만 Firestore DocumentReference 생성
-  /// - Pure Domain Entity (Message) 반환
-  Stream<Result<List<Message>>> execute({
+  /// **PHASE 1 Complete - Passthrough Pattern**:
+  /// 1. Repository부터 Either 반환 (캐시/네트워크 에러 처리)
+  /// 2. UseCase는 입력 검증만 수행 후 패스스루
+  /// 3. 불필요한 .map() 변환 제거 (코드 단순화)
+  /// 4. Repository 에러가 그대로 전달됨
+  ///
+  /// **Clean Architecture v4.0**:
+  /// - Firestore 의존성 완전 제거
+  /// - 순수 Domain Entity 사용
+  /// - Either 패턴으로 타입 안전한 에러 처리
+  Stream<Either<ChatFailure, List<Message>>> execute({
     required String chatId,
     int limit = 30,
-  }) {
-    try {
-      // 입력 검증
-      if (chatId.isEmpty) {
-        return Stream.value(
-          const ResultFailure(
-            InvalidMessageContent(),
-          ),
-        );
-      }
+  }) async* {
+    // ✅ 입력 검증
+    if (chatId.isEmpty) {
+      yield left(const InvalidMessageContent());
+      return;
+    }
 
-      // Clean Architecture v4.0: chatId만 전달, Repository에서 Firestore 처리
-      final messagesStream = _chatRepository.queryMessagesByChatId(
-        chatId: chatId,
-        limit: limit,
-        orderBy: 'timeStamp',
-        descending: false,
-      );
-
-      // Stream<List<Message>>을 Result로 감싸서 반환
-      return messagesStream.map((messages) => Success(messages));
-    } catch (e) {
-      return Stream.value(
-        const ResultFailure(
-          MessageLoadFailed(),
-        ),
-      );
+    // ✅ Repository에서 이미 Either 반환하므로 그대로 전달 (패스스루)
+    await for (final either in _chatRepository.queryMessagesByChatId(
+      chatId: chatId,
+      limit: limit,
+      orderBy: 'timeStamp',
+      descending: false,
+    )) {
+      yield either; // 패스스루: Repository → UseCase → Provider
     }
   }
 }

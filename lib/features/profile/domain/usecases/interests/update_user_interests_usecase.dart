@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
 import '../../failures/profile_failure.dart';
 import '../../repositories/i_interests_repository.dart';
-import '../../models/interest.dart';
+import '../../entities/interest.dart';
 
 /// 사용자 관심사 업데이트 UseCase
 ///

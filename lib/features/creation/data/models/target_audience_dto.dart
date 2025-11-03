@@ -1,23 +1,24 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'target_audience_dto.freezed.dart';
+
 /// Data Transfer Object for target audience from Presentation layer
 /// Converts UI layer data format to Domain layer format
-class TargetAudienceDto {
-  final String collectionType;
-  final int targetCount;
-  final bool isPremium;
-  final List<String> selectedInterests;
-  final String selectedAgeGroup;
-  final String selectedGender;
-  final bool activeUserOnly;
-
-  const TargetAudienceDto({
-    required this.collectionType,
-    required this.targetCount,
-    required this.isPremium,
-    required this.selectedInterests,
-    required this.selectedAgeGroup,
-    required this.selectedGender,
-    required this.activeUserOnly,
-  });
+///
+/// **Architecture Note**: This DTO is largely redundant as the Domain layer
+/// TargetAudience already contains all these fields. Consider eliminating
+/// this DTO in future refactoring and passing Domain model directly.
+@freezed
+class TargetAudienceDto with _$TargetAudienceDto {
+  const factory TargetAudienceDto({
+    required String collectionType,
+    required int targetCount,
+    required bool isPremium,
+    required List<String> selectedInterests,
+    required String selectedAgeGroup,
+    required String selectedGender,
+    required bool activeUserOnly,
+  }) = _TargetAudienceDto;
 
   /// Factory constructor for creating from Provider's Map
   /// Converts UI layer keys to Domain layer format
@@ -55,13 +56,5 @@ class TargetAudienceDto {
     };
 
     return ageMapping[ageGroup] ?? '전체';
-  }
-
-  @override
-  String toString() {
-    return 'TargetAudienceDto(collectionType: $collectionType, '
-        'targetCount: $targetCount, isPremium: $isPremium, '
-        'selectedInterests: $selectedInterests, selectedAgeGroup: $selectedAgeGroup, '
-        'selectedGender: $selectedGender, activeUserOnly: $activeUserOnly)';
   }
 }

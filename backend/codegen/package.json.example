@@ -1,0 +1,54 @@
+{
+  "name": "versus-space-functions",
+  "version": "1.0.0",
+  "description": "Firebase Cloud Functions for Versus Space",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "shell": "npm run build && firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log",
+
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+
+    "generate:dart": "node scripts/generate-dart-models.js",
+    "generate:rules": "node scripts/generate-firestore-rules.js",
+    "generate:all": "npm run generate:dart && cd ../.. && dart run build_runner build --delete-conflicting-outputs",
+
+    "migrate:add-camelcase": "node scripts/migrations/add-camelcase-fields.js",
+    "migrate:remove-legacy": "node scripts/migrations/remove-legacy-fields.js",
+    "migrate:validate": "node scripts/migrations/validate-migration.js",
+
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "engines": {
+    "node": "18"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^5.0.0",
+    "zod": "^3.22.0",
+    "@genkit-ai/ai": "^0.5.0",
+    "@genkit-ai/firebase": "^0.5.0",
+    "@genkit-ai/googleai": "^0.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-plugin-import": "^2.29.0",
+    "firebase-functions-test": "^3.0.0",
+    "jest": "^29.0.0",
+    "quicktype": "^23.0.0",
+    "typescript": "^5.2.0"
+  },
+  "private": true
+}

@@ -264,40 +264,41 @@ class CreatePostProviderV2 extends ChangeNotifier {
         context: 'post_creation',
       );
 
-      // Handle moderation failure
-      if (textResult.isLeft()) {
-        return textResult.fold(
-          (failure) {
-            _moderationStatus = ModerationStatus.rejected;
+      // Handle moderation result using fold()
+      final shouldContinue = textResult.fold(
+        (failure) {
+          _moderationStatus = ModerationStatus.rejected;
 
-            // Use getUserMessage() if failure has it
-            if (failure is AIModerationFailure) {
-              _moderationMessage = failure.getUserMessage();
-            } else {
-              _moderationMessage = failure.message;
-            }
+          // Use getUserMessage() if failure has it
+          if (failure is AIModerationFailure) {
+            _moderationMessage = failure.getUserMessage();
+          } else {
+            _moderationMessage = failure.message;
+          }
+          notifyListeners();
+          return false;
+        },
+        (textDecision) {
+          // Check if moderation approved the content
+          if (!textDecision.isApproved) {
+            _moderationStatus = ModerationStatus.rejected;
+            // Create AIModerationFailure with rejection details
+            // TODO(Step 5): Get detectedCategories from UseCase when implemented
+            final failure = AIModerationFailure(
+              aiProvider: 'perspective',
+              confidenceScore: textDecision.confidence,
+              detectedCategories: [], // Will be populated by UseCase in future
+              message: textDecision.reason,
+            );
+            _moderationMessage = failure.getUserMessage();
             notifyListeners();
             return false;
-          },
-          (_) => true, // Won't be called since we checked isLeft()
-        );
-      }
+          }
+          return true;
+        },
+      );
 
-      // Extract the decision from the Right side
-      final textDecision = textResult.getOrElse((_) => throw Exception('Unexpected state'));
-
-      if (!textDecision.isApproved) {
-        _moderationStatus = ModerationStatus.rejected;
-        // Create AIModerationFailure with rejection details
-        // TODO(Step 5): Get detectedCategories from UseCase when implemented
-        final failure = AIModerationFailure(
-          aiProvider: 'perspective',
-          confidenceScore: textDecision.confidence,
-          detectedCategories: [], // Will be populated by UseCase in future
-          message: textDecision.reason,
-        );
-        _moderationMessage = failure.getUserMessage();
-        notifyListeners();
+      if (!shouldContinue) {
         return false;
       }
 

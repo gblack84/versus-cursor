@@ -182,7 +182,7 @@ class MediaUploadProvider extends ChangeNotifier {
       notifyListeners();
 
       // Process images with moderation
-      final processResult = await _imageProcessingService.processMultipleImages(
+      final processResultEither = await _imageProcessingService.processMultipleImages(
         files: task.files,
         box: task.box,
         onProgress: (progress) {
@@ -190,20 +190,31 @@ class MediaUploadProvider extends ChangeNotifier {
         },
       );
 
-      // Check if moderation passed
-      if (processResult.allRejected) {
-        // Build rejection reason from rejectedReasons map
-        final reasons = processResult.rejectedReasons.entries
-            .map((e) => '${e.key}: ${e.value.join(", ")}')
-            .join('; ');
+      // Handle processing result using fold()
+      final processResult = await processResultEither.fold(
+        (failure) async {
+          // Processing/moderation failed
+          throw failure;
+        },
+        (result) async {
+          // Check if moderation passed
+          if (result.allRejected) {
+            // Build rejection reason from rejectedReasons map
+            final reasons = result.rejectedReasons.entries
+                .map((e) => '${e.key}: ${e.value.join(", ")}')
+                .join('; ');
 
-        // Create MediaProcessingFailure with moderation check failure
-        throw MediaProcessingFailure(
-          failedStep: MediaProcessingStep.moderationCheck,
-          affectedFiles: task.files.map((f) => f.path).toList(),
-          details: reasons.isNotEmpty ? reasons : null,
-        );
-      }
+            // Create MediaProcessingFailure with moderation check failure
+            throw MediaProcessingFailure(
+              failedStep: MediaProcessingStep.moderationCheck,
+              affectedFiles: task.files.map((f) => f.path).toList(),
+              details: reasons.isNotEmpty ? reasons : null,
+            );
+          }
+
+          return result;
+        },
+      );
 
       // Upload approved images
       final uploadedUrls = <String>[];
@@ -214,17 +225,26 @@ class MediaUploadProvider extends ChangeNotifier {
 
         try {
           // Upload single file
-          final url = await _mediaRepository.uploadImage(
+          final urlEither = await _mediaRepository.uploadImage(
             path: 'posts/${task.box}',
             fileName: '${task.id}_$i.jpg',
             bytes: await file.readAsBytes(),
           );
 
-          uploadedUrls.add(url);
+          // Handle upload result using fold()
+          urlEither.fold(
+            (failure) {
+              debugPrint('Failed to upload file $i: ${failure.message}');
+              // Continue with other files even if one fails
+            },
+            (url) {
+              uploadedUrls.add(url);
 
-          // Update progress
-          final progress = 0.5 + (0.5 * (i + 1) / approvedFiles.length);
-          _updateProgress(task.id, progress);
+              // Update progress
+              final progress = 0.5 + (0.5 * (i + 1) / approvedFiles.length);
+              _updateProgress(task.id, progress);
+            },
+          );
         } catch (e) {
           debugPrint('Failed to upload file $i: $e');
           // Continue with other files even if one fails
@@ -435,17 +455,25 @@ class MediaUploadProvider extends ChangeNotifier {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final fileName = 'edited_${timestamp}_$box.jpg';
 
-      final url = await _mediaRepository.uploadImage(
+      final urlEither = await _mediaRepository.uploadImage(
         path: 'posts/$box',
         fileName: fileName,
         bytes: imageBytes,
       );
 
-      // 업로드 완료
-      onProgress?.call(1.0);
-
-      debugPrint('✅ Edited image uploaded: $url');
-      return url;
+      // Handle upload result using fold()
+      return urlEither.fold(
+        (failure) {
+          debugPrint('❌ Failed to upload edited image: ${failure.message}');
+          throw failure;
+        },
+        (url) {
+          // 업로드 완료
+          onProgress?.call(1.0);
+          debugPrint('✅ Edited image uploaded: $url');
+          return url;
+        },
+      );
     } catch (e) {
       debugPrint('❌ Failed to upload edited image: $e');
       rethrow;
@@ -471,14 +499,18 @@ class MediaUploadProvider extends ChangeNotifier {
     Function(double)? onProgress,
   }) async {
     // IImageProcessingService 위임
-    final result = await _imageProcessingService.processEditedImage(
+    final resultEither = await _imageProcessingService.processEditedImage(
       editedFile: editedFile,
       box: box,
       assetId: assetId,
       onProgress: onProgress,
     );
 
-    return result;
+    // Handle result using fold()
+    return resultEither.fold(
+      (failure) => throw failure,
+      (result) => result,
+    );
   }
 
   /// Process multiple images with moderation (MediaEditorWidget용)
@@ -506,7 +538,7 @@ class MediaUploadProvider extends ChangeNotifier {
     Function(int, int)? onModerationProgress,
   }) async {
     // IImageProcessingService 위임
-    final result = await _imageProcessingService.processMultipleImages(
+    final resultEither = await _imageProcessingService.processMultipleImages(
       files: files,
       box: box,
       editedFile: editedFile,
@@ -516,7 +548,11 @@ class MediaUploadProvider extends ChangeNotifier {
       onModerationProgress: onModerationProgress,
     );
 
-    return result;
+    // Handle result using fold()
+    return resultEither.fold(
+      (failure) => throw failure,
+      (result) => result,
+    );
   }
 
   @override

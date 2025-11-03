@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../domain/usecases/moderate_content_usecase.dart';
 import '../../../domain/failures/creation_failures.dart';
-import '/core/types/result.dart';
 
 /// Validation result model
 class ValidationResult {
@@ -84,7 +83,7 @@ class MediaValidationProvider extends ChangeNotifier {
 
     try {
       // Use batch moderation
-      final result = await _moderateContentUseCase.moderateImages(
+      final resultEither = await _moderateContentUseCase.moderateImages(
         imageFiles: images,
         box: box,
         onProgress: (current, total) {
@@ -94,17 +93,28 @@ class MediaValidationProvider extends ChangeNotifier {
         },
       );
 
-      if (result.isFailure) {
-        final failure = result.failureOrNull;
-        _validationFailure = failure;
-        _validationMessage = failure is MediaProcessingFailure
-            ? failure.getUserMessage()
-            : '검증 실패: ${failure?.message}';
-        notifyListeners();
+      // Handle result using fold()
+      final shouldContinue = resultEither.fold(
+        (failure) {
+          _validationFailure = failure;
+          _validationMessage = failure is MediaProcessingFailure
+              ? failure.getUserMessage()
+              : '검증 실패: ${failure.message}';
+          notifyListeners();
+          return false;
+        },
+        (_) => true,
+      );
+
+      if (!shouldContinue) {
         return false;
       }
 
-      final decisions = result.valueOrNull!;
+      // Extract decisions from successful result
+      final decisions = resultEither.fold(
+        (_) => throw Exception('Unexpected: already checked success'),
+        (decisions) => decisions,
+      );
       bool allApproved = true;
       final rejectedIndices = <int>[];
 
@@ -191,35 +201,38 @@ class MediaValidationProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await _moderateContentUseCase.moderateText(
+      final resultEither = await _moderateContentUseCase.moderateText(
         text: text,
         context: context,
       );
 
-      if (result.isFailure) {
-        _validationMessage = '검증 실패: ${result.failureOrNull?.message}';
-        notifyListeners();
-        return false;
-      }
+      // Handle result using fold()
+      return resultEither.fold(
+        (failure) {
+          _validationMessage = '검증 실패: ${failure.message}';
+          notifyListeners();
+          return false;
+        },
+        (decision) {
+          final id = 'text_$context';
 
-      final decision = result.valueOrNull!;
-      final id = 'text_$context';
+          _validationResults[id] = ValidationResult(
+            id: id,
+            isApproved: decision.isApproved,
+            rejectionReason: decision.reason,
+            confidence: decision.confidence,
+            metadata: decision.metadata,
+          );
 
-      _validationResults[id] = ValidationResult(
-        id: id,
-        isApproved: decision.isApproved,
-        rejectionReason: decision.reason,
-        confidence: decision.confidence,
-        metadata: decision.metadata,
+          if (!decision.isApproved) {
+            _validationMessage = decision.reason ?? '부적절한 텍스트가 감지되었습니다.';
+          } else {
+            _validationMessage = null;
+          }
+
+          return decision.isApproved;
+        },
       );
-
-      if (!decision.isApproved) {
-        _validationMessage = decision.reason ?? '부적절한 텍스트가 감지되었습니다.';
-      } else {
-        _validationMessage = null;
-      }
-
-      return decision.isApproved;
     } catch (e) {
       debugPrint('MediaValidationProvider: Error validating text: $e');
       _validationMessage = '검증 중 오류가 발생했습니다.';
@@ -243,37 +256,40 @@ class MediaValidationProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await _moderateContentUseCase.moderateContentCombination(
+      final resultEither = await _moderateContentUseCase.moderateContentCombination(
         title: title,
         description: description,
         imagesA: imagesA,
         imagesB: imagesB,
       );
 
-      if (result.isFailure) {
-        _validationMessage = '검증 실패: ${result.failureOrNull?.message}';
-        notifyListeners();
-        return false;
-      }
+      // Handle result using fold()
+      return resultEither.fold(
+        (failure) {
+          _validationMessage = '검증 실패: ${failure.message}';
+          notifyListeners();
+          return false;
+        },
+        (decision) {
+          const id = 'content_combination';
 
-      final decision = result.valueOrNull!;
-      const id = 'content_combination';
+          _validationResults[id] = ValidationResult(
+            id: id,
+            isApproved: decision.isApproved,
+            rejectionReason: decision.reason,
+            confidence: decision.confidence,
+            metadata: decision.metadata,
+          );
 
-      _validationResults[id] = ValidationResult(
-        id: id,
-        isApproved: decision.isApproved,
-        rejectionReason: decision.reason,
-        confidence: decision.confidence,
-        metadata: decision.metadata,
+          if (!decision.isApproved) {
+            _validationMessage = decision.reason ?? '콘텐츠 검증에 실패했습니다.';
+          } else {
+            _validationMessage = null;
+          }
+
+          return decision.isApproved;
+        },
       );
-
-      if (!decision.isApproved) {
-        _validationMessage = decision.reason ?? '콘텐츠 검증에 실패했습니다.';
-      } else {
-        _validationMessage = null;
-      }
-
-      return decision.isApproved;
     } catch (e) {
       debugPrint('MediaValidationProvider: Error validating content: $e');
       _validationMessage = '검증 중 오류가 발생했습니다.';

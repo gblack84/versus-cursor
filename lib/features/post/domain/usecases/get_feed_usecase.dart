@@ -1,10 +1,15 @@
-import '/core/types/result.dart';
-import '/core/errors/failures.dart';
+import 'package:fpdart/fpdart.dart';
 import '../repositories/i_post_display_repository_v2.dart';
 import '../models/post_display.dart';
+import '../failures/post_failure.dart';
 
 /// UseCase for getting feed posts
 /// 피드 게시물을 가져오기 위한 UseCase
+///
+/// **Phase 1: Either Pattern Applied**
+/// - Returns Either<PostFailure, FeedResult>
+/// - Type-safe error handling with specific failure types
+/// - Stream methods return Stream without Either wrapper
 class GetFeedUseCase {
   final IPostDisplayRepositoryV2 _postRepository;
 
@@ -13,13 +18,30 @@ class GetFeedUseCase {
   }) : _postRepository = postRepository;
 
   /// Get feed posts with pagination
-  Future<Result<FeedResult>> execute({
+  ///
+  /// **Parameters**:
+  /// - [limit] - Maximum number of posts to fetch (default: 20)
+  /// - [lastDocumentId] - Last document ID for pagination (null for first page)
+  /// - [sortBy] - Sort order for posts (default: latest)
+  /// - [filter] - Optional filter criteria
+  ///
+  /// **Returns**:
+  /// - Right(FeedResult) - Feed loaded successfully with pagination info
+  /// - Left(PostFailure.invalidInput) - Invalid filter or parameters
+  /// - Left(PostFailure.queryFailed) - Query execution failed
+  /// - Left(PostFailure.*) - Other repository failures
+  Future<Either<PostFailure, FeedResult>> execute({
     int limit = 20,
     String? lastDocumentId,
     FeedSortBy sortBy = FeedSortBy.latest,
     FeedFilter? filter,
   }) async {
     try {
+      // Validate input
+      if (limit <= 0) {
+        return left(const PostFailure.invalidInput(field: 'limit'));
+      }
+
       Stream<List<PostDisplay>> stream;
 
       // Use specialized repository methods when possible
@@ -119,7 +141,7 @@ class GetFeedUseCase {
         nextLastDocumentId = posts.last.id;
       }
 
-      return Success(
+      return right(
         FeedResult(
           posts: posts,
           hasMore: posts.length >= limit,
@@ -128,30 +150,37 @@ class GetFeedUseCase {
         ),
       );
     } catch (error) {
-      print('GetFeedUseCase Error: $error');
-
-      // Handle errors without Firebase dependency
-      if (error.toString().contains('permission-denied')) {
-        return ResultFailure(
-          ServerFailure(
-            message: 'Permission denied to load feed',
-            code: 'permission-denied',
-          ),
-        );
-      }
-
-      return ResultFailure(
-        AppFailure(message: 'Failed to load feed: $error'),
-      );
+      // Handle stream errors
+      return left(PostFailure.queryFailed(
+        reason: 'Failed to load feed: $error',
+      ));
     }
   }
 
   /// Get feed stream for real-time updates
-  Stream<Result<List<PostDisplay>>> getFeedStream({
+  ///
+  /// **Note**: Stream methods don't use Either - they use Stream.error()
+  ///
+  /// **Parameters**:
+  /// - [limit] - Maximum number of posts to fetch
+  /// - [sortBy] - Sort order for posts
+  /// - [filter] - Optional filter criteria
+  ///
+  /// **Returns**:
+  /// - Stream emits List<PostDisplay> on success
+  /// - Stream emits error (PostFailure) on failure
+  Stream<List<PostDisplay>> getFeedStream({
     int limit = 20,
     FeedSortBy sortBy = FeedSortBy.latest,
     FeedFilter? filter,
   }) {
+    // Validate input
+    if (limit <= 0) {
+      return Stream.error(
+        const PostFailure.invalidInput(field: 'limit'),
+      );
+    }
+
     try {
       // Build query parameters similar to execute method
       Map<String, dynamic> Function(Map<String, dynamic>) queryBuilder = (params) {
@@ -197,31 +226,18 @@ class GetFeedUseCase {
       };
 
       // Get stream from repository
-      final stream = _postRepository.queryPosts(
+      return _postRepository.queryPosts(
         queryBuilder: queryBuilder,
         limit: limit,
       );
-
-      // Transform stream to Result wrapper
-      return stream.map((posts) {
-        try {
-          return Success(posts);
-        } catch (error) {
-          return ResultFailure<List<PostDisplay>>(
-            AppFailure(message: 'Failed to load posts: $error'),
-          );
-        }
-      });
     } catch (error) {
-      // Return error stream
-      return Stream.value(
-        ResultFailure(
-          AppFailure(message: 'Failed to create feed stream: $error'),
+      return Stream.error(
+        PostFailure.queryFailed(
+          reason: 'Failed to create feed stream: $error',
         ),
       );
     }
   }
-
 }
 
 /// Feed result with pagination info
@@ -264,7 +280,6 @@ class FeedFilter {
     this.userId,
     this.hasImages,
     this.isAnonymous,
-    this.startDate,
-    this.endDate,
+    this.startDate,this.endDate,
   });
 }

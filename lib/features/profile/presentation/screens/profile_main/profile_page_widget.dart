@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart' as provider;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 import '/core_exports.dart';
 // Phase 3: Riverpod - profile_providers.dart 사용
 import '/features/profile/presentation/providers/profile_providers.dart';
+// Phase 3: Riverpod - profile_post_providers.dart (Feature-First)
+import '/features/profile/presentation/providers/profile_post_providers.dart';
 // Phase 4: Contract 패턴으로 Feature 간 의존성 제거
 import '/app/contracts/auth_contract.dart';
 import '/core/design_system/design_system.dart';
-import '/features/post/presentation/providers/user_posts_provider.dart';
 import '/features/post/domain/models/post_display.dart';
 import '/features/profile/presentation/screens/settings/settings_screen.dart';
 import '/features/profile/presentation/screens/user_posts_list/user_posts_list_screen.dart';
@@ -22,7 +22,7 @@ import '/features/profile/presentation/widgets/profile/profile_completion_card.d
 /// **Architecture**: Clean Architecture v4.0 + Riverpod
 /// - ✅ ConsumerStatefulWidget으로 전환
 /// - ✅ profileStreamProvider로 실시간 프로필 동기화
-/// - ⚠️ UserPostsProvider는 Post Feature이므로 유지
+/// - ✅ profileUserPostsStreamProvider (Feature-First)
 class ProfilePageWidget extends ConsumerStatefulWidget {
   const ProfilePageWidget({super.key});
 
@@ -37,7 +37,6 @@ class _ProfilePageWidgetState extends ConsumerState<ProfilePageWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
   // Phase 4: Contract 패턴으로 Feature 간 의존성 제거
   late final AuthContract _authContract;
-  late final UserPostsProvider _userPostsProvider;
 
   @override
   void initState() {
@@ -46,16 +45,9 @@ class _ProfilePageWidgetState extends ConsumerState<ProfilePageWidget> {
     // Initialize dependencies from DI
     // Phase 4: Contract 패턴으로 Feature 간 의존성 제거
     _authContract = GetIt.instance<AuthContract>();
-    _userPostsProvider = GetIt.instance<UserPostsProvider>();
 
     // Phase 3: Riverpod - ProfileProvider 제거
     // 프로필 로드는 profileStreamProvider가 자동 처리
-  }
-
-  @override
-  void dispose() {
-    _userPostsProvider.dispose();
-    super.dispose();
   }
 
   @override
@@ -267,11 +259,8 @@ class _ProfilePageWidgetState extends ConsumerState<ProfilePageWidget> {
                         ),
                         VersusSpacing.gapLG,
 
-                        // 내 게시물 섹션
-                        provider.ChangeNotifierProvider.value(
-                          value: _userPostsProvider,
-                          child: _buildUserPostsSection(context, user.uid),
-                        ),
+                        // 내 게시물 섹션 (Riverpod)
+                        _buildUserPostsSection(context, user.uid),
                         VersusSpacing.gapLG,
 
                         // 로그아웃 버튼
@@ -336,84 +325,84 @@ class _ProfilePageWidgetState extends ConsumerState<ProfilePageWidget> {
   }
 
   Widget _buildUserPostsSection(BuildContext context, String userId) {
-    return provider.Consumer<UserPostsProvider>(
-      builder: (context, postProvider, child) {
-        // Load posts on first build
-        if (postProvider.loadingState == UserPostsLoadingState.initial) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            postProvider.loadUserPosts(userId: userId, limit: 5);
-          });
-        }
+    // Phase 3: Riverpod - profileUserPostsStreamProvider 사용
+    final postsAsync = ref.watch(profileUserPostsStreamProvider(userId, limit: 5));
 
-        return Container(
-          padding: VersusSpacing.paddingLG,
-          decoration: BoxDecoration(
-            color: VersusColors.backgroundSecondary,
-            borderRadius: VersusRadius.radiusMedium,
-            boxShadow: [
-              BoxShadow(
-                color: VersusColors.blackWithAlpha(0.05),
-                blurRadius: 10,
-                offset: Offset(0, 4),
+    return Container(
+      padding: VersusSpacing.paddingLG,
+      decoration: BoxDecoration(
+        color: VersusColors.backgroundSecondary,
+        borderRadius: VersusRadius.radiusMedium,
+        boxShadow: [
+          BoxShadow(
+            color: VersusColors.blackWithAlpha(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '내 게시물',
+                style: VersusTextStyles.headingMedium,
+              ),
+              postsAsync.when(
+                data: (posts) => posts.isNotEmpty
+                    ? TextButton(
+                        onPressed: () {
+                          context.pushNamed(
+                            UserPostsListScreen.routeName,
+                            pathParameters: {'userId': userId},
+                          );
+                        },
+                        child: Text(
+                          '전체보기',
+                          style: VersusTextStyles.bodySmall.copyWith(
+                            color: VersusColors.primary,
+                          ),
+                        ),
+                      )
+                    : SizedBox.shrink(),
+                loading: () => SizedBox.shrink(),
+                error: (_, __) => SizedBox.shrink(),
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '내 게시물',
-                    style: VersusTextStyles.headingMedium,
-                  ),
-                  if (postProvider.hasPosts)
-                    TextButton(
-                      onPressed: () {
-                        // Phase 2: Clean Architecture - 파라미터로 받은 userId 사용
-                        context.pushNamed(
-                          UserPostsListScreen.routeName,
-                          pathParameters: {'userId': userId},
-                        );
-                      },
-                      child: Text(
-                        '전체보기',
-                        style: VersusTextStyles.bodySmall.copyWith(
-                          color: VersusColors.primary,
-                        ),
-                      ),
-                    ),
-                ],
+          VersusSpacing.gapMD,
+
+          // Riverpod AsyncValue.when()으로 상태 처리
+          postsAsync.when(
+            // Loading state
+            loading: () => Padding(
+              padding: EdgeInsets.all(VersusSpacing.lg),
+              child: ProfileLoadingIndicator(
+                size: LoadingSize.small,
               ),
-              VersusSpacing.gapMD,
+            ),
 
-              // Loading state
-              if (postProvider.loadingState == UserPostsLoadingState.loading)
-                Padding(
-                  padding: EdgeInsets.all(VersusSpacing.lg),
-                  child: ProfileLoadingIndicator(
-                    size: LoadingSize.small,
+            // Error state
+            error: (error, stackTrace) => Center(
+              child: Padding(
+                padding: EdgeInsets.all(VersusSpacing.md),
+                child: Text(
+                  error.toString(),
+                  style: VersusTextStyles.bodyMedium.copyWith(
+                    color: VersusColors.error,
                   ),
                 ),
+              ),
+            ),
 
-              // Error state
-              if (postProvider.loadingState == UserPostsLoadingState.error)
-                Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(VersusSpacing.md),
-                    child: Text(
-                      postProvider.errorMessage ?? '오류가 발생했습니다',
-                      style: VersusTextStyles.bodyMedium.copyWith(
-                        color: VersusColors.error,
-                      ),
-                    ),
-                  ),
-                ),
-
+            // Data state
+            data: (posts) {
               // Empty state
-              if (postProvider.loadingState == UserPostsLoadingState.empty)
-                Center(
+              if (posts.isEmpty) {
+                return Center(
                   child: Padding(
                     padding: EdgeInsets.all(VersusSpacing.lg),
                     child: Column(
@@ -433,15 +422,17 @@ class _ProfilePageWidgetState extends ConsumerState<ProfilePageWidget> {
                       ],
                     ),
                   ),
-                ),
+                );
+              }
 
               // Loaded state
-              if (postProvider.hasPosts)
-                ...postProvider.posts.map((post) => _buildPostItem(context, post)),
-            ],
+              return Column(
+                children: posts.map((post) => _buildPostItem(context, post)).toList(),
+              );
+            },
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -505,7 +496,7 @@ class _ProfilePageWidgetState extends ConsumerState<ProfilePageWidget> {
                 ),
                 Spacer(),
                 Text(
-                  dateTimeFormat('relative', post.createdAt),
+                  dateTimeFormat('relative', post.createdAtDateTime),
                   style: VersusTextStyles.bodySmall.copyWith(
                     color: VersusColors.textSecondary,
                   ),

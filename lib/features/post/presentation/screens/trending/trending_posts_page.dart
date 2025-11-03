@@ -1,155 +1,158 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '/core_exports.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/features/post/domain/models/post_display.dart';
-import '/features/post/presentation/providers/trending_posts_provider.dart';
+import '/features/post/domain/failures/post_failure.dart';
+import '/features/post/presentation/providers/post_providers.dart';
 import '/core/design_system/design_system.dart';
-import 'package:get_it/get_it.dart';
 import '/core/constants/app_constants.dart';
+import '/core_exports.dart';
 
-class TrendingPostsPage extends StatefulWidget {
+/// Trending Posts Page - Riverpod 2.x Migration
+///
+/// **Phase 2: ConsumerWidget Pattern**
+/// - Uses trendingPostsStreamProvider for real-time updates
+/// - AsyncValue.when() for automatic state handling
+/// - No manual dispose needed
+class TrendingPostsPage extends ConsumerWidget {
   const TrendingPostsPage({super.key});
 
   static String routeName = 'trendingPosts';
   static String routePath = '/trending';
 
   @override
-  State<TrendingPostsPage> createState() => _TrendingPostsPageState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch trending posts stream with default limit of 20
+    final postsAsync = ref.watch(trendingPostsStreamProvider(20));
 
-class _TrendingPostsPageState extends State<TrendingPostsPage> {
-  late final TrendingPostsProvider _provider;
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Get provider from DI
-    _provider = GetIt.instance<TrendingPostsProvider>();
-
-    // Load trending posts
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _provider.loadTrendingPosts();
-    });
-  }
-
-  @override
-  void dispose() {
-    _provider.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: _provider,
-      child: Scaffold(
-        backgroundColor: VersusColors.backgroundPrimary,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: VersusColors.textPrimary),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          title: Text(
-            '트렌딩 게시물',
-            style: VersusTextStyles.headingSmall,
-          ),
-          centerTitle: true,
-          elevation: 0.0,
+    return Scaffold(
+      backgroundColor: VersusColors.backgroundPrimary,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: VersusColors.textPrimary),
+          onPressed: () => Navigator.of(context).pop(),
         ),
-        body: SafeArea(
-          top: true,
-          child: Consumer<TrendingPostsProvider>(
-            builder: (context, provider, child) {
-              // 로딩 상태
-              if (provider.loadingState == TrendingLoadingState.loading) {
-                return Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      VersusColors.primary,
+        title: Text(
+          '트렌딩 게시물',
+          style: VersusTextStyles.headingSmall,
+        ),
+        centerTitle: true,
+        elevation: 0.0,
+      ),
+      body: SafeArea(
+        top: true,
+        child: postsAsync.when(
+          // Loading state
+          loading: () => Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(
+                VersusColors.primary,
+              ),
+            ),
+          ),
+
+          // Error state
+          error: (error, stack) {
+            String errorMessage = '오류가 발생했습니다';
+
+            if (error is PostFailure) {
+              errorMessage = error.when(
+                networkError: () => '네트워크 연결을 확인해주세요.',
+                serverError: (message) => '서버 오류: ${message ?? "알 수 없는 오류"}',
+                timeout: () => '요청 시간이 초과되었습니다.',
+                insufficientPermissions: () => '권한이 없습니다.',
+                unauthorized: () => '로그인이 필요합니다.',
+                postNotFound: (postId) => '게시물을 찾을 수 없습니다.',
+                userNotFound: (userId) => '사용자를 찾을 수 없습니다.',
+                invalidInput: (field) => '$field 값이 올바르지 않습니다.',
+                contentTooLong: (maxLength) => '내용이 너무 깁니다.',
+                createFailed: (reason) => '생성 실패',
+                updateFailed: (reason) => '업데이트 실패',
+                deleteFailed: (reason) => '삭제 실패',
+                searchFailed: (query) => '검색 실패',
+                queryFailed: (reason) => '조회 실패: ${reason ?? "알 수 없는 오류"}',
+                unexpected: (message, err, stackTrace) =>
+                    message ?? '예상치 못한 오류가 발생했습니다.',
+              );
+            }
+
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: VersusColors.error,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    errorMessage,
+                    style: VersusTextStyles.bodyMedium.copyWith(
+                      color: VersusColors.textSecondary,
                     ),
                   ),
-                );
-              }
-
-              // 에러 상태
-              if (provider.loadingState == TrendingLoadingState.error) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 64,
-                        color: VersusColors.error,
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        provider.errorMessage ?? '오류가 발생했습니다',
-                        style: VersusTextStyles.bodyMedium.copyWith(
-                          color: VersusColors.textSecondary,
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => provider.refresh(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: VersusColors.primary,
-                        ),
-                        child: Text('다시 시도'),
-                      ),
-                    ],
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      ref.invalidate(trendingPostsStreamProvider(20));
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: VersusColors.primary,
+                    ),
+                    child: Text('다시 시도'),
                   ),
-                );
-              }
+                ],
+              ),
+            );
+          },
 
-              // 게시물 없음 상태
-              if (provider.loadingState == TrendingLoadingState.empty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.trending_up,
-                        size: 64,
+          // Data state
+          data: (posts) {
+            if (posts.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.trending_up,
+                      size: 64,
+                      color: VersusColors.textSecondary,
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      '트렌딩 게시물이 없습니다',
+                      style: VersusTextStyles.headingMedium.copyWith(
                         color: VersusColors.textSecondary,
                       ),
-                      SizedBox(height: 16),
-                      Text(
-                        '트렌딩 게시물이 없습니다',
-                        style: VersusTextStyles.headingMedium.copyWith(
-                          color: VersusColors.textSecondary,
-                        ),
+                    ),
+                    VersusSpacing.gapSM,
+                    Text(
+                      '새로운 게시물을 작성해보세요!',
+                      style: VersusTextStyles.bodyMedium.copyWith(
+                        color: VersusColors.textSecondary,
                       ),
-                      VersusSpacing.gapSM,
-                      Text(
-                        '새로운 게시물을 작성해보세요!',
-                        style: VersusTextStyles.bodyMedium.copyWith(
-                          color: VersusColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              final posts = provider.posts;
-
-              // 게시물 목록
-              return RefreshIndicator(
-                onRefresh: () => provider.refresh(),
-                child: ListView.builder(
-                  padding: EdgeInsets.symmetric(vertical: VersusSpacing.sm),
-                  itemCount: posts.length,
-                  itemBuilder: (context, index) {
-                    final post = posts[index];
-                    return _buildTrendingCard(context, post);
-                  },
+                    ),
+                  ],
                 ),
               );
-            },
-          ),
+            }
+
+            // 게시물 목록
+            return RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(trendingPostsStreamProvider(20));
+              },
+              child: ListView.builder(
+                padding: EdgeInsets.symmetric(vertical: VersusSpacing.sm),
+                itemCount: posts.length,
+                itemBuilder: (context, index) {
+                  final post = posts[index];
+                  return _buildTrendingCard(context, post);
+                },
+              ),
+            );
+          },
         ),
       ),
     );
@@ -212,7 +215,7 @@ class _TrendingPostsPageState extends State<TrendingPostsPage> {
                             ),
                           ),
                           Text(
-                            dateTimeFormat('relative', post.createdAt),
+                            dateTimeFormat('relative', post.createdAtDateTime),
                             style: VersusTextStyles.bodySmall.copyWith(
                               color: VersusColors.textSecondary,
                             ),

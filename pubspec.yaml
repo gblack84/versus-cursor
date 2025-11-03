@@ -58,6 +58,7 @@ dependencies:
   firebase_storage_platform_interface: ^5.2.9
   firebase_storage_web: ^3.10.13
   flutter_animate: ^4.5.2
+  fpdart: ^1.1.0  # Either Pattern support for functional programming
   flutter_cache_manager: 3.4.1
   flutter_dotenv: ^5.1.0
   flutter_native_video_trimmer: ^1.1.9

@@ -43,14 +43,17 @@ domain/
 │   │   ├── post_voting.dart               # 220 lines - Main voting entity
 │   │   ├── post_voting.freezed.dart       # Generated
 │   │   ├── post_voting.g.dart             # Generated
+│   │   ├── post_voting_extensions.dart    # 233 lines - PostVoting ↔ Firestore
 │   │   ├── vote_state.dart                # 60 lines - Voting state machine
 │   │   ├── vote_state.freezed.dart        # Generated
-│   │   └── vote_state.g.dart              # Generated
+│   │   ├── vote_state.g.dart              # Generated
+│   │   └── vote_state_extensions.dart     # 89 lines - VoteState ↔ Firestore
 │   │
-│   └── dialog/                            # Dialog-based voting entities (21 files)
+│   └── dialog/                            # Dialog-based voting entities (26 files + Extensions)
 │       ├── vote.dart                      # 55 lines - Single vote entity
 │       ├── vote.freezed.dart              # Generated
 │       ├── vote.g.dart                    # Generated
+│       ├── vote_extensions.dart           # 142 lines - Vote ↔ Firestore
 │       ├── vote_cache_state.dart          # Cache state entity
 │       ├── vote_cache_state.freezed.dart  # Generated
 │       ├── vote_cache_state.g.dart        # Generated
@@ -60,6 +63,7 @@ domain/
 │       ├── vote_expansion_request.dart    # Vote time extension
 │       ├── vote_expansion_request.freezed.dart # Generated
 │       ├── vote_expansion_request.g.dart  # Generated
+│       ├── vote_expansion_request_extensions.dart # ~150 lines - VoteExpansionRequest ↔ Firestore
 │       ├── vote_options.dart              # Vote option enum
 │       ├── vote_options.freezed.dart      # Generated
 │       ├── vote_options.g.dart            # Generated
@@ -68,7 +72,8 @@ domain/
 │       ├── versus_box_size_data.g.dart    # Generated
 │       ├── weight.dart                    # Vote weight entity
 │       ├── weight.freezed.dart            # Generated
-│       └── weight.g.dart                  # Generated
+│       ├── weight.g.dart                  # Generated
+│       └── weight_extensions.dart         # ~100 lines - Weight ↔ Firestore
 │
 ├── failures/
 │   └── voting_failure.dart                # 129 lines - 18 error types
@@ -86,7 +91,11 @@ domain/
     └── watch_vote_state_use_case.dart     # Real-time vote state monitoring
 ```
 
-**Total**: 17 main files + 18 generated files = **35 files**
+**Total**: 21 main files (17 entity/logic + 4 generated excluded) + 18 generated files = **39 files**
+
+**Extension 파일 (5개)**: Data Layer에서 Domain Layer로 이동 완료
+- `vote_extensions.dart`, `vote_state_extensions.dart`, `post_voting_extensions.dart`
+- `vote_expansion_request_extensions.dart`, `weight_extensions.dart`
 
 ---
 
@@ -1741,13 +1750,229 @@ try {
 
 ---
 
+## 🔄 Extension Pattern: Entity-Owned Serialization
+
+### 개요
+
+Voting Feature의 Domain Layer는 **5개 Extension 파일**을 포함하여 Entity가 자신의 Firestore 변환 로직을 소유합니다. 이는 Firebase-Centric v2.0 아키텍처의 핵심 패턴입니다.
+
+### Extension 파일 목록 (5개)
+
+| 파일명 | 라인 수 | 책임 | Entity |
+|--------|---------|------|--------|
+| `vote_extensions.dart` | 142 | Vote ↔ Firestore | `Vote` |
+| `vote_state_extensions.dart` | 89 | VoteState ↔ Firestore | `VoteState` |
+| `post_voting_extensions.dart` | 233 | PostVoting ↔ Firestore | `PostVoting` |
+| `vote_expansion_request_extensions.dart` | ~150 | VoteExpansionRequest ↔ Firestore | `VoteExpansionRequest` |
+| `weight_extensions.dart` | ~100 | Weight ↔ Firestore | `Weight` |
+
+**총**: ~714 lines의 변환 로직이 Domain Layer에 위치
+
+### Extension 패턴 예시
+
+#### vote_extensions.dart (142 lines)
+
+```dart
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '/features/voting/domain/entities/dialog/vote.dart';
+
+/// Vote Entity의 Firestore 변환 Extension
+///
+/// **Firebase-Centric v2.0 Pattern**:
+/// - Domain Layer가 Firestore 타입 의존 (DocumentSnapshot, Timestamp)
+/// - Entity가 자신의 직렬화 방법을 소유
+/// - Mapper/DTO 레이어 제거로 코드 간소화
+extension VoteFirestoreExtension on Vote {
+  /// Firestore DocumentSnapshot → Vote Entity
+  static Vote fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+
+    return Vote(
+      id: doc.id,
+      postId: data['postId'] as String? ?? '',
+      userId: data['userId'] as String? ?? '',
+      option: _parseVoteOption(data['option']),
+      timestamp: _parseTimestamp(data['timestamp']),
+      weight: Weight.fromMap(data['weight'] as Map<String, dynamic>?),
+      // ... 15개 필드 변환
+    );
+  }
+
+  /// Vote Entity → Firestore Map
+  Map<String, dynamic> toFirestore() {
+    return {
+      'postId': postId,
+      'userId': userId,
+      'option': option.name,
+      'timestamp': Timestamp.fromDate(timestamp),
+      'weight': weight.toMap(),
+      // ... null-safe 변환
+    };
+  }
+
+  // Helper methods for safe parsing
+  static VoteOption _parseVoteOption(dynamic value) {
+    if (value == null) return VoteOption.optionA;
+    if (value is String) {
+      return VoteOption.values.byName(value);
+    }
+    return VoteOption.optionA;
+  }
+
+  static DateTime _parseTimestamp(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is DateTime) return value;
+    if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+    return DateTime.now();
+  }
+}
+```
+
+#### post_voting_extensions.dart (233 lines)
+
+```dart
+extension PostVotingFirestoreExtension on PostVoting {
+  static PostVoting fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+
+    return PostVoting(
+      id: doc.id,
+      postId: data['postId'] as String? ?? '',
+
+      // Voting State
+      voteState: VoteState.fromMap(data['voteState']),
+
+      // Vote Counts (Sharded Counter)
+      votesA: data['votesA'] as int? ?? 0,
+      votesB: data['votesB'] as int? ?? 0,
+
+      // Timer fields
+      voteStartTime: _parseDateTime(data['voteStartTime']),
+      voteEndTime: _parseDateTime(data['voteEndTime']),
+
+      // Options (A/B content)
+      optionA: _parseOptionMap(data['optionA']),
+      optionB: _parseOptionMap(data['optionB']),
+
+      // ... 20+ 필드 변환
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'postId': postId,
+      'voteState': voteState.toMap(),
+      'votesA': votesA,
+      'votesB': votesB,
+      'voteStartTime': voteStartTime != null
+          ? Timestamp.fromDate(voteStartTime!)
+          : null,
+      'voteEndTime': voteEndTime != null
+          ? Timestamp.fromDate(voteEndTime!)
+          : null,
+      'optionA': optionA,
+      'optionB': optionB,
+      // ... null-safe, type-safe 변환
+    };
+  }
+}
+```
+
+### 아키텍처 트레이드오프
+
+#### ❌ Clean Architecture 위반
+
+**Domain Layer가 Firestore 의존**:
+```dart
+import 'package:cloud_firestore/cloud_firestore.dart';  // ⚠️ Infrastructure 의존
+
+extension VoteFirestoreExtension on Vote {
+  static Vote fromFirestore(DocumentSnapshot doc) { ... }  // ⚠️ Firestore 타입
+}
+```
+
+**순수 Clean Architecture에서는**:
+- Domain Layer는 프레임워크 몰라야 함
+- `DocumentSnapshot`, `Timestamp` 같은 Firestore 타입 사용 금지
+- Mapper가 Data Layer에서 변환 담당
+
+#### ✅ 실용주의 아키텍처 이득
+
+**1. 코드 감소 (10개 → 5개 파일)**:
+- Mapper 클래스 5개 제거
+- DTO 클래스 5개 제거
+- Extension만으로 양방향 변환 처리
+
+**2. Entity 중심 설계**:
+```dart
+// Entity와 Extension이 같은 디렉토리
+entities/dialog/
+├── vote.dart                 # Entity 정의
+└── vote_extensions.dart      # Entity 변환 로직
+```
+
+**3. 유지보수성 향상**:
+- Entity 수정 시 Extension도 함께 확인 가능
+- 변환 로직이 Entity 옆에 있어 탐색 용이
+- Mapper 계층 없어 디버깅 단순화
+
+**4. 타입 안전성 보장**:
+```dart
+// Freezed Entity + Extension = 100% Type Safety
+final vote = Vote(id: '123', ...);  // Freezed 생성자
+final map = vote.toFirestore();     // Extension 메서드
+final restored = VoteFirestoreExtension.fromFirestore(doc);
+```
+
+### Migration History
+
+**Before (Data Layer)**:
+```
+lib/features/voting/data/
+└── extensions/
+    ├── vote_extensions.dart        # 142 lines
+    ├── vote_state_extensions.dart  # 89 lines
+    ├── post_voting_extensions.dart # 233 lines
+    └── ... (5 files total)
+```
+
+**After (Domain Layer)**:
+```
+lib/features/voting/domain/entities/
+├── dialog/
+│   ├── vote.dart
+│   ├── vote_extensions.dart        # ⬅️ Moved
+│   ├── weight.dart
+│   └── weight_extensions.dart      # ⬅️ Moved
+└── chat/
+    ├── post_voting.dart
+    ├── post_voting_extensions.dart # ⬅️ Moved
+    ├── vote_state.dart
+    └── vote_state_extensions.dart  # ⬅️ Moved
+```
+
+**이동 사유**:
+1. Entity는 자신의 직렬화 방법을 알아야 함
+2. Extension을 Entity 옆에 두면 응집도 향상
+3. Firebase를 피할 수 없으므로 Domain에서 수용
+
+### 결론
+
+Firebase-Centric v2.0의 Extension 패턴은:
+- **순수성을 포기**하되 **실용성을 획득**
+- **10개 파일 감소**, **유지보수성 향상**, **타입 안전성 보장**
+- Firebase 의존을 인정하고 Domain Layer에서 직접 사용
+- "실용주의 아키텍처" 철학의 구현체
+
+---
+
 ## Summary
 
 **Voting Domain Layer**는 투표 Feature의 핵심 비즈니스 로직을 정의하는 순수 Dart 레이어입니다.
 
 **Key Highlights**:
 
-1. **35 files**: 17 main files + 18 generated files
+1. **39 files**: 21 main files (5 Extensions 포함) + 18 generated files
 2. **9 Entities**: Vote, VoteCounts, PostVoting, VoteState, etc.
 3. **2 Repository Interfaces**: Dialog (25+ methods), Chat (simplified)
 4. **2 UseCases**: SubmitVote, WatchVoteState

@@ -45,7 +45,7 @@ lib/features/profile/
 │   ├── 📂 failures/
 │   │   ├── profile_failure.dart                  # 204줄 - 12 failure types
 │   │   └── profile_failure.freezed.dart          # Generated
-│   ├── 📂 models/                        # Domain Models (6 main + 18 generated = 24 files)
+│   ├── 📂 entities/                      # Domain Models (6 main + 18 generated = 24 files)
 │   │   ├── user_profile.dart                     # 146줄 - 42 fields (통합 모델)
 │   │   ├── user_profile.freezed.dart             # Generated
 │   │   ├── user_profile.g.dart                   # Generated
@@ -64,7 +64,7 @@ lib/features/profile/
 │   │   ├── interest_category.dart                # 36줄 - 4 fields
 │   │   ├── interest_category.freezed.dart        # Generated
 │   │   ├── interest_category.g.dart              # Generated
-│   │   ├── user_profile_extensions.dart          # 314줄 - 🔥 Extension methods
+│   │   ├── user_profile_extensions.dart          # 313줄 - 🔥 Extension methods
 │   │   └── README.md                             # 213줄 - Model documentation
 │   ├── 📂 repositories/                  # Repository Interfaces (6 files)
 │   │   ├── i_profile_repository.dart             # 102줄 - 3 methods (Phase 6: 85% 축소)
@@ -509,12 +509,12 @@ final repository = GetIt.instance<IUserRepository>();
 
 | 구분 | 파일 수 | 총 라인 수 | 주요 패턴 |
 |------|---------|-----------|-----------|
-| **Data** | 10 | ~1,621 | Extension, 3-Layer Caching, Singleton, Idempotency |
-| **Domain** | 42 | ~2,249 | Freezed, Either, UseCase, Repository Interface |
-| **Presentation** | 53 | ~2,176 | Riverpod, StreamProvider.family, ProfileActions |
+| **Data** | 10 | ~1,711 | Extension, 3-Layer Caching, Singleton, Idempotency |
+| **Domain** | 45 | ~2,397 | Freezed, Either, UseCase, Repository Interface |
+| **Presentation** | 31 | ~6,822 | Riverpod, StreamProvider.family, ProfileActions |
 | **DI** | 1 | ~150 | GetIt 등록, Singleton 초기화 |
 | **문서** | 4 | ~6,046 | 통합 가이드 + 레이어별 상세 문서 |
-| **총합** | **110** | **~12,242** | Clean Architecture v4.0 + 3-Layer Caching |
+| **총합** | **91** | **~17,126** | Clean Architecture v4.0 + 3-Layer Caching |
 
 ### Phase별 통계
 
@@ -533,11 +533,11 @@ final repository = GetIt.instance<IUserRepository>();
 
 **8단계 체크리스트**:
 
-1. **Domain Entity 정의**: `domain/models/` (Freezed 사용)
+1. **Domain Entity 정의**: `domain/entities/` (Freezed 사용)
 2. **Repository 인터페이스**: `domain/repositories/i_*_repository.dart`
 3. **UseCase 생성**: `domain/usecases/*/` (Single Responsibility)
 4. **Repository 구현**: `data/repositories/*_repository_impl.dart`
-5. **Extension 작성**: `domain/models/*_extensions.dart` (Firestore 변환)
+5. **Extension 작성**: `domain/entities/*_extensions.dart` (Firestore 변환)
 6. **캐싱 전략**: `UnifiedCacheService` 메서드 추가 (필요 시)
 7. **Provider 생성**: `presentation/providers/profile_providers.dart`
 8. **DI 등록**: `di/profile_di_module.dart`

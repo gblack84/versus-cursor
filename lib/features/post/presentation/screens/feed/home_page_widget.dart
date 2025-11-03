@@ -1,35 +1,42 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/core_exports.dart';
 import '/features/notifications/presentation/providers/notification_badge_provider.dart';
 import '/features/post/domain/models/post_display.dart';
-import '/features/post/presentation/providers/feed_provider.dart';
+import '/features/post/domain/failures/post_failure.dart';
+import '/features/post/presentation/providers/post_providers.dart';
+import '/features/post/presentation/providers/post_params.dart';
+import '/features/post/domain/usecases/get_feed_usecase.dart';
 import '/core/design_system/design_system.dart';
 import '/services/cache/unified_cache_service.dart';
+
+// TODO: Phase 5 - Move ProfileAvatar to core/design_system/widgets/ after all features complete
+// Currently depends on Profile Feature widget for displaying user avatars
 import '/features/profile/presentation/widgets/profile/profile_avatar.dart';
 
-class HomePageWidget extends StatefulWidget {
+/// Home Page Widget - Riverpod 2.x Migration
+///
+/// **Phase 2: ConsumerWidget Pattern**
+/// - Uses feedStreamProvider for real-time feed updates
+/// - AsyncValue.when() for automatic state handling
+/// - No manual dispose needed
+/// - Removed FeedProvider dependency
+class HomePageWidget extends ConsumerStatefulWidget {
   const HomePageWidget({super.key});
 
   static String routeName = 'homePage';
   static String routePath = '/home';
 
   @override
-  State<HomePageWidget> createState() => _HomePageWidgetState();
+  ConsumerState<HomePageWidget> createState() => _HomePageWidgetState();
 }
 
-class _HomePageWidgetState extends State<HomePageWidget> {
+class _HomePageWidgetState extends ConsumerState<HomePageWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
-
-    // FeedProvider 초기화
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<FeedProvider>();
-      provider.initializeFeed();
-    });
 
     // 백그라운드에서 인기 게시물 프리로드
     Future.microtask(() async {
@@ -44,6 +51,13 @@ class _HomePageWidgetState extends State<HomePageWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Watch feed stream with default params
+    final feedAsync = ref.watch(
+      feedStreamProvider(
+        const FeedParams(limit: 20, sortBy: FeedSortBy.latest),
+      ),
+    );
+
     return Scaffold(
       key: scaffoldKey,
       backgroundColor: VersusColors.backgroundPrimary,
@@ -66,51 +80,75 @@ class _HomePageWidgetState extends State<HomePageWidget> {
       ),
       body: SafeArea(
         top: true,
-        child: Consumer<FeedProvider>(
-          builder: (context, provider, child) {
-            // 로딩 상태
-            if (provider.loadingState == FeedLoadingState.loading) {
-              return Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    VersusColors.primary,
+        child: feedAsync.when(
+          // Loading state
+          loading: () => Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(
+                VersusColors.primary,
+              ),
+            ),
+          ),
+
+          // Error state
+          error: (error, stack) {
+            String errorMessage = '오류가 발생했습니다';
+
+            if (error is PostFailure) {
+              errorMessage = error.when(
+                networkError: () => '네트워크 연결을 확인해주세요.',
+                serverError: (message) => '서버 오류: ${message ?? "알 수 없는 오류"}',
+                timeout: () => '요청 시간이 초과되었습니다.',
+                insufficientPermissions: () => '권한이 없습니다.',
+                unauthorized: () => '로그인이 필요합니다.',
+                postNotFound: (postId) => '게시물을 찾을 수 없습니다.',
+                userNotFound: (userId) => '사용자를 찾을 수 없습니다.',
+                invalidInput: (field) => '$field 값이 올바르지 않습니다.',
+                contentTooLong: (maxLength) => '내용이 너무 깁니다.',
+                createFailed: (reason) => '생성 실패',
+                updateFailed: (reason) => '업데이트 실패',
+                deleteFailed: (reason) => '삭제 실패',
+                searchFailed: (query) => '검색 실패',
+                queryFailed: (reason) => '조회 실패: ${reason ?? "알 수 없는 오류"}',
+                unexpected: (message, err, stackTrace) =>
+                    message ?? '예상치 못한 오류가 발생했습니다.',
+              );
+            }
+
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: VersusColors.error,
                   ),
-                ),
-              );
-            }
-
-            // 에러 상태
-            if (provider.loadingState == FeedLoadingState.error) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: VersusColors.error,
+                  SizedBox(height: 16),
+                  Text(
+                    errorMessage,
+                    style: VersusTextStyles.bodyMedium.copyWith(
+                      color: VersusColors.textSecondary,
                     ),
-                    SizedBox(height: 16),
-                    Text(
-                      provider.errorMessage ?? '오류가 발생했습니다',
-                      style: VersusTextStyles.bodyMedium.copyWith(
-                        color: VersusColors.textSecondary,
-                      ),
+                  ),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      ref.invalidate(feedStreamProvider(const FeedParams(limit: 20, sortBy: FeedSortBy.latest)));
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: VersusColors.primary,
                     ),
-                    SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () => provider.refresh(),
-                      child: Text('다시 시도'),
-                    ),
-                  ],
-                ),
-              );
-            }
+                    child: Text('다시 시도'),
+                  ),
+                ],
+              ),
+            );
+          },
 
-            final posts = provider.posts;
-
-            // 게시물이 없을 때
-            if (provider.loadingState == FeedLoadingState.empty || posts.isEmpty) {
+          // Data state
+          data: (posts) {
+            if (posts.isEmpty) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -140,13 +178,18 @@ class _HomePageWidgetState extends State<HomePageWidget> {
             }
 
             // 게시물 목록
-            return ListView.builder(
-              padding: EdgeInsets.symmetric(vertical: VersusSpacing.sm),
-              itemCount: posts.length,
-              itemBuilder: (context, index) {
-                final post = posts[index];
-                return _buildVersusCard(context, post);
+            return RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(feedStreamProvider(const FeedParams(limit: 20, sortBy: FeedSortBy.latest)));
               },
+              child: ListView.builder(
+                padding: EdgeInsets.symmetric(vertical: VersusSpacing.sm),
+                itemCount: posts.length,
+                itemBuilder: (context, index) {
+                  final post = posts[index];
+                  return _buildVersusCard(context, post);
+                },
+              ),
             );
           },
         ),
@@ -204,7 +247,7 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                             ),
                           ),
                           Text(
-                            dateTimeFormat('relative', post.createdAt),
+                            dateTimeFormat('relative', post.createdAtDateTime),
                             style: VersusTextStyles.bodySmall.copyWith(
                               color: VersusColors.textSecondary,
                             ),

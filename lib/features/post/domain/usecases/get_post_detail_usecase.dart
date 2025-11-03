@@ -1,107 +1,93 @@
-import '/core/types/result.dart';
-import '/core/errors/failures.dart';
+import 'package:fpdart/fpdart.dart';
 import '../repositories/i_post_display_repository_v2.dart';
 import '../models/post_display.dart';
+import '../failures/post_failure.dart';
+import 'increment_view_count_usecase.dart';
 
 /// UseCase for getting a single post's details
-/// 단일 게시물의 상세 정보를 가져오기 위한 UseCase
+///
+/// **Phase 1: Either Pattern Applied**
+/// - Returns Either<PostFailure, PostDisplay>
+/// - Type-safe error handling with specific failure types
+///
+/// **Phase 4: Idempotency Integration**
+/// - Uses IncrementViewCountUseCase for view count increment
+/// - eventId automatically generated for idempotency
 class GetPostDetailUseCase {
   final IPostDisplayRepositoryV2 _postRepository;
+  final IncrementViewCountUseCase _incrementViewCountUseCase;
 
   GetPostDetailUseCase({
     required IPostDisplayRepositoryV2 postRepository,
-  }) : _postRepository = postRepository;
+    required IncrementViewCountUseCase incrementViewCountUseCase,
+  })  : _postRepository = postRepository,
+        _incrementViewCountUseCase = incrementViewCountUseCase;
 
   /// Execute the use case to get post details
   ///
-  /// [postId] - ID of the post to retrieve
-  /// [incrementViewCount] - Whether to increment the view count (default: true)
+  /// **Parameters**:
+  /// - [postId] - ID of the post to retrieve
+  /// - [incrementViewCount] - Whether to increment the view count (default: true)
   ///
-  /// Returns a Result containing either the post or a Failure
-  Future<Result<PostDisplay>> execute({
+  /// **Returns**:
+  /// - Right(PostDisplay) - Post found and loaded successfully
+  /// - Left(PostFailure.invalidInput) - Empty postId
+  /// - Left(PostFailure.postNotFound) - Post doesn't exist
+  /// - Left(PostFailure.*) - Other repository failures
+  Future<Either<PostFailure, PostDisplay>> execute({
     required String postId,
     bool incrementViewCount = true,
   }) async {
-    try {
-      if (postId.isEmpty) {
-        return ResultFailure(
-          ValidationFailure(message: 'Post ID cannot be empty'),
-        );
-      }
+    // Validate input
+    if (postId.trim().isEmpty) {
+      return left(const PostFailure.invalidInput(field: 'postId'));
+    }
 
-      // Get post from repository
-      final post = await _postRepository.getPost(postId);
+    // Get post from repository (now returns Either)
+    final result = await _postRepository.getPost(postId);
 
-      if (post == null) {
-        return ResultFailure(
-          NotFoundFailure(message: 'Post not found with ID: $postId'),
-        );
-      }
-
-      // Increment view count if requested
-      if (incrementViewCount) {
-        // Fire and forget - don't wait for completion
-        _postRepository.incrementViewCount(postId).catchError((error) {
-          print('Failed to increment view count: $error');
-        });
-      }
-
-      return Success(post);
-    } catch (error) {
-      print('GetPostDetailUseCase Error: $error');
-
-      // Handle errors without Firebase dependency
-      if (error.toString().contains('permission-denied')) {
-        return ResultFailure(
-          ServerFailure(
-            message: 'Permission denied to load post',
-            code: 'permission-denied',
-          ),
-        );
-      }
-
-      return ResultFailure(
-        AppFailure(message: 'Failed to load post: $error'),
+    // If successful and incrementViewCount is true, increment view count
+    if (incrementViewCount) {
+      result.fold(
+        (_) {}, // Ignore if post fetch failed
+        (post) {
+          // Fire and forget - don't wait for completion
+          // Phase 4: Use IncrementViewCountUseCase (eventId auto-generated)
+          _incrementViewCountUseCase.execute(postId: postId).then(
+            (viewCountResult) {
+              viewCountResult.fold(
+                (failure) {
+                  // Log error but don't fail the main operation
+                  print('Failed to increment view count: $failure');
+                },
+                (_) {}, // Success - no action needed
+              );
+            },
+          );
+        },
       );
     }
+
+    return result;
   }
 
   /// Get post details as a real-time stream
-  /// 실시간 게시물 상세 스트림 가져오기
-  Stream<Result<PostDisplay>> getPostStream({
+  ///
+  /// **Note**: Stream methods don't use Either - they use Stream.error()
+  ///
+  /// **Returns**:
+  /// - Stream emits PostDisplay when post is found
+  /// - Stream emits null if post doesn't exist
+  /// - Stream emits error on failures
+  Stream<PostDisplay?> getPostStream({
     required String postId,
   }) {
-    try {
-      if (postId.isEmpty) {
-        return Stream.value(
-          ResultFailure(
-            ValidationFailure(message: 'Post ID cannot be empty'),
-          ),
-        );
-      }
-
-      final stream = _postRepository.streamPost(postId);
-
-      return stream.map((post) {
-        try {
-          if (post == null) {
-            return ResultFailure<PostDisplay>(
-              NotFoundFailure(message: 'Post not found with ID: $postId'),
-            );
-          }
-          return Success(post);
-        } catch (error) {
-          return ResultFailure<PostDisplay>(
-            AppFailure(message: 'Failed to load post: $error'),
-          );
-        }
-      });
-    } catch (error) {
-      return Stream.value(
-        ResultFailure(
-          AppFailure(message: 'Failed to create post stream: $error'),
-        ),
+    if (postId.trim().isEmpty) {
+      return Stream.error(
+        const PostFailure.invalidInput(field: 'postId'),
       );
     }
+
+    return _postRepository.streamPost(postId);
   }
 }

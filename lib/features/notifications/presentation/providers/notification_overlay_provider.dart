@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/models/notification.dart' as domain;
+import '../../domain/entities/notification.dart' as domain;
 import '../../domain/usecases/mark_as_read_usecase.dart';
 import '/services/notification/notification_queue_service.dart';
 import '/core/utils/logger.dart';

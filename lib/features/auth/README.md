@@ -25,11 +25,8 @@
 ```
 lib/features/auth/
 ├── 📂 data/                              # Data Layer (Firebase-Centric v2.0)
-│   ├── 📂 datasources/                   # 데이터 소스 (2개)
-│   │   ├── i_auth_local_datasource.dart
-│   │   └── auth_local_datasource.dart
 │   ├── 📂 repositories/                  # Repository 구현체 (1개)
-│   │   └── auth_repository_impl.dart    # [복잡] Firebase Auth/Firestore 통합
+│   │   └── auth_repository_impl.dart    # [복잡] Firebase Auth/Firestore + UnifiedCacheService 통합
 │   └── 📄 README.md                      # Data Layer 상세 문서
 │
 ├── 📂 domain/                             # Domain Layer (Clean Architecture v4.0)
@@ -46,17 +43,21 @@ lib/features/auth/
 │   │   └── auth_failure.freezed.dart    # [자동 생성] Freezed 코드
 │   ├── 📂 repositories/                  # Repository 인터페이스 (1개)
 │   │   └── i_auth_repository.dart       # [62 lines] 14개 인증 메서드 계약
-│   ├── 📂 usecases/                      # UseCase (비즈니스 로직, 10개)
-│   │   ├── sign_in_with_email_usecase.dart     # [88 lines] 이메일 로그인
-│   │   ├── sign_in_with_google_usecase.dart    # [50 lines] Google OAuth
-│   │   ├── sign_in_with_apple_usecase.dart     # [56 lines] Apple Sign In
-│   │   ├── sign_in_with_phone_usecase.dart     # [192 lines] 전화번호 인증
-│   │   ├── sign_up_with_email_usecase.dart     # [135 lines] 이메일 회원가입
-│   │   ├── sign_out_usecase.dart              # [57 lines] 로그아웃
-│   │   ├── get_current_user_usecase.dart      # [17 lines] 현재 사용자 조회
-│   │   ├── account_management_usecase.dart     # [294 lines] 계정 관리
-│   │   ├── email_verification_usecase.dart     # [200 lines] 이메일 인증
-│   │   └── password_management_usecase.dart    # [209 lines] 비밀번호 관리
+│   ├── 📂 usecases/                      # UseCase (비즈니스 로직, 10개 - 관심사별 정리)
+│   │   ├── 📂 sign_in/                        # 로그인 UseCases (4개)
+│   │   │   ├── sign_in_with_email_usecase.dart     # [88 lines] 이메일 로그인
+│   │   │   ├── sign_in_with_google_usecase.dart    # [50 lines] Google OAuth
+│   │   │   ├── sign_in_with_apple_usecase.dart     # [56 lines] Apple Sign In
+│   │   │   └── sign_in_with_phone_usecase.dart     # [192 lines] 전화번호 인증
+│   │   ├── 📂 sign_up/                        # 회원가입 UseCases (1개)
+│   │   │   └── sign_up_with_email_usecase.dart     # [135 lines] 이메일 회원가입
+│   │   ├── 📂 session/                        # 세션 관리 UseCases (2개)
+│   │   │   ├── sign_out_usecase.dart              # [57 lines] 로그아웃
+│   │   │   └── get_current_user_usecase.dart      # [17 lines] 현재 사용자 조회
+│   │   └── 📂 account/                        # 계정 관리 UseCases (3개)
+│   │       ├── account_management_usecase.dart     # [294 lines] 계정 관리
+│   │       ├── email_verification_usecase.dart     # [200 lines] 이메일 인증
+│   │       └── password_management_usecase.dart    # [209 lines] 비밀번호 관리
 │   └── 📄 README.md                      # Domain Layer 상세 문서 (1861줄)
 │
 ├── 📂 presentation/                       # Presentation Layer (Riverpod 2.x)
@@ -108,12 +109,12 @@ lib/features/auth/
 └── 📄 README.md                         # 👈 이 문서 (통합 가이드)
 ```
 
-**총 파일 수**: 약 56개 (생성된 Freezed/JSON 파일 포함)
-- Data Layer: 3개
+**총 파일 수**: 61개 (생성된 Freezed/JSON 파일 포함)
+- Data Layer: 2개 (Repository 1개 + README 1개)
 - Domain Layer: 19개 (10 UseCases + 5 Entities + 2 Failures + 1 Repository + 1 Enum)
 - Presentation Layer: 33개 (6 screens + 31 components/models/widgets)
 - DI: 1개
-- 문서: 4개
+- 문서: 6개 (Main README + 3 Layer READMEs + 2 Phase docs)
 
 ---
 
@@ -150,8 +151,8 @@ lib/features/auth/
 │  • Direct Firebase SDK 사용 (Auth, Firestore)                │
 │  • Either 패턴 (11개 Firebase 에러 → AuthFailure 변환)        │
 │  • Extension Pattern (Firebase User ↔ AuthUser 변환)         │
-│  • Local DataSource (SharedPreferences 캐싱)                 │
-│  • 3개 파일                                                    │
+│  • UnifiedCacheService 통합 (3-Layer 캐싱: Memory→Hive→Firestore)│
+│  • 2개 파일                                                    │
 └─────────────────────────────────────────────────────────────┘
                    │
                    ▼
@@ -185,20 +186,20 @@ lib/features/auth/
 
 | 무엇을 찾을 때 | 어느 README | 어느 섹션 | 파일 위치 |
 |---------------|-------------|-----------|-----------|
-| **이메일 로그인 로직** | `domain/README.md` | UseCase 섹션 | `domain/usecases/sign_in_with_email_usecase.dart` |
-| **Google 로그인 구현** | `domain/README.md` | UseCase 섹션 | `domain/usecases/sign_in_with_google_usecase.dart` |
-| **Apple 로그인 구현** | `domain/README.md` | UseCase 섹션 | `domain/usecases/sign_in_with_apple_usecase.dart` |
-| **전화번호 인증 플로우** | `domain/README.md` | UseCase 섹션 | `domain/usecases/sign_in_with_phone_usecase.dart` |
-| **회원가입 로직** | `domain/README.md` | UseCase 섹션 | `domain/usecases/sign_up_with_email_usecase.dart` |
-| **로그아웃 구현** | `domain/README.md` | UseCase 섹션 | `domain/usecases/sign_out_usecase.dart` |
-| **비밀번호 재설정** | `domain/README.md` | UseCase 섹션 | `domain/usecases/password_management_usecase.dart` |
-| **이메일 인증 발송** | `domain/README.md` | UseCase 섹션 | `domain/usecases/email_verification_usecase.dart` |
-| **계정 관리 (삭제, 프로필)** | `domain/README.md` | UseCase 섹션 | `domain/usecases/account_management_usecase.dart` |
+| **이메일 로그인 로직** | `domain/README.md` | UseCase 섹션 | `domain/usecases/sign_in/sign_in_with_email_usecase.dart` |
+| **Google 로그인 구현** | `domain/README.md` | UseCase 섹션 | `domain/usecases/sign_in/sign_in_with_google_usecase.dart` |
+| **Apple 로그인 구현** | `domain/README.md` | UseCase 섹션 | `domain/usecases/sign_in/sign_in_with_apple_usecase.dart` |
+| **전화번호 인증 플로우** | `domain/README.md` | UseCase 섹션 | `domain/usecases/sign_in/sign_in_with_phone_usecase.dart` |
+| **회원가입 로직** | `domain/README.md` | UseCase 섹션 | `domain/usecases/sign_up/sign_up_with_email_usecase.dart` |
+| **로그아웃 구현** | `domain/README.md` | UseCase 섹션 | `domain/usecases/session/sign_out_usecase.dart` |
+| **비밀번호 재설정** | `domain/README.md` | UseCase 섹션 | `domain/usecases/account/password_management_usecase.dart` |
+| **이메일 인증 발송** | `domain/README.md` | UseCase 섹션 | `domain/usecases/account/email_verification_usecase.dart` |
+| **계정 관리 (삭제, 프로필)** | `domain/README.md` | UseCase 섹션 | `domain/usecases/account/account_management_usecase.dart` |
 | **AuthUser 엔티티 구조** | `domain/README.md` | Entity 섹션 | `domain/entities/auth_user.dart` |
 | **에러 타입 정의** | `domain/README.md` | Failure 섹션 | `domain/failures/auth_failure.dart` |
 | **Firebase 데이터 변환** | `domain/README.md` | Extension 섹션 | `domain/entities/auth_user_extensions.dart` |
 | **Repository 구현체** | `data/README.md` | Repository 구현 섹션 | `data/repositories/auth_repository_impl.dart` |
-| **로컬 캐싱 로직** | `data/README.md` | DataSource 섹션 | `data/datasources/auth_local_datasource.dart` |
+| **캐싱 시스템 통합** | `data/README.md` | UnifiedCache 섹션 | UnifiedCacheService (전역 싱글톤) |
 | **로그인 UI 화면** | `presentation/README.md` | Screens 섹션 | `presentation/screens/login/login_page/` |
 | **회원가입 UI 화면** | `presentation/README.md` | Screens 섹션 | `presentation/screens/signup/create_account/` |
 | **전화 인증 UI** | `presentation/README.md` | Screens 섹션 | `presentation/screens/phone_auth/` |
@@ -315,7 +316,7 @@ lib/features/auth/
    - `ref.read(signInWithEmailUseCaseProvider)` 호출
    - GetIt에서 UseCase 인스턴스 가져오기
 
-3. **UseCase 실행**: `domain/usecases/sign_in_with_email_usecase.dart:88`
+3. **UseCase 실행**: `domain/usecases/sign_in/sign_in_with_email_usecase.dart:88`
    - 이메일/비밀번호 검증
    - Repository 메서드 호출
    - Either<AuthFailure, AuthUser> 반환
@@ -328,13 +329,19 @@ lib/features/auth/
    - Firebase Auth SDK 직접 호출
    - `FirebaseAuth.instance.signInWithEmailAndPassword()`
    - Firebase User → AuthUser 변환
+   - UnifiedCacheService 3-Layer 캐싱 적용
 
 6. **Extension 변환**: `domain/entities/auth_user_extensions.dart:208`
    - `FirebaseUser.toAuthUser()` 확장 메서드
    - Firestore에서 추가 사용자 정보 조회
    - AuthUser 엔티티 생성
 
-7. **Firebase 호출**:
+7. **캐싱 레이어**: UnifiedCacheService (전역 싱글톤)
+   - L1 메모리 캐시: SimpleMemoryCache (LRU, 5분 TTL)
+   - L2 로컬 DB: Hive 영구 저장소
+   - L3 원격 캐시: Firestore 오프라인 캐시
+
+8. **Firebase 호출**:
    - Firebase Auth: 인증 처리
    - Firestore: `users/{uid}` 문서 조회
    - 실시간 Auth 상태 스트림 반환
@@ -347,10 +354,11 @@ lib/features/auth/
 
 1. **UI 이벤트**: `presentation/screens/login/login_page/login_page_widget.dart`
 2. **Provider 호출**: `presentation/providers/auth_providers.dart`
-3. **UseCase 실행**: `domain/usecases/sign_in_with_google_usecase.dart:50`
+3. **UseCase 실행**: `domain/usecases/sign_in/sign_in_with_google_usecase.dart:50`
 4. **Google OAuth**: GoogleSignIn SDK → OAuth Token
 5. **Firebase 연동**: `FirebaseAuth.signInWithCredential()`
 6. **Extension 변환**: `auth_user_extensions.dart`
+7. **캐싱**: UnifiedCacheService 3-Layer 캐싱 적용
 
 ### 전화번호 인증 플로우 (3단계)
 
@@ -361,9 +369,10 @@ lib/features/auth/
 ```
 
 1. **1단계 (전화번호 입력)**: `presentation/screens/phone_auth/phone_creat_account/`
-2. **2단계 (SMS 발송)**: `domain/usecases/sign_in_with_phone_usecase.dart:192`
+2. **2단계 (SMS 발송)**: `domain/usecases/sign_in/sign_in_with_phone_usecase.dart:192`
 3. **3단계 (PIN 입력)**: `presentation/screens/phone_auth/phonelogeinpincode/`
 4. **인증 완료**: Firebase Auth Phone Provider 사용
+5. **캐싱**: UnifiedCacheService에 사용자 프로필 저장
 
 ---
 
@@ -371,10 +380,18 @@ lib/features/auth/
 
 **파일**: `di/auth_di_module.dart`
 
-**등록되는 의존성** (Simplified with UnifiedCacheService):
+**등록되는 의존성**:
 - **Repository**: `AuthRepositoryImpl` (IAuthRepository 구현체)
   - FirebaseAuth 직접 주입
-  - UnifiedCacheService 싱글톤 사용 (DI 등록 불필요)
+  - UnifiedCacheService 싱글톤 사용 (전역 캐시 관리)
+
+**UnifiedCacheService 3-Layer 캐싱 전략**:
+- **L1 메모리**: SimpleMemoryCache (LRU, 100개 제한, 5분 TTL) - <10ms 응답
+- **L2 로컬 DB**: Hive 영구 저장소 - 10-30ms 응답
+- **L3 원격 캐시**: Firestore 오프라인 캐시 - 50-100ms 응답
+- **캐시 키**: `user_profile_{userId}`, `auth_session_{sessionId}`
+- **비용 절약**: Firestore 읽기 요청 ~60% 감소
+
 - **10개 UseCase**:
   - `SignInWithEmailUseCase`
   - `SignInWithGoogleUseCase`
@@ -406,11 +423,11 @@ final result = await useCase.execute(email: email, password: password);
 | 구분 | 파일 수 | 총 라인 수 | 주요 패턴 |
 |------|---------|-----------|-----------|
 | **Domain** | 19 | ~1,861 | Freezed, Either, UseCase, Repository Interface |
-| **Data** | 3 | ~? | Extension, Firebase-Centric, Repository Implementation |
+| **Data** | 2 | ~500+ | Extension, Firebase-Centric, UnifiedCache 통합 |
 | **Presentation** | 33 | ~2,663 | Riverpod + GetIt, Widget + Model, Component-Driven |
-| **DI** | 1 | ~150 | GetIt 등록 |
-| **문서** | 4 | ~5,000+ | 통합 가이드 + 레이어별 상세 문서 |
-| **총합** | **60** | **~10,000+** | Clean Architecture v4.0 |
+| **DI** | 1 | ~140 | GetIt 등록 |
+| **문서** | 6 | ~7,000+ | 통합 가이드 + 레이어별 문서 + Phase 문서 |
+| **총합** | **61** | **~12,000+** | Clean Architecture v4.0 + Firebase-Centric v2.0 |
 
 ---
 
@@ -480,10 +497,10 @@ final result = await useCase.execute(email: email, password: password);
    - `StreamProvider` 캐싱 (`keepAlive()` 사용)
    - 불필요한 리빌드 방지
 
-2. **로컬 캐싱**:
-   - `data/datasources/auth_local_datasource.dart` 활용
-   - SharedPreferences 또는 Hive 사용
-   - TTL(Time To Live) 설정
+2. **UnifiedCacheService 활용**:
+   - 전역 싱글톤 캐시 시스템
+   - 3-Layer 캐싱 (Memory → Hive → Firestore)
+   - TTL 5분 (메모리), 영구(Hive), 오프라인(Firestore)
 
 3. **Firebase 최적화**:
    - Firestore 쿼리 최소화

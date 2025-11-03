@@ -29,13 +29,15 @@ lib/features/voting/
 │   │       │   └── pending_operations_service.dart  # 오프라인 큐 관리
 │   │       └── 📂 utils/
 │   │           └── cache_keys.dart       # 캐시 키 상수
-│   ├── 📂 extensions/                    # Firestore 변환 (6개)
-│   │   ├── vote_extensions.dart
-│   │   ├── vote_state_extensions.dart
-│   │   ├── post_voting_extensions.dart
-│   │   ├── vote_expansion_request_extensions.dart
-│   │   ├── weight_extensions.dart
-│   │   └── firestore_error_extensions.dart
+│   ├── 📂 extensions/                    # Firestore 에러 변환 (1개)
+│   │   └── firestore_error_extensions.dart  # FirebaseException → VotingFailure
+│   │
+│   │   # ⚠️ NOTE: Entity 변환 Extension 5개는 Domain Layer로 이동
+│   │   # - vote_extensions.dart → domain/entities/dialog/
+│   │   # - vote_state_extensions.dart → domain/entities/chat/
+│   │   # - post_voting_extensions.dart → domain/entities/chat/
+│   │   # - vote_expansion_request_extensions.dart → domain/entities/dialog/
+│   │   # - weight_extensions.dart → domain/entities/dialog/
 │   ├── 📂 adapters/                      # Legacy 호환성 (2개)
 │   │   ├── votecounts_adapter.dart
 │   │   └── box_calculator_adapter.dart
@@ -157,12 +159,15 @@ lib/features/voting/
 └── 📄 README.md                         # 👈 이 문서 (통합 가이드)
 ```
 
-**총 파일 수**: 약 93개 (생성된 Freezed 파일 포함)
-- Data Layer: 12개 (7개 레거시 캐시 파일 삭제 완료)
-- Domain Layer: 35개 (17개 주요 + 18개 생성)
+**총 파일 수**: 약 87개 (생성된 Freezed 파일 포함)
+- Data Layer: 8개 (11개 파일 삭제: 7개 레거시 캐시 + 4개 Extension 이동)
+- Domain Layer: 39개 (21개 주요 + 18개 생성) - Extension 5개 Data에서 이동
 - Presentation Layer: 39개
 - DI: 1개
 - 문서: 4개
+
+**아키텍처 변화**: Extension 파일 5개가 Data → Domain으로 이동하여
+Entity 중심 설계 완성 (Firebase-Centric v2.0 진화)
 
 ---
 
@@ -389,14 +394,14 @@ final useCase = GetIt.instance<SubmitVoteUseCase>();
 
 ## 📊 통계
 
-| 구분 | 파일 수 | 총 라인 수 | 주요 패턴 |
-|------|---------|-----------|-----------|
-| **Data** | 12 | ~1,400 | Extension, Sharded Counter, UnifiedCache |
-| **Domain** | 35 | ~1,775 | Freezed, Either, UseCase, Repository Interface |
-| **Presentation** | 39 | ~4,500 | Riverpod, StreamProvider, Component-Driven |
-| **DI** | 1 | ~100 | GetIt 등록 (DataSource 제거) |
-| **문서** | 4 | ~6,500 | 통합 가이드 + 레이어별 상세 문서 |
-| **총합** | **91** | **~14,275** | Clean Architecture v4.0 + Firebase-Centric v2.0 |
+| 구분 | 파일 수 | 총 라인 수 | 주요 패턴 | 변경사항 |
+|------|---------|-----------|-----------|---------|
+| **Data** | 8 | ~2,300 | Extension (1개), Sharded Counter, UnifiedCache | ⬇️ 4개 감소 (Extension 이동) |
+| **Domain** | 39 | ~2,132 | Freezed, Either, UseCase, Extension (5개) | ⬆️ 4개 증가 (Extension 수용) |
+| **Presentation** | 39 | ~6,850 | Riverpod, StreamProvider, Component-Driven | 📈 +52% 증가 |
+| **DI** | 1 | ~100 | GetIt 등록 (DataSource 제거) | - |
+| **문서** | 4 | ~6,500 | 통합 가이드 + 레이어별 상세 문서 | - |
+| **총합** | **87** | **~17,882** | Clean Architecture v4.0 + Firebase-Centric v2.0 | 🔄 Extension Pattern 진화 |
 
 ---
 

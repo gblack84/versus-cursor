@@ -5,14 +5,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '/core/config/environment_config.dart';
 import '/core/firebase/firebase_config.dart';
 import 'services/cache/unified_cache_service.dart';
 import 'services/notification/fcm_service.dart';
-import 'features/notifications/data/adapters/notification_service.dart';
+import 'features/notifications/data/services/notification_service.dart';
 import '/app/state/providers/navigation_provider.dart';
-import '/features/post/presentation/providers/feed_provider.dart';
 import '/app/di.dart';
 import 'package:get_it/get_it.dart';
 import 'core_exports.dart';
@@ -85,7 +85,6 @@ void main() async {
         providers: [
           ChangeNotifierProvider(create: (context) => appState),
           ChangeNotifierProvider(create: (context) => NavigationProvider()),
-          ChangeNotifierProvider(create: (context) => GetIt.instance<FeedProvider>()),
           Provider<NotificationService>(
               create: (context) => GetIt.instance<NotificationService>()),
         ],
@@ -93,6 +92,49 @@ void main() async {
       ),
     ),
   );
+
+  // 백그라운드 프리로딩 (앱 시작 차단하지 않음)
+  _preloadNotifications();
+  _preloadPosts();
+}
+
+/// 알림 프리로딩 - 백그라운드에서 최근 알림 캐시에 로드
+///
+/// Phase 3 Cache Integration: UnifiedCacheService 활용
+/// - 500ms 지연 후 실행 (UI 렌더링 완료 대기)
+/// - 실패 시 에러 로그만 출력 (앱 시작에 영향 없음)
+void _preloadNotifications() {
+  Future.delayed(const Duration(milliseconds: 500), () async {
+    try {
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      if (currentUserId == null) return;
+
+      final repository = getIt<INotificationRepository>();
+      await repository.getUserNotifications(currentUserId);
+
+      debugPrint('✅ Notification Preloading: Success');
+    } catch (e) {
+      debugPrint('⚠️ Notification Preloading: Failed - $e');
+    }
+  });
+}
+
+/// 게시물 프리로딩 - 백그라운드에서 인기 게시물 캐시에 로드
+///
+/// **Phase 3: Cache Integration**
+/// - 700ms 지연 후 실행 (알림 프리로딩 완료 대기)
+/// - PostCacheService를 통해 인기 & 트렌딩 게시물 프리로드
+/// - 실패 시 에러 로그만 출력 (앱 시작에 영향 없음)
+void _preloadPosts() {
+  Future.delayed(const Duration(milliseconds: 700), () async {
+    try {
+      // PostCacheService를 통한 프리로딩
+      await UnifiedCacheService.instance.preloadPopularPosts();
+      debugPrint('✅ Post Preloading: Success');
+    } catch (e) {
+      debugPrint('⚠️ Post Preloading: Failed - $e');
+    }
+  });
 }
 
 // For backward compatibility - MyApp is now in app/app.dart

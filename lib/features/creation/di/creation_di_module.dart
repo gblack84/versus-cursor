@@ -29,7 +29,6 @@ import '../domain/repositories/specialized/i_moderation_repository.dart';
 import '../domain/repositories/specialized/i_visibility_repository.dart';
 import '../domain/repositories/i_media_repository.dart';
 import '../domain/repositories/i_post_creation_repository_v2.dart';
-import '/features/post/domain/repositories/i_post_query_service.dart';
 
 // ===== Data Layer - Repository Implementations (Adapters) =====
 import '../data/repositories/image_processing_repository_impl.dart';
@@ -39,7 +38,6 @@ import '../data/repositories/content_moderation_repository_impl.dart';
 import '../data/repositories/content_visibility_repository_impl.dart';
 import '../data/repositories/media_repository_impl.dart';
 import '../data/repositories/post_creation_repository_v2_impl.dart';
-import '/features/post/data/repositories/post_query_service_impl.dart';
 
 // ===== Domain Layer - UseCases =====
 import '../domain/usecases/create_post_usecase.dart';
@@ -112,6 +110,10 @@ void _registerServices(GetIt getIt) {
 }
 
 /// Register Repository implementations
+///
+/// **Firebase-Centric v2.0**: Post Feature dependency removed
+/// - Removed IPostQueryService (Post Feature import)
+/// - Creation Feature now fully independent
 void _registerRepositories(GetIt getIt) {
   // 1. Content Metrics Repository
   getIt.registerLazySingleton<IContentMetricsRepository>(
@@ -128,19 +130,14 @@ void _registerRepositories(GetIt getIt) {
     () => ContentVisibilityRepositoryImpl(),
   );
 
-  // 4. Post Query Service
-  getIt.registerLazySingleton<IPostQueryService>(
-    () => PostQueryServiceImpl(),
-  );
-
-  // 5. Media Repository
+  // 4. Media Repository
   getIt.registerLazySingleton<IMediaRepository>(
     () => MediaRepositoryImpl(
       storageDataSource: getIt<FirebaseStorageDataSource>(),
     ),
   );
 
-  // 6. Post Creation Repository V2
+  // 5. Post Creation Repository V2
   getIt.registerLazySingleton<IPostCreationRepositoryV2>(
     () => PostCreationRepositoryV2Impl(
       dataSource: getIt<FirebasePostCreationDataSource>(),

@@ -1,5 +1,5 @@
 import 'dart:async';
-import '../models/notification.dart';
+import '../entities/notification.dart';
 
 /// 알림 서비스 인터페이스
 ///

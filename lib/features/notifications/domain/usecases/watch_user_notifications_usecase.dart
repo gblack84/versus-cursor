@@ -1,4 +1,4 @@
-import '../models/notification.dart';
+import '../entities/notification.dart';
 import '../repositories/i_notification_repository.dart';
 import '../value_objects/notification_filter.dart';
 import 'base/stream_use_case.dart';
@@ -7,6 +7,10 @@ import 'base/stream_use_case.dart';
 ///
 /// Clean Architecture - Domain Business Logic with Reactive Programming
 /// Observes real-time notification updates for a specific user
+///
+/// **Phase 1 Complete**: Stream methods unchanged
+/// - Streams don't use Either pattern (use Stream.error() instead)
+/// - Business logic applied via Repository filter parameters
 ///
 /// Example:
 /// ```dart

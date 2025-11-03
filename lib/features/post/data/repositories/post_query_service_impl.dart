@@ -315,7 +315,7 @@ class PostQueryServiceImpl implements IPostQueryService {
     try {
       // Use Algolia if available
       if (_algolia != null) {
-        final index = _algolia!.instance.index('posts');
+        final index = _algolia.instance.index('posts');
         final algoliaQuery = index.query(query);
         algoliaQuery.setHitsPerPage(limit);
 

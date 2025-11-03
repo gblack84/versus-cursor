@@ -1,161 +1,169 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '/core_exports.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/features/post/domain/models/post_display.dart';
-import '/features/post/presentation/providers/popular_posts_provider.dart';
+import '/features/post/domain/failures/post_failure.dart';
+import '/features/post/presentation/providers/post_providers.dart';
+import '/features/post/presentation/providers/post_params.dart';
 import '/core/design_system/design_system.dart';
-import 'package:get_it/get_it.dart';
 import '/core/constants/app_constants.dart';
+import '/core_exports.dart';
 
-class PopularPostsPage extends StatefulWidget {
+/// Popular Posts Page - Riverpod 2.x Migration
+///
+/// **Phase 2: ConsumerWidget Pattern**
+/// - Uses popularPostsStreamProvider for real-time updates
+/// - AsyncValue.when() for automatic state handling
+/// - No manual dispose needed
+class PopularPostsPage extends ConsumerWidget {
   const PopularPostsPage({super.key});
 
   static String routeName = 'popularPosts';
   static String routePath = '/popular';
 
   @override
-  State<PopularPostsPage> createState() => _PopularPostsPageState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch popular posts stream with default params
+    final postsAsync = ref.watch(
+      popularPostsStreamProvider(
+        const PopularPostsParams(limit: 20, timeWindow: Duration(days: 7)),
+      ),
+    );
 
-class _PopularPostsPageState extends State<PopularPostsPage> {
-  late final PopularPostsProvider _provider;
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Get provider from DI
-    _provider = GetIt.instance<PopularPostsProvider>();
-
-    // Load popular posts
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _provider.loadPopularPosts();
-    });
-  }
-
-  @override
-  void dispose() {
-    _provider.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: _provider,
-      child: Scaffold(
-        backgroundColor: VersusColors.backgroundPrimary,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: VersusColors.textPrimary),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          title: Text(
-            '인기 게시물',
-            style: VersusTextStyles.headingSmall,
-          ),
-          centerTitle: true,
-          elevation: 0.0,
+    return Scaffold(
+      backgroundColor: VersusColors.backgroundPrimary,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: VersusColors.textPrimary),
+          onPressed: () => Navigator.of(context).pop(),
         ),
-        body: SafeArea(
-          top: true,
-          child: Consumer<PopularPostsProvider>(
-            builder: (context, provider, child) {
-              // 로딩 상태
-              if (provider.loadingState == PopularLoadingState.loading) {
-                return Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      VersusColors.primary,
+        title: Text(
+          '인기 게시물',
+          style: VersusTextStyles.headingSmall,
+        ),
+        centerTitle: true,
+        elevation: 0.0,
+      ),
+      body: SafeArea(
+        top: true,
+        child: postsAsync.when(
+          // Loading state
+          loading: () => Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(
+                VersusColors.primary,
+              ),
+            ),
+          ),
+
+          // Error state
+          error: (error, stack) {
+            String errorMessage = '오류가 발생했습니다';
+
+            if (error is PostFailure) {
+              errorMessage = error.when(
+                networkError: () => '네트워크 연결을 확인해주세요.',
+                serverError: (message) => '서버 오류: ${message ?? "알 수 없는 오류"}',
+                timeout: () => '요청 시간이 초과되었습니다.',
+                insufficientPermissions: () => '권한이 없습니다.',
+                unauthorized: () => '로그인이 필요합니다.',
+                postNotFound: (postId) => '게시물을 찾을 수 없습니다.',
+                userNotFound: (userId) => '사용자를 찾을 수 없습니다.',
+                invalidInput: (field) => '$field 값이 올바르지 않습니다.',
+                contentTooLong: (maxLength) => '내용이 너무 깁니다.',
+                createFailed: (reason) => '생성 실패',
+                updateFailed: (reason) => '업데이트 실패',
+                deleteFailed: (reason) => '삭제 실패',
+                searchFailed: (query) => '검색 실패',
+                queryFailed: (reason) => '조회 실패: ${reason ?? "알 수 없는 오류"}',
+                unexpected: (message, err, stackTrace) =>
+                    message ?? '예상치 못한 오류가 발생했습니다.',
+              );
+            }
+
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: VersusColors.error,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    errorMessage,
+                    style: VersusTextStyles.bodyMedium.copyWith(
+                      color: VersusColors.textSecondary,
                     ),
                   ),
-                );
-              }
-
-              // 에러 상태
-              if (provider.loadingState == PopularLoadingState.error) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 64,
-                        color: VersusColors.error,
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        provider.errorMessage ?? '오류가 발생했습니다',
-                        style: VersusTextStyles.bodyMedium.copyWith(
-                          color: VersusColors.textSecondary,
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => provider.refresh(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: VersusColors.primary,
-                        ),
-                        child: Text('다시 시도'),
-                      ),
-                    ],
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      ref.invalidate(popularPostsStreamProvider(const PopularPostsParams(limit: 20, timeWindow: Duration(days: 7))));
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: VersusColors.primary,
+                    ),
+                    child: Text('다시 시도'),
                   ),
-                );
-              }
+                ],
+              ),
+            );
+          },
 
-              // 게시물 없음 상태
-              if (provider.loadingState == PopularLoadingState.empty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.stars,
-                        size: 64,
+          // Data state
+          data: (posts) {
+            if (posts.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.star,
+                      size: 64,
+                      color: VersusColors.textSecondary,
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      '인기 게시물이 없습니다',
+                      style: VersusTextStyles.headingMedium.copyWith(
                         color: VersusColors.textSecondary,
                       ),
-                      SizedBox(height: 16),
-                      Text(
-                        '인기 게시물이 없습니다',
-                        style: VersusTextStyles.headingMedium.copyWith(
-                          color: VersusColors.textSecondary,
-                        ),
+                    ),
+                    VersusSpacing.gapSM,
+                    Text(
+                      '새로운 게시물을 작성해보세요!',
+                      style: VersusTextStyles.bodyMedium.copyWith(
+                        color: VersusColors.textSecondary,
                       ),
-                      VersusSpacing.gapSM,
-                      Text(
-                        '새로운 게시물을 작성해보세요!',
-                        style: VersusTextStyles.bodyMedium.copyWith(
-                          color: VersusColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              final posts = provider.posts;
-
-              // 게시물 목록
-              return RefreshIndicator(
-                onRefresh: () => provider.refresh(),
-                child: ListView.builder(
-                  padding: EdgeInsets.symmetric(vertical: VersusSpacing.sm),
-                  itemCount: posts.length,
-                  itemBuilder: (context, index) {
-                    final post = posts[index];
-                    return _buildPopularCard(context, post, index);
-                  },
+                    ),
+                  ],
                 ),
               );
-            },
-          ),
+            }
+
+            // 게시물 목록
+            return RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(popularPostsStreamProvider(const PopularPostsParams(limit: 20, timeWindow: Duration(days: 7))));
+              },
+              child: ListView.builder(
+                padding: EdgeInsets.symmetric(vertical: VersusSpacing.sm),
+                itemCount: posts.length,
+                itemBuilder: (context, index) {
+                  final post = posts[index];
+                  return _buildPopularCard(context, post);
+                },
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildPopularCard(BuildContext context, PostDisplay post, int index) {
+  Widget _buildPopularCard(BuildContext context, PostDisplay post) {
     return Padding(
       padding: EdgeInsets.symmetric(
           horizontal: VersusSpacing.md, vertical: VersusSpacing.sm),
@@ -212,7 +220,7 @@ class _PopularPostsPageState extends State<PopularPostsPage> {
                             ),
                           ),
                           Text(
-                            dateTimeFormat('relative', post.createdAt),
+                            dateTimeFormat('relative', post.createdAtDateTime),
                             style: VersusTextStyles.bodySmall.copyWith(
                               color: VersusColors.textSecondary,
                             ),
@@ -220,26 +228,33 @@ class _PopularPostsPageState extends State<PopularPostsPage> {
                         ],
                       ),
                     ),
-                    // 순위 뱃지
+                    // 인기 뱃지
                     Container(
                       padding: EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
+                        horizontal: 8,
+                        vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: _getRankColor(index).withValues(alpha: 0.2),
+                        color: VersusColors.info.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: _getRankColor(index).withValues(alpha: 0.5),
-                          width: 1,
-                        ),
                       ),
-                      child: Text(
-                        '#${index + 1}',
-                        style: VersusTextStyles.labelMedium.copyWith(
-                          color: _getRankColor(index),
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.star,
+                            size: 14,
+                            color: VersusColors.info,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'POPULAR',
+                            style: VersusTextStyles.labelSmall.copyWith(
+                              color: VersusColors.info,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -395,12 +410,5 @@ class _PopularPostsPageState extends State<PopularPostsPage> {
         ),
       ),
     );
-  }
-
-  Color _getRankColor(int index) {
-    if (index == 0) return Color(0xFFFFD700); // Gold
-    if (index == 1) return Color(0xFFC0C0C0); // Silver
-    if (index == 2) return Color(0xFFCD7F32); // Bronze
-    return VersusColors.primary;
   }
 }

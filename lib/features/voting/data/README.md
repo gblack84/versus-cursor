@@ -21,7 +21,7 @@ Voting Feature의 Data Layer는 **Firebase-Centric Architecture v2.0**을 따릅
 | 측면 | Creation (Clean Arch v4.0) | Voting (Firebase-Centric v2.0) |
 |------|---------------------------|-------------------------------|
 | **DataSource** | ✅ Interface 추상화 (`IPostCreationDataSource`, `IStorageDataSource`) | ❌ Firebase SDK 직접 사용 |
-| **변환 패턴** | Mapper 클래스 (`/mappers`, 3개) | Extension 메서드 (`/extensions`, 6개) |
+| **변환 패턴** | Mapper 클래스 (`/mappers`, 3개) | Extension 메서드 (`data/extensions`: 1개, `domain/entities`: 5개) |
 | **DTO** | ✅ 전용 DTO (`/dto`, 6개) | ❌ Domain 모델 직접 사용 |
 | **캐싱 전략** | SharedPreferences 기반 개별 캐시 | UnifiedCacheService (3-Layer: Memory → Hive → Firestore) |
 | **레거시 호환** | N/A | ✅ Adapter 패턴 (`/adapters`, 2개) |
@@ -58,21 +58,29 @@ lib/features/voting/data/
 │       │   └── pending_operations_service.dart  # 오프라인 큐 관리
 │       └── utils/                           # 1개 - 캐시 키 정의
 │           └── cache_keys.dart
-├── extensions/                              # 6개 - Mapper 대체
-│   ├── firestore_error_extensions.dart
-│   ├── post_voting_extensions.dart
-│   ├── vote_expansion_request_extensions.dart
-│   ├── vote_extensions.dart
-│   ├── vote_state_extensions.dart
-│   └── weight_extensions.dart
+├── extensions/                              # 1개 - Firestore 에러 변환
+│   └── firestore_error_extensions.dart      # 129줄 - FirebaseException → VotingFailure
+│
+│   # ⚠️ NOTE: 나머지 5개 Extension 파일은 Domain Layer로 이동
+│   # - vote_extensions.dart → domain/entities/
+│   # - vote_state_extensions.dart → domain/entities/
+│   # - post_voting_extensions.dart → domain/entities/
+│   # - vote_expansion_request_extensions.dart → domain/entities/
+│   # - weight_extensions.dart → domain/entities/
+│   #
+│   # 이유: Entity 변환 로직은 Domain Layer에서 관리하는 것이 더 적절
+│   # (Firebase-Centric v2.0 아키텍처 진화)
 ├── adapters/                                # 2개 - Legacy 호환
 │   ├── votecounts_adapter.dart             # votesA/B ↔ option1/2
 │   └── box_calculator_adapter.dart         # 박스 크기 계산 호환
 └── services/                                # 1개 - Feature 전용
     └── vote_timer_service.dart             # 투표 타이머 싱글톤
 
-총 파일 수: 12개 (기존 19개 → 7개 삭제)
-총 라인 수: ~1,400줄 (기존 ~1,851줄)
+총 파일 수: 8개 (기존 19개 → 11개 삭제)
+총 라인 수: ~2,300줄 (기존 ~1,851줄)
+
+**아키텍처 진화**: 5개 Extension 파일이 Domain Layer로 이동하면서
+총 파일 수는 감소했으나, 라인 수는 증가 (Repository 구현 강화)
 
 **삭제된 레거시 파일 (7개)**:
 - i_voting_local_datasource.dart
@@ -83,6 +91,76 @@ lib/features/voting/data/
 - cache_management_service.dart
 - cache_helpers.dart
 ```
+
+---
+
+## 🔄 아키텍처 진화: Extension 파일 이동
+
+### 배경
+
+Firebase-Centric v2.0 아키텍처는 다음과 같이 진화했습니다:
+
+**기존 구조 (Phase 4 초기)**:
+```
+lib/features/voting/
+├── data/
+│   └── extensions/                    # 6개 파일 위치
+│       ├── firestore_error_extensions.dart
+│       ├── vote_extensions.dart        # Entity ↔ Firestore 변환
+│       ├── vote_state_extensions.dart
+│       ├── post_voting_extensions.dart
+│       ├── vote_expansion_request_extensions.dart
+│       └── weight_extensions.dart
+└── domain/
+    └── entities/                      # Entity 정의만
+```
+
+**현재 구조 (Phase 4 완료)**:
+```
+lib/features/voting/
+├── data/
+│   └── extensions/                    # 1개 파일만 유지
+│       └── firestore_error_extensions.dart  # FirebaseException → VotingFailure
+└── domain/
+    └── entities/                      # Entity 정의 + Firestore 변환
+        ├── vote.dart
+        ├── vote_extensions.dart       # ⬅️ 이동됨
+        ├── vote_state_extensions.dart # ⬅️ 이동됨
+        ├── post_voting_extensions.dart # ⬅️ 이동됨
+        ├── vote_expansion_request_extensions.dart # ⬅️ 이동됨
+        └── weight_extensions.dart     # ⬅️ 이동됨
+```
+
+### 이동 사유
+
+1. **Entity 책임 원칙**:
+   - Entity는 자신의 직렬화/역직렬화 방법을 알아야 함
+   - Extension을 Entity와 같은 위치에 두는 것이 응집도 향상
+
+2. **Clean Architecture 재해석**:
+   - 순수 Clean Architecture: Domain은 외부 프레임워크 몰라야 함
+   - Firebase-Centric v2.0: Firebase를 Domain의 일부로 수용
+   - 실용성 > 순수성 (코드 간소화, 유지보수 향상)
+
+3. **코드 탐색성**:
+   - `vote.dart` 옆에 `vote_extensions.dart`가 있으면 찾기 쉬움
+   - 개발자가 Entity 수정 시 Extension도 함께 확인 가능
+
+### 트레이드오프
+
+**Negative**:
+- ❌ Domain Layer가 Firestore 타입 (`DocumentSnapshot`, `Timestamp`) 의존
+- ❌ 순수 Clean Architecture 위반 (Domain이 Infrastructure 알게 됨)
+
+**Positive**:
+- ✅ 파일 수 감소 (10개 → 5개로 통합)
+- ✅ Entity 중심 설계 (Entity가 변환 로직 소유)
+- ✅ 유지보수 용이 (Entity 변경 시 Extension 함께 수정)
+- ✅ 코드 탐색성 향상 (관련 파일이 같은 디렉토리)
+
+### 결론
+
+Firebase-Centric v2.0은 **실용주의 아키텍처**입니다. Firebase를 피할 수 없는 프레임워크로 인정하고, Domain Layer에서도 사용합니다. 이는 순수성을 포기하되 **유지보수성과 개발 속도**를 얻는 트레이드오프입니다.
 
 ---
 

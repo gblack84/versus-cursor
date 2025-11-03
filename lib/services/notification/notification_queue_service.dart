@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 // Domain imports only
-import '/features/notifications/domain/models/notification.dart' as domain;
-// Data layer imports
-import '/features/notifications/data/datasources/i_local_notification_datasource.dart';
+import '/features/notifications/domain/entities/notification.dart' as domain;
 import '/features/notifications/domain/services/i_notification_service.dart';
 // Core utilities
 import '/core/utils/logger.dart';
+import '/services/cache/unified_cache_service.dart';
 // FCM Service
 import 'fcm_service.dart';
 
@@ -16,9 +15,11 @@ import 'fcm_service.dart';
 /// Implements Clean Architecture by emitting notifications via Stream for UI layer.
 ///
 /// Integrates both Firestore-based notifications and FCM push notifications.
-/// Refactored and finalized in Phase 3 migration.
+/// **Phase 5 Complete**: UnifiedCacheService 통합
+/// - ILocalNotificationDatasource 제거
+/// - UnifiedCacheService 3-Layer 캐싱 사용
+/// - Firebase-Centric v2.0 아키텍처 준수
 class NotificationQueueService {
-  final ILocalNotificationDatasource _localDatasource;
   final INotificationService _notificationService;
   final FCMService _fcmService;
 
@@ -31,11 +32,9 @@ class NotificationQueueService {
     _showNotificationController.stream;
 
   NotificationQueueService({
-    required ILocalNotificationDatasource localDatasource,
     required INotificationService notificationService,
     FCMService? fcmService,
-  })  : _localDatasource = localDatasource,
-        _notificationService = notificationService,
+  })  : _notificationService = notificationService,
         _fcmService = fcmService ?? FCMService();
 
   /// 알림 큐
@@ -178,15 +177,11 @@ class NotificationQueueService {
 
         case 'social':
         case 'social_notification':
-          // TODO: Implement SocialNotification conversion
-          Logger.info('Social 알림 변환 미구현', tag: 'NotificationQueueService');
-          return null;
+          return _convertToSocialNotification(data);
 
         case 'system':
         case 'system_notification':
-          // TODO: Implement SystemNotification conversion
-          Logger.info('System 알림 변환 미구현', tag: 'NotificationQueueService');
-          return null;
+          return _convertToSystemNotification(data);
 
         default:
           Logger.warning('알 수 없는 알림 타입: $notificationType',
@@ -196,6 +191,105 @@ class NotificationQueueService {
     } catch (e) {
       Logger.error('FCM 메시지 변환 오류', error: e, tag: 'NotificationQueueService');
       return null;
+    }
+  }
+
+  /// FCM 데이터를 SocialNotification으로 변환
+  domain.SocialNotification? _convertToSocialNotification(Map<String, dynamic> data) {
+    try {
+      return domain.SocialNotification(
+        id: data['id'] as String? ?? '',
+        userId: data['userId'] as String? ?? '',
+        type: data['type'] as String? ?? 'social',
+        title: data['title'] as String? ?? '',
+        content: data['content'] as String? ?? '',
+        createdAt: data['createdAt'] != null
+            ? DateTime.parse(data['createdAt'] as String)
+            : DateTime.now(),
+        isRead: data['isRead'] as bool? ?? false,
+        readAt: data['readAt'] != null
+            ? DateTime.parse(data['readAt'] as String)
+            : null,
+        expiryTime: data['expiryTime'] != null
+            ? DateTime.parse(data['expiryTime'] as String)
+            : null,
+        metadata: data['metadata'] as Map<String, dynamic>? ?? {},
+        actionType: _parseSocialActionType(data['actionType'] as String?),
+        fromUserId: data['fromUserId'] as String? ?? '',
+        fromUserName: data['fromUserName'] as String? ?? '',
+        fromUserProfileUrl: data['fromUserProfileUrl'] as String?,
+        relatedPostId: data['relatedPostId'] as String?,
+        relatedCommentId: data['relatedCommentId'] as String?,
+        relatedContent: data['relatedContent'] as String?,
+        interactionCount: data['interactionCount'] as int?,
+      );
+    } catch (e) {
+      Logger.error('Social 알림 변환 오류', error: e, tag: 'NotificationQueueService');
+      return null;
+    }
+  }
+
+  /// FCM 데이터를 SystemNotification으로 변환
+  domain.SystemNotification? _convertToSystemNotification(Map<String, dynamic> data) {
+    try {
+      return domain.SystemNotification(
+        id: data['id'] as String? ?? '',
+        userId: data['userId'] as String? ?? '',
+        type: data['type'] as String? ?? 'system',
+        title: data['title'] as String? ?? '',
+        content: data['content'] as String? ?? '',
+        createdAt: data['createdAt'] != null
+            ? DateTime.parse(data['createdAt'] as String)
+            : DateTime.now(),
+        isRead: data['isRead'] as bool? ?? false,
+        readAt: data['readAt'] != null
+            ? DateTime.parse(data['readAt'] as String)
+            : null,
+        expiryTime: data['expiryTime'] != null
+            ? DateTime.parse(data['expiryTime'] as String)
+            : null,
+        metadata: data['metadata'] as Map<String, dynamic>? ?? {},
+        alertType: _parseSystemAlertType(data['alertType'] as String?),
+        actionUrl: data['actionUrl'] as String?,
+        actionLabel: data['actionLabel'] as String?,
+        actionButtons: (data['actionButtons'] as Map<String, dynamic>?)
+            ?.map((k, v) => MapEntry(k, v.toString())),
+        iconUrl: data['iconUrl'] as String?,
+        isDismissible: data['isDismissible'] as bool? ?? true,
+      );
+    } catch (e) {
+      Logger.error('System 알림 변환 오류', error: e, tag: 'NotificationQueueService');
+      return null;
+    }
+  }
+
+  /// SocialActionType 파싱 헬퍼
+  domain.SocialActionType _parseSocialActionType(String? typeStr) {
+    if (typeStr == null) return domain.SocialActionType.like;
+
+    switch (typeStr.toLowerCase()) {
+      case 'like': return domain.SocialActionType.like;
+      case 'comment': return domain.SocialActionType.comment;
+      case 'friend_request': return domain.SocialActionType.friendRequest;
+      case 'friend_accepted': return domain.SocialActionType.friendAccepted;
+      case 'follow': return domain.SocialActionType.follow;
+      case 'mention': return domain.SocialActionType.mention;
+      case 'share': return domain.SocialActionType.share;
+      default: return domain.SocialActionType.like;
+    }
+  }
+
+  /// SystemAlertType 파싱 헬퍼
+  domain.SystemAlertType _parseSystemAlertType(String? typeStr) {
+    if (typeStr == null) return domain.SystemAlertType.info;
+
+    switch (typeStr.toLowerCase()) {
+      case 'critical': return domain.SystemAlertType.critical;
+      case 'security': return domain.SystemAlertType.security;
+      case 'maintenance': return domain.SystemAlertType.maintenance;
+      case 'update': return domain.SystemAlertType.update;
+      case 'info': return domain.SystemAlertType.info;
+      default: return domain.SystemAlertType.info;
     }
   }
 
@@ -311,8 +405,13 @@ class NotificationQueueService {
   /// 처리된 알림 ID 로드
   Future<void> _loadProcessedNotifications() async {
     try {
-      final savedIds = await _localDatasource.getProcessedNotificationIds();
-      _processedNotificationIds.addAll(savedIds);
+      final cachedIds = await UnifiedCacheService.instance
+          .get<List<dynamic>>('processed_notification_ids');
+      if (cachedIds != null) {
+        _processedNotificationIds.addAll(
+          cachedIds.map((id) => id.toString())
+        );
+      }
     } catch (e) {
       Logger.warning('처리 기록 로드 실패', tag: 'NotificationQueueService');
     }
@@ -321,8 +420,10 @@ class NotificationQueueService {
   /// 처리된 알림 ID 저장
   Future<void> _saveProcessedNotifications() async {
     try {
-      await _localDatasource
-          .saveProcessedNotificationIds(_processedNotificationIds);
+      await UnifiedCacheService.instance.set(
+        'processed_notification_ids',
+        _processedNotificationIds.toList(),
+      );
     } catch (e) {
       Logger.warning('처리 기록 저장 실패', tag: 'NotificationQueueService');
     }

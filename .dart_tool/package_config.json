@@ -842,6 +842,12 @@
       "languageVersion": "3.0"
     },
     {
+      "name": "fpdart",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/fpdart-1.2.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "freezed",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/freezed-3.2.3",
       "packageUri": "lib/",

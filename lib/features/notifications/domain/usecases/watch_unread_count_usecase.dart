@@ -3,6 +3,10 @@ import 'base/stream_use_case.dart';
 
 /// UseCase for watching unread notification count
 /// Clean Architecture - Domain Business Logic with Reactive Programming
+///
+/// **Phase 1 Complete**: Stream methods unchanged
+/// - Streams don't use Either pattern (use Stream.error() instead)
+/// - Business logic applied via Stream operators (map, where, etc.)
 class WatchUnreadCountUseCase implements StreamUseCase<String, int> {
   final INotificationRepository _repository;
 

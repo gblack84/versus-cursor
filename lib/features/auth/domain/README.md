@@ -82,17 +82,21 @@ lib/features/auth/domain/
 ├── repositories/                # 레포지토리 인터페이스 (Data 레이어가 구현)
 │   └── i_auth_repository.dart  # [62 lines] 14개 인증 메서드 추상 인터페이스
 │
-└── usecases/                    # 비즈니스 로직 캡슐화 (10개 유스케이스)
-    ├── account_management_usecase.dart   # [294 lines] 계정 관리 (프로필, 삭제)
-    ├── email_verification_usecase.dart   # [200 lines] 이메일 인증 발송 및 확인
-    ├── get_current_user_usecase.dart     # [17 lines]  현재 로그인 사용자 조회
-    ├── password_management_usecase.dart  # [209 lines] 비밀번호 재설정 및 변경
-    ├── sign_in_with_apple_usecase.dart   # [56 lines]  Apple 소셜 로그인
-    ├── sign_in_with_email_usecase.dart   # [88 lines]  이메일 로그인
-    ├── sign_in_with_google_usecase.dart  # [50 lines]  Google 소셜 로그인
-    ├── sign_in_with_phone_usecase.dart   # [192 lines] 전화번호(SMS OTP) 인증
-    ├── sign_out_usecase.dart            # [57 lines]  로그아웃
-    └── sign_up_with_email_usecase.dart   # [135 lines] 이메일 회원가입 + Firestore 사용자 생성
+└── usecases/                    # 비즈니스 로직 캡슐화 (10개 유스케이스 - 관심사별 정리)
+    ├── sign_in/                 # 로그인 UseCases (4개)
+    │   ├── sign_in_with_email_usecase.dart   # [88 lines]  이메일 로그인
+    │   ├── sign_in_with_google_usecase.dart  # [50 lines]  Google 소셜 로그인
+    │   ├── sign_in_with_apple_usecase.dart   # [56 lines]  Apple 소셜 로그인
+    │   └── sign_in_with_phone_usecase.dart   # [192 lines] 전화번호(SMS OTP) 인증
+    ├── sign_up/                 # 회원가입 UseCases (1개)
+    │   └── sign_up_with_email_usecase.dart   # [135 lines] 이메일 회원가입 + Firestore 사용자 생성
+    ├── session/                 # 세션 관리 UseCases (2개)
+    │   ├── sign_out_usecase.dart            # [57 lines]  로그아웃
+    │   └── get_current_user_usecase.dart     # [17 lines]  현재 로그인 사용자 조회
+    └── account/                 # 계정 관리 UseCases (3개)
+        ├── account_management_usecase.dart   # [294 lines] 계정 관리 (프로필, 삭제)
+        ├── email_verification_usecase.dart   # [200 lines] 이메일 인증 발송 및 확인
+        └── password_management_usecase.dart  # [209 lines] 비밀번호 재설정 및 변경
 
 📊 Total: 16 main files, 1,861 lines
 ```

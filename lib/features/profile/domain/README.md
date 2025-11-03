@@ -39,7 +39,7 @@ domain/
 │   ├── profile_failure.dart              # 204 lines - 12 failure types
 │   └── profile_failure.freezed.dart       # Generated
 │
-├── models/ (6 main + 18 generated = 24 files)
+├── entities/ (6 main + 18 generated = 24 files)
 │   ├── user_profile.dart                 # 146 lines - 42 fields (통합 모델)
 │   ├── user_profile.freezed.dart         # Generated
 │   ├── user_profile.g.dart               # Generated
@@ -92,7 +92,7 @@ domain/
         └── update_user_interests_usecase.dart        # 75 lines
 ```
 
-**Total**: 24 models + 6 repositories + 11 usecases + 1 README = **42 files**
+**Total**: 24 entities + 6 repositories + 11 usecases + 1 README + 3 기타 = **45 files**
 
 ---
 
@@ -222,7 +222,7 @@ try {
 
 ---
 
-## models/ - Domain Models Deep Dive
+## entities/ - Domain Models Deep Dive
 
 Domain Models는 비즈니스 개념을 표현하는 불변 객체입니다. Freezed 패키지를 사용하여 불변성, JSON 직렬화, copyWith, equality를 자동 생성합니다.
 

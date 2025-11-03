@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'package:fpdart/fpdart.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '/services/moderation/image_moderation_service.dart';
+import '../failures/creation_failures.dart';
 
 /// Image processing service interface for Domain layer
 ///
@@ -8,7 +10,7 @@ import '/services/moderation/image_moderation_service.dart';
 /// to avoid direct Service dependency in UseCase
 abstract class IImageProcessingService {
   /// Process multiple images with moderation
-  Future<ImageProcessingResult> processMultipleImages({
+  Future<Either<MediaProcessingFailure, ImageProcessingResult>> processMultipleImages({
     required List<File> files,
     required String box,
     File? editedFile,
@@ -19,7 +21,7 @@ abstract class IImageProcessingService {
   });
 
   /// Process a single edited image
-  Future<SingleImageResult> processEditedImage({
+  Future<Either<MediaProcessingFailure, SingleImageResult>> processEditedImage({
     required File editedFile,
     required String box,
     String? assetId,

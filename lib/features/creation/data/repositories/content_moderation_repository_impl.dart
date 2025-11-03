@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fpdart/fpdart.dart';
 import '../../domain/repositories/specialized/i_moderation_repository.dart';
 import '../../domain/usecases/moderate_content_usecase.dart';
+import '../../domain/failures/creation_failures.dart';
 
 /// Implementation of content moderation repository
 /// AI 검열 시스템과 연동되는 콘텐츠 정책 적용 구현체
@@ -23,7 +25,7 @@ class ContentModerationRepositoryImpl implements IContentModerationRepository {
       _firestore.collection(_reportsCollectionName);
 
   @override
-  Future<void> reportContent(
+  Future<Either<ModerationRepositoryFailure, Unit>> reportContent(
     String contentId,
     String userId,
     ReportReason reason,
@@ -51,56 +53,75 @@ class ContentModerationRepositoryImpl implements IContentModerationRepository {
       });
 
       await batch.commit();
+      return right(unit);
+    } on FirebaseException catch (e) {
+      return left(ModerationRepositoryFailure(
+        moderationStep: 'reportContent',
+        message: 'Failed to report content: ${e.message}',
+        code: e.code,
+      ));
     } catch (e) {
-      throw Exception('Failed to report content: $e');
+      return left(ModerationRepositoryFailure(
+        moderationStep: 'reportContent',
+        message: 'Unexpected error while reporting content: $e',
+      ));
     }
   }
 
   @override
-  Future<ModerationResult> moderateContent(String contentId) async {
+  Future<Either<ModerationRepositoryFailure, ModerationResult>> moderateContent(String contentId) async {
     try {
       // Use existing ModerateContentUseCase if available
       if (_moderateUseCase != null) {
-        final result = await _moderateUseCase!.moderateText(
+        final result = await _moderateUseCase.moderateText(
           text: contentId,
           context: 'post_content',
         );
 
         return result.fold(
-          (failure) => ModerationResult(
+          (failure) => right(ModerationResult(
             contentId: contentId,
             isApproved: false,
             violations: [failure.message],
             confidenceScore: 0.0,
             blockReason: failure.message,
             moderatedAt: DateTime.now(),
-          ),
-          (decision) => ModerationResult(
+          )),
+          (decision) => right(ModerationResult(
             contentId: contentId,
             isApproved: decision.isApproved,
             violations: decision.reason != null ? [decision.reason!] : [],
             confidenceScore: decision.confidence,
             blockReason: decision.reason,
             moderatedAt: DateTime.now(),
-          ),
+          )),
         );
       }
 
       // Fallback: Simple moderation without AI
-      return ModerationResult(
+      return right(ModerationResult(
         contentId: contentId,
         isApproved: true,
         violations: [],
         confidenceScore: 1.0,
         moderatedAt: DateTime.now(),
-      );
+      ));
+    } on FirebaseException catch (e) {
+      return left(ModerationRepositoryFailure(
+        moderationStep: 'moderateContent',
+        message: 'Failed to moderate content: ${e.message}',
+        code: e.code,
+      ));
     } catch (e) {
-      throw Exception('Failed to moderate content: $e');
+      return left(ModerationRepositoryFailure(
+        moderationStep: 'moderateContent',
+        message: 'Unexpected error during moderation: $e',
+      ));
     }
   }
 
   @override
-  Future<void> blockContent(String contentId, String reason) async {
+  Future<Either<ModerationRepositoryFailure, Unit>> blockContent(String contentId, String reason) async {
     try {
       await _postsCollection.doc(contentId).update({
         'isBlocked': true,
@@ -109,13 +130,23 @@ class ContentModerationRepositoryImpl implements IContentModerationRepository {
         'visibility': 2, // private
         'moderationStatus': 'blocked',
       });
+      return right(unit);
+    } on FirebaseException catch (e) {
+      return left(ModerationRepositoryFailure(
+        moderationStep: 'blockContent',
+        message: 'Failed to block content: ${e.message}',
+        code: e.code,
+      ));
     } catch (e) {
-      throw Exception('Failed to block content: $e');
+      return left(ModerationRepositoryFailure(
+        moderationStep: 'blockContent',
+        message: 'Unexpected error while blocking content: $e',
+      ));
     }
   }
 
   @override
-  Future<void> unblockContent(String contentId) async {
+  Future<Either<ModerationRepositoryFailure, Unit>> unblockContent(String contentId) async {
     try {
       await _postsCollection.doc(contentId).update({
         'isBlocked': false,
@@ -124,13 +155,23 @@ class ContentModerationRepositoryImpl implements IContentModerationRepository {
         'visibility': 0, // public
         'moderationStatus': 'approved',
       });
+      return right(unit);
+    } on FirebaseException catch (e) {
+      return left(ModerationRepositoryFailure(
+        moderationStep: 'unblockContent',
+        message: 'Failed to unblock content: ${e.message}',
+        code: e.code,
+      ));
     } catch (e) {
-      throw Exception('Failed to unblock content: $e');
+      return left(ModerationRepositoryFailure(
+        moderationStep: 'unblockContent',
+        message: 'Unexpected error while unblocking content: $e',
+      ));
     }
   }
 
   @override
-  Future<void> appealModeration(
+  Future<Either<ModerationRepositoryFailure, Unit>> appealModeration(
     String contentId,
     String userId,
     String reason,
@@ -150,20 +191,30 @@ class ContentModerationRepositoryImpl implements IContentModerationRepository {
         'moderationStatus': 'appealed',
         'appealedAt': FieldValue.serverTimestamp(),
       });
+      return right(unit);
+    } on FirebaseException catch (e) {
+      return left(ModerationRepositoryFailure(
+        moderationStep: 'appealModeration',
+        message: 'Failed to appeal moderation: ${e.message}',
+        code: e.code,
+      ));
     } catch (e) {
-      throw Exception('Failed to appeal moderation: $e');
+      return left(ModerationRepositoryFailure(
+        moderationStep: 'appealModeration',
+        message: 'Unexpected error while appealing moderation: $e',
+      ));
     }
   }
 
   @override
-  Future<List<ModerationAction>> getModerationHistory(String contentId) async {
+  Future<Either<ModerationRepositoryFailure, List<ModerationAction>>> getModerationHistory(String contentId) async {
     try {
       final snapshot = await _reportsCollection
           .where('contentId', isEqualTo: contentId)
           .orderBy('reportedAt', descending: true)
           .get();
 
-      return snapshot.docs.map((doc) {
+      final actions = snapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
         return ModerationAction(
           actionId: doc.id,
@@ -174,68 +225,131 @@ class ContentModerationRepositoryImpl implements IContentModerationRepository {
           timestamp: (data['reportedAt'] ?? data['appealedAt'] as Timestamp).toDate(),
         );
       }).toList();
+
+      return right(actions);
+    } on FirebaseException catch (e) {
+      return left(ModerationRepositoryFailure(
+        moderationStep: 'getModerationHistory',
+        message: 'Failed to get moderation history: ${e.message}',
+        code: e.code,
+      ));
     } catch (e) {
-      throw Exception('Failed to get moderation history: $e');
+      return left(ModerationRepositoryFailure(
+        moderationStep: 'getModerationHistory',
+        message: 'Unexpected error while getting moderation history: $e',
+      ));
     }
   }
 
   @override
-  Future<bool> isContentSafe(String contentId) async {
+  Future<Either<ModerationRepositoryFailure, Unit>> isContentSafe(String contentId) async {
     try {
       final doc = await _postsCollection.doc(contentId).get();
-      if (!doc.exists) return false;
+      if (!doc.exists) {
+        return left(ModerationRepositoryFailure(
+          moderationStep: 'isContentSafe',
+          message: 'Content not found',
+          code: 'not-found',
+        ));
+      }
 
       final data = doc.data() as Map<String, dynamic>;
-      return !(data['isBlocked'] ?? false) &&
-             (data['moderationStatus'] != 'blocked');
+      final isSafe = !(data['isBlocked'] ?? false) &&
+                     (data['moderationStatus'] != 'blocked');
+
+      if (isSafe) {
+        return right(unit);
+      } else {
+        return left(ModerationRepositoryFailure(
+          moderationStep: 'isContentSafe',
+          message: 'Content is not safe',
+          code: 'content-blocked',
+        ));
+      }
+    } on FirebaseException catch (e) {
+      return left(ModerationRepositoryFailure(
+        moderationStep: 'isContentSafe',
+        message: 'Failed to check content safety: ${e.message}',
+        code: e.code,
+      ));
     } catch (e) {
-      throw Exception('Failed to check content safety: $e');
+      return left(ModerationRepositoryFailure(
+        moderationStep: 'isContentSafe',
+        message: 'Unexpected error while checking content safety: $e',
+      ));
     }
   }
 
   @override
-  Stream<List<ReportedContent>> getReportedContent({int limit = 50}) {
-    return _postsCollection
-        .where('isReported', isEqualTo: true)
-        .orderBy('lastReportedAt', descending: true)
-        .limit(limit)
-        .snapshots()
-        .asyncMap((snapshot) async {
-      final futures = snapshot.docs.map((doc) async {
-        final data = doc.data() as Map<String, dynamic>;
+  Stream<Either<ModerationRepositoryFailure, List<ReportedContent>>> getReportedContent({int limit = 50}) {
+    try {
+      return _postsCollection
+          .where('isReported', isEqualTo: true)
+          .orderBy('lastReportedAt', descending: true)
+          .limit(limit)
+          .snapshots()
+          .asyncMap((snapshot) async {
+        try {
+          final futures = snapshot.docs.map((doc) async {
+            final data = doc.data() as Map<String, dynamic>;
 
-        // Get report reasons
-        final reports = await _reportsCollection
-            .where('contentId', isEqualTo: doc.id)
-            .get();
+            // Get report reasons
+            final reports = await _reportsCollection
+                .where('contentId', isEqualTo: doc.id)
+                .get();
 
-        final reasons = reports.docs
-            .map((r) {
-              final data = r.data() as Map<String, dynamic>?;
-              return data != null && data['reason'] != null
-                  ? _parseReportReason(data['reason'])
-                  : ReportReason.other;
-            })
-            .toSet()
-            .toList();
+            final reasons = reports.docs
+                .map((r) {
+                  final data = r.data() as Map<String, dynamic>?;
+                  return data != null && data['reason'] != null
+                      ? _parseReportReason(data['reason'])
+                      : ReportReason.other;
+                })
+                .toSet()
+                .toList();
 
-        return ReportedContent(
-          contentId: doc.id,
-          title: data['questionTitle'] ?? '',
-          reportCount: data['reportCount'] ?? 0,
-          reasons: reasons,
-          firstReportedAt: (data['lastReportedAt'] as Timestamp?)?.toDate() ??
-                          DateTime.now(),
-          status: _parseModerationStatus(data['moderationStatus'] ?? 'pending'),
-        );
-      }).toList();
+            return ReportedContent(
+              contentId: doc.id,
+              title: data['questionTitle'] ?? '',
+              reportCount: data['reportCount'] ?? 0,
+              reasons: reasons,
+              firstReportedAt: (data['lastReportedAt'] as Timestamp?)?.toDate() ??
+                              DateTime.now(),
+              status: _parseModerationStatus(data['moderationStatus'] ?? 'pending'),
+            );
+          }).toList();
 
-      return Future.wait(futures);
-    });
+          final results = await Future.wait(futures);
+          return right<ModerationRepositoryFailure, List<ReportedContent>>(results);
+        } on FirebaseException catch (e) {
+          return left<ModerationRepositoryFailure, List<ReportedContent>>(
+            ModerationRepositoryFailure(
+              moderationStep: 'getReportedContent',
+              message: 'Failed to get reported content: ${e.message}',
+              code: e.code,
+            ),
+          );
+        } catch (e) {
+          return left<ModerationRepositoryFailure, List<ReportedContent>>(
+            ModerationRepositoryFailure(
+              moderationStep: 'getReportedContent',
+              message: 'Unexpected error while getting reported content: $e',
+            ),
+          );
+        }
+      });
+    } catch (e) {
+      return Stream.value(
+        left(ModerationRepositoryFailure(
+          moderationStep: 'getReportedContent',
+          message: 'Failed to create stream: $e',
+        )),
+      );
+    }
   }
 
   @override
-  Future<void> processModerationQueue() async {
+  Future<Either<ModerationRepositoryFailure, Unit>> processModerationQueue() async {
     try {
       // Get pending reports
       final pendingReports = await _reportsCollection
@@ -248,26 +362,49 @@ class ContentModerationRepositoryImpl implements IContentModerationRepository {
         final contentId = reportData['contentId'];
 
         // Moderate content
-        final result = await moderateContent(contentId);
+        final moderationResult = await moderateContent(contentId);
 
-        // Update report status
-        await reportDoc.reference.update({
-          'status': result.isApproved ? 'approved' : 'rejected',
-          'processedAt': FieldValue.serverTimestamp(),
-        });
+        await moderationResult.fold(
+          (failure) async {
+            // On failure, mark report as error
+            await reportDoc.reference.update({
+              'status': 'error',
+              'errorMessage': failure.message,
+              'processedAt': FieldValue.serverTimestamp(),
+            });
+          },
+          (result) async {
+            // Update report status
+            await reportDoc.reference.update({
+              'status': result.isApproved ? 'approved' : 'rejected',
+              'processedAt': FieldValue.serverTimestamp(),
+            });
 
-        // Update content if needed
-        if (!result.isApproved && result.blockReason != null) {
-          await blockContent(contentId, result.blockReason!);
-        }
+            // Update content if needed
+            if (!result.isApproved && result.blockReason != null) {
+              await blockContent(contentId, result.blockReason!);
+            }
+          },
+        );
       }
+
+      return right(unit);
+    } on FirebaseException catch (e) {
+      return left(ModerationRepositoryFailure(
+        moderationStep: 'processModerationQueue',
+        message: 'Failed to process moderation queue: ${e.message}',
+        code: e.code,
+      ));
     } catch (e) {
-      throw Exception('Failed to process moderation queue: $e');
+      return left(ModerationRepositoryFailure(
+        moderationStep: 'processModerationQueue',
+        message: 'Unexpected error while processing moderation queue: $e',
+      ));
     }
   }
 
   @override
-  Future<void> updateModerationStatus(
+  Future<Either<ModerationRepositoryFailure, Unit>> updateModerationStatus(
     String contentId,
     ModerationStatus status,
   ) async {
@@ -276,8 +413,18 @@ class ContentModerationRepositoryImpl implements IContentModerationRepository {
         'moderationStatus': status.toString().split('.').last,
         'moderationUpdatedAt': FieldValue.serverTimestamp(),
       });
+      return right(unit);
+    } on FirebaseException catch (e) {
+      return left(ModerationRepositoryFailure(
+        moderationStep: 'updateModerationStatus',
+        message: 'Failed to update moderation status: ${e.message}',
+        code: e.code,
+      ));
     } catch (e) {
-      throw Exception('Failed to update moderation status: $e');
+      return left(ModerationRepositoryFailure(
+        moderationStep: 'updateModerationStatus',
+        message: 'Unexpected error while updating moderation status: $e',
+      ));
     }
   }
 

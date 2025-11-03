@@ -1,4 +1,6 @@
+import 'package:fpdart/fpdart.dart';
 import '../models/value_objects/target_audience.dart';
+import '../failures/creation_failures.dart';
 
 /// Domain service interface for target audience operations
 abstract class ITargetAudienceService {
@@ -6,7 +8,7 @@ abstract class ITargetAudienceService {
   ValidationResult validateTargetAudience(TargetAudience audience);
 
   /// Create target audience with validation
-  Future<TargetAudience> createTargetAudience({
+  Future<Either<TargetAudienceFailure, TargetAudience>> createTargetAudience({
     required String mode,
     required int targetCount,
     List<String>? selectedUserIds,
@@ -14,7 +16,7 @@ abstract class ITargetAudienceService {
   });
 
   /// Get recommended users based on content
-  Future<List<String>> getRecommendedUsers({
+  Future<Either<TargetAudienceFailure, List<String>>> getRecommendedUsers({
     required String contentId,
     required int count,
   });

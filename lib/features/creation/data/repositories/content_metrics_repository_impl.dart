@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:uuid/uuid.dart';
 import '../../domain/repositories/specialized/i_metrics_repository.dart';
+import '../../domain/failures/creation_failures.dart';
 import '../../../../core/utils/idempotency_service.dart';
 import '../../../../core/utils/shard_utils.dart';
 
@@ -25,29 +27,43 @@ class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
       _firestore.collection(_collection);
 
   @override
-  Future<void> incrementViewCount(String contentId) async {
+  Future<Either<MetricsRepositoryFailure, Unit>> incrementViewCount(String contentId) async {
     try {
       await _postsCollection.doc(contentId).update({
         'stats.viewCount': FieldValue.increment(1),
         'stats.lastViewedAt': FieldValue.serverTimestamp(),
       });
+      return right(unit);
+    } on FirebaseException catch (e) {
+      return left(MetricsRepositoryFailure(
+        metricType: 'viewCount',
+        message: 'Failed to increment view count: ${e.message}',
+        code: e.code,
+      ));
     } catch (e) {
-      throw Exception('Failed to increment view count: $e');
+      return left(MetricsRepositoryFailure(
+        metricType: 'viewCount',
+        message: 'Unexpected error incrementing view count: $e',
+      ));
     }
   }
 
   @override
-  Future<ContentMetrics> getEngagementMetrics(String contentId) async {
+  Future<Either<MetricsRepositoryFailure, ContentMetrics>> getEngagementMetrics(String contentId) async {
     try {
       final doc = await _postsCollection.doc(contentId).get();
       if (!doc.exists) {
-        throw Exception('Content not found');
+        return left(MetricsRepositoryFailure(
+          metricType: 'engagement',
+          message: 'Content not found',
+          code: 'not-found',
+        ));
       }
 
       final data = doc.data() as Map<String, dynamic>;
       final stats = data['stats'] as Map<String, dynamic>? ?? {};
 
-      return ContentMetrics(
+      final metrics = ContentMetrics(
         viewCount: stats['viewCount'] ?? 0,
         participantCount: stats['participantcount'] ?? 0,
         commentCount: stats['commentCount'] ?? 0,
@@ -55,57 +71,105 @@ class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
         engagementRate: _calculateEngagementRate(stats),
         lastUpdated: DateTime.now(),
       );
+      return right(metrics);
+    } on FirebaseException catch (e) {
+      return left(MetricsRepositoryFailure(
+        metricType: 'engagement',
+        message: 'Failed to get engagement metrics: ${e.message}',
+        code: e.code,
+      ));
     } catch (e) {
-      throw Exception('Failed to get engagement metrics: $e');
+      return left(MetricsRepositoryFailure(
+        metricType: 'engagement',
+        message: 'Unexpected error getting engagement metrics: $e',
+      ));
     }
   }
 
   @override
-  Future<double> getTrendingScore(String contentId) async {
+  Future<Either<MetricsRepositoryFailure, double>> getTrendingScore(String contentId) async {
     try {
-      final metrics = await getEngagementMetrics(contentId);
-      final doc = await _postsCollection.doc(contentId).get();
-      final data = doc.data() as Map<String, dynamic>;
+      final metricsResult = await getEngagementMetrics(contentId);
+      return metricsResult.fold(
+        (failure) => left(failure),
+        (metrics) async {
+          try {
+            final doc = await _postsCollection.doc(contentId).get();
+            if (!doc.exists) {
+              return left(MetricsRepositoryFailure(
+                metricType: 'trending',
+                message: 'Content not found',
+                code: 'not-found',
+              ));
+            }
 
-      final createdAt = (data['createdAt'] as Timestamp).toDate();
-      final ageInHours = DateTime.now().difference(createdAt).inHours;
+            final data = doc.data() as Map<String, dynamic>;
+            final createdAt = (data['createdAt'] as Timestamp).toDate();
+            final ageInHours = DateTime.now().difference(createdAt).inHours;
 
-      // Trending score algorithm
-      // Higher engagement in shorter time = higher score
-      final score = (metrics.participantCount * 2 +
-                    metrics.commentCount * 1.5 +
-                    metrics.viewCount * 0.5) /
-                   (ageInHours + 2); // +2 to avoid division by zero
+            // Trending score algorithm
+            // Higher engagement in shorter time = higher score
+            final score = (metrics.participantCount * 2 +
+                          metrics.commentCount * 1.5 +
+                          metrics.viewCount * 0.5) /
+                         (ageInHours + 2); // +2 to avoid division by zero
 
-      return score;
+            return right(score);
+          } on FirebaseException catch (e) {
+            return left(MetricsRepositoryFailure(
+              metricType: 'trending',
+              message: 'Failed to calculate trending score: ${e.message}',
+              code: e.code,
+            ));
+          }
+        },
+      );
     } catch (e) {
-      throw Exception('Failed to calculate trending score: $e');
+      return left(MetricsRepositoryFailure(
+        metricType: 'trending',
+        message: 'Unexpected error calculating trending score: $e',
+      ));
     }
   }
 
   @override
-  Stream<MetricsUpdate> watchMetrics(String contentId) {
+  Stream<Either<MetricsRepositoryFailure, MetricsUpdate>> watchMetrics(String contentId) {
     return _postsCollection.doc(contentId).snapshots().map((doc) {
-      if (!doc.exists) {
-        throw Exception('Content not found');
-      }
+      try {
+        if (!doc.exists) {
+          return left(MetricsRepositoryFailure(
+            metricType: 'watch',
+            message: 'Content not found',
+            code: 'not-found',
+          ));
+        }
 
-      final data = doc.data() as Map<String, dynamic>;
-      return MetricsUpdate(
-        contentId: contentId,
-        metrics: data['stats'] ?? {},
-        timestamp: DateTime.now(),
-      );
+        final data = doc.data() as Map<String, dynamic>;
+        final update = MetricsUpdate(
+          contentId: contentId,
+          metrics: data['stats'] ?? {},
+          timestamp: DateTime.now(),
+        );
+        return right(update);
+      } catch (e) {
+        return left(MetricsRepositoryFailure(
+          metricType: 'watch',
+          message: 'Unexpected error watching metrics: $e',
+        ));
+      }
     });
   }
 
   @override
-  Future<ContentMetrics> getPostMetrics(String contentId) async {
+  Future<Either<MetricsRepositoryFailure, ContentMetrics>> getPostMetrics(String contentId) async {
     return getEngagementMetrics(contentId);
   }
 
   @override
-  Future<void> updateStats(String contentId, Map<String, dynamic> stats) async {
+  Future<Either<MetricsRepositoryFailure, Unit>> updateStats(
+    String contentId,
+    Map<String, dynamic> stats,
+  ) async {
     try {
       final updateData = <String, dynamic>{};
       stats.forEach((key, value) {
@@ -114,40 +178,61 @@ class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
       updateData['stats.lastUpdatedAt'] = FieldValue.serverTimestamp();
 
       await _postsCollection.doc(contentId).update(updateData);
+      return right(unit);
+    } on FirebaseException catch (e) {
+      return left(MetricsRepositoryFailure(
+        metricType: 'update',
+        message: 'Failed to update stats: ${e.message}',
+        code: e.code,
+      ));
     } catch (e) {
-      throw Exception('Failed to update stats: $e');
+      return left(MetricsRepositoryFailure(
+        metricType: 'update',
+        message: 'Unexpected error updating stats: $e',
+      ));
     }
   }
 
   @override
-  Stream<List<TrendingContent>> getTrendingContent({int limit = 20}) {
+  Stream<Either<MetricsRepositoryFailure, List<TrendingContent>>> getTrendingContent({int limit = 20}) {
     return _postsCollection
         .orderBy('stats.participantcount', descending: true)
         .orderBy('createdAt', descending: true)
         .limit(limit)
         .snapshots()
         .asyncMap((snapshot) async {
-      final futures = snapshot.docs.map((doc) async {
-        final data = doc.data() as Map<String, dynamic>;
-        final score = await getTrendingScore(doc.id);
+      try {
+        final futures = snapshot.docs.map((doc) async {
+          final data = doc.data() as Map<String, dynamic>;
+          final scoreResult = await getTrendingScore(doc.id);
 
-        return TrendingContent(
-          contentId: doc.id,
-          title: data['questionTitle'] ?? '',
-          trendingScore: score,
-          participantCount: data['stats']?['participantcount'] ?? 0,
-          trendingAt: DateTime.now(),
-        );
-      }).toList();
+          return scoreResult.fold(
+            (failure) => null,
+            (score) => TrendingContent(
+              contentId: doc.id,
+              title: data['questionTitle'] ?? '',
+              trendingScore: score,
+              participantCount: data['stats']?['participantcount'] ?? 0,
+              trendingAt: DateTime.now(),
+            ),
+          );
+        }).toList();
 
-      final results = await Future.wait(futures);
-      results.sort((a, b) => b.trendingScore.compareTo(a.trendingScore));
-      return results.take(limit).toList();
+        final results = await Future.wait(futures);
+        final validResults = results.whereType<TrendingContent>().toList();
+        validResults.sort((a, b) => b.trendingScore.compareTo(a.trendingScore));
+        return right(validResults.take(limit).toList());
+      } catch (e) {
+        return left(MetricsRepositoryFailure(
+          metricType: 'trending',
+          message: 'Unexpected error getting trending content: $e',
+        ));
+      }
     });
   }
 
   @override
-  Stream<List<PopularContent>> getPopularByCategory(
+  Stream<Either<MetricsRepositoryFailure, List<PopularContent>>> getPopularByCategory(
     String category, {
     int limit = 10,
   }) {
@@ -157,22 +242,31 @@ class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
         .limit(limit)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
+      try {
+        final popularList = snapshot.docs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
 
-        return PopularContent(
-          contentId: doc.id,
-          title: data['questionTitle'] ?? '',
-          category: category,
-          viewCount: data['stats']?['viewCount'] ?? 0,
-          popularityScore: _calculatePopularityScore(data['stats'] ?? {}),
-        );
-      }).toList();
+          return PopularContent(
+            contentId: doc.id,
+            title: data['questionTitle'] ?? '',
+            category: category,
+            viewCount: data['stats']?['viewCount'] ?? 0,
+            popularityScore: _calculatePopularityScore(data['stats'] ?? {}),
+          );
+        }).toList();
+
+        return right(popularList);
+      } catch (e) {
+        return left(MetricsRepositoryFailure(
+          metricType: 'popular',
+          message: 'Unexpected error getting popular content: $e',
+        ));
+      }
     });
   }
 
   @override
-  Future<void> recordInteraction(
+  Future<Either<MetricsRepositoryFailure, Unit>> recordInteraction(
     String contentId,
     String userId,
     InteractionType type, {
@@ -212,13 +306,23 @@ class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
           });
         },
       );
+      return right(unit);
+    } on FirebaseException catch (e) {
+      return left(MetricsRepositoryFailure(
+        metricType: 'interaction',
+        message: 'Failed to record interaction: ${e.message}',
+        code: e.code,
+      ));
     } catch (e) {
-      throw Exception('Failed to record interaction: $e');
+      return left(MetricsRepositoryFailure(
+        metricType: 'interaction',
+        message: 'Unexpected error recording interaction: $e',
+      ));
     }
   }
 
   @override
-  Future<List<UserInteraction>> getInteractionHistory(
+  Future<Either<MetricsRepositoryFailure, List<UserInteraction>>> getInteractionHistory(
     String contentId,
     String userId,
   ) async {
@@ -230,7 +334,7 @@ class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
           .orderBy('timestamp', descending: true)
           .get();
 
-      return snapshot.docs.map((doc) {
+      final interactions = snapshot.docs.map((doc) {
         final data = doc.data();
         return UserInteraction(
           userId: userId,
@@ -239,8 +343,19 @@ class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
           metadata: data['metadata'],
         );
       }).toList();
+
+      return right(interactions);
+    } on FirebaseException catch (e) {
+      return left(MetricsRepositoryFailure(
+        metricType: 'history',
+        message: 'Failed to get interaction history: ${e.message}',
+        code: e.code,
+      ));
     } catch (e) {
-      throw Exception('Failed to get interaction history: $e');
+      return left(MetricsRepositoryFailure(
+        metricType: 'history',
+        message: 'Unexpected error getting interaction history: $e',
+      ));
     }
   }
 

@@ -1,7 +1,10 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:http/http.dart' as http;
+import '../../domain/failures/creation_failures.dart';
 import '../../domain/repositories/i_media_repository.dart';
 import '../../domain/services/i_image_processing_service.dart';
 import '../../domain/services/i_media_upload_service.dart';
@@ -28,17 +31,17 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
   ///
   /// Returns:
   /// ```dart
-  /// {
+  /// Right({
   ///   'originalUrl': 'https://...',
   ///   'displayUrl': 'https://...',
   ///   'thumbnailUrl': 'https://...',
   ///   'aspectRatio': 1.5,
   ///   'width': 1920,
   ///   'height': 1280,
-  /// }
+  /// })
   /// ```
   @override
-  Future<Map<String, dynamic>> uploadImageWithVariants({
+  Future<Either<MediaRepositoryFailure, Map<String, dynamic>>> uploadImageWithVariants({
     required Uint8List imageBytes,
     required String box,
     String? customPath,
@@ -64,45 +67,77 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
       final baseFileName = sessionId != null ? '${sessionId}_$timestamp' : timestamp.toString();
 
       // Original (원본 크기)
-      final originalUrl = await _mediaRepository.uploadImage(
+      final originalResult = await _mediaRepository.uploadImage(
         path: basePath,
         fileName: '${baseFileName}_original.jpg',
         bytes: imageBytes,
+      );
+
+      final originalUrl = originalResult.fold(
+        (failure) => throw Exception('Original upload failed: ${failure.message}'),
+        (url) => url,
       );
       onModerationStatusUpdate?.call('Uploaded original image');
 
       // Display (800px width)
       final displayBytes = await _resizeImage(imageBytes, 800);
-      final displayUrl = await _mediaRepository.uploadImage(
+      final displayResult = await _mediaRepository.uploadImage(
         path: basePath,
         fileName: '${baseFileName}_display.jpg',
         bytes: displayBytes,
+      );
+
+      final displayUrl = displayResult.fold(
+        (failure) => throw Exception('Display upload failed: ${failure.message}'),
+        (url) => url,
       );
       onModerationStatusUpdate?.call('Uploaded display image');
 
       // Thumbnail (150px width)
       final thumbnailBytes = await _resizeImage(imageBytes, 150);
-      final thumbnailUrl = await _mediaRepository.uploadImage(
+      final thumbnailResult = await _mediaRepository.uploadImage(
         path: basePath,
         fileName: '${baseFileName}_thumbnail.jpg',
         bytes: thumbnailBytes,
+      );
+
+      final thumbnailUrl = thumbnailResult.fold(
+        (failure) => throw Exception('Thumbnail upload failed: ${failure.message}'),
+        (url) => url,
       );
       onModerationStatusUpdate?.call('Uploaded thumbnail image');
 
       debugPrint('✅ [MediaUploadService] All variants uploaded successfully');
 
-      return {
+      return right({
         'originalUrl': originalUrl,
         'displayUrl': displayUrl,
         'thumbnailUrl': thumbnailUrl,
         'aspectRatio': aspectRatio,
         'width': width,
         'height': height,
-      };
+      });
+    } on FirebaseException catch (e) {
+      final errorMessage = 'Failed to upload image variants: ${e.message}';
+      debugPrint('❌ [MediaUploadService] Upload failed: $errorMessage');
+      onRejected?.call(errorMessage);
+
+      return left(MediaRepositoryFailure(
+        mediaType: 'image',
+        failedPaths: [customPath ?? 'posts/$box'],
+        message: errorMessage,
+        code: e.code,
+      ));
     } catch (e) {
-      debugPrint('❌ [MediaUploadService] Upload failed: $e');
-      onRejected?.call('Upload failed: $e');
-      rethrow;
+      final errorMessage = 'Unexpected error during upload: $e';
+      debugPrint('❌ [MediaUploadService] Upload failed: $errorMessage');
+      onRejected?.call(errorMessage);
+
+      return left(MediaRepositoryFailure(
+        mediaType: 'image',
+        failedPaths: [customPath ?? 'posts/$box'],
+        message: errorMessage,
+      ));
     }
   }
 
@@ -112,82 +147,112 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
   ///
   /// Returns:
   /// ```dart
-  /// {
+  /// Right({
   ///   'approvedUrls': ['https://...', 'https://...'],
   ///   'rejectedIndices': [2, 3],
   ///   'rejectedReasons': {
   ///     'inappropriate': [2],
   ///     'violence': [3],
   ///   },
-  /// }
+  /// })
   /// ```
   @override
-  Future<Map<String, dynamic>> uploadAndWaitForModeration({
+  Future<Either<MediaRepositoryFailure, Map<String, dynamic>>> uploadAndWaitForModeration({
     required List<Uint8List> imageBytesList,
     required String box,
     String? customPath,
     String? sessionId,
     Function(int current, int total)? onProgress,
   }) async {
-    debugPrint('📤 [MediaUploadService] Starting batch upload with moderation for ${imageBytesList.length} images');
+    try {
+      debugPrint('📤 [MediaUploadService] Starting batch upload with moderation for ${imageBytesList.length} images');
 
-    final approvedUrls = <String>[];
-    final rejectedIndices = <int>[];
-    final rejectedReasons = <String, List<int>>{};
+      final approvedUrls = <String>[];
+      final rejectedIndices = <int>[];
+      final rejectedReasons = <String, List<int>>{};
+      final failedPaths = <String>[];
 
-    for (int i = 0; i < imageBytesList.length; i++) {
-      try {
-        onProgress?.call(i + 1, imageBytesList.length);
+      for (int i = 0; i < imageBytesList.length; i++) {
+        try {
+          onProgress?.call(i + 1, imageBytesList.length);
 
-        // 각 이미지를 variant로 업로드
-        final result = await uploadImageWithVariants(
-          imageBytes: imageBytesList[i],
-          box: box,
-          customPath: customPath,
-          sessionId: sessionId != null ? '${sessionId}_$i' : null,
-          onModerationStatusUpdate: (status) {
-            debugPrint('  ⏳ Image $i: $status');
-          },
-          onRejected: (reason) {
-            debugPrint('  ❌ Image $i rejected: $reason');
-            rejectedIndices.add(i);
+          // 각 이미지를 variant로 업로드
+          final result = await uploadImageWithVariants(
+            imageBytes: imageBytesList[i],
+            box: box,
+            customPath: customPath,
+            sessionId: sessionId != null ? '${sessionId}_$i' : null,
+            onModerationStatusUpdate: (status) {
+              debugPrint('  ⏳ Image $i: $status');
+            },
+            onRejected: (reason) {
+              debugPrint('  ❌ Image $i rejected: $reason');
+              rejectedIndices.add(i);
 
-            // Parse rejection reason
-            final category = _parseRejectionCategory(reason);
-            if (!rejectedReasons.containsKey(category)) {
-              rejectedReasons[category] = [];
-            }
-            rejectedReasons[category]!.add(i + 1); // 1-indexed for user display
-          },
-        );
+              // Parse rejection reason
+              final category = _parseRejectionCategory(reason);
+              if (!rejectedReasons.containsKey(category)) {
+                rejectedReasons[category] = [];
+              }
+              rejectedReasons[category]!.add(i + 1); // 1-indexed for user display
+            },
+          );
 
-        // Display URL만 저장 (UI에서 사용)
-        approvedUrls.add(result['displayUrl'] as String);
+          // Handle Either result
+          result.fold(
+            (failure) {
+              debugPrint('  ❌ Image $i upload failed: ${failure.message}');
+              rejectedIndices.add(i);
+              failedPaths.addAll(failure.failedPaths);
 
-      } catch (e) {
-        debugPrint('❌ [MediaUploadService] Image $i upload failed: $e');
-        rejectedIndices.add(i);
+              if (!rejectedReasons.containsKey('error')) {
+                rejectedReasons['error'] = [];
+              }
+              rejectedReasons['error']!.add(i + 1);
+            },
+            (data) {
+              // Display URL만 저장 (UI에서 사용)
+              approvedUrls.add(data['displayUrl'] as String);
+            },
+          );
+        } catch (e) {
+          debugPrint('❌ [MediaUploadService] Image $i upload failed: $e');
+          rejectedIndices.add(i);
 
-        if (!rejectedReasons.containsKey('error')) {
-          rejectedReasons['error'] = [];
+          if (!rejectedReasons.containsKey('error')) {
+            rejectedReasons['error'] = [];
+          }
+          rejectedReasons['error']!.add(i + 1);
         }
-        rejectedReasons['error']!.add(i + 1);
       }
+
+      debugPrint('✅ [MediaUploadService] Batch upload complete: ${approvedUrls.length} approved, ${rejectedIndices.length} rejected');
+
+      return right({
+        'approvedUrls': approvedUrls,
+        'rejectedIndices': rejectedIndices,
+        'rejectedReasons': rejectedReasons,
+        'allRejected': approvedUrls.isEmpty,
+      });
+    } on FirebaseException catch (e) {
+      return left(MediaRepositoryFailure(
+        mediaType: 'image',
+        failedPaths: [customPath ?? 'posts/$box'],
+        message: 'Batch upload failed: ${e.message}',
+        code: e.code,
+      ));
+    } catch (e) {
+      return left(MediaRepositoryFailure(
+        mediaType: 'image',
+        failedPaths: [customPath ?? 'posts/$box'],
+        message: 'Unexpected error during batch upload: $e',
+      ));
     }
-
-    debugPrint('✅ [MediaUploadService] Batch upload complete: ${approvedUrls.length} approved, ${rejectedIndices.length} rejected');
-
-    return {
-      'approvedUrls': approvedUrls,
-      'rejectedIndices': rejectedIndices,
-      'rejectedReasons': rejectedReasons,
-      'allRejected': approvedUrls.isEmpty,
-    };
   }
 
   /// Firebase Storage URL에서 이미지 다운로드
   @override
-  Future<Uint8List> downloadImageFromUrl(String url) async {
+  Future<Either<MediaRepositoryFailure, Uint8List>> downloadImageFromUrl(String url) async {
     try {
       debugPrint('⬇️  [MediaUploadService] Downloading image from: $url');
 
@@ -195,13 +260,30 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
 
       if (response.statusCode == 200) {
         debugPrint('✅ [MediaUploadService] Image downloaded successfully');
-        return response.bodyBytes;
+        return right(response.bodyBytes);
       } else {
-        throw Exception('Failed to download image: ${response.statusCode}');
+        return left(MediaRepositoryFailure(
+          mediaType: 'image',
+          failedPaths: [url],
+          message: 'Failed to download image: HTTP ${response.statusCode}',
+          code: 'HTTP_${response.statusCode}',
+        ));
       }
+    } on FirebaseException catch (e) {
+      debugPrint('❌ [MediaUploadService] Download failed: ${e.message}');
+      return left(MediaRepositoryFailure(
+        mediaType: 'image',
+        failedPaths: [url],
+        message: 'Failed to download image: ${e.message}',
+        code: e.code,
+      ));
     } catch (e) {
       debugPrint('❌ [MediaUploadService] Download failed: $e');
-      rethrow;
+      return left(MediaRepositoryFailure(
+        mediaType: 'image',
+        failedPaths: [url],
+        message: 'Unexpected error during download: $e',
+      ));
     }
   }
 

@@ -1,6 +1,8 @@
-import '/core_exports.dart';
 import '/features/creation/domain/models/value_objects/target_audience.dart';
 import '/features/creation/domain/services/i_target_audience_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fpdart/fpdart.dart';
+import '../../domain/failures/creation_failures.dart';
 
 /// Implementation of ITargetAudienceService
 ///
@@ -62,7 +64,7 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
   /// 투표와 타겟 오디언스 정보를 함께 저장
   ///
   /// posts_record에 투표를 생성할 때 targetAudience 필드를 추가합니다.
-  Future<String> createPostWithTargetAudience({
+  Future<Either<TargetAudienceFailure, String>> createPostWithTargetAudience({
     required Map<String, dynamic> postData,
     required TargetAudience targetAudience,
   }) async {
@@ -70,7 +72,10 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
       // 1. 타겟 오디언스 유효성 검사
       final validation = validateTargetAudience(targetAudience);
       if (!validation.isValid) {
-        throw Exception(validation.error);
+        return left(TargetAudienceFailure(
+          validation.error ?? 'Invalid target audience',
+          'VALIDATION_FAILED',
+        ));
       }
 
       // 2. 타겟 오디언스 데이터 변환
@@ -100,17 +105,26 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
       print(
           '[TargetAudienceService] 타겟 오디언스: ${targetAudience.collectionType}, ${targetAudience.targetCount}명');
 
-      return postId;
+      return right(postId);
+    } on FirebaseException catch (e) {
+      print('[TargetAudienceService] Firebase 오류: ${e.code} - ${e.message}');
+      return left(TargetAudienceFailure(
+        'Failed to create post with target audience: ${e.message}',
+        e.code,
+      ));
     } catch (e) {
       print('[TargetAudienceService] 투표 생성 오류: $e');
-      rethrow;
+      return left(TargetAudienceFailure(
+        'Unexpected error creating post: $e',
+        'UNKNOWN_ERROR',
+      ));
     }
   }
 
   /// 알림 발송 상태 업데이트
   ///
   /// Cloud Functions에서 알림을 발송한 후 상태를 업데이트할 때 사용합니다.
-  Future<void> updateNotificationStatus(
+  Future<Either<TargetAudienceFailure, Unit>> updateNotificationStatus(
     String postId, {
     required int sentCount,
     int? completedCount,
@@ -133,15 +147,27 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
           .update(updateData);
 
       print('[TargetAudienceService] 알림 상태 업데이트: $postId, 발송: $sentCount명');
+      return right(unit);
+    } on FirebaseException catch (e) {
+      print('[TargetAudienceService] Firebase 오류: ${e.code} - ${e.message}');
+      return left(TargetAudienceFailure(
+        'Failed to update notification status: ${e.message}',
+        e.code,
+      ));
     } catch (e) {
       print('[TargetAudienceService] 알림 상태 업데이트 오류: $e');
+      return left(TargetAudienceFailure(
+        'Unexpected error updating notification status: $e',
+        'UNKNOWN_ERROR',
+      ));
     }
   }
 
   /// 타겟 오디언스 통계 조회
   ///
   /// 현재 사용자의 타겟 오디언스 사용 통계를 조회합니다.
-  Future<TargetAudienceStats> getUserStats(String userId) async {
+  Future<Either<TargetAudienceFailure, TargetAudienceStats>> getUserStats(
+      String userId) async {
     try {
       // Firestore에서 직접 조회
       final querySnapshot = await FirebaseFirestore.instance
@@ -152,7 +178,7 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
           .get();
 
       final posts = querySnapshot.docs
-          .map((doc) => doc.data() as Map<String, dynamic>)
+          .map((doc) => doc.data())
           .toList();
 
       int totalSent = 0;
@@ -181,7 +207,7 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
         }
       }
 
-      return TargetAudienceStats(
+      final stats = TargetAudienceStats(
         totalPosts: posts.length,
         totalSent: totalSent,
         totalCompleted: totalCompleted,
@@ -189,41 +215,70 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
         averageCompletionRate:
             totalSent > 0 ? (totalCompleted / totalSent) : 0.0,
       );
+
+      return right(stats);
+    } on FirebaseException catch (e) {
+      print('[TargetAudienceService] Firebase 오류: ${e.code} - ${e.message}');
+      return left(TargetAudienceFailure(
+        'Failed to get user stats: ${e.message}',
+        e.code,
+      ));
     } catch (e) {
       print('[TargetAudienceService] 통계 조회 오류: $e');
-      return TargetAudienceStats.empty();
+      return left(TargetAudienceFailure(
+        'Unexpected error getting user stats: $e',
+        'UNKNOWN_ERROR',
+      ));
     }
   }
 
   @override
-  Future<TargetAudience> createTargetAudience({
+  Future<Either<TargetAudienceFailure, TargetAudience>> createTargetAudience({
     required String mode,
     required int targetCount,
     List<String>? selectedUserIds,
     Map<String, dynamic>? filters,
   }) async {
-    // Create and return a new TargetAudience instance
-    return TargetAudience(
-      collectionType: mode,
-      targetCount: targetCount,
-      // Handle filters for custom mode
-      selectedInterests: filters?['interests'] as List<String>? ?? [],
-      selectedAgeGroup: filters?['ageGroup'] as String? ?? '전체',
-      selectedGender: filters?['gender'] as String? ?? 'all',
-      activeUserOnly: filters?['activeUserOnly'] as bool? ?? false,
-      createdAt: DateTime.now(),
-    );
+    try {
+      // Create and return a new TargetAudience instance
+      final targetAudience = TargetAudience(
+        collectionType: mode,
+        targetCount: targetCount,
+        // Handle filters for custom mode
+        selectedInterests: filters?['interests'] as List<String>? ?? [],
+        selectedAgeGroup: filters?['ageGroup'] as String? ?? '전체',
+        selectedGender: filters?['gender'] as String? ?? 'all',
+        activeUserOnly: filters?['activeUserOnly'] as bool? ?? false,
+        createdAt: DateTime.now(),
+      );
+
+      return right(targetAudience);
+    } catch (e) {
+      print('[TargetAudienceService] 타겟 오디언스 생성 오류: $e');
+      return left(TargetAudienceFailure(
+        'Unexpected error creating target audience: $e',
+        'UNKNOWN_ERROR',
+      ));
+    }
   }
 
   @override
-  Future<List<String>> getRecommendedUsers({
+  Future<Either<TargetAudienceFailure, List<String>>> getRecommendedUsers({
     required String contentId,
     required int count,
   }) async {
-    // This would typically call an AI service or recommendation engine
-    // For now, return an empty list
-    // TODO: Implement user recommendation logic
-    return [];
+    try {
+      // This would typically call an AI service or recommendation engine
+      // For now, return an empty list
+      // TODO: Implement user recommendation logic
+      return right([]);
+    } catch (e) {
+      print('[TargetAudienceService] 추천 사용자 조회 오류: $e');
+      return left(TargetAudienceFailure(
+        'Unexpected error getting recommended users: $e',
+        'UNKNOWN_ERROR',
+      ));
+    }
   }
 }
 

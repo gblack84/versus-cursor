@@ -1,29 +1,24 @@
 import 'dart:io';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'image_upload_dto.freezed.dart';
 
 /// Data Transfer Object for image upload operations
 /// Bundles image files with metadata for upload process
-class ImageUploadDto {
-  final List<File> images;
-  final String box;  // 'A' or 'B' to identify which option
-  final String userId;
+@freezed
+class ImageUploadDto with _$ImageUploadDto {
+  const factory ImageUploadDto({
+    required List<File> images,
+    required String box, // 'A' or 'B' to identify which option
+    required String userId,
+  }) = _ImageUploadDto;
+}
 
-  const ImageUploadDto({
-    required this.images,
-    required this.box,
-    required this.userId,
-  });
-
+/// Extension for business logic methods
+extension ImageUploadDtoX on ImageUploadDto {
   /// Validates the box parameter
   bool get isValidBox => box == 'A' || box == 'B';
 
   /// Returns the number of images to upload
   int get imageCount => images.length;
-
-  @override
-  String toString() {
-    return 'ImageUploadDto('
-        'box: $box, '
-        'userId: $userId, '
-        'images: ${images.length} files)';
-  }
 }

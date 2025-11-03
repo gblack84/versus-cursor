@@ -1,5 +1,4 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../../data/mappers/target_audience_mapper.dart';
 
 part 'target_audience.freezed.dart';
 part 'target_audience.g.dart';
@@ -128,20 +127,58 @@ sealed class TargetAudience with _$TargetAudience {
 
   // ============================================
   // Age Group Conversion Helpers (Private)
+  // Clean Architecture compliant - no Data layer dependency
   // ============================================
 
-  /// Convert age group from map (English to Korean)
-  /// Delegates to TargetAudienceMapper
+  /// Convert age group from map (Firebase English to Korean)
+  ///
+  /// Firebase → Domain
+  /// - 'all' → '전체'
+  /// - '10s' → '10대'
+  /// - '20s' → '20대'
+  /// - '30s' → '30대'
+  /// - '40s' → '40대'
+  /// - '50s+' → '50대 이상'
   static String _convertAgeGroupFromMap(Map<String, dynamic>? criteria) {
     if (criteria == null) return '전체';
 
     final ageGroup = criteria['ageGroup'];
-    return TargetAudienceMapper.convertAgeGroupFromFirebase(ageGroup);
+    if (ageGroup == null) return '전체';
+
+    // Inline conversion logic (moved from TargetAudienceMapper)
+    const ageMapping = {
+      'all': '전체',
+      '10s': '10대',
+      '20s': '20대',
+      '30s': '30대',
+      '40s': '40대',
+      '50s+': '50대 이상',
+    };
+
+    return ageMapping[ageGroup] ?? '전체';
   }
 
-  /// Convert age group to map (Korean to English)
-  /// Delegates to TargetAudienceMapper
+  /// Convert age group to map (Korean to Firebase English)
+  ///
+  /// Domain → Firebase
+  /// - '전체' → 'all'
+  /// - '10대' → '10s'
+  /// - '20대' → '20s'
+  /// - '30대' → '30s'
+  /// - '40대' → '40s'
+  /// - '50대 이상' → '50s+'
   static String _convertAgeGroupToMap(String ageGroup) {
-    return TargetAudienceMapper.convertAgeGroupToFirebase(ageGroup);
+    if (ageGroup == '전체') return 'all';
+
+    // Inline conversion logic (moved from TargetAudienceMapper)
+    const ageMapping = {
+      '10대': '10s',
+      '20대': '20s',
+      '30대': '30s',
+      '40대': '40s',
+      '50대 이상': '50s+',
+    };
+
+    return ageMapping[ageGroup] ?? 'all';
   }
 }

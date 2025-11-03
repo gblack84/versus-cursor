@@ -1,5 +1,5 @@
 import 'dart:io';
-import '../models/value_objects/media_info.dart';
+import '../models/entities/media_info.dart';
 
 /// Repository interface for Media-related operations
 /// This interface handles images, videos, and media encoding functionality

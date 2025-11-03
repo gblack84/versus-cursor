@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/repositories/i_media_repository.dart';
 import '../datasources/interfaces/i_storage_datasource.dart';
-import '../../domain/models/value_objects/media_info.dart';
+import '../../domain/models/entities/media_info.dart';
 import '../models/image_result_dto.dart';
 import '../models/video_result_dto.dart';
 
@@ -24,7 +24,7 @@ class MediaRepositoryImpl implements IMediaRepository {
 
   /// Convert ImageResultDto to ImageInfo domain entity
   ImageInfo _dtoToImageInfo(ImageResultDto dto) {
-    return ImageInfo(
+    return MediaInfo.image(
       id: dto.id,
       url: dto.url,
       parentId: dto.parentId,
@@ -42,7 +42,7 @@ class MediaRepositoryImpl implements IMediaRepository {
 
   /// Convert VideoResultDto to VideoInfo domain entity
   VideoInfo _dtoToVideoInfo(VideoResultDto dto) {
-    return VideoInfo(
+    return MediaInfo.video(
       id: dto.id,
       url: dto.url,
       parentId: dto.parentId,

@@ -1,34 +1,63 @@
 // Metrics repository - no external model dependencies needed
 
+import 'package:fpdart/fpdart.dart';
+import '../../failures/creation_failures.dart';
+
 /// Repository interface for content metrics and analytics
 /// CQRS 패턴 - Query 모델로 읽기 전용 통계 관리
 abstract class IContentMetricsRepository {
   /// Increment view count
-  Future<void> incrementViewCount(String contentId);
+  ///
+  /// **Returns**: `Either<MetricsRepositoryFailure, Unit>`
+  Future<Either<MetricsRepositoryFailure, Unit>> incrementViewCount(String contentId);
 
   /// Get engagement metrics
-  Future<ContentMetrics> getEngagementMetrics(String contentId);
+  ///
+  /// **Returns**: `Either<MetricsRepositoryFailure, ContentMetrics>`
+  Future<Either<MetricsRepositoryFailure, ContentMetrics>> getEngagementMetrics(String contentId);
 
   /// Calculate trending score
-  Future<double> getTrendingScore(String contentId);
+  ///
+  /// **Returns**: `Either<MetricsRepositoryFailure, double>`
+  Future<Either<MetricsRepositoryFailure, double>> getTrendingScore(String contentId);
 
   /// Watch metrics updates in real-time
-  Stream<MetricsUpdate> watchMetrics(String contentId);
+  ///
+  /// **Returns**: Stream of `Either<MetricsRepositoryFailure, MetricsUpdate>`
+  Stream<Either<MetricsRepositoryFailure, MetricsUpdate>> watchMetrics(String contentId);
 
   /// Get post metrics
-  Future<ContentMetrics> getPostMetrics(String contentId);
+  ///
+  /// **Returns**: `Either<MetricsRepositoryFailure, ContentMetrics>`
+  Future<Either<MetricsRepositoryFailure, ContentMetrics>> getPostMetrics(String contentId);
 
   /// Update post statistics
-  Future<void> updateStats(String contentId, Map<String, dynamic> stats);
+  ///
+  /// **Returns**: `Either<MetricsRepositoryFailure, Unit>`
+  Future<Either<MetricsRepositoryFailure, Unit>> updateStats(
+    String contentId,
+    Map<String, dynamic> stats,
+  );
 
   /// Get trending posts
-  Stream<List<TrendingContent>> getTrendingContent({int limit = 20});
+  ///
+  /// **Returns**: Stream of `Either<MetricsRepositoryFailure, List<TrendingContent>>`
+  Stream<Either<MetricsRepositoryFailure, List<TrendingContent>>> getTrendingContent({
+    int limit = 20,
+  });
 
   /// Get popular posts by category
-  Stream<List<PopularContent>> getPopularByCategory(String category, {int limit = 10});
+  ///
+  /// **Returns**: Stream of `Either<MetricsRepositoryFailure, List<PopularContent>>`
+  Stream<Either<MetricsRepositoryFailure, List<PopularContent>>> getPopularByCategory(
+    String category, {
+    int limit = 10,
+  });
 
   /// Record user interaction
-  Future<void> recordInteraction(
+  ///
+  /// **Returns**: `Either<MetricsRepositoryFailure, Unit>`
+  Future<Either<MetricsRepositoryFailure, Unit>> recordInteraction(
     String contentId,
     String userId,
     InteractionType type, {
@@ -36,7 +65,12 @@ abstract class IContentMetricsRepository {
   });
 
   /// Get interaction history
-  Future<List<UserInteraction>> getInteractionHistory(String contentId, String userId);
+  ///
+  /// **Returns**: `Either<MetricsRepositoryFailure, List<UserInteraction>>`
+  Future<Either<MetricsRepositoryFailure, List<UserInteraction>>> getInteractionHistory(
+    String contentId,
+    String userId,
+  );
 }
 
 /// Content metrics data

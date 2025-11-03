@@ -1,35 +1,75 @@
+import 'package:fpdart/fpdart.dart';
+import '../../failures/creation_failures.dart';
+
 /// Repository interface for content moderation and policy enforcement
 /// AI 검열 시스템과 연동되는 콘텐츠 정책 적용 Repository
 abstract class IContentModerationRepository {
   /// Report content for violation
-  Future<void> reportContent(String contentId, String userId, ReportReason reason);
+  ///
+  /// **Returns**: `Either<ModerationRepositoryFailure, Unit>`
+  Future<Either<ModerationRepositoryFailure, Unit>> reportContent(
+    String contentId,
+    String userId,
+    ReportReason reason,
+  );
 
   /// Moderate content using AI
-  Future<ModerationResult> moderateContent(String contentId);
+  ///
+  /// **Returns**: `Either<ModerationRepositoryFailure, ModerationResult>`
+  Future<Either<ModerationRepositoryFailure, ModerationResult>> moderateContent(String contentId);
 
   /// Block/hide content
-  Future<void> blockContent(String contentId, String reason);
+  ///
+  /// **Returns**: `Either<ModerationRepositoryFailure, Unit>`
+  Future<Either<ModerationRepositoryFailure, Unit>> blockContent(String contentId, String reason);
 
   /// Unblock content
-  Future<void> unblockContent(String contentId);
+  ///
+  /// **Returns**: `Either<ModerationRepositoryFailure, Unit>`
+  Future<Either<ModerationRepositoryFailure, Unit>> unblockContent(String contentId);
 
   /// Appeal moderation decision
-  Future<void> appealModeration(String contentId, String userId, String reason);
+  ///
+  /// **Returns**: `Either<ModerationRepositoryFailure, Unit>`
+  Future<Either<ModerationRepositoryFailure, Unit>> appealModeration(
+    String contentId,
+    String userId,
+    String reason,
+  );
 
   /// Get moderation history
-  Future<List<ModerationAction>> getModerationHistory(String contentId);
+  ///
+  /// **Returns**: `Either<ModerationRepositoryFailure, List<ModerationAction>>`
+  Future<Either<ModerationRepositoryFailure, List<ModerationAction>>> getModerationHistory(
+    String contentId,
+  );
 
   /// Check if content is safe
-  Future<bool> isContentSafe(String contentId);
+  ///
+  /// **Returns**: `Either<ModerationRepositoryFailure, Unit>`
+  /// - `Right(unit)` if safe
+  /// - `Left(failure)` if unsafe or check failed
+  Future<Either<ModerationRepositoryFailure, Unit>> isContentSafe(String contentId);
 
   /// Get reported content list
-  Stream<List<ReportedContent>> getReportedContent({int limit = 50});
+  ///
+  /// **Returns**: Stream of `Either<ModerationRepositoryFailure, List<ReportedContent>>`
+  Stream<Either<ModerationRepositoryFailure, List<ReportedContent>>> getReportedContent({
+    int limit = 50,
+  });
 
   /// Process moderation queue
-  Future<void> processModerationQueue();
+  ///
+  /// **Returns**: `Either<ModerationRepositoryFailure, Unit>`
+  Future<Either<ModerationRepositoryFailure, Unit>> processModerationQueue();
 
   /// Update moderation status
-  Future<void> updateModerationStatus(String contentId, ModerationStatus status);
+  ///
+  /// **Returns**: `Either<ModerationRepositoryFailure, Unit>`
+  Future<Either<ModerationRepositoryFailure, Unit>> updateModerationStatus(
+    String contentId,
+    ModerationStatus status,
+  );
 }
 
 /// Report reasons

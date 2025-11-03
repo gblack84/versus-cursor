@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/repositories/i_media_repository.dart';
 import '../datasources/interfaces/i_storage_datasource.dart';
 import '../../domain/models/entities/media_info.dart';
-import '../models/image_result_dto.dart';
+import '../models/image_result.dart';
 import '../models/video_result_dto.dart';
 
 /// Implementation of Media Repository using Clean Architecture
@@ -22,20 +22,20 @@ class MediaRepositoryImpl implements IMediaRepository {
 
   // ========== Helper Methods for Conversion ==========
 
-  /// Convert ImageResultDto to ImageInfo domain entity
-  ImageInfo _dtoToImageInfo(ImageResultDto dto) {
+  /// Convert ImageResult to ImageInfo domain entity
+  ImageInfo _resultToImageInfo(ImageResult result) {
     return MediaInfo.image(
-      id: dto.id,
-      url: dto.url,
-      parentId: dto.parentId,
-      width: null,  // DTO doesn't have width field
-      height: null,  // DTO doesn't have height field
-      size: null,  // DTO doesn't have size field
-      mimeType: null,  // DTO doesn't have mimeType field
-      createdAt: null,  // DTO doesn't have createdAt field
-      thumbnailUrl: null,  // DTO doesn't have thumbnailUrl field
+      id: result.id,
+      url: result.url,
+      parentId: result.parentId,
+      width: null,  // Result doesn't have width field
+      height: null,  // Result doesn't have height field
+      size: null,  // Result doesn't have size field
+      mimeType: null,  // Result doesn't have mimeType field
+      createdAt: null,  // Result doesn't have createdAt field
+      thumbnailUrl: null,  // Result doesn't have thumbnailUrl field
       metadata: {
-        'option': dto.option,
+        'option': result.option,
       },
     );
   }
@@ -89,8 +89,8 @@ class MediaRepositoryImpl implements IMediaRepository {
 
     return query.snapshots().map((snapshot) {
       return snapshot.docs
-          .map((doc) => ImageResultDto.fromFirestore(doc.data(), doc.id))
-          .map((dto) => _dtoToImageInfo(dto))
+          .map((doc) => ImageResult.fromFirestore(doc.data(), doc.id))
+          .map((result) => _resultToImageInfo(result))
           .toList();
     });
   }
@@ -272,8 +272,8 @@ class MediaRepositoryImpl implements IMediaRepository {
   Future<ImageInfo?> getImage(String imageId) async {
     final doc = await _firestore.collection('images').doc(imageId).get();
     if (!doc.exists) return null;
-    final dto = ImageResultDto.fromFirestore(doc.data()!, doc.id);
-    return _dtoToImageInfo(dto);
+    final result = ImageResult.fromFirestore(doc.data()!, doc.id);
+    return _resultToImageInfo(result);
   }
 
   @override

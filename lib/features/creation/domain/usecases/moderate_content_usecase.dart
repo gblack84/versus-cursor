@@ -1,5 +1,5 @@
 import 'dart:io';
-import '/core/types/result.dart';
+import 'package:fpdart/fpdart.dart';
 import '../failures/creation_failures.dart';
 import '/services/moderation/image_moderation_service.dart';
 
@@ -7,7 +7,7 @@ import '/services/moderation/image_moderation_service.dart';
 /// 콘텐츠 검열을 위한 UseCase
 class ModerateContentUseCase {
   /// Execute content moderation on text
-  Future<Result<ModerationDecision>> moderateText({
+  Future<Either<Failure, ModerationDecision>> moderateText({
     required String text,
     required String context,
   }) async {
@@ -25,7 +25,7 @@ class ModerateContentUseCase {
       for (final word in prohibitedWords) {
         if (lowerText.contains(word)) {
           // Step 5: detectedCategories 추가로 AIModerationFailure와 연동
-          return Success(
+          return right(
             ModerationDecision(
               isApproved: false,
               reason: 'Contains prohibited content',
@@ -36,7 +36,7 @@ class ModerateContentUseCase {
         }
       }
 
-      return Success(
+      return right(
         ModerationDecision(
           isApproved: true,
           confidence: 0.8,
@@ -44,7 +44,7 @@ class ModerateContentUseCase {
       );
     } catch (error) {
       // Step 5: ModerationFailure 생성 (하드코딩 제거)
-      return ResultFailure(
+      return left(
         ModerationFailure(
           'Text moderation error',
           code: 'TEXT_MODERATION_ERROR',
@@ -54,7 +54,7 @@ class ModerateContentUseCase {
   }
 
   /// Execute content moderation on image
-  Future<Result<ModerationDecision>> moderateImage({
+  Future<Either<Failure, ModerationDecision>> moderateImage({
     required File imageFile,
     required String box,
   }) async {
@@ -64,7 +64,7 @@ class ModerateContentUseCase {
         box: box,
       );
 
-      return Success(
+      return right(
         ModerationDecision(
           isApproved: result.isAppropriate,
           reason: result.isAppropriate ? null : result.reason,
@@ -77,7 +77,7 @@ class ModerateContentUseCase {
       );
     } catch (error) {
       // Step 5: ModerationFailure 생성 (하드코딩 제거)
-      return ResultFailure(
+      return left(
         ModerationFailure(
           'Image moderation error',
           code: 'IMAGE_MODERATION_ERROR',
@@ -87,7 +87,7 @@ class ModerateContentUseCase {
   }
 
   /// Execute batch moderation on multiple images
-  Future<Result<List<ModerationDecision>>> moderateImages({
+  Future<Either<Failure, List<ModerationDecision>>> moderateImages({
     required List<File> imageFiles,
     required String box,
     Function(int current, int total)? onProgress,
@@ -103,26 +103,28 @@ class ModerateContentUseCase {
           box: box,
         );
 
-        if (result.isSuccess) {
-          decisions.add(result.valueOrNull!);
-        } else {
-          // Step 5: 실패한 이미지에 대한 ModerationDecision 생성
-          // Continue with other images even if one fails
-          final failure = result.failureOrNull;
-          decisions.add(
-            ModerationDecision(
-              isApproved: false,
-              reason: failure?.message ?? 'Image moderation failed',
-              confidence: 0.0,
-            ),
-          );
-        }
+        result.fold(
+          (failure) {
+            // Step 5: 실패한 이미지에 대한 ModerationDecision 생성
+            // Continue with other images even if one fails
+            decisions.add(
+              ModerationDecision(
+                isApproved: false,
+                reason: failure.message,
+                confidence: 0.0,
+              ),
+            );
+          },
+          (decision) {
+            decisions.add(decision);
+          },
+        );
       }
 
-      return Success(decisions);
+      return right(decisions);
     } catch (error) {
       // Step 5: ModerationFailure 생성 (하드코딩 제거)
-      return ResultFailure(
+      return left(
         ModerationFailure(
           'Batch image moderation error',
           code: 'BATCH_MODERATION_ERROR',
@@ -132,7 +134,7 @@ class ModerateContentUseCase {
   }
 
   /// Check if content combination is appropriate
-  Future<Result<ModerationDecision>> moderateContentCombination({
+  Future<Either<Failure, ModerationDecision>> moderateContentCombination({
     required String title,
     required String description,
     required List<File> imagesA,
@@ -145,7 +147,12 @@ class ModerateContentUseCase {
         context: 'title',
       );
 
-      if (titleResult.isFailure || !titleResult.valueOrNull!.isApproved) {
+      final titleDecision = titleResult.fold(
+        (failure) => null,
+        (decision) => decision,
+      );
+
+      if (titleDecision == null || !titleDecision.isApproved) {
         return titleResult;
       }
 
@@ -154,7 +161,12 @@ class ModerateContentUseCase {
         context: 'description',
       );
 
-      if (descResult.isFailure || !descResult.valueOrNull!.isApproved) {
+      final descDecision = descResult.fold(
+        (failure) => null,
+        (decision) => decision,
+      );
+
+      if (descDecision == null || !descDecision.isApproved) {
         return descResult;
       }
 
@@ -164,11 +176,20 @@ class ModerateContentUseCase {
         box: 'A',
       );
 
-      if (imagesAResult.isFailure) {
-        return ResultFailure(imagesAResult.failureOrNull!);
+      // Early return on failure
+      if (imagesAResult.isLeft()) {
+        return imagesAResult.fold(
+          (failure) => left(failure),
+          (_) => left(ModerationFailure('Unexpected error', code: 'UNKNOWN_ERROR')),
+        );
       }
 
-      final rejectedA = imagesAResult.valueOrNull!
+      final decisionsA = imagesAResult.fold(
+        (failure) => <ModerationDecision>[],
+        (decisions) => decisions,
+      );
+
+      final rejectedA = decisionsA
           .where((d) => !d.isApproved)
           .toList();
 
@@ -184,7 +205,7 @@ class ModerateContentUseCase {
             .toSet()
             .toList();
 
-        return Success(
+        return right(
           ModerationDecision(
             isApproved: false,
             reason: reasons.isNotEmpty ? 'Option A: $reasons' : 'Option A contains inappropriate content',
@@ -199,11 +220,20 @@ class ModerateContentUseCase {
         box: 'B',
       );
 
-      if (imagesBResult.isFailure) {
-        return ResultFailure(imagesBResult.failureOrNull!);
+      // Early return on failure
+      if (imagesBResult.isLeft()) {
+        return imagesBResult.fold(
+          (failure) => left(failure),
+          (_) => left(ModerationFailure('Unexpected error', code: 'UNKNOWN_ERROR')),
+        );
       }
 
-      final rejectedB = imagesBResult.valueOrNull!
+      final decisionsB = imagesBResult.fold(
+        (failure) => <ModerationDecision>[],
+        (decisions) => decisions,
+      );
+
+      final rejectedB = decisionsB
           .where((d) => !d.isApproved)
           .toList();
 
@@ -219,7 +249,7 @@ class ModerateContentUseCase {
             .toSet()
             .toList();
 
-        return Success(
+        return right(
           ModerationDecision(
             isApproved: false,
             reason: reasons.isNotEmpty ? 'Option B: $reasons' : 'Option B contains inappropriate content',
@@ -230,7 +260,7 @@ class ModerateContentUseCase {
       }
 
       // All content is approved
-      return Success(
+      return right(
         ModerationDecision(
           isApproved: true,
           confidence: 0.95,
@@ -242,7 +272,7 @@ class ModerateContentUseCase {
       );
     } catch (error) {
       // Step 5: ModerationFailure 생성 (하드코딩 제거)
-      return ResultFailure(
+      return left(
         ModerationFailure(
           'Content combination moderation error',
           code: 'COMBINATION_MODERATION_ERROR',

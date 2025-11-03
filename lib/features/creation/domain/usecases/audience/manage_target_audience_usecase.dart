@@ -1,4 +1,4 @@
-import '/core/types/result.dart';
+import 'package:fpdart/fpdart.dart';
 import '../../failures/creation_failures.dart';
 import '../../models/value_objects/target_audience.dart';
 import '../../../data/models/target_audience_dto.dart';
@@ -17,7 +17,7 @@ class ManageTargetAudienceUseCase {
 
   /// Create target audience from DTO (from Presentation layer)
   /// This method provides a clean interface for Providers to use
-  Future<Result<TargetAudience>> createFromDto(
+  Future<Either<Failure, TargetAudience>> createFromDto(
     TargetAudienceDto dto,
   ) async {
     return createTargetAudience(
@@ -32,7 +32,7 @@ class ManageTargetAudienceUseCase {
   }
 
   /// Create and validate a target audience configuration
-  Future<Result<TargetAudience>> createTargetAudience({
+  Future<Either<Failure, TargetAudience>> createTargetAudience({
     required String collectionType,
     required int targetCount,
     List<String>? selectedInterests,
@@ -59,17 +59,17 @@ class ManageTargetAudienceUseCase {
       final validationResult = validateTargetAudience(targetAudience);
 
       if (!validationResult.isValid) {
-        return ResultFailure(
+        return left(
           CreationValidationFailure(
             validationResult.error ?? 'Invalid target audience configuration',
           ),
         );
       }
 
-      return Success(targetAudience);
+      return right(targetAudience);
     } catch (error) {
       print('ManageTargetAudienceUseCase Error: $error');
-      return ResultFailure(
+      return left(
         UnknownFailure(message: 'Failed to create target audience: $error'),
       );
     }
@@ -87,7 +87,7 @@ class ManageTargetAudienceUseCase {
   }
 
   /// Get target audience recommendations based on post content
-  Future<Result<TargetAudienceRecommendation>> getRecommendations({
+  Future<Either<Failure, TargetAudienceRecommendation>> getRecommendations({
     required String title,
     required String description,
     List<String>? imageTags,
@@ -100,10 +100,10 @@ class ManageTargetAudienceUseCase {
         imageTags: imageTags,
       );
 
-      return Success(recommendations);
+      return right(recommendations);
     } catch (error) {
       print('GetRecommendations Error: $error');
-      return ResultFailure(
+      return left(
         UnknownFailure(message: 'Failed to get recommendations: $error'),
       );
     }

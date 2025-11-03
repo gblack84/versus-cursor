@@ -494,22 +494,25 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     required String box,
     Function(double)? onProgress,
   }) async {
-    // Delegate to internal service
-    final result = await _imageProcessingService.processMultipleImages(
+    // Delegate to internal service (now returns Either)
+    final resultEither = await _imageProcessingService.processMultipleImages(
       files: files,
       box: box,
       onProgress: onProgress,
     );
 
-    // Convert service result to domain result
-    return ImageProcessingResult(
-      approvedFiles: result.approvedFiles,
-      approvedRatios: result.approvedRatios,
-      approvedAssetIds: result.approvedAssetIds,
-      rejectedReasons: result.rejectedReasons,
-      rejectedIndices: result.rejectedIndices,
-      rejectedCount: result.rejectedCount,
-      allRejected: result.allRejected,
+    // Unwrap Either - throw if failed (service operations should handle errors)
+    return resultEither.fold(
+      (failure) => throw Exception('Image processing failed: ${failure.message}'),
+      (result) => ImageProcessingResult(
+        approvedFiles: result.approvedFiles,
+        approvedRatios: result.approvedRatios,
+        approvedAssetIds: result.approvedAssetIds,
+        rejectedReasons: result.rejectedReasons,
+        rejectedIndices: result.rejectedIndices,
+        rejectedCount: result.rejectedCount,
+        allRejected: result.allRejected,
+      ),
     );
   }
 
@@ -520,21 +523,24 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     String? assetId,
     Function(double)? onProgress,
   }) async {
-    // Delegate to internal service
-    final result = await _imageProcessingService.processEditedImage(
+    // Delegate to internal service (now returns Either)
+    final resultEither = await _imageProcessingService.processEditedImage(
       editedFile: editedFile,
       box: box,
       assetId: assetId,
       onProgress: onProgress,
     );
 
-    // Convert service result to domain result
-    return SingleImageResult(
-      success: result.success,
-      file: result.file,
-      aspectRatio: result.aspectRatio,
-      assetId: result.assetId,
-      rejectionReason: result.moderationResult?.reason,
+    // Unwrap Either - throw if failed (service operations should handle errors)
+    return resultEither.fold(
+      (failure) => throw Exception('Image processing failed: ${failure.message}'),
+      (result) => SingleImageResult(
+        success: result.success,
+        file: result.file,
+        aspectRatio: result.aspectRatio,
+        assetId: result.assetId,
+        rejectionReason: result.moderationResult?.reason,
+      ),
     );
   }
 

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import '/core/types/result.dart';
+import 'package:fpdart/fpdart.dart';
 import '../../failures/creation_failures.dart';
 import '../../repositories/i_media_repository.dart';
 import '../../services/i_image_processing_service.dart';
@@ -23,20 +23,20 @@ class UploadImagesUseCase {
   /// Upload multiple images with processing and moderation using DTO
   ///
   /// Simplified interface using ImageUploadDto to bundle parameters.
-  Future<Result<UploadResult>> execute({
+  Future<Either<Failure, UploadResult>> execute({
     required ImageUploadDto dto,
     Function(double)? onProgress,
   }) async {
     try {
       if (dto.images.isEmpty) {
-        return ResultFailure(
-          CreationValidationFailure('No images provided'),
+        return left(
+          const CreationValidationFailure('No images provided'),
         );
       }
 
       // Validate box parameter
       if (!dto.isValidBox) {
-        return ResultFailure(
+        return left(
           CreationValidationFailure('Invalid box parameter: ${dto.box}'),
         );
       }
@@ -44,7 +44,7 @@ class UploadImagesUseCase {
       // Step 1: Process and moderate images
       onProgress?.call(0.2);
 
-      final processingResult = await _imageProcessingService.processMultipleImages(
+      final processingEither = await _imageProcessingService.processMultipleImages(
         files: dto.images,
         box: dto.box,
         onProgress: (progress) {
@@ -53,49 +53,59 @@ class UploadImagesUseCase {
         },
       );
 
-      if (processingResult.allRejected) {
-        return ResultFailure(
-          ModerationFailure(
-            'All images were rejected',
-            rejectedReasons: processingResult.rejectedReasons.keys.toList(),
-          ),
-        );
-      }
+      return processingEither.fold(
+        (failure) => left(failure),
+        (processingResult) async {
+          if (processingResult.allRejected) {
+            return left(
+              ModerationFailure(
+                'All images were rejected',
+                rejectedReasons: processingResult.rejectedReasons.keys.toList(),
+              ),
+            );
+          }
 
-      // Step 2: Upload approved images to storage
-      onProgress?.call(0.6);
+          // Step 2: Upload approved images to storage
+          onProgress?.call(0.6);
 
-      final uploadedUrls = await _mediaRepository.uploadImages(
-        processingResult.approvedFiles,
+          final uploadEither = await _mediaRepository.uploadImages(
+            processingResult.approvedFiles,
+          );
+
+          return uploadEither.fold(
+            (failure) => left(failure),
+            (uploadedUrls) {
+              onProgress?.call(0.9);
+
+              // Step 3: Return results
+              final result = UploadResult(
+                uploadedUrls: uploadedUrls,
+                aspectRatios: processingResult.approvedRatios,
+                rejectedCount: processingResult.rejectedCount,
+                rejectedReasons: processingResult.rejectedReasons.map(
+                  (key, value) => MapEntry(key, value.join(', ')),
+                ),
+              );
+
+              onProgress?.call(1.0);
+
+              return right(result);
+            },
+          );
+        },
       );
-
-      onProgress?.call(0.9);
-
-      // Step 3: Return results
-      final result = UploadResult(
-        uploadedUrls: uploadedUrls,
-        aspectRatios: processingResult.approvedRatios,
-        rejectedCount: processingResult.rejectedCount,
-        rejectedReasons: processingResult.rejectedReasons.map(
-          (key, value) => MapEntry(key, value.join(', ')),
-        ),
-      );
-
-      onProgress?.call(1.0);
-
-      return Success(result);
     } catch (error, stackTrace) {
       print('UploadImagesUseCase Error: $error');
       print('StackTrace: $stackTrace');
 
-      return ResultFailure(
+      return left(
         ImageUploadFailure('Failed to upload images: $error'),
       );
     }
   }
 
   /// Process and upload a single edited image
-  Future<Result<SingleUploadResult>> uploadEditedImage({
+  Future<Either<Failure, SingleUploadResult>> uploadEditedImage({
     required File editedFile,
     required String box,
     String? assetId,
@@ -103,7 +113,7 @@ class UploadImagesUseCase {
   }) async {
     try {
       // Process with moderation
-      final processingResult = await _imageProcessingService.processEditedImage(
+      final processingEither = await _imageProcessingService.processEditedImage(
         editedFile: editedFile,
         box: box,
         assetId: assetId,
@@ -112,41 +122,51 @@ class UploadImagesUseCase {
         },
       );
 
-      if (!processingResult.success || processingResult.file == null) {
-        return ResultFailure(
-          ModerationFailure(
-            'Image was rejected',
-            rejectedReasons: [
-              processingResult.rejectionReason ?? 'Unknown reason',
-            ],
-          ),
-        );
-      }
+      return processingEither.fold(
+        (failure) => left(failure),
+        (processingResult) async {
+          if (!processingResult.success || processingResult.file == null) {
+            return left(
+              ModerationFailure(
+                'Image was rejected',
+                rejectedReasons: [
+                  processingResult.rejectionReason ?? 'Unknown reason',
+                ],
+              ),
+            );
+          }
 
-      // Upload to storage
-      onProgress?.call(0.7);
+          // Upload to storage
+          onProgress?.call(0.7);
 
-      final urls = await _mediaRepository.uploadImages([processingResult.file!]);
+          final uploadEither = await _mediaRepository.uploadImages([processingResult.file!]);
 
-      if (urls.isEmpty) {
-        return ResultFailure(
-          ImageUploadFailure('Failed to upload edited image'),
-        );
-      }
+          return uploadEither.fold(
+            (failure) => left(failure),
+            (urls) {
+              if (urls.isEmpty) {
+                return left(
+                  const ImageUploadFailure('Failed to upload edited image'),
+                );
+              }
 
-      onProgress?.call(1.0);
+              onProgress?.call(1.0);
 
-      return Success(
-        SingleUploadResult(
-          uploadedUrl: urls.first,
-          aspectRatio: processingResult.aspectRatio ?? 1.0,
-          assetId: processingResult.assetId,
-        ),
+              return right(
+                SingleUploadResult(
+                  uploadedUrl: urls.first,
+                  aspectRatio: processingResult.aspectRatio ?? 1.0,
+                  assetId: processingResult.assetId,
+                ),
+              );
+            },
+          );
+        },
       );
     } catch (error) {
       print('UploadEditedImageUseCase Error: $error');
 
-      return ResultFailure(
+      return left(
         ImageUploadFailure('Failed to upload edited image: $error'),
       );
     }

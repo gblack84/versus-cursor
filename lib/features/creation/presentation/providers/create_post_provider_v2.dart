@@ -195,22 +195,28 @@ class CreatePostProviderV2 extends ChangeNotifier {
 
     // Title and description validation
     final titleResult = await _validatePostUseCase.validateText(_formData.title);
-    if (!titleResult.isValid) {
-      if (_formData.title.isEmpty) {
-        missingFields.add('title');
-      } else {
-        invalidFields.add('title');
-      }
-    }
+    titleResult.fold(
+      (failure) {
+        if (_formData.title.isEmpty) {
+          missingFields.add('title');
+        } else {
+          invalidFields.add('title');
+        }
+      },
+      (_) {}, // Success case - do nothing
+    );
 
     final descriptionResult = await _validatePostUseCase.validateText(_formData.description);
-    if (!descriptionResult.isValid) {
-      if (_formData.description.isEmpty) {
-        missingFields.add('description');
-      } else {
-        invalidFields.add('description');
-      }
-    }
+    descriptionResult.fold(
+      (failure) {
+        if (_formData.description.isEmpty) {
+          missingFields.add('description');
+        } else {
+          invalidFields.add('description');
+        }
+      },
+      (_) {}, // Success case - do nothing
+    );
 
     // Option validation
     if (_formData.textA.isEmpty && _formData.imagesA.isEmpty) {
@@ -258,21 +264,28 @@ class CreatePostProviderV2 extends ChangeNotifier {
         context: 'post_creation',
       );
 
-      if (textResult.isFailure) {
-        _moderationStatus = ModerationStatus.rejected;
-        final failure = textResult.failureOrNull;
+      // Handle moderation failure
+      if (textResult.isLeft()) {
+        return textResult.fold(
+          (failure) {
+            _moderationStatus = ModerationStatus.rejected;
 
-        // Use getUserMessage() if failure has it
-        if (failure is AIModerationFailure) {
-          _moderationMessage = failure.getUserMessage();
-        } else {
-          _moderationMessage = failure?.message ?? '텍스트 검열 중 오류가 발생했습니다.';
-        }
-        notifyListeners();
-        return false;
+            // Use getUserMessage() if failure has it
+            if (failure is AIModerationFailure) {
+              _moderationMessage = failure.getUserMessage();
+            } else {
+              _moderationMessage = failure.message;
+            }
+            notifyListeners();
+            return false;
+          },
+          (_) => true, // Won't be called since we checked isLeft()
+        );
       }
 
-      final textDecision = textResult.valueOrNull!;
+      // Extract the decision from the Right side
+      final textDecision = textResult.getOrElse((_) => throw Exception('Unexpected state'));
+
       if (!textDecision.isApproved) {
         _moderationStatus = ModerationStatus.rejected;
         // Create AIModerationFailure with rejection details
@@ -500,24 +513,28 @@ class CreatePostProviderV2 extends ChangeNotifier {
     try {
       final result = await _validatePostUseCase.validateText(text);
 
-      // Convert ValidationResult to PerspectiveResult
-      // Note: ValidatePostUseCase returns ValidationResult, but we need PerspectiveResult
+      // Convert Either<Failure, Unit> to PerspectiveResult
+      // Note: ValidatePostUseCase returns Either, but we need PerspectiveResult
       // For now, create a simple pass/fail PerspectiveResult
       // TODO: Enhance ValidatePostUseCase to return detailed PerspectiveResult
-      if (result.isValid) {
-        _validationResults.remove(FieldStyles.questionTitle);
-      } else {
-        // Create a simple rejected result
-        _validationResults[FieldStyles.questionTitle] = PerspectiveResult(
-          isToxic: true,
-          toxicityScore: 0.9,
-          profanityScore: 0.0,
-          threatScore: 0.0,
-          insultScore: 0.0,
-          allScores: {'TOXICITY': 0.9},
-          toxicSpans: [],
-        );
-      }
+      result.fold(
+        (failure) {
+          // Create a simple rejected result
+          _validationResults[FieldStyles.questionTitle] = PerspectiveResult(
+            isToxic: true,
+            toxicityScore: 0.9,
+            profanityScore: 0.0,
+            threatScore: 0.0,
+            insultScore: 0.0,
+            allScores: {'TOXICITY': 0.9},
+            toxicSpans: [],
+          );
+        },
+        (_) {
+          // Success - clear validation result
+          _validationResults.remove(FieldStyles.questionTitle);
+        },
+      );
       notifyListeners();
     } catch (e) {
       // On error, clear validation result
@@ -534,20 +551,24 @@ class CreatePostProviderV2 extends ChangeNotifier {
     try {
       final result = await _validatePostUseCase.validateText(text);
 
-      if (result.isValid) {
-        _validationResults.remove(FieldStyles.description);
-      } else {
-        // Create a simple rejected result
-        _validationResults[FieldStyles.description] = PerspectiveResult(
-          isToxic: true,
-          toxicityScore: 0.9,
-          profanityScore: 0.0,
-          threatScore: 0.0,
-          insultScore: 0.0,
-          allScores: {'TOXICITY': 0.9},
-          toxicSpans: [],
-        );
-      }
+      result.fold(
+        (failure) {
+          // Create a simple rejected result
+          _validationResults[FieldStyles.description] = PerspectiveResult(
+            isToxic: true,
+            toxicityScore: 0.9,
+            profanityScore: 0.0,
+            threatScore: 0.0,
+            insultScore: 0.0,
+            allScores: {'TOXICITY': 0.9},
+            toxicSpans: [],
+          );
+        },
+        (_) {
+          // Success - clear validation result
+          _validationResults.remove(FieldStyles.description);
+        },
+      );
       notifyListeners();
     } catch (e) {
       // On error, clear validation result

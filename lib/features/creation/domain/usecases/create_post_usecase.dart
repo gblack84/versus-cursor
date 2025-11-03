@@ -1,37 +1,32 @@
 import 'dart:io';
-import 'package:versus_space/core/types/result.dart';
+import 'package:fpdart/fpdart.dart';
 import '../models/aggregates/post_creation.dart';
 import '../failures/creation_failures.dart';
 import '../repositories/i_post_creation_repository_v2.dart';
 import '../repositories/i_media_repository.dart';
 import '../../data/models/post_creation_dto.dart';
-import '../../data/models/target_audience_dto.dart';
 import '../services/i_image_processing_service.dart';
-import 'audience/manage_target_audience_usecase.dart';
 
 /// UseCase for creating a new post
 /// 새로운 게시물을 생성하기 위한 UseCase
 ///
 /// Phase 1.3: Service dependencies removed, now using Repository methods
-/// Phase 5 Restoration: ManageTargetAudienceUseCase fully integrated
+/// Phase 6: Converted to Either<Failure, T> pattern with fold/map composition
 class CreatePostUseCase {
   final IPostCreationRepositoryV2 _postRepository;
   final IMediaRepository _mediaRepository;
-  final ManageTargetAudienceUseCase _manageTargetAudienceUseCase;
 
   CreatePostUseCase({
     required IPostCreationRepositoryV2 postRepository,
     required IMediaRepository mediaRepository,
-    required ManageTargetAudienceUseCase manageTargetAudienceUseCase,
   })  : _postRepository = postRepository,
-        _mediaRepository = mediaRepository,
-        _manageTargetAudienceUseCase = manageTargetAudienceUseCase;
+        _mediaRepository = mediaRepository;
 
   /// Execute the use case with DTO
   ///
   /// Simplified interface using PostCreationDto to bundle all parameters.
   /// This follows Clean Architecture by reducing coupling between layers.
-  Future<Result<PostCreation>> execute({
+  Future<Either<CreateContentFailure, PostCreation>> execute({
     required PostCreationDto dto,
     Function(double)? onProgress,
   }) async {
@@ -45,133 +40,131 @@ class CreatePostUseCase {
       );
 
       if (validationResult != null) {
-        return ResultFailure(validationResult);
+        return left(
+          CreateContentFailure(
+            validationResult.message,
+            validationResult.code,
+          ),
+        );
       }
 
       onProgress?.call(0.1);
 
-      // 2. Process and moderate images for option A
+      // 2. Process images for option A
       final resultA = await _processImages(
         images: dto.imagesA,
         box: 'A',
         onProgress: (progress) => onProgress?.call(0.1 + progress * 0.3),
       );
 
-      if (resultA.isFailure) {
-        return ResultFailure(resultA.failureOrNull!);
-      }
+      return resultA.fold(
+        (failure) => left(failure),
+        (processedA) async {
+          onProgress?.call(0.4);
 
-      onProgress?.call(0.4);
+          // 3. Process images for option B
+          final resultB = await _processImages(
+            images: dto.imagesB,
+            box: 'B',
+            onProgress: (progress) => onProgress?.call(0.4 + progress * 0.3),
+          );
 
-      // 3. Process and moderate images for option B
-      final resultB = await _processImages(
-        images: dto.imagesB,
-        box: 'B',
-        onProgress: (progress) => onProgress?.call(0.4 + progress * 0.3),
+          return resultB.fold(
+            (failure) => left(failure),
+            (processedB) async {
+              onProgress?.call(0.7);
+
+              // 4. Upload processed images for option A
+              final uploadResultA = await _uploadImages(
+                processedImages: processedA.approvedFiles,
+              );
+
+              return uploadResultA.fold(
+                (failure) => left(failure),
+                (urlsA) async {
+                  // 5. Upload processed images for option B
+                  final uploadResultB = await _uploadImages(
+                    processedImages: processedB.approvedFiles,
+                  );
+
+                  return uploadResultB.fold(
+                    (failure) => left(failure),
+                    (urlsB) async {
+                      onProgress?.call(0.8);
+
+                      // 6. Validate target audience if provided
+                      if (dto.targetAudience != null) {
+                        final validation = _postRepository.validateTargetAudience(
+                          dto.targetAudience!,
+                        );
+
+                        if (!validation.isValid) {
+                          return left(
+                            CreateContentFailure(
+                              validation.error ?? 'Invalid target audience',
+                              'validation-failed',
+                            ),
+                          );
+                        }
+                      }
+
+                      // 7. Create post entity from DTO with uploaded media
+                      final post = PostCreation(
+                        userId: dto.userId,
+                        title: dto.title,
+                        description: dto.description,
+                        optionA: PostOption(
+                          imageUrls: urlsA,
+                          aspectRatios: processedA.approvedRatios,
+                        ),
+                        optionB: PostOption(
+                          imageUrls: urlsB,
+                          aspectRatios: processedB.approvedRatios,
+                        ),
+                        targetAudience: dto.targetAudience,
+                        createdAt: DateTime.now(),
+                        status: PostStatus.published,
+                        isAnonymous: dto.isAnonymous,
+                      );
+
+                      onProgress?.call(0.9);
+
+                      // 8. Save post using PostCreation aggregate
+                      final createResult = await _postRepository.createPost(post: post);
+
+                      return createResult.map((postId) {
+                        // Update the post with the generated ID
+                        final savedPost = post.copyWith(id: postId);
+                        onProgress?.call(1.0);
+                        return savedPost;
+                      });
+                    },
+                  );
+                },
+              );
+            },
+          );
+        },
       );
-
-      if (resultB.isFailure) {
-        return ResultFailure(resultB.failureOrNull!);
-      }
-
-      onProgress?.call(0.7);
-
-      // 4. Upload processed images
-      final uploadResultA = await _uploadImages(
-        processedImages: resultA.valueOrNull!.approvedFiles,
-      );
-
-      if (uploadResultA.isFailure) {
-        return ResultFailure(uploadResultA.failureOrNull!);
-      }
-
-      final uploadResultB = await _uploadImages(
-        processedImages: resultB.valueOrNull!.approvedFiles,
-      );
-
-      if (uploadResultB.isFailure) {
-        return ResultFailure(uploadResultB.failureOrNull!);
-      }
-
-      onProgress?.call(0.8);
-
-      // 5. Validate and process target audience if provided
-      // Phase 5 Restoration: Using ManageTargetAudienceUseCase for complete functionality
-      // - DTO conversion with validation
-      // - Model creation with proper defaults
-      // - ITargetAudienceService validation
-      // - Result pattern error handling
-      if (dto.targetAudience != null) {
-        // Convert to DTO for UseCase
-        final targetAudienceDto = TargetAudienceDto(
-          collectionType: dto.targetAudience!.collectionType,
-          targetCount: dto.targetAudience!.targetCount,
-          selectedInterests: dto.targetAudience!.selectedInterests,
-          selectedAgeGroup: dto.targetAudience!.selectedAgeGroup,
-          selectedGender: dto.targetAudience!.selectedGender,
-          activeUserOnly: dto.targetAudience!.activeUserOnly,
-          isPremium: dto.targetAudience!.isPremium,
-        );
-
-        // Use ManageTargetAudienceUseCase for creation and validation
-        final audienceResult = await _manageTargetAudienceUseCase.createFromDto(
-          targetAudienceDto,
-        );
-
-        if (audienceResult.isFailure) {
-          return ResultFailure(audienceResult.failureOrNull!);
-        }
-
-        // Validated TargetAudience is now available for use
-        // (dto.targetAudience already contains the necessary data)
-      }
-
-      // 6. Create post entity from DTO with uploaded media
-      final post = PostCreation(
-        userId: dto.userId,
-        title: dto.title,
-        description: dto.description,
-        optionA: PostOption(
-          imageUrls: uploadResultA.valueOrNull!,
-          aspectRatios: resultA.valueOrNull!.approvedRatios,
-        ),
-        optionB: PostOption(
-          imageUrls: uploadResultB.valueOrNull!,
-          aspectRatios: resultB.valueOrNull!.approvedRatios,
-        ),
-        targetAudience: dto.targetAudience,
-        createdAt: DateTime.now(),
-        status: PostStatus.published,
-        isAnonymous: dto.isAnonymous,
-      );
-
-      onProgress?.call(0.9);
-
-      // 7. Save post using PostCreation aggregate (Phase 2 Migration)
-      final postId = await _postRepository.createPost(post: post);
-
-      // Update the post with the generated ID
-      final savedPost = post.copyWith(id: postId);
-
-      onProgress?.call(1.0);
-
-      return Success(savedPost);
     } catch (error, stackTrace) {
       print('CreatePostUseCase Error: $error');
       print('StackTrace: $stackTrace');
 
       // Handle specific error types without Firebase dependency
       if (error.toString().contains('permission-denied')) {
-        return ResultFailure(
-          ServerFailure(
+        return left(
+          CreateContentFailure(
             'Permission denied to create post',
-            code: 'permission-denied',
+            'permission-denied',
           ),
         );
       }
 
-      return ResultFailure(
-        UnknownFailure(message: 'Failed to create post: $error'),
+      return left(
+        CreateContentFailure(
+          'Failed to create post: $error',
+          'unknown-error',
+        ),
       );
     }
   }
@@ -221,7 +214,7 @@ class CreatePostUseCase {
 
   /// Process and moderate images
   /// Now using repository method instead of direct service dependency (Phase 1.3)
-  Future<Result<ImageProcessingResult>> _processImages({
+  Future<Either<CreateContentFailure, ImageProcessingResult>> _processImages({
     required List<File> images,
     required String box,
     Function(double)? onProgress,
@@ -234,33 +227,37 @@ class CreatePostUseCase {
       );
 
       if (result.allRejected) {
-        return ResultFailure(
-          ModerationFailure(
-            'All images were rejected',
-            rejectedReasons: result.rejectedReasons.keys.toList(),
+        return left(
+          CreateContentFailure(
+            'All images were rejected: ${result.rejectedReasons.keys.join(", ")}',
+            'moderation-failed',
           ),
         );
       }
 
-      return Success(result);
+      return right(result);
     } catch (error) {
-      return ResultFailure(
-        ImageUploadFailure('Failed to process images: $error'),
+      return left(
+        CreateContentFailure(
+          'Failed to process images: $error',
+          'image-processing-failed',
+        ),
       );
     }
   }
 
   /// Upload images to storage
-  Future<Result<List<String>>> _uploadImages({
+  Future<Either<CreateContentFailure, List<String>>> _uploadImages({
     required List<File> processedImages,
   }) async {
-    try {
-      final urls = await _mediaRepository.uploadImages(processedImages);
-      return Success(urls);
-    } catch (error) {
-      return ResultFailure(
-        ImageUploadFailure('Failed to upload images: $error'),
-      );
-    }
+    final result = await _mediaRepository.uploadImages(processedImages);
+
+    // Convert MediaRepositoryFailure to CreateContentFailure
+    return result.mapLeft((failure) =>
+      CreateContentFailure(
+        'Failed to upload images: ${failure.message}',
+        'image-upload-failed',
+      ),
+    );
   }
 }

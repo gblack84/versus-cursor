@@ -4,7 +4,7 @@
 > **작성일**: 2025-11-03
 > **최종 수정**: 2025-11-03
 > **Phase**: 2-1 (Either Pattern + Riverpod 도입 - 개요 및 현황 분석)
-> **이전 Phase**: [Phase 1 - Freezed Migration](./PHASE_1_EITHER_PATTERN.md)
+> **이전 Phase**: [Phase 1 - Freezed Migration](./PHASE_1_FREEZED_MIGRATION.md)
 > **다음 Phase**: [Phase 2-2 - Migration Steps](./PHASE_2_2_MIGRATION_STEPS.md)
 
 ---

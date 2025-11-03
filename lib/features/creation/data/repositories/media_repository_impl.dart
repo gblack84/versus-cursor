@@ -4,7 +4,7 @@ import '../../domain/repositories/i_media_repository.dart';
 import '../datasources/interfaces/i_storage_datasource.dart';
 import '../../domain/models/entities/media_info.dart';
 import '../models/image_result.dart';
-import '../models/video_result_dto.dart';
+import '../models/video_result.dart';
 
 /// Implementation of Media Repository using Clean Architecture
 ///
@@ -40,25 +40,25 @@ class MediaRepositoryImpl implements IMediaRepository {
     );
   }
 
-  /// Convert VideoResultDto to VideoInfo domain entity
-  VideoInfo _dtoToVideoInfo(VideoResultDto dto) {
+  /// Convert VideoResult to VideoInfo domain entity
+  VideoInfo _resultToVideoInfo(VideoResult result) {
     return MediaInfo.video(
-      id: dto.id,
-      url: dto.url,
-      parentId: dto.parentId,
-      width: null,  // DTO doesn't have width field
-      height: null,  // DTO doesn't have height field
-      duration: dto.duration.toDouble(),
-      size: null,  // DTO doesn't have size field
-      mimeType: null,  // DTO doesn't have mimeType field
-      createdAt: dto.createdAt,
-      thumbnailUrl: dto.thumbUrl?.isNotEmpty == true ? dto.thumbUrl : null,
+      id: result.id,
+      url: result.url,
+      parentId: result.parentId,
+      width: null,  // Result doesn't have width field
+      height: null,  // Result doesn't have height field
+      duration: result.duration.toDouble(),
+      size: null,  // Result doesn't have size field
+      mimeType: null,  // Result doesn't have mimeType field
+      createdAt: result.createdAt,
+      thumbnailUrl: result.thumbUrl?.isNotEmpty == true ? result.thumbUrl : null,
       aspectRatio: null,
       metadata: {
-        'params': dto.params,
-        'sourceVideoUrl': dto.sourceVideoUrl,
-        'ownerUid': dto.ownerUid,
-        'status': dto.status,
+        'params': result.params,
+        'sourceVideoUrl': result.sourceVideoUrl,
+        'ownerUid': result.ownerUid,
+        'status': result.status,
       },
     );
   }
@@ -135,8 +135,8 @@ class MediaRepositoryImpl implements IMediaRepository {
 
     return query.snapshots().map((snapshot) {
       return snapshot.docs
-          .map((doc) => VideoResultDto.fromFirestore(doc.data(), doc.id))
-          .map((dto) => _dtoToVideoInfo(dto))
+          .map((doc) => VideoResult.fromFirestore(doc.data(), doc.id))
+          .map((result) => _resultToVideoInfo(result))
           .toList();
     });
   }
@@ -317,8 +317,8 @@ class MediaRepositoryImpl implements IMediaRepository {
   Future<VideoInfo?> getVideo(String videoId) async {
     final doc = await _firestore.collection('videos').doc(videoId).get();
     if (!doc.exists) return null;
-    final dto = VideoResultDto.fromFirestore(doc.data()!, doc.id);
-    return _dtoToVideoInfo(dto);
+    final result = VideoResult.fromFirestore(doc.data()!, doc.id);
+    return _resultToVideoInfo(result);
   }
 
   @override

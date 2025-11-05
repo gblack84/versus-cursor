@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fpdart/fpdart.dart';
@@ -9,6 +10,9 @@ import '../../domain/services/i_image_processing_service.dart';
 import '../../domain/repositories/i_post_creation_repository_v2.dart';
 import '../datasources/interfaces/i_post_creation_datasource.dart';
 import '../mappers/creation_firestore_mapper.dart';
+import '/services/cache/creation_cache_service.dart';
+import '/core/utils/idempotency_service.dart'; // ✅ Phase 4: Idempotency
+// import '/app/contracts/creation_contract.dart'; // TODO: Create adapter for Dual Interface Pattern
 
 // Use ValidationResult from ITargetAudienceService
 export '../../domain/services/i_target_audience_service.dart' show ValidationResult;
@@ -33,24 +37,34 @@ export '../../domain/services/i_target_audience_service.dart' show ValidationRes
 ///
 /// Phase 1: MediaContent Freezed conversion complete
 /// Phase 2: PostCore/PostContent removed, PostCreation direct usage (447 lines removed)
-/// Phase 3: Dual Interface Pattern - implements both IPostCreationRepositoryV2 and CreationContract
-/// Phase 2 Migration: Either pattern migration in progress
-/// TODO: Update CreationContract to use Either pattern or create adapter
+/// Phase 3: Dual Interface Pattern - BLOCKED: Cannot implement both interfaces
+///   - IPostCreationRepositoryV2 uses Either<Failure, T> pattern
+///   - CreationContract uses Future<T?>/Future<bool> pattern
+///   - TODO: Create adapter class or update CreationContract to use Either pattern
+/// Phase 2 Migration: Either pattern migration complete
+/// Phase 3 Migration: UnifiedCacheService Integration (Draft Auto-Save)
+/// Phase 4 Migration: Idempotency Pattern (Duplicate Operation Prevention)
 class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   final IPostCreationDataSource _dataSource;
   final ITargetAudienceService? _targetAudienceService;
   final IImageProcessingService _imageProcessingService;
   final CollectionReference<Map<String, dynamic>> _postsCollection;
+  final CreationCacheService _cacheService; // ✅ Phase 3: Cache Integration
+  final IdempotencyService _idempotencyService; // ✅ Phase 4: Idempotency
   final CreationFirestoreMapper _mapper = CreationFirestoreMapper();
 
   PostCreationRepositoryV2Impl({
     required IPostCreationDataSource dataSource,
     ITargetAudienceService? targetAudienceService,
     required IImageProcessingService imageProcessingService,
+    required CreationCacheService cacheService, // ✅ Phase 3: DI Injection
+    required IdempotencyService idempotencyService, // ✅ Phase 4: DI Injection
     FirebaseFirestore? firestore,
   }) : _dataSource = dataSource,
        _targetAudienceService = targetAudienceService,
        _imageProcessingService = imageProcessingService,
+       _cacheService = cacheService,
+       _idempotencyService = idempotencyService,
        _postsCollection = (firestore ?? FirebaseFirestore.instance).collection('posts');
 
   // ====== Creation Operations ======
@@ -58,24 +72,44 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   @override
   Future<Either<CreateContentFailure, String>> createPost({
     required PostCreation post,
+    required String eventId, // ✅ Phase 4: UUID for idempotency
   }) async {
     try {
-      // Use CreationFirestoreMapper to convert PostCreation to Firestore document
-      final data = _mapper.toCreateDocument(post);
+      // ✅ Phase 4: Wrap operation in Idempotency Service
+      final postId = await _idempotencyService.executeIdempotent<String>(
+        entityType: 'post_create',
+        entityId: post.id ?? 'draft_${post.userId}',
+        userId: post.userId,
+        eventId: eventId,
+        operation: (transaction) async {
+          // Use CreationFirestoreMapper to convert PostCreation to Firestore document
+          final data = _mapper.toCreateDocument(post);
 
-      // Additional default fields for backward compatibility
-      data['postCreatedDate'] = post.createdAt;
+          // Additional default fields for backward compatibility
+          data['postCreatedDate'] = post.createdAt;
 
-      // Note: PostVoting and PostMetrics fields will be added by their respective features
-      // through onCreate triggers or after post creation
+          // Note: PostVoting and PostMetrics fields will be added by their respective features
+          // through onCreate triggers or after post creation
 
-      // Create the post using DataSource
-      final result = await _dataSource.createPost(data);
+          // Create the post using Transaction
+          final docRef = _postsCollection.doc();
+          transaction.set(docRef, data);
 
-      // Extract the ID from the result
-      final postId = result['id'] as String;
+          return docRef.id;
+        },
+      );
+
+      // ✅ Phase 3: Delete Draft after successful post creation
+      await deleteDraftPost(post.userId);
 
       return right(postId);
+    } on IdempotencyViolation catch (e) {
+      // User attempted same operation with different eventId (real duplicate)
+      return left(PostCreationRepositoryFailure(
+        operation: 'create',
+        message: 'Duplicate post creation attempt: ${e.message}',
+        code: 'idempotency_violation',
+      ));
     } on FirebaseException catch (e) {
       return left(PostCreationRepositoryFailure(
         operation: 'create',
@@ -90,18 +124,207 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     }
   }
 
+  // ========== Phase 3: Draft Post Operations ==========
+
+  /// Draft Post 조회 (Cache-First Pattern)
+  ///
+  /// **Flow**:
+  /// 1. L1/L2 캐시 시도 (<10ms)
+  /// 2. 캐시 미스 → Firestore에서 Draft 조회
+  /// 3. 캐시 업데이트 (다음 조회 시 <10ms)
+  ///
+  /// **사용처**:
+  /// - 앱 재시작 시 작성 중이던 Draft 복원
+  /// - 백그라운드 전환 후 복귀 시 Draft 복원
+  ///
+  /// **Example**:
+  /// ```dart
+  /// final draft = await repository.getDraftPost('user123');
+  /// if (draft != null) {
+  ///   // Draft 복원 성공 (<10ms)
+  /// }
+  /// ```
+  Future<PostCreation?> getDraftPost(String userId) async {
+    // 1. ✅ 캐시 먼저 시도 (L1 → L2)
+    final cachedDraft = await _cacheService.getDraftPost(userId);
+    if (cachedDraft != null) {
+      return cachedDraft; // <10ms 응답
+    }
+
+    // 2. ✅ Firestore에서 Draft 조회
+    final snapshot = await _postsCollection
+        .where('userid', isEqualTo: userId)
+        .where('status', isEqualTo: 'draft')
+        .orderBy('createdAt', descending: true)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) return null;
+
+    final draft = _mapper.extractPostCreation(
+      snapshot.docs.first.data(),
+      snapshot.docs.first.id,
+    );
+
+    // 3. ✅ 캐시 업데이트 (다음 조회 시 <10ms)
+    await _cacheService.setDraftPost(userId, draft);
+
+    return draft;
+  }
+
+  /// Draft Post 저장 (Write-Through Pattern)
+  ///
+  /// **Flow**:
+  /// 1. 캐시에 즉시 저장 (<10ms, UI 반응성 보장)
+  /// 2. Firestore에 비동기 저장 (백그라운드, 데이터 안전성)
+  ///
+  /// **Auto-Save 전략** (Provider에서 구현):
+  /// - 500ms Debounce: 연속 입력 시 마지막만 저장
+  /// - Write-Through: 캐시와 Firestore 동시 업데이트
+  ///
+  /// **Example**:
+  /// ```dart
+  /// final draft = PostCreation(
+  ///   userId: 'user123',
+  ///   title: '작성 중인 질문',
+  ///   status: PostStatus.draft,
+  /// );
+  /// await repository.saveDraftPost('user123', draft);
+  /// // <10ms 응답, UI 블로킹 없음
+  /// ```
+  Future<void> saveDraftPost(
+    String userId,
+    PostCreation draft, {
+    required String eventId, // ✅ Phase 4: UUID for idempotency
+  }) async {
+    // 1. ✅ 캐시에 즉시 저장 (UI 반응성)
+    await _cacheService.setDraftPost(userId, draft);
+
+    // 2. ✅ Firestore에 비동기 저장 (데이터 안전성) with Idempotency
+    scheduleMicrotask(() async {
+      try {
+        // ✅ Phase 4: Wrap Firestore write in Idempotency Service
+        await _idempotencyService.executeIdempotent<void>(
+          entityType: 'draft_save',
+          entityId: draft.id ?? 'draft_$userId',
+          userId: userId,
+          eventId: eventId,
+          operation: (transaction) async {
+            final draftId = draft.id ?? 'draft_$userId';
+            final docRef = _postsCollection.doc(draftId);
+            transaction.set(docRef, _mapper.toCreateDocument(draft));
+          },
+        );
+      } on IdempotencyViolation catch (e) {
+        // Same draft with different eventId - skip silently (cache already updated)
+        print('⚠️ Draft save idempotency violation (ignored): ${e.message}');
+      } catch (e) {
+        // 실패 시 재시도 로직 (Optional)
+        // TODO: Implement retry with exponential backoff
+        print('❌ Draft save failed: $e');
+      }
+    });
+  }
+
+  /// Draft Post 삭제 (게시 완료 시)
+  ///
+  /// **사용처**:
+  /// - Post 게시 완료 시 Draft 자동 삭제 (createPost()에서 호출)
+  /// - 사용자가 명시적으로 Draft 삭제 시
+  ///
+  /// **Example**:
+  /// ```dart
+  /// await repository.deleteDraftPost('user123');
+  /// // L1, L2, L3 모두 삭제
+  /// ```
+  Future<void> deleteDraftPost(String userId) async {
+    // 1. 캐시 무효화
+    await _cacheService.invalidateDraftPost(userId);
+
+    // 2. Firestore Draft 삭제
+    final snapshot = await _postsCollection
+        .where('userid', isEqualTo: userId)
+        .where('status', isEqualTo: 'draft')
+        .get();
+
+    for (final doc in snapshot.docs) {
+      await doc.reference.delete();
+    }
+  }
+
+  /// 타겟 오디언스 프리셋 조회 (최근 사용 설정)
+  ///
+  /// **사용처**:
+  /// - 새 질문 작성 시 최근 사용한 타겟 설정 자동 완성
+  /// - 타겟 설정 UI 초기값 제공
+  ///
+  /// **Example**:
+  /// ```dart
+  /// final preset = await repository.getTargetAudiencePreset('user123');
+  /// if (preset != null) {
+  ///   // 자동 완성: 최근 사용한 타겟 설정 적용
+  /// }
+  /// ```
+  Future<TargetAudience?> getTargetAudiencePreset(String userId) async {
+    // 1. 캐시에서 프리셋 조회
+    final preset = await _cacheService.getTargetAudiencePreset(userId);
+    if (preset != null) {
+      return preset;
+    }
+
+    // 2. 최근 게시물에서 타겟 오디언스 추출
+    final snapshot = await _postsCollection
+        .where('userid', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) return null;
+
+    final lastPost = _mapper.extractPostCreation(
+      snapshot.docs.first.data(),
+      snapshot.docs.first.id,
+    );
+
+    // 3. 캐시 업데이트
+    final audience = lastPost.targetAudience;
+    if (audience != null) {
+      await _cacheService.setTargetAudiencePreset(userId, audience);
+    }
+
+    return audience;
+  }
+
   // ====== Update Operations ======
 
   @override
   Future<Either<CreateContentFailure, Unit>> updatePost({
     required String postId,
     required PostCreation post,
+    required String eventId, // ✅ Phase 4: UUID for idempotency
   }) async {
     try {
-      // Use CreationFirestoreMapper to convert PostCreation to Firestore update document
-      final data = _mapper.toUpdateDocument(post);
-      await _dataSource.updatePost(postId, data);
+      // ✅ Phase 4: Wrap operation in Idempotency Service
+      await _idempotencyService.executeIdempotent<void>(
+        entityType: 'post_update',
+        entityId: postId,
+        userId: post.userId,
+        eventId: eventId,
+        operation: (transaction) async {
+          // Use CreationFirestoreMapper to convert PostCreation to Firestore update document
+          final data = _mapper.toUpdateDocument(post);
+          final docRef = _postsCollection.doc(postId);
+          transaction.update(docRef, data);
+        },
+      );
       return right(unit);
+    } on IdempotencyViolation catch (e) {
+      return left(PostCreationRepositoryFailure(
+        operation: 'update',
+        postId: postId,
+        message: 'Duplicate post update attempt: ${e.message}',
+        code: 'idempotency_violation',
+      ));
     } on FirebaseException catch (e) {
       return left(PostCreationRepositoryFailure(
         operation: 'update',
@@ -150,11 +373,47 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // ====== Delete Operations ======
 
   @override
-  Future<Either<CreateContentFailure, Unit>> deletePost(String postId) async {
-    // For now, we can delegate to updatePostPartial to mark as deleted
-    // or create a deletePost method in DataSource
-    return await updatePostPartial(postId: postId, data: {'deleted': true, 'deletedAt': DateTime.now()});
-    // TODO: Add deletePost to DataSource interface and implementation
+  Future<Either<CreateContentFailure, Unit>> deletePost({
+    required String postId,
+    required String eventId, // ✅ Phase 4: UUID for idempotency
+  }) async {
+    try {
+      // ✅ Phase 4: Wrap operation in Idempotency Service
+      await _idempotencyService.executeIdempotent<void>(
+        entityType: 'post_delete',
+        entityId: postId,
+        userId: '', // deletePost doesn't have userId directly, use postId as identifier
+        eventId: eventId,
+        operation: (transaction) async {
+          final docRef = _postsCollection.doc(postId);
+          transaction.update(docRef, {
+            'deleted': true,
+            'deletedAt': DateTime.now(),
+          });
+        },
+      );
+      return right(unit);
+    } on IdempotencyViolation catch (e) {
+      return left(PostCreationRepositoryFailure(
+        operation: 'delete',
+        postId: postId,
+        message: 'Duplicate post delete attempt: ${e.message}',
+        code: 'idempotency_violation',
+      ));
+    } on FirebaseException catch (e) {
+      return left(PostCreationRepositoryFailure(
+        operation: 'delete',
+        postId: postId,
+        message: 'Failed to delete post: ${e.message}',
+        code: e.code,
+      ));
+    } catch (e) {
+      return left(PostCreationRepositoryFailure(
+        operation: 'delete',
+        postId: postId,
+        message: 'Unexpected error during post deletion: $e',
+      ));
+    }
   }
 
   // ====== Media Operations ======
@@ -165,19 +424,38 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     required String mediaUrl,
     required String mediaType,
     String? side,
+    required String eventId, // ✅ Phase 4: UUID for idempotency
   }) async {
     try {
-      final field = side != null ? 'option$side.images' : 'images';
-      await _postsCollection.doc(postId).update({
-        field: FieldValue.arrayUnion([
-          {
-            'url': mediaUrl,
-            'type': mediaType,
-            'uploadedAt': DateTime.now(),
-          }
-        ]),
-      });
+      // ✅ Phase 4: Wrap operation in Idempotency Service
+      await _idempotencyService.executeIdempotent<void>(
+        entityType: 'media_upload',
+        entityId: postId,
+        userId: '', // Media upload doesn't have userId, use postId as identifier
+        eventId: eventId,
+        operation: (transaction) async {
+          final field = side != null ? 'option$side.images' : 'images';
+          final docRef = _postsCollection.doc(postId);
+
+          transaction.update(docRef, {
+            field: FieldValue.arrayUnion([
+              {
+                'url': mediaUrl,
+                'type': mediaType,
+                'uploadedAt': DateTime.now(),
+              }
+            ]),
+          });
+        },
+      );
       return right(unit);
+    } on IdempotencyViolation catch (e) {
+      return left(PostCreationRepositoryFailure(
+        operation: 'uploadMedia',
+        postId: postId,
+        message: 'Duplicate media upload attempt: ${e.message}',
+        code: 'idempotency_violation',
+      ));
     } on FirebaseException catch (e) {
       return left(PostCreationRepositoryFailure(
         operation: 'uploadMedia',
@@ -246,22 +524,90 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   Future<Either<CreateContentFailure, Unit>> updatePostStatus({
     required String postId,
     required String status,
+    required String eventId, // ✅ Phase 4: UUID for idempotency
   }) async {
-    return await updatePostPartial(postId: postId, data: {
-      'status': status,
-      'updatedAt': DateTime.now(),
-    });
+    try {
+      // ✅ Phase 4: Wrap operation in Idempotency Service
+      await _idempotencyService.executeIdempotent<void>(
+        entityType: 'post_status_update',
+        entityId: postId,
+        userId: '', // updatePostStatus doesn't have userId directly
+        eventId: eventId,
+        operation: (transaction) async {
+          final docRef = _postsCollection.doc(postId);
+          transaction.update(docRef, {
+            'status': status,
+            'updatedAt': DateTime.now(),
+          });
+        },
+      );
+      return right(unit);
+    } on IdempotencyViolation catch (e) {
+      return left(PostCreationRepositoryFailure(
+        operation: 'updateStatus',
+        postId: postId,
+        message: 'Duplicate status update attempt: ${e.message}',
+        code: 'idempotency_violation',
+      ));
+    } on FirebaseException catch (e) {
+      return left(PostCreationRepositoryFailure(
+        operation: 'updateStatus',
+        postId: postId,
+        message: 'Failed to update status: ${e.message}',
+        code: e.code,
+      ));
+    } catch (e) {
+      return left(PostCreationRepositoryFailure(
+        operation: 'updateStatus',
+        postId: postId,
+        message: 'Unexpected error during status update: $e',
+      ));
+    }
   }
 
   @override
   Future<Either<CreateContentFailure, Unit>> markPostAsProcessed({
     required String postId,
     DateTime? processedAt,
+    required String eventId, // ✅ Phase 4: UUID for idempotency
   }) async {
-    return await updatePostPartial(postId: postId, data: {
-      'processingStatus': 'completed',
-      'processedAt': processedAt ?? DateTime.now(),
-    });
+    try {
+      // ✅ Phase 4: Wrap operation in Idempotency Service
+      await _idempotencyService.executeIdempotent<void>(
+        entityType: 'post_processing_mark',
+        entityId: postId,
+        userId: '', // markPostAsProcessed doesn't have userId directly
+        eventId: eventId,
+        operation: (transaction) async {
+          final docRef = _postsCollection.doc(postId);
+          transaction.update(docRef, {
+            'processingStatus': 'completed',
+            'processedAt': processedAt ?? DateTime.now(),
+          });
+        },
+      );
+      return right(unit);
+    } on IdempotencyViolation catch (e) {
+      return left(PostCreationRepositoryFailure(
+        operation: 'markProcessed',
+        postId: postId,
+        message: 'Duplicate mark processed attempt: ${e.message}',
+        code: 'idempotency_violation',
+      ));
+    } on FirebaseException catch (e) {
+      return left(PostCreationRepositoryFailure(
+        operation: 'markProcessed',
+        postId: postId,
+        message: 'Failed to mark as processed: ${e.message}',
+        code: e.code,
+      ));
+    } catch (e) {
+      return left(PostCreationRepositoryFailure(
+        operation: 'markProcessed',
+        postId: postId,
+        message: 'Unexpected error marking as processed: $e',
+      ));
+    }
   }
 
   // ====== Query Operations ======
@@ -566,34 +912,51 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // ====== Additional Command Operations (from ICreationCommandRepository) ======
 
   @override
-  Future<Either<CreateContentFailure, String>> createContent(PostCreation post) async {
-    // Direct delegation to createPost
-    return createPost(post: post);
+  Future<Either<CreateContentFailure, String>> createContent(
+    PostCreation post, {
+    required String eventId, // ✅ Phase 4: UUID for idempotency
+  }) async {
+    // Direct delegation to createPost with eventId
+    return createPost(post: post, eventId: eventId);
   }
 
   @override
-  Future<Either<CreateContentFailure, Unit>> updateContent(String contentId, PostCreation post) async {
-    // Direct delegation to updatePost
-    return updatePost(postId: contentId, post: post);
+  Future<Either<CreateContentFailure, Unit>> updateContent(
+    String contentId,
+    PostCreation post, {
+    required String eventId, // ✅ Phase 4: UUID for idempotency
+  }) async {
+    // Direct delegation to updatePost with eventId
+    return updatePost(postId: contentId, post: post, eventId: eventId);
   }
 
   @override
-  Future<Either<CreateContentFailure, Unit>> deleteContent(String contentId) async {
-    return deletePost(contentId);
+  Future<Either<CreateContentFailure, Unit>> deleteContent(
+    String contentId, {
+    required String eventId, // ✅ Phase 4: UUID for idempotency
+  }) async {
+    return deletePost(postId: contentId, eventId: eventId);
   }
 
   @override
-  Future<Either<CreateContentFailure, Unit>> publishContent(String contentId) async {
-    return updatePostStatus(postId: contentId, status: 'published');
+  Future<Either<CreateContentFailure, Unit>> publishContent(
+    String contentId, {
+    required String eventId, // ✅ Phase 4: UUID for idempotency
+  }) async {
+    return updatePostStatus(postId: contentId, status: 'published', eventId: eventId);
   }
 
   @override
-  Future<Either<CreateContentFailure, Unit>> saveDraft(String contentId, PostCreation post) async {
+  Future<Either<CreateContentFailure, Unit>> saveDraft(
+    String contentId,
+    PostCreation post, {
+    required String eventId, // ✅ Phase 4: UUID for idempotency
+  }) async {
     // Update post and set status to draft - need to chain Either operations
-    final updateResult = await updatePost(postId: contentId, post: post);
+    final updateResult = await updatePost(postId: contentId, post: post, eventId: eventId);
     if (updateResult.isLeft()) return updateResult;
 
-    return updatePostStatus(postId: contentId, status: 'draft');
+    return updatePostStatus(postId: contentId, status: 'draft', eventId: eventId);
   }
 
   // Note: _postOptionToMediaContent helper removed

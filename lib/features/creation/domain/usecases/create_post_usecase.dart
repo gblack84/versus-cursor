@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:fpdart/fpdart.dart';
+import 'package:uuid/uuid.dart'; // ✅ Phase 4: UUID for idempotency
 import '../models/aggregates/post_creation.dart';
 import '../failures/creation_failures.dart';
 import '../repositories/i_post_creation_repository_v2.dart';
@@ -12,9 +13,11 @@ import '../services/i_image_processing_service.dart';
 ///
 /// Phase 1.3: Service dependencies removed, now using Repository methods
 /// Phase 6: Converted to Either<Failure, T> pattern with fold/map composition
+/// Phase 4: Idempotency Pattern - UUID generation for duplicate prevention
 class CreatePostUseCase {
   final IPostCreationRepositoryV2 _postRepository;
   final IMediaRepository _mediaRepository;
+  final Uuid _uuid = const Uuid(); // ✅ Phase 4: UUID generator
 
   CreatePostUseCase({
     required IPostCreationRepositoryV2 postRepository,
@@ -129,8 +132,14 @@ class CreatePostUseCase {
 
                       onProgress?.call(0.9);
 
-                      // 8. Save post using PostCreation aggregate
-                      final createResult = await _postRepository.createPost(post: post);
+                      // ✅ Phase 4: Generate eventId for idempotency
+                      final eventId = _uuid.v4();
+
+                      // 8. Save post using PostCreation aggregate with eventId
+                      final createResult = await _postRepository.createPost(
+                        post: post,
+                        eventId: eventId, // ✅ Phase 4: UUID for idempotency
+                      );
 
                       return createResult.map((postId) {
                         // Update the post with the generated ID

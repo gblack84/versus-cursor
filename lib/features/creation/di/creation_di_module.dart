@@ -12,8 +12,15 @@
 
 import 'package:get_it/get_it.dart';
 
-// ===== App Layer - Contracts =====
-import '/app/contracts/creation_contract.dart';
+// ===== App Layer - Contracts (Phase 10 대기 중) =====
+// import '/app/contracts/creation_contract.dart'; // TODO Phase 10: Adapter 구현 후 활성화
+
+// ===== Services Layer - Cache Services (Phase 3) =====
+import '/services/cache/unified_cache_service.dart';
+import '/services/cache/creation_cache_service.dart';
+
+// ===== Core Services - Idempotency (Phase 4) =====
+import '/core/utils/idempotency_service.dart';
 
 // ===== Data Layer - DataSource Implementations =====
 import '../data/datasources/firebase_post_creation_datasource.dart';
@@ -45,19 +52,24 @@ import '../domain/usecases/moderate_content_usecase.dart';
 import '../domain/usecases/validation/validate_post_usecase.dart';
 import '../domain/usecases/audience/manage_target_audience_usecase.dart';
 
-// ===== Presentation Layer - Media Providers =====
-import '../presentation/providers/media/media_selection_provider.dart';
-import '../presentation/providers/media/media_upload_provider.dart';
-import '../presentation/providers/media/media_validation_provider.dart';
-import '../presentation/providers/media/media_state_coordinator.dart';
-
-// ===== Presentation Layer - Main Providers =====
-import '../presentation/providers/create_post_provider_v2.dart';
-import '../presentation/providers/target_audience_provider.dart';
 
 /// Register all Creation feature dependencies
 /// Call this function from main setupDependencyInjection()
+///
+/// **Phase 3**: UnifiedCacheService Integration
+/// - CreationCacheService Singleton 등록
+/// - PostCreationRepositoryV2Impl에 캐시 주입
+///
+/// **Phase 4**: Idempotency Pattern Integration
+/// - IdempotencyService Singleton 등록
+/// - PostCreationRepositoryV2Impl에 IdempotencyService 주입
 void registerCreationModule(GetIt getIt) {
+  // ===== Phase 3: Cache Services Registration =====
+  _registerCacheServices(getIt);
+
+  // ===== Phase 4: Idempotency Service Registration =====
+  _registerIdempotencyService(getIt);
+
   // ===== DataSources Registration =====
   _registerDataSources(getIt);
 
@@ -72,15 +84,41 @@ void registerCreationModule(GetIt getIt) {
 
   // ===== UseCases Registration =====
   _registerUseCases(getIt);
+}
 
-  // ===== Media Providers Registration =====
-  _registerMediaProviders(getIt);
+/// Register Cache Services (Phase 3)
+///
+/// **Dependencies**:
+/// - UnifiedCacheService must be registered in main.dart before calling registerCreationModule()
+void _registerCacheServices(GetIt getIt) {
+  // CreationCacheService Singleton
+  //
+  // **Responsibilities**:
+  // - Draft Post 캐싱 (작성 중 임시 저장)
+  // - TargetAudience Preset 캐싱 (자동 완성)
+  // - AI 생성 결과 캐싱 (비용 절감)
+  // - Media 메타데이터 캐싱 (중복 업로드 방지)
+  //
+  // **Lifecycle**: Singleton (앱 전체에서 공유)
+  getIt.registerLazySingleton<CreationCacheService>(
+    () => CreationCacheService(
+      cacheService: getIt<UnifiedCacheService>(),
+    ),
+  );
+}
 
-  // ===== Coordinator Registration =====
-  _registerCoordinator(getIt);
-
-  // ===== Main Providers Registration =====
-  _registerProviders(getIt);
+/// Register Idempotency Service (Phase 4)
+///
+/// **Responsibilities**:
+/// - Prevent duplicate post creation during network retries
+/// - Prevent duplicate media upload
+/// - Prevent duplicate draft save operations
+///
+/// **Lifecycle**: Singleton (앱 전체에서 공유, 재사용 가능)
+void _registerIdempotencyService(GetIt getIt) {
+  getIt.registerLazySingleton<IdempotencyService>(
+    () => IdempotencyService(),
+  );
 }
 
 /// Register Remote and Local DataSources
@@ -137,21 +175,26 @@ void _registerRepositories(GetIt getIt) {
     ),
   );
 
-  // 5. Post Creation Repository V2
+  // 5. Post Creation Repository V2 (Phase 3 & 4: Cache + Idempotency)
   getIt.registerLazySingleton<IPostCreationRepositoryV2>(
     () => PostCreationRepositoryV2Impl(
       dataSource: getIt<FirebasePostCreationDataSource>(),
       imageProcessingService: getIt<IImageProcessingService>(),
+      cacheService: getIt<CreationCacheService>(), // ✅ Phase 3: Cache Injection
+      idempotencyService: getIt<IdempotencyService>(), // ✅ Phase 4: Idempotency Injection
     ),
   );
 }
 
 /// Register CreationContract (Cross-Feature Communication)
-/// PostCreationRepositoryV2Impl implements both IPostCreationRepositoryV2 and CreationContract (Dual Interface)
+/// **DISABLED**: Dual Interface Pattern blocked by Either<Failure, T> vs Future<T?> mismatch
+/// PostCreationRepositoryV2Impl uses Either pattern but CreationContract expects simple Future/Stream
+/// TODO Phase 10: Create adapter class to bridge IPostCreationRepositoryV2 ↔ CreationContract
 void _registerContract(GetIt getIt) {
-  getIt.registerLazySingleton<CreationContract>(
-    () => getIt<IPostCreationRepositoryV2>() as PostCreationRepositoryV2Impl,
-  );
+  // COMMENTED OUT - Cannot cast directly due to return type mismatch
+  // getIt.registerLazySingleton<CreationContract>(
+  //   () => getIt<IPostCreationRepositoryV2>() as PostCreationRepositoryV2Impl,
+  // );
 }
 
 /// Register all UseCases (4 total)
@@ -168,7 +211,6 @@ void _registerUseCases(GetIt getIt) {
     () => CreatePostUseCase(
       postRepository: getIt<IPostCreationRepositoryV2>(),
       mediaRepository: getIt<IMediaRepository>(),
-      manageTargetAudienceUseCase: getIt<ManageTargetAudienceUseCase>(),
     ),
   );
 
@@ -183,55 +225,3 @@ void _registerUseCases(GetIt getIt) {
   );
 }
 
-/// Register Media Providers (used by Coordinator)
-void _registerMediaProviders(GetIt getIt) {
-  // Media Selection Provider (no dependencies)
-  getIt.registerFactory(
-    () => MediaSelectionProvider(),
-  );
-
-  // Media Upload Provider
-  getIt.registerFactory(
-    () => MediaUploadProvider(
-      mediaRepository: getIt<IMediaRepository>(),
-      imageProcessingService: getIt<IImageProcessingService>(),
-    ),
-  );
-
-  // Media Validation Provider
-  getIt.registerFactory(
-    () => MediaValidationProvider(
-      moderateContentUseCase: getIt<ModerateContentUseCase>(),
-    ),
-  );
-}
-
-/// Register Coordinator
-void _registerCoordinator(GetIt getIt) {
-  // Media State Coordinator
-  getIt.registerFactory(
-    () => MediaStateCoordinator(
-      selectionProvider: getIt<MediaSelectionProvider>(),
-      uploadProvider: getIt<MediaUploadProvider>(),
-      validationProvider: getIt<MediaValidationProvider>(),
-    ),
-  );
-}
-
-/// Register Main Presentation Layer Providers
-void _registerProviders(GetIt getIt) {
-  // Create Post Provider V2
-  getIt.registerFactory(
-    () => CreatePostProviderV2(
-      createPostUseCase: getIt<CreatePostUseCase>(),
-      moderateContentUseCase: getIt<ModerateContentUseCase>(),
-      validatePostUseCase: getIt<ValidatePostUseCase>(),
-      mediaCoordinator: getIt<MediaStateCoordinator>(),
-    ),
-  );
-
-  // Target Audience Provider (no dependencies)
-  getIt.registerFactory(
-    () => TargetAudienceModel(),
-  );
-}

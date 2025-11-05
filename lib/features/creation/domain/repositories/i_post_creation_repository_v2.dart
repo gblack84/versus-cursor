@@ -16,30 +16,42 @@ abstract class IPostCreationRepositoryV2 {
 
   /// Create a new post using PostCreation aggregate
   ///
+  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  ///
   /// **Returns**: `Either<CreationFailure, String>` (postId on success)
   ///
   /// **Errors**:
   /// - `PostCreationRepositoryFailure`: Firestore write failure
   /// - `NetworkFailure`: No internet connection
   /// - `ServerFailure`: Firestore service unavailable
+  /// - `IdempotencyViolation`: Duplicate operation with different eventId
+  ///
+  /// **Idempotency**: Same eventId will skip operation and return success (network retry safe)
   ///
   /// Voting Feature and Post Feature will add their fields later through onCreate triggers.
   Future<Either<CreateContentFailure, String>> createPost({
     required PostCreation post,
+    required String eventId, // ✅ Phase 4: UUID for idempotency
   });
 
   // ====== Update Operations ======
 
   /// Update post using PostCreation aggregate
   ///
+  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  ///
   /// **Returns**: `Either<CreationFailure, Unit>` (Unit on success = functional void)
   ///
   /// **Errors**:
   /// - `PostCreationRepositoryFailure`: Update failed
   /// - `NetworkFailure`: Connection lost during update
+  /// - `IdempotencyViolation`: Duplicate operation with different eventId
+  ///
+  /// **Idempotency**: Same eventId will skip operation and return success
   Future<Either<CreateContentFailure, Unit>> updatePost({
     required String postId,
     required PostCreation post,
+    required String eventId, // ✅ Phase 4: UUID for idempotency
   });
 
   /// Update post using partial data (for granular updates)
@@ -57,19 +69,31 @@ abstract class IPostCreationRepositoryV2 {
 
   /// Delete post
   ///
+  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  ///
   /// **Returns**: `Either<CreationFailure, Unit>`
-  Future<Either<CreateContentFailure, Unit>> deletePost(String postId);
+  ///
+  /// **Idempotency**: Same eventId will skip operation and return success
+  Future<Either<CreateContentFailure, Unit>> deletePost({
+    required String postId,
+    required String eventId, // ✅ Phase 4: UUID for idempotency
+  });
 
   // ====== Media Operations ======
 
   /// Upload post media (image/video)
   ///
+  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  ///
   /// **Returns**: `Either<CreationFailure, Unit>`
+  ///
+  /// **Idempotency**: Same eventId will skip operation and return success
   Future<Either<CreateContentFailure, Unit>> uploadPostMedia({
     required String postId,
     required String mediaUrl,
     required String mediaType,
     String? side, // 'A' or 'B'
+    required String eventId, // ✅ Phase 4: UUID for idempotency
   });
 
   /// Delete post media
@@ -85,18 +109,28 @@ abstract class IPostCreationRepositoryV2 {
 
   /// Update post status (draft, published, archived)
   ///
+  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  ///
   /// **Returns**: `Either<CreationFailure, Unit>`
+  ///
+  /// **Idempotency**: Same eventId will skip operation and return success
   Future<Either<CreateContentFailure, Unit>> updatePostStatus({
     required String postId,
     required String status,
+    required String eventId, // ✅ Phase 4: UUID for idempotency
   });
 
   /// Mark post as processed by backend
   ///
+  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  ///
   /// **Returns**: `Either<CreationFailure, Unit>`
+  ///
+  /// **Idempotency**: Same eventId will skip operation and return success
   Future<Either<CreateContentFailure, Unit>> markPostAsProcessed({
     required String postId,
     DateTime? processedAt,
+    required String eventId, // ✅ Phase 4: UUID for idempotency
   });
 
   // ====== Query Operations ======
@@ -181,30 +215,118 @@ abstract class IPostCreationRepositoryV2 {
   /// Create content using PostCreation aggregate
   /// Convenience wrapper for createPost() with consistent naming
   ///
+  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  ///
   /// **Returns**: `Either<CreationFailure, String>` (contentId)
-  Future<Either<CreateContentFailure, String>> createContent(PostCreation post);
+  Future<Either<CreateContentFailure, String>> createContent(
+    PostCreation post, {
+    required String eventId, // ✅ Phase 4: UUID for idempotency
+  });
 
   /// Update existing content using PostCreation aggregate
   /// Convenience wrapper for updatePost() with consistent naming
   ///
+  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  ///
   /// **Returns**: `Either<CreationFailure, Unit>`
-  Future<Either<CreateContentFailure, Unit>> updateContent(String contentId, PostCreation post);
+  Future<Either<CreateContentFailure, Unit>> updateContent(
+    String contentId,
+    PostCreation post, {
+    required String eventId, // ✅ Phase 4: UUID for idempotency
+  });
 
   /// Delete content
   /// Removes the post and all associated data
   ///
+  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  ///
   /// **Returns**: `Either<CreationFailure, Unit>`
-  Future<Either<CreateContentFailure, Unit>> deleteContent(String contentId);
+  Future<Either<CreateContentFailure, Unit>> deleteContent(
+    String contentId, {
+    required String eventId, // ✅ Phase 4: UUID for idempotency
+  });
 
   /// Publish content (change visibility to public)
   /// This is a convenience method that updates post status and visibility
   ///
+  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  ///
   /// **Returns**: `Either<CreationFailure, Unit>`
-  Future<Either<CreateContentFailure, Unit>> publishContent(String contentId);
+  Future<Either<CreateContentFailure, Unit>> publishContent(
+    String contentId, {
+    required String eventId, // ✅ Phase 4: UUID for idempotency
+  });
 
   /// Save as draft
   /// This saves the post with draft status for later editing
   ///
+  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  ///
   /// **Returns**: `Either<CreationFailure, Unit>`
-  Future<Either<CreateContentFailure, Unit>> saveDraft(String contentId, PostCreation post);
+  Future<Either<CreateContentFailure, Unit>> saveDraft(
+    String contentId,
+    PostCreation post, {
+    required String eventId, // ✅ Phase 4: UUID for idempotency
+  });
+
+  // ====== Phase 3: Draft Cache Operations ======
+
+  /// Get user's Draft Post (Cache-First pattern)
+  ///
+  /// **Flow**: L1 (Memory) → L2 (Hive) → L3 (Firestore)
+  /// **Returns**: Draft Post if exists, null otherwise
+  /// **Performance**: <10ms (Cache Hit), 50-100ms (Firestore)
+  ///
+  /// **Example**:
+  /// ```dart
+  /// final draft = await repository.getDraftPost('user123');
+  /// if (draft != null) {
+  ///   // Restore form data
+  /// }
+  /// ```
+  Future<PostCreation?> getDraftPost(String userId);
+
+  /// Save Draft Post (Write-Through pattern)
+  ///
+  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  ///
+  /// **Flow**: Cache (L1, L2) immediately → Firestore async
+  /// **Performance**: <10ms (non-blocking)
+  ///
+  /// **Idempotency**: Same eventId will skip Firestore write (cache still updated)
+  ///
+  /// **Example**:
+  /// ```dart
+  /// await repository.saveDraftPost('user123', draft, eventId: uuid.v4());
+  /// // Saved to cache instantly, Firestore updates in background
+  /// ```
+  Future<void> saveDraftPost(
+    String userId,
+    PostCreation draft, {
+    required String eventId, // ✅ Phase 4: UUID for idempotency
+  });
+
+  /// Delete Draft Post (Cache invalidation + Firestore delete)
+  ///
+  /// **Called**: After successful post creation
+  ///
+  /// **Example**:
+  /// ```dart
+  /// await repository.deleteDraftPost('user123');
+  /// ```
+  Future<void> deleteDraftPost(String userId);
+
+  /// Get TargetAudience preset (Cache-First pattern)
+  ///
+  /// **Returns**: Last used TargetAudience settings
+  /// **TTL**: Memory 10분, Hive 30일
+  ///
+  /// **Example**:
+  /// ```dart
+  /// final preset = await repository.getTargetAudiencePreset('user123');
+  /// if (preset != null) {
+  ///   // Auto-fill target audience settings
+  /// }
+  /// ```
+  Future<TargetAudience?> getTargetAudiencePreset(String userId);
 }

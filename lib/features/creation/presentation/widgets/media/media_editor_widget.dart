@@ -2,18 +2,18 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
-import 'package:provider/provider.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:path_provider/path_provider.dart';
 import '/services/moderation/image_moderation_service.dart';
-import '../../providers/media/media_selection_provider.dart';
-import '../../providers/media/media_upload_provider.dart';
+import '../../providers/creation_providers.dart';
 import '../../../domain/failures/creation_failures.dart';
 
 /// 이미지 에디터 페이지 위젯
-class MediaEditorWidget extends StatefulWidget {
+/// Migrated to Riverpod 3.x (Phase 2-6)
+class MediaEditorWidget extends ConsumerStatefulWidget {
   final File selectedFile;
   final List<File> allSelectedFiles;
   final List<AssetEntity> selectedAssets;
@@ -56,10 +56,10 @@ class MediaEditorWidget extends StatefulWidget {
   });
 
   @override
-  State<MediaEditorWidget> createState() => _MediaEditorWidgetState();
+  ConsumerState<MediaEditorWidget> createState() => _MediaEditorWidgetState();
 }
 
-class _MediaEditorWidgetState extends State<MediaEditorWidget> {
+class _MediaEditorWidgetState extends ConsumerState<MediaEditorWidget> {
   // 검열 거부로 인한 재시도 모드인지 추적
   bool _isInRejectionRetryMode = false;
 
@@ -199,9 +199,9 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
     await Future.delayed(const Duration(milliseconds: 100));
 
     try {
-      // Provider 접근 (Clean Architecture)
-      final uploadProvider = context.read<MediaUploadProvider>();
-      final selectionProvider = context.read<MediaSelectionProvider>();
+      // Provider 직접 접근 (Phase 2-14: Coordinator 삭제됨)
+      final uploadNotifier = ref.read(mediaUploadProvider.notifier);
+      final selectionNotifier = ref.read(mediaSelectionProvider.notifier);
 
       // 편집된 이미지를 File로 저장
       final editedFile = await _saveEditedImageAsFile(bytes);
@@ -211,8 +211,8 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
 
       // 멀티 이미지 처리
       if (widget.allSelectedFiles.isNotEmpty) {
-        // 멀티 이미지 처리 (검열만 수행, 업로드 X) - Provider를 통해 간접 호출
-        final result = await uploadProvider.processMultipleImagesForUI(
+        // 멀티 이미지 처리 (검열만 수행, 업로드 X) - Notifier를 통해 간접 호출
+        final result = await uploadNotifier.processMultipleImagesForUI(
           files: widget.allSelectedFiles,
           box: widget.box,
           editedFile: editedFile,
@@ -260,7 +260,7 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
 
           // 비율 업데이트 - Provider 메서드 사용 (Clean Architecture)
           if (aspectRatio != null) {
-            selectionProvider.replaceFileAtIndex(
+            selectionNotifier.replaceFileAtIndex(
               box: widget.box,
               index: widget.currentEditIndex,
               file: editedFile,
@@ -286,8 +286,8 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
           }
         }
       } else {
-        // 단일 이미지 처리 - Provider를 통해 간접 호출 (Clean Architecture)
-        final result = await uploadProvider.processEditedImageForUI(
+        // 단일 이미지 처리 - Notifier를 통해 간접 호출 (Clean Architecture - Riverpod 3.x)
+        final result = await uploadNotifier.processEditedImageForUI(
           editedFile: editedFile,
           box: widget.box,
           assetId: widget.selectedAssets.isNotEmpty
@@ -329,7 +329,7 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
           if (aspectRatio != null) {
             if (widget.startWithEditor) {
               // 기존 이미지 교체
-              selectionProvider.replaceFileAtIndex(
+              selectionNotifier.replaceFileAtIndex(
                 box: widget.box,
                 index: widget.currentIndex ?? 0,
                 file: editedFile,
@@ -337,7 +337,7 @@ class _MediaEditorWidgetState extends State<MediaEditorWidget> {
               );
             } else {
               // 새 이미지 추가
-              selectionProvider.addFile(
+              selectionNotifier.addFile(
                 box: widget.box,
                 file: editedFile,
                 aspectRatio: aspectRatio,

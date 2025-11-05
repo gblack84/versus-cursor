@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:wechat_camera_picker/wechat_camera_picker.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart'; // For DefaultAssetPickerProvider (3rd party)
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
 import '/core_exports.dart';
 import '/features/creation/presentation/delegates/korean_asset_picker_delegate.dart';
@@ -13,11 +14,11 @@ import '/features/creation/presentation/screens/thumbnail/thumbnail_selection_pa
 import '/features/creation/presentation/delegates/camera_floating_button_delegate.dart';
 import 'media_editor_widget.dart';
 import '/core/utils/navigation/no_animation_page_route.dart';
-import '/features/creation/presentation/providers/media/media_selection_provider.dart';
+import '/features/creation/presentation/providers/creation_providers.dart';
 import '/features/creation/domain/failures/creation_failures.dart';
 
-/// 미디어 선택부터 편집까지 하나의 플로우로 처리하는 위젯
-class MediaSelectionFlowWidget extends StatefulWidget {
+/// 미디어 선택부터 편집까지 하나의 플로우로 처리하는 위젯 - Riverpod 3.x (Phase 2-7)
+class MediaSelectionFlowWidget extends ConsumerStatefulWidget {
   const MediaSelectionFlowWidget({
     super.key,
     required this.box,
@@ -54,11 +55,11 @@ class MediaSelectionFlowWidget extends StatefulWidget {
   final Function(List<AssetEntity> assets)? onImagesSelected; // Phase 5: Provider 연동
 
   @override
-  State<MediaSelectionFlowWidget> createState() =>
+  ConsumerState<MediaSelectionFlowWidget> createState() =>
       _MediaSelectionFlowWidgetState();
 }
 
-class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
+class _MediaSelectionFlowWidgetState extends ConsumerState<MediaSelectionFlowWidget> {
   // 선택된 파일
   File? _selectedFile;
 
@@ -96,14 +97,14 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
     }
   }
 
-  /// Phase 5: Provider에서 초기 상태 복원
+  /// Phase 5: Provider에서 초기 상태 복원 - Riverpod 3.x
   Future<void> _initializeFromProvider() async {
-    final mediaSelection = context.read<MediaSelectionProvider>();
+    final mediaSelectionState = ref.read(mediaSelectionProvider);
 
     // 기존 AssetEntity ID 복원
     final existingIds = widget.box == 'A'
-        ? mediaSelection.assetEntityIdsA
-        : mediaSelection.assetEntityIdsB;
+        ? mediaSelectionState.assetEntityIdsA
+        : mediaSelectionState.assetEntityIdsB;
 
     if (existingIds.isNotEmpty) {
       final restoredAssets = <AssetEntity>[];
@@ -203,8 +204,8 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
         }
         return;
       }
-      // Phase 5: MediaSelectionProvider에서 기존 선택 복원
-      final mediaSelection = context.read<MediaSelectionProvider>();
+      // Phase 5: MediaSelectionProvider에서 기존 선택 복원 - Riverpod 3.x
+      final mediaSelectionState = ref.read(mediaSelectionProvider);
       List<AssetEntity> selectedAssets = [];
 
       print('[AssetPicker] Opening picker...');
@@ -213,8 +214,8 @@ class _MediaSelectionFlowWidgetState extends State<MediaSelectionFlowWidget> {
 
       // Provider에서 AssetEntity ID 가져오기
       final existingIds = widget.box == 'A'
-          ? mediaSelection.assetEntityIdsA
-          : mediaSelection.assetEntityIdsB;
+          ? mediaSelectionState.assetEntityIdsA
+          : mediaSelectionState.assetEntityIdsB;
 
       print('[AssetPicker] existingAssetIds from Provider: ${existingIds.length}');
 

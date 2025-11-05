@@ -1,51 +1,49 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/core_exports.dart';
-import '/features/creation/presentation/providers/target_audience_provider.dart';
+import '/features/creation/presentation/providers/creation_providers.dart';
+import '/features/creation/presentation/providers/target_audience_notifier.dart' show TargetAudience;
 import '/features/creation/domain/constants/target_audience_constants.dart';
 import '/features/creation/presentation/constants/target_audience_ui_constants.dart';
 
 /// Step 2: 목표 응답 수 설정
-class TargetCountSelector extends StatelessWidget {
-  final Function(int) onCountChanged;
-  final Function(bool) onPremiumChanged;
+class TargetCountSelector extends ConsumerWidget {
 
   const TargetCountSelector({
     super.key,
-    required this.onCountChanged,
-    required this.onPremiumChanged,
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<TargetAudienceModel>(
-      builder: (context, model, child) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(TargetAudienceUIConstants.contentPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                '목표 응답 수를 설정하세요',
-                style: AppTheme.of(context).headlineSmall.override(
-                      fontWeight: FontWeight.w600,
-                    ),
-                textAlign: TextAlign.center,
-              ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(targetAudienceProvider);
+    final notifier = ref.read(targetAudienceProvider.notifier);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(TargetAudienceUIConstants.contentPadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '목표 응답 수를 설정하세요',
+            style: AppTheme.of(context).headlineSmall.override(
+                  fontWeight: FontWeight.w600,
+                ),
+            textAlign: TextAlign.center,
+          ),
               const SizedBox(height: 32),
 
               // 목표 응답 수 섹션
-              _buildTargetCountSection(context, model),
+              _buildTargetCountSection(context, state, notifier),
 
               const SizedBox(height: 24),
 
               // 예상 소요 시간 섹션
-              _buildEstimatedTimeSection(context, model),
+              _buildEstimatedTimeSection(context, state),
 
               const SizedBox(height: 24),
 
               // 프리미엄 옵션
-              _buildPremiumOption(context, model),
+              _buildPremiumOption(context, state, notifier),
 
               const SizedBox(height: 24),
 
@@ -53,13 +51,14 @@ class TargetCountSelector extends StatelessWidget {
               _buildInfoMessage(context),
             ],
           ),
-        );
-      },
     );
   }
 
   Widget _buildTargetCountSection(
-      BuildContext context, TargetAudienceModel model) {
+    BuildContext context,
+    TargetAudienceState state,
+    TargetAudience notifier,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -91,7 +90,7 @@ class TargetCountSelector extends StatelessWidget {
               ),
             ),
             child: DropdownButton<int>(
-              value: model.targetCount,
+              value: state.targetCount,
               isExpanded: true,
               underline: const SizedBox(),
               icon: Icon(
@@ -109,7 +108,7 @@ class TargetCountSelector extends StatelessWidget {
               }).toList(),
               onChanged: (value) {
                 if (value != null) {
-                  onCountChanged(value);
+                  notifier.setTargetCount(value);
                 }
               },
             ),
@@ -120,14 +119,14 @@ class TargetCountSelector extends StatelessWidget {
           // 빠른 선택 버튼들
           Row(
             children: TargetAudienceConstants.targetCountOptions.map((count) {
-              final isSelected = model.targetCount == count;
+              final isSelected = state.targetCount == count;
               return Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: OutlinedButton(
                     onPressed: () {
                       debugPrint('[TargetCountSelector] 목표 응답 수 선택: $count');
-                      onCountChanged(count);
+                      notifier.setTargetCount(count);
                     },
                     style: OutlinedButton.styleFrom(
                       backgroundColor: isSelected
@@ -163,7 +162,9 @@ class TargetCountSelector extends StatelessWidget {
   }
 
   Widget _buildEstimatedTimeSection(
-      BuildContext context, TargetAudienceModel model) {
+    BuildContext context,
+    TargetAudienceState state,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -191,7 +192,7 @@ class TargetCountSelector extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            model.estimatedTime,
+            state.estimatedTime,
             style: AppTheme.of(context).headlineMedium.override(
                   color: AppTheme.of(context).primary,
                   fontWeight: FontWeight.w700,
@@ -202,25 +203,29 @@ class TargetCountSelector extends StatelessWidget {
     );
   }
 
-  Widget _buildPremiumOption(BuildContext context, TargetAudienceModel model) {
+  Widget _buildPremiumOption(
+    BuildContext context,
+    TargetAudienceState state,
+    TargetAudience notifier,
+  ) {
     return InkWell(
       onTap: () {
-        debugPrint('[TargetCountSelector] 프리미엄 옵션 토글: ${!model.isPremium}');
-        onPremiumChanged(!model.isPremium);
+        debugPrint('[TargetCountSelector] 프리미엄 옵션 토글: ${!state.isPremium}');
+        notifier.setIsPremium(!state.isPremium);
       },
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: model.isPremium
+          color: state.isPremium
               ? AppTheme.of(context).tertiary.withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: model.isPremium
+            color: state.isPremium
                 ? AppTheme.of(context).tertiary
                 : AppTheme.of(context).alternate,
-            width: model.isPremium ? 2 : 1,
+            width: state.isPremium ? 2 : 1,
           ),
         ),
         child: Row(
@@ -230,18 +235,18 @@ class TargetCountSelector extends StatelessWidget {
               width: 24,
               height: 24,
               decoration: BoxDecoration(
-                color: model.isPremium
+                color: state.isPremium
                     ? AppTheme.of(context).tertiary
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: model.isPremium
+                  color: state.isPremium
                       ? AppTheme.of(context).tertiary
                       : AppTheme.of(context).secondaryText,
                   width: 2,
                 ),
               ),
-              child: model.isPremium
+              child: state.isPremium
                   ? Icon(
                       Icons.check,
                       size: 16,

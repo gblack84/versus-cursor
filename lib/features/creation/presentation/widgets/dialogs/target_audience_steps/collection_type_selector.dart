@@ -1,73 +1,62 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/core_exports.dart';
-import '/features/creation/presentation/providers/target_audience_provider.dart';
+import '/features/creation/presentation/providers/creation_providers.dart';
 import '/features/creation/domain/constants/target_audience_constants.dart';
 import '/features/creation/presentation/constants/target_audience_ui_constants.dart';
 
-/// Step 1: 수집 방식 선택
-class CollectionTypeSelector extends StatefulWidget {
-  final Function(String) onTypeSelected;
-
-  const CollectionTypeSelector({
-    super.key,
-    required this.onTypeSelected,
-  });
+/// Step 1: 수집 방식 선택 - Riverpod 3.x (Phase 2-7)
+class CollectionTypeSelector extends ConsumerWidget {
+  const CollectionTypeSelector({super.key});
 
   @override
-  State<CollectionTypeSelector> createState() => _CollectionTypeSelectorState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(targetAudienceProvider);
+    final notifier = ref.read(targetAudienceProvider.notifier);
 
-class _CollectionTypeSelectorState extends State<CollectionTypeSelector> {
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<TargetAudienceModel>(
-      builder: (context, model, child) {
-        // 모든 타입 표시
-        final availableTypes =
-            TargetAudienceConstants.collectionTypes.entries.toList();
+    // 모든 타입 표시
+    final availableTypes =
+        TargetAudienceConstants.collectionTypes.entries.toList();
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(TargetAudienceUIConstants.contentPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                '투표 수집 방식을 선택하세요',
-                style: AppTheme.of(context).headlineSmall.override(
-                      fontWeight: FontWeight.w600,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-
-              // 수집 방식 옵션들
-              ...availableTypes.map((entry) {
-                final typeInfo = entry.value;
-                final isSelected = model.collectionType == typeInfo.id;
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: _buildTypeOption(
-                    context: context,
-                    typeInfo: typeInfo,
-                    isSelected: isSelected,
-                    onTap: () {
-                      debugPrint(
-                          '[CollectionTypeSelector] 수집 방식 선택: ${typeInfo.id}');
-                      debugPrint(
-                          '[CollectionTypeSelector]   - 제목: ${typeInfo.title}');
-                      debugPrint(
-                          '[CollectionTypeSelector]   - 설명: ${typeInfo.subtitle}');
-                      widget.onTypeSelected(typeInfo.id);
-                    },
-                  ),
-                );
-              }).toList(),
-            ],
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(TargetAudienceUIConstants.contentPadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '투표 수집 방식을 선택하세요',
+            style: AppTheme.of(context).headlineSmall.override(
+                  fontWeight: FontWeight.w600,
+                ),
+            textAlign: TextAlign.center,
           ),
-        );
-      },
+          const SizedBox(height: 32),
+
+          // 수집 방식 옵션들
+          ...availableTypes.map((entry) {
+            final typeInfo = entry.value;
+            final isSelected = state.collectionType == typeInfo.id;
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _buildTypeOption(
+                context: context,
+                typeInfo: typeInfo,
+                isSelected: isSelected,
+                onTap: () {
+                  debugPrint(
+                      '[CollectionTypeSelector] 수집 방식 선택: ${typeInfo.id}');
+                  debugPrint(
+                      '[CollectionTypeSelector]   - 제목: ${typeInfo.title}');
+                  debugPrint(
+                      '[CollectionTypeSelector]   - 설명: ${typeInfo.subtitle}');
+                  notifier.setCollectionType(typeInfo.id);
+                },
+              ),
+            );
+          }).toList(),
+        ],
+      ),
     );
   }
 

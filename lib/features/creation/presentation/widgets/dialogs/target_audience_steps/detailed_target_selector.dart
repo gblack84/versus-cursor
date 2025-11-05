@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/core_exports.dart';
-import '/features/creation/presentation/providers/target_audience_provider.dart';
+import '/features/creation/presentation/providers/creation_providers.dart';
+import '/features/creation/presentation/providers/target_audience_notifier.dart' show TargetAudience;
 import '/features/creation/domain/constants/target_audience_constants.dart';
 import '/features/creation/presentation/constants/target_audience_ui_constants.dart';
 
-/// Step 3: 세부 타겟 설정 (맞춤 설정 선택 시)
-class DetailedTargetSelector extends StatelessWidget {
+/// Step 3: 세부 타겟 설정 (맞춤 설정 선택 시) - Riverpod 3.x (Phase 2-7)
+class DetailedTargetSelector extends ConsumerWidget {
   const DetailedTargetSelector({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<TargetAudienceModel>(
-      builder: (context, model, child) {
-        return SingleChildScrollView(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(targetAudienceProvider);
+    final notifier = ref.read(targetAudienceProvider.notifier);
+
+    return SingleChildScrollView(
           padding: const EdgeInsets.all(TargetAudienceUIConstants.contentPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -28,31 +30,32 @@ class DetailedTargetSelector extends StatelessWidget {
               const SizedBox(height: 32),
 
               // 관심사 선택
-              _buildInterestsSection(context, model),
+              _buildInterestsSection(context, state, notifier),
 
               const SizedBox(height: 24),
 
               // 연령대 선택
-              _buildAgeGroupSection(context, model),
+              _buildAgeGroupSection(context, state, notifier),
 
               const SizedBox(height: 24),
 
               // 성별 선택
-              _buildGenderSection(context, model),
+              _buildGenderSection(context, state, notifier),
 
               const SizedBox(height: 24),
 
               // 고급 옵션
-              _buildAdvancedOptions(context, model),
+              _buildAdvancedOptions(context, state, notifier),
             ],
           ),
-        );
-      },
     );
   }
 
   Widget _buildInterestsSection(
-      BuildContext context, TargetAudienceModel model) {
+    BuildContext context,
+    TargetAudienceState state,
+    TargetAudience notifier,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -76,7 +79,7 @@ class DetailedTargetSelector extends StatelessWidget {
             spacing: TargetAudienceUIConstants.chipSpacing,
             runSpacing: TargetAudienceUIConstants.chipRunSpacing,
             children: TargetAudienceConstants.interests.map((interest) {
-              final isSelected = model.selectedInterests.contains(interest);
+              final isSelected = state.selectedInterests.contains(interest);
 
               return FilterChip(
                 label: Text(interest),
@@ -84,7 +87,7 @@ class DetailedTargetSelector extends StatelessWidget {
                 onSelected: (_) {
                   debugPrint(
                       '[DetailedTargetSelector] 관심사 토글: $interest (현재: $isSelected)');
-                  model.toggleInterest(interest);
+                  notifier.toggleInterest(interest);
                 },
                 selectedColor: AppTheme.of(context).primary,
                 checkmarkColor: Colors.white,
@@ -114,7 +117,10 @@ class DetailedTargetSelector extends StatelessWidget {
   }
 
   Widget _buildAgeGroupSection(
-      BuildContext context, TargetAudienceModel model) {
+    BuildContext context,
+    TargetAudienceState state,
+    TargetAudience notifier,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -129,13 +135,13 @@ class DetailedTargetSelector extends StatelessWidget {
           spacing: 12,
           runSpacing: 12,
           children: TargetAudienceConstants.ageGroups.entries.map((entry) {
-            final isSelected = model.selectedAgeGroup == entry.key;
+            final isSelected = state.selectedAgeGroup == entry.key;
 
             return InkWell(
               onTap: () {
                 debugPrint(
                     '[DetailedTargetSelector] 연령대 선택: ${entry.value} (${entry.key})');
-                model.selectedAgeGroup = entry.key;
+                notifier.setAgeGroup(entry.key);
               },
               borderRadius: BorderRadius.circular(20),
               child: Container(
@@ -199,7 +205,11 @@ class DetailedTargetSelector extends StatelessWidget {
     );
   }
 
-  Widget _buildGenderSection(BuildContext context, TargetAudienceModel model) {
+  Widget _buildGenderSection(
+    BuildContext context,
+    TargetAudienceState state,
+    TargetAudience notifier,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -212,7 +222,7 @@ class DetailedTargetSelector extends StatelessWidget {
         const SizedBox(height: 12),
         Row(
           children: TargetAudienceConstants.genderOptions.entries.map((entry) {
-            final isSelected = model.selectedGender == entry.key;
+            final isSelected = state.selectedGender == entry.key;
             final genderInfo = entry.value;
 
             return Expanded(
@@ -227,7 +237,7 @@ class DetailedTargetSelector extends StatelessWidget {
                   onTap: () {
                     debugPrint(
                         '[DetailedTargetSelector] 성별 선택: ${entry.value} (${entry.key})');
-                    model.selectedGender = entry.key;
+                    notifier.setGender(entry.key);
                   },
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
@@ -295,7 +305,10 @@ class DetailedTargetSelector extends StatelessWidget {
   }
 
   Widget _buildAdvancedOptions(
-      BuildContext context, TargetAudienceModel model) {
+    BuildContext context,
+    TargetAudienceState state,
+    TargetAudience notifier,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -316,7 +329,7 @@ class DetailedTargetSelector extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           InkWell(
-            onTap: () => model.activeUserOnly = !model.activeUserOnly,
+            onTap: () => notifier.setActiveUserOnly(!state.activeUserOnly),
             borderRadius: BorderRadius.circular(8),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -326,18 +339,18 @@ class DetailedTargetSelector extends StatelessWidget {
                     width: 24,
                     height: 24,
                     decoration: BoxDecoration(
-                      color: model.activeUserOnly
+                      color: state.activeUserOnly
                           ? AppTheme.of(context).primary
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                        color: model.activeUserOnly
+                        color: state.activeUserOnly
                             ? AppTheme.of(context).primary
                             : AppTheme.of(context).secondaryText,
                         width: 2,
                       ),
                     ),
-                    child: model.activeUserOnly
+                    child: state.activeUserOnly
                         ? Icon(
                             Icons.check,
                             size: 16,

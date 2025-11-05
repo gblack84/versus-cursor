@@ -1,21 +1,21 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
-import 'package:provider/provider.dart';
 import '/core_exports.dart';
 import '/services/media/image_download_service.dart';
-import '../../providers/media/media_upload_provider.dart';
-import '../../providers/media/media_selection_provider.dart';
+import '../../providers/creation_providers.dart';
 
 /// ProImageEditor 통합 페이지
 ///
+/// Migrated to Riverpod 3.x (Phase 2-6)
 /// Clean Architecture Phase 8:
 /// - Firebase SDK 직접 사용 제거 ✅
-/// - MediaUploadProvider를 통한 간접 업로드 ✅
-/// - MediaSelectionProvider를 통한 상태 관리 ✅
+/// - MediaUploadNotifier를 통한 간접 업로드 ✅
+/// - MediaStateCoordinator를 통한 상태 관리 ✅
 /// - AppState 의존성 제거 ✅
 /// - Legacy AppModel 패턴 제거 ✅
-class ProImageEditorPage extends StatefulWidget {
+class ProImageEditorPage extends ConsumerStatefulWidget {
   const ProImageEditorPage({
     super.key,
     required this.imagePath,
@@ -29,10 +29,10 @@ class ProImageEditorPage extends StatefulWidget {
   static String routePath = '/proImageEditor/:imagePath/:box';
 
   @override
-  State<ProImageEditorPage> createState() => _ProImageEditorPageState();
+  ConsumerState<ProImageEditorPage> createState() => _ProImageEditorPageState();
 }
 
-class _ProImageEditorPageState extends State<ProImageEditorPage> {
+class _ProImageEditorPageState extends ConsumerState<ProImageEditorPage> {
   // 업로드 상태 (AppModel 대신 State에서 직접 관리)
   bool _isUploading = false;
   double _uploadProgress = 0.0;
@@ -49,9 +49,9 @@ class _ProImageEditorPageState extends State<ProImageEditorPage> {
     });
 
     try {
-      // Provider를 통한 업로드 (Firebase 직접 호출 제거)
-      final uploadProvider = context.read<MediaUploadProvider>();
-      final url = await uploadProvider.uploadEditedImage(
+      // Notifier를 통한 업로드 (Firebase 직접 호출 제거 - Riverpod 3.x)
+      final uploadNotifier = ref.read(mediaUploadProvider.notifier);
+      final url = await uploadNotifier.uploadEditedImage(
         imageBytes: bytes,
         box: widget.box,
         onProgress: (progress) {
@@ -65,13 +65,14 @@ class _ProImageEditorPageState extends State<ProImageEditorPage> {
 
       if (!mounted) return;
 
-      // MediaSelectionProvider 업데이트 (AppState 대신)
-      final selectionProvider = context.read<MediaSelectionProvider>();
+      // MediaSelectionProvider 직접 사용 (Phase 2-14: Coordinator 삭제됨)
+      final mediaSelectionNotifier = ref.read(mediaSelectionProvider.notifier);
+      final currentState = ref.read(mediaSelectionProvider);
       final currentUrls = widget.box == 'A'
-          ? selectionProvider.uploadedUrlsA
-          : selectionProvider.uploadedUrlsB;
+          ? currentState.uploadedUrlsA
+          : currentState.uploadedUrlsB;
 
-      selectionProvider.updateUploadedUrls(
+      mediaSelectionNotifier.updateUploadedUrls(
         box: widget.box,
         urls: [...currentUrls, url],
       );

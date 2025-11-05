@@ -4,12 +4,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fpdart/fpdart.dart';
 import '../../domain/failures/creation_failures.dart';
 import '../../domain/models/aggregates/post_creation.dart';
+import '../../domain/models/aggregates/post_creation_extensions.dart'; // ✅ Phase 5: Extension Pattern
 import '../../domain/models/value_objects/target_audience.dart';
 import '../../domain/services/i_target_audience_service.dart';
 import '../../domain/services/i_image_processing_service.dart';
 import '../../domain/repositories/i_post_creation_repository_v2.dart';
-import '../datasources/interfaces/i_post_creation_datasource.dart';
-import '../mappers/creation_firestore_mapper.dart';
 import '/services/cache/creation_cache_service.dart';
 import '/core/utils/idempotency_service.dart'; // ✅ Phase 4: Idempotency
 // import '/app/contracts/creation_contract.dart'; // TODO: Create adapter for Dual Interface Pattern
@@ -44,24 +43,24 @@ export '../../domain/services/i_target_audience_service.dart' show ValidationRes
 /// Phase 2 Migration: Either pattern migration complete
 /// Phase 3 Migration: UnifiedCacheService Integration (Draft Auto-Save)
 /// Phase 4 Migration: Idempotency Pattern (Duplicate Operation Prevention)
+/// Phase 5 Migration: Extension Pattern (DataSource/Mapper → Direct Firestore)
+///   - Removed: IPostCreationDataSource, CreationFirestoreMapper
+///   - Added: PostCreationFirestore Extension, TargetAudienceFirestore Extension
+///   - Direct Firestore transformation via Extension methods
 class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
-  final IPostCreationDataSource _dataSource;
   final ITargetAudienceService? _targetAudienceService;
   final IImageProcessingService _imageProcessingService;
   final CollectionReference<Map<String, dynamic>> _postsCollection;
   final CreationCacheService _cacheService; // ✅ Phase 3: Cache Integration
   final IdempotencyService _idempotencyService; // ✅ Phase 4: Idempotency
-  final CreationFirestoreMapper _mapper = CreationFirestoreMapper();
 
   PostCreationRepositoryV2Impl({
-    required IPostCreationDataSource dataSource,
     ITargetAudienceService? targetAudienceService,
     required IImageProcessingService imageProcessingService,
     required CreationCacheService cacheService, // ✅ Phase 3: DI Injection
     required IdempotencyService idempotencyService, // ✅ Phase 4: DI Injection
     FirebaseFirestore? firestore,
-  }) : _dataSource = dataSource,
-       _targetAudienceService = targetAudienceService,
+  }) : _targetAudienceService = targetAudienceService,
        _imageProcessingService = imageProcessingService,
        _cacheService = cacheService,
        _idempotencyService = idempotencyService,
@@ -82,11 +81,11 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
         userId: post.userId,
         eventId: eventId,
         operation: (transaction) async {
-          // Use CreationFirestoreMapper to convert PostCreation to Firestore document
-          final data = _mapper.toCreateDocument(post);
+          // ✅ Phase 5: Use Extension to convert PostCreation to Firestore document
+          final data = post.toFirestore();
 
           // Additional default fields for backward compatibility
-          data['postCreatedDate'] = post.createdAt;
+          data['postCreatedDate'] = Timestamp.fromDate(post.createdAt);
 
           // Note: PostVoting and PostMetrics fields will be added by their respective features
           // through onCreate triggers or after post creation
@@ -153,7 +152,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
 
     // 2. ✅ Firestore에서 Draft 조회
     final snapshot = await _postsCollection
-        .where('userid', isEqualTo: userId)
+        .where('userId', isEqualTo: userId)
         .where('status', isEqualTo: 'draft')
         .orderBy('createdAt', descending: true)
         .limit(1)
@@ -161,10 +160,8 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
 
     if (snapshot.docs.isEmpty) return null;
 
-    final draft = _mapper.extractPostCreation(
-      snapshot.docs.first.data(),
-      snapshot.docs.first.id,
-    );
+    // ✅ Phase 5: Use Extension to convert Firestore document to PostCreation
+    final draft = PostCreationFirestore.fromFirestore(snapshot.docs.first);
 
     // 3. ✅ 캐시 업데이트 (다음 조회 시 <10ms)
     await _cacheService.setDraftPost(userId, draft);
@@ -212,7 +209,8 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
           operation: (transaction) async {
             final draftId = draft.id ?? 'draft_$userId';
             final docRef = _postsCollection.doc(draftId);
-            transaction.set(docRef, _mapper.toCreateDocument(draft));
+            // ✅ Phase 5: Use Extension
+            transaction.set(docRef, draft.toFirestore());
           },
         );
       } on IdempotencyViolation catch (e) {
@@ -281,10 +279,8 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
 
     if (snapshot.docs.isEmpty) return null;
 
-    final lastPost = _mapper.extractPostCreation(
-      snapshot.docs.first.data(),
-      snapshot.docs.first.id,
-    );
+    // ✅ Phase 5: Use Extension
+    final lastPost = PostCreationFirestore.fromFirestore(snapshot.docs.first);
 
     // 3. 캐시 업데이트
     final audience = lastPost.targetAudience;
@@ -311,8 +307,8 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
         userId: post.userId,
         eventId: eventId,
         operation: (transaction) async {
-          // Use CreationFirestoreMapper to convert PostCreation to Firestore update document
-          final data = _mapper.toUpdateDocument(post);
+          // ✅ Phase 5: Use Extension to convert PostCreation to Firestore document
+          final data = post.toFirestore();
           final docRef = _postsCollection.doc(postId);
           transaction.update(docRef, data);
         },
@@ -347,7 +343,8 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     required Map<String, dynamic> data,
   }) async {
     try {
-      await _dataSource.updatePost(postId, data);
+      // ✅ Phase 5: Direct Firestore update
+      await _postsCollection.doc(postId).update(data);
       return right(unit);
     } on FirebaseException catch (e) {
       return left(PostCreationRepositoryFailure(
@@ -621,8 +618,8 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
         return right(none());
       }
 
-      final data = doc.data() as Map<String, dynamic>;
-      final post = _mapper.extractPostCreation(data, postId);
+      // ✅ Phase 5: Use Extension
+      final post = PostCreationFirestore.fromFirestore(doc);
       return right(some(post));
     } on FirebaseException catch (e) {
       return left(PostCreationRepositoryFailure(
@@ -657,8 +654,8 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
             message: 'Post not found',
           ) as CreateContentFailure);
         }
-        final data = doc.data() as Map<String, dynamic>;
-        final post = _mapper.extractPostCreation(data, postId);
+        // ✅ Phase 5: Use Extension
+        final post = PostCreationFirestore.fromFirestore(doc);
         return right(post);
       } on FirebaseException catch (e) {
         return left(PostCreationRepositoryFailure(
@@ -697,11 +694,10 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
 
     return query.snapshots().map((snapshot) {
       try {
-        final posts = snapshot.docs.map((doc) {
-          final data = doc.data() as Map<String, dynamic>;
-          final postId = doc.id;
-          return _mapper.extractPostCreation(data, postId);
-        }).toList();
+        // ✅ Phase 5: Use Extension
+        final posts = snapshot.docs
+            .map((doc) => PostCreationFirestore.fromFirestore(doc))
+            .toList();
         return right(posts);
       } on FirebaseException catch (e) {
         return left(PostCreationRepositoryFailure(

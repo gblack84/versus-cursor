@@ -1,8 +1,11 @@
 import 'dart:io';
 import 'package:fpdart/fpdart.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '/services/moderation/image_moderation_service.dart';
 import '../failures/creation_failures.dart';
+
+part 'i_image_processing_service.freezed.dart';
 
 /// Image processing service interface for Domain layer
 ///
@@ -29,42 +32,51 @@ abstract class IImageProcessingService {
   });
 }
 
-/// Result of processing multiple images
-class ImageProcessingResult {
-  final List<File> approvedFiles;
-  final List<double> approvedRatios;
-  final List<String> approvedAssetIds;
-  final Map<String, List<int>> rejectedReasons;
-  final List<int> rejectedIndices;
-  final int rejectedCount;
-  final bool allRejected;
+/// Result of processing multiple images (Freezed - Phase 2-15)
+/// 이미지 처리 결과 - Freezed 불변 클래스로 변환
+@freezed
+sealed class ImageProcessingResult with _$ImageProcessingResult {
+  const ImageProcessingResult._(); // Private constructor for custom getters
 
-  const ImageProcessingResult({
-    required this.approvedFiles,
-    required this.approvedRatios,
-    required this.approvedAssetIds,
-    required this.rejectedReasons,
-    required this.rejectedIndices,
-    required this.rejectedCount,
-    required this.allRejected,
-  });
+  const factory ImageProcessingResult({
+    required List<File> approvedFiles,
+    required List<double> approvedRatios,
+    required List<String> approvedAssetIds,
+    required Map<String, List<int>> rejectedReasons,
+    required List<int> rejectedIndices,
+    required int rejectedCount,
+    required bool allRejected,
+  }) = _ImageProcessingResult;
+
+  /// Custom getter: Check if there are approved files
+  /// 승인된 파일이 있는지 확인하는 커스텀 getter
+  bool get hasApproved => approvedFiles.isNotEmpty;
+
+  /// Custom getter: Check if there are rejected files
+  /// 거부된 파일이 있는지 확인하는 커스텀 getter
+  bool get hasRejected => rejectedCount > 0;
 }
 
-/// Result of processing a single image
-class SingleImageResult {
-  final bool success;
-  final File? file;
-  final double? aspectRatio;
-  final String? assetId;
-  final String? rejectionReason;
-  final ModerationResult? moderationResult;
+/// Result of processing a single image (Freezed - Phase 2-15)
+/// 단일 이미지 처리 결과 - Freezed 불변 클래스로 변환
+@freezed
+sealed class SingleImageResult with _$SingleImageResult {
+  const SingleImageResult._(); // Private constructor for custom getters
 
-  const SingleImageResult({
-    required this.success,
-    this.file,
-    this.aspectRatio,
-    this.assetId,
-    this.rejectionReason,
-    this.moderationResult,
-  });
+  const factory SingleImageResult({
+    required bool success,
+    File? file,
+    double? aspectRatio,
+    String? assetId,
+    String? rejectionReason,
+    ModerationResult? moderationResult,
+  }) = _SingleImageResult;
+
+  /// Custom getter: Check if image was rejected
+  /// 이미지가 거부되었는지 확인하는 커스텀 getter
+  bool get isRejected => !success;
+
+  /// Custom getter: Check if file is available
+  /// 파일이 사용 가능한지 확인하는 커스텀 getter
+  bool get hasFile => file != null;
 }

@@ -1,10 +1,13 @@
 import 'dart:io';
 
 import 'package:fpdart/fpdart.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../failures/creation_failures.dart';
 import '../../repositories/i_media_repository.dart';
 import '../../services/i_image_processing_service.dart';
 import '../../../data/models/image_upload_dto.dart';
+
+part 'upload_images_usecase.freezed.dart';
 
 /// UseCase for uploading and processing images
 ///
@@ -173,30 +176,41 @@ class UploadImagesUseCase {
   }
 }
 
-/// Result of multiple image uploads
-class UploadResult {
-  final List<String> uploadedUrls;
-  final List<double> aspectRatios;
-  final int rejectedCount;
-  final Map<String, String> rejectedReasons;
+/// Result of multiple image uploads (Freezed - Phase 2-15)
+/// 여러 이미지 업로드 결과 - Freezed 불변 클래스로 변환
+@freezed
+sealed class UploadResult with _$UploadResult {
+  const UploadResult._(); // Private constructor for custom getters
 
-  UploadResult({
-    required this.uploadedUrls,
-    required this.aspectRatios,
-    required this.rejectedCount,
-    this.rejectedReasons = const {},
-  });
+  const factory UploadResult({
+    required List<String> uploadedUrls,
+    required List<double> aspectRatios,
+    required int rejectedCount,
+    @Default({}) Map<String, String> rejectedReasons,
+  }) = _UploadResult;
+
+  /// Custom getter: Check if all uploads succeeded
+  /// 모든 업로드가 성공했는지 확인하는 커스텀 getter
+  bool get allSucceeded => rejectedCount == 0;
+
+  /// Custom getter: Check if any uploads were rejected
+  /// 거부된 업로드가 있는지 확인하는 커스텀 getter
+  bool get hasRejections => rejectedCount > 0;
 }
 
-/// Result of single image upload
-class SingleUploadResult {
-  final String uploadedUrl;
-  final double aspectRatio;
-  final String? assetId;
+/// Result of single image upload (Freezed - Phase 2-15)
+/// 단일 이미지 업로드 결과 - Freezed 불변 클래스로 변환
+@freezed
+sealed class SingleUploadResult with _$SingleUploadResult {
+  const SingleUploadResult._(); // Private constructor for custom getters
 
-  SingleUploadResult({
-    required this.uploadedUrl,
-    required this.aspectRatio,
-    this.assetId,
-  });
+  const factory SingleUploadResult({
+    required String uploadedUrl,
+    required double aspectRatio,
+    String? assetId,
+  }) = _SingleUploadResult;
+
+  /// Custom getter: Check if asset ID is available
+  /// Asset ID가 있는지 확인하는 커스텀 getter
+  bool get hasAssetId => assetId != null;
 }

@@ -1,20 +1,25 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/create_post_provider_v2.dart';
-import '../../providers/media/media_selection_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/creation_providers.dart';
+import '../../providers/create_post_notifier.dart'; // For createPostProvider
+import '../../providers/states/create_post_state.dart'; // For CreatePostState
+import '../../providers/media/states/media_selection_state.dart'; // For MediaSelectionState
 import '/features/creation/presentation/widgets/components/media_selection_box_multi.dart';
 import '/features/creation/presentation/widgets/media/media_selection_flow_widget.dart';
 import '/core/types/layout_type.dart'; // Phase 5: Provider의 LayoutType 읽기용 (직접 생성 안 함)
 import '/features/creation/presentation/constants/dimensions.dart' as post_dimensions;
+import '/features/creation/presentation/constants/colors.dart'; // Phase 2: Box colors
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 /// Image selection component extracted from InPutPostImageWidget
 ///
 /// This widget handles all image selection and management functionality
 /// including image picking, editing, and layout management.
-class ImageSelectionWidget extends StatefulWidget {
+///
+/// **Migrated to Riverpod 3.x** (Phase 2-13)
+class ImageSelectionWidget extends ConsumerStatefulWidget {
   final Function(List<File> images, String box)? onImagesSelected;
   final Function(String box)? onImageEdit;
   final Function(String box, int index)? onImageDelete;
@@ -33,38 +38,36 @@ class ImageSelectionWidget extends StatefulWidget {
   });
 
   @override
-  State<ImageSelectionWidget> createState() => _ImageSelectionWidgetState();
+  ConsumerState<ImageSelectionWidget> createState() => _ImageSelectionWidgetState();
 }
 
-class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
+class _ImageSelectionWidgetState extends ConsumerState<ImageSelectionWidget> {
   @override
   Widget build(BuildContext context) {
-    return Consumer2<CreatePostProviderV2, MediaSelectionProvider>(
-      builder: (context, provider, mediaSelection, child) {
-        // Phase 5 Clean Architecture: Provider가 레이아웃 관리
-        // Widget은 Provider 상태만 읽음
-        _updateLayoutIfNeeded(mediaSelection);
+    // Riverpod 3.x: ref.watch() 사용
+    final createPostState = ref.watch(createPostProvider);
+    final mediaSelectionState = ref.watch(mediaSelectionProvider);
 
-        return Column(
-          children: [
-            // 레이아웃 정보 (디버그 모드에서만)
-            if (kDebugMode) _buildLayoutDebugInfo(mediaSelection),
+    // Phase 5 Clean Architecture: Provider가 레이아웃 관리
+    // Widget은 Provider 상태만 읽음
+    _updateLayoutIfNeeded(mediaSelectionState);
 
-            // 메인 미디어 섹션
-            _buildMediaSection(provider),
+    return Column(
+      children: [
+        // 레이아웃 정보 (디버그 모드에서만)
+        if (kDebugMode) _buildLayoutDebugInfo(mediaSelectionState),
 
-            // 경고 메시지
-            if (_shouldShowWarning(provider))
-              _buildWarningMessage(),
-          ],
-        );
-      },
+        // 메인 미디어 섹션
+        _buildMediaSection(createPostState, mediaSelectionState),
+
+        // 경고 메시지
+        if (_shouldShowWarning(createPostState))
+          _buildWarningMessage(),
+      ],
     );
   }
 
-  Widget _buildMediaSection(CreatePostProviderV2 provider) {
-    // MediaSelectionProvider는 context에서 직접 가져옴
-    final mediaSelection = Provider.of<MediaSelectionProvider>(context, listen: false);
+  Widget _buildMediaSection(CreatePostState createPostState, MediaSelectionState mediaSelectionState) {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -81,15 +84,15 @@ class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
           ),
 
           // 미디어 박스들
-          _buildMediaBoxes(provider, mediaSelection),
+          _buildMediaBoxes(createPostState, mediaSelectionState),
         ],
       ),
     );
   }
 
-  Widget _buildMediaBoxes(CreatePostProviderV2 provider, MediaSelectionProvider mediaSelection) {
+  Widget _buildMediaBoxes(CreatePostState createPostState, MediaSelectionState mediaSelectionState) {
     // Phase 5: Provider의 레이아웃 상태 사용
-    final isHorizontal = mediaSelection.currentLayout == LayoutType.horizontal;
+    final isHorizontal = mediaSelectionState.currentLayout == LayoutType.horizontal;
 
     if (isHorizontal) {
       // 가로 레이아웃
@@ -98,8 +101,8 @@ class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
           Expanded(
             child: _buildMediaBox(
               box: 'A',
-              provider: provider,
-              mediaSelection: mediaSelection,
+              createPostState: createPostState,
+              mediaSelectionState: mediaSelectionState,
             ),
           ),
           if (!widget.absellected) ...[
@@ -107,8 +110,8 @@ class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
             Expanded(
               child: _buildMediaBox(
                 box: 'B',
-                provider: provider,
-                mediaSelection: mediaSelection,
+                createPostState: createPostState,
+                mediaSelectionState: mediaSelectionState,
               ),
             ),
           ],
@@ -120,15 +123,15 @@ class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
         children: [
           _buildMediaBox(
             box: 'A',
-            provider: provider,
-            mediaSelection: mediaSelection,
+            createPostState: createPostState,
+            mediaSelectionState: mediaSelectionState,
           ),
           if (!widget.absellected) ...[
             const SizedBox(height: 8),
             _buildMediaBox(
               box: 'B',
-              provider: provider,
-              mediaSelection: mediaSelection,
+              createPostState: createPostState,
+              mediaSelectionState: mediaSelectionState,
             ),
           ],
         ],
@@ -138,65 +141,67 @@ class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
 
   Widget _buildMediaBox({
     required String box,
-    required CreatePostProviderV2 provider,
-    required MediaSelectionProvider mediaSelection,
+    required CreatePostState createPostState,
+    required MediaSelectionState mediaSelectionState,
   }) {
     final images = box == 'A'
-        ? mediaSelection.selectedFilesA
-        : mediaSelection.selectedFilesB;
+        ? mediaSelectionState.selectedFilesA
+        : mediaSelectionState.selectedFilesB;
 
     final uploadedUrls = box == 'A'
-        ? mediaSelection.uploadedUrlsA
-        : mediaSelection.uploadedUrlsB;
+        ? mediaSelectionState.uploadedUrlsA
+        : mediaSelectionState.uploadedUrlsB;
 
     // Phase 5: Provider의 박스 크기 사용
-    final boxWidth = box == 'A' ? mediaSelection.boxWidthA : mediaSelection.boxWidthB;
-    final boxHeight = box == 'A' ? mediaSelection.boxHeightA : mediaSelection.boxHeightB;
+    final boxWidth = box == 'A' ? mediaSelectionState.boxWidthA : mediaSelectionState.boxWidthB;
+    final boxHeight = box == 'A' ? mediaSelectionState.boxHeightA : mediaSelectionState.boxHeightB;
 
     return GestureDetector(
-      onTap: () => _handleBoxTap(box, provider, mediaSelection),
+      onTap: () => _handleBoxTap(box, createPostState, mediaSelectionState),
       child: MediaSelectionBoxMulti(
         label: box,
         isSelected: widget.absellected,
-        isVideoSelected: mediaSelection.isVideoSelectedA,
-        isHorizontal: mediaSelection.currentLayout == LayoutType.horizontal,
-        boxColor: box == 'A' ? Colors.blue.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+        isVideoSelected: mediaSelectionState.isVideoSelectedA,
+        isHorizontal: mediaSelectionState.currentLayout == LayoutType.horizontal,
+        boxColor: box == 'A' ? AppColors.boxABackground : AppColors.boxBBackground,
         imageUrls: uploadedUrls,
         imageFiles: images.isNotEmpty ? images : null,
         dynamicHeight: boxHeight ?? post_dimensions.MediaDimensions.defaultBoxHeight,
         dynamicWidth: boxWidth,
-        onTap: () => _handleBoxTap(box, provider, mediaSelection),
+        onTap: () => _handleBoxTap(box, createPostState, mediaSelectionState),
         onEditTap: images.isNotEmpty
-            ? () => _handleImageEdit(box, provider, mediaSelection)
+            ? () => _handleImageEdit(box, createPostState, mediaSelectionState)
             : null,
         onAddImageTap: images.isNotEmpty
-            ? () => _handleAddMore(box, provider, mediaSelection)
+            ? () => _handleAddMore(box, createPostState, mediaSelectionState)
             : null,
         showPlusIcon: box == 'A' && !widget.absellected,
         onPlusIconTap: box == 'A' && !widget.absellected
-            ? () => setState(() {
-                // B박스 토글 로직
-                mediaSelection.toggleBoxBVisibility();
-              })
+            ? () {
+                // B박스 토글 로직 - Notifier를 통해 업데이트
+                ref.read(mediaSelectionProvider.notifier).toggleBoxBVisibility();
+              }
             : null,
-        onCancel: (index) => _handleDeleteImage(box, index, provider, mediaSelection),
-        onCurrentIndexChanged: (index) => mediaSelection.updateCurrentIndex(box: box, index: index),
+        onCancel: (index) => _handleDeleteImage(box, index, createPostState, mediaSelectionState),
+        onCurrentIndexChanged: (index) {
+          // Notifier를 통해 currentIndex 업데이트
+          ref.read(mediaSelectionProvider.notifier).updateCurrentIndex(box: box, index: index);
+        },
       ),
     );
   }
 
   Future<void> _handleBoxTap(
     String box,
-    CreatePostProviderV2 provider,
-    MediaSelectionProvider mediaSelection,
+    CreatePostState createPostState,
+    MediaSelectionState mediaSelectionState,
   ) async {
     // B박스 검증: A박스가 비어있으면 경고
-    if (box == 'B' && !mediaSelection.canAddToBoxB()) {
-      final message = mediaSelection.getBoxBValidationMessage();
-      if (message != null && mounted) {
+    if (box == 'B' && mediaSelectionState.selectedFilesA.isEmpty) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(message),
+            content: const Text('A 항목을 먼저 선택해주세요'),
             backgroundColor: Colors.orange,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 2),
@@ -205,6 +210,8 @@ class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
       }
       return;
     }
+
+    final mediaSelectionNotifier = ref.read(mediaSelectionProvider.notifier);
 
     // 이미지 선택 플로우
     await showModalBottomSheet(
@@ -225,17 +232,18 @@ class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
 
             final validFiles = files.whereType<File>().toList();
 
-            // MediaSelectionProvider를 통해 상태 업데이트
-            await mediaSelection.selectImages(
+            // MediaSelectionNotifier를 통해 상태 업데이트
+            await mediaSelectionNotifier.selectImages(
               box: box,
               assets: assets,
             );
 
-            // Provider에도 동기화
+            // CreatePostNotifier에도 동기화
+            final createPostNotifier = ref.read(createPostProvider.notifier);
             if (box == 'A') {
-              provider.updateImagesA(validFiles);
+              createPostNotifier.updateImagesA(validFiles);
             } else {
-              provider.updateImagesB(validFiles);
+              createPostNotifier.updateImagesB(validFiles);
             }
 
             // 콜백 호출
@@ -248,52 +256,55 @@ class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
 
   Future<void> _handleImageEdit(
     String box,
-    CreatePostProviderV2 provider,
-    MediaSelectionProvider mediaSelection,
+    CreatePostState createPostState,
+    MediaSelectionState mediaSelectionState,
   ) async {
     widget.onImageEdit?.call(box);
   }
 
   Future<void> _handleAddMore(
     String box,
-    CreatePostProviderV2 provider,
-    MediaSelectionProvider mediaSelection,
+    CreatePostState createPostState,
+    MediaSelectionState mediaSelectionState,
   ) async {
-    await _handleBoxTap(box, provider, mediaSelection);
+    await _handleBoxTap(box, createPostState, mediaSelectionState);
   }
 
   void _handleDeleteImage(
     String box,
     int index,
-    CreatePostProviderV2 provider,
-    MediaSelectionProvider mediaSelection,
+    CreatePostState createPostState,
+    MediaSelectionState mediaSelectionState,
   ) {
-    // MediaSelectionProvider에서 직접 삭제
-    mediaSelection.removeAtIndex(box: box, index: index);
+    // MediaSelectionNotifier를 통해 삭제
+    final mediaSelectionNotifier = ref.read(mediaSelectionProvider.notifier);
+    mediaSelectionNotifier.removeAtIndex(box: box, index: index);
 
-    // Provider도 동기화
+    // CreatePostNotifier도 동기화
+    final createPostNotifier = ref.read(createPostProvider.notifier);
+    final updatedState = ref.read(mediaSelectionProvider);
     if (box == 'A') {
-      provider.updateImagesA(mediaSelection.selectedFilesA);
+      createPostNotifier.updateImagesA(updatedState.selectedFilesA);
     } else {
-      provider.updateImagesB(mediaSelection.selectedFilesB);
+      createPostNotifier.updateImagesB(updatedState.selectedFilesB);
     }
   }
 
-  /// Phase 5 Clean Architecture: Widget은 Provider에 위임만 함
-  /// Widget → Provider → Domain/Service (올바른 패턴)
-  void _updateLayoutIfNeeded(MediaSelectionProvider mediaSelection) {
+  /// Phase 5 Clean Architecture: Widget은 Notifier에 위임만 함
+  /// Widget → Notifier → Domain/Service (올바른 패턴)
+  void _updateLayoutIfNeeded(MediaSelectionState mediaSelectionState) {
     final screenWidth = MediaQuery.of(context).size.width - 32; // 패딩 제외
 
-    // Provider가 레이아웃 관리 책임을 가짐
-    mediaSelection.updateLayout(
+    // Notifier가 레이아웃 관리 책임을 가짐
+    ref.read(mediaSelectionProvider.notifier).updateLayout(
       containerWidth: screenWidth,
       absellected: widget.absellected,
     );
   }
 
-  bool _shouldShowWarning(CreatePostProviderV2 provider) {
+  bool _shouldShowWarning(CreatePostState createPostState) {
     // A박스가 비어있고 B박스에 이미지가 있는 경우
-    final formData = provider.formData;
+    final formData = createPostState.formData;
     return formData.imagesA.isEmpty && formData.imagesB.isNotEmpty;
   }
 
@@ -302,7 +313,7 @@ class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.1),
+        color: AppColors.warningBackground,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.orange),
       ),
@@ -321,19 +332,19 @@ class _ImageSelectionWidgetState extends State<ImageSelectionWidget> {
     );
   }
 
-  Widget _buildLayoutDebugInfo(MediaSelectionProvider mediaSelection) {
-    // Phase 5: Provider의 레이아웃 상태 사용
+  Widget _buildLayoutDebugInfo(MediaSelectionState mediaSelectionState) {
+    // Phase 5: State의 레이아웃 정보 사용
     return Container(
       margin: const EdgeInsets.all(8),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.1),
+        color: AppColors.debugBackground,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        'Layout: ${mediaSelection.currentLayout} | '
-        'A: ${mediaSelection.boxWidthA?.toStringAsFixed(0)}x${mediaSelection.boxHeightA?.toStringAsFixed(0)} | '
-        'B: ${mediaSelection.boxWidthB?.toStringAsFixed(0)}x${mediaSelection.boxHeightB?.toStringAsFixed(0)}',
+        'Layout: ${mediaSelectionState.currentLayout} | '
+        'A: ${mediaSelectionState.boxWidthA?.toStringAsFixed(0)}x${mediaSelectionState.boxHeightA?.toStringAsFixed(0)} | '
+        'B: ${mediaSelectionState.boxWidthB?.toStringAsFixed(0)}x${mediaSelectionState.boxHeightB?.toStringAsFixed(0)}',
         style: const TextStyle(fontSize: 10),
       ),
     );

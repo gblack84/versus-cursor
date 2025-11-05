@@ -1,7 +1,10 @@
 import 'dart:io';
 import 'package:fpdart/fpdart.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import '../failures/creation_failures.dart';
 import '/services/moderation/image_moderation_service.dart';
+
+part 'moderate_content_usecase.freezed.dart';
 
 /// UseCase for content moderation
 /// 콘텐츠 검열을 위한 UseCase
@@ -282,22 +285,21 @@ class ModerateContentUseCase {
   }
 }
 
-/// Moderation decision result
-/// 검열 결정 결과
-class ModerationDecision {
-  final bool isApproved;
-  final String? reason;
-  final double confidence;
-  final List<String> detectedCategories; // Step 5: AI 검열 카테고리 (AIModerationFailure 연동)
-  final Map<String, dynamic>? metadata;
+/// Moderation decision result (Freezed - Phase 2-15)
+/// 검열 결정 결과 - Freezed 불변 클래스로 변환
+@freezed
+sealed class ModerationDecision with _$ModerationDecision {
+  const ModerationDecision._(); // Private constructor for custom getters
 
-  ModerationDecision({
-    required this.isApproved,
-    this.reason,
-    required this.confidence,
-    this.detectedCategories = const [],
-    this.metadata,
-  });
+  const factory ModerationDecision({
+    required bool isApproved,
+    String? reason,
+    required double confidence,
+    @Default([]) List<String> detectedCategories, // Step 5: AI 검열 카테고리
+    Map<String, dynamic>? metadata,
+  }) = _ModerationDecision;
 
+  /// Custom getter: Check if moderation rejected the content
+  /// 콘텐츠가 거부되었는지 확인하는 커스텀 getter
   bool get isRejected => !isApproved;
 }

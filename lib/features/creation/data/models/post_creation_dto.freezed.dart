@@ -130,10 +130,7 @@ return $default(_that);case _:
 final _that = this;
 switch (_that) {
 case _PostCreationDto():
-return $default(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -192,10 +189,7 @@ return $default(_that.userId,_that.title,_that.description,_that.imagesA,_that.i
 @optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String userId,  String title,  String description,  List<File> imagesA,  List<File> imagesB,  TargetAudience? targetAudience,  bool isAnonymous)  $default,) {final _that = this;
 switch (_that) {
 case _PostCreationDto():
-return $default(_that.userId,_that.title,_that.description,_that.imagesA,_that.imagesB,_that.targetAudience,_that.isAnonymous);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that.userId,_that.title,_that.description,_that.imagesA,_that.imagesB,_that.targetAudience,_that.isAnonymous);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///

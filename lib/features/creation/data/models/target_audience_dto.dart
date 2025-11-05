@@ -9,7 +9,7 @@ part 'target_audience_dto.freezed.dart';
 /// TargetAudience already contains all these fields. Consider eliminating
 /// this DTO in future refactoring and passing Domain model directly.
 @freezed
-class TargetAudienceDto with _$TargetAudienceDto {
+sealed class TargetAudienceDto with _$TargetAudienceDto {
   const factory TargetAudienceDto({
     required String collectionType,
     required int targetCount,

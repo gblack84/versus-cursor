@@ -150,10 +150,7 @@ final _that = this;
 switch (_that) {
 case ImageInfo():
 return image(_that);case VideoInfo():
-return video(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return video(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -215,10 +212,7 @@ return video(_that.id,_that.url,_that.parentId,_that.width,_that.height,_that.du
 switch (_that) {
 case ImageInfo():
 return image(_that.id,_that.url,_that.parentId,_that.aspectRatio,_that.width,_that.height,_that.size,_that.mimeType,_that.createdAt,_that.thumbnailUrl,_that.metadata);case VideoInfo():
-return video(_that.id,_that.url,_that.parentId,_that.width,_that.height,_that.duration,_that.size,_that.mimeType,_that.createdAt,_that.thumbnailUrl,_that.aspectRatio,_that.metadata);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return video(_that.id,_that.url,_that.parentId,_that.width,_that.height,_that.duration,_that.size,_that.mimeType,_that.createdAt,_that.thumbnailUrl,_that.aspectRatio,_that.metadata);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///

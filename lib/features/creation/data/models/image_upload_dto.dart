@@ -6,7 +6,7 @@ part 'image_upload_dto.freezed.dart';
 /// Data Transfer Object for image upload operations
 /// Bundles image files with metadata for upload process
 @freezed
-class ImageUploadDto with _$ImageUploadDto {
+sealed class ImageUploadDto with _$ImageUploadDto {
   const factory ImageUploadDto({
     required List<File> images,
     required String box, // 'A' or 'B' to identify which option

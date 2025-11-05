@@ -7,7 +7,7 @@ part 'post_creation_dto.freezed.dart';
 /// Data Transfer Object for post creation from Presentation layer
 /// Simplifies CreatePostUseCase interface by bundling all creation parameters
 @freezed
-class PostCreationDto with _$PostCreationDto {
+sealed class PostCreationDto with _$PostCreationDto {
   const factory PostCreationDto({
     required String userId,
     required String title,

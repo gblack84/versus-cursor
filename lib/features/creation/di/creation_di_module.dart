@@ -23,7 +23,7 @@ import '/services/cache/creation_cache_service.dart';
 import '/core/utils/idempotency_service.dart';
 
 // ===== Data Layer - DataSource Implementations =====
-import '../data/datasources/firebase_post_creation_datasource.dart';
+// ❌ Phase 5: Removed firebase_post_creation_datasource.dart (Extension Pattern replaces DataSource)
 import '../data/datasources/firebase_storage_datasource.dart';
 
 // ===== Domain Layer - Service Interfaces (Ports) =====
@@ -122,13 +122,12 @@ void _registerIdempotencyService(GetIt getIt) {
 }
 
 /// Register Remote and Local DataSources
+///
+/// **Phase 5 Update**: FirebasePostCreationDataSource removed
+/// - PostCreationRepositoryV2Impl now uses direct Firestore via Extension Pattern
+/// - Only FirebaseStorageDataSource remains (for media upload operations)
 void _registerDataSources(GetIt getIt) {
-  // Firebase Post Creation DataSource
-  getIt.registerLazySingleton<FirebasePostCreationDataSource>(
-    () => FirebasePostCreationDataSource(),
-  );
-
-  // Firebase Storage DataSource
+  // Firebase Storage DataSource (for media upload operations)
   getIt.registerLazySingleton<FirebaseStorageDataSource>(
     () => FirebaseStorageDataSource(),
   );
@@ -175,10 +174,10 @@ void _registerRepositories(GetIt getIt) {
     ),
   );
 
-  // 5. Post Creation Repository V2 (Phase 3 & 4: Cache + Idempotency)
+  // 5. Post Creation Repository V2 (Phase 3 & 4 & 5: Cache + Idempotency + Extension)
   getIt.registerLazySingleton<IPostCreationRepositoryV2>(
     () => PostCreationRepositoryV2Impl(
-      dataSource: getIt<FirebasePostCreationDataSource>(),
+      // ❌ Phase 5: dataSource removed - Direct Firestore via Extension Pattern
       imageProcessingService: getIt<IImageProcessingService>(),
       cacheService: getIt<CreationCacheService>(), // ✅ Phase 3: Cache Injection
       idempotencyService: getIt<IdempotencyService>(), // ✅ Phase 4: Idempotency Injection

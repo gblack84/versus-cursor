@@ -15,7 +15,7 @@ import 'features/notifications/data/services/notification_service.dart';
 import '/app/state/providers/navigation_provider.dart';
 import '/app/di.dart';
 import 'package:get_it/get_it.dart';
-import 'core_exports.dart';
+import 'core_exports.dart'; // ✅ Phase 3: Includes IPostCreationRepositoryV2
 import 'app/app.dart';
 
 /// FCM Background Message Handler
@@ -96,6 +96,7 @@ void main() async {
   // 백그라운드 프리로딩 (앱 시작 차단하지 않음)
   _preloadNotifications();
   _preloadPosts();
+  _preloadDrafts(); // ✅ Phase 3: Draft preload
 }
 
 /// 알림 프리로딩 - 백그라운드에서 최근 알림 캐시에 로드
@@ -133,6 +134,43 @@ void _preloadPosts() {
       debugPrint('✅ Post Preloading: Success');
     } catch (e) {
       debugPrint('⚠️ Post Preloading: Failed - $e');
+    }
+  });
+}
+
+/// Draft 프리로딩 - 백그라운드에서 사용자 Draft 캐시에 로드
+///
+/// **Phase 3: Creation Cache Integration**
+/// - 900ms 지연 후 실행 (Post 프리로딩 완료 대기)
+/// - CreationCacheService를 통해 Draft 및 TargetAudience 프리셋 로드
+/// - 실패 시 에러 로그만 출력 (앱 시작에 영향 없음)
+///
+/// **Benefits**:
+/// - Draft 복원 시간: <10ms (Memory Hit)
+/// - Create Post 화면 진입 시 즉시 Draft 로드
+/// - 타겟 오디언스 자동 완성 준비
+void _preloadDrafts() {
+  Future.delayed(const Duration(milliseconds: 900), () async {
+    try {
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      if (currentUserId == null) {
+        debugPrint('⏭️ Draft Preloading: Skipped (User not logged in)');
+        return;
+      }
+
+      // Get IPostCreationRepositoryV2 from GetIt
+      final repository = GetIt.instance<IPostCreationRepositoryV2>();
+
+      // Preload Draft (will cache in L1, L2, L3)
+      await repository.getDraftPost(currentUserId);
+
+      // Preload TargetAudience preset (optional)
+      await repository.getTargetAudiencePreset(currentUserId);
+
+      debugPrint('✅ Draft Preloading: Success');
+    } catch (e) {
+      debugPrint('⚠️ Draft Preloading: Failed - $e');
+      // Don't block app startup on preload failure
     }
   });
 }

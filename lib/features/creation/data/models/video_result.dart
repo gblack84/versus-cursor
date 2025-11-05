@@ -8,7 +8,7 @@ part 'video_result.freezed.dart';
 /// This DTO eliminates DocumentReference dependency while preserving
 /// all functionality including parentId and encoding status tracking.
 @freezed
-class VideoResult with _$VideoResult {
+sealed class VideoResult with _$VideoResult {
   const factory VideoResult({
     required String id,
     required String url,

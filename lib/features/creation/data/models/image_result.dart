@@ -8,7 +8,7 @@ part 'image_result.freezed.dart';
 /// This DTO eliminates DocumentReference dependency while preserving
 /// all functionality including parentId tracking.
 @freezed
-class ImageResult with _$ImageResult {
+sealed class ImageResult with _$ImageResult {
   const factory ImageResult({
     required String id,
     required String url,

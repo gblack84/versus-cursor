@@ -6,7 +6,7 @@ part 'media_info.g.dart';
 /// Domain entity for media information using Freezed sealed union
 /// Represents either image or video media with type-safe pattern matching
 @freezed
-class MediaInfo with _$MediaInfo {
+sealed class MediaInfo with _$MediaInfo {
   /// Image media variant
   ///
   /// Contains image-specific properties like aspect ratio and dimensions

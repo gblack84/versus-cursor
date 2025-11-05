@@ -185,63 +185,14 @@ String _$imageProcessingServiceHash() =>
 
 /// Media State Coordinator Provider
 ///
-/// Coordinates media selection and upload state across providers
-
-@ProviderFor(mediaStateCoordinator)
-const mediaStateCoordinatorProvider = MediaStateCoordinatorProvider._();
-
-/// Media State Coordinator Provider
-///
-/// Coordinates media selection and upload state across providers
-
-final class MediaStateCoordinatorProvider
-    extends
-        $FunctionalProvider<
-          MediaStateCoordinator,
-          MediaStateCoordinator,
-          MediaStateCoordinator
-        >
-    with $Provider<MediaStateCoordinator> {
-  /// Media State Coordinator Provider
-  ///
-  /// Coordinates media selection and upload state across providers
-  const MediaStateCoordinatorProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'mediaStateCoordinatorProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$mediaStateCoordinatorHash();
-
-  @$internal
-  @override
-  $ProviderElement<MediaStateCoordinator> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
-
-  @override
-  MediaStateCoordinator create(Ref ref) {
-    return mediaStateCoordinator(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(MediaStateCoordinator value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<MediaStateCoordinator>(value),
-    );
-  }
-}
-
-String _$mediaStateCoordinatorHash() =>
-    r'15b53cbaa1072393e09b17ce0baf15feab001ad8';
-
+/// **MOVED to media_coordinator_provider.dart** (Phase 2-7-3)
+/// This provider is now defined in media/media_coordinator_provider.dart
+/// and exported above. The old GetIt-based version is replaced.
+// @riverpod
+// MediaStateCoordinator mediaStateCoordinator(Ref ref) {
+//   return getIt<MediaStateCoordinator>();
+// }
+// ============= UseCase Providers =============
 /// Create Post UseCase Provider
 ///
 /// Provides access to the post creation business logic
@@ -249,6 +200,16 @@ String _$mediaStateCoordinatorHash() =>
 @ProviderFor(createPostUseCase)
 const createPostUseCaseProvider = CreatePostUseCaseProvider._();
 
+/// Media State Coordinator Provider
+///
+/// **MOVED to media_coordinator_provider.dart** (Phase 2-7-3)
+/// This provider is now defined in media/media_coordinator_provider.dart
+/// and exported above. The old GetIt-based version is replaced.
+// @riverpod
+// MediaStateCoordinator mediaStateCoordinator(Ref ref) {
+//   return getIt<MediaStateCoordinator>();
+// }
+// ============= UseCase Providers =============
 /// Create Post UseCase Provider
 ///
 /// Provides access to the post creation business logic
@@ -261,6 +222,16 @@ final class CreatePostUseCaseProvider
           CreatePostUseCase
         >
     with $Provider<CreatePostUseCase> {
+  /// Media State Coordinator Provider
+  ///
+  /// **MOVED to media_coordinator_provider.dart** (Phase 2-7-3)
+  /// This provider is now defined in media/media_coordinator_provider.dart
+  /// and exported above. The old GetIt-based version is replaced.
+  // @riverpod
+  // MediaStateCoordinator mediaStateCoordinator(Ref ref) {
+  //   return getIt<MediaStateCoordinator>();
+  // }
+  // ============= UseCase Providers =============
   /// Create Post UseCase Provider
   ///
   /// Provides access to the post creation business logic

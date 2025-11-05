@@ -5,8 +5,19 @@ import '../../domain/usecases/validation/validate_post_usecase.dart';
 import '../../domain/repositories/i_post_creation_repository_v2.dart';
 import '../../domain/repositories/i_media_repository.dart';
 import '../../domain/services/i_image_processing_service.dart';
-import 'media/media_state_coordinator.dart';
+// import 'media/media_state_coordinator.dart'; // Phase 2-7-3: Moved to media_coordinator_provider.dart
 import '/app/di.dart';
+
+// Phase 2-7: Export Riverpod 3.x Notifier Providers
+export 'media/media_selection_notifier.dart' show mediaSelectionProvider, MediaSelection;
+export 'media/media_upload_notifier.dart' show mediaUploadProvider, MediaUpload;
+export 'media/media_validation_notifier.dart' show mediaValidationProvider, MediaValidation;
+export 'target_audience_notifier.dart' show targetAudienceProvider;
+export 'states/target_audience_state.dart' show TargetAudienceState, TargetAudienceStateX;
+// export 'media/media_coordinator_provider.dart' show mediaStateCoordinatorProvider; // DELETED - Phase 2-14
+
+// Phase 2-11: Export UseCase Providers
+export 'usecase_providers.dart' show createPostUseCaseProvider, moderateContentUseCaseProvider, validatePostUseCaseProvider;
 
 part 'creation_providers.g.dart';
 
@@ -40,11 +51,13 @@ IImageProcessingService imageProcessingService(Ref ref) {
 
 /// Media State Coordinator Provider
 ///
-/// Coordinates media selection and upload state across providers
-@riverpod
-MediaStateCoordinator mediaStateCoordinator(Ref ref) {
-  return getIt<MediaStateCoordinator>();
-}
+/// **MOVED to media_coordinator_provider.dart** (Phase 2-7-3)
+/// This provider is now defined in media/media_coordinator_provider.dart
+/// and exported above. The old GetIt-based version is replaced.
+// @riverpod
+// MediaStateCoordinator mediaStateCoordinator(Ref ref) {
+//   return getIt<MediaStateCoordinator>();
+// }
 
 // ============= UseCase Providers =============
 

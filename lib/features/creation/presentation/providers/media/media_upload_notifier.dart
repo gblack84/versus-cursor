@@ -3,110 +3,62 @@ import 'dart:collection';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '../../../domain/repositories/i_media_repository.dart';
 import '../../../domain/services/i_image_processing_service.dart';
 import '../../../domain/failures/creation_failures.dart';
+import '../states/upload_queue_state.dart';
+import '../creation_providers.dart';
 
-/// Upload task model
-class UploadTask {
-  final String id;
-  final String box;
-  final List<File> files;
-  final DateTime createdAt;
-  UploadStatus status;
-  double progress;
-  List<String>? uploadedUrls;
-  String? errorMessage;
+part 'media_upload_notifier.g.dart';
 
-  UploadTask({
-    required this.id,
-    required this.box,
-    required this.files,
-    DateTime? createdAt,
-    this.status = UploadStatus.pending,
-    this.progress = 0.0,
-    this.uploadedUrls,
-    this.errorMessage,
-  }) : createdAt = createdAt ?? DateTime.now();
-}
-
-/// Upload status enum
-enum UploadStatus {
-  pending,
-  uploading,
-  completed,
-  failed,
-  cancelled,
-}
-
-/// Upload error model
-class UploadError {
-  final String taskId;
-  final String message;
-  final DateTime timestamp;
-  final int? retryCount;
-
-  UploadError({
-    required this.taskId,
-    required this.message,
-    DateTime? timestamp,
-    this.retryCount,
-  }) : timestamp = timestamp ?? DateTime.now();
-}
-
-/// Media upload state management provider
-/// 미디어 업로드 상태 관리 Provider - Clean Architecture Phase 5
+/// Media upload state management with Riverpod Notifier
+/// 미디어 업로드 상태 관리 - Riverpod 3.x Migration (Phase 2-5-3)
 ///
-/// Responsibilities:
+/// **Migration Changes**:
+/// - ChangeNotifier → Notifier<UploadQueueState>
+/// - Mutable state → Immutable Freezed state
+/// - notifyListeners() → state = state.copyWith()
+/// - StreamController management → Riverpod-managed
+///
+/// **Responsibilities**:
 /// - Upload queue management (업로드 큐 관리)
 /// - Progress tracking (진행률 추적)
 /// - Error handling with retry (에러 처리 및 재시도)
 /// - Parallel upload management (병렬 업로드 관리)
-class MediaUploadProvider extends ChangeNotifier {
-  final IMediaRepository _mediaRepository;
-  final IImageProcessingService _imageProcessingService;
-
-  MediaUploadProvider({
-    required IMediaRepository mediaRepository,
-    required IImageProcessingService imageProcessingService,
-  })  : _mediaRepository = mediaRepository,
-        _imageProcessingService = imageProcessingService;
-
-  // ============= State =============
-  // Active upload tasks
-  final Map<String, UploadTask> _activeTasks = {};
-
-  // Upload progress tracking
-  final Map<String, double> _uploadProgress = {};
-
-  // Upload errors
-  final Map<String, UploadError> _uploadErrors = {};
-
-  // Upload queue
-  final Queue<UploadTask> _uploadQueue = Queue();
-
-  // Currently uploading
-  bool _isUploading = false;
-
-  // Stream controllers for progress
-  final Map<String, StreamController<double>> _progressControllers = {};
-
+@riverpod
+class MediaUpload extends _$MediaUpload {
   // Configuration
   static const int maxConcurrentUploads = 3;
   static const int maxRetries = 3;
   static const Duration retryDelay = Duration(seconds: 2);
 
-  // Retry counts
-  final Map<String, int> _retryCount = {};
+  // Stream controllers for progress (managed separately from state)
+  final Map<String, StreamController<double>> _progressControllers = {};
+
+  @override
+  UploadQueueState build() {
+    // Initialize with empty state
+    ref.onDispose(() {
+      // Close all progress controllers on dispose
+      for (final controller in _progressControllers.values) {
+        controller.close();
+      }
+      _progressControllers.clear();
+    });
+
+    return const UploadQueueState();
+  }
+
+  /// Get dependencies from providers
+  IMediaRepository get _mediaRepository => ref.read(mediaRepositoryProvider);
+  IImageProcessingService get _imageProcessingService =>
+      ref.read(imageProcessingServiceProvider);
 
   // ============= Getters =============
-  Map<String, UploadTask> get activeTasks => Map.unmodifiable(_activeTasks);
-  Map<String, double> get uploadProgress => Map.unmodifiable(_uploadProgress);
-  Map<String, UploadError> get uploadErrors => Map.unmodifiable(_uploadErrors);
-  bool get isUploading => _isUploading;
-  int get queueLength => _uploadQueue.length;
-  int get activeUploadsCount => _activeTasks.values
+  int get queueLength => state.uploadQueue.length;
+  int get activeUploadsCount => state.activeTasks.values
       .where((task) => task.status == UploadStatus.uploading)
       .length;
 
@@ -125,23 +77,35 @@ class MediaUploadProvider extends ChangeNotifier {
       id: taskId,
       box: box,
       files: files,
+      createdAt: DateTime.now(),
     );
 
-    // Add to active tasks
-    _activeTasks[taskId] = task;
-    _uploadQueue.add(task);
+    // Add to active tasks and queue
+    final newActiveTasks = Map<String, UploadTask>.from(state.activeTasks);
+    newActiveTasks[taskId] = task;
 
-    // Initialize progress
-    _uploadProgress[taskId] = 0.0;
-    _retryCount[taskId] = 0;
+    final newQueue = List<UploadTask>.from(state.uploadQueue);
+    newQueue.add(task);
+
+    final newProgress = Map<String, double>.from(state.uploadProgress);
+    newProgress[taskId] = 0.0;
+
+    final newRetryCounts = Map<String, int>.from(state.retryCounts);
+    newRetryCounts[taskId] = 0;
 
     // Create progress stream controller
     _progressControllers[taskId] = StreamController<double>.broadcast();
 
-    notifyListeners();
+    // Update state
+    state = state.copyWith(
+      activeTasks: newActiveTasks,
+      uploadQueue: newQueue,
+      uploadProgress: newProgress,
+      retryCounts: newRetryCounts,
+    );
 
     // Start processing queue if not already
-    if (!_isUploading) {
+    if (!state.isUploading) {
       _processUploadQueue();
     }
 
@@ -151,15 +115,16 @@ class MediaUploadProvider extends ChangeNotifier {
   /// Process upload queue
   /// 업로드 큐 처리
   Future<void> _processUploadQueue() async {
-    if (_isUploading || _uploadQueue.isEmpty) {
+    if (state.isUploading || state.uploadQueue.isEmpty) {
       return;
     }
 
-    _isUploading = true;
-    notifyListeners();
+    state = state.copyWith(isUploading: true);
 
-    while (_uploadQueue.isNotEmpty && activeUploadsCount < maxConcurrentUploads) {
-      final task = _uploadQueue.removeFirst();
+    final queue = Queue<UploadTask>.from(state.uploadQueue);
+
+    while (queue.isNotEmpty && activeUploadsCount < maxConcurrentUploads) {
+      final task = queue.removeFirst();
 
       if (task.status == UploadStatus.cancelled) {
         continue;
@@ -169,8 +134,11 @@ class MediaUploadProvider extends ChangeNotifier {
       _uploadTask(task);
     }
 
-    _isUploading = false;
-    notifyListeners();
+    // Update queue with remaining tasks
+    state = state.copyWith(
+      uploadQueue: queue.toList(),
+      isUploading: false,
+    );
   }
 
   /// Upload a single task
@@ -178,8 +146,7 @@ class MediaUploadProvider extends ChangeNotifier {
   Future<void> _uploadTask(UploadTask task) async {
     try {
       // Update status
-      task.status = UploadStatus.uploading;
-      notifyListeners();
+      _updateTaskStatus(task.id, UploadStatus.uploading);
 
       // Process images with moderation
       final processResultEither = await _imageProcessingService.processMultipleImages(
@@ -261,18 +228,29 @@ class MediaUploadProvider extends ChangeNotifier {
       }
 
       // Update task
-      task.uploadedUrls = uploadedUrls;
-      task.status = UploadStatus.completed;
-      task.progress = 1.0;
-      _uploadProgress[task.id] = 1.0;
+      final updatedTask = task.copyWith(
+        uploadedUrls: uploadedUrls,
+        status: UploadStatus.completed,
+        progress: 1.0,
+      );
 
-      // Clear error if any
-      _uploadErrors.remove(task.id);
+      final newActiveTasks = Map<String, UploadTask>.from(state.activeTasks);
+      newActiveTasks[task.id] = updatedTask;
+
+      final newProgress = Map<String, double>.from(state.uploadProgress);
+      newProgress[task.id] = 1.0;
+
+      final newErrors = Map<String, UploadError>.from(state.uploadErrors);
+      newErrors.remove(task.id);
+
+      state = state.copyWith(
+        activeTasks: newActiveTasks,
+        uploadProgress: newProgress,
+        uploadErrors: newErrors,
+      );
 
       // Notify progress complete
       _progressControllers[task.id]?.add(1.0);
-
-      notifyListeners();
 
       // Process next in queue
       _processUploadQueue();
@@ -285,52 +263,97 @@ class MediaUploadProvider extends ChangeNotifier {
   /// Handle upload error
   /// 업로드 에러 처리
   void _handleUploadError(UploadTask task, String errorMessage) {
-    final retries = _retryCount[task.id] ?? 0;
+    final retries = state.retryCounts[task.id] ?? 0;
 
     if (retries < maxRetries) {
       // Retry upload
-      _retryCount[task.id] = retries + 1;
+      final newRetryCounts = Map<String, int>.from(state.retryCounts);
+      newRetryCounts[task.id] = retries + 1;
+
+      state = state.copyWith(retryCounts: newRetryCounts);
 
       // Add back to queue after delay
       Future.delayed(retryDelay * (retries + 1), () {
-        task.status = UploadStatus.pending;
-        _uploadQueue.addFirst(task);
+        final updatedTask = task.copyWith(status: UploadStatus.pending);
+        final newActiveTasks = Map<String, UploadTask>.from(state.activeTasks);
+        newActiveTasks[task.id] = updatedTask;
+
+        final newQueue = List<UploadTask>.from(state.uploadQueue);
+        newQueue.insert(0, updatedTask);
+
+        state = state.copyWith(
+          activeTasks: newActiveTasks,
+          uploadQueue: newQueue,
+        );
+
         _processUploadQueue();
       });
 
       debugPrint('Retrying upload ${task.id}, attempt ${retries + 1}');
     } else {
       // Max retries reached
-      task.status = UploadStatus.failed;
-      task.errorMessage = errorMessage;
+      final failedTask = task.copyWith(
+        status: UploadStatus.failed,
+        errorMessage: errorMessage,
+      );
 
-      _uploadErrors[task.id] = UploadError(
+      final newActiveTasks = Map<String, UploadTask>.from(state.activeTasks);
+      newActiveTasks[task.id] = failedTask;
+
+      final newErrors = Map<String, UploadError>.from(state.uploadErrors);
+      newErrors[task.id] = UploadError(
         taskId: task.id,
         message: errorMessage,
+        timestamp: DateTime.now(),
         retryCount: retries,
       );
 
-      _progressControllers[task.id]?.addError(errorMessage);
+      state = state.copyWith(
+        activeTasks: newActiveTasks,
+        uploadErrors: newErrors,
+      );
 
-      notifyListeners();
+      _progressControllers[task.id]?.addError(errorMessage);
 
       // Process next in queue
       _processUploadQueue();
     }
   }
 
+  /// Update task status
+  /// 태스크 상태 업데이트
+  void _updateTaskStatus(String taskId, UploadStatus status) {
+    final task = state.activeTasks[taskId];
+    if (task != null) {
+      final updatedTask = task.copyWith(status: status);
+      final newActiveTasks = Map<String, UploadTask>.from(state.activeTasks);
+      newActiveTasks[taskId] = updatedTask;
+
+      state = state.copyWith(activeTasks: newActiveTasks);
+    }
+  }
+
   /// Update upload progress
   /// 업로드 진행률 업데이트
   void _updateProgress(String taskId, double progress) {
-    _uploadProgress[taskId] = progress;
+    final newProgress = Map<String, double>.from(state.uploadProgress);
+    newProgress[taskId] = progress;
+
     _progressControllers[taskId]?.add(progress);
 
-    final task = _activeTasks[taskId];
+    final task = state.activeTasks[taskId];
     if (task != null) {
-      task.progress = progress;
-    }
+      final updatedTask = task.copyWith(progress: progress);
+      final newActiveTasks = Map<String, UploadTask>.from(state.activeTasks);
+      newActiveTasks[taskId] = updatedTask;
 
-    notifyListeners();
+      state = state.copyWith(
+        activeTasks: newActiveTasks,
+        uploadProgress: newProgress,
+      );
+    } else {
+      state = state.copyWith(uploadProgress: newProgress);
+    }
   }
 
   /// Get upload progress stream
@@ -345,40 +368,58 @@ class MediaUploadProvider extends ChangeNotifier {
   /// Cancel upload
   /// 업로드 취소
   void cancelUpload(String taskId) {
-    final task = _activeTasks[taskId];
+    final task = state.activeTasks[taskId];
     if (task != null) {
-      task.status = UploadStatus.cancelled;
+      final cancelledTask = task.copyWith(status: UploadStatus.cancelled);
+      final newActiveTasks = Map<String, UploadTask>.from(state.activeTasks);
+      newActiveTasks[taskId] = cancelledTask;
 
       // Remove from queue if pending
-      _uploadQueue.removeWhere((t) => t.id == taskId);
+      final newQueue = state.uploadQueue.where((t) => t.id != taskId).toList();
+
+      state = state.copyWith(
+        activeTasks: newActiveTasks,
+        uploadQueue: newQueue,
+      );
 
       // Close progress controller
       _progressControllers[taskId]?.close();
       _progressControllers.remove(taskId);
-
-      notifyListeners();
     }
   }
 
   /// Retry failed upload
   /// 실패한 업로드 재시도
   void retryUpload(String taskId) {
-    final task = _activeTasks[taskId];
+    final task = state.activeTasks[taskId];
     if (task != null && task.status == UploadStatus.failed) {
       // Reset retry count
-      _retryCount[taskId] = 0;
+      final newRetryCounts = Map<String, int>.from(state.retryCounts);
+      newRetryCounts[taskId] = 0;
 
       // Clear error
-      _uploadErrors.remove(taskId);
+      final newErrors = Map<String, UploadError>.from(state.uploadErrors);
+      newErrors.remove(taskId);
 
       // Reset task status
-      task.status = UploadStatus.pending;
-      task.progress = 0.0;
+      final resetTask = task.copyWith(
+        status: UploadStatus.pending,
+        progress: 0.0,
+      );
+
+      final newActiveTasks = Map<String, UploadTask>.from(state.activeTasks);
+      newActiveTasks[taskId] = resetTask;
 
       // Add to queue
-      _uploadQueue.add(task);
+      final newQueue = List<UploadTask>.from(state.uploadQueue);
+      newQueue.add(resetTask);
 
-      notifyListeners();
+      state = state.copyWith(
+        activeTasks: newActiveTasks,
+        uploadQueue: newQueue,
+        uploadErrors: newErrors,
+        retryCounts: newRetryCounts,
+      );
 
       // Start processing
       _processUploadQueue();
@@ -389,46 +430,53 @@ class MediaUploadProvider extends ChangeNotifier {
   /// 모든 업로드 취소
   void cancelAllUploads() {
     // Cancel all active tasks
-    for (final taskId in _activeTasks.keys.toList()) {
-      cancelUpload(taskId);
+    final newActiveTasks = <String, UploadTask>{};
+    for (final entry in state.activeTasks.entries) {
+      newActiveTasks[entry.key] = entry.value.copyWith(status: UploadStatus.cancelled);
+      _progressControllers[entry.key]?.close();
+      _progressControllers.remove(entry.key);
     }
 
-    // Clear queue
-    _uploadQueue.clear();
-
-    _isUploading = false;
-    notifyListeners();
+    state = state.copyWith(
+      activeTasks: newActiveTasks,
+      uploadQueue: [],
+      isUploading: false,
+    );
   }
 
   /// Clear completed uploads
   /// 완료된 업로드 정리
   void clearCompleted() {
-    _activeTasks.removeWhere((_, task) =>
-      task.status == UploadStatus.completed ||
-      task.status == UploadStatus.cancelled);
+    final newActiveTasks = Map<String, UploadTask>.from(state.activeTasks);
+    newActiveTasks.removeWhere((_, task) =>
+        task.status == UploadStatus.completed ||
+        task.status == UploadStatus.cancelled);
 
-    _uploadProgress.removeWhere((taskId, _) =>
-      !_activeTasks.containsKey(taskId));
+    final newProgress = Map<String, double>.from(state.uploadProgress);
+    newProgress.removeWhere((taskId, _) => !newActiveTasks.containsKey(taskId));
 
-    notifyListeners();
+    state = state.copyWith(
+      activeTasks: newActiveTasks,
+      uploadProgress: newProgress,
+    );
   }
 
   /// Get upload URLs for a task
   /// 태스크의 업로드된 URL 가져오기
   List<String>? getUploadedUrls(String taskId) {
-    return _activeTasks[taskId]?.uploadedUrls;
+    return state.activeTasks[taskId]?.uploadedUrls;
   }
 
   /// Check if task is complete
   /// 태스크 완료 여부 확인
   bool isTaskComplete(String taskId) {
-    return _activeTasks[taskId]?.status == UploadStatus.completed;
+    return state.activeTasks[taskId]?.status == UploadStatus.completed;
   }
 
   /// Get task status
   /// 태스크 상태 가져오기
   UploadStatus? getTaskStatus(String taskId) {
-    return _activeTasks[taskId]?.status;
+    return state.activeTasks[taskId]?.status;
   }
 
   /// Upload edited image from bytes (ProImageEditor용)
@@ -553,16 +601,5 @@ class MediaUploadProvider extends ChangeNotifier {
       (failure) => throw failure,
       (result) => result,
     );
-  }
-
-  @override
-  void dispose() {
-    // Close all progress controllers
-    for (final controller in _progressControllers.values) {
-      controller.close();
-    }
-    _progressControllers.clear();
-
-    super.dispose();
   }
 }

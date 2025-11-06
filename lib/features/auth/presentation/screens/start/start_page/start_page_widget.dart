@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
+import '/features/auth/presentation/providers/usecase_providers.dart';
 import '/core/widgets/pickle_mark/pickle_mark_widget.dart';
 import '/core_exports.dart';
 import '/core/utils/error_handler.dart';
@@ -268,7 +269,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
 
                                           GoRouter.of(context).prepareAuthEvent();
 
-                                          ref.read(authLoadingProvider.notifier).state = true;
+                                          ref.read(authLoadingProvider.notifier).setLoading(true);
 
                                           final signInWithAppleUseCase = ref.read(signInWithAppleUseCaseProvider);
                                           final result = await signInWithAppleUseCase.execute(
@@ -277,7 +278,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
 
                                           result.fold(
                                             (failure) {
-                                              ref.read(authLoadingProvider.notifier).state = false;
+                                              ref.read(authLoadingProvider.notifier).setLoading(false);
                                               if (context.mounted) {
                                                 ErrorHandler.handle(
                                                   failure.message,
@@ -287,7 +288,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
                                               }
                                             },
                                             (user) {
-                                              ref.read(authLoadingProvider.notifier).state = false;
+                                              ref.read(authLoadingProvider.notifier).setLoading(false);
                                               if (context.mounted) {
                                                 context.goNamedAuth(
                                                     TestpageSelectWidget.routeName,
@@ -357,7 +358,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
 
                                     GoRouter.of(context).prepareAuthEvent();
 
-                                    ref.read(authLoadingProvider.notifier).state = true;
+                                    ref.read(authLoadingProvider.notifier).setLoading(true);
 
                                     final signInWithGoogleUseCase = ref.read(signInWithGoogleUseCaseProvider);
                                     final result = await signInWithGoogleUseCase.execute(
@@ -366,7 +367,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
 
                                     result.fold(
                                       (failure) {
-                                        ref.read(authLoadingProvider.notifier).state = false;
+                                        ref.read(authLoadingProvider.notifier).setLoading(false);
                                         if (context.mounted) {
                                           ErrorHandler.handle(
                                             failure.message,
@@ -376,7 +377,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
                                         }
                                       },
                                       (user) {
-                                        ref.read(authLoadingProvider.notifier).state = false;
+                                        ref.read(authLoadingProvider.notifier).setLoading(false);
                                         if (context.mounted) {
                                           context.goNamedAuth(
                                               TestpageSelectWidget.routeName,
@@ -439,7 +440,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
 
                                     GoRouter.of(context).prepareAuthEvent();
 
-                                    ref.read(authLoadingProvider.notifier).state = true;
+                                    ref.read(authLoadingProvider.notifier).setLoading(true);
 
                                     final signInWithGoogleUseCase = ref.read(signInWithGoogleUseCaseProvider);
                                     final result = await signInWithGoogleUseCase.execute(
@@ -448,7 +449,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
 
                                     result.fold(
                                       (failure) {
-                                        ref.read(authLoadingProvider.notifier).state = false;
+                                        ref.read(authLoadingProvider.notifier).setLoading(false);
                                         if (context.mounted) {
                                           ErrorHandler.handle(
                                             failure.message,
@@ -458,7 +459,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
                                         }
                                       },
                                       (user) {
-                                        ref.read(authLoadingProvider.notifier).state = false;
+                                        ref.read(authLoadingProvider.notifier).setLoading(false);
                                         if (context.mounted) {
                                           context.goNamedAuth(
                                               TestpageSelectWidget.routeName,
@@ -520,7 +521,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
                                   // Instagram 로그인은 현재 Google로 대체 (추후 구현 예정)
                                   GoRouter.of(context).prepareAuthEvent();
 
-                                  ref.read(authLoadingProvider.notifier).state = true;
+                                  ref.read(authLoadingProvider.notifier).setLoading(true);
 
                                   final signInWithGoogleUseCase = ref.read(signInWithGoogleUseCaseProvider);
                                   final result = await signInWithGoogleUseCase.execute(
@@ -529,7 +530,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
 
                                   result.fold(
                                     (failure) {
-                                      ref.read(authLoadingProvider.notifier).state = false;
+                                      ref.read(authLoadingProvider.notifier).setLoading(false);
                                       if (context.mounted) {
                                         ErrorHandler.handle(
                                           failure.message,
@@ -539,7 +540,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
                                       }
                                     },
                                     (user) {
-                                      ref.read(authLoadingProvider.notifier).state = false;
+                                      ref.read(authLoadingProvider.notifier).setLoading(false);
                                       if (context.mounted) {
                                         context.goNamedAuth(
                                             TestpageSelectWidget.routeName,

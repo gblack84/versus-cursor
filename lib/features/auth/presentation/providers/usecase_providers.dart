@@ -124,7 +124,7 @@ AccountManagementUseCase accountManagementUseCase(Ref ref) {
 /// **의존성**: IAuthRepository
 /// **사용처**: currentUserProvider (FutureProvider)
 @riverpod
-GetCurrentUserUseCase getCurrentUserUseCase(GetCurrentUserUseCaseRef ref) {
+GetCurrentUserUseCase getCurrentUserUseCase(Ref ref) {
   return getIt<GetCurrentUserUseCase>();
 }
 
@@ -134,6 +134,6 @@ GetCurrentUserUseCase getCurrentUserUseCase(GetCurrentUserUseCaseRef ref) {
 /// **의존성**: IAuthRepository
 /// **사용처**: ProfileScreen, SettingsScreen
 @riverpod
-SignOutUseCase signOutUseCase(SignOutUseCaseRef ref) {
+SignOutUseCase signOutUseCase(Ref ref) {
   return getIt<SignOutUseCase>();
 }

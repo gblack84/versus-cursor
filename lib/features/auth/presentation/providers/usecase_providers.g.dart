@@ -92,7 +92,7 @@ final class SignInWithEmailUseCaseProvider
 }
 
 String _$signInWithEmailUseCaseHash() =>
-    r'4bb275eaf5139f7610829c7d8b30818c694edead';
+    r'a2b2341ebc564b973060c5a9ca59389c4bba5e46';
 
 /// Sign In with Google UseCase Provider
 ///
@@ -157,7 +157,7 @@ final class SignInWithGoogleUseCaseProvider
 }
 
 String _$signInWithGoogleUseCaseHash() =>
-    r'0c21c8963ae5987dfe4cc61c810e7ea47d285c91';
+    r'965538c661cf0ad29b5ca4509082eb3af2c41a0d';
 
 /// Sign In with Apple UseCase Provider
 ///
@@ -222,7 +222,7 @@ final class SignInWithAppleUseCaseProvider
 }
 
 String _$signInWithAppleUseCaseHash() =>
-    r'df7232b1cdb074c1fe437231bbac31c11d0def08';
+    r'd18fb761fe7e040ae99d777262185006bbd6bf33';
 
 /// Sign In with Phone UseCase Provider
 ///
@@ -287,7 +287,7 @@ final class SignInWithPhoneUseCaseProvider
 }
 
 String _$signInWithPhoneUseCaseHash() =>
-    r'f935ea9bf655ed7b8dfa67afc6c22f1145587d82';
+    r'c1b5c2f5801f4a6001ef29348f73c2fe20b477b6';
 
 /// Sign Up with Email UseCase Provider
 ///
@@ -352,7 +352,7 @@ final class SignUpWithEmailUseCaseProvider
 }
 
 String _$signUpWithEmailUseCaseHash() =>
-    r'6cfadb5bb0753c507d68de48aa2e686453c86a3e';
+    r'528d699062d7fdbad9f85a8c740a69f8fab07151';
 
 /// Password Management UseCase Provider
 ///
@@ -417,7 +417,7 @@ final class PasswordManagementUseCaseProvider
 }
 
 String _$passwordManagementUseCaseHash() =>
-    r'cc65ae1a4cbbf90d98904a7135dc9645fe5652d5';
+    r'd488964f304c536b5cdbcd6e32d1d2d9ba172bc1';
 
 /// Email Verification UseCase Provider
 ///
@@ -482,7 +482,7 @@ final class EmailVerificationUseCaseProvider
 }
 
 String _$emailVerificationUseCaseHash() =>
-    r'128d2b50c1f6be25c44002dea8c1629c96281d92';
+    r'a45ab69b048204d727b5ad62d7a4d6a7b54e1988';
 
 /// Account Management UseCase Provider
 ///
@@ -547,7 +547,7 @@ final class AccountManagementUseCaseProvider
 }
 
 String _$accountManagementUseCaseHash() =>
-    r'804350f6cc7c3e1adb32140c766570e1cc02d021';
+    r'313c207ad4bbfe950a9a57b3618bac58d808566c';
 
 /// Get Current User UseCase Provider
 ///
@@ -612,7 +612,7 @@ final class GetCurrentUserUseCaseProvider
 }
 
 String _$getCurrentUserUseCaseHash() =>
-    r'd1acbc7e3b9010331028e0895886ff199a17f3b2';
+    r'2fb99a898a909efc085eb27a447f110890b03064';
 
 /// Sign Out UseCase Provider
 ///
@@ -670,4 +670,4 @@ final class SignOutUseCaseProvider
   }
 }
 
-String _$signOutUseCaseHash() => r'25dbca36e50f4dc3169c1fd4dcd1e0463f9db546';
+String _$signOutUseCaseHash() => r'd405ca6556edf2bac6c98685b4c001f82237ea8e';

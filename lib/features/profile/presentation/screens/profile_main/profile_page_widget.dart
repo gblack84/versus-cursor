@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 import '/core_exports.dart';
-// Phase 3: Riverpod - profile_providers.dart 사용
-import '/features/profile/presentation/providers/profile_providers.dart';
+// Phase 3: Riverpod 3.x - profile_notifiers.dart (Freezed + Code Generation)
+import '/features/profile/presentation/providers/profile_notifiers.dart';
 // Phase 3: Riverpod - profile_post_providers.dart (Feature-First)
 import '/features/profile/presentation/providers/profile_post_providers.dart';
 // Phase 4: Contract 패턴으로 Feature 간 의존성 제거
@@ -97,10 +97,8 @@ class _ProfilePageWidgetState extends ConsumerState<ProfilePageWidget> {
               );
             }
 
-            // Riverpod: profileStreamProvider로 실시간 프로필 조회
-            final profileState = ref.watch(profileStreamProvider(
-              ProfileStreamParams(userId: userId),
-            ));
+            // Riverpod 3.x: profileStreamProvider로 실시간 프로필 조회 (direct parameter)
+            final profileState = ref.watch(profileStreamProvider(userId));
 
             return profileState.when(
               // Loading state
@@ -110,18 +108,14 @@ class _ProfilePageWidgetState extends ConsumerState<ProfilePageWidget> {
               // Error state
               error: (error, stackTrace) => ProfileErrorMessage(
                 message: error.toString(),
-                onRetry: () => ref.invalidate(profileStreamProvider(
-                  ProfileStreamParams(userId: userId),
-                )),
+                onRetry: () => ref.invalidate(profileStreamProvider(userId)),
               ),
               // Data state
               data: (user) {
                 if (user == null) {
                   return ProfileErrorMessage(
                     message: '프로필을 찾을 수 없습니다',
-                    onRetry: () => ref.invalidate(profileStreamProvider(
-                      ProfileStreamParams(userId: userId),
-                    )),
+                    onRetry: () => ref.invalidate(profileStreamProvider(userId)),
                   );
                 }
 

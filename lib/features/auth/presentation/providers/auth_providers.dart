@@ -37,7 +37,7 @@ part 'auth_providers.g.dart';
 /// );
 /// ```
 @riverpod
-Stream<AuthUser?> authStateStream(AuthStateStreamRef ref, AuthStateParams params) async* {
+Stream<AuthUser?> authStateStream(Ref ref, AuthStateParams params) async* {
   // 1. 즉시 로딩: 기본값 먼저 emit
   yield null;
 
@@ -182,7 +182,7 @@ class AuthError extends _$AuthError {
 /// );
 /// ```
 @riverpod
-Future<AuthUser?> currentUser(CurrentUserRef ref) async {
+Future<AuthUser?> currentUser(Ref ref) async {
   final useCase = ref.watch(getCurrentUserUseCaseProvider);
   final result = await useCase();
 
@@ -210,7 +210,7 @@ Future<AuthUser?> currentUser(CurrentUserRef ref) async {
 /// await repository.loadUserData(currentUserId);
 /// ```
 @riverpod
-Future<String?> currentUserId(CurrentUserIdRef ref) async {
+Future<String?> currentUserId(Ref ref) async {
   final user = await ref.watch(currentUserProvider.future);
   return user?.uid;
 }

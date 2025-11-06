@@ -3,6 +3,7 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:uuid/uuid.dart';
 import '/core/utils/error_handler.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
+import '/features/auth/presentation/providers/usecase_providers.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
@@ -349,7 +350,7 @@ Enter the 6-digit code sent t... */
                                 }
 
                                 // 로딩 시작
-                                ref.read(authLoadingProvider.notifier).state = true;
+                                ref.read(authLoadingProvider.notifier).setLoading(true);
 
                                 // 전화번호 인증
                                 final signInWithPhoneUseCase = ref.read(signInWithPhoneUseCaseProvider);
@@ -364,8 +365,8 @@ Enter the 6-digit code sent t... */
                                   (failure) {
                                     // 실패 처리
                                     _model.isVerified = false;
-                                    ref.read(authErrorProvider.notifier).state = failure.message;
-                                    ref.read(authLoadingProvider.notifier).state = false;
+                                    ref.read(authErrorProvider.notifier).setError(failure.message);
+                                    ref.read(authLoadingProvider.notifier).setLoading(false);
                                     setState(() {});
 
                                     // 에러 메시지 표시
@@ -380,7 +381,7 @@ Enter the 6-digit code sent t... */
                                   (user) {
                                     // 성공 처리
                                     _model.isVerified = true;
-                                    ref.read(authLoadingProvider.notifier).state = false;
+                                    ref.read(authLoadingProvider.notifier).setLoading(false);
                                     setState(() {});
 
                                     // 인증 성공 시 다음 페이지로 이동
@@ -545,7 +546,7 @@ Enter the 6-digit code sent t... */
                                             }
 
                                             // 로딩 시작
-                                            ref.read(authLoadingProvider.notifier).state = true;
+                                            ref.read(authLoadingProvider.notifier).setLoading(true);
 
                                             // OTP 재전송
                                             final signInWithPhoneUseCase = ref.read(signInWithPhoneUseCaseProvider);
@@ -558,8 +559,8 @@ Enter the 6-digit code sent t... */
                                             result.fold(
                                               (failure) {
                                                 // 재전송 실패
-                                                ref.read(authErrorProvider.notifier).state = failure.message;
-                                                ref.read(authLoadingProvider.notifier).state = false;
+                                                ref.read(authErrorProvider.notifier).setError(failure.message);
+                                                ref.read(authLoadingProvider.notifier).setLoading(false);
 
                                                 if (context.mounted) {
                                                   ErrorHandler.handle(
@@ -571,7 +572,7 @@ Enter the 6-digit code sent t... */
                                               },
                                               (_) {
                                                 // 코드가 성공적으로 전송됨
-                                                ref.read(authLoadingProvider.notifier).state = false;
+                                                ref.read(authLoadingProvider.notifier).setLoading(false);
 
                                                 if (context.mounted) {
                                                   ErrorHandler.showSuccessToast('인증 코드가 재전송되었습니다.');

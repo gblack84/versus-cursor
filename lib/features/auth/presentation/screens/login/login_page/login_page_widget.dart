@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
+import '/features/auth/presentation/providers/usecase_providers.dart';
 import '/features/auth/presentation/screens/login/components/email_login_form.dart';
 import '/features/auth/presentation/screens/login/components/test_account_buttons.dart';
 import '/features/auth/presentation/screens/login/components/login_buttons.dart';
@@ -94,7 +95,7 @@ class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
     GoRouter.of(context).prepareAuthEvent();
 
     // 로딩 시작
-    ref.read(authLoadingProvider.notifier).state = true;
+    ref.read(authLoadingProvider.notifier).setLoading(true);
 
     // UseCase 실행
     final signInUseCase = ref.read(signInWithEmailUseCaseProvider);
@@ -107,8 +108,8 @@ class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
     result.fold(
       (failure) {
         // 실패 처리
-        ref.read(authErrorProvider.notifier).state = failure.message;
-        ref.read(authLoadingProvider.notifier).state = false;
+        ref.read(authErrorProvider.notifier).setError(failure.message);
+        ref.read(authLoadingProvider.notifier).setLoading(false);
 
         if (context.mounted) {
           ErrorHandler.handle(
@@ -120,7 +121,7 @@ class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
       },
       (user) {
         // 성공 처리
-        ref.read(authLoadingProvider.notifier).state = false;
+        ref.read(authLoadingProvider.notifier).setLoading(false);
 
         if (context.mounted) {
           context.pushNamedAuth(
@@ -155,7 +156,7 @@ class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
     GoRouter.of(context).prepareAuthEvent();
 
     // 로딩 시작
-    ref.read(authLoadingProvider.notifier).state = true;
+    ref.read(authLoadingProvider.notifier).setLoading(true);
 
     // 테스트 계정은 일반 로그인으로 처리 (계정이 이미 존재한다고 가정)
     final signInUseCase = ref.read(signInWithEmailUseCaseProvider);
@@ -178,8 +179,8 @@ class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
 
         signUpResult.fold(
           (signUpFailure) {
-            ref.read(authErrorProvider.notifier).state = signUpFailure.message;
-            ref.read(authLoadingProvider.notifier).state = false;
+            ref.read(authErrorProvider.notifier).setError(signUpFailure.message);
+            ref.read(authLoadingProvider.notifier).setLoading(false);
 
             if (context.mounted) {
               ErrorHandler.handle(
@@ -190,7 +191,7 @@ class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
             }
           },
           (user) {
-            ref.read(authLoadingProvider.notifier).state = false;
+            ref.read(authLoadingProvider.notifier).setLoading(false);
 
             if (context.mounted) {
               ErrorHandler.showSuccessToast('테스트 계정으로 로그인되었습니다.');
@@ -204,7 +205,7 @@ class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
       },
       (user) {
         // 로그인 성공
-        ref.read(authLoadingProvider.notifier).state = false;
+        ref.read(authLoadingProvider.notifier).setLoading(false);
 
         if (context.mounted) {
           ErrorHandler.showSuccessToast('테스트 계정으로 로그인되었습니다.');

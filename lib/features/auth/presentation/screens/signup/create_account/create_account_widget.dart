@@ -3,6 +3,7 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:uuid/uuid.dart';
 import '/core/utils/error_handler.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
+import '/features/auth/presentation/providers/usecase_providers.dart';
 import '/features/auth/presentation/screens/email_verification/popup_timer_email/popup_timer_email_widget.dart';
 import '/features/auth/presentation/screens/signup/components/header_section.dart';
 import '/features/auth/presentation/screens/signup/components/signup_form.dart';
@@ -75,7 +76,7 @@ class _CreateAccountWidgetState extends ConsumerState<CreateAccountWidget> {
     }
 
     // 로딩 시작
-    ref.read(authLoadingProvider.notifier).state = true;
+    ref.read(authLoadingProvider.notifier).setLoading(true);
 
     // 계정 생성
     final eventId = const Uuid().v4(); // Generate UUID for idempotency
@@ -90,8 +91,8 @@ class _CreateAccountWidgetState extends ConsumerState<CreateAccountWidget> {
     await result.fold(
       (failure) async {
         // 실패 처리
-        ref.read(authErrorProvider.notifier).state = failure.message;
-        ref.read(authLoadingProvider.notifier).state = false;
+        ref.read(authErrorProvider.notifier).setError(failure.message);
+        ref.read(authLoadingProvider.notifier).setLoading(false);
 
         if (context.mounted) {
           ErrorHandler.handle(
@@ -109,7 +110,7 @@ class _CreateAccountWidgetState extends ConsumerState<CreateAccountWidget> {
           eventId: const Uuid().v4(),
         );
 
-        ref.read(authLoadingProvider.notifier).state = false;
+        ref.read(authLoadingProvider.notifier).setLoading(false);
 
         if (context.mounted) {
           await showDialog(

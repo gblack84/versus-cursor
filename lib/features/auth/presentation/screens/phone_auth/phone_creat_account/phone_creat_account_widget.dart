@@ -3,6 +3,7 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:uuid/uuid.dart';
 import '/core/utils/error_handler.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
+import '/features/auth/presentation/providers/usecase_providers.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
@@ -444,7 +445,7 @@ class _PhoneCreatAccountWidgetState extends ConsumerState<PhoneCreatAccountWidge
                             }
 
                             // 로딩 시작
-                            ref.read(authLoadingProvider.notifier).state = true;
+                            ref.read(authLoadingProvider.notifier).setLoading(true);
 
                             // OTP 발송
                             final signInWithPhoneUseCase = ref.read(signInWithPhoneUseCaseProvider);
@@ -457,8 +458,8 @@ class _PhoneCreatAccountWidgetState extends ConsumerState<PhoneCreatAccountWidge
                             result.fold(
                               (failure) {
                                 // 실패 처리
-                                ref.read(authErrorProvider.notifier).state = failure.message;
-                                ref.read(authLoadingProvider.notifier).state = false;
+                                ref.read(authErrorProvider.notifier).setError(failure.message);
+                                ref.read(authLoadingProvider.notifier).setLoading(false);
 
                                 if (context.mounted) {
                                   ErrorHandler.handle(
@@ -470,7 +471,7 @@ class _PhoneCreatAccountWidgetState extends ConsumerState<PhoneCreatAccountWidge
                               },
                               (_) {
                                 // 성공 처리
-                                ref.read(authLoadingProvider.notifier).state = false;
+                                ref.read(authLoadingProvider.notifier).setLoading(false);
 
                                 // 코드가 성공적으로 전송되면 PIN 입력 화면으로 이동
                                 if (context.mounted) {

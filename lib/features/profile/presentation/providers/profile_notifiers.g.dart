@@ -221,7 +221,7 @@ final class ProfileNotifierProvider
   }
 }
 
-String _$profileNotifierHash() => r'47631607d38f3fc3044385ace0ffd22834007385';
+String _$profileNotifierHash() => r'3e68e61b76da54bced80c033a25f3ad9f5769d51';
 
 /// Profile Actions Notifier
 
@@ -395,7 +395,7 @@ final class SettingsStreamProvider
   }
 }
 
-String _$settingsStreamHash() => r'1a27802f1c576224925e114e3d4dcc04aab69a71';
+String _$settingsStreamHash() => r'33e56f72f3bd6b12d3bfd31efc02de866c2dbdcf';
 
 /// Settings Stream Provider
 

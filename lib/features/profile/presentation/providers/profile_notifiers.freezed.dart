@@ -113,10 +113,7 @@ return $default(_that);case _:
 final _that = this;
 switch (_that) {
 case _ProfileUIState():
-return $default(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -175,10 +172,7 @@ return $default(_that.isLoading,_that.error);case _:
 @optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool isLoading,  String? error)  $default,) {final _that = this;
 switch (_that) {
 case _ProfileUIState():
-return $default(_that.isLoading,_that.error);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that.isLoading,_that.error);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -206,8 +200,8 @@ return $default(_that.isLoading,_that.error);case _:
 /// @nodoc
 
 
-class _ProfileUIState extends ProfileUIState {
-  const _ProfileUIState({this.isLoading = false, this.error}): super._();
+class _ProfileUIState implements ProfileUIState {
+  const _ProfileUIState({this.isLoading = false, this.error});
   
 
 @override@JsonKey() final  bool isLoading;
@@ -373,10 +367,7 @@ return $default(_that);case _:
 final _that = this;
 switch (_that) {
 case _SettingsUIState():
-return $default(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -435,10 +426,7 @@ return $default(_that.isLoading,_that.error);case _:
 @optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool isLoading,  String? error)  $default,) {final _that = this;
 switch (_that) {
 case _SettingsUIState():
-return $default(_that.isLoading,_that.error);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that.isLoading,_that.error);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -466,8 +454,8 @@ return $default(_that.isLoading,_that.error);case _:
 /// @nodoc
 
 
-class _SettingsUIState extends SettingsUIState {
-  const _SettingsUIState({this.isLoading = false, this.error}): super._();
+class _SettingsUIState implements SettingsUIState {
+  const _SettingsUIState({this.isLoading = false, this.error});
   
 
 @override@JsonKey() final  bool isLoading;
@@ -636,10 +624,7 @@ return $default(_that);case _:
 final _that = this;
 switch (_that) {
 case _ImageUploadState():
-return $default(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -698,10 +683,7 @@ return $default(_that.isUploading,_that.progress,_that.error,_that.uploadedUrl);
 @optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool isUploading,  double progress,  String? error,  String? uploadedUrl)  $default,) {final _that = this;
 switch (_that) {
 case _ImageUploadState():
-return $default(_that.isUploading,_that.progress,_that.error,_that.uploadedUrl);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that.isUploading,_that.progress,_that.error,_that.uploadedUrl);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -729,8 +711,8 @@ return $default(_that.isUploading,_that.progress,_that.error,_that.uploadedUrl);
 /// @nodoc
 
 
-class _ImageUploadState extends ImageUploadState {
-  const _ImageUploadState({this.isUploading = false, this.progress = 0.0, this.error, this.uploadedUrl}): super._();
+class _ImageUploadState implements ImageUploadState {
+  const _ImageUploadState({this.isUploading = false, this.progress = 0.0, this.error, this.uploadedUrl});
   
 
 @override@JsonKey() final  bool isUploading;

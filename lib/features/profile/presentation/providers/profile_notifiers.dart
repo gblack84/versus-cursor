@@ -14,9 +14,7 @@ part 'profile_notifiers.g.dart';
 
 /// Profile UI State
 @freezed
-class ProfileUIState with _$ProfileUIState {
-  const ProfileUIState._();
-
+sealed class ProfileUIState with _$ProfileUIState {
   const factory ProfileUIState({
     @Default(false) bool isLoading,
     String? error,
@@ -25,9 +23,7 @@ class ProfileUIState with _$ProfileUIState {
 
 /// Settings UI State
 @freezed
-class SettingsUIState with _$SettingsUIState {
-  const SettingsUIState._();
-
+sealed class SettingsUIState with _$SettingsUIState {
   const factory SettingsUIState({
     @Default(false) bool isLoading,
     String? error,
@@ -36,9 +32,7 @@ class SettingsUIState with _$SettingsUIState {
 
 /// Image Upload State
 @freezed
-class ImageUploadState with _$ImageUploadState {
-  const ImageUploadState._();
-
+sealed class ImageUploadState with _$ImageUploadState {
   const factory ImageUploadState({
     @Default(false) bool isUploading,
     @Default(0.0) double progress, // 0.0 to 1.0
@@ -223,14 +217,15 @@ class ProfileNotifier extends _$ProfileNotifier {
 
   /// Update user settings
   Future<void> updateSettings({
-    required UserSettings settings,
+    required String userId,
+    required Map<String, dynamic> settings,
     String? eventId,
   }) async {
     ref.read(settingsUIProvider.notifier).setLoading(true);
     ref.read(settingsUIProvider.notifier).clearError();
 
     final useCase = ref.read(updateUserSettingsUseCaseProvider);
-    final result = await useCase.execute(settings, eventId: eventId);
+    final result = await useCase.execute(userId, settings, eventId: eventId);
 
     result.fold(
       (failure) {
@@ -316,7 +311,7 @@ Stream<UserSettings?> settingsStream(
   final watchUseCase = ref.read(getUserSettingsUseCaseProvider);
 
   // Get user settings once (not a stream in current implementation)
-  final result = await watchUseCase.execute(userId: userId);
+  final result = await watchUseCase.execute(userId);
 
   yield result.fold(
     (failure) {

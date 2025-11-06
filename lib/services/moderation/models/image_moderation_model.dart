@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 
 // Migrated from backend.dart
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '/core/firebase/utils/firestore_util.dart';
 import '/core_exports.dart';
 
 class ImageModerationModel extends FirestoreRecord {

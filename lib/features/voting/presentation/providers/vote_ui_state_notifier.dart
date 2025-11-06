@@ -34,6 +34,8 @@ part 'vote_ui_state_notifier.g.dart';
 /// - [isAnimating]: 애니메이션 진행 여부
 @freezed
 class VoteUIState with _$VoteUIState {
+  const VoteUIState._(); // Private constructor for Freezed
+
   const factory VoteUIState({
     @Default(false) bool hasVoted,
     @Default(null) String? selectedOption,

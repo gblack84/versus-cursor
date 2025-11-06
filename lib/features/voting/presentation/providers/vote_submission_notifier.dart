@@ -32,6 +32,8 @@ part 'vote_submission_notifier.g.dart';
 /// - ==, hashCode 자동 생성
 @freezed
 class VoteSubmissionState with _$VoteSubmissionState {
+  const VoteSubmissionState._(); // Private constructor for Freezed
+
   const factory VoteSubmissionState({
     @Default(false) bool isLoading,
     @Default(null) String? error,

@@ -208,8 +208,8 @@ return $default(_that.hasVoted,_that.selectedOption,_that.voteTimestamp,_that.is
 /// @nodoc
 
 
-class _VoteUIState implements VoteUIState {
-  const _VoteUIState({this.hasVoted = false, this.selectedOption = null, this.voteTimestamp = null, this.isAnimating = false});
+class _VoteUIState extends VoteUIState {
+  const _VoteUIState({this.hasVoted = false, this.selectedOption = null, this.voteTimestamp = null, this.isAnimating = false}): super._();
   
 
 @override@JsonKey() final  bool hasVoted;

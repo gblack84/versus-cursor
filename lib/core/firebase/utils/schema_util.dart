@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
 import 'package:from_css_color/from_css_color.dart' as css_color;
 import '/features/search/data/adapters/serialization_util.dart';
 

@@ -207,8 +207,8 @@ return $default(_that.isLoading,_that.error,_that.isSuccess);case _:
 /// @nodoc
 
 
-class _VoteSubmissionState implements VoteSubmissionState {
-  const _VoteSubmissionState({this.isLoading = false, this.error = null, this.isSuccess = false});
+class _VoteSubmissionState extends VoteSubmissionState {
+  const _VoteSubmissionState({this.isLoading = false, this.error = null, this.isSuccess = false}): super._();
   
 
 @override@JsonKey() final  bool isLoading;

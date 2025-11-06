@@ -65,7 +65,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/core/design_system/design_system.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../providers/vote_providers.dart';
+// ✅ Riverpod 3.x Migration
+import '../../providers/vote_submission_notifier.dart';
 
 /// 채팅 메시지로 표시되는 투표 카드의 기본 클래스
 ///
@@ -241,14 +242,17 @@ mixin BaseVoteMessageStateMixin<T extends BaseVoteMessage> on ConsumerState<T> {
     }
   }
 
-  /// 투표 제출
+  /// 투표 제출 (Riverpod 3.x Migration ✅)
   ///
-  /// 📌 TODO: 이 메서드를 활성화하려면 위의 구현 방법 중 하나를 선택하세요
+  /// **Riverpod 3.x Pattern**:
+  /// - `voteSubmissionProvider` Notifier 사용
+  /// - `ref.read().notifier.submitVote()` 패턴
+  /// - Freezed state로 에러 처리
   ///
-  /// Riverpod VoteSubmissionController를 사용하여 투표 처리:
-  /// - userId는 GetIt의 AuthContract에서 자동 획득
-  /// - 에러 시 SnackBar로 사용자에게 피드백 제공
-  /// - 성공 시 자동으로 UI 업데이트 (VoteStateCoordinator를 통해)
+  /// **Clean Architecture v4.0**:
+  /// - SubmitVoteUseCase를 통한 투표 제출
+  /// - Either 패턴으로 에러 처리
+  /// - VoteStateCoordinator를 통한 UI 자동 업데이트
   ///
   /// 사용 예시:
   /// ```dart
@@ -258,17 +262,16 @@ mixin BaseVoteMessageStateMixin<T extends BaseVoteMessage> on ConsumerState<T> {
   /// )
   /// ```
   Future<void> submitVote(String option) async {
-    // VoteSubmissionController를 통해 투표 제출
-    final controller = ref.read(voteSubmissionControllerProvider);
-    final result = await controller.submitVote(
-      postId: widget.postId,
-      userId: currentUserUid,
-      choice: option,
-      messageId: widget.messageId,
-      chatId: widget.chatId,
-    );
+    // ✅ Riverpod 3.x: Notifier 패턴 사용
+    final result = await ref.read(voteSubmissionProvider.notifier).submitVote(
+          postId: widget.postId,
+          userId: currentUserUid,
+          choice: option,
+          messageId: widget.messageId,
+          chatId: widget.chatId,
+        );
 
-    // 결과에 따라 UI 피드백 표시
+    // ✅ Freezed state로 에러 처리
     if (mounted) {
       if (result.error != null) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -172,7 +172,7 @@ class ContentVisibilityRepositoryImpl implements IContentVisibilityRepository {
     try {
       // Phase 5 Restoration: Use _targetAudienceToMap()
       // Note: This TargetAudience type is from i_content_visibility_repository.dart
-      // It's different from domain/models/target_audience.dart
+      // It's different from domain/entities/target_audience.dart
       // Validation is already done by ManageTargetAudienceUseCase in CreatePostUseCase
       await _postsCollection.doc(contentId).update({
         'targetAudience': _targetAudienceToMap(audience),

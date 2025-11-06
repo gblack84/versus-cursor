@@ -195,3 +195,53 @@ final authLoadingProvider = StateProvider<bool>((ref) => false);
 /// }
 /// ```
 final authErrorProvider = StateProvider<String?>((ref) => null);
+
+// ========================================
+// Current User Providers (Clean Architecture)
+// ========================================
+/// Current User Provider - Firebase Auth 상태를 Domain Layer를 통해 제공
+///
+/// **Clean Architecture**:
+/// ```
+/// Presentation → UseCase → Repository → Firebase
+/// ```
+///
+/// **사용 예시**:
+/// ```dart
+/// final currentUserAsync = ref.watch(currentUserProvider);
+///
+/// currentUserAsync.when(
+///   loading: () => CircularProgressIndicator(),
+///   error: (error, stack) => Text('Error: $error'),
+///   data: (user) => user == null ? LoginScreen() : HomeScreen(),
+/// );
+/// ```
+final currentUserProvider = FutureProvider.autoDispose<AuthUser?>((ref) async {
+  final useCase = ref.watch(getCurrentUserUseCaseProvider);
+  final result = await useCase();
+
+  return result.fold(
+    (failure) => null,  // Return null on error
+    (user) => user,     // Return AuthUser entity
+  );
+});
+
+/// Current User ID Provider - userId만 필요한 경우 편의 제공
+///
+/// **Clean Architecture**: Presentation Layer에서 userId만 필요할 때 사용
+///
+/// **사용 예시**:
+/// ```dart
+/// final currentUserId = await ref.read(currentUserIdProvider.future);
+/// if (currentUserId == null) {
+///   // User not logged in
+///   return;
+/// }
+///
+/// // Use userId for business logic
+/// await repository.loadUserData(currentUserId);
+/// ```
+final currentUserIdProvider = FutureProvider.autoDispose<String?>((ref) async {
+  final user = await ref.watch(currentUserProvider.future);
+  return user?.uid;
+});

@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 
-import '/features/creation/domain/models/aggregates/post_creation.dart';
-import '/features/creation/domain/models/value_objects/target_audience.dart';
-import '/features/creation/domain/models/entities/media_info.dart';
+import '/features/creation/domain/entities/post_creation.dart';
+import '/features/creation/domain/entities/target_audience.dart';
+import '/features/creation/domain/entities/media_info.dart';
 import '/services/cache/unified_cache_service.dart';
 import 'creation_cache_keys.dart';
 

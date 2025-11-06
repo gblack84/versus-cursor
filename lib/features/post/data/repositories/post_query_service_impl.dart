@@ -1,5 +1,5 @@
 import 'package:algolia/algolia.dart';
-import '../../../creation/domain/models/aggregates/post_creation.dart';
+import '../../../creation/domain/entities/post_creation.dart';
 import '../../domain/repositories/i_post_query_service.dart';
 import '/core/firebase/utils/firestore_util.dart';
 

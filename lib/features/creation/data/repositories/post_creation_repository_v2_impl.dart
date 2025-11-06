@@ -3,15 +3,14 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fpdart/fpdart.dart';
 import '../../domain/failures/creation_failures.dart';
-import '../../domain/models/aggregates/post_creation.dart';
-import '../../domain/models/aggregates/post_creation_extensions.dart'; // ✅ Phase 5: Extension Pattern
-import '../../domain/models/value_objects/target_audience.dart';
+import '../../domain/entities/post_creation.dart';
+import '../../domain/entities/post_creation_extensions.dart'; // ✅ Phase 5: Extension Pattern
+import '../../domain/entities/target_audience.dart';
 import '../../domain/services/i_target_audience_service.dart';
 import '../../domain/services/i_image_processing_service.dart';
 import '../../domain/repositories/i_post_creation_repository_v2.dart';
 import '/services/cache/creation_cache_service.dart';
 import '/core/utils/idempotency_service.dart'; // ✅ Phase 4: Idempotency
-// import '/app/contracts/creation_contract.dart'; // TODO: Create adapter for Dual Interface Pattern
 
 // Use ValidationResult from ITargetAudienceService
 export '../../domain/services/i_target_audience_service.dart' show ValidationResult;
@@ -36,10 +35,6 @@ export '../../domain/services/i_target_audience_service.dart' show ValidationRes
 ///
 /// Phase 1: MediaContent Freezed conversion complete
 /// Phase 2: PostCore/PostContent removed, PostCreation direct usage (447 lines removed)
-/// Phase 3: Dual Interface Pattern - BLOCKED: Cannot implement both interfaces
-///   - IPostCreationRepositoryV2 uses Either<Failure, T> pattern
-///   - CreationContract uses Future<T?>/Future<bool> pattern
-///   - TODO: Create adapter class or update CreationContract to use Either pattern
 /// Phase 2 Migration: Either pattern migration complete
 /// Phase 3 Migration: UnifiedCacheService Integration (Draft Auto-Save)
 /// Phase 4 Migration: Idempotency Pattern (Duplicate Operation Prevention)

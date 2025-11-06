@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:fpdart/fpdart.dart';
 import '../failures/creation_failures.dart';
-import '../models/entities/media_info.dart';
+import '../entities/media_info.dart';
 
 /// Repository interface for Media-related operations
 /// This interface handles images, videos, and media encoding functionality

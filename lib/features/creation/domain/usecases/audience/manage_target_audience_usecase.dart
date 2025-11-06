@@ -1,10 +1,13 @@
 import 'package:fpdart/fpdart.dart';
 import '../../failures/creation_failures.dart';
-import '../../models/value_objects/target_audience.dart';
-import '../../../data/models/target_audience_dto.dart';
+import '../../entities/target_audience.dart';
 import '../../services/i_target_audience_service.dart';
 
 /// UseCase for managing target audience
+///
+/// **Phase 5 Migration**: Removed TargetAudienceDto dependency
+/// - Now uses TargetAudience.fromProviderMap() directly
+/// - Cleaner interface following Clean Architecture
 ///
 /// This UseCase wraps the TargetAudienceService to provide a clean interface
 /// for the Presentation layer, following Clean Architecture principles.
@@ -15,20 +18,38 @@ class ManageTargetAudienceUseCase {
     required ITargetAudienceService targetAudienceService,
   }) : _targetAudienceService = targetAudienceService;
 
-  /// Create target audience from DTO (from Presentation layer)
+  /// Create target audience from Provider Map (from Presentation layer)
+  ///
+  /// **Phase 5 Migration**: Replaced createFromDto() with createFromProviderMap()
+  /// - Uses TargetAudience.fromProviderMap() factory method
+  /// - No DTO layer needed - direct Entity creation
+  ///
   /// This method provides a clean interface for Providers to use
-  Future<Either<Failure, TargetAudience>> createFromDto(
-    TargetAudienceDto dto,
+  Future<Either<Failure, TargetAudience>> createFromProviderMap(
+    Map<String, dynamic> providerMap,
   ) async {
-    return createTargetAudience(
-      collectionType: dto.collectionType,
-      targetCount: dto.targetCount,
-      selectedInterests: dto.selectedInterests,
-      selectedAgeGroup: dto.selectedAgeGroup,
-      selectedGender: dto.selectedGender,
-      activeUserOnly: dto.activeUserOnly,
-      isPremium: dto.isPremium,
-    );
+    try {
+      // Create target audience from Provider map using Entity factory
+      final targetAudience = TargetAudience.fromProviderMap(providerMap);
+
+      // Validate target audience
+      final validationResult = validateTargetAudience(targetAudience);
+
+      if (!validationResult.isValid) {
+        return left(
+          CreationValidationFailure(
+            validationResult.error ?? 'Invalid target audience configuration',
+          ),
+        );
+      }
+
+      return right(targetAudience);
+    } catch (error) {
+      print('createFromProviderMap Error: $error');
+      return left(
+        UnknownFailure(message: 'Failed to create target audience: $error'),
+      );
+    }
   }
 
   /// Create and validate a target audience configuration

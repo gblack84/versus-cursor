@@ -1,6 +1,8 @@
-import '/features/creation/domain/models/value_objects/target_audience.dart';
+import '/features/creation/domain/entities/target_audience.dart';
+import '/features/creation/domain/entities/target_audience_extensions.dart';
 import '/features/creation/domain/services/i_target_audience_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:fpdart/fpdart.dart';
 import '../../domain/failures/creation_failures.dart';
 
@@ -17,10 +19,11 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
 
   /// TargetAudience를 Firestore 저장용 Map으로 변환
   ///
+  /// **Phase 5 Migration**: Uses Extension Pattern (toFirestore())
   /// Firebase Functions의 targetMatcher.js가 기대하는 형식으로 변환합니다.
   Map<String, dynamic> convertModelToFirestore(TargetAudience model) {
-    // TargetAudience already has a toMap() method that's Firebase-compatible
-    final Map<String, dynamic> firestoreData = model.toMap();
+    // ✅ Phase 5: Use Extension alias for consistency
+    final Map<String, dynamic> firestoreData = model.toFirestore();
 
     // Override createdAt with server timestamp for consistency
     firestoreData['createdAt'] = FieldValue.serverTimestamp();
@@ -268,12 +271,67 @@ class TargetAudienceRepositoryImpl implements ITargetAudienceService {
     required int count,
   }) async {
     try {
-      // This would typically call an AI service or recommendation engine
-      // For now, return an empty list
-      // TODO: Implement user recommendation logic
-      return right([]);
+      print('[TargetAudienceService] AI 추천 시작: postId=$contentId, count=$count');
+
+      // Call Firebase Cloud Function for AI recommendation
+      final callable = FirebaseFunctions.instance.httpsCallable(
+        'getAIRecommendedUsersCallable',
+      );
+
+      final result = await callable.call<Map<String, dynamic>>({
+        'postId': contentId,
+        'targetCount': count,
+      });
+
+      final data = result.data;
+
+      if (data['success'] != true) {
+        return left(TargetAudienceFailure(
+          'AI recommendation failed: Invalid response',
+          'AI_RECOMMENDATION_FAILED',
+        ));
+      }
+
+      // Extract user IDs from response
+      final userIds = (data['userIds'] as List<dynamic>?)
+          ?.map((id) => id.toString())
+          .toList() ?? [];
+
+      // Log metadata for debugging
+      final metadata = data['metadata'] as Map<String, dynamic>?;
+      if (metadata != null) {
+        print('[TargetAudienceService] AI 추천 완료:');
+        print('  - 후보 사용자: ${metadata['totalCandidates']}명');
+        print('  - 추천된 사용자: ${metadata['recommendedCount']}명');
+        print('  - 평균 점수: ${metadata['avgScore']?.toStringAsFixed(1)}');
+      }
+
+      print('[TargetAudienceService] 추천 사용자: ${userIds.length}명');
+      return right(userIds);
+
+    } on FirebaseFunctionsException catch (e) {
+      print('[TargetAudienceService] Cloud Function 오류: ${e.code} - ${e.message}');
+
+      // User-friendly error messages based on error code
+      String message;
+      switch (e.code) {
+        case 'unauthenticated':
+          message = '로그인이 필요합니다';
+          break;
+        case 'not-found':
+          message = '게시물을 찾을 수 없습니다';
+          break;
+        case 'invalid-argument':
+          message = '잘못된 요청입니다';
+          break;
+        default:
+          message = 'AI 추천 중 오류가 발생했습니다';
+      }
+
+      return left(TargetAudienceFailure(message, e.code));
+
     } catch (e) {
-      print('[TargetAudienceService] 추천 사용자 조회 오류: $e');
+      print('[TargetAudienceService] 예상치 못한 오류: $e');
       return left(TargetAudienceFailure(
         'Unexpected error getting recommended users: $e',
         'UNKNOWN_ERROR',

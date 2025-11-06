@@ -3,8 +3,8 @@ import 'dart:ui' as ui;
 import 'package:fpdart/fpdart.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '../../domain/services/i_image_processing_service.dart';
+import '../../domain/services/i_image_moderation_service.dart'; // ✅ Port Interface import
 import '../../domain/failures/creation_failures.dart';
-import '/services/moderation/image_moderation_service.dart';
 
 /// Implementation of IImageProcessingService
 ///
@@ -15,9 +15,17 @@ import '/services/moderation/image_moderation_service.dart';
 /// - Aspect ratio calculation
 /// - Multi-image batch processing
 /// - Edited image handling
+///
+/// ✅ DI Pattern: IImageModerationService 주입
 class ImageProcessingRepositoryImpl implements IImageProcessingService {
-  // TODO: Inject IImageModerationService instead of using static service
-  // For now, using global service until moderation service is refactored
+  final IImageModerationService _moderationService; // ✅ DI 주입
+
+  /// Constructor with dependency injection
+  ///
+  /// ✅ DI Pattern (기존 생성자 없음 → DI 지원 생성자 추가)
+  ImageProcessingRepositoryImpl({
+    required IImageModerationService moderationService,
+  }) : _moderationService = moderationService;
 
   /// Process edited image with moderation (for multi-image edit flow)
   @override
@@ -30,8 +38,8 @@ class ImageProcessingRepositoryImpl implements IImageProcessingService {
     try {
       onProgress?.call(0.1);
 
-      // Check moderation
-      final moderationResult = await ImageModerationService.checkImage(
+      // ✅ Instance method 호출 (기존 Static call에서 변경)
+      final moderationResult = await _moderationService.checkImage(
         imageFile: editedFile,
         box: box,
       );
@@ -93,7 +101,8 @@ class ImageProcessingRepositoryImpl implements IImageProcessingService {
       if (editedFile != null && editedFileIndex != null) {
         onModerationProgress?.call(1, 1);
 
-        final result = await ImageModerationService.checkImage(
+        // ✅ Instance method 호출
+        final result = await _moderationService.checkImage(
           imageFile: editedFile,
           box: box,
         );
@@ -118,7 +127,8 @@ class ImageProcessingRepositoryImpl implements IImageProcessingService {
           continue; // Skip if already processed as edited
         }
 
-        final result = await ImageModerationService.checkImage(
+        // ✅ Instance method 호출
+        final result = await _moderationService.checkImage(
           imageFile: files[i],
           box: box,
         );
@@ -171,8 +181,8 @@ class ImageProcessingRepositoryImpl implements IImageProcessingService {
     try {
       onProgress?.call(0.1);
 
-      // Check moderation
-      final moderationResult = await ImageModerationService.checkImage(
+      // ✅ Instance method 호출
+      final moderationResult = await _moderationService.checkImage(
         imageFile: file,
         box: box,
       );

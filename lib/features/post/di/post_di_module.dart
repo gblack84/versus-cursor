@@ -20,9 +20,11 @@ import '../data/services/post_cache_service.dart';
 
 // ===== Domain Layer - Repository Interfaces (Ports) =====
 import '../domain/repositories/i_post_display_repository_v2.dart';
+import '../domain/repositories/i_post_metrics_repository.dart';
 
 // ===== Data Layer - Repository Implementations (Adapters) =====
 import '../data/repositories/post_repository_impl.dart';
+import '../data/repositories/post_metrics_repository_impl.dart';
 
 // ===== Domain Layer - UseCases (9 total) =====
 // Query UseCases
@@ -92,13 +94,26 @@ void _registerServices(GetIt getIt) {
 ///
 /// **Phase 4: Idempotency Integration**
 /// - IdempotencyService injection for CRUD operations
+///
+/// **Phase 6: Metrics Repository Migration** (2025-11-06)
+/// - IPostMetricsRepository moved from Creation Feature
+/// - Sharded counter support for metrics
 void _registerRepositories(GetIt getIt) {
-  // Post Repository (Firebase-Centric v2.0 + Cache + Idempotency)
+  // 1. Post Repository (Firebase-Centric v2.0 + Cache + Idempotency)
   getIt.registerLazySingleton<IPostDisplayRepositoryV2>(
     () => PostRepositoryImpl(
       firestore: FirebaseFirestore.instance,
       cacheService: getIt<PostCacheService>(),
       idempotencyService: getIt<IdempotencyService>(),
+    ),
+  );
+
+  // 2. Post Metrics Repository (Sharded counters + Idempotency)
+  getIt.registerLazySingleton<IPostMetricsRepository>(
+    () => PostMetricsRepositoryImpl(
+      firestore: FirebaseFirestore.instance,
+      idempotencyService: getIt<IdempotencyService>(),
+      // ShardUtils는 자동 생성 (기본값 사용)
     ),
   );
 }

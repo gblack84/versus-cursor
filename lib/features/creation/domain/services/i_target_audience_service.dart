@@ -1,5 +1,5 @@
 import 'package:fpdart/fpdart.dart';
-import '../models/value_objects/target_audience.dart';
+import '../entities/target_audience.dart';
 import '../failures/creation_failures.dart';
 
 /// Domain service interface for target audience operations

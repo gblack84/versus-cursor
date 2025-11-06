@@ -77,6 +77,7 @@ class PostDetailPage extends ConsumerWidget {
                 createFailed: (reason) => '생성 실패: ${reason ?? "알 수 없는 오류"}',
                 updateFailed: (reason) => '업데이트 실패: ${reason ?? "알 수 없는 오류"}',
                 deleteFailed: (reason) => '삭제 실패: ${reason ?? "알 수 없는 오류"}',
+                metricsOperationFailed: (operation, reason) => '통계 작업 실패: ${reason ?? "알 수 없는 오류"}',
                 searchFailed: (query) => '검색 실패: ${query ?? ""}',
                 queryFailed: (reason) => '조회 실패: ${reason ?? "알 수 없는 오류"}',
                 unexpected: (message, err, stackTrace) =>

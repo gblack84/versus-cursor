@@ -1,15 +1,19 @@
 import 'dart:io';
 import 'package:fpdart/fpdart.dart';
 import 'package:uuid/uuid.dart'; // ✅ Phase 4: UUID for idempotency
-import '../models/aggregates/post_creation.dart';
+import '../entities/post_creation.dart';
+import '../entities/target_audience.dart';
 import '../failures/creation_failures.dart';
 import '../repositories/i_post_creation_repository_v2.dart';
 import '../repositories/i_media_repository.dart';
-import '../../data/models/post_creation_dto.dart';
 import '../services/i_image_processing_service.dart';
 
 /// UseCase for creating a new post
 /// 새로운 게시물을 생성하기 위한 UseCase
+///
+/// **Phase 5 Migration**: Removed PostCreationDto dependency
+/// - Now uses individual parameters (userId, title, description, etc.)
+/// - Validation logic remains inline
 ///
 /// Phase 1.3: Service dependencies removed, now using Repository methods
 /// Phase 6: Converted to Either<Failure, T> pattern with fold/map composition
@@ -25,21 +29,34 @@ class CreatePostUseCase {
   })  : _postRepository = postRepository,
         _mediaRepository = mediaRepository;
 
-  /// Execute the use case with DTO
+  /// Execute the use case with individual parameters
   ///
-  /// Simplified interface using PostCreationDto to bundle all parameters.
-  /// This follows Clean Architecture by reducing coupling between layers.
+  /// **Phase 5 Migration**: Replaced PostCreationDto with individual parameters
+  /// - [userId]: User ID creating the post
+  /// - [title]: Post title
+  /// - [description]: Post description
+  /// - [imagesA]: Images for option A
+  /// - [imagesB]: Images for option B
+  /// - [targetAudience]: Optional target audience configuration
+  /// - [isAnonymous]: Whether post is anonymous
+  /// - [onProgress]: Optional progress callback (0.0 to 1.0)
   Future<Either<CreateContentFailure, PostCreation>> execute({
-    required PostCreationDto dto,
+    required String userId,
+    required String title,
+    required String description,
+    required List<File> imagesA,
+    required List<File> imagesB,
+    TargetAudience? targetAudience,
+    bool isAnonymous = false,
     Function(double)? onProgress,
   }) async {
     try {
-      // 1. Validate inputs from DTO
+      // 1. Validate inputs
       final validationResult = _validateInputs(
-        title: dto.title,
-        description: dto.description,
-        imagesA: dto.imagesA,
-        imagesB: dto.imagesB,
+        title: title,
+        description: description,
+        imagesA: imagesA,
+        imagesB: imagesB,
       );
 
       if (validationResult != null) {
@@ -55,7 +72,7 @@ class CreatePostUseCase {
 
       // 2. Process images for option A
       final resultA = await _processImages(
-        images: dto.imagesA,
+        images: imagesA,
         box: 'A',
         onProgress: (progress) => onProgress?.call(0.1 + progress * 0.3),
       );
@@ -67,7 +84,7 @@ class CreatePostUseCase {
 
           // 3. Process images for option B
           final resultB = await _processImages(
-            images: dto.imagesB,
+            images: imagesB,
             box: 'B',
             onProgress: (progress) => onProgress?.call(0.4 + progress * 0.3),
           );
@@ -96,9 +113,9 @@ class CreatePostUseCase {
                       onProgress?.call(0.8);
 
                       // 6. Validate target audience if provided
-                      if (dto.targetAudience != null) {
+                      if (targetAudience != null) {
                         final validation = _postRepository.validateTargetAudience(
-                          dto.targetAudience!,
+                          targetAudience,
                         );
 
                         if (!validation.isValid) {
@@ -111,11 +128,11 @@ class CreatePostUseCase {
                         }
                       }
 
-                      // 7. Create post entity from DTO with uploaded media
+                      // 7. Create post entity with uploaded media
                       final post = PostCreation(
-                        userId: dto.userId,
-                        title: dto.title,
-                        description: dto.description,
+                        userId: userId,
+                        title: title,
+                        description: description,
                         optionA: PostOption(
                           imageUrls: urlsA,
                           aspectRatios: processedA.approvedRatios,
@@ -124,10 +141,10 @@ class CreatePostUseCase {
                           imageUrls: urlsB,
                           aspectRatios: processedB.approvedRatios,
                         ),
-                        targetAudience: dto.targetAudience,
+                        targetAudience: targetAudience,
                         createdAt: DateTime.now(),
                         status: PostStatus.published,
-                        isAnonymous: dto.isAnonymous,
+                        isAnonymous: isAnonymous,
                       );
 
                       onProgress?.call(0.9);

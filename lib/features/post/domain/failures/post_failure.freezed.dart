@@ -55,7 +55,7 @@ extension PostFailurePatterns on PostFailure {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( NetworkError value)?  networkError,TResult Function( ServerError value)?  serverError,TResult Function( TimeoutError value)?  timeout,TResult Function( InsufficientPermissions value)?  insufficientPermissions,TResult Function( Unauthorized value)?  unauthorized,TResult Function( PostNotFound value)?  postNotFound,TResult Function( UserNotFound value)?  userNotFound,TResult Function( InvalidInput value)?  invalidInput,TResult Function( ContentTooLong value)?  contentTooLong,TResult Function( CreateFailed value)?  createFailed,TResult Function( UpdateFailed value)?  updateFailed,TResult Function( DeleteFailed value)?  deleteFailed,TResult Function( SearchFailed value)?  searchFailed,TResult Function( QueryFailed value)?  queryFailed,TResult Function( Unexpected value)?  unexpected,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( NetworkError value)?  networkError,TResult Function( ServerError value)?  serverError,TResult Function( TimeoutError value)?  timeout,TResult Function( InsufficientPermissions value)?  insufficientPermissions,TResult Function( Unauthorized value)?  unauthorized,TResult Function( PostNotFound value)?  postNotFound,TResult Function( UserNotFound value)?  userNotFound,TResult Function( InvalidInput value)?  invalidInput,TResult Function( ContentTooLong value)?  contentTooLong,TResult Function( CreateFailed value)?  createFailed,TResult Function( UpdateFailed value)?  updateFailed,TResult Function( DeleteFailed value)?  deleteFailed,TResult Function( MetricsOperationFailed value)?  metricsOperationFailed,TResult Function( SearchFailed value)?  searchFailed,TResult Function( QueryFailed value)?  queryFailed,TResult Function( Unexpected value)?  unexpected,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case NetworkError() when networkError != null:
@@ -70,7 +70,8 @@ return invalidInput(_that);case ContentTooLong() when contentTooLong != null:
 return contentTooLong(_that);case CreateFailed() when createFailed != null:
 return createFailed(_that);case UpdateFailed() when updateFailed != null:
 return updateFailed(_that);case DeleteFailed() when deleteFailed != null:
-return deleteFailed(_that);case SearchFailed() when searchFailed != null:
+return deleteFailed(_that);case MetricsOperationFailed() when metricsOperationFailed != null:
+return metricsOperationFailed(_that);case SearchFailed() when searchFailed != null:
 return searchFailed(_that);case QueryFailed() when queryFailed != null:
 return queryFailed(_that);case Unexpected() when unexpected != null:
 return unexpected(_that);case _:
@@ -91,7 +92,7 @@ return unexpected(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( NetworkError value)  networkError,required TResult Function( ServerError value)  serverError,required TResult Function( TimeoutError value)  timeout,required TResult Function( InsufficientPermissions value)  insufficientPermissions,required TResult Function( Unauthorized value)  unauthorized,required TResult Function( PostNotFound value)  postNotFound,required TResult Function( UserNotFound value)  userNotFound,required TResult Function( InvalidInput value)  invalidInput,required TResult Function( ContentTooLong value)  contentTooLong,required TResult Function( CreateFailed value)  createFailed,required TResult Function( UpdateFailed value)  updateFailed,required TResult Function( DeleteFailed value)  deleteFailed,required TResult Function( SearchFailed value)  searchFailed,required TResult Function( QueryFailed value)  queryFailed,required TResult Function( Unexpected value)  unexpected,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( NetworkError value)  networkError,required TResult Function( ServerError value)  serverError,required TResult Function( TimeoutError value)  timeout,required TResult Function( InsufficientPermissions value)  insufficientPermissions,required TResult Function( Unauthorized value)  unauthorized,required TResult Function( PostNotFound value)  postNotFound,required TResult Function( UserNotFound value)  userNotFound,required TResult Function( InvalidInput value)  invalidInput,required TResult Function( ContentTooLong value)  contentTooLong,required TResult Function( CreateFailed value)  createFailed,required TResult Function( UpdateFailed value)  updateFailed,required TResult Function( DeleteFailed value)  deleteFailed,required TResult Function( MetricsOperationFailed value)  metricsOperationFailed,required TResult Function( SearchFailed value)  searchFailed,required TResult Function( QueryFailed value)  queryFailed,required TResult Function( Unexpected value)  unexpected,}){
 final _that = this;
 switch (_that) {
 case NetworkError():
@@ -106,7 +107,8 @@ return invalidInput(_that);case ContentTooLong():
 return contentTooLong(_that);case CreateFailed():
 return createFailed(_that);case UpdateFailed():
 return updateFailed(_that);case DeleteFailed():
-return deleteFailed(_that);case SearchFailed():
+return deleteFailed(_that);case MetricsOperationFailed():
+return metricsOperationFailed(_that);case SearchFailed():
 return searchFailed(_that);case QueryFailed():
 return queryFailed(_that);case Unexpected():
 return unexpected(_that);}
@@ -123,7 +125,7 @@ return unexpected(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( NetworkError value)?  networkError,TResult? Function( ServerError value)?  serverError,TResult? Function( TimeoutError value)?  timeout,TResult? Function( InsufficientPermissions value)?  insufficientPermissions,TResult? Function( Unauthorized value)?  unauthorized,TResult? Function( PostNotFound value)?  postNotFound,TResult? Function( UserNotFound value)?  userNotFound,TResult? Function( InvalidInput value)?  invalidInput,TResult? Function( ContentTooLong value)?  contentTooLong,TResult? Function( CreateFailed value)?  createFailed,TResult? Function( UpdateFailed value)?  updateFailed,TResult? Function( DeleteFailed value)?  deleteFailed,TResult? Function( SearchFailed value)?  searchFailed,TResult? Function( QueryFailed value)?  queryFailed,TResult? Function( Unexpected value)?  unexpected,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( NetworkError value)?  networkError,TResult? Function( ServerError value)?  serverError,TResult? Function( TimeoutError value)?  timeout,TResult? Function( InsufficientPermissions value)?  insufficientPermissions,TResult? Function( Unauthorized value)?  unauthorized,TResult? Function( PostNotFound value)?  postNotFound,TResult? Function( UserNotFound value)?  userNotFound,TResult? Function( InvalidInput value)?  invalidInput,TResult? Function( ContentTooLong value)?  contentTooLong,TResult? Function( CreateFailed value)?  createFailed,TResult? Function( UpdateFailed value)?  updateFailed,TResult? Function( DeleteFailed value)?  deleteFailed,TResult? Function( MetricsOperationFailed value)?  metricsOperationFailed,TResult? Function( SearchFailed value)?  searchFailed,TResult? Function( QueryFailed value)?  queryFailed,TResult? Function( Unexpected value)?  unexpected,}){
 final _that = this;
 switch (_that) {
 case NetworkError() when networkError != null:
@@ -138,7 +140,8 @@ return invalidInput(_that);case ContentTooLong() when contentTooLong != null:
 return contentTooLong(_that);case CreateFailed() when createFailed != null:
 return createFailed(_that);case UpdateFailed() when updateFailed != null:
 return updateFailed(_that);case DeleteFailed() when deleteFailed != null:
-return deleteFailed(_that);case SearchFailed() when searchFailed != null:
+return deleteFailed(_that);case MetricsOperationFailed() when metricsOperationFailed != null:
+return metricsOperationFailed(_that);case SearchFailed() when searchFailed != null:
 return searchFailed(_that);case QueryFailed() when queryFailed != null:
 return queryFailed(_that);case Unexpected() when unexpected != null:
 return unexpected(_that);case _:
@@ -158,7 +161,7 @@ return unexpected(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  networkError,TResult Function( String? message)?  serverError,TResult Function()?  timeout,TResult Function()?  insufficientPermissions,TResult Function()?  unauthorized,TResult Function( String postId)?  postNotFound,TResult Function( String userId)?  userNotFound,TResult Function( String field)?  invalidInput,TResult Function( int maxLength)?  contentTooLong,TResult Function( String? reason)?  createFailed,TResult Function( String? reason)?  updateFailed,TResult Function( String? reason)?  deleteFailed,TResult Function( String? query)?  searchFailed,TResult Function( String? reason)?  queryFailed,TResult Function( String? message,  Object? error,  StackTrace? stackTrace)?  unexpected,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  networkError,TResult Function( String? message)?  serverError,TResult Function()?  timeout,TResult Function()?  insufficientPermissions,TResult Function()?  unauthorized,TResult Function( String postId)?  postNotFound,TResult Function( String userId)?  userNotFound,TResult Function( String field)?  invalidInput,TResult Function( int maxLength)?  contentTooLong,TResult Function( String? reason)?  createFailed,TResult Function( String? reason)?  updateFailed,TResult Function( String? reason)?  deleteFailed,TResult Function( String operation,  String? reason)?  metricsOperationFailed,TResult Function( String? query)?  searchFailed,TResult Function( String? reason)?  queryFailed,TResult Function( String? message,  Object? error,  StackTrace? stackTrace)?  unexpected,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case NetworkError() when networkError != null:
 return networkError();case ServerError() when serverError != null:
@@ -172,7 +175,8 @@ return invalidInput(_that.field);case ContentTooLong() when contentTooLong != nu
 return contentTooLong(_that.maxLength);case CreateFailed() when createFailed != null:
 return createFailed(_that.reason);case UpdateFailed() when updateFailed != null:
 return updateFailed(_that.reason);case DeleteFailed() when deleteFailed != null:
-return deleteFailed(_that.reason);case SearchFailed() when searchFailed != null:
+return deleteFailed(_that.reason);case MetricsOperationFailed() when metricsOperationFailed != null:
+return metricsOperationFailed(_that.operation,_that.reason);case SearchFailed() when searchFailed != null:
 return searchFailed(_that.query);case QueryFailed() when queryFailed != null:
 return queryFailed(_that.reason);case Unexpected() when unexpected != null:
 return unexpected(_that.message,_that.error,_that.stackTrace);case _:
@@ -193,7 +197,7 @@ return unexpected(_that.message,_that.error,_that.stackTrace);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  networkError,required TResult Function( String? message)  serverError,required TResult Function()  timeout,required TResult Function()  insufficientPermissions,required TResult Function()  unauthorized,required TResult Function( String postId)  postNotFound,required TResult Function( String userId)  userNotFound,required TResult Function( String field)  invalidInput,required TResult Function( int maxLength)  contentTooLong,required TResult Function( String? reason)  createFailed,required TResult Function( String? reason)  updateFailed,required TResult Function( String? reason)  deleteFailed,required TResult Function( String? query)  searchFailed,required TResult Function( String? reason)  queryFailed,required TResult Function( String? message,  Object? error,  StackTrace? stackTrace)  unexpected,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  networkError,required TResult Function( String? message)  serverError,required TResult Function()  timeout,required TResult Function()  insufficientPermissions,required TResult Function()  unauthorized,required TResult Function( String postId)  postNotFound,required TResult Function( String userId)  userNotFound,required TResult Function( String field)  invalidInput,required TResult Function( int maxLength)  contentTooLong,required TResult Function( String? reason)  createFailed,required TResult Function( String? reason)  updateFailed,required TResult Function( String? reason)  deleteFailed,required TResult Function( String operation,  String? reason)  metricsOperationFailed,required TResult Function( String? query)  searchFailed,required TResult Function( String? reason)  queryFailed,required TResult Function( String? message,  Object? error,  StackTrace? stackTrace)  unexpected,}) {final _that = this;
 switch (_that) {
 case NetworkError():
 return networkError();case ServerError():
@@ -207,7 +211,8 @@ return invalidInput(_that.field);case ContentTooLong():
 return contentTooLong(_that.maxLength);case CreateFailed():
 return createFailed(_that.reason);case UpdateFailed():
 return updateFailed(_that.reason);case DeleteFailed():
-return deleteFailed(_that.reason);case SearchFailed():
+return deleteFailed(_that.reason);case MetricsOperationFailed():
+return metricsOperationFailed(_that.operation,_that.reason);case SearchFailed():
 return searchFailed(_that.query);case QueryFailed():
 return queryFailed(_that.reason);case Unexpected():
 return unexpected(_that.message,_that.error,_that.stackTrace);}
@@ -224,7 +229,7 @@ return unexpected(_that.message,_that.error,_that.stackTrace);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  networkError,TResult? Function( String? message)?  serverError,TResult? Function()?  timeout,TResult? Function()?  insufficientPermissions,TResult? Function()?  unauthorized,TResult? Function( String postId)?  postNotFound,TResult? Function( String userId)?  userNotFound,TResult? Function( String field)?  invalidInput,TResult? Function( int maxLength)?  contentTooLong,TResult? Function( String? reason)?  createFailed,TResult? Function( String? reason)?  updateFailed,TResult? Function( String? reason)?  deleteFailed,TResult? Function( String? query)?  searchFailed,TResult? Function( String? reason)?  queryFailed,TResult? Function( String? message,  Object? error,  StackTrace? stackTrace)?  unexpected,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  networkError,TResult? Function( String? message)?  serverError,TResult? Function()?  timeout,TResult? Function()?  insufficientPermissions,TResult? Function()?  unauthorized,TResult? Function( String postId)?  postNotFound,TResult? Function( String userId)?  userNotFound,TResult? Function( String field)?  invalidInput,TResult? Function( int maxLength)?  contentTooLong,TResult? Function( String? reason)?  createFailed,TResult? Function( String? reason)?  updateFailed,TResult? Function( String? reason)?  deleteFailed,TResult? Function( String operation,  String? reason)?  metricsOperationFailed,TResult? Function( String? query)?  searchFailed,TResult? Function( String? reason)?  queryFailed,TResult? Function( String? message,  Object? error,  StackTrace? stackTrace)?  unexpected,}) {final _that = this;
 switch (_that) {
 case NetworkError() when networkError != null:
 return networkError();case ServerError() when serverError != null:
@@ -238,7 +243,8 @@ return invalidInput(_that.field);case ContentTooLong() when contentTooLong != nu
 return contentTooLong(_that.maxLength);case CreateFailed() when createFailed != null:
 return createFailed(_that.reason);case UpdateFailed() when updateFailed != null:
 return updateFailed(_that.reason);case DeleteFailed() when deleteFailed != null:
-return deleteFailed(_that.reason);case SearchFailed() when searchFailed != null:
+return deleteFailed(_that.reason);case MetricsOperationFailed() when metricsOperationFailed != null:
+return metricsOperationFailed(_that.operation,_that.reason);case SearchFailed() when searchFailed != null:
 return searchFailed(_that.query);case QueryFailed() when queryFailed != null:
 return queryFailed(_that.reason);case Unexpected() when unexpected != null:
 return unexpected(_that.message,_that.error,_that.stackTrace);case _:
@@ -898,6 +904,74 @@ class _$DeleteFailedCopyWithImpl<$Res>
 @pragma('vm:prefer-inline') $Res call({Object? reason = freezed,}) {
   return _then(DeleteFailed(
 reason: freezed == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class MetricsOperationFailed implements PostFailure {
+  const MetricsOperationFailed({required this.operation, this.reason});
+  
+
+ final  String operation;
+ final  String? reason;
+
+/// Create a copy of PostFailure
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$MetricsOperationFailedCopyWith<MetricsOperationFailed> get copyWith => _$MetricsOperationFailedCopyWithImpl<MetricsOperationFailed>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MetricsOperationFailed&&(identical(other.operation, operation) || other.operation == operation)&&(identical(other.reason, reason) || other.reason == reason));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,operation,reason);
+
+@override
+String toString() {
+  return 'PostFailure.metricsOperationFailed(operation: $operation, reason: $reason)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $MetricsOperationFailedCopyWith<$Res> implements $PostFailureCopyWith<$Res> {
+  factory $MetricsOperationFailedCopyWith(MetricsOperationFailed value, $Res Function(MetricsOperationFailed) _then) = _$MetricsOperationFailedCopyWithImpl;
+@useResult
+$Res call({
+ String operation, String? reason
+});
+
+
+
+
+}
+/// @nodoc
+class _$MetricsOperationFailedCopyWithImpl<$Res>
+    implements $MetricsOperationFailedCopyWith<$Res> {
+  _$MetricsOperationFailedCopyWithImpl(this._self, this._then);
+
+  final MetricsOperationFailed _self;
+  final $Res Function(MetricsOperationFailed) _then;
+
+/// Create a copy of PostFailure
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? operation = null,Object? reason = freezed,}) {
+  return _then(MetricsOperationFailed(
+operation: null == operation ? _self.operation : operation // ignore: cast_nullable_to_non_nullable
+as String,reason: freezed == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

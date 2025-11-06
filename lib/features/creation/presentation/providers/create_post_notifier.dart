@@ -1,17 +1,16 @@
 import 'dart:io';
 import 'dart:async'; // ✅ Phase 3: Timer for debounce
-import 'package:firebase_auth/firebase_auth.dart'; // ✅ Phase 3: Get current user
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart'; // ✅ Phase 4: UUID for idempotency
 import '../../domain/failures/creation_failures.dart';
-import '../../domain/models/value_objects/target_audience.dart' as domain;
-import '../../domain/models/aggregates/post_creation.dart'; // ✅ Phase 3: Draft entity
-import '../../data/models/post_creation_dto.dart';
+import '../../domain/entities/target_audience.dart' as domain;
+import '../../domain/entities/post_creation.dart'; // ✅ Phase 3: Draft entity
 import 'states/create_post_state.dart';
 import 'states/upload_queue_state.dart'; // For UploadStatus enum
 import 'creation_providers.dart';
 import '/services/moderation/perspective_api_service.dart';
 import '../constants/field_styles.dart';
+import '/features/auth/presentation/providers/auth_providers.dart';
 
 part 'create_post_notifier.g.dart';
 
@@ -55,7 +54,7 @@ class CreatePost extends _$CreatePost {
   /// Load Draft asynchronously (Phase 3)
   ///
   /// **Flow**:
-  /// 1. Get current user ID from FirebaseAuth
+  /// 1. Get current user ID through Auth Provider (Clean Architecture)
   /// 2. Load Draft from cache (L1 → L2 → L3)
   /// 3. Restore form data if Draft exists
   ///
@@ -64,7 +63,8 @@ class CreatePost extends _$CreatePost {
   /// - Cache miss: 50-100ms (Firestore)
   /// - Non-blocking: UI renders immediately
   Future<void> _loadDraftAsync() async {
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    // ✅ Clean Architecture: Get userId through Provider (not direct Firebase)
+    final currentUserId = await ref.read(currentUserIdProvider.future);
 
     if (currentUserId == null) {
       return; // User not logged in
@@ -115,7 +115,8 @@ class CreatePost extends _$CreatePost {
   /// // Draft 저장 완료! (L1, L2 캐시 + Firestore 비동기)
   /// ```
   Future<void> saveDraft() async {
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    // ✅ Clean Architecture: Get userId through Provider (not direct Firebase)
+    final currentUserId = await ref.read(currentUserIdProvider.future);
     if (currentUserId == null) return; // User not logged in
 
     // Cancel previous timer
@@ -281,6 +282,36 @@ class CreatePost extends _$CreatePost {
       },
       (_) {}, // Success case - do nothing
     );
+
+    // Image validation for Option A
+    for (int i = 0; i < state.formData.imagesA.length; i++) {
+      final imageFile = state.formData.imagesA[i];
+      final imageResult = await validateUseCase.validateImage(imageFile);
+
+      imageResult.fold(
+        (failure) {
+          invalidFields.add('imageA_$i');
+          print('[ValidateFormFields] Image A[$i] validation failed: ${failure.message}');
+        },
+        (_) {}, // Success case - do nothing
+      );
+    }
+
+    // Image validation for Option B (if not single mode)
+    if (!state.formData.isSingleMode) {
+      for (int i = 0; i < state.formData.imagesB.length; i++) {
+        final imageFile = state.formData.imagesB[i];
+        final imageResult = await validateUseCase.validateImage(imageFile);
+
+        imageResult.fold(
+          (failure) {
+            invalidFields.add('imageB_$i');
+            print('[ValidateFormFields] Image B[$i] validation failed: ${failure.message}');
+          },
+          (_) {}, // Success case - do nothing
+        );
+      }
+    }
 
     // Option validation
     if (state.formData.textA.isEmpty && state.formData.imagesA.isEmpty) {
@@ -565,8 +596,9 @@ class CreatePost extends _$CreatePost {
     state = state.copyWith(uploadProgress: 0.0);
 
     try {
-      // Create DTO from form data
-      final dto = PostCreationDto(
+      // **Phase 5 Migration**: Execute UseCase with individual parameters (no DTO)
+      final createUseCase = ref.read(createPostUseCaseProvider);
+      final result = await createUseCase.execute(
         userId: userId,
         title: state.formData.title,
         description: state.formData.description,
@@ -574,12 +606,6 @@ class CreatePost extends _$CreatePost {
         imagesB: finalImagesB,
         targetAudience: state.formData.targetAudience,
         isAnonymous: state.formData.isAnonymous,
-      );
-
-      // Execute UseCase with DTO
-      final createUseCase = ref.read(createPostUseCaseProvider);
-      final result = await createUseCase.execute(
-        dto: dto,
         onProgress: (progress) {
           state = state.copyWith(uploadProgress: progress);
         },

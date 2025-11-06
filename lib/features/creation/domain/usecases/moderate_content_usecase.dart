@@ -1,56 +1,183 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:fpdart/fpdart.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:http/http.dart' as http;
 import '../failures/creation_failures.dart';
-import '/services/moderation/image_moderation_service.dart';
+import '../services/i_image_moderation_service.dart'; // ✅ Port Interface import
+import '/services/moderation/perspective_api_service.dart';
 
 part 'moderate_content_usecase.freezed.dart';
 
 /// UseCase for content moderation
 /// 콘텐츠 검열을 위한 UseCase
+///
+/// **Migration**: Static service → DI-injected service (Phase 2-Step 3)
+/// **Dependencies**: IPerspectiveApiService (text moderation), IImageModerationService (image moderation)
+/// **Clean Architecture**: Domain Layer UseCase with injected service dependencies
+///
+/// ✅ DI Pattern: Both text and image moderation services are injected
 class ModerateContentUseCase {
+  final IPerspectiveApiService _perspectiveService;
+  final IImageModerationService _imageModerationService; // ✅ DI 주입
+
+  /// Constructor injection for moderation services
+  ///
+  /// ✅ DI Pattern (text + image moderation services)
+  ModerateContentUseCase({
+    required IPerspectiveApiService perspectiveService,
+    required IImageModerationService imageModerationService, // ✅ 추가
+  })  : _perspectiveService = perspectiveService,
+        _imageModerationService = imageModerationService;
+
   /// Execute content moderation on text
+  ///
+  /// **Implementation**: Perspective API integration (Phase 2-Step 3)
+  /// **Flow**:
+  /// 1. Empty text check (immediate approval)
+  /// 2. Call Perspective API for toxicity analysis
+  /// 3. Map PerspectiveResult → ModerationDecision
+  /// 4. Return Either<Failure, ModerationDecision>
+  ///
+  /// **Error Handling**:
+  /// - Network errors → Graceful degradation (fallback to basic word check)
+  /// - Timeout → Graceful degradation
+  /// - Generic errors → Fallback with lower confidence
   Future<Either<Failure, ModerationDecision>> moderateText({
     required String text,
     required String context,
   }) async {
     try {
-      // TODO: Implement text moderation logic
-      // For now, we'll do basic checks
+      // Empty text is always approved
+      if (text.trim().isEmpty) {
+        return right(
+          ModerationDecision(
+            isApproved: true,
+            confidence: 1.0,
+          ),
+        );
+      }
+
+      // Call Perspective API for toxicity analysis
+      final result = await _perspectiveService.analyzeText(text);
+
+      // Map PerspectiveResult → ModerationDecision
+      if (result.isToxic) {
+        // Extract detected categories from toxic spans
+        final detectedCategories = result.toxicSpans
+            .map((span) => span.text)
+            .toSet()
+            .toList();
+
+        // Find highest scoring category
+        String primaryCategory = 'TOXICITY';
+        double maxScore = result.toxicityScore;
+
+        if (result.profanityScore > maxScore) {
+          primaryCategory = 'PROFANITY';
+          maxScore = result.profanityScore;
+        }
+        if (result.threatScore > maxScore) {
+          primaryCategory = 'THREAT';
+          maxScore = result.threatScore;
+        }
+        if (result.insultScore > maxScore) {
+          primaryCategory = 'INSULT';
+          maxScore = result.insultScore;
+        }
+
+        // Build user-friendly reason message (Korean)
+        final reasonMap = {
+          'PROFANITY': '욕설이 포함되어 있습니다',
+          'THREAT': '위협적인 내용이 포함되어 있습니다',
+          'INSULT': '모욕적인 내용이 포함되어 있습니다',
+          'TOXICITY': '독성 콘텐츠가 감지되었습니다',
+        };
+
+        final reason = reasonMap[primaryCategory] ?? '부적절한 내용이 감지되었습니다';
+
+        // Return ModerationDecision with rejection
+        return right(
+          ModerationDecision(
+            isApproved: false,
+            reason: '$reason (신뢰도: ${(maxScore * 100).toInt()}%)',
+            confidence: maxScore,
+            detectedCategories: [primaryCategory, ...detectedCategories],
+            metadata: {
+              'toxicityScore': result.toxicityScore,
+              'profanityScore': result.profanityScore,
+              'threatScore': result.threatScore,
+              'insultScore': result.insultScore,
+            },
+          ),
+        );
+      }
+
+      // Content approved
+      return right(
+        ModerationDecision(
+          isApproved: true,
+          confidence: 1.0 - result.toxicityScore, // Inverse of toxicity
+          metadata: {
+            'toxicityScore': result.toxicityScore,
+            'profanityScore': result.profanityScore,
+            'threatScore': result.threatScore,
+            'insultScore': result.insultScore,
+          },
+        ),
+      );
+    } on http.ClientException catch (e) {
+      // Network error → Return failure
+      print('Perspective API network error: $e');
+      return left(
+        ModerationFailure(
+          '네트워크 오류로 콘텐츠 검증에 실패했습니다',
+          code: 'NETWORK_ERROR',
+        ),
+      );
+    } on TimeoutException catch (e) {
+      // API timeout → Return failure
+      print('Perspective API timeout: $e');
+      return left(
+        ModerationFailure(
+          'API 요청 시간이 초과되었습니다',
+          code: 'TIMEOUT',
+        ),
+      );
+    } catch (error) {
+      // Generic error → Graceful degradation with basic word check
+      print('Perspective API error: $error');
+
+      // Fallback: Basic prohibited word check
       final lowerText = text.toLowerCase();
+      final basicProhibitedWords = ['욕설', 'spam', 'prohibited'];
 
-      // Check for prohibited words (simplified example)
-      final prohibitedWords = [
-        '욕설', 'spam', 'prohibited',
-        // Add more words as needed
-      ];
-
-      for (final word in prohibitedWords) {
+      for (final word in basicProhibitedWords) {
         if (lowerText.contains(word)) {
-          // Step 5: detectedCategories 추가로 AIModerationFailure와 연동
           return right(
             ModerationDecision(
               isApproved: false,
-              reason: 'Contains prohibited content',
-              confidence: 0.95,
-              detectedCategories: [word], // 감지된 금지 단어
+              reason: '부적절한 콘텐츠가 감지되었습니다 (기본 검증)',
+              confidence: 0.7, // Lower confidence due to fallback
+              detectedCategories: [word],
+              metadata: {
+                'fallbackMode': true,
+                'error': error.toString(),
+              },
             ),
           );
         }
       }
 
+      // If fallback also passes, allow content
       return right(
         ModerationDecision(
           isApproved: true,
-          confidence: 0.8,
-        ),
-      );
-    } catch (error) {
-      // Step 5: ModerationFailure 생성 (하드코딩 제거)
-      return left(
-        ModerationFailure(
-          'Text moderation error',
-          code: 'TEXT_MODERATION_ERROR',
+          confidence: 0.5, // Lower confidence due to API failure
+          metadata: {
+            'fallbackMode': true,
+            'error': error.toString(),
+          },
         ),
       );
     }
@@ -62,7 +189,8 @@ class ModerateContentUseCase {
     required String box,
   }) async {
     try {
-      final result = await ImageModerationService.checkImage(
+      // ✅ Instance method 호출 (기존 Static call에서 변경)
+      final result = await _imageModerationService.checkImage(
         imageFile: imageFile,
         box: box,
       );

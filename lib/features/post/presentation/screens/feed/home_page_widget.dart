@@ -108,6 +108,7 @@ class _HomePageWidgetState extends ConsumerState<HomePageWidget> {
                 createFailed: (reason) => '생성 실패',
                 updateFailed: (reason) => '업데이트 실패',
                 deleteFailed: (reason) => '삭제 실패',
+                metricsOperationFailed: (operation, reason) => '통계 작업 실패',
                 searchFailed: (query) => '검색 실패',
                 queryFailed: (reason) => '조회 실패: ${reason ?? "알 수 없는 오류"}',
                 unexpected: (message, err, stackTrace) =>

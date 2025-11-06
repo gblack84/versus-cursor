@@ -94,7 +94,7 @@ final class CreatePostUseCaseProvider
   }
 }
 
-String _$createPostUseCaseHash() => r'eb51ed7a8b4e394d6712162a612858927780be18';
+String _$createPostUseCaseHash() => r'6003df0a25bb06fcb0899bbc6e2fc57d1ed60241';
 
 /// Moderate Content UseCase Provider
 ///
@@ -162,7 +162,7 @@ final class ModerateContentUseCaseProvider
 }
 
 String _$moderateContentUseCaseHash() =>
-    r'b6ec35eab8e22a7ddd447e17c73ba6a869e9ba95';
+    r'8f9a22a9a7c82f56abf4e208f04295ec6b2c441d';
 
 /// Validate Post UseCase Provider
 ///
@@ -239,4 +239,4 @@ final class ValidatePostUseCaseProvider
 }
 
 String _$validatePostUseCaseHash() =>
-    r'2af24d08a5b1d364c43c74e84fb2c95934db00ed';
+    r'743b7f70ffa7c22a572d246762a2f8c79ff10a8a';

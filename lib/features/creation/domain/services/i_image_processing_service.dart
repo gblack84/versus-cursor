@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:fpdart/fpdart.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
-import '/services/moderation/image_moderation_service.dart';
+import 'i_image_moderation_service.dart';
 import '../failures/creation_failures.dart';
 
 part 'i_image_processing_service.freezed.dart';

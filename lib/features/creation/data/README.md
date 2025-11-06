@@ -1,29 +1,62 @@
 # Creation Feature - Data Layer
 
-> 최종 업데이트: 2025-08-24 | 버전: 4.0.0 | Clean Architecture v4.0 + Phase 5 MediaStateCoordinator
+> **Architecture**: Firebase-Centric Architecture v2.0 (+ UnifiedCacheService)
+> **Extension Migration**: 2025-11-06
+> **Status**: ✅ Phase 5 Extension Pattern Complete (100%)
 
 ## 📊 개요
 
-Creation Feature의 Data Layer는 **Clean Architecture v4.0** 원칙에 따라 외부 데이터 소스(Firebase Firestore, Firebase Storage, AI APIs)와의 통신을 담당하며, Domain Layer를 외부 의존성으로부터 완전히 격리합니다.
+Creation Feature의 Data Layer는 **Firebase-Centric Architecture v2.0**을 따릅니다.
 
-### 핵심 특징
+### 핵심 원칙
 
-- ✅ **DataSource 패턴**: Firebase 의존성을 인터페이스로 추상화
-- ✅ **Repository 패턴**: Domain 인터페이스 구현 및 비즈니스 로직 orchestration
-- ✅ **DTO 패턴**: Presentation ↔ Domain 레이어 간 데이터 전송 최적화
-- ✅ **Mapper 패턴**: Firestore ↔ Domain Model 양방향 변환 with 레거시 호환성
-- ✅ **Phase 3 Failures**: 10개 도메인별 에러 클래스 (`getUserMessage()` 지원)
-- ✅ **Feature Isolation**: PostCore/PostContent만 처리, Voting/Post Feature와 명확한 경계
-- ✅ **AI Integration**: Perspective API, Gemini AI, Cloud Vision API 통합
+- ✅ **Firebase SDK 직접 사용**: Remote DataSource 추상화 제거 (Firestore만)
+- ✅ **Extension Pattern**: Mapper + DTO 패턴을 Extension으로 대체 (85% 코드 감소)
+- ✅ **UnifiedCacheService 통합**: 3-Layer 캐싱 (Memory → Hive → Firestore)
+- ✅ **Idempotency Pattern**: 중복 작업 방지 (Phase 4)
+- ✅ **Port-Adapter Pattern**: Storage 추상화 유지 (IStorageDataSource)
 
-### 책임 범위
+### Chat Feature와의 비교
 
-| Layer | Responsibility | Example |
-|-------|---------------|---------|
-| **DataSources** | 외부 API 직접 통신 | Firebase CRUD, AI API 호출 |
-| **Repositories** | 비즈니스 로직 조율 | 이미지 업로드 → AI 검열 → Post 생성 |
-| **DTOs** | 레이어 간 데이터 전송 | PostCreationDto, ImageUploadDto |
-| **Mappers** | 데이터 변환 | Firestore Map ↔ Domain Model |
+| 측면 | Chat (v2.0) | Creation (v2.0) |
+|------|------------|----------------|
+| **DataSource** | ❌ Firebase SDK 직접 사용 | ❌ Firestore 직접 사용<br>✅ Storage만 Port-Adapter |
+| **변환 패턴** | Extension 메서드 (`/domain/entities/`, 2개) | Extension 메서드 (`/domain/entities/`, 3개) |
+| **DTO** | ❌ Domain 모델 직접 사용 | ❌ Domain 모델 직접 사용 |
+| **캐싱 전략** | UnifiedCacheService (3-Layer) | CreationCacheService + UnifiedCache (3-Layer) |
+| **Repository 수** | 1개 (ChatRepository) | **9개** (특화된 관심사 분리) |
+| **Adapter 수** | 2개 (FlutterChatUser, GeminiAI) | 0개 (자체 UI, AI는 Service로) |
+| **공유 서비스** | ✅ IdempotencyService, UnifiedCache | ✅ IdempotencyService, UnifiedCache, CreationCache |
+| **Feature 전용 서비스** | 2개 (Lifecycle, Upload) | 0개 (Repository에 통합) |
+| **Domain Services** | 0개 | 2개 (ITargetAudienceService, IImageProcessingService) |
+
+### 왜 Firebase-Centric인가?
+
+**Clean Architecture v4.0의 문제점**:
+- Remote DataSource 추상화로 인한 보일러플레이트 코드 과다
+- Firebase SDK가 안정적이고 변경 가능성 낮음
+- Mapper + DTO 패턴으로 인한 중간 레이어 증가
+- 테스트에서 Firebase를 모킹하는 것은 여전히 필요
+
+**Firebase-Centric의 장점**:
+- 코드 간결성 대폭 향상 (**1,067줄 삭제** 달성, -19%)
+- Extension Pattern으로 직관적인 변환
+- Domain 모델 직접 사용으로 레이어 감소
+- UnifiedCacheService + CreationCacheService로 Draft 자동 저장
+
+**Phase 5 Before/After**:
+```
+Before (Phase 4): 5,615 lines
+├── DataSource:   450 lines (firebase_post_creation_datasource.dart)
+├── DTO:          600 lines (3 DTO classes)
+├── Mapper:       565 lines (3 Mapper classes)
+└── Repositories: ~4,000 lines
+
+After (Phase 5): 4,548 lines (-19%)
+├── Extension:    409 lines (3 extension files in domain/entities/)
+├── Repositories: ~3,961 lines
+└── DataSource:   178 lines (firebase_storage_datasource.dart만 유지)
+```
 
 ---
 
@@ -31,1121 +64,1600 @@ Creation Feature의 Data Layer는 **Clean Architecture v4.0** 원칙에 따라 �
 
 ```
 lib/features/creation/data/
-├── repositories/              # 📦 Repository 구현체 (8개)
-│   ├── post_creation_repository_v2_impl.dart       # 핵심 - Post 생성/수정
-│   ├── media_repository_impl.dart                  # 미디어 업로드
-│   ├── content_moderation_repository_impl.dart     # AI 검열 orchestration
-│   ├── content_metrics_repository_impl.dart        # 콘텐츠 메트릭
-│   ├── content_visibility_repository_impl.dart     # 가시성 관리
-│   ├── image_processing_repository_impl.dart       # 이미지 리사이징 (3단계)
-│   ├── media_upload_repository_impl.dart           # 멀티미디어 업로드
-│   └── target_audience_repository_impl.dart        # 타겟 오디언스 검증
-│
-├── datasources/               # 🔌 데이터 소스
-│   ├── interfaces/
-│   │   ├── i_post_creation_datasource.dart         # Post CRUD 인터페이스
-│   │   └── i_storage_datasource.dart               # Storage 인터페이스
-│   ├── firebase_post_creation_datasource.dart      # Firestore 구현
-│   └── firebase_storage_datasource.dart            # Firebase Storage 구현
-│
-├── dto/                       # 📋 Data Transfer Objects (6개)
-│   ├── post_creation_dto.dart                      # Post 생성 요청
-│   ├── target_audience_dto.dart                    # 타겟 오디언스
-│   ├── image_upload_dto.dart                       # 이미지 업로드 요청
-│   ├── content_moderation_dto.dart                 # AI 검열 요청
-│   ├── image_result_dto.dart                       # 이미지 처리 결과
-│   └── video_result_dto.dart                       # 비디오 처리 결과
-│
-├── mappers/                   # 🔄 데이터 변환
-│   ├── creation_firestore_mapper.dart              # Firestore ↔ Domain (핵심)
-│   ├── post_creation_mapper.dart                   # DTO ↔ Domain
-│   └── target_audience_mapper.dart                 # TargetAudience ↔ Map
-│
-└── data.dart                  # 📤 Data Layer Exports
+├── datasources/                             # 2개 - Storage만 Port-Adapter 유지
+│   ├── firebase_storage_datasource.dart    # Firebase Storage 구현체
+│   └── interfaces/
+│       └── i_storage_datasource.dart       # Storage 인터페이스
+└── repositories/                            # 9개 - Firebase 직접 사용
+    ├── Core Repositories (3개)
+    │   ├── post_creation_repository_v2_impl.dart  # 메인 CRUD + Cache + Idempotency
+    │   ├── target_audience_repository_impl.dart   # Firebase Functions 통합
+    │   └── media_repository_impl.dart             # Storage 쿼리/업로드
+    ├── Upload & Processing (2개)
+    │   ├── media_upload_repository_impl.dart      # 멀티 업로드 + Progress
+    │   └── image_processing_repository_impl.dart  # AI 검열 + 처리
+    └── Specialized Repositories (4개)
+        ├── content_moderation_repository_impl.dart   # AI 필터링
+        ├── content_metrics_repository_impl.dart      # CQRS + Sharding
+        ├── content_visibility_repository_impl.dart   # 접근 제어
+        └── (기타 1개)
 
-Domain Layer 인터페이스:
-├── repositories/              # Repository 인터페이스 (Domain)
-│   ├── i_post_creation_repository_v2.dart          # 핵심 인터페이스
-│   ├── i_media_repository.dart                     # 미디어 인터페이스
-│   └── specialized/                                # 특화 인터페이스
-│       ├── i_content_moderation_repository.dart
-│       ├── i_content_metrics_repository.dart
-│       └── i_content_visibility_repository.dart
+총 파일 수: 11개
+총 라인 수: ~4,200줄
+
+**Extensions (domain/entities/)**:
+- post_creation_extensions.dart (189줄)
+- target_audience_extensions.dart (68줄)
+- media_info_extensions.dart (152줄)
 ```
 
 ---
 
 ## 📂 디렉토리별 상세 설명
 
-### 1. repositories/ - Repository 구현체
+### 1. repositories/ (9개)
 
-Repository는 Domain 인터페이스를 구현하며, DataSource와 Mapper를 조율하여 비즈니스 로직을 실행합니다.
+#### 📌 핵심 개념: Firebase-Centric Pattern + Specialized Concerns
 
-#### 1.1 PostCreationRepositoryV2Impl (핵심)
+**Chat과의 차이점**:
+- ✅ **다중 Repository**: 관심사 분리 (9개 vs Chat의 1개)
+- ✅ **CQRS Pattern**: Metrics는 Query-only (Command 분리)
+- ✅ **AI Integration**: Moderation, Processing에 AI 서비스 통합
+- ✅ **Sharding**: 고성능 Counter를 위한 샤딩 전략
 
-**파일**: `post_creation_repository_v2_impl.dart`
+---
+
+#### 1.1 Core Repositories (3개)
+
+##### 1.1.1 post_creation_repository_v2_impl.dart
+
+**위치**: `lib/features/creation/data/repositories/post_creation_repository_v2_impl.dart`
 
 **책임**:
-- Post 생성/수정 orchestration
-- CreationFirestoreMapper를 통한 데이터 변환
-- Feature 경계 준수 (PostCore, PostContent만 처리)
-- 타겟 오디언스 검증
-- 이미지 처리 조율
-
-**주요 메서드**:
-```dart
-// Creation Operations
-Future<String> createPost({
-  required PostCore core,
-  required PostContent content,
-});
-
-// Update Operations
-Future<void> updatePost({required String postId, required Map<String, dynamic> data});
-Future<void> updatePostCore({required String postId, required PostCore core});
-Future<void> updatePostContent({required String postId, required PostContent content});
-
-// Service Operations (Phase 1.3)
-ValidationResult validateTargetAudience(TargetAudience targetAudience);
-Future<ImageProcessingResult> processImages({...});
-```
+- PostCreation CRUD 및 실시간 조회 (watchPostById)
+- Draft 자동 저장 및 복원 (CreationCacheService)
+- TargetAudience 업데이트 및 검증
+- Idempotency Pattern으로 중복 작업 방지
+- Firebase Extension Pattern으로 직접 변환
 
 **의존성**:
-- `IPostCreationDataSource` - Firestore 통신
-- `ITargetAudienceService` - 타겟 오디언스 검증
-- `IImageProcessingService` - 이미지 처리
-- `CreationFirestoreMapper` - 데이터 변환
-
-**Feature 경계**:
 ```dart
-// ✅ Creation Feature 책임
-final data = _mapper.toCreateDocument(core, content);
-
-// ❌ Voting Feature 책임 (onCreate trigger에서 추가)
-// - votesA, votesB, voteStartTime, voteEndTime ...
-
-// ❌ Post Feature 책임 (투표 완료 후 추가)
-// - totalVotes, winningOption, completedAt ...
-```
-
-#### 1.2 MediaRepositoryImpl
-
-**파일**: `media_repository_impl.dart`
-
-**책임**:
-- 이미지/비디오 업로드 orchestration
-- Firebase Storage 통합
-- 멀티미디어 메타데이터 관리
-
-**주요 메서드**:
-```dart
-Future<String> uploadImage({required String path, required String fileName, required List<int> bytes});
-Future<List<String>> uploadImages(List<File> files);
-Future<String> uploadVideo({...});
-Future<void> deleteMedia(String url);
-```
-
-#### 1.3 ContentModerationRepositoryImpl
-
-**파일**: `content_moderation_repository_impl.dart`
-
-**책임**:
-- AI 검열 시스템 orchestration (3-tier)
-- Perspective API (텍스트 유해성)
-- Gemini AI (이미지 로직 검증)
-- Cloud Vision API (이미지 안전성)
-
-**검열 플로우**:
-```
-1. Perspective API → 텍스트 유해성 검사
-2. Cloud Vision API → 이미지 안전성 검사 (성인 콘텐츠, 폭력)
-3. Gemini AI → 이미지 로직 검증 (얼굴 평가 BLOCK 등)
-```
-
-#### 1.4 ImageProcessingRepositoryImpl
-
-**파일**: `image_processing_repository_impl.dart`
-
-**책임**:
-- 3단계 이미지 리사이징 (original, display 800px, thumbnail 150px)
-- JPEG 압축 (85% 품질)
-- aspect ratio 계산 및 저장
-
-**처리 파이프라인**:
-```
-원본 이미지 → 리사이징 (3단계) → JPEG 압축 → Firebase Storage 업로드
-```
-
-#### 1.5 기타 Specialized Repositories
-
-| Repository | 책임 |
-|-----------|------|
-| **MediaUploadRepositoryImpl** | 멀티미디어 업로드 배치 처리 |
-| **TargetAudienceRepositoryImpl** | 타겟 오디언스 검증 및 저장 |
-| **ContentMetricsRepositoryImpl** | 콘텐츠 메트릭 추적 |
-| **ContentVisibilityRepositoryImpl** | 가시성 설정 관리 |
-
----
-
-### 2. datasources/ - 데이터 소스
-
-DataSource는 **외부 시스템과의 직접 통신**을 담당하며, Firebase 의존성을 인터페이스로 추상화합니다.
-
-#### 2.1 인터페이스 (interfaces/)
-
-##### IPostCreationDataSource
-
-**파일**: `interfaces/i_post_creation_datasource.dart`
-
-**메서드**:
-```dart
-abstract class IPostCreationDataSource {
-  // Create
-  Future<Map<String, dynamic>> createPost(Map<String, dynamic> postData);
-
-  // Read
-  Future<Map<String, dynamic>?> getPost(String postId);
-
-  // Update
-  Future<void> updatePost(String postId, Map<String, dynamic> data);
-
-  // Delete
-  Future<void> deletePost(String postId);
+class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
+  final IImageProcessingService _imageProcessingService;  // Domain Service (AI 검열)
+  final CreationCacheService _cacheService;               // ✅ 3-Layer cache + Draft
+  final IdempotencyService _idempotencyService;           // ✅ Shared service (Phase 4)
+  final FirebaseFirestore _firestore;                     // ✅ Direct Firebase injection
 }
 ```
 
-##### IStorageDataSource
-
-**파일**: `interfaces/i_storage_datasource.dart`
-
-**메서드**:
+**Extension Pattern 사용 예시**:
 ```dart
-abstract class IStorageDataSource {
-  Future<String> uploadFile({
-    required String path,
-    required String fileName,
-    required List<int> bytes,
-  });
-
-  Future<void> deleteFile(String url);
-  Future<String?> getDownloadUrl(String path);
-}
-```
-
-#### 2.2 구현체
-
-##### FirebasePostCreationDataSource
-
-**파일**: `firebase_post_creation_datasource.dart`
-
-**책임**:
-- Firestore CRUD 작업 실행
-- Firebase 에러를 Phase 3 Failure로 변환
-- Server timestamp 자동 추가
-
-**에러 변환 예시**:
-```dart
-try {
-  final docRef = await _firestore.collection('posts').add(postData);
-  // ...
-} on FirebaseException catch (e) {
-  if (e.code == 'permission-denied') {
-    throw FirestoreWriteFailure(
-      collectionPath: 'posts',
-      operation: 'add',
-      attemptedData: postData,
-      code: 'FIRESTORE_PERMISSION_DENIED',
-    );
-  } else if (e.code == 'unavailable') {
-    throw const NetworkFailure(message: 'Firestore service unavailable');
-  }
-  // ...
-}
-```
-
-##### FirebaseStorageDataSource
-
-**파일**: `firebase_storage_datasource.dart`
-
-**책임**:
-- Firebase Storage 파일 업로드/삭제
-- 사용자별 경로 관리 (`user_uploads/{userId}/`)
-- Download URL 생성
-
-**경로 구조**:
-```
-user_uploads/{userId}/
-├── post_images/
-│   ├── original/
-│   ├── display/     # 800px
-│   └── thumbnail/   # 150px
-└── post_videos/
-```
-
----
-
-### 3. dto/ - Data Transfer Objects
-
-DTO는 **레이어 간 데이터 전송**을 최적화하며, 각 작업별로 필요한 데이터만 포함합니다.
-
-#### 3.1 PostCreationDto
-
-**파일**: `post_creation_dto.dart`
-
-**용도**: CreatePostUseCase 인터페이스 단순화
-
-**필드**:
-```dart
-class PostCreationDto {
-  final String userId;
-  final String title;
-  final String description;
-  final List<File> imagesA;
-  final List<File> imagesB;
-  final TargetAudience? targetAudience;
-  final bool isAnonymous;
-}
-```
-
-**팩토리 메서드**:
-```dart
-factory PostCreationDto.fromFormData({
-  required String userId,
-  required String title,
-  required String description,
-  required List<File> imagesA,
-  required List<File> imagesB,
-  TargetAudience? targetAudience,
-  bool isAnonymous = false,
-});
-```
-
-#### 3.2 TargetAudienceDto
-
-**파일**: `target_audience_dto.dart`
-
-**용도**: 타겟 오디언스 설정 전달
-
-**모드**:
-- `quick` - AI 기반 사용자 추천
-- `public` - 랜덤 배포
-- `custom` - 조건 필터링 (관심사, 연령, 성별)
-- `test` - Admin/Tester 전용
-
-#### 3.3 이미지/비디오 DTOs
-
-| DTO | 용도 |
-|-----|-----|
-| **ImageUploadDto** | 이미지 업로드 요청 (path, fileName, bytes) |
-| **ContentModerationDto** | AI 검열 요청 (text, imageUrls) |
-| **ImageResultDto** | 이미지 처리 결과 (url, aspectRatio, size) |
-| **VideoResultDto** | 비디오 처리 결과 (url, duration, thumbnail) |
-
----
-
-### 4. mappers/ - 데이터 변환
-
-Mapper는 **Firestore와 Domain Model 간 양방향 변환**을 담당하며, 레거시 호환성을 유지합니다.
-
-#### 4.1 CreationFirestoreMapper (핵심)
-
-**파일**: `creation_firestore_mapper.dart`
-
-**책임**:
-- Firestore Map ↔ PostCore/PostContent 변환
-- 레거시 필드명 호환성 (`questionTitle` 등)
-- Feature 경계 준수 (Creation Feature 필드만 처리)
-
-**주요 메서드**:
-
-##### Firebase → Domain (READ)
-```dart
-// PostCore 추출
-PostCore extractPostCore(Map<String, dynamic> data, String postId);
-
-// PostContent 추출
-PostContent extractPostContent(Map<String, dynamic> data);
-```
-
-**레거시 호환성 예시**:
-```dart
-// Legacy field name: questionTitle (not title)
-questionTitle: data['questionTitle'] ?? '',
-
-// Handle both 'userid' and 'uid'
-userId: data['userid']?.toString() ?? data['uid']?.toString() ?? '',
-
-// Convert int visibility to String
-visibility: _convertVisibilityToString(data['visibility']),
-```
-
-##### Domain → Firebase (WRITE)
-```dart
-// Post 생성 (Creation Feature 필드만)
-Map<String, dynamic> toCreateDocument(PostCore core, PostContent content);
-
-// PostCore 업데이트
-Map<String, dynamic> toUpdateCoreDocument(PostCore core);
-
-// PostContent 업데이트
-Map<String, dynamic> toUpdateContentDocument(PostContent content);
-```
-
-**Feature 경계 예시**:
-```dart
-// ✅ Creation Feature가 쓰는 필드만 포함
-return {
-  'questionTitle': core.questionTitle,
-  'description': core.description,
-  'userid': core.userId,
-  'createdAt': FieldValue.serverTimestamp(),
-  // Media from PostContent
-  'optionA': content.optionA.toJson(),
-  'optionB': content.optionB.toJson(),
-};
-
-// ❌ Voting Feature 필드는 포함하지 않음 (onCreate trigger에서 추가)
-// 'votesA', 'votesB', 'voteStartTime' ...
-```
-
-#### 4.2 PostCreationMapper
-
-**파일**: `post_creation_mapper.dart`
-
-**책임**: DTO ↔ Domain Model 변환
-
-```dart
-// DTO → Domain
-PostCreation fromDto(PostCreationDto dto);
-
-// Domain → DTO
-PostCreationDto toDto(PostCreation creation);
-```
-
-#### 4.3 TargetAudienceMapper
-
-**파일**: `target_audience_mapper.dart`
-
-**책임**: TargetAudience ↔ Map 변환
-
-```dart
-Map<String, dynamic> toMap(TargetAudience audience);
-TargetAudience fromMap(Map<String, dynamic> map);
-```
-
----
-
-## 🔄 데이터 플로우
-
-### 1. Post 생성 플로우
-
-```
-[Presentation Layer]
-  CreatePostProviderV2 (Phase 5 MediaStateCoordinator)
-    ↓ PostCreationDto
-
-[Domain Layer]
-  CreatePostUseCase
-    ↓ PostCore, PostContent
-
-[Data Layer - Repository]
-  PostCreationRepositoryV2Impl
-    ├─ validateTargetAudience() (ITargetAudienceService)
-    ├─ processImages() (IImageProcessingService)
-    │   ├─ 3단계 리사이징 (original, display, thumbnail)
-    │   ├─ JPEG 압축 (85%)
-    │   └─ Firebase Storage 업로드
-    ├─ CreationFirestoreMapper.toCreateDocument()
-    └─ IPostCreationDataSource.createPost()
-
-[Data Layer - DataSource]
-  FirebasePostCreationDataSource
-    ↓ Firestore API
-
-[Firebase]
-  posts collection
-    ├─ onCreate trigger (Voting Feature)
-    │   └─ votesA, votesB, voteStartTime 추가
-    └─ Document created
-```
-
-### 2. AI 검열 플로우
-
-```
-[Presentation Layer]
-  다음 버튼 클릭
-    ↓ 이미지 업로드 트리거
-
-[Data Layer - Repository]
-  ContentModerationRepositoryImpl
-    ├─ 1단계: Perspective API (텍스트 유해성)
-    ├─ 2단계: Cloud Vision API (이미지 안전성)
-    └─ 3단계: Gemini AI (이미지 로직 검증)
-
-[결과]
-  승인 → 타겟 오디언스 다이얼로그 표시
-  거부 → 구체적 거부 메시지 + 재선택 유도
-```
-
-### 3. 이미지 처리 플로우
-
-```
-[User Action]
-  wechat_assets_picker로 이미지 선택
-    ↓ List<File>
-
-[Data Layer - Service]
-  ImageProcessingRepositoryImpl
-    ↓ 3단계 병렬 처리
-
-├─ Original (그대로 저장)
-│   └─ user_uploads/{userId}/post_images/original/{fileName}
-│
-├─ Display (800px)
-│   ├─ 리사이징
-│   ├─ JPEG 압축 (85%)
-│   └─ user_uploads/{userId}/post_images/display/{fileName}
-│
-└─ Thumbnail (150px)
-    ├─ 리사이징
-    ├─ JPEG 압축 (85%)
-    └─ user_uploads/{userId}/post_images/thumbnail/{fileName}
-
-[Result]
-  ImageProcessingResult {
-    originalUrl: String,
-    displayUrl: String,
-    thumbnailUrl: String,
-    aspectRatio: double,
-  }
-```
-
----
-
-## 🛡️ 에러 처리
-
-### Phase 3 Creation Failures (10개 클래스)
-
-모든 Failure 클래스는 `getUserMessage()` 메서드를 제공하여 사용자 친화적 메시지를 표시합니다.
-
-#### 1. FirestoreWriteFailure
-
-**발생 시점**: Firestore 쓰기 작업 실패
-
-**원인**:
-- 권한 부족 (`permission-denied`)
-- 네트워크 오류 (`unavailable`)
-- 할당량 초과 (`quota-exceeded`)
-
-**사용자 메시지**:
-```dart
-// 권한 오류
-'데이터베이스 접근 권한이 없습니다. 다시 로그인해주세요.'
-
-// 네트워크 오류
-'서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.'
-
-// 할당량 초과
-'서버 용량이 부족합니다. 잠시 후 다시 시도해주세요.'
-```
-
-#### 2. AIModerationFailure
-
-**발생 시점**: AI 검열 거부
-
-**원인**:
-- Perspective API - 텍스트 유해성 감지
-- Cloud Vision API - 이미지 안전성 문제
-- Gemini AI - 얼굴 평가 등 부적절 콘텐츠
-
-**사용자 메시지**:
-```dart
-'AI 검열에서 다음 문제가 감지되었습니다: ${detectedCategories.join(', ')}'
-
-// 예시: 'AI 검열에서 다음 문제가 감지되었습니다: 선정적 콘텐츠, 폭력적 내용'
-```
-
-#### 3. MediaProcessingFailure
-
-**발생 시점**: 이미지/비디오 처리 실패
-
-**원인**:
-- 이미지 압축 오류
-- 리사이징 실패
-- 업로드 실패
-
-**사용자 메시지**:
-```dart
-// 압축 오류
-'이미지 압축 중 오류가 발생했습니다. 다른 이미지를 선택해주세요.'
-
-// 업로드 실패
-'이미지 업로드에 실패했습니다. 인터넷 연결을 확인해주세요.'
-```
-
-#### 4. PostValidationFailure
-
-**발생 시점**: 필드 유효성 검증 실패
-
-**원인**:
-- 필수 필드 누락
-- 텍스트 길이 초과
-- 이미지 개수 부족
-
-**사용자 메시지**:
-```dart
-'필수 항목을 입력해주세요: ${missingFields.join(', ')}'
-
-// 예시: '필수 항목을 입력해주세요: 제목, 설명'
-```
-
-#### 5. 기타 Failures
-
-| Failure | 발생 시점 | 사용자 메시지 |
-|---------|----------|-------------|
-| **NetworkFailure** | 네트워크 오류 | '인터넷 연결을 확인하고 다시 시도해주세요' |
-| **ServerFailure** | 서버 오류 | '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' |
-| **PostCreationRepositoryFailure** | Repository 오류 | '게시물 저장에 실패했습니다. 잠시 후 다시 시도해주세요.' |
-| **TargetAudienceFailure** | 타겟 오디언스 검증 실패 | '타겟 오디언스 설정이 올바르지 않습니다.' |
-| **ImageUploadFailure** | 이미지 업로드 실패 | '이미지 업로드에 실패했습니다. 다시 시도해주세요.' |
-| **ContentModerationFailure** | 콘텐츠 검열 실패 | '콘텐츠 검열 중 오류가 발생했습니다.' |
-
-### 에러 처리 패턴
-
-#### Repository Layer
-```dart
-try {
-  final data = _mapper.toCreateDocument(core, content);
-  final result = await _dataSource.createPost(data);
-  return result['id'] as String;
-} on FirebaseException catch (e) {
-  // Firebase 에러를 Phase 3 Failure로 변환
-  if (e.code == 'permission-denied') {
-    throw FirestoreWriteFailure(
-      collectionPath: 'posts',
-      operation: 'add',
-      attemptedData: data,
-      code: 'FIRESTORE_PERMISSION_DENIED',
-    );
-  }
-  // ...
-}
-```
-
-#### Presentation Layer
-```dart
-try {
-  await provider.createPost(userId, targetAudience: targetAudience);
-  Navigator.of(context).pop(true);
-} catch (e) {
-  String errorMessage = '포스트 생성 중 오류가 발생했습니다';
-
-  if (e is FirestoreWriteFailure) {
-    errorMessage = e.getUserMessage();
-  } else if (e is AIModerationFailure) {
-    errorMessage = e.getUserMessage();
-  } else if (e is MediaProcessingFailure) {
-    errorMessage = e.getUserMessage();
-  }
-
-  BotToast.showText(text: errorMessage);
-}
-```
-
----
-
-## 🧪 테스트 전략
-
-### 1. DataSource Tests (Unit)
-
-**목적**: Firebase 통신 로직 검증
-
-**Mock 대상**:
-- `FirebaseFirestore`
-- `FirebaseStorage`
-
-**테스트 케이스**:
-```dart
-group('FirebasePostCreationDataSource', () {
-  late MockFirebaseFirestore mockFirestore;
-  late FirebasePostCreationDataSource dataSource;
-
-  test('createPost - 성공 시 post ID 반환', () async {
-    // Given
-    final postData = {'questionTitle': 'Test', 'userid': 'user123'};
-    when(mockFirestore.collection('posts').add(postData))
-      .thenAnswer((_) async => MockDocumentReference('post123'));
-
-    // When
-    final result = await dataSource.createPost(postData);
-
-    // Then
-    expect(result['id'], 'post123');
-  });
-
-  test('createPost - permission-denied 에러 발생', () async {
-    // Given
-    when(mockFirestore.collection('posts').add(any))
-      .thenThrow(FirebaseException(code: 'permission-denied'));
-
-    // When & Then
-    expect(
-      () => dataSource.createPost({}),
-      throwsA(isA<FirestoreWriteFailure>()),
-    );
-  });
-});
-```
-
-### 2. Repository Tests (Unit)
-
-**목적**: 비즈니스 로직 orchestration 검증
-
-**Mock 대상**:
-- `IPostCreationDataSource`
-- `ITargetAudienceService`
-- `IImageProcessingService`
-
-**테스트 케이스**:
-```dart
-group('PostCreationRepositoryV2Impl', () {
-  late MockPostCreationDataSource mockDataSource;
-  late MockImageProcessingService mockImageService;
-  late PostCreationRepositoryV2Impl repository;
-
-  test('createPost - 성공 시 post ID 반환', () async {
-    // Given
-    final core = PostCore(questionTitle: 'Test', userId: 'user123');
-    final content = PostContent(optionA: MediaContent(...));
-
-    when(mockDataSource.createPost(any))
-      .thenAnswer((_) async => {'id': 'post123'});
-
-    // When
-    final postId = await repository.createPost(core: core, content: content);
-
-    // Then
-    expect(postId, 'post123');
-    verify(mockDataSource.createPost(any)).called(1);
-  });
-});
-```
-
-### 3. Mapper Tests (Unit)
-
-**목적**: 데이터 변환 정확성 검증
-
-**테스트 케이스**:
-```dart
-group('CreationFirestoreMapper', () {
-  late CreationFirestoreMapper mapper;
-
-  test('toCreateDocument - PostCore/PostContent를 Map으로 변환', () {
-    // Given
-    final core = PostCore(questionTitle: 'Test', userId: 'user123');
-    final content = PostContent(optionA: MediaContent(...));
-
-    // When
-    final result = mapper.toCreateDocument(core, content);
-
-    // Then
-    expect(result['questionTitle'], 'Test');
-    expect(result['userid'], 'user123');
-    expect(result['optionA'], isNotNull);
-  });
-
-  test('extractPostCore - 레거시 필드 호환성 확인', () {
-    // Given
-    final data = {
-      'questionTitle': 'Test',
-      'userid': 'user123', // Legacy field
-      'visibility': 0,     // Legacy int visibility
-    };
-
-    // When
-    final core = mapper.extractPostCore(data, 'post123');
-
-    // Then
-    expect(core.questionTitle, 'Test');
-    expect(core.userId, 'user123');
-    expect(core.visibility, 'public'); // Converted to string
-  });
-});
-```
-
-### 4. Integration Tests
-
-**목적**: 전체 플로우 검증 (Presentation → Data)
-
-**시나리오**:
-```dart
-group('Post Creation Integration', () {
-  testWidgets('완전한 post 생성 플로우', (tester) async {
-    // 1. CreatePostScreen 렌더링
-    await tester.pumpWidget(MyApp());
-
-    // 2. 텍스트 입력
-    await tester.enterText(find.byKey(Key('titleField')), 'Test Title');
-    await tester.enterText(find.byKey(Key('descField')), 'Test Description');
-
-    // 3. 이미지 선택 (Mock)
-    // ...
-
-    // 4. 다음 버튼 클릭
-    await tester.tap(find.byKey(Key('nextButton')));
-    await tester.pumpAndSettle();
-
-    // 5. 타겟 오디언스 선택
-    await tester.tap(find.text('Quick Collection'));
-    await tester.tap(find.text('확인'));
-    await tester.pumpAndSettle();
-
-    // 6. Post 생성 확인
-    verify(mockDataSource.createPost(any)).called(1);
-  });
-});
-```
-
----
-
-## 🔐 보안 고려사항
-
-### 1. Firebase Security Rules 통합
-
-**Firestore Rules**:
-```javascript
-// posts 컬렉션
-match /posts/{postId} {
-  // Creation Feature 필드만 쓰기 가능
-  allow create: if request.auth != null
-    && request.resource.data.keys().hasAll(['questionTitle', 'userid'])
-    && request.resource.data.userid == request.auth.uid;
-
-  // 본인 작성 글만 수정 가능
-  allow update: if request.auth != null
-    && resource.data.userid == request.auth.uid
-    && !request.resource.data.diff(resource.data).affectedKeys()
-      .hasAny(['votesA', 'votesB', 'totalVotes']); // Voting Feature 필드 보호
-}
-```
-
-**Storage Rules**:
-```javascript
-// user_uploads/{userId}
-match /user_uploads/{userId}/{allPaths=**} {
-  allow read: if request.auth != null;
-  allow write: if request.auth != null && request.auth.uid == userId;
-}
-```
-
-### 2. 데이터 검증
-
-#### Repository Layer
-```dart
-ValidationResult validateTargetAudience(TargetAudience targetAudience) {
-  // 모드별 검증
-  if (targetAudience.mode == 'test') {
-    // Admin/Tester 역할 확인
-    if (!currentUser.isAdmin && !currentUser.isTester) {
-      return ValidationResult.failure('Test 모드는 Admin/Tester만 사용 가능합니다.');
-    }
-  }
-
-  if (targetAudience.mode == 'custom') {
-    // Custom 조건 검증
-    if (targetAudience.filters.isEmpty) {
-      return ValidationResult.failure('Custom 모드는 최소 1개 필터가 필요합니다.');
-    }
-  }
-
-  return ValidationResult.success();
-}
-```
-
-#### DataSource Layer
-```dart
-Future<Map<String, dynamic>> createPost(Map<String, dynamic> postData) async {
-  // 필수 필드 검증
-  if (!postData.containsKey('questionTitle') || !postData.containsKey('userid')) {
-    throw PostValidationFailure(
-      missingFields: ['questionTitle', 'userid'],
-    );
-  }
-
-  // SQL Injection 방지 (Firestore는 자동 처리)
-  // XSS 방지 (Presentation layer에서 sanitize)
-
-  return await _firestore.collection('posts').add(postData);
-}
-```
-
-### 3. AI 검열 보안
-
-**3단계 검증**:
-```dart
-Future<bool> moderateContent({
-  required String text,
-  required List<String> imageUrls,
-}) async {
-  // 1단계: Perspective API (텍스트 유해성)
-  final textResult = await _perspectiveApi.analyze(text);
-  if (!textResult.passed) {
-    throw AIModerationFailure(
-      detectedCategories: textResult.categories,
-    );
-  }
-
-  // 2단계: Cloud Vision API (이미지 안전성)
-  final visionResult = await _cloudVisionApi.safeSearch(imageUrls);
-  if (!visionResult.passed) {
-    throw AIModerationFailure(
-      detectedCategories: visionResult.categories,
-    );
-  }
-
-  // 3단계: Gemini AI (이미지 로직 검증)
-  final geminiResult = await _geminiApi.validateLogic(text, imageUrls);
-  if (!geminiResult.passed) {
-    throw AIModerationFailure(
-      detectedCategories: ['얼굴 평가 관련 콘텐츠'],
-    );
-  }
-
-  return true;
-}
-```
-
----
-
-## 🚀 확장 가능성
-
-### 1. 새로운 DataSource 추가
-
-**예시: Local Cache DataSource 추가**
-
-```dart
-// 1. 인터페이스 정의
-abstract class ILocalCacheDataSource {
-  Future<Map<String, dynamic>?> getCachedPost(String postId);
-  Future<void> cachePost(String postId, Map<String, dynamic> data);
-}
-
-// 2. 구현
-class HiveLocalCacheDataSource implements ILocalCacheDataSource {
-  final Box<Map<String, dynamic>> _postsBox;
-
-  @override
-  Future<Map<String, dynamic>?> getCachedPost(String postId) async {
-    return _postsBox.get(postId);
-  }
-
-  @override
-  Future<void> cachePost(String postId, Map<String, dynamic> data) async {
-    await _postsBox.put(postId, data);
-  }
-}
-
-// 3. Repository에 통합
-class PostCreationRepositoryV2Impl {
-  final IPostCreationDataSource _remoteDataSource;
-  final ILocalCacheDataSource _localDataSource;
-
-  @override
-  Future<String> createPost({...}) async {
-    // 로컬 캐시에 먼저 저장
-    await _localDataSource.cachePost(tempId, data);
-
-    // 원격 저장
-    final postId = await _remoteDataSource.createPost(data);
-
-    // 캐시 업데이트
-    await _localDataSource.cachePost(postId, data);
-
-    return postId;
-  }
-}
-```
-
-### 2. 새로운 Repository 추가
-
-**예시: Draft Repository 추가**
-
-```dart
-// 1. Domain 인터페이스
-abstract class IDraftRepository {
-  Future<void> saveDraft(String userId, PostCore core, PostContent content);
-  Future<List<Draft>> getDrafts(String userId);
-  Future<void> deleteDraft(String draftId);
-}
-
-// 2. Data 구현
-class DraftRepositoryImpl implements IDraftRepository {
-  final ILocalCacheDataSource _localDataSource;
-
-  @override
-  Future<void> saveDraft(String userId, PostCore core, PostContent content) async {
-    final draftData = {
-      'userId': userId,
-      'core': _mapper.coreToMap(core),
-      'content': _mapper.contentToMap(content),
-      'savedAt': DateTime.now().toIso8601String(),
-    };
-
-    await _localDataSource.saveDraft(userId, draftData);
-  }
-}
-
-// 3. DI 등록
-getIt.registerLazySingleton<IDraftRepository>(
-  () => DraftRepositoryImpl(
-    localDataSource: getIt<ILocalCacheDataSource>(),
-  ),
+// Firestore → Domain Entity
+final doc = await _firestore.collection('posts').doc(postId).get();
+final post = PostCreationFirestore.fromFirestore(doc);  // ✅ Extension
+
+// Domain Entity → Firestore
+await _firestore.collection('posts').doc(postId).set(
+  post.toFirestore(),  // ✅ Extension
 );
 ```
 
-### 3. 새로운 DTO 추가
-
-**예시: Batch Upload DTO**
-
+**Cache Strategy (Phase 3)**:
 ```dart
-class BatchUploadDto {
-  final String userId;
-  final List<PostCreationDto> posts;
-  final int maxConcurrent;
+// Draft 자동 저장 (작성 중 임시 저장)
+await _cacheService.putDraftPost(userId, draftPost);
 
-  const BatchUploadDto({
-    required this.userId,
-    required this.posts,
-    this.maxConcurrent = 3,
-  });
+// Draft 복원 (앱 재시작 시)
+final draft = await _cacheService.getDraftPost(userId);
+```
+
+**Idempotency Pattern (Phase 4)**:
+```dart
+// 중복 작업 방지
+final eventId = _idempotencyService.generateEventId();
+if (!await _idempotencyService.markAsProcessing(eventId)) {
+  return left(CreationFailure.duplicateOperation());
 }
 
-// UseCase 통합
-class BatchCreatePostsUseCase {
-  Future<Result<List<String>>> execute(BatchUploadDto dto) async {
-    final postIds = <String>[];
+try {
+  // 작업 실행
+  await _firestore.collection('posts').add(data);
+  await _idempotencyService.markAsCompleted(eventId);
+} catch (e) {
+  await _idempotencyService.markAsFailed(eventId);
+  rethrow;
+}
+```
 
-    // Concurrent upload with limit
-    for (int i = 0; i < dto.posts.length; i += dto.maxConcurrent) {
-      final batch = dto.posts.skip(i).take(dto.maxConcurrent);
-      final results = await Future.wait(
-        batch.map((postDto) => _createPostUseCase.execute(dto: postDto)),
-      );
+**주요 메서드**:
+- `createPost()`: 게시물 생성 + AI 검열 + Idempotency
+- `updatePost()`: 게시물 수정 + Cache 무효화
+- `deletePost()`: 게시물 삭제 (Soft delete)
+- `watchPostById()`: 실시간 게시물 조회 (Stream)
+- `saveDraft()`: Draft 임시 저장 (Cache)
+- `loadDraft()`: Draft 복원 (Cache)
+- `updateTargetAudience()`: 타겟 오디언스 업데이트
 
-      postIds.addAll(results.map((r) => r.data!.id));
+---
+
+##### 1.1.2 target_audience_repository_impl.dart
+
+**위치**: `lib/features/creation/data/repositories/target_audience_repository_impl.dart`
+
+**책임**:
+- ITargetAudienceService 구현 (Domain Service in Data Layer)
+- Firebase Functions 통합 (calculateTargetAudience)
+- AI 기반 타겟팅 (Gemini AI)
+- 타겟 검증 및 최적화
+
+**의존성**:
+```dart
+class TargetAudienceRepositoryImpl implements ITargetAudienceService {
+  final FirebaseFunctions _functions = FirebaseFunctions.instance;
+  // No Firestore - Cloud Function만 사용
+}
+```
+
+**Firebase Functions 호출**:
+```dart
+@override
+Future<Either<TargetAudienceFailure, int>> estimateAudienceCount(
+  TargetAudience audience,
+) async {
+  final result = await _functions
+      .httpsCallable('calculateTargetAudience')
+      .call({'audience': audience.toFirestore()});
+
+  return right(result.data['count'] as int);
+}
+```
+
+**AI 타겟팅 (Quick Mode)**:
+```dart
+@override
+Future<Either<TargetAudienceFailure, TargetAudience>> generateQuickTarget(
+  String postDescription,
+) async {
+  // Gemini AI가 게시물 내용 분석 → 적합한 타겟 추천
+  final result = await _functions
+      .httpsCallable('aiGenerateTarget')
+      .call({'description': postDescription});
+
+  return right(TargetAudienceFirestore.fromFirestore(result.data));
+}
+```
+
+**주요 메서드**:
+- `estimateAudienceCount()`: 예상 타겟 수 계산
+- `generateQuickTarget()`: AI 기반 자동 타겟팅
+- `validateAudience()`: 타겟 검증
+- `optimizeAudience()`: 타겟 최적화
+
+---
+
+##### 1.1.3 media_repository_impl.dart
+
+**위치**: `lib/features/creation/data/repositories/media_repository_impl.dart`
+
+**책임**:
+- 이미지/비디오 Storage 업로드
+- IStorageDataSource 사용 (Port-Adapter Pattern 유지)
+- MediaInfo 메타데이터 관리
+- 중복 업로드 방지 (Hash 기반 캐싱)
+
+**의존성**:
+```dart
+class MediaRepositoryImpl implements IMediaRepository {
+  final IStorageDataSource _storageDataSource;  // ✅ Port-Adapter Pattern
+  final CreationCacheService _cacheService;     // ✅ Media 캐싱
+  // No Firestore - Storage만 사용
+}
+```
+
+**Port-Adapter Pattern 이유**:
+```
+Q: 왜 Firestore는 직접 사용하는데 Storage는 추상화하나요?
+
+A: Storage는 Firestore와 다른 특성이 있습니다:
+   1. 테스트 시 Mock Storage가 유용 (대용량 파일)
+   2. CDN/S3로의 전환 가능성
+   3. Storage API는 Firestore보다 변경 가능성이 높음
+   4. Progress 콜백, 업로드 취소 등 복잡한 로직
+```
+
+**Hash 기반 중복 방지**:
+```dart
+@override
+Future<Either<MediaFailure, String>> uploadImage(File file) async {
+  // 1. 파일 해시 계산
+  final hash = md5.convert(await file.readAsBytes()).toString();
+
+  // 2. 캐시에서 기존 URL 조회
+  final cachedUrl = await _cacheService.getMediaMetadata(hash);
+  if (cachedUrl != null) {
+    return right(cachedUrl);  // ✅ 중복 업로드 방지 (100% 시간 절약)
+  }
+
+  // 3. Storage 업로드
+  final url = await _storageDataSource.uploadImage(
+    file: file,
+    path: 'posts/$hash.jpg',
+  );
+
+  // 4. 캐시에 저장 (7일)
+  await _cacheService.putMediaMetadata(hash, url);
+
+  return right(url);
+}
+```
+
+**주요 메서드**:
+- `uploadImage()`: 이미지 업로드 + 중복 방지
+- `uploadVideo()`: 비디오 업로드 + Progress
+- `deleteMedia()`: 미디어 삭제
+- `getMediaUrl()`: 미디어 URL 조회
+
+---
+
+#### 1.2 Upload & Processing (2개)
+
+##### 1.2.1 media_upload_repository_impl.dart
+
+**위치**: `lib/features/creation/data/repositories/media_upload_repository_impl.dart`
+
+**책임**:
+- 멀티 이미지/비디오 병렬 업로드
+- Progress 추적 및 콜백
+- 업로드 취소 처리
+- 에러 복구 및 재시도
+
+**의존성**:
+```dart
+class MediaUploadRepositoryImpl {
+  final IMediaRepository _mediaRepository;  // ✅ 단일 업로드 위임
+  // 병렬 처리 로직만 담당
+}
+```
+
+**병렬 업로드 + Progress**:
+```dart
+@override
+Future<Either<MediaFailure, List<String>>> uploadMultipleImages(
+  List<File> files, {
+  Function(double progress)? onProgress,
+}) async {
+  final totalFiles = files.length;
+  var completedFiles = 0;
+
+  // 병렬 업로드 (최대 3개 동시)
+  final results = await Future.wait(
+    files.map((file) async {
+      final url = await _mediaRepository.uploadImage(file);
+
+      completedFiles++;
+      onProgress?.call(completedFiles / totalFiles);  // ✅ Progress 콜백
+
+      return url;
+    }),
+  );
+
+  // 모든 성공 확인
+  final urls = results
+      .where((r) => r.isRight())
+      .map((r) => r.getOrElse((l) => ''))
+      .toList();
+
+  return right(urls);
+}
+```
+
+**에러 복구 전략**:
+- 실패한 파일만 재시도
+- 부분 성공 시 성공한 URL 반환
+- 취소 토큰으로 중간 취소 가능
+
+**주요 메서드**:
+- `uploadMultipleImages()`: 멀티 이미지 병렬 업로드
+- `uploadMultipleVideos()`: 멀티 비디오 업로드
+- `cancelUpload()`: 업로드 취소
+- `retryFailed()`: 실패 파일 재시도
+
+---
+
+##### 1.2.2 image_processing_repository_impl.dart
+
+**위치**: `lib/features/creation/data/repositories/image_processing_repository_impl.dart`
+
+**책임**:
+- IImageProcessingService 구현 (Domain Service in Data Layer)
+- AI 이미지 검열 (Cloud Vision API)
+- 이미지 압축 및 리사이징
+- Aspect Ratio 계산
+
+**의존성**:
+```dart
+class ImageProcessingRepositoryImpl implements IImageProcessingService {
+  final IImageModerationService _moderationService;  // ✅ AI 검열 Service
+  // Image processing 로직
+}
+```
+
+**AI 검열 통합**:
+```dart
+@override
+Future<Either<MediaProcessingFailure, ImageProcessingResult>> processMultipleImages({
+  required List<File> files,
+  required String box,
+  Function(double)? onProgress,
+}) async {
+  final approvedFiles = <File>[];
+  final rejectedReasons = <String, List<int>>{};
+
+  for (var i = 0; i < files.length; i++) {
+    final file = files[i];
+
+    // 1. AI 검열
+    final moderationResult = await _moderationService.checkImage(
+      imageFile: file,
+      box: box,
+    );
+
+    moderationResult.fold(
+      (failure) => rejectedReasons.putIfAbsent('ai_error', () => []).add(i),
+      (result) {
+        if (result.isApproved) {
+          approvedFiles.add(file);  // ✅ 승인
+        } else {
+          // ❌ 거부 (adult, violence, etc.)
+          rejectedReasons.putIfAbsent(result.category, () => []).add(i);
+        }
+      },
+    );
+
+    onProgress?.call((i + 1) / files.length);
+  }
+
+  return right(ImageProcessingResult(
+    approvedFiles: approvedFiles,
+    approvedRatios: await _calculateAspectRatios(approvedFiles),
+    rejectedReasons: rejectedReasons,
+  ));
+}
+```
+
+**이미지 처리 파이프라인**:
+1. **검열**: AI 부적절 콘텐츠 감지
+2. **압축**: 1080p 기준 압축 (품질 85%)
+3. **리사이징**: Aspect ratio 유지하며 리사이징
+4. **메타데이터**: EXIF 제거 (프라이버시)
+
+**주요 메서드**:
+- `processMultipleImages()`: 멀티 이미지 처리 + 검열
+- `processEditedImage()`: 단일 이미지 편집 후 처리
+- `calculateAspectRatio()`: Aspect ratio 계산
+
+---
+
+#### 1.3 Specialized Repositories (4개)
+
+##### 1.3.1 content_moderation_repository_impl.dart
+
+**위치**: `lib/features/creation/data/repositories/content_moderation_repository_impl.dart`
+
+**책임**:
+- IContentModerationRepository 구현
+- 텍스트 AI 검열 (Perspective API)
+- 이미지 AI 검열 (Cloud Vision API)
+- 신고 관리 및 정책 집행
+
+**의존성**:
+```dart
+class ContentModerationRepositoryImpl implements IContentModerationRepository {
+  final IPerspectiveApiService _perspectiveService;     // ✅ 텍스트 검열
+  final IImageModerationService _imageModerationService; // ✅ 이미지 검열
+  final FirebaseFirestore _firestore;                   // ✅ 신고 데이터
+}
+```
+
+**텍스트 검열 (Perspective API)**:
+```dart
+@override
+Future<Either<ModerationFailure, ModerationResult>> moderateText(
+  String text,
+) async {
+  // Google Perspective API - 독성 점수 분석
+  final result = await _perspectiveService.analyzeText(text);
+
+  return result.fold(
+    (failure) => left(ModerationFailure.apiError(failure.message)),
+    (scores) {
+      // TOXICITY, PROFANITY, THREAT, INSULT 점수 평가
+      final isToxic = scores['TOXICITY']! > 0.7;
+      final isProfane = scores['PROFANITY']! > 0.7;
+
+      if (isToxic || isProfane) {
+        return right(ModerationResult.rejected(
+          category: 'toxic_content',
+          confidence: scores['TOXICITY']!,
+        ));
+      }
+
+      return right(ModerationResult.approved());
+    },
+  );
+}
+```
+
+**이미지 검열 (Cloud Vision API)**:
+```dart
+@override
+Future<Either<ModerationFailure, ModerationResult>> moderateImage(
+  File imageFile,
+) async {
+  // Cloud Vision API - SafeSearch 분석
+  final result = await _imageModerationService.checkImage(
+    imageFile: imageFile,
+    box: 'contentA',  // A/B 옵션 구분
+  );
+
+  return result.fold(
+    (failure) => left(ModerationFailure.apiError(failure.message)),
+    (moderationResult) => right(moderationResult),
+  );
+}
+```
+
+**신고 처리**:
+```dart
+@override
+Future<Either<ModerationFailure, Unit>> processReport(
+  String postId,
+  String reporterId,
+  String reason,
+) async {
+  // 1. 신고 기록 저장
+  await _firestore.collection('reports').add({
+    'postId': postId,
+    'reporterId': reporterId,
+    'reason': reason,
+    'timestamp': FieldValue.serverTimestamp(),
+  });
+
+  // 2. 신고 횟수 확인
+  final reportCount = await _getReportCount(postId);
+
+  // 3. 임계값 초과 시 자동 블라인드 처리
+  if (reportCount >= 5) {
+    await _firestore.collection('posts').doc(postId).update({
+      'moderationStatus': 'blinded',
+      'blindedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  return right(unit);
+}
+```
+
+**주요 메서드**:
+- `moderateText()`: 텍스트 AI 검열
+- `moderateImage()`: 이미지 AI 검열
+- `processReport()`: 신고 처리
+- `getReportStatus()`: 신고 상태 조회
+
+---
+
+##### 1.3.2 content_metrics_repository_impl.dart
+
+**위치**: `lib/features/creation/data/repositories/content_metrics_repository_impl.dart`
+
+**책임**:
+- IContentMetricsRepository 구현
+- CQRS Pattern (Query-only, Command는 별도)
+- 조회수/좋아요/댓글 카운터 (Sharding)
+- 실시간 통계 조회
+
+**의존성**:
+```dart
+class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
+  final FirebaseFirestore _firestore;  // ✅ Direct Firestore
+  // Read-only operations (CQRS)
+}
+```
+
+**CQRS Pattern**:
+```
+Command (Write):
+  - Voting Feature가 투표 시 카운터 업데이트
+  - Post Feature가 댓글 작성 시 카운터 업데이트
+
+Query (Read):
+  - Creation Feature는 통계만 조회 (IContentMetricsRepository)
+  - 카운터는 수정하지 않음
+```
+
+**Sharding 전략**:
+```dart
+@override
+Future<Either<MetricsFailure, int>> getVoteCount(String postId) async {
+  // Distributed Counter Pattern (Firestore best practice)
+  // 10개 샤드로 분산 → 초당 500회 쓰기 가능 (샤드당 50회)
+
+  int totalCount = 0;
+
+  // 10개 샤드 병렬 조회
+  final shardDocs = await Future.wait(
+    List.generate(10, (shardId) async {
+      final doc = await _firestore
+          .collection('posts')
+          .doc(postId)
+          .collection('shards')
+          .doc('shard_$shardId')
+          .get();
+      return doc.data()?['count'] as int? ?? 0;
+    }),
+  );
+
+  // 합산
+  totalCount = shardDocs.fold(0, (sum, count) => sum + count);
+
+  return right(totalCount);
+}
+```
+
+**실시간 통계 조회**:
+```dart
+@override
+Stream<Either<MetricsFailure, ContentMetrics>> watchMetrics(
+  String postId,
+) {
+  return _firestore
+      .collection('posts')
+      .doc(postId)
+      .snapshots()
+      .map((doc) {
+        if (!doc.exists) {
+          return left(MetricsFailure.notFound());
+        }
+
+        final data = doc.data()!;
+        return right(ContentMetrics(
+          voteCount: data['voteCount'] as int? ?? 0,
+          commentCount: data['commentCount'] as int? ?? 0,
+          viewCount: data['viewCount'] as int? ?? 0,
+        ));
+      });
+}
+```
+
+**주요 메서드**:
+- `getVoteCount()`: 투표 수 조회 (Sharding)
+- `getCommentCount()`: 댓글 수 조회
+- `getViewCount()`: 조회수 조회
+- `watchMetrics()`: 실시간 통계 스트림
+
+---
+
+##### 1.3.3 content_visibility_repository_impl.dart
+
+**위치**: `lib/features/creation/data/repositories/content_visibility_repository_impl.dart`
+
+**책임**:
+- IContentVisibilityRepository 구현
+- TargetAudience 기반 접근 제어
+- 가시성 레벨 관리 (public, friends, custom)
+- 알림 전송 대상 필터링
+
+**의존성**:
+```dart
+class ContentVisibilityRepositoryImpl implements IContentVisibilityRepository {
+  final FirebaseFirestore _firestore;  // ✅ Direct Firestore
+  // 접근 제어 로직
+}
+```
+
+**접근 제어 검증**:
+```dart
+@override
+Future<Either<VisibilityFailure, bool>> canUserAccess(
+  String userId,
+  String postId,
+) async {
+  // 1. 게시물 조회
+  final postDoc = await _firestore.collection('posts').doc(postId).get();
+  if (!postDoc.exists) {
+    return left(VisibilityFailure.postNotFound());
+  }
+
+  final post = PostCreationFirestore.fromFirestore(postDoc);
+
+  // 2. 작성자는 항상 접근 가능
+  if (post.userId == userId) {
+    return right(true);
+  }
+
+  // 3. Public은 모두 접근 가능
+  if (post.targetAudience == null) {
+    return right(true);
+  }
+
+  // 4. Custom Target 검증
+  final userProfile = await _firestore
+      .collection('users')
+      .doc(userId)
+      .get();
+
+  final matchesTarget = _matchesTargetAudience(
+    userProfile.data()!,
+    post.targetAudience!,
+  );
+
+  return right(matchesTarget);
+}
+```
+
+**타겟 매칭 로직**:
+```dart
+bool _matchesTargetAudience(
+  Map<String, dynamic> userProfile,
+  TargetAudience target,
+) {
+  // 관심사 필터
+  if (target.interests != null && target.interests!.isNotEmpty) {
+    final userInterests = userProfile['interests'] as List<String>? ?? [];
+    final hasMatchingInterest = target.interests!
+        .any((interest) => userInterests.contains(interest));
+    if (!hasMatchingInterest) return false;
+  }
+
+  // 연령대 필터
+  if (target.ageRange != null) {
+    final userAge = userProfile['age'] as int?;
+    if (userAge == null) return false;
+    if (userAge < target.ageRange!.min || userAge > target.ageRange!.max) {
+      return false;
+    }
+  }
+
+  // 성별 필터
+  if (target.gender != null) {
+    final userGender = userProfile['gender'] as String?;
+    if (userGender != target.gender) return false;
+  }
+
+  return true;  // ✅ 모든 조건 통과
+}
+```
+
+**알림 대상 필터링**:
+```dart
+@override
+Future<Either<VisibilityFailure, List<String>>> getNotificationTargets(
+  String postId,
+  int maxCount,
+) async {
+  final postDoc = await _firestore.collection('posts').doc(postId).get();
+  final post = PostCreationFirestore.fromFirestore(postDoc);
+
+  // 1. TargetAudience 기준 필터링
+  Query query = _firestore.collection('users');
+
+  if (post.targetAudience != null) {
+    final target = post.targetAudience!;
+
+    // 관심사 필터
+    if (target.interests != null && target.interests!.isNotEmpty) {
+      query = query.where('interests', arrayContainsAny: target.interests);
     }
 
-    return ResultSuccess(postIds);
+    // 연령대 필터
+    if (target.ageRange != null) {
+      query = query
+          .where('age', isGreaterThanOrEqualTo: target.ageRange!.min)
+          .where('age', isLessThanOrEqualTo: target.ageRange!.max);
+    }
   }
+
+  // 2. 제한 인원 적용
+  query = query.limit(maxCount);
+
+  // 3. 사용자 ID 추출
+  final snapshot = await query.get();
+  final userIds = snapshot.docs.map((doc) => doc.id).toList();
+
+  return right(userIds);
+}
+```
+
+**주요 메서드**:
+- `canUserAccess()`: 접근 권한 검증
+- `getNotificationTargets()`: 알림 대상 필터링
+- `updateVisibility()`: 가시성 레벨 업데이트
+- `getVisibilityLevel()`: 가시성 레벨 조회
+
+---
+
+### 2. datasources/ (2개)
+
+#### 📌 핵심 개념: Port-Adapter Pattern (Storage만)
+
+**Firestore vs Storage 추상화 차이**:
+
+| 측면 | Firestore | Firebase Storage |
+|------|----------|-----------------|
+| **추상화** | ❌ 직접 사용 | ✅ Port-Adapter Pattern |
+| **변경 가능성** | 낮음 (안정적) | 중간 (CDN/S3 전환 가능) |
+| **테스트** | Firestore Emulator | Mock Storage 유용 |
+| **복잡도** | 단순 (CRUD) | 복잡 (Progress, 취소) |
+| **이유** | 보일러플레이트 제거 | 추상화 가치 있음 |
+
+---
+
+#### 2.1 firebase_storage_datasource.dart
+
+**위치**: `lib/features/creation/data/datasources/firebase_storage_datasource.dart`
+
+**책임**:
+- IStorageDataSource 인터페이스 구현 (Adapter)
+- Firebase Storage 업로드/다운로드/삭제
+- Progress 추적 및 콜백
+- 에러 처리 및 재시도
+
+**의존성**:
+```dart
+class FirebaseStorageDataSource implements IStorageDataSource {
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+  // No other dependencies
+}
+```
+
+**업로드 + Progress**:
+```dart
+@override
+Future<Either<StorageFailure, String>> uploadImage({
+  required File file,
+  required String path,
+  Function(double progress)? onProgress,
+}) async {
+  try {
+    // 1. Storage 레퍼런스 생성
+    final ref = _storage.ref().child(path);
+
+    // 2. 업로드 Task 생성
+    final uploadTask = ref.putFile(file);
+
+    // 3. Progress 추적
+    uploadTask.snapshotEvents.listen((snapshot) {
+      final progress = snapshot.bytesTransferred / snapshot.totalBytes;
+      onProgress?.call(progress);
+    });
+
+    // 4. 완료 대기
+    await uploadTask;
+
+    // 5. Download URL 반환
+    final url = await ref.getDownloadURL();
+    return right(url);
+  } on FirebaseException catch (e) {
+    return left(StorageFailure.uploadFailed(e.message ?? 'Unknown error'));
+  }
+}
+```
+
+**취소 가능한 업로드**:
+```dart
+@override
+Future<Either<StorageFailure, String>> uploadImageCancellable({
+  required File file,
+  required String path,
+  required CancelToken cancelToken,
+}) async {
+  final ref = _storage.ref().child(path);
+  final uploadTask = ref.putFile(file);
+
+  // 취소 토큰 리스너
+  cancelToken.onCancel = () {
+    uploadTask.cancel();
+  };
+
+  try {
+    await uploadTask;
+    final url = await ref.getDownloadURL();
+    return right(url);
+  } catch (e) {
+    if (cancelToken.isCancelled) {
+      return left(StorageFailure.uploadCancelled());
+    }
+    return left(StorageFailure.uploadFailed(e.toString()));
+  }
+}
+```
+
+**주요 메서드**:
+- `uploadImage()`: 이미지 업로드 + Progress
+- `uploadVideo()`: 비디오 업로드 + Progress
+- `deleteFile()`: 파일 삭제
+- `getDownloadUrl()`: Download URL 조회
+
+---
+
+#### 2.2 interfaces/i_storage_datasource.dart
+
+**위치**: `lib/features/creation/data/datasources/interfaces/i_storage_datasource.dart`
+
+**책임**:
+- Storage 인터페이스 정의 (Port)
+- 구현체 독립적인 계약
+- 테스트용 Mock 가능
+
+**인터페이스 정의**:
+```dart
+abstract class IStorageDataSource {
+  /// 이미지 업로드
+  Future<Either<StorageFailure, String>> uploadImage({
+    required File file,
+    required String path,
+    Function(double progress)? onProgress,
+  });
+
+  /// 비디오 업로드
+  Future<Either<StorageFailure, String>> uploadVideo({
+    required File file,
+    required String path,
+    Function(double progress)? onProgress,
+  });
+
+  /// 파일 삭제
+  Future<Either<StorageFailure, Unit>> deleteFile(String path);
+
+  /// Download URL 조회
+  Future<Either<StorageFailure, String>> getDownloadUrl(String path);
+}
+```
+
+**Mock 구현 예시** (테스트용):
+```dart
+class MockStorageDataSource implements IStorageDataSource {
+  @override
+  Future<Either<StorageFailure, String>> uploadImage({
+    required File file,
+    required String path,
+    Function(double progress)? onProgress,
+  }) async {
+    // 가짜 업로드 시뮬레이션
+    await Future.delayed(Duration(seconds: 1));
+    onProgress?.call(1.0);
+    return right('https://fake-storage.com/image.jpg');
+  }
+
+  // ... 나머지 메서드도 Mock 구현
 }
 ```
 
 ---
 
-## 📊 성능 최적화
+## 🔄 Extensions (domain/entities/)
 
-### 1. 이미지 처리 병렬화
+### 📌 핵심 개념: Extension Pattern (Phase 5)
 
-**Before (순차 처리)**:
+**Extension Pattern의 장점**:
+- ✅ Mapper + DTO 제거 (85% 코드 감소)
+- ✅ Entity 클래스 내부 확장 (응집도 증가)
+- ✅ Type-safe 변환 (컴파일 타임 체크)
+- ✅ IDE 자동완성 지원
+
+**Before (Phase 4)**:
 ```dart
-// ❌ 느림: 3개 이미지 × 200ms = 600ms
-final originalUrl = await _uploadImage(original);
-final displayUrl = await _uploadImage(display);
-final thumbnailUrl = await _uploadImage(thumbnail);
+// DataSource → DTO → Mapper → Entity
+PostCreationDTO dto = PostCreationDTO.fromFirestore(doc);
+PostCreation entity = PostCreationMapper.toEntity(dto);
 ```
 
-**After (병렬 처리)**:
+**After (Phase 5)**:
 ```dart
-// ✅ 빠름: max(200ms) = 200ms (67% 단축)
-final results = await Future.wait([
-  _uploadImage(original),
-  _uploadImage(display),
-  _uploadImage(thumbnail),
-]);
+// Firestore → Extension → Entity
+PostCreation entity = PostCreationFirestore.fromFirestore(doc);
 ```
 
-**성능 개선**: 30-50% 업로드 시간 단축
+---
 
-### 2. 이미지 프리캐싱
+### 3.1 post_creation_extensions.dart (189줄)
 
+**위치**: `lib/features/creation/domain/entities/post_creation_extensions.dart`
+
+**책임**:
+- PostCreation ↔ Firestore 직접 변환
+- Nested objects 변환 (PostOption, VoteConfiguration)
+- Timestamp 변환
+- Null safety 처리
+
+**Extension 정의**:
 ```dart
-Future<void> uploadAndPrecache(List<File> files) async {
-  // 1. 업로드
-  final urls = await uploadImages(files);
+extension PostCreationFirestore on PostCreation {
+  /// Firestore DocumentSnapshot → PostCreation Entity
+  static PostCreation fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>? ?? {};
 
-  // 2. 프리캐싱 (UI 차단 없이)
-  for (final url in urls) {
-    final memCacheWidth = _calculateMemCacheWidth(context);
-    precacheImage(
-      CachedNetworkImageProvider(url),
-      context,
-      size: Size(memCacheWidth.toDouble(), 0),
+    return PostCreation(
+      id: doc.id,
+      userId: data['userId'] as String? ?? '',
+      title: data['title'] as String? ?? '',
+      description: data['description'] as String? ?? '',
+
+      // Nested objects 변환
+      optionA: PostOption.fromJson(data['optionA'] as Map<String, dynamic>? ?? {}),
+      optionB: PostOption.fromJson(data['optionB'] as Map<String, dynamic>? ?? {}),
+
+      // TargetAudience 변환 (nullable)
+      targetAudience: data['targetAudience'] != null
+          ? TargetAudienceFirestore.fromFirestore(data['targetAudience'])
+          : null,
+
+      // Timestamp 변환
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+
+      // Enum 변환
+      status: PostStatus.values.byName(data['status'] as String? ?? 'draft'),
+    );
+  }
+
+  /// PostCreation Entity → Firestore Map
+  Map<String, dynamic> toFirestore() {
+    return {
+      'userId': userId,
+      'title': title,
+      'description': description,
+      'optionA': optionA.toJson(),
+      'optionB': optionB.toJson(),
+      'targetAudience': targetAudience?.toFirestore(),
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
+      'status': status.name,
+    };
+  }
+}
+```
+
+**사용 예시**:
+```dart
+// Repository에서 사용
+final doc = await _firestore.collection('posts').doc(postId).get();
+final post = PostCreationFirestore.fromFirestore(doc);  // ✅ Extension
+
+await _firestore.collection('posts').doc(postId).set(
+  post.toFirestore(),  // ✅ Extension
+);
+```
+
+---
+
+### 3.2 target_audience_extensions.dart (68줄)
+
+**위치**: `lib/features/creation/domain/entities/target_audience_extensions.dart`
+
+**책임**:
+- TargetAudience ↔ Firestore 변환
+- Alias Pattern (Freezed가 이미 toJson/fromJson 제공)
+- 일관된 네이밍 (fromFirestore/toFirestore)
+
+**Extension 정의** (Alias Pattern):
+```dart
+extension TargetAudienceFirestore on TargetAudience {
+  /// Firestore Map → TargetAudience Entity
+  /// Freezed fromJson을 사용하되, 일관된 네이밍 제공
+  static TargetAudience fromFirestore(Map<String, dynamic> data) {
+    return TargetAudience.fromJson(data);  // ✅ Freezed 활용
+  }
+
+  /// TargetAudience Entity → Firestore Map
+  /// Freezed toJson을 사용하되, 일관된 네이밍 제공
+  Map<String, dynamic> toFirestore() {
+    return toJson();  // ✅ Freezed 활용
+  }
+}
+```
+
+**Alias Pattern 이유**:
+```
+Q: 왜 단순 Alias를 만드나요?
+
+A: 일관성과 명확성을 위해:
+   1. 모든 Entity가 fromFirestore/toFirestore 메서드 제공
+   2. TargetAudience는 Freezed가 이미 toJson/fromJson 생성
+   3. Alias로 통일된 인터페이스 제공
+   4. 나중에 Firestore 전용 로직 추가 가능 (확장성)
+```
+
+---
+
+### 3.3 media_info_extensions.dart (152줄)
+
+**위치**: `lib/features/creation/domain/entities/media_info_extensions.dart`
+
+**책임**:
+- MediaInfo (Sealed Class) ↔ Firestore 변환
+- Union Type 패턴 매칭
+- Type discriminator 처리
+
+**Extension 정의** (Sealed Class Pattern):
+```dart
+extension MediaInfoFirestore on MediaInfo {
+  /// Firestore Map → MediaInfo Entity
+  /// Sealed Class 패턴 매칭 (ImageInfo | VideoInfo)
+  static MediaInfo fromFirestore(Map<String, dynamic> data) {
+    final type = data['type'] as String?;
+
+    switch (type) {
+      case 'image':
+        return ImageInfo(
+          assetId: data['assetId'] as String? ?? '',
+          uploadUrl: data['uploadUrl'] as String? ?? '',
+          aspectRatio: data['aspectRatio'] as double? ?? 1.0,
+          fileSize: data['fileSize'] as int?,
+          uploadedAt: (data['uploadedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        );
+
+      case 'video':
+        return VideoInfo(
+          assetId: data['assetId'] as String? ?? '',
+          uploadUrl: data['uploadUrl'] as String? ?? '',
+          duration: data['duration'] as int? ?? 0,
+          thumbnailUrl: data['thumbnailUrl'] as String?,
+          fileSize: data['fileSize'] as int?,
+          uploadedAt: (data['uploadedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        );
+
+      default:
+        throw ArgumentError('Unknown MediaInfo type: $type');
+    }
+  }
+
+  /// MediaInfo Entity → Firestore Map
+  /// Sealed Class when 패턴 매칭
+  Map<String, dynamic> toFirestore() {
+    return when(
+      image: (assetId, uploadUrl, aspectRatio, fileSize, uploadedAt) => {
+        'type': 'image',
+        'assetId': assetId,
+        'uploadUrl': uploadUrl,
+        'aspectRatio': aspectRatio,
+        'fileSize': fileSize,
+        'uploadedAt': Timestamp.fromDate(uploadedAt),
+      },
+      video: (assetId, uploadUrl, duration, thumbnailUrl, fileSize, uploadedAt) => {
+        'type': 'video',
+        'assetId': assetId,
+        'uploadUrl': uploadUrl,
+        'duration': duration,
+        'thumbnailUrl': thumbnailUrl,
+        'fileSize': fileSize,
+        'uploadedAt': Timestamp.fromDate(uploadedAt),
+      },
     );
   }
 }
 ```
 
-### 3. Batch Write 최적화
+**Sealed Class Pattern의 장점**:
+- ✅ Type-safe Union Types (ImageInfo | VideoInfo)
+- ✅ 컴파일 타임 exhaustiveness check
+- ✅ when 패턴으로 모든 케이스 처리 강제
+- ✅ 런타임 타입 에러 방지
 
+---
+
+## 🔥 Firebase-Centric Architecture
+
+### 설계 원칙
+
+#### 1. DataSource 추상화 제거 (Firestore만)
+
+**제거 이유**:
+- Firebase SDK는 안정적이고 변경 가능성 낮음
+- Firestore는 GCP 의존성으로 다른 DB로 전환 불가능
+- 추상화 레이어가 주는 가치 < 보일러플레이트 비용
+- 테스트는 Firestore Emulator로 충분
+
+**유지 이유** (Storage):
+- Storage는 CDN/S3로 전환 가능성 있음
+- Progress, 취소 등 복잡한 로직 테스트 필요
+- Mock Storage가 유용함
+
+#### 2. Extension Pattern 채택
+
+**Before (Mapper + DTO)**:
+```
+장점: 관심사 분리, 테스트 용이
+단점: 보일러플레이트 3배 증가, 중간 레이어 증가
+```
+
+**After (Extension)**:
+```
+장점: 코드 85% 감소, 직관적, Type-safe
+단점: Entity에 Firestore 의존 (하지만 Extension이라 분리됨)
+```
+
+**선택 근거**:
+- Extension은 Entity 파일과 분리 가능
+- Freezed가 이미 toJson/fromJson 제공
+- 실용성 > 이론적 순수성
+
+#### 3. Domain Services in Data Layer
+
+**ITargetAudienceService, IImageProcessingService**:
+```
+Q: Domain Service를 왜 Data Layer에서 구현하나요?
+
+A: Repository와 긴밀하게 연결되어 있기 때문:
+   1. ITargetAudienceService → Firebase Functions 호출
+   2. IImageProcessingService → AI 검열 Service 통합
+   3. Domain Interface는 유지 (의존성 역전)
+   4. Data Layer 구현체가 Firebase 의존
+```
+
+**대안 고려**:
+- Domain Layer 구현? → Firebase 의존성 문제
+- Presentation Layer 구현? → 비즈니스 로직 침투
+- **Data Layer 구현** → ✅ 적절함 (Repository와 동급)
+
+#### 4. CQRS Pattern (Metrics)
+
+**Command/Query 분리**:
+```
+Command (Write): Voting/Post Feature
+  - 투표 시 카운터 +1
+  - 댓글 작성 시 카운터 +1
+
+Query (Read): Creation Feature
+  - IContentMetricsRepository → Read-only
+  - Sharding으로 고성능 읽기
+```
+
+**이점**:
+- 읽기/쓰기 최적화 분리
+- Sharding 전략 적용 가능
+- 확장성 향상
+
+---
+
+## 📊 Cache Integration (Phase 3)
+
+### CreationCacheService
+
+**위치**: `lib/services/cache/creation_cache_service.dart`
+
+**3-Layer 캐싱 전략**:
+```
+L1: Memory Cache (SimpleMemoryCache)
+  ├─ TTL: 5분
+  ├─ 용량: 100개 (LRU)
+  └─ 용도: Draft, TargetAudience Preset
+
+L2: Hive Cache (Local DB)
+  ├─ TTL: Draft 영구, AI 결과 30일
+  ├─ 용량: 무제한
+  └─ 용도: 앱 재시작 시 Draft 복원
+
+L3: Firestore (Remote)
+  ├─ TTL: 영구
+  ├─ 비용: 읽기당 $0.06/100만
+  └─ 용도: 최종 저장소
+```
+
+### Cache 사용 예시
+
+**Draft 자동 저장**:
 ```dart
-Future<void> batchUpdatePosts(List<String> postIds, Map<String, dynamic> updates) async {
-  final batch = _firestore.batch();
+// Repository에서 사용
+class PostCreationRepositoryV2Impl {
+  final CreationCacheService _cacheService;
 
-  for (final postId in postIds) {
-    final docRef = _firestore.collection('posts').doc(postId);
-    batch.update(docRef, updates);
+  Future<Either<CreationFailure, Unit>> saveDraft(PostCreation draft) async {
+    // 1. Cache에 저장 (L1, L2, L3 모두)
+    await _cacheService.putDraftPost(draft.userId, draft);
+
+    // 2. Firestore에도 저장 (백업)
+    await _firestore
+        .collection('drafts')
+        .doc(draft.userId)
+        .set(draft.toFirestore());
+
+    return right(unit);
   }
 
-  // 1번의 네트워크 호출로 모든 업데이트 실행
-  await batch.commit();
+  Future<Either<CreationFailure, PostCreation?>> loadDraft(String userId) async {
+    // 1. Cache에서 조회 (L1 → L2 → L3 순서)
+    final cached = await _cacheService.getDraftPost(userId);
+    if (cached != null) {
+      return right(cached);  // ✅ 캐시 히트 (<10ms)
+    }
+
+    // 2. Firestore에서 조회 (캐시 미스)
+    final doc = await _firestore.collection('drafts').doc(userId).get();
+    if (!doc.exists) {
+      return right(null);
+    }
+
+    final draft = PostCreationFirestore.fromFirestore(doc);
+
+    // 3. Cache에 저장 (다음 조회 최적화)
+    await _cacheService.putDraftPost(userId, draft);
+
+    return right(draft);
+  }
 }
 ```
 
-### 4. 캐싱 전략
-
+**AI 결과 캐싱**:
 ```dart
-class CachedPostCreationRepository implements IPostCreationRepositoryV2 {
-  final IPostCreationRepositoryV2 _remoteRepository;
-  final Map<String, PostCore> _coreCache = {};
-  final Map<String, PostContent> _contentCache = {};
+// AI 타이틀 생성 시
+Future<Either<CreationFailure, String>> generateTitle(String description) async {
+  // 1. Hash 기반 캐시 키 생성
+  final hash = md5.convert(utf8.encode(description)).toString();
 
-  @override
-  Future<PostCore?> getPostCore(String postId) async {
-    // 캐시 확인
-    if (_coreCache.containsKey(postId)) {
-      return _coreCache[postId];
+  // 2. Cache에서 조회
+  final cached = await _cacheService.getAIGenerationResult(hash);
+  if (cached != null) {
+    return right(cached);  // ✅ Gemini API 호출 생략 ($0.10 절약)
+  }
+
+  // 3. AI 생성 (캐시 미스)
+  final title = await _geminiService.generateTitle(description);
+
+  // 4. Cache에 저장 (30일)
+  await _cacheService.putAIGenerationResult(hash, title);
+
+  return right(title);
+}
+```
+
+### Cache 성능 메트릭
+
+| 메트릭 | L1 (Memory) | L2 (Hive) | L3 (Firestore) |
+|--------|-------------|-----------|----------------|
+| **응답 시간** | <10ms | 10-30ms | 50-500ms |
+| **히트율** | 30% | 20% | 10% |
+| **비용 절감** | - | - | 40-60% |
+| **AI 절약** | - | - | 70% ($70/월) |
+
+---
+
+## 🔒 Idempotency Pattern (Phase 4)
+
+### IdempotencyService
+
+**위치**: `lib/core/utils/idempotency_service.dart`
+
+**목적**:
+- 중복 작업 방지 (네트워크 재시도 시)
+- Draft 중복 저장 방지
+- 미디어 중복 업로드 방지
+
+### Idempotency 사용 예시
+
+**Post 생성 시**:
+```dart
+class PostCreationRepositoryV2Impl {
+  final IdempotencyService _idempotencyService;
+
+  Future<Either<CreationFailure, String>> createPost(PostCreation post) async {
+    // 1. Idempotency Key 생성 (UUID)
+    final eventId = _idempotencyService.generateEventId();
+
+    // 2. 이미 처리 중인지 확인
+    if (!await _idempotencyService.markAsProcessing(eventId)) {
+      return left(CreationFailure.duplicateOperation());  // ❌ 중복
     }
 
-    // 원격 조회
-    final core = await _remoteRepository.getPostCore(postId);
-    if (core != null) {
-      _coreCache[postId] = core;
-    }
+    try {
+      // 3. 작업 실행
+      final docRef = await _firestore.collection('posts').add(
+        post.toFirestore(),
+      );
 
-    return core;
+      // 4. 완료 표시
+      await _idempotencyService.markAsCompleted(eventId);
+
+      return right(docRef.id);
+    } catch (e) {
+      // 5. 실패 표시 (재시도 가능)
+      await _idempotencyService.markAsFailed(eventId);
+      return left(CreationFailure.serverError(e.toString()));
+    }
   }
 }
+```
+
+**Draft 저장 시**:
+```dart
+Future<Either<CreationFailure, Unit>> saveDraft(PostCreation draft) async {
+  // 1. 사용자별 Idempotency Key (고정)
+  final eventId = 'draft_save_${draft.userId}';
+
+  // 2. 이미 저장 중인지 확인 (중복 클릭 방지)
+  if (!await _idempotencyService.markAsProcessing(eventId)) {
+    return right(unit);  // ✅ 이미 저장 중, 무시
+  }
+
+  try {
+    await _cacheService.putDraftPost(draft.userId, draft);
+    await _idempotencyService.markAsCompleted(eventId);
+    return right(unit);
+  } catch (e) {
+    await _idempotencyService.markAsFailed(eventId);
+    return left(CreationFailure.cacheFailed(e.toString()));
+  }
+}
+```
+
+### Idempotency 상태 머신
+
+```
+[생성] ──generateEventId()──> [대기]
+  │
+  └──markAsProcessing()──> [처리중]
+                              │
+                              ├──markAsCompleted()──> [완료] (성공)
+                              │
+                              └──markAsFailed()──> [실패] (재시도 가능)
 ```
 
 ---
 
-## 🔗 관련 문서
+## 🔗 Dependency Diagram
 
-### Creation Feature 문서
-- [📱 FEATURE_OVERVIEW.md](./docs/FEATURE_OVERVIEW.md) - 기능 개요 및 사용자 플로우
-- [📖 API_REFERENCE.md](./docs/API_REFERENCE.md) - API 인터페이스 상세
-- [🚀 USAGE_GUIDE.md](./docs/USAGE_GUIDE.md) - 실제 사용 예제 및 가이드
+### Layer 의존성
 
-### Domain Layer 문서
-- [Domain Models](./domain/models/) - PostCore, PostContent, MediaContent
-- [Repository Interfaces](./domain/repositories/) - IPostCreationRepositoryV2, IMediaRepository
-- [UseCases](./domain/usecases/) - CreatePostUseCase, ValidatePostUseCase
+```
+┌─────────────────────────────────────────────────┐
+│         Presentation Layer                      │
+│  (Providers, Screens, Widgets)                  │
+└──────────────────┬──────────────────────────────┘
+                   │ ref.watch()
+                   ▼
+┌─────────────────────────────────────────────────┐
+│         Domain Layer                            │
+│  ┌─────────────────────────────────────────┐   │
+│  │ Entities (Freezed)                      │   │
+│  │  - PostCreation                         │   │
+│  │  - TargetAudience                       │   │
+│  │  - MediaInfo (Sealed)                   │   │
+│  └─────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────┐   │
+│  │ UseCases                                │   │
+│  │  - CreatePostUseCase                    │   │
+│  │  - ManageTargetAudienceUseCase          │   │
+│  │  - ModerateContentUseCase               │   │
+│  └─────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────┐   │
+│  │ Repository Interfaces                   │   │
+│  │  - IPostCreationRepositoryV2            │   │
+│  │  - IMediaRepository                     │   │
+│  │  - IContentModerationRepository         │   │
+│  └─────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────┐   │
+│  │ Service Interfaces (Ports)              │   │
+│  │  - ITargetAudienceService               │   │
+│  │  - IImageProcessingService              │   │
+│  │  - IStorageDataSource                   │   │
+│  └─────────────────────────────────────────┘   │
+└──────────────────┬──────────────────────────────┘
+                   │ implements
+                   ▼
+┌─────────────────────────────────────────────────┐
+│         Data Layer                              │
+│  ┌─────────────────────────────────────────┐   │
+│  │ Repositories (9개)                      │   │
+│  │  - PostCreationRepositoryV2Impl         │   │
+│  │  - TargetAudienceRepositoryImpl         │   │
+│  │  - MediaRepositoryImpl                  │   │
+│  │  - MediaUploadRepositoryImpl            │   │
+│  │  - ImageProcessingRepositoryImpl        │   │
+│  │  - ContentModerationRepositoryImpl      │   │
+│  │  - ContentMetricsRepositoryImpl         │   │
+│  │  - ContentVisibilityRepositoryImpl      │   │
+│  └─────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────┐   │
+│  │ DataSources (1개 - Port-Adapter)       │   │
+│  │  - FirebaseStorageDataSource            │   │
+│  └─────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────┐   │
+│  │ Extensions (3개)                        │   │
+│  │  - PostCreationFirestore                │   │
+│  │  - TargetAudienceFirestore              │   │
+│  │  - MediaInfoFirestore                   │   │
+│  └─────────────────────────────────────────┘   │
+└──────────────────┬──────────────────────────────┘
+                   │ Direct SDK
+                   ▼
+┌─────────────────────────────────────────────────┐
+│         External Services                       │
+│  - FirebaseFirestore (Direct)                   │
+│  - FirebaseStorage (via DataSource)             │
+│  - FirebaseFunctions (Target Audience)          │
+│  - CreationCacheService (3-Layer)               │
+│  - IdempotencyService (Shared)                  │
+│  - AI Services (Gemini, Perspective, Vision)    │
+└─────────────────────────────────────────────────┘
+```
 
-### Phase 문서
-- [Phase 3 Failures](../../docs/phases/phase3_failures.md) - 에러 처리 시스템
-- [Phase 5 MediaStateCoordinator](../../docs/phases/phase5_media_state.md) - 미디어 상태 관리
+### Repository 상호 의존성
 
-### 참고 문서
-- [Auth Feature Data Layer](../auth/data/README.md) - Auth 참고 구조
-- [Clean Architecture v4.0](../../docs/architecture/clean_architecture_v4.md)
-- [Firebase Integration Guide](../../docs/firebase/integration.md)
+```
+PostCreationRepositoryV2Impl
+  ├─> IImageProcessingService (AI 검열)
+  ├─> CreationCacheService (Draft 저장)
+  ├─> IdempotencyService (중복 방지)
+  └─> FirebaseFirestore (Direct)
+
+MediaRepositoryImpl
+  ├─> IStorageDataSource (Port-Adapter)
+  └─> CreationCacheService (Media 캐싱)
+
+MediaUploadRepositoryImpl
+  └─> IMediaRepository (단일 업로드 위임)
+
+ImageProcessingRepositoryImpl
+  └─> IImageModerationService (AI 검열)
+
+TargetAudienceRepositoryImpl
+  └─> FirebaseFunctions (AI 타겟팅)
+
+ContentModerationRepositoryImpl
+  ├─> IPerspectiveApiService (텍스트 검열)
+  ├─> IImageModerationService (이미지 검열)
+  └─> FirebaseFirestore (신고 데이터)
+
+ContentMetricsRepositoryImpl
+  └─> FirebaseFirestore (CQRS Read-only)
+
+ContentVisibilityRepositoryImpl
+  └─> FirebaseFirestore (접근 제어)
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### 1. Extension Import 에러
+
+**증상**:
+```
+Error: The name 'PostCreationFirestore' isn't defined.
+```
+
+**원인**:
+Extension 파일 import 누락
+
+**해결**:
+```dart
+// Repository 상단에 Extension import 추가
+import '/features/creation/domain/entities/post_creation_extensions.dart';
+```
+
+---
+
+### 2. Cache 동기화 이슈
+
+**증상**:
+Draft 저장 후 다른 디바이스에서 보이지 않음
+
+**원인**:
+Draft는 L1/L2 캐시만 사용 (Local)
+
+**해결**:
+```dart
+// Firestore에도 Draft 저장 (선택 사항)
+await _firestore.collection('drafts').doc(userId).set(draft.toFirestore());
+```
+
+---
+
+### 3. Idempotency 키 충돌
+
+**증상**:
+```
+CreationFailure.duplicateOperation()
+```
+
+**원인**:
+동일한 eventId로 중복 요청
+
+**해결**:
+```dart
+// 1. 매번 새로운 eventId 생성
+final eventId = _idempotencyService.generateEventId();  // ✅ UUID
+
+// 2. 고정 eventId는 신중하게 사용 (Draft 저장 등)
+final eventId = 'draft_save_${userId}';  // ⚠️ 사용자별 고정
+```
+
+---
+
+### 4. Storage 업로드 느림
+
+**증상**:
+대용량 이미지 업로드 시 30초+ 소요
+
+**원인**:
+압축 없이 원본 업로드
+
+**해결**:
+```dart
+// 1. ImageProcessingService로 압축 먼저
+final compressedFile = await _imageProcessingService.compressImage(file);
+
+// 2. 압축된 파일 업로드
+final url = await _mediaRepository.uploadImage(compressedFile);
+```
+
+---
+
+### 5. Firestore 읽기 비용 증가
+
+**증상**:
+Firestore 읽기 비용이 예상보다 2배 높음
+
+**원인**:
+Cache 미스율 높음
+
+**해결**:
+```dart
+// 1. Cache TTL 늘리기
+await _cacheService.putDraftPost(
+  userId,
+  draft,
+  ttl: Duration(days: 7),  // 기본 5분 → 7일
+);
+
+// 2. 캐시 통계 확인
+final stats = _cacheService.getStatistics();
+print('L1 Hit Rate: ${stats.l1HitRate}%');
+print('Firestore Reads Saved: ${stats.firestoreReadsSaved}');
+```
+
+---
+
+## 📚 References
+
+### Phase Documentation
+
+- `PHASE_1_FREEZED_MIGRATION.md` - Freezed 마이그레이션
+- `PHASE_2_EITHER_PATTERN.md` - Either 패턴 도입
+- `PHASE_3_CACHE_INTEGRATION.md` - UnifiedCache 통합
+- `PHASE_4_IDEMPOTENCY.md` - Idempotency 패턴
+- `PHASE_5_EXTENSION_PATTERN.md` - Extension 패턴 (완료)
+
+### Related Documentation
+
+- `lib/features/creation/domain/README.md` - Domain Layer 문서
+- `lib/features/creation/presentation/README.md` - Presentation Layer 문서
+- `lib/services/cache/creation_cache_service.dart` - Cache 서비스 구현
+- `lib/core/utils/idempotency_service.dart` - Idempotency 서비스
+
+### External Services
+
+- [Firebase Firestore](https://firebase.google.com/docs/firestore)
+- [Firebase Storage](https://firebase.google.com/docs/storage)
+- [Firebase Functions](https://firebase.google.com/docs/functions)
+- [Gemini AI](https://ai.google.dev/docs)
+- [Perspective API](https://perspectiveapi.com/)
+- [Cloud Vision API](https://cloud.google.com/vision/docs)
+
+---
+
+## 📝 Change History
+
+| 버전 | 날짜 | 변경 사항 |
+|------|------|----------|
+| v1.0.0 | 2025-11-06 | ✅ Phase 5 Extension Pattern 완료 |
+| v0.9.0 | 2025-11-05 | ✅ Phase 4 Idempotency 완료 |
+| v0.8.0 | 2025-11-03 | ✅ Phase 3 Cache Integration 완료 |
+| v0.7.0 | 2025-11-03 | ✅ Phase 2 Either Pattern 완료 |
+| v0.6.0 | 2025-10-XX | ✅ Phase 1 Freezed Migration 완료 |
+
+---
+
+**Last Updated**: 2025-11-06
+**Architecture**: Firebase-Centric v2.0 + Clean Architecture v4.0
+**Status**: ✅ Production Ready

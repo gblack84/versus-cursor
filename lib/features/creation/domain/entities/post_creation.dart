@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../value_objects/target_audience.dart';
+import 'target_audience.dart';
 
 part 'post_creation.freezed.dart';
 part 'post_creation.g.dart';

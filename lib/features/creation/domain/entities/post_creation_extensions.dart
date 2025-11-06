@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'post_creation.dart';
-import '../value_objects/target_audience_extensions.dart';
+import 'target_audience_extensions.dart';
 
 /// Firestore Extension for PostCreation
 ///

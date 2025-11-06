@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/create_post_notifier.dart';
 import '../../widgets/create_post/image_selection_widget.dart';
@@ -10,6 +9,7 @@ import '/core/utils/error_handler.dart';
 import 'package:bot_toast/bot_toast.dart';
 import '../../widgets/dialogs/target_audience_dialog.dart';
 import '/features/creation/domain/failures/creation_failures.dart';
+import '/features/auth/presentation/providers/auth_providers.dart';
 
 /// Main screen for post creation
 ///
@@ -96,20 +96,21 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen>
       }
 
       // CreatePostNotifier를 통해 포스트 생성 (타겟 오디언스 포함)
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
+      // ✅ Clean Architecture: Provider를 통한 간접 접근
+      final currentUserId = await ref.read(currentUserIdProvider.future);
+      if (currentUserId == null) {
         BotToast.showText(text: '로그인이 필요합니다');
         return;
       }
 
       await notifier.createPost(
-        currentUser.uid,
+        currentUserId,
         targetAudience: targetAudienceData,
       );
 
       // 성공 - AI 채팅방으로 자동 이동 (투표 카드 즉시 표시)
       if (mounted) {
-        final chatId = 'ai_assistant_${currentUser.uid}';
+        final chatId = 'ai_assistant_$currentUserId';
 
         // AI 채팅방으로 이동
         context.go('/chatDetail?chatId=$chatId');

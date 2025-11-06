@@ -20,6 +20,7 @@ const { debugMigration } = require('./functions/https/debugMigration');
 const { markMessagesAsSeen } = require('./functions/https/markMessagesAsSeen');
 const { fullDatabaseScan } = require('./functions/https/fullDatabaseScan');
 const { migrateEntireDatabase } = require('./functions/https/migrateEntireDatabase');
+const { getAIRecommendedUsersCallable } = require('./functions/https/getAIRecommendedUsers');
 
 // Firestore 함수
 const { onPostCreatedSendNotifications } = require('./functions/firestore/onPostCreatedSendNotifications');
@@ -54,7 +55,8 @@ module.exports = {
   markMessagesAsSeen,
   fullDatabaseScan,
   migrateEntireDatabase,
-  
+  getAIRecommendedUsersCallable,
+
   // Firestore
   onPostCreatedSendNotifications,
   onPostVoteUpdate,

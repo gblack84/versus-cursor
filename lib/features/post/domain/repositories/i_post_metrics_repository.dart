@@ -1,63 +1,67 @@
-// Metrics repository - no external model dependencies needed
+// Post Metrics repository - no external model dependencies needed
 
 import 'package:fpdart/fpdart.dart';
-import '../../failures/creation_failures.dart';
+import '../failures/post_failure.dart';
 
-/// Repository interface for content metrics and analytics
+/// Repository interface for post metrics and analytics
 /// CQRS 패턴 - Query 모델로 읽기 전용 통계 관리
-abstract class IContentMetricsRepository {
+///
+/// **Migrated from**: `lib/features/creation/domain/repositories/specialized/i_metrics_repository.dart`
+/// **Migration Date**: 2025-11-06
+/// **Reason**: Metrics are displayed and used in Post screens
+abstract class IPostMetricsRepository {
   /// Increment view count
   ///
-  /// **Returns**: `Either<MetricsRepositoryFailure, Unit>`
-  Future<Either<MetricsRepositoryFailure, Unit>> incrementViewCount(String contentId);
+  /// **Returns**: `Either<PostFailure, Unit>`
+  Future<Either<PostFailure, Unit>> incrementViewCount(String contentId);
 
   /// Get engagement metrics
   ///
-  /// **Returns**: `Either<MetricsRepositoryFailure, ContentMetrics>`
-  Future<Either<MetricsRepositoryFailure, ContentMetrics>> getEngagementMetrics(String contentId);
+  /// **Returns**: `Either<PostFailure, ContentMetrics>`
+  Future<Either<PostFailure, ContentMetrics>> getEngagementMetrics(String contentId);
 
   /// Calculate trending score
   ///
-  /// **Returns**: `Either<MetricsRepositoryFailure, double>`
-  Future<Either<MetricsRepositoryFailure, double>> getTrendingScore(String contentId);
+  /// **Returns**: `Either<PostFailure, double>`
+  Future<Either<PostFailure, double>> getTrendingScore(String contentId);
 
   /// Watch metrics updates in real-time
   ///
-  /// **Returns**: Stream of `Either<MetricsRepositoryFailure, MetricsUpdate>`
-  Stream<Either<MetricsRepositoryFailure, MetricsUpdate>> watchMetrics(String contentId);
+  /// **Returns**: Stream of `Either<PostFailure, MetricsUpdate>`
+  Stream<Either<PostFailure, MetricsUpdate>> watchMetrics(String contentId);
 
   /// Get post metrics
   ///
-  /// **Returns**: `Either<MetricsRepositoryFailure, ContentMetrics>`
-  Future<Either<MetricsRepositoryFailure, ContentMetrics>> getPostMetrics(String contentId);
+  /// **Returns**: `Either<PostFailure, ContentMetrics>`
+  Future<Either<PostFailure, ContentMetrics>> getPostMetrics(String contentId);
 
   /// Update post statistics
   ///
-  /// **Returns**: `Either<MetricsRepositoryFailure, Unit>`
-  Future<Either<MetricsRepositoryFailure, Unit>> updateStats(
+  /// **Returns**: `Either<PostFailure, Unit>`
+  Future<Either<PostFailure, Unit>> updateStats(
     String contentId,
     Map<String, dynamic> stats,
   );
 
   /// Get trending posts
   ///
-  /// **Returns**: Stream of `Either<MetricsRepositoryFailure, List<TrendingContent>>`
-  Stream<Either<MetricsRepositoryFailure, List<TrendingContent>>> getTrendingContent({
+  /// **Returns**: Stream of `Either<PostFailure, List<TrendingContent>>`
+  Stream<Either<PostFailure, List<TrendingContent>>> getTrendingContent({
     int limit = 20,
   });
 
   /// Get popular posts by category
   ///
-  /// **Returns**: Stream of `Either<MetricsRepositoryFailure, List<PopularContent>>`
-  Stream<Either<MetricsRepositoryFailure, List<PopularContent>>> getPopularByCategory(
+  /// **Returns**: Stream of `Either<PostFailure, List<PopularContent>>`
+  Stream<Either<PostFailure, List<PopularContent>>> getPopularByCategory(
     String category, {
     int limit = 10,
   });
 
   /// Record user interaction
   ///
-  /// **Returns**: `Either<MetricsRepositoryFailure, Unit>`
-  Future<Either<MetricsRepositoryFailure, Unit>> recordInteraction(
+  /// **Returns**: `Either<PostFailure, Unit>`
+  Future<Either<PostFailure, Unit>> recordInteraction(
     String contentId,
     String userId,
     InteractionType type, {
@@ -66,8 +70,8 @@ abstract class IContentMetricsRepository {
 
   /// Get interaction history
   ///
-  /// **Returns**: `Either<MetricsRepositoryFailure, List<UserInteraction>>`
-  Future<Either<MetricsRepositoryFailure, List<UserInteraction>>> getInteractionHistory(
+  /// **Returns**: `Either<PostFailure, List<UserInteraction>>`
+  Future<Either<PostFailure, List<UserInteraction>>> getInteractionHistory(
     String contentId,
     String userId,
   );

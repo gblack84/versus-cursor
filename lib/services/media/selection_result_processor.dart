@@ -3,8 +3,9 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:bot_toast/bot_toast.dart';
+import 'package:get_it/get_it.dart';
 import '/app/state/app_state.dart';
-import '/services/moderation/image_moderation_service.dart';
+import '/features/creation/domain/services/i_image_moderation_service.dart';
 import '/core/utils/debug_helper.dart';
 import '/core/utils/error_handler.dart';
 
@@ -146,8 +147,9 @@ class SelectionResultProcessor {
       onProgressUpdate(0.3 + (0.3 * (i + 1) / newAssets.length));
 
       try {
-        // 이미지 검열
-        final result = await ImageModerationService.checkImage(
+        // 이미지 검열 (GetIt으로 서비스 해결)
+        final moderationService = GetIt.instance<IImageModerationService>();
+        final result = await moderationService.checkImage(
           imageFile: file,
           box: box,
         );

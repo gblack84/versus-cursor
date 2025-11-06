@@ -61,7 +61,7 @@ Future<void> setupDependencyInjection() async {
   // because Auth depends on UserContract (provided by Profile)
 
   // ===== Creation Feature DI =====
-  // Note: CreationContract is registered internally by Creation Feature
+  // Note: Creation Feature repositories are registered internally by Creation Feature
   registerCreationModule(getIt);
 
   // ===== Post Feature DI (MUST BE REGISTERED BEFORE Voting) =====

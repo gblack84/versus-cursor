@@ -11,9 +11,35 @@ import '/core/design_system/design_system.dart';
 /// - Perspective API (텍스트 유해성)
 /// - Vision API (이미지 검열)
 /// - Gemini AI (콘텐츠 논리성)
+///
+/// **Migration**: Static class → Instance-based class (Phase 2-Cleanup)
+/// **DI Pattern**: Constructor injection for PerspectiveApiService
 class AIModerationService {
-  /// 포스트 콘텐츠 전체 검증
+  final IPerspectiveApiService _perspectiveService;
+
+  /// Constructor injection for Perspective API service
+  AIModerationService({
+    required IPerspectiveApiService perspectiveService,
+  }) : _perspectiveService = perspectiveService;
+
+  /// Static factory method for convenient usage (creates instance internally)
   static Future<ModerationResult> moderatePostContent({
+    required ModerationRequest request,
+    ModerationOptions options = ModerationOptions.defaultOptions,
+    Function(String)? onProgressUpdate,
+  }) async {
+    final service = AIModerationService(
+      perspectiveService: PerspectiveApiService.fromEnvironment(),
+    );
+    return service._moderatePostContent(
+      request: request,
+      options: options,
+      onProgressUpdate: onProgressUpdate,
+    );
+  }
+
+  /// 포스트 콘텐츠 전체 검증 (Internal implementation)
+  Future<ModerationResult> _moderatePostContent({
     required ModerationRequest request,
     ModerationOptions options = ModerationOptions.defaultOptions,
     Function(String)? onProgressUpdate,
@@ -88,7 +114,7 @@ class AIModerationService {
   }
 
   /// 텍스트 검열 (Perspective API)
-  static Future<TextModerationResult> _moderateText(
+  Future<TextModerationResult> _moderateText(
       ModerationRequest request) async {
     final textsToValidate = <String, String>{};
 
@@ -115,7 +141,7 @@ class AIModerationService {
 
     // Perspective API 호출
     final results =
-        await PerspectiveApiService.analyzeMultipleTexts(textsToValidate);
+        await _perspectiveService.analyzeMultipleTexts(textsToValidate);
 
     // 가장 높은 점수와 카테고리 찾기
     double maxScore = 0.0;
@@ -143,7 +169,7 @@ class AIModerationService {
   }
 
   /// 텍스트 위반 사항 포맷팅
-  static String _formatTextViolation(TextModerationResult result) {
+  String _formatTextViolation(TextModerationResult result) {
     if (result.detectedCategory == null) return '부적절한 내용';
 
     final categoryName =
@@ -153,7 +179,7 @@ class AIModerationService {
   }
 
   /// 심각도 결정
-  static String _determineSeverity(
+  String _determineSeverity(
     TextModerationResult? textResult,
     GeminiModerationResult? geminiResult,
     List<String> violations,

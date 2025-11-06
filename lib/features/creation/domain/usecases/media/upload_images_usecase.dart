@@ -5,11 +5,14 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../failures/creation_failures.dart';
 import '../../repositories/i_media_repository.dart';
 import '../../services/i_image_processing_service.dart';
-import '../../../data/models/image_upload_dto.dart';
 
 part 'upload_images_usecase.freezed.dart';
 
 /// UseCase for uploading and processing images
+///
+/// **Phase 5 Migration**: Removed ImageUploadDto dependency
+/// - Now uses individual parameters (images, box, userId)
+/// - Validation logic moved inline
 ///
 /// This UseCase wraps the ImageUploadService to provide a clean interface
 /// for the Presentation layer, following Clean Architecture principles.
@@ -23,24 +26,30 @@ class UploadImagesUseCase {
   })  : _mediaRepository = mediaRepository,
         _imageProcessingService = imageProcessingService;
 
-  /// Upload multiple images with processing and moderation using DTO
+  /// Upload multiple images with processing and moderation
   ///
-  /// Simplified interface using ImageUploadDto to bundle parameters.
+  /// **Phase 5 Migration**: Replaced ImageUploadDto with individual parameters
+  /// - [images]: List of image files to upload
+  /// - [box]: 'A' or 'B' to identify which option
+  /// - [userId]: User ID for file path generation
+  /// - [onProgress]: Optional progress callback (0.0 to 1.0)
   Future<Either<Failure, UploadResult>> execute({
-    required ImageUploadDto dto,
+    required List<File> images,
+    required String box,
+    required String userId,
     Function(double)? onProgress,
   }) async {
     try {
-      if (dto.images.isEmpty) {
+      if (images.isEmpty) {
         return left(
           const CreationValidationFailure('No images provided'),
         );
       }
 
-      // Validate box parameter
-      if (!dto.isValidBox) {
+      // Validate box parameter (inline validation, moved from DTO)
+      if (box != 'A' && box != 'B') {
         return left(
-          CreationValidationFailure('Invalid box parameter: ${dto.box}'),
+          CreationValidationFailure('Invalid box parameter: $box'),
         );
       }
 
@@ -48,8 +57,8 @@ class UploadImagesUseCase {
       onProgress?.call(0.2);
 
       final processingEither = await _imageProcessingService.processMultipleImages(
-        files: dto.images,
-        box: dto.box,
+        files: images,
+        box: box,
         onProgress: (progress) {
           // Map processing progress to 20-60% of total
           onProgress?.call(0.2 + (progress * 0.4));

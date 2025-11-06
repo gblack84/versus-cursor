@@ -1,20 +1,24 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:uuid/uuid.dart';
-import '../../domain/repositories/specialized/i_metrics_repository.dart';
-import '../../domain/failures/creation_failures.dart';
-import '../../../../core/utils/idempotency_service.dart';
-import '../../../../core/utils/shard_utils.dart';
+import '../../domain/repositories/i_post_metrics_repository.dart';
+import '../../domain/failures/post_failure.dart';
+import '/core/utils/idempotency_service.dart';
+import '/core/utils/shard_utils.dart';
 
-/// Implementation of content metrics repository
+/// Implementation of post metrics repository
 /// CQRS 패턴 - Query 모델로 읽기 전용 통계 관리 구현체
-class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
+///
+/// **Migrated from**: `lib/features/creation/data/repositories/content_metrics_repository_impl.dart`
+/// **Migration Date**: 2025-11-06
+/// **Reason**: Metrics are displayed and used in Post screens
+class PostMetricsRepositoryImpl implements IPostMetricsRepository {
   final FirebaseFirestore _firestore;
   final IdempotencyService _idempotencyService;
   final ShardUtils _shardUtils;
   static const String _collection = 'posts';
 
-  ContentMetricsRepositoryImpl({
+  PostMetricsRepositoryImpl({
     FirebaseFirestore? firestore,
     IdempotencyService? idempotencyService,
     ShardUtils? shardUtils,
@@ -27,7 +31,7 @@ class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
       _firestore.collection(_collection);
 
   @override
-  Future<Either<MetricsRepositoryFailure, Unit>> incrementViewCount(String contentId) async {
+  Future<Either<PostFailure, Unit>> incrementViewCount(String contentId) async {
     try {
       await _postsCollection.doc(contentId).update({
         'stats.viewCount': FieldValue.increment(1),
@@ -35,29 +39,24 @@ class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
       });
       return right(unit);
     } on FirebaseException catch (e) {
-      return left(MetricsRepositoryFailure(
-        metricType: 'viewCount',
-        message: 'Failed to increment view count: ${e.message}',
-        code: e.code,
+      return left(PostFailure.metricsOperationFailed(
+        operation: 'incrementViewCount',
+        reason: e.message,
       ));
     } catch (e) {
-      return left(MetricsRepositoryFailure(
-        metricType: 'viewCount',
-        message: 'Unexpected error incrementing view count: $e',
+      return left(PostFailure.unexpected(
+        message: 'Unexpected error incrementing view count',
+        error: e,
       ));
     }
   }
 
   @override
-  Future<Either<MetricsRepositoryFailure, ContentMetrics>> getEngagementMetrics(String contentId) async {
+  Future<Either<PostFailure, ContentMetrics>> getEngagementMetrics(String contentId) async {
     try {
       final doc = await _postsCollection.doc(contentId).get();
       if (!doc.exists) {
-        return left(MetricsRepositoryFailure(
-          metricType: 'engagement',
-          message: 'Content not found',
-          code: 'not-found',
-        ));
+        return left(PostFailure.postNotFound(postId: contentId));
       }
 
       final data = doc.data() as Map<String, dynamic>;
@@ -73,21 +72,20 @@ class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
       );
       return right(metrics);
     } on FirebaseException catch (e) {
-      return left(MetricsRepositoryFailure(
-        metricType: 'engagement',
-        message: 'Failed to get engagement metrics: ${e.message}',
-        code: e.code,
+      return left(PostFailure.metricsOperationFailed(
+        operation: 'getEngagementMetrics',
+        reason: e.message,
       ));
     } catch (e) {
-      return left(MetricsRepositoryFailure(
-        metricType: 'engagement',
-        message: 'Unexpected error getting engagement metrics: $e',
+      return left(PostFailure.unexpected(
+        message: 'Unexpected error getting engagement metrics',
+        error: e,
       ));
     }
   }
 
   @override
-  Future<Either<MetricsRepositoryFailure, double>> getTrendingScore(String contentId) async {
+  Future<Either<PostFailure, double>> getTrendingScore(String contentId) async {
     try {
       final metricsResult = await getEngagementMetrics(contentId);
       return metricsResult.fold(
@@ -96,11 +94,7 @@ class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
           try {
             final doc = await _postsCollection.doc(contentId).get();
             if (!doc.exists) {
-              return left(MetricsRepositoryFailure(
-                metricType: 'trending',
-                message: 'Content not found',
-                code: 'not-found',
-              ));
+              return left(PostFailure.postNotFound(postId: contentId));
             }
 
             final data = doc.data() as Map<String, dynamic>;
@@ -116,32 +110,27 @@ class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
 
             return right(score);
           } on FirebaseException catch (e) {
-            return left(MetricsRepositoryFailure(
-              metricType: 'trending',
-              message: 'Failed to calculate trending score: ${e.message}',
-              code: e.code,
+            return left(PostFailure.metricsOperationFailed(
+              operation: 'getTrendingScore',
+              reason: e.message,
             ));
           }
         },
       );
     } catch (e) {
-      return left(MetricsRepositoryFailure(
-        metricType: 'trending',
-        message: 'Unexpected error calculating trending score: $e',
+      return left(PostFailure.unexpected(
+        message: 'Unexpected error calculating trending score',
+        error: e,
       ));
     }
   }
 
   @override
-  Stream<Either<MetricsRepositoryFailure, MetricsUpdate>> watchMetrics(String contentId) {
+  Stream<Either<PostFailure, MetricsUpdate>> watchMetrics(String contentId) {
     return _postsCollection.doc(contentId).snapshots().map((doc) {
       try {
         if (!doc.exists) {
-          return left(MetricsRepositoryFailure(
-            metricType: 'watch',
-            message: 'Content not found',
-            code: 'not-found',
-          ));
+          return left(PostFailure.postNotFound(postId: contentId));
         }
 
         final data = doc.data() as Map<String, dynamic>;
@@ -152,21 +141,21 @@ class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
         );
         return right(update);
       } catch (e) {
-        return left(MetricsRepositoryFailure(
-          metricType: 'watch',
-          message: 'Unexpected error watching metrics: $e',
+        return left(PostFailure.unexpected(
+          message: 'Unexpected error watching metrics',
+          error: e,
         ));
       }
     });
   }
 
   @override
-  Future<Either<MetricsRepositoryFailure, ContentMetrics>> getPostMetrics(String contentId) async {
+  Future<Either<PostFailure, ContentMetrics>> getPostMetrics(String contentId) async {
     return getEngagementMetrics(contentId);
   }
 
   @override
-  Future<Either<MetricsRepositoryFailure, Unit>> updateStats(
+  Future<Either<PostFailure, Unit>> updateStats(
     String contentId,
     Map<String, dynamic> stats,
   ) async {
@@ -180,21 +169,20 @@ class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
       await _postsCollection.doc(contentId).update(updateData);
       return right(unit);
     } on FirebaseException catch (e) {
-      return left(MetricsRepositoryFailure(
-        metricType: 'update',
-        message: 'Failed to update stats: ${e.message}',
-        code: e.code,
+      return left(PostFailure.metricsOperationFailed(
+        operation: 'updateStats',
+        reason: e.message,
       ));
     } catch (e) {
-      return left(MetricsRepositoryFailure(
-        metricType: 'update',
-        message: 'Unexpected error updating stats: $e',
+      return left(PostFailure.unexpected(
+        message: 'Unexpected error updating stats',
+        error: e,
       ));
     }
   }
 
   @override
-  Stream<Either<MetricsRepositoryFailure, List<TrendingContent>>> getTrendingContent({int limit = 20}) {
+  Stream<Either<PostFailure, List<TrendingContent>>> getTrendingContent({int limit = 20}) {
     return _postsCollection
         .orderBy('stats.participantcount', descending: true)
         .orderBy('createdAt', descending: true)
@@ -223,16 +211,16 @@ class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
         validResults.sort((a, b) => b.trendingScore.compareTo(a.trendingScore));
         return right(validResults.take(limit).toList());
       } catch (e) {
-        return left(MetricsRepositoryFailure(
-          metricType: 'trending',
-          message: 'Unexpected error getting trending content: $e',
+        return left(PostFailure.unexpected(
+          message: 'Unexpected error getting trending content',
+          error: e,
         ));
       }
     });
   }
 
   @override
-  Stream<Either<MetricsRepositoryFailure, List<PopularContent>>> getPopularByCategory(
+  Stream<Either<PostFailure, List<PopularContent>>> getPopularByCategory(
     String category, {
     int limit = 10,
   }) {
@@ -257,16 +245,16 @@ class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
 
         return right(popularList);
       } catch (e) {
-        return left(MetricsRepositoryFailure(
-          metricType: 'popular',
-          message: 'Unexpected error getting popular content: $e',
+        return left(PostFailure.unexpected(
+          message: 'Unexpected error getting popular content',
+          error: e,
         ));
       }
     });
   }
 
   @override
-  Future<Either<MetricsRepositoryFailure, Unit>> recordInteraction(
+  Future<Either<PostFailure, Unit>> recordInteraction(
     String contentId,
     String userId,
     InteractionType type, {
@@ -308,21 +296,20 @@ class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
       );
       return right(unit);
     } on FirebaseException catch (e) {
-      return left(MetricsRepositoryFailure(
-        metricType: 'interaction',
-        message: 'Failed to record interaction: ${e.message}',
-        code: e.code,
+      return left(PostFailure.metricsOperationFailed(
+        operation: 'recordInteraction',
+        reason: e.message,
       ));
     } catch (e) {
-      return left(MetricsRepositoryFailure(
-        metricType: 'interaction',
-        message: 'Unexpected error recording interaction: $e',
+      return left(PostFailure.unexpected(
+        message: 'Unexpected error recording interaction',
+        error: e,
       ));
     }
   }
 
   @override
-  Future<Either<MetricsRepositoryFailure, List<UserInteraction>>> getInteractionHistory(
+  Future<Either<PostFailure, List<UserInteraction>>> getInteractionHistory(
     String contentId,
     String userId,
   ) async {
@@ -346,15 +333,14 @@ class ContentMetricsRepositoryImpl implements IContentMetricsRepository {
 
       return right(interactions);
     } on FirebaseException catch (e) {
-      return left(MetricsRepositoryFailure(
-        metricType: 'history',
-        message: 'Failed to get interaction history: ${e.message}',
-        code: e.code,
+      return left(PostFailure.metricsOperationFailed(
+        operation: 'getInteractionHistory',
+        reason: e.message,
       ));
     } catch (e) {
-      return left(MetricsRepositoryFailure(
-        metricType: 'history',
-        message: 'Unexpected error getting interaction history: $e',
+      return left(PostFailure.unexpected(
+        message: 'Unexpected error getting interaction history',
+        error: e,
       ));
     }
   }

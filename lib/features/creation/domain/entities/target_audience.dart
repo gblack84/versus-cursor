@@ -73,6 +73,33 @@ sealed class TargetAudience with _$TargetAudience {
     );
   }
 
+  /// Factory constructor for creating from Provider's Map
+  ///
+  /// **Phase 5 Migration**: Moved from TargetAudienceDto
+  /// Converts UI layer keys to Domain layer format
+  /// - UI 'type' → Domain 'collectionType'
+  /// - Handles criteria nesting
+  /// - Age group conversion (English → Korean)
+  factory TargetAudience.fromProviderMap(Map<String, dynamic> map) {
+    return TargetAudience(
+      collectionType: map['type'] as String, // UI 'type' → Domain 'collectionType'
+      targetCount: map['targetCount'] as int? ?? 100,
+      isPremium: map['isPremium'] as bool? ?? false,
+      selectedInterests: map['criteria'] != null
+          ? List<String>.from(map['criteria']['interests'] ?? [])
+          : const [],
+      selectedAgeGroup: _convertAgeGroupFromMap(map['criteria']),
+      selectedGender: map['criteria'] != null
+          ? map['criteria']['gender'] as String? ?? 'all'
+          : 'all',
+      activeUserOnly: map['criteria'] != null
+          ? map['criteria']['activeUserOnly'] as bool? ?? true
+          : true,
+      createdAt: DateTime.now(), // Provider maps don't have createdAt
+      status: 'pending', // New audience is always pending
+    );
+  }
+
   /// Convert to map for Firestore storage (Firebase Functions compatible)
   Map<String, dynamic> toMap() {
     final Map<String, dynamic> data = {

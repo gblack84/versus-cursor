@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../../domain/models/aggregates/post_creation.dart';
-import '../../../domain/models/value_objects/target_audience.dart';
+import '../../../domain/entities/post_creation.dart';
+import '../../../domain/entities/target_audience.dart';
 import '/services/moderation/perspective_api_service.dart';
 
 part 'create_post_state.freezed.dart';

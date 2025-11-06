@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:fpdart/fpdart.dart';
 import '../failures/creation_failures.dart';
-import '../models/aggregates/post_creation.dart';
-import '../models/value_objects/target_audience.dart';
+import '../entities/post_creation.dart';
+import '../entities/target_audience.dart';
 import '../services/i_target_audience_service.dart' as service;
 import '../services/i_image_processing_service.dart';
 

@@ -3,15 +3,34 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:image/image.dart' as img;
+import '/features/creation/domain/services/i_image_moderation_service.dart';
 
-/// 이미지 검열 서비스 (Cloud Function 사용)
-class ImageModerationService {
-  static final FirebaseFunctions _functions = FirebaseFunctions.instanceFor(
-    region: 'asia-northeast3',
-  );
+/// Image Moderation Service Implementation
+///
+/// Clean Architecture - Adapter pattern
+/// Implements IImageModerationService interface (Port)
+///
+/// Responsibilities:
+/// - Image content moderation via Cloud Vision API
+/// - Inappropriate content detection (violence, adult, etc.)
+/// - Text detection (OCR) for policy enforcement
+///
+/// Pattern: Port-Adapter (Hexagonal Architecture)
+class ImageModerationService implements IImageModerationService {
+  final FirebaseFunctions _functions;
 
-  /// 단일 이미지 검열
-  static Future<ModerationResult> checkImage({
+  /// Constructor with dependency injection
+  ///
+  /// ✅ DI Pattern (기존 Static → Instance 변환)
+  ImageModerationService({FirebaseFunctions? functions})
+      : _functions = functions ??
+          FirebaseFunctions.instanceFor(region: 'asia-northeast3');
+
+  /// Check image for inappropriate content
+  ///
+  /// ✅ Instance method (기존 Static method에서 변환)
+  @override
+  Future<ModerationResult> checkImage({
     required File imageFile,
     required String box,
   }) async {
@@ -39,16 +58,23 @@ class ImageModerationService {
         isAppropriate: data['isAppropriate'] ?? false,
         reason: data['reason'] ?? '',
         hasText: data['hasText'] ?? false,
+        details: data,
       );
     } catch (e) {
       print('[ImageModerationService] 검열 중 오류: $e');
       // 오류 시 통과로 처리 (나중에 서버에서 재검증)
-      return ModerationResult(isAppropriate: true, reason: '', hasText: false);
+      return ModerationResult(
+        isAppropriate: true,
+        reason: '',
+        hasText: false,
+      );
     }
   }
 
   /// 여러 이미지 검열
-  static Future<List<ModerationResult>> checkMultipleImages({
+  ///
+  /// ✅ Instance method (기존 Static method에서 변환)
+  Future<List<ModerationResult>> checkMultipleImages({
     required List<File> imageFiles,
     required String box,
     Function(int current, int total)? onProgress,
@@ -69,7 +95,9 @@ class ImageModerationService {
   }
 
   /// 검열용 이미지 리사이즈 (작은 크기로 변환하여 속도 향상)
-  static Future<Uint8List> _resizeImageForModeration(File imageFile) async {
+  ///
+  /// ✅ Instance method (기존 Static method에서 변환)
+  Future<Uint8List> _resizeImageForModeration(File imageFile) async {
     try {
       final bytes = await imageFile.readAsBytes();
       final image = img.decodeImage(bytes);
@@ -104,20 +132,12 @@ class ImageModerationService {
   }
 
   /// File에서 Uint8List로 변환
-  static Future<Uint8List> fileToBytes(File file) async {
+  ///
+  /// ✅ Instance method (기존 Static method에서 변환)
+  Future<Uint8List> fileToBytes(File file) async {
     return await file.readAsBytes();
   }
 }
 
-/// 검열 결과
-class ModerationResult {
-  final bool isAppropriate;
-  final String reason;
-  final bool hasText;
-
-  ModerationResult({
-    required this.isAppropriate,
-    required this.reason,
-    this.hasText = false,
-  });
-}
+// ✅ ModerationResult 클래스는 IImageModerationService로 이동됨
+// (Port Interface에 정의되어 있음)

@@ -4,8 +4,8 @@ import 'package:fpdart/fpdart.dart';
 import '../../domain/failures/creation_failures.dart';
 import '../../domain/repositories/i_media_repository.dart';
 import '../datasources/interfaces/i_storage_datasource.dart';
-import '../../domain/models/entities/media_info.dart';
-import '../../domain/models/entities/media_info_extensions.dart';
+import '../../domain/entities/media_info.dart';
+import '../../domain/entities/media_info_extensions.dart';
 
 /// Implementation of Media Repository using Clean Architecture
 ///

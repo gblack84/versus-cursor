@@ -114,6 +114,20 @@ sealed class PostFailure with _$PostFailure {
   /// - 삭제 권한 없음
   const factory PostFailure.deleteFailed({String? reason}) = DeleteFailed;
 
+  /// 메트릭스 작업 실패
+  ///
+  /// **발생 시나리오**:
+  /// - 조회수 증가 실패
+  /// - 통계 업데이트 실패
+  /// - 인터랙션 기록 실패
+  ///
+  /// **Migrated from**: `MetricsRepositoryFailure` (Creation Feature)
+  /// **Migration Date**: 2025-11-06
+  const factory PostFailure.metricsOperationFailed({
+    required String operation,
+    String? reason,
+  }) = MetricsOperationFailed;
+
   // ========== Search & Query Errors ==========
 
   /// 검색 실패

@@ -153,15 +153,42 @@ class ToxicSpan {
   });
 }
 
-/// Google Perspective API 서비스
-class PerspectiveApiService {
+/// Abstract interface for Perspective API Service (Port Pattern)
+///
+/// **Clean Architecture**: Port (Interface) for text moderation service
+/// **Implementation**: PerspectiveApiService (Adapter)
+/// **Purpose**: Dependency Inversion Principle - Domain depends on interface, not concrete implementation
+abstract class IPerspectiveApiService {
+  Future<PerspectiveResult> analyzeText(String text);
+  Future<Map<String, PerspectiveResult>> analyzeMultipleTexts(Map<String, String> texts);
+  Future<String?> validateText(String? value);
+  Future<bool> testConnection();
+}
+
+/// Google Perspective API 서비스 (Concrete Implementation)
+///
+/// **Migration**: Static class → Instance-based class (Phase 2-Step 1)
+/// **DI Pattern**: Constructor injection for API key
+/// **Clean Architecture**: Adapter implementation of IPerspectiveApiService
+class PerspectiveApiService implements IPerspectiveApiService {
   // API Key는 환경 변수에서 로드됩니다 (Phase 0 보안 수정)
-  static String get _apiKey => EnvironmentConfig.perspectiveApiKey;
+  final String apiKey;
   static const String _baseUrl =
       'https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze';
 
+  /// Constructor injection for API key
+  PerspectiveApiService({required this.apiKey});
+
+  /// Factory constructor for default setup (uses EnvironmentConfig)
+  factory PerspectiveApiService.fromEnvironment() {
+    return PerspectiveApiService(
+      apiKey: EnvironmentConfig.perspectiveApiKey,
+    );
+  }
+
   /// 텍스트 독성 분석
-  static Future<PerspectiveResult> analyzeText(String text) async {
+  @override
+  Future<PerspectiveResult> analyzeText(String text) async {
     if (text.trim().isEmpty) {
       return PerspectiveResult(
         isToxic: false,
@@ -190,7 +217,7 @@ class PerspectiveApiService {
 
       final response = await http
           .post(
-            Uri.parse('$_baseUrl?key=$_apiKey'),
+            Uri.parse('$_baseUrl?key=$apiKey'),
             headers: {
               'Content-Type': 'application/json',
             },
@@ -213,7 +240,8 @@ class PerspectiveApiService {
   }
 
   /// 여러 텍스트 필드를 한 번에 분석
-  static Future<Map<String, PerspectiveResult>> analyzeMultipleTexts(
+  @override
+  Future<Map<String, PerspectiveResult>> analyzeMultipleTexts(
       Map<String, String> texts) async {
     final results = <String, PerspectiveResult>{};
 
@@ -249,7 +277,8 @@ class PerspectiveApiService {
   }
 
   /// 텍스트 검증 (TextFormField용)
-  static Future<String?> validateText(String? value) async {
+  @override
+  Future<String?> validateText(String? value) async {
     if (value == null || value.trim().isEmpty) return null;
 
     try {
@@ -295,7 +324,8 @@ class PerspectiveApiService {
   }
 
   /// API 상태 테스트
-  static Future<bool> testConnection() async {
+  @override
+  Future<bool> testConnection() async {
     try {
       final result = await analyzeText('Hello world');
       return !result.isToxic; // 정상적인 텍스트는 독성이 아니어야 함

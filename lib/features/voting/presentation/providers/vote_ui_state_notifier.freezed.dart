@@ -115,10 +115,7 @@ return $default(_that);case _:
 final _that = this;
 switch (_that) {
 case _VoteUIState():
-return $default(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -177,10 +174,7 @@ return $default(_that.hasVoted,_that.selectedOption,_that.voteTimestamp,_that.is
 @optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool hasVoted,  String? selectedOption,  DateTime? voteTimestamp,  bool isAnimating)  $default,) {final _that = this;
 switch (_that) {
 case _VoteUIState():
-return $default(_that.hasVoted,_that.selectedOption,_that.voteTimestamp,_that.isAnimating);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that.hasVoted,_that.selectedOption,_that.voteTimestamp,_that.isAnimating);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -208,8 +202,8 @@ return $default(_that.hasVoted,_that.selectedOption,_that.voteTimestamp,_that.is
 /// @nodoc
 
 
-class _VoteUIState extends VoteUIState {
-  const _VoteUIState({this.hasVoted = false, this.selectedOption = null, this.voteTimestamp = null, this.isAnimating = false}): super._();
+class _VoteUIState implements VoteUIState {
+  const _VoteUIState({this.hasVoted = false, this.selectedOption = null, this.voteTimestamp = null, this.isAnimating = false});
   
 
 @override@JsonKey() final  bool hasVoted;

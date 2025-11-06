@@ -32,7 +32,7 @@ part 'usecase_providers.g.dart';
 /// **의존성**: IAuthRepository
 /// **사용처**: SignInScreen
 @riverpod
-SignInWithEmailUseCase signInWithEmailUseCase(SignInWithEmailUseCaseRef ref) {
+SignInWithEmailUseCase signInWithEmailUseCase(Ref ref) {
   return getIt<SignInWithEmailUseCase>();
 }
 
@@ -42,7 +42,7 @@ SignInWithEmailUseCase signInWithEmailUseCase(SignInWithEmailUseCaseRef ref) {
 /// **의존성**: IAuthRepository, GoogleSignIn
 /// **사용처**: SignInScreen, SocialLoginButtons
 @riverpod
-SignInWithGoogleUseCase signInWithGoogleUseCase(SignInWithGoogleUseCaseRef ref) {
+SignInWithGoogleUseCase signInWithGoogleUseCase(Ref ref) {
   return getIt<SignInWithGoogleUseCase>();
 }
 
@@ -52,7 +52,7 @@ SignInWithGoogleUseCase signInWithGoogleUseCase(SignInWithGoogleUseCaseRef ref) 
 /// **의존성**: IAuthRepository, SignInWithApple
 /// **사용처**: SignInScreen, SocialLoginButtons
 @riverpod
-SignInWithAppleUseCase signInWithAppleUseCase(SignInWithAppleUseCaseRef ref) {
+SignInWithAppleUseCase signInWithAppleUseCase(Ref ref) {
   return getIt<SignInWithAppleUseCase>();
 }
 
@@ -62,7 +62,7 @@ SignInWithAppleUseCase signInWithAppleUseCase(SignInWithAppleUseCaseRef ref) {
 /// **의존성**: IAuthRepository, Firebase Phone Auth
 /// **사용처**: PhoneSignInScreen
 @riverpod
-SignInWithPhoneUseCase signInWithPhoneUseCase(SignInWithPhoneUseCaseRef ref) {
+SignInWithPhoneUseCase signInWithPhoneUseCase(Ref ref) {
   return getIt<SignInWithPhoneUseCase>();
 }
 
@@ -76,7 +76,7 @@ SignInWithPhoneUseCase signInWithPhoneUseCase(SignInWithPhoneUseCaseRef ref) {
 /// **의존성**: IAuthRepository
 /// **사용처**: SignUpScreen
 @riverpod
-SignUpWithEmailUseCase signUpWithEmailUseCase(SignUpWithEmailUseCaseRef ref) {
+SignUpWithEmailUseCase signUpWithEmailUseCase(Ref ref) {
   return getIt<SignUpWithEmailUseCase>();
 }
 
@@ -90,7 +90,7 @@ SignUpWithEmailUseCase signUpWithEmailUseCase(SignUpWithEmailUseCaseRef ref) {
 /// **의존성**: IAuthRepository
 /// **사용처**: SettingsScreen, ForgotPasswordScreen
 @riverpod
-PasswordManagementUseCase passwordManagementUseCase(PasswordManagementUseCaseRef ref) {
+PasswordManagementUseCase passwordManagementUseCase(Ref ref) {
   return getIt<PasswordManagementUseCase>();
 }
 
@@ -100,7 +100,7 @@ PasswordManagementUseCase passwordManagementUseCase(PasswordManagementUseCaseRef
 /// **의존성**: IAuthRepository
 /// **사용처**: EmailVerificationScreen
 @riverpod
-EmailVerificationUseCase emailVerificationUseCase(EmailVerificationUseCaseRef ref) {
+EmailVerificationUseCase emailVerificationUseCase(Ref ref) {
   return getIt<EmailVerificationUseCase>();
 }
 
@@ -110,7 +110,7 @@ EmailVerificationUseCase emailVerificationUseCase(EmailVerificationUseCaseRef re
 /// **의존성**: IAuthRepository
 /// **사용처**: SettingsScreen, DeleteAccountDialog
 @riverpod
-AccountManagementUseCase accountManagementUseCase(AccountManagementUseCaseRef ref) {
+AccountManagementUseCase accountManagementUseCase(Ref ref) {
   return getIt<AccountManagementUseCase>();
 }
 

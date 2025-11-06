@@ -71,7 +71,7 @@ final class VoteSubmissionProvider
   }
 }
 
-String _$voteSubmissionHash() => r'5a9aa1b7dcc0e28feb422103849a2a95400bc1e2';
+String _$voteSubmissionHash() => r'b55d266a4822e251dd621ffb02441e4b075bd744';
 
 /// 투표 제출 Notifier
 ///

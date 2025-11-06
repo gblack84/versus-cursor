@@ -114,10 +114,7 @@ return $default(_that);case _:
 final _that = this;
 switch (_that) {
 case _VoteSubmissionState():
-return $default(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -176,10 +173,7 @@ return $default(_that.isLoading,_that.error,_that.isSuccess);case _:
 @optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool isLoading,  String? error,  bool isSuccess)  $default,) {final _that = this;
 switch (_that) {
 case _VoteSubmissionState():
-return $default(_that.isLoading,_that.error,_that.isSuccess);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that.isLoading,_that.error,_that.isSuccess);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -207,8 +201,8 @@ return $default(_that.isLoading,_that.error,_that.isSuccess);case _:
 /// @nodoc
 
 
-class _VoteSubmissionState extends VoteSubmissionState {
-  const _VoteSubmissionState({this.isLoading = false, this.error = null, this.isSuccess = false}): super._();
+class _VoteSubmissionState implements VoteSubmissionState {
+  const _VoteSubmissionState({this.isLoading = false, this.error = null, this.isSuccess = false});
   
 
 @override@JsonKey() final  bool isLoading;

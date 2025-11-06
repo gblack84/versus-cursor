@@ -13,9 +13,8 @@
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '/app/di.dart';
-import '/features/voting/domain/usecases/chat/submit_vote_use_case.dart';
 import '/features/voting/domain/failures/voting_failure.dart';
+import 'usecase_providers.dart';
 
 part 'vote_submission_notifier.freezed.dart';
 part 'vote_submission_notifier.g.dart';
@@ -31,9 +30,7 @@ part 'vote_submission_notifier.g.dart';
 /// - copyWith() 자동 생성
 /// - ==, hashCode 자동 생성
 @freezed
-class VoteSubmissionState with _$VoteSubmissionState {
-  const VoteSubmissionState._(); // Private constructor for Freezed
-
+sealed class VoteSubmissionState with _$VoteSubmissionState {
   const factory VoteSubmissionState({
     @Default(false) bool isLoading,
     @Default(null) String? error,
@@ -88,7 +85,7 @@ class VoteSubmission extends _$VoteSubmission {
 
     try {
       // SubmitVoteUseCase를 통한 투표 제출
-      final useCase = getIt<SubmitVoteUseCase>();
+      final useCase = ref.read(submitVoteUseCaseProvider);
       final result = await useCase(
         postId: postId,
         userId: userId,

@@ -3,6 +3,9 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/entities/user_settings.dart';
+import '../../domain/entities/character.dart';
+import '../../domain/entities/interest.dart';
+import '../../domain/entities/profile_info.dart';
 import 'usecase_providers.dart';
 
 part 'profile_notifiers.freezed.dart';
@@ -322,5 +325,56 @@ Stream<UserSettings?> settingsStream(
       ref.read(settingsUIProvider.notifier).clearError();
       return settings;
     },
+  );
+}
+
+// ========================================
+// Future Providers (Data Fetching)
+// ========================================
+
+/// Characters Future Provider
+@riverpod
+Future<List<Character>> characters(Ref ref) async {
+  final useCase = ref.read(getAvailableCharactersUseCaseProvider);
+  final result = await useCase.execute();
+  return result.fold(
+    (failure) => [],
+    (characters) => characters,
+  );
+}
+
+/// Interests Future Provider
+@riverpod
+Future<List<Interest>> interests(Ref ref, String userId) async {
+  final useCase = ref.read(getUserInterestsUseCaseProvider);
+  final result = await useCase.execute(userId);  // Positional parameter
+  return result.fold(
+    (failure) => [],
+    (interests) => interests,
+  );
+}
+
+/// Profile Completion Future Provider
+@riverpod
+Future<double> profileCompletion(Ref ref, String userId) async {
+  final useCase = ref.read(getProfileCompletionUseCaseProvider);
+  final result = await useCase.execute(userId);  // Positional parameter
+  return result.fold(
+    (failure) => 0.0,
+    (completion) => completion,
+  );
+}
+
+/// Profile Info Future Provider
+@riverpod
+Future<ProfileInfo> profileInfo(Ref ref, String userId) async {
+  final useCase = ref.read(getProfileInfoUseCaseProvider);
+  final result = await useCase.execute(userId);  // Positional parameter
+  return result.fold(
+    (failure) => const ProfileInfo(
+      userId: '',
+      displayName: '',
+    ),
+    (info) => info,
   );
 }

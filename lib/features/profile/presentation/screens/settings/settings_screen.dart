@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/core_exports.dart';
-import '/features/profile/presentation/providers/profile_providers.dart';
+import '/features/profile/presentation/providers/profile_notifiers.dart';
 import '/features/profile/presentation/widgets/settings/settings_section.dart';
 import '/features/profile/presentation/widgets/settings/settings_toggle.dart';
 import '/features/profile/presentation/widgets/settings/settings_list_tile.dart';
@@ -34,10 +34,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Riverpod: StreamProvider로 실시간 동기화
-    final settingsAsync = ref.watch(
-      settingsStreamProvider(SettingsStreamParams(userId: widget.userId)),
-    );
+    // Riverpod 3.x: StreamProvider로 실시간 동기화 (direct parameter)
+    final settingsAsync = ref.watch(settingsStreamProvider(widget.userId));
 
     return Scaffold(
       backgroundColor: AppTheme.of(context).primaryBackground,
@@ -61,7 +59,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           message: error.toString(),
           onRetry: () {
             // 재시도: Stream을 다시 구독하도록 강제
-            ref.invalidate(settingsStreamProvider);
+            ref.invalidate(settingsStreamProvider(widget.userId));
           },
         ),
         data: (settings) {

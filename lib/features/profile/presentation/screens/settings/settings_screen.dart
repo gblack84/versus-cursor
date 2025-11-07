@@ -8,11 +8,11 @@ import '/features/profile/presentation/widgets/settings/settings_list_tile.dart'
 import '/features/profile/presentation/widgets/common/loading_indicator.dart';
 import '/features/profile/presentation/widgets/common/error_message.dart';
 
-/// 설정 화면 (Phase 3: Riverpod 마이그레이션 완료)
+/// 설정 화면 (Riverpod 3.x 마이그레이션 완료)
 ///
-/// **Clean Architecture v4.0 + Riverpod**:
+/// **Clean Architecture v4.0 + Riverpod 3.x**:
 /// - StreamProvider로 실시간 동기화
-/// - ProfileActions로 업데이트 실행
+/// - ProfileNotifier로 업데이트 실행
 /// - UI와 비즈니스 로직 완전 분리
 /// - GetIt + Riverpod 통합
 class SettingsScreen extends ConsumerStatefulWidget {

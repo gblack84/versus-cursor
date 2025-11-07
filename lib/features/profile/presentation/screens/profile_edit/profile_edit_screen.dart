@@ -13,9 +13,9 @@ import '/core/constants/app_constants.dart';
 
 /// 프로필 편집 화면 (Phase 3: Riverpod 마이그레이션 완료)
 ///
-/// **Clean Architecture v4.0 + Riverpod**:
+/// **Clean Architecture v4.0 + Riverpod 3.x**:
 /// - ConsumerStatefulWidget으로 로컬 상태 관리 (Form)
-/// - ProfileActions로 업데이트 실행
+/// - ProfileNotifier로 업데이트 실행
 /// - StreamProvider로 실시간 동기화
 class ProfileEditScreen extends ConsumerStatefulWidget {
   const ProfileEditScreen({
@@ -312,7 +312,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
   /// 이미지 선택 및 업로드
   ///
-  /// **Phase 3: Riverpod 구현**: ProfileActions를 통한 이미지 선택 및 업로드
+  /// **Riverpod 3.x**: ProfileNotifier를 통한 이미지 선택 및 업로드
   Future<void> _pickAndUploadImage(UserProfile currentProfile) async {
     // 1. 이미지 소스 선택 다이얼로그
     final ImageSource? source = await showDialog<ImageSource>(

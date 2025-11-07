@@ -5,9 +5,9 @@ import '/features/profile/presentation/providers/profile_notifiers.dart';
 
 /// 온보딩 플로우 화면 (Riverpod)
 ///
-/// **Clean Architecture v4.0 + Riverpod**:
+/// **Clean Architecture v4.0 + Riverpod 3.x**:
 /// - ✅ ConsumerStatefulWidget으로 전환
-/// - ✅ ProfileActions.updateInterests() 사용
+/// - ✅ ProfileNotifier.updateInterests() 사용
 /// - ✅ UseCase 통해 비즈니스 로직 처리
 /// - 3단계 온보딩 플로우 통합 (언어 → 전문분야 → 취미)
 class OnboardingFlowScreen extends ConsumerStatefulWidget {

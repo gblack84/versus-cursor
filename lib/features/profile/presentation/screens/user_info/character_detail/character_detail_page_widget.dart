@@ -17,10 +17,10 @@ import 'package:get_it/get_it.dart';
 
 /// 캐릭터 선택 화면 (Riverpod)
 ///
-/// **Clean Architecture v4.0 + Riverpod**:
+/// **Clean Architecture v4.0 + Riverpod 3.x**:
 /// - ✅ ConsumerStatefulWidget으로 전환
 /// - ✅ charactersProvider 사용
-/// - ✅ ProfileActions.updateProfile() 사용
+/// - ✅ ProfileNotifier.updateProfile() 사용
 class CharacterDetailPageWidget extends ConsumerStatefulWidget {
   const CharacterDetailPageWidget({super.key});
 
@@ -327,7 +327,7 @@ class _CharacterDetailPageWidgetState extends ConsumerState<CharacterDetailPageW
     );
   }
 
-  /// Phase 3: Riverpod - ProfileActions.updateProfile() 사용
+  /// Riverpod 3.x - ProfileNotifier.updateProfile() 사용
   Future<void> _updateProfileCharacter({
     required String? characterId,
     required String photoUrl,

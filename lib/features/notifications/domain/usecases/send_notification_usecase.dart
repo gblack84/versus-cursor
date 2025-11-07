@@ -21,13 +21,13 @@ class SendNotificationUseCase {
       SendNotificationParams params) async {
     // 비즈니스 규칙: 타겟 사용자 검증
     if (params.targetUserIds.isEmpty) {
-      return left(const InvalidNotificationData());
+      return left(const NotificationFailure.invalidNotificationData());
     }
 
     // 비즈니스 규칙: 최대 타겟 사용자 수 제한
     const maxTargets = 100;
     if (params.targetUserIds.length > maxTargets) {
-      return left(const InvalidNotificationData());
+      return left(const NotificationFailure.invalidNotificationData());
     }
 
     // 알림 타입별 처리
@@ -61,7 +61,7 @@ class SendNotificationUseCase {
       if (idOrError.isLeft()) {
         return idOrError.fold(
           (failure) => left(failure),
-          (_) => left(const NotificationSendFailed()), // 이 경로는 실행되지 않음
+          (_) => left(const NotificationFailure.notificationSendFailed()), // 이 경로는 실행되지 않음
         );
       }
 

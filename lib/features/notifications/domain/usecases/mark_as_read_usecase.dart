@@ -19,7 +19,7 @@ class MarkAsReadUseCase {
   Future<Either<NotificationFailure, Unit>> call(MarkAsReadParams params) async {
     // 비즈니스 규칙: 권한 검증
     if (params.userId.isEmpty || params.notificationId.isEmpty) {
-      return left(const InvalidNotificationData());
+      return left(const NotificationFailure.invalidNotificationData());
     }
 
     // 비즈니스 로직: 알림 조회하여 소유자 확인
@@ -34,7 +34,7 @@ class MarkAsReadUseCase {
       (notification) async {
         // 비즈니스 규칙: 본인 알림만 읽음 처리 가능
         if (notification.userId != params.userId) {
-          return left(const PermissionDenied());
+          return left(const NotificationFailure.permissionDenied());
         }
 
         // 비즈니스 규칙: 이미 읽은 알림은 스킵 (Idempotent)

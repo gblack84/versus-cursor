@@ -79,7 +79,7 @@ class NotificationRepositoryImpl implements INotificationRepository {
       final doc = await _notificationsCollection.doc(id).get();
 
       if (!doc.exists) {
-        return left(const NotificationNotFound());
+        return left(const NotificationFailure.notificationNotFound());
       }
 
       // Extension으로 변환
@@ -91,11 +91,11 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return right(notification);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        return left(const PermissionDenied());
+        return left(const NotificationFailure.permissionDenied());
       }
-      return left(const NotificationLoadFailed());
+      return left(const NotificationFailure.notificationLoadFailed());
     } catch (e) {
-      return left(Unexpected('Failed to get notification: ${e.toString()}'));
+      return left(NotificationFailure.unexpected('Failed to get notification: ${e.toString()}'));
     }
   }
 
@@ -137,11 +137,11 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return right(notifications);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        return left(const PermissionDenied());
+        return left(const NotificationFailure.permissionDenied());
       }
-      return left(const NotificationLoadFailed());
+      return left(const NotificationFailure.notificationLoadFailed());
     } catch (e) {
-      return left(Unexpected('Failed to get user notifications: ${e.toString()}'));
+      return left(NotificationFailure.unexpected('Failed to get user notifications: ${e.toString()}'));
     }
   }
 
@@ -182,14 +182,14 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return right(unit);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        return left(const PermissionDenied());
+        return left(const NotificationFailure.permissionDenied());
       } else if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
-        return left(const NetworkError());
+        return left(const NotificationFailure.networkError());
       } else {
-        return left(const ServerError());
+        return left(const NotificationFailure.serverError());
       }
     } catch (e) {
-      return left(Unexpected('Failed to send notification: ${e.toString()}'));
+      return left(NotificationFailure.unexpected('Failed to send notification: ${e.toString()}'));
     }
   }
 
@@ -205,12 +205,12 @@ class NotificationRepositoryImpl implements INotificationRepository {
           .get();
 
       if (!notificationDoc.exists) {
-        return left(const NotificationNotFound());
+        return left(const NotificationFailure.notificationNotFound());
       }
 
       final userId = notificationDoc.data()?['userId'] as String?;
       if (userId == null) {
-        return left(const Unexpected('Notification missing userId'));
+        return left(const NotificationFailure.unexpected('Notification missing userId'));
       }
 
       // 2. executeIdempotent로 중복 방지
@@ -235,16 +235,16 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return right(unit);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        return left(const PermissionDenied());
+        return left(const NotificationFailure.permissionDenied());
       } else if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
-        return left(const NetworkError());
+        return left(const NotificationFailure.networkError());
       } else if (e.code == 'not-found') {
-        return left(const NotificationNotFound());
+        return left(const NotificationFailure.notificationNotFound());
       } else {
-        return left(const ServerError());
+        return left(const NotificationFailure.serverError());
       }
     } catch (e) {
-      return left(Unexpected('Failed to mark as read: ${e.toString()}'));
+      return left(NotificationFailure.unexpected('Failed to mark as read: ${e.toString()}'));
     }
   }
 
@@ -260,12 +260,12 @@ class NotificationRepositoryImpl implements INotificationRepository {
           .get();
 
       if (!notificationDoc.exists) {
-        return left(const NotificationNotFound());
+        return left(const NotificationFailure.notificationNotFound());
       }
 
       final userId = notificationDoc.data()?['userId'] as String?;
       if (userId == null) {
-        return left(const Unexpected('Notification missing userId'));
+        return left(const NotificationFailure.unexpected('Notification missing userId'));
       }
 
       // 2. executeIdempotent로 중복 방지
@@ -287,16 +287,16 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return right(unit);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        return left(const PermissionDenied());
+        return left(const NotificationFailure.permissionDenied());
       } else if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
-        return left(const NetworkError());
+        return left(const NotificationFailure.networkError());
       } else if (e.code == 'not-found') {
-        return left(const NotificationNotFound());
+        return left(const NotificationFailure.notificationNotFound());
       } else {
-        return left(const ServerError());
+        return left(const NotificationFailure.serverError());
       }
     } catch (e) {
-      return left(Unexpected('Failed to delete notification: ${e.toString()}'));
+      return left(NotificationFailure.unexpected('Failed to delete notification: ${e.toString()}'));
     }
   }
 
@@ -336,14 +336,14 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return right(unit);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        return left(const PermissionDenied());
+        return left(const NotificationFailure.permissionDenied());
       } else if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
-        return left(const NetworkError());
+        return left(const NotificationFailure.networkError());
       } else {
-        return left(const ServerError());
+        return left(const NotificationFailure.serverError());
       }
     } catch (e) {
-      return left(Unexpected('Failed to mark all as read: ${e.toString()}'));
+      return left(NotificationFailure.unexpected('Failed to mark all as read: ${e.toString()}'));
     }
   }
 
@@ -384,14 +384,14 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return right(unit);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        return left(const PermissionDenied());
+        return left(const NotificationFailure.permissionDenied());
       } else if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
-        return left(const NetworkError());
+        return left(const NotificationFailure.networkError());
       } else {
-        return left(const ServerError());
+        return left(const NotificationFailure.serverError());
       }
     } catch (e) {
-      return left(Unexpected('Failed to delete all notifications: ${e.toString()}'));
+      return left(NotificationFailure.unexpected('Failed to delete all notifications: ${e.toString()}'));
     }
   }
 
@@ -422,11 +422,11 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return right(unit);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        return left(const PermissionDenied());
+        return left(const NotificationFailure.permissionDenied());
       }
-      return left(const NotificationDeleteFailed());
+      return left(const NotificationFailure.notificationDeleteFailed());
     } catch (e) {
-      return left(Unexpected('Failed to delete old notifications: ${e.toString()}'));
+      return left(NotificationFailure.unexpected('Failed to delete old notifications: ${e.toString()}'));
     }
   }
 
@@ -457,11 +457,11 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return right(unit);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        return left(const PermissionDenied());
+        return left(const NotificationFailure.permissionDenied());
       }
-      return left(const NotificationDeleteFailed());
+      return left(const NotificationFailure.notificationDeleteFailed());
     } catch (e) {
-      return left(Unexpected('Failed to delete expired notifications: ${e.toString()}'));
+      return left(NotificationFailure.unexpected('Failed to delete expired notifications: ${e.toString()}'));
     }
   }
 
@@ -488,11 +488,11 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return right(querySnapshot.docs.length);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        return left(const PermissionDenied());
+        return left(const NotificationFailure.permissionDenied());
       }
-      return left(const NotificationLoadFailed());
+      return left(const NotificationFailure.notificationLoadFailed());
     } catch (e) {
-      return left(Unexpected('Failed to get unread count: ${e.toString()}'));
+      return left(NotificationFailure.unexpected('Failed to get unread count: ${e.toString()}'));
     }
   }
 
@@ -532,11 +532,11 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return right(notifications);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        return left(const PermissionDenied());
+        return left(const NotificationFailure.permissionDenied());
       }
-      return left(const NotificationLoadFailed());
+      return left(const NotificationFailure.notificationLoadFailed());
     } catch (e) {
-      return left(Unexpected('Failed to get notifications by type: ${e.toString()}'));
+      return left(NotificationFailure.unexpected('Failed to get notifications by type: ${e.toString()}'));
     }
   }
 
@@ -582,14 +582,14 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return right(notificationId);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        return left(const PermissionDenied());
+        return left(const NotificationFailure.permissionDenied());
       } else if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
-        return left(const NetworkError());
+        return left(const NotificationFailure.networkError());
       } else {
-        return left(const ServerError());
+        return left(const NotificationFailure.serverError());
       }
     } catch (e) {
-      return left(Unexpected('Failed to create notification: ${e.toString()}'));
+      return left(NotificationFailure.unexpected('Failed to create notification: ${e.toString()}'));
     }
   }
 
@@ -608,14 +608,14 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return right(unit);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        return left(const PermissionDenied());
+        return left(const NotificationFailure.permissionDenied());
       } else if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
-        return left(const NetworkError());
+        return left(const NotificationFailure.networkError());
       } else {
-        return left(const ServerError());
+        return left(const NotificationFailure.serverError());
       }
     } catch (e) {
-      return left(Unexpected('Failed to update notification: ${e.toString()}'));
+      return left(NotificationFailure.unexpected('Failed to update notification: ${e.toString()}'));
     }
   }
 
@@ -702,14 +702,14 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return right(unit);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        return left(const PermissionDenied());
+        return left(const NotificationFailure.permissionDenied());
       } else if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
-        return left(const NetworkError());
+        return left(const NotificationFailure.networkError());
       } else {
-        return left(const ServerError());
+        return left(const NotificationFailure.serverError());
       }
     } catch (e) {
-      return left(Unexpected('Failed to broadcast system notification: ${e.toString()}'));
+      return left(NotificationFailure.unexpected('Failed to broadcast system notification: ${e.toString()}'));
     }
   }
 
@@ -790,14 +790,14 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return right(unit);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        return left(const PermissionDenied());
+        return left(const NotificationFailure.permissionDenied());
       } else if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
-        return left(const NetworkError());
+        return left(const NotificationFailure.networkError());
       } else {
-        return left(const ServerError());
+        return left(const NotificationFailure.serverError());
       }
     } catch (e) {
-      return left(Unexpected('Failed to group social notifications: ${e.toString()}'));
+      return left(NotificationFailure.unexpected('Failed to group social notifications: ${e.toString()}'));
     }
   }
 
@@ -847,11 +847,11 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return right(result);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        return left(const PermissionDenied());
+        return left(const NotificationFailure.permissionDenied());
       }
-      return left(const NotificationLoadFailed());
+      return left(const NotificationFailure.notificationLoadFailed());
     } catch (e) {
-      return left(Unexpected('Failed to get notification stats: ${e.toString()}'));
+      return left(NotificationFailure.unexpected('Failed to get notification stats: ${e.toString()}'));
     }
   }
 
@@ -893,11 +893,11 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return right(formattedLogs);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        return left(const PermissionDenied());
+        return left(const NotificationFailure.permissionDenied());
       }
-      return left(const NotificationLoadFailed());
+      return left(const NotificationFailure.notificationLoadFailed());
     } catch (e) {
-      return left(Unexpected('Failed to get notification activity log: ${e.toString()}'));
+      return left(NotificationFailure.unexpected('Failed to get notification activity log: ${e.toString()}'));
     }
   }
 
@@ -914,11 +914,11 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return right(unit);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        return left(const PermissionDenied());
+        return left(const NotificationFailure.permissionDenied());
       }
-      return left(const NotificationLoadFailed());
+      return left(const NotificationFailure.notificationLoadFailed());
     } catch (e) {
-      return left(Unexpected('Failed to initialize notification system: ${e.toString()}'));
+      return left(NotificationFailure.unexpected('Failed to initialize notification system: ${e.toString()}'));
     }
   }
 
@@ -934,11 +934,11 @@ class NotificationRepositoryImpl implements INotificationRepository {
       return right(unit);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        return left(const PermissionDenied());
+        return left(const NotificationFailure.permissionDenied());
       }
-      return left(const NotificationLoadFailed());
+      return left(const NotificationFailure.notificationLoadFailed());
     } catch (e) {
-      return left(Unexpected('Failed to stop notification listening: ${e.toString()}'));
+      return left(NotificationFailure.unexpected('Failed to stop notification listening: ${e.toString()}'));
     }
   }
 

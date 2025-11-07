@@ -57,17 +57,14 @@ class LanguageSelectorModel extends AppModel<LanguageSelectorWidget> {
       language: selectedLanguage,
     );
 
-    // ProfileActions.updateProfile() 호출
-    await ProfileActions.updateProfile(
-      ref: ref,
-      userId: userId,
-      updatedProfile: updatedProfile,
-      onSuccess: () {
-        // 성공 처리 (선택적)
-      },
-      onError: (message) {
-        // 에러 처리 (선택적)
-      },
-    );
+    // Riverpod 3.x ProfileNotifier.updateProfile() 호출
+    try {
+      await ref.read(profileNotifierProvider.notifier).updateProfile(
+        profile: updatedProfile,
+      );
+      // 성공 처리 (선택적)
+    } catch (e) {
+      // Error handling - 필요시 처리
+    }
   }
 }

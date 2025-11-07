@@ -62,8 +62,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       profileStreamProvider(widget.userId),
     );
 
-    // 로딩 상태 체크
-    final isLoading = ref.watch(profileLoadingProvider);
+    // 로딩 상태 체크 (Riverpod 3.x ProfileUIProvider)
+    final isLoading = ref.watch(profileUIProvider.select((state) => state.isLoading));
 
     return Scaffold(
       appBar: AppBar(
@@ -283,33 +283,31 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       gender: _selectedGender,
     );
 
-    // ProfileActions로 업데이트 실행
-    await ProfileActions.updateProfile(
-      ref: ref,
-      userId: widget.userId,
-      updatedProfile: updatedProfile,
-      onSuccess: () {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('프로필이 저장되었습니다'),
-              backgroundColor: AppTheme.of(context).success,
-            ),
-          );
-          Navigator.pop(context);
-        }
-      },
-      onError: (message) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              backgroundColor: AppTheme.of(context).error,
-            ),
-          );
-        }
-      },
-    );
+    // Riverpod 3.x ProfileNotifier로 업데이트 실행
+    try {
+      await ref.read(profileNotifierProvider.notifier).updateProfile(
+        profile: updatedProfile,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('프로필이 저장되었습니다'),
+            backgroundColor: AppTheme.of(context).success,
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('프로필 저장 실패: $e'),
+            backgroundColor: AppTheme.of(context).error,
+          ),
+        );
+      }
+    }
   }
 
   /// 이미지 선택 및 업로드
@@ -355,31 +353,30 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     // 3. 파일 변환
     final File imageFile = File(image.path);
 
-    // 4. ProfileActions를 통해 업로드
-    await ProfileActions.uploadProfileImage(
-      ref: ref,
-      userId: widget.userId,
-      imageFile: imageFile,
-      onSuccess: (imageUrl) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('프로필 사진이 업데이트되었습니다'),
-              backgroundColor: AppTheme.of(context).success,
-            ),
-          );
-        }
-      },
-      onError: (message) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              backgroundColor: AppTheme.of(context).error,
-            ),
-          );
-        }
-      },
-    );
+    // 4. Riverpod 3.x ProfileNotifier로 업로드
+    try {
+      await ref.read(profileNotifierProvider.notifier).uploadProfileImage(
+        userId: widget.userId,
+        imageFile: imageFile,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('프로필 사진이 업데이트되었습니다'),
+            backgroundColor: AppTheme.of(context).success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('프로필 사진 업로드 실패: $e'),
+            backgroundColor: AppTheme.of(context).error,
+          ),
+        );
+      }
+    }
   }
 }

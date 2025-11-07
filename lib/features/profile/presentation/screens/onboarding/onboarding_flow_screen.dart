@@ -69,36 +69,35 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen> {
   }
 
   Future<void> _completeOnboarding() async {
-    // Riverpod: ProfileActions.updateInterests() 사용
-    await ProfileActions.updateInterests(
-      ref: ref,
-      userId: widget.userId,
-      expertise: _selectedExpertise,
-      hobbies: _selectedHobbies,
-      onSuccess: () {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('온보딩이 완료되었습니다'),
-              backgroundColor: AppTheme.of(context).success,
-            ),
-          );
-          // TODO: 온보딩 완료 후 메인 화면으로 이동
-          // 언어 설정은 ProfileEditScreen 또는 Settings에서 변경 가능
-          Navigator.of(context).pop();
-        }
-      },
-      onError: (message) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              backgroundColor: AppTheme.of(context).error,
-            ),
-          );
-        }
-      },
-    );
+    // Riverpod 3.x: ProfileNotifier.updateInterests() 사용
+    try {
+      await ref.read(profileNotifierProvider.notifier).updateInterests(
+        userId: widget.userId,
+        expertise: _selectedExpertise,
+        hobbies: _selectedHobbies,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('온보딩이 완료되었습니다'),
+            backgroundColor: AppTheme.of(context).success,
+          ),
+        );
+        // TODO: 온보딩 완료 후 메인 화면으로 이동
+        // 언어 설정은 ProfileEditScreen 또는 Settings에서 변경 가능
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('온보딩 완료 실패: $e'),
+            backgroundColor: AppTheme.of(context).error,
+          ),
+        );
+      }
+    }
   }
 
   @override

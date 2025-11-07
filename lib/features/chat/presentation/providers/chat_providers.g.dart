@@ -59,7 +59,7 @@ final class GetChatListUseCaseProvider
 }
 
 String _$getChatListUseCaseHash() =>
-    r'8d235600798a4f7d1dff09f6bae3b12e0e7848de';
+    r'0fac4a060d75cf5bbb6792b569b321201db3cc85';
 
 /// GetIt에 등록된 GetChatMessagesUseCase를 Riverpod Provider로 제공
 
@@ -112,7 +112,7 @@ final class GetChatMessagesUseCaseProvider
 }
 
 String _$getChatMessagesUseCaseHash() =>
-    r'2f23b3081e3fcd1b8f9ddb3b76e2fadf9b212879';
+    r'645c8c65348f0f8b61ce9e00ec6be89e4d1f71ca';
 
 /// GetIt에 등록된 LoadMoreMessagesUseCase를 Riverpod Provider로 제공
 
@@ -165,7 +165,7 @@ final class LoadMoreMessagesUseCaseProvider
 }
 
 String _$loadMoreMessagesUseCaseHash() =>
-    r'd9628266c7ac211a4d1de2c53acce9e9216d3b52';
+    r'a7fbdbb3668fbff4f0aa8c49b0120969f7687e55';
 
 /// GetIt에 등록된 SendMessageUseCase를 Riverpod Provider로 제공
 
@@ -218,7 +218,7 @@ final class SendMessageUseCaseProvider
 }
 
 String _$sendMessageUseCaseHash() =>
-    r'01f4d2253e5a79724d8f9149cc9cdae00849f1e5';
+    r'9cc1a53cdd65f5cfcf291a98877f3854d1fae4a8';
 
 /// GetIt에 등록된 SearchMessagesUseCase를 Riverpod Provider로 제공
 
@@ -271,7 +271,7 @@ final class SearchMessagesUseCaseProvider
 }
 
 String _$searchMessagesUseCaseHash() =>
-    r'bbc0fb9dc3fc493fd60f18387908508a0c7db39b';
+    r'1848060ae9955c2744cd58ca32bb7e810a5acd30';
 
 /// GetIt에 등록된 SendAIQueryUseCase를 Riverpod Provider로 제공
 
@@ -324,7 +324,7 @@ final class SendAIQueryUseCaseProvider
 }
 
 String _$sendAIQueryUseCaseHash() =>
-    r'6ab228a635dea7e7e84c8733071684de3bed4020';
+    r'09bafa7ae76d30f34de0f8778ca480a0b8350ab9';
 
 /// GetIt에 등록된 GetRecommendedFriendsUseCase를 Riverpod Provider로 제공
 
@@ -378,7 +378,7 @@ final class GetRecommendedFriendsUseCaseProvider
 }
 
 String _$getRecommendedFriendsUseCaseHash() =>
-    r'647f4f6ee370d369855a534ed32b8768bd10aaa4';
+    r'bb8eb663a24df4b8432f30dd8ad67bf01af739bd';
 
 /// GetIt에 등록된 SearchFriendsUseCase를 Riverpod Provider로 제공
 
@@ -431,7 +431,7 @@ final class SearchFriendsUseCaseProvider
 }
 
 String _$searchFriendsUseCaseHash() =>
-    r'd2e80673d11720032d0ad634a9b4c424dd7e45b8';
+    r'ce6061e849094ed972c6ba0a36cd2b365bf75d64';
 
 /// GetIt에 등록된 SendFriendRequestUseCase를 Riverpod Provider로 제공
 
@@ -484,7 +484,7 @@ final class SendFriendRequestUseCaseProvider
 }
 
 String _$sendFriendRequestUseCaseHash() =>
-    r'b7ccab12fe92a3d97bc81462ad9db3701d3d4b39';
+    r'bc6bece3656121b42becdc9a8eba584af671c966';
 
 /// GetIt에 등록된 ToggleFollowUseCase를 Riverpod Provider로 제공
 
@@ -537,7 +537,7 @@ final class ToggleFollowUseCaseProvider
 }
 
 String _$toggleFollowUseCaseHash() =>
-    r'48e84ba4423640d2b3e7200156af8676cfa3b10e';
+    r'ee5cdb30f6397310362e9f669f2c2f068bb56f40';
 
 /// GetIt에 등록된 ChatMessageLifecycleService를 Riverpod Provider로 제공
 
@@ -591,7 +591,7 @@ final class ChatMessageLifecycleServiceProvider
 }
 
 String _$chatMessageLifecycleServiceHash() =>
-    r'f6945c46b668c113ced625b4ad8365bedd58faf6';
+    r'd65670df9efe87919e5000e1f87335d3ebb38ca6';
 
 /// GetIt에 등록된 IAIService를 Riverpod Provider로 제공
 
@@ -637,7 +637,7 @@ final class AiServiceProvider
   }
 }
 
-String _$aiServiceHash() => r'5b78baaf881c15c2ff3f5cfc6326b48c6da12fbe';
+String _$aiServiceHash() => r'e735ea51c689b3e2566bb08a6c1ffba6f5cd5bcc';
 
 /// 채팅 목록 실시간 스트림 Provider
 ///
@@ -755,7 +755,7 @@ final class ChatListStreamProvider
   }
 }
 
-String _$chatListStreamHash() => r'179b2955087e4e052bc785ca6619dc99186c3a76';
+String _$chatListStreamHash() => r'1fb787b90ae5f42cf0a955c9b079870e3aebeacb';
 
 /// 채팅 목록 실시간 스트림 Provider
 ///
@@ -893,7 +893,7 @@ final class ChatMessagesStreamProvider
 }
 
 String _$chatMessagesStreamHash() =>
-    r'6901f79f9bcfac094d1a34e80b89d201247a7cb2';
+    r'8ddc9289fb7700841c57531edf6b82162bc446e9';
 
 /// 채팅 메시지 실시간 스트림 Provider
 ///
@@ -1048,7 +1048,7 @@ final class RecommendedFriendsStreamProvider
 }
 
 String _$recommendedFriendsStreamHash() =>
-    r'0d22982eb1c0602f7ce4dae80d320f27e001a7c6';
+    r'54280329812f6d6758a28cafb7560217c309826f';
 
 /// 추천 친구 목록 실시간 스트림 Provider
 ///
@@ -1213,7 +1213,7 @@ final class SearchFriendsStreamProvider
 }
 
 String _$searchFriendsStreamHash() =>
-    r'fb900a2d138656e2d8e323481812506a37bdfca1';
+    r'c09ebadc95bcd4505caf49fbbe77ad4cb2aacec8';
 
 /// 친구 검색 실시간 스트림 Provider
 ///
@@ -1341,7 +1341,7 @@ final class UnreadChatCountProvider extends $FunctionalProvider<int, int, int>
   }
 }
 
-String _$unreadChatCountHash() => r'f7962d68ccfc4f44108a525f3ed067c36fb34a5f';
+String _$unreadChatCountHash() => r'f446030eb309c04a5674a656d5c53bcd3c6b2c1a';
 
 /// 읽지 않은 채팅 개수 Provider
 ///
@@ -1451,7 +1451,7 @@ final class AiChatProvider extends $FunctionalProvider<Chat?, Chat?, Chat?>
   }
 }
 
-String _$aiChatHash() => r'9e6593939bf53fd347eccf48f557c6f3d77c3ccf';
+String _$aiChatHash() => r'6326e31d33ace2dc4c9e5b0163aefef1822dc2c8';
 
 /// AI 채팅방 찾기 Provider
 ///

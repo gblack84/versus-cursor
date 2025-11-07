@@ -150,17 +150,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       description: '새로운 칭호를 획득하면 알림을 받습니다',
                       value: settings.receiveTitleUpdateNotifications,
                       onChanged: (value) {
-                        ProfileActions.updateSettings(
-                          ref: ref,
-                          userId: widget.userId,
-                          settings: {'receiveTitleUpdateNotifications': value},
-                          onSuccess: () {},
-                          onError: (message) {
+                        try {
+                          await ref.read(profileNotifierProvider.notifier).updateSettings(
+                            userId: widget.userId,
+                            settings: {'receiveTitleUpdateNotifications': value},
+                          );
+                        } catch (e) {
+                          if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(message)),
+                              SnackBar(content: Text('설정 업데이트 실패: $e')),
                             );
-                          },
-                        );
+                          }
+                        };
                       },
                     ),
                     Divider(height: 1, indent: 16, endIndent: 16),
@@ -170,17 +171,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       description: '내 게시물에 새로운 투표가 있으면 알림을 받습니다',
                       value: settings.receiveVoteNotifications,
                       onChanged: (value) {
-                        ProfileActions.updateSettings(
-                          ref: ref,
-                          userId: widget.userId,
-                          settings: {'receiveVoteNotifications': value},
-                          onSuccess: () {},
-                          onError: (message) {
+                        try {
+                          await ref.read(profileNotifierProvider.notifier).updateSettings(
+                            userId: widget.userId,
+                            settings: {'receiveVoteNotifications': value},
+                          );
+                        } catch (e) {
+                          if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(message)),
+                              SnackBar(content: Text('설정 업데이트 실패: $e')),
                             );
-                          },
-                        );
+                          }
+                        };
                       },
                     ),
                     Divider(height: 1, indent: 16, endIndent: 16),
@@ -190,17 +192,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       description: '내 게시물에 새로운 댓글이 달리면 알림을 받습니다',
                       value: settings.receiveCommentNotifications,
                       onChanged: (value) {
-                        ProfileActions.updateSettings(
-                          ref: ref,
-                          userId: widget.userId,
-                          settings: {'receiveCommentNotifications': value},
-                          onSuccess: () {},
-                          onError: (message) {
+                        try {
+                          await ref.read(profileNotifierProvider.notifier).updateSettings(
+                            userId: widget.userId,
+                            settings: {'receiveCommentNotifications': value},
+                          );
+                        } catch (e) {
+                          if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(message)),
+                              SnackBar(content: Text('설정 업데이트 실패: $e')),
                             );
-                          },
-                        );
+                          }
+                        };
                       },
                     ),
                     Divider(height: 1, indent: 16, endIndent: 16),
@@ -210,17 +213,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       description: '친구 요청 및 활동 알림을 받습니다',
                       value: settings.receiveFriendNotifications,
                       onChanged: (value) {
-                        ProfileActions.updateSettings(
-                          ref: ref,
-                          userId: widget.userId,
-                          settings: {'receiveFriendNotifications': value},
-                          onSuccess: () {},
-                          onError: (message) {
+                        try {
+                          await ref.read(profileNotifierProvider.notifier).updateSettings(
+                            userId: widget.userId,
+                            settings: {'receiveFriendNotifications': value},
+                          );
+                        } catch (e) {
+                          if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(message)),
+                              SnackBar(content: Text('설정 업데이트 실패: $e')),
                             );
-                          },
-                        );
+                          }
+                        };
                       },
                     ),
                   ],
@@ -342,11 +346,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               // 다이얼로그 닫기
               Navigator.of(dialogContext).pop();
 
-              // 계정 삭제 실행 (ProfileActions 사용)
-              await ProfileActions.deleteProfile(
-                ref: ref,
-                userId: userId,
-                onSuccess: () {
+              // 계정 삭제 실행 (Riverpod 3.x ProfileNotifier)
+              try {
+                await ref.read(profileNotifierProvider.notifier).deleteProfile(
+                  userId: userId,
+                );
+
+                if (context.mounted) {
                   // 성공 메시지
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -357,17 +363,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                   // startPage로 이동
                   context.goNamed('startPage');
-                },
-                onError: (message) {
+                }
+              } catch (e) {
+                if (context.mounted) {
                   // 에러 메시지
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(message),
+                      content: Text('계정 삭제 실패: $e'),
                       backgroundColor: AppTheme.of(context).error,
                     ),
                   );
-                },
-              );
+                }
+              }
             },
             child: Text(
               '삭제',

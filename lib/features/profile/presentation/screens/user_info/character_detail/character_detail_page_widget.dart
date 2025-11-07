@@ -371,25 +371,23 @@ class _CharacterDetailPageWidgetState extends ConsumerState<CharacterDetailPageW
       photoUrl: photoUrl,
     );
 
-    // ProfileActions.updateProfile() 호출
-    await ProfileActions.updateProfile(
-      ref: ref,
-      userId: userId,
-      updatedProfile: updatedProfile,
-      onSuccess: () {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('프로필이 업데이트되었습니다')),
-          );
-        }
-      },
-      onError: (message) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(message)),
-          );
-        }
-      },
-    );
+    // Riverpod 3.x ProfileNotifier.updateProfile() 호출
+    try {
+      await ref.read(profileNotifierProvider.notifier).updateProfile(
+        profile: updatedProfile,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('프로필이 업데이트되었습니다')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('프로필 업데이트 실패: $e')),
+        );
+      }
+    }
   }
 }

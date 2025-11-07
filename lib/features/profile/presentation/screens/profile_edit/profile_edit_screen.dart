@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '/core_exports.dart';
 import '/features/profile/domain/entities/user_profile.dart';
-import '/features/profile/presentation/providers/profile_providers.dart';
+import '/features/profile/presentation/providers/profile_notifiers.dart';
 import '/features/profile/presentation/widgets/common/loading_indicator.dart';
 import '/features/profile/presentation/widgets/common/error_message.dart';
 import '/features/profile/presentation/constants/validation_rules.dart';
@@ -59,7 +59,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   Widget build(BuildContext context) {
     // Riverpod: StreamProvider로 실시간 프로필 동기화
     final profileAsync = ref.watch(
-      profileStreamProvider(ProfileStreamParams(userId: widget.userId)),
+      profileStreamProvider(widget.userId),
     );
 
     // 로딩 상태 체크

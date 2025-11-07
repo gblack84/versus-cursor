@@ -5,7 +5,7 @@ import '/features/profile/domain/entities/user_post_item.dart';
 import '/core/design_system/design_system.dart';
 import '/features/profile/presentation/widgets/common/loading_indicator.dart';
 import '/features/profile/presentation/widgets/common/error_message.dart';
-import '/features/profile/presentation/providers/profile_providers.dart';
+import '/features/profile/presentation/providers/profile_notifiers.dart';
 
 /// 사용자 게시물 전체 목록 화면 (Riverpod)
 ///

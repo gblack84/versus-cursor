@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/profile_providers.dart';
+import '../../providers/profile_notifiers.dart';
 import '/features/profile/domain/entities/user_profile.dart';
 
 /// 프로필 완성도 카드 위젯 (Riverpod)
@@ -32,13 +32,11 @@ class ProfileCompletionCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Riverpod: profileCompletionProvider로 완성도 조회
+    // Riverpod 3.x: profileCompletionProvider로 완성도 조회
     final completionState = ref.watch(profileCompletionProvider(userId));
 
-    // Riverpod: profileStreamProvider로 프로필 데이터 조회
-    final profileState = ref.watch(profileStreamProvider(
-      ProfileStreamParams(userId: userId),
-    ));
+    // Riverpod 3.x: profileStreamProvider로 프로필 데이터 조회 (direct parameter)
+    final profileState = ref.watch(profileStreamProvider(userId));
 
     // AsyncValue.when으로 로딩/에러/데이터 상태 처리
     return completionState.when(

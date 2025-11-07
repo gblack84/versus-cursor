@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/core_exports.dart';
-import '/features/profile/presentation/providers/profile_providers.dart';
+import '/features/profile/presentation/providers/profile_notifiers.dart';
 import '/features/profile/presentation/widgets/profile/profile_header.dart';
 import '/features/profile/presentation/widgets/common/loading_indicator.dart';
 import '/features/profile/presentation/widgets/common/error_message.dart';
@@ -30,7 +30,7 @@ class UserInfoDisplayScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Riverpod: StreamProvider로 실시간 프로필 감시
     final profileAsync = ref.watch(
-      profileStreamProvider(ProfileStreamParams(userId: userId)),
+      profileStreamProvider(userId),
     );
 
     return Scaffold(

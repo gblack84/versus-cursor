@@ -3,7 +3,7 @@ import '/core_exports.dart';
 import 'language_selector_widget.dart' show LanguageSelectorWidget;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '/features/profile/presentation/providers/profile_providers.dart';
+import '/features/profile/presentation/providers/profile_notifiers.dart';
 import '/features/profile/domain/entities/user_profile.dart';
 import '/app/contracts/auth_contract.dart';
 import 'package:get_it/get_it.dart';
@@ -41,9 +41,7 @@ class LanguageSelectorModel extends AppModel<LanguageSelectorWidget> {
     if (userId == null) return;
 
     // 현재 프로필 가져오기
-    final profileState = ref.read(profileStreamProvider(
-      ProfileStreamParams(userId: userId),
-    ));
+    final profileState = ref.read(profileStreamProvider(userId));
 
     UserProfile? currentProfile;
     profileState.when(

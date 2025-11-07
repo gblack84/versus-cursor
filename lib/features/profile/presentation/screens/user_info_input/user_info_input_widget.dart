@@ -14,7 +14,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:webviewx_plus/webviewx_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '/features/profile/presentation/providers/profile_providers.dart';
+import '/features/profile/presentation/providers/profile_notifiers.dart';
 import '/features/profile/domain/entities/user_profile.dart';
 import '/app/contracts/auth_contract.dart';
 import 'user_info_input_model.dart';
@@ -52,9 +52,7 @@ class _UserInfoInputWidgetState extends ConsumerState<UserInfoInputWidget> {
   UserProfile? get _currentProfile {
     if (_userId == null) return null;
 
-    final profileState = ref.read(profileStreamProvider(
-      ProfileStreamParams(userId: _userId!),
-    ));
+    final profileState = ref.read(profileStreamProvider(_userId!));
 
     UserProfile? profile;
     profileState.when(
@@ -1006,9 +1004,7 @@ class _UserInfoInputWidgetState extends ConsumerState<UserInfoInputWidget> {
                                                   (_) {
                                                     // Phase 3: Riverpod - profileStreamProvider 갱신 및 다음 페이지로 이동
                                                     if (_userId != null) {
-                                                      ref.invalidate(profileStreamProvider(
-                                                        ProfileStreamParams(userId: _userId!),
-                                                      ));
+                                                      ref.invalidate(profileStreamProvider(_userId!));
                                                     }
                                                     context.pushNamed(
                                                         ExpertiseSelectWidget

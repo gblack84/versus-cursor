@@ -10,7 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:webviewx_plus/webviewx_plus.dart';
 import 'package:get_it/get_it.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '/features/profile/presentation/providers/profile_providers.dart';
+import '/features/profile/presentation/providers/profile_notifiers.dart';
 import '/features/profile/domain/entities/user_profile.dart';
 import '/app/contracts/auth_contract.dart';
 import 'interest_category.dart';
@@ -65,9 +65,7 @@ class _InterestSelectionWidgetState extends ConsumerState<InterestSelectionWidge
   UserProfile? get _currentProfile {
     if (_userId == null) return null;
 
-    final profileState = ref.read(profileStreamProvider(
-      ProfileStreamParams(userId: _userId!),
-    ));
+    final profileState = ref.read(profileStreamProvider(_userId!));
 
     UserProfile? profile;
     profileState.when(

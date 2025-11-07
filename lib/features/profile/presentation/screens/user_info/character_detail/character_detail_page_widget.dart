@@ -9,7 +9,7 @@ export 'character_detail_page_model.dart';
 
 // Phase 3: Riverpod
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '/features/profile/presentation/providers/profile_providers.dart';
+import '/features/profile/presentation/providers/profile_notifiers.dart';
 import '/features/profile/domain/entities/user_profile.dart';
 // Phase 4: Contract 패턴으로 Feature 간 의존성 제거
 import '/app/contracts/auth_contract.dart';
@@ -346,9 +346,7 @@ class _CharacterDetailPageWidgetState extends ConsumerState<CharacterDetailPageW
     }
 
     // 현재 프로필 가져오기
-    final profileState = ref.read(profileStreamProvider(
-      ProfileStreamParams(userId: userId),
-    ));
+    final profileState = ref.read(profileStreamProvider(userId));
 
     // AsyncValue에서 현재 프로필 추출
     UserProfile? currentProfile;

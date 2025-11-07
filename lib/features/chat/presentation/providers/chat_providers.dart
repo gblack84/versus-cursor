@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '/app/di.dart';
 import '/features/chat/domain/entities/chat.dart';
@@ -19,58 +19,99 @@ import '/features/chat/domain/ports/i_ai_service.dart';
 import '/core/constants/app_constants.dart';
 import 'chat_params.dart';
 
+part 'chat_providers.g.dart';
+
 // ========================================
 // UseCase Providers (GetIt Wrapping)
 // ========================================
 
 /// GetIt에 등록된 GetChatListUseCase를 Riverpod Provider로 제공
-final getChatListUseCaseProvider = Provider<GetChatListUseCase>((ref) {
+@riverpod
+GetChatListUseCase getChatListUseCase(Ref ref) {
   return getIt<GetChatListUseCase>();
-});
+}
 
 /// GetIt에 등록된 GetChatMessagesUseCase를 Riverpod Provider로 제공
-final getChatMessagesUseCaseProvider = Provider<GetChatMessagesUseCase>((ref) {
+@riverpod
+GetChatMessagesUseCase getChatMessagesUseCase(Ref ref) {
   return getIt<GetChatMessagesUseCase>();
-});
+}
 
 /// GetIt에 등록된 LoadMoreMessagesUseCase를 Riverpod Provider로 제공
-final loadMoreMessagesUseCaseProvider = Provider<LoadMoreMessagesUseCase>((ref) {
+@riverpod
+LoadMoreMessagesUseCase loadMoreMessagesUseCase(Ref ref) {
   return getIt<LoadMoreMessagesUseCase>();
-});
+}
 
 /// GetIt에 등록된 SendMessageUseCase를 Riverpod Provider로 제공
-final sendMessageUseCaseProvider = Provider<SendMessageUseCase>((ref) {
+@riverpod
+SendMessageUseCase sendMessageUseCase(Ref ref) {
   return getIt<SendMessageUseCase>();
-});
+}
 
 /// GetIt에 등록된 SearchMessagesUseCase를 Riverpod Provider로 제공
-final searchMessagesUseCaseProvider = Provider<SearchMessagesUseCase>((ref) {
+@riverpod
+SearchMessagesUseCase searchMessagesUseCase(Ref ref) {
   return getIt<SearchMessagesUseCase>();
-});
+}
 
 /// GetIt에 등록된 SendAIQueryUseCase를 Riverpod Provider로 제공
-final sendAIQueryUseCaseProvider = Provider<SendAIQueryUseCase>((ref) {
+@riverpod
+SendAIQueryUseCase sendAIQueryUseCase(Ref ref) {
   return getIt<SendAIQueryUseCase>();
-});
+}
+
+/// GetIt에 등록된 GetRecommendedFriendsUseCase를 Riverpod Provider로 제공
+@riverpod
+GetRecommendedFriendsUseCase getRecommendedFriendsUseCase(Ref ref) {
+  return getIt<GetRecommendedFriendsUseCase>();
+}
+
+/// GetIt에 등록된 SearchFriendsUseCase를 Riverpod Provider로 제공
+@riverpod
+SearchFriendsUseCase searchFriendsUseCase(Ref ref) {
+  return getIt<SearchFriendsUseCase>();
+}
+
+/// GetIt에 등록된 SendFriendRequestUseCase를 Riverpod Provider로 제공
+@riverpod
+SendFriendRequestUseCase sendFriendRequestUseCase(Ref ref) {
+  return getIt<SendFriendRequestUseCase>();
+}
+
+/// GetIt에 등록된 ToggleFollowUseCase를 Riverpod Provider로 제공
+@riverpod
+ToggleFollowUseCase toggleFollowUseCase(Ref ref) {
+  return getIt<ToggleFollowUseCase>();
+}
+
+// ========================================
+// Service Providers
+// ========================================
 
 /// GetIt에 등록된 ChatMessageLifecycleService를 Riverpod Provider로 제공
-final chatMessageLifecycleServiceProvider = Provider<ChatMessageLifecycleService>((ref) {
+@riverpod
+ChatMessageLifecycleService chatMessageLifecycleService(Ref ref) {
   return getIt<ChatMessageLifecycleService>();
-});
+}
 
 /// GetIt에 등록된 IAIService를 Riverpod Provider로 제공
-final aiServiceProvider = Provider<IAIService>((ref) {
+@riverpod
+IAIService aiService(Ref ref) {
   return getIt<IAIService>();
-});
+}
 
-// ========== Chat List Stream Provider ==========
+// ========================================
+// Stream Providers
+// ========================================
 
 /// 채팅 목록 실시간 스트림 Provider
 ///
-/// **Riverpod StreamProvider.autoDispose.family 패턴 적용**:
-/// - StreamProvider.autoDispose.family
-/// - 즉시 emit으로 로딩 개선
-/// - keepAlive()로 중복 리스너 방지
+/// **Riverpod 3.x Stream 패턴**:
+/// - @riverpod 어노테이션으로 StreamProvider 자동 생성
+/// - family 파라미터 자동 처리 (params)
+/// - autoDispose 기본 활성화
+/// - ref.keepAlive()로 중복 리스너 방지
 ///
 /// **사용 예시**:
 /// ```dart
@@ -84,144 +125,67 @@ final aiServiceProvider = Provider<IAIService>((ref) {
 ///   error: (error, stack) => ErrorWidget(error: error),
 /// );
 /// ```
-final chatListStreamProvider =
-    StreamProvider.autoDispose.family<List<Chat>, ChatListParams>(
-  (ref, params) async* {
-    // UseCase를 통한 실시간 스트림 (캐시 우선 응답)
-    // Note: getChatListUseCaseProvider는 Step 5에서 정의됨
-    final getChatListUseCase = ref.watch(getChatListUseCaseProvider);
+@riverpod
+Stream<List<Chat>> chatListStream(
+  Ref ref,
+  ChatListParams params,
+) async* {
+  // UseCase를 통한 실시간 스트림 (캐시 우선 응답)
+  final getChatListUseCase = ref.watch(getChatListUseCaseProvider);
 
-    await for (final either in getChatListUseCase.execute(
-      userId: params.userId,
-      limit: params.limit,
-    )) {
-      // 3. Either → Stream 변환
-      yield* either.fold(
-        (failure) => Stream<List<Chat>>.error(failure), // Left: Error
-        (chats) async* {
-          yield chats; // Right: Success
-        },
-      );
-    }
+  await for (final either in getChatListUseCase.execute(
+    userId: params.userId,
+    limit: params.limit,
+  )) {
+    // Either → Stream 변환
+    yield* either.fold(
+      (failure) => Stream<List<Chat>>.error(failure), // Left: Error
+      (chats) async* {
+        yield chats; // Right: Success
+      },
+    );
+  }
 
-    // 4. keepAlive로 중복 리스너 방지
-    ref.keepAlive();
-  },
-);
-
-// ========== Chat Messages Stream Provider ==========
+  // keepAlive로 중복 리스너 방지
+  ref.keepAlive();
+}
 
 /// 채팅 메시지 실시간 스트림 Provider
 ///
-/// **동일한 패턴 적용**:
+/// **동일한 Riverpod 3.x 패턴 적용**:
+/// - @riverpod로 자동 StreamProvider 생성
 /// - autoDispose로 자동 메모리 관리
 /// - keepAlive()로 화면 전환 시에도 Stream 유지
-final chatMessagesStreamProvider = StreamProvider.autoDispose
-    .family<List<Message>, ChatMessagesParams>(
-  (ref, params) async* {
-    // UseCase를 통한 실시간 스트림 (캐시 우선 응답)
-    final getChatMessagesUseCase = ref.watch(getChatMessagesUseCaseProvider);
+@riverpod
+Stream<List<Message>> chatMessagesStream(
+  Ref ref,
+  ChatMessagesParams params,
+) async* {
+  // UseCase를 통한 실시간 스트림 (캐시 우선 응답)
+  final getChatMessagesUseCase = ref.watch(getChatMessagesUseCaseProvider);
 
-    await for (final either in getChatMessagesUseCase.execute(
-      chatId: params.chatId,
-      limit: params.limit,
-    )) {
-      // 3. Either → Stream 변환
-      yield* either.fold(
-        (failure) => Stream<List<Message>>.error(failure),
-        (messages) async* {
-          yield messages;
-        },
-      );
-    }
-
-    // 4. keepAlive
-    ref.keepAlive();
-  },
-);
-
-// ========== Computed Providers ==========
-
-/// 읽지 않은 채팅 개수 Provider
-///
-/// **Computed Provider 패턴**:
-/// - chatListStreamProvider를 watch하여 자동 업데이트
-/// - 읽지 않은 채팅만 필터링
-final unreadChatCountProvider = Provider.autoDispose.family<int, String>(
-  (ref, userId) {
-    final asyncChats = ref.watch(chatListStreamProvider(
-      ChatListParams(userId: userId, limit: 50),
-    ));
-
-    return asyncChats.when(
-      data: (chats) => chats.where((chat) => !chat.isRead).length,
-      loading: () => 0,
-      error: (_, __) => 0,
-    );
-  },
-);
-
-/// AI 채팅방 찾기 Provider
-///
-/// **Computed Provider 패턴**:
-/// - AI 채팅방만 필터링
-/// - 없으면 null 반환
-final aiChatProvider = Provider.autoDispose.family<Chat?, String>(
-  (ref, userId) {
-    final asyncChats = ref.watch(chatListStreamProvider(
-      ChatListParams(userId: userId, limit: 50),
-    ));
-
-    return asyncChats.when(
-      data: (chats) {
-        try {
-          return chats.firstWhere(
-            (chat) =>
-                chat.participantIds.contains(AppConstants.aiUserId) ||
-                chat.chatType == 'aiChat',
-          );
-        } catch (e) {
-          return null;
-        }
+  await for (final either in getChatMessagesUseCase.execute(
+    chatId: params.chatId,
+    limit: params.limit,
+  )) {
+    // Either → Stream 변환
+    yield* either.fold(
+      (failure) => Stream<List<Message>>.error(failure),
+      (messages) async* {
+        yield messages;
       },
-      loading: () => null,
-      error: (_, __) => null,
     );
-  },
-);
+  }
 
-// ========================================
-// Friends Management - UseCase Providers
-// ========================================
-
-/// GetIt에 등록된 GetRecommendedFriendsUseCase를 Riverpod Provider로 제공
-final getRecommendedFriendsUseCaseProvider = Provider<GetRecommendedFriendsUseCase>((ref) {
-  return getIt<GetRecommendedFriendsUseCase>();
-});
-
-/// GetIt에 등록된 SearchFriendsUseCase를 Riverpod Provider로 제공
-final searchFriendsUseCaseProvider = Provider<SearchFriendsUseCase>((ref) {
-  return getIt<SearchFriendsUseCase>();
-});
-
-/// GetIt에 등록된 SendFriendRequestUseCase를 Riverpod Provider로 제공
-final sendFriendRequestUseCaseProvider = Provider<SendFriendRequestUseCase>((ref) {
-  return getIt<SendFriendRequestUseCase>();
-});
-
-/// GetIt에 등록된 ToggleFollowUseCase를 Riverpod Provider로 제공
-final toggleFollowUseCaseProvider = Provider<ToggleFollowUseCase>((ref) {
-  return getIt<ToggleFollowUseCase>();
-});
-
-// ========================================
-// Friends Management - Stream Providers
-// ========================================
+  // keepAlive
+  ref.keepAlive();
+}
 
 /// 추천 친구 목록 실시간 스트림 Provider
 ///
-/// **Riverpod StreamProvider.autoDispose.family 패턴 적용**:
-/// - StreamProvider.autoDispose.family
+/// **Riverpod 3.x Stream 패턴**:
+/// - @riverpod로 StreamProvider 자동 생성
+/// - family 파라미터 자동 처리
 /// - Either → Stream 변환
 /// - keepAlive()로 중복 리스너 방지
 ///
@@ -237,30 +201,33 @@ final toggleFollowUseCaseProvider = Provider<ToggleFollowUseCase>((ref) {
 ///   error: (error, stack) => ErrorWidget(error: error),
 /// );
 /// ```
-final recommendedFriendsStreamProvider =
-    StreamProvider.autoDispose.family<List<UserProfile>, RecommendedFriendsParams>(
-  (ref, params) async* {
-    final getRecommendedFriendsUseCase = ref.watch(getRecommendedFriendsUseCaseProvider);
+@riverpod
+Stream<List<UserProfile>> recommendedFriendsStream(
+  Ref ref,
+  RecommendedFriendsParams params,
+) async* {
+  final getRecommendedFriendsUseCase =
+      ref.watch(getRecommendedFriendsUseCaseProvider);
 
-    await for (final either in getRecommendedFriendsUseCase.execute(
-      currentUserId: params.currentUserId,
-      limit: params.limit,
-    )) {
-      yield* either.fold(
-        (failure) => Stream<List<UserProfile>>.error(failure),
-        (friends) async* {
-          yield friends;
-        },
-      );
-    }
+  await for (final either in getRecommendedFriendsUseCase.execute(
+    currentUserId: params.currentUserId,
+    limit: params.limit,
+  )) {
+    yield* either.fold(
+      (failure) => Stream<List<UserProfile>>.error(failure),
+      (friends) async* {
+        yield friends;
+      },
+    );
+  }
 
-    ref.keepAlive();
-  },
-);
+  ref.keepAlive();
+}
 
 /// 친구 검색 실시간 스트림 Provider
 ///
-/// **동일한 패턴 적용**:
+/// **동일한 Riverpod 3.x 패턴 적용**:
+/// - @riverpod로 자동 StreamProvider 생성
 /// - autoDispose로 자동 메모리 관리
 /// - keepAlive()로 화면 전환 시에도 Stream 유지
 ///
@@ -270,24 +237,76 @@ final recommendedFriendsStreamProvider =
 ///   SearchFriendsParams(currentUserId: currentUserUid, query: 'John'),
 /// ));
 /// ```
-final searchFriendsStreamProvider =
-    StreamProvider.autoDispose.family<List<UserProfile>, SearchFriendsParams>(
-  (ref, params) async* {
-    final searchFriendsUseCase = ref.watch(searchFriendsUseCaseProvider);
+@riverpod
+Stream<List<UserProfile>> searchFriendsStream(
+  Ref ref,
+  SearchFriendsParams params,
+) async* {
+  final searchFriendsUseCase = ref.watch(searchFriendsUseCaseProvider);
 
-    await for (final either in searchFriendsUseCase.execute(
-      currentUserId: params.currentUserId,
-      query: params.query,
-    )) {
-      yield* either.fold(
-        (failure) => Stream<List<UserProfile>>.error(failure),
-        (results) async* {
-          yield results;
-        },
-      );
-    }
+  await for (final either in searchFriendsUseCase.execute(
+    currentUserId: params.currentUserId,
+    query: params.query,
+  )) {
+    yield* either.fold(
+      (failure) => Stream<List<UserProfile>>.error(failure),
+      (results) async* {
+        yield results;
+      },
+    );
+  }
 
-    ref.keepAlive();
-  },
-);
+  ref.keepAlive();
+}
 
+// ========================================
+// Computed Providers
+// ========================================
+
+/// 읽지 않은 채팅 개수 Provider
+///
+/// **Riverpod 3.x Computed Provider 패턴**:
+/// - @riverpod로 자동 Provider 생성
+/// - chatListStream을 watch하여 자동 업데이트
+/// - 읽지 않은 채팅만 필터링
+@riverpod
+int unreadChatCount(Ref ref, String userId) {
+  final asyncChats = ref.watch(chatListStreamProvider(
+    ChatListParams(userId: userId, limit: 50),
+  ));
+
+  return asyncChats.when(
+    data: (chats) => chats.where((chat) => !chat.isRead).length,
+    loading: () => 0,
+    error: (_, __) => 0,
+  );
+}
+
+/// AI 채팅방 찾기 Provider
+///
+/// **Riverpod 3.x Computed Provider 패턴**:
+/// - @riverpod로 자동 Provider 생성
+/// - AI 채팅방만 필터링
+/// - 없으면 null 반환
+@riverpod
+Chat? aiChat(Ref ref, String userId) {
+  final asyncChats = ref.watch(chatListStreamProvider(
+    ChatListParams(userId: userId, limit: 50),
+  ));
+
+  return asyncChats.when(
+    data: (chats) {
+      try {
+        return chats.firstWhere(
+          (chat) =>
+              chat.participantIds.contains(AppConstants.aiUserId) ||
+              chat.chatType == 'aiChat',
+        );
+      } catch (e) {
+        return null;
+      }
+    },
+    loading: () => null,
+    error: (_, __) => null,
+  );
+}

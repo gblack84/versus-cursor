@@ -125,21 +125,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       title: '랭크 업데이트',
                       description: '내 랭크가 변경되면 알림을 받습니다',
                       value: settings.receiveRankUpdateNotifications,
-                      onChanged: (value) {
+                      onChanged: (value) async {
                         final newSettings = {
                           'receiveRankUpdateNotifications': value,
                         };
-                        ProfileActions.updateSettings(
-                          ref: ref,
-                          userId: widget.userId,
-                          settings: newSettings,
-                          onSuccess: () {},
-                          onError: (message) {
+                        try {
+                          await ref.read(profileNotifierProvider.notifier).updateSettings(
+                            userId: widget.userId,
+                            settings: newSettings,
+                          );
+                        } catch (e) {
+                          if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(message)),
+                              SnackBar(content: Text('설정 업데이트 실패: $e')),
                             );
-                          },
-                        );
+                          }
+                        }
                       },
                     ),
                     Divider(height: 1, indent: 16, endIndent: 16),

@@ -6,7 +6,6 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:http/http.dart' as http;
-import 'package:equatable/equatable.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:mime_type/mime_type.dart';
 
@@ -30,7 +29,14 @@ enum BodyType {
   MULTIPART,
 }
 
-class ApiCallOptions extends Equatable {
+/// API Call Options
+///
+/// Configuration for API calls with caching support
+///
+/// **Migration Status**: Equatable removed (2025-11-07)
+/// - ✅ Equatable 제거
+/// - ✅ Manual equality implementation for caching
+class ApiCallOptions {
   const ApiCallOptions({
     this.callName = '',
     required this.callType,
@@ -115,12 +121,31 @@ class ApiCallOptions extends Equatable {
       );
 
   @override
-  List<Object?> get props => [
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ApiCallOptions &&
+        other.callName == callName &&
+        other.callType == callType &&
+        other.apiUrl == apiUrl &&
+        const DeepCollectionEquality().equals(other.headers, headers) &&
+        const DeepCollectionEquality().equals(other.params, params) &&
+        other.bodyType == bodyType &&
+        other.body == body &&
+        other.returnBody == returnBody &&
+        other.encodeBodyUtf8 == encodeBodyUtf8 &&
+        other.decodeUtf8 == decodeUtf8 &&
+        other.alwaysAllowBody == alwaysAllowBody &&
+        other.cache == cache &&
+        other.isStreamingApi == isStreamingApi;
+  }
+
+  @override
+  int get hashCode => Object.hash(
         callName,
-        callType.name,
+        callType,
         apiUrl,
-        headers,
-        params,
+        const DeepCollectionEquality().hash(headers),
+        const DeepCollectionEquality().hash(params),
         bodyType,
         body,
         returnBody,
@@ -129,7 +154,7 @@ class ApiCallOptions extends Equatable {
         alwaysAllowBody,
         cache,
         isStreamingApi,
-      ];
+      );
 
   static Map<String, dynamic> _cloneMap(Map<String, dynamic> map) {
     try {

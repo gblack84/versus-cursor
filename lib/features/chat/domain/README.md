@@ -1222,7 +1222,9 @@ class GetChatListUseCase {
 }
 ```
 
-**Usage in Presentation Layer**:
+**Usage in Presentation Layer** (Riverpod 3.x):
+
+> **Note**: Chat Feature는 Riverpod 3.x를 사용합니다. @riverpod 어노테이션 기반 code generation으로 Provider가 자동 생성됩니다. 자세한 내용은 [presentation/README.md > Riverpod 3.x Migration](/lib/features/chat/presentation/README.md#-riverpod-3x-migration)을 참조하세요.
 
 ```dart
 class ChatListWidget extends ConsumerWidget {
@@ -2402,11 +2404,13 @@ Presentation → Domain (interfaces, entities) ← Data (implementations, adapte
 
 **Next Steps**:
 - Presentation Layer 구현 (UI 위젯, Providers)
+  - **NEW**: Riverpod 3.x with @riverpod code generation (18개 Providers)
 - Data Layer 검토 ([Data Layer README](/lib/features/chat/data/README.md) 참조)
 - Unit Tests 작성 (UseCases, Entities)
 - Integration Tests (Repository 통합)
 
 **Related Documentation**:
+- [Presentation Layer README](/lib/features/chat/presentation/README.md) - **Riverpod 3.x Migration 완료**
 - [Data Layer README](/lib/features/chat/data/README.md)
 - [Voting Domain README](/lib/features/voting/domain/README.md)
 - [Clean Architecture v4.0 Guide](/docs/guides/CLEAN_ARCHITECTURE.md)

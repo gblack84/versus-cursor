@@ -4,7 +4,8 @@ import '/core_exports.dart';
 import '/services/moderation/perspective_api_service.dart';
 import '../components/simple_validated_field.dart';
 import '/features/creation/presentation/constants/field_styles.dart';
-import '/features/creation/domain/failures/creation_failures.dart';
+import '/features/creation/domain/failures/creation_failure.dart';
+import '/features/creation/domain/failures/creation_failure_extensions.dart'; // Extension for getUserMessage()
 
 /// 입력 필드 빌더 헬퍼
 ///
@@ -120,8 +121,8 @@ class InputFieldBuilder {
       validationResult.insultScore,
     ].reduce((a, b) => a > b ? a : b);
 
-    // Step 9: AIModerationFailure 생성 및 getUserMessage() 사용
-    final failure = AIModerationFailure(
+    // Step 9: AIModerationFailed 생성 및 getUserMessage() 사용
+    final failure = CreationFailure.aiModerationFailed(
       aiProvider: 'perspective',
       detectedCategories: detectedCategories,
       confidenceScore: maxScore,

@@ -1,7 +1,9 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 part 'ranking.freezed.dart';
 part 'ranking.g.dart';
+part 'ranking_extensions.dart';
 
 /// Pure Domain Entity for ranking
 ///

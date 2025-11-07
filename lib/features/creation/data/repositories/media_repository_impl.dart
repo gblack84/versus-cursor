@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fpdart/fpdart.dart';
-import '../../domain/failures/creation_failures.dart';
+import '../../domain/failures/creation_failure.dart';
 import '../../domain/repositories/i_media_repository.dart';
 import '../datasources/interfaces/i_storage_datasource.dart';
 import '../../domain/entities/media_info.dart';
@@ -26,7 +26,7 @@ class MediaRepositoryImpl implements IMediaRepository {
 
   // ========== Image Queries ==========
   @override
-  Stream<Either<MediaRepositoryFailure, List<ImageInfo>>> queryImages({
+  Stream<Either<CreationFailure, List<ImageInfo>>> queryImages({
     String? parentId,
     Map<String, dynamic>? filters,
     int limit = -1,
@@ -60,33 +60,33 @@ class MediaRepositoryImpl implements IMediaRepository {
               .whereType<ImageInfo>() // Filter for ImageInfo only
               .toList();
           return right(mediaInfoList);
-        } on FirebaseException catch (e) {
-          return left(MediaRepositoryFailure(
+        } on FirebaseException catch (_) {
+          return left(CreationFailure.mediaRepositoryFailed(
             mediaType: 'image',
             failedPaths: [],
-            message: 'Failed to query images: ${e.message}',
-            code: e.code,
+            // message: 'Failed to query images: ${e.message}',
+            // code: e.code,
           ));
         } catch (e) {
-          return left(MediaRepositoryFailure(
+          return left(CreationFailure.mediaRepositoryFailed(
             mediaType: 'image',
             failedPaths: [],
-            message: 'Unexpected error querying images: $e',
+            // message: 'Unexpected error querying images: $e',
           ));
         }
       });
     } catch (e) {
       // Return a stream with an error if query setup fails
-      return Stream.value(left(MediaRepositoryFailure(
+      return Stream.value(left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: [],
-        message: 'Failed to setup image query: $e',
+        // message: 'Failed to setup image query: $e',
       )));
     }
   }
 
   @override
-  Future<Either<MediaRepositoryFailure, int>> queryImagesCount({
+  Future<Either<CreationFailure, int>> queryImagesCount({
     String? parentId,
     Map<String, dynamic>? filters,
     int limit = -1,
@@ -104,25 +104,25 @@ class MediaRepositoryImpl implements IMediaRepository {
         (failure) => left(failure),
         (images) => right(images.length),
       );
-    } on FirebaseException catch (e) {
-      return left(MediaRepositoryFailure(
+    } on FirebaseException catch (_) {
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: [],
-        message: 'Failed to count images: ${e.message}',
-        code: e.code,
+        // message: 'Failed to count images: ${e.message}',
+        // code: e.code,
       ));
     } catch (e) {
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: [],
-        message: 'Unexpected error counting images: $e',
+        // message: 'Unexpected error counting images: $e',
       ));
     }
   }
 
   // ========== Video Queries ==========
   @override
-  Stream<Either<MediaRepositoryFailure, List<VideoInfo>>> queryVideos({
+  Stream<Either<CreationFailure, List<VideoInfo>>> queryVideos({
     String? parentId,
     Map<String, dynamic>? filters,
     int limit = -1,
@@ -156,33 +156,33 @@ class MediaRepositoryImpl implements IMediaRepository {
               .whereType<VideoInfo>() // Filter for VideoInfo only
               .toList();
           return right(mediaInfoList);
-        } on FirebaseException catch (e) {
-          return left(MediaRepositoryFailure(
+        } on FirebaseException catch (_) {
+          return left(CreationFailure.mediaRepositoryFailed(
             mediaType: 'video',
             failedPaths: [],
-            message: 'Failed to query videos: ${e.message}',
-            code: e.code,
+            // message: 'Failed to query videos: ${e.message}',
+            // code: e.code,
           ));
         } catch (e) {
-          return left(MediaRepositoryFailure(
+          return left(CreationFailure.mediaRepositoryFailed(
             mediaType: 'video',
             failedPaths: [],
-            message: 'Unexpected error querying videos: $e',
+            // message: 'Unexpected error querying videos: $e',
           ));
         }
       });
     } catch (e) {
       // Return a stream with an error if query setup fails
-      return Stream.value(left(MediaRepositoryFailure(
+      return Stream.value(left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'video',
         failedPaths: [],
-        message: 'Failed to setup video query: $e',
+        // message: 'Failed to setup video query: $e',
       )));
     }
   }
 
   @override
-  Future<Either<MediaRepositoryFailure, int>> queryVideosCount({
+  Future<Either<CreationFailure, int>> queryVideosCount({
     String? parentId,
     Map<String, dynamic>? filters,
     int limit = -1,
@@ -200,18 +200,18 @@ class MediaRepositoryImpl implements IMediaRepository {
         (failure) => left(failure),
         (videos) => right(videos.length),
       );
-    } on FirebaseException catch (e) {
-      return left(MediaRepositoryFailure(
+    } on FirebaseException catch (_) {
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'video',
         failedPaths: [],
-        message: 'Failed to count videos: ${e.message}',
-        code: e.code,
+        // message: 'Failed to count videos: ${e.message}',
+        // code: e.code,
       ));
     } catch (e) {
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'video',
         failedPaths: [],
-        message: 'Unexpected error counting videos: $e',
+        // message: 'Unexpected error counting videos: $e',
       ));
     }
   }
@@ -260,7 +260,7 @@ class MediaRepositoryImpl implements IMediaRepository {
   // ========== Media Upload Operations (Using DataSource) ==========
 
   @override
-  Future<Either<MediaRepositoryFailure, String>> uploadImage({
+  Future<Either<CreationFailure, String>> uploadImage({
     required String path,
     required String fileName,
     required List<int> bytes,
@@ -275,18 +275,18 @@ class MediaRepositoryImpl implements IMediaRepository {
       // Use DataSource for upload (Firebase isolation)
       final url = await _storageDataSource.uploadImage(tempFile, path);
       return right(url);
-    } on FirebaseException catch (e) {
-      return left(MediaRepositoryFailure(
+    } on FirebaseException catch (_) {
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: [path],
-        message: 'Failed to upload image: ${e.message}',
-        code: e.code,
+        // message: 'Failed to upload image: ${e.message}',
+        // code: e.code,
       ));
     } catch (e) {
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: [path],
-        message: 'Unexpected error uploading image: $e',
+        // message: 'Unexpected error uploading image: $e',
       ));
     } finally {
       // Clean up temporary file
@@ -297,7 +297,7 @@ class MediaRepositoryImpl implements IMediaRepository {
   }
 
   @override
-  Future<Either<MediaRepositoryFailure, String>> uploadVideo({
+  Future<Either<CreationFailure, String>> uploadVideo({
     required String path,
     required String fileName,
     required List<int> bytes,
@@ -312,18 +312,18 @@ class MediaRepositoryImpl implements IMediaRepository {
       // Use DataSource for upload (Firebase isolation)
       final url = await _storageDataSource.uploadImage(tempFile, path);
       return right(url);
-    } on FirebaseException catch (e) {
-      return left(MediaRepositoryFailure(
+    } on FirebaseException catch (_) {
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'video',
         failedPaths: [path],
-        message: 'Failed to upload video: ${e.message}',
-        code: e.code,
+        // message: 'Failed to upload video: ${e.message}',
+        // code: e.code,
       ));
     } catch (e) {
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'video',
         failedPaths: [path],
-        message: 'Unexpected error uploading video: $e',
+        // message: 'Unexpected error uploading video: $e',
       ));
     } finally {
       // Clean up temporary file
@@ -334,71 +334,71 @@ class MediaRepositoryImpl implements IMediaRepository {
   }
 
   @override
-  Future<Either<MediaRepositoryFailure, Unit>> deleteMedia(String url) async {
+  Future<Either<CreationFailure, Unit>> deleteMedia(String url) async {
     try {
       // Use DataSource for deletion (Firebase isolation)
       await _storageDataSource.deleteImage(url);
       return right(unit);
-    } on FirebaseException catch (e) {
-      return left(MediaRepositoryFailure(
+    } on FirebaseException catch (_) {
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'unknown',
         failedPaths: [url],
-        message: 'Failed to delete media: ${e.message}',
-        code: e.code,
+        // message: 'Failed to delete media: ${e.message}',
+        // code: e.code,
       ));
     } catch (e) {
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'unknown',
         failedPaths: [url],
-        message: 'Unexpected error deleting media: $e',
+        // message: 'Unexpected error deleting media: $e',
       ));
     }
   }
 
   @override
-  Future<Either<MediaRepositoryFailure, List<String>>> uploadImages(List<File> files) async {
+  Future<Either<CreationFailure, List<String>>> uploadImages(List<File> files) async {
     try {
       // Use DataSource for batch upload (Firebase isolation)
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final basePath = 'posts/images/$timestamp';
       final urls = await _storageDataSource.uploadMultipleImages(files, basePath);
       return right(urls);
-    } on FirebaseException catch (e) {
-      return left(MediaRepositoryFailure(
+    } on FirebaseException catch (_) {
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: files.map((f) => f.path).toList(),
-        message: 'Failed to upload images: ${e.message}',
-        code: e.code,
+        // message: 'Failed to upload images: ${e.message}',
+        // code: e.code,
       ));
     } catch (e) {
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: files.map((f) => f.path).toList(),
-        message: 'Unexpected error uploading images: $e',
+        // message: 'Unexpected error uploading images: $e',
       ));
     }
   }
 
   @override
-  Future<Either<MediaRepositoryFailure, List<String>>> uploadVideos(List<File> files) async {
+  Future<Either<CreationFailure, List<String>>> uploadVideos(List<File> files) async {
     try {
       // Use DataSource for batch upload (Firebase isolation)
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final basePath = 'posts/videos/$timestamp';
       final urls = await _storageDataSource.uploadMultipleImages(files, basePath);
       return right(urls);
-    } on FirebaseException catch (e) {
-      return left(MediaRepositoryFailure(
+    } on FirebaseException catch (_) {
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'video',
         failedPaths: files.map((f) => f.path).toList(),
-        message: 'Failed to upload videos: ${e.message}',
-        code: e.code,
+        // message: 'Failed to upload videos: ${e.message}',
+        // code: e.code,
       ));
     } catch (e) {
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'video',
         failedPaths: files.map((f) => f.path).toList(),
-        message: 'Unexpected error uploading videos: $e',
+        // message: 'Unexpected error uploading videos: $e',
       ));
     }
   }
@@ -406,7 +406,7 @@ class MediaRepositoryImpl implements IMediaRepository {
   // ========== CRUD Operations ==========
 
   @override
-  Future<Either<MediaRepositoryFailure, Option<ImageInfo>>> getImage(String imageId) async {
+  Future<Either<CreationFailure, Option<ImageInfo>>> getImage(String imageId) async {
     try {
       final doc = await _firestore.collection('images').doc(imageId).get();
 
@@ -422,60 +422,60 @@ class MediaRepositoryImpl implements IMediaRepository {
       if (mediaInfo is ImageInfo) {
         return right(some(mediaInfo));
       } else {
-        return left(MediaRepositoryFailure(
+        return left(CreationFailure.mediaRepositoryFailed(
           mediaType: 'image',
           failedPaths: [imageId],
-          message: 'Document is not an image type',
+          // message: 'Document is not an image type',
         ));
       }
-    } on FirebaseException catch (e) {
-      return left(MediaRepositoryFailure(
+    } on FirebaseException catch (_) {
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: [imageId],
-        message: 'Failed to get image: ${e.message}',
-        code: e.code,
+        // message: 'Failed to get image: ${e.message}',
+        // code: e.code,
       ));
     } catch (e) {
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: [imageId],
-        message: 'Unexpected error getting image: $e',
+        // message: 'Unexpected error getting image: $e',
       ));
     }
   }
 
   @override
-  Future<Either<MediaRepositoryFailure, Unit>> createImage(ImageInfo image) async {
+  Future<Either<CreationFailure, Unit>> createImage(ImageInfo image) async {
     try {
       // Use Extension pattern for Firestore conversion
       final data = image.toFirestore();
       await _firestore.collection('images').add(data);
       return right(unit);
-    } on FirebaseException catch (e) {
-      return left(MediaRepositoryFailure(
+    } on FirebaseException catch (_) {
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: [image.id],
-        message: 'Failed to create image: ${e.message}',
-        code: e.code,
+        // message: 'Failed to create image: ${e.message}',
+        // code: e.code,
       ));
     } catch (e) {
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: [image.id],
-        message: 'Unexpected error creating image: $e',
+        // message: 'Unexpected error creating image: $e',
       ));
     }
   }
 
   @override
-  Future<Either<MediaRepositoryFailure, Unit>> updateImage(ImageInfo image) async {
+  Future<Either<CreationFailure, Unit>> updateImage(ImageInfo image) async {
     try {
       if (image.id.isEmpty) {
-        return left(MediaRepositoryFailure(
+        return left(CreationFailure.mediaRepositoryFailed(
           mediaType: 'image',
           failedPaths: [image.id],
-          message: 'Image ID is required for update',
-          code: 'INVALID_ARGUMENT',
+          // message: 'Image ID is required for update',
+          // code: 'INVALID_ARGUMENT',
         ));
       }
 
@@ -483,45 +483,45 @@ class MediaRepositoryImpl implements IMediaRepository {
       final data = image.toFirestore();
       await _firestore.collection('images').doc(image.id).update(data);
       return right(unit);
-    } on FirebaseException catch (e) {
-      return left(MediaRepositoryFailure(
+    } on FirebaseException catch (_) {
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: [image.id],
-        message: 'Failed to update image: ${e.message}',
-        code: e.code,
+        // message: 'Failed to update image: ${e.message}',
+        // code: e.code,
       ));
     } catch (e) {
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: [image.id],
-        message: 'Unexpected error updating image: $e',
+        // message: 'Unexpected error updating image: $e',
       ));
     }
   }
 
   @override
-  Future<Either<MediaRepositoryFailure, Unit>> deleteImage(String imageId) async {
+  Future<Either<CreationFailure, Unit>> deleteImage(String imageId) async {
     try {
       await _firestore.collection('images').doc(imageId).delete();
       return right(unit);
-    } on FirebaseException catch (e) {
-      return left(MediaRepositoryFailure(
+    } on FirebaseException catch (_) {
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: [imageId],
-        message: 'Failed to delete image: ${e.message}',
-        code: e.code,
+        // message: 'Failed to delete image: ${e.message}',
+        // code: e.code,
       ));
     } catch (e) {
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: [imageId],
-        message: 'Unexpected error deleting image: $e',
+        // message: 'Unexpected error deleting image: $e',
       ));
     }
   }
 
   @override
-  Future<Either<MediaRepositoryFailure, Option<VideoInfo>>> getVideo(String videoId) async {
+  Future<Either<CreationFailure, Option<VideoInfo>>> getVideo(String videoId) async {
     try {
       final doc = await _firestore.collection('videos').doc(videoId).get();
 
@@ -537,60 +537,60 @@ class MediaRepositoryImpl implements IMediaRepository {
       if (mediaInfo is VideoInfo) {
         return right(some(mediaInfo));
       } else {
-        return left(MediaRepositoryFailure(
+        return left(CreationFailure.mediaRepositoryFailed(
           mediaType: 'video',
           failedPaths: [videoId],
-          message: 'Document is not a video type',
+          // message: 'Document is not a video type',
         ));
       }
-    } on FirebaseException catch (e) {
-      return left(MediaRepositoryFailure(
+    } on FirebaseException catch (_) {
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'video',
         failedPaths: [videoId],
-        message: 'Failed to get video: ${e.message}',
-        code: e.code,
+        // message: 'Failed to get video: ${e.message}',
+        // code: e.code,
       ));
     } catch (e) {
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'video',
         failedPaths: [videoId],
-        message: 'Unexpected error getting video: $e',
+        // message: 'Unexpected error getting video: $e',
       ));
     }
   }
 
   @override
-  Future<Either<MediaRepositoryFailure, Unit>> createVideo(VideoInfo video) async {
+  Future<Either<CreationFailure, Unit>> createVideo(VideoInfo video) async {
     try {
       // Use Extension pattern for Firestore conversion
       final data = video.toFirestore();
       await _firestore.collection('videos').add(data);
       return right(unit);
-    } on FirebaseException catch (e) {
-      return left(MediaRepositoryFailure(
+    } on FirebaseException catch (_) {
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'video',
         failedPaths: [video.id],
-        message: 'Failed to create video: ${e.message}',
-        code: e.code,
+        // message: 'Failed to create video: ${e.message}',
+        // code: e.code,
       ));
     } catch (e) {
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'video',
         failedPaths: [video.id],
-        message: 'Unexpected error creating video: $e',
+        // message: 'Unexpected error creating video: $e',
       ));
     }
   }
 
   @override
-  Future<Either<MediaRepositoryFailure, Unit>> updateVideo(VideoInfo video) async {
+  Future<Either<CreationFailure, Unit>> updateVideo(VideoInfo video) async {
     try {
       if (video.id.isEmpty) {
-        return left(MediaRepositoryFailure(
+        return left(CreationFailure.mediaRepositoryFailed(
           mediaType: 'video',
           failedPaths: [video.id],
-          message: 'Video ID is required for update',
-          code: 'INVALID_ARGUMENT',
+          // message: 'Video ID is required for update',
+          // code: 'INVALID_ARGUMENT',
         ));
       }
 
@@ -598,45 +598,45 @@ class MediaRepositoryImpl implements IMediaRepository {
       final data = video.toFirestore();
       await _firestore.collection('videos').doc(video.id).update(data);
       return right(unit);
-    } on FirebaseException catch (e) {
-      return left(MediaRepositoryFailure(
+    } on FirebaseException catch (_) {
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'video',
         failedPaths: [video.id],
-        message: 'Failed to update video: ${e.message}',
-        code: e.code,
+        // message: 'Failed to update video: ${e.message}',
+        // code: e.code,
       ));
     } catch (e) {
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'video',
         failedPaths: [video.id],
-        message: 'Unexpected error updating video: $e',
+        // message: 'Unexpected error updating video: $e',
       ));
     }
   }
 
   @override
-  Future<Either<MediaRepositoryFailure, Unit>> deleteVideo(String videoId) async {
+  Future<Either<CreationFailure, Unit>> deleteVideo(String videoId) async {
     try {
       await _firestore.collection('videos').doc(videoId).delete();
       return right(unit);
-    } on FirebaseException catch (e) {
-      return left(MediaRepositoryFailure(
+    } on FirebaseException catch (_) {
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'video',
         failedPaths: [videoId],
-        message: 'Failed to delete video: ${e.message}',
-        code: e.code,
+        // message: 'Failed to delete video: ${e.message}',
+        // code: e.code,
       ));
     } catch (e) {
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'video',
         failedPaths: [videoId],
-        message: 'Unexpected error deleting video: $e',
+        // message: 'Unexpected error deleting video: $e',
       ));
     }
   }
 
   @override
-  Future<Either<MediaRepositoryFailure, Unit>> requestEncoding({
+  Future<Either<CreationFailure, Unit>> requestEncoding({
     required String videoId,
     required String quality,
   }) async {
@@ -648,18 +648,18 @@ class MediaRepositoryImpl implements IMediaRepository {
         'requestedAt': FieldValue.serverTimestamp(),
       });
       return right(unit);
-    } on FirebaseException catch (e) {
-      return left(MediaRepositoryFailure(
+    } on FirebaseException catch (_) {
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'video',
         failedPaths: [videoId],
-        message: 'Failed to request encoding: ${e.message}',
-        code: e.code,
+        // message: 'Failed to request encoding: ${e.message}',
+        // code: e.code,
       ));
     } catch (e) {
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'video',
         failedPaths: [videoId],
-        message: 'Unexpected error requesting encoding: $e',
+        // message: 'Unexpected error requesting encoding: $e',
       ));
     }
   }

@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../../domain/failures/creation_failures.dart';
+import '../../../domain/failures/creation_failure.dart';
 
 part 'validation_state.freezed.dart';
 
@@ -45,7 +45,7 @@ sealed class ValidationState with _$ValidationState {
     String? validationMessage,
 
     /// Current validation failure
-    Failure? validationFailure,
+    CreationFailure? validationFailure,
 
     /// Vision API results for Box A (for compatibility)
     Map<String, dynamic>? visionResultA,

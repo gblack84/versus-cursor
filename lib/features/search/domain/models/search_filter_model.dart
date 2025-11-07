@@ -1,47 +1,31 @@
-import 'package:equatable/equatable.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'search_filter_model.freezed.dart';
+part 'search_filter_model.g.dart';
 
 /// Search Filter Model
 ///
 /// Encapsulates search filter criteria
 ///
-/// **Current Status**: Basic structure (2025-01-20)
-/// - Core filter fields defined
-/// - Serialization pending
-class SearchFilter extends Equatable {
-  final List<String>? categories;
-  final DateTime? startDate;
-  final DateTime? endDate;
-  final String sortBy; // 'relevance', 'date', 'popularity'
-  final bool descending;
-
-  const SearchFilter({
-    this.categories,
-    this.startDate,
-    this.endDate,
-    this.sortBy = 'relevance',
-    this.descending = true,
-  });
-
-  // TODO: Add JSON serialization
-  // Map<String, dynamic> toJson() {}
-  // factory SearchFilter.fromJson(Map<String, dynamic> json) {}
-
-  SearchFilter copyWith({
+/// **Clean Architecture v4.0 - Freezed Pattern**:
+/// - Freezed로 자동 생성되는 불변 모델
+/// - JSON serialization 자동 생성
+/// - copyWith, ==, hashCode 자동 구현
+///
+/// **Migration Status**: Migrated to Freezed (2025-11-07)
+/// - ✅ Equatable 제거
+/// - ✅ JSON serialization 추가
+/// - ✅ Immutable pattern
+@freezed
+sealed class SearchFilter with _$SearchFilter {
+  const factory SearchFilter({
     List<String>? categories,
     DateTime? startDate,
     DateTime? endDate,
-    String? sortBy,
-    bool? descending,
-  }) {
-    return SearchFilter(
-      categories: categories ?? this.categories,
-      startDate: startDate ?? this.startDate,
-      endDate: endDate ?? this.endDate,
-      sortBy: sortBy ?? this.sortBy,
-      descending: descending ?? this.descending,
-    );
-  }
+    @Default('relevance') String sortBy, // 'relevance', 'date', 'popularity'
+    @Default(true) bool descending,
+  }) = _SearchFilter;
 
-  @override
-  List<Object?> get props => [categories, startDate, endDate, sortBy, descending];
+  factory SearchFilter.fromJson(Map<String, dynamic> json) =>
+      _$SearchFilterFromJson(json);
 }

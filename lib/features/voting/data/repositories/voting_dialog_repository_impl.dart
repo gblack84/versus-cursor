@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../../domain/repositories/i_voting_dialog_repository.dart';

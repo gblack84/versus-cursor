@@ -9,7 +9,8 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../domain/services/i_image_moderation_service.dart';
 import '../../providers/creation_providers.dart';
-import '../../../domain/failures/creation_failures.dart';
+import '../../../domain/failures/creation_failure.dart';
+import '../../../domain/failures/creation_failure_extensions.dart';
 
 /// 이미지 에디터 페이지 위젯
 /// Migrated to Riverpod 3.x (Phase 2-6)
@@ -157,8 +158,8 @@ class _MediaEditorWidgetState extends ConsumerState<MediaEditorWidget> {
     print(
         '[DEBUG] moderationResult: ${moderationResult != null ? "있음" : "없음"}');
 
-    // Step 6: MediaProcessingFailure 생성으로 중앙화된 메시지 사용
-    final failure = MediaProcessingFailure(
+    // Step 6: MediaProcessingFailed 생성으로 중앙화된 메시지 사용
+    final failure = CreationFailure.mediaProcessingFailed(
       failedStep: MediaProcessingStep.moderationCheck,
       affectedFiles: result.rejectedIndices
           ?.map<String>((i) => 'image_$i')
@@ -242,8 +243,8 @@ class _MediaEditorWidgetState extends ConsumerState<MediaEditorWidget> {
               // 피커 열기 (모달은 닫지 않음)
               widget.onBackToPicker?.call();
             } else {
-              // Step 6: 편집 모드에서 이미지가 거부된 경우 - MediaProcessingFailure 사용
-              final failure = MediaProcessingFailure(
+              // Step 6: 편집 모드에서 이미지가 거부된 경우 - CreationFailure.mediaProcessingFailed() 사용
+              final failure = CreationFailure.mediaProcessingFailed(
                 failedStep: MediaProcessingStep.moderationCheck,
                 affectedFiles: [widget.selectedFile.path],
               );
@@ -305,8 +306,8 @@ class _MediaEditorWidgetState extends ConsumerState<MediaEditorWidget> {
               _isInRejectionRetryMode = true;
             });
 
-            // Step 6: 거부 메시지 표시 - MediaProcessingFailure 사용
-            final failure = MediaProcessingFailure(
+            // Step 6: 거부 메시지 표시 - CreationFailure.mediaProcessingFailed() 사용
+            final failure = CreationFailure.mediaProcessingFailed(
               failedStep: MediaProcessingStep.moderationCheck,
               affectedFiles: [editedFile.path],
               details: result.moderationResult?.reason ?? result.rejectionReason,
@@ -360,10 +361,10 @@ class _MediaEditorWidgetState extends ConsumerState<MediaEditorWidget> {
         }
       }
     } catch (e) {
-      // Step 6: 에러 처리 - MediaProcessingFailure 사용
+      // Step 6: 에러 처리 - CreationFailure.mediaProcessingFailed() 사용
       print('이미지 업로드 에러: $e');
       if (mounted) {
-        final failure = MediaProcessingFailure(
+        final failure = CreationFailure.mediaProcessingFailed(
           failedStep: MediaProcessingStep.upload,
           affectedFiles: [widget.selectedFile.path],
           details: e.toString(),

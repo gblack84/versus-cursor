@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fpdart/fpdart.dart';
 import '../../domain/repositories/specialized/i_visibility_repository.dart';
 import '../../domain/usecases/audience/manage_target_audience_usecase.dart';
-import '../../domain/failures/creation_failures.dart';
+import '../../domain/failures/creation_failure.dart';
 
 /// Implementation of content visibility repository
 /// Target Audience 시스템과 연동되는 접근 제어 구현체
@@ -21,36 +21,36 @@ class ContentVisibilityRepositoryImpl implements IContentVisibilityRepository {
       _firestore.collection(_collection);
 
   @override
-  Future<Either<VisibilityRepositoryFailure, Unit>> setVisibility(String contentId, VisibilityLevel level) async {
+  Future<Either<CreationFailure, Unit>> setVisibility(String contentId, VisibilityLevel level) async {
     try {
       await _postsCollection.doc(contentId).update({
         'visibility': _visibilityLevelToInt(level),
         'visibilityUpdatedAt': FieldValue.serverTimestamp(),
       });
       return right(unit);
-    } on FirebaseException catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: level.name,
-        message: 'Failed to set visibility: ${e.message}',
-        code: e.code,
+        // message:'Failed to set visibility: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: level.name,
-        message: 'Unexpected error setting visibility: $e',
+        // message:'Unexpected error setting visibility: $e',
       ));
     }
   }
 
   @override
-  Future<Either<VisibilityRepositoryFailure, Unit>> canUserView(String contentId, String userId) async {
+  Future<Either<CreationFailure, Unit>> canUserView(String contentId, String userId) async {
     try {
       final doc = await _postsCollection.doc(contentId).get();
       if (!doc.exists) {
-        return left(VisibilityRepositoryFailure(
+        return left(CreationFailure.visibilityRepositoryFailed(
           visibility: 'unknown',
-          message: 'Content not found',
-          code: 'content-not-found',
+          // message:'Content not found',
+          // code:'content-not-found',
         ));
       }
 
@@ -97,35 +97,35 @@ class ContentVisibilityRepositoryImpl implements IContentVisibilityRepository {
       if (canView) {
         return right(unit);
       } else {
-        return left(VisibilityRepositoryFailure(
+        return left(CreationFailure.visibilityRepositoryFailed(
           visibility: visibility.name,
-          message: 'User does not have permission to view this content',
-          code: 'access-denied',
+          // message:'User does not have permission to view this content',
+          // code:'access-denied',
         ));
       }
-    } on FirebaseException catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'unknown',
-        message: 'Failed to check user view permission: ${e.message}',
-        code: e.code,
+        // message:'Failed to check user view permission: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'unknown',
-        message: 'Unexpected error checking user view permission: $e',
+        // message:'Unexpected error checking user view permission: $e',
       ));
     }
   }
 
   @override
-  Future<Either<VisibilityRepositoryFailure, TargetAudience>> getTargetAudience(String contentId) async {
+  Future<Either<CreationFailure, TargetAudience>> getTargetAudience(String contentId) async {
     try {
       final doc = await _postsCollection.doc(contentId).get();
       if (!doc.exists) {
-        return left(VisibilityRepositoryFailure(
+        return left(CreationFailure.visibilityRepositoryFailed(
           visibility: 'unknown',
-          message: 'Content not found',
-          code: 'content-not-found',
+          // message:'Content not found',
+          // code:'content-not-found',
         ));
       }
 
@@ -150,22 +150,22 @@ class ContentVisibilityRepositoryImpl implements IContentVisibilityRepository {
         customFilters: targetAudienceData['customFilters'],
       );
       return right(audience);
-    } on FirebaseException catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'custom',
-        message: 'Failed to get target audience: ${e.message}',
-        code: e.code,
+        // message:'Failed to get target audience: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'custom',
-        message: 'Unexpected error getting target audience: $e',
+        // message:'Unexpected error getting target audience: $e',
       ));
     }
   }
 
   @override
-  Future<Either<VisibilityRepositoryFailure, Unit>> updateTargetAudience(
+  Future<Either<CreationFailure, Unit>> updateTargetAudience(
     String contentId,
     TargetAudience audience,
   ) async {
@@ -179,22 +179,22 @@ class ContentVisibilityRepositoryImpl implements IContentVisibilityRepository {
         'targetAudienceUpdatedAt': FieldValue.serverTimestamp(),
       });
       return right(unit);
-    } on FirebaseException catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'custom',
-        message: 'Failed to update target audience: ${e.message}',
-        code: e.code,
+        // message:'Failed to update target audience: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'custom',
-        message: 'Unexpected error updating target audience: $e',
+        // message:'Unexpected error updating target audience: $e',
       ));
     }
   }
 
   @override
-  Stream<Either<VisibilityRepositoryFailure, List<String>>> getContentByVisibility(VisibilityLevel level) {
+  Stream<Either<CreationFailure, List<String>>> getContentByVisibility(VisibilityLevel level) {
     return _postsCollection
         .where('visibility', isEqualTo: _visibilityLevelToInt(level))
         .orderBy('createdAt', descending: true)
@@ -202,57 +202,55 @@ class ContentVisibilityRepositoryImpl implements IContentVisibilityRepository {
         .map((snapshot) {
       try {
         final contentIds = snapshot.docs.map((doc) => doc.id).toList();
-        return right<VisibilityRepositoryFailure, List<String>>(contentIds);
-      } catch (e) {
-        return left<VisibilityRepositoryFailure, List<String>>(
-          VisibilityRepositoryFailure(
+        return right<CreationFailure, List<String>>(contentIds);
+      } catch (_) {
+        return left<CreationFailure, List<String>>(
+          CreationFailure.visibilityRepositoryFailed(
             visibility: level.name,
-            message: 'Failed to get content by visibility: $e',
+            // message:'Failed to get content by visibility: $e',
           ),
         );
       }
     }).handleError((error) {
-      return left<VisibilityRepositoryFailure, List<String>>(
-        VisibilityRepositoryFailure(
+      return left<CreationFailure, List<String>>(
+        CreationFailure.visibilityRepositoryFailed(
           visibility: level.name,
-          message: 'Stream error: $error',
-          code: error is FirebaseException ? error.code : null,
         ),
       );
     });
   }
 
   @override
-  Future<Either<VisibilityRepositoryFailure, Unit>> setAnonymous(String contentId, bool isAnonymous) async {
+  Future<Either<CreationFailure, Unit>> setAnonymous(String contentId, bool isAnonymous) async {
     try {
       await _postsCollection.doc(contentId).update({
         'isAnonymous': isAnonymous,
         'anonymousUpdatedAt': FieldValue.serverTimestamp(),
       });
       return right(unit);
-    } on FirebaseException catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'anonymous',
-        message: 'Failed to set anonymous: ${e.message}',
-        code: e.code,
+        // message:'Failed to set anonymous: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'anonymous',
-        message: 'Unexpected error setting anonymous: $e',
+        // message:'Unexpected error setting anonymous: $e',
       ));
     }
   }
 
   @override
-  Future<Either<VisibilityRepositoryFailure, Unit>> isPremiumRequired(String contentId) async {
+  Future<Either<CreationFailure, Unit>> isPremiumRequired(String contentId) async {
     try {
       final doc = await _postsCollection.doc(contentId).get();
       if (!doc.exists) {
-        return left(VisibilityRepositoryFailure(
+        return left(CreationFailure.visibilityRepositoryFailed(
           visibility: 'premium',
-          message: 'Content not found',
-          code: 'content-not-found',
+          // message:'Content not found',
+          // code:'content-not-found',
         ));
       }
 
@@ -262,28 +260,28 @@ class ContentVisibilityRepositoryImpl implements IContentVisibilityRepository {
       if (isPremium) {
         return right(unit);
       } else {
-        return left(VisibilityRepositoryFailure(
+        return left(CreationFailure.visibilityRepositoryFailed(
           visibility: 'premium',
-          message: 'Premium not required',
-          code: 'premium-not-required',
+          // message:'Premium not required',
+          // code:'premium-not-required',
         ));
       }
-    } on FirebaseException catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'premium',
-        message: 'Failed to check premium requirement: ${e.message}',
-        code: e.code,
+        // message:'Failed to check premium requirement: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'premium',
-        message: 'Unexpected error checking premium requirement: $e',
+        // message:'Unexpected error checking premium requirement: $e',
       ));
     }
   }
 
   @override
-  Future<Either<VisibilityRepositoryFailure, Unit>> setPremiumRequired(String contentId, bool required) async {
+  Future<Either<CreationFailure, Unit>> setPremiumRequired(String contentId, bool required) async {
     try {
       await _postsCollection.doc(contentId).update({
         'premiumRequired': required,
@@ -291,22 +289,22 @@ class ContentVisibilityRepositoryImpl implements IContentVisibilityRepository {
         'premiumUpdatedAt': FieldValue.serverTimestamp(),
       });
       return right(unit);
-    } on FirebaseException catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'premium',
-        message: 'Failed to set premium requirement: ${e.message}',
-        code: e.code,
+        // message:'Failed to set premium requirement: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'premium',
-        message: 'Unexpected error setting premium requirement: $e',
+        // message:'Unexpected error setting premium requirement: $e',
       ));
     }
   }
 
   @override
-  Stream<Either<VisibilityRepositoryFailure, List<String>>> getUserAccessibleContent(String userId) {
+  Stream<Either<CreationFailure, List<String>>> getUserAccessibleContent(String userId) {
     // Get user data first to check premium status
     return _firestore
         .collection('users')
@@ -334,29 +332,27 @@ class ContentVisibilityRepositoryImpl implements IContentVisibilityRepository {
           .map((snapshot) {
         try {
           final contentIds = snapshot.docs.map((doc) => doc.id).toList();
-          return right<VisibilityRepositoryFailure, List<String>>(contentIds);
-        } catch (e) {
-          return left<VisibilityRepositoryFailure, List<String>>(
-            VisibilityRepositoryFailure(
+          return right<CreationFailure, List<String>>(contentIds);
+        } catch (_) {
+          return left<CreationFailure, List<String>>(
+            CreationFailure.visibilityRepositoryFailed(
               visibility: 'user-accessible',
-              message: 'Failed to get user accessible content: $e',
+              // message:'Failed to get user accessible content: $e',
             ),
           );
         }
       });
     }).handleError((error) {
-      return left<VisibilityRepositoryFailure, List<String>>(
-        VisibilityRepositoryFailure(
+      return left<CreationFailure, List<String>>(
+        CreationFailure.visibilityRepositoryFailed(
           visibility: 'user-accessible',
-          message: 'Stream error: $error',
-          code: error is FirebaseException ? error.code : null,
         ),
       );
     });
   }
 
   @override
-  Future<Either<VisibilityRepositoryFailure, Unit>> grantAccess(String contentId, String userId) async {
+  Future<Either<CreationFailure, Unit>> grantAccess(String contentId, String userId) async {
     try {
       final accessRef = _postsCollection
           .doc(contentId)
@@ -369,22 +365,22 @@ class ContentVisibilityRepositoryImpl implements IContentVisibilityRepository {
         'grantedAt': FieldValue.serverTimestamp(),
       });
       return right(unit);
-    } on FirebaseException catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'access-control',
-        message: 'Failed to grant access: ${e.message}',
-        code: e.code,
+        // message:'Failed to grant access: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'access-control',
-        message: 'Unexpected error granting access: $e',
+        // message:'Unexpected error granting access: $e',
       ));
     }
   }
 
   @override
-  Future<Either<VisibilityRepositoryFailure, Unit>> revokeAccess(String contentId, String userId) async {
+  Future<Either<CreationFailure, Unit>> revokeAccess(String contentId, String userId) async {
     try {
       await _postsCollection
           .doc(contentId)
@@ -392,22 +388,22 @@ class ContentVisibilityRepositoryImpl implements IContentVisibilityRepository {
           .doc(userId)
           .delete();
       return right(unit);
-    } on FirebaseException catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'access-control',
-        message: 'Failed to revoke access: ${e.message}',
-        code: e.code,
+        // message:'Failed to revoke access: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'access-control',
-        message: 'Unexpected error revoking access: $e',
+        // message:'Unexpected error revoking access: $e',
       ));
     }
   }
 
   @override
-  Future<Either<VisibilityRepositoryFailure, List<AccessControl>>> getAccessControlList(String contentId) async {
+  Future<Either<CreationFailure, List<AccessControl>>> getAccessControlList(String contentId) async {
     try {
       final snapshot = await _postsCollection
           .doc(contentId)
@@ -426,16 +422,16 @@ class ContentVisibilityRepositoryImpl implements IContentVisibilityRepository {
         );
       }).toList();
       return right(accessList);
-    } on FirebaseException catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'access-control',
-        message: 'Failed to get access control list: ${e.message}',
-        code: e.code,
+        // message:'Failed to get access control list: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'access-control',
-        message: 'Unexpected error getting access control list: $e',
+        // message:'Unexpected error getting access control list: $e',
       ));
     }
   }
@@ -507,7 +503,7 @@ class ContentVisibilityRepositoryImpl implements IContentVisibilityRepository {
   }
 
   @override
-  Future<Either<VisibilityRepositoryFailure, Unit>> sendNotifications(String contentId) async {
+  Future<Either<CreationFailure, Unit>> sendNotifications(String contentId) async {
     try {
       // Get content details and target audience
       final contentDoc = await _firestore
@@ -516,10 +512,10 @@ class ContentVisibilityRepositoryImpl implements IContentVisibilityRepository {
           .get();
 
       if (!contentDoc.exists) {
-        return left(VisibilityRepositoryFailure(
+        return left(CreationFailure.visibilityRepositoryFailed(
           visibility: 'notification',
-          message: 'Content not found: $contentId',
-          code: 'content-not-found',
+          // message:'Content not found: $contentId',
+          // code:'content-not-found',
         ));
       }
 
@@ -527,10 +523,10 @@ class ContentVisibilityRepositoryImpl implements IContentVisibilityRepository {
       final targetAudienceData = contentData['targetAudience'] as Map<String, dynamic>?;
 
       if (targetAudienceData == null) {
-        return left(VisibilityRepositoryFailure(
+        return left(CreationFailure.visibilityRepositoryFailed(
           visibility: 'notification',
-          message: 'No target audience defined for content: $contentId',
-          code: 'no-target-audience',
+          // message:'No target audience defined for content: $contentId',
+          // code:'no-target-audience',
         ));
       }
 
@@ -554,16 +550,16 @@ class ContentVisibilityRepositoryImpl implements IContentVisibilityRepository {
       });
 
       return right(unit);
-    } on FirebaseException catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'notification',
-        message: 'Failed to send notifications: ${e.message}',
-        code: e.code,
+        // message:'Failed to send notifications: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(VisibilityRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.visibilityRepositoryFailed(
         visibility: 'notification',
-        message: 'Unexpected error sending notifications: $e',
+        // message:'Unexpected error sending notifications: $e',
       ));
     }
   }

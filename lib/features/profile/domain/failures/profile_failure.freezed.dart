@@ -20,13 +20,17 @@ mixin _$ProfileFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProfileFailure&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProfileFailure);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ProfileFailure()';
+}
 
 
 }
@@ -246,13 +250,17 @@ $ValidationFailureCopyWith<ValidationFailure> get copyWith => _$ValidationFailur
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ValidationFailure&&super == other&&(identical(other.field, field) || other.field == field));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ValidationFailure&&(identical(other.field, field) || other.field == field));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode,field);
+int get hashCode => Object.hash(runtimeType,field);
 
+@override
+String toString() {
+  return 'ProfileFailure.validation(field: $field)';
+}
 
 
 }
@@ -308,13 +316,17 @@ $ProfileNotFoundCopyWith<ProfileNotFound> get copyWith => _$ProfileNotFoundCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProfileNotFound&&super == other&&(identical(other.userId, userId) || other.userId == userId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProfileNotFound&&(identical(other.userId, userId) || other.userId == userId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode,userId);
+int get hashCode => Object.hash(runtimeType,userId);
 
+@override
+String toString() {
+  return 'ProfileFailure.profileNotFound(userId: $userId)';
+}
 
 
 }
@@ -370,13 +382,17 @@ $FirestoreReadCopyWith<FirestoreRead> get copyWith => _$FirestoreReadCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FirestoreRead&&super == other&&(identical(other.operation, operation) || other.operation == operation));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FirestoreRead&&(identical(other.operation, operation) || other.operation == operation));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode,operation);
+int get hashCode => Object.hash(runtimeType,operation);
 
+@override
+String toString() {
+  return 'ProfileFailure.firestoreRead(operation: $operation)';
+}
 
 
 }
@@ -432,13 +448,17 @@ $FirestoreWriteCopyWith<FirestoreWrite> get copyWith => _$FirestoreWriteCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FirestoreWrite&&super == other&&(identical(other.operation, operation) || other.operation == operation));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FirestoreWrite&&(identical(other.operation, operation) || other.operation == operation));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode,operation);
+int get hashCode => Object.hash(runtimeType,operation);
 
+@override
+String toString() {
+  return 'ProfileFailure.firestoreWrite(operation: $operation)';
+}
 
 
 }
@@ -494,13 +514,17 @@ $StorageFailureCopyWith<StorageFailure> get copyWith => _$StorageFailureCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is StorageFailure&&super == other&&(identical(other.operation, operation) || other.operation == operation));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is StorageFailure&&(identical(other.operation, operation) || other.operation == operation));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode,operation);
+int get hashCode => Object.hash(runtimeType,operation);
 
+@override
+String toString() {
+  return 'ProfileFailure.storage(operation: $operation)';
+}
 
 
 }
@@ -551,13 +575,17 @@ class NetworkFailure extends ProfileFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is NetworkFailure&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NetworkFailure);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ProfileFailure.network()';
+}
 
 
 }
@@ -584,13 +612,17 @@ $PermissionDeniedCopyWith<PermissionDenied> get copyWith => _$PermissionDeniedCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PermissionDenied&&super == other&&(identical(other.resource, resource) || other.resource == resource));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PermissionDenied&&(identical(other.resource, resource) || other.resource == resource));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode,resource);
+int get hashCode => Object.hash(runtimeType,resource);
 
+@override
+String toString() {
+  return 'ProfileFailure.permissionDenied(resource: $resource)';
+}
 
 
 }
@@ -641,13 +673,17 @@ class AuthenticationRequired extends ProfileFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthenticationRequired&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthenticationRequired);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ProfileFailure.authenticationRequired()';
+}
 
 
 }
@@ -674,13 +710,17 @@ $UnauthorizedAccessCopyWith<UnauthorizedAccess> get copyWith => _$UnauthorizedAc
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UnauthorizedAccess&&super == other&&(identical(other.message, message) || other.message == message));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UnauthorizedAccess&&(identical(other.message, message) || other.message == message));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode,message);
+int get hashCode => Object.hash(runtimeType,message);
 
+@override
+String toString() {
+  return 'ProfileFailure.unauthorizedAccess(message: $message)';
+}
 
 
 }
@@ -736,13 +776,17 @@ $CacheFailureCopyWith<CacheFailure> get copyWith => _$CacheFailureCopyWithImpl<C
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CacheFailure&&super == other&&(identical(other.operation, operation) || other.operation == operation));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CacheFailure&&(identical(other.operation, operation) || other.operation == operation));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode,operation);
+int get hashCode => Object.hash(runtimeType,operation);
 
+@override
+String toString() {
+  return 'ProfileFailure.cache(operation: $operation)';
+}
 
 
 }
@@ -798,13 +842,17 @@ $DuplicateOperationCopyWith<DuplicateOperation> get copyWith => _$DuplicateOpera
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DuplicateOperation&&super == other&&(identical(other.message, message) || other.message == message));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DuplicateOperation&&(identical(other.message, message) || other.message == message));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode,message);
+int get hashCode => Object.hash(runtimeType,message);
 
+@override
+String toString() {
+  return 'ProfileFailure.duplicateOperation(message: $message)';
+}
 
 
 }
@@ -860,13 +908,17 @@ $UnknownProfileCopyWith<UnknownProfile> get copyWith => _$UnknownProfileCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UnknownProfile&&super == other&&(identical(other.error, error) || other.error == error));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UnknownProfile&&(identical(other.error, error) || other.error == error));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode,error);
+int get hashCode => Object.hash(runtimeType,error);
 
+@override
+String toString() {
+  return 'ProfileFailure.unknown(error: $error)';
+}
 
 
 }

@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../domain/usecases/moderate_content_usecase.dart';
-import '../../../domain/failures/creation_failures.dart';
+import '../../../domain/failures/creation_failure.dart';
+import '../../../domain/failures/creation_failure_extensions.dart'; // Extension for getUserMessage()
 import '../states/validation_state.dart';
 import '../creation_providers.dart';
 
@@ -71,9 +72,9 @@ class MediaValidation extends _$MediaValidation {
         (failure) {
           state = state.copyWith(
             validationFailure: failure,
-            validationMessage: failure is MediaProcessingFailure
+            validationMessage: failure is MediaProcessingFailed
                 ? failure.getUserMessage()
-                : '검증 실패: ${failure.message}',
+                : failure.getUserMessage(),
           );
           return false;
         },
@@ -122,11 +123,11 @@ class MediaValidation extends _$MediaValidation {
       };
 
       if (!allApproved) {
-        // Create MediaProcessingFailure for rejected images
+        // Create MediaProcessingFailed for rejected images
         final affectedFiles = rejectedIndices
             .map((i) => images[i - 1].path)
             .toList();
-        final failure = MediaProcessingFailure(
+        final failure = CreationFailure.mediaProcessingFailed(
           failedStep: MediaProcessingStep.moderationCheck,
           affectedFiles: affectedFiles,
           details: '이미지 ${rejectedIndices.join(", ")}번',
@@ -153,8 +154,8 @@ class MediaValidation extends _$MediaValidation {
 
       return allApproved;
     } catch (e) {
-      // Create generic MediaProcessingFailure for unexpected errors
-      final failure = MediaProcessingFailure(
+      // Create generic MediaProcessingFailed for unexpected errors
+      final failure = CreationFailure.mediaProcessingFailed(
         failedStep: MediaProcessingStep.moderationCheck,
         affectedFiles: images.map((f) => f.path).toList(),
         details: e.toString(),
@@ -194,7 +195,7 @@ class MediaValidation extends _$MediaValidation {
       return resultEither.fold(
         (failure) {
           state = state.copyWith(
-            validationMessage: '검증 실패: ${failure.message}',
+            validationMessage: '검증 실패: ${failure.getUserMessage()}',
             isValidating: false,
           );
           return false;
@@ -257,7 +258,7 @@ class MediaValidation extends _$MediaValidation {
       return resultEither.fold(
         (failure) {
           state = state.copyWith(
-            validationMessage: '검증 실패: ${failure.message}',
+            validationMessage: '검증 실패: ${failure.getUserMessage()}',
             isValidating: false,
           );
           return false;

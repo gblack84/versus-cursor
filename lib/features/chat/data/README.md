@@ -1227,6 +1227,8 @@ final result = await chatRepository
 - [Chat Feature 개요](/lib/features/chat/README.md)
 - [Domain Layer 상세](/lib/features/chat/domain/README.md)
 - [Presentation Layer 상세](/lib/features/chat/presentation/README.md)
+  - **NEW**: Riverpod 3.x Migration 완료 (18개 @riverpod Providers)
+  - 참고: [presentation/README.md > Riverpod 3.x Migration 섹션](/lib/features/chat/presentation/README.md#-riverpod-3x-migration)
 - [Firebase-Centric Architecture 가이드](/docs/architecture/FIREBASE_CENTRIC.md)
 
 ### 외부 링크

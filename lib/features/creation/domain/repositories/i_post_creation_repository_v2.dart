@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:fpdart/fpdart.dart';
-import '../failures/creation_failures.dart';
+import '../failures/creation_failure.dart';
 import '../entities/post_creation.dart';
 import '../entities/target_audience.dart';
 import '../services/i_target_audience_service.dart' as service;
@@ -29,7 +29,7 @@ abstract class IPostCreationRepositoryV2 {
   /// **Idempotency**: Same eventId will skip operation and return success (network retry safe)
   ///
   /// Voting Feature and Post Feature will add their fields later through onCreate triggers.
-  Future<Either<CreateContentFailure, String>> createPost({
+  Future<Either<CreationFailure, String>> createPost({
     required PostCreation post,
     required String eventId, // ✅ Phase 4: UUID for idempotency
   });
@@ -48,7 +48,7 @@ abstract class IPostCreationRepositoryV2 {
   /// - `IdempotencyViolation`: Duplicate operation with different eventId
   ///
   /// **Idempotency**: Same eventId will skip operation and return success
-  Future<Either<CreateContentFailure, Unit>> updatePost({
+  Future<Either<CreationFailure, Unit>> updatePost({
     required String postId,
     required PostCreation post,
     required String eventId, // ✅ Phase 4: UUID for idempotency
@@ -57,7 +57,7 @@ abstract class IPostCreationRepositoryV2 {
   /// Update post using partial data (for granular updates)
   ///
   /// **Returns**: `Either<CreationFailure, Unit>`
-  Future<Either<CreateContentFailure, Unit>> updatePostPartial({
+  Future<Either<CreationFailure, Unit>> updatePostPartial({
     required String postId,
     required Map<String, dynamic> data,
   });
@@ -74,7 +74,7 @@ abstract class IPostCreationRepositoryV2 {
   /// **Returns**: `Either<CreationFailure, Unit>`
   ///
   /// **Idempotency**: Same eventId will skip operation and return success
-  Future<Either<CreateContentFailure, Unit>> deletePost({
+  Future<Either<CreationFailure, Unit>> deletePost({
     required String postId,
     required String eventId, // ✅ Phase 4: UUID for idempotency
   });
@@ -88,7 +88,7 @@ abstract class IPostCreationRepositoryV2 {
   /// **Returns**: `Either<CreationFailure, Unit>`
   ///
   /// **Idempotency**: Same eventId will skip operation and return success
-  Future<Either<CreateContentFailure, Unit>> uploadPostMedia({
+  Future<Either<CreationFailure, Unit>> uploadPostMedia({
     required String postId,
     required String mediaUrl,
     required String mediaType,
@@ -99,7 +99,7 @@ abstract class IPostCreationRepositoryV2 {
   /// Delete post media
   ///
   /// **Returns**: `Either<CreationFailure, Unit>`
-  Future<Either<CreateContentFailure, Unit>> deletePostMedia({
+  Future<Either<CreationFailure, Unit>> deletePostMedia({
     required String postId,
     required String mediaUrl,
     String? side, // 'A' or 'B'
@@ -114,7 +114,7 @@ abstract class IPostCreationRepositoryV2 {
   /// **Returns**: `Either<CreationFailure, Unit>`
   ///
   /// **Idempotency**: Same eventId will skip operation and return success
-  Future<Either<CreateContentFailure, Unit>> updatePostStatus({
+  Future<Either<CreationFailure, Unit>> updatePostStatus({
     required String postId,
     required String status,
     required String eventId, // ✅ Phase 4: UUID for idempotency
@@ -127,7 +127,7 @@ abstract class IPostCreationRepositoryV2 {
   /// **Returns**: `Either<CreationFailure, Unit>`
   ///
   /// **Idempotency**: Same eventId will skip operation and return success
-  Future<Either<CreateContentFailure, Unit>> markPostAsProcessed({
+  Future<Either<CreationFailure, Unit>> markPostAsProcessed({
     required String postId,
     DateTime? processedAt,
     required String eventId, // ✅ Phase 4: UUID for idempotency
@@ -140,14 +140,14 @@ abstract class IPostCreationRepositoryV2 {
   /// **Returns**: `Either<CreationFailure, Option<PostCreation>>`
   /// - `Some(post)` if found
   /// - `None()` if not found
-  Future<Either<CreateContentFailure, Option<PostCreation>>> getPost(String postId);
+  Future<Either<CreationFailure, Option<PostCreation>>> getPost(String postId);
 
   /// Stream post changes as PostCreation aggregate (Creation Feature responsibility only)
   ///
   /// **Returns**: Stream of `Either<CreationFailure, PostCreation>`
   /// - Emits Left on error
   /// - Emits Right on data
-  Stream<Either<CreateContentFailure, PostCreation>> watchPost(String postId);
+  Stream<Either<CreationFailure, PostCreation>> watchPost(String postId);
 
   // Note: PostBundle, PostVoting, PostMetrics queries removed
   // These span multiple features and should be handled at app/contracts level
@@ -157,7 +157,7 @@ abstract class IPostCreationRepositoryV2 {
   /// Get user's created posts as PostCreation aggregates
   ///
   /// **Returns**: Stream of `Either<CreationFailure, List<PostCreation>>`
-  Stream<Either<CreateContentFailure, List<PostCreation>>> getUserCreatedPosts({
+  Stream<Either<CreationFailure, List<PostCreation>>> getUserCreatedPosts({
     required String userId,
     int limit = -1,
   });
@@ -165,16 +165,16 @@ abstract class IPostCreationRepositoryV2 {
   /// Get count of user's created posts
   ///
   /// **Returns**: `Either<CreationFailure, int>`
-  Future<Either<CreateContentFailure, int>> getUserCreatedPostsCount(String userId);
+  Future<Either<CreationFailure, int>> getUserCreatedPostsCount(String userId);
 
   // ====== Validation ======
 
   /// Validate post data before creation using PostCreation aggregate
   ///
-  /// **Returns**: `Either<CreationValidationFailure, Unit>`
+  /// **Returns**: `Either<CreationFailure, Unit>`
   /// - `Right(unit)` if valid
   /// - `Left(failure)` with validation errors
-  Future<Either<CreationValidationFailure, Unit>> validatePostData({
+  Future<Either<CreationFailure, Unit>> validatePostData({
     required PostCreation post,
   });
 
@@ -183,7 +183,7 @@ abstract class IPostCreationRepositoryV2 {
   /// **Returns**: `Either<CreationFailure, Unit>`
   /// - `Right(unit)` if allowed
   /// - `Left(failure)` if rate limited or restricted
-  Future<Either<CreateContentFailure, Unit>> canUserCreatePost(String userId);
+  Future<Either<CreationFailure, Unit>> canUserCreatePost(String userId);
 
   // ====== Service Operations (Phase 1.3) ======
   // These methods delegate to internal services but expose them through repository
@@ -218,7 +218,7 @@ abstract class IPostCreationRepositoryV2 {
   /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
   ///
   /// **Returns**: `Either<CreationFailure, String>` (contentId)
-  Future<Either<CreateContentFailure, String>> createContent(
+  Future<Either<CreationFailure, String>> createContent(
     PostCreation post, {
     required String eventId, // ✅ Phase 4: UUID for idempotency
   });
@@ -229,7 +229,7 @@ abstract class IPostCreationRepositoryV2 {
   /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
   ///
   /// **Returns**: `Either<CreationFailure, Unit>`
-  Future<Either<CreateContentFailure, Unit>> updateContent(
+  Future<Either<CreationFailure, Unit>> updateContent(
     String contentId,
     PostCreation post, {
     required String eventId, // ✅ Phase 4: UUID for idempotency
@@ -241,7 +241,7 @@ abstract class IPostCreationRepositoryV2 {
   /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
   ///
   /// **Returns**: `Either<CreationFailure, Unit>`
-  Future<Either<CreateContentFailure, Unit>> deleteContent(
+  Future<Either<CreationFailure, Unit>> deleteContent(
     String contentId, {
     required String eventId, // ✅ Phase 4: UUID for idempotency
   });
@@ -252,7 +252,7 @@ abstract class IPostCreationRepositoryV2 {
   /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
   ///
   /// **Returns**: `Either<CreationFailure, Unit>`
-  Future<Either<CreateContentFailure, Unit>> publishContent(
+  Future<Either<CreationFailure, Unit>> publishContent(
     String contentId, {
     required String eventId, // ✅ Phase 4: UUID for idempotency
   });
@@ -263,7 +263,7 @@ abstract class IPostCreationRepositoryV2 {
   /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
   ///
   /// **Returns**: `Either<CreationFailure, Unit>`
-  Future<Either<CreateContentFailure, Unit>> saveDraft(
+  Future<Either<CreationFailure, Unit>> saveDraft(
     String contentId,
     PostCreation post, {
     required String eventId, // ✅ Phase 4: UUID for idempotency

@@ -83,7 +83,7 @@ final class MediaUploadProvider
   }
 }
 
-String _$mediaUploadHash() => r'bb1f7bfcee0332d53055b23adc6a97c6f26535e3';
+String _$mediaUploadHash() => r'c501a25a25a901e28dc8eaed30a269ef6639783b';
 
 /// Media upload state management with Riverpod Notifier
 /// 미디어 업로드 상태 관리 - Riverpod 3.x Migration (Phase 2-5-3)

@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../failures/creation_failures.dart';
+import '../../failures/creation_failure.dart';
 import '../../repositories/i_media_repository.dart';
 import '../../services/i_image_processing_service.dart';
 
@@ -33,7 +33,7 @@ class UploadImagesUseCase {
   /// - [box]: 'A' or 'B' to identify which option
   /// - [userId]: User ID for file path generation
   /// - [onProgress]: Optional progress callback (0.0 to 1.0)
-  Future<Either<Failure, UploadResult>> execute({
+  Future<Either<CreationFailure, UploadResult>> execute({
     required List<File> images,
     required String box,
     required String userId,
@@ -42,14 +42,18 @@ class UploadImagesUseCase {
     try {
       if (images.isEmpty) {
         return left(
-          const CreationValidationFailure('No images provided'),
+          CreationFailure.creationValidationFailed(
+            fieldErrors: {'images': 'No images provided'},
+          ),
         );
       }
 
       // Validate box parameter (inline validation, moved from DTO)
       if (box != 'A' && box != 'B') {
         return left(
-          CreationValidationFailure('Invalid box parameter: $box'),
+          CreationFailure.creationValidationFailed(
+            fieldErrors: {'box': 'Invalid box parameter: $box'},
+          ),
         );
       }
 
@@ -70,8 +74,7 @@ class UploadImagesUseCase {
         (processingResult) async {
           if (processingResult.allRejected) {
             return left(
-              ModerationFailure(
-                'All images were rejected',
+              CreationFailure.moderationFailed(
                 rejectedReasons: processingResult.rejectedReasons.keys.toList(),
               ),
             );
@@ -111,13 +114,13 @@ class UploadImagesUseCase {
       print('StackTrace: $stackTrace');
 
       return left(
-        ImageUploadFailure('Failed to upload images: $error'),
+        CreationFailure.imageUploadFailed(),
       );
     }
   }
 
   /// Process and upload a single edited image
-  Future<Either<Failure, SingleUploadResult>> uploadEditedImage({
+  Future<Either<CreationFailure, SingleUploadResult>> uploadEditedImage({
     required File editedFile,
     required String box,
     String? assetId,
@@ -139,8 +142,7 @@ class UploadImagesUseCase {
         (processingResult) async {
           if (!processingResult.success || processingResult.file == null) {
             return left(
-              ModerationFailure(
-                'Image was rejected',
+              CreationFailure.moderationFailed(
                 rejectedReasons: [
                   processingResult.rejectionReason ?? 'Unknown reason',
                 ],
@@ -158,7 +160,7 @@ class UploadImagesUseCase {
             (urls) {
               if (urls.isEmpty) {
                 return left(
-                  const ImageUploadFailure('Failed to upload edited image'),
+                  CreationFailure.imageUploadFailed(),
                 );
               }
 
@@ -179,7 +181,7 @@ class UploadImagesUseCase {
       print('UploadEditedImageUseCase Error: $error');
 
       return left(
-        ImageUploadFailure('Failed to upload edited image: $error'),
+        CreationFailure.imageUploadFailed(),
       );
     }
   }

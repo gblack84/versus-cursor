@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import '../../failures/profile_failure.dart';
 import '../../repositories/i_interests_repository.dart';
 import '../../entities/interest.dart';

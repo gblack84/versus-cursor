@@ -154,7 +154,7 @@ VotingNotification _$VotingNotificationFromJson(Map<String, dynamic> json) =>
       body: json['body'] as String?,
       notificationPriority: json['notificationPriority'] == null
           ? NotificationPriority.medium
-          : NotificationPriority.fromJson(
+          : const NotificationPriorityConverter().fromJson(
               (json['notificationPriority'] as num).toInt(),
             ),
       imageUrlsA:
@@ -199,7 +199,7 @@ Map<String, dynamic> _$VotingNotificationToJson(VotingNotification instance) =>
       'senderId': instance.senderId,
       'senderName': instance.senderName,
       'body': instance.body,
-      'notificationPriority': _notificationPriorityToJson(
+      'notificationPriority': const NotificationPriorityConverter().toJson(
         instance.notificationPriority,
       ),
       'imageUrlsA': instance.imageUrlsA,

@@ -7,7 +7,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '../../../domain/repositories/i_media_repository.dart';
 import '../../../domain/services/i_image_processing_service.dart';
-import '../../../domain/failures/creation_failures.dart';
+import '../../../domain/failures/creation_failure.dart';
 import '../states/upload_queue_state.dart';
 import '../creation_providers.dart';
 
@@ -171,8 +171,8 @@ class MediaUpload extends _$MediaUpload {
                 .map((e) => '${e.key}: ${e.value.join(", ")}')
                 .join('; ');
 
-            // Create MediaProcessingFailure with moderation check failure
-            throw MediaProcessingFailure(
+            // Create MediaProcessingFailed with moderation check failure
+            throw CreationFailure.mediaProcessingFailed(
               failedStep: MediaProcessingStep.moderationCheck,
               affectedFiles: task.files.map((f) => f.path).toList(),
               details: reasons.isNotEmpty ? reasons : null,
@@ -219,8 +219,8 @@ class MediaUpload extends _$MediaUpload {
       }
 
       if (uploadedUrls.isEmpty) {
-        // Create MediaProcessingFailure with upload failure
-        throw MediaProcessingFailure(
+        // Create MediaProcessingFailed with upload failure
+        throw CreationFailure.mediaProcessingFailed(
           failedStep: MediaProcessingStep.upload,
           affectedFiles: approvedFiles.map((f) => f.path).toList(),
           details: '모든 파일 업로드에 실패했습니다.',

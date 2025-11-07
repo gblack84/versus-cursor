@@ -89,10 +89,7 @@ sealed class Notification with _$Notification {
     String? senderId,
     String? senderName,
     String? body,
-    @JsonKey(
-      fromJson: NotificationPriority.fromJson,
-      toJson: _notificationPriorityToJson,
-    )
+    @NotificationPriorityConverter()
     @Default(NotificationPriority.medium)
     NotificationPriority notificationPriority,
 
@@ -241,6 +238,3 @@ enum NotificationStatus {
     );
   }
 }
-
-// JSON serialization helper for NotificationPriority
-int _notificationPriorityToJson(NotificationPriority priority) => priority.toJson();

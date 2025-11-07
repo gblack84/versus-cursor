@@ -20,7 +20,7 @@ mixin _$ProfileInfo {
  String get displayName; String? get photoUrl;// Profile Details
  String? get shortDescription; String? get gender; DateTime? get dateOfBirth; String get language;// Lists
  List<String> get interests; List<String> get expertise;// Location
-@JsonKey(fromJson: _latLngFromJson, toJson: _latLngToJson) LatLng? get location;
+@LatLngConverter() LatLng? get location;
 /// Create a copy of ProfileInfo
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -53,7 +53,7 @@ abstract mixin class $ProfileInfoCopyWith<$Res>  {
   factory $ProfileInfoCopyWith(ProfileInfo value, $Res Function(ProfileInfo) _then) = _$ProfileInfoCopyWithImpl;
 @useResult
 $Res call({
- String userId, String displayName, String? photoUrl, String? shortDescription, String? gender, DateTime? dateOfBirth, String language, List<String> interests, List<String> expertise,@JsonKey(fromJson: _latLngFromJson, toJson: _latLngToJson) LatLng? location
+ String userId, String displayName, String? photoUrl, String? shortDescription, String? gender, DateTime? dateOfBirth, String language, List<String> interests, List<String> expertise,@LatLngConverter() LatLng? location
 });
 
 
@@ -164,7 +164,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String userId,  String displayName,  String? photoUrl,  String? shortDescription,  String? gender,  DateTime? dateOfBirth,  String language,  List<String> interests,  List<String> expertise, @JsonKey(fromJson: _latLngFromJson, toJson: _latLngToJson)  LatLng? location)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String userId,  String displayName,  String? photoUrl,  String? shortDescription,  String? gender,  DateTime? dateOfBirth,  String language,  List<String> interests,  List<String> expertise, @LatLngConverter()  LatLng? location)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ProfileInfo() when $default != null:
 return $default(_that.userId,_that.displayName,_that.photoUrl,_that.shortDescription,_that.gender,_that.dateOfBirth,_that.language,_that.interests,_that.expertise,_that.location);case _:
@@ -185,7 +185,7 @@ return $default(_that.userId,_that.displayName,_that.photoUrl,_that.shortDescrip
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String userId,  String displayName,  String? photoUrl,  String? shortDescription,  String? gender,  DateTime? dateOfBirth,  String language,  List<String> interests,  List<String> expertise, @JsonKey(fromJson: _latLngFromJson, toJson: _latLngToJson)  LatLng? location)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String userId,  String displayName,  String? photoUrl,  String? shortDescription,  String? gender,  DateTime? dateOfBirth,  String language,  List<String> interests,  List<String> expertise, @LatLngConverter()  LatLng? location)  $default,) {final _that = this;
 switch (_that) {
 case _ProfileInfo():
 return $default(_that.userId,_that.displayName,_that.photoUrl,_that.shortDescription,_that.gender,_that.dateOfBirth,_that.language,_that.interests,_that.expertise,_that.location);}
@@ -202,7 +202,7 @@ return $default(_that.userId,_that.displayName,_that.photoUrl,_that.shortDescrip
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String userId,  String displayName,  String? photoUrl,  String? shortDescription,  String? gender,  DateTime? dateOfBirth,  String language,  List<String> interests,  List<String> expertise, @JsonKey(fromJson: _latLngFromJson, toJson: _latLngToJson)  LatLng? location)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String userId,  String displayName,  String? photoUrl,  String? shortDescription,  String? gender,  DateTime? dateOfBirth,  String language,  List<String> interests,  List<String> expertise, @LatLngConverter()  LatLng? location)?  $default,) {final _that = this;
 switch (_that) {
 case _ProfileInfo() when $default != null:
 return $default(_that.userId,_that.displayName,_that.photoUrl,_that.shortDescription,_that.gender,_that.dateOfBirth,_that.language,_that.interests,_that.expertise,_that.location);case _:
@@ -217,7 +217,7 @@ return $default(_that.userId,_that.displayName,_that.photoUrl,_that.shortDescrip
 @JsonSerializable()
 
 class _ProfileInfo implements ProfileInfo {
-  const _ProfileInfo({required this.userId, required this.displayName, this.photoUrl, this.shortDescription, this.gender, this.dateOfBirth, this.language = 'en', final  List<String> interests = const [], final  List<String> expertise = const [], @JsonKey(fromJson: _latLngFromJson, toJson: _latLngToJson) this.location}): _interests = interests,_expertise = expertise;
+  const _ProfileInfo({required this.userId, required this.displayName, this.photoUrl, this.shortDescription, this.gender, this.dateOfBirth, this.language = 'en', final  List<String> interests = const [], final  List<String> expertise = const [], @LatLngConverter() this.location}): _interests = interests,_expertise = expertise;
   factory _ProfileInfo.fromJson(Map<String, dynamic> json) => _$ProfileInfoFromJson(json);
 
 // Core Fields
@@ -247,7 +247,7 @@ class _ProfileInfo implements ProfileInfo {
 }
 
 // Location
-@override@JsonKey(fromJson: _latLngFromJson, toJson: _latLngToJson) final  LatLng? location;
+@override@LatLngConverter() final  LatLng? location;
 
 /// Create a copy of ProfileInfo
 /// with the given fields replaced by the non-null parameter values.
@@ -282,7 +282,7 @@ abstract mixin class _$ProfileInfoCopyWith<$Res> implements $ProfileInfoCopyWith
   factory _$ProfileInfoCopyWith(_ProfileInfo value, $Res Function(_ProfileInfo) _then) = __$ProfileInfoCopyWithImpl;
 @override @useResult
 $Res call({
- String userId, String displayName, String? photoUrl, String? shortDescription, String? gender, DateTime? dateOfBirth, String language, List<String> interests, List<String> expertise,@JsonKey(fromJson: _latLngFromJson, toJson: _latLngToJson) LatLng? location
+ String userId, String displayName, String? photoUrl, String? shortDescription, String? gender, DateTime? dateOfBirth, String language, List<String> interests, List<String> expertise,@LatLngConverter() LatLng? location
 });
 
 

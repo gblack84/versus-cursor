@@ -1,8 +1,8 @@
 # Profile Domain Layer - Clean Architecture v4.0
 
-> **Last Updated**: 2025-01-30
+> **Last Updated**: 2025-01-07
 > **Architecture**: Clean Architecture v4.0 - Domain Layer
-> **Pattern**: Repository Pattern + UseCase Pattern + Freezed Immutability
+> **Pattern**: Repository Pattern + UseCase Pattern + Freezed Immutability + Feature Isolation (Phase 6.5)
 > **Dependencies**: Pure Dart (No Flutter/Firebase)
 
 ## Overview
@@ -61,13 +61,14 @@ domain/
 │   ├── user_profile_extensions.dart      # 314 lines - Extension methods
 │   └── README.md                         # 213 lines - Model documentation
 │
-├── repositories/ (6 files)
+├── repositories/ (7 files)
 │   ├── i_profile_repository.dart         # 102 lines - 3 methods (Phase 6: 85% 축소)
 │   ├── i_user_repository.dart            # 293 lines - 12 methods
 │   ├── i_settings_repository.dart        # 31 lines - 2 methods
 │   ├── i_characters_repository.dart      # 21 lines - 1 method
 │   ├── i_interests_repository.dart       # 76 lines - 4 methods
-│   └── i_profile_storage_repository.dart # 43 lines - 2 methods
+│   ├── i_profile_storage_repository.dart # 43 lines - 2 methods
+│   └── i_profile_post_repository.dart    # 29 lines - 1 method (Phase 6.5: Feature 독립성)
 │
 └── usecases/ (11 files)
     ├── profile/ (8 files)
@@ -92,7 +93,7 @@ domain/
         └── update_user_interests_usecase.dart        # 75 lines
 ```
 
-**Total**: 24 entities + 6 repositories + 11 usecases + 1 README + 3 기타 = **45 files**
+**Total**: 24 entities + 7 repositories + 11 usecases + 1 README + 4 기타 = **47 files**
 
 ---
 
@@ -983,6 +984,81 @@ abstract class IProfileStorageRepository {
 - Firebase Storage는 Firestore와 완전히 다른 서비스
 - File 업로드는 CRUD 패턴과 다름
 - UseCase가 Storage 작업을 명확히 인식 가능
+
+### 7. IProfilePostRepository (i_profile_post_repository.dart) ⭐ Phase 6.5
+
+**Purpose**: Profile Feature의 "내 게시물" 관리 (Feature 독립성 확보)
+
+**Phase 6.5 추가** (2025-01-07):
+- Post Feature 의존성 완전 제거
+- Profile Feature가 직접 Firestore posts 컬렉션 쿼리
+- Clean Architecture 원칙 준수 (Feature → Infrastructure)
+
+**Key Features**:
+- 🎯 **Feature 독립성**: Post Feature 의존 없이 독립적 운영
+- 🔍 **직접 Firestore 쿼리**: `where('userId', '==', userId)` - 내 것만!
+- 📦 **경량 DTO**: UserPostItem (5 fields) vs PostDisplay (20+ fields)
+- ⚡ **Real-time Streaming**: Firestore WebSocket 기반
+
+```dart
+abstract class IProfilePostRepository {
+  /// 내 게시물 목록 실시간 조회
+  ///
+  /// **Use Case**: 프로필 페이지에서 "내가 작성한 게시물" 표시
+  /// - UserPostsListScreen: 전체 목록 표시
+  /// - ProfilePageWidget: 최근 5개 미리보기
+  ///
+  /// **Query Condition**: `where('userId', '==', userId)` - 내 것만!
+  ///
+  /// **Returns**: Stream<Either<ProfileFailure, List<UserPostItem>>>
+  /// - Stream: Firestore 실시간 동기화
+  /// - Either: 타입 안전 에러 처리
+  /// - UserPostItem: 경량 DTO (id, questionTitle, totalVotes, commentCount, createdAt)
+  ///
+  /// **Performance**:
+  /// - 75% 데이터 경량화 (PostDisplay 20+ fields → UserPostItem 5 fields)
+  /// - Firestore 인덱스 활용 (userId + createdAt desc)
+  /// - 자동 정렬 (최신순)
+  ///
+  /// **Added**: 2025-01-07 Phase 6.5 - Feature 독립성 확보
+  Stream<Either<ProfileFailure, List<UserPostItem>>> watchMyPosts(String userId);
+}
+```
+
+**Method Count**: 1개 메서드
+
+**Clean Architecture 원칙**:
+
+**Before (문제)**:
+```
+Profile Feature → Post Feature → PostRepository → Firestore
+(Feature 간 직접 의존성 - Clean Architecture 위배)
+```
+
+**After (해결)**:
+```
+Profile Feature → ProfilePostRepository → Firestore
+(Feature → Infrastructure 패턴 - Clean Architecture 준수)
+```
+
+**핵심 원리**:
+- ❌ **잘못된 패턴**: Feature → Feature 의존
+- ✅ **올바른 패턴**: Feature → Infrastructure (Firestore) 의존
+- 💡 **공유 가능**: 같은 컬렉션, 다른 쿼리 조건
+
+**Data Model Comparison**:
+
+| Model | Fields | Purpose | Feature |
+|-------|--------|---------|---------|
+| **PostDisplay** | 20+ fields | 소셜 피드 표시 | Post Feature |
+| **UserPostItem** | 5 fields | 내 게시물 목록 | Profile Feature |
+| **Reduction** | 75% less | 경량화 | 성능 최적화 |
+
+**Why Separate Repository?**:
+- 책임 분리: "내 게시물 관리"는 Profile Feature의 책임
+- Feature 독립성: Post Feature에 의존하지 않음
+- 데이터 경량화: UI 목적에 맞는 최소 필드만 조회
+- 쿼리 최적화: Profile용 인덱스 사용 가능
 
 ---
 

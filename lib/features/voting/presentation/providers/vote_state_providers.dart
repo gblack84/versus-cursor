@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '/features/voting/domain/entities/chat/vote_state.dart';
 import '/features/voting/domain/usecases/chat/watch_vote_state_use_case.dart';
 import '/app/di.dart';
+
+part 'vote_state_providers.g.dart';
 
 /// **VoteStateCoordinator._stateCache (BehaviorSubject) 완벽 대체**
 ///
@@ -76,38 +79,39 @@ class VoteStateParams {
 /// 5. **keepAlive로 중복 방지**
 ///    - 첫 리스너 생성 후 keepAlive() 호출
 ///    - 모든 리스너가 사라져도 상태 유지 (BehaviorSubject와 동일)
-final voteStateStreamProvider =
-    StreamProvider.autoDispose.family<VoteStateData, VoteStateParams>(
-  (ref, params) async* {
-    // ✅ UseCase 가져오기 (DI에서 주입)
-    final useCase = getIt<WatchVoteStateUseCase>();
+@riverpod
+Stream<VoteStateData> voteStateStream(
+  Ref ref,
+  VoteStateParams params,
+) async* {
+  // ✅ UseCase 가져오기 (DI에서 주입)
+  final useCase = getIt<WatchVoteStateUseCase>();
 
-    // ✅ 1. 즉시 로딩: 기본값 먼저 emit (BehaviorSubject.seeded와 동일)
-    // Coordinator line 77-85: BehaviorSubject.seeded(initialValue)
-    yield const VoteStateData(
-      state: VoteState.votingRequest,
-      hasUserVoted: false,
-      userChoice: null,
-      remainingTime: null,
-      voteResults: null,
-    );
+  // ✅ 1. 즉시 로딩: 기본값 먼저 emit (BehaviorSubject.seeded와 동일)
+  // Coordinator line 77-85: BehaviorSubject.seeded(initialValue)
+  yield const VoteStateData(
+    state: VoteState.votingRequest,
+    hasUserVoted: false,
+    userChoice: null,
+    remainingTime: null,
+    voteResults: null,
+  );
 
-    // ✅ 2. 실시간 스트림 (Coordinator line 88-153)
-    // Repository → PostVoting → Extension → VoteStateData
-    await for (final voteStateData in useCase(
-      postId: params.postId,
-      userId: params.userId,
-      voteEndTime: params.voteEndTime,
-    )) {
-      yield voteStateData;
-    }
+  // ✅ 2. 실시간 스트림 (Coordinator line 88-153)
+  // Repository → PostVoting → Extension → VoteStateData
+  await for (final voteStateData in useCase(
+    postId: params.postId,
+    userId: params.userId,
+    voteEndTime: params.voteEndTime,
+  )) {
+    yield voteStateData;
+  }
 
-    // ✅ 3. keepAlive: 중복 리스너 방지 (BehaviorSubject 캐싱과 동일)
-    // 모든 리스너가 사라져도 Provider 인스턴스 유지
-    // = Coordinator._stateCache[postId] 유지와 동일
-    ref.keepAlive();
-  },
-);
+  // ✅ 3. keepAlive: 중복 리스너 방지 (BehaviorSubject 캐싱과 동일)
+  // 모든 리스너가 사라져도 Provider 인스턴스 유지
+  // = Coordinator._stateCache[postId] 유지와 동일
+  ref.keepAlive();
+}
 
 /// ✅ Coordinator.hasCache() 대체
 ///

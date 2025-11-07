@@ -1,29 +1,35 @@
-import 'package:dartz/dartz.dart';
-import '/core/errors/failures.dart';
+import 'package:fpdart/fpdart.dart';
 import '../models/ranking.dart';
 import '../repositories/i_search_repository.dart';
-import 'base/use_case.dart';
+import '../failures/search_failure.dart';
 
 /// Parameters for getting rankings
+///
+/// **Phase 1 (2025-11-07)**: Either Pattern Migration
+/// - Pure domain parameters without base class
 class GetRankingsParams {
   final int limit;
 
-  GetRankingsParams({this.limit = 10});
+  const GetRankingsParams({this.limit = 10});
 }
 
 /// Use case for getting top rankings
-class GetRankingsUseCase extends UseCase<List<Ranking>, GetRankingsParams> {
+///
+/// **Phase 1 (2025-11-07)**: Either Pattern Migration
+/// - Removed base UseCase<T, P> inheritance
+/// - Direct Either<SearchFailure, List<Ranking>> return
+/// - Repository already returns Either
+class GetRankingsUseCase {
   final ISearchRepository repository;
 
-  GetRankingsUseCase(this.repository);
+  const GetRankingsUseCase(this.repository);
 
-  @override
-  Future<Either<Failure, List<Ranking>>> call(GetRankingsParams params) async {
-    try {
-      final result = await repository.getTopRankings(limit: params.limit);
-      return Right(result);
-    } catch (e) {
-      return Left(ServerFailure(message: e.toString()));
-    }
+  /// Get top rankings with specified limit
+  ///
+  /// Returns Either<SearchFailure, List<Ranking>>:
+  /// - Left: SearchFailure when error occurs
+  /// - Right: List<Ranking> when successful
+  Future<Either<SearchFailure, List<Ranking>>> call(GetRankingsParams params) async {
+    return repository.getTopRankings(limit: params.limit);
   }
 }

@@ -1,25 +1,9 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '/app/models/lat_lng.dart';
+import '/app/models/lat_lng_converter.dart';
 
 part 'user_profile.freezed.dart';
 part 'user_profile.g.dart';
-
-/// LatLng JSON 변환 함수
-LatLng? _latLngFromJson(Map<String, dynamic>? json) {
-  if (json == null) return null;
-  return LatLng(
-    (json['latitude'] as num).toDouble(),
-    (json['longitude'] as num).toDouble(),
-  );
-}
-
-Map<String, dynamic>? _latLngToJson(LatLng? latLng) {
-  if (latLng == null) return null;
-  return {
-    'latitude': latLng.latitude,
-    'longitude': latLng.longitude,
-  };
-}
 
 /// UserProfile pure domain model (Clean Architecture v4.0)
 ///
@@ -52,7 +36,8 @@ sealed class UserProfile with _$UserProfile {
     String? phoneNumber,
 
     // ============= Profile Information =============
-    @JsonKey(fromJson: _latLngFromJson, toJson: _latLngToJson) LatLng? location,
+    @LatLngConverter()
+    LatLng? location,
     String? shortDescription,
     String? gender,
     DateTime? dateOfBirth,

@@ -4,7 +4,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '../../domain/services/i_image_processing_service.dart';
 import '../../domain/services/i_image_moderation_service.dart'; // ✅ Port Interface import
-import '../../domain/failures/creation_failures.dart';
+import '../../domain/failures/creation_failure.dart';
 
 /// Implementation of IImageProcessingService
 ///
@@ -29,7 +29,7 @@ class ImageProcessingRepositoryImpl implements IImageProcessingService {
 
   /// Process edited image with moderation (for multi-image edit flow)
   @override
-  Future<Either<MediaProcessingFailure, SingleImageResult>> processEditedImage({
+  Future<Either<CreationFailure, SingleImageResult>> processEditedImage({
     required File editedFile,
     required String box,
     String? assetId,
@@ -68,18 +68,17 @@ class ImageProcessingRepositoryImpl implements IImageProcessingService {
         moderationResult: moderationResult,
       ));
     } catch (e) {
-      return left(MediaProcessingFailure(
+      return left(CreationFailure.mediaProcessingFailed(
         failedStep: MediaProcessingStep.moderationCheck,
         affectedFiles: [editedFile.path],
         details: 'Unexpected error: $e',
-        message: 'Failed to process edited image',
       ));
     }
   }
 
   /// Process multiple images with moderation check
   @override
-  Future<Either<MediaProcessingFailure, ImageProcessingResult>> processMultipleImages({
+  Future<Either<CreationFailure, ImageProcessingResult>> processMultipleImages({
     required List<File> files,
     required String box,
     File? editedFile,
@@ -162,17 +161,16 @@ class ImageProcessingRepositoryImpl implements IImageProcessingService {
         allRejected: approvedFiles.isEmpty,
       ));
     } catch (e) {
-      return left(MediaProcessingFailure(
+      return left(CreationFailure.mediaProcessingFailed(
         failedStep: MediaProcessingStep.moderationCheck,
         affectedFiles: files.map((f) => f.path).toList(),
         details: 'Unexpected error: $e',
-        message: 'Failed to process multiple images',
       ));
     }
   }
 
   /// Process single image with moderation
-  Future<Either<MediaProcessingFailure, SingleImageResult>> processSingleImage({
+  Future<Either<CreationFailure, SingleImageResult>> processSingleImage({
     required File file,
     required String box,
     String? assetId,
@@ -211,11 +209,10 @@ class ImageProcessingRepositoryImpl implements IImageProcessingService {
         moderationResult: moderationResult,
       ));
     } catch (e) {
-      return left(MediaProcessingFailure(
+      return left(CreationFailure.mediaProcessingFailed(
         failedStep: MediaProcessingStep.moderationCheck,
         affectedFiles: [file.path],
         details: 'Unexpected error: $e',
-        message: 'Failed to process single image',
       ));
     }
   }

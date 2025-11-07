@@ -1,86 +1,112 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fpdart/fpdart.dart';
 import '../models/search_history_model.dart';
 import '../models/ranking.dart';
+import '../failures/search_failure.dart';
 
 /// Repository interface for Search-related operations
 /// This interface defines the contract for search functionality
+///
+/// **Phase 1 (2025-11-07)**: Either Pattern Migration
+/// - Future<T> → Future<Either<SearchFailure, T>>
+/// - Stream<T> → Stream<Either<SearchFailure, T>>
+/// - Clean Architecture v4.0 - Functional Error Handling
 abstract class ISearchRepository {
-  // Search history queries
-  Stream<List<SearchesModel>> querySearches({
+  // ========== Search History Queries ==========
+
+  /// Query searches with optional filters
+  /// Returns Stream for real-time updates
+  Stream<Either<SearchFailure, List<SearchesModel>>> querySearches({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
   });
 
-  Future<int> querySearchesCount({
+  /// Count searches matching query
+  Future<Either<SearchFailure, int>> querySearchesCount({
     Query Function(Query)? queryBuilder,
     int limit = -1,
   });
 
-  // Search operations
-  Future<void> saveSearchQuery({
+  // ========== Search Operations ==========
+
+  /// Save search query to history
+  Future<Either<SearchFailure, void>> saveSearchQuery({
     required String userId,
     required String query,
     required DateTime timestamp,
     Map<String, dynamic>? metadata,
   });
 
-  Future<List<SearchesModel>> getUserSearchHistory({
+  /// Get user's search history
+  Future<Either<SearchFailure, List<SearchesModel>>> getUserSearchHistory({
     required String userId,
     int limit = 10,
   });
 
-  Future<void> clearSearchHistory(String userId);
+  /// Clear all search history for user
+  Future<Either<SearchFailure, void>> clearSearchHistory(String userId);
 
-  Future<void> deleteSearchEntry(String searchId);
+  /// Delete specific search entry
+  Future<Either<SearchFailure, void>> deleteSearchEntry(String searchId);
 
-  // Search suggestions
-  Future<List<String>> getSearchSuggestions({
+  // ========== Search Suggestions ==========
+
+  /// Get search suggestions based on prefix
+  Future<Either<SearchFailure, List<String>>> getSearchSuggestions({
     required String prefix,
     int limit = 5,
   });
 
-  Future<List<String>> getPopularSearches({
+  /// Get popular searches
+  Future<Either<SearchFailure, List<String>>> getPopularSearches({
     int limit = 10,
     Duration? inLastDuration,
   });
 
-  // Full-text search operations
-  Future<List<Map<String, dynamic>>> searchPosts({
+  // ========== Full-Text Search Operations ==========
+
+  /// Search posts
+  Future<Either<SearchFailure, List<Map<String, dynamic>>>> searchPosts({
     required String query,
     int limit = 20,
     Map<String, dynamic>? filters,
   });
 
-  Future<List<Map<String, dynamic>>> searchUsers({
+  /// Search users
+  Future<Either<SearchFailure, List<Map<String, dynamic>>>> searchUsers({
     required String query,
     int limit = 20,
     Map<String, dynamic>? filters,
   });
 
-  Future<List<Map<String, dynamic>>> searchContent({
+  /// Search content by type
+  Future<Either<SearchFailure, List<Map<String, dynamic>>>> searchContent({
     required String query,
     required String contentType, // 'posts', 'users', 'all'
     int limit = 20,
     Map<String, dynamic>? filters,
   });
 
-  // Rankings - Content Discovery
+  // ========== Rankings - Content Discovery ==========
+
   /// Update rankings based on voting data
-  Future<void> updateRankings();
+  Future<Either<SearchFailure, void>> updateRankings();
 
   /// Get top-ranked posts by rank order
-  Future<List<Ranking>> getTopRankings({int limit = 10});
+  Future<Either<SearchFailure, List<Ranking>>> getTopRankings({int limit = 10});
 
   /// Stream rankings with optional query builder for filtering
-  Stream<List<Ranking>> queryRankings({
+  Stream<Either<SearchFailure, List<Ranking>>> queryRankings({
     dynamic Function(dynamic)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
   });
 
-  // Analytics
-  Future<Map<String, int>> getSearchAnalytics({
+  // ========== Analytics ==========
+
+  /// Get search analytics for date range
+  Future<Either<SearchFailure, Map<String, int>>> getSearchAnalytics({
     DateTime? startDate,
     DateTime? endDate,
   });

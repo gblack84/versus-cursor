@@ -1,8 +1,8 @@
 # Profile Feature - Data Layer
 
-> **Architecture**: Firebase-Centric v2.0 + 3-Layer Caching
-> **Migration Date**: Phase 2 (2025-01-20), Phase 4 (2025-01-29), Phase 6 (2025-01-21), Phase 7 (2025-01-30)
-> **Status**: ✅ Migration Complete (100%) + 3-Layer Caching Integrated
+> **Architecture**: Firebase-Centric v2.0 + 3-Layer Caching + Feature Isolation (Phase 6.5)
+> **Migration Date**: Phase 2 (2025-01-20), Phase 4 (2025-01-29), Phase 6 (2025-01-21), Phase 6.5 (2025-01-07), Phase 7 (2025-01-30)
+> **Status**: ✅ Migration Complete (100%) + 3-Layer Caching Integrated + Feature Independence Achieved
 
 ## 📊 개요
 
@@ -53,13 +53,14 @@ Profile Feature의 Data Layer는 **Firebase-Centric Architecture v2.0**와 **3-L
 
 ```
 lib/features/profile/data/
-├── repositories/                              # 6개 - Firebase + 3-Layer Caching
+├── repositories/                              # 7개 - Firebase + 3-Layer Caching + Feature Isolation
 │   ├── profile_repository_impl.dart          # ProfileInfo + Completion (267줄)
 │   ├── user_repository_impl.dart             # ⭐ User CRUD + Singleton (743줄)
 │   ├── settings_repository_impl.dart         # UserSettings (132줄)
 │   ├── interests_repository_impl.dart        # Interests + Constraints (278줄)
 │   ├── characters_repository_impl.dart       # Characters (82줄)
-│   └── profile_storage_repository_impl.dart  # Storage Wrapper (61줄)
+│   ├── profile_storage_repository_impl.dart  # Storage Wrapper (61줄)
+│   └── profile_post_repository_impl.dart     # ⭐ My Posts (102줄) - Phase 6.5
 └── datasources/                               # 4개 - Storage 추상화
     ├── profile_storage_datasource.dart       # Interface (44줄)
     ├── profile_storage_datasource_impl.dart  # Implementation (55줄)
@@ -68,8 +69,8 @@ lib/features/profile/data/
     └── implementations/
         └── firebase_storage_datasource.dart  # (Deprecated)
 
-총 파일 수: 10개 (활성 파일)
-총 라인 수: ~1,662줄
+총 파일 수: 11개 (활성 파일)
+총 라인 수: ~1,764줄
 
 삭제된 디렉토리 (Phase 6 대규모 정리):
 ├── adapters/    # ❌ Removed (UserProfileAdapter 등)
@@ -830,6 +831,158 @@ Future<Either<ProfileFailure, bool>> deleteProfileImage(String imageUrl) async {
 - **다중 Storage 지원**: Firebase Storage, S3, Cloudinary 등 교체 가능
 - **비즈니스 로직 분리**: Repository에서 이미지 크기/포맷 검증 추가 가능
 - **Firebase SDK와 다른 특성**: Firestore는 안정적이지만 Storage는 변경 가능성 있음
+
+---
+
+#### 1.7 profile_post_repository_impl.dart ⭐ Phase 6.5 - Feature 독립성
+
+**위치**: `lib/features/profile/data/repositories/profile_post_repository_impl.dart`
+
+**Phase 6.5 추가** (2025-01-07):
+- Post Feature 의존성 완전 제거
+- Profile Feature가 직접 Firestore posts 컬렉션 쿼리
+- Clean Architecture 원칙 준수 (Feature → Infrastructure)
+
+**책임**:
+- 내 게시물 실시간 조회 (userId로 필터링)
+- UserPostItem 경량 DTO 사용 (5 fields)
+- Firestore Stream으로 실시간 동기화
+
+**의존성**:
+```dart
+class ProfilePostRepositoryImpl implements IProfilePostRepository {
+  final FirebaseFirestore _firestore;  // ✅ Direct Firebase injection (Firebase-Centric)
+
+  ProfilePostRepositoryImpl({
+    FirebaseFirestore? firestore,
+  }) : _firestore = firestore ?? FirebaseFirestore.instance;
+}
+```
+
+**주요 메서드**:
+
+##### `watchMyPosts()` - 내 게시물 실시간 조회
+
+```dart
+@override
+Stream<Either<ProfileFailure, List<UserPostItem>>> watchMyPosts(String userId) {
+  try {
+    debugPrint('[ProfilePostRepository] Watching my posts for user: $userId');
+
+    return _firestore
+        .collection('posts')
+        .where('userId', isEqualTo: userId)  // 🎯 내 것만 필터링
+        .orderBy('createdAt', descending: true)  // 최신순 정렬
+        .snapshots()
+        .map((snapshot) {
+      try {
+        // Extension Pattern으로 변환
+        final posts = snapshot.docs
+            .map((doc) => UserPostItem.fromFirestore(doc))
+            .toList();
+
+        debugPrint('[ProfilePostRepository] Loaded ${posts.length} posts');
+        return right<ProfileFailure, List<UserPostItem>>(posts);
+      } catch (e) {
+        debugPrint('[ProfilePostRepository] Error parsing posts: $e');
+        return left<ProfileFailure, List<UserPostItem>>(
+          ProfileFailure.firestoreRead('Failed to parse posts: $e'),
+        );
+      }
+    }).handleError((error) {
+      debugPrint('[ProfilePostRepository] Stream error: $error');
+
+      if (error is FirebaseException) {
+        return left<ProfileFailure, List<UserPostItem>>(
+          _mapFirebaseException(error),
+        );
+      }
+
+      return left<ProfileFailure, List<UserPostItem>>(
+        ProfileFailure.firestoreRead('Stream error: $error'),
+      );
+    });
+  } catch (e) {
+    debugPrint('[ProfilePostRepository] Unexpected error: $e');
+    // 초기 에러는 단일 이벤트로 반환
+    return Stream.value(
+      left(ProfileFailure.firestoreRead('Failed to watch posts: $e')),
+    );
+  }
+}
+```
+
+**핵심 포인트**:
+
+1. **Firebase-Centric v2.0 패턴**:
+   - FirebaseFirestore 직접 사용 (DataSource 없음)
+   - Extension Pattern으로 변환 (`UserPostItem.fromFirestore`)
+   - Either 패턴으로 타입 안전 에러 처리
+
+2. **Feature 독립성 확보**:
+   - Post Feature에 의존하지 않음
+   - Profile Feature가 직접 posts 컬렉션 쿼리
+   - Clean Architecture 원칙: Feature → Infrastructure (Firestore)
+
+3. **Firestore 쿼리 최적화**:
+   - `where('userId', '==', userId)`: 내 게시물만 필터링
+   - `orderBy('createdAt', descending: true)`: 최신순 자동 정렬
+   - Firestore 인덱스 활용 (userId + createdAt desc)
+
+4. **Real-time Streaming**:
+   - `snapshots()`: Firestore WebSocket 기반 실시간 리스닝
+   - 게시물 생성/수정/삭제 시 자동 업데이트
+   - 네트워크 끊김 시 자동 재연결
+
+5. **경량 DTO 사용**:
+   - UserPostItem (5 fields): id, questionTitle, totalVotes, commentCount, createdAt
+   - PostDisplay (20+ fields) 대비 75% 경량화
+   - 프로필 페이지 목록 표시에 최적화
+
+6. **에러 처리**:
+   - FirebaseException → ProfileFailure 매핑
+   - Stream 에러 핸들링 (handleError)
+   - Either 패턴으로 타입 안전 에러 전파
+
+**Clean Architecture 비교**:
+
+**Before (문제)**:
+```
+Profile Feature → Post Feature → PostRepository → Firestore
+                   ↓
+            PostDisplay (20+ fields)
+            Feature 간 결합도 높음
+```
+
+**After (해결)**:
+```
+Profile Feature → ProfilePostRepository → Firestore
+                   ↓
+            UserPostItem (5 fields)
+            Feature 독립성 확보
+```
+
+**vs Post Feature**:
+
+| 항목 | Profile Feature | Post Feature |
+|------|-----------------|--------------|
+| **Repository** | ProfilePostRepositoryImpl | PostRepository |
+| **Query** | `where('userId', '==', me)` | 전체 쿼리 (소셜 피드) |
+| **DTO** | UserPostItem (5 fields) | PostDisplay (20+ fields) |
+| **목적** | 내 게시물 관리 | 소셜 피드 표시 |
+| **Feature 의존성** | 독립 (Infrastructure만) | 독립 (Infrastructure만) |
+
+**Performance**:
+- 75% 데이터 경량화 (20+ → 5 fields)
+- Firestore 인덱스 활용 (빠른 쿼리)
+- Real-time 동기화 (WebSocket)
+- 네트워크 대역폭 절감
+
+**왜 별도 Repository인가?**:
+- **책임 분리**: "내 게시물 관리"는 Profile Feature의 책임
+- **Feature 독립성**: Post Feature 변경에 영향받지 않음
+- **데이터 최적화**: UI 목적에 맞는 최소 필드만 조회
+- **쿼리 독립성**: Profile용 인덱스 별도 관리 가능
 
 ---
 

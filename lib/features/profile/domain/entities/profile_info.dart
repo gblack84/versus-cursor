@@ -1,25 +1,9 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '/app/models/lat_lng.dart';
+import '/app/models/lat_lng_converter.dart';
 
 part 'profile_info.freezed.dart';
 part 'profile_info.g.dart';
-
-/// LatLng JSON 변환 함수
-LatLng? _latLngFromJson(Map<String, dynamic>? json) {
-  if (json == null) return null;
-  return LatLng(
-    (json['latitude'] as num).toDouble(),
-    (json['longitude'] as num).toDouble(),
-  );
-}
-
-Map<String, dynamic>? _latLngToJson(LatLng? latLng) {
-  if (latLng == null) return null;
-  return {
-    'latitude': latLng.latitude,
-    'longitude': latLng.longitude,
-  };
-}
 
 /// ProfileInfo Domain Model
 /// Clean Architecture - Domain Layer Entity
@@ -56,7 +40,8 @@ sealed class ProfileInfo with _$ProfileInfo {
     @Default([]) List<String> expertise,
 
     // Location
-    @JsonKey(fromJson: _latLngFromJson, toJson: _latLngToJson) LatLng? location,
+    @LatLngConverter()
+    LatLng? location,
   }) = _ProfileInfo;
 
   factory ProfileInfo.fromJson(Map<String, dynamic> json) =>

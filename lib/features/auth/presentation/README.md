@@ -1,8 +1,10 @@
 # Auth Feature - Presentation Layer Documentation
 
-> **Version**: 2.0.0 (Riverpod + GetIt)
-> **Last Updated**: 2025-01-20
+> **Version**: 4.0.0 (Riverpod 2.x Phase 3-5 완료)
+> **Last Updated**: 2025-11-06
 > **Migration Status**: ✅ Riverpod 2.x Pattern Applied, Clean Architecture v4.0 Complete
+>
+> **마이그레이션**: [Phase 1-2](../RIVERPOD_3X_MIGRATION_PHASE_1_2.md), [Phase 3-5](../RIVERPOD_3X_MIGRATION_PHASE_3_5.md)
 
 ## 📋 Table of Contents
 

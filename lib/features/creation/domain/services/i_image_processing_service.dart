@@ -3,7 +3,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'i_image_moderation_service.dart';
-import '../failures/creation_failures.dart';
+import '../failures/creation_failure.dart';
 
 part 'i_image_processing_service.freezed.dart';
 
@@ -13,7 +13,7 @@ part 'i_image_processing_service.freezed.dart';
 /// to avoid direct Service dependency in UseCase
 abstract class IImageProcessingService {
   /// Process multiple images with moderation
-  Future<Either<MediaProcessingFailure, ImageProcessingResult>> processMultipleImages({
+  Future<Either<CreationFailure, ImageProcessingResult>> processMultipleImages({
     required List<File> files,
     required String box,
     File? editedFile,
@@ -24,7 +24,7 @@ abstract class IImageProcessingService {
   });
 
   /// Process a single edited image
-  Future<Either<MediaProcessingFailure, SingleImageResult>> processEditedImage({
+  Future<Either<CreationFailure, SingleImageResult>> processEditedImage({
     required File editedFile,
     required String box,
     String? assetId,

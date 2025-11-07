@@ -15,7 +15,8 @@ import '/features/creation/presentation/delegates/camera_floating_button_delegat
 import 'media_editor_widget.dart';
 import '/core/utils/navigation/no_animation_page_route.dart';
 import '/features/creation/presentation/providers/creation_providers.dart';
-import '/features/creation/domain/failures/creation_failures.dart';
+import '/features/creation/domain/failures/creation_failure.dart';
+import '/features/creation/domain/failures/creation_failure_extensions.dart';
 
 /// 미디어 선택부터 편집까지 하나의 플로우로 처리하는 위젯 - Riverpod 3.x (Phase 2-7)
 class MediaSelectionFlowWidget extends ConsumerStatefulWidget {
@@ -163,22 +164,26 @@ class _MediaSelectionFlowWidgetState extends ConsumerState<MediaSelectionFlowWid
       print('[AssetPicker] Permission state: $permission');
 
       if (permission.isAuth != true) {
-        // Step 7: 권한이 거부된 경우 - PermissionFailure 사용
-        final failure = PermissionFailure(
-          message: permission == PermissionState.denied
-              ? '사진 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.'
-              : '제한된 사진 접근만 허용되었습니다.\n모든 사진에 접근하려면 설정을 변경해주세요.',
-        );
-        _showToast(failure.message, isError: true);
+        // Step 7: 권한이 거부된 경우 - MediaProcessingFailed 사용
+        final permissionMessage = permission == PermissionState.denied
+            ? '사진 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.'
+            : '제한된 사진 접근만 허용되었습니다.\n모든 사진에 접근하려면 설정을 변경해주세요.';
 
-        // Step 7: 설정으로 이동하는 다이얼로그 표시 (PermissionFailure 메시지 재사용)
+        final failure = CreationFailure.mediaProcessingFailed(
+          failedStep: MediaProcessingStep.permission,
+          affectedFiles: [],
+          details: permissionMessage,
+        );
+        _showToast(failure.getUserMessage(), isError: true);
+
+        // Step 7: 설정으로 이동하는 다이얼로그 표시
         if (mounted) {
           final bool? openSettings = await showDialog<bool>(
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
                 title: const Text('사진 접근 권한'),
-                content: Text(failure.message),
+                content: Text(failure.getUserMessage()),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(false),
@@ -395,13 +400,10 @@ class _MediaSelectionFlowWidgetState extends ConsumerState<MediaSelectionFlowWid
         }
       }
     } catch (e) {
-      // Step 7: 이미지 선택 중 오류 - ImageUploadFailure 사용
+      // Step 7: 이미지 선택 중 오류 - ImageUploadFailed 사용
       if (mounted) {
-        final failure = ImageUploadFailure(
-          '이미지 선택 실패',
-          'IMAGE_SELECTION_ERROR',
-        );
-        _showToast('${failure.message}: $e', isError: true);
+        final failure = CreationFailure.imageUploadFailed();
+        _showToast('${failure.getUserMessage()}: $e', isError: true);
         if (Navigator.canPop(context)) {
           Navigator.pop(context);
         }
@@ -456,9 +458,13 @@ class _MediaSelectionFlowWidgetState extends ConsumerState<MediaSelectionFlowWid
           await PhotoManager.requestPermissionExtend();
 
       if (cameraPermission.isAuth != true) {
-        // Step 7: 카메라 권한 오류 - PermissionFailure 사용
-        final failure = PermissionFailure(message: '카메라 권한이 필요합니다.');
-        _showToast(failure.message, isError: true);
+        // Step 7: 카메라 권한 오류 - MediaProcessingFailed 사용
+        final failure = CreationFailure.mediaProcessingFailed(
+          failedStep: MediaProcessingStep.permission,
+          affectedFiles: [],
+          details: '카메라 권한이 필요합니다.',
+        );
+        _showToast(failure.getUserMessage(), isError: true);
         return null;
       }
 
@@ -478,10 +484,10 @@ class _MediaSelectionFlowWidgetState extends ConsumerState<MediaSelectionFlowWid
         return null;
       }
     } catch (e) {
-      // Step 7: 카메라 오류 - ImageUploadFailure 사용
+      // Step 7: 카메라 오류 - ImageUploadFailed 사용
       print('[AssetPicker] Camera error: $e');
-      final failure = ImageUploadFailure('카메라 오류', 'CAMERA_ERROR');
-      _showToast(failure.message, isError: true);
+      final failure = CreationFailure.imageUploadFailed();
+      _showToast(failure.getUserMessage(), isError: true);
       return null;
     }
   }
@@ -542,10 +548,10 @@ class _MediaSelectionFlowWidgetState extends ConsumerState<MediaSelectionFlowWid
         _selectedFile = file;
       });
     } catch (e) {
-      // Step 7: 이미지 로드 실패 - ImageUploadFailure 사용
+      // Step 7: 이미지 로드 실패 - ImageUploadFailed 사용
       if (mounted) {
-        final failure = ImageUploadFailure('이미지 로드 실패', 'IMAGE_LOAD_ERROR');
-        _showToast('${failure.message}: $e', isError: true);
+        final failure = CreationFailure.imageUploadFailed();
+        _showToast('${failure.getUserMessage()}: $e', isError: true);
         Navigator.pop(context);
       }
     }

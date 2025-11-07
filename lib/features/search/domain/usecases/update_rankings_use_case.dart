@@ -1,21 +1,24 @@
-import 'package:dartz/dartz.dart';
-import '/core/errors/failures.dart';
+import 'package:fpdart/fpdart.dart';
 import '../repositories/i_search_repository.dart';
-import 'base/use_case.dart';
+import '../failures/search_failure.dart';
 
 /// Use case for updating rankings
-class UpdateRankingsUseCase extends NoParamsUseCase<void> {
+///
+/// **Phase 1 (2025-11-07)**: Either Pattern Migration
+/// - Removed base NoParamsUseCase<T> inheritance
+/// - Direct Either<SearchFailure, void> return
+/// - Repository already returns Either
+class UpdateRankingsUseCase {
   final ISearchRepository repository;
 
-  UpdateRankingsUseCase(this.repository);
+  const UpdateRankingsUseCase(this.repository);
 
-  @override
-  Future<Either<Failure, void>> call() async {
-    try {
-      await repository.updateRankings();
-      return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure(message: e.toString()));
-    }
+  /// Update rankings based on voting data
+  ///
+  /// Returns Either<SearchFailure, void>:
+  /// - Left: SearchFailure when error occurs
+  /// - Right: void when successful
+  Future<Either<SearchFailure, void>> call() async {
+    return repository.updateRankings();
   }
 }

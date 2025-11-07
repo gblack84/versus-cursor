@@ -1,9 +1,9 @@
 # Profile Feature - 통합 문서
 
-> **최종 업데이트**: 2025-01-30
+> **최종 업데이트**: 2025-01-07
 > **아키텍처**: Clean Architecture v4.0 + Firebase-Centric v2.0 + 3-Layer Caching
-> **상태 관리**: Riverpod 2.x
-> **Migration Status**: ✅ Phase 2, 4, 6, 7 Complete (100%)
+> **상태 관리**: Riverpod 3.x with @riverpod code generation
+> **Migration Status**: ✅ Phase 2, 4, 6, 6.5, 7 Complete (100%)
 
 ## 📋 목차
 
@@ -25,13 +25,14 @@
 ```
 lib/features/profile/
 ├── 📂 data/                              # Data Layer (Firebase-Centric v2.0 + 3-Layer Caching)
-│   ├── 📂 repositories/                  # Repository 구현체 (6개)
+│   ├── 📂 repositories/                  # Repository 구현체 (7개)
 │   │   ├── profile_repository_impl.dart          # 267줄 - ProfileInfo + Completion
 │   │   ├── user_repository_impl.dart             # 743줄 - ⭐ User CRUD + Singleton
 │   │   ├── settings_repository_impl.dart         # 132줄 - UserSettings
 │   │   ├── interests_repository_impl.dart        # 278줄 - Interests + Constraints
 │   │   ├── characters_repository_impl.dart       # 82줄 - Characters
-│   │   └── profile_storage_repository_impl.dart  # 61줄 - Storage Wrapper
+│   │   ├── profile_storage_repository_impl.dart  # 61줄 - Storage Wrapper
+│   │   └── profile_post_repository_impl.dart     # 102줄 - ⭐ My Posts (Phase 6.5)
 │   ├── 📂 datasources/                   # DataSource (4개 - Storage 추상화)
 │   │   ├── profile_storage_datasource.dart       # 44줄 - Interface
 │   │   ├── profile_storage_datasource_impl.dart  # 55줄 - Implementation
@@ -66,13 +67,14 @@ lib/features/profile/
 │   │   ├── interest_category.g.dart              # Generated
 │   │   ├── user_profile_extensions.dart          # 313줄 - 🔥 Extension methods
 │   │   └── README.md                             # 213줄 - Model documentation
-│   ├── 📂 repositories/                  # Repository Interfaces (6 files)
+│   ├── 📂 repositories/                  # Repository Interfaces (7 files)
 │   │   ├── i_profile_repository.dart             # 102줄 - 3 methods (Phase 6: 85% 축소)
 │   │   ├── i_user_repository.dart                # 293줄 - 12 methods
 │   │   ├── i_settings_repository.dart            # 31줄 - 2 methods
 │   │   ├── i_characters_repository.dart          # 21줄 - 1 method
 │   │   ├── i_interests_repository.dart           # 76줄 - 4 methods
-│   │   └── i_profile_storage_repository.dart     # 43줄 - 2 methods
+│   │   ├── i_profile_storage_repository.dart     # 43줄 - 2 methods
+│   │   └── i_profile_post_repository.dart        # 29줄 - 1 method (Phase 6.5: Feature 독립성)
 │   ├── 📂 usecases/                      # UseCases (11 files)
 │   │   ├── 📂 profile/                   # 8 files
 │   │   │   ├── get_current_user_profile_usecase.dart     # 47줄
@@ -93,9 +95,11 @@ lib/features/profile/
 │   │       └── update_user_interests_usecase.dart        # 75줄
 │   └── 📄 README.md                      # Domain Layer 상세 문서 (2,249줄)
 │
-├── 📂 presentation/                      # Presentation Layer (Riverpod 2.x)
+├── 📂 presentation/                      # Presentation Layer (Riverpod 3.x)
 │   ├── 📂 providers/                     # 상태 관리
 │   │   ├── profile_providers.dart                # 561줄 - ⭐ 25개 Provider 정의
+│   │   ├── profile_post_providers.dart           # 100줄 - 3개 Provider (Phase 6.5)
+│   │   ├── profile_post_providers.g.dart         # Generated (Riverpod 3.x)
 │   │   └── README.md                             # Provider 가이드
 │   ├── 📂 screens/                       # 화면 (10개)
 │   │   ├── 📂 profile_main/              # 메인 프로필 화면
@@ -161,11 +165,12 @@ lib/features/profile/
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Presentation Layer                        │
-│  • Riverpod 2.x 상태 관리                                     │
+│  • Riverpod 3.x 상태 관리 (@riverpod code generation)         │
 │  • StreamProvider.autoDispose.family                         │
-│  • 25개 Providers (UseCase 13, Stream 2, Future 4, State 6) │
+│  • 28개 Providers (UseCase 13, Stream 4, Future 4, State 6) │
 │  • AsyncValue State Management                              │
-│  • 53개 파일 (~2,176줄)                                       │
+│  • ⭐ Feature 독립성: ProfilePostProviders (Phase 6.5)        │
+│  • 56개 파일 (~2,276줄)                                       │
 └──────────────────┬──────────────────────────────────────────┘
                    │ Provider 의존성 (ref.watch)
                    ▼
@@ -176,8 +181,9 @@ lib/features/profile/
 │  • Either<Failure, Success> 패턴                             │
 │  • 12 ProfileFailure types                                  │
 │  • UserProfile (42 fields), ProfileInfo (10 fields)         │
-│  • 6 Repository Interfaces + 11 UseCases                    │
-│  • 42개 파일 (~2,249줄)                                       │
+│  • ⭐ UserPostItem (5 fields) - Phase 6.5 경량 DTO           │
+│  • 7 Repository Interfaces + 11 UseCases                    │
+│  • 44개 파일 (~2,278줄)                                       │
 └──────────────────┬──────────────────────────────────────────┘
                    │ Repository 인터페이스 의존성
                    ▼
@@ -213,6 +219,142 @@ lib/features/profile/
 | **Singleton Pattern** | Data | UserRepository 전역 접근 | `UserRepositoryImpl.instance` |
 | **3-Layer Caching** | Data | 성능 최적화 | `UnifiedCacheService` |
 | **Idempotency** | Data | 중복 방지 (UUID v4 기반) | `IdempotencyService` |
+| **Feature Isolation** | All | Feature 독립성 확보 (Phase 6.5) | `ProfilePostRepository` |
+
+---
+
+## ⭐ Phase 6.5: Feature 독립성 확보 (2025-01-07)
+
+### 목표: Post Feature 의존성 제거
+
+Profile Feature의 "내 게시물 관리"는 Profile Feature의 책임입니다. 이전에는 Post Feature에 의존했지만, Clean Architecture 원칙에 따라 **Feature → Infrastructure** 패턴으로 변경했습니다.
+
+### 핵심 변경사항
+
+**Before (문제 상황)**:
+```
+Profile Feature → Post Feature → PostRepository → Firestore
+(Feature 간 직접 의존성 - Clean Architecture 위배)
+```
+
+**After (해결 방법)**:
+```
+Profile Feature → ProfilePostRepository → Firestore
+(Feature → Infrastructure 패턴 - Clean Architecture 준수)
+```
+
+### 구현 내역
+
+#### 1. Domain Layer 추가 (1개 파일)
+- **`domain/repositories/i_profile_post_repository.dart`**
+  - Interface: `Stream<Either<ProfileFailure, List<UserPostItem>>> watchMyPosts(userId)`
+  - 내 게시물만 조회하는 Repository 계약 정의
+
+- **`domain/entities/user_post_item.dart`**
+  - 5개 필드: `id`, `questionTitle`, `totalVotes`, `commentCount`, `createdAt`
+  - PostDisplay (20+ fields) → UserPostItem (5 fields) 경량화 (75% 축소)
+
+#### 2. Data Layer 추가 (1개 파일)
+- **`data/repositories/profile_post_repository_impl.dart`**
+  - Firebase-Centric v2.0 패턴: Direct Firestore Access
+  - Firestore 쿼리: `collection('posts').where('userId', isEqualTo: userId)`
+  - Extension Pattern: `UserPostItem.fromFirestore(doc)`
+  - Either 패턴: 타입 안전 에러 처리
+
+#### 3. Presentation Layer 추가 (2개 파일)
+- **`presentation/providers/profile_post_providers.dart`**
+  - Riverpod 3.x with @riverpod code generation
+  - 3개 Provider:
+    1. `profilePostRepositoryProvider` - GetIt DI wrapper
+    2. `myPostsStreamProvider` - 내 게시물 전체 (UserPostsListScreen 사용)
+    3. `profileUserPostsStreamProvider` - 최근 5개 (ProfilePageWidget 사용)
+
+- **`presentation/providers/profile_post_providers.g.dart`**
+  - Riverpod 3.x 코드 생성 결과
+
+#### 4. DI 설정 업데이트
+- **`di/profile_di_module.dart`**
+  - ProfilePostRepository GetIt 등록
+
+#### 5. Widget 업데이트 (2개 파일)
+- **`presentation/screens/user_posts_list/user_posts_list_screen.dart`**
+  - Provider 변경: `userPostsStreamProvider` → `myPostsStreamProvider`
+
+- **`presentation/screens/profile_main/profile_page_widget.dart`**
+  - Import 변경: `PostDisplay` → `UserPostItem`
+  - Provider 변경: `userPostsStreamProvider` → `profileUserPostsStreamProvider`
+
+### 성과 및 개선 효과
+
+| 항목 | Before (Post 의존) | After (독립) | 개선율 |
+|------|-------------------|-------------|--------|
+| **Feature 의존성** | ❌ Profile → Post | ✅ Profile → Firestore | 독립성 100% |
+| **Data Model** | PostDisplay (20+ fields) | UserPostItem (5 fields) | 75% 경량화 |
+| **코드 복잡도** | 복잡 (Feature 결합) | 단순 (직접 쿼리) | 간결성 향상 |
+| **유지보수성** | 낮음 (결합도 높음) | 높음 (독립성 확보) | 유지보수 용이 |
+
+### Clean Architecture 원칙 준수
+
+**Feature 독립성 규칙**:
+- ❌ **잘못된 패턴**: Profile Feature → Post Feature 의존
+- ✅ **올바른 패턴**: Profile Feature → Firestore (Infrastructure)
+
+**핵심 원리**:
+- Features는 서로 의존하지 않음
+- Features는 공유 Infrastructure (Firestore)에 의존 가능
+- 같은 컬렉션 (`posts`), 다른 쿼리 조건 (where userId = me)
+
+**실제 구현**:
+- **Profile Feature**: `where('userId', '==', userId)` - 내 것만!
+- **Post Feature**: 전체 쿼리 - 소셜 피드용
+
+### 코드 예시
+
+```dart
+// Domain: Repository Interface
+abstract class IProfilePostRepository {
+  Stream<Either<ProfileFailure, List<UserPostItem>>> watchMyPosts(String userId);
+}
+
+// Data: Repository Implementation
+class ProfilePostRepositoryImpl implements IProfilePostRepository {
+  final FirebaseFirestore _firestore;
+
+  @override
+  Stream<Either<ProfileFailure, List<UserPostItem>>> watchMyPosts(String userId) {
+    return _firestore
+      .collection('posts')
+      .where('userId', isEqualTo: userId)  // 🎯 내 것만!
+      .orderBy('createdAt', descending: true)
+      .snapshots()
+      .map((snapshot) {
+        final posts = snapshot.docs
+          .map((doc) => UserPostItem.fromFirestore(doc))
+          .toList();
+        return right<ProfileFailure, List<UserPostItem>>(posts);
+      });
+  }
+}
+
+// Presentation: Riverpod 3.x Provider
+@riverpod
+Stream<List<UserPostItem>> myPostsStream(Ref ref, String userId) {
+  final repository = ref.watch(profilePostRepositoryProvider);
+  return repository.watchMyPosts(userId).map(
+    (either) => either.fold(
+      (failure) => <UserPostItem>[],
+      (posts) => posts,
+    ),
+  );
+}
+```
+
+### Phase 6.5 문서
+
+- ✅ Feature 독립성 확보 완료
+- ✅ Clean Architecture 원칙 준수
+- ✅ Firebase-Centric v2.0 패턴 적용
+- ✅ Riverpod 3.x 마이그레이션 완료
 
 ---
 
@@ -509,12 +651,12 @@ final repository = GetIt.instance<IUserRepository>();
 
 | 구분 | 파일 수 | 총 라인 수 | 주요 패턴 |
 |------|---------|-----------|-----------|
-| **Data** | 10 | ~1,711 | Extension, 3-Layer Caching, Singleton, Idempotency |
-| **Domain** | 45 | ~2,397 | Freezed, Either, UseCase, Repository Interface |
-| **Presentation** | 31 | ~6,822 | Riverpod, StreamProvider.family, ProfileActions |
-| **DI** | 1 | ~150 | GetIt 등록, Singleton 초기화 |
-| **문서** | 4 | ~6,046 | 통합 가이드 + 레이어별 상세 문서 |
-| **총합** | **91** | **~17,126** | Clean Architecture v4.0 + 3-Layer Caching |
+| **Data** | 11 | ~1,813 | Extension, 3-Layer Caching, Singleton, Idempotency, Feature Isolation |
+| **Domain** | 47 | ~2,426 | Freezed, Either, UseCase, Repository Interface |
+| **Presentation** | 34 | ~6,922 | Riverpod 3.x, StreamProvider.family, ProfileActions |
+| **DI** | 1 | ~157 | GetIt 등록, Singleton 초기화 |
+| **문서** | 4 | ~6,200 | 통합 가이드 + 레이어별 상세 문서 |
+| **총합** | **97** | **~17,518** | Clean Architecture v4.0 + 3-Layer Caching + Feature Isolation |
 
 ### Phase별 통계
 
@@ -523,6 +665,7 @@ final repository = GetIt.instance<IUserRepository>();
 | **Phase 2** | 2025-01-20 | DataSource 추상화 제거 (Storage 제외) | 코드 간결성 50% 향상 |
 | **Phase 4** | 2025-01-29 | Extension Pattern 도입 | Mapper/DTO 제거, Auth Feature 100% 일치 |
 | **Phase 6** | 2025-01-21 | 대규모 정리 (20→3 메서드) | 85% 메서드 축소, 1,329줄 삭제 |
+| **Phase 6.5** | 2025-01-07 | ⭐ Feature 독립성 확보 | Post 의존 제거, 75% 데이터 경량화 |
 | **Phase 7** | 2025-01-30 | 🔥 3-Layer 캐싱 통합 | 95% 성능 향상, 97% 비용 절감 |
 
 ---

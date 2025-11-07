@@ -1,7 +1,7 @@
 // Account Management UseCase
 // Clean Architecture - Domain Layer
 
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter/foundation.dart';
 import '/core/utils/idempotency_service.dart';
 import '../../entities/auth_user.dart';
@@ -82,15 +82,11 @@ class AccountManagementUseCase {
       },
     );
 
-    // Early return if user retrieval failed
-    if (currentUserEither.isLeft()) {
-      return currentUserEither.fold(
-        (failure) => left(failure),
-        (_) => left(const AuthFailure.userNotFound()),
-      );
-    }
-
-    final currentUser = currentUserEither.getOrElse(() => throw Exception('Unreachable'));
+    // Extract current user or return early with failure
+    final currentUser = currentUserEither.fold(
+      (failure) => throw StateError('Unreachable: already checked isLeft above'),
+      (user) => user,
+    );
 
     // 4. Check if re-authentication is needed (Business Logic)
     if (checkReAuth && await needsReAuthentication()) {

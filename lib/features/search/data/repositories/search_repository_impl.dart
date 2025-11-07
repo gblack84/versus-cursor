@@ -1,13 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fpdart/fpdart.dart';
 import '../../domain/repositories/i_search_repository.dart';
-import '/core/firebase/utils/firestore_util.dart'
-    show queryCollection, queryCollectionOnce, queryCollectionCount;
-import '/features/search/domain/models/search_history_model.dart';
+import '../../domain/failures/search_failure.dart';
+import '../../domain/models/search_history_model.dart';
 import '../../domain/models/ranking.dart';
-import '../mappers/ranking_mapper.dart';
-import '../models/ranking_dto.dart';
 
 /// Implementation of search repository
+///
+/// **Phase 1 (2025-11-07)**: Either Pattern Migration
+/// - Exception handling → Either<SearchFailure, T>
+/// - Functional error handling with fpdart
+///
+/// **Phase 5 (2025-11-07)**: Extension Pattern (Applied early)
+/// - Removed DTO and Mapper classes
+/// - Using Ranking.fromFirestore() extension directly
 class SearchRepositoryImpl implements ISearchRepository {
   static SearchRepositoryImpl? _instance;
   static SearchRepositoryImpl get instance =>
@@ -15,173 +21,338 @@ class SearchRepositoryImpl implements ISearchRepository {
 
   SearchRepositoryImpl._();
 
-  // Search history queries
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // ========== Search History Queries ==========
+
   @override
-  Stream<List<SearchesModel>> querySearches({
+  Stream<Either<SearchFailure, List<SearchesModel>>> querySearches({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
-  }) =>
-      queryCollection(
-        SearchesModel.collection,
-        SearchesModel.fromSnapshot,
-        queryBuilder: queryBuilder,
-        limit: limit,
-        singleRecord: singleRecord,
-      );
+  }) {
+    try {
+      Query query = _firestore.collection('searches');
+
+      if (queryBuilder != null) {
+        query = queryBuilder(query);
+      }
+
+      if (limit > 0) {
+        query = query.limit(limit);
+      }
+
+      if (singleRecord) {
+        query = query.limit(1);
+      }
+
+      return query.snapshots().map((snapshot) {
+        try {
+          final models = snapshot.docs
+              .map((doc) => SearchesModel.fromSnapshot(doc))
+              .toList();
+          return right<SearchFailure, List<SearchesModel>>(models);
+        } catch (e) {
+          return left<SearchFailure, List<SearchesModel>>(SearchFailure.firestoreReadFailed(
+            collection: 'searches',
+            message: e.toString(),
+          ));
+        }
+      }).handleError((e) {
+        return left<SearchFailure, List<SearchesModel>>(SearchFailure.firestoreReadFailed(
+          collection: 'searches',
+          message: e.toString(),
+        ));
+      });
+    } catch (e) {
+      return Stream.value(left(SearchFailure.unexpected(e.toString())));
+    }
+  }
 
   @override
-  Future<int> querySearchesCount({
+  Future<Either<SearchFailure, int>> querySearchesCount({
     Query Function(Query)? queryBuilder,
     int limit = -1,
-  }) =>
-      queryCollectionCount(
-        SearchesModel.collection,
-        queryBuilder: queryBuilder,
-        limit: limit,
-      );
+  }) async {
+    try {
+      Query query = _firestore.collection('searches');
 
-  // Search operations - TODO: Implement when Algolia is configured
+      if (queryBuilder != null) {
+        query = queryBuilder(query);
+      }
+
+      if (limit > 0) {
+        query = query.limit(limit);
+      }
+
+      final snapshot = await query.count().get();
+      return right(snapshot.count ?? 0);
+    } on FirebaseException catch (e) {
+      return left(SearchFailure.firestoreReadFailed(
+        collection: 'searches',
+        message: e.message,
+      ));
+    } catch (e) {
+      return left(SearchFailure.unexpected(e.toString()));
+    }
+  }
+
+  // ========== Search Operations ==========
+
   @override
-  Future<void> saveSearchQuery({
+  Future<Either<SearchFailure, void>> saveSearchQuery({
     required String userId,
     required String query,
     required DateTime timestamp,
     Map<String, dynamic>? metadata,
   }) async {
-    // TODO: Implement search query saving
-    throw UnimplementedError('saveSearchQuery not implemented');
+    try {
+      // TODO: Implement search query saving
+      return left(SearchFailure.unexpected('saveSearchQuery not implemented'));
+    } on FirebaseException catch (e) {
+      return left(SearchFailure.firestoreWriteFailed(
+        collection: 'search_history',
+        operation: 'save',
+        message: e.message,
+      ));
+    } catch (e) {
+      return left(SearchFailure.unexpected(e.toString()));
+    }
   }
 
   @override
-  Future<List<SearchesModel>> getUserSearchHistory({
+  Future<Either<SearchFailure, List<SearchesModel>>> getUserSearchHistory({
     required String userId,
     int limit = 10,
   }) async {
-    // TODO: Implement user search history
-    throw UnimplementedError('getUserSearchHistory not implemented');
+    try {
+      // TODO: Implement user search history
+      return left(
+          SearchFailure.unexpected('getUserSearchHistory not implemented'));
+    } on FirebaseException catch (e) {
+      return left(SearchFailure.firestoreReadFailed(
+        collection: 'search_history',
+        message: e.message,
+      ));
+    } catch (e) {
+      return left(SearchFailure.unexpected(e.toString()));
+    }
   }
 
   @override
-  Future<void> clearSearchHistory(String userId) async {
-    // TODO: Implement clear search history
-    throw UnimplementedError('clearSearchHistory not implemented');
+  Future<Either<SearchFailure, void>> clearSearchHistory(String userId) async {
+    try {
+      // TODO: Implement clear search history
+      return left(
+          SearchFailure.unexpected('clearSearchHistory not implemented'));
+    } on FirebaseException catch (e) {
+      return left(SearchFailure.firestoreWriteFailed(
+        collection: 'search_history',
+        operation: 'delete',
+        message: e.message,
+      ));
+    } catch (e) {
+      return left(SearchFailure.unexpected(e.toString()));
+    }
   }
 
   @override
-  Future<void> deleteSearchEntry(String searchId) async {
-    // TODO: Implement delete search entry
-    throw UnimplementedError('deleteSearchEntry not implemented');
+  Future<Either<SearchFailure, void>> deleteSearchEntry(String searchId) async {
+    try {
+      // TODO: Implement delete search entry
+      return left(
+          SearchFailure.unexpected('deleteSearchEntry not implemented'));
+    } on FirebaseException catch (e) {
+      return left(SearchFailure.firestoreWriteFailed(
+        collection: 'search_history',
+        operation: 'delete',
+        message: e.message,
+      ));
+    } catch (e) {
+      return left(SearchFailure.unexpected(e.toString()));
+    }
   }
 
+  // ========== Search Suggestions ==========
+
   @override
-  Future<List<String>> getSearchSuggestions({
+  Future<Either<SearchFailure, List<String>>> getSearchSuggestions({
     required String prefix,
     int limit = 5,
   }) async {
-    // TODO: Implement search suggestions
-    throw UnimplementedError('getSearchSuggestions not implemented');
+    try {
+      // TODO: Implement search suggestions
+      return left(
+          SearchFailure.unexpected('getSearchSuggestions not implemented'));
+    } catch (e) {
+      return left(SearchFailure.unexpected(e.toString()));
+    }
   }
 
   @override
-  Future<List<String>> getPopularSearches({
+  Future<Either<SearchFailure, List<String>>> getPopularSearches({
     int limit = 10,
     Duration? inLastDuration,
   }) async {
-    // TODO: Implement popular searches
-    throw UnimplementedError('getPopularSearches not implemented');
+    try {
+      // TODO: Implement popular searches
+      return left(
+          SearchFailure.unexpected('getPopularSearches not implemented'));
+    } catch (e) {
+      return left(SearchFailure.unexpected(e.toString()));
+    }
   }
 
+  // ========== Full-Text Search Operations ==========
+
   @override
-  Future<List<Map<String, dynamic>>> searchPosts({
+  Future<Either<SearchFailure, List<Map<String, dynamic>>>> searchPosts({
     required String query,
     int limit = 20,
     Map<String, dynamic>? filters,
   }) async {
-    // TODO: Implement posts search with Algolia
-    throw UnimplementedError(
-        'searchPosts not implemented - requires Algolia setup');
+    try {
+      // TODO: Implement posts search with Algolia
+      return left(SearchFailure.unexpected(
+          'searchPosts not implemented - requires Algolia setup'));
+    } catch (e) {
+      return left(SearchFailure.unexpected(e.toString()));
+    }
   }
 
   @override
-  Future<List<Map<String, dynamic>>> searchUsers({
+  Future<Either<SearchFailure, List<Map<String, dynamic>>>> searchUsers({
     required String query,
     int limit = 20,
     Map<String, dynamic>? filters,
   }) async {
-    // TODO: Implement users search with Algolia
-    throw UnimplementedError(
-        'searchUsers not implemented - requires Algolia setup');
+    try {
+      // TODO: Implement users search with Algolia
+      return left(SearchFailure.unexpected(
+          'searchUsers not implemented - requires Algolia setup'));
+    } catch (e) {
+      return left(SearchFailure.unexpected(e.toString()));
+    }
   }
 
   @override
-  Future<List<Map<String, dynamic>>> searchContent({
+  Future<Either<SearchFailure, List<Map<String, dynamic>>>> searchContent({
     required String query,
     required String contentType,
     int limit = 20,
     Map<String, dynamic>? filters,
   }) async {
-    // TODO: Implement content search with Algolia
-    throw UnimplementedError(
-        'searchContent not implemented - requires Algolia setup');
+    try {
+      // TODO: Implement content search with Algolia
+      return left(SearchFailure.unexpected(
+          'searchContent not implemented - requires Algolia setup'));
+    } catch (e) {
+      return left(SearchFailure.unexpected(e.toString()));
+    }
+  }
+
+  // ========== Rankings - Content Discovery ==========
+
+  @override
+  Future<Either<SearchFailure, void>> updateRankings() async {
+    try {
+      // TODO: Implement ranking update logic from voting data
+      return left(SearchFailure.unexpected('updateRankings not implemented'));
+    } on FirebaseException catch (e) {
+      return left(SearchFailure.firestoreWriteFailed(
+        collection: 'rankings',
+        operation: 'update',
+        message: e.message,
+      ));
+    } catch (e) {
+      return left(SearchFailure.unexpected(e.toString()));
+    }
   }
 
   @override
-  Future<Map<String, int>> getSearchAnalytics({
-    DateTime? startDate,
-    DateTime? endDate,
-  }) async {
-    // TODO: Implement search analytics
-    throw UnimplementedError('getSearchAnalytics not implemented');
-  }
+  Future<Either<SearchFailure, List<Ranking>>> getTopRankings(
+      {int limit = 10}) async {
+    try {
+      final snapshot = await _firestore
+          .collection('rankings')
+          .orderBy('rank')
+          .limit(limit)
+          .get();
 
-  // Rankings - Content Discovery
-  @override
-  Future<void> updateRankings() async {
-    // TODO: Implement ranking update logic from voting data
-    // This will be implemented when we move the logic from VotingDataSource
-    throw UnimplementedError('updateRankings not implemented yet');
-  }
+      // Phase 5: Direct extension usage (no DTO/Mapper)
+      final rankings = snapshot.docs
+          .map((doc) => RankingFirestore.fromFirestore(doc))
+          .toList();
 
-  @override
-  Future<List<Ranking>> getTopRankings({int limit = 10}) async {
-    final firestore = FirebaseFirestore.instance;
-    final snapshot = await firestore
-        .collection('rankings')
-        .orderBy('rank')
-        .limit(limit)
-        .get();
-
-    final dtos = snapshot.docs
-        .map((doc) => RankingDto.fromFirestore(doc))
-        .toList();
-
-    return RankingMapper.toEntityList(dtos);
+      return right(rankings);
+    } on FirebaseException catch (e) {
+      return left(SearchFailure.firestoreReadFailed(
+        collection: 'rankings',
+        message: e.message,
+      ));
+    } catch (e) {
+      return left(SearchFailure.unexpected(e.toString()));
+    }
   }
 
   @override
-  Stream<List<Ranking>> queryRankings({
+  Stream<Either<SearchFailure, List<Ranking>>> queryRankings({
     dynamic Function(dynamic)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
   }) {
-    final firestore = FirebaseFirestore.instance;
-    Query query = firestore.collection('rankings');
+    try {
+      Query query = _firestore.collection('rankings');
 
-    if (queryBuilder != null) {
-      query = queryBuilder(query);
+      if (queryBuilder != null) {
+        query = queryBuilder(query);
+      }
+
+      if (limit > 0) {
+        query = query.limit(limit);
+      }
+
+      if (singleRecord) {
+        query = query.limit(1);
+      }
+
+      return query.snapshots().map((snapshot) {
+        try {
+          // Phase 5: Direct extension usage (no DTO/Mapper)
+          final rankings = snapshot.docs
+              .map((doc) => RankingFirestore.fromFirestore(doc))
+              .toList();
+          return right<SearchFailure, List<Ranking>>(rankings);
+        } catch (e) {
+          return left<SearchFailure, List<Ranking>>(SearchFailure.firestoreReadFailed(
+            collection: 'rankings',
+            message: e.toString(),
+          ));
+        }
+      }).handleError((e) {
+        return left<SearchFailure, List<Ranking>>(SearchFailure.firestoreReadFailed(
+          collection: 'rankings',
+          message: e.toString(),
+        ));
+      });
+    } catch (e) {
+      return Stream.value(left(SearchFailure.unexpected(e.toString())));
     }
+  }
 
-    if (limit > 0) {
-      query = query.limit(limit);
+  // ========== Analytics ==========
+
+  @override
+  Future<Either<SearchFailure, Map<String, int>>> getSearchAnalytics({
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      // TODO: Implement search analytics
+      return left(
+          SearchFailure.unexpected('getSearchAnalytics not implemented'));
+    } catch (e) {
+      return left(SearchFailure.unexpected(e.toString()));
     }
-
-    return query.snapshots().map((snapshot) {
-      final dtos = snapshot.docs
-          .map((doc) => RankingDto.fromFirestore(doc))
-          .toList();
-
-      return RankingMapper.toEntityList(dtos);
-    });
   }
 }

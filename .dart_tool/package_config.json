@@ -332,12 +332,6 @@
       "languageVersion": "3.7"
     },
     {
-      "name": "dartz",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/dartz-0.10.1",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
-    },
-    {
       "name": "dbus",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/dbus-0.7.11",
       "packageUri": "lib/",
@@ -1050,12 +1044,6 @@
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.1+1",
       "packageUri": "lib/",
       "languageVersion": "2.19"
-    },
-    {
-      "name": "injectable",
-      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/injectable-2.5.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
     },
     {
       "name": "intl",

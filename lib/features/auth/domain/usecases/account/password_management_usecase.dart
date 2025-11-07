@@ -1,7 +1,7 @@
 // Password Management UseCase
 // Clean Architecture - Domain Layer
 
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter/foundation.dart';
 import '/core/utils/idempotency_service.dart';
 import '../../repositories/i_auth_repository.dart';

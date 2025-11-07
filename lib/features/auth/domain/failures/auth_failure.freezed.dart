@@ -20,13 +20,17 @@ mixin _$AuthFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthFailure&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthFailure);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'AuthFailure()';
+}
 
 
 }
@@ -283,13 +287,17 @@ class InvalidEmail extends AuthFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is InvalidEmail&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is InvalidEmail);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'AuthFailure.invalidEmail()';
+}
 
 
 }
@@ -311,13 +319,17 @@ class WeakPassword extends AuthFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WeakPassword&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WeakPassword);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'AuthFailure.weakPassword()';
+}
 
 
 }
@@ -339,13 +351,17 @@ class EmailAlreadyInUse extends AuthFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is EmailAlreadyInUse&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EmailAlreadyInUse);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'AuthFailure.emailAlreadyInUse()';
+}
 
 
 }
@@ -367,13 +383,17 @@ class InvalidCredentials extends AuthFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is InvalidCredentials&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is InvalidCredentials);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'AuthFailure.invalidCredentials()';
+}
 
 
 }
@@ -395,13 +415,17 @@ class InvalidPhoneNumber extends AuthFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is InvalidPhoneNumber&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is InvalidPhoneNumber);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'AuthFailure.invalidPhoneNumber()';
+}
 
 
 }
@@ -423,13 +447,17 @@ class InvalidSmsCode extends AuthFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is InvalidSmsCode&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is InvalidSmsCode);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'AuthFailure.invalidSmsCode()';
+}
 
 
 }
@@ -451,13 +479,17 @@ class SmsCodeExpired extends AuthFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SmsCodeExpired&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SmsCodeExpired);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'AuthFailure.smsCodeExpired()';
+}
 
 
 }
@@ -479,13 +511,17 @@ class CancelledByUser extends AuthFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CancelledByUser&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CancelledByUser);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'AuthFailure.cancelledByUser()';
+}
 
 
 }
@@ -507,13 +543,17 @@ class SocialSignInFailed extends AuthFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SocialSignInFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SocialSignInFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'AuthFailure.socialSignInFailed()';
+}
 
 
 }
@@ -535,13 +575,17 @@ class NetworkError extends AuthFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is NetworkError&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NetworkError);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'AuthFailure.networkError()';
+}
 
 
 }
@@ -563,13 +607,17 @@ class ServerError extends AuthFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ServerError&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ServerError);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'AuthFailure.serverError()';
+}
 
 
 }
@@ -591,13 +639,17 @@ class UserNotFound extends AuthFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserNotFound&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserNotFound);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'AuthFailure.userNotFound()';
+}
 
 
 }
@@ -619,13 +671,17 @@ class UserDisabled extends AuthFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserDisabled&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserDisabled);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'AuthFailure.userDisabled()';
+}
 
 
 }
@@ -647,13 +703,17 @@ class EmailNotVerified extends AuthFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is EmailNotVerified&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EmailNotVerified);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'AuthFailure.emailNotVerified()';
+}
 
 
 }
@@ -675,13 +735,17 @@ class InsufficientPermission extends AuthFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is InsufficientPermission&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is InsufficientPermission);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'AuthFailure.insufficientPermission()';
+}
 
 
 }
@@ -703,13 +767,17 @@ class RequiresRecentLogin extends AuthFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RequiresRecentLogin&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RequiresRecentLogin);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'AuthFailure.requiresRecentLogin()';
+}
 
 
 }
@@ -731,13 +799,17 @@ class UserNameAlreadyTaken extends AuthFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserNameAlreadyTaken&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserNameAlreadyTaken);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'AuthFailure.userNameAlreadyTaken()';
+}
 
 
 }
@@ -759,13 +831,17 @@ class ProfileIncomplete extends AuthFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProfileIncomplete&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProfileIncomplete);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'AuthFailure.profileIncomplete()';
+}
 
 
 }
@@ -792,13 +868,17 @@ $UnexpectedCopyWith<Unexpected> get copyWith => _$UnexpectedCopyWithImpl<Unexpec
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Unexpected&&super == other&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Unexpected&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode,errorMessage);
+int get hashCode => Object.hash(runtimeType,errorMessage);
 
+@override
+String toString() {
+  return 'AuthFailure.unexpected(errorMessage: $errorMessage)';
+}
 
 
 }

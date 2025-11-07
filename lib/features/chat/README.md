@@ -1,9 +1,9 @@
 # Chat Feature - 통합 문서
 
-> **최종 업데이트**: 2025-01-30
+> **최종 업데이트**: 2025-11-07
 > **아키텍처**: Clean Architecture v4.0 + Firebase-Centric v2.0
 > **캐싱**: UnifiedCacheService 3-Layer (Memory → Hive → Firestore)
-> **상태 관리**: Riverpod 2.x
+> **상태 관리**: Riverpod 3.x with @riverpod code generation
 > **UI 라이브러리**: flutter_chat_ui v2
 
 ## 📋 목차
@@ -65,9 +65,10 @@ lib/features/chat/
 │   └── 📄 README.md                      # Domain Layer 상세 문서 (1,618줄)
 │
 ├── 📂 presentation/                       # Presentation Layer (Clean Architecture v4.0)
-│   ├── 📂 providers/                     # Riverpod 2.x 상태 관리 (2개)
-│   │   ├── chat_providers.dart           # 10개 Provider 정의 (293줄)
-│   │   └── chat_params.dart              # Freezed 파라미터 클래스 (76줄)
+│   ├── 📂 providers/                     # Riverpod 3.x 상태 관리 (3개)
+│   │   ├── chat_providers.dart           # 18개 Provider 정의 (312줄)
+│   │   ├── chat_providers.g.dart         # Auto-generated (42.7 KB)
+│   │   └── chat_params.dart              # Freezed 파라미터 클래스 (150줄)
 │   ├── 📂 adapters/                      # flutter_chat_ui 어댑터 (1개)
 │   │   └── flutter_chat_adapter.dart     # Message 변환 (338줄)
 │   ├── 📂 screens/                       # 화면 위젯 (5개)
@@ -113,8 +114,8 @@ lib/features/chat/
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Presentation Layer                        │
-│  • Riverpod 2.x 상태 관리                                     │
-│  • StreamProvider.autoDispose.family 패턴                    │
+│  • Riverpod 3.x with @riverpod code generation               │
+│  • 18개 Providers (10 UseCase + 4 Stream + 2 Computed + 2 Service) │
 │  • flutter_chat_ui v2 통합 (Adapter Pattern)                │
 │  • ConsumerWidget/ConsumerStatefulWidget                     │
 │  • AsyncValue.when() 자동 상태 처리                          │
@@ -165,7 +166,7 @@ lib/features/chat/
 | **Freezed Pattern** | Domain | 불변 엔티티 + 코드 생성 | `chat.dart`, `message.dart` + `*.freezed.dart` |
 | **Either Pattern** | Domain | 타입 안전 에러 처리 | `Either<ChatFailure, Chat>` |
 | **Port-Adapter Pattern** | Domain/Data | 서비스 인터페이스 분리 | `IAIService` (Port) ↔ `GeminiAIService` (Adapter) |
-| **StreamProvider.family** | Presentation | 파라미터화된 스트림 상태 | `chatMessagesStreamProvider(ChatMessagesParams)` |
+| **@riverpod Stream** | Presentation | @riverpod 어노테이션 기반 스트림 Provider | `chatMessagesStream()` → `chatMessagesStreamProvider()` |
 | **Adapter Pattern** | Presentation | flutter_chat_ui 통합 | `FlutterChatAdapter` (Message → core.Message) |
 | **ConsumerWidget** | Presentation | Riverpod 통합 위젯 | `ChatListWidgetClean`, `ChatDetailWidgetClean` |
 | **AsyncValue.when()** | Presentation | 로딩/에러/데이터 자동 처리 | `asyncMessages.when(loading: ..., error: ..., data: ...)` |
@@ -306,8 +307,8 @@ lib/features/chat/
 ### 3. Presentation Layer README (`presentation/README.md` - 2,800+줄)
 
 **📌 핵심 내용**:
-- Riverpod 2.x 상태 관리
-- StreamProvider.autoDispose.family 패턴
+- Riverpod 3.x with @riverpod code generation
+- 18개 Providers (10 UseCase + 4 Stream + 2 Computed + 2 Service)
 - flutter_chat_ui v2 통합 (Adapter Pattern)
 - ConsumerWidget/ConsumerStatefulWidget
 - AsyncValue.when() 자동 상태 처리
@@ -315,7 +316,7 @@ lib/features/chat/
 - Clean Architecture v4.0 마이그레이션 (38% 평균 코드 감소)
 
 **📖 주요 섹션**:
-1. **Providers**: 10개 Riverpod Provider 정의
+1. **Providers**: 18개 Riverpod 3.x Provider 정의 (chat_providers.dart + .g.dart)
 2. **Freezed Params**: ChatListParams, ChatMessagesParams, RecommendedFriendsParams, SearchFriendsParams
 3. **Flutter Chat UI Adapter**: Message Entity → flutter_chat_ui 변환
 4. **Screens**: 5개 화면 (Chat List, Chat Detail, AI Chat, Friends Search, Create Chat)
@@ -439,7 +440,7 @@ final chatListStreamProvider =
 **Clean Architecture v4.0 Migration 성과**:
 - 평균 코드 감소: **38%**
 - 최대 감소 (ChatDetailWidget): **48%** (1,199줄 → 627줄)
-- Riverpod 2.x 완전 도입
+- Riverpod 3.x 완전 도입 (18개 @riverpod Providers)
 - flutter_chat_ui v2 통합 완료
 - 3-Layer 캐싱 시스템 통합
 
@@ -586,7 +587,7 @@ final chatListStreamProvider =
    - Entity는 Freezed 사용
    - Repository는 Either 패턴
    - Extension으로 Firestore 변환
-   - Provider는 Riverpod 2.x (StreamProvider.family)
+   - Provider는 Riverpod 3.x (@riverpod 어노테이션)
 
 3. **문서 업데이트**:
    - 파일 추가 시: 해당 레이어 README 업데이트
@@ -607,7 +608,7 @@ final chatListStreamProvider =
 
 1. **Clean Architecture 이해**: `domain/README.md` 읽기
 2. **Firebase-Centric v2.0**: `data/README.md` 읽기
-3. **Riverpod 2.x**: `presentation/README.md` 읽기
+3. **Riverpod 3.x**: `presentation/README.md` 읽기 (Riverpod 3.x Migration 섹션 포함)
 4. **flutter_chat_ui 통합**: `presentation/README.md` > Adapter 섹션
 5. **실습**: 간단한 메시지 전송 기능 추가
 
@@ -635,7 +636,7 @@ final chatListStreamProvider =
 ### 내부 문서
 - [Data Layer README](./data/README.md) - Firebase-Centric v2.0 아키텍처
 - [Domain Layer README](./domain/README.md) - Clean Architecture v4.0 비즈니스 로직
-- [Presentation Layer README](./presentation/README.md) - Riverpod 2.x + flutter_chat_ui 통합
+- [Presentation Layer README](./presentation/README.md) - Riverpod 3.x + flutter_chat_ui 통합
 - [Chat DI Module](./di/chat_di_module.dart) - Dependency Injection 설정
 
 ### 공유 서비스
@@ -648,7 +649,7 @@ final chatListStreamProvider =
 
 ### 외부 라이브러리
 - [flutter_chat_ui v2](https://pub.dev/packages/flutter_chat_ui) - 채팅 UI 라이브러리
-- [Riverpod 2.x](https://riverpod.dev/) - 상태 관리
+- [Riverpod 3.x](https://riverpod.dev/) - 상태 관리 with @riverpod code generation
 - [fpdart](https://pub.dev/packages/fpdart) - Functional Programming (Either)
 - [freezed](https://pub.dev/packages/freezed) - 불변 엔티티 코드 생성
 - [Hive](https://pub.dev/packages/hive) - 로컬 DB

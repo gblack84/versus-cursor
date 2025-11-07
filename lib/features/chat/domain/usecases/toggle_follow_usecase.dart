@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:uuid/uuid.dart';
 import '../repositories/i_chat_repository.dart';
 import '../failures/chat_failure.dart';

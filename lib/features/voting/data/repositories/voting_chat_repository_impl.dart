@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter/foundation.dart';
 import '../../domain/repositories/i_voting_chat_repository.dart';
 import '../../domain/entities/chat/post_voting.dart';
@@ -125,7 +125,10 @@ class VotingChatRepositoryImpl implements IVotingChatRepository {
         return votingResult;
       }
 
-      final voting = votingResult.getOrElse(() => throw UnimplementedError());
+      final voting = votingResult.fold(
+        (failure) => throw StateError('Unreachable: already checked isLeft above'),
+        (value) => value,
+      );
 
       // 2. Check if user can vote (domain business logic)
       if (!voting.canUserVote(userId)) {
@@ -196,7 +199,10 @@ class VotingChatRepositoryImpl implements IVotingChatRepository {
         return votingResult;
       }
 
-      final voting = votingResult.getOrElse(() => throw UnimplementedError());
+      final voting = votingResult.fold(
+        (failure) => throw StateError('Unreachable: already checked isLeft above'),
+        (value) => value,
+      );
 
       // 2. Use domain model's business logic
       final updatedVoting = voting.startVoting(customTimeout: duration);
@@ -227,7 +233,10 @@ class VotingChatRepositoryImpl implements IVotingChatRepository {
         return votingResult;
       }
 
-      final voting = votingResult.getOrElse(() => throw UnimplementedError());
+      final voting = votingResult.fold(
+        (failure) => throw StateError('Unreachable: already checked isLeft above'),
+        (value) => value,
+      );
 
       // 2. Use domain model's business logic
       final updatedVoting = voting.completeVoting();
@@ -259,7 +268,10 @@ class VotingChatRepositoryImpl implements IVotingChatRepository {
         return votingResult;
       }
 
-      final voting = votingResult.getOrElse(() => throw UnimplementedError());
+      final voting = votingResult.fold(
+        (failure) => throw StateError('Unreachable: already checked isLeft above'),
+        (value) => value,
+      );
       final updatedVoting = voting.cancelVoting(reason: reason);
 
       // ✅ Update Firestore with Extension method
@@ -285,7 +297,10 @@ class VotingChatRepositoryImpl implements IVotingChatRepository {
         return votingResult;
       }
 
-      final voting = votingResult.getOrElse(() => throw UnimplementedError());
+      final voting = votingResult.fold(
+        (failure) => throw StateError('Unreachable: already checked isLeft above'),
+        (value) => value,
+      );
       final updatedVoting = voting.timeoutVoting();
 
       // ✅ Update Firestore with Extension method
@@ -319,7 +334,10 @@ class VotingChatRepositoryImpl implements IVotingChatRepository {
         return votingResult;
       }
 
-      final voting = votingResult.getOrElse(() => throw UnimplementedError());
+      final voting = votingResult.fold(
+        (failure) => throw StateError('Unreachable: already checked isLeft above'),
+        (value) => value,
+      );
       final updatedVoting = voting.updateExpansion(
         pointsUsed: points,
         userCount: targetUserIds.length,
@@ -353,7 +371,10 @@ class VotingChatRepositoryImpl implements IVotingChatRepository {
         return votingResult.map((_) {});
       }
 
-      final voting = votingResult.getOrElse(() => throw UnimplementedError());
+      final voting = votingResult.fold(
+        (failure) => throw StateError('Unreachable: already checked isLeft above'),
+        (value) => value,
+      );
       final updatedVoting = voting.markNotificationsSent();
 
       // ✅ Update Firestore with Extension method
@@ -385,7 +406,10 @@ class VotingChatRepositoryImpl implements IVotingChatRepository {
         return votingResult;
       }
 
-      final voting = votingResult.getOrElse(() => throw UnimplementedError());
+      final voting = votingResult.fold(
+        (failure) => throw StateError('Unreachable: already checked isLeft above'),
+        (value) => value,
+      );
       final updatedVoting = voting.copyWith(
         displayVotesA: displayA,
         displayVotesB: displayB,
@@ -460,7 +484,10 @@ class VotingChatRepositoryImpl implements IVotingChatRepository {
         return const Right(false);
       }
 
-      final voting = votingResult.getOrElse(() => throw UnimplementedError());
+      final voting = votingResult.fold(
+        (failure) => throw StateError('Unreachable: already checked isLeft above'),
+        (value) => value,
+      );
 
       // Use domain model's business logic
       return Right(voting.hasUserVoted(userId));
@@ -482,7 +509,10 @@ class VotingChatRepositoryImpl implements IVotingChatRepository {
         return const Right(null);
       }
 
-      final voting = votingResult.getOrElse(() => throw UnimplementedError());
+      final voting = votingResult.fold(
+        (failure) => throw StateError('Unreachable: already checked isLeft above'),
+        (value) => value,
+      );
 
       // Use domain model's business logic
       return Right(voting.getUserVote(userId));

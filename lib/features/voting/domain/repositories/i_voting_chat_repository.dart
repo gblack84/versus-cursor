@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import '../entities/chat/post_voting.dart';
 import '../failures/voting_failure.dart';
 

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:algolia/algolia.dart';
-import 'package:equatable/equatable.dart';
 
 // Migrated from backend.dart - only need LatLng
 import '/app/models/lat_lng.dart';
@@ -12,7 +11,14 @@ export 'package:algolia/algolia.dart';
 const kAlgoliaApplicationId = '0GAS0MPT9Z';
 const kAlgoliaApiKey = '123e265bbab0702b220a66a59f22ab8e';
 
-class AlgoliaQueryParams extends Equatable {
+/// Algolia Query Parameters
+///
+/// Encapsulates Algolia search parameters for caching
+///
+/// **Migration Status**: Equatable removed (2025-11-07)
+/// - ✅ Equatable 제거
+/// - ✅ Manual equality implementation
+class AlgoliaQueryParams {
   const AlgoliaQueryParams(this.index, this.term, this.latLng, this.maxResults,
       this.searchRadiusMeters);
   final String index;
@@ -22,8 +28,19 @@ class AlgoliaQueryParams extends Equatable {
   final double? searchRadiusMeters;
 
   @override
-  List<Object?> get props =>
-      [index, term, latLng, maxResults, searchRadiusMeters];
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is AlgoliaQueryParams &&
+        other.index == index &&
+        other.term == term &&
+        other.latLng == latLng &&
+        other.maxResults == maxResults &&
+        other.searchRadiusMeters == searchRadiusMeters;
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(index, term, latLng, maxResults, searchRadiusMeters);
 }
 
 class AppAlgoliaManager {

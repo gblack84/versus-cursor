@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../repositories/i_user_repository.dart';
 import '../../entities/user_settings.dart';

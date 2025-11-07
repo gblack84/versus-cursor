@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter/foundation.dart';
 import '../../domain/repositories/i_profile_repository.dart';
 import '../../domain/entities/profile_info.dart';

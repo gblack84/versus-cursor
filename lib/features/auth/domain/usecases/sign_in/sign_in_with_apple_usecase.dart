@@ -1,7 +1,7 @@
 // Sign In with Apple UseCase
 // Clean Architecture - Domain Layer
 
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter/foundation.dart';
 import '/core/utils/idempotency_service.dart';
 import '../../entities/auth_user.dart';

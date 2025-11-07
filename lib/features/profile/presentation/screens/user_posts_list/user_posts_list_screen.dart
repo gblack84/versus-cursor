@@ -5,17 +5,22 @@ import '/features/profile/domain/entities/user_post_item.dart';
 import '/core/design_system/design_system.dart';
 import '/features/profile/presentation/widgets/common/loading_indicator.dart';
 import '/features/profile/presentation/widgets/common/error_message.dart';
+import '/features/profile/presentation/providers/profile_post_providers.dart';
 
 /// 사용자 게시물 전체 목록 화면 (Riverpod)
 ///
-/// **Clean Architecture v4.0 + Riverpod 2.x**:
+/// **Clean Architecture v4.0 + Riverpod 3.x**:
 /// - ✅ ConsumerWidget으로 전환
 /// - ✅ StreamProvider.autoDispose.family 사용
 /// - ✅ AsyncValue.when() 패턴
 /// - ✅ 실시간 동기화 (Firestore Stream)
 /// - ✅ 자동 dispose 및 keepAlive
 ///
-/// **Phase 3 Riverpod Migration**: ChangeNotifier → Riverpod 완료
+/// **Phase 6.5: Feature 독립성 확보** (2025-01-07):
+/// - ✅ Post Feature 의존성 완전 제거
+/// - ✅ myPostsStreamProvider 사용 (Profile Feature 전용)
+/// - ✅ UserPostItem 엔티티 (5 fields, 간소화)
+/// - ✅ Repository 패턴 도입
 class UserPostsListScreen extends ConsumerWidget {
   const UserPostsListScreen({
     super.key,
@@ -29,8 +34,8 @@ class UserPostsListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // userPostsStreamProvider 구독 (실시간 동기화)
-    final postsState = ref.watch(userPostsStreamProvider(userId));
+    // myPostsStreamProvider 구독 (실시간 동기화)
+    final postsState = ref.watch(myPostsStreamProvider(userId));
 
     return Scaffold(
       backgroundColor: VersusColors.backgroundPrimary,
@@ -61,7 +66,7 @@ class UserPostsListScreen extends ConsumerWidget {
           message: error.toString(),
           onRetry: () {
             // Provider 새로고침으로 재시도
-            ref.invalidate(userPostsStreamProvider(userId));
+            ref.invalidate(myPostsStreamProvider(userId));
           },
         ),
 
@@ -94,7 +99,7 @@ class UserPostsListScreen extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: () async {
               // Provider 새로고침
-              ref.invalidate(userPostsStreamProvider(userId));
+              ref.invalidate(myPostsStreamProvider(userId));
             },
             child: ListView.separated(
               padding: VersusSpacing.paddingMD,

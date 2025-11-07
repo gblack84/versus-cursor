@@ -2,7 +2,8 @@
 
 > **Architecture**: Firebase-Centric Architecture v2.0 (+ UnifiedCacheService)
 > **Extension Migration**: 2025-11-06
-> **Status**: ✅ Phase 5 Extension Pattern Complete (100%)
+> **Freezed Migration**: 2025-11-07
+> **Status**: ✅ Phase 5 Extension Pattern Complete (100%) + Freezed Complete
 
 ## 📊 개요
 
@@ -56,6 +57,48 @@ After (Phase 5): 4,548 lines (-19%)
 ├── Extension:    409 lines (3 extension files in domain/entities/)
 ├── Repositories: ~3,961 lines
 └── DataSource:   178 lines (firebase_storage_datasource.dart만 유지)
+```
+
+### Integration with Freezed (2025-11-07)
+
+**Error Handling with Freezed Failures**:
+- CreationFailure sealed class (16+ types)
+- Extension pattern for Korean error messages
+- Either<CreationFailure, T> return types
+
+**Repository Error Mapping**:
+```dart
+try {
+  final result = await _firestore.collection('posts').add(data);
+  return right(result);
+} on FirebaseException catch (_) {
+  return left(CreationFailure.firestoreWriteFailed(
+    collectionPath: 'posts',
+    operation: 'create',
+    code: 'FIRESTORE_ERROR',
+  ));
+}
+```
+
+**Warning Fixes (2025-11-07)**:
+- ✅ 24 unused catch clause warnings → `catch (_)` pattern
+- ✅ 5 unnecessary cast warnings → removed `as CreationFailure`
+- ✅ Files:
+  - `media_repository_impl.dart` (18 catch clauses fixed)
+  - `post_creation_repository_v2_impl.dart` (6 catches + 5 casts fixed)
+- ✅ Result: `flutter analyze` - No issues found!
+
+**Type-Safe Error Handling**:
+```dart
+// Before: Generic exception catching
+} catch (e) {
+  return left(CreationFailure.mediaRepositoryFailed(...) as CreationFailure);
+}
+
+// After: Specific Firebase exceptions with unused variable elimination
+} on FirebaseException catch (_) {
+  return left(CreationFailure.mediaRepositoryFailed(...));
+}
 ```
 
 ---

@@ -3,7 +3,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:uuid/uuid.dart'; // ✅ Phase 4: UUID for idempotency
 import '../entities/post_creation.dart';
 import '../entities/target_audience.dart';
-import '../failures/creation_failures.dart';
+import '../failures/creation_failure.dart';
 import '../repositories/i_post_creation_repository_v2.dart';
 import '../repositories/i_media_repository.dart';
 import '../services/i_image_processing_service.dart';
@@ -40,7 +40,7 @@ class CreatePostUseCase {
   /// - [targetAudience]: Optional target audience configuration
   /// - [isAnonymous]: Whether post is anonymous
   /// - [onProgress]: Optional progress callback (0.0 to 1.0)
-  Future<Either<CreateContentFailure, PostCreation>> execute({
+  Future<Either<CreationFailure, PostCreation>> execute({
     required String userId,
     required String title,
     required String description,
@@ -61,9 +61,10 @@ class CreatePostUseCase {
 
       if (validationResult != null) {
         return left(
-          CreateContentFailure(
-            validationResult.message,
-            validationResult.code,
+          CreationFailure.postCreationRepositoryFailed(
+            operation: 'create_post',
+            // message: validationResult.message,
+            // code: validationResult.code,
           ),
         );
       }
@@ -120,9 +121,10 @@ class CreatePostUseCase {
 
                         if (!validation.isValid) {
                           return left(
-                            CreateContentFailure(
-                              validation.error ?? 'Invalid target audience',
-                              'validation-failed',
+                            CreationFailure.postCreationRepositoryFailed(
+                              operation: 'create_post',
+                              // message: validation.error ?? 'Invalid target audience',
+                              // code: 'validation-failed',
                             ),
                           );
                         }
@@ -179,24 +181,26 @@ class CreatePostUseCase {
       // Handle specific error types without Firebase dependency
       if (error.toString().contains('permission-denied')) {
         return left(
-          CreateContentFailure(
-            'Permission denied to create post',
-            'permission-denied',
+          CreationFailure.postCreationRepositoryFailed(
+            operation: 'create_post',
+            // message: 'Permission denied to create post',
+            // code: 'permission-denied',
           ),
         );
       }
 
       return left(
-        CreateContentFailure(
-          'Failed to create post: $error',
-          'unknown-error',
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'create_post',
+          // message: 'Failed to create post: $error',
+          // code: 'unknown-error',
         ),
       );
     }
   }
 
   /// Validate inputs
-  CreationValidationFailure? _validateInputs({
+  CreationFailure? _validateInputs({
     required String title,
     required String description,
     required List<File> imagesA,
@@ -229,8 +233,7 @@ class CreatePostUseCase {
     }
 
     if (errors.isNotEmpty) {
-      return CreationValidationFailure(
-        'Validation failed',
+      return CreationFailure.creationValidationFailed(
         fieldErrors: errors,
       );
     }
@@ -240,7 +243,7 @@ class CreatePostUseCase {
 
   /// Process and moderate images
   /// Now using repository method instead of direct service dependency (Phase 1.3)
-  Future<Either<CreateContentFailure, ImageProcessingResult>> _processImages({
+  Future<Either<CreationFailure, ImageProcessingResult>> _processImages({
     required List<File> images,
     required String box,
     Function(double)? onProgress,
@@ -254,9 +257,10 @@ class CreatePostUseCase {
 
       if (result.allRejected) {
         return left(
-          CreateContentFailure(
-            'All images were rejected: ${result.rejectedReasons.keys.join(", ")}',
-            'moderation-failed',
+          CreationFailure.postCreationRepositoryFailed(
+            operation: 'create_post',
+            // message: 'All images were rejected: ${result.rejectedReasons.keys.join(", ")}',
+            // code: 'moderation-failed',
           ),
         );
       }
@@ -264,25 +268,27 @@ class CreatePostUseCase {
       return right(result);
     } catch (error) {
       return left(
-        CreateContentFailure(
-          'Failed to process images: $error',
-          'image-processing-failed',
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'create_post',
+          // message: 'Failed to process images: $error',
+          // code: 'image-processing-failed',
         ),
       );
     }
   }
 
   /// Upload images to storage
-  Future<Either<CreateContentFailure, List<String>>> _uploadImages({
+  Future<Either<CreationFailure, List<String>>> _uploadImages({
     required List<File> processedImages,
   }) async {
     final result = await _mediaRepository.uploadImages(processedImages);
 
-    // Convert MediaRepositoryFailure to CreateContentFailure
+    // Convert MediaRepositoryFailure to CreationFailure
     return result.mapLeft((failure) =>
-      CreateContentFailure(
-        'Failed to upload images: ${failure.message}',
-        'image-upload-failed',
+      CreationFailure.postCreationRepositoryFailed(
+        operation: 'upload_images',
+        // message: 'Failed to upload images: ${failure.message}',
+        // code: 'image-upload-failed',
       ),
     );
   }

@@ -20,13 +20,17 @@ mixin _$NotificationFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationFailure&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationFailure);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'NotificationFailure()';
+}
 
 
 }
@@ -265,13 +269,17 @@ class NotificationNotFound extends NotificationFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationNotFound&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationNotFound);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'NotificationFailure.notificationNotFound()';
+}
 
 
 }
@@ -293,13 +301,17 @@ class NotificationLoadFailed extends NotificationFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationLoadFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationLoadFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'NotificationFailure.notificationLoadFailed()';
+}
 
 
 }
@@ -321,13 +333,17 @@ class NotificationSendFailed extends NotificationFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationSendFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationSendFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'NotificationFailure.notificationSendFailed()';
+}
 
 
 }
@@ -349,13 +365,17 @@ class NotificationCreateFailed extends NotificationFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationCreateFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationCreateFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'NotificationFailure.notificationCreateFailed()';
+}
 
 
 }
@@ -377,13 +397,17 @@ class NotificationUpdateFailed extends NotificationFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationUpdateFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationUpdateFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'NotificationFailure.notificationUpdateFailed()';
+}
 
 
 }
@@ -405,13 +429,17 @@ class NotificationDeleteFailed extends NotificationFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationDeleteFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationDeleteFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'NotificationFailure.notificationDeleteFailed()';
+}
 
 
 }
@@ -433,13 +461,17 @@ class InvalidNotificationData extends NotificationFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is InvalidNotificationData&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is InvalidNotificationData);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'NotificationFailure.invalidNotificationData()';
+}
 
 
 }
@@ -461,13 +493,17 @@ class NotificationExpired extends NotificationFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationExpired&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationExpired);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'NotificationFailure.notificationExpired()';
+}
 
 
 }
@@ -489,13 +525,17 @@ class BroadcastFailed extends NotificationFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is BroadcastFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is BroadcastFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'NotificationFailure.broadcastFailed()';
+}
 
 
 }
@@ -517,13 +557,17 @@ class GroupingFailed extends NotificationFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is GroupingFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GroupingFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'NotificationFailure.groupingFailed()';
+}
 
 
 }
@@ -545,13 +589,17 @@ class StreamingFailed extends NotificationFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is StreamingFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is StreamingFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'NotificationFailure.streamingFailed()';
+}
 
 
 }
@@ -573,13 +621,17 @@ class InitializationFailed extends NotificationFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is InitializationFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is InitializationFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'NotificationFailure.initializationFailed()';
+}
 
 
 }
@@ -601,13 +653,17 @@ class NetworkError extends NotificationFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is NetworkError&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NetworkError);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'NotificationFailure.networkError()';
+}
 
 
 }
@@ -629,13 +685,17 @@ class PermissionDenied extends NotificationFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PermissionDenied&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PermissionDenied);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'NotificationFailure.permissionDenied()';
+}
 
 
 }
@@ -657,13 +717,17 @@ class ServerError extends NotificationFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ServerError&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ServerError);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'NotificationFailure.serverError()';
+}
 
 
 }
@@ -690,13 +754,17 @@ $UnexpectedCopyWith<Unexpected> get copyWith => _$UnexpectedCopyWithImpl<Unexpec
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Unexpected&&super == other&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Unexpected&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode,errorMessage);
+int get hashCode => Object.hash(runtimeType,errorMessage);
 
+@override
+String toString() {
+  return 'NotificationFailure.unexpected(errorMessage: $errorMessage)';
+}
 
 
 }

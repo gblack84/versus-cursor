@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 
 import '../failures/chat_failure.dart';
 import '../repositories/i_chat_repository.dart';

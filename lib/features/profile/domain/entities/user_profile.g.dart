@@ -12,7 +12,9 @@ _UserProfile _$UserProfileFromJson(Map<String, dynamic> json) => _UserProfile(
   displayName: json['displayName'] as String?,
   photoUrl: json['photoUrl'] as String?,
   phoneNumber: json['phoneNumber'] as String?,
-  location: _latLngFromJson(json['location'] as Map<String, dynamic>?),
+  location: const LatLngConverter().fromJson(
+    json['location'] as Map<String, dynamic>?,
+  ),
   shortDescription: json['shortDescription'] as String?,
   gender: json['gender'] as String?,
   dateOfBirth: json['dateOfBirth'] == null
@@ -101,7 +103,7 @@ Map<String, dynamic> _$UserProfileToJson(
   'displayName': instance.displayName,
   'photoUrl': instance.photoUrl,
   'phoneNumber': instance.phoneNumber,
-  'location': _latLngToJson(instance.location),
+  'location': const LatLngConverter().toJson(instance.location),
   'shortDescription': instance.shortDescription,
   'gender': instance.gender,
   'dateOfBirth': instance.dateOfBirth?.toIso8601String(),

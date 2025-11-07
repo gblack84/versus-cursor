@@ -1,3 +1,5 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
 /// Notification TYPE 상수 Contract
 ///
 /// Feature 간 공유되는 알림 타입 정의
@@ -67,4 +69,28 @@ enum NotificationPriority {
 
   /// Create from JSON (weight integer)
   static NotificationPriority fromJson(int json) => fromWeight(json);
+}
+
+/// NotificationPriorityConverter for Freezed 3.x compatibility
+///
+/// Converts between NotificationPriority enum and int (weight)
+///
+/// **Usage**:
+/// ```dart
+/// @NotificationPriorityConverter()
+/// @Default(NotificationPriority.medium)
+/// NotificationPriority notificationPriority,
+/// ```
+class NotificationPriorityConverter implements JsonConverter<NotificationPriority, int> {
+  const NotificationPriorityConverter();
+
+  @override
+  NotificationPriority fromJson(int json) {
+    return NotificationPriority.fromJson(json);
+  }
+
+  @override
+  int toJson(NotificationPriority priority) {
+    return priority.toJson();
+  }
 }

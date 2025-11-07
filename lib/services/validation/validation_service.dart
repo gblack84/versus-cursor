@@ -4,7 +4,6 @@ import '/services/moderation/models/moderation_result.dart'
     as ai;
 import '/features/creation/presentation/constants/field_styles.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:provider/provider.dart';
 import '/core_exports.dart';
 
 class ValidationService {
@@ -28,6 +27,7 @@ class ValidationService {
     required String? aTitle,
     required String? bTitle,
     BuildContext? context,
+    AppState? appState,  // AppState를 직접 파라미터로 받음
     Function(String)? onProgressUpdate,
     Map<String, dynamic>? visionDataA,
     Map<String, dynamic>? visionDataB,
@@ -64,8 +64,7 @@ class ValidationService {
       );
     }
 
-    // AppState 가져오기
-    final appState = context?.read<AppState>();
+    // AppState는 파라미터로 받음 (더 이상 context.read 사용 안 함)
 
     try {
       // AI Moderation Request 생성

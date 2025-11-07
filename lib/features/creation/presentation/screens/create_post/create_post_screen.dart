@@ -8,7 +8,8 @@ import '/features/creation/presentation/widgets/components/next_button.dart';
 import '/core/utils/error_handler.dart';
 import 'package:bot_toast/bot_toast.dart';
 import '../../widgets/dialogs/target_audience_dialog.dart';
-import '/features/creation/domain/failures/creation_failures.dart';
+import '/features/creation/domain/failures/creation_failure.dart';
+import '/features/creation/domain/failures/creation_failure_extensions.dart'; // Extension for getUserMessage()
 import '/features/auth/presentation/providers/auth_providers.dart';
 
 /// Main screen for post creation
@@ -122,20 +123,16 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen>
       // 에러 타입별로 다른 메시지 표시
       String errorMessage = '포스트 생성 중 오류가 발생했습니다'; // 기본값
 
-      if (e is FirestoreWriteFailure) {
+      if (e is FirestoreWriteFailed) {
         errorMessage = e.getUserMessage();
-      } else if (e is AIModerationFailure) {
+      } else if (e is AIModerationFailed) {
         errorMessage = e.getUserMessage();
-      } else if (e is MediaProcessingFailure) {
+      } else if (e is MediaProcessingFailed) {
         errorMessage = e.getUserMessage();
-      } else if (e is NetworkFailure) {
-        errorMessage = '인터넷 연결을 확인하고 다시 시도해주세요';
-      } else if (e is PostValidationFailure) {
+      } else if (e is PostValidationFailed) {
         errorMessage = e.getUserMessage();
-      } else if (e is PostCreationRepositoryFailure) {
+      } else if (e is PostCreationRepositoryFailed) {
         errorMessage = '게시물 저장에 실패했습니다. 잠시 후 다시 시도해주세요.';
-      } else if (e is ServerFailure) {
-        errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
       }
 
       ErrorHandler.handle(e, type: ErrorType.unknown);

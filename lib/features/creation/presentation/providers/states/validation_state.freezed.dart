@@ -292,7 +292,7 @@ mixin _$ValidationState {
  Map<String, ValidationResult> get validationResults;/// Current validation status
  bool get isValidating;/// Current validation message
  String? get validationMessage;/// Current validation failure
- Failure? get validationFailure;/// Vision API results for Box A (for compatibility)
+ CreationFailure? get validationFailure;/// Vision API results for Box A (for compatibility)
  Map<String, dynamic>? get visionResultA;/// Vision API results for Box B (for compatibility)
  Map<String, dynamic>? get visionResultB;
 /// Create a copy of ValidationState
@@ -325,11 +325,11 @@ abstract mixin class $ValidationStateCopyWith<$Res>  {
   factory $ValidationStateCopyWith(ValidationState value, $Res Function(ValidationState) _then) = _$ValidationStateCopyWithImpl;
 @useResult
 $Res call({
- Map<String, ValidationResult> validationResults, bool isValidating, String? validationMessage, Failure? validationFailure, Map<String, dynamic>? visionResultA, Map<String, dynamic>? visionResultB
+ Map<String, ValidationResult> validationResults, bool isValidating, String? validationMessage, CreationFailure? validationFailure, Map<String, dynamic>? visionResultA, Map<String, dynamic>? visionResultB
 });
 
 
-
+$CreationFailureCopyWith<$Res>? get validationFailure;
 
 }
 /// @nodoc
@@ -348,12 +348,24 @@ validationResults: null == validationResults ? _self.validationResults : validat
 as Map<String, ValidationResult>,isValidating: null == isValidating ? _self.isValidating : isValidating // ignore: cast_nullable_to_non_nullable
 as bool,validationMessage: freezed == validationMessage ? _self.validationMessage : validationMessage // ignore: cast_nullable_to_non_nullable
 as String?,validationFailure: freezed == validationFailure ? _self.validationFailure : validationFailure // ignore: cast_nullable_to_non_nullable
-as Failure?,visionResultA: freezed == visionResultA ? _self.visionResultA : visionResultA // ignore: cast_nullable_to_non_nullable
+as CreationFailure?,visionResultA: freezed == visionResultA ? _self.visionResultA : visionResultA // ignore: cast_nullable_to_non_nullable
 as Map<String, dynamic>?,visionResultB: freezed == visionResultB ? _self.visionResultB : visionResultB // ignore: cast_nullable_to_non_nullable
 as Map<String, dynamic>?,
   ));
 }
+/// Create a copy of ValidationState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$CreationFailureCopyWith<$Res>? get validationFailure {
+    if (_self.validationFailure == null) {
+    return null;
+  }
 
+  return $CreationFailureCopyWith<$Res>(_self.validationFailure!, (value) {
+    return _then(_self.copyWith(validationFailure: value));
+  });
+}
 }
 
 
@@ -432,7 +444,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Map<String, ValidationResult> validationResults,  bool isValidating,  String? validationMessage,  Failure? validationFailure,  Map<String, dynamic>? visionResultA,  Map<String, dynamic>? visionResultB)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Map<String, ValidationResult> validationResults,  bool isValidating,  String? validationMessage,  CreationFailure? validationFailure,  Map<String, dynamic>? visionResultA,  Map<String, dynamic>? visionResultB)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ValidationState() when $default != null:
 return $default(_that.validationResults,_that.isValidating,_that.validationMessage,_that.validationFailure,_that.visionResultA,_that.visionResultB);case _:
@@ -453,7 +465,7 @@ return $default(_that.validationResults,_that.isValidating,_that.validationMessa
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Map<String, ValidationResult> validationResults,  bool isValidating,  String? validationMessage,  Failure? validationFailure,  Map<String, dynamic>? visionResultA,  Map<String, dynamic>? visionResultB)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Map<String, ValidationResult> validationResults,  bool isValidating,  String? validationMessage,  CreationFailure? validationFailure,  Map<String, dynamic>? visionResultA,  Map<String, dynamic>? visionResultB)  $default,) {final _that = this;
 switch (_that) {
 case _ValidationState():
 return $default(_that.validationResults,_that.isValidating,_that.validationMessage,_that.validationFailure,_that.visionResultA,_that.visionResultB);}
@@ -470,7 +482,7 @@ return $default(_that.validationResults,_that.isValidating,_that.validationMessa
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Map<String, ValidationResult> validationResults,  bool isValidating,  String? validationMessage,  Failure? validationFailure,  Map<String, dynamic>? visionResultA,  Map<String, dynamic>? visionResultB)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Map<String, ValidationResult> validationResults,  bool isValidating,  String? validationMessage,  CreationFailure? validationFailure,  Map<String, dynamic>? visionResultA,  Map<String, dynamic>? visionResultB)?  $default,) {final _that = this;
 switch (_that) {
 case _ValidationState() when $default != null:
 return $default(_that.validationResults,_that.isValidating,_that.validationMessage,_that.validationFailure,_that.visionResultA,_that.visionResultB);case _:
@@ -502,7 +514,7 @@ class _ValidationState extends ValidationState {
 /// Current validation message
 @override final  String? validationMessage;
 /// Current validation failure
-@override final  Failure? validationFailure;
+@override final  CreationFailure? validationFailure;
 /// Vision API results for Box A (for compatibility)
  final  Map<String, dynamic>? _visionResultA;
 /// Vision API results for Box A (for compatibility)
@@ -556,11 +568,11 @@ abstract mixin class _$ValidationStateCopyWith<$Res> implements $ValidationState
   factory _$ValidationStateCopyWith(_ValidationState value, $Res Function(_ValidationState) _then) = __$ValidationStateCopyWithImpl;
 @override @useResult
 $Res call({
- Map<String, ValidationResult> validationResults, bool isValidating, String? validationMessage, Failure? validationFailure, Map<String, dynamic>? visionResultA, Map<String, dynamic>? visionResultB
+ Map<String, ValidationResult> validationResults, bool isValidating, String? validationMessage, CreationFailure? validationFailure, Map<String, dynamic>? visionResultA, Map<String, dynamic>? visionResultB
 });
 
 
-
+@override $CreationFailureCopyWith<$Res>? get validationFailure;
 
 }
 /// @nodoc
@@ -579,13 +591,25 @@ validationResults: null == validationResults ? _self._validationResults : valida
 as Map<String, ValidationResult>,isValidating: null == isValidating ? _self.isValidating : isValidating // ignore: cast_nullable_to_non_nullable
 as bool,validationMessage: freezed == validationMessage ? _self.validationMessage : validationMessage // ignore: cast_nullable_to_non_nullable
 as String?,validationFailure: freezed == validationFailure ? _self.validationFailure : validationFailure // ignore: cast_nullable_to_non_nullable
-as Failure?,visionResultA: freezed == visionResultA ? _self._visionResultA : visionResultA // ignore: cast_nullable_to_non_nullable
+as CreationFailure?,visionResultA: freezed == visionResultA ? _self._visionResultA : visionResultA // ignore: cast_nullable_to_non_nullable
 as Map<String, dynamic>?,visionResultB: freezed == visionResultB ? _self._visionResultB : visionResultB // ignore: cast_nullable_to_non_nullable
 as Map<String, dynamic>?,
   ));
 }
 
+/// Create a copy of ValidationState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$CreationFailureCopyWith<$Res>? get validationFailure {
+    if (_self.validationFailure == null) {
+    return null;
+  }
 
+  return $CreationFailureCopyWith<$Res>(_self.validationFailure!, (value) {
+    return _then(_self.copyWith(validationFailure: value));
+  });
+}
 }
 
 // dart format on

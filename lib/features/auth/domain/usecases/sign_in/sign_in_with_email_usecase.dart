@@ -1,7 +1,7 @@
 // Sign In With Email UseCase
 // Clean Architecture - Domain Layer
 
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter/foundation.dart';
 import '../../entities/auth_user.dart';
 import '../../repositories/i_auth_repository.dart';

@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 
 import '/features/chat/domain/entities/chat.dart';
 import '/features/chat/domain/entities/message.dart';

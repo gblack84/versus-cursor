@@ -22,7 +22,9 @@ _ProfileInfo _$ProfileInfoFromJson(Map<String, dynamic> json) => _ProfileInfo(
   expertise:
       (json['expertise'] as List<dynamic>?)?.map((e) => e as String).toList() ??
       const [],
-  location: _latLngFromJson(json['location'] as Map<String, dynamic>?),
+  location: const LatLngConverter().fromJson(
+    json['location'] as Map<String, dynamic>?,
+  ),
 );
 
 Map<String, dynamic> _$ProfileInfoToJson(_ProfileInfo instance) =>
@@ -36,5 +38,5 @@ Map<String, dynamic> _$ProfileInfoToJson(_ProfileInfo instance) =>
       'language': instance.language,
       'interests': instance.interests,
       'expertise': instance.expertise,
-      'location': _latLngToJson(instance.location),
+      'location': const LatLngConverter().toJson(instance.location),
     };

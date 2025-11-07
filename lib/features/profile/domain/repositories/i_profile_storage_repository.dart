@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import '../failures/profile_failure.dart';
 
 /// Profile Storage Repository 인터페이스 (Clean Architecture v4.0)

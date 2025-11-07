@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import '../failures/voting_failure.dart';
 import '../entities/dialog/vote_expansion_request.dart';
 import '../entities/dialog/weight.dart';

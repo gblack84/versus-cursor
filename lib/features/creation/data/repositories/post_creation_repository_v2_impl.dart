@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fpdart/fpdart.dart';
-import '../../domain/failures/creation_failures.dart';
+import '../../domain/failures/creation_failure.dart';
 import '../../domain/entities/post_creation.dart';
 import '../../domain/entities/post_creation_extensions.dart'; // ✅ Phase 5: Extension Pattern
 import '../../domain/entities/target_audience.dart';
@@ -64,7 +64,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // ====== Creation Operations ======
 
   @override
-  Future<Either<CreateContentFailure, String>> createPost({
+  Future<Either<CreationFailure, String>> createPost({
     required PostCreation post,
     required String eventId, // ✅ Phase 4: UUID for idempotency
   }) async {
@@ -97,23 +97,23 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
       await deleteDraftPost(post.userId);
 
       return right(postId);
-    } on IdempotencyViolation catch (e) {
+    } on IdempotencyViolation catch (_) {
       // User attempted same operation with different eventId (real duplicate)
-      return left(PostCreationRepositoryFailure(
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'create',
-        message: 'Duplicate post creation attempt: ${e.message}',
-        code: 'idempotency_violation',
+        // message:'Duplicate post creation attempt: ${e.message}',
+        // code:'idempotency_violation',
       ));
-    } on FirebaseException catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'create',
-        message: 'Failed to create post: ${e.message}',
-        code: e.code,
+        // message:'Failed to create post: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'create',
-        message: 'Unexpected error during post creation: $e',
+        // message:'Unexpected error during post creation: $e',
       ));
     }
   }
@@ -289,7 +289,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // ====== Update Operations ======
 
   @override
-  Future<Either<CreateContentFailure, Unit>> updatePost({
+  Future<Either<CreationFailure, Unit>> updatePost({
     required String postId,
     required PostCreation post,
     required String eventId, // ✅ Phase 4: UUID for idempotency
@@ -309,31 +309,31 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
         },
       );
       return right(unit);
-    } on IdempotencyViolation catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } on IdempotencyViolation catch (_) {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'update',
         postId: postId,
-        message: 'Duplicate post update attempt: ${e.message}',
-        code: 'idempotency_violation',
+        // message:'Duplicate post update attempt: ${e.message}',
+        // code:'idempotency_violation',
       ));
-    } on FirebaseException catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'update',
         postId: postId,
-        message: 'Failed to update post: ${e.message}',
-        code: e.code,
+        // message:'Failed to update post: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'update',
         postId: postId,
-        message: 'Unexpected error during post update: $e',
+        // message:'Unexpected error during post update: $e',
       ));
     }
   }
 
   @override
-  Future<Either<CreateContentFailure, Unit>> updatePostPartial({
+  Future<Either<CreationFailure, Unit>> updatePostPartial({
     required String postId,
     required Map<String, dynamic> data,
   }) async {
@@ -341,18 +341,18 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
       // ✅ Phase 5: Direct Firestore update
       await _postsCollection.doc(postId).update(data);
       return right(unit);
-    } on FirebaseException catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'update',
         postId: postId,
-        message: 'Failed to update post partial: ${e.message}',
-        code: e.code,
+        // message:'Failed to update post partial: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'update',
         postId: postId,
-        message: 'Unexpected error during partial update: $e',
+        // message:'Unexpected error during partial update: $e',
       ));
     }
   }
@@ -365,7 +365,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // ====== Delete Operations ======
 
   @override
-  Future<Either<CreateContentFailure, Unit>> deletePost({
+  Future<Either<CreationFailure, Unit>> deletePost({
     required String postId,
     required String eventId, // ✅ Phase 4: UUID for idempotency
   }) async {
@@ -385,25 +385,25 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
         },
       );
       return right(unit);
-    } on IdempotencyViolation catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } on IdempotencyViolation catch (_) {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'delete',
         postId: postId,
-        message: 'Duplicate post delete attempt: ${e.message}',
-        code: 'idempotency_violation',
+        // message:'Duplicate post delete attempt: ${e.message}',
+        // code:'idempotency_violation',
       ));
-    } on FirebaseException catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'delete',
         postId: postId,
-        message: 'Failed to delete post: ${e.message}',
-        code: e.code,
+        // message:'Failed to delete post: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'delete',
         postId: postId,
-        message: 'Unexpected error during post deletion: $e',
+        // message:'Unexpected error during post deletion: $e',
       ));
     }
   }
@@ -411,7 +411,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // ====== Media Operations ======
 
   @override
-  Future<Either<CreateContentFailure, Unit>> uploadPostMedia({
+  Future<Either<CreationFailure, Unit>> uploadPostMedia({
     required String postId,
     required String mediaUrl,
     required String mediaType,
@@ -441,31 +441,31 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
         },
       );
       return right(unit);
-    } on IdempotencyViolation catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } on IdempotencyViolation catch (_) {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'uploadMedia',
         postId: postId,
-        message: 'Duplicate media upload attempt: ${e.message}',
-        code: 'idempotency_violation',
+        // message:'Duplicate media upload attempt: ${e.message}',
+        // code:'idempotency_violation',
       ));
-    } on FirebaseException catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'uploadMedia',
         postId: postId,
-        message: 'Failed to upload media: ${e.message}',
-        code: e.code,
+        // message:'Failed to upload media: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'uploadMedia',
         postId: postId,
-        message: 'Unexpected error during media upload: $e',
+        // message:'Unexpected error during media upload: $e',
       ));
     }
   }
 
   @override
-  Future<Either<CreateContentFailure, Unit>> deletePostMedia({
+  Future<Either<CreationFailure, Unit>> deletePostMedia({
     required String postId,
     required String mediaUrl,
     String? side,
@@ -473,10 +473,10 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     try {
       final doc = await _postsCollection.doc(postId).get();
       if (!doc.exists) {
-        return left(PostCreationRepositoryFailure(
+        return left(CreationFailure.postCreationRepositoryFailed(
           operation: 'deleteMedia',
           postId: postId,
-          message: 'Post not found',
+          // message:'Post not found',
         ));
       }
 
@@ -494,18 +494,18 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
         });
       }
       return right(unit);
-    } on FirebaseException catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'deleteMedia',
         postId: postId,
-        message: 'Failed to delete media: ${e.message}',
-        code: e.code,
+        // message:'Failed to delete media: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'deleteMedia',
         postId: postId,
-        message: 'Unexpected error during media deletion: $e',
+        // message:'Unexpected error during media deletion: $e',
       ));
     }
   }
@@ -513,7 +513,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // ====== Status Operations ======
 
   @override
-  Future<Either<CreateContentFailure, Unit>> updatePostStatus({
+  Future<Either<CreationFailure, Unit>> updatePostStatus({
     required String postId,
     required String status,
     required String eventId, // ✅ Phase 4: UUID for idempotency
@@ -534,31 +534,31 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
         },
       );
       return right(unit);
-    } on IdempotencyViolation catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } on IdempotencyViolation catch (_) {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'updateStatus',
         postId: postId,
-        message: 'Duplicate status update attempt: ${e.message}',
-        code: 'idempotency_violation',
+        // message:'Duplicate status update attempt: ${e.message}',
+        // code:'idempotency_violation',
       ));
-    } on FirebaseException catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'updateStatus',
         postId: postId,
-        message: 'Failed to update status: ${e.message}',
-        code: e.code,
+        // message:'Failed to update status: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'updateStatus',
         postId: postId,
-        message: 'Unexpected error during status update: $e',
+        // message:'Unexpected error during status update: $e',
       ));
     }
   }
 
   @override
-  Future<Either<CreateContentFailure, Unit>> markPostAsProcessed({
+  Future<Either<CreationFailure, Unit>> markPostAsProcessed({
     required String postId,
     DateTime? processedAt,
     required String eventId, // ✅ Phase 4: UUID for idempotency
@@ -579,25 +579,25 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
         },
       );
       return right(unit);
-    } on IdempotencyViolation catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } on IdempotencyViolation catch (_) {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'markProcessed',
         postId: postId,
-        message: 'Duplicate mark processed attempt: ${e.message}',
-        code: 'idempotency_violation',
+        // message:'Duplicate mark processed attempt: ${e.message}',
+        // code:'idempotency_violation',
       ));
-    } on FirebaseException catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'markProcessed',
         postId: postId,
-        message: 'Failed to mark as processed: ${e.message}',
-        code: e.code,
+        // message:'Failed to mark as processed: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'markProcessed',
         postId: postId,
-        message: 'Unexpected error marking as processed: $e',
+        // message:'Unexpected error marking as processed: $e',
       ));
     }
   }
@@ -606,7 +606,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // Note: getPostBundle removed - spans multiple features
 
   @override
-  Future<Either<CreateContentFailure, Option<PostCreation>>> getPost(String postId) async {
+  Future<Either<CreationFailure, Option<PostCreation>>> getPost(String postId) async {
     try {
       final doc = await _postsCollection.doc(postId).get();
       if (!doc.exists) {
@@ -616,18 +616,18 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
       // ✅ Phase 5: Use Extension
       final post = PostCreationFirestore.fromFirestore(doc);
       return right(some(post));
-    } on FirebaseException catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'getPost',
         postId: postId,
-        message: 'Failed to get post: ${e.message}',
-        code: e.code,
+        // message:'Failed to get post: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'getPost',
         postId: postId,
-        message: 'Unexpected error while getting post: $e',
+        // message:'Unexpected error while getting post: $e',
       ));
     }
   }
@@ -639,32 +639,32 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // Note: watchPostBundle removed - spans multiple features
 
   @override
-  Stream<Either<CreateContentFailure, PostCreation>> watchPost(String postId) {
+  Stream<Either<CreationFailure, PostCreation>> watchPost(String postId) {
     return _postsCollection.doc(postId).snapshots().map((doc) {
       try {
         if (!doc.exists) {
-          return left(PostCreationRepositoryFailure(
+          return left(CreationFailure.postCreationRepositoryFailed(
             operation: 'watchPost',
             postId: postId,
-            message: 'Post not found',
-          ) as CreateContentFailure);
+            // message:'Post not found',
+          ));
         }
         // ✅ Phase 5: Use Extension
         final post = PostCreationFirestore.fromFirestore(doc);
         return right(post);
-      } on FirebaseException catch (e) {
-        return left(PostCreationRepositoryFailure(
+      } on FirebaseException {
+        return left(CreationFailure.postCreationRepositoryFailed(
           operation: 'watchPost',
           postId: postId,
-          message: 'Failed to watch post: ${e.message}',
-          code: e.code,
-        ) as CreateContentFailure);
-      } catch (e) {
-        return left(PostCreationRepositoryFailure(
+          // message:'Failed to watch post: ${e.message}',
+          // code:e.code,
+        ));
+      } catch (_) {
+        return left(CreationFailure.postCreationRepositoryFailed(
           operation: 'watchPost',
           postId: postId,
-          message: 'Unexpected error while watching post: $e',
-        ) as CreateContentFailure);
+          // message:'Unexpected error while watching post: $e',
+        ));
       }
     });
   }
@@ -675,7 +675,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // ====== User's Posts ======
 
   @override
-  Stream<Either<CreateContentFailure, List<PostCreation>>> getUserCreatedPosts({
+  Stream<Either<CreationFailure, List<PostCreation>>> getUserCreatedPosts({
     required String userId,
     int limit = -1,
   }) {
@@ -694,39 +694,39 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
             .map((doc) => PostCreationFirestore.fromFirestore(doc))
             .toList();
         return right(posts);
-      } on FirebaseException catch (e) {
-        return left(PostCreationRepositoryFailure(
+      } on FirebaseException {
+        return left(CreationFailure.postCreationRepositoryFailed(
           operation: 'getUserCreatedPosts',
-          message: 'Failed to get user posts: ${e.message}',
-          code: e.code,
-        ) as CreateContentFailure);
-      } catch (e) {
-        return left(PostCreationRepositoryFailure(
+          // message:'Failed to get user posts: ${e.message}',
+          // code:e.code,
+        ));
+      } catch (_) {
+        return left(CreationFailure.postCreationRepositoryFailed(
           operation: 'getUserCreatedPosts',
-          message: 'Unexpected error while getting user posts: $e',
-        ) as CreateContentFailure);
+          // message:'Unexpected error while getting user posts: $e',
+        ));
       }
     });
   }
 
   @override
-  Future<Either<CreateContentFailure, int>> getUserCreatedPostsCount(String userId) async {
+  Future<Either<CreationFailure, int>> getUserCreatedPostsCount(String userId) async {
     try {
       final snapshot = await _postsCollection
           .where('userid', isEqualTo: userId)
           .count()
           .get();
       return right(snapshot.count ?? 0);
-    } on FirebaseException catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'getUserCreatedPostsCount',
-        message: 'Failed to get user posts count: ${e.message}',
-        code: e.code,
+        // message:'Failed to get user posts count: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'getUserCreatedPostsCount',
-        message: 'Unexpected error while getting user posts count: $e',
+        // message:'Unexpected error while getting user posts count: $e',
       ));
     }
   }
@@ -734,20 +734,18 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // ====== Validation ======
 
   @override
-  Future<Either<CreationValidationFailure, Unit>> validatePostData({
+  Future<Either<CreationFailure, Unit>> validatePostData({
     required PostCreation post,
   }) async {
     try {
       // Basic validation
       if (post.title.isEmpty) {
-        return left(CreationValidationFailure(
-          'Title cannot be empty',
+        return left(CreationFailure.creationValidationFailed(
           fieldErrors: {'title': 'Title is required'},
         ));
       }
       if (post.userId.isEmpty) {
-        return left(CreationValidationFailure(
-          'User ID cannot be empty',
+        return left(CreationFailure.creationValidationFailed(
           fieldErrors: {'userId': 'User ID is required'},
         ));
       }
@@ -761,23 +759,21 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
                          (post.optionB.videoUrls?.isNotEmpty ?? false);
 
       if (!hasOptionA && !hasOptionB) {
-        return left(CreationValidationFailure(
-          'At least one option must have content',
+        return left(CreationFailure.creationValidationFailed(
           fieldErrors: {'options': 'Both options are empty'},
         ));
       }
 
       return right(unit);
-    } catch (e) {
-      return left(CreationValidationFailure(
-        'Unexpected validation error: $e',
-        fieldErrors: {'unknown': e.toString()},
+    } catch (_) {
+      return left(CreationFailure.creationValidationFailed(
+        fieldErrors: {'unknown': 'Unexpected validation error'},
       ));
     }
   }
 
   @override
-  Future<Either<CreateContentFailure, Unit>> canUserCreatePost(String userId) async {
+  Future<Either<CreationFailure, Unit>> canUserCreatePost(String userId) async {
     try {
       // Check rate limiting (e.g., max 10 posts per day)
       final now = DateTime.now();
@@ -791,23 +787,23 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
 
       final count = snapshot.count ?? 0;
       if (count >= 10) {
-        return left(PostCreationRepositoryFailure(
+        return left(CreationFailure.postCreationRepositoryFailed(
           operation: 'canUserCreatePost',
-          message: 'User has reached daily post limit (10 posts per day)',
+          // message:'User has reached daily post limit (10 posts per day)',
         ));
       }
 
       return right(unit);
-    } on FirebaseException catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'canUserCreatePost',
-        message: 'Failed to check user post limit: ${e.message}',
-        code: e.code,
+        // message:'Failed to check user post limit: ${e.message}',
+        // code:e.code,
       ));
-    } catch (e) {
-      return left(PostCreationRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.postCreationRepositoryFailed(
         operation: 'canUserCreatePost',
-        message: 'Unexpected error while checking post limit: $e',
+        // message:'Unexpected error while checking post limit: $e',
       ));
     }
   }
@@ -903,7 +899,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // ====== Additional Command Operations (from ICreationCommandRepository) ======
 
   @override
-  Future<Either<CreateContentFailure, String>> createContent(
+  Future<Either<CreationFailure, String>> createContent(
     PostCreation post, {
     required String eventId, // ✅ Phase 4: UUID for idempotency
   }) async {
@@ -912,7 +908,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   }
 
   @override
-  Future<Either<CreateContentFailure, Unit>> updateContent(
+  Future<Either<CreationFailure, Unit>> updateContent(
     String contentId,
     PostCreation post, {
     required String eventId, // ✅ Phase 4: UUID for idempotency
@@ -922,7 +918,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   }
 
   @override
-  Future<Either<CreateContentFailure, Unit>> deleteContent(
+  Future<Either<CreationFailure, Unit>> deleteContent(
     String contentId, {
     required String eventId, // ✅ Phase 4: UUID for idempotency
   }) async {
@@ -930,7 +926,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   }
 
   @override
-  Future<Either<CreateContentFailure, Unit>> publishContent(
+  Future<Either<CreationFailure, Unit>> publishContent(
     String contentId, {
     required String eventId, // ✅ Phase 4: UUID for idempotency
   }) async {
@@ -938,7 +934,7 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   }
 
   @override
-  Future<Either<CreateContentFailure, Unit>> saveDraft(
+  Future<Either<CreationFailure, Unit>> saveDraft(
     String contentId,
     PostCreation post, {
     required String eventId, // ✅ Phase 4: UUID for idempotency

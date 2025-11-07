@@ -1,7 +1,7 @@
 // Sign Out UseCase
 // Clean Architecture - Domain Layer
 
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter/foundation.dart';
 import '../../repositories/i_auth_repository.dart';
 import '../../failures/auth_failure.dart';

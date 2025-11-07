@@ -18,11 +18,11 @@ mixin _$PostVoting {
 // Core Identity
  String get postId;// Foreign key to PostCore.id
 // Timing Fields
-@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) DateTime? get voteStartTime;@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) DateTime? get voteEndTime;@JsonKey(fromJson: _voteStatusFromJson, toJson: _voteStatusToJson) VoteStatus get voteStatus; bool get voteCompleted;@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) DateTime? get voteCompletedAt;@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) DateTime? get voteCancelledAt; String? get voteCancelledReason;@JsonKey(fromJson: _durationFromJson, toJson: _durationToJson) Duration get voteTimeout;// Vote Counts
+@TimestampConverter() DateTime? get voteStartTime;@TimestampConverter() DateTime? get voteEndTime;@VoteStatusConverter() VoteStatus get voteStatus; bool get voteCompleted;@TimestampConverter() DateTime? get voteCompletedAt;@TimestampConverter() DateTime? get voteCancelledAt; String? get voteCancelledReason;@DurationConverter() Duration get voteTimeout;// Vote Counts
  int get votesA; int get votesB; List<String> get votedUserIdsA; List<String> get votedUserIdsB;// Display Values (for animations/privacy)
  int? get displayVotesA;// May differ from actual for animation
  int? get displayVotesB;// Notification System
- bool get notificationsSent;@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) DateTime? get notificationsSentAt;// Expansion System
+ bool get notificationsSent;@TimestampConverter() DateTime? get notificationsSentAt;// Expansion System
  int get expansionPointsUsed; int get expandedUserCount; String get expansionStatus;
 /// Create a copy of PostVoting
 /// with the given fields replaced by the non-null parameter values.
@@ -56,7 +56,7 @@ abstract mixin class $PostVotingCopyWith<$Res>  {
   factory $PostVotingCopyWith(PostVoting value, $Res Function(PostVoting) _then) = _$PostVotingCopyWithImpl;
 @useResult
 $Res call({
- String postId,@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) DateTime? voteStartTime,@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) DateTime? voteEndTime,@JsonKey(fromJson: _voteStatusFromJson, toJson: _voteStatusToJson) VoteStatus voteStatus, bool voteCompleted,@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) DateTime? voteCompletedAt,@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) DateTime? voteCancelledAt, String? voteCancelledReason,@JsonKey(fromJson: _durationFromJson, toJson: _durationToJson) Duration voteTimeout, int votesA, int votesB, List<String> votedUserIdsA, List<String> votedUserIdsB, int? displayVotesA, int? displayVotesB, bool notificationsSent,@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) DateTime? notificationsSentAt, int expansionPointsUsed, int expandedUserCount, String expansionStatus
+ String postId,@TimestampConverter() DateTime? voteStartTime,@TimestampConverter() DateTime? voteEndTime,@VoteStatusConverter() VoteStatus voteStatus, bool voteCompleted,@TimestampConverter() DateTime? voteCompletedAt,@TimestampConverter() DateTime? voteCancelledAt, String? voteCancelledReason,@DurationConverter() Duration voteTimeout, int votesA, int votesB, List<String> votedUserIdsA, List<String> votedUserIdsB, int? displayVotesA, int? displayVotesB, bool notificationsSent,@TimestampConverter() DateTime? notificationsSentAt, int expansionPointsUsed, int expandedUserCount, String expansionStatus
 });
 
 
@@ -177,7 +177,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String postId, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)  DateTime? voteStartTime, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)  DateTime? voteEndTime, @JsonKey(fromJson: _voteStatusFromJson, toJson: _voteStatusToJson)  VoteStatus voteStatus,  bool voteCompleted, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)  DateTime? voteCompletedAt, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)  DateTime? voteCancelledAt,  String? voteCancelledReason, @JsonKey(fromJson: _durationFromJson, toJson: _durationToJson)  Duration voteTimeout,  int votesA,  int votesB,  List<String> votedUserIdsA,  List<String> votedUserIdsB,  int? displayVotesA,  int? displayVotesB,  bool notificationsSent, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)  DateTime? notificationsSentAt,  int expansionPointsUsed,  int expandedUserCount,  String expansionStatus)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String postId, @TimestampConverter()  DateTime? voteStartTime, @TimestampConverter()  DateTime? voteEndTime, @VoteStatusConverter()  VoteStatus voteStatus,  bool voteCompleted, @TimestampConverter()  DateTime? voteCompletedAt, @TimestampConverter()  DateTime? voteCancelledAt,  String? voteCancelledReason, @DurationConverter()  Duration voteTimeout,  int votesA,  int votesB,  List<String> votedUserIdsA,  List<String> votedUserIdsB,  int? displayVotesA,  int? displayVotesB,  bool notificationsSent, @TimestampConverter()  DateTime? notificationsSentAt,  int expansionPointsUsed,  int expandedUserCount,  String expansionStatus)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PostVoting() when $default != null:
 return $default(_that.postId,_that.voteStartTime,_that.voteEndTime,_that.voteStatus,_that.voteCompleted,_that.voteCompletedAt,_that.voteCancelledAt,_that.voteCancelledReason,_that.voteTimeout,_that.votesA,_that.votesB,_that.votedUserIdsA,_that.votedUserIdsB,_that.displayVotesA,_that.displayVotesB,_that.notificationsSent,_that.notificationsSentAt,_that.expansionPointsUsed,_that.expandedUserCount,_that.expansionStatus);case _:
@@ -198,7 +198,7 @@ return $default(_that.postId,_that.voteStartTime,_that.voteEndTime,_that.voteSta
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String postId, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)  DateTime? voteStartTime, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)  DateTime? voteEndTime, @JsonKey(fromJson: _voteStatusFromJson, toJson: _voteStatusToJson)  VoteStatus voteStatus,  bool voteCompleted, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)  DateTime? voteCompletedAt, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)  DateTime? voteCancelledAt,  String? voteCancelledReason, @JsonKey(fromJson: _durationFromJson, toJson: _durationToJson)  Duration voteTimeout,  int votesA,  int votesB,  List<String> votedUserIdsA,  List<String> votedUserIdsB,  int? displayVotesA,  int? displayVotesB,  bool notificationsSent, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)  DateTime? notificationsSentAt,  int expansionPointsUsed,  int expandedUserCount,  String expansionStatus)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String postId, @TimestampConverter()  DateTime? voteStartTime, @TimestampConverter()  DateTime? voteEndTime, @VoteStatusConverter()  VoteStatus voteStatus,  bool voteCompleted, @TimestampConverter()  DateTime? voteCompletedAt, @TimestampConverter()  DateTime? voteCancelledAt,  String? voteCancelledReason, @DurationConverter()  Duration voteTimeout,  int votesA,  int votesB,  List<String> votedUserIdsA,  List<String> votedUserIdsB,  int? displayVotesA,  int? displayVotesB,  bool notificationsSent, @TimestampConverter()  DateTime? notificationsSentAt,  int expansionPointsUsed,  int expandedUserCount,  String expansionStatus)  $default,) {final _that = this;
 switch (_that) {
 case _PostVoting():
 return $default(_that.postId,_that.voteStartTime,_that.voteEndTime,_that.voteStatus,_that.voteCompleted,_that.voteCompletedAt,_that.voteCancelledAt,_that.voteCancelledReason,_that.voteTimeout,_that.votesA,_that.votesB,_that.votedUserIdsA,_that.votedUserIdsB,_that.displayVotesA,_that.displayVotesB,_that.notificationsSent,_that.notificationsSentAt,_that.expansionPointsUsed,_that.expandedUserCount,_that.expansionStatus);}
@@ -215,7 +215,7 @@ return $default(_that.postId,_that.voteStartTime,_that.voteEndTime,_that.voteSta
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String postId, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)  DateTime? voteStartTime, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)  DateTime? voteEndTime, @JsonKey(fromJson: _voteStatusFromJson, toJson: _voteStatusToJson)  VoteStatus voteStatus,  bool voteCompleted, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)  DateTime? voteCompletedAt, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)  DateTime? voteCancelledAt,  String? voteCancelledReason, @JsonKey(fromJson: _durationFromJson, toJson: _durationToJson)  Duration voteTimeout,  int votesA,  int votesB,  List<String> votedUserIdsA,  List<String> votedUserIdsB,  int? displayVotesA,  int? displayVotesB,  bool notificationsSent, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)  DateTime? notificationsSentAt,  int expansionPointsUsed,  int expandedUserCount,  String expansionStatus)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String postId, @TimestampConverter()  DateTime? voteStartTime, @TimestampConverter()  DateTime? voteEndTime, @VoteStatusConverter()  VoteStatus voteStatus,  bool voteCompleted, @TimestampConverter()  DateTime? voteCompletedAt, @TimestampConverter()  DateTime? voteCancelledAt,  String? voteCancelledReason, @DurationConverter()  Duration voteTimeout,  int votesA,  int votesB,  List<String> votedUserIdsA,  List<String> votedUserIdsB,  int? displayVotesA,  int? displayVotesB,  bool notificationsSent, @TimestampConverter()  DateTime? notificationsSentAt,  int expansionPointsUsed,  int expandedUserCount,  String expansionStatus)?  $default,) {final _that = this;
 switch (_that) {
 case _PostVoting() when $default != null:
 return $default(_that.postId,_that.voteStartTime,_that.voteEndTime,_that.voteStatus,_that.voteCompleted,_that.voteCompletedAt,_that.voteCancelledAt,_that.voteCancelledReason,_that.voteTimeout,_that.votesA,_that.votesB,_that.votedUserIdsA,_that.votedUserIdsB,_that.displayVotesA,_that.displayVotesB,_that.notificationsSent,_that.notificationsSentAt,_that.expansionPointsUsed,_that.expandedUserCount,_that.expansionStatus);case _:
@@ -230,21 +230,21 @@ return $default(_that.postId,_that.voteStartTime,_that.voteEndTime,_that.voteSta
 @JsonSerializable()
 
 class _PostVoting extends PostVoting {
-  const _PostVoting({required this.postId, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) this.voteStartTime, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) this.voteEndTime, @JsonKey(fromJson: _voteStatusFromJson, toJson: _voteStatusToJson) this.voteStatus = VoteStatus.pending, this.voteCompleted = false, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) this.voteCompletedAt, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) this.voteCancelledAt, this.voteCancelledReason, @JsonKey(fromJson: _durationFromJson, toJson: _durationToJson) this.voteTimeout = const Duration(minutes: 10), this.votesA = 0, this.votesB = 0, final  List<String> votedUserIdsA = const [], final  List<String> votedUserIdsB = const [], this.displayVotesA, this.displayVotesB, this.notificationsSent = false, @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) this.notificationsSentAt, this.expansionPointsUsed = 0, this.expandedUserCount = 0, this.expansionStatus = 'none'}): _votedUserIdsA = votedUserIdsA,_votedUserIdsB = votedUserIdsB,super._();
+  const _PostVoting({required this.postId, @TimestampConverter() this.voteStartTime, @TimestampConverter() this.voteEndTime, @VoteStatusConverter() this.voteStatus = VoteStatus.pending, this.voteCompleted = false, @TimestampConverter() this.voteCompletedAt, @TimestampConverter() this.voteCancelledAt, this.voteCancelledReason, @DurationConverter() this.voteTimeout = const Duration(minutes: 10), this.votesA = 0, this.votesB = 0, final  List<String> votedUserIdsA = const [], final  List<String> votedUserIdsB = const [], this.displayVotesA, this.displayVotesB, this.notificationsSent = false, @TimestampConverter() this.notificationsSentAt, this.expansionPointsUsed = 0, this.expandedUserCount = 0, this.expansionStatus = 'none'}): _votedUserIdsA = votedUserIdsA,_votedUserIdsB = votedUserIdsB,super._();
   factory _PostVoting.fromJson(Map<String, dynamic> json) => _$PostVotingFromJson(json);
 
 // Core Identity
 @override final  String postId;
 // Foreign key to PostCore.id
 // Timing Fields
-@override@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) final  DateTime? voteStartTime;
-@override@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) final  DateTime? voteEndTime;
-@override@JsonKey(fromJson: _voteStatusFromJson, toJson: _voteStatusToJson) final  VoteStatus voteStatus;
+@override@TimestampConverter() final  DateTime? voteStartTime;
+@override@TimestampConverter() final  DateTime? voteEndTime;
+@override@JsonKey()@VoteStatusConverter() final  VoteStatus voteStatus;
 @override@JsonKey() final  bool voteCompleted;
-@override@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) final  DateTime? voteCompletedAt;
-@override@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) final  DateTime? voteCancelledAt;
+@override@TimestampConverter() final  DateTime? voteCompletedAt;
+@override@TimestampConverter() final  DateTime? voteCancelledAt;
 @override final  String? voteCancelledReason;
-@override@JsonKey(fromJson: _durationFromJson, toJson: _durationToJson) final  Duration voteTimeout;
+@override@JsonKey()@DurationConverter() final  Duration voteTimeout;
 // Vote Counts
 @override@JsonKey() final  int votesA;
 @override@JsonKey() final  int votesB;
@@ -268,7 +268,7 @@ class _PostVoting extends PostVoting {
 @override final  int? displayVotesB;
 // Notification System
 @override@JsonKey() final  bool notificationsSent;
-@override@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) final  DateTime? notificationsSentAt;
+@override@TimestampConverter() final  DateTime? notificationsSentAt;
 // Expansion System
 @override@JsonKey() final  int expansionPointsUsed;
 @override@JsonKey() final  int expandedUserCount;
@@ -307,7 +307,7 @@ abstract mixin class _$PostVotingCopyWith<$Res> implements $PostVotingCopyWith<$
   factory _$PostVotingCopyWith(_PostVoting value, $Res Function(_PostVoting) _then) = __$PostVotingCopyWithImpl;
 @override @useResult
 $Res call({
- String postId,@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) DateTime? voteStartTime,@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) DateTime? voteEndTime,@JsonKey(fromJson: _voteStatusFromJson, toJson: _voteStatusToJson) VoteStatus voteStatus, bool voteCompleted,@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) DateTime? voteCompletedAt,@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) DateTime? voteCancelledAt, String? voteCancelledReason,@JsonKey(fromJson: _durationFromJson, toJson: _durationToJson) Duration voteTimeout, int votesA, int votesB, List<String> votedUserIdsA, List<String> votedUserIdsB, int? displayVotesA, int? displayVotesB, bool notificationsSent,@JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp) DateTime? notificationsSentAt, int expansionPointsUsed, int expandedUserCount, String expansionStatus
+ String postId,@TimestampConverter() DateTime? voteStartTime,@TimestampConverter() DateTime? voteEndTime,@VoteStatusConverter() VoteStatus voteStatus, bool voteCompleted,@TimestampConverter() DateTime? voteCompletedAt,@TimestampConverter() DateTime? voteCancelledAt, String? voteCancelledReason,@DurationConverter() Duration voteTimeout, int votesA, int votesB, List<String> votedUserIdsA, List<String> votedUserIdsB, int? displayVotesA, int? displayVotesB, bool notificationsSent,@TimestampConverter() DateTime? notificationsSentAt, int expansionPointsUsed, int expandedUserCount, String expansionStatus
 });
 
 

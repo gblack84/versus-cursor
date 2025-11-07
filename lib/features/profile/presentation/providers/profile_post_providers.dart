@@ -1,67 +1,100 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '/features/post/domain/models/post_display.dart';
-import '/features/post/domain/models/post_display_extensions.dart';
+import '/app/di.dart';
+import '../../domain/repositories/i_profile_post_repository.dart';
+import '../../domain/entities/user_post_item.dart';
 
 part 'profile_post_providers.g.dart';
 
-/// Profile Feature 전용: 사용자 게시물 스트림 Provider
+// ========================================
+// Profile Post Providers (Phase 6.5)
+// ========================================
+//
+// **Feature 독립성 원칙** (2025-01-07 업데이트):
+// - ✅ Post Feature 의존성 완전 제거 (PostDisplay → UserPostItem)
+// - ✅ Repository 패턴 도입 (직접 Firestore 쿼리 → Repository)
+// - ✅ Clean Architecture 준수 (Domain → Data → Infrastructure)
+// - ✅ "내 게시물" 관리 책임을 Profile Feature가 담당
+//
+// **Riverpod 3.x 패턴**:
+// - @riverpod 코드 생성
+// - StreamProvider.autoDispose.family 자동 생성
+// - GetIt DI 연동
+
+/// ProfilePostRepository Provider (GetIt Wrapper)
 ///
-/// **Architecture**: Feature-First - Profile Feature 자체 Provider
-/// - ✅ Post Feature 의존성 제거 (Firebase 직접 쿼리)
-/// - ✅ Riverpod 2.x StreamProvider.autoDispose.family
-/// - ✅ 실시간 동기화 (Firestore Stream)
+/// **DI 패턴**:
+/// - GetIt에 등록된 IProfilePostRepository 인스턴스 반환
+/// - Singleton으로 관리
+@riverpod
+IProfilePostRepository profilePostRepository(Ref ref) {
+  return getIt<IProfilePostRepository>();
+}
+
+/// 내 게시물 목록 Stream Provider
+///
+/// **사용법**:
+/// ```dart
+/// final postsAsync = ref.watch(myPostsStreamProvider(userId));
+///
+/// postsAsync.when(
+///   data: (posts) => ListView.builder(...),
+///   loading: () => CircularProgressIndicator(),
+///   error: (error, stack) => Text('Error: $error'),
+/// );
+/// ```
+///
+/// **특징**:
+/// - StreamProvider.autoDispose.family 자동 생성
+/// - userId 파라미터로 사용자별 게시물 조회
+/// - Either → List 변환으로 UI 친화적
+/// - 에러 시 빈 리스트 반환 (UI에서 AsyncValue.error로 처리)
+///
+/// **실시간 동기화**:
+/// - Firestore snapshots() 사용
+/// - 게시물 생성/수정/삭제 시 자동 업데이트
+///
+/// **자동 dispose**:
+/// - Widget이 unmount되면 자동으로 구독 해제
+/// - 메모리 누수 방지
+///
+/// **vs 이전 구현**:
+/// - Before: PostDisplay (20+ fields) + Post Feature 의존
+/// - After: UserPostItem (5 fields) + Repository 패턴
+@riverpod
+Stream<List<UserPostItem>> myPostsStream(
+  Ref ref,
+  String userId,
+) {
+  final repository = ref.watch(profilePostRepositoryProvider);
+
+  return repository.watchMyPosts(userId).map(
+        (either) => either.fold(
+          (failure) {
+            // 에러 발생 시 빈 리스트 반환
+            // UI에서는 AsyncValue.error로 처리됨
+            return <UserPostItem>[];
+          },
+          (posts) => posts,
+        ),
+      );
+}
+
+/// Profile Feature 전용: 프로필 페이지 최근 게시물 (제한된 개수)
 ///
 /// **사용처**:
 /// - ProfilePageWidget: 프로필 페이지에서 최근 게시물 5개 표시
 ///
-/// @param userId - 조회할 사용자 ID
-/// @param limit - 조회할 게시물 최대 개수 (default: 5)
-/// @returns Stream<List<PostDisplay>> - 실시간 게시물 목록
+/// **특징**:
+/// - myPostsStream의 결과를 limit 개수만큼 제한
+/// - UI 최적화를 위한 Provider
 @riverpod
-Stream<List<PostDisplay>> profileUserPostsStream(
+Stream<List<UserPostItem>> profileUserPostsStream(
   Ref ref,
   String userId, {
   int limit = 5,
-}) async* {
-  final firestore = FirebaseFirestore.instance;
-
-  // Firestore Query: userId로 필터링, 최신순 정렬, 최대 limit개
-  final snapshot = firestore
-      .collection('posts')
-      .where('userId', isEqualTo: userId)
-      .orderBy('createdAt', descending: true)
-      .limit(limit)
-      .snapshots();
-
-  // Stream 변환: QuerySnapshot → List<PostDisplay>
-  await for (final data in snapshot) {
-    final posts = data.docs
-        .map((doc) => PostDisplayFirestore.fromFirestore(doc))
-        .toList();
-    yield posts;
-  }
-}
-
-/// Profile Feature 전용: 사용자 게시물 개수 조회
-///
-/// **사용처**:
-/// - 프로필 통계 표시
-///
-/// @param userId - 조회할 사용자 ID
-/// @returns Future<int> - 사용자 게시물 총 개수
-@riverpod
-Future<int> profileUserPostsCount(
-  Ref ref,
-  String userId,
-) async {
-  final firestore = FirebaseFirestore.instance;
-
-  final snapshot = await firestore
-      .collection('posts')
-      .where('userId', isEqualTo: userId)
-      .count()
-      .get();
-
-  return snapshot.count ?? 0;
+}) {
+  // myPostsStreamProvider로부터 Stream을 받아서 limit 적용
+  return myPostsStream(ref, userId).map(
+    (posts) => posts.take(limit).toList(),
+  );
 }

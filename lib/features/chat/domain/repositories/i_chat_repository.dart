@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 
 import '../entities/chat.dart';
 import '../entities/message.dart';

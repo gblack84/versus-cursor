@@ -1,7 +1,7 @@
 // Auth Repository Interface
 // Clean Architecture - Domain Layer Interface
 
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 
 import '../entities/auth_user.dart';
 import '../failures/auth_failure.dart';

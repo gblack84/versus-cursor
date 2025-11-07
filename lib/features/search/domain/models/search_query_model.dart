@@ -1,44 +1,31 @@
-import 'package:equatable/equatable.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'search_filter_model.dart';
+
+part 'search_query_model.freezed.dart';
+part 'search_query_model.g.dart';
 
 /// Search Query Model
 ///
 /// Encapsulates all search request parameters
 ///
-/// **Current Status**: Basic structure (2025-01-20)
-/// - Core fields defined
-/// - Serialization pending
-class SearchQuery extends Equatable {
-  final String query;
-  final SearchFilter? filter;
-  final int page;
-  final int limit;
-
-  const SearchQuery({
-    required this.query,
-    this.filter,
-    this.page = 0,
-    this.limit = 20,
-  });
-
-  // TODO: Add JSON serialization
-  // Map<String, dynamic> toJson() {}
-  // factory SearchQuery.fromJson(Map<String, dynamic> json) {}
-
-  SearchQuery copyWith({
-    String? query,
+/// **Clean Architecture v4.0 - Freezed Pattern**:
+/// - Freezed로 자동 생성되는 불변 모델
+/// - JSON serialization 자동 생성
+/// - copyWith, ==, hashCode 자동 구현
+///
+/// **Migration Status**: Migrated to Freezed (2025-11-07)
+/// - ✅ Equatable 제거
+/// - ✅ JSON serialization 추가
+/// - ✅ Immutable pattern
+@freezed
+sealed class SearchQuery with _$SearchQuery {
+  const factory SearchQuery({
+    required String query,
     SearchFilter? filter,
-    int? page,
-    int? limit,
-  }) {
-    return SearchQuery(
-      query: query ?? this.query,
-      filter: filter ?? this.filter,
-      page: page ?? this.page,
-      limit: limit ?? this.limit,
-    );
-  }
+    @Default(0) int page,
+    @Default(20) int limit,
+  }) = _SearchQuery;
 
-  @override
-  List<Object?> get props => [query, filter, page, limit];
+  factory SearchQuery.fromJson(Map<String, dynamic> json) =>
+      _$SearchQueryFromJson(json);
 }

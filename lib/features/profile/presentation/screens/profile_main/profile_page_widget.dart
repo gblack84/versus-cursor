@@ -9,7 +9,7 @@ import '/features/profile/presentation/providers/profile_post_providers.dart';
 // Phase 4: Contract 패턴으로 Feature 간 의존성 제거
 import '/app/contracts/auth_contract.dart';
 import '/core/design_system/design_system.dart';
-import '/features/post/domain/models/post_display.dart';
+import '/features/profile/domain/entities/user_post_item.dart';
 import '/features/profile/presentation/screens/settings/settings_screen.dart';
 import '/features/profile/presentation/screens/user_posts_list/user_posts_list_screen.dart';
 import '/features/profile/presentation/widgets/common/loading_indicator.dart';
@@ -430,7 +430,7 @@ class _ProfilePageWidgetState extends ConsumerState<ProfilePageWidget> {
     );
   }
 
-  Widget _buildPostItem(BuildContext context, PostDisplay post) {
+  Widget _buildPostItem(BuildContext context, UserPostItem post) {
     return InkWell(
       onTap: () {
         context.pushNamed(
@@ -490,7 +490,7 @@ class _ProfilePageWidgetState extends ConsumerState<ProfilePageWidget> {
                 ),
                 Spacer(),
                 Text(
-                  dateTimeFormat('relative', post.createdAtDateTime),
+                  dateTimeFormat('relative', post.createdAt),
                   style: VersusTextStyles.bodySmall.copyWith(
                     color: VersusColors.textSecondary,
                   ),

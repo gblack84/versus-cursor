@@ -3,7 +3,8 @@ import 'dart:async';
 import 'package:fpdart/fpdart.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:http/http.dart' as http;
-import '../failures/creation_failures.dart';
+import '../failures/creation_failure.dart';
+import '../failures/creation_failure_extensions.dart'; // Extension for getUserMessage()
 import '../services/i_image_moderation_service.dart'; // ✅ Port Interface import
 import '/services/moderation/perspective_api_service.dart';
 
@@ -43,7 +44,7 @@ class ModerateContentUseCase {
   /// - Network errors → Graceful degradation (fallback to basic word check)
   /// - Timeout → Graceful degradation
   /// - Generic errors → Fallback with lower confidence
-  Future<Either<Failure, ModerationDecision>> moderateText({
+  Future<Either<CreationFailure, ModerationDecision>> moderateText({
     required String text,
     required String context,
   }) async {
@@ -130,19 +131,13 @@ class ModerateContentUseCase {
       // Network error → Return failure
       print('Perspective API network error: $e');
       return left(
-        ModerationFailure(
-          '네트워크 오류로 콘텐츠 검증에 실패했습니다',
-          code: 'NETWORK_ERROR',
-        ),
+        CreationFailure.moderationFailed(),
       );
     } on TimeoutException catch (e) {
       // API timeout → Return failure
       print('Perspective API timeout: $e');
       return left(
-        ModerationFailure(
-          'API 요청 시간이 초과되었습니다',
-          code: 'TIMEOUT',
-        ),
+        CreationFailure.moderationFailed(),
       );
     } catch (error) {
       // Generic error → Graceful degradation with basic word check
@@ -184,7 +179,7 @@ class ModerateContentUseCase {
   }
 
   /// Execute content moderation on image
-  Future<Either<Failure, ModerationDecision>> moderateImage({
+  Future<Either<CreationFailure, ModerationDecision>> moderateImage({
     required File imageFile,
     required String box,
   }) async {
@@ -209,16 +204,13 @@ class ModerateContentUseCase {
     } catch (error) {
       // Step 5: ModerationFailure 생성 (하드코딩 제거)
       return left(
-        ModerationFailure(
-          'Image moderation error',
-          code: 'IMAGE_MODERATION_ERROR',
-        ),
+        CreationFailure.moderationFailed(),
       );
     }
   }
 
   /// Execute batch moderation on multiple images
-  Future<Either<Failure, List<ModerationDecision>>> moderateImages({
+  Future<Either<CreationFailure, List<ModerationDecision>>> moderateImages({
     required List<File> imageFiles,
     required String box,
     Function(int current, int total)? onProgress,
@@ -241,7 +233,7 @@ class ModerateContentUseCase {
             decisions.add(
               ModerationDecision(
                 isApproved: false,
-                reason: failure.message,
+                reason: failure.getUserMessage(),
                 confidence: 0.0,
               ),
             );
@@ -256,16 +248,13 @@ class ModerateContentUseCase {
     } catch (error) {
       // Step 5: ModerationFailure 생성 (하드코딩 제거)
       return left(
-        ModerationFailure(
-          'Batch image moderation error',
-          code: 'BATCH_MODERATION_ERROR',
-        ),
+        CreationFailure.moderationFailed(),
       );
     }
   }
 
   /// Check if content combination is appropriate
-  Future<Either<Failure, ModerationDecision>> moderateContentCombination({
+  Future<Either<CreationFailure, ModerationDecision>> moderateContentCombination({
     required String title,
     required String description,
     required List<File> imagesA,
@@ -311,7 +300,7 @@ class ModerateContentUseCase {
       if (imagesAResult.isLeft()) {
         return imagesAResult.fold(
           (failure) => left(failure),
-          (_) => left(ModerationFailure('Unexpected error', code: 'UNKNOWN_ERROR')),
+          (_) => left(CreationFailure.moderationFailed()),
         );
       }
 
@@ -355,7 +344,7 @@ class ModerateContentUseCase {
       if (imagesBResult.isLeft()) {
         return imagesBResult.fold(
           (failure) => left(failure),
-          (_) => left(ModerationFailure('Unexpected error', code: 'UNKNOWN_ERROR')),
+          (_) => left(CreationFailure.moderationFailed()),
         );
       }
 
@@ -404,10 +393,7 @@ class ModerateContentUseCase {
     } catch (error) {
       // Step 5: ModerationFailure 생성 (하드코딩 제거)
       return left(
-        ModerationFailure(
-          'Content combination moderation error',
-          code: 'COMBINATION_MODERATION_ERROR',
-        ),
+        CreationFailure.moderationFailed(),
       );
     }
   }

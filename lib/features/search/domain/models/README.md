@@ -10,9 +10,9 @@ Domain Models는 검색 기능의 핵심 비즈니스 엔티티를 정의합니�
 
 ### 핵심 원칙
 - **불변성(Immutability)**: 모든 모델은 immutable
-- **값 동등성(Value Equality)**: Equatable 사용
+- **값 동등성(Value Equality)**: Freezed 사용 (Equatable 대체)
 - **비즈니스 규칙 캡슐화**: 모델 내 검증 로직
-- **직렬화 지원**: JSON 변환 메서드 제공
+- **직렬화 지원**: JSON 변환 메서드 제공 (Freezed 자동 생성)
 - **Null Safety**: 명확한 nullable 정의
 
 ### 모델이 하지 않는 것
@@ -125,10 +125,14 @@ touch lib/features/search/domain/models/algolia_result_model.dart
 
 ### SearchQuery Model
 ```dart
-import 'package:equatable/equatable.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-/// 검색 쿼리 모델
-class SearchQuery extends Equatable {
+part 'search_query_model.freezed.dart';
+part 'search_query_model.g.dart';
+
+/// 검색 쿼리 모델 (Freezed로 마이그레이션됨)
+@freezed
+class SearchQuery with _$SearchQuery {
   final String text;
   final List<String> keywords;
   final bool isExactMatch;

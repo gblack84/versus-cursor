@@ -24,6 +24,7 @@ import '../domain/repositories/i_user_repository.dart';
 import '../domain/repositories/i_characters_repository.dart';
 import '../domain/repositories/i_interests_repository.dart';
 import '../domain/repositories/i_profile_repository.dart';
+import '../domain/repositories/i_profile_post_repository.dart';
 
 // ===== Data Layer - DataSource Implementations (Adapters) =====
 // Note: Profile DataSource removed in Phase 4 (Firebase-Centric v2.0)
@@ -37,6 +38,7 @@ import '../data/repositories/characters_repository_impl.dart';
 import '../data/repositories/interests_repository_impl.dart';
 import '../data/repositories/profile_repository_impl.dart';
 import '../data/repositories/profile_storage_repository_impl.dart';
+import '../data/repositories/profile_post_repository_impl.dart';
 
 // ===== Domain Layer - UseCases (13 total) =====
 // Profile UseCases (8)
@@ -135,6 +137,11 @@ void _registerRepositories(GetIt getIt) {
   // Profile Repository (Firebase-Centric v2.0)
   getIt.registerLazySingleton<IProfileRepository>(
     () => ProfileRepositoryImpl(),
+  );
+
+  // Profile Post Repository (Phase 6.5 - Feature 독립성 확보)
+  getIt.registerLazySingleton<IProfilePostRepository>(
+    () => ProfilePostRepositoryImpl(),
   );
 }
 

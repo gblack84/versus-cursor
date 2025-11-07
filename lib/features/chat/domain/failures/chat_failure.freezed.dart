@@ -20,13 +20,17 @@ mixin _$ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatFailure&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatFailure);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure()';
+}
 
 
 }
@@ -289,13 +293,17 @@ class MessageSendFailed extends ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageSendFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageSendFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure.messageSendFailed()';
+}
 
 
 }
@@ -317,13 +325,17 @@ class MessageLoadFailed extends ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageLoadFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageLoadFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure.messageLoadFailed()';
+}
 
 
 }
@@ -345,13 +357,17 @@ class MessageDeleteFailed extends ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageDeleteFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageDeleteFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure.messageDeleteFailed()';
+}
 
 
 }
@@ -373,13 +389,17 @@ class InvalidMessageContent extends ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is InvalidMessageContent&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is InvalidMessageContent);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure.invalidMessageContent()';
+}
 
 
 }
@@ -401,13 +421,17 @@ class ChatNotFound extends ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatNotFound&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatNotFound);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure.chatNotFound()';
+}
 
 
 }
@@ -429,13 +453,17 @@ class ChatCreationFailed extends ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatCreationFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatCreationFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure.chatCreationFailed()';
+}
 
 
 }
@@ -457,13 +485,17 @@ class ChatLoadFailed extends ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatLoadFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatLoadFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure.chatLoadFailed()';
+}
 
 
 }
@@ -485,13 +517,17 @@ class ParticipantNotFound extends ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ParticipantNotFound&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ParticipantNotFound);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure.participantNotFound()';
+}
 
 
 }
@@ -513,13 +549,17 @@ class ParticipantLoadFailed extends ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ParticipantLoadFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ParticipantLoadFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure.participantLoadFailed()';
+}
 
 
 }
@@ -541,13 +581,17 @@ class AIQueryFailed extends ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AIQueryFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AIQueryFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure.aiQueryFailed()';
+}
 
 
 }
@@ -569,13 +613,17 @@ class AIStreamingError extends ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AIStreamingError&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AIStreamingError);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure.aiStreamingError()';
+}
 
 
 }
@@ -597,13 +645,17 @@ class AINotInitialized extends ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AINotInitialized&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AINotInitialized);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure.aiNotInitialized()';
+}
 
 
 }
@@ -625,13 +677,17 @@ class SearchFailed extends ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SearchFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SearchFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure.searchFailed()';
+}
 
 
 }
@@ -653,13 +709,17 @@ class FriendRequestFailed extends ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FriendRequestFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FriendRequestFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure.friendRequestFailed()';
+}
 
 
 }
@@ -681,13 +741,17 @@ class FriendLoadFailed extends ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FriendLoadFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FriendLoadFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure.friendLoadFailed()';
+}
 
 
 }
@@ -709,13 +773,17 @@ class FollowToggleFailed extends ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FollowToggleFailed&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FollowToggleFailed);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure.followToggleFailed()';
+}
 
 
 }
@@ -737,13 +805,17 @@ class NetworkError extends ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is NetworkError&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NetworkError);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure.networkError()';
+}
 
 
 }
@@ -765,13 +837,17 @@ class PermissionDenied extends ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PermissionDenied&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PermissionDenied);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure.permissionDenied()';
+}
 
 
 }
@@ -793,13 +869,17 @@ class ServerError extends ChatFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ServerError&&super == other);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ServerError);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode);
+int get hashCode => runtimeType.hashCode;
 
+@override
+String toString() {
+  return 'ChatFailure.serverError()';
+}
 
 
 }
@@ -826,13 +906,17 @@ $UnexpectedCopyWith<Unexpected> get copyWith => _$UnexpectedCopyWithImpl<Unexpec
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Unexpected&&super == other&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Unexpected&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,super.hashCode,errorMessage);
+int get hashCode => Object.hash(runtimeType,errorMessage);
 
+@override
+String toString() {
+  return 'ChatFailure.unexpected(errorMessage: $errorMessage)';
+}
 
 
 }

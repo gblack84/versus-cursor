@@ -1,102 +1,102 @@
 import 'package:fpdart/fpdart.dart';
-import '../../failures/creation_failures.dart';
+import '../../failures/creation_failure.dart';
 
 /// Repository interface for content visibility and access control
 /// Target Audience 시스템과 연동되는 접근 제어 Repository
 abstract class IContentVisibilityRepository {
   /// Set content visibility level
   ///
-  /// **Returns**: `Either<VisibilityRepositoryFailure, Unit>`
-  Future<Either<VisibilityRepositoryFailure, Unit>> setVisibility(
+  /// **Returns**: `Either<CreationFailure, Unit>`
+  Future<Either<CreationFailure, Unit>> setVisibility(
     String contentId,
     VisibilityLevel level,
   );
 
   /// Check if user can view content
   ///
-  /// **Returns**: `Either<VisibilityRepositoryFailure, Unit>`
+  /// **Returns**: `Either<CreationFailure, Unit>`
   /// - `Right(unit)` if user can view
   /// - `Left(failure)` if access denied
-  Future<Either<VisibilityRepositoryFailure, Unit>> canUserView(
+  Future<Either<CreationFailure, Unit>> canUserView(
     String contentId,
     String userId,
   );
 
   /// Get target audience settings
   ///
-  /// **Returns**: `Either<VisibilityRepositoryFailure, TargetAudience>`
-  Future<Either<VisibilityRepositoryFailure, TargetAudience>> getTargetAudience(String contentId);
+  /// **Returns**: `Either<CreationFailure, TargetAudience>`
+  Future<Either<CreationFailure, TargetAudience>> getTargetAudience(String contentId);
 
   /// Update target audience
   ///
-  /// **Returns**: `Either<VisibilityRepositoryFailure, Unit>`
-  Future<Either<VisibilityRepositoryFailure, Unit>> updateTargetAudience(
+  /// **Returns**: `Either<CreationFailure, Unit>`
+  Future<Either<CreationFailure, Unit>> updateTargetAudience(
     String contentId,
     TargetAudience audience,
   );
 
   /// Get content by visibility level
   ///
-  /// **Returns**: Stream of `Either<VisibilityRepositoryFailure, List<String>>`
-  Stream<Either<VisibilityRepositoryFailure, List<String>>> getContentByVisibility(
+  /// **Returns**: Stream of `Either<CreationFailure, List<String>>`
+  Stream<Either<CreationFailure, List<String>>> getContentByVisibility(
     VisibilityLevel level,
   );
 
   /// Set content as anonymous
   ///
-  /// **Returns**: `Either<VisibilityRepositoryFailure, Unit>`
-  Future<Either<VisibilityRepositoryFailure, Unit>> setAnonymous(
+  /// **Returns**: `Either<CreationFailure, Unit>`
+  Future<Either<CreationFailure, Unit>> setAnonymous(
     String contentId,
     bool isAnonymous,
   );
 
   /// Check if content requires premium
   ///
-  /// **Returns**: `Either<VisibilityRepositoryFailure, Unit>`
+  /// **Returns**: `Either<CreationFailure, Unit>`
   /// - `Right(unit)` if premium required
   /// - `Left(failure)` if not required or check failed
-  Future<Either<VisibilityRepositoryFailure, Unit>> isPremiumRequired(String contentId);
+  Future<Either<CreationFailure, Unit>> isPremiumRequired(String contentId);
 
   /// Set premium requirement
   ///
-  /// **Returns**: `Either<VisibilityRepositoryFailure, Unit>`
-  Future<Either<VisibilityRepositoryFailure, Unit>> setPremiumRequired(
+  /// **Returns**: `Either<CreationFailure, Unit>`
+  Future<Either<CreationFailure, Unit>> setPremiumRequired(
     String contentId,
     bool required,
   );
 
   /// Get user's accessible content
   ///
-  /// **Returns**: Stream of `Either<VisibilityRepositoryFailure, List<String>>`
-  Stream<Either<VisibilityRepositoryFailure, List<String>>> getUserAccessibleContent(String userId);
+  /// **Returns**: Stream of `Either<CreationFailure, List<String>>`
+  Stream<Either<CreationFailure, List<String>>> getUserAccessibleContent(String userId);
 
   /// Grant user access to content
   ///
-  /// **Returns**: `Either<VisibilityRepositoryFailure, Unit>`
-  Future<Either<VisibilityRepositoryFailure, Unit>> grantAccess(
+  /// **Returns**: `Either<CreationFailure, Unit>`
+  Future<Either<CreationFailure, Unit>> grantAccess(
     String contentId,
     String userId,
   );
 
   /// Revoke user access to content
   ///
-  /// **Returns**: `Either<VisibilityRepositoryFailure, Unit>`
-  Future<Either<VisibilityRepositoryFailure, Unit>> revokeAccess(
+  /// **Returns**: `Either<CreationFailure, Unit>`
+  Future<Either<CreationFailure, Unit>> revokeAccess(
     String contentId,
     String userId,
   );
 
   /// Get access control list
   ///
-  /// **Returns**: `Either<VisibilityRepositoryFailure, List<AccessControl>>`
-  Future<Either<VisibilityRepositoryFailure, List<AccessControl>>> getAccessControlList(
+  /// **Returns**: `Either<CreationFailure, List<AccessControl>>`
+  Future<Either<CreationFailure, List<AccessControl>>> getAccessControlList(
     String contentId,
   );
 
   /// Send notifications to target audience
   ///
-  /// **Returns**: `Either<VisibilityRepositoryFailure, Unit>`
-  Future<Either<VisibilityRepositoryFailure, Unit>> sendNotifications(String contentId);
+  /// **Returns**: `Either<CreationFailure, Unit>`
+  Future<Either<CreationFailure, Unit>> sendNotifications(String contentId);
 }
 
 /// Visibility levels

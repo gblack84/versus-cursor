@@ -1,15 +1,18 @@
-# Chat Feature - Presentation Layer
+# 🎨 Chat Feature - Presentation Layer
 
-> **최종 업데이트**: 2025-11-01
-> **버전**: 4.0.0 (Clean Architecture v4.0 + Riverpod 2.x Migration Complete)
-> **UI Framework**: Flutter with Riverpod 2.x + flutter_chat_ui v2
+> **Last Updated**: 2025-11-07 | **Version**: 4.0.0 (Phase 5 + Riverpod 3.x 완료)
+> **Status**: Clean Architecture v4.0 + Riverpod 3.x with @riverpod code generation
+> **UI Framework**: Flutter + Riverpod 3.x + flutter_chat_ui v2
 
 ## 📋 개요
 
-Chat Feature의 Presentation Layer는 사용자 인터페이스와 상호작용을 담당합니다. **Riverpod 2.x** 기반 반응형 상태 관리와 **flutter_chat_ui v2** 통합으로 구성되어 있습니다.
+Chat Feature의 Presentation Layer는 사용자 인터페이스와 상호작용을 담당합니다. **Riverpod 3.x** 기반 반응형 상태 관리와 **flutter_chat_ui v2** 통합으로 구성되어 있습니다.
 
 ### 핵심 특징
-- ✅ **Riverpod 2.x Pattern**: StreamProvider.autoDispose.family 기반 반응형 상태 관리
+- ✅ **Riverpod 3.x**: @riverpod annotation-based code generation
+- ✅ **18개 Providers**: 10 UseCase + 4 Stream + 2 Computed + 2 Service
+- ✅ **Auto-generated Provider Names**: chatListStream → chatListStreamProvider
+- ✅ **Type-safe Family Parameters**: Automatic parameter handling
 - ✅ **flutter_chat_ui v2 통합**: 채팅 UI 전문 라이브러리 통합
 - ✅ **Clean Architecture v4.0**: Domain Layer와 완전 분리 (코드 30-48% 감소)
 - ✅ **3-Layer Caching**: Memory → Hive → Firestore 캐싱 시스템 통합
@@ -25,14 +28,15 @@ lib/features/chat/presentation/
 ├── adapters/                           # 외부 라이브러리 어댑터 (338줄)
 │   └── flutter_chat_adapter.dart       # Message Entity ↔ flutter_chat_ui 변환
 │
-├── providers/                          # Riverpod 2.x Providers (1,414줄)
-│   ├── chat_params.dart                # StreamProvider 파라미터 (Freezed)
+├── providers/                          # Riverpod 3.x Providers (1,474줄)
+│   ├── chat_params.dart                # StreamProvider 파라미터 (Freezed, 150줄)
 │   ├── chat_params.freezed.dart        # Auto-generated Freezed code
-│   └── chat_providers.dart             # Provider 정의 (293줄)
-│       ├── UseCase Providers (10개)    # GetIt 래핑
-│       ├── chatListStreamProvider      # 채팅 목록 실시간 Stream
-│       ├── chatMessagesStreamProvider  # 메시지 실시간 Stream
-│       └── unreadChatCountProvider     # Computed Provider
+│   ├── chat_providers.dart             # Provider 정의 (312줄) ⭐
+│   └── chat_providers.g.dart           # Auto-generated (42.7 KB)
+│       ├── UseCase Providers (10개)    # @riverpod GetIt wrapper
+│       ├── Stream Providers (4개)      # chatList, chatMessages, friends, search
+│       ├── Computed Providers (2개)    # unreadCount, aiChat
+│       └── Service Providers (2개)     # lifecycle, aiService
 │
 ├── screens/                            # 화면 위젯 (3,253줄)
 │   ├── ai_chat/                        # AI 채팅 화면 (1,100줄)
@@ -87,24 +91,28 @@ lib/features/chat/presentation/
 
 ## 🔧 주요 컴포넌트
 
-### 1. Riverpod 2.x Providers (293줄 + 1,045줄 generated)
+### 1. Riverpod 3.x Providers (312줄 + 42.7 KB generated)
 
-#### UseCase Providers (GetIt 래핑)
+#### UseCase Providers (@riverpod GetIt 래핑)
 
 ```dart
 // chat_providers.dart
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '/app/di.dart';
 
+part 'chat_providers.g.dart';
+
 /// GetIt에 등록된 GetChatListUseCase를 Riverpod Provider로 제공
-final getChatListUseCaseProvider = Provider<GetChatListUseCase>((ref) {
+@riverpod
+GetChatListUseCase getChatListUseCase(Ref ref) {
   return getIt<GetChatListUseCase>();
-});
+}
 
 /// GetIt에 등록된 SendMessageUseCase를 Riverpod Provider로 제공
-final sendMessageUseCaseProvider = Provider<SendMessageUseCase>((ref) {
+@riverpod
+SendMessageUseCase sendMessageUseCase(Ref ref) {
   return getIt<SendMessageUseCase>();
-});
+}
 
 // ... 총 10개 UseCase Provider
 ```
@@ -121,15 +129,16 @@ final sendMessageUseCaseProvider = Provider<SendMessageUseCase>((ref) {
 9. `getRecommendedFriendsUseCaseProvider` - 친구 추천 (Future)
 10. `searchFriendsUseCaseProvider` - 친구 검색 (Future)
 
-#### StreamProvider.autoDispose.family 패턴
+#### @riverpod Stream Provider 패턴
 
 ```dart
 /// 채팅 목록 실시간 스트림 Provider
 ///
-/// **Riverpod StreamProvider.autoDispose.family 패턴 적용**:
-/// - StreamProvider.autoDispose.family
-/// - 즉시 emit으로 로딩 개선
-/// - keepAlive()로 중복 리스너 방지
+/// **Riverpod 3.x Stream 패턴**:
+/// - @riverpod 어노테이션으로 StreamProvider 자동 생성
+/// - family 파라미터 자동 처리 (params)
+/// - autoDispose 기본 활성화
+/// - ref.keepAlive()로 중복 리스너 방지
 ///
 /// **사용 예시**:
 /// ```dart
@@ -143,60 +152,60 @@ final sendMessageUseCaseProvider = Provider<SendMessageUseCase>((ref) {
 ///   error: (error, stack) => ErrorWidget(error: error),
 /// );
 /// ```
-final chatListStreamProvider =
-    StreamProvider.autoDispose.family<List<Chat>, ChatListParams>(
-  (ref, params) async* {
-    // UseCase를 통한 실시간 스트림 (캐시 우선 응답)
-    final getChatListUseCase = ref.watch(getChatListUseCaseProvider);
+@riverpod
+Stream<List<Chat>> chatListStream(
+  Ref ref,
+  ChatListParams params,
+) async* {
+  // UseCase를 통한 실시간 스트림 (캐시 우선 응답)
+  final getChatListUseCase = ref.watch(getChatListUseCaseProvider);
 
-    await for (final either in getChatListUseCase.execute(
-      userId: params.userId,
-      limit: params.limit,
-    )) {
-      // Either → Stream 변환
-      yield* either.fold(
-        (failure) => Stream<List<Chat>>.error(failure), // Left: Error
-        (chats) async* {
-          yield chats; // Right: Success
-        },
-      );
-    }
+  await for (final either in getChatListUseCase.execute(
+    userId: params.userId,
+    limit: params.limit,
+  )) {
+    // Either → Stream 변환
+    yield* either.fold(
+      (failure) => Stream<List<Chat>>.error(failure), // Left: Error
+      (chats) async* {
+        yield chats; // Right: Success
+      },
+    );
+  }
 
-    // keepAlive로 중복 리스너 방지
-    ref.keepAlive();
-  },
-);
+  // keepAlive로 중복 리스너 방지
+  ref.keepAlive();
+}
 ```
 
-**StreamProvider 특징**:
-- **autoDispose**: 자동 메모리 관리
-- **family**: 파라미터별 독립 인스턴스
+**@riverpod Stream 특징**:
+- **자동 Provider 생성**: chatListStream → chatListStreamProvider
+- **autoDispose 기본**: 자동 메모리 관리
+- **family 자동**: 파라미터별 독립 인스턴스
 - **keepAlive()**: 화면 전환 시에도 Stream 유지
 - **캐시 우선**: UnifiedCacheService 통합으로 <10ms 응답
 
-#### Computed Provider 패턴
+#### @riverpod Computed Provider 패턴
 
 ```dart
 /// 읽지 않은 채팅 개수 Provider
 ///
-/// **Computed Provider 패턴**:
-/// - chatListStreamProvider를 watch하여 자동 업데이트
+/// **Riverpod 3.x Computed Provider 패턴**:
+/// - @riverpod로 자동 Provider 생성
+/// - chatListStream을 watch하여 자동 업데이트
 /// - 읽지 않은 채팅만 필터링
-final unreadChatCountProvider = Provider.autoDispose.family<int, String>(
-  (ref, userId) {
-    final asyncChats = ref.watch(chatListStreamProvider(
-      ChatListParams(userId: userId),
-    ));
+@riverpod
+int unreadChatCount(Ref ref, String userId) {
+  final asyncChats = ref.watch(chatListStreamProvider(
+    ChatListParams(userId: userId, limit: 50),
+  ));
 
-    return asyncChats.when(
-      data: (chats) => chats.where((chat) {
-        return chat.hasUnreadMessages(userId);
-      }).length,
-      loading: () => 0,
-      error: (_, __) => 0,
-    );
-  },
-);
+  return asyncChats.when(
+    data: (chats) => chats.where((chat) => !chat.isRead).length,
+    loading: () => 0,
+    error: (_, __) => 0,
+  );
+}
 ```
 
 ### 2. Freezed Params (76줄 + 1,045줄 generated)
@@ -729,6 +738,93 @@ class ChatScrollService {
 }
 ```
 
+## 🔄 Riverpod 3.x Migration
+
+### Migration Overview
+
+Chat Feature의 Riverpod 마이그레이션은 **Riverpod 2.x → Riverpod 3.x**로 진행되었습니다.
+
+**Before (Riverpod 2.x)**:
+```dart
+// 수동 Provider 정의 (chat_providers.dart - 293줄)
+final getChatListUseCaseProvider = Provider<GetChatListUseCase>((ref) {
+  return getIt<GetChatListUseCase>();
+});
+
+final chatListStreamProvider =
+    StreamProvider.autoDispose.family<List<Chat>, ChatListParams>(
+  (ref, params) async* {
+    final getChatListUseCase = ref.watch(getChatListUseCaseProvider);
+    // ... stream implementation
+  },
+);
+```
+
+**After (Riverpod 3.x)**:
+```dart
+// @riverpod 어노테이션 기반 코드 생성 (chat_providers.dart - 312줄)
+@riverpod
+GetChatListUseCase getChatListUseCase(Ref ref) {
+  return getIt<GetChatListUseCase>();
+}
+
+@riverpod
+Stream<List<Chat>> chatListStream(
+  Ref ref,
+  ChatListParams params,
+) async* {
+  final getChatListUseCase = ref.watch(getChatListUseCaseProvider);
+  // ... stream implementation
+}
+```
+
+### Key Changes
+
+| Aspect | Riverpod 2.x | Riverpod 3.x |
+|--------|--------------|--------------|
+| **Provider 정의** | 수동 final 선언 | @riverpod 어노테이션 |
+| **Code Generation** | 수동 관리 | 자동 생성 (.g.dart) |
+| **Family Parameters** | .family<Type, Param> | 함수 파라미터 |
+| **Provider Name** | 수동 정의 | 자동 생성 (함수명 + Provider) |
+| **Type Safety** | 수동 타입 지정 | 자동 타입 추론 |
+| **Ref Type** | Generated Ref | Generic Ref |
+
+### Migration Benefits
+
+✅ **Code Reduction**: 293줄 → 312줄 (provider count +8개, but cleaner)
+✅ **Type Safety**: 자동 타입 생성 및 검증
+✅ **Maintainability**: 보일러플레이트 코드 제거
+✅ **Consistency**: 모든 Provider가 동일한 패턴 사용
+✅ **IDE Support**: 더 나은 자동완성 및 타입 힌트
+
+### Provider Statistics
+
+**Total Providers**: 18개
+- UseCase Providers: 10개 (GetIt wrapper)
+- Stream Providers: 4개 (chatList, chatMessages, recommendedFriends, searchFriends)
+- Computed Providers: 2개 (unreadCount, aiChat)
+- Service Providers: 2개 (lifecycle, aiService)
+
+### Code Generation
+
+```bash
+# Riverpod 3.x requires build_runner
+dart run build_runner build --delete-conflicting-outputs
+
+# Watch mode for development
+dart run build_runner watch --delete-conflicting-outputs
+```
+
+**Generated Files**:
+- `chat_providers.g.dart` (42.7 KB) - Auto-generated provider definitions
+- `chat_params.freezed.dart` - Freezed parameter classes
+
+### Migration References
+
+See also:
+- **Profile Feature**: `/lib/features/profile/presentation/README.md` (Riverpod 3.x reference)
+- **Voting Feature**: `/lib/features/voting/RIVERPOD_3X_MIGRATION_PHASE_3_7.md`
+
 ## 📦 의존성 구조
 
 ```mermaid
@@ -894,7 +990,7 @@ void initState() {
 }
 ```
 
-## 💾 Riverpod 2.x 사용 방법
+## 💾 Riverpod 3.x 사용 방법
 
 ### 1. Provider 설정
 
@@ -914,7 +1010,7 @@ void main() async {
 }
 ```
 
-**주의**: Riverpod 2.x는 `ProviderScope`만 필요하며, 개별 Provider는 `providers/chat_providers.dart`에서 자동 관리됩니다.
+**주의**: Riverpod 3.x는 `ProviderScope`만 필요하며, 개별 Provider는 `providers/chat_providers.dart`에서 @riverpod 어노테이션으로 자동 생성됩니다.
 
 ### 2. Widget에서 사용
 
@@ -1304,10 +1400,11 @@ Chat(
 )
 ```
 
-## 📊 현재 상태 (2025-11-01)
+## 📊 현재 상태 (2025-11-07)
 
 ### 구현 완료
-- ✅ Riverpod 2.x 전면 적용 (10개 Provider)
+- ✅ **Riverpod 3.x 전면 적용** (18개 Provider, @riverpod 어노테이션)
+- ✅ **Code Generation**: chat_providers.g.dart 자동 생성 (42.7 KB)
 - ✅ flutter_chat_ui v2 통합
 - ✅ 5개 Screen 구현 (Chat Detail, AI Chat, AI Helper, Chat List, Friends)
 - ✅ FlutterChatAdapter 구현 (5가지 메시지 타입)

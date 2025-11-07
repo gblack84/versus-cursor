@@ -145,15 +145,4 @@ extension ChatFirestore on Chat {
     if (value is DateTime) return value;
     return null;
   }
-
-  /// Generic Map 안전 파싱
-  ///
-  /// **사용 처**: metadata, 기타 확장 필드
-  static Map<String, dynamic> _parseMap(dynamic value) {
-    if (value == null) return {};
-    if (value is Map) {
-      return Map<String, dynamic>.from(value);
-    }
-    return {};
-  }
 }

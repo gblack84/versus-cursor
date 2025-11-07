@@ -50,6 +50,42 @@ class VoteException implements Exception {
 // Custom JSON Converters for Firestore Compatibility
 // ============================================================================
 
+/// TimestampConverter for Freezed 3.x compatibility
+/// Converts between DateTime? and Firestore Timestamp/dynamic
+class TimestampConverter implements JsonConverter<DateTime?, dynamic> {
+  const TimestampConverter();
+
+  @override
+  DateTime? fromJson(dynamic timestamp) => _dateTimeFromTimestamp(timestamp);
+
+  @override
+  dynamic toJson(DateTime? date) => _dateTimeToTimestamp(date);
+}
+
+/// VoteStatusConverter for Freezed 3.x compatibility
+/// Converts between VoteStatus enum and String
+class VoteStatusConverter implements JsonConverter<VoteStatus, dynamic> {
+  const VoteStatusConverter();
+
+  @override
+  VoteStatus fromJson(dynamic value) => _voteStatusFromJson(value);
+
+  @override
+  String toJson(VoteStatus status) => _voteStatusToJson(status);
+}
+
+/// DurationConverter for Freezed 3.x compatibility
+/// Converts between Duration and milliseconds (int)
+class DurationConverter implements JsonConverter<Duration, int?> {
+  const DurationConverter();
+
+  @override
+  Duration fromJson(int? milliseconds) => _durationFromJson(milliseconds);
+
+  @override
+  int toJson(Duration duration) => _durationToJson(duration);
+}
+
 /// DateTime 안전 변환 함수
 ///
 /// **Note:** Firestore Timestamp 처리는 Adapter 레이어로 이동
@@ -146,27 +182,27 @@ sealed class PostVoting with _$PostVoting {
     required String postId, // Foreign key to PostCore.id
 
     // Timing Fields
-    @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
+    @TimestampConverter()
     DateTime? voteStartTime,
 
-    @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
+    @TimestampConverter()
     DateTime? voteEndTime,
 
-    @JsonKey(fromJson: _voteStatusFromJson, toJson: _voteStatusToJson)
+    @VoteStatusConverter()
     @Default(VoteStatus.pending)
     VoteStatus voteStatus,
 
     @Default(false) bool voteCompleted,
 
-    @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
+    @TimestampConverter()
     DateTime? voteCompletedAt,
 
-    @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
+    @TimestampConverter()
     DateTime? voteCancelledAt,
 
     String? voteCancelledReason,
 
-    @JsonKey(fromJson: _durationFromJson, toJson: _durationToJson)
+    @DurationConverter()
     @Default(Duration(minutes: 10))
     Duration voteTimeout,
 
@@ -183,7 +219,7 @@ sealed class PostVoting with _$PostVoting {
     // Notification System
     @Default(false) bool notificationsSent,
 
-    @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
+    @TimestampConverter()
     DateTime? notificationsSentAt,
 
     // Expansion System

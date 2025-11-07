@@ -2,7 +2,8 @@ import 'dart:io';
 import 'dart:async'; // ✅ Phase 3: Timer for debounce
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart'; // ✅ Phase 4: UUID for idempotency
-import '../../domain/failures/creation_failures.dart';
+import '../../domain/failures/creation_failure.dart';
+import '../../domain/failures/creation_failure_extensions.dart'; // Extension for getUserMessage()
 import '../../domain/entities/target_audience.dart' as domain;
 import '../../domain/entities/post_creation.dart'; // ✅ Phase 3: Draft entity
 import 'states/create_post_state.dart';
@@ -324,9 +325,9 @@ class CreatePost extends _$CreatePost {
       }
     }
 
-    // If validation failed, create PostValidationFailure and return error
+    // If validation failed, create PostValidationFailed and return error
     if (missingFields.isNotEmpty || invalidFields.isNotEmpty) {
-      final failure = PostValidationFailure(
+      final failure = CreationFailure.postValidationFailed(
         missingFields: missingFields,
         invalidFields: invalidFields,
       );
@@ -370,9 +371,9 @@ class CreatePost extends _$CreatePost {
       final shouldContinue = textResult.fold(
         (failure) {
           // Use getUserMessage() if failure has it
-          final message = failure is AIModerationFailure
+          final message = failure is AIModerationFailed
               ? failure.getUserMessage()
-              : failure.message;
+              : failure.getUserMessage();
 
           state = state.copyWith(
             moderationStatus: ModerationStatus.rejected,
@@ -383,12 +384,12 @@ class CreatePost extends _$CreatePost {
         (textDecision) {
           // Check if moderation approved the content
           if (!textDecision.isApproved) {
-            // Create AIModerationFailure with rejection details
-            final failure = AIModerationFailure(
+            // Create AIModerationFailed with rejection details
+            final failure = CreationFailure.aiModerationFailed(
               aiProvider: 'perspective',
               confidenceScore: textDecision.confidence,
               detectedCategories: [], // Will be populated by UseCase in future
-              message: textDecision.reason,
+              rejectedReasons: textDecision.reason != null ? [textDecision.reason!] : [],
             );
             state = state.copyWith(
               moderationStatus: ModerationStatus.rejected,
@@ -658,32 +659,24 @@ class CreatePost extends _$CreatePost {
     );
   }
 
-  String _getFailureMessage(Failure failure) {
-    // Use getUserMessage() for advanced Failure types
-    if (failure is PostValidationFailure) {
+  String _getFailureMessage(CreationFailure failure) {
+    // Use getUserMessage() for all CreationFailure types
+    if (failure is PostValidationFailed) {
       return failure.getUserMessage();
-    } else if (failure is AIModerationFailure) {
+    } else if (failure is AIModerationFailed) {
       return failure.getUserMessage();
-    } else if (failure is MediaProcessingFailure) {
+    } else if (failure is MediaProcessingFailed) {
       return failure.getUserMessage();
-    } else if (failure is FirestoreWriteFailure) {
+    } else if (failure is FirestoreWriteFailed) {
       return failure.getUserMessage();
-    }
-
-    // Fallback for base Failure types
-    if (failure is CreationValidationFailure) {
-      if (failure.fieldErrors.isNotEmpty) {
-        return failure.fieldErrors.values.first;
-      }
-      return failure.message;
-    } else if (failure is ImageUploadFailure) {
-      return '이미지 업로드 실패: ${failure.message}';
-    } else if (failure is ModerationFailure) {
-      return '콘텐츠 검열 실패: ${failure.message}';
-    } else if (failure is ServerFailure) {
-      return '서버 오류: ${failure.message}';
+    } else if (failure is CreationValidationFailed) {
+      return failure.getUserMessage();
+    } else if (failure is ImageUploadFailed) {
+      return failure.getUserMessage();
+    } else if (failure is ModerationFailed) {
+      return failure.getUserMessage();
     } else {
-      return failure.message;
+      return failure.getUserMessage();
     }
   }
 

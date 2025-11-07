@@ -1,5 +1,5 @@
 import 'package:fpdart/fpdart.dart';
-import '../../failures/creation_failures.dart';
+import '../../failures/creation_failure.dart';
 import '../../entities/target_audience.dart';
 import '../../services/i_target_audience_service.dart';
 
@@ -25,7 +25,7 @@ class ManageTargetAudienceUseCase {
   /// - No DTO layer needed - direct Entity creation
   ///
   /// This method provides a clean interface for Providers to use
-  Future<Either<Failure, TargetAudience>> createFromProviderMap(
+  Future<Either<CreationFailure, TargetAudience>> createFromProviderMap(
     Map<String, dynamic> providerMap,
   ) async {
     try {
@@ -37,8 +37,10 @@ class ManageTargetAudienceUseCase {
 
       if (!validationResult.isValid) {
         return left(
-          CreationValidationFailure(
-            validationResult.error ?? 'Invalid target audience configuration',
+          CreationFailure.creationValidationFailed(
+            fieldErrors: {
+              'targetAudience': validationResult.error ?? 'Invalid target audience configuration',
+            },
           ),
         );
       }
@@ -47,13 +49,13 @@ class ManageTargetAudienceUseCase {
     } catch (error) {
       print('createFromProviderMap Error: $error');
       return left(
-        UnknownFailure(message: 'Failed to create target audience: $error'),
+        CreationFailure.postCreationRepositoryFailed(operation: 'createFromProviderMap'),
       );
     }
   }
 
   /// Create and validate a target audience configuration
-  Future<Either<Failure, TargetAudience>> createTargetAudience({
+  Future<Either<CreationFailure, TargetAudience>> createTargetAudience({
     required String collectionType,
     required int targetCount,
     List<String>? selectedInterests,
@@ -81,8 +83,10 @@ class ManageTargetAudienceUseCase {
 
       if (!validationResult.isValid) {
         return left(
-          CreationValidationFailure(
-            validationResult.error ?? 'Invalid target audience configuration',
+          CreationFailure.creationValidationFailed(
+            fieldErrors: {
+              'targetAudience': validationResult.error ?? 'Invalid target audience configuration',
+            },
           ),
         );
       }
@@ -91,7 +95,7 @@ class ManageTargetAudienceUseCase {
     } catch (error) {
       print('ManageTargetAudienceUseCase Error: $error');
       return left(
-        UnknownFailure(message: 'Failed to create target audience: $error'),
+        CreationFailure.postCreationRepositoryFailed(operation: 'createFromProviderMap'),
       );
     }
   }
@@ -108,7 +112,7 @@ class ManageTargetAudienceUseCase {
   }
 
   /// Get target audience recommendations based on post content
-  Future<Either<Failure, TargetAudienceRecommendation>> getRecommendations({
+  Future<Either<CreationFailure, TargetAudienceRecommendation>> getRecommendations({
     required String title,
     required String description,
     List<String>? imageTags,
@@ -125,7 +129,7 @@ class ManageTargetAudienceUseCase {
     } catch (error) {
       print('GetRecommendations Error: $error');
       return left(
-        UnknownFailure(message: 'Failed to get recommendations: $error'),
+        CreationFailure.postCreationRepositoryFailed(operation: 'createFromProviderMap'),
       );
     }
   }

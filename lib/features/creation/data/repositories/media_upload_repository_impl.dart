@@ -4,7 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:http/http.dart' as http;
-import '../../domain/failures/creation_failures.dart';
+import '../../domain/failures/creation_failure.dart';
 import '../../domain/repositories/i_media_repository.dart';
 import '../../domain/services/i_image_processing_service.dart';
 import '../../domain/services/i_media_upload_service.dart';
@@ -41,7 +41,7 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
   /// })
   /// ```
   @override
-  Future<Either<MediaRepositoryFailure, Map<String, dynamic>>> uploadImageWithVariants({
+  Future<Either<CreationFailure, Map<String, dynamic>>> uploadImageWithVariants({
     required Uint8List imageBytes,
     required String box,
     String? customPath,
@@ -122,21 +122,18 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
       debugPrint('❌ [MediaUploadService] Upload failed: $errorMessage');
       onRejected?.call(errorMessage);
 
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: [customPath ?? 'posts/$box'],
-        message: errorMessage,
-        code: e.code,
       ));
     } catch (e) {
       final errorMessage = 'Unexpected error during upload: $e';
       debugPrint('❌ [MediaUploadService] Upload failed: $errorMessage');
       onRejected?.call(errorMessage);
 
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: [customPath ?? 'posts/$box'],
-        message: errorMessage,
       ));
     }
   }
@@ -157,7 +154,7 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
   /// })
   /// ```
   @override
-  Future<Either<MediaRepositoryFailure, Map<String, dynamic>>> uploadAndWaitForModeration({
+  Future<Either<CreationFailure, Map<String, dynamic>>> uploadAndWaitForModeration({
     required List<Uint8List> imageBytesList,
     required String box,
     String? customPath,
@@ -203,7 +200,14 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
             (failure) {
               debugPrint('  ❌ Image $i upload failed: ${failure.message}');
               rejectedIndices.add(i);
-              failedPaths.addAll(failure.failedPaths);
+
+              // Extract failedPaths from MediaRepositoryFailed
+              failure.maybeWhen(
+                mediaRepositoryFailed: (mediaType, paths) {
+                  failedPaths.addAll(paths);
+                },
+                orElse: () {},
+              );
 
               if (!rejectedReasons.containsKey('error')) {
                 rejectedReasons['error'] = [];
@@ -234,25 +238,22 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
         'rejectedReasons': rejectedReasons,
         'allRejected': approvedUrls.isEmpty,
       });
-    } on FirebaseException catch (e) {
-      return left(MediaRepositoryFailure(
+    } on FirebaseException {
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: [customPath ?? 'posts/$box'],
-        message: 'Batch upload failed: ${e.message}',
-        code: e.code,
       ));
-    } catch (e) {
-      return left(MediaRepositoryFailure(
+    } catch (_) {
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: [customPath ?? 'posts/$box'],
-        message: 'Unexpected error during batch upload: $e',
       ));
     }
   }
 
   /// Firebase Storage URL에서 이미지 다운로드
   @override
-  Future<Either<MediaRepositoryFailure, Uint8List>> downloadImageFromUrl(String url) async {
+  Future<Either<CreationFailure, Uint8List>> downloadImageFromUrl(String url) async {
     try {
       debugPrint('⬇️  [MediaUploadService] Downloading image from: $url');
 
@@ -262,27 +263,22 @@ class MediaUploadRepositoryImpl implements IMediaUploadService {
         debugPrint('✅ [MediaUploadService] Image downloaded successfully');
         return right(response.bodyBytes);
       } else {
-        return left(MediaRepositoryFailure(
+        return left(CreationFailure.mediaRepositoryFailed(
           mediaType: 'image',
           failedPaths: [url],
-          message: 'Failed to download image: HTTP ${response.statusCode}',
-          code: 'HTTP_${response.statusCode}',
         ));
       }
     } on FirebaseException catch (e) {
       debugPrint('❌ [MediaUploadService] Download failed: ${e.message}');
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: [url],
-        message: 'Failed to download image: ${e.message}',
-        code: e.code,
       ));
     } catch (e) {
       debugPrint('❌ [MediaUploadService] Download failed: $e');
-      return left(MediaRepositoryFailure(
+      return left(CreationFailure.mediaRepositoryFailed(
         mediaType: 'image',
         failedPaths: [url],
-        message: 'Unexpected error during download: $e',
       ));
     }
   }

@@ -373,7 +373,7 @@ class _CharacterDetailPageWidgetState extends ConsumerState<CharacterDetailPageW
 
     // Riverpod 3.x ProfileNotifier.updateProfile() 호출
     try {
-      await ref.read(profileNotifierProvider.notifier).updateProfile(
+      await ref.read(profileProvider.notifier).updateProfile(
         profile: updatedProfile,
       );
 

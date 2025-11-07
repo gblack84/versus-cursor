@@ -285,7 +285,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
     // Riverpod 3.x ProfileNotifier로 업데이트 실행
     try {
-      await ref.read(profileNotifierProvider.notifier).updateProfile(
+      await ref.read(profileProvider.notifier).updateProfile(
         profile: updatedProfile,
       );
 
@@ -355,7 +355,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
     // 4. Riverpod 3.x ProfileNotifier로 업로드
     try {
-      await ref.read(profileNotifierProvider.notifier).uploadProfileImage(
+      await ref.read(profileProvider.notifier).uploadProfileImage(
         userId: widget.userId,
         imageFile: imageFile,
       );

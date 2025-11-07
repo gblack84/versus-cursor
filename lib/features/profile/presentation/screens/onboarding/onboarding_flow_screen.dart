@@ -71,7 +71,7 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen> {
   Future<void> _completeOnboarding() async {
     // Riverpod 3.x: ProfileNotifier.updateInterests() 사용
     try {
-      await ref.read(profileNotifierProvider.notifier).updateInterests(
+      await ref.read(profileProvider.notifier).updateInterests(
         userId: widget.userId,
         expertise: _selectedExpertise,
         hobbies: _selectedHobbies,

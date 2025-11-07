@@ -130,7 +130,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           'receiveRankUpdateNotifications': value,
                         };
                         try {
-                          await ref.read(profileNotifierProvider.notifier).updateSettings(
+                          await ref.read(profileProvider.notifier).updateSettings(
                             userId: widget.userId,
                             settings: newSettings,
                           );
@@ -149,9 +149,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       title: '칭호 업데이트',
                       description: '새로운 칭호를 획득하면 알림을 받습니다',
                       value: settings.receiveTitleUpdateNotifications,
-                      onChanged: (value) {
+                      onChanged: (value) async {
                         try {
-                          await ref.read(profileNotifierProvider.notifier).updateSettings(
+                          await ref.read(profileProvider.notifier).updateSettings(
                             userId: widget.userId,
                             settings: {'receiveTitleUpdateNotifications': value},
                           );
@@ -170,9 +170,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       title: '투표 알림',
                       description: '내 게시물에 새로운 투표가 있으면 알림을 받습니다',
                       value: settings.receiveVoteNotifications,
-                      onChanged: (value) {
+                      onChanged: (value) async {
                         try {
-                          await ref.read(profileNotifierProvider.notifier).updateSettings(
+                          await ref.read(profileProvider.notifier).updateSettings(
                             userId: widget.userId,
                             settings: {'receiveVoteNotifications': value},
                           );
@@ -191,9 +191,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       title: '댓글 알림',
                       description: '내 게시물에 새로운 댓글이 달리면 알림을 받습니다',
                       value: settings.receiveCommentNotifications,
-                      onChanged: (value) {
+                      onChanged: (value) async {
                         try {
-                          await ref.read(profileNotifierProvider.notifier).updateSettings(
+                          await ref.read(profileProvider.notifier).updateSettings(
                             userId: widget.userId,
                             settings: {'receiveCommentNotifications': value},
                           );
@@ -212,9 +212,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       title: '친구 알림',
                       description: '친구 요청 및 활동 알림을 받습니다',
                       value: settings.receiveFriendNotifications,
-                      onChanged: (value) {
+                      onChanged: (value) async {
                         try {
-                          await ref.read(profileNotifierProvider.notifier).updateSettings(
+                          await ref.read(profileProvider.notifier).updateSettings(
                             userId: widget.userId,
                             settings: {'receiveFriendNotifications': value},
                           );
@@ -348,7 +348,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
               // 계정 삭제 실행 (Riverpod 3.x ProfileNotifier)
               try {
-                await ref.read(profileNotifierProvider.notifier).deleteProfile(
+                await ref.read(profileProvider.notifier).deleteProfile(
                   userId: userId,
                 );
 

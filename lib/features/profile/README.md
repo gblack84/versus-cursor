@@ -47,10 +47,10 @@ lib/features/profile/
 │   │   ├── profile_failure.dart                  # 204줄 - 12 failure types
 │   │   └── profile_failure.freezed.dart          # Generated
 │   ├── 📂 entities/                      # Domain Models (6 main + 18 generated = 24 files)
-│   │   ├── user_profile.dart                     # 146줄 - 42 fields (통합 모델)
+│   │   ├── user_profile.dart                     # 146줄 - 44 fields (통합 모델, includes country, countryCode)
 │   │   ├── user_profile.freezed.dart             # Generated
 │   │   ├── user_profile.g.dart                   # Generated
-│   │   ├── profile_info.dart                     # 65줄 - 10 fields (경량 조회)
+│   │   ├── profile_info.dart                     # 65줄 - 12 fields (경량 조회, includes country, countryCode)
 │   │   ├── profile_info.freezed.dart             # Generated
 │   │   ├── profile_info.g.dart                   # Generated
 │   │   ├── user_settings.dart                    # 98줄 - 9 fields
@@ -180,7 +180,7 @@ lib/features/profile/
 │  • Freezed 불변 엔티티                                         │
 │  • Either<Failure, Success> 패턴                             │
 │  • 12 ProfileFailure types                                  │
-│  • UserProfile (42 fields), ProfileInfo (10 fields)         │
+│  • UserProfile (44 fields), ProfileInfo (10 fields)         │
 │  • ⭐ UserPostItem (5 fields) - Phase 6.5 경량 DTO           │
 │  • 7 Repository Interfaces + 11 UseCases                    │
 │  • 44개 파일 (~2,278줄)                                       │
@@ -403,8 +403,8 @@ Stream<List<UserPostItem>> myPostsStream(Ref ref, String userId) {
 
 | 데이터 타입 | TTL | Cache Layer | 이유 |
 |------------|-----|-------------|------|
-| **UserProfile** | 1hr | Memory + Hive | 자주 조회, 크기 큼 (42 fields) |
-| **ProfileInfo** | 1hr | Memory + Hive | 자주 조회, 경량 (10 fields) |
+| **UserProfile** | 1hr | Memory + Hive | 자주 조회, 크기 큼 (44 fields, including country, countryCode) |
+| **ProfileInfo** | 1hr | Memory + Hive | 자주 조회, 경량 (10 fields, no country/countryCode) |
 | **Completion** | 30min | Memory + Hive | 자주 변경 |
 | **Settings** | 1hr | Memory + Hive | 변경 빈도 낮음 |
 | **Interests** | 30min | Memory only | 변경 가능성 있음 |
@@ -483,13 +483,13 @@ Stream<List<UserPostItem>> myPostsStream(Ref ref, String userId) {
 - Freezed 불변 엔티티 패턴
 - Either<Failure, Success> 에러 처리
 - 12개 ProfileFailure 타입 정의
-- UserProfile (42 fields) vs ProfileInfo (10 fields)
+- UserProfile (44 fields) vs ProfileInfo (10 fields) - country/countryCode는 UserProfile에만 존재
 - 6개 Repository Interfaces
 - 11개 UseCases (Single Responsibility)
 
 **📖 주요 섹션**:
 1. **Failures**: 12개 실패 타입 (ProfileNotFound, PermissionDenied, Network 등)
-2. **Models**: 6개 핵심 모델 (UserProfile 42 fields, ProfileInfo 10 fields 등)
+2. **Models**: 6개 핵심 모델 (UserProfile 44 fields, ProfileInfo 10 fields - country/countryCode는 UserProfile에만 존재)
 3. **Repository Interfaces**: 6개 계약 정의 (IUserRepository 12 methods 등)
 4. **UseCases**: 11개 비즈니스 로직 (Profile 8, Settings 2, Interests 2)
 5. **Extension Methods**: UserProfileFirestore, ProfileInfoFirestore 등
@@ -836,11 +836,13 @@ await UserRepositoryImpl.initialize();
 <details>
 <summary><strong>Q3. UserProfile vs ProfileInfo 차이는?</strong></summary>
 
-**A**: **UserProfile (42 fields)**은 통합 모델, **ProfileInfo (10 fields)**는 경량 조회용.
+**A**: **UserProfile (44 fields)**은 통합 모델, **ProfileInfo (10 fields)**는 경량 조회용.
+
+**중요**: country와 countryCode 필드는 **UserProfile에만 존재**합니다. ProfileInfo에는 포함되지 않습니다.
 
 | 항목 | UserProfile | ProfileInfo |
 |------|-------------|-------------|
-| **필드 수** | 42개 | 10개 |
+| **필드 수** | 44개 (includes country, countryCode) | 10개 (no country/countryCode) |
 | **용도** | CRUD 전체 작업 | 조회 전용 (경량) |
 | **크기** | ~2KB | ~500B (75% 작음) |
 | **사용 예** | 프로필 편집, 업데이트 | 목록 표시, 카드 |
@@ -906,7 +908,9 @@ extension UserProfileFirestore on UserProfile {
   Map<String, dynamic> toFirestore() => {
     'displayName': displayName,
     'email': email,
-    // ... 42 fields
+    'country': country,           // 🆕 IP-based auto-detection
+    'countryCode': countryCode,   // 🆕 ISO 3166-1 alpha-2
+    // ... 44 fields total
   };
 
   static UserProfile fromFirestore(DocumentSnapshot doc) {

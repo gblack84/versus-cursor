@@ -118,7 +118,7 @@ lib/features/auth/
 │   │   │       ├── login_link.dart
 │   │   │       └── signup_buttons.dart
 │   │   ├── 📂 phone_auth/               # 전화번호 인증 (9개 파일, 3개 화면)
-│   │   │   ├── phone_creat_account/            # 전화번호 입력
+│   │   │   ├── phone_creat_account/            # 전화번호 입력 + CountrySelectorWidget (Profile Feature)
 │   │   │   ├── phonelogeinpincode/             # PIN 코드 입력
 │   │   │   ├── phonemaximum/                   # 재시도 초과 화면
 │   │   │   └── 📂 components/                  # 전화 인증 컴포넌트 (4개)
@@ -719,9 +719,13 @@ Auth Feature의 Provider 패턴은 다른 Feature들과 **100% 일관성**을 �
 전화번호 입력 → SMS 발송 → PIN 입력 → 인증 완료
      ↓            ↓          ↓          ↓
  PhoneCreat  verifyPhone  PINcode   AuthUser
+  (+ CountrySelector)
 ```
 
 1. **1단계 (전화번호 입력)**: `presentation/screens/phone_auth/phone_creat_account/`
+   - **CountrySelectorWidget 통합** (Profile Feature)
+   - IP-based auto-detection (CountryDetectionService)
+   - 240+ countries with dial codes (+82, +1, etc.)
 2. **2단계 (SMS 발송)**: `domain/usecases/sign_in/sign_in_with_phone_usecase.dart:192`
 3. **3단계 (PIN 입력)**: `presentation/screens/phone_auth/phonelogeinpincode/`
 4. **인증 완료**: Firebase Auth Phone Provider 사용
@@ -970,9 +974,16 @@ final result = await useCase.execute(email: email, password: password);
 
 ## 🔗 관련 문서
 
+### Auth Feature 문서
 - [Auth Domain Layer README](./domain/README.md) - 비즈니스 로직 및 엔티티
 - [Auth Data Layer README](./data/README.md) - Firebase 통합 및 Repository 구현
 - [Auth Presentation Layer README](./presentation/README.md) - UI 화면 및 Riverpod Provider
+
+### 다른 Features
+- [Profile Feature - CountrySelectorWidget](../profile/presentation/README.md#7-countryselectorwidget) - 전화번호 인증에 사용되는 국가 선택 위젯
+- [Core Localization](../../../core/localization/README.md) - CountryDetectionService (IP 기반 국가 감지)
+
+### 프로젝트 전체
 - [프로젝트 루트 CLAUDE.md](../../../CLAUDE.md) - 전체 프로젝트 가이드
 
 ---

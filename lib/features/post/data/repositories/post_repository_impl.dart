@@ -7,6 +7,7 @@ import '/features/post/domain/models/post_display.dart';
 import '/features/post/domain/models/post_display_extensions.dart';
 import '/features/post/domain/repositories/i_post_display_repository_v2.dart';
 import '/features/post/domain/failures/post_failure.dart';
+import '/features/post/domain/usecases/get_feed_usecase.dart';  // FeedSortBy enum
 import '/features/post/data/services/post_cache_service.dart';
 import '/core/utils/idempotency_service.dart';
 
@@ -548,9 +549,12 @@ class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
               'targetAudience': post.targetAudience,
             });
 
-            // Invalidate feed cache in background
+            // ✅ Selective cache invalidation (Posts only, not other Features)
             Future.microtask(() async {
-              await _cacheService.clearAll();
+              // Invalidate all feed caches (latest, popular, trending)
+              await _cacheService.invalidateFeed(sortBy: FeedSortBy.latest);
+              await _cacheService.invalidateFeed(sortBy: FeedSortBy.popular);
+              await _cacheService.invalidateFeed(sortBy: FeedSortBy.trending);
             });
 
             return right(unit);
@@ -600,10 +604,12 @@ class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
 
             transaction.update(postRef, updatesWithTimestamp);
 
-            // Invalidate cache in background
+            // ✅ Selective cache invalidation (Specific post + feeds only)
             Future.microtask(() async {
               await _cacheService.invalidatePost(postId);
-              await _cacheService.clearAll();
+              await _cacheService.invalidateFeed(sortBy: FeedSortBy.latest);
+              await _cacheService.invalidateFeed(sortBy: FeedSortBy.popular);
+              await _cacheService.invalidateFeed(sortBy: FeedSortBy.trending);
             });
 
             return right(unit);
@@ -682,10 +688,12 @@ class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
             // 5. Delete post document
             transaction.delete(postRef);
 
-            // 6. Invalidate cache in background
+            // ✅ Selective cache invalidation (Deleted post + feeds only)
             Future.microtask(() async {
               await _cacheService.invalidatePost(postId);
-              await _cacheService.clearAll();
+              await _cacheService.invalidateFeed(sortBy: FeedSortBy.latest);
+              await _cacheService.invalidateFeed(sortBy: FeedSortBy.popular);
+              await _cacheService.invalidateFeed(sortBy: FeedSortBy.trending);
             });
 
             return right(unit);

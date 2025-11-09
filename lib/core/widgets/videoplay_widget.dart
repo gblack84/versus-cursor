@@ -3,7 +3,7 @@ import '/core_exports.dart';
 // Previous: /core/app_utils.dart';
 // Previous: /core/app_video_player.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+// import 'package:provider/provider.dart'; // 삭제: AppState 사용 안 함
 import 'videoplay_model.dart';
 export 'videoplay_model.dart';
 
@@ -45,14 +45,14 @@ class _VideoplayWidgetState extends State<VideoplayWidget> {
 
   @override
   Widget build(BuildContext context) {
-    context.watch<AppState>();
+    // context.watch<AppState>() 삭제 (Props 우선 사용)
 
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.of(context).secondaryBackground,
       ),
       child: AppVideoPlayer(
-        path: '${AppState().uploadVideoA}',
+        path: widget.videoUrl ?? '',
         videoType: VideoType.network,
         autoPlay: false,
         looping: true,

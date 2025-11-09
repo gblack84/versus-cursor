@@ -9,7 +9,7 @@ import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import '/features/profile/presentation/screens/user_info/selectors/country_selector_widget.dart';
 import 'phone_creat_account_model.dart';
 export 'phone_creat_account_model.dart';
 
@@ -39,10 +39,6 @@ class _PhoneCreatAccountWidgetState extends ConsumerState<PhoneCreatAccountWidge
     super.initState();
     _model = createModel(context, () => PhoneCreatAccountModel());
 
-    _model.codeCuntryTextController ??= TextEditingController();
-    _model.codeCuntryFocusNode ??= FocusNode();
-
-    _model.codeCuntryMask = MaskTextInputFormatter(mask: '+###');
     _model.phoneNumberTextController ??= TextEditingController();
     _model.phoneNumberFocusNode ??= FocusNode();
 
@@ -186,89 +182,19 @@ class _PhoneCreatAccountWidgetState extends ConsumerState<PhoneCreatAccountWidge
                         padding:
                             EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 5.0, 0.0),
                         child: Container(
-                          width: 70.0,
-                          child: TextFormField(
-                            controller: _model.codeCuntryTextController,
-                            focusNode: _model.codeCuntryFocusNode,
-                            autofillHints: [
-                              AutofillHints.telephoneNumberCountryCode
-                            ],
-                            textCapitalization: TextCapitalization.none,
-                            obscureText: false,
-                            decoration: InputDecoration(
-                              labelText: AppLocalizations.of(context).getText(
-                                '3rvgi38u' /* +Code */,
-                              ),
-                              labelStyle:
-                                  AppTheme.of(context).labelMedium.override(
-                                        font: GoogleFonts.plusJakartaSans(
-                                          fontWeight: AppTheme.of(context)
-                                              .labelMedium
-                                              .fontWeight,
-                                          fontStyle: AppTheme.of(context)
-                                              .labelMedium
-                                              .fontStyle,
-                                        ),
-                                        letterSpacing: 0.0,
-                                        fontWeight: AppTheme.of(context)
-                                            .labelMedium
-                                            .fontWeight,
-                                        fontStyle: AppTheme.of(context)
-                                            .labelMedium
-                                            .fontStyle,
-                                      ),
-                              hintStyle:
-                                  AppTheme.of(context).labelMedium.override(
-                                        font: GoogleFonts.plusJakartaSans(
-                                          fontWeight: AppTheme.of(context)
-                                              .labelMedium
-                                              .fontWeight,
-                                          fontStyle: AppTheme.of(context)
-                                              .labelMedium
-                                              .fontStyle,
-                                        ),
-                                        letterSpacing: 0.0,
-                                        fontWeight: AppTheme.of(context)
-                                            .labelMedium
-                                            .fontWeight,
-                                        fontStyle: AppTheme.of(context)
-                                            .labelMedium
-                                            .fontStyle,
-                                      ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: AppTheme.of(context).alternate,
-                                  width: 2.0,
-                                ),
-                                borderRadius: BorderRadius.circular(12.0),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: AppTheme.of(context).primary,
-                                  width: 2.0,
-                                ),
-                                borderRadius: BorderRadius.circular(12.0),
-                              ),
-                              errorBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: AppTheme.of(context).error,
-                                  width: 2.0,
-                                ),
-                                borderRadius: BorderRadius.circular(12.0),
-                              ),
-                              focusedErrorBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: AppTheme.of(context).error,
-                                  width: 2.0,
-                                ),
-                                borderRadius: BorderRadius.circular(12.0),
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
-                              contentPadding: EdgeInsetsDirectional.fromSTEB(
-                                  5.0, 24.0, 5.0, 24.0),
-                            ),
-                            style: AppTheme.of(context).bodyMedium.override(
+                          width: 120.0,
+                          child: CountrySelectorWidget(
+                            initialCountryCode: _model.selectedCountryCode,
+                            onChanged: (country) {
+                              setState(() {
+                                _model.selectedCountryCode = country.dialCode;
+                                _model.selectedCountryName = country.name;
+                              });
+                            },
+                            backgroundColor: Colors.white,
+                            borderColor: AppTheme.of(context).alternate,
+                            borderRadius: 12.0,
+                            textStyle: AppTheme.of(context).bodyMedium.override(
                                   font: GoogleFonts.plusJakartaSans(
                                     fontWeight: AppTheme.of(context)
                                         .bodyMedium
@@ -279,19 +205,7 @@ class _PhoneCreatAccountWidgetState extends ConsumerState<PhoneCreatAccountWidge
                                   ),
                                   color: Colors.black,
                                   letterSpacing: 0.0,
-                                  fontWeight: AppTheme.of(context)
-                                      .bodyMedium
-                                      .fontWeight,
-                                  fontStyle:
-                                      AppTheme.of(context).bodyMedium.fontStyle,
                                 ),
-                            maxLines: null,
-                            maxLength: 4,
-                            keyboardType: TextInputType.phone,
-                            cursorColor: AppTheme.of(context).primary,
-                            validator: _model.codeCuntryTextControllerValidator
-                                .asValidator(context),
-                            inputFormatters: [_model.codeCuntryMask],
                           ),
                         ),
                       ),
@@ -426,15 +340,15 @@ class _PhoneCreatAccountWidgetState extends ConsumerState<PhoneCreatAccountWidge
                 child: Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(0.0, 10.0, 0.0, 0.0),
                   child: AppButtonWidget(
-                    onPressed: ((_model.codeCuntryTextController.text != '') &&
-                            (_model.phoneNumberTextController.text != ''))
+                    onPressed: ((_model.selectedCountryCode != null) &&
+                            (_model.phoneNumberTextController.text.isNotEmpty))
                         ? null
                         : () async {
                             final phoneNumberVal =
-                                '${_model.codeCuntryTextController.text}${_model.phoneNumberTextController.text}';
+                                '${_model.selectedCountryCode ?? ''}${_model.phoneNumberTextController.text}';
                             if (phoneNumberVal.isEmpty ||
                                 !phoneNumberVal.startsWith('+')) {
-                              BotToast.showText(text: '전화번호는 필수이며 +로 시작해야 합니다.');
+                              BotToast.showText(text: '국가 코드와 전화번호를 입력해주세요.');
                               return;
                             }
 

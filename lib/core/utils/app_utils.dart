@@ -12,8 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '/app/app.dart';
 
-export '/app/models/lat_lng.dart';
-export '/app/models/place.dart';
+export '/app/types/lat_lng.dart';
 export '/core/models/uploaded_file.dart';
 export '/app/state/app_state.dart';
 export '/core/models/app_model.dart';

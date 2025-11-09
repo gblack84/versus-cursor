@@ -6,7 +6,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_it/get_it.dart';
 import '/core_exports.dart';
 import '/features/profile/presentation/screens/user_info/character_detail/character_detail_page_widget.dart';
-import '/features/profile/presentation/screens/user_info/language_selector/language_selector_widget.dart';
+import '/features/profile/presentation/screens/user_info/selectors/app_language_selector.dart';
+import '/features/profile/presentation/screens/user_info/selectors/country_selector_widget.dart';
 import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -566,6 +567,45 @@ class _UserInfoInputWidgetState extends ConsumerState<UserInfoInputWidget> {
                                       ],
                                     ),
                                   ),
+                                  // ============= Country Selection =============
+                                  Text(
+                                    'Country',
+                                    style: AppTheme.of(context)
+                                        .bodyMedium
+                                        .override(
+                                          font: GoogleFonts.plusJakartaSans(
+                                            fontWeight: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontWeight,
+                                            fontStyle: AppTheme.of(context)
+                                                .bodyMedium
+                                                .fontStyle,
+                                          ),
+                                          letterSpacing: 0.0,
+                                          fontWeight: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontWeight,
+                                          fontStyle: AppTheme.of(context)
+                                              .bodyMedium
+                                              .fontStyle,
+                                        ),
+                                  ),
+                                  CountrySelectorWidget(
+                                    initialCountryCode: _model.selectedCountryCode,
+                                    onChanged: (country) {
+                                      setState(() {
+                                        _model.selectedCountry = country.name;
+                                        _model.selectedCountryCode = country.code;
+                                      });
+                                    },
+                                    backgroundColor: AppTheme.of(context).secondaryBackground,
+                                    borderColor: const Color(0xFF262D34),
+                                    borderRadius: 8.0,
+                                  ),
+                                  Container(
+                                    decoration: BoxDecoration(),
+                                  ),
+                                  // ============= Language Selection =============
                                   Text(
                                     AppLocalizations.of(context).getText(
                                       'pqx67cpq' /* Language */,
@@ -590,16 +630,24 @@ class _UserInfoInputWidgetState extends ConsumerState<UserInfoInputWidget> {
                                               .fontStyle,
                                         ),
                                   ),
-                                  Container(
-                                    height: 40.0,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.rectangle,
-                                    ),
-                                    child: wrapWithModel(
-                                      model: _model.languageSelectorModel,
-                                      updateCallback: () => setState(() {}),
-                                      child: LanguageSelectorWidget(),
-                                    ),
+                                  AppLanguageSelector(
+                                    currentLanguage: AppLocalizations.of(context).languageCode,
+                                    languages: AppLocalizations.languages(),
+                                    onChanged: (lang) async {
+                                      // 1. UI 언어 변경 (VersusApp._locale 업데이트)
+                                      setAppLanguage(context, lang);
+
+                                      // 2. UserProfile.language 업데이트 (Firestore 저장)
+                                      // Phase 5: AppState.selectedLang → ProfileNotifier.updateLanguage()
+                                      await ref.read(profileProvider.notifier).updateLanguage(
+                                        languageCode: lang,
+                                      );
+                                    },
+                                    width: double.infinity,
+                                    height: 44.0,
+                                    backgroundColor: AppTheme.of(context).secondaryBackground,
+                                    borderColor: const Color(0xFF262D34),
+                                    borderRadius: 8.0,
                                   ),
                                   Container(
                                     decoration: BoxDecoration(),
@@ -984,6 +1032,8 @@ class _UserInfoInputWidgetState extends ConsumerState<UserInfoInputWidget> {
                                                   displayName: _model.displayNameTextController.text,
                                                   gender: _model.choiceChipsValue,
                                                   language: AppLocalizations.of(context).languageCode,
+                                                  country: _model.selectedCountry,
+                                                  countryCode: _model.selectedCountryCode,
                                                 );
 
                                                 // UseCase 실행

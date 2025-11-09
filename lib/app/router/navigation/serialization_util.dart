@@ -41,16 +41,6 @@ String dateTimeRangeToString(DateTimeRange dateTimeRange) {
   return '$startStr|$endStr';
 }
 
-String placeToString(AppPlace place) => jsonEncode({
-      'latLng': place.latLng.serialize(),
-      'name': place.name,
-      'address': place.address,
-      'city': place.city,
-      'state': place.state,
-      'country': place.country,
-      'zipCode': place.zipCode,
-    });
-
 String uploadedFileToString(AppUploadedFile uploadedFile) =>
     uploadedFile.serialize();
 
@@ -102,8 +92,6 @@ String? serializeParam(
         data = (param as LatLng).serialize();
       case ParamType.Color:
         data = AppColorSerialization(param as Color).toCssString();
-      case ParamType.AppPlace:
-        data = placeToString(param as AppPlace);
       case ParamType.AppUploadedFile:
         data = uploadedFileToString(param as AppUploadedFile);
       case ParamType.JSON:
@@ -147,30 +135,6 @@ LatLng? latLngFromString(String? latLngStr) {
   );
 }
 
-AppPlace placeFromString(String placeStr) {
-  final serializedData = jsonDecode(placeStr) as Map<String, dynamic>;
-  final data = {
-    'latLng': serializedData.containsKey('latLng')
-        ? latLngFromString(serializedData['latLng'] as String)
-        : const LatLng(0.0, 0.0),
-    'name': serializedData['name'] ?? '',
-    'address': serializedData['address'] ?? '',
-    'city': serializedData['city'] ?? '',
-    'state': serializedData['state'] ?? '',
-    'country': serializedData['country'] ?? '',
-    'zipCode': serializedData['zipCode'] ?? '',
-  };
-  return AppPlace(
-    latLng: data['latLng'] as LatLng,
-    name: data['name'] as String,
-    address: data['address'] as String,
-    city: data['city'] as String,
-    state: data['state'] as String,
-    country: data['country'] as String,
-    zipCode: data['zipCode'] as String,
-  );
-}
-
 AppUploadedFile uploadedFileFromString(String uploadedFileStr) =>
     AppUploadedFile.deserialize(uploadedFileStr);
 
@@ -195,7 +159,6 @@ enum ParamType {
   DateTimeRange,
   LatLng,
   Color,
-  AppPlace,
   AppUploadedFile,
   JSON,
 
@@ -247,8 +210,6 @@ dynamic deserializeParam<T>(
         return latLngFromString(param);
       case ParamType.Color:
         return appFromCssColor(param);
-      case ParamType.AppPlace:
-        return placeFromString(param);
       case ParamType.AppUploadedFile:
         return uploadedFileFromString(param);
       case ParamType.JSON:

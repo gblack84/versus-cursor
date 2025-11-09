@@ -3,7 +3,7 @@ import 'user_profile.dart';
 import 'profile_info.dart';
 import 'user_settings.dart';
 import '/features/profile/domain/failures/profile_failure.dart';
-import '/app/models/lat_lng.dart';
+import '/app/types/lat_lng.dart';
 
 /// UserProfile Extension for Firestore conversion
 ///
@@ -48,6 +48,8 @@ extension UserProfileFirestore on UserProfile {
 
       // Profile Information
       location: _parseLatLng(data['location']),
+      country: data['country'] as String?,
+      countryCode: data['countryCode'] as String?,
       shortDescription: data['shortDescription'] as String?,
       gender: data['gender'] as String?,
       dateOfBirth: (data['dateOfBirth'] as Timestamp?)?.toDate(),
@@ -137,6 +139,8 @@ extension UserProfileFirestore on UserProfile {
           'latitude': location!.latitude,
           'longitude': location!.longitude,
         },
+      if (country != null) 'country': country,
+      if (countryCode != null) 'countryCode': countryCode,
       if (shortDescription != null) 'shortDescription': shortDescription,
       if (gender != null) 'gender': gender,
       if (dateOfBirth != null)

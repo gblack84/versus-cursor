@@ -157,7 +157,7 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
                     ),
                     onPressed: () async {
                       Navigator.pop(context);
-                      AppState().uploadTextEditing = 0;
+                      // AppState().uploadTextEditing 삭제 (이미 폐기된 기능)
                       setState(() {});
                       await showModalBottomSheet(
                         isScrollControlled: true,

@@ -112,6 +112,35 @@ abstract class IUserRepository {
     String? eventId,
   });
 
+  /// 사용자 언어 설정 업데이트
+  ///
+  /// **Phase 5**: AppState.selectedLang 대체
+  /// - Feature-First 아키텍처: AppState → UserProfile.language
+  /// - UnifiedCacheService 통합
+  ///
+  /// **Parameters**:
+  /// - `languageCode`: 언어 코드 (예: 'en', 'ko', 'ja', 'zh')
+  /// - `eventId`: (Optional) 중복 방지를 위한 이벤트 ID
+  ///
+  /// **Returns**:
+  /// - `Right(UserProfile)`: 업데이트된 프로필
+  /// - `Left(ProfileFailure.unauthenticated)`: 인증되지 않은 사용자
+  /// - `Left(ProfileFailure.serverError)`: Firestore 업데이트 실패
+  /// - `Left(ProfileFailure.duplicateOperation)`: 이미 처리된 작업
+  ///
+  /// **Usage**:
+  /// ```dart
+  /// final result = await repository.updateLanguage('ko', eventId: uuid.v4());
+  /// result.fold(
+  ///   (failure) => // 에러 처리,
+  ///   (updatedProfile) => // 성공 처리,
+  /// );
+  /// ```
+  Future<Either<ProfileFailure, UserProfile>> updateLanguage(
+    String languageCode, {
+    String? eventId,
+  });
+
   /// 사용자 삭제
   ///
   /// **Parameters**:

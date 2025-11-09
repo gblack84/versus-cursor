@@ -3,6 +3,7 @@ import '/app/di.dart';
 import '../../domain/usecases/profile/get_user_profile_usecase.dart';
 import '../../domain/usecases/profile/get_current_user_profile_usecase.dart';
 import '../../domain/usecases/profile/update_user_profile_usecase.dart';
+import '../../domain/usecases/profile/update_language_usecase.dart';
 import '../../domain/usecases/profile/upload_profile_image_usecase.dart';
 import '../../domain/usecases/profile/delete_user_profile_usecase.dart';
 import '../../domain/usecases/profile/watch_user_profile_usecase.dart';
@@ -36,6 +37,11 @@ GetCurrentUserProfileUseCase getCurrentUserProfileUseCase(Ref ref) {
 @riverpod
 UpdateUserProfileUseCase updateUserProfileUseCase(Ref ref) {
   return getIt<UpdateUserProfileUseCase>();
+}
+
+@riverpod
+UpdateLanguageUseCase updateLanguageUseCase(Ref ref) {
+  return getIt<UpdateLanguageUseCase>();
 }
 
 @riverpod

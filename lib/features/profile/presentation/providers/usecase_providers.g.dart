@@ -154,6 +154,54 @@ final class UpdateUserProfileUseCaseProvider
 String _$updateUserProfileUseCaseHash() =>
     r'097e917ee954c7f60c620f50437f5b132253f8d2';
 
+@ProviderFor(updateLanguageUseCase)
+const updateLanguageUseCaseProvider = UpdateLanguageUseCaseProvider._();
+
+final class UpdateLanguageUseCaseProvider
+    extends
+        $FunctionalProvider<
+          UpdateLanguageUseCase,
+          UpdateLanguageUseCase,
+          UpdateLanguageUseCase
+        >
+    with $Provider<UpdateLanguageUseCase> {
+  const UpdateLanguageUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'updateLanguageUseCaseProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$updateLanguageUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<UpdateLanguageUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  UpdateLanguageUseCase create(Ref ref) {
+    return updateLanguageUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(UpdateLanguageUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<UpdateLanguageUseCase>(value),
+    );
+  }
+}
+
+String _$updateLanguageUseCaseHash() =>
+    r'08dc25d6e10f2e733ace9c799a787dc41e9bcb2b';
+
 @ProviderFor(uploadProfileImageUseCase)
 const uploadProfileImageUseCaseProvider = UploadProfileImageUseCaseProvider._();
 

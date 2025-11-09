@@ -172,6 +172,45 @@ class ProfileNotifier extends _$ProfileNotifier {
     ref.read(profileUIProvider.notifier).setLoading(false);
   }
 
+  /// Update user language setting
+  ///
+  /// **Phase 5**: AppState.selectedLang 대체
+  /// - Feature-First 아키텍처: AppState → UserProfile.language
+  ///
+  /// **Usage**:
+  /// ```dart
+  /// await ref.read(profileNotifierProvider.notifier).updateLanguage(
+  ///   languageCode: 'ko',  // 한국어
+  ///   eventId: uuid.v4(),   // Optional: Idempotency
+  /// );
+  /// ```
+  Future<void> updateLanguage({
+    required String languageCode,
+    String? eventId,
+  }) async {
+    ref.read(profileUIProvider.notifier).setLoading(true);
+    ref.read(profileUIProvider.notifier).clearError();
+
+    final useCase = ref.read(updateLanguageUseCaseProvider);
+    final result = await useCase.execute(
+      languageCode: languageCode,
+      eventId: eventId,
+    );
+
+    result.fold(
+      (failure) {
+        ref.read(profileUIProvider.notifier).setError(failure.message);
+      },
+      (updatedProfile) {
+        // Success: ProfileStreamProvider will automatically update
+        // via Firestore real-time listener
+        ref.read(profileUIProvider.notifier).clearError();
+      },
+    );
+
+    ref.read(profileUIProvider.notifier).setLoading(false);
+  }
+
   /// Upload profile image with progress tracking
   Future<void> uploadProfileImage({
     required String userId,

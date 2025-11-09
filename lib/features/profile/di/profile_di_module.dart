@@ -38,10 +38,11 @@ import '../data/repositories/profile_storage_repository_impl.dart';
 import '../data/repositories/profile_post_repository_impl.dart';
 
 // ===== Domain Layer - UseCases (13 total) =====
-// Profile UseCases (8)
+// Profile UseCases (9)
 import '../domain/usecases/profile/get_user_profile_usecase.dart';
 import '../domain/usecases/profile/get_current_user_profile_usecase.dart';
 import '../domain/usecases/profile/update_user_profile_usecase.dart';
+import '../domain/usecases/profile/update_language_usecase.dart';
 import '../domain/usecases/profile/upload_profile_image_usecase.dart';
 import '../domain/usecases/profile/delete_user_profile_usecase.dart';
 import '../domain/usecases/profile/watch_user_profile_usecase.dart';
@@ -140,9 +141,9 @@ void _registerRepositories(GetIt getIt) {
   );
 }
 
-/// Register all UseCases (13 total)
+/// Register all UseCases (14 total)
 void _registerUseCases(GetIt getIt) {
-  // ===== Profile UseCases (8) =====
+  // ===== Profile UseCases (9) =====
 
   getIt.registerFactory(
     () => GetUserProfileUseCase(
@@ -158,6 +159,12 @@ void _registerUseCases(GetIt getIt) {
 
   getIt.registerFactory(
     () => UpdateUserProfileUseCase(
+      repository: getIt<IUserRepository>(),
+    ),
+  );
+
+  getIt.registerFactory(
+    () => UpdateLanguageUseCase(
       repository: getIt<IUserRepository>(),
     ),
   );

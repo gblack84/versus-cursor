@@ -54,8 +54,7 @@ service cloud.firestore {
       allow create: if true;
       allow read: if true;
       allow update: if request.auth != null && (
-        // 클라이언트가 업데이트 가능한 필드만 허용
-        // ⚠️ 카운터 필드는 제외 (votesA, votesB, totalVotes, counterLastUpdated)
+        // ✅ Step 1: 클라이언트가 업데이트 가능한 필드만 허용 (Whitelist)
         request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['votedUserIDsA', 'votedUserIDsB', 'lastVoteAt',
                     'timerStartedAt', 'timerExpiryAt', 'voteRequestStatus',
@@ -66,7 +65,13 @@ service cloud.firestore {
                     'notificationsSent', 'notificationsSentAt',
                     // 표시용 투표 수 (증폭된 수)
                     'displayVotesA', 'displayVotesB', 'displayPercentA', 'displayPercentB'])
-        // 중복 투표 방지 (필드가 존재하는 경우에만 확인)
+
+        // ✅ Step 2: 카운터 필드 명시적 차단 (Server-Only, Blacklist)
+        // Cloud Functions에서만 업데이트 가능
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['votesA', 'votesB', 'totalVotes', 'counterLastUpdated'])
+
+        // ✅ Step 3: 중복 투표 방지 (필드가 존재하는 경우에만 확인)
         && (
           (!('votedUserIDsA' in resource.data) || !(request.auth.uid in resource.data.votedUserIDsA))
           && (!('votedUserIDsB' in resource.data) || !(request.auth.uid in resource.data.votedUserIDsB))

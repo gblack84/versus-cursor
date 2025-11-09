@@ -60,6 +60,10 @@ class PostCacheService {
     return 'posts_user_${userId}_limit_$limit';
   }
 
+  String _recentPostsCacheKey({int limit = 30}) {
+    return 'posts_recent_limit_$limit';
+  }
+
   // ────────────────────────────────────────────────────────────────
   // Feed Posts Cache Operations
   // ────────────────────────────────────────────────────────────────
@@ -325,6 +329,55 @@ class PostCacheService {
   }
 
   // ────────────────────────────────────────────────────────────────
+  // Recent Posts Cache Operations
+  // ────────────────────────────────────────────────────────────────
+
+  /// Get recent posts from cache
+  ///
+  /// **TTL**: 5 minutes
+  Future<List<PostDisplay>> getRecentPosts({int limit = 30}) async {
+    final cacheKey = _recentPostsCacheKey(limit: limit);
+    final cachedDataResult = await _cache.get<List<dynamic>>(cacheKey);
+    final cachedData = cachedDataResult.fold(
+      (failure) => null,  // Cache miss or error
+      (data) => data,
+    );
+
+    if (cachedData != null && cachedData.isNotEmpty) {
+      try {
+        return cachedData
+            .map((json) => PostDisplay.fromJson(json as Map<String, dynamic>))
+            .toList();
+      } catch (e) {
+        debugPrint('⚠️ PostCacheService: Failed to deserialize recent posts - $e');
+        await _cache.invalidate(cacheKey);
+        return [];
+      }
+    }
+
+    return [];
+  }
+
+  /// Set recent posts in cache
+  ///
+  /// **TTL**: 5 minutes
+  Future<void> setRecentPosts({
+    required List<PostDisplay> posts,
+    int limit = 30,
+  }) async {
+    final cacheKey = _recentPostsCacheKey(limit: limit);
+    final jsonData = posts.map((post) => post.toJson()).toList();
+
+    await _cache.set(
+      cacheKey,
+      jsonData,
+      ttl: const Duration(minutes: 5),
+    );
+
+    debugPrint('✅ PostCacheService: Cached ${posts.length} recent posts');
+  }
+
+  // ────────────────────────────────────────────────────────────────
   // Preloading Operations
   // ────────────────────────────────────────────────────────────────
 
@@ -412,6 +465,7 @@ class PostCacheService {
       await _cache.invalidate('posts_popular_');
       await _cache.invalidate('posts_trending_');
       await _cache.invalidate('posts_user_');
+      await _cache.invalidate('posts_recent_');
 
       debugPrint('🗑️ PostCacheService: Cleared all post caches');
     } catch (e) {

@@ -12,6 +12,9 @@ Profile Feature의 Data Layer는 **Firebase-Centric Architecture v2.0**와 **3-L
 
 - ✅ **Firebase SDK 직접 사용**: Remote DataSource 추상화 제거 (Storage 제외)
 - ✅ **Extension Pattern**: Mapper + DTO 패턴을 Extension으로 대체
+  - UserProfile: 44 fields (including country, countryCode)
+  - ProfileInfo: 10 fields (경량 조회용, country/countryCode는 UserProfile에만 존재)
+  - UserSettings: 9 fields
 - ✅ **3-Layer Caching**: Memory → Hive → Firestore로 성능 극대화
 - ✅ **Storage만 추상화**: IProfileStorageDataSource 인터페이스 분리
 - ✅ **공유 서비스 통합**: IdempotencyService, AuthContract, UserContract 활용
@@ -133,6 +136,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
 Future<Either<ProfileFailure, ProfileInfo>> getProfileInfo(String userId) async {
   try {
     // 🔥 3-Layer Cache 조회 (Memory → Hive → Firestore)
+    // ProfileInfo includes: displayName, photoUrl, location, interests, etc. (10 fields)
     final profileInfo = await _cacheService.getProfileInfo(userId);
 
     if (profileInfo == null) {
@@ -151,6 +155,7 @@ Future<Either<ProfileFailure, ProfileInfo>> getProfileInfo(String userId) async 
 2. **3-Layer 자동 처리**: Memory → Hive → Firestore 순서로 자동 조회
 3. **Cache Promotion**: 하위 캐시 히트 시 상위 캐시로 자동 승급
 4. **TTL 관리**: ProfileInfo = 1시간, Completion = 30분
+5. **경량 모델**: ProfileInfo는 10개 필드로 경량 조회 (country/countryCode는 UserProfile에만 존재)
 
 ##### `getProfileCompletionPercentage()` - 완성도 조회
 
@@ -168,6 +173,7 @@ Future<Either<ProfileFailure, double>> getProfileCompletionPercentage(
 
     // Cache Miss - Firebase SDK 직접 사용하여 계산
     final doc = await _firestore.collection('users').doc(userId).get();
+    // Extension Pattern: Firestore Document → UserProfile (44 fields including country, countryCode)
     final profile = UserProfileFirestore.fromFirestore(doc);
     final percentage = profile.completionRate;
 
@@ -253,6 +259,8 @@ Future<Either<ProfileFailure, UserProfile>> getUserByUid(String uid) async {
 
   // Cache Miss - Firestore 조회
   final doc = await _firestore.collection('users').doc(uid).get();
+  // Extension Pattern: Firestore Document → UserProfile (44 fields)
+  // Includes: uid, email, displayName, photoUrl, country, countryCode, location, etc.
   final profile = UserProfileFirestore.fromFirestore(doc);
 
   // 🔥 캐시에 저장
@@ -264,6 +272,8 @@ Future<Either<ProfileFailure, UserProfile>> getUserByUid(String uid) async {
 // ===== Create =====
 @override
 Future<Either<ProfileFailure, Unit>> createUser(UserProfile user) async {
+  // Extension Pattern: UserProfile → Firestore Map (44 fields)
+  // Includes: displayName, email, photoUrl, country, countryCode, location, etc.
   final data = user.toFirestore();
   await _firestore.collection('users').doc(user.uid).set(data);
   return right(unit);
@@ -342,6 +352,7 @@ Stream<UserProfile?> watchUserProfile(String userId) {
         if (!snapshot.exists) return null;
 
         // Extension으로 변환 (Firestore Document → Domain Model)
+        // Converts all 44 fields including country, countryCode
         final profile = UserProfileFirestore.fromFirestore(snapshot);
         return profile;
       })
@@ -398,6 +409,7 @@ Future<Either<ProfileFailure, UserSettings>> getUserSettings(
 
   // Cache Miss - Firestore 조회
   final doc = await _firestore.collection('users').doc(userId).get();
+  // Extension Pattern: Firestore Document → UserSettings (9 fields)
   final settings = UserSettingsFirestore.fromFirestore(doc);
 
   // 🔥 캐시에 저장
@@ -412,7 +424,7 @@ Future<Either<ProfileFailure, Unit>> updateUserSettings(
   UserSettings settings, {
   String? eventId,
 }) async {
-  // IdempotencyService + Extension 활용
+  // Extension Pattern: UserSettings → Firestore Map (9 fields)
   final data = settings.toFirestore();
 
   if (eventId != null) {
@@ -518,6 +530,7 @@ Future<Either<ProfileFailure, UserSettings>> getUserSettings(
 
   // Cache Miss - Firebase SDK 직접 사용
   final doc = await _firestore.collection('users').doc(userId).get();
+  // Extension Pattern: Firestore Document → UserSettings (9 fields)
   final settings = UserSettingsFirestore.fromFirestore(doc);
 
   // 🔥 캐시에 저장
@@ -531,6 +544,7 @@ Future<Either<ProfileFailure, Unit>> updateUserSettings(
   String userId,
   UserSettings settings,
 ) async {
+  // Extension Pattern: UserSettings → Firestore Map (9 fields)
   final data = settings.toFirestore();
   await _firestore.collection('users').doc(userId).update(data);
 

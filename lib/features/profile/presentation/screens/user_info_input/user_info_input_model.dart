@@ -1,6 +1,5 @@
 import '/features/profile/domain/entities/user_profile.dart';
 import '/core_exports.dart';
-import '/features/profile/presentation/screens/user_info/language_selector/language_selector_widget.dart';
 import '/app/widgets/index.dart';
 import 'user_info_input_widget.dart' show UserInfoInputWidget;
 import 'package:flutter/material.dart';
@@ -9,6 +8,8 @@ class UserInfoInputModel extends AppModel<UserInfoInputWidget> {
   ///  Local state fields for this page.
 
   String? selectedLanguage;
+  String? selectedCountry;      // "South Korea"
+  String? selectedCountryCode;  // "KR"
 
   bool agreed13old = false;
 
@@ -32,8 +33,6 @@ class UserInfoInputModel extends AppModel<UserInfoInputWidget> {
     return null;
   }
 
-  // Model for LanguageSelector component.
-  late LanguageSelectorModel languageSelectorModel;
   // State field(s) for ChoiceChips widget.
   FormFieldController<List<String>>? choiceChipsValueController;
   String? get choiceChipsValue =>
@@ -46,14 +45,11 @@ class UserInfoInputModel extends AppModel<UserInfoInputWidget> {
   @override
   void initState(BuildContext context) {
     displayNameTextControllerValidator = _displayNameTextControllerValidator;
-    languageSelectorModel = createModel(context, () => LanguageSelectorModel());
   }
 
   @override
   void dispose() {
     displayNameFocusNode?.dispose();
     displayNameTextController?.dispose();
-
-    languageSelectorModel.dispose();
   }
 }

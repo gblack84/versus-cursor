@@ -221,7 +221,7 @@ final class ProfileNotifierProvider
   }
 }
 
-String _$profileNotifierHash() => r'3e68e61b76da54bced80c033a25f3ad9f5769d51';
+String _$profileNotifierHash() => r'c83ab21ec32b6aeccdaad6cfb68d374fe8bac25a';
 
 /// Profile Actions Notifier
 

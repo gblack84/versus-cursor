@@ -557,8 +557,7 @@ we'll send you better questio... */
                                                 _model.inputTextController
                                                     ?.clear();
                                               });
-                                              // Update AppState
-                                              AppState().update(() {});
+                                              // AppState().update() 삭제 (이미 Riverpod으로 자동 업데이트)
                                             },
                                           );
                                         }
@@ -754,8 +753,7 @@ we'll send you better questio... */
                                                     );
                                                   },
                                                   (_) {
-                                                    // Update AppState
-                                                    AppState().update(() {});
+                                                    // AppState().update() 삭제 (이미 Riverpod으로 자동 업데이트)
                                                   },
                                                 );
                                               },

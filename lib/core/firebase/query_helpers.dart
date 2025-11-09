@@ -19,7 +19,7 @@ export 'utils/firestore_util.dart';
 export 'utils/schema_util.dart';
 
 // Core export for common types
-export '/app/models/lat_lng.dart'; // LatLng type used across features
+export '/app/types/lat_lng.dart'; // LatLng type used across features
 
 // ============================================
 // UTILITY FUNCTIONS ONLY

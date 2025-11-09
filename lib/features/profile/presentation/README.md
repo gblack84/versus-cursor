@@ -45,7 +45,7 @@ Profile Feature의 **Presentation Layer**는 Clean Architecture v4.0의 최상�
 |------|------|------|
 | **Providers** | 25개 | UseCase(13) + Stream(2) + Future(4) + State(6) |
 | **Screens** | 10개 | Main, Edit, Settings, Onboarding, UserInfo 등 |
-| **Widgets** | 18개 | Profile, Interest, Settings, Common widgets |
+| **Widgets** | 19개 | Profile, Interest, Settings, Common widgets, CountrySelector |
 | **Actions** | 5개 | updateProfile, uploadImage, delete, updateSettings, updateInterests |
 
 ---
@@ -74,7 +74,9 @@ presentation/
 │   ├── user_info/                      # 사용자 정보
 │   │   ├── user_info_display/          # 정보 표시 (Phase 6.1 경량 ProfileInfo 사용)
 │   │   ├── character_detail/           # 캐릭터 상세
-│   │   └── language_selector/          # 언어 선택
+│   │   └── selectors/                  # 🆕 선택 위젯 (국가, 언어)
+│   │       ├── country_selector_widget.dart  # 국가 선택 (IP 자동 감지)
+│   │       └── app_language_selector.dart    # 언어 선택 (← Core에서 이동)
 │   ├── user_info_input/                # 정보 입력
 │   │   ├── user_info_input_widget.dart
 │   │   └── user_info_input_model.dart
@@ -1538,7 +1540,7 @@ class UserInfoDisplayScreen extends ConsumerWidget {
 
 ---
 
-## 🧩 Widgets (18개)
+## 🧩 Widgets (19개)
 
 ### **Common Widgets**
 
@@ -1835,6 +1837,78 @@ class InterestChip extends StatelessWidget {
   }
 }
 ```
+
+---
+
+### **Selector Widgets** 🆕
+
+#### **7. CountrySelectorWidget**
+
+**위치**: `screens/user_info/selectors/country_selector_widget.dart` (178 lines)
+
+**목적**: IP 기반 국가 자동 감지 + 수동 선택
+
+**Features**:
+- ✅ **IP-based Auto-detection**: CountryDetectionService를 통한 자동 국가 감지
+- ✅ **Manual Selection**: country_code_picker 패키지 UI
+- ✅ **Favorite Countries**: +82 (KR), +1 (US), +49 (DE) 즐겨찾기
+- ✅ **Searchable**: 240+ 국가 검색 기능
+- ✅ **Dark Theme**: 앱 테마에 맞춘 다크 모드
+- ✅ **Loading State**: 자동 감지 중 로딩 표시
+
+**Usage**:
+```dart
+CountrySelectorWidget(
+  initialCountryCode: _model.selectedCountryCode,
+  onChanged: (country) {
+    setState(() {
+      _model.selectedCountry = country.name;        // "South Korea"
+      _model.selectedCountryCode = country.code;    // "KR"
+    });
+  },
+  backgroundColor: AppTheme.of(context).secondaryBackground,
+  borderColor: const Color(0xFF262D34),
+  borderRadius: 8.0,
+)
+```
+
+**Parameters**:
+```dart
+class CountrySelectorWidget extends StatefulWidget {
+  final String? initialCountryCode;           // 초기 국가 코드 (null = auto-detect)
+  final Function(CountryCode) onChanged;      // 국가 변경 콜백
+  final Color? backgroundColor;               // 배경색 (optional)
+  final Color? borderColor;                   // 테두리 색상 (optional)
+  final double borderRadius;                  // 테두리 둥글기 (default: 8.0)
+  final TextStyle? textStyle;                 // 텍스트 스타일 (optional)
+}
+```
+
+**Dependencies**:
+- `country_code_picker: ^3.0.0` - Country selection UI
+- `CountryDetectionService` - IP-based detection (core/localization/)
+
+**Flow**:
+1. Widget `initState()` → `_detectCountry()`
+2. If `initialCountryCode != null` → Use provided code
+3. Else → Call `CountryDetectionService.detectCountry()`
+4. Auto-detect country via IP geolocation (ip-api.com)
+5. Set `_countryCode` → Initialize `CountryCodePicker`
+6. User can manually change country
+7. `onChanged()` callback with `CountryCode` object
+
+**Integration Points**:
+- **user_info_input_widget.dart**: 프로필 생성 시 국가 선택
+- **phone_creat_account (Auth Feature)**: 전화번호 인증 시 국가 코드
+
+**Performance**:
+- Auto-detection: ~100-500ms (network call)
+- Fallback: Instant (US/en)
+- Timeout: 5 seconds max
+
+**Related Documentation**:
+- [CountryDetectionService](/lib/core/localization/README.md#countrydetectionservice)
+- [country_code_picker Package](https://pub.dev/packages/country_code_picker)
 
 ---
 
@@ -2339,6 +2413,38 @@ final profileInfoProvider = FutureProvider.family<ProfileInfo, String>(...);
 
 ---
 
+## 📦 External Dependencies
+
+### UI Components
+- **country_code_picker**: 3.0.0
+  - 국가 선택 UI 컴포넌트
+  - 240+ 국가 지원, 플래그 아이콘 자동 표시
+  - 검색 기능 포함
+  - **사용 위치**: `CountrySelectorWidget` (user_info/selectors/)
+  - **통합**: Auth Feature (phone_creat_account)
+
+### Services
+- **CountryDetectionService**: IP 기반 국가 자동 감지
+  - **위치**: `/lib/core/localization/country_detection_service.dart`
+  - **API**: ip-api.com (무료, 45 req/min)
+  - **Fallback**: 네트워크 에러 시 US/en 기본값
+  - **사용 위치**: `CountrySelectorWidget`
+  - **문서**: [Core Localization README](/lib/core/localization/README.md)
+
+### State Management
+- **flutter_riverpod**: 3.0.3
+  - Riverpod 3.x state management
+  - @riverpod code generation pattern
+  - 25개 Providers (UseCase 13, Stream 2, Future 4, State 6)
+
+### Dependency Injection
+- **get_it**: 7.6.0
+  - GetIt dependency injection
+  - UseCase Provider pattern
+  - Singleton service management
+
+---
+
 ## 🔗 관련 문서
 
 ### Profile Feature 문서
@@ -2348,6 +2454,7 @@ final profileInfoProvider = FutureProvider.family<ProfileInfo, String>(...);
 - [Domain Models README](/lib/features/profile/domain/models/README.md) - 모델 상세 가이드
 
 ### Core 문서
+- [Core Localization README](/lib/core/localization/README.md) - 🆕 CountryDetectionService, IP-based detection
 - [Design System Guide](/lib/core/design_system/README.md) - VersusColors, VersusSpacing 등
 - [Clean Architecture Guide](/FEATURE_ARCHITECTURE.md) - 아키텍처 원칙
 - [GetIt DI Guide](/app/di/README.md) - Dependency Injection 패턴

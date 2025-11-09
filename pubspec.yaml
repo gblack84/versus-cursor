@@ -70,6 +70,7 @@ dependencies:
   google_sign_in: ^6.3.0
   html: ^0.15.6
   http: ^1.4.0
+  country_code_picker: ^3.0.0  # 국가 선택 및 전화번호 국가 코드
   image_picker: 1.1.2
   dart_openai: ^5.1.0
   image_picker_android: ^0.8.12+23
@@ -98,13 +99,11 @@ dependencies:
   pointer_interceptor_web: 0.10.2+1
   pro_image_editor: ^10.3.1
   pro_video_editor: ^0.1.8
-  riverpod: ^3.0.3
   flutter_riverpod: ^3.0.3
   riverpod_annotation: ^3.0.0
   flutter_sfsymbols: ^2.0.0
   wechat_assets_picker: ^9.5.1
   wechat_camera_picker: ^4.3.7
-  rxdart: ^0.28.0
   shared_preferences: ^2.5.3
   shared_preferences_android: ^2.3.2
   shared_preferences_foundation: ^2.5.2
@@ -117,7 +116,6 @@ dependencies:
   sign_in_with_apple_web: ^3.0.0
   smooth_page_indicator: ^1.2.1
   stop_watch_timer: ^3.2.2
-  stream_transform: ^2.1.1
   styled_divider: ^1.0.5
   timeago: 3.7.1
   transparent_image: ^2.0.1

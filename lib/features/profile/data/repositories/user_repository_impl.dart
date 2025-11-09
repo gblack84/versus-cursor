@@ -299,6 +299,77 @@ class UserRepositoryImpl implements IUserRepository {
   }
 
   @override
+  Future<Either<ProfileFailure, UserProfile>> updateLanguage(
+    String languageCode, {
+    String? eventId,
+  }) async {
+    try {
+      debugPrint('[UserRepository] Updating language to: $languageCode');
+
+      // 1. 현재 사용자 ID 가져오기
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        debugPrint('[UserRepository] No authenticated user');
+        return left(const ProfileFailure.authenticationRequired());
+      }
+
+      final userId = currentUser.uid;
+
+      // 2. IdempotencyService로 래핑
+      if (eventId != null && eventId.isNotEmpty) {
+        await _idempotencyService.executeIdempotent<void>(
+          entityType: 'language_updates',
+          entityId: userId,
+          userId: userId,
+          eventId: eventId,
+          operation: (transaction) async {
+            // Transaction 내부에서 language 필드만 update
+            final docRef = _firestore.collection('users').doc(userId);
+            transaction.update(docRef, {
+              'language': languageCode,
+              'lastActiveTime': Timestamp.fromDate(getCurrentTimestamp()),
+            });
+          },
+        );
+      } else {
+        // eventId 없으면 기존 로직 (backward compatibility)
+        await _firestore.collection('users').doc(userId).update({
+          'language': languageCode,
+          'lastActiveTime': Timestamp.fromDate(getCurrentTimestamp()),
+        });
+      }
+
+      // 3. 캐시 무효화 (업데이트 후 캐시 클리어)
+      await _cacheService.clearUserProfile(userId);
+
+      // 4. 업데이트된 프로필 가져오기
+      final updatedProfileResult = await getUserByUid(userId);
+
+      return updatedProfileResult.fold(
+        (failure) {
+          debugPrint('[UserRepository] Failed to get updated profile: $failure');
+          return left(failure);
+        },
+        (updatedProfile) {
+          debugPrint('[UserRepository] Language updated successfully to: ${updatedProfile.language}');
+          return right(updatedProfile);
+        },
+      );
+    } on IdempotencyViolation catch (e) {
+      debugPrint('[UserRepository] Idempotency violation: $e');
+      return left(ProfileFailure.duplicateOperation('Language already updated: ${e.message}'));
+    } on FirebaseException catch (e) {
+      debugPrint('[UserRepository] Firebase error: ${e.code} - ${e.message}');
+      return left(_mapFirebaseException(e));
+    } on ProfileFailure catch (e) {
+      return left(e);
+    } catch (e) {
+      debugPrint('[UserRepository] Unexpected error: $e');
+      return left(ProfileFailure.firestoreWrite('Failed to update language: $e'));
+    }
+  }
+
+  @override
   Future<Either<ProfileFailure, Unit>> deleteUser(
     String uid, {
     String? eventId,

@@ -38,13 +38,13 @@ Profile Feature의 **Domain Models**를 정의합니다. Firebase 의존성이 �
 
 **역할**: 사용자의 모든 프로필 정보를 담는 메인 모델
 
-**42개 필드 구성**:
+**44개 필드 구성**:
 ```dart
 // Core Identity (5)
 uid, email, displayName, photoUrl, phoneNumber
 
-// Profile Information (5)
-location, shortDescription, gender, dateOfBirth, language
+// Profile Information (7)
+location, country, countryCode, shortDescription, gender, dateOfBirth, language
 
 // System Timestamps (3)
 createdTime, lastActive, lastActiveTime
@@ -90,8 +90,10 @@ role, title, stats, subscription
 **10개 필드**:
 - Core: `userId`, `displayName`, `photoUrl`
 - Details: `shortDescription`, `gender`, `dateOfBirth`, `language`
-- Lists: `interests[]`, `expertise[]`
 - Location: `location` (LatLng)
+- Lists: `interests[]`, `expertise[]`
+
+**참고**: `country`와 `countryCode` 필드는 ProfileInfo에 없으며, **UserProfile에만 존재**합니다.
 
 **변경 이력**:
 - 2025-01-20 Phase 1: Firebase 의존성 제거

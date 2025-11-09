@@ -123,9 +123,9 @@ lib/features/auth/presentation/
 │   ├── phone_auth/                        # 9 files - 전화 인증 플로우
 │   │   ├── phonelogeinpincode_widget.dart # PIN 입력 화면
 │   │   ├── phonelogeinpincode_model.dart
-│   │   ├── phone_creat_account/           # 번호 입력 화면
-│   │   │   ├── phone_creat_account_widget.dart
-│   │   │   └── phone_creat_account_model.dart
+│   │   ├── phone_creat_account/           # 번호 입력 화면 + CountrySelectorWidget (Profile Feature)
+│   │   │   ├── phone_creat_account_widget.dart  # IP-based country auto-detection
+│   │   │   └── phone_creat_account_model.dart   # selectedCountryCode, selectedCountryName
 │   │   ├── phonemaximum/                  # 재시도 초과 화면
 │   │   │   ├── phonemaximum_widget.dart
 │   │   │   └── phonemaximum_model.dart
@@ -3400,6 +3400,11 @@ flutter pub run build_runner watch
 ### Reference Features
 
 - [Voting Presentation](../../voting/presentation/README.md) - Riverpod 패턴 참조 (637 lines)
+- [Profile Presentation - CountrySelectorWidget](../../profile/presentation/README.md#7-countryselectorwidget) - 전화번호 인증에 사용되는 국가 선택 위젯
+
+### Core Services
+
+- [Core Localization](../../../../lib/core/localization/README.md) - CountryDetectionService (IP 기반 국가 감지, 240+ countries)
 
 ### Architecture Documentation
 

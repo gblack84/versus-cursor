@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '/app/models/lat_lng.dart';
-import '/app/models/lat_lng_converter.dart';
+import '/app/types/lat_lng.dart';
+import '/app/types/lat_lng_converter.dart';
 
 part 'user_profile.freezed.dart';
 part 'user_profile.g.dart';
@@ -38,6 +38,8 @@ sealed class UserProfile with _$UserProfile {
     // ============= Profile Information =============
     @LatLngConverter()
     LatLng? location,
+    String? country,           // "South Korea" (정적, 프로필 식별)
+    String? countryCode,       // "KR" (ISO 3166-1 alpha-2)
     String? shortDescription,
     String? gender,
     DateTime? dateOfBirth,
@@ -112,10 +114,11 @@ sealed class UserProfile with _$UserProfile {
   /// 프로필 완성도 (0.0 ~ 1.0)
   double get completionRate {
     int completedFields = 0;
-    const int totalRequiredFields = 10; // 주요 필드 개수
+    const int totalRequiredFields = 11; // 주요 필드 개수
 
     if (displayName != null && displayName!.isNotEmpty) completedFields++;
     if (photoUrl != null && photoUrl!.isNotEmpty) completedFields++;
+    if (country != null && country!.isNotEmpty) completedFields++;
     if (shortDescription != null && shortDescription!.isNotEmpty) completedFields++;
     if (gender != null) completedFields++;
     if (dateOfBirth != null) completedFields++;

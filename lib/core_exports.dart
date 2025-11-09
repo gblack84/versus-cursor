@@ -40,7 +40,6 @@ export 'core/widgets/app_video_player.dart';
 export 'core/widgets/app_web_view.dart';
 
 // Localization
-export 'core/localization/app_language_selector.dart';
 export 'core/localization/app_localizations.dart';
 
 // Utilities
@@ -65,6 +64,5 @@ export 'core/models/form_field_controller.dart';
 export 'app/router/navigation/nav.dart';
 export 'app/router/navigation/serialization_util.dart' hide appFromCssColor;
 
-// App Models (app/models)
-export 'app/models/lat_lng.dart';
-export 'app/models/place.dart';
+// App Types (app/types)
+export 'app/types/lat_lng.dart';

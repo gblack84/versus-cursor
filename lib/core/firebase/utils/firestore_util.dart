@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'schema_util.dart';
-import '/app/models/lat_lng.dart';
+import '/app/types/lat_lng.dart';
 import '/app/router/navigation/serialization_util.dart'
     show AppColorSerialization;
 

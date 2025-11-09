@@ -1,12 +1,37 @@
 rules_version = '2';
+
 service firebase.storage {
   match /b/{bucket}/o {
+    // Default: deny all access
     match /{allPaths=**} {
       allow read, write: if false;
     }
+
+    // User profile images - own folder only
+    // Path: /users/{userId}/profile.jpg, avatar.png, etc.
     match /users/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth.uid == userId;
+      allow read: if true;  // Public read for profile images
+      allow write: if request.auth != null
+        && request.auth.uid == userId  // Only own folder
+        && request.resource.size < 10 * 1024 * 1024  // 10MB limit
+        && request.resource.contentType.matches('image/.*|video/.*');  // Images/videos only
+    }
+
+    // Post media - authenticated write
+    // Path: /posts/{postId}/optionA.jpg, optionB.mp4, etc.
+    match /posts/{postId}/{allPaths=**} {
+      allow read: if true;  // Public read for post media
+      allow write: if request.auth != null  // Authenticated users
+        && request.resource.size < 10 * 1024 * 1024  // 10MB limit
+        && request.resource.contentType.matches('image/.*|video/.*');  // Images/videos only
+    }
+
+    // Temporary uploads (24h TTL) - for upload processing
+    // Path: /temp/{userId}/{tempId}.jpg
+    match /temp/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == userId  // Only own temp folder
+        && request.resource.size < 10 * 1024 * 1024;  // 10MB limit
     }
   }
 }

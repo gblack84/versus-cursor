@@ -3,11 +3,22 @@ import 'dart:async';
 import 'package:algolia/algolia.dart';
 
 // Migrated from backend.dart - only need LatLng
-import '/app/models/lat_lng.dart';
+import '/app/types/lat_lng.dart';
 import '/core_exports.dart';
 
 export 'package:algolia/algolia.dart';
 
+// TODO(security): Algolia 자격증명을 EnvironmentConfig로 마이그레이션 필요
+// 현재 하드코딩된 API 키는 Git 저장소에 노출되어 보안 위험이 있음
+//
+// 마이그레이션 단계:
+// 1. .env 파일에 ALGOLIA_APP_ID, ALGOLIA_API_KEY 추가
+// 2. 아래 코드를 다음과 같이 수정:
+//    final kAlgoliaApplicationId = EnvironmentConfig.algoliaAppId;
+//    final kAlgoliaApiKey = EnvironmentConfig.algoliaApiKey;
+// 3. EnvironmentConfig.validateConfiguration()에 Algolia 검증 추가
+//
+// 참고: lib/core/config/README.md
 const kAlgoliaApplicationId = '0GAS0MPT9Z';
 const kAlgoliaApiKey = '123e265bbab0702b220a66a59f22ab8e';
 

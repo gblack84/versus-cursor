@@ -13,7 +13,6 @@ import '/core_exports.dart';
 import '/core/utils/error_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'login_page_model.dart';
 export 'login_page_model.dart';
 
@@ -33,8 +32,6 @@ class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
-  final animationsMap = <String, AnimationInfo>{};
-
   @override
   void initState() {
     super.initState();
@@ -45,35 +42,6 @@ class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
 
     _model.passwordLoginTextController ??= TextEditingController();
     _model.passwordLoginFocusNode ??= FocusNode();
-
-    animationsMap.addAll({
-      'columnOnPageLoadAnimation': AnimationInfo(
-        trigger: AnimationTrigger.onPageLoad,
-        effectsBuilder: () => [
-          FadeEffect(
-            curve: Curves.easeInOut,
-            delay: 200.0.ms,
-            duration: 400.0.ms,
-            begin: 0.0,
-            end: 1.0,
-          ),
-          MoveEffect(
-            curve: Curves.easeInOut,
-            delay: 200.0.ms,
-            duration: 400.0.ms,
-            begin: Offset(0.0, 60.0),
-            end: Offset(0.0, 0.0),
-          ),
-          TiltEffect(
-            curve: Curves.easeInOut,
-            delay: 200.0.ms,
-            duration: 400.0.ms,
-            begin: Offset(-0.349, 0),
-            end: Offset(0, 0),
-          ),
-        ],
-      ),
-    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
@@ -339,8 +307,7 @@ class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
                                 onTap: _handleCreateAccount,
                               ),
                             ],
-                          ).animateOnPageLoad(
-                              animationsMap['columnOnPageLoadAnimation']!),
+                          ),
                         ),
                       ),
                     ],

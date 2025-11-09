@@ -163,11 +163,35 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
             ),
           ],
         ),
-        AppRoute(
+        GoRoute(
           name: LoginPageWidget.routeName,
           path: LoginPageWidget.routePath,
-          builder: (context, params) => LoginPageWidget(),
-        ).toRoute(appStateNotifier),
+          pageBuilder: (context, state) {
+            fixStatusBarOniOS16AndBelow(context);
+            return CustomTransitionPage(
+              key: state.pageKey,
+              child: LoginPageWidget(),
+              transitionDuration: Duration(milliseconds: 400),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                // Fade + Slide transition (replicates FlutterFlow animation)
+                final curvedAnimation = CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeInOut,
+                );
+                return FadeTransition(
+                  opacity: curvedAnimation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: Offset(0.0, 0.15), // 60px → 15% of screen height
+                      end: Offset.zero,
+                    ).animate(curvedAnimation),
+                    child: child,
+                  ),
+                );
+              },
+            );
+          },
+        ),
         AppRoute(
           name: CreateAccountWidget.routeName,
           path: CreateAccountWidget.routePath,
@@ -251,11 +275,35 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
             userId: params.getParam('userId', ParamType.String) ?? '',
           ),
         ).toRoute(appStateNotifier),
-        AppRoute(
+        GoRoute(
           name: StartPageWidget.routeName,
           path: StartPageWidget.routePath,
-          builder: (context, params) => StartPageWidget(),
-        ).toRoute(appStateNotifier),
+          pageBuilder: (context, state) {
+            fixStatusBarOniOS16AndBelow(context);
+            return CustomTransitionPage(
+              key: state.pageKey,
+              child: StartPageWidget(),
+              transitionDuration: Duration(milliseconds: 400),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                // Fade + Slide transition (replicates FlutterFlow animation)
+                final curvedAnimation = CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeInOut,
+                );
+                return FadeTransition(
+                  opacity: curvedAnimation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: Offset(0.0, 0.15), // 60px → 15% of screen height
+                      end: Offset.zero,
+                    ).animate(curvedAnimation),
+                    child: child,
+                  ),
+                );
+              },
+            );
+          },
+        ),
         AppRoute(
           name: PhoneCreatAccountWidget.routeName,
           path: PhoneCreatAccountWidget.routePath,

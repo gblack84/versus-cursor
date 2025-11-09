@@ -30,9 +30,6 @@ export 'features/search/domain/repositories/i_search_repository.dart';
 // Theme & Styling
 export 'core/theme/app_theme.dart';
 
-// Animations
-export 'core/animations/app_animations.dart';
-
 // Widgets
 export 'core/widgets/app_widgets.dart';
 export 'core/widgets/app_choice_chips.dart';

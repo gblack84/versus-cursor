@@ -7,7 +7,6 @@ import '/core_exports.dart';
 import '/core/utils/error_handler.dart';
 import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'start_page_model.dart';
@@ -28,75 +27,11 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
   late StartPageModel _model;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
-  var hasButtonTriggered1 = false;
-  var hasButtonTriggered2 = false;
-  final animationsMap = <String, AnimationInfo>{};
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => StartPageModel());
-
-    animationsMap.addAll({
-      'columnOnPageLoadAnimation': AnimationInfo(
-        trigger: AnimationTrigger.onPageLoad,
-        effectsBuilder: () => [
-          FadeEffect(
-            curve: Curves.easeInOut,
-            delay: 200.0.ms,
-            duration: 400.0.ms,
-            begin: 0.0,
-            end: 1.0,
-          ),
-          MoveEffect(
-            curve: Curves.easeInOut,
-            delay: 200.0.ms,
-            duration: 400.0.ms,
-            begin: Offset(0.0, 60.0),
-            end: Offset(0.0, 0.0),
-          ),
-          TiltEffect(
-            curve: Curves.easeInOut,
-            delay: 200.0.ms,
-            duration: 400.0.ms,
-            begin: Offset(-0.349, 0),
-            end: Offset(0, 0),
-          ),
-        ],
-      ),
-      'buttonOnActionTriggerAnimation1': AnimationInfo(
-        trigger: AnimationTrigger.onActionTrigger,
-        applyInitialState: false,
-        effectsBuilder: () => [
-          ScaleEffect(
-            curve: Curves.easeOut,
-            delay: 0.0.ms,
-            duration: 200.0.ms,
-            begin: Offset(1.0, 1.0),
-            end: Offset(0.95, 0.95),
-          ),
-        ],
-      ),
-      'buttonOnActionTriggerAnimation2': AnimationInfo(
-        trigger: AnimationTrigger.onActionTrigger,
-        applyInitialState: false,
-        effectsBuilder: () => [
-          ScaleEffect(
-            curve: Curves.easeOut,
-            delay: 0.0.ms,
-            duration: 200.0.ms,
-            begin: Offset(1.0, 1.0),
-            end: Offset(0.95, 0.95),
-          ),
-        ],
-      ),
-    });
-    setupAnimations(
-      animationsMap.values.where((anim) =>
-          anim.trigger == AnimationTrigger.onActionTrigger ||
-          !anim.applyInitialState),
-      this,
-    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
@@ -249,10 +184,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
                                     ),
                                     borderRadius: BorderRadius.circular(12.0),
                                   ),
-                                ).animateOnActionTrigger(
-                                    animationsMap[
-                                        'buttonOnActionTriggerAnimation1']!,
-                                    hasBeenTriggered: hasButtonTriggered1),
+                                ),
                               ),
                               isAndroid
                                   ? Container()
@@ -639,18 +571,14 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
                                     ),
                                     borderRadius: BorderRadius.circular(12.0),
                                   ),
-                                ).animateOnActionTrigger(
-                                    animationsMap[
-                                        'buttonOnActionTriggerAnimation2']!,
-                                    hasBeenTriggered: hasButtonTriggered2),
+                                ),
                               ),
                             ],
                           ),
                         ),
                       ),
                     ],
-                  ).animateOnPageLoad(
-                      animationsMap['columnOnPageLoadAnimation']!),
+                  ),
                 ),
               ),
             ],

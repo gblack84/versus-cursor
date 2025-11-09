@@ -4,7 +4,6 @@ import 'package:easy_debounce/easy_debounce.dart';
 import '/core_exports.dart';
 import '/services/moderation/perspective_api_service.dart';
 import '/core/widgets/highlighted_text_field.dart';
-import '/services/content/content_filter.dart';
 import '/features/creation/presentation/constants/field_styles.dart';
 
 /// 통합된 입력 필드 위젯
@@ -90,8 +89,7 @@ class SimpleValidatedField extends StatelessWidget {
               debounceKey ?? 'simple_validated_field_$fieldName',
               debounceDuration,
               () {
-                final result = ContentFilter.filterText(value);
-                onFieldChanged!(value, fieldName!, result.isBlocked);
+                onFieldChanged!(value, fieldName!, false);
               },
             );
           } else if (debounceKey != null && onFieldChanged != null) {
@@ -100,8 +98,7 @@ class SimpleValidatedField extends StatelessWidget {
               debounceKey!,
               debounceDuration,
               () {
-                final result = ContentFilter.filterText(value);
-                onFieldChanged!(value, '', result.isBlocked);
+                onFieldChanged!(value, '', false);
               },
             );
           }

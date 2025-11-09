@@ -18,8 +18,7 @@ class InputFieldBuilder {
   ///
   /// SimpleValidatedField를 사용하여 고급 기능 제공:
   /// - 다국어 지원 (labelKey, hintKey)
-  /// - ContentFilter 통합
-  /// - Perspective API 검열
+  /// - AI 기반 검열 (Perspective API + Gemini)
   /// - maxLength 100 (vs TextFormField 기본 60)
   static Widget buildTitleField({
     required BuildContext context,
@@ -48,8 +47,7 @@ class InputFieldBuilder {
   ///
   /// SimpleValidatedField를 사용하여 고급 기능 제공:
   /// - 다국어 지원
-  /// - ContentFilter 통합
-  /// - Perspective API 검열
+  /// - AI 기반 검열 (Perspective API + Gemini)
   /// - maxLength 2000 (vs TextFormField 기본 400)
   static Widget buildDescriptionField({
     required BuildContext context,

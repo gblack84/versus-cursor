@@ -5,7 +5,6 @@ import '/features/creation/domain/entities/post_creation.dart';
 import '/features/creation/domain/entities/target_audience.dart';
 import '/features/creation/domain/entities/media_info.dart';
 import '/services/cache/unified_cache_service.dart';
-import '/services/cache/failures/cache_failure.dart';
 import 'creation_cache_keys.dart';
 
 /// Creation Feature 전용 캐시 서비스

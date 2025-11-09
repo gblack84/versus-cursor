@@ -58,7 +58,7 @@ Future<void> setupDependencyInjection() async {
 
   // ===== Auth Feature DI =====
   // Note: Auth registration moved to after Profile Feature registration
-  // because Auth depends on UserContract (provided by Profile)
+  // because Auth uses IUserRepository (provided by Profile Feature)
 
   // ===== Creation Feature DI =====
   // Note: Creation Feature repositories are registered internally by Creation Feature
@@ -70,7 +70,6 @@ Future<void> setupDependencyInjection() async {
 
   // ===== Voting Feature DI =====
   // Note: Registered AFTER Post because uses VoteTimerService from Post Feature
-  // Note: VoteContract is registered internally by Voting Feature
   registerVotingModule(getIt);
 
   // ===== Notifications Feature DI =====
@@ -78,11 +77,11 @@ Future<void> setupDependencyInjection() async {
   registerNotificationModule(getIt);
 
   // ===== Profile Feature DI =====
-  // Note: Registered before Auth because Auth depends on UserContract
+  // Note: Registered before Auth because Auth uses IUserRepository (Profile Feature)
   registerProfileModule(getIt);
 
   // ===== Auth Feature DI =====
-  // Note: Registered after Profile because Auth depends on UserContract
+  // Note: Registered after Profile because Auth uses IUserRepository (Profile Feature)
   registerAuthModule(getIt);
 
   // ===== Chat Feature DI =====

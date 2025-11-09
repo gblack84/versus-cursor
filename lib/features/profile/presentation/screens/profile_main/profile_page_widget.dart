@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get_it/get_it.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '/core_exports.dart';
 // Phase 3: Riverpod 3.x - profile_notifiers.dart (Freezed + Code Generation)
 import '/features/profile/presentation/providers/profile_notifiers.dart';
 // Phase 3: Riverpod - profile_post_providers.dart (Feature-First)
 import '/features/profile/presentation/providers/profile_post_providers.dart';
-// Phase 4: Contract 패턴으로 Feature 간 의존성 제거
-import '/app/contracts/auth_contract.dart';
 import '/core/design_system/design_system.dart';
 import '/features/profile/domain/entities/user_post_item.dart';
 import '/features/profile/presentation/screens/settings/settings_screen.dart';
@@ -35,20 +33,10 @@ class ProfilePageWidget extends ConsumerStatefulWidget {
 
 class _ProfilePageWidgetState extends ConsumerState<ProfilePageWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
-  // Phase 4: Contract 패턴으로 Feature 간 의존성 제거
-  late final AuthContract _authContract;
 
-  @override
-  void initState() {
-    super.initState();
-
-    // Initialize dependencies from DI
-    // Phase 4: Contract 패턴으로 Feature 간 의존성 제거
-    _authContract = GetIt.instance<AuthContract>();
-
-    // Phase 3: Riverpod - ProfileProvider 제거
-    // 프로필 로드는 profileStreamProvider가 자동 처리
-  }
+  // Contract 패턴 폐기 (2025-11-09): FirebaseAuth 직접 사용
+  // Phase 3: Riverpod - ProfileProvider 제거
+  // 프로필 로드는 profileStreamProvider가 자동 처리
 
   @override
   Widget build(BuildContext context) {
@@ -68,8 +56,8 @@ class _ProfilePageWidgetState extends ConsumerState<ProfilePageWidget> {
           IconButton(
             icon: Icon(Icons.settings, color: Colors.black),
             onPressed: () {
-              // Phase 3: Riverpod - AuthContract로 userId 조회
-              final userId = _authContract.getCurrentUserId();
+              // Phase 3: Riverpod - FirebaseAuth로 userId 조회
+              final userId = FirebaseAuth.instance.currentUser?.uid;
               if (userId != null) {
                 context.pushNamed(
                   SettingsScreen.routeName,
@@ -87,8 +75,8 @@ class _ProfilePageWidgetState extends ConsumerState<ProfilePageWidget> {
         // Phase 3: Riverpod - profileStreamProvider 사용
         child: Builder(
           builder: (context) {
-            // AuthContract로 userId 조회
-            final userId = _authContract.getCurrentUserId();
+            // FirebaseAuth로 userId 조회
+            final userId = FirebaseAuth.instance.currentUser?.uid;
 
             if (userId == null) {
               return ProfileErrorMessage(
@@ -263,9 +251,9 @@ class _ProfilePageWidgetState extends ConsumerState<ProfilePageWidget> {
                           isFullWidth: true,
                           size: VersusButtonSize.large,
                           onPressed: () async {
-                            // Phase 4: Contract 패턴으로 Feature 간 의존성 제거
+                            // Contract 패턴 폐기 (2025-11-09): FirebaseAuth 직접 사용
                             try {
-                              await _authContract.signOut();
+                              await FirebaseAuth.instance.signOut();
                               if (mounted) {
                                 context.goNamed('startPage');
                               }

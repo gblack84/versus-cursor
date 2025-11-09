@@ -5,7 +5,7 @@ import 'package:uuid/uuid.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/providers/usecase_providers.dart';
 import '/features/auth/presentation/widgets/auth_user_stream_widget.dart' hide currentUserId;
-import '/app/contracts/user_contract.dart';
+import '/features/profile/domain/repositories/i_user_repository.dart';
 import '/core/widgets/pickle_mark/pickle_mark_widget.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
@@ -131,8 +131,9 @@ class _PopupTimerEmailWidgetState extends ConsumerState<PopupTimerEmailWidget> {
                             final userId = await ref.read(currentUserIdProvider.future);
                             if (userId == null) return;
 
-                            final userContract = GetIt.instance<UserContract>();
-                            await userContract.updateUserProfileData(
+                            // Contract 패턴 폐기 (2025-11-09): IUserRepository 직접 사용
+                            final userRepository = GetIt.instance<IUserRepository>();
+                            await userRepository.updateUser(
                               userId,
                               {
                                 'photoUrl': 'https://firebasestorage.googleapis.com/v0/b/versus-space-1lwwiw.appspot.com/o/characters%2Fdefault%2Fdefaultimage.jpg?alt=media&token=b485c8ad-c393-4ec7-bc1a-c1c3c93ec4ec',

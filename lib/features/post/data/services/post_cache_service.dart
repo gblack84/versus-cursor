@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '/features/post/domain/models/post_display.dart';
 import '/features/post/domain/usecases/get_feed_usecase.dart'; // FeedSortBy, FeedFilter
 import '/services/cache/unified_cache_service.dart';
+import '/services/cache/failures/cache_failure.dart';
 
 /// Post Cache Service - 3-Layer Caching Strategy
 ///
@@ -76,7 +77,11 @@ class PostCacheService {
     FeedFilter? filter,
   }) async {
     final cacheKey = _feedCacheKey(sortBy: sortBy, limit: limit, filter: filter);
-    final cachedData = await _cache.get<List<dynamic>>(cacheKey);
+    final cachedDataResult = await _cache.get<List<dynamic>>(cacheKey);
+    final cachedData = cachedDataResult.fold(
+      (failure) => null,  // Cache miss or error
+      (data) => data,
+    );
 
     if (cachedData != null && cachedData.isNotEmpty) {
       try {
@@ -129,7 +134,11 @@ class PostCacheService {
   /// **TTL**: 10 minutes
   Future<PostDisplay?> getPost(String postId) async {
     final cacheKey = _postCacheKey(postId);
-    final cachedData = await _cache.get<Map<String, dynamic>>(cacheKey);
+    final cachedDataResult = await _cache.get<Map<String, dynamic>>(cacheKey);
+    final cachedData = cachedDataResult.fold(
+      (failure) => null,  // Cache miss or error
+      (data) => data,
+    );
 
     if (cachedData != null) {
       try {
@@ -172,7 +181,11 @@ class PostCacheService {
     Duration timeWindow = const Duration(days: 7),
   }) async {
     final cacheKey = _popularPostsCacheKey(limit: limit, timeWindow: timeWindow);
-    final cachedData = await _cache.get<List<dynamic>>(cacheKey);
+    final cachedDataResult = await _cache.get<List<dynamic>>(cacheKey);
+    final cachedData = cachedDataResult.fold(
+      (failure) => null,  // Cache miss or error
+      (data) => data,
+    );
 
     if (cachedData != null && cachedData.isNotEmpty) {
       try {
@@ -218,7 +231,11 @@ class PostCacheService {
   /// **TTL**: 10 minutes
   Future<List<PostDisplay>> getTrendingPosts({int limit = 20}) async {
     final cacheKey = _trendingPostsCacheKey(limit: limit);
-    final cachedData = await _cache.get<List<dynamic>>(cacheKey);
+    final cachedDataResult = await _cache.get<List<dynamic>>(cacheKey);
+    final cachedData = cachedDataResult.fold(
+      (failure) => null,  // Cache miss or error
+      (data) => data,
+    );
 
     if (cachedData != null && cachedData.isNotEmpty) {
       try {
@@ -266,7 +283,11 @@ class PostCacheService {
     int limit = 20,
   }) async {
     final cacheKey = _userPostsCacheKey(userId: userId, limit: limit);
-    final cachedData = await _cache.get<List<dynamic>>(cacheKey);
+    final cachedDataResult = await _cache.get<List<dynamic>>(cacheKey);
+    final cachedData = cachedDataResult.fold(
+      (failure) => null,  // Cache miss or error
+      (data) => data,
+    );
 
     if (cachedData != null && cachedData.isNotEmpty) {
       try {

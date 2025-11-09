@@ -15,7 +15,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '/core/utils/idempotency_service.dart';
 
 // ===== App Layer - Contracts =====
-// AuthContract & UserContract removed - Firebase-Centric Architecture
+// Contract 패턴 완전 폐기 (2025-11-09) - Firebase-Centric Architecture
+// - AuthContract 제거: FirebaseAuth.instance 직접 사용
+// - UserContract 제거: IUserRepository 직접 사용
 
 // ===== Domain Layer - Repositories =====
 import '../domain/repositories/i_auth_repository.dart';

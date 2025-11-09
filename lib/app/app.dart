@@ -5,7 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '/core_exports.dart';
-import '/app/contracts/notification_contract.dart';
+import '/features/notifications/domain/services/i_notification_service.dart';
 import '/features/notifications/presentation/providers/notification_overlay_provider.dart';
 import '/services/cache/preload_strategy.dart';
 import 'package:get_it/get_it.dart';
@@ -63,12 +63,11 @@ class _VersusAppState extends State<VersusApp> {
       ..listen((user) async {
         _appStateNotifier.update(user);
 
-        // NotificationContract를 통한 통합 알림 시스템 초기화
+        // INotificationService를 통한 통합 알림 시스템 초기화
         if (user != null && user.uid.isNotEmpty) {
-          // 사용자가 로그인하면 알림 시스템 초기화
-          final notificationContract = GetIt.instance<NotificationContract>();
-          await notificationContract.initializeNotifications(user.uid);
-          await notificationContract.startNotificationListening(user.uid);
+          // 사용자가 로그인하면 알림 시스템 시작
+          final notificationService = GetIt.instance<INotificationService>();
+          notificationService.startListening(user.uid);
 
           // NotificationOverlayProvider 초기화 및 시작
           _overlayProvider = GetIt.instance<NotificationOverlayProvider>();
@@ -104,10 +103,8 @@ class _VersusAppState extends State<VersusApp> {
           }
         } else {
           // 사용자가 로그아웃하면 알림 시스템 종료
-          final notificationContract = GetIt.instance<NotificationContract>();
-          if (user != null) {
-            await notificationContract.stopNotificationListening(user.uid);
-          }
+          final notificationService = GetIt.instance<INotificationService>();
+          notificationService.stopListening();
           debugPrint('[VersusApp] 알림 서비스 중지');
 
           // NotificationOverlayProvider 정리
@@ -120,7 +117,7 @@ class _VersusAppState extends State<VersusApp> {
 
   @override
   void dispose() {
-    // NotificationContract는 stopNotificationListening으로 정리됨 (위에서 호출)
+    // INotificationService는 stopListening으로 정리됨 (위에서 호출)
     // NotificationOverlayProvider 안전한 정리
     _overlayProvider?.stopListening();
     super.dispose();

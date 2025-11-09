@@ -6,6 +6,7 @@ import '/features/notifications/domain/services/i_notification_service.dart';
 // Core utilities
 import '/core/utils/logger.dart';
 import '/services/cache/unified_cache_service.dart';
+import '/services/cache/failures/cache_failure.dart';
 // FCM Service
 import 'fcm_service.dart';
 
@@ -405,8 +406,13 @@ class NotificationQueueService {
   /// 처리된 알림 ID 로드
   Future<void> _loadProcessedNotifications() async {
     try {
-      final cachedIds = await UnifiedCacheService.instance
+      final cachedIdsResult = await UnifiedCacheService.instance
           .get<List<dynamic>>('processed_notification_ids');
+      final cachedIds = cachedIdsResult.fold(
+        (failure) => null,  // Cache miss or error
+        (ids) => ids,
+      );
+
       if (cachedIds != null) {
         _processedNotificationIds.addAll(
           cachedIds.map((id) => id.toString())

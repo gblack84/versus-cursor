@@ -1,8 +1,8 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '/app/contracts/notification_types.dart';
+import '/app/types/notification_types.dart';
 
 // Backward compatibility를 위해 re-export
-export '/app/contracts/notification_types.dart' show NotificationPriority;
+export '/app/types/notification_types.dart' show NotificationPriority;
 
 part 'notification.freezed.dart';
 part 'notification.g.dart';

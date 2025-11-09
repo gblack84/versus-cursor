@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '/core/utils/app_utils.dart';
 import '/core/utils/idempotency_service.dart';
 import '/services/cache/unified_cache_service.dart';
@@ -9,8 +10,6 @@ import '../../domain/entities/user_profile_extensions.dart';
 import '../../domain/entities/user_settings.dart';
 import '../../domain/failures/profile_failure.dart';
 import '../../domain/repositories/i_user_repository.dart';
-import '/app/contracts/auth_contract.dart';
-import '/app/contracts/user_contract.dart';
 
 /// UserRepository 구현 (Clean Architecture v4.0)
 ///
@@ -21,13 +20,16 @@ import '/app/contracts/user_contract.dart';
 /// - debugPrint 로깅 추가
 /// - Auth Feature 패턴 100% 일치
 ///
+/// **Contract 패턴 폐기** (2025-11-09):
+/// - AuthContract → FirebaseAuth 직접 사용
+/// - Firebase-Centric v2.0: 중간 추상화 제거
+///
 /// **Phase 2 (2025-01-20)**:
-/// - AuthContract 주입으로 현재 사용자 작업 지원
+/// - FirebaseAuth 주입으로 현재 사용자 작업 지원
 /// - getCurrentUserProfile(), updateCurrentUserProfile() 구현
 /// - 싱글톤 패턴 유지하면서 의존성 주입 구조 적용
 ///
 /// **Phase 6 (2025-01-21)**:
-/// - UserContract 구현으로 다른 Feature들에게 프로필 접근 제공
 /// - Auth Feature의 프로필 생성/수정/삭제를 Profile Feature로 이관
 ///
 /// **책임**:
@@ -35,10 +37,9 @@ import '/app/contracts/user_contract.dart';
 /// - Extension으로 Entity 변환
 /// - Firebase Exception → ProfileFailure 매핑
 /// - 싱글톤 패턴으로 전역 접근 제공
-/// - AuthContract를 통한 현재 사용자 관리
-/// - UserContract로 다른 Feature에 프로필 접근 제공
-class UserRepositoryImpl implements IUserRepository, UserContract {
-  final AuthContract _authContract;
+/// - FirebaseAuth를 통한 현재 사용자 관리
+class UserRepositoryImpl implements IUserRepository {
+  final FirebaseAuth _auth;
   final IdempotencyService _idempotencyService;
   final UnifiedCacheService _cacheService;
 
@@ -57,24 +58,24 @@ class UserRepositoryImpl implements IUserRepository, UserContract {
     return _instance!;
   }
 
-  UserRepositoryImpl._(this._authContract, this._idempotencyService, this._cacheService);
+  UserRepositoryImpl._(this._auth, this._idempotencyService, this._cacheService);
 
   /// 싱글톤 초기화 (DI Module에서 호출)
   ///
   /// **사용 예시** (profile_module.dart):
   /// ```dart
-  /// final authContract = sl<AuthContract>();
+  /// final auth = FirebaseAuth.instance;
   /// final idempotencyService = sl<IdempotencyService>();
   /// final cacheService = UnifiedCacheService.instance;
-  /// UserRepositoryImpl.initialize(authContract, idempotencyService, cacheService);
+  /// UserRepositoryImpl.initialize(auth, idempotencyService, cacheService);
   /// sl.registerLazySingleton<IUserRepository>(() => UserRepositoryImpl.instance);
   /// ```
   static void initialize(
-    AuthContract authContract,
+    FirebaseAuth auth,
     IdempotencyService idempotencyService,
     UnifiedCacheService cacheService,
   ) {
-    _instance = UserRepositoryImpl._(authContract, idempotencyService, cacheService);
+    _instance = UserRepositoryImpl._(auth, idempotencyService, cacheService);
   }
 
   // ============= Private Firestore Instance =============
@@ -88,7 +89,12 @@ class UserRepositoryImpl implements IUserRepository, UserContract {
       debugPrint('[UserRepository] Getting user by UID: $uid');
 
       // 🔥 3-Layer Cache 우선 조회
-      final cachedProfile = await _cacheService.getUserProfile(uid);
+      final cachedResult = await _cacheService.getUserProfile(uid);
+      final cachedProfile = cachedResult.fold(
+        (failure) => null,  // Cache miss
+        (profile) => profile,  // Cache hit
+      );
+
       if (cachedProfile != null) {
         debugPrint('[UserRepository] User loaded from CACHE: ${cachedProfile.displayName}');
         return right(cachedProfile);
@@ -529,7 +535,7 @@ class UserRepositoryImpl implements IUserRepository, UserContract {
 
   @override
   Future<Either<ProfileFailure, UserProfile>> getCurrentUserProfile() async {
-    final uid = _authContract.getCurrentUserId();
+    final uid = _auth.currentUser?.uid;
     if (uid == null || uid.isEmpty) {
       return left(ProfileFailure.authenticationRequired());
     }
@@ -545,7 +551,7 @@ class UserRepositoryImpl implements IUserRepository, UserContract {
 
   @override
   Future<Either<ProfileFailure, Unit>> updateCurrentUserProfile(UserProfile user) async {
-    final currentUid = _authContract.getCurrentUserId();
+    final currentUid = _auth.currentUser?.uid;
 
     if (currentUid == null || currentUid.isEmpty) {
       return left(ProfileFailure.authenticationRequired());
@@ -559,142 +565,6 @@ class UserRepositoryImpl implements IUserRepository, UserContract {
     }
 
     return await updateUserProfile(user);
-  }
-
-  // ============= UserContract 구현 (Phase 6: 2025-01-21) =============
-  // 다른 Feature들(특히 Auth Feature)이 프로필에 접근하기 위한 Contract 메서드들
-
-  @override
-  Future<void> createUserProfile({
-    required String uid,
-    String? email,
-    String? displayName,
-    String? photoUrl,
-    String? phoneNumber,
-  }) async {
-    // ✅ 기존 createUser 메서드 활용
-    final user = UserProfile(
-      uid: uid,
-      email: email ?? '',
-      displayName: displayName,
-      photoUrl: photoUrl,
-      phoneNumber: phoneNumber,
-      createdTime: getCurrentTimestamp(),
-      lastActive: getCurrentTimestamp(),
-      role: 'user',
-      isPremiumUser: false,
-      pointsA: 0,
-      pointsQ: 0,
-      interests: const [],
-      expertise: const [],
-      hobbies: const [],
-      friends: const [],
-      activeChats: const [],
-      groupChats: const [],
-      anonymousPostsCount: 0,
-      anonymousCommentsCount: 0,
-      anonymousQuestionCount: 0,
-      totalAPoints: 0,
-      totalQPoints: 0,
-      isRankEligible: false,
-      rankEvaluationCount: 0,
-      rankHistory: const [],
-      titleHistory: const [],
-      receiveRankUpdateNotifications: false,
-      receiveTitleUpdateNotifications: false,
-      stats: const {},
-      subscription: const {},
-    );
-
-    await createUser(user);
-  }
-
-  @override
-  Future<void> updateUserProfileData(String uid, Map<String, dynamic> data) {
-    // ✅ 기존 updateUser 메서드 활용
-    return updateUser(uid, data);
-  }
-
-  @override
-  Future<void> deleteUserProfile(String uid, {String? eventId}) {
-    // ✅ 기존 deleteUser 메서드 활용
-    return deleteUser(uid, eventId: eventId);
-  }
-
-  @override
-  Future<Map<String, dynamic>?> getUserProfile(String userId) async {
-    // ✅ 기존 getUserByUid 활용 후 Extension으로 Map 변환
-    final userResult = await getUserByUid(userId);
-    return userResult.fold(
-      (failure) => null,
-      (user) => user.toFirestore(),
-    );
-  }
-
-  @override
-  Future<String?> getUserDisplayName(String userId) async {
-    final userResult = await getUserByUid(userId);
-    return userResult.fold(
-      (failure) => null,
-      (user) => user.displayName,
-    );
-  }
-
-  @override
-  Future<String?> getUserPhotoUrl(String userId) async {
-    final userResult = await getUserByUid(userId);
-    return userResult.fold(
-      (failure) => null,
-      (user) => user.photoUrl,
-    );
-  }
-
-  @override
-  Future<List<String>> getUserInterests(String userId) async {
-    final userResult = await getUserByUid(userId);
-    return userResult.fold(
-      (failure) => const [],
-      (user) => user.interests,
-    );
-  }
-
-  @override
-  Future<List<String>> getUserExpertise(String userId) async {
-    final userResult = await getUserByUid(userId);
-    return userResult.fold(
-      (failure) => const [],
-      (user) => user.expertise,
-    );
-  }
-
-  @override
-  Future<Map<String, int>> getUserPoints(String userId) async {
-    final userResult = await getUserByUid(userId);
-    return userResult.fold(
-      (failure) => {'pointsA': 0, 'pointsQ': 0},
-      (user) => {
-        'pointsA': user.pointsA,
-        'pointsQ': user.pointsQ,
-      },
-    );
-  }
-
-  @override
-  Future<bool> isPremiumUser(String userId) async {
-    final userResult = await getUserByUid(userId);
-    return userResult.fold(
-      (failure) => false,
-      (user) => user.isPremiumUser,
-    );
-  }
-
-  @override
-  Future<String?> getUserRole(String userId) async {
-    final userResult = await getUserByUid(userId);
-    return userResult.fold(
-      (failure) => null,
-      (user) => user.role,
-    );
   }
 
   // ============= Firebase Exception Mapping =============

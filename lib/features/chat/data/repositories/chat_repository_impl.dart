@@ -10,9 +10,9 @@ import '../../domain/entities/message.dart';
 import '../../domain/failures/chat_failure.dart';
 import '../../domain/entities/chat_extensions.dart';
 import '../../domain/entities/message_extensions.dart';
-import '/app/contracts/chat_contract.dart';
 import '/core/utils/idempotency_service.dart';
 import '/services/cache/unified_cache_service.dart';
+import '/services/cache/failures/cache_failure.dart';
 
 /// Implementation of chat repository with Clean Architecture v4.0 + 3-Layer Caching
 ///
@@ -32,11 +32,10 @@ import '/services/cache/unified_cache_service.dart';
 /// - Either 패턴: 명시적 에러 처리
 /// - deleteChat(): messages/participants 서브컬렉션 완전 정리
 ///
-/// **Dual Interface Pattern**:
-/// - Implements both IChatRepository (Port) and ChatContract
-/// - Same instance serves internal and external interfaces
-/// - Registered in DI with both types
-class ChatRepositoryImpl implements IChatRepository, ChatContract {
+/// **Contract 패턴 폐기** (2025-11-09):
+/// - ChatContract 제거 → IChatRepository만 구현
+/// - Firebase-Centric v2.0: Feature 간 Firestore 직접 통신
+class ChatRepositoryImpl implements IChatRepository {
   final UnifiedCacheService _cacheService = UnifiedCacheService.instance;
   final IdempotencyService _idempotencyService;
   final FirebaseFirestore _firestore;
@@ -85,7 +84,11 @@ class ChatRepositoryImpl implements IChatRepository, ChatContract {
   }) async* {
     try {
       // 1. ✅ Cache-First: L1 → L2 → L3 (background sync)
-      final cachedMaps = await _cacheService.get<List<dynamic>>('chat_list_$userId');
+      final cachedMapsResult = await _cacheService.get<List<dynamic>>('chat_list_$userId');
+      final cachedMaps = cachedMapsResult.fold(
+        (failure) => null,  // Cache miss or error - continue to Firestore
+        (data) => data,
+      );
       if (cachedMaps != null && cachedMaps.isNotEmpty) {
         final cachedChats = cachedMaps
             .map((map) => Chat.fromJson(Map<String, dynamic>.from(map as Map)))
@@ -175,7 +178,11 @@ class ChatRepositoryImpl implements IChatRepository, ChatContract {
   }) async* {
     try {
       // 1. ✅ Cache-First: L1 → L2 → L3 (97% 빠른 응답)
-      final cachedMaps = await _cacheService.get<List<dynamic>>('chat_messages_$chatId');
+      final cachedMapsResult = await _cacheService.get<List<dynamic>>('chat_messages_$chatId');
+      final cachedMaps = cachedMapsResult.fold(
+        (failure) => null,  // Cache miss or error - continue to Firestore
+        (data) => data,
+      );
       if (cachedMaps != null && cachedMaps.isNotEmpty) {
         final cachedMessages = cachedMaps
             .map((map) => Message.fromJson(Map<String, dynamic>.from(map as Map)))

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '/app/contracts/notification_types.dart';
+import '/app/types/notification_types.dart';
 
 /// Helper for notification display information (titles, icons)
 ///

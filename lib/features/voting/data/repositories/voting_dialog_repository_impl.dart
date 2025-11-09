@@ -13,6 +13,7 @@ import '../../domain/entities/vote_extensions.dart';
 import '../../../../core/utils/idempotency_service.dart';
 import '../../../../core/utils/shard_utils.dart';
 import '../../../../services/cache/unified_cache_service.dart';
+import '../../../../services/cache/failures/cache_failure.dart';
 
 /// Implementation of Dialog voting repository
 ///
@@ -236,7 +237,11 @@ class VotingDialogRepositoryImpl implements IVotingDialogRepository {
   }) async {
     try {
       // Try 3-Layer cache first
-      final cachedHistory = await _cacheService.getVoteHistory(userId);
+      final cachedHistoryResult = await _cacheService.getVoteHistory(userId);
+      final cachedHistory = cachedHistoryResult.fold(
+        (failure) => null,  // Cache miss or error - continue to Firestore
+        (history) => history,
+      );
 
       if (cachedHistory != null) {
         final userVote = cachedHistory.firstWhere(

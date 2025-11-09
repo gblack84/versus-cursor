@@ -23,8 +23,8 @@ import 'package:get_it/get_it.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 // ===== App Layer - Contracts =====
-// Phase 2 TODO: Re-enable when NotificationContract Adapter is implemented
-// import '/app/contracts/notification_contract.dart';
+// Contract 패턴 완전 폐기 (2025-11-09)
+// Firebase-Centric v2.0: Firestore 직접 접근
 
 // ===== Domain Layer - Repository Interfaces =====
 import '../domain/repositories/i_notification_repository.dart';
@@ -66,10 +66,6 @@ void registerNotificationModule(GetIt getIt) {
 
   // ===== Repository Registration =====
   _registerRepository(getIt);
-
-  // ===== NotificationContract Registration =====
-  // **Phase 2 TODO**: NotificationContract will be implemented via Adapter pattern
-  // _registerContract(getIt);  // Commented out for Phase 1
 
   // ===== UseCases Registration =====
   _registerUseCases(getIt);
@@ -126,14 +122,6 @@ void _registerRepository(GetIt getIt) {
     ),
   );
 }
-
-// ===== Phase 2 TODO: NotificationContract registration =====
-// Will be implemented via Adapter pattern when NotificationContract is ready
-// void _registerContract(GetIt getIt) {
-//   getIt.registerLazySingleton<NotificationContract>(
-//     () => NotificationContractAdapter(getIt<INotificationRepository>()),
-//   );
-// }
 
 /// Register all UseCases (5 total)
 void _registerUseCases(GetIt getIt) {

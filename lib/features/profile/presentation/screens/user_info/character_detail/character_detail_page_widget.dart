@@ -12,8 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/features/profile/presentation/providers/profile_notifiers.dart';
 import '/features/profile/domain/entities/user_profile.dart';
 // Phase 4: Contract 패턴으로 Feature 간 의존성 제거
-import '/app/contracts/auth_contract.dart';
-import 'package:get_it/get_it.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 /// 캐릭터 선택 화면 (Riverpod)
 ///
@@ -332,9 +331,8 @@ class _CharacterDetailPageWidgetState extends ConsumerState<CharacterDetailPageW
     required String? characterId,
     required String photoUrl,
   }) async {
-    // AuthContract에서 현재 userId 가져오기
-    final authContract = GetIt.instance<AuthContract>();
-    final userId = authContract.getCurrentUserId();
+    // FirebaseAuth에서 현재 userId 가져오기
+    final userId = FirebaseAuth.instance.currentUser?.uid;
 
     if (userId == null) {
       if (mounted) {

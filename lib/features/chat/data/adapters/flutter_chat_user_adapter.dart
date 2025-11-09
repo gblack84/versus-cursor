@@ -3,6 +3,7 @@ import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import 'package:firebase_auth/firebase_auth.dart';
 import '/core/constants/app_constants.dart';
 import '/services/cache/unified_cache_service.dart';
+import '/services/cache/failures/cache_failure.dart';
 import '/features/profile/domain/entities/user_profile.dart';
 
 /// Flutter Chat Core 사용자 타입 변환 어댑터
@@ -64,7 +65,11 @@ class FlutterChatUserAdapter {
 
     // 3. UnifiedCacheService에서 UserProfile 가져오기 (3-Layer 캐싱)
     try {
-      final userProfile = await _cacheService.getUserProfile(userId);
+      final userProfileResult = await _cacheService.getUserProfile(userId);
+      final userProfile = userProfileResult.fold(
+        (failure) => null,  // Cache miss or error
+        (profile) => profile,
+      );
 
       if (userProfile != null) {
         // 4. flutter_chat_core.User로 변환

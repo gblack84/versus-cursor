@@ -6,6 +6,7 @@ import '../../domain/repositories/i_interests_repository.dart';
 import '../../domain/entities/interest.dart';
 import '../../domain/failures/profile_failure.dart';
 import '/services/cache/unified_cache_service.dart';
+import '/services/cache/failures/cache_failure.dart';
 
 /// InterestsRepository 구현 (Clean Architecture v4.0)
 ///
@@ -107,7 +108,12 @@ class InterestsRepositoryImpl implements IInterestsRepository {
       debugPrint('[InterestsRepository] Getting interests for: $userId');
 
       // 🔥 3-Layer Cache 우선 조회
-      final cachedNames = await _cacheService.getUserInterests(userId);
+      final cachedNamesResult = await _cacheService.getUserInterests(userId);
+      final cachedNames = cachedNamesResult.fold(
+        (failure) => null,  // Cache miss or error
+        (names) => names,
+      );
+
       if (cachedNames != null) {
         final interests = _convertStringListToInterests(cachedNames);
         debugPrint('[InterestsRepository] Found ${interests.length} interests from CACHE');

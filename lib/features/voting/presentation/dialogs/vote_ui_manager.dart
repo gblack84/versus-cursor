@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '/core/types/layout_type.dart';
-import '/app/contracts/auth_contract.dart';
 import '/features/voting/presentation/dialogs/voting_dialog.dart';
 import '/features/voting/domain/entities/dialog/versus_box_size_data.dart';
 import '/core_exports.dart';
@@ -11,6 +11,7 @@ import '/core/utils/debug_helper.dart';
 ///
 /// Presentation 레이어에서 투표 UI 표시를 담당합니다.
 /// Clean Architecture v4.0 - No Port dependencies
+/// Contract 패턴 폐기 (2025-11-09): FirebaseAuth 직접 사용
 class VoteUIManager {
   static VoteUIManager? _instance;
   static VoteUIManager get instance {
@@ -19,12 +20,12 @@ class VoteUIManager {
   }
 
   /// Factory constructor for DI
-  factory VoteUIManager({AuthContract? authContract}) {
-    _instance ??= VoteUIManager._internal(authContract);
+  factory VoteUIManager({FirebaseAuth? firebaseAuth}) {
+    _instance ??= VoteUIManager._internal(firebaseAuth);
     return _instance!;
   }
 
-  VoteUIManager._internal(this._authContract);
+  VoteUIManager._internal(this._firebaseAuth);
 
   /// 현재 표시 중인 다이얼로그
   bool _isShowingDialog = false;
@@ -32,14 +33,9 @@ class VoteUIManager {
   /// 컨텍스트 (Optional - Coordinator에서 설정)
   BuildContext? _context;
 
-  /// Auth Contract (injected through constructor)
-  final AuthContract? _authContract;
-  AuthContract get authContract {
-    if (_authContract == null) {
-      throw StateError('AuthContract not initialized. Please inject it through constructor.');
-    }
-    return _authContract;
-  }
+  /// FirebaseAuth (injected through constructor)
+  final FirebaseAuth? _firebaseAuth;
+  FirebaseAuth get auth => _firebaseAuth ?? FirebaseAuth.instance;
 
   /// 컨텍스트 설정
   void setContext(BuildContext context) {
@@ -58,7 +54,7 @@ class VoteUIManager {
 
   bool isUIContextAvailable() {
     final context = appNavigatorKey.currentContext;
-    final isAuthenticated = authContract.isSignedIn;
+    final isAuthenticated = auth.currentUser != null;
     return context != null && isAuthenticated;
   }
 
@@ -68,7 +64,7 @@ class VoteUIManager {
 
     while (DateTime.now().isBefore(endTime)) {
       final context = appNavigatorKey.currentContext;
-      final isAuthenticated = authContract.isSignedIn;
+      final isAuthenticated = auth.currentUser != null;
 
       if (context != null && isAuthenticated) {
         return context;

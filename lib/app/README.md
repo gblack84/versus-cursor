@@ -12,6 +12,75 @@ App Layer는 Versus Space 애플리케이션의 진입점과 전역 설정을 �
 
 **통합 마이그레이션 문서가 작성되었습니다**: [MIGRATION_APP_ORDER_RULES.md](./MIGRATION_APP_ORDER_RULES.md)
 
+## 🎉 Contract 패턴 완전 폐기 (2025-11-09)
+
+**Firebase-Centric v2.0**로의 전환 과정에서 불필요한 추상화 계층인 Contract 패턴을 제거했습니다.
+
+### 제거된 Contract 목록
+
+| Contract | 제거 일자 | 영향 범위 | 대체 패턴 |
+|---------|---------|----------|---------|
+| **AuthContract** | 2025-11-09 | 8개 파일 | `FirebaseAuth.instance` 직접 사용 |
+| **ChatContract** | 2025-11-09 | 3개 파일 | `IChatRepository` 인터페이스 사용 |
+| **NotificationContract** | 2025-11-09 | 2개 파일 | `INotificationService` 도메인 서비스 |
+| **PostContract** | 2025-11-09 | 1개 파일 | 미사용으로 삭제 |
+| **UserContentContract** | 2025-11-09 | 1개 파일 | 미사용으로 삭제 |
+
+### 보존된 Contract
+
+| Contract | 보존 이유 | 현재 사용처 |
+|---------|---------|-----------|
+| **UserContract** | Profile Feature의 cross-feature 데이터 제공 | Auth, Voting Feature (18개 참조) |
+
+### 주요 변경 사항
+
+**Before (Legacy Contract Pattern)**:
+```dart
+// AuthContract를 통한 간접 접근
+final authContract = GetIt.instance<AuthContract>();
+final userId = authContract.getCurrentUserId();
+final isSignedIn = authContract.isSignedIn;
+
+// ChatContract를 통한 간접 접근
+final chatContract = GetIt.instance<ChatContract>();
+await chatContract.createChat(...);
+
+// NotificationContract를 통한 간접 접근
+final notificationContract = GetIt.instance<NotificationContract>();
+await notificationContract.initializeNotifications(userId);
+await notificationContract.startNotificationListening(userId);
+```
+
+**After (Firebase-Centric v2.0)**:
+```dart
+// Firebase SDK 직접 사용
+final userId = FirebaseAuth.instance.currentUser?.uid;
+final isSignedIn = FirebaseAuth.instance.currentUser != null;
+
+// Repository 인터페이스 직접 사용
+final chatRepository = GetIt.instance<IChatRepository>();
+await chatRepository.createChat(...);
+
+// Domain Service 직접 사용
+final notificationService = GetIt.instance<INotificationService>();
+notificationService.startListening(userId);
+```
+
+### 마이그레이션 성과
+
+- **코드 감소**: Contract interface + implementation 파일 6개 삭제 (~850줄)
+- **레이어 단순화**: 불필요한 추상화 계층 제거로 코드 가독성 향상
+- **의존성 명확화**: Firebase SDK → Repository → UseCase → Provider 의존성 체인 명확화
+- **유지보수성 향상**: 중복 인터페이스 제거로 유지보수 포인트 감소
+
+### 타입 정의 파일 이동
+
+**notification_types.dart 이동**:
+- **이전 위치**: `/lib/app/contracts/notification_types.dart`
+- **새 위치**: `/lib/app/types/notification_types.dart`
+- **이유**: Contract가 아닌 공유 타입 정의 파일로 적절한 위치로 이동
+- **영향 파일**: 4개 (notification.dart, notification_overlay_provider.dart, notification_display_helper.dart, notification_di_module.dart)
+
 ### 마이그레이션 문서 구조
 - **통합 규칙 문서**: `MIGRATION_APP_ORDER_RULES.md` - 전체 실행 순서와 규칙
 - **DI 시스템**: `di/MIGRATION_Part3.md` - GetIt 기반 의존성 주입

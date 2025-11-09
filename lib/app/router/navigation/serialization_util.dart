@@ -101,7 +101,7 @@ String? serializeParam(
       case ParamType.LatLng:
         data = (param as LatLng).serialize();
       case ParamType.Color:
-        data = (param as Color).toCssString();
+        data = AppColorSerialization(param as Color).toCssString();
       case ParamType.AppPlace:
         data = placeToString(param as AppPlace);
       case ParamType.AppUploadedFile:

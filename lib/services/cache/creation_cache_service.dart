@@ -5,6 +5,7 @@ import '/features/creation/domain/entities/post_creation.dart';
 import '/features/creation/domain/entities/target_audience.dart';
 import '/features/creation/domain/entities/media_info.dart';
 import '/services/cache/unified_cache_service.dart';
+import '/services/cache/failures/cache_failure.dart';
 import 'creation_cache_keys.dart';
 
 /// Creation Feature 전용 캐시 서비스
@@ -62,7 +63,11 @@ class CreationCacheService {
 
     try {
       // UnifiedCacheService.get<T>()는 Map<String, dynamic>를 받아 T로 변환
-      final cached = await _cacheService.get<Map<String, dynamic>>(key);
+      final cachedResult = await _cacheService.get<Map<String, dynamic>>(key);
+      final cached = cachedResult.fold(
+        (failure) => null,  // Cache miss or error
+        (data) => data,
+      );
       if (cached != null) {
         return PostCreation.fromJson(cached);
       }
@@ -141,7 +146,11 @@ class CreationCacheService {
     final key = CreationCacheKeys.targetAudiencePreset(userId);
 
     try {
-      final cached = await _cacheService.get<Map<String, dynamic>>(key);
+      final cachedResult = await _cacheService.get<Map<String, dynamic>>(key);
+      final cached = cachedResult.fold(
+        (failure) => null,  // Cache miss or error
+        (data) => data,
+      );
       if (cached != null) {
         return TargetAudience.fromJson(cached);
       }
@@ -210,8 +219,11 @@ class CreationCacheService {
 
     try {
       // String 타입은 직접 반환 가능
-      final cached = await _cacheService.get<String>(key);
-      return cached;
+      final cachedResult = await _cacheService.get<String>(key);
+      return cachedResult.fold(
+        (failure) => null,  // Cache miss or error
+        (data) => data,
+      );
     } catch (e) {
       return null;
     }
@@ -271,7 +283,11 @@ class CreationCacheService {
     final key = CreationCacheKeys.mediaMetadata(fileHash);
 
     try {
-      final cached = await _cacheService.get<Map<String, dynamic>>(key);
+      final cachedResult = await _cacheService.get<Map<String, dynamic>>(key);
+      final cached = cachedResult.fold(
+        (failure) => null,  // Cache miss or error
+        (data) => data,
+      );
       if (cached != null) {
         return MediaInfo.fromJson(cached);
       }

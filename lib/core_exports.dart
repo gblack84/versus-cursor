@@ -20,7 +20,7 @@
 
 // Repository Interfaces (Updated: 2025-01-09 - Moved to Features)
 export 'features/creation/domain/repositories/i_post_creation_repository_v2.dart';
-export 'features/post/domain/repositories/i_post_display_repository.dart';
+export 'features/post/domain/repositories/i_post_display_repository_v2.dart';
 export 'features/creation/domain/repositories/i_media_repository.dart';
 export 'features/profile/domain/repositories/i_user_repository.dart';
 export 'features/chat/domain/repositories/i_chat_repository.dart';

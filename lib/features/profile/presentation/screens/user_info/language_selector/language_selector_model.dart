@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/features/profile/presentation/providers/profile_notifiers.dart';
 import '/features/profile/domain/entities/user_profile.dart';
-import '/app/contracts/auth_contract.dart';
-import 'package:get_it/get_it.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 /// 언어 선택 모델 (Riverpod)
 ///
@@ -34,9 +33,8 @@ class LanguageSelectorModel extends AppModel<LanguageSelectorWidget> {
   ) async {
     if (selectedLanguage == null) return;
 
-    // AuthContract에서 현재 userId 가져오기
-    final authContract = GetIt.instance<AuthContract>();
-    final userId = authContract.getCurrentUserId();
+    // FirebaseAuth에서 현재 userId 가져오기
+    final userId = FirebaseAuth.instance.currentUser?.uid;
 
     if (userId == null) return;
 

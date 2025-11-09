@@ -5,6 +5,7 @@ import '../../domain/repositories/i_characters_repository.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/failures/profile_failure.dart';
 import '/services/cache/unified_cache_service.dart';
+import '/services/cache/failures/cache_failure.dart';
 
 /// CharactersRepository 구현 (Clean Architecture v4.0)
 ///
@@ -40,7 +41,11 @@ class CharactersRepositoryImpl implements ICharactersRepository {
       debugPrint('[CharactersRepository] Getting available characters');
 
       // 🔥 3-Layer Cache 조회 (Memory → Hive → Firestore)
-      final characters = await _cacheService.getAvailableCharacters();
+      final charactersResult = await _cacheService.getAvailableCharacters();
+      final characters = charactersResult.fold(
+        (failure) => null,  // Cache miss or error
+        (chars) => chars,
+      );
 
       if (characters == null || characters.isEmpty) {
         debugPrint('[CharactersRepository] No active characters found');

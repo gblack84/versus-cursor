@@ -134,7 +134,7 @@ final class VoteStateStreamProvider
   }
 }
 
-String _$voteStateStreamHash() => r'd15f1be300cf2fb76c9e7e49aa473fdee4970c4a';
+String _$voteStateStreamHash() => r'1ca536a50e047e6b24d2c11f17f20270e51e8ac0';
 
 /// ✅ Coordinator.getVoteStateStream() 완벽 대체
 ///

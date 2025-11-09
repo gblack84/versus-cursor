@@ -13,6 +13,7 @@ import '../../domain/entities/auth_user_extensions.dart';
 import '../../domain/repositories/i_auth_repository.dart';
 import '../../domain/failures/auth_failure.dart';
 import '../../../../services/cache/unified_cache_service.dart';
+import '../../../../services/cache/failures/cache_failure.dart';
 
 /// AuthRepositoryImpl
 ///
@@ -46,17 +47,25 @@ class AuthRepositoryImpl implements IAuthRepository {
       }
 
       // ✅ Cache-first strategy
-      final cachedUser = await _cacheService.getAuthUser(firebaseUser.uid);
+      final cachedResult = await _cacheService.getAuthUser(firebaseUser.uid);
+      final cachedUser = cachedResult.fold(
+        (failure) => null,  // Cache miss or error - continue to fetch
+        (user) => user,     // Cache hit
+      );
       if (cachedUser != null) {
         return right(cachedUser);
       }
 
       // Cache miss: Convert to domain model and cache
       final authUser = AuthUserFirestore.fromFirebaseUser(firebaseUser);
-      await _cacheService.setAuthUser(
+      final cacheResult = await _cacheService.setAuthUser(
         authUser.uid,
         authUser,
         ttl: const Duration(hours: 24),
+      );
+      cacheResult.fold(
+        (failure) => debugPrint('Failed to cache auth user: ${failure.message}'),
+        (_) => null,
       );
 
       return right(authUser);
@@ -86,10 +95,14 @@ class AuthRepositoryImpl implements IAuthRepository {
       final authUser = AuthUserFirestore.fromFirebaseUser(firebaseUser);
 
       // 3. Cache auth data (3-Layer)
-      await _cacheService.setAuthUser(
+      final cacheResult = await _cacheService.setAuthUser(
         authUser.uid,
         authUser,
         ttl: const Duration(hours: 24),
+      );
+      cacheResult.fold(
+        (failure) => debugPrint('Failed to cache auth user: ${failure.message}'),
+        (_) => null,
       );
 
       return right(authUser);
@@ -130,10 +143,14 @@ class AuthRepositoryImpl implements IAuthRepository {
       final authUser = AuthUserFirestore.fromFirebaseUser(firebaseUser);
 
       // 4. Cache auth data (3-Layer)
-      await _cacheService.setAuthUser(
+      final cacheResult = await _cacheService.setAuthUser(
         authUser.uid,
         authUser,
         ttl: const Duration(hours: 24),
+      );
+      cacheResult.fold(
+        (failure) => debugPrint('Failed to cache auth user: ${failure.message}'),
+        (_) => null,
       );
 
       return right(authUser);
@@ -191,10 +208,14 @@ class AuthRepositoryImpl implements IAuthRepository {
       final authUser = AuthUserFirestore.fromFirebaseUser(firebaseUser);
 
       // 7. Cache auth data (3-Layer)
-      await _cacheService.setAuthUser(
+      final cacheResult = await _cacheService.setAuthUser(
         authUser.uid,
         authUser,
         ttl: const Duration(hours: 24),
+      );
+      cacheResult.fold(
+        (failure) => debugPrint('Failed to cache auth user: ${failure.message}'),
+        (_) => null,
       );
 
       return right(authUser);
@@ -251,10 +272,14 @@ class AuthRepositoryImpl implements IAuthRepository {
       final authUser = AuthUserFirestore.fromFirebaseUser(firebaseUser);
 
       // 6. Cache auth data (3-Layer)
-      await _cacheService.setAuthUser(
+      final cacheResult = await _cacheService.setAuthUser(
         authUser.uid,
         authUser,
         ttl: const Duration(hours: 24),
+      );
+      cacheResult.fold(
+        (failure) => debugPrint('Failed to cache auth user: ${failure.message}'),
+        (_) => null,
       );
 
       return right(authUser);
@@ -342,10 +367,14 @@ class AuthRepositoryImpl implements IAuthRepository {
       final authUser = AuthUserFirestore.fromFirebaseUser(firebaseUser);
 
       // Cache auth data (3-Layer)
-      await _cacheService.setAuthUser(
+      final cacheResult = await _cacheService.setAuthUser(
         authUser.uid,
         authUser,
         ttl: const Duration(hours: 24),
+      );
+      cacheResult.fold(
+        (failure) => debugPrint('Failed to cache auth user: ${failure.message}'),
+        (_) => null,
       );
 
       // Clear verification ID

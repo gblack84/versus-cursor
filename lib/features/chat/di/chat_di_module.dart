@@ -28,7 +28,7 @@ import '../domain/repositories/i_chat_repository.dart';
 import '../data/repositories/chat_repository_impl.dart';
 
 // ===== App Contracts =====
-import '/app/contracts/chat_contract.dart';
+// Contract 패턴 완전 폐기 (2025-11-09)
 
 // ===== Domain Layer - Port Interfaces =====
 import '../domain/ports/i_ai_service.dart';
@@ -70,9 +70,6 @@ void registerChatModule(GetIt getIt) {
   // ===== Repository Registration =====
   _registerRepository(getIt);
 
-  // ===== Contract Registration (Cross-Feature Communication) =====
-  _registerContract(getIt);
-
   // ===== Port & Adapter Registration =====
   _registerPorts(getIt);
 
@@ -98,17 +95,6 @@ void _registerRepository(GetIt getIt) {
       idempotencyService: getIt<IdempotencyService>(),
       firestore: FirebaseFirestore.instance,
     ),
-  );
-}
-
-/// Register ChatContract for cross-feature communication
-/// Uses Dual Interface Pattern - same instance as IChatRepository
-void _registerContract(GetIt getIt) {
-  // ChatContract: App-level interface for other Features to access Chat functionality
-  // Same instance as IChatRepository, different interface type
-  // Used by: Notification, Profile, Post, Voting Features
-  getIt.registerLazySingleton<ChatContract>(
-    () => getIt<IChatRepository>() as ChatRepositoryImpl,
   );
 }
 

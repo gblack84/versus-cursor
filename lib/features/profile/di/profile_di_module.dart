@@ -9,14 +9,11 @@
 /// - Contracts
 
 import 'package:get_it/get_it.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // ===== Core Services =====
 import '/core/utils/idempotency_service.dart';
 import '/services/cache/unified_cache_service.dart';
-
-// ===== App Layer - Contracts =====
-import '/app/contracts/user_contract.dart';
-import '/app/contracts/firebase_auth_contract_impl.dart';
 
 // ===== Domain Layer - Repository Interfaces (Ports) =====
 import '../domain/repositories/i_profile_storage_repository.dart';
@@ -70,16 +67,13 @@ import '../domain/usecases/interests/update_user_interests_usecase.dart';
 /// Call this function from main setupDependencyInjection()
 ///
 /// IMPORTANT: Must be called BEFORE registerAuthModule()
-/// Auth Feature depends on UserContract from Profile Feature
+/// Auth Feature uses IUserRepository from Profile Feature
 void registerProfileModule(GetIt getIt) {
   // ===== DataSources Registration =====
   _registerDataSources(getIt);
 
   // ===== Repositories Registration =====
   _registerRepositories(getIt);
-
-  // ===== UserContract Registration =====
-  _registerContract(getIt);
 
   // ===== UseCases Registration =====
   _registerUseCases(getIt);
@@ -112,11 +106,12 @@ void _registerRepositories(GetIt getIt) {
 
   // User Repository (Singleton pattern with explicit initialization)
   // IMPORTANT: Initialize BEFORE registering the singleton
-  final authContract = FirebaseAuthContractImpl();
+  // Contract 패턴 폐기 (2025-11-09): FirebaseAuth 직접 사용
+  final auth = FirebaseAuth.instance;
   final idempotencyService = getIt<IdempotencyService>();
   final cacheService = UnifiedCacheService.instance;
 
-  UserRepositoryImpl.initialize(authContract, idempotencyService, cacheService);
+  UserRepositoryImpl.initialize(auth, idempotencyService, cacheService);
 
   getIt.registerLazySingleton<IUserRepository>(
     () => UserRepositoryImpl.instance,
@@ -142,14 +137,6 @@ void _registerRepositories(GetIt getIt) {
   // Profile Post Repository (Phase 6.5 - Feature 독립성 확보)
   getIt.registerLazySingleton<IProfilePostRepository>(
     () => ProfilePostRepositoryImpl(),
-  );
-}
-
-/// Register UserContract
-/// UserRepositoryImpl implements both IUserRepository and UserContract (Dual Interface)
-void _registerContract(GetIt getIt) {
-  getIt.registerLazySingleton<UserContract>(
-    () => UserRepositoryImpl.instance,
   );
 }
 

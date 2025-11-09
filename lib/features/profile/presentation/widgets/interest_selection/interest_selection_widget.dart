@@ -12,7 +12,7 @@ import 'package:get_it/get_it.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/features/profile/presentation/providers/profile_notifiers.dart';
 import '/features/profile/domain/entities/user_profile.dart';
-import '/app/contracts/auth_contract.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'interest_category.dart';
 import 'interest_selection_model.dart';
 export 'interest_selection_model.dart';
@@ -55,10 +55,10 @@ class _InterestSelectionWidgetState extends ConsumerState<InterestSelectionWidge
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
-  /// Phase 3: Riverpod - AuthContract를 통한 userId 가져오기
+  /// Phase 3: Riverpod - FirebaseAuth를 통한 userId 가져오기
+  /// Contract 패턴 폐기 (2025-11-09): Firebase 직접 접근
   String? get _userId {
-    final authContract = GetIt.instance<AuthContract>();
-    return authContract.getCurrentUserId();
+    return FirebaseAuth.instance.currentUser?.uid;
   }
 
   /// Phase 3: Riverpod - profileStreamProvider를 통한 프로필 가져오기

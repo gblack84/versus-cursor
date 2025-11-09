@@ -8,6 +8,7 @@ import '../../domain/failures/voting_failure.dart';
 import '../../domain/entities/post_voting_extensions.dart';
 import '../extensions/firestore_error_extensions.dart';
 import '../../../../services/cache/unified_cache_service.dart';
+import '../../../../services/cache/failures/cache_failure.dart';
 
 /// Implementation of VotingRepository for chat card voting system
 ///
@@ -157,14 +158,23 @@ class VotingChatRepositoryImpl implements IVotingChatRepository {
 
       // 6. Add to vote history (3-Layer cache)
       try {
-        final history = await _cacheService.getVoteHistory(userId) ?? [];
+        final historyResult = await _cacheService.getVoteHistory(userId);
+        final history = historyResult.fold(
+          (failure) => <Map<String, dynamic>>[],  // Cache miss - start with empty list
+          (cachedHistory) => cachedHistory,
+        );
         final newEntry = {
           'postId': postId,
           'voteOption': option == VoteOption.A ? 'A' : 'B',
           'votedAt': DateTime.now().toIso8601String(),
         };
         history.add(newEntry);
-        await _cacheService.setVoteHistory(userId, history);
+
+        final cacheResult = await _cacheService.setVoteHistory(userId, history);
+        cacheResult.fold(
+          (failure) => debugPrint('Failed to cache vote history: ${failure.message}'),
+          (_) => null,
+        );
       } catch (e) {
         if (kDebugMode) {
           print('[VotingChatRepository] Failed to cache vote history: $e');
@@ -440,7 +450,11 @@ class VotingChatRepositoryImpl implements IVotingChatRepository {
       String userId) async {
     try {
       // Get user's vote history from 3-Layer cache
-      final history = await _cacheService.getVoteHistory(userId) ?? [];
+      final historyResult = await _cacheService.getVoteHistory(userId);
+      final history = historyResult.fold(
+        (failure) => <Map<String, dynamic>>[],  // Cache miss - return empty list
+        (cachedHistory) => cachedHistory,
+      );
 
       // Calculate stats
       int totalVotes = history.length;

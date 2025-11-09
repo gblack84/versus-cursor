@@ -12,6 +12,7 @@ import '../../domain/entities/social_notification_extensions.dart';
 import '../../domain/entities/system_notification_extensions.dart';
 import '../../domain/entities/voting_notification_extensions.dart';
 import '/services/cache/unified_cache_service.dart';
+import '/services/cache/failures/cache_failure.dart';
 import '/core/utils/idempotency_service.dart';
 
 /// Clean Architecture 준수 Repository 구현체
@@ -67,7 +68,12 @@ class NotificationRepositoryImpl implements INotificationRepository {
       final cacheKey = 'notification_$id';
 
       // L1 Memory Cache (즉시 응답: <10ms)
-      final cached = await UnifiedCacheService.instance.get<Map<String, dynamic>>(cacheKey);
+      final cachedResult = await UnifiedCacheService.instance.get<Map<String, dynamic>>(cacheKey);
+      final cached = cachedResult.fold(
+        (failure) => null,  // Cache miss or error
+        (data) => data,
+      );
+
       if (cached != null) {
         // Cache에서 복원: Map → DocumentSnapshot 대신 직접 Extension 호출 불가
         // Firestore에서 다시 가져와서 Extension 사용
@@ -108,7 +114,12 @@ class NotificationRepositoryImpl implements INotificationRepository {
       final cacheKey = 'notifications_$userId';
 
       // L1 Memory Cache (즉시 응답: <10ms)
-      final cachedList = await UnifiedCacheService.instance.get<List>(cacheKey);
+      final cachedListResult = await UnifiedCacheService.instance.get<List>(cacheKey);
+      final cachedList = cachedListResult.fold(
+        (failure) => null,  // Cache miss or error
+        (data) => data,
+      );
+
       if (cachedList != null) {
         // 캐시된 데이터는 재사용 가능하지만, Extension은 DocumentSnapshot 필요
         // Firestore에서 다시 가져와서 Extension 사용

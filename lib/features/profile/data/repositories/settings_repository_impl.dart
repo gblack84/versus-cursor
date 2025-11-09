@@ -6,6 +6,7 @@ import '../../domain/entities/user_settings.dart';
 import '../../domain/entities/user_profile_extensions.dart';
 import '../../domain/failures/profile_failure.dart';
 import '/services/cache/unified_cache_service.dart';
+import '/services/cache/failures/cache_failure.dart';
 
 /// SettingsRepository 구현 (Clean Architecture v4.0)
 ///
@@ -37,7 +38,12 @@ class SettingsRepositoryImpl implements ISettingsRepository {
       debugPrint('[SettingsRepository] Getting user settings for: $userId');
 
       // 🔥 3-Layer Cache 우선 조회
-      final cached = await _cacheService.getUserSettings(userId);
+      final cachedResult = await _cacheService.getUserSettings(userId);
+      final cached = cachedResult.fold(
+        (failure) => null,  // Cache miss or error
+        (settings) => settings,
+      );
+
       if (cached != null) {
         debugPrint('[SettingsRepository] Settings loaded from CACHE');
         return right(cached);

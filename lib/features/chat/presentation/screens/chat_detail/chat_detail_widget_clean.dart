@@ -29,7 +29,7 @@ import '/features/chat/domain/entities/message.dart';
 import '/features/chat/domain/constants/chat_constants.dart';
 import '/features/chat/presentation/adapters/flutter_chat_adapter.dart';
 import '/features/chat/data/adapters/flutter_chat_user_adapter.dart';
-import '/services/image/unified_image_cache_service.dart';
+import '/services/cache/unified_image_cache_service.dart';
 import 'chat_detail_controller_v2.dart';
 import 'components/chat_detail_app_bar.dart';
 import 'components/chat_detail_fab.dart';

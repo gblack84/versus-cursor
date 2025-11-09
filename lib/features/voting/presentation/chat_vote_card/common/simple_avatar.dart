@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '/core/design_system/design_system.dart';
-import '/services/image/unified_image_cache_service.dart';
+import '/services/cache/unified_image_cache_service.dart';
 
 /// 간단한 프로필 아바타 위젯 (Voting Feature 전용)
 ///

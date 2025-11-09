@@ -40,7 +40,7 @@ import '/services/ui/unified_box_calculator.dart';
 import '/core/utils/media/aspect_ratio_analyzer.dart';
 import '/services/ui/responsive_breakpoints.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '/services/image/unified_image_cache_service.dart';
+import '/services/cache/unified_image_cache_service.dart';
 import 'ai_chat_controller.dart';
 import '../../providers/chat_providers.dart';
 import '../../providers/chat_params.dart';

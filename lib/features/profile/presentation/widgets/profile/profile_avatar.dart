@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '/core_exports.dart';
-import '/services/image/unified_image_cache_service.dart';
+import '/services/cache/unified_image_cache_service.dart';
 
 /// 프로필 아바타 위젯
 ///

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '/services/image/unified_image_cache_service.dart';
+import '/services/cache/unified_image_cache_service.dart';
 import 'image_viewer/components/image_viewer_app_bar.dart';
 import 'image_viewer/components/image_viewer_page_view.dart';
 import 'image_viewer/components/image_viewer_controls.dart';

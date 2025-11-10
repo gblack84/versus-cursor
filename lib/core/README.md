@@ -42,6 +42,9 @@ lib/core/
 │   ├── components/            # UI 컴포넌트 라이브러리
 │   ├── tokens/                # 디자인 토큰 (색상, 간격, 타이포)
 │   └── README.md
+├── firebase/                   # Firebase 유틸리티 (Complete ✅)
+│   ├── firestore_util.dart   # Generic Firestore 유틸리티 (123줄)
+│   └── README.md              # 400줄 문서
 ├── internationalization/       # 다국어 지원 (Legacy ⚠️)
 │   └── lang/                  # 번역 파일 (en.json만 존재)
 ├── localization/               # 새 다국어 시스템 (Complete ✅)
@@ -77,6 +80,7 @@ lib/core/
 | **animations** | 11 | 2,083 | 🟢 완성 | Low |
 | **constants** | 1 | 26 | 🟢 완성 | Low |
 | **design_system** | 15 | 3,412 | 🟡 진행중 | High |
+| **firebase** | 1 | 123 | 🟢 완성 | Low |
 | **localization** | 1 | 2,419 | 🟢 완성 | Low |
 | **models** | 3 | 293 | 🟡 개선 필요 | Medium |
 | **theme** | 6 | 892 | 🟢 완성 | Low |
@@ -105,6 +109,129 @@ import '/features/auth/data/services/auth_util.dart';  // ❌ Core가 Feature에
 - 비디오 플레이어 3개 중복
 - internationalization vs localization 중복
 - nav.dart 미사용 코드
+
+## 🔥 Firebase 유틸리티 (Complete ✅)
+
+### 개요
+
+Core Firebase 디렉토리는 **Generic하고 재사용 가능한** Firestore 유틸리티를 제공합니다. Feature-specific 로직은 각 Feature의 Data Layer Extension Pattern으로 구현됩니다.
+
+**철학**: Pure Dart, 프레임워크 독립, 최소한의 핵심 유틸리티만 포함
+
+### 제공 유틸리티
+
+#### 1. GeoPoint ↔ LatLng 변환
+
+Flutter의 `LatLng`와 Firestore의 `GeoPoint` 간 변환:
+
+```dart
+// GeoPoint → LatLng
+extension LatLngExtension on GeoPoint {
+  LatLng toLatLng() => LatLng(latitude, longitude);
+}
+
+// LatLng → GeoPoint
+extension GeoPointExtension on LatLng {
+  GeoPoint toGeoPoint() => GeoPoint(latitude, longitude);
+}
+```
+
+#### 2. safeGet() - 안전한 함수 실행
+
+Firestore 데이터 파싱 시 에러 처리:
+
+```dart
+final user = safeGet(
+  () => UserProfile.fromFirestore(doc),
+  (e) => logger.error('Failed to parse user: $e'),
+);
+```
+
+#### 3. mergeNestedFields() - 중첩 필드 병합
+
+Firestore의 dot notation을 중첩 Map으로 변환:
+
+```dart
+// Input:  { 'user.name': 'John', 'user.age': 30 }
+// Output: { 'user': { 'name': 'John', 'age': 30 } }
+final data = mergeNestedFields(snapshot.data()!);
+```
+
+#### 4. toRef() - DocumentReference 생성
+
+문자열 경로를 DocumentReference로 변환:
+
+```dart
+final userRef = toRef('users/user123');
+final doc = await userRef.get();
+```
+
+### 아키텍처 원칙
+
+**✅ Core에 포함되는 유틸리티**:
+- Generic하고 재사용 가능
+- Feature에 독립적
+- Pure Dart (Flutter/Firebase SDK만 의존)
+- 명확한 책임 (타입 변환, 안전성, 편의성)
+
+**❌ Core에 포함되지 않는 것**:
+- Feature-specific 로직 → Extension Pattern 사용
+- 데이터 직렬화/역직렬화 → Extension Pattern 사용
+- 복잡한 데이터 변환 → Repository 패턴 사용
+- Legacy 패턴 → `/lib/services/firebase/legacy_firestore_record.dart`
+
+### Extension Pattern (권장)
+
+대부분의 Firestore 작업은 **Extension Pattern**으로 구현:
+
+```dart
+// lib/features/profile/data/extensions/user_profile_extensions.dart
+
+extension UserProfileFirestore on UserProfile {
+  /// Firestore DocumentSnapshot → UserProfile 엔티티
+  static UserProfile fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+
+    return UserProfile(
+      uid: doc.id,
+      displayName: data['displayName'] as String? ?? '',
+      email: data['email'] as String?,
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      // GeoPoint 변환에 Core 유틸리티 사용
+      location: (data['location'] as GeoPoint?)?.toLatLng(),
+    );
+  }
+
+  /// UserProfile 엔티티 → Firestore Map
+  Map<String, dynamic> toFirestore() {
+    return {
+      'displayName': displayName,
+      'email': email,
+      'createdAt': Timestamp.fromDate(createdAt),
+      // LatLng 변환에 Core 유틸리티 사용
+      'location': location?.toGeoPoint(),
+    };
+  }
+}
+```
+
+### 마이그레이션 히스토리
+
+**2025-11-10**: 디렉토리 구조 개선
+- `/lib/core/firebase/utils/` → `/lib/core/firebase/` (플랫 구조)
+- 포괄적인 README.md 작성 (400+ 줄)
+- 아키텍처 가이드 및 마이그레이션 가이드 포함
+
+**이전**: Core Firebase 정리
+- `firebase_config.dart` → App Layer로 이동
+- `schema_util.dart` → Search Feature로 이동 (architecture violation 수정)
+- Legacy 패턴 → Services Layer로 분리
+
+### 관련 문서
+
+- **[Core Firebase README](./firebase/README.md)** - 상세 사용법 및 예시
+- **[Services Firebase README](../services/firebase/README.md)** - Legacy 패턴 문서
+- **[Search Algolia Converters](../features/search/data/utils/README.md)** - Feature-specific 예시
 
 ## 🛠️ Feature-First Architecture 개선 방안
 

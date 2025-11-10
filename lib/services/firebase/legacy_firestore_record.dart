@@ -19,7 +19,7 @@ import 'package:flutter/material.dart' show Color;
 import '/app/types/lat_lng.dart';
 import '/app/router/navigation/serialization_util.dart'
     show AppColorSerialization;
-import '/core/firebase/utils/firestore_util.dart'
+import '/core/firebase/firestore_util.dart'
     show mergeNestedFields, GeoPointExtension, LatLngExtension;
 
 export 'package:cloud_firestore/cloud_firestore.dart'

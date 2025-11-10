@@ -10,6 +10,9 @@ Data Layer는 검색 기능의 모든 데이터 소스와의 통신을 관리합
 
 ```
 data/
+├── adapters/                 # 데이터 어댑터
+│   └── serialization_util.dart       # Algolia 직렬화 (ParamType 변환)
+│
 ├── datasources/              # 데이터 소스
 │   ├── algolia_datasource.dart        # Algolia API 통신
 │   ├── local_search_datasource.dart   # 로컬 검색 캐싱
@@ -18,11 +21,15 @@ data/
 ├── repositories/             # 리포지토리 구현
 │   └── search_repository_impl.dart    # 검색 리포지토리 구현체
 │
-└── services/                 # 검색 서비스
-    ├── algolia_manager.dart          # Algolia 매니저 (기존)
-    ├── search_cache_service.dart     # 검색 결과 캐싱
-    ├── search_history_service.dart   # 검색 기록 관리
-    └── search_filter_service.dart    # 검색 필터 처리
+├── services/                 # 검색 서비스
+│   ├── algolia_manager.dart          # Algolia 매니저 (기존)
+│   ├── search_cache_service.dart     # 검색 결과 캐싱
+│   ├── search_history_service.dart   # 검색 기록 관리
+│   └── search_filter_service.dart    # 검색 필터 처리
+│
+└── utils/                    # 유틸리티 (Feature-specific) ✨ NEW
+    ├── algolia_converters.dart       # Algolia 검색 결과 변환
+    └── README.md                     # 1,000+ 줄 문서
 ```
 
 ## 📦 주요 컴포넌트
@@ -144,6 +151,62 @@ data/
 - `mergeFilters()`: 여러 필터 병합
 - `getDefaultFilter()`: 기본 필터 반환
 
+### 4. Utilities (Feature-Specific) ✨ NEW
+
+#### algolia_converters.dart
+**역할**: Algolia 검색 결과를 앱 모델로 변환
+
+**Migration**: `/lib/core/firebase/utils/schema_util.dart` → `/lib/features/search/data/utils/algolia_converters.dart` (2025-11-10)
+
+**Why This Change?**
+- ❌ **Before**: Core importing from Feature (architecture violation)
+- ✅ **After**: Feature owns its conversion logic (Clean Architecture compliant)
+- ✅ **Benefit**: Algolia-specific logic belongs to Search Feature Data Layer
+
+**주요 함수**:
+- `convertAlgoliaStruct<T>()`: Algolia 결과 → 앱 struct 변환
+  - 파라미터: data (dynamic), paramType (ParamType), isList (bool), structBuilder (StructBuilder<T>)
+  - 반환: T? (변환된 구조체)
+- `convertAlgoliaParam<T>()`: Algolia 파라미터 타입 변환
+  - DateTime (milliseconds → DateTime)
+  - LatLng (`_geoloc` → LatLng)
+  - Color (CSS string → Color)
+  - DocumentReference (path → DocumentReference)
+- `getStructList<T>()`: Algolia 리스트 데이터에서 구조체 리스트 추출
+- `getSchemaColor()`: CSS 색상 문자열 → Flutter Color
+- `getColorsList()`: CSS 색상 리스트 → Flutter Color 리스트
+- `getDataList<T>()`: 타입이 지정된 리스트 추출
+
+**Usage Example**:
+```dart
+// lib/features/search/data/repositories/search_repository_impl.dart
+
+import '../utils/algolia_converters.dart';
+
+class SearchRepositoryImpl {
+  Future<List<Post>> searchPosts(String query) async {
+    final snapshot = await _algolia.index('posts').search(query).getObjects();
+
+    // Algolia 결과 → Post 엔티티 변환
+    final posts = snapshot.hits.map((hit) {
+      return convertAlgoliaStruct<Post>(
+        hit.data,
+        ParamType.DataStruct,
+        false,
+        structBuilder: (data) => Post.fromAlgolia(data),
+      );
+    }).whereType<Post>().toList();
+
+    return posts;
+  }
+}
+```
+
+**Related Documentation**:
+- [Algolia Converters README](./utils/README.md) - 상세 API 레퍼런스 (1,000+ 줄)
+- [Core Firebase README](/lib/core/firebase/README.md) - Generic 유틸리티
+- [Services Firebase README](/lib/services/firebase/README.md) - Legacy 패턴
+
 ## 🔗 의존성
 
 ### 외부 패키지
@@ -151,10 +214,18 @@ data/
 - `cloud_firestore: ^5.5.0` - Firebase Firestore
 - `hive: ^2.2.3` - 로컬 캐싱
 - `injectable: ^2.1.0` - 의존성 주입
+- `from_css_color: ^2.0.0` - CSS 색상 파싱 (Algolia 변환용)
 
-### 내부 의존성
+### 내부 의존성 (Feature 내)
 - `/features/search/domain/models/` - 도메인 모델
 - `/features/search/domain/repositories/` - 리포지토리 인터페이스
+- `/features/search/data/utils/algolia_converters.dart` - Algolia 변환 유틸리티
+- `/features/search/data/adapters/serialization_util.dart` - Algolia 직렬화
+
+### Core Layer 의존성
+- `/lib/core/firebase/firestore_util.dart` - Generic Firestore 유틸리티 (safeGet, toRef)
+- `/lib/core/utils/app_utils.dart` - 타입 캐스팅 유틸리티 (castToType)
+- `/lib/app/router/navigation/serialization_util.dart` - ParamType enum
 
 ## 📊 데이터 흐름
 
@@ -236,6 +307,26 @@ graph LR
 
 ## 📝 마이그레이션 노트
 
+### Phase 0: Algolia Converters Migration (2025-11-10) ✅ COMPLETE
+**Goal**: Fix architecture violation (Core importing from Feature)
+
+**Completed**:
+- [x] schema_util.dart → algolia_converters.dart (Core → Feature Data Layer)
+- [x] Import 경로 업데이트 (3개 파일)
+  - search/data/adapters/serialization_util.dart
+  - services/firebase/legacy_firestore_record.dart
+  - core_exports.dart
+- [x] Comprehensive README.md creation (1,000+ 줄)
+  - algolia_converters API reference
+  - Usage examples and best practices
+  - Migration guide
+
+**Impact**:
+- ✅ Architecture violation resolved
+- ✅ Clean Architecture compliance
+- ✅ Feature owns its conversion logic
+- ✅ Clear Feature boundary established
+
 ### Phase 1 완료 시
 - [ ] AlgoliaManager 이동 확인
 - [ ] serialization_util 이동 확인
@@ -248,4 +339,14 @@ graph LR
 
 ---
 
+## 📚 추가 문서
+
+- **[Algolia Converters README](./utils/README.md)** - Algolia 변환 유틸리티 상세 문서 (1,000+ 줄)
+- **[Search Feature README](../README.md)** - Feature 전체 개요
+- **[Core Firebase README](/lib/core/firebase/README.md)** - Generic Firestore 유틸리티
+- **[Services Firebase README](/lib/services/firebase/README.md)** - Legacy 패턴 문서
+
+---
+
 *Data Layer는 검색 기능의 데이터 접근을 책임지는 핵심 레이어입니다.*
+*Last Updated: 2025-11-10 - Algolia Converters Migration Complete*

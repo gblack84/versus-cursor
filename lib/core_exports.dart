@@ -49,7 +49,7 @@ export 'core/utils/batch_service.dart';
 export 'core/utils/custom_functions.dart';
 
 // Firebase utilities (Core - Generic)
-export 'core/firebase/utils/firestore_util.dart';
+export 'core/firebase/firestore_util.dart';
 
 // Firebase utilities (Services - Legacy Pattern)
 // TODO: Remove after Extension Pattern migration complete

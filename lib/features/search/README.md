@@ -12,9 +12,11 @@ Algolia를 활용한 고급 검색과 검색 기록 관리를 담당합니다.
 ```
 search/
 ├── data/                  # 데이터 레이어
+│   ├── adapters/         # Algolia serialization (serialization_util.dart)
 │   ├── datasources/      # Algolia, Firestore 검색
 │   ├── repositories/     # SearchRepository 구현
-│   └── services/         # 검색 인덱싱, 필터링
+│   ├── services/         # 검색 인덱싱, 필터링
+│   └── utils/            # Algolia 변환 유틸리티 (algolia_converters.dart) ✨ NEW
 │
 ├── domain/               # 도메인 레이어
 │   ├── models/          # SearchQuery, SearchResult
@@ -26,6 +28,50 @@ search/
     ├── widgets/         # 검색바, 결과 카드
     └── providers/       # SearchProvider 상태 관리
 ```
+
+### 🔥 Algolia Converters (2025-11-10)
+
+**Migration**: `/lib/core/firebase/utils/schema_util.dart` → `/lib/features/search/data/utils/algolia_converters.dart`
+
+**Why This Change?**
+- ❌ **Before**: Core importing from Feature (architecture violation)
+- ✅ **After**: Feature owns its conversion logic (Clean Architecture compliant)
+
+**What Was Moved?**
+- `convertAlgoliaStruct()` - Algolia search result → app struct 변환
+- `convertAlgoliaParam()` - Algolia parameter 타입 변환
+- `getStructList()`, `getColorsList()`, `getDataList()` - 리스트 추출 헬퍼
+- `StructBuilder<T>` typedef, `BaseStruct` abstract class
+
+**Usage Example**:
+```dart
+// lib/features/search/data/repositories/search_repository_impl.dart
+
+import '../utils/algolia_converters.dart';
+
+class SearchRepositoryImpl {
+  Future<List<Post>> searchPosts(String query) async {
+    final snapshot = await _algolia.index('posts').search(query).getObjects();
+
+    // Algolia 결과 → Post 엔티티 변환
+    final posts = snapshot.hits.map((hit) {
+      return convertAlgoliaStruct<Post>(
+        hit.data,
+        ParamType.DataStruct,
+        false,
+        structBuilder: (data) => Post.fromAlgolia(data),
+      );
+    }).whereType<Post>().toList();
+
+    return posts;
+  }
+}
+```
+
+**Related Documentation**:
+- [Algolia Converters README](./data/utils/README.md) - 상세 사용법 및 API 레퍼런스
+- [Core Firebase README](/lib/core/firebase/README.md) - Generic 유틸리티
+- [Services Firebase README](/lib/services/firebase/README.md) - Legacy 패턴
 
 ## ✅ Structure Cleanup Status (2025-01-20)
 
@@ -116,12 +162,18 @@ search/
 ### 전역 레이어 사용
 - `backend/algolia`: Algolia 설정
 - `core/utils`: 검색 유틸리티
+- `core/firebase`: Generic Firestore 유틸리티 (`safeGet`, `toRef`)
 - `services/cache`: 검색 결과 캐싱
 
 ### 외부 패키지
 ```yaml
 algolia: ^1.1.1
+from_css_color: ^2.0.0    # CSS 색상 파싱 (Algolia 변환용)
 ```
+
+### Feature 내부 의존성
+- `data/utils/algolia_converters.dart`: Algolia 검색 결과 변환
+- `data/adapters/serialization_util.dart`: Algolia 직렬화
 
 ## 🔄 상태 관리
 
@@ -235,6 +287,16 @@ flutter test test/features/search/algolia/
 ```
 
 ## 📝 변경 이력
+
+### v0.2.0 (2025-11-10) - Algolia Converters Migration
+- **Architecture Fix**: `schema_util.dart` → `algolia_converters.dart`
+  - Core → Feature 역방향 의존성 제거 (Clean Architecture 준수)
+  - Algolia-specific 로직을 Feature Data Layer로 이동
+  - 포괄적인 README.md 작성 (1,000+ 줄)
+- **Documentation**: data/utils/README.md 추가
+  - Algolia 변환 API 레퍼런스
+  - 사용 예시 및 Best Practices
+  - 마이그레이션 가이드
 
 ### v0.1.0 (2025-01-20) - Structure Cleanup
 - Clean Architecture v4.0 구조 확립

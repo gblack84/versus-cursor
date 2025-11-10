@@ -110,11 +110,25 @@ class EnvironmentConfig {
       'FIREBASE_PROJECT_ID',
       'FIREBASE_AUTH_DOMAIN',
       'FIREBASE_STORAGE_BUCKET',
+      'FIREBASE_MESSAGING_SENDER_ID',  // Web platform required
+      'FIREBASE_APP_ID',               // Web platform required
     ];
 
     for (final varName in requiredVars) {
-      if (dotenv.env[varName] == null || dotenv.env[varName]!.isEmpty) {
+      final value = dotenv.env[varName];
+
+      // Check if missing or empty
+      if (value == null || value.isEmpty) {
         print('⚠️ Missing required environment variable: $varName');
+        print('   Please set this in .env file (see .env.example)');
+        return false;
+      }
+
+      // Check for placeholder values (e.g., "your_sender_id_here")
+      if (value.startsWith('your_') || value.contains('_here')) {
+        print('⚠️ Placeholder value detected for: $varName');
+        print('   Current value: $value');
+        print('   Please replace with actual value in .env file');
         return false;
       }
     }

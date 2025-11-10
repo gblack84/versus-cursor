@@ -1,19 +1,38 @@
 import 'dart:async';
 import 'package:cloud_functions/cloud_functions.dart';
 import '/services/moderation/models/moderation_result.dart';
+import '../interfaces/i_gemini_moderation_service.dart';
 
-/// Gemini AI를 활용한 콘텐츠 검증 서비스 (Cloud Functions 버전)
-class GeminiModerationService {
-  static final FirebaseFunctions _functions =
-      FirebaseFunctions.instanceFor(region: 'asia-northeast3');
+/// Gemini AI를 활용한 콘텐츠 검증 서비스 (Port-Adapter Pattern Adapter)
+///
+/// Cloud Functions를 통해 Gemini AI 기반 콘텐츠 검증을 수행합니다.
+/// - 콘텐츠 논리성 검증
+/// - 컨텍스트 적절성 분석
+/// - 예상 투표 비율 예측
+///
+/// **Port-Adapter Pattern**:
+/// - Implements: IGeminiModerationService (Port)
+/// - Adapts: FirebaseFunctions (Cloud Functions HTTP callable)
+///
+/// **Phase 2-Cleanup**: ✅ Static → Instance 변환 완료
+/// **DI Pattern**: Constructor injection for FirebaseFunctions
+class GeminiModerationService implements IGeminiModerationService {
+  final FirebaseFunctions _functions;
+
+  /// Constructor injection for Firebase Functions
+  GeminiModerationService({
+    required FirebaseFunctions functions,
+  }) : _functions = functions;
 
   /// 초기화 (더 이상 필요 없음 - Cloud Functions 사용)
-  static void initialize() {
+  @override
+  void initialize() {
     print('[GeminiModerationService] Using Cloud Functions for Gemini AI');
   }
 
   /// Gemini AI로 포스트 콘텐츠 검증 (Cloud Functions 호출)
-  static Future<GeminiModerationResult?> validateContent({
+  @override
+  Future<GeminiModerationResult?> validateContent({
     required String userId,
     required String? questionTitle,
     required String? description,

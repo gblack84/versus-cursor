@@ -3,7 +3,7 @@
 > **작성일**: 2025-11-02
 > **업데이트**: 2025-11-10
 > **목적**: Firebase-Centric v2.0 아키텍처의 Backend 인프라 마이그레이션 전략 및 가이드
-> **Phase 2 문서 상태**: ✅ **100% 완료** (Voting Schema 추가)
+> **Phase 2 상태**: 🔄 **진행 중** (Documentation 완료, Schemas 3/9 완성)
 
 ---
 
@@ -54,13 +54,17 @@ backend/
 │   ├── entity_analysis.md              #    엔티티 패턴 분석 결과
 │   ├── common_patterns.md              #    공통 패턴 추출
 │   └── flutterflow_legacy.md           #    FlutterFlow 레거시 매핑
-├── schemas/                            # 🎨 Zod 스키마 설계 (Phase 2 ✅)
+├── schemas/                            # 🎨 Zod 스키마 설계 (진행 중: 3/9 완성)
 │   ├── README.md                       #    Zod 스키마 가이드
-│   ├── post_schema.ts                  # ✅ Post/PostDisplay 스키마 (완성)
-│   ├── chat_schema.ts                  # ✅ Chat/Message 스키마 (완성)
-│   ├── voting_schema.ts                # ✅ Vote/PostVoting 스키마 (2025-11-10 완성)
-│   ├── user_schema.ts                  # ✅ UserProfile 스키마 (완성)
-│   └── common_helpers.ts               # ✅ 공통 Helper 함수 (완성)
+│   ├── post_schema.ts                  # ✅ Post/PostDisplay 스키마 (213줄, 완성)
+│   ├── chat_schema.ts                  # ✅ Chat/Message 스키마 (90줄, 완성)
+│   ├── voting_schema.ts                # ✅ Vote/PostVoting 스키마 (506줄, 2025-11-10 완성)
+│   ├── common_helpers.ts               # ✅ 공통 Helper 함수 (326줄, 완성)
+│   ├── user_schema.ts                  # 🔄 UserProfile 스키마 (생성 필요)
+│   ├── auth_schema.ts                  # 🔄 FirebaseUser 스키마 (생성 필요)
+│   ├── notification_schema.ts          # 🔄 Notification 스키마 (생성 필요)
+│   ├── creation_schema.ts              # 🔄 PostCreation 스키마 (생성 필요)
+│   └── search_schema.ts                # 🔄 Search 스키마 (생성 필요, 낮은 우선순위)
 └── codegen/                            # 🏗️ 코드 생성 파이프라인 (Phase 2 ✅)
     ├── README.md                       #    코드 생성 가이드
     ├── setup_guide.md                  # ✅ Quicktype 설정 가이드 (2025-11-10 완성)
@@ -130,7 +134,7 @@ cat backend/codegen/package.json.example
 
 ### Phase 2 Documentation 완료 현황
 
-**✅ Backend Phase 2 문서 100% 완료** (2025-11-10):
+**✅ Backend Phase 2 문서 완료** (2025-11-10):
 
 | 문서 | 상태 | 라인 수 | 완성일 |
 |------|------|---------|--------|
@@ -139,27 +143,49 @@ cat backend/codegen/package.json.example
 | `codegen/package.json.example` | ✅ 업데이트 | 129 | 2025-11-10 |
 | `codegen/package.json.README.md` | ✅ 신규 | 329 | 2025-11-10 |
 
-**총 4개 파일, 1,375 lines 작성/업데이트**
+**총 4개 문서 파일, 1,375 lines 작성/업데이트**
 
-### 완료된 Feature 분석 (Phase 1-5 완성)
+### 완료된 Flutter Feature vs Backend Schema 현황
 
-| Feature | Entity | 필드 수 | Zod Schema | 분석 완료 |
-|---------|--------|--------|-----------|----------|
-| **Post** | PostDisplay | 30 | ✅ post_schema.ts | ✅ |
-| **Chat** | Chat | 17 | ✅ chat_schema.ts | ✅ |
-| **Chat** | Message | 45 | ✅ chat_schema.ts | ✅ |
-| **Voting** | Vote | 4 | ✅ voting_schema.ts | ✅ |
-| **Voting** | PostVoting | 23 | ✅ voting_schema.ts | ✅ |
-| **Profile** | UserProfile | ~50 | ✅ user_schema.ts | ✅ |
+| Feature | Flutter Status | Entity | 필드 수 | Zod Schema 상태 |
+|---------|---------------|--------|--------|----------------|
+| **Post** | ✅ Phase 1-5 | PostDisplay | 30 | ✅ post_schema.ts (213줄) |
+| **Chat** | ✅ Phase 1-5 | Chat | 17 | ✅ chat_schema.ts (90줄) |
+| **Chat** | ✅ Phase 1-5 | Message | 45 | ✅ chat_schema.ts (90줄) |
+| **Voting** | ✅ Phase 1-5 | Vote | 4 | ✅ voting_schema.ts (506줄) |
+| **Voting** | ✅ Phase 1-5 | PostVoting | 23 | ✅ voting_schema.ts (506줄) |
+| **Profile** | ✅ Phase 2,4,6,7 | UserProfile | ~50 | 🔄 **생성 필요** |
+| **Notifications** | ✅ Phase 1-5 | NotificationEntity | ~20 | 🔄 **생성 필요** |
+| **Creation** | ✅ Phase 1-5 | PostCreation | ~30 | 🔄 **생성 필요** |
+| **Auth** | ✅ Phase 1-5 | FirebaseUser | ~15 | 🔄 **생성 필요** |
 
-**총 6개 엔티티, 169개 필드 분석 완료**
-**✅ Zod Schema 5/5 완성** (User, Post, Chat, Message, Voting)
+**완료된 Flutter Features**: 7/8 (87.5%)
+**Backend Zod Schemas**: 3/9 완성 (33.3%)
+**Schema 생성 필요**: 6개 (Profile, Notifications, Creation, Auth, Search)
 
-### 미완료 Feature (분석 대기 중)
+### Schema 생성 우선순위
 
-- 🔄 **Creation** - 콘텐츠 생성 Feature
-- 🔄 **Search** - 검색 Feature (Algolia 연동)
-- 🔄 **Voting** - 투표 Feature (일부 엔티티만 완성)
+**High Priority** (Flutter Feature 100% 완성, Schema 누락):
+1. 🔴 **user_schema.ts** - Profile Feature (50+ fields)
+   - UserProfile entity 전체 스펙
+   - Profile settings, stats, subscription
+
+2. 🔴 **notification_schema.ts** - Notifications Feature (20+ fields)
+   - NotificationEntity 스펙
+   - 알림 타입, 읽음 상태, 만료 시간
+
+3. 🔴 **creation_schema.ts** - Creation Feature (30+ fields)
+   - PostCreation entity 스펙
+   - 멀티미디어 업로드, AI 검열, 타겟팅
+
+**Medium Priority** (Flutter Feature 100% 완성, Schema 선택적):
+4. 🟡 **auth_schema.ts** - Auth Feature (15+ fields)
+   - FirebaseUser 확장 정보
+   - 대부분 Firebase Auth SDK가 처리
+
+**Low Priority** (Flutter Feature 미완성 또는 외부 연동):
+5. 🟢 **search_schema.ts** - Search Feature
+   - Algolia 연동, Flutter만 75% 완성
 
 ### FlutterFlow 레거시 현황
 
@@ -351,51 +377,46 @@ git push origin feature/update-backend-docs
 
 ---
 
-## 🎉 Phase 2 Documentation 완료 Summary
+## 🎉 Phase 2 현황 Summary
 
 **작업 기간**: 2025-11-10 (1일)
-**작업 범위**: Backend Phase 2 문서 작성 (문서만, 코드 실행 없음)
+**작업 범위**: Documentation 완료, Schema 3/9 완성
 
-### 완성된 결과물
+### ✅ 완성된 결과물
 
-1. **voting_schema.ts** (507 lines):
-   - VoteStatus Enum (TypeScript native enum)
-   - Vote Schema (4 fields)
-   - PostVoting Schema (23 fields, 7 categories)
-   - Firestore Converters (fromFirestore/toFirestore)
-   - Validation Helpers (validateVote, validatePostVoting)
+**1. Documentation (100% 완료)**:
+- `voting_schema.ts` (507줄) - Vote + PostVoting Zod 스키마
+- `setup_guide.md` (410줄) - Quicktype 설치 및 사용 가이드
+- `package.json.example` (129줄) - 64개 npm scripts
+- `package.json.README.md` (329줄) - Scripts 사용 가이드
 
-2. **setup_guide.md** (410 lines):
-   - Quicktype 소개 및 설치
-   - 자동화 스크립트 (generate-dart-models.js)
-   - 실전 통합 워크플로 (4단계)
-   - 완료 체크리스트
-   - 커스텀 코드 생성기 대안
+**총 4개 문서, 1,375 lines**
 
-3. **package.json.example** (129 lines):
-   - 64개 npm scripts 정의
-   - Build, Deploy, Code Generation, Testing, Migration, Validation 카테고리
-   - Pre-commit hooks
-   - 전체 의존성 리스트
+**2. Zod Schemas (3/9 완성, 33%)**:
+- ✅ `post_schema.ts` (213줄) - PostDisplay
+- ✅ `chat_schema.ts` (90줄) - Chat + Message
+- ✅ `voting_schema.ts` (506줄) - Vote + PostVoting
+- ✅ `common_helpers.ts` (326줄) - 공통 helpers
 
-4. **package.json.README.md** (329 lines):
-   - npm scripts 사용 가이드
-   - 3가지 워크플로 시나리오
-   - 스크립트 카테고리별 사용 예시
+**총 4개 파일, 1,135 lines**
 
-### 다음 단계 (Phase 2 실행)
+### 🔄 다음 단계 (Schema 생성 필요)
 
-**준비 완료**: ✅ 모든 문서 작성 완료, 실행 준비 가능
+**High Priority** (3개):
+1. 🔴 user_schema.ts (Profile Feature, 50+ fields)
+2. 🔴 notification_schema.ts (Notifications Feature, 20+ fields)
+3. 🔴 creation_schema.ts (Creation Feature, 30+ fields)
 
-**실행 순서**:
-1. TypeScript Functions 마이그레이션 (1주)
-2. Zod Schema 통합 및 Validation (1주)
-3. Quicktype으로 Dart 모델 생성 (1주)
-4. Extension Pattern 작성 및 검증 (1주)
+**Medium Priority** (1개):
+4. 🟡 auth_schema.ts (Auth Feature, 15+ fields)
 
-**예상 기간**: 4주 (문서는 완성, 실행 대기 중)
+**Low Priority** (1개):
+5. 🟢 search_schema.ts (Search Feature)
+
+**예상 작업량**: 5개 schema 생성 시 약 2,000-2,500 lines 추가
 
 ---
 
-**최종 업데이트**: 2025-11-10 (Phase 2 문서 100% 완료)
-**다음 업데이트 예정**: Phase 2 실행 시작 시
+**최종 업데이트**: 2025-11-10
+**Phase 2 상태**: Documentation 100% 완료, Schemas 3/9 완성 (33%)
+**다음 단계**: 누락된 6개 Schema 생성 (user, notification, creation, auth, search)

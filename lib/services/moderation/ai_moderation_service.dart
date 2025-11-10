@@ -2,46 +2,38 @@ import 'package:flutter/material.dart';
 import '/services/moderation/perspective_api_service.dart';
 import '/services/moderation/models/moderation_result.dart';
 import '/services/moderation/constants/moderation_config.dart';
-import '/services/moderation/text/gemini_service.dart';
 import '/core/design_system/design_system.dart';
+import 'interfaces/i_ai_moderation_service.dart';
+import 'interfaces/i_gemini_moderation_service.dart';
 
-/// 통합 AI 검열 서비스
+/// 통합 AI 검열 서비스 (Port-Adapter Pattern Adapter)
 ///
 /// 모든 AI 기반 콘텐츠 검열을 중앙에서 관리합니다.
 /// - Perspective API (텍스트 유해성)
 /// - Vision API (이미지 검열)
 /// - Gemini AI (콘텐츠 논리성)
 ///
-/// **Migration**: Static class → Instance-based class (Phase 2-Cleanup)
-/// **DI Pattern**: Constructor injection for PerspectiveApiService
-class AIModerationService {
+/// **Port-Adapter Pattern**:
+/// - Implements: IAIModerationService (Port)
+/// - Adapts: IPerspectiveApiService, IGeminiModerationService
+///
+/// **Phase 2-Cleanup**: ✅ Static → Instance 변환 완료
+/// **DI Pattern**: Constructor injection for all dependencies
+class AIModerationService implements IAIModerationService {
   final IPerspectiveApiService _perspectiveService;
+  final IGeminiModerationService _geminiService;
 
-  /// Constructor injection for Perspective API service
+  /// Constructor injection for all moderation services
   AIModerationService({
     required IPerspectiveApiService perspectiveService,
-  }) : _perspectiveService = perspectiveService;
+    required IGeminiModerationService geminiService,
+  })  : _perspectiveService = perspectiveService,
+        _geminiService = geminiService;
 
-  /// Static factory method for convenient usage (creates instance internally)
-  static Future<ModerationResult> moderatePostContent({
+  /// 포스트 콘텐츠 전체 검증 (IAIModerationService 구현)
+  @override
+  Future<ModerationResult> moderatePostContent({
     required ModerationRequest request,
-    ModerationOptions options = ModerationOptions.defaultOptions,
-    Function(String)? onProgressUpdate,
-  }) async {
-    final service = AIModerationService(
-      perspectiveService: PerspectiveApiService.fromEnvironment(),
-    );
-    return service._moderatePostContent(
-      request: request,
-      options: options,
-      onProgressUpdate: onProgressUpdate,
-    );
-  }
-
-  /// 포스트 콘텐츠 전체 검증 (Internal implementation)
-  Future<ModerationResult> _moderatePostContent({
-    required ModerationRequest request,
-    ModerationOptions options = ModerationOptions.defaultOptions,
     Function(String)? onProgressUpdate,
   }) async {
     final violations = <String>[];
@@ -50,21 +42,19 @@ class AIModerationService {
 
     try {
       // 1단계: 텍스트 유해성 검사 (Perspective API)
-      if (options.enablePerspectiveAPI) {
-        onProgressUpdate?.call('텍스트를 검토하고 있습니다...');
-        textResult = await _moderateText(request);
+      onProgressUpdate?.call('텍스트를 검토하고 있습니다...');
+      textResult = await _moderateText(request);
 
-        if (textResult.isToxic) {
-          violations.add(_formatTextViolation(textResult));
-        }
+      if (textResult.isToxic) {
+        violations.add(_formatTextViolation(textResult));
       }
 
       // 2단계: 텍스트 검증 통과 시 Gemini AI 검증
-      if (options.enableGeminiAI && violations.isEmpty) {
+      if (violations.isEmpty) {
         onProgressUpdate?.call('AI가 내용을 분석하고 있습니다...');
 
-        // 클라이언트에서 직접 Gemini 호출
-        geminiResult = await GeminiModerationService.validateContent(
+        // Gemini Service DI 사용
+        geminiResult = await _geminiService.validateContent(
           userId: request.userId,
           questionTitle: request.questionTitle,
           description: request.description,
@@ -74,7 +64,7 @@ class AIModerationService {
           imageUrlB: request.imageUrlsB?.firstOrNull,
           visionDataA: request.visionDataA,
           visionDataB: request.visionDataB,
-          perspectiveScores: textResult?.scores,
+          perspectiveScores: textResult.scores,
           sessionId: request.sessionId,
           documentId: request.documentId,
           revisionCount: request.revisionCount,
@@ -198,8 +188,9 @@ class AIModerationService {
     return violations.isNotEmpty ? 'error' : 'pass';
   }
 
-  /// 검증 결과 다이얼로그 표시
-  static Future<void> showModerationDialog(
+  /// 검증 결과 다이얼로그 표시 (IAIModerationService 구현)
+  @override
+  Future<void> showModerationDialog(
     BuildContext context,
     ModerationResult result,
   ) async {
@@ -227,7 +218,7 @@ class AIModerationService {
   }
 
   /// 경고 다이얼로그
-  static Future<bool> _showWarningDialog(
+  Future<bool> _showWarningDialog(
     BuildContext context,
     String reason,
     String? suggestions,
@@ -236,7 +227,7 @@ class AIModerationService {
   }
 
   /// 제안 다이얼로그 (VersusDialog로 마이그레이션됨)
-  static Future<bool> _showSuggestionDialog(
+  Future<bool> _showSuggestionDialog(
     BuildContext context,
     String reason,
     String? suggestions,
@@ -255,7 +246,7 @@ class AIModerationService {
   }
 
   /// 차단 다이얼로그 (VersusDialog로 마이그레이션됨)
-  static Future<void> _showBlockDialog(
+  Future<void> _showBlockDialog(
     BuildContext context,
     List<String> violations,
     String? suggestions,

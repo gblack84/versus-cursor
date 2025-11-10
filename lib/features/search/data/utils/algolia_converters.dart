@@ -1,21 +1,52 @@
+// ============================================
+// ALGOLIA CONVERTERS - Search Feature Specific
+// ============================================
+//
+// Migrated from: /lib/core/firebase/utils/schema_util.dart
+// Migration date: 2025-11-10
+// Reason: Search Feature specific (Algolia), architecture violation fixed
+//
+// Location: Search Feature Data Layer
+// Purpose: Convert Algolia search results to app models
+//
+// Previous location (Core) violated Clean Architecture:
+// - Core importing from Feature (reverse dependency)
+// - Algolia-specific logic (not generic/reusable)
+// ============================================
+
 import 'dart:convert';
 
 import 'package:from_css_color/from_css_color.dart' as css_color;
-import '/features/search/data/adapters/serialization_util.dart';
-
-import '/core_exports.dart';
+import 'package:flutter/material.dart' show Color;
+import '/app/router/navigation/serialization_util.dart' show ParamType;
+import '/core/utils/app_utils.dart' show castToType;
+import '../adapters/serialization_util.dart';
 
 export 'package:collection/collection.dart' show ListEquality;
 export 'package:flutter/material.dart' show Color, Colors;
 export 'package:from_css_color/from_css_color.dart';
 
+// ============================================
+// TYPE DEFINITIONS
+// ============================================
+
+/// Struct builder function type
 typedef StructBuilder<T> = T Function(Map<String, dynamic> data);
 
+/// Base struct for serialization
 abstract class BaseStruct {
   Map<String, dynamic> toSerializableMap();
   String serialize() => json.encode(toSerializableMap());
 }
 
+// ============================================
+// ALGOLIA CONVERTERS
+// ============================================
+
+/// Convert Algolia search result data to app struct
+///
+/// Handles both single objects and lists from Algolia responses.
+/// Used by Search Feature to convert Algolia JSON to Dart models.
 dynamic convertAlgoliaStruct<T>(
   dynamic data,
   ParamType paramType,
@@ -48,6 +79,7 @@ dynamic convertAlgoliaStruct<T>(
   }
 }
 
+/// Get list of structs from Algolia data
 List<T>? getStructList<T>(
   dynamic value,
   StructBuilder<T> structBuilder,
@@ -59,14 +91,18 @@ List<T>? getStructList<T>(
             .map((e) => structBuilder(e as Map<String, dynamic>))
             .toList();
 
+/// Get Color from CSS color string (Algolia format)
 Color? getSchemaColor(dynamic value) => value is String
     ? css_color.fromCssColor(value)
     : value is Color
         ? value
         : null;
 
-List<Color>? getColorsList(dynamic value) =>
-    value is! List ? null : value.map(getSchemaColor).withoutNulls;
+/// Get list of Colors from Algolia data
+List<Color>? getColorsList(dynamic value) => value is! List
+    ? null
+    : value.map(getSchemaColor).where((e) => e != null).cast<Color>().toList();
 
+/// Get typed list from Algolia data
 List<T>? getDataList<T>(dynamic value) =>
     value is! List ? null : value.map((e) => castToType<T>(e)!).toList();

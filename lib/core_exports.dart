@@ -48,9 +48,16 @@ export 'core/utils/app_timer.dart';
 export 'core/utils/batch_service.dart';
 export 'core/utils/custom_functions.dart';
 
-// Firebase utilities
+// Firebase utilities (Core - Generic)
 export 'core/firebase/utils/firestore_util.dart';
-export 'core/firebase/utils/schema_util.dart';
+
+// Firebase utilities (Services - Legacy Pattern)
+// TODO: Remove after Extension Pattern migration complete
+export 'services/firebase/legacy_firestore_record.dart';
+
+// Search Feature utilities (Algolia-specific)
+// Moved from Core to fix architecture violation (Core → Feature dependency)
+export 'features/search/data/utils/algolia_converters.dart';
 
 // Models
 export 'core/models/app_model.dart';

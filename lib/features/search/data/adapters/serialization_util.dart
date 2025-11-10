@@ -3,9 +3,7 @@ import '/app/types/lat_lng.dart';
 import '/core/firebase/utils/firestore_util.dart'; // For safeGet, toRef
 import 'package:from_css_color/from_css_color.dart'; // For fromCssColor
 import '/app/router/navigation/serialization_util.dart'; // For ParamType
-
-// StructBuilder typedef (duplicated from schema_util to avoid circular import)
-typedef StructBuilder<T> = T Function(Map<String, dynamic> data);
+import '../utils/algolia_converters.dart'; // For StructBuilder (exports from_css_color)
 
 dynamic convertAlgoliaParam<T>(
   dynamic data,

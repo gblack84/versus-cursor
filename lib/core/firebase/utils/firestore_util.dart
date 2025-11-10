@@ -1,9 +1,18 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+// ============================================
+// FIRESTORE UTILITIES - Generic Core Layer
+// ============================================
+//
+// This file contains ONLY generic, reusable Firestore utilities
+// that are framework-agnostic and used across multiple features.
+//
+// Location: Core Layer
+// Reason: Pure Dart generic utilities (GeoPoint conversion, safe operations, etc.)
+//
+// Legacy patterns moved to: /lib/services/firebase/legacy_firestore_record.dart
+// ============================================
 
-import 'schema_util.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '/app/types/lat_lng.dart';
-import '/app/router/navigation/serialization_util.dart'
-    show AppColorSerialization;
 
 // Re-export commonly used Firestore classes
 export 'package:cloud_firestore/cloud_firestore.dart'
@@ -19,114 +28,40 @@ export 'package:cloud_firestore/cloud_firestore.dart'
         Query,
         FieldPath;
 
-typedef RecordBuilder<T> = T Function(DocumentSnapshot snapshot);
+// ============================================
+// GENERIC GEOPOINT EXTENSIONS
+// ============================================
 
-abstract class FirestoreRecord {
-  FirestoreRecord(this.reference, this.snapshotData);
-  Map<String, dynamic> snapshotData;
-  DocumentReference reference;
-}
-
-abstract class AppFirebaseStruct extends BaseStruct {
-  AppFirebaseStruct(this.firestoreUtilData);
-
-  /// Utility class for Firestore updates
-  FirestoreUtilData firestoreUtilData = FirestoreUtilData();
-}
-
-class FirestoreUtilData {
-  const FirestoreUtilData({
-    this.fieldValues = const {},
-    this.clearUnsetFields = true,
-    this.create = false,
-    this.delete = false,
-  });
-  final Map<String, dynamic> fieldValues;
-  final bool clearUnsetFields;
-  final bool create;
-  final bool delete;
-  static String get name => 'firestoreUtilData';
-}
-
-Map<String, dynamic> mapFromFirestore(Map<String, dynamic> data) =>
-    mergeNestedFields(data)
-        .where((k, _) => k != FirestoreUtilData.name)
-        .map((key, value) {
-      // Handle Timestamp
-      if (value is Timestamp) {
-        value = value.toDate();
-      }
-      // Handle list of Timestamp
-      if (value is Iterable && value.isNotEmpty && value.first is Timestamp) {
-        value = value.map((v) => (v as Timestamp).toDate()).toList();
-      }
-      // Handle GeoPoint
-      if (value is GeoPoint) {
-        value = value.toLatLng();
-      }
-      // Handle list of GeoPoint
-      if (value is Iterable && value.isNotEmpty && value.first is GeoPoint) {
-        value = value.map((v) => (v as GeoPoint).toLatLng()).toList();
-      }
-      // Handle nested data.
-      if (value is Map) {
-        value = mapFromFirestore(value as Map<String, dynamic>);
-      }
-      // Handle list of nested data.
-      if (value is Iterable && value.isNotEmpty && value.first is Map) {
-        value = value
-            .map((v) => mapFromFirestore(v as Map<String, dynamic>))
-            .toList();
-      }
-      return MapEntry(key, value);
-    });
-
-Map<String, dynamic> mapToFirestore(Map<String, dynamic> data) =>
-    data.where((k, v) => k != FirestoreUtilData.name).map((key, value) {
-      // Handle GeoPoint
-      if (value is LatLng) {
-        value = value.toGeoPoint();
-      }
-      // Handle list of GeoPoint
-      if (value is Iterable && value.isNotEmpty && value.first is LatLng) {
-        value = value.map((v) => (v as LatLng).toGeoPoint()).toList();
-      }
-      // Handle Color
-      if (value is Color) {
-        value = AppColorSerialization(value).toCssString();
-      }
-      // Handle list of Color
-      if (value is Iterable && value.isNotEmpty && value.first is Color) {
-        value = value
-            .map((v) => AppColorSerialization(v as Color).toCssString())
-            .toList();
-      }
-      // Handle nested data.
-      if (value is Map) {
-        value = mapToFirestore(value as Map<String, dynamic>);
-      }
-      // Handle list of nested data.
-      if (value is Iterable && value.isNotEmpty && value.first is Map) {
-        value = value
-            .map((v) => mapToFirestore(v as Map<String, dynamic>))
-            .toList();
-      }
-      return MapEntry(key, value);
-    });
-
-List<GeoPoint>? convertToGeoPointList(List<LatLng>? list) =>
-    list?.map((e) => e.toGeoPoint()).toList();
-
+/// Convert LatLng to Firestore GeoPoint
 extension GeoPointExtension on LatLng {
   GeoPoint toGeoPoint() => GeoPoint(latitude, longitude);
 }
 
+/// Convert Firestore GeoPoint to LatLng
 extension LatLngExtension on GeoPoint {
   LatLng toLatLng() => LatLng(latitude, longitude);
 }
 
+/// Convert list of LatLng to list of GeoPoint
+List<GeoPoint>? convertToGeoPointList(List<LatLng>? list) =>
+    list?.map((e) => e.toGeoPoint()).toList();
+
+// ============================================
+// GENERIC UTILITIES
+// ============================================
+
+/// Convert Firestore document path to DocumentReference
 DocumentReference toRef(String ref) => FirebaseFirestore.instance.doc(ref);
 
+/// Safe get with optional error reporting
+///
+/// Example:
+/// ```dart
+/// final user = safeGet(
+///   () => UserProfile.fromFirestore(doc),
+///   (e) => print('Error: $e'),
+/// );
+/// ```
 T? safeGet<T>(T Function() func, [Function(dynamic)? reportError]) {
   try {
     return func();
@@ -136,11 +71,24 @@ T? safeGet<T>(T Function() func, [Function(dynamic)? reportError]) {
   return null;
 }
 
+/// Merge nested fields from Firestore (e.g., 'foo.bar' → { foo: { bar: value } })
+///
+/// Firestore supports nested field notation like:
+/// ```dart
+/// { 'user.name': 'John', 'user.age': 30 }
+/// ```
+///
+/// This function converts it to:
+/// ```dart
+/// { 'user': { 'name': 'John', 'age': 30 } }
+/// ```
 Map<String, dynamic> mergeNestedFields(Map<String, dynamic> data) {
   final nestedData = data.where((k, _) => k.contains('.'));
   final fieldNames = nestedData.keys.map((k) => k.split('.').first).toSet();
-  // Remove nested values (e.g. 'foo.bar') and merge them into a map.
+
+  // Remove nested values (e.g. 'foo.bar') and merge them into a map
   data.removeWhere((k, _) => k.contains('.'));
+
   fieldNames.forEach((name) {
     final mergedValues = mergeNestedFields(
       nestedData
@@ -154,7 +102,8 @@ Map<String, dynamic> mergeNestedFields(Map<String, dynamic> data) {
       ...mergedValues,
     };
   });
-  // Merge any nested maps inside any of the fields as well.
+
+  // Merge any nested maps inside any of the fields as well
   data.where((_, v) => v is Map).forEach((k, v) {
     data[k] = mergeNestedFields(v as Map<String, dynamic>);
   });
@@ -162,159 +111,12 @@ Map<String, dynamic> mergeNestedFields(Map<String, dynamic> data) {
   return data;
 }
 
+// ============================================
+// HELPER EXTENSIONS
+// ============================================
+
+/// Map.where extension for filtering map entries
 extension _WhereMapExtension<K, V> on Map<K, V> {
   Map<K, V> where(bool Function(K, V) test) =>
       Map.fromEntries(entries.where((e) => test(e.key, e.value)));
-}
-
-// ============================================================================
-// Query utility functions (migrated from backend.dart)
-// Added: 2025-01-09 - Repository Layer Migration
-// ============================================================================
-
-/// Count documents in a collection with optional query builder
-Future<int> queryCollectionCount(
-  Query collection, {
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-}) {
-  final builder = queryBuilder ?? (q) => q;
-  var query = builder(collection);
-  if (limit > 0) {
-    query = query.limit(limit);
-  }
-  return query.count().get().then((value) => value.count!).catchError((err) {
-    print('Error querying $collection: $err');
-    return 0;
-  });
-}
-
-/// Stream query for collections with real-time updates
-Stream<List<T>> queryCollection<T>(
-  Query collection,
-  RecordBuilder<T> recordBuilder, {
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) {
-  final builder = queryBuilder ?? (q) => q;
-  var query = builder(collection);
-  if (limit > 0 || singleRecord) {
-    query = query.limit(singleRecord ? 1 : limit);
-  }
-  return query.snapshots().handleError((err) {
-    print('Error querying $collection: $err');
-  }).map((s) => s.docs
-      .map(
-        (d) => safeGet(
-          () => recordBuilder(d),
-          (e) => print('Error serializing doc ${d.reference.path}:\n$e'),
-        ),
-      )
-      .where((d) => d != null)
-      .map((d) => d!)
-      .toList());
-}
-
-/// One-time query for collections
-Future<List<T>> queryCollectionOnce<T>(
-  Query collection,
-  RecordBuilder<T> recordBuilder, {
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) {
-  final builder = queryBuilder ?? (q) => q;
-  var query = builder(collection);
-  if (limit > 0 || singleRecord) {
-    query = query.limit(singleRecord ? 1 : limit);
-  }
-  return query.get().then((s) => s.docs
-      .map(
-        (d) => safeGet(
-          () => recordBuilder(d),
-          (e) => print('Error serializing doc ${d.reference.path}:\n$e'),
-        ),
-      )
-      .where((d) => d != null)
-      .map((d) => d!)
-      .toList());
-}
-
-// ============================================================================
-// Query Extensions (migrated from creation/data/utils)
-// Added: 2025-01-20 - Utility consolidation
-// ============================================================================
-
-/// Extension for safe query parameter handling
-extension QueryExtension on Query {
-  /// Safe whereIn that handles empty lists
-  Query whereIn(String field, List? list) => (list?.isEmpty ?? true)
-      ? where(field, whereIn: null)
-      : where(field, whereIn: list);
-
-  /// Safe whereNotIn that handles empty lists
-  Query whereNotIn(String field, List? list) => (list?.isEmpty ?? true)
-      ? where(field, whereNotIn: null)
-      : where(field, whereNotIn: list);
-
-  /// Safe whereArrayContainsAny that handles empty lists
-  Query whereArrayContainsAny(String field, List? list) =>
-      (list?.isEmpty ?? true)
-          ? where(field, arrayContainsAny: null)
-          : where(field, arrayContainsAny: list);
-}
-
-/// Overloaded query functions for collections that take parent parameter
-/// Count documents with parent parameter
-Future<int> queryCollectionCountWithParent(
-  Query<Map<String, dynamic>> Function([DocumentReference?]) collectionBuilder, {
-  DocumentReference? parent,
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-}) {
-  final collection = collectionBuilder(parent);
-  return queryCollectionCount(
-    collection,
-    queryBuilder: queryBuilder,
-    limit: limit,
-  );
-}
-
-/// Stream query with parent parameter
-Stream<List<T>> queryCollectionWithParent<T>(
-  Query<Map<String, dynamic>> Function([DocumentReference?]) collectionBuilder,
-  RecordBuilder<T> recordBuilder, {
-  DocumentReference? parent,
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) {
-  final collection = collectionBuilder(parent);
-  return queryCollection<T>(
-    collection,
-    recordBuilder,
-    queryBuilder: queryBuilder,
-    limit: limit,
-    singleRecord: singleRecord,
-  );
-}
-
-/// One-time query with parent parameter
-Future<List<T>> queryCollectionOnceWithParent<T>(
-  Query<Map<String, dynamic>> Function([DocumentReference?]) collectionBuilder,
-  RecordBuilder<T> recordBuilder, {
-  DocumentReference? parent,
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) {
-  final collection = collectionBuilder(parent);
-  return queryCollectionOnce<T>(
-    collection,
-    recordBuilder,
-    queryBuilder: queryBuilder,
-    limit: limit,
-    singleRecord: singleRecord,
-  );
 }

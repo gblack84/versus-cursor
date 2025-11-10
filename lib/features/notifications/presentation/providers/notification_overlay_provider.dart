@@ -7,7 +7,7 @@ import '../../domain/usecases/mark_as_read_usecase.dart';
 import '/services/notification/notification_queue_service.dart';
 import '/core/utils/logger.dart';
 import '/app/router/navigation/nav.dart';
-import '/app/types/notification_types.dart';
+import '/features/notifications/domain/types/notification_types.dart';
 import '/features/voting/domain/usecases/chat/submit_vote_use_case.dart';
 import '/app/di.dart';
 

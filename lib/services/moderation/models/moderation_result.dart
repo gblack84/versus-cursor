@@ -1,5 +1,5 @@
 /// AI 검열 통합 결과 모델
-class ModerationResult {
+class AIModerationResult {
   final bool isValid;
   final String severity; // 'pass', 'warning', 'error'
   final List<String> violations;
@@ -8,7 +8,7 @@ class ModerationResult {
   final GeminiModerationResult? geminiResult;
   final String? errorMessage;
 
-  ModerationResult({
+  AIModerationResult({
     required this.isValid,
     required this.severity,
     required this.violations,

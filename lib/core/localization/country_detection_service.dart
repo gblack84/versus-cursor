@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '/core/types/lat_lng.dart';
 
 /// IP 기반 국가 자동 감지 서비스
 ///
@@ -39,9 +40,9 @@ class CountryDetectionService {
 
   /// 국가 자동 감지
   ///
-  /// **Returns**: [DetectedCountry] - 감지된 국가 정보
+  /// **Returns**: [DetectedCountry] - 감지된 국가 정보 (IP 기반 좌표 포함)
   ///
-  /// **Fallback**: 네트워크 에러 시 (US, United States, en) 반환
+  /// **Fallback**: 네트워크 에러 시 (US, United States, null location, en) 반환
   ///
   /// **제한사항**: 45 requests/minute (ip-api.com 무료 플랜)
   Future<DetectedCountry> detectCountry() async {
@@ -61,9 +62,17 @@ class CountryDetectionService {
             final suggestedLanguage =
                 CountryLanguageMapper.getLanguageForCountry(countryCode);
 
+            // IP 기반 좌표 추출 (±10-50km 정확도)
+            final lat = data['lat'] as num?;
+            final lon = data['lon'] as num?;
+            final location = (lat != null && lon != null)
+                ? LatLng(lat.toDouble(), lon.toDouble())
+                : null;
+
             return DetectedCountry(
               country: country,
               countryCode: countryCode,
+              location: location,
               suggestedLanguage: suggestedLanguage,
             );
           }
@@ -80,10 +89,11 @@ class CountryDetectionService {
       print('CountryDetectionService: Unexpected error - $e');
     }
 
-    // Fallback: 기본값 (미국, 영어)
+    // Fallback: 기본값 (미국, 영어, 좌표 없음)
     return DetectedCountry(
       country: 'United States',
       countryCode: 'US',
+      location: null,
       suggestedLanguage: 'en',
     );
   }
@@ -94,21 +104,24 @@ class CountryDetectionService {
 /// **필드**:
 /// - [country]: 국가 전체 이름 (예: "South Korea")
 /// - [countryCode]: ISO 3166-1 alpha-2 코드 (예: "KR")
+/// - [location]: IP 기반 대략적 좌표 (±10-50km 정확도, 도시 단위)
 /// - [suggestedLanguage]: 국가 기반 언어 제안 (예: "en")
 class DetectedCountry {
   final String country; // "South Korea"
   final String countryCode; // "KR"
+  final LatLng? location; // IP-based approximate coordinates
   final String suggestedLanguage; // "en"
 
   const DetectedCountry({
     required this.country,
     required this.countryCode,
+    this.location,
     required this.suggestedLanguage,
   });
 
   @override
   String toString() =>
-      'DetectedCountry(country: $country, countryCode: $countryCode, suggestedLanguage: $suggestedLanguage)';
+      'DetectedCountry(country: $country, countryCode: $countryCode, location: $location, suggestedLanguage: $suggestedLanguage)';
 }
 
 /// 국가 → 언어 매핑 서비스

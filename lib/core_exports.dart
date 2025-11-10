@@ -71,5 +71,5 @@ export 'core/models/form_field_controller.dart';
 export 'app/router/navigation/nav.dart';
 export 'app/router/navigation/serialization_util.dart' hide appFromCssColor;
 
-// App Types (app/types)
-export 'app/types/lat_lng.dart';
+// Core Types (core/types) - Domain Primitives
+export 'core/types/lat_lng.dart';

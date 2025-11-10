@@ -4,7 +4,7 @@ import 'package:fpdart/fpdart.dart';
 import 'simple_memory_cache.dart';
 import 'cache_statistics.dart';
 import 'failures/cache_failure.dart';
-import '/app/types/lat_lng.dart';
+import '/core/types/lat_lng.dart';
 // Domain models imports (migrated from backend.dart)
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/features/chat/domain/entities/message_extensions.dart';

@@ -1,13 +1,21 @@
 /// AI 검열 시스템 설정 및 상수
 class ModerationConfig {
-  // Perspective API 임계값
-  static const double toxicityThreshold = 0.6;
-  static const double severeToxicityThreshold = 0.5;
-  static const double insultThreshold = 0.5;
-  static const double profanityThreshold = 0.5;
+  // Perspective API 임계값 (통일: 0.7 = 기본, 0.8 = 심각)
+  //
+  // ✅ Phase 3: 하드코딩 제거 - 모든 threshold를 0.7로 통일
+  // - 기존: toxicity=0.6, insult=0.5, profanity=0.5, threat=0.7 (불일치)
+  // - 수정: 모든 값을 0.7로 통일 (하드코딩된 값과 일치)
+  // - 추가: severeThreshold=0.8 (input_field_builder.dart용)
+  static const double toxicityThreshold = 0.7;
+  static const double severeToxicityThreshold = 0.7;
+  static const double insultThreshold = 0.7;
+  static const double profanityThreshold = 0.7;
   static const double threatThreshold = 0.7;
   static const double identityAttackThreshold = 0.7;
   static const double sexuallyExplicitThreshold = 0.7;
+
+  // 심각한 위반 임계값 (0.8 = 즉시 차단)
+  static const double severeThreshold = 0.8;
 
   // Vision API 설정
   static const List<String> inappropriateLabels = [

@@ -15,8 +15,8 @@ abstract class IContentModerationRepository {
 
   /// Moderate content using AI
   ///
-  /// **Returns**: `Either<CreationFailure, ModerationResult>`
-  Future<Either<CreationFailure, ModerationResult>> moderateContent(String contentId);
+  /// **Returns**: `Either<CreationFailure, ContentModerationResult>`
+  Future<Either<CreationFailure, ContentModerationResult>> moderateContent(String contentId);
 
   /// Block/hide content
   ///
@@ -85,8 +85,8 @@ enum ReportReason {
   other,
 }
 
-/// Moderation result
-class ModerationResult {
+/// Content moderation result
+class ContentModerationResult {
   final String contentId;
   final bool isApproved;
   final List<String> violations;
@@ -94,7 +94,7 @@ class ModerationResult {
   final String? blockReason;
   final DateTime moderatedAt;
 
-  ModerationResult({
+  ContentModerationResult({
     required this.contentId,
     required this.isApproved,
     required this.violations,

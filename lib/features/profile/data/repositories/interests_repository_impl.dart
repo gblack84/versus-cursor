@@ -6,7 +6,6 @@ import '../../domain/repositories/i_interests_repository.dart';
 import '../../domain/entities/interest.dart';
 import '../../domain/failures/profile_failure.dart';
 import '/services/cache/unified_cache_service.dart';
-import '/services/cache/failures/cache_failure.dart';
 
 /// InterestsRepository 구현 (Clean Architecture v4.0)
 ///

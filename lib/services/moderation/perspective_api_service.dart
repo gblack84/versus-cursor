@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '/core/config/environment_config.dart';
+import '/core/utils/logger.dart';
+import 'constants/moderation_config.dart';
 
 /// Perspective API 분석 결과
 class PerspectiveResult {
@@ -39,9 +41,13 @@ class PerspectiveResult {
       'INSULT': insult,
     };
 
-    // 독성 판단 (0.7 이상이면 독성으로 판단)
+    // 독성 판단 (ModerationConfig threshold 이상이면 독성으로 판단)
+    // ✅ Phase 3: 하드코딩 제거 (0.7 → Config 상수)
     bool isToxic =
-        toxicity >= 0.7 || profanity >= 0.7 || threat >= 0.7 || insult >= 0.7;
+        toxicity >= ModerationConfig.toxicityThreshold ||
+        profanity >= ModerationConfig.profanityThreshold ||
+        threat >= ModerationConfig.threatThreshold ||
+        insult >= ModerationConfig.insultThreshold;
 
     // 독성 구간 찾기
     List<ToxicSpan> toxicSpans = [];
@@ -106,7 +112,8 @@ class PerspectiveResult {
     }
 
     // 만약 패턴 매칭으로 찾지 못했지만 독성이 감지된 경우, 전체 텍스트를 독성으로 표시
-    if (spans.isEmpty && scores.values.any((score) => score >= 0.7)) {
+    // ✅ Phase 3: 하드코딩 제거 (0.7 → Config 상수)
+    if (spans.isEmpty && scores.values.any((score) => score >= ModerationConfig.toxicityThreshold)) {
       double maxScore = scores.values.reduce((a, b) => a > b ? a : b);
       spans.add(ToxicSpan(
         start: 0,
@@ -132,7 +139,7 @@ class PerspectiveResult {
       final value = summaryScores['value'];
       return (value as num?)?.toDouble() ?? 0.0;
     } catch (e) {
-      print('점수 파싱 오류 ($attribute): $e');
+      ModerationLogger.perspectiveError(e);
       return 0.0;
     }
   }
@@ -227,14 +234,24 @@ class PerspectiveApiService implements IPerspectiveApiService {
 
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
-        return PerspectiveResult.fromJson(jsonResponse, text);
+        final result = PerspectiveResult.fromJson(jsonResponse, text);
+
+        // Log successful result
+        ModerationLogger.perspectiveResult(
+          isToxic: result.isToxic,
+          toxicityScore: result.toxicityScore,
+        );
+
+        return result;
       } else {
-        print('Perspective API 오류: ${response.statusCode}');
-        print('응답 내용: ${response.body}');
+        ModerationLogger.perspectiveError(
+          'Response: ${response.body}',
+          statusCode: response.statusCode,
+        );
         throw Exception('Perspective API 오류: ${response.statusCode}');
       }
     } catch (e) {
-      print('Perspective API 호출 실패: $e');
+      ModerationLogger.perspectiveError(e);
       rethrow;
     }
   }
@@ -258,7 +275,7 @@ class PerspectiveApiService implements IPerspectiveApiService {
           // API 호출 간격 (Rate Limiting 방지)
           await Future.delayed(const Duration(milliseconds: 100));
         } catch (e) {
-          print('$fieldName 분석 실패: $e');
+          ModerationLogger.perspectiveError(e);
           // 실패한 경우 안전한 기본값 설정
           results[fieldName] = PerspectiveResult(
             isToxic: false,
@@ -318,7 +335,7 @@ class PerspectiveApiService implements IPerspectiveApiService {
 
       return null;
     } catch (e) {
-      print('Perspective API 검증 오류: $e');
+      ModerationLogger.perspectiveError(e);
       return '콘텐츠 검증 중 오류가 발생했습니다';
     }
   }
@@ -330,7 +347,7 @@ class PerspectiveApiService implements IPerspectiveApiService {
       final result = await analyzeText('Hello world');
       return !result.isToxic; // 정상적인 텍스트는 독성이 아니어야 함
     } catch (e) {
-      print('Perspective API 연결 테스트 실패: $e');
+      ModerationLogger.perspectiveError(e);
       return false;
     }
   }

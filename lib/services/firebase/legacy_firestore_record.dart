@@ -16,7 +16,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart' show Color;
-import '/app/types/lat_lng.dart';
+import '/core/types/lat_lng.dart';
 import '/app/router/navigation/serialization_util.dart'
     show AppColorSerialization;
 import '/core/firebase/firestore_util.dart'

@@ -49,7 +49,7 @@ abstract class IAIModerationService {
   ///   // Content rejected - show violations
   /// }
   /// ```
-  Future<ModerationResult> moderatePostContent({
+  Future<AIModerationResult> moderatePostContent({
     required ModerationRequest request,
     Function(String)? onProgressUpdate,
   });
@@ -72,6 +72,6 @@ abstract class IAIModerationService {
   /// ```
   Future<void> showModerationDialog(
     BuildContext context,
-    ModerationResult result,
+    AIModerationResult result,
   );
 }

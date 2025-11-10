@@ -12,7 +12,6 @@ import '../../domain/entities/chat_extensions.dart';
 import '../../domain/entities/message_extensions.dart';
 import '/core/utils/idempotency_service.dart';
 import '/services/cache/unified_cache_service.dart';
-import '/services/cache/failures/cache_failure.dart';
 
 /// Implementation of chat repository with Clean Architecture v4.0 + 3-Layer Caching
 ///

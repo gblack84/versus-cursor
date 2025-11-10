@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:image/image.dart' as img;
+import '/core/utils/logger.dart';
 import '/features/creation/domain/services/i_image_moderation_service.dart';
 
 /// Image Moderation Service Implementation
@@ -30,7 +31,7 @@ class ImageModerationService implements IImageModerationService {
   ///
   /// ✅ Instance method (기존 Static method에서 변환)
   @override
-  Future<ModerationResult> checkImage({
+  Future<ImageCheckResult> checkImage({
     required File imageFile,
     required String box,
   }) async {
@@ -49,21 +50,21 @@ class ImageModerationService implements IImageModerationService {
       final data = response.data;
 
       // 디버깅용 로그
-      print('[ImageModerationService] Cloud Function 응답:');
-      print('  - isAppropriate: ${data['isAppropriate']}');
-      print('  - reason: ${data['reason']}');
-      print('  - hasText: ${data['hasText']}');
+      Logger.debug(
+        'Image moderation result: isAppropriate=${data['isAppropriate']}, reason=${data['reason']}, hasText=${data['hasText']}',
+        tag: 'Moderation/ImageModeration',
+      );
 
-      return ModerationResult(
+      return ImageCheckResult(
         isAppropriate: data['isAppropriate'] ?? false,
         reason: data['reason'] ?? '',
         hasText: data['hasText'] ?? false,
         details: data,
       );
     } catch (e) {
-      print('[ImageModerationService] 검열 중 오류: $e');
+      ModerationLogger.imageError('checkImage', e);
       // 오류 시 통과로 처리 (나중에 서버에서 재검증)
-      return ModerationResult(
+      return ImageCheckResult(
         isAppropriate: true,
         reason: '',
         hasText: false,
@@ -74,12 +75,12 @@ class ImageModerationService implements IImageModerationService {
   /// 여러 이미지 검열
   ///
   /// ✅ Instance method (기존 Static method에서 변환)
-  Future<List<ModerationResult>> checkMultipleImages({
+  Future<List<ImageCheckResult>> checkMultipleImages({
     required List<File> imageFiles,
     required String box,
     Function(int current, int total)? onProgress,
   }) async {
-    final results = <ModerationResult>[];
+    final results = <ImageCheckResult>[];
 
     for (int i = 0; i < imageFiles.length; i++) {
       onProgress?.call(i + 1, imageFiles.length);
@@ -125,7 +126,7 @@ class ImageModerationService implements IImageModerationService {
         img.encodeJpg(resized, quality: 70),
       );
     } catch (e) {
-      print('[ImageModerationService] 이미지 리사이즈 실패: $e');
+      ModerationLogger.imageError('resizeImage', e);
       // 실패 시 원본 반환
       return await imageFile.readAsBytes();
     }
@@ -139,5 +140,5 @@ class ImageModerationService implements IImageModerationService {
   }
 }
 
-// ✅ ModerationResult 클래스는 IImageModerationService로 이동됨
+// ✅ ImageCheckResult 클래스는 IImageModerationService로 이동됨
 // (Port Interface에 정의되어 있음)

@@ -124,4 +124,31 @@ abstract class ICloudImageModerationService {
   /// }
   /// ```
   bool isImageRejected(ImageModerationModel? moderation);
+
+  /// Get rejection reason from moderation results
+  ///
+  /// Analyzes SafeSearch results to determine why image was rejected.
+  ///
+  /// **Parameters**:
+  /// - [moderation]: Moderation model with SafeSearch results
+  ///
+  /// **Returns**: Human-readable rejection reason in Korean
+  ///   - Returns '커뮤니티 가이드라인 위반' if no specific reason found
+  ///
+  /// **Possible reasons**:
+  /// - '성인 콘텐츠' (Adult content)
+  /// - '폭력적 콘텐츠' (Violent content)
+  /// - '선정적 콘텐츠' (Racy content)
+  ///
+  /// **Example**:
+  /// ```dart
+  /// final service = getIt<ICloudImageModerationService>();
+  /// final status = await service.checkModerationStatus('path/to/image.jpg');
+  ///
+  /// if (status != null && service.isImageRejected(status)) {
+  ///   final reason = service.getRejectionReason(status);
+  ///   print('Rejection reason: $reason');
+  /// }
+  /// ```
+  String getRejectionReason(ImageModerationModel moderation);
 }

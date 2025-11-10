@@ -152,7 +152,7 @@ class _MediaEditorWidgetState extends ConsumerState<MediaEditorWidget> {
 
   /// 거부 메시지 생성 (Step 6: MediaProcessingFailure 사용)
   String _buildRejectionMessage(dynamic result,
-      {ModerationResult? moderationResult}) {
+      {ImageCheckResult? moderationResult}) {
     print('[DEBUG] _buildRejectionMessage 호출됨');
     print('[DEBUG] rejectedCount: ${result.rejectedCount}');
     print(

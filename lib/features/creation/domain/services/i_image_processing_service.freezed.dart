@@ -313,7 +313,7 @@ as bool,
 /// @nodoc
 mixin _$SingleImageResult {
 
- bool get success; File? get file; double? get aspectRatio; String? get assetId; String? get rejectionReason; ModerationResult? get moderationResult;
+ bool get success; File? get file; double? get aspectRatio; String? get assetId; String? get rejectionReason; ImageCheckResult? get moderationResult;
 /// Create a copy of SingleImageResult
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -344,7 +344,7 @@ abstract mixin class $SingleImageResultCopyWith<$Res>  {
   factory $SingleImageResultCopyWith(SingleImageResult value, $Res Function(SingleImageResult) _then) = _$SingleImageResultCopyWithImpl;
 @useResult
 $Res call({
- bool success, File? file, double? aspectRatio, String? assetId, String? rejectionReason, ModerationResult? moderationResult
+ bool success, File? file, double? aspectRatio, String? assetId, String? rejectionReason, ImageCheckResult? moderationResult
 });
 
 
@@ -369,7 +369,7 @@ as File?,aspectRatio: freezed == aspectRatio ? _self.aspectRatio : aspectRatio /
 as double?,assetId: freezed == assetId ? _self.assetId : assetId // ignore: cast_nullable_to_non_nullable
 as String?,rejectionReason: freezed == rejectionReason ? _self.rejectionReason : rejectionReason // ignore: cast_nullable_to_non_nullable
 as String?,moderationResult: freezed == moderationResult ? _self.moderationResult : moderationResult // ignore: cast_nullable_to_non_nullable
-as ModerationResult?,
+as ImageCheckResult?,
   ));
 }
 
@@ -451,7 +451,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool success,  File? file,  double? aspectRatio,  String? assetId,  String? rejectionReason,  ModerationResult? moderationResult)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool success,  File? file,  double? aspectRatio,  String? assetId,  String? rejectionReason,  ImageCheckResult? moderationResult)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SingleImageResult() when $default != null:
 return $default(_that.success,_that.file,_that.aspectRatio,_that.assetId,_that.rejectionReason,_that.moderationResult);case _:
@@ -472,7 +472,7 @@ return $default(_that.success,_that.file,_that.aspectRatio,_that.assetId,_that.r
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool success,  File? file,  double? aspectRatio,  String? assetId,  String? rejectionReason,  ModerationResult? moderationResult)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool success,  File? file,  double? aspectRatio,  String? assetId,  String? rejectionReason,  ImageCheckResult? moderationResult)  $default,) {final _that = this;
 switch (_that) {
 case _SingleImageResult():
 return $default(_that.success,_that.file,_that.aspectRatio,_that.assetId,_that.rejectionReason,_that.moderationResult);}
@@ -489,7 +489,7 @@ return $default(_that.success,_that.file,_that.aspectRatio,_that.assetId,_that.r
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool success,  File? file,  double? aspectRatio,  String? assetId,  String? rejectionReason,  ModerationResult? moderationResult)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool success,  File? file,  double? aspectRatio,  String? assetId,  String? rejectionReason,  ImageCheckResult? moderationResult)?  $default,) {final _that = this;
 switch (_that) {
 case _SingleImageResult() when $default != null:
 return $default(_that.success,_that.file,_that.aspectRatio,_that.assetId,_that.rejectionReason,_that.moderationResult);case _:
@@ -512,7 +512,7 @@ class _SingleImageResult extends SingleImageResult {
 @override final  double? aspectRatio;
 @override final  String? assetId;
 @override final  String? rejectionReason;
-@override final  ModerationResult? moderationResult;
+@override final  ImageCheckResult? moderationResult;
 
 /// Create a copy of SingleImageResult
 /// with the given fields replaced by the non-null parameter values.
@@ -544,7 +544,7 @@ abstract mixin class _$SingleImageResultCopyWith<$Res> implements $SingleImageRe
   factory _$SingleImageResultCopyWith(_SingleImageResult value, $Res Function(_SingleImageResult) _then) = __$SingleImageResultCopyWithImpl;
 @override @useResult
 $Res call({
- bool success, File? file, double? aspectRatio, String? assetId, String? rejectionReason, ModerationResult? moderationResult
+ bool success, File? file, double? aspectRatio, String? assetId, String? rejectionReason, ImageCheckResult? moderationResult
 });
 
 
@@ -569,7 +569,7 @@ as File?,aspectRatio: freezed == aspectRatio ? _self.aspectRatio : aspectRatio /
 as double?,assetId: freezed == assetId ? _self.assetId : assetId // ignore: cast_nullable_to_non_nullable
 as String?,rejectionReason: freezed == rejectionReason ? _self.rejectionReason : rejectionReason // ignore: cast_nullable_to_non_nullable
 as String?,moderationResult: freezed == moderationResult ? _self.moderationResult : moderationResult // ignore: cast_nullable_to_non_nullable
-as ModerationResult?,
+as ImageCheckResult?,
   ));
 }
 

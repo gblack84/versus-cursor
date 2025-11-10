@@ -1,12 +1,18 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter/material.dart' hide NavigationMode;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '/core/design_system/design_system.dart';
-import '/app/state/providers/navigation_provider.dart' as nav;
+import '/app/router/navigation/navigation_notifier.dart';
+import '/app/router/navigation/navigation_state.dart';
 
 /// 메인 네비게이션 쉘
 /// 바텀 네비게이션 바와 페이지들을 관리하는 위젯
-class MainNavigationShell extends StatelessWidget {
+///
+/// **Riverpod 3.x 마이그레이션**:
+/// - StatelessWidget → ConsumerWidget
+/// - Consumer<T> → ref.watch()
+/// - Provider 0.x → Riverpod 3.x
+class MainNavigationShell extends ConsumerWidget {
   final Widget child;
 
   const MainNavigationShell({
@@ -15,22 +21,26 @@ class MainNavigationShell extends StatelessWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<nav.NavigationProvider>(
-      builder: (context, navigationProvider, _) {
-        return Scaffold(
-          body: child,
-          bottomNavigationBar:
-              _buildBottomNavigationBar(context, navigationProvider),
-        );
-      },
+  Widget build(BuildContext context, WidgetRef ref) {
+    final navigationState = ref.watch(navigationProvider);
+
+    return Scaffold(
+      body: child,
+      bottomNavigationBar: _buildBottomNavigationBar(
+        context,
+        ref,
+        navigationState,
+      ),
     );
   }
 
   Widget _buildBottomNavigationBar(
-      BuildContext context, nav.NavigationProvider provider) {
-    final items = provider.currentItems;
-    final currentIndex = provider.currentTabIndex;
+    BuildContext context,
+    WidgetRef ref,
+    NavigationState state,
+  ) {
+    final items = state.currentItems;
+    final currentIndex = state.currentTabIndex;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -46,7 +56,7 @@ class MainNavigationShell extends StatelessWidget {
       ),
       child: BottomNavigationBar(
         currentIndex: currentIndex,
-        onTap: (index) => _onItemTapped(context, provider, index),
+        onTap: (index) => _onItemTapped(context, ref, state, index),
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
         selectedItemColor: VersusColors.primary,
@@ -74,22 +84,27 @@ class MainNavigationShell extends StatelessWidget {
   }
 
   void _onItemTapped(
-      BuildContext context, nav.NavigationProvider provider, int index) {
-    final items = provider.currentItems;
+    BuildContext context,
+    WidgetRef ref,
+    NavigationState state,
+    int index,
+  ) {
+    final notifier = ref.read(navigationProvider.notifier);
+    final items = state.currentItems;
     final selectedItem = items[index];
 
     // 특별한 처리가 필요한 경우
-    if (provider.mode == nav.NavigationMode.main && index == 3) {
+    if (state.mode == NavigationMode.main && index == 3) {
       // 메인 모드에서 채팅 탭 선택 시
-      provider.switchToChatMode();
+      notifier.switchToChatMode();
       context.go('/chat/list');
-    } else if (provider.mode == nav.NavigationMode.chat && index == 3) {
+    } else if (state.mode == NavigationMode.chat && index == 3) {
       // 채팅 모드에서 홈 탭 선택 시
-      provider.switchToMainMode();
+      notifier.switchToMainMode();
       context.go('/home');
     } else {
       // 일반적인 탭 선택
-      provider.setTabIndex(index);
+      notifier.setTabIndex(index);
       context.go(selectedItem.route);
     }
   }
@@ -97,7 +112,7 @@ class MainNavigationShell extends StatelessWidget {
 
 /// 바텀 네비게이션 아이템 위젯 (커스텀 디자인이 필요한 경우)
 class NavigationItemWidget extends StatelessWidget {
-  final nav.NavigationItem item;
+  final NavigationItem item;
   final bool isSelected;
   final VoidCallback onTap;
 

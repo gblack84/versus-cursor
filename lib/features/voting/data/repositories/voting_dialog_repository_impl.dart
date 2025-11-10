@@ -13,7 +13,6 @@ import '../../domain/entities/vote_extensions.dart';
 import '../../../../core/utils/idempotency_service.dart';
 import '../../../../core/utils/shard_utils.dart';
 import '../../../../services/cache/unified_cache_service.dart';
-import '../../../../services/cache/failures/cache_failure.dart';
 
 /// Implementation of Dialog voting repository
 ///

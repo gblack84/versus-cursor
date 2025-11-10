@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '/core_exports.dart';
 import '/services/moderation/perspective_api_service.dart';
+import '/services/moderation/constants/moderation_config.dart'; // ✅ Phase 3: Added
 import '../components/simple_validated_field.dart';
 import '/features/creation/presentation/constants/field_styles.dart';
 import '/features/creation/domain/failures/creation_failure.dart';
@@ -100,11 +101,12 @@ class InputFieldBuilder {
     }
 
     // Step 9: Perspective API 점수를 AIModerationFailure 카테고리로 매핑
+    // ✅ Phase 3: 하드코딩 제거 (0.8 → ModerationConfig.severeThreshold)
     List<String> detectedCategories = [];
-    if (validationResult.toxicityScore > 0.8) detectedCategories.add('toxicity');
-    if (validationResult.profanityScore > 0.8) detectedCategories.add('profanity');
-    if (validationResult.threatScore > 0.8) detectedCategories.add('harassment');
-    if (validationResult.insultScore > 0.8) detectedCategories.add('hate');
+    if (validationResult.toxicityScore > ModerationConfig.severeThreshold) detectedCategories.add('toxicity');
+    if (validationResult.profanityScore > ModerationConfig.severeThreshold) detectedCategories.add('profanity');
+    if (validationResult.threatScore > ModerationConfig.severeThreshold) detectedCategories.add('harassment');
+    if (validationResult.insultScore > ModerationConfig.severeThreshold) detectedCategories.add('hate');
 
     // Step 9: detectedCategories가 비어있으면 generic 카테고리 사용
     if (detectedCategories.isEmpty) {

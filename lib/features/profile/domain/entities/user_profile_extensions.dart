@@ -3,7 +3,7 @@ import 'user_profile.dart';
 import 'profile_info.dart';
 import 'user_settings.dart';
 import '/features/profile/domain/failures/profile_failure.dart';
-import '/app/types/lat_lng.dart';
+import '/core/types/lat_lng.dart';
 
 /// UserProfile Extension for Firestore conversion
 ///

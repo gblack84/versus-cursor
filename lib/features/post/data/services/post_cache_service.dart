@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import '/features/post/domain/models/post_display.dart';
 import '/features/post/domain/usecases/get_feed_usecase.dart'; // FeedSortBy, FeedFilter
 import '/services/cache/unified_cache_service.dart';
-import '/services/cache/failures/cache_failure.dart';
 
 /// Post Cache Service - 3-Layer Caching Strategy
 ///

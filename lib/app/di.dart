@@ -10,6 +10,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '/core/utils/idempotency_service.dart';
 import '/core/utils/batch_service.dart';
 
+// Service DI Modules
+import '/services/moderation/di/moderation_di_module.dart';
+
 // Feature DI Modules
 import '/features/post/di/post_di_module.dart';
 import '/features/voting/di/voting_di_module.dart';
@@ -55,6 +58,11 @@ Future<void> setupDependencyInjection() async {
   getIt.registerSingleton<BatchService>(
     BatchService(),
   );
+
+  // ===== Moderation Services DI =====
+  // Note: Registered early as global services used by multiple features (Creation, Post)
+  // Provides: PerspectiveApiService, GeminiModerationService, CloudImageModerationService, AIModerationService
+  registerModerationModule(getIt);
 
   // ===== Auth Feature DI =====
   // Note: Auth registration moved to after Profile Feature registration

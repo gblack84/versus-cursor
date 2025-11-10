@@ -5,7 +5,6 @@ import '../../domain/repositories/i_characters_repository.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/failures/profile_failure.dart';
 import '/services/cache/unified_cache_service.dart';
-import '/services/cache/failures/cache_failure.dart';
 
 /// CharactersRepository 구현 (Clean Architecture v4.0)
 ///

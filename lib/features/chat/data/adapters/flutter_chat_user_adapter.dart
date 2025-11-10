@@ -3,7 +3,6 @@ import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import 'package:firebase_auth/firebase_auth.dart';
 import '/core/constants/app_constants.dart';
 import '/services/cache/unified_cache_service.dart';
-import '/services/cache/failures/cache_failure.dart';
 import '/features/profile/domain/entities/user_profile.dart';
 
 /// Flutter Chat Core 사용자 타입 변환 어댑터

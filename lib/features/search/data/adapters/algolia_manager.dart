@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:algolia/algolia.dart';
 
 // Migrated from backend.dart - only need LatLng
-import '/app/types/lat_lng.dart';
+import '/core/types/lat_lng.dart';
 import '/core_exports.dart';
 
 export 'package:algolia/algolia.dart';

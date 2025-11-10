@@ -1,4 +1,3 @@
-import 'package:provider/provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as riverpod;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -11,8 +10,6 @@ import '/core/config/environment_config.dart';
 import '/app/config/firebase_config.dart';
 import 'services/cache/unified_cache_service.dart';
 import 'services/notification/fcm_service.dart';
-import 'features/notifications/data/services/notification_service.dart';
-import '/app/state/providers/navigation_provider.dart';
 import '/app/di.dart';
 import 'package:get_it/get_it.dart';
 import 'core_exports.dart'; // ✅ Phase 3: Includes IPostCreationRepositoryV2
@@ -78,14 +75,7 @@ void main() async {
 
   runApp(
     riverpod.ProviderScope(
-      child: MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (context) => NavigationProvider()),
-          Provider<NotificationService>(
-              create: (context) => GetIt.instance<NotificationService>()),
-        ],
-        child: const VersusApp(),
-      ),
+      child: const VersusApp(),
     ),
   );
 

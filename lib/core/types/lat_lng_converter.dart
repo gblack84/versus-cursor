@@ -1,12 +1,10 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'lat_lng.dart';
+import '/core/types/lat_lng.dart';
 
 /// LatLngConverter for Freezed 3.x compatibility
 ///
-/// Converts between LatLng and Map<String, dynamic>
-///
-/// **Shared Converter**: Used by profile_info.dart and user_profile.dart
-/// to eliminate code duplication for location field serialization.
+/// **위치**: Core Layer - 공유 Converter
+/// **사용처**: Profile Feature (user_profile.dart, profile_info.dart)
 ///
 /// **Usage**:
 /// ```dart
@@ -14,11 +12,7 @@ import 'lat_lng.dart';
 /// LatLng? location,
 /// ```
 ///
-/// **Migration Note**: Replaces individual helper functions:
-/// - `_latLngFromJson` (removed from profile_info.dart)
-/// - `_latLngToJson` (removed from profile_info.dart)
-/// - `_latLngFromJson` (removed from user_profile.dart)
-/// - `_latLngToJson` (removed from user_profile.dart)
+/// **마이그레이션**: /app/types/ → /core/types/ (2025-11-10)
 class LatLngConverter implements JsonConverter<LatLng?, Map<String, dynamic>?> {
   const LatLngConverter();
 
@@ -37,7 +31,6 @@ class LatLngConverter implements JsonConverter<LatLng?, Map<String, dynamic>?> {
         longitude.toDouble(),
       );
     } catch (e) {
-      // Invalid data format, return null
       return null;
     }
   }

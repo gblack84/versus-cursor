@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '/app/types/lat_lng.dart';
-import '/app/types/lat_lng_converter.dart';
+import '/core/types/lat_lng.dart';
+import '/core/types/lat_lng_converter.dart';
 
 part 'user_profile.freezed.dart';
 part 'user_profile.g.dart';

@@ -70,7 +70,7 @@ class ContentModerationRepositoryImpl implements IContentModerationRepository {
   }
 
   @override
-  Future<Either<CreationFailure, ModerationResult>> moderateContent(String contentId) async {
+  Future<Either<CreationFailure, ContentModerationResult>> moderateContent(String contentId) async {
     try {
       // Use existing ModerateContentUseCase if available
       if (_moderateUseCase != null) {
@@ -80,7 +80,7 @@ class ContentModerationRepositoryImpl implements IContentModerationRepository {
         );
 
         return result.fold(
-          (failure) => right(ModerationResult(
+          (failure) => right(ContentModerationResult(
             contentId: contentId,
             isApproved: false,
             violations: [failure.getUserMessage()],
@@ -88,7 +88,7 @@ class ContentModerationRepositoryImpl implements IContentModerationRepository {
             blockReason: failure.getUserMessage(),
             moderatedAt: DateTime.now(),
           )),
-          (decision) => right(ModerationResult(
+          (decision) => right(ContentModerationResult(
             contentId: contentId,
             isApproved: decision.isApproved,
             violations: decision.reason != null ? [decision.reason!] : [],
@@ -100,7 +100,7 @@ class ContentModerationRepositoryImpl implements IContentModerationRepository {
       }
 
       // Fallback: Simple moderation without AI
-      return right(ModerationResult(
+      return right(ContentModerationResult(
         contentId: contentId,
         isApproved: true,
         violations: [],

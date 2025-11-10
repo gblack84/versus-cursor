@@ -2,8 +2,9 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get_it/get_it.dart';
 import 'package:image/image.dart' as img;
-import '/services/moderation/cloud_image_moderation_service.dart';
+import '/services/moderation/interfaces/i_cloud_image_moderation_service.dart';
 import '/services/storage/storage_service.dart';
 import '/core/utils/debug_helper.dart';
 import '/features/creation/domain/constants/image_constants.dart';
@@ -215,16 +216,19 @@ class MediaUploadService {
       sessionId: sessionId,
     );
 
+    // Get ICloudImageModerationService instance via DI
+    final moderationService = GetIt.instance<ICloudImageModerationService>();
+
     // 검열 결과 대기
     final filePath = uploadResult['filePath'] as String;
-    final moderation = await CloudImageModerationService.waitForModeration(
+    final moderation = await moderationService.waitForModeration(
       filePath,
       timeout: timeout,
     );
 
     // 검열 결과 확인
-    final isApproved = CloudImageModerationService.isImageSafe(moderation);
-    final isRejected = CloudImageModerationService.isImageRejected(moderation);
+    final isApproved = moderationService.isImageSafe(moderation);
+    final isRejected = moderationService.isImageRejected(moderation);
 
     // 거부된 경우 이미지 삭제
     if (isRejected) {
@@ -254,7 +258,7 @@ class MediaUploadService {
       'isApproved': isApproved,
       'isRejected': isRejected,
       'rejectionReason': moderation != null && isRejected
-          ? CloudImageModerationService.getRejectionReason(moderation)
+          ? moderationService.getRejectionReason(moderation)
           : null,
     };
   }

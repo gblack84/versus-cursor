@@ -12,7 +12,7 @@
 // ============================================
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/app/types/lat_lng.dart';
+import '/core/types/lat_lng.dart';
 
 // Re-export commonly used Firestore classes
 export 'package:cloud_firestore/cloud_firestore.dart'

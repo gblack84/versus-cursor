@@ -6,7 +6,6 @@ import '../../domain/entities/user_settings.dart';
 import '../../domain/entities/user_profile_extensions.dart';
 import '../../domain/failures/profile_failure.dart';
 import '/services/cache/unified_cache_service.dart';
-import '/services/cache/failures/cache_failure.dart';
 
 /// SettingsRepository 구현 (Clean Architecture v4.0)
 ///

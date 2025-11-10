@@ -20,7 +20,7 @@ abstract class IImageModerationService {
   /// - Racy content
   /// - Other inappropriate material
   ///
-  /// Returns [ModerationResult] with isAppropriate flag and reason
+  /// Returns [ImageCheckResult] with isAppropriate flag and reason
   ///
   /// Example:
   /// ```dart
@@ -33,16 +33,16 @@ abstract class IImageModerationService {
   ///   print('Image rejected: ${result.reason}');
   /// }
   /// ```
-  Future<ModerationResult> checkImage({
+  Future<ImageCheckResult> checkImage({
     required File imageFile,
     required String box,
   });
 }
 
-/// Moderation result from AI analysis
+/// Image check result from AI analysis
 ///
 /// Contains the result of image content moderation
-class ModerationResult {
+class ImageCheckResult {
   /// Whether the image is appropriate for display
   final bool isAppropriate;
 
@@ -60,7 +60,7 @@ class ModerationResult {
   /// - API response metadata
   final Map<String, dynamic>? details;
 
-  ModerationResult({
+  ImageCheckResult({
     required this.isAppropriate,
     required this.reason,
     this.hasText = false,
@@ -68,8 +68,8 @@ class ModerationResult {
   });
 
   /// Create a passing moderation result
-  factory ModerationResult.pass({bool hasText = false}) {
-    return ModerationResult(
+  factory ImageCheckResult.pass({bool hasText = false}) {
+    return ImageCheckResult(
       isAppropriate: true,
       reason: '',
       hasText: hasText,
@@ -78,12 +78,12 @@ class ModerationResult {
   }
 
   /// Create a failing moderation result
-  factory ModerationResult.fail(
+  factory ImageCheckResult.fail(
     String reason, {
     bool hasText = false,
     Map<String, dynamic>? details,
   }) {
-    return ModerationResult(
+    return ImageCheckResult(
       isAppropriate: false,
       reason: reason,
       hasText: hasText,
@@ -93,6 +93,6 @@ class ModerationResult {
 
   @override
   String toString() {
-    return 'ModerationResult(isAppropriate: $isAppropriate, reason: $reason, hasText: $hasText)';
+    return 'ImageCheckResult(isAppropriate: $isAppropriate, reason: $reason, hasText: $hasText)';
   }
 }

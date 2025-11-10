@@ -3,6 +3,7 @@ import '/services/moderation/perspective_api_service.dart';
 import '/services/moderation/models/moderation_result.dart';
 import '/services/moderation/constants/moderation_config.dart';
 import '/core/design_system/design_system.dart';
+import '/core/utils/logger.dart';
 import 'interfaces/i_ai_moderation_service.dart';
 import 'interfaces/i_gemini_moderation_service.dart';
 
@@ -32,7 +33,7 @@ class AIModerationService implements IAIModerationService {
 
   /// 포스트 콘텐츠 전체 검증 (IAIModerationService 구현)
   @override
-  Future<ModerationResult> moderatePostContent({
+  Future<AIModerationResult> moderatePostContent({
     required ModerationRequest request,
     Function(String)? onProgressUpdate,
   }) async {
@@ -78,14 +79,14 @@ class AIModerationService implements IAIModerationService {
           }
         } else {
           // Gemini API 실패 시 로그만 남기고 계속 진행
-          print('[AIModerationService] Gemini API 응답 없음 - 기본 통과 처리');
+          ModerationLogger.moderationGeminiFallback('No response from Gemini API');
         }
       }
 
       // 3단계: 최종 결과 생성
       final severity = _determineSeverity(textResult, geminiResult, violations);
 
-      return ModerationResult(
+      return AIModerationResult(
         isValid: violations.isEmpty || severity == 'warning',
         severity: severity,
         violations: violations,
@@ -93,8 +94,8 @@ class AIModerationService implements IAIModerationService {
         geminiResult: geminiResult,
       );
     } catch (e) {
-      print('[AIModerationService] Error: $e');
-      return ModerationResult(
+      ModerationLogger.moderationError(e);
+      return AIModerationResult(
         isValid: false,
         severity: 'error',
         violations: violations,
@@ -192,7 +193,7 @@ class AIModerationService implements IAIModerationService {
   @override
   Future<void> showModerationDialog(
     BuildContext context,
-    ModerationResult result,
+    AIModerationResult result,
   ) async {
     if (result.severity == 'warning' && result.geminiResult != null) {
       // 경고 다이얼로그

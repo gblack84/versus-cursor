@@ -12,7 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '/app/app.dart';
 
-export '/app/types/lat_lng.dart';
+export '/core/types/lat_lng.dart';
 export '/core/models/uploaded_file.dart';
 export '/core/models/app_model.dart';
 export 'dart:math' show min, max;

@@ -5,7 +5,6 @@ import 'package:uuid/uuid.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/providers/usecase_providers.dart';
 import '/features/auth/presentation/widgets/auth_user_stream_widget.dart' hide currentUserId;
-import '/features/profile/domain/repositories/i_user_repository.dart';
 import '/core/widgets/pickle_mark/pickle_mark_widget.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';

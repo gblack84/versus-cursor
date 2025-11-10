@@ -6,7 +6,6 @@ import '/features/notifications/domain/services/i_notification_service.dart';
 // Core utilities
 import '/core/utils/logger.dart';
 import '/services/cache/unified_cache_service.dart';
-import '/services/cache/failures/cache_failure.dart';
 // FCM Service
 import 'fcm_service.dart';
 

@@ -69,7 +69,7 @@ sealed class SingleImageResult with _$SingleImageResult {
     double? aspectRatio,
     String? assetId,
     String? rejectionReason,
-    ModerationResult? moderationResult,
+    ImageCheckResult? moderationResult,
   }) = _SingleImageResult;
 
   /// Custom getter: Check if image was rejected

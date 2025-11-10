@@ -172,6 +172,30 @@ class MediaSelection extends _$MediaSelection {
     );
   }
 
+  /// 선택된 파일 추가 (Option A)
+  ///
+  /// **AppState 대체**: `addToTempImageFilesA()`, `addToUploadImageAspectRatioA()`, `addToAssetEntityIdsA()`
+  ///
+  /// **사용 예시**:
+  /// ```dart
+  /// ref.read(mediaSelectionProvider.notifier).addSelectedFileA(
+  ///   file: File('/path/to/image.jpg'),
+  ///   aspectRatio: 1.5,
+  ///   assetId: 'asset_123',
+  /// );
+  /// ```
+  void addSelectedFileA({
+    required File file,
+    required double aspectRatio,
+    required String assetId,
+  }) {
+    state = state.copyWith(
+      selectedFilesA: [...state.selectedFilesA, file],
+      aspectRatiosA: [...state.aspectRatiosA, aspectRatio],
+      assetEntityIdsA: [...state.assetEntityIdsA, assetId],
+    );
+  }
+
   // ==================== Option B 메서드 ====================
 
   /// 업로드된 URL 추가 (Option B)
@@ -272,6 +296,21 @@ class MediaSelection extends _$MediaSelection {
       uploadedUrlsB: urls,
       aspectRatiosB: aspectRatios,
       assetEntityIdsB: assetIds,
+    );
+  }
+
+  /// 선택된 파일 추가 (Option B)
+  ///
+  /// **AppState 대체**: `addToTempImageFilesB()`, `addToUploadImageAspectRatioB()`, `addToAssetEntityIdsB()`
+  void addSelectedFileB({
+    required File file,
+    required double aspectRatio,
+    required String assetId,
+  }) {
+    state = state.copyWith(
+      selectedFilesB: [...state.selectedFilesB, file],
+      aspectRatiosB: [...state.aspectRatiosB, aspectRatio],
+      assetEntityIdsB: [...state.assetEntityIdsB, assetId],
     );
   }
 

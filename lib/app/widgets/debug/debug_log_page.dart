@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '/services/logger/app_logger.dart';
+import '/core/utils/logger.dart';
 
 /// 디버그 로그를 보여주는 페이지
 class DebugLogPage extends StatelessWidget {
@@ -15,7 +15,7 @@ class DebugLogPage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.copy),
             onPressed: () {
-              final logs = AppLogger.getAllLogs();
+              final logs = Logger.getAllLogs();
               Clipboard.setData(ClipboardData(text: logs));
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('로그가 클립보드에 복사되었습니다')),
@@ -25,7 +25,7 @@ class DebugLogPage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.delete),
             onPressed: () {
-              AppLogger.clearLogs();
+              Logger.clearLogs();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('로그가 삭제되었습니다')),
               );
@@ -38,7 +38,7 @@ class DebugLogPage extends StatelessWidget {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: SelectableText(
-            AppLogger.getAllLogs(),
+            Logger.getAllLogs(),
             style: const TextStyle(
               fontFamily: 'monospace',
               fontSize: 12,
@@ -50,7 +50,7 @@ class DebugLogPage extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // 최근 100개 로그만 복사
-          final recentLogs = AppLogger.getRecentLogs(100);
+          final recentLogs = Logger.getRecentLogs(100);
           Clipboard.setData(ClipboardData(text: recentLogs));
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('최근 100개 로그가 복사되었습니다')),

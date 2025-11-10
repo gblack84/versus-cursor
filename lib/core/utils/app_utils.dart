@@ -14,7 +14,6 @@ import '/app/app.dart';
 
 export '/app/types/lat_lng.dart';
 export '/core/models/uploaded_file.dart';
-export '/app/state/app_state.dart';
 export '/core/models/app_model.dart';
 export 'dart:math' show min, max;
 export 'dart:typed_data' show Uint8List;

@@ -1,14 +1,21 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '/core_exports.dart';
+import '/features/creation/presentation/providers/media_selection_provider.dart';
 import 'media_upload_service.dart';
 
 /// 이미지 에디터 콜백 처리를 담당하는 클래스
+///
+/// **Phase 3.6**: AppState → MediaSelectionProvider 마이그레이션
+/// - AppState 의존성 제거
+/// - WidgetRef를 통한 Provider 접근
+/// - Clean Architecture v4.0 준수
 class ImageEditorCallbackHandler {
   final BuildContext context;
-  final AppState appState;
+  final WidgetRef ref;
   final String box;
   final List<File> allSelectedFiles;
   final List<AssetEntity> selectedAssets;
@@ -26,7 +33,7 @@ class ImageEditorCallbackHandler {
 
   ImageEditorCallbackHandler({
     required this.context,
-    required this.appState,
+    required this.ref,
     required this.box,
     required this.allSelectedFiles,
     required this.selectedAssets,
@@ -126,22 +133,23 @@ class ImageEditorCallbackHandler {
     final isEditMode = startWithEditor && initialImageUrl != null;
 
     if (!isEditMode) {
-      // 편집 모드가 아닐 때만 AppState에 추가
-      appState.update(() {
-        if (box == 'A') {
-          appState.addToUploadImageA(displayUrl);
-          appState.addToUploadImageAspectRatioA(aspectRatio);
-          if (selectedAssets.isNotEmpty) {
-            appState.addToAssetEntityIdsA(selectedAssets.first.id);
-          }
-        } else {
-          appState.addToUploadImageB(displayUrl);
-          appState.addToUploadImageAspectRatioB(aspectRatio);
-          if (selectedAssets.isNotEmpty) {
-            appState.addToAssetEntityIdsB(selectedAssets.first.id);
-          }
-        }
-      });
+      // 편집 모드가 아닐 때만 MediaSelectionProvider에 추가
+      // Phase 3.6: AppState.addToUploadImage → MediaSelectionProvider.addUploadedUrl
+      final assetId = selectedAssets.isNotEmpty ? selectedAssets.first.id : '';
+
+      if (box == 'A') {
+        ref.read(mediaSelectionProvider.notifier).addUploadedUrlA(
+          url: displayUrl,
+          aspectRatio: aspectRatio,
+          assetId: assetId,
+        );
+      } else {
+        ref.read(mediaSelectionProvider.notifier).addUploadedUrlB(
+          url: displayUrl,
+          aspectRatio: aspectRatio,
+          assetId: assetId,
+        );
+      }
     }
 
     // 프리캐싱
@@ -357,23 +365,27 @@ class ImageEditorCallbackHandler {
     return reorderedAssetIds;
   }
 
-  /// AppState 업데이트
+  /// MediaSelectionProvider 업데이트
+  ///
+  /// **Phase 3.6**: AppState.uploadImageA = ... → MediaSelectionProvider.setUploadedUrlsA
   void _updateAppState(
     List<String> reorderedUrls,
     List<double> reorderedRatios,
     List<String> reorderedAssetIds,
   ) {
-    appState.update(() {
-      if (box == 'A') {
-        appState.uploadImageA = reorderedUrls;
-        appState.uploadImageAspectRatioA = reorderedRatios;
-        appState.assetEntityIdsA = reorderedAssetIds;
-      } else {
-        appState.uploadImageB = reorderedUrls;
-        appState.uploadImageAspectRatioB = reorderedRatios;
-        appState.assetEntityIdsB = reorderedAssetIds;
-      }
-    });
+    if (box == 'A') {
+      ref.read(mediaSelectionProvider.notifier).setUploadedUrlsA(
+        urls: reorderedUrls,
+        aspectRatios: reorderedRatios,
+        assetIds: reorderedAssetIds,
+      );
+    } else {
+      ref.read(mediaSelectionProvider.notifier).setUploadedUrlsB(
+        urls: reorderedUrls,
+        aspectRatios: reorderedRatios,
+        assetIds: reorderedAssetIds,
+      );
+    }
   }
 
   /// 검열 상태 업데이트 처리

@@ -8,7 +8,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '/core/config/environment_config.dart';
-import '/core/firebase/firebase_config.dart';
+import '/app/config/firebase_config.dart';
 import 'services/cache/unified_cache_service.dart';
 import 'services/notification/fcm_service.dart';
 import 'features/notifications/data/services/notification_service.dart';
@@ -76,14 +76,10 @@ void main() async {
 
   await AppTheme.initialize();
 
-  final appState = AppState(); // Initialize AppState
-  await appState.initializePersistedState();
-
   runApp(
     riverpod.ProviderScope(
       child: MultiProvider(
         providers: [
-          ChangeNotifierProvider(create: (context) => appState),
           ChangeNotifierProvider(create: (context) => NavigationProvider()),
           Provider<NotificationService>(
               create: (context) => GetIt.instance<NotificationService>()),

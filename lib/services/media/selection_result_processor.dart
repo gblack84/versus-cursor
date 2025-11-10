@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:get_it/get_it.dart';
-import '/app/state/app_state.dart';
+import '/features/creation/presentation/providers/media_selection_provider.dart';
 import '/features/creation/domain/services/i_image_moderation_service.dart';
 import '/core/utils/debug_helper.dart';
 import '/core/utils/error_handler.dart';
 
 /// 이미지 선택 결과 처리 서비스
+///
+/// **Phase 3.6**: AppState → MediaSelectionProvider 마이그레이션
+/// - AppState 의존성 제거
+/// - WidgetRef를 통한 Provider 접근
+/// - Clean Architecture v4.0 준수
 class SelectionResultProcessor {
   final BuildContext context;
-  final AppState appState;
+  final WidgetRef ref;
   final String box;
   final List<String>? existingAssetIds;
   final Function(double) onProgressUpdate;
@@ -21,7 +27,7 @@ class SelectionResultProcessor {
 
   SelectionResultProcessor({
     required this.context,
-    required this.appState,
+    required this.ref,
     required this.box,
     this.existingAssetIds,
     required this.onProgressUpdate,
@@ -75,8 +81,10 @@ class SelectionResultProcessor {
       onProgressUpdate(1.0);
 
       // 콜백 호출
+      // Phase 3.6: AppState.uploadImageA → MediaSelectionProvider.uploadedUrlsA
       if (onMultiComplete != null) {
-        final urls = box == 'A' ? appState.uploadImageA : appState.uploadImageB;
+        final state = ref.read(mediaSelectionProvider);
+        final urls = box == 'A' ? state.uploadedUrlsA : state.uploadedUrlsB;
         onMultiComplete!(urls);
       }
 
@@ -100,35 +108,28 @@ class SelectionResultProcessor {
   }
 
   /// 삭제 처리
+  ///
+  /// **Phase 3.6**: AppState.assetEntityIds → MediaSelectionProvider.removeUploadedUrl
   void _handleRemovals(List<String> removedIds) {
-    appState.update(() {
-      if (box == 'A') {
-        // 삭제할 인덱스 찾기 (역순으로 삭제)
-        for (final removedId in removedIds.reversed) {
-          final index = appState.assetEntityIdsA.indexOf(removedId);
-          if (index != -1) {
-            // File 기반 삭제
-            if (index < appState.tempImageFilesA.length) {
-              appState.tempImageFilesA.removeAt(index);
-            }
-            appState.uploadImageAspectRatioA.removeAt(index);
-            appState.assetEntityIdsA.removeAt(index);
-          }
-        }
-      } else {
-        for (final removedId in removedIds.reversed) {
-          final index = appState.assetEntityIdsB.indexOf(removedId);
-          if (index != -1) {
-            // File 기반 삭제
-            if (index < appState.tempImageFilesB.length) {
-              appState.tempImageFilesB.removeAt(index);
-            }
-            appState.uploadImageAspectRatioB.removeAt(index);
-            appState.assetEntityIdsB.removeAt(index);
-          }
+    final state = ref.read(mediaSelectionProvider);
+    final notifier = ref.read(mediaSelectionProvider.notifier);
+
+    if (box == 'A') {
+      // 삭제할 인덱스 찾기 (역순으로 삭제하여 인덱스 변화 방지)
+      for (final removedId in removedIds.reversed) {
+        final index = state.assetEntityIdsA.indexOf(removedId);
+        if (index != -1) {
+          notifier.removeUploadedUrlA(index);
         }
       }
-    });
+    } else {
+      for (final removedId in removedIds.reversed) {
+        final index = state.assetEntityIdsB.indexOf(removedId);
+        if (index != -1) {
+          notifier.removeUploadedUrlB(index);
+        }
+      }
+    }
   }
 
   /// 새 이미지 처리 (검열 후 File 객체로 저장)
@@ -159,9 +160,11 @@ class SelectionResultProcessor {
           approvedAssets.add(asset);
         } else {
           // 기존 이미지 개수를 고려하여 실제 번호 계산
+          // Phase 3.6: AppState.tempImageFilesA → MediaSelectionProvider.selectedFilesA
+          final state = ref.read(mediaSelectionProvider);
           final existingCount = box == 'A'
-              ? appState.tempImageFilesA.length
-              : appState.tempImageFilesB.length;
+              ? state.selectedFilesA.length
+              : state.selectedFilesB.length;
           final actualIndex = existingCount + i + 1;
           rejectedIndices.add(actualIndex); // 사용자에게 표시할 번호
 
@@ -195,7 +198,10 @@ class SelectionResultProcessor {
       _showRejectionToast(rejectedReasons);
     }
 
-    // 승인된 이미지들을 AppState에 File 객체로 저장
+    // 승인된 이미지들을 MediaSelectionProvider에 File 객체로 저장
+    // Phase 3.6: AppState.addToTempImageFilesA → MediaSelectionProvider.addSelectedFileA
+    final notifier = ref.read(mediaSelectionProvider.notifier);
+
     for (int i = 0; i < approvedFiles.length; i++) {
       final file = approvedFiles[i];
       final asset = approvedAssets[i];
@@ -204,17 +210,19 @@ class SelectionResultProcessor {
       final bytes = await file.readAsBytes();
       final aspectRatio = await _calculateAspectRatio(bytes);
 
-      appState.update(() {
-        if (box == 'A') {
-          appState.addToTempImageFilesA(file);
-          appState.addToUploadImageAspectRatioA(aspectRatio);
-          appState.addToAssetEntityIdsA(asset.id);
-        } else {
-          appState.addToTempImageFilesB(file);
-          appState.addToUploadImageAspectRatioB(aspectRatio);
-          appState.addToAssetEntityIdsB(asset.id);
-        }
-      });
+      if (box == 'A') {
+        notifier.addSelectedFileA(
+          file: file,
+          aspectRatio: aspectRatio,
+          assetId: asset.id,
+        );
+      } else {
+        notifier.addSelectedFileB(
+          file: file,
+          aspectRatio: aspectRatio,
+          assetId: asset.id,
+        );
+      }
     }
 
     onProgressUpdate(1.0);

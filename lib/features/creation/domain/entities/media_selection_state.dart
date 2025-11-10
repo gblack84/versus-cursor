@@ -19,7 +19,7 @@ part 'media_selection_state.freezed.dart';
 /// - Option B: 동일한 구조
 /// - 각 Option은 독립적으로 초기화 및 리셋 가능
 @freezed
-class MediaSelectionState with _$MediaSelectionState {
+sealed class MediaSelectionState with _$MediaSelectionState {
   const MediaSelectionState._();
 
   const factory MediaSelectionState({

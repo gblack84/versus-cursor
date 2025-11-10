@@ -673,7 +673,7 @@ EnvironmentConfig로 마이그레이션하면 모두 해결됩니다.
 
 - **`.env.example`**: 환경 변수 템플릿
 - **`lib/main.dart`**: 앱 초기화 및 EnvironmentConfig.init() 호출
-- **`lib/core/firebase/firebase_config.dart`**: Firebase 초기화
+- **`lib/app/config/firebase_config.dart`**: Firebase 초기화
 - **`lib/services/moderation/perspective_api_service.dart`**: Perspective API 서비스
 
 ---

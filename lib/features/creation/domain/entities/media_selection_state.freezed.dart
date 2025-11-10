@@ -192,10 +192,7 @@ return $default(_that);case _:
 final _that = this;
 switch (_that) {
 case _MediaSelectionState():
-return $default(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -254,10 +251,7 @@ return $default(_that.uploadedUrlsA,_that.selectedFilesA,_that.aspectRatiosA,_th
 @optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<String> uploadedUrlsA,  List<File> selectedFilesA,  List<double> aspectRatiosA,  List<String> assetEntityIdsA,  List<String> localPathsA,  bool isUploadingA,  List<String> uploadedUrlsB,  List<File> selectedFilesB,  List<double> aspectRatiosB,  List<String> assetEntityIdsB,  List<String> localPathsB,  bool isUploadingB)  $default,) {final _that = this;
 switch (_that) {
 case _MediaSelectionState():
-return $default(_that.uploadedUrlsA,_that.selectedFilesA,_that.aspectRatiosA,_that.assetEntityIdsA,_that.localPathsA,_that.isUploadingA,_that.uploadedUrlsB,_that.selectedFilesB,_that.aspectRatiosB,_that.assetEntityIdsB,_that.localPathsB,_that.isUploadingB);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return $default(_that.uploadedUrlsA,_that.selectedFilesA,_that.aspectRatiosA,_that.assetEntityIdsA,_that.localPathsA,_that.isUploadingA,_that.uploadedUrlsB,_that.selectedFilesB,_that.aspectRatiosB,_that.assetEntityIdsB,_that.localPathsB,_that.isUploadingB);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -285,8 +279,8 @@ return $default(_that.uploadedUrlsA,_that.selectedFilesA,_that.aspectRatiosA,_th
 /// @nodoc
 
 
-class _MediaSelectionState implements MediaSelectionState {
-  const _MediaSelectionState({final  List<String> uploadedUrlsA = const [], final  List<File> selectedFilesA = const [], final  List<double> aspectRatiosA = const [], final  List<String> assetEntityIdsA = const [], final  List<String> localPathsA = const [], this.isUploadingA = false, final  List<String> uploadedUrlsB = const [], final  List<File> selectedFilesB = const [], final  List<double> aspectRatiosB = const [], final  List<String> assetEntityIdsB = const [], final  List<String> localPathsB = const [], this.isUploadingB = false}): _uploadedUrlsA = uploadedUrlsA,_selectedFilesA = selectedFilesA,_aspectRatiosA = aspectRatiosA,_assetEntityIdsA = assetEntityIdsA,_localPathsA = localPathsA,_uploadedUrlsB = uploadedUrlsB,_selectedFilesB = selectedFilesB,_aspectRatiosB = aspectRatiosB,_assetEntityIdsB = assetEntityIdsB,_localPathsB = localPathsB;
+class _MediaSelectionState extends MediaSelectionState {
+  const _MediaSelectionState({final  List<String> uploadedUrlsA = const [], final  List<File> selectedFilesA = const [], final  List<double> aspectRatiosA = const [], final  List<String> assetEntityIdsA = const [], final  List<String> localPathsA = const [], this.isUploadingA = false, final  List<String> uploadedUrlsB = const [], final  List<File> selectedFilesB = const [], final  List<double> aspectRatiosB = const [], final  List<String> assetEntityIdsB = const [], final  List<String> localPathsB = const [], this.isUploadingB = false}): _uploadedUrlsA = uploadedUrlsA,_selectedFilesA = selectedFilesA,_aspectRatiosA = aspectRatiosA,_assetEntityIdsA = assetEntityIdsA,_localPathsA = localPathsA,_uploadedUrlsB = uploadedUrlsB,_selectedFilesB = selectedFilesB,_aspectRatiosB = aspectRatiosB,_assetEntityIdsB = assetEntityIdsB,_localPathsB = localPathsB,super._();
   
 
 // ==================== Option A 상태 (6개 필드) ====================

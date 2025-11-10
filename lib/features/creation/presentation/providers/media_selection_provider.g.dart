@@ -95,7 +95,7 @@ final class MediaSelectionProvider
   }
 }
 
-String _$mediaSelectionHash() => r'67920e62a47436fde5b149ddf7c169d9b855e566';
+String _$mediaSelectionHash() => r'6207d3c8d014e5783c40472da594dee962ea1aa9';
 
 /// Media Selection Provider
 ///

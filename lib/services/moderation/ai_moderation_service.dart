@@ -3,7 +3,7 @@ import '/services/moderation/perspective_api_service.dart';
 import '/services/moderation/models/moderation_result.dart';
 import '/services/moderation/constants/moderation_config.dart';
 import '/core/design_system/design_system.dart';
-import '/core/utils/logger.dart';
+import '/services/logging/logger_service.dart';
 import 'interfaces/i_ai_moderation_service.dart';
 import 'interfaces/i_gemini_moderation_service.dart';
 

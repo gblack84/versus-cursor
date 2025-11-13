@@ -3,8 +3,8 @@ import '/core_exports.dart';
 import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'phonemaximum_model.dart';
-export 'phonemaximum_model.dart';
+
+// Phase 10: PhonemaximumModel 제거 (빈 모델, 상태 없음)
 
 class PhonemaximumWidget extends StatefulWidget {
   const PhonemaximumWidget({super.key});
@@ -14,27 +14,12 @@ class PhonemaximumWidget extends StatefulWidget {
 }
 
 class _PhonemaximumWidgetState extends State<PhonemaximumWidget> {
-  late PhonemaximumModel _model;
-
-  @override
-  void setState(VoidCallback callback) {
-    super.setState(callback);
-    _model.onUpdate();
-  }
+  // Phase 10: AppModel 제거 - 상태 없음
 
   @override
   void initState() {
     super.initState();
-    _model = createModel(context, () => PhonemaximumModel());
-
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
-  }
-
-  @override
-  void dispose() {
-    _model.maybeDispose();
-
-    super.dispose();
   }
 
   @override
@@ -65,11 +50,7 @@ class _PhonemaximumWidgetState extends State<PhonemaximumWidget> {
                   decoration: BoxDecoration(
                     color: AppTheme.of(context).secondaryBackground,
                   ),
-                  child: wrapWithModel(
-                    model: _model.pickleMarkModel,
-                    updateCallback: () => setState(() {}),
-                    child: PickleMarkWidget(),
-                  ),
+                  child: PickleMarkWidget(),
                 ),
               ),
             ),

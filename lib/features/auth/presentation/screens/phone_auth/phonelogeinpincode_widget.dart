@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:uuid/uuid.dart';
-import '/core/utils/error_handler.dart';
+import 'package:versus_space/gen/assets.gen.dart';
+import '/services/error/error_handler_service.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/providers/usecase_providers.dart';
 import '/core_exports.dart';
@@ -11,9 +12,12 @@ import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'phonelogeinpincode_model.dart';
+import 'phonelogeinpincode_provider.dart';
 import 'phonemaximum/phonemaximum_widget.dart';
-export 'phonelogeinpincode_model.dart';
+import '../../widgets/timer/auth_timer_display.dart';
+
+// Phase 10: PhonelogeinpincodeModel → Riverpod 3.x (PinCode + Timer + verification)
+// AppTimer 제거 (2025-11-11): stop_watch_timer 직접 사용 + AuthTimerDisplay
 
 class PhonelogeinpincodeWidget extends ConsumerStatefulWidget {
   const PhonelogeinpincodeWidget({
@@ -32,31 +36,58 @@ class PhonelogeinpincodeWidget extends ConsumerStatefulWidget {
 }
 
 class _PhonelogeinpincodeWidgetState extends ConsumerState<PhonelogeinpincodeWidget> {
-  late PhonelogeinpincodeModel _model;
+  // Phase 10: Widget resources
+  late final FocusNode _pinCodeFocusNode;
+  late final TextEditingController _pinCodeController;
+  // stop_watch_timer 직접 사용 (AppTimerController 제거)
+  late final StopWatchTimer _timer;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
-    _model = createModel(context, () => PhonelogeinpincodeModel());
+
+    // Phase 10: Widget resources initialization
+    _pinCodeController = TextEditingController();
+    _pinCodeFocusNode = FocusNode();
+
+    // stop_watch_timer 직접 초기화 (120초)
+    _timer = StopWatchTimer(
+      mode: StopWatchMode.countDown,
+      presetMillisecond: 120000, // 120초 (2분)
+    );
+
+    // 타이머 값 변경 리스너
+    _timer.rawTime.listen((value) {
+      final displayTime = StopWatchTimer.getDisplayTime(
+        value,
+        hours: false,
+        milliSecond: false,
+      );
+      ref.read(phonelogeinpincodeProvider.notifier).updateTimerValues(
+        milliseconds: value,
+        displayValue: displayTime,
+      );
+      if (mounted) setState(() {});
+    });
 
     // On page load action.
     SchedulerBinding.instance.addPostFrameCallback((_) async {
-      _model.timerController.onStartTimer();
+      _timer.onStartTimer();
       await Future.delayed(const Duration(milliseconds: 30000));
-      _model.canResendCode = true;
-      setState(() {});
+      ref.read(phonelogeinpincodeProvider.notifier).updateCanResendCode(true);
     });
-
-    _model.pinCodeFocusNode ??= FocusNode();
 
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
   void dispose() {
-    _model.dispose();
+    // Phase 10: Widget resources disposal
+    _pinCodeFocusNode.dispose();
+    _pinCodeController.dispose();
+    _timer.dispose();
 
     super.dispose();
   }
@@ -122,8 +153,7 @@ class _PhonelogeinpincodeWidgetState extends ConsumerState<PhonelogeinpincodeWid
             ),
             ClipRRect(
               borderRadius: BorderRadius.circular(8.0),
-              child: Image.asset(
-                'assets/images/20250402_1112_____remix_01jqt4bfgvebj8s1j9b2ywjy5z.png',
+              child: Assets.images_signup_header.image(
                 width: 50.0,
                 height: 50.0,
                 fit: BoxFit.cover,
@@ -310,7 +340,7 @@ Enter the 6-digit code sent t... */
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               enableActiveFill: false,
                               autoFocus: true,
-                              focusNode: _model.pinCodeFocusNode,
+                              focusNode: _pinCodeFocusNode,
                               enablePinAutofill: false,
                               errorTextSpace: 16.0,
                               showCursor: true,
@@ -333,11 +363,11 @@ Enter the 6-digit code sent t... */
                                 inactiveColor: AppTheme.of(context).alternate,
                                 selectedColor: AppTheme.of(context).primary,
                               ),
-                              controller: _model.pinCodeController,
+                              controller: _pinCodeController,
                               onChanged: (_) {},
                               onCompleted: (_) async {
                                 final smsCodeVal =
-                                    _model.pinCodeController!.text;
+                                    _pinCodeController.text;
                                 if (smsCodeVal.isEmpty) {
                                   BotToast.showText(text: 'Enter SMS verification code.');
                                   return;
@@ -364,7 +394,7 @@ Enter the 6-digit code sent t... */
                                 result.fold(
                                   (failure) {
                                     // 실패 처리
-                                    _model.isVerified = false;
+                                    ref.read(phonelogeinpincodeProvider.notifier).updateVerificationStatus(false);
                                     ref.read(authErrorProvider.notifier).setError(failure.message);
                                     ref.read(authLoadingProvider.notifier).setLoading(false);
                                     setState(() {});
@@ -380,7 +410,7 @@ Enter the 6-digit code sent t... */
                                   },
                                   (user) {
                                     // 성공 처리
-                                    _model.isVerified = true;
+                                    ref.read(phonelogeinpincodeProvider.notifier).updateVerificationStatus(true);
                                     ref.read(authLoadingProvider.notifier).setLoading(false);
                                     setState(() {});
 
@@ -402,8 +432,7 @@ Enter the 6-digit code sent t... */
                               },
                               autovalidateMode:
                                   AutovalidateMode.onUserInteraction,
-                              validator: _model.pinCodeControllerValidator
-                                  .asValidator(context),
+                              // Phase 10: validator 제거 (모델에서 초기화되지 않았음)
                             ),
                           ),
                         ),
@@ -417,7 +446,7 @@ Enter the 6-digit code sent t... */
                             child: Column(
                               mainAxisSize: MainAxisSize.max,
                               children: [
-                                if (_model.isVerified == true)
+                                if (ref.read(phonelogeinpincodeProvider).isVerified == true)
                                   Text(
                                     AppLocalizations.of(context).getText(
                                       'ep61t57h' /* Authentication succeeded!! */,
@@ -441,7 +470,7 @@ Enter the 6-digit code sent t... */
                                               .fontStyle,
                                         ),
                                   ),
-                                if (_model.isVerified == false)
+                                if (ref.read(phonelogeinpincodeProvider).isVerified == false)
                                   Text(
                                     AppLocalizations.of(context).getText(
                                       '85h4oe02' /* Authentication failed. Please ... */,
@@ -477,59 +506,40 @@ Enter the 6-digit code sent t... */
                           child: Column(
                             mainAxisSize: MainAxisSize.max,
                             children: [
-                              AppTimer(
-                                initialTime: _model.timerInitialTimeMs,
-                                getDisplayTime: (value) =>
-                                    StopWatchTimer.getDisplayTime(
-                                  value,
-                                  hours: false,
-                                  milliSecond: false,
-                                ),
-                                controller: _model.timerController,
-                                updateStateInterval:
-                                    Duration(milliseconds: 1000),
-                                onChanged: (value, displayTime, shouldUpdate) {
-                                  _model.timerMilliseconds = value;
-                                  _model.timerValue = displayTime;
-                                  if (shouldUpdate) setState(() {});
-                                },
+                              AuthTimerDisplay(
+                                timer: _timer,
+                                style: AppTheme.of(context).headlineSmall.override(
+                                      font: GoogleFonts.plusJakartaSans(
+                                        fontWeight: AppTheme.of(context)
+                                            .headlineSmall
+                                            .fontWeight,
+                                        fontStyle: AppTheme.of(context)
+                                            .headlineSmall
+                                            .fontStyle,
+                                      ),
+                                      letterSpacing: 0.0,
+                                      fontWeight: AppTheme.of(context)
+                                          .headlineSmall
+                                          .fontWeight,
+                                      fontStyle: AppTheme.of(context)
+                                          .headlineSmall
+                                          .fontStyle,
+                                    ),
                                 textAlign: TextAlign.start,
-                                style:
-                                    AppTheme.of(context).headlineSmall.override(
-                                          font: GoogleFonts.plusJakartaSans(
-                                            fontWeight: AppTheme.of(context)
-                                                .headlineSmall
-                                                .fontWeight,
-                                            fontStyle: AppTheme.of(context)
-                                                .headlineSmall
-                                                .fontStyle,
-                                          ),
-                                          letterSpacing: 0.0,
-                                          fontWeight: AppTheme.of(context)
-                                              .headlineSmall
-                                              .fontWeight,
-                                          fontStyle: AppTheme.of(context)
-                                              .headlineSmall
-                                              .fontStyle,
-                                        ),
                               ),
                               Padding(
                                 padding: EdgeInsets.all(8.0),
                                 child: AppButtonWidget(
-                                  onPressed: (_model.timerMilliseconds > 90000)
+                                  onPressed: (ref.watch(phonelogeinpincodeProvider).timerMilliseconds > 90000)
                                       ? null
                                       : () async {
-                                          if (_model.canResendCount < 3) {
-                                            _model.canResendCount++;
-                                            setState(() {});
-                                            _model.timerController.timer
-                                                .setPresetTime(
-                                                    mSec: 60000, add: false);
-                                            _model.timerController
-                                                .onResetTimer();
+                                          if (ref.read(phonelogeinpincodeProvider).canResendCount < 3) {
+                                            ref.read(phonelogeinpincodeProvider.notifier).incrementResendCount();
 
-                                            _model.timerController
-                                                .onStartTimer();
+                                            // 타이머 리셋 및 재시작 (60초)
+                                            _timer.setPresetTime(mSec: 60000, add: false);
+                                            _timer.onResetTimer();
+                                            _timer.onStartTimer();
                                             final phoneNumberVal =
                                                 widget.phoneNumberParam;
                                             if (phoneNumberVal == null ||
@@ -681,7 +691,7 @@ Enter the 6-digit code sent t... */
                 child: Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(0.0, 24.0, 0.0, 0.0),
                   child: AppButtonWidget(
-                    onPressed: (_model.isVerified != true)
+                    onPressed: (ref.read(phonelogeinpincodeProvider).isVerified != true)
                         ? null
                         : () async {
                             // 이미 인증이 성공한 경우 다음 페이지로 이동

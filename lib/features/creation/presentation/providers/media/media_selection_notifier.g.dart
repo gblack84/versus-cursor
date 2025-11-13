@@ -116,7 +116,7 @@ final class MediaSelectionProvider
   }
 }
 
-String _$mediaSelectionHash() => r'017c876468969c38a2247f783e8c9e33cbc5c1c4';
+String _$mediaSelectionHash() => r'47f1106f6f56feba936043081bb00667c164e5de';
 
 /// Media selection notifier - Riverpod 3.x (Phase 2-7-1)
 /// 미디어 선택 상태 관리를 위한 Notifier

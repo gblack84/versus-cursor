@@ -19,8 +19,8 @@ import 'dart:convert';
 import 'package:from_css_color/from_css_color.dart' as css_color;
 import 'package:flutter/material.dart' show Color;
 import '/app/router/navigation/serialization_util.dart' show ParamType;
-import '/core/utils/app_utils.dart' show castToType;
 import '../adapters/serialization_util.dart';
+import 'type_converters.dart' show castToType;
 
 export 'package:collection/collection.dart' show ListEquality;
 export 'package:flutter/material.dart' show Color, Colors;

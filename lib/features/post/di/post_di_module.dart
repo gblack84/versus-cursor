@@ -15,7 +15,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 // ===== Services Layer =====
 import '/services/cache/unified_cache_service.dart';
-import '/core/utils/idempotency_service.dart';
+import '/services/idempotency/idempotency_service.dart';
 import '../data/services/post_cache_service.dart';
 
 // ===== Domain Layer - Repository Interfaces (Ports) =====

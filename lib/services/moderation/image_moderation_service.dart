@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:image/image.dart' as img;
-import '/core/utils/logger.dart';
+import '/services/logging/logger_service.dart';
 import '/features/creation/domain/services/i_image_moderation_service.dart';
 
 /// Image Moderation Service Implementation

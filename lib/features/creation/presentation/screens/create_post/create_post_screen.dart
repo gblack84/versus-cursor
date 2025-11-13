@@ -5,7 +5,7 @@ import '../../providers/create_post_notifier.dart';
 import '../../widgets/create_post/image_selection_widget.dart';
 import '../../widgets/create_post/text_input_widget.dart';
 import '/features/creation/presentation/widgets/components/next_button.dart';
-import '/core/utils/error_handler.dart';
+import '/services/error/error_handler_service.dart';
 import 'package:bot_toast/bot_toast.dart';
 import '../../widgets/dialogs/target_audience_dialog.dart';
 import '/features/creation/domain/failures/creation_failure.dart';

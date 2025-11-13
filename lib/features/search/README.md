@@ -139,6 +139,235 @@ class SearchRepositoryImpl {
 - AlgoliaManager: 이미 구현 완료 (90줄)
 - ChatSearchBar: 이미 구현 완료 (314줄, Chat Feature에서 사용)
 
+---
+
+## 🏛️ BOUNDARIES - Clean Architecture 3-Layer 경계
+
+Search Feature는 **Clean Architecture v4.0**의 3-Layer 구조를 따르며, 각 Layer 간 의존성 방향을 엄격히 준수합니다.
+
+### 3-Layer 의존성 규칙
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Presentation Layer                         │
+│  • 의존: Domain Layer (UseCase, Entity, Repository          │
+│          Interface)                                          │
+│  • 금지: Data Layer, 다른 Feature Presentation               │
+│  • 패턴: Riverpod Provider, ConsumerWidget, AsyncValue      │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ Repository Interface 의존
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Domain Layer                             │
+│  • 의존: 없음 (Pure Dart)                                    │
+│  • 금지: Presentation, Data, Flutter SDK, Algolia            │
+│  • 패턴: UseCase, Entity (Freezed), Repository Interface    │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ Repository Interface 구현
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      Data Layer                              │
+│  • 의존: Domain Layer (Entity, Repository Interface)         │
+│  • 금지: Presentation Layer                                   │
+│  • 패턴: Repository 구현, Algolia SDK 직접 사용              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 실전 예시
+
+#### 1. ✅ Presentation → Domain (올바른 사용)
+
+```dart
+// presentation/providers/search_providers.dart
+@riverpod
+FutureOr<List<SearchResult>> searchPosts(
+  SearchPostsRef ref,
+  String query,
+) async {
+  final useCase = getIt<SearchPostsUseCase>();
+  final result = await useCase.execute(query: query);
+
+  return result.fold(
+    (failure) => throw Exception(failure.getUserMessage()),
+    (results) => results,
+  );
+}
+
+@riverpod
+FutureOr<void> saveSearchHistory(
+  SaveSearchHistoryRef ref,
+  String query,
+) async {
+  final useCase = getIt<SaveSearchHistoryUseCase>();
+  final userId = ref.watch(currentUserIdProvider);
+
+  final result = await useCase.execute(
+    userId: userId,
+    query: query,
+  );
+
+  return result.fold(
+    (failure) => throw Exception(failure.getUserMessage()),
+    (_) => null,
+  );
+}
+```
+
+#### 2. ✅ Domain → 독립성 (올바른 사용)
+
+```dart
+// domain/usecases/search_posts_usecase.dart
+class SearchPostsUseCase {
+  final ISearchRepository _repository;
+
+  SearchPostsUseCase(this._repository);
+
+  Future<Either<SearchFailure, List<SearchResult>>> execute({
+    required String query,
+  }) {
+    return _repository.searchPosts(query);
+  }
+}
+
+// domain/usecases/save_search_history_usecase.dart
+class SaveSearchHistoryUseCase {
+  final ISearchRepository _repository;
+
+  SaveSearchHistoryUseCase(this._repository);
+
+  Future<Either<SearchFailure, void>> execute({
+    required String userId,
+    required String query,
+  }) {
+    return _repository.saveSearchHistory(userId, query);
+  }
+}
+
+// domain/entities/search_result.dart (Freezed)
+@freezed
+class SearchResult with _$SearchResult {
+  const factory SearchResult({
+    required String id,
+    required String title,
+    required String description,
+    required SearchResultType type,
+  }) = _SearchResult;
+
+  factory SearchResult.fromJson(Map<String, dynamic> json) =>
+      _$SearchResultFromJson(json);
+}
+```
+
+#### 3. ✅ Data → Domain (올바른 사용)
+
+```dart
+// data/repositories/search_repository_impl.dart
+class SearchRepositoryImpl implements ISearchRepository {
+  final AlgoliaManager _algolia;
+  final UnifiedCacheService _cacheService;
+
+  @override
+  Future<Either<SearchFailure, List<SearchResult>>> searchPosts(
+    String query,
+  ) async {
+    try {
+      // ✅ Data Layer는 Algolia SDK 직접 사용 허용
+      final algoliaQuery = _algolia.index('posts').query(query);
+      final snapshot = await algoliaQuery.getObjects();
+
+      final results = snapshot.hits
+          .map((hit) => SearchResult.fromAlgolia(hit))
+          .toList();
+
+      return right(results);
+    } catch (e) {
+      return left(SearchFailure.serverError(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<SearchFailure, void>> saveSearchHistory(
+    String userId,
+    String query,
+  ) async {
+    try {
+      // ✅ Data Layer는 Firestore 직접 사용 허용
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('searchHistory')
+          .add({
+        'query': query,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      return right(null);
+    } catch (e) {
+      return left(SearchFailure.serverError(e.toString()));
+    }
+  }
+}
+```
+
+#### 4. ❌ 잘못된 사용 패턴
+
+```dart
+// ❌ Presentation Layer에서 Algolia 직접 접근
+@riverpod
+FutureOr<List<SearchResult>> searchPosts(
+  SearchPostsRef ref,
+  String query,
+) async {
+  final algoliaQuery = Algolia.init(...).index('posts').query(query);
+  final snapshot = await algoliaQuery.getObjects();
+
+  return snapshot.hits.map((hit) => SearchResult.fromAlgolia(hit)).toList();
+}
+
+// ❌ Domain Layer에서 Algolia 의존성
+class SearchPostsUseCase {
+  Future<List<SearchResult>> execute(String query) async {
+    final algoliaQuery = Algolia.init(...).index('posts').query(query);
+    final snapshot = await algoliaQuery.getObjects();
+
+    return snapshot.hits.map((hit) => SearchResult.fromAlgolia(hit)).toList();
+  }
+}
+```
+
+### Boundary 검증
+
+#### 자동 검증 (Lint)
+
+```bash
+# Presentation → Data 위반 검사
+grep -r "import.*search.*data" lib/features/search/presentation/
+
+# Domain → Algolia/Firestore 의존성 검사
+grep -r "import.*algolia" lib/features/search/domain/
+grep -r "import.*firebase" lib/features/search/domain/
+
+# 기대 결과: 발견되지 않아야 함
+```
+
+#### 수동 검증 체크리스트
+
+- [ ] Presentation Layer는 UseCase만 호출하는가?
+- [ ] Domain Layer는 Pure Dart만 사용하는가? (Algolia/Firebase SDK 없음)
+- [ ] Data Layer는 Repository Interface를 구현하는가?
+- [ ] GetIt으로 UseCase/Repository를 DI하는가?
+- [ ] Either 패턴으로 에러를 반환하는가?
+
+### 참고 문서
+
+- **전체 프로젝트 Boundaries**: `/CLAUDE.md` - "## 🏛 BOUNDARIES" 섹션
+- **App Layer Boundaries**: `/lib/app/README.md` - "### 🏛️ BOUNDARIES" 섹션
+- **Search Domain Layer**: `domain/README.md` - UseCase, Entity, Failure
+- **Search Data Layer**: `data/README.md` - Repository 구현
+- **Search Presentation Layer**: `presentation/README.md` - Provider, Widget
+
+---
+
 ## 🎯 주요 기능
 
 ### 검색 대상
@@ -285,6 +514,196 @@ flutter test test/features/search/integration/
 # Algolia 테스트
 flutter test test/features/search/algolia/
 ```
+
+## 🧭 Router 통합 (Navigation)
+
+### Search Feature Routes (Phase 3 준비 완료)
+
+Search Feature는 **Placeholder Routes 구조**를 가지고 있습니다. Phase 3에서 Routes 파일을 생성했으며, 실제 라우트는 Phase 4-5에서 구현 예정입니다.
+
+**파일**: `lib/features/search/presentation/routes/search_routes.dart` (213줄)
+
+### Route 구성 (현재 0개, 3개 예정)
+
+| Route | Path | 상태 | requireAuth | 설명 |
+|-------|------|------|-------------|------|
+| **SearchResultsPage** | `/search/results` | ⏳ Phase 4-5 | false (PUBLIC) | 검색 결과 상세 페이지 |
+| **SearchFilterPage** | `/search/filter` | ⏳ Phase 4-5 | false (PUBLIC) | 검색 필터 설정 |
+| **SearchHistoryPage** | `/search/history` | ⏳ Phase 4-5 | true (PRIVATE) | 검색 기록 (로그인 필요) |
+
+### 현재 상태 (Phase 3)
+
+**✅ 완료**:
+- Routes 파일 생성 (`search_routes.dart`)
+- nav.dart 통합 완료 (`...SearchRoutes.routes(ref)` line 145)
+- Type-safe navigation 상수 준비 (주석 처리)
+- 상세 문서화 (213줄 인라인 문서)
+
+**⏳ 대기 중**:
+- 실제 라우트 구현 (Phase 4-5)
+- SearchResultsWidget 생성
+- SearchFilterWidget 생성
+- SearchHistoryWidget 생성
+
+### nav.dart 통합
+
+**파일**: `/lib/app/router/navigation/nav.dart` (line 145)
+
+```dart
+routes: [
+  ...SearchRoutes.routes(ref), // 현재 0개, 향후 3개 예정
+],
+```
+
+### ShellRoute vs Feature Routes
+
+**SearchPageWidget** (하단 네비게이션 검색 탭)은 **ShellRoute**에 있으며, `search_routes.dart`에 포함되지 않습니다:
+- 위치: `/lib/app/router/navigation/nav.dart` lines 150-153
+- 역할: 항상 표시되는 검색 탭 (하단 네비게이션 바)
+- 경로: `/search` (ShellRoute 자식)
+- 이유: ShellRoute 페이지는 nav.dart에서 직접 관리 (다른 4개 탭과 동일)
+
+**SearchRoutes에 포함될 라우트**:
+- 검색 결과 상세 페이지 (SearchPageWidget 외부)
+- 검색 필터 설정 페이지
+- 검색 기록 페이지
+- 기타 검색 관련 독립 페이지
+
+### 향후 구현 예정 (Phase 4-5)
+
+#### 1. SearchResultsPage (검색 결과 상세)
+```dart
+AppRoute(
+  name: 'searchResults',
+  path: '/search/results',
+  requireAuth: false,  // PUBLIC (검색은 누구나 가능)
+  builder: (context, params) => SearchResultsWidget(
+    query: params.getParam('query', ParamType.String),
+    filters: params.getParam('filters', ParamType.JSON),
+  ),
+).toRoute(ref)
+```
+
+**기능**:
+- 검색어 기반 게시물 필터링
+- 실시간 검색 결과 업데이트 (Algolia Stream)
+- 무한 스크롤 페이징
+- 파라미터: `query` (필수), `filters` (선택)
+
+#### 2. SearchFilterPage (검색 필터 설정)
+```dart
+AppRoute(
+  name: 'searchFilter',
+  path: '/search/filter',
+  requireAuth: false,  // PUBLIC
+  builder: (context, params) => SearchFilterWidget(
+    currentFilters: params.getParam('currentFilters', ParamType.JSON),
+  ),
+).toRoute(ref)
+```
+
+**기능**:
+- 카테고리, 날짜 범위, 정렬 방식 설정
+- 필터 프리셋 저장 (로그인 사용자만)
+- 파라미터: `currentFilters` (JSON)
+
+#### 3. SearchHistoryPage (검색 기록)
+```dart
+AppRoute(
+  name: 'searchHistory',
+  path: '/search/history',
+  requireAuth: true,  // 로그인 필요 (개인 기록)
+  builder: (context, params) => const SearchHistoryWidget(),
+).toRoute(ref)
+```
+
+**기능**:
+- 사용자별 검색 기록 (Firestore 저장)
+- 최근 검색어, 인기 검색어
+- 기록 삭제 기능
+
+### 구현 가이드 (Phase 4-5)
+
+**Step 1**: 위젯 생성
+```bash
+# 검색 결과 페이지 생성
+touch lib/features/search/presentation/screens/results/search_results_widget.dart
+```
+
+**Step 2**: routes() 메서드에 추가
+```dart
+static List<GoRoute> routes(WidgetRef ref) => [
+  // 빈 리스트에서 실제 라우트 추가
+  AppRoute(
+    name: SearchResultsWidget.routeName,
+    path: SearchResultsWidget.routePath,
+    requireAuth: false,
+    builder: (context, params) => SearchResultsWidget(
+      query: params.getParam('query', ParamType.String),
+    ),
+  ).toRoute(ref),
+];
+```
+
+**Step 3**: Type-safe navigation 상수 활성화
+```dart
+// 주석 제거
+static String get searchResults => SearchResultsWidget.routeName;
+static String get searchResultsPath => SearchResultsWidget.routePath;
+```
+
+**Step 4**: 사용
+```dart
+context.goNamed(
+  SearchRoutes.searchResults,
+  queryParameters: {'query': searchQuery},
+);
+```
+
+### Public vs Private
+
+Search Feature 라우트는 **대부분 PUBLIC** 권장:
+- **SearchResultsPage**: requireAuth: false (비로그인 사용자도 검색 가능)
+- **SearchFilterPage**: requireAuth: false (필터 설정도 public)
+- **SearchHistoryPage**: requireAuth: true (개인 기록만 private)
+
+**근거**:
+- 사용자 획득: 검색 기능을 먼저 경험 → 회원가입 유도
+- SEO: 검색 결과 페이지 크롤링 가능
+- 공유: 검색 링크 공유 시 로그인 불필요
+
+### 애니메이션
+
+Search Feature 라우트는 **즉시 전환** (Duration.zero) 권장:
+- 검색은 빈번한 이동 → 애니메이션 불필요
+- AppRoute 패턴 기본 동작: NoTransitionPage
+
+**단, SearchResultsPage는 Slide 애니메이션 고려 가능**:
+- 사용자가 검색 → 결과 전환의 명확한 피드백
+- 300ms Slide (왼쪽에서 오른쪽)
+
+### 참조 문서
+
+- [search/README.md](../README.md) - Search Feature 전체 가이드 (312줄)
+- [search_routes.dart](./presentation/routes/search_routes.dart) - Routes 인라인 문서 (213줄)
+- [/lib/app/router/README.md](/lib/app/router/README.md) - Router 시스템 개요
+- [/lib/app/router/navigation/README.md](/lib/app/router/navigation/README.md) - Navigation 상세 가이드
+- [PHASE_1_EITHER_PATTERN.md](./PHASE_1_EITHER_PATTERN.md) - Search Phase 1 완료
+- [PHASE_2_RIVERPOD.md](./PHASE_2_RIVERPOD.md) - Search Phase 2 완료
+- [PHASE_3_CACHE_INTEGRATION.md](./PHASE_3_CACHE_INTEGRATION.md) - Cache 통합 계획
+
+### Phase 진행 상황
+
+**Phase 완료**:
+- ✅ Phase 1: Either Pattern (SearchFailure, Repository Interface)
+- ✅ Phase 2: Riverpod 3.x (search_providers.dart 255줄)
+- ✅ Phase 3: **Router 준비** (search_routes.dart 생성, nav.dart 통합)
+
+**Phase 대기**:
+- ⏳ Phase 4: Idempotency + Route 구현
+- ⏳ Phase 5: Extension Pattern + Cache 통합
+
+---
 
 ## 📝 변경 이력
 

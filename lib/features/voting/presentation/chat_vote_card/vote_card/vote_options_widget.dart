@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '/core/design_system/design_system.dart';
-import '/services/ui/models/box_sizes.dart';
+import '/core/utils/ui/box_sizing/models/box_sizes.dart';
 
 /// 투표 옵션 A/B 표시 위젯
 /// 이미지와 텍스트 옵션을 레이아웃에 맞게 표시합니다

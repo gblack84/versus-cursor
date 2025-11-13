@@ -2,9 +2,10 @@ import 'dart:io';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '/core/types/layout_type.dart';
-import '/core/utils/media/aspect_ratio_analyzer.dart';
+import '/core/utils/ui/box_sizing/aspect_ratio_analyzer.dart';
 import '/features/creation/domain/usecases/media/ratio_calculator.dart';
-import '/services/ui/unified_box_calculator.dart';
+import '/features/creation/domain/services/i_box_calculator_service.dart';
+import '/app/di.dart';
 import 'states/media_selection_state.dart';
 
 part 'media_selection_notifier.g.dart';
@@ -441,9 +442,11 @@ class MediaSelection extends _$MediaSelection {
     // Provider가 Domain 정적 메서드 사용 (Widget이 아님)
     final layoutType = AspectRatioAnalyzer.getOptimalLayout(ratioA, ratioB);
 
-    // Provider가 Service 정적 메서드 사용 (Widget이 아님)
+    // Phase 1: Use Clean Architecture adapter (2025-11-10)
+    final boxCalculatorService = getIt<IBoxCalculatorService>();
+
     if (layoutType == LayoutType.horizontal) {
-      final data = UnifiedBoxCalculator.calculateForQuestion(
+      final data = boxCalculatorService.calculateForQuestion(
         containerWidth: containerWidth,
         layoutType: LayoutType.horizontal,
         aspectRatioA: ratioA,
@@ -460,7 +463,7 @@ class MediaSelection extends _$MediaSelection {
         boxHeightB: data.sizeB.height,
       );
     } else {
-      final data = UnifiedBoxCalculator.calculateForQuestion(
+      final data = boxCalculatorService.calculateForQuestion(
         containerWidth: containerWidth,
         layoutType: LayoutType.vertical,
         aspectRatioA: ratioA,

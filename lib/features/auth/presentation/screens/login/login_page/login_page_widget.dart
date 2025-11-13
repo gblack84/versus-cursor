@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:versus_space/gen/assets.gen.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/providers/usecase_providers.dart';
 import '/features/auth/presentation/screens/login/components/email_login_form.dart';
@@ -10,11 +11,11 @@ import '/testpage_select/testpage_select_widget.dart';
 import '/features/auth/presentation/screens/phone_auth/phone_creat_account/phone_creat_account_widget.dart';
 import '/features/auth/presentation/screens/signup/create_account/create_account_widget.dart';
 import '/core_exports.dart';
-import '/core/utils/error_handler.dart';
+import '/services/error/error_handler_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'login_page_model.dart';
-export 'login_page_model.dart';
+
+// Phase 10: LoginPageModel → Riverpod 3.x (TextField-only → Widget class)
 
 class LoginPageWidget extends ConsumerStatefulWidget {
   const LoginPageWidget({super.key});
@@ -28,27 +29,62 @@ class LoginPageWidget extends ConsumerStatefulWidget {
 
 class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
     with TickerProviderStateMixin {
-  late LoginPageModel _model;
+  // Phase 10: TextField controllers and validators (moved from LoginPageModel)
+  final formKey = GlobalKey<FormState>();
+  late final FocusNode _emailAddressLoginFocusNode;
+  late final TextEditingController _emailAddressLoginTextController;
+  late final FocusNode _passwordLoginFocusNode;
+  late final TextEditingController _passwordLoginTextController;
+  late bool _passwordLoginVisibility;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  // Email validator
+  String? _emailAddressLoginTextControllerValidator(BuildContext context, String? val) {
+    if (val == null || val.isEmpty) {
+      return AppLocalizations.of(context).getText(
+        'zodqb7tr' /* Please enter a valid email add... */,
+      );
+    }
+
+    if (!RegExp(kTextValidatorEmailRegex).hasMatch(val)) {
+      return 'Has to be a valid email address.';
+    }
+    return null;
+  }
+
+  // Password validator
+  String? _passwordLoginTextControllerValidator(BuildContext context, String? val) {
+    if (val == null || val.isEmpty) {
+      return AppLocalizations.of(context).getText(
+        'a3s2kg05' /* Password must be at least 6 ch... */,
+      );
+    }
+    return null;
+  }
 
   @override
   void initState() {
     super.initState();
-    _model = createModel(context, () => LoginPageModel());
 
-    _model.emailAddressLoginTextController ??= TextEditingController();
-    _model.emailAddressLoginFocusNode ??= FocusNode();
-
-    _model.passwordLoginTextController ??= TextEditingController();
-    _model.passwordLoginFocusNode ??= FocusNode();
+    // Phase 10: Initialize TextField controllers (moved from LoginPageModel)
+    _emailAddressLoginTextController = TextEditingController();
+    _emailAddressLoginFocusNode = FocusNode();
+    _passwordLoginTextController = TextEditingController();
+    _passwordLoginFocusNode = FocusNode();
+    _passwordLoginVisibility = false;
 
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
   void dispose() {
-    _model.dispose();
+    // Phase 10: Dispose TextField controllers (moved from LoginPageModel)
+    _emailAddressLoginFocusNode.dispose();
+    _emailAddressLoginTextController.dispose();
+    _passwordLoginFocusNode.dispose();
+    _passwordLoginTextController.dispose();
+
     super.dispose();
   }
 
@@ -60,7 +96,8 @@ class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
       return;
     }
 
-    GoRouter.of(context).prepareAuthEvent();
+    // Phase 1: prepareAuthEvent() 제거 (AppStateNotifier 제거로 불필요)
+    // Riverpod은 자동으로 auth 상태 변경을 감지합니다
 
     // 로딩 시작
     ref.read(authLoadingProvider.notifier).setLoading(true);
@@ -68,8 +105,8 @@ class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
     // UseCase 실행
     final signInUseCase = ref.read(signInWithEmailUseCaseProvider);
     final result = await signInUseCase.execute(
-      email: _model.emailAddressLoginTextController.text,
-      password: _model.passwordLoginTextController.text,
+      email: _emailAddressLoginTextController.text,
+      password: _passwordLoginTextController.text,
     );
 
     // 결과 처리
@@ -121,7 +158,8 @@ class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
       return;
     }
 
-    GoRouter.of(context).prepareAuthEvent();
+    // Phase 1: prepareAuthEvent() 제거 (AppStateNotifier 제거로 불필요)
+    // Riverpod은 자동으로 auth 상태 변경을 감지합니다
 
     // 로딩 시작
     ref.read(authLoadingProvider.notifier).setLoading(true);
@@ -235,7 +273,7 @@ class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
                 color: Color(0xFFECECEC),
               ),
               child: Form(
-                key: _model.formKey,
+                key: formKey,
                 autovalidateMode: AutovalidateMode.disabled,
                 child: SingleChildScrollView(
                   child: Column(
@@ -248,9 +286,7 @@ class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
                         decoration: BoxDecoration(
                           image: DecorationImage(
                             fit: BoxFit.cover,
-                            image: Image.asset(
-                              'assets/images/20250402_1128____remix_01jqt58d7tey2bhvkccgczdtsg.png',
-                            ).image,
+                            image: Assets.images_login_header.provider(),
                           ),
                         ),
                       ),
@@ -268,25 +304,23 @@ class _LoginPageWidgetState extends ConsumerState<LoginPageWidget>
                               // Email & Password Form Fields
                               EmailLoginForm(
                                 emailController:
-                                    _model.emailAddressLoginTextController!,
+                                    _emailAddressLoginTextController,
                                 passwordController:
-                                    _model.passwordLoginTextController!,
+                                    _passwordLoginTextController,
                                 emailFocusNode:
-                                    _model.emailAddressLoginFocusNode!,
+                                    _emailAddressLoginFocusNode,
                                 passwordFocusNode:
-                                    _model.passwordLoginFocusNode!,
+                                    _passwordLoginFocusNode,
                                 passwordVisibility:
-                                    _model.passwordLoginVisibility,
+                                    _passwordLoginVisibility,
                                 onPasswordVisibilityToggle: () => setState(
-                                  () => _model.passwordLoginVisibility =
-                                      !_model.passwordLoginVisibility,
+                                  () => _passwordLoginVisibility =
+                                      !_passwordLoginVisibility,
                                 ),
-                                emailValidator: _model
-                                    .emailAddressLoginTextControllerValidator
-                                    .asValidator(context),
-                                passwordValidator: _model
-                                    .passwordLoginTextControllerValidator
-                                    .asValidator(context),
+                                emailValidator: (val) =>
+                                    _emailAddressLoginTextControllerValidator(context, val),
+                                passwordValidator: (val) =>
+                                    _passwordLoginTextControllerValidator(context, val),
                               ),
                               // Login Buttons (Email & Phone)
                               LoginButtons(

@@ -16,6 +16,18 @@ abstract class IStorageDataSource {
     required String fileName,
   });
 
+  /// 파일 바이트 업로드 (범용)
+  ///
+  /// **Parameters**:
+  /// - `path`: Firebase Storage 경로 (예: 'users/uid/image.jpg')
+  /// - `bytes`: 파일 바이트 데이터
+  ///
+  /// **Returns**: 업로드된 파일 URL
+  Future<String> uploadFileBytes({
+    required String path,
+    required List<int> bytes,
+  });
+
   /// 프로필 이미지 삭제
   Future<void> deleteProfileImage(String imageUrl);
 }

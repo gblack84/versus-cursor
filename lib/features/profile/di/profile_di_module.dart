@@ -12,7 +12,7 @@ import 'package:get_it/get_it.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 // ===== Core Services =====
-import '/core/utils/idempotency_service.dart';
+import '/services/idempotency/idempotency_service.dart';
 import '/services/cache/unified_cache_service.dart';
 
 // ===== Domain Layer - Repository Interfaces (Ports) =====
@@ -37,7 +37,7 @@ import '../data/repositories/profile_repository_impl.dart';
 import '../data/repositories/profile_storage_repository_impl.dart';
 import '../data/repositories/profile_post_repository_impl.dart';
 
-// ===== Domain Layer - UseCases (13 total) =====
+// ===== Domain Layer - UseCases (16 total) =====
 // Profile UseCases (9)
 import '../domain/usecases/profile/get_user_profile_usecase.dart';
 import '../domain/usecases/profile/get_current_user_profile_usecase.dart';
@@ -48,6 +48,13 @@ import '../domain/usecases/profile/delete_user_profile_usecase.dart';
 import '../domain/usecases/profile/watch_user_profile_usecase.dart';
 import '../domain/usecases/profile/get_profile_completion_usecase.dart';
 import '../domain/usecases/profile/get_profile_info_usecase.dart';
+
+// Activity UseCases (1) - Added 2025-11-11
+import '../domain/usecases/activity/update_last_active_usecase.dart';
+
+// Storage UseCases (2) - Added 2025-11-10
+import '../domain/usecases/storage/select_media_usecase.dart';
+import '../domain/usecases/storage/validate_media_usecase.dart';
 
 // Settings UseCases (2)
 import '../domain/usecases/settings/get_user_settings_usecase.dart';
@@ -141,7 +148,7 @@ void _registerRepositories(GetIt getIt) {
   );
 }
 
-/// Register all UseCases (14 total)
+/// Register all UseCases (16 total)
 void _registerUseCases(GetIt getIt) {
   // ===== Profile UseCases (9) =====
 
@@ -199,6 +206,14 @@ void _registerUseCases(GetIt getIt) {
     ),
   );
 
+  // ===== Activity UseCases (1) =====
+
+  getIt.registerFactory(
+    () => UpdateLastActiveUseCase(
+      getIt<IProfileRepository>(),
+    ),
+  );
+
   // ===== Settings UseCases (2) =====
 
   getIt.registerFactory(
@@ -232,6 +247,20 @@ void _registerUseCases(GetIt getIt) {
   getIt.registerFactory(
     () => UpdateUserInterestsUseCase(
       repository: getIt<IInterestsRepository>(),
+    ),
+  );
+
+  // ===== Storage UseCases (2) - Added 2025-11-10 =====
+
+  getIt.registerFactory(
+    () => SelectMediaUseCase(
+      storageRepository: getIt<IProfileStorageRepository>(),
+    ),
+  );
+
+  getIt.registerFactory(
+    () => ValidateMediaUseCase(
+      storageRepository: getIt<IProfileStorageRepository>(),
     ),
   );
 }

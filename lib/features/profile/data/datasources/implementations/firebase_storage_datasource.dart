@@ -29,6 +29,24 @@ class FirebaseStorageDataSource implements IStorageDataSource {
   }
 
   @override
+  Future<String> uploadFileBytes({
+    required String path,
+    required List<int> bytes,
+  }) async {
+    final ref = _storage.ref().child(path);
+
+    final uploadTask = ref.putData(
+      Uint8List.fromList(bytes),
+      SettableMetadata(contentType: 'image/jpeg'),
+    );
+
+    final snapshot = await uploadTask;
+    final downloadUrl = await snapshot.ref.getDownloadURL();
+
+    return downloadUrl;
+  }
+
+  @override
   Future<void> deleteProfileImage(String imageUrl) async {
     final ref = _storage.refFromURL(imageUrl);
     await ref.delete();

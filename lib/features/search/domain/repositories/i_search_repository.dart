@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fpdart/fpdart.dart';
-import '../models/search_history_model.dart';
+import '../models/search_history.dart';
 import '../models/ranking.dart';
 import '../failures/search_failure.dart';
 
@@ -16,7 +16,7 @@ abstract class ISearchRepository {
 
   /// Query searches with optional filters
   /// Returns Stream for real-time updates
-  Stream<Either<SearchFailure, List<SearchesModel>>> querySearches({
+  Stream<Either<SearchFailure, List<SearchHistory>>> querySearches({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
@@ -39,7 +39,7 @@ abstract class ISearchRepository {
   });
 
   /// Get user's search history
-  Future<Either<SearchFailure, List<SearchesModel>>> getUserSearchHistory({
+  Future<Either<SearchFailure, List<SearchHistory>>> getUserSearchHistory({
     required String userId,
     int limit = 10,
   });

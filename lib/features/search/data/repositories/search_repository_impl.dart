@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fpdart/fpdart.dart';
 import '../../domain/repositories/i_search_repository.dart';
 import '../../domain/failures/search_failure.dart';
-import '../../domain/models/search_history_model.dart';
+import '../../domain/models/search_history.dart';
 import '../../domain/models/ranking.dart';
 
 /// Implementation of search repository
@@ -26,7 +26,7 @@ class SearchRepositoryImpl implements ISearchRepository {
   // ========== Search History Queries ==========
 
   @override
-  Stream<Either<SearchFailure, List<SearchesModel>>> querySearches({
+  Stream<Either<SearchFailure, List<SearchHistory>>> querySearches({
     Query Function(Query)? queryBuilder,
     int limit = -1,
     bool singleRecord = false,
@@ -49,17 +49,17 @@ class SearchRepositoryImpl implements ISearchRepository {
       return query.snapshots().map((snapshot) {
         try {
           final models = snapshot.docs
-              .map((doc) => SearchesModel.fromSnapshot(doc))
+              .map((doc) => SearchHistory.fromFirestore(doc))
               .toList();
-          return right<SearchFailure, List<SearchesModel>>(models);
+          return right<SearchFailure, List<SearchHistory>>(models);
         } catch (e) {
-          return left<SearchFailure, List<SearchesModel>>(SearchFailure.firestoreReadFailed(
+          return left<SearchFailure, List<SearchHistory>>(SearchFailure.firestoreReadFailed(
             collection: 'searches',
             message: e.toString(),
           ));
         }
       }).handleError((e) {
-        return left<SearchFailure, List<SearchesModel>>(SearchFailure.firestoreReadFailed(
+        return left<SearchFailure, List<SearchHistory>>(SearchFailure.firestoreReadFailed(
           collection: 'searches',
           message: e.toString(),
         ));
@@ -121,7 +121,7 @@ class SearchRepositoryImpl implements ISearchRepository {
   }
 
   @override
-  Future<Either<SearchFailure, List<SearchesModel>>> getUserSearchHistory({
+  Future<Either<SearchFailure, List<SearchHistory>>> getUserSearchHistory({
     required String userId,
     int limit = 10,
   }) async {

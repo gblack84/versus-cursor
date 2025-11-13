@@ -266,6 +266,12 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "color",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/color-3.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "convert",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/convert-3.1.2",
       "packageUri": "lib/",
@@ -336,6 +342,12 @@
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/dart_style-3.1.1",
       "packageUri": "lib/",
       "languageVersion": "3.7"
+    },
+    {
+      "name": "dartx",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/dartx-1.2.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
     },
     {
       "name": "dbus",
@@ -680,6 +692,18 @@
       "languageVersion": "2.12"
     },
     {
+      "name": "flutter_gen_core",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/flutter_gen_core-5.12.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "flutter_gen_runner",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/flutter_gen_runner-5.12.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
       "name": "flutter_image_compress",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/flutter_image_compress-2.4.0",
       "packageUri": "lib/",
@@ -956,6 +980,12 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "hashcodes",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/hashcodes-2.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "hive",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/hive-2.2.3",
       "packageUri": "lib/",
@@ -1056,6 +1086,12 @@
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.1+1",
       "packageUri": "lib/",
       "languageVersion": "2.19"
+    },
+    {
+      "name": "image_size_getter",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/image_size_getter-2.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
     },
     {
       "name": "intl",
@@ -1260,6 +1296,12 @@
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/path-1.9.1",
       "packageUri": "lib/",
       "languageVersion": "3.4"
+    },
+    {
+      "name": "path_parsing",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/path_parsing-1.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
     },
     {
       "name": "path_provider",
@@ -1760,6 +1802,12 @@
       "languageVersion": "3.5"
     },
     {
+      "name": "time",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/time-2.1.5",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "timeago",
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/timeago-3.7.1",
       "packageUri": "lib/",
@@ -1854,6 +1902,18 @@
       "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/uuid-4.5.1",
       "packageUri": "lib/",
       "languageVersion": "3.0"
+    },
+    {
+      "name": "vector_graphics_codec",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/vector_graphics_codec-1.1.13",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "vector_graphics_compiler",
+      "rootUri": "file:///Users/g_black/.pub-cache/hosted/pub.dev/vector_graphics_compiler-1.1.19",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
     },
     {
       "name": "vector_math",

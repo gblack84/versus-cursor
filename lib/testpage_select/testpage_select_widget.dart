@@ -7,8 +7,7 @@ import '/app/widgets/index.dart';
 import '/features/notifications/presentation/providers/notification_badge_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'testpage_select_model.dart';
-export 'testpage_select_model.dart';
+import 'package:versus_space/gen/assets.gen.dart';
 
 class TestpageSelectWidget extends StatefulWidget {
   const TestpageSelectWidget({super.key});
@@ -21,23 +20,12 @@ class TestpageSelectWidget extends StatefulWidget {
 }
 
 class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
-  late TestpageSelectModel _model;
-
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
-    _model = createModel(context, () => TestpageSelectModel());
-
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
-  }
-
-  @override
-  void dispose() {
-    _model.dispose();
-
-    super.dispose();
   }
 
   @override
@@ -94,8 +82,7 @@ class _TestpageSelectWidgetState extends State<TestpageSelectWidget> {
             ),
             ClipRRect(
               borderRadius: BorderRadius.circular(8.0),
-              child: Image.asset(
-                'assets/images/versus-sign-black-white-symbol_679005-151@1x.png',
+              child: Assets.images_versus_logo.image(
                 width: 100.0,
                 height: double.infinity,
                 fit: BoxFit.cover,

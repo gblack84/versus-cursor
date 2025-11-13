@@ -4,7 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import '/features/notifications/domain/entities/notification.dart' as domain;
 import '/features/notifications/domain/services/i_notification_service.dart';
 // Core utilities
-import '/core/utils/logger.dart';
+import '/services/logging/logger_service.dart';
 import '/services/cache/unified_cache_service.dart';
 // FCM Service
 import 'fcm_service.dart';
@@ -48,6 +48,12 @@ class NotificationQueueService {
 
   /// 처리된 알림 ID 세트 (중복 표시 방지)
   final Set<String> _processedNotificationIds = {};
+
+  /// 처리된 알림 ID + 타임스탬프 (TTL 기반 정리용)
+  final Map<String, DateTime> _processedNotificationTimestamps = {};
+
+  /// 중복 감지 통계
+  int _duplicateDetectionCount = 0;
 
   /// 스트림 구독
   StreamSubscription<List<domain.Notification>>? _notificationSubscription;
@@ -299,8 +305,13 @@ class NotificationQueueService {
     for (final notification in notifications) {
       final notificationId = notification.id;
 
-      // 이미 처리된 알림은 무시
+      // 이미 처리된 알림은 무시 (중복 감지)
       if (_processedNotificationIds.contains(notificationId)) {
+        _duplicateDetectionCount++;
+        Logger.warning(
+          '중복 알림 감지: $notificationId (총 $_duplicateDetectionCount회)',
+          tag: 'NotificationQueueService',
+        );
         continue;
       }
 
@@ -317,7 +328,7 @@ class NotificationQueueService {
     _notificationQueue.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
     Logger.debug(
-        '큐 크기: ${_notificationQueue.length}, 처리된: ${_processedNotificationIds.length}',
+        '큐 크기: ${_notificationQueue.length}, 처리된: ${_processedNotificationIds.length}, 중복: $_duplicateDetectionCount',
         tag: 'NotificationQueueService');
 
     // 즉시 처리 시도
@@ -346,6 +357,7 @@ class NotificationQueueService {
     // 알림을 처리 목록에 추가 (중복 표시 방지)
     final notificationId = notification.id;
     _processedNotificationIds.add(notificationId);
+    _processedNotificationTimestamps[notificationId] = DateTime.now();
 
     // 처리 기록 저장 (비동기로 처리하여 UI 블로킹 방지)
     _saveProcessedNotifications();
@@ -380,22 +392,29 @@ class NotificationQueueService {
     });
   }
 
-  /// 오래된 처리 기록 정리
+  /// 오래된 처리 기록 정리 (TTL 기반)
   void _cleanupProcessedNotifications() {
     final beforeCount = _processedNotificationIds.length;
+    final now = DateTime.now();
+    final oneHourAgo = now.subtract(const Duration(hours: 1));
 
-    // 메모리 사용을 줄이기 위해 최대 1000개까지만 유지
-    if (_processedNotificationIds.length > 1000) {
-      // 가장 오래된 항목들을 제거 (Set은 순서가 없으므로 모두 제거 후 최근 500개만 다시 추가)
-      final recentIds = _processedNotificationIds
-          .toList()
-          .sublist(_processedNotificationIds.length - 500);
-      _processedNotificationIds.clear();
-      _processedNotificationIds.addAll(recentIds);
+    // 1시간 이상 지난 항목 찾기
+    final idsToRemove = _processedNotificationTimestamps.entries
+        .where((entry) => entry.value.isBefore(oneHourAgo))
+        .map((entry) => entry.key)
+        .toList();
 
+    // 오래된 항목 제거
+    for (final id in idsToRemove) {
+      _processedNotificationIds.remove(id);
+      _processedNotificationTimestamps.remove(id);
+    }
+
+    if (idsToRemove.isNotEmpty) {
       Logger.debug(
-          '처리 기록 정리: $beforeCount -> ${_processedNotificationIds.length}',
-          tag: 'NotificationQueueService');
+        '처리 기록 TTL 정리: $beforeCount -> ${_processedNotificationIds.length} (${idsToRemove.length}개 제거)',
+        tag: 'NotificationQueueService',
+      );
 
       // 정리 후 저장
       _saveProcessedNotifications();
@@ -405,6 +424,7 @@ class NotificationQueueService {
   /// 처리된 알림 ID 로드
   Future<void> _loadProcessedNotifications() async {
     try {
+      // IDs 로드
       final cachedIdsResult = await UnifiedCacheService.instance
           .get<List<dynamic>>('processed_notification_ids');
       final cachedIds = cachedIdsResult.fold(
@@ -417,6 +437,26 @@ class NotificationQueueService {
           cachedIds.map((id) => id.toString())
         );
       }
+
+      // Timestamps 로드
+      final cachedTimestampsResult = await UnifiedCacheService.instance
+          .get<Map<String, dynamic>>('processed_notification_timestamps');
+      final cachedTimestamps = cachedTimestampsResult.fold(
+        (failure) => null,
+        (timestamps) => timestamps,
+      );
+
+      if (cachedTimestamps != null) {
+        cachedTimestamps.forEach((key, value) {
+          if (value is String) {
+            try {
+              _processedNotificationTimestamps[key] = DateTime.parse(value);
+            } catch (e) {
+              // 파싱 실패 시 무시
+            }
+          }
+        });
+      }
     } catch (e) {
       Logger.warning('처리 기록 로드 실패', tag: 'NotificationQueueService');
     }
@@ -425,9 +465,19 @@ class NotificationQueueService {
   /// 처리된 알림 ID 저장
   Future<void> _saveProcessedNotifications() async {
     try {
+      // IDs 저장
       await UnifiedCacheService.instance.set(
         'processed_notification_ids',
         _processedNotificationIds.toList(),
+      );
+
+      // Timestamps 저장 (ISO8601 문자열로 변환)
+      final timestampsMap = _processedNotificationTimestamps.map(
+        (key, value) => MapEntry(key, value.toIso8601String()),
+      );
+      await UnifiedCacheService.instance.set(
+        'processed_notification_timestamps',
+        timestampsMap,
       );
     } catch (e) {
       Logger.warning('처리 기록 저장 실패', tag: 'NotificationQueueService');
@@ -445,10 +495,20 @@ class NotificationQueueService {
 
   /// 디버그 정보 반환
   Map<String, dynamic> getDebugInfo() {
+    // 가장 오래된 처리 기록 찾기
+    DateTime? oldestTimestamp;
+    if (_processedNotificationTimestamps.isNotEmpty) {
+      oldestTimestamp = _processedNotificationTimestamps.values.reduce(
+        (a, b) => a.isBefore(b) ? a : b,
+      );
+    }
+
     return {
       'isShowingNotification': _isShowingNotification,
       'queueLength': _notificationQueue.length,
       'processedCount': _processedNotificationIds.length,
+      'duplicateDetectionCount': _duplicateDetectionCount,
+      'oldestProcessedTimestamp': oldestTimestamp?.toIso8601String(),
       'currentNotificationId': _currentNotification?.id,
       'currentNotificationType': _currentNotification?.type,
       'fcmInitialized': _fcmService.isInitialized,

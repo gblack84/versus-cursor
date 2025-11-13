@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/profile/domain/entities/user_profile.dart';
 import '/core/design_system/design_system.dart';
-import '/core/utils/error_handler.dart';
+import '/services/error/error_handler_service.dart';
 import '../../providers/chat_providers.dart';
 import '../../providers/chat_params.dart';
 
@@ -35,8 +35,8 @@ class _FriendsWidgetState extends ConsumerState<FriendsWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
 
-  // Firebase Auth helper
-  String get currentUserUid => FirebaseAuth.instance.currentUser?.uid ?? '';
+  // Phase C-2: Auth Provider 헬퍼 메서드
+  String get currentUserUid => ref.watch(currentUserIdProvider).value ?? '';
 
   @override
   void dispose() {

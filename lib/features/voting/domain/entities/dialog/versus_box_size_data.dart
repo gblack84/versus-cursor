@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '/core/types/layout_type.dart';
-import '/core/utils/media/aspect_ratio_analyzer.dart';
+import '/core/utils/ui/box_sizing/aspect_ratio_analyzer.dart';
 
 part 'versus_box_size_data.freezed.dart';
 part 'versus_box_size_data.g.dart';

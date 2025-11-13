@@ -33,6 +33,20 @@ abstract class IProfileStorageDataSource {
     required File imageFile,
   });
 
+  /// 파일 바이트 업로드 (범용 - 캐릭터 이미지 등)
+  ///
+  /// **Parameters**:
+  /// - `path`: Firebase Storage 경로 (예: 'users/uid/uploads/timestamp.jpg')
+  /// - `bytes`: 파일 바이트 데이터
+  ///
+  /// **Returns**: 업로드된 파일의 다운로드 URL
+  ///
+  /// **Throws**: 업로드 실패 시 Exception
+  Future<String> uploadFileBytes({
+    required String path,
+    required List<int> bytes,
+  });
+
   /// 프로필 이미지 삭제
   ///
   /// **Parameters**:

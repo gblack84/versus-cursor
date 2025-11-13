@@ -6,7 +6,7 @@ import '/features/voting/domain/entities/dialog/versus_box_size_data.dart';
 import '/features/voting/domain/constants/voting_constants.dart';
 import '/features/voting/domain/services/i_box_calculator_service.dart';
 import '../../voting_box.dart';
-import '/core/utils/media/aspect_ratio_analyzer.dart';
+import '/core/utils/ui/box_sizing/aspect_ratio_analyzer.dart';
 
 /// Content component for the voting dialog
 /// Displays the question and A/B voting boxes

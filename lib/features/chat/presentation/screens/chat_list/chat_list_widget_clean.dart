@@ -18,7 +18,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '/features/auth/presentation/providers/auth_providers.dart';
 
 import '/core_exports.dart';
 import '/features/chat/domain/entities/chat.dart';
@@ -40,11 +40,11 @@ class ChatListWidgetClean extends ConsumerWidget {
   static String routeName = 'chatList';
   static String routePath = '/chat/list';
 
-  // Firebase Auth helper
-  String get currentUserUid => FirebaseAuth.instance.currentUser?.uid ?? '';
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Phase C-2: Auth Provider 사용
+    final currentUserUid = ref.watch(currentUserIdProvider).value ?? '';
+
     // ✅ Riverpod: StreamProvider를 watch (자동 초기화, 자동 dispose)
     final asyncChats = ref.watch(chatListStreamProvider(
       ChatListParams(userId: currentUserUid, limit: 50),

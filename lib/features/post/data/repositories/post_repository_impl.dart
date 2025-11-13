@@ -9,7 +9,7 @@ import '/features/post/domain/repositories/i_post_display_repository_v2.dart';
 import '/features/post/domain/failures/post_failure.dart';
 import '/features/post/domain/usecases/get_feed_usecase.dart';  // FeedSortBy enum
 import '/features/post/data/services/post_cache_service.dart';
-import '/core/utils/idempotency_service.dart';
+import '/services/idempotency/idempotency_service.dart';
 
 /// Post Repository Implementation - Firebase-Centric v2.0 + 3-Layer Caching
 ///

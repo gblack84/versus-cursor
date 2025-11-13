@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter/foundation.dart';
-import '/core/utils/idempotency_service.dart';
+import '/services/idempotency/idempotency_service.dart';
 import '../../domain/repositories/i_interests_repository.dart';
 import '../../domain/entities/interest.dart';
 import '../../domain/failures/profile_failure.dart';

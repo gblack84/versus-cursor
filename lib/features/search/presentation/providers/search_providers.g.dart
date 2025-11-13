@@ -872,13 +872,13 @@ const userSearchHistoryProvider = UserSearchHistoryFamily._();
 final class UserSearchHistoryProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<SearchesModel>>,
-          List<SearchesModel>,
-          FutureOr<List<SearchesModel>>
+          AsyncValue<List<SearchHistory>>,
+          List<SearchHistory>,
+          FutureOr<List<SearchHistory>>
         >
     with
-        $FutureModifier<List<SearchesModel>>,
-        $FutureProvider<List<SearchesModel>> {
+        $FutureModifier<List<SearchHistory>>,
+        $FutureProvider<List<SearchHistory>> {
   /// User Search History Provider
   ///
   /// **Phase 2 (2025-11-07)**: Riverpod 3.x Migration
@@ -906,12 +906,12 @@ final class UserSearchHistoryProvider
 
   @$internal
   @override
-  $FutureProviderElement<List<SearchesModel>> $createElement(
+  $FutureProviderElement<List<SearchHistory>> $createElement(
     $ProviderPointer pointer,
   ) => $FutureProviderElement(pointer);
 
   @override
-  FutureOr<List<SearchesModel>> create(Ref ref) {
+  FutureOr<List<SearchHistory>> create(Ref ref) {
     final argument = this.argument as (String, {int limit});
     return userSearchHistory(ref, argument.$1, limit: argument.limit);
   }
@@ -927,7 +927,7 @@ final class UserSearchHistoryProvider
   }
 }
 
-String _$userSearchHistoryHash() => r'4759856ec655c0ce04c0d0f80386407bd80c26b3';
+String _$userSearchHistoryHash() => r'e67a8e54663e8a45b19d9f4060bafed631478ce3';
 
 /// User Search History Provider
 ///
@@ -937,7 +937,7 @@ String _$userSearchHistoryHash() => r'4759856ec655c0ce04c0d0f80386407bd80c26b3';
 final class UserSearchHistoryFamily extends $Family
     with
         $FunctionalFamilyOverride<
-          FutureOr<List<SearchesModel>>,
+          FutureOr<List<SearchHistory>>,
           (String, {int limit})
         > {
   const UserSearchHistoryFamily._()
@@ -977,13 +977,13 @@ const searchHistoryStreamProvider = SearchHistoryStreamFamily._();
 final class SearchHistoryStreamProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<SearchesModel>>,
-          List<SearchesModel>,
-          Stream<List<SearchesModel>>
+          AsyncValue<List<SearchHistory>>,
+          List<SearchHistory>,
+          Stream<List<SearchHistory>>
         >
     with
-        $FutureModifier<List<SearchesModel>>,
-        $StreamProvider<List<SearchesModel>> {
+        $FutureModifier<List<SearchHistory>>,
+        $StreamProvider<List<SearchHistory>> {
   /// Search History Stream Provider (Real-time)
   ///
   /// **Phase 2 (2025-11-07)**: Riverpod 3.x Migration
@@ -1011,12 +1011,12 @@ final class SearchHistoryStreamProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<SearchesModel>> $createElement(
+  $StreamProviderElement<List<SearchHistory>> $createElement(
     $ProviderPointer pointer,
   ) => $StreamProviderElement(pointer);
 
   @override
-  Stream<List<SearchesModel>> create(Ref ref) {
+  Stream<List<SearchHistory>> create(Ref ref) {
     final argument = this.argument as String;
     return searchHistoryStream(ref, argument);
   }
@@ -1033,7 +1033,7 @@ final class SearchHistoryStreamProvider
 }
 
 String _$searchHistoryStreamHash() =>
-    r'd602632e6b0bb04d28e6445b41338b5b94067e3e';
+    r'8dba2bb0653f8f9c83123cf32ddc314f31574dad';
 
 /// Search History Stream Provider (Real-time)
 ///
@@ -1041,7 +1041,7 @@ String _$searchHistoryStreamHash() =>
 /// - StreamProvider for real-time search history
 
 final class SearchHistoryStreamFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<List<SearchesModel>>, String> {
+    with $FunctionalFamilyOverride<Stream<List<SearchHistory>>, String> {
   const SearchHistoryStreamFamily._()
     : super(
         retry: null,

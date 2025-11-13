@@ -6,10 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # Versus Space - Flutter Clean Architecture v4.0 프로젝트
 
-> **최종 업데이트**: 2025-11-09 (Deep Analysis & Complete Rewrite)
+> **최종 업데이트**: 2025-11-10 (FlutterGen Asset 관리 도입)
 > **프로젝트**: versus_space - Flutter Social Voting App
 > **아키텍처**: Clean Architecture v4.0 + Firebase-Centric v2.0
 > **상태 관리**: Riverpod 3.x (@riverpod annotation, 8개 Feature 모두 완료)
+> **Asset 관리**: FlutterGen v5.7.0 (타입 안전 asset 참조, 14개 파일 마이그레이션 완료)
 > **캐싱**: UnifiedCacheService 3-Layer (Memory → Hive → Firestore)
 > **에러 처리**: Either<Failure, T> 패턴 (fpdart 1.1.0)
 > **전체 완성도**: **87.5%** (7/8 Features 완료)
@@ -301,6 +302,247 @@ features/[feature_name]/
 
 ---
 
+## 🏛 BOUNDARIES - Clean Architecture Layer 경계
+
+### 개요
+
+Versus Space는 **Clean Architecture v4.0 + Feature-First** 구조로 설계되었습니다. 각 Layer는 명확한 책임과 의존성 규칙을 따릅니다.
+
+### App Layer 경계 규칙
+
+**App Layer 위치**: Presentation Layer의 일부 (Composition Root)
+**책임 범위**: 앱 진입점, 전역 Router, DI 설정, Infrastructure 초기화
+
+#### ✅ 허용되는 의존성
+
+1. **Feature Presentation Layer 의존** (위젯, Provider)
+   ```dart
+   // 화면 위젯 import
+   import '/features/auth/presentation/screens/start_page.dart';
+   import '/features/profile/presentation/routes/profile_routes.dart';
+
+   // Riverpod Provider 사용
+   final userId = ref.watch(currentUserIdProvider).value;
+   final updateLastActiveUseCase = ref.read(updateLastActiveUseCaseProvider);
+   ```
+
+2. **GetIt을 통한 Domain/Data Layer 간접 주입**
+   ```dart
+   // UseCase (GetIt DI)
+   final useCase = getIt<UpdateLastActiveUseCase>();
+   await useCase(userId);
+
+   // Repository (GetIt DI)
+   final repository = getIt<IProfileRepository>();
+   ```
+
+3. **Core Layer 공통 요소**
+   ```dart
+   import '/core/utils/debounce.dart';
+   import '/core/theme/app_theme.dart';
+   import '/core/design_system/design_system.dart';
+   ```
+
+4. **Infrastructure 관리를 위한 Firebase SDK** (제한적 허용)
+   ```dart
+   // ✅ 앱 초기화 (main.dart)
+   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+   // ✅ 앱 생명주기 관리 (app.dart)
+   FirebaseAuth.instance.authStateChanges().listen((user) {
+     // Infrastructure: 전역 서비스 초기화
+     final notificationService = getIt<INotificationService>();
+     notificationService.startListening(user.uid);
+
+     // Clean Architecture: UseCase 사용
+     final updateLastActiveUseCase = ref.read(updateLastActiveUseCaseProvider);
+     await updateLastActiveUseCase(user.uid);
+   });
+
+   // ✅ Router Guard (auth_guard.dart) - GoRouter 기술적 제약
+   static bool isAuthenticated() {
+     return FirebaseAuth.instance.currentUser != null;
+   }
+   ```
+
+#### ❌ 금지되는 의존성
+
+1. **Domain/Data Layer 직접 import**
+   ```dart
+   // ❌ 금지 - Repository 구현체 직접 import
+   import '/features/profile/data/repositories/profile_repository_impl.dart';
+   final repository = ProfileRepositoryImpl();  // 직접 인스턴스화
+
+   // ❌ 금지 - Domain Entity 직접 import (Presentation Provider 통해 접근)
+   import '/features/auth/domain/entities/auth_user.dart';
+   ```
+
+2. **비즈니스 로직을 위한 Firestore/Storage 직접 사용**
+   ```dart
+   // ❌ 금지 - App Layer에서 Firestore 직접 쿼리
+   await FirebaseFirestore.instance
+       .collection('users')
+       .doc(userId)
+       .update({'lastActive': FieldValue.serverTimestamp()});
+
+   // ✅ 올바른 방법 - UseCase 사용
+   final useCase = ref.read(updateLastActiveUseCaseProvider);
+   await useCase(userId);
+   ```
+
+### Feature Layer 경계 규칙
+
+**3-Layer 구조**: Presentation → Domain → Data
+
+#### Layer별 의존성 규칙
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Presentation Layer                         │
+│  • 의존: Domain Layer (UseCase, Entity, Repository          │
+│          Interface)                                          │
+│  • 금지: Data Layer, 다른 Feature Presentation               │
+│  • 패턴: Riverpod Provider, ConsumerWidget, AsyncValue      │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ Repository Interface 의존
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Domain Layer                             │
+│  • 의존: 없음 (Pure Dart)                                    │
+│  • 금지: Presentation, Data, Flutter SDK, Firebase           │
+│  • 패턴: UseCase, Entity (Freezed), Repository Interface     │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ Repository Interface 구현
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      Data Layer                              │
+│  • 의존: Domain Layer (Entity, Repository Interface)         │
+│  • 금지: Presentation Layer                                   │
+│  • 패턴: Repository 구현, Extension (fromFirestore,          │
+│          toFirestore), Firebase SDK 직접 사용                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 실무 예시
+
+**✅ Presentation → Domain (올바른 사용)**:
+```dart
+// Provider에서 UseCase 사용
+@riverpod
+FutureOr<UserProfile> userProfile(UserProfileRef ref, String userId) {
+  final useCase = getIt<GetUserProfileUseCase>();  // GetIt DI
+  return useCase.execute(userId: userId).then(
+    (either) => either.fold(
+      (failure) => throw Exception(failure.getUserMessage()),
+      (profile) => profile,
+    ),
+  );
+}
+```
+
+**✅ Domain → 독립성 (올바른 사용)**:
+```dart
+// Pure Dart (의존성 없음)
+class GetUserProfileUseCase {
+  final IProfileRepository _repository;
+
+  GetUserProfileUseCase(this._repository);
+
+  Future<Either<ProfileFailure, UserProfile>> execute({
+    required String userId,
+  }) {
+    return _repository.getUserProfile(userId);
+  }
+}
+```
+
+**✅ Data → Domain (올바른 사용)**:
+```dart
+// Repository 구현 (Domain Interface 구현)
+class ProfileRepositoryImpl implements IProfileRepository {
+  final FirebaseFirestore _firestore;
+
+  @override
+  Future<Either<ProfileFailure, UserProfile>> getUserProfile(String userId) async {
+    try {
+      // ✅ Data Layer는 Firestore 직접 접근 허용
+      final doc = await _firestore.collection('users').doc(userId).get();
+      if (!doc.exists) return left(ProfileFailure.notFound());
+
+      return right(UserProfile.fromFirestore(doc));
+    } catch (e) {
+      return left(ProfileFailure.serverError(e.toString()));
+    }
+  }
+}
+```
+
+**❌ 잘못된 사용**:
+```dart
+// ❌ Presentation → Data (Layer 건너뛰기)
+import '/features/profile/data/repositories/profile_repository_impl.dart';
+final repository = ProfileRepositoryImpl();  // 직접 인스턴스화
+
+// ❌ Domain → Presentation (역방향 의존)
+import 'package:flutter_riverpod/flutter_riverpod.dart';  // Flutter SDK
+
+// ❌ Domain → Data (Layer 건너뛰기)
+import '/features/profile/data/repositories/profile_repository_impl.dart';
+
+// ❌ Presentation → Firebase (Layer 책임 위반)
+final doc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+```
+
+### 경계 준수 검증
+
+#### 자동 검사
+
+```bash
+# 코드 분석 (Lint 검사)
+flutter analyze
+
+# import 패턴 확인
+# Presentation → Data 위반 검사
+grep -r "import.*data.*repositories" lib/features/*/presentation/
+
+# Domain → Flutter 위반 검사
+grep -r "import.*flutter" lib/features/*/domain/
+
+# Domain → Firebase 위반 검사
+grep -r "import.*firebase" lib/features/*/domain/
+```
+
+#### 수동 체크리스트
+
+**App Layer**:
+- [ ] app.dart에서 Domain/Data Layer 직접 import 없음
+- [ ] GetIt/Riverpod을 통한 간접 주입만 사용
+- [ ] Firebase SDK는 Infrastructure 관리 목적만 (앱 초기화, 생명주기)
+- [ ] 비즈니스 로직은 Feature Layer UseCase 사용
+
+**Feature Presentation Layer**:
+- [ ] Data Layer import 없음
+- [ ] UseCase/Entity/Repository Interface만 의존
+- [ ] Firebase SDK 사용 없음
+
+**Feature Domain Layer**:
+- [ ] Flutter/Firebase import 없음
+- [ ] Pure Dart 코드만 (외부 의존성 없음)
+- [ ] Freezed, fpdart 등 Pure Dart 라이브러리만 허용
+
+**Feature Data Layer**:
+- [ ] Presentation Layer import 없음
+- [ ] Domain Layer (Entity, Repository Interface)만 의존
+- [ ] Firebase SDK 사용 허용 (Firestore, Storage)
+
+### 참고 문서
+
+- **App Layer 상세**: [lib/app/README.md](lib/app/README.md)
+- **Router 시스템**: [lib/app/router/README.md](lib/app/router/README.md)
+- **Feature별 경계**: 각 Feature의 README.md 참조
+
+---
+
 ## ✅ Feature 완성도 매트릭스
 
 ### 전체 완성도: **87.5%** (7/8 Features 100% 완료)
@@ -436,6 +678,65 @@ dev_dependencies:
 **생성되는 파일**:
 - `*.freezed.dart`: Freezed 불변 클래스 (50개)
 - `*.g.dart`: JSON 직렬화 + Riverpod Provider (49개)
+
+### Asset 관리 (FlutterGen)
+
+```yaml
+dev_dependencies:
+  flutter_gen_runner: ^5.7.0         # Asset 코드 생성
+```
+
+**설정** (pubspec.yaml):
+```yaml
+flutter_gen:
+  output: lib/gen/
+  line_length: 80
+  integrations:
+    flutter_svg: false
+    rive: false
+    lottie: false
+  assets:
+    outputs:
+      class_name: Assets
+      style: snake-case  # images_pikle_icon
+  fonts:
+    outputs:
+      class_name: FontFamily
+```
+
+**생성되는 파일**:
+- `lib/gen/assets.gen.dart`: 모든 asset 경로 (이미지, 비디오, 오디오 등)
+- `lib/gen/fonts.gen.dart`: 폰트 패밀리 상수
+
+**사용 예시**:
+```dart
+import 'package:versus_space/gen/assets.gen.dart';
+import 'package:versus_space/gen/fonts.gen.dart';
+
+// ✅ 이미지 - 타입 안전
+Assets.images_pikle_icon.image(width: 100, height: 100)
+
+// ✅ ImageProvider (DecorationImage 등)
+Assets.images_login_header.provider()
+
+// ✅ 폰트 - IDE 자동완성
+Text('Welcome', style: TextStyle(fontFamily: FontFamily.sourGummy))
+
+// ❌ OLD - 문자열 (런타임 에러 위험)
+Image.asset('assets/images/pikle_icon.png')  // 오타 가능!
+Text('Welcome', style: TextStyle(fontFamily: 'SourGummy'))  // 오타 가능!
+```
+
+**장점**:
+- ✅ **타입 안전성**: 컴파일 타임에 asset 존재 여부 확인
+- ✅ **IDE 자동완성**: Assets. 입력 시 모든 asset 목록 표시
+- ✅ **리팩토링 안전**: 파일 이름 변경 시 자동 추적
+- ✅ **런타임 에러 방지**: 잘못된 경로로 인한 crash 제거
+
+**마이그레이션 완료** (2025-11-10):
+- 14개 파일 마이그레이션 완료
+- 기존 'assets/...' 문자열 패턴: 0개
+- FlutterGen 패턴 사용: 16개 (Images: 11, Fonts: 5)
 
 ### 에러 처리
 

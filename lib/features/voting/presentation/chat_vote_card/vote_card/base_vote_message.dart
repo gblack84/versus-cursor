@@ -64,7 +64,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/core/design_system/design_system.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '/features/auth/presentation/providers/auth_providers.dart';
 // ✅ Riverpod 3.x Migration
 import '../../providers/vote_submission_notifier.dart';
 
@@ -203,8 +203,8 @@ mixin BaseVoteMessageStateMixin<T extends BaseVoteMessage> on ConsumerState<T> {
     super.dispose();
   }
 
-  // Firebase Auth helper
-  String get currentUserUid => FirebaseAuth.instance.currentUser?.uid ?? '';
+  // Phase C-2: Auth Provider 사용
+  String get currentUserUid => ref.watch(currentUserIdProvider).value ?? '';
 
   /// 현재 사용자가 투표했는지 확인
   bool get hasCurrentUserVoted {

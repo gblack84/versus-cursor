@@ -4,39 +4,24 @@ import '/core_exports.dart';
 // Previous: /core/app_video_player.dart';
 // Previous: /core/app_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'editviedo_model.dart';
-export 'editviedo_model.dart';
+import 'editviedo_provider.dart';
+export 'editviedo_provider.dart';
+export 'editviedo_state.dart';
 
-class EditviedoWidget extends StatefulWidget {
+class EditviedoWidget extends ConsumerStatefulWidget {
   const EditviedoWidget({super.key});
 
   @override
-  State<EditviedoWidget> createState() => _EditviedoWidgetState();
+  ConsumerState<EditviedoWidget> createState() => _EditviedoWidgetState();
 }
 
-class _EditviedoWidgetState extends State<EditviedoWidget> {
-  late EditviedoModel _model;
-
-  @override
-  void setState(VoidCallback callback) {
-    super.setState(callback);
-    _model.onUpdate();
-  }
-
+class _EditviedoWidgetState extends ConsumerState<EditviedoWidget> {
   @override
   void initState() {
     super.initState();
-    _model = createModel(context, () => EditviedoModel());
-
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
-  }
-
-  @override
-  void dispose() {
-    _model.maybeDispose();
-
-    super.dispose();
   }
 
   @override
@@ -106,11 +91,14 @@ class _EditviedoWidgetState extends State<EditviedoWidget> {
                           inactiveColor: AppTheme.of(context).alternate,
                           min: 0.0,
                           max: 60.0,
-                          value: _model.sliderValue1 ??= _model.startSec,
+                          value: ref.watch(editviedoProvider).sliderValue1 ??
+                              ref.watch(editviedoProvider).startSec,
                           onChanged: (newValue) {
                             newValue =
                                 double.parse(newValue.toStringAsFixed(2));
-                            setState(() => _model.sliderValue1 = newValue);
+                            ref
+                                .read(editviedoProvider.notifier)
+                                .updateSlider1(newValue);
                           },
                         ),
                       ],
@@ -148,11 +136,14 @@ class _EditviedoWidgetState extends State<EditviedoWidget> {
                           inactiveColor: AppTheme.of(context).alternate,
                           min: 0.0,
                           max: 60.0,
-                          value: _model.sliderValue2 ??= _model.endSec,
+                          value: ref.watch(editviedoProvider).sliderValue2 ??
+                              ref.watch(editviedoProvider).endSec,
                           onChanged: (newValue) {
                             newValue =
                                 double.parse(newValue.toStringAsFixed(2));
-                            setState(() => _model.sliderValue2 = newValue);
+                            ref
+                                .read(editviedoProvider.notifier)
+                                .updateSlider2(newValue);
                           },
                         ),
                       ],

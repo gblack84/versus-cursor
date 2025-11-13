@@ -3,8 +3,8 @@ import 'package:fpdart/fpdart.dart';
 import 'package:uuid/uuid.dart';
 import '../../domain/repositories/i_post_metrics_repository.dart';
 import '../../domain/failures/post_failure.dart';
-import '/core/utils/idempotency_service.dart';
-import '/core/utils/shard_utils.dart';
+import '/services/idempotency/idempotency_service.dart';
+import '/services/sharding/shard_utils.dart';
 
 /// Implementation of post metrics repository
 /// CQRS 패턴 - Query 모델로 읽기 전용 통계 관리 구현체

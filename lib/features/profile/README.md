@@ -1,9 +1,9 @@
 # Profile Feature - 통합 문서
 
-> **최종 업데이트**: 2025-01-07
+> **최종 업데이트**: 2025-11-11
 > **아키텍처**: Clean Architecture v4.0 + Firebase-Centric v2.0 + 3-Layer Caching
 > **상태 관리**: Riverpod 3.x with @riverpod code generation
-> **Migration Status**: ✅ Phase 2, 4, 6, 6.5, 7 Complete (100%)
+> **Migration Status**: ✅ Phase 2, 4, 6, 6.5, 7, B-2 Complete (100%)
 
 ## 📋 목차
 
@@ -414,6 +414,169 @@ Stream<List<UserPostItem>> myPostsStream(Ref ref, String userId) {
 
 ---
 
+## 🏛️ BOUNDARIES - Clean Architecture 3-Layer 경계
+
+### Layer 의존성 규칙
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Presentation Layer                         │
+│  • 의존: Domain Layer (UseCase, Entity, Repository          │
+│          Interface)                                          │
+│  • 금지: Data Layer, 다른 Feature Presentation               │
+│  • 패턴: Riverpod Provider, ConsumerWidget, AsyncValue      │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ Repository Interface 의존
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Domain Layer                             │
+│  • 의존: 없음 (Pure Dart)                                    │
+│  • 금지: Presentation, Data, Flutter SDK, Firebase           │
+│  • 패턴: UseCase, Entity (Freezed), Repository Interface     │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ Repository Interface 구현
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      Data Layer                              │
+│  • 의존: Domain Layer (Entity, Repository Interface)         │
+│  • 금지: Presentation Layer                                   │
+│  • 패턴: Repository 구현, Extension (fromFirestore,          │
+│          toFirestore), Firebase SDK 직접 사용                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 실무 예시
+
+#### ✅ Presentation → Domain (올바른 사용)
+
+```dart
+// Provider에서 UseCase 사용
+@riverpod
+FutureOr<UserProfile> userProfile(Ref ref, String userId) async {
+  final useCase = getIt<GetUserProfileUseCase>();  // GetIt DI
+  final result = await useCase.execute(userId: userId);
+
+  return result.fold(
+    (failure) => throw Exception(failure.getUserMessage()),
+    (profile) => profile,
+  );
+}
+```
+
+#### ✅ Domain → 독립성 (올바른 사용)
+
+```dart
+// Pure Dart (의존성 없음)
+class GetUserProfileUseCase {
+  final IProfileRepository _repository;
+
+  GetUserProfileUseCase(this._repository);
+
+  Future<Either<ProfileFailure, UserProfile>> execute({
+    required String userId,
+  }) {
+    return _repository.getUserProfile(userId);
+  }
+}
+```
+
+#### ✅ Data → Domain (올바른 사용)
+
+```dart
+// Repository 구현 (Domain Interface 구현)
+class ProfileRepositoryImpl implements IProfileRepository {
+  final FirebaseFirestore _firestore;
+  final UnifiedCacheService _cacheService;
+
+  @override
+  Future<Either<ProfileFailure, UserProfile>> getUserProfile(String userId) async {
+    try {
+      // ✅ 3-Layer 캐싱 사용
+      final cached = await _cacheService.get<UserProfile>(
+        ProfileCacheKeys.userProfile(userId),
+      );
+      if (cached != null) return right(cached);
+
+      // ✅ Data Layer는 Firestore 직접 접근 허용
+      final doc = await _firestore.collection('users').doc(userId).get();
+      if (!doc.exists) return left(ProfileFailure.notFound());
+
+      final profile = UserProfile.fromFirestore(doc);
+      await _cacheService.set(ProfileCacheKeys.userProfile(userId), profile);
+
+      return right(profile);
+    } catch (e) {
+      return left(ProfileFailure.serverError(e.toString()));
+    }
+  }
+}
+```
+
+#### ❌ 잘못된 사용
+
+```dart
+// ❌ Presentation → Data (Layer 건너뛰기)
+import '/features/profile/data/repositories/profile_repository_impl.dart';
+final repository = ProfileRepositoryImpl();  // 직접 인스턴스화
+
+// ❌ Domain → Presentation (역방향 의존)
+import 'package:flutter_riverpod/flutter_riverpod.dart';  // Flutter SDK
+
+// ❌ Domain → Data (Layer 건너뛰기)
+import '/features/profile/data/repositories/profile_repository_impl.dart';
+
+// ❌ Presentation → Firestore (Layer 책임 위반)
+final doc = await FirebaseFirestore.instance
+    .collection('users')
+    .doc(userId)
+    .get();
+```
+
+### 경계 준수 검증
+
+#### 자동 검사
+
+```bash
+# Presentation → Data 위반 검사
+grep -r "import.*data.*repositories" lib/features/profile/presentation/
+
+# Domain → Flutter 위반 검사
+grep -r "import.*flutter" lib/features/profile/domain/
+
+# Domain → Firebase 위반 검사
+grep -r "import.*firebase" lib/features/profile/domain/
+
+# 기대 결과: 모두 발견되지 않아야 함
+```
+
+#### 수동 체크리스트
+
+**Presentation Layer**:
+- [x] Data Layer import 없음
+- [x] UseCase/Entity/Repository Interface만 의존
+- [x] Firebase SDK 사용 없음
+- [x] Riverpod Provider 패턴 사용
+
+**Domain Layer**:
+- [x] Flutter/Firebase import 없음
+- [x] Pure Dart 코드만 (외부 의존성 없음)
+- [x] Freezed, fpdart 등 Pure Dart 라이브러리만 허용
+- [x] Repository Interface 정의
+
+**Data Layer**:
+- [x] Presentation Layer import 없음
+- [x] Domain Layer (Entity, Repository Interface)만 의존
+- [x] Firebase SDK 사용 허용 (Firestore)
+- [x] 3-Layer 캐싱 시스템 통합
+
+### 참고 문서
+
+- **전체 아키텍처**: [CLAUDE.md - BOUNDARIES 섹션](../../../CLAUDE.md#boundaries)
+- **App Layer 경계**: [lib/app/README.md - BOUNDARIES](../../../lib/app/README.md#boundaries)
+- **Feature 내부 README**: [Presentation](presentation/README.md) | [Domain](domain/README.md) | [Data](data/README.md)
+
+---
+
 ## 🎯 빠른 참조 가이드
 
 ### 찾고자 하는 것 → 참조할 README 섹션
@@ -432,6 +595,370 @@ Stream<List<UserPostItem>> myPostsStream(Ref ref, String userId) {
 | **Extension Pattern** | `data/README.md` | Extension Pattern | `domain/models/user_profile_extensions.dart` |
 | **IdempotencyService 사용** | `data/README.md` | Idempotency | `data/repositories/interests_repository_impl.dart` |
 | **DI 설정** | `di/profile_di_module.dart` | - | `di/profile_di_module.dart` |
+
+---
+
+## 🗺 Router Integration
+
+Profile Feature는 GoRouter 기반 라우팅을 사용하며, **Phase 6.5 Feature 독립성** 패턴을 준수합니다.
+
+### 라우트 구성
+
+**파일 위치**: `lib/features/profile/presentation/routes/profile_routes.dart` (123줄)
+
+Profile Feature는 **6개의 라우트**를 제공합니다:
+
+| # | 라우트 이름 | 경로 | requireAuth | 파라미터 | 목적 |
+|---|------------|------|-------------|---------|------|
+| 1 | `ProfileEditPageWidget.routeName` | `/profileEdit` | ✅ true (PRIVATE) | - | 프로필 편집 (DisplayName, Bio, Interests) |
+| 2 | `SettingsPageWidget.routeName` | `/settings` | ✅ true (PRIVATE) | - | 앱 설정 (Notifications, Privacy, Theme) |
+| 3 | `UserPostsListWidget.routeName` | `/myPosts` | ✅ true (PRIVATE) | `userId` (String, 선택) | 내 게시물 목록 (Phase 6.5: Feature 독립성) |
+| 4 | `OnboardingFlowWidget.routeName` | `/onboarding` | ✅ true (PRIVATE) | - | 온보딩 플로우 (Character, Interests 선택) |
+| 5 | `UserInfoDisplayScreen.routeName` | `/profile/:userId` | ❌ false (PUBLIC) | `userId` (String, 필수, PathParameter) | 다른 사용자 프로필 조회 |
+| 6 | `UserInfoInputWidget.routeName` | `/profileInput` | ✅ true (PRIVATE) | - | 프로필 초기 입력 (회원가입 후) |
+
+**총 라우트**: 6개 (5개 PRIVATE + 1개 PUBLIC)
+
+### PUBLIC vs PRIVATE Routes
+
+Profile Feature는 **5:1 비율**로 PRIVATE 라우트가 우세합니다.
+
+#### PRIVATE Routes (5개) - requireAuth: true
+
+```dart
+// ✅ PRIVATE - 본인만 접근 가능
+AppRoute(
+  name: ProfileEditPageWidget.routeName,
+  path: ProfileEditPageWidget.routePath,
+  requireAuth: true,  // AuthGuard 자동 적용
+  builder: (context, params) => ProfileEditPageWidget(),
+).toRoute(ref),
+```
+
+**PRIVATE 라우트**:
+1. **ProfileEdit** - 자신의 프로필 편집 (DisplayName, Bio, Interests, ProfileImage)
+2. **Settings** - 앱 설정 변경 (Notifications, Privacy, Theme, Language)
+3. **UserPostsList** - 자신이 작성한 게시물 목록 (Phase 6.5: Post Feature 독립)
+4. **OnboardingFlow** - 온보딩 완료 (Character 선택, Interests 설정)
+5. **UserInfoInput** - 프로필 초기 입력 (회원가입 직후)
+
+#### PUBLIC Route (1개) - requireAuth: false
+
+```dart
+// ✅ PUBLIC - 누구나 접근 가능
+AppRoute(
+  name: UserInfoDisplayScreen.routeName,
+  path: UserInfoDisplayScreen.routePath, // '/profile/:userId'
+  requireAuth: false,  // 로그인 없이 프로필 조회 가능
+  builder: (context, params) => UserInfoDisplayScreen(
+    userID: params.getParam('userId', ParamType.String),
+  ),
+).toRoute(ref),
+```
+
+**PUBLIC 라우트**:
+- **UserInfoDisplay** (`/profile/:userId`) - 다른 사용자 프로필 조회
+  - **왜 PUBLIC?** 프로필 링크 공유 시 로그인 없이 조회 가능 (바이럴 효과)
+  - **SEO 친화**: 크롤러가 프로필 페이지 인덱싱 가능
+  - **딥링크 지원**: `versus://profile/abc123` → 직접 프로필 접근
+
+**근거**:
+| Route | Access Level | 이유 |
+|-------|--------------|------|
+| **ProfileEdit, Settings, UserInfoInput** | PRIVATE | 본인만 수정 가능 |
+| **UserPostsList** | PRIVATE | 본인 게시물 관리 (Phase 6.5: Feature 독립성) |
+| **OnboardingFlow** | PRIVATE | 회원가입 후 1회만 접근 |
+| **UserInfoDisplay** | PUBLIC | 프로필 공유 + SEO + 바이럴 |
+
+### Phase 6.5 Feature 독립성
+
+Profile Feature는 **Phase 6.5**에서 Post Feature 의존성을 제거했습니다.
+
+#### Before Phase 6.5
+
+```dart
+// ❌ 문제: Post Feature에 직접 의존
+AppRoute(
+  name: 'myPosts',
+  path: '/myPosts',
+  requireAuth: true,
+  builder: (context, params) {
+    // Post Feature의 PostListWidget 직접 사용
+    return PostFeature.PostListWidget(userId: currentUserId);
+  },
+).toRoute(ref),
+```
+
+**문제점**:
+- Feature 간 순환 의존성 발생 가능
+- Post Feature 변경 시 Profile Feature도 영향
+- 테스트 격리 불가능
+
+#### After Phase 6.5
+
+```dart
+// ✅ 해결: Profile Feature 자체 MyPosts 구현
+AppRoute(
+  name: UserPostsListWidget.routeName,
+  path: UserPostsListWidget.routePath,
+  requireAuth: true,
+  builder: (context, params) => UserPostsListWidget(
+    userId: params.getParam('userId', ParamType.String),
+  ),
+).toRoute(ref),
+```
+
+**개선사항**:
+1. **독립성**: Profile Feature가 Post Feature에 의존하지 않음
+2. **Infrastructure 계층 공유**: PostRepository는 Infrastructure에서 공유
+3. **테스트 용이**: Feature 단독 테스트 가능
+4. **유지보수성**: Post Feature 변경이 Profile에 영향 없음
+
+**Architecture**:
+```
+Profile Feature → Infrastructure (PostRepository Interface)
+Post Feature    → Infrastructure (PostRepository Interface)
+
+(Feature들은 서로를 모르지만, Infrastructure를 통해 통신)
+```
+
+### 3-Layer 캐싱 통합
+
+Profile Feature의 라우트는 **3-Layer 캐싱 시스템**과 통합되어 있습니다.
+
+#### 캐싱 적용 라우트
+
+| Route | 캐싱 대상 | L1 Memory | L2 Hive | L3 Firestore |
+|-------|----------|-----------|---------|--------------|
+| **ProfileEdit** | UserProfile (44 fields) | 5분 TTL | 영구 | 오프라인 캐시 |
+| **Settings** | UserSettings (9 fields) | 5분 TTL | 영구 | 오프라인 캐시 |
+| **UserPostsList** | Post[] (Phase 6.5) | 5분 TTL | 영구 | 오프라인 캐시 |
+| **UserInfoDisplay** | ProfileInfo (12 fields, 경량) | 5분 TTL | 영구 | 오프라인 캐시 |
+| **UserInfoInput** | Draft (자동 저장) | 30초 TTL | 1일 | - |
+
+#### 캐싱 성능 (Phase 7 완료)
+
+**Before 3-Layer Caching**:
+```dart
+// ❌ 매번 Firestore 조회 (300-500ms)
+@riverpod
+Future<UserProfile> userProfile(UserProfileRef ref, String userId) async {
+  final doc = await firestore.collection('users').doc(userId).get();
+  return UserProfile.fromFirestore(doc);
+}
+```
+
+**After 3-Layer Caching**:
+```dart
+// ✅ 3-Layer 캐싱 (L1 Hit: <10ms, 95% 성능 향상)
+@riverpod
+Future<UserProfile> userProfile(UserProfileRef ref, String userId) async {
+  // L1 Memory 확인 (LRU 100개, 5분 TTL)
+  final cached = _memoryCache.get<UserProfile>('profile_$userId');
+  if (cached != null) return cached;  // <10ms
+
+  // L2 Hive 확인 (영구 저장)
+  final local = await _hiveCache.get('profile_$userId');
+  if (local != null) {
+    _memoryCache.set('profile_$userId', local);  // L1에 승격
+    return local;  // 10-30ms
+  }
+
+  // L3 Firestore 조회 (오프라인 캐시 지원)
+  final doc = await firestore.collection('users').doc(userId).get();
+  final profile = UserProfile.fromFirestore(doc);
+
+  // 모든 레이어에 저장
+  await _cacheService.set('profile_$userId', profile);
+  return profile;  // 50-100ms
+}
+```
+
+**성능 지표** (Phase 7 완료):
+- **앱 재시작 시간**: 300-500ms → 10-30ms (95% 향상)
+- **Cache Hit Rate**: 60% → 95%
+- **오프라인 지원**: 0% → 100%
+- **Firestore 비용**: 97% 절감
+
+### 사용 예시
+
+#### 1. 타입 안전 네비게이션 (권장)
+
+```dart
+// 프로필 편집 화면으로 이동
+context.goNamed(ProfileRoutes.profileEdit);
+
+// 설정 화면으로 이동
+context.goNamed(ProfileRoutes.settings);
+
+// 온보딩 플로우 시작
+context.goNamed(ProfileRoutes.onboardingFlow);
+
+// 내 게시물 목록 (Phase 6.5: Feature 독립성)
+context.goNamed(ProfileRoutes.myPosts);
+```
+
+#### 2. PathParameter 사용 (UserInfoDisplay)
+
+```dart
+// 다른 사용자 프로필 조회 (PUBLIC 라우트)
+context.goNamed(
+  ProfileRoutes.profileDisplay,
+  pathParameters: {
+    'userId': targetUserId,  // PathParameter (필수)
+  },
+);
+
+// URL: /profile/abc123def456
+// GoRouter가 자동으로 userId 파싱
+```
+
+#### 3. 조건부 네비게이션 (AuthGuard 통합)
+
+```dart
+// AuthGuard가 자동으로 인증 체크 (requireAuth: true)
+context.goNamed(ProfileRoutes.profileEdit);
+
+// 미인증 시 자동 리다이렉션 → /startPage
+// 인증 후 원래 경로로 복귀
+```
+
+#### 4. 캐싱과 함께 사용
+
+```dart
+// Provider에서 3-Layer 캐싱 자동 적용
+final profileAsync = ref.watch(userProfileProvider(userId));
+
+profileAsync.when(
+  data: (profile) {
+    // L1 Memory Hit: <10ms (95% 케이스)
+    // L2 Hive Hit: 10-30ms (앱 재시작 시)
+    // L3 Firestore: 50-100ms (캐시 Miss 시)
+    return ProfileWidget(profile: profile);
+  },
+  loading: () => CircularProgressIndicator(),
+  error: (e, s) => ErrorWidget(error: e),
+);
+```
+
+#### 5. Push 네비게이션 (스택에 추가)
+
+```dart
+// 프로필 편집 화면을 스택에 추가 (뒤로가기 가능)
+context.pushNamed(ProfileRoutes.profileEdit);
+
+// 다른 사용자 프로필 Push
+context.pushNamed(
+  ProfileRoutes.profileDisplay,
+  pathParameters: {'userId': userId},
+);
+```
+
+#### 6. Phase 6.5 패턴: My Posts 라우트
+
+```dart
+// Profile Feature 내에서 내 게시물 조회 (Feature 독립성)
+context.goNamed(
+  ProfileRoutes.myPosts,
+  queryParameters: {
+    'userId': currentUserId,  // 선택적 파라미터
+  },
+);
+
+// UserPostsListWidget 내부에서 Infrastructure의 PostRepository 사용
+// Post Feature에 직접 의존하지 않음 (Phase 6.5: Feature 독립성)
+```
+
+### nav.dart 통합
+
+Profile Feature의 6개 라우트는 `lib/app/router/navigation/nav.dart`에 통합되어 있습니다.
+
+```dart
+// /lib/app/router/navigation/nav.dart (line 137)
+routes: [
+  ...AuthRoutes.routes(ref),        // 6개 (최우선)
+  ...ProfileRoutes.routes(ref),     // 6개 (5 PRIVATE + 1 PUBLIC)
+  ...ChatRoutes.routes(ref),        // 2개
+  // ... 다른 Feature Routes
+],
+```
+
+**병합 순서**:
+1. AuthRoutes (6개) - 앱 진입점
+2. **ProfileRoutes (6개)** - 프로필 관리 (Phase 6.5: Feature 독립성)
+3. ChatRoutes (2개)
+4. VotingRoutes (0개 - 다이얼로그)
+5. CreationRoutes (2개)
+6. NotificationRoutes (4개)
+7. PostRoutes (3개)
+8. SearchRoutes (0개 - Phase 4-5 대기)
+
+### Type-Safe Navigation 상수
+
+Profile Feature는 타입 안전 네비게이션을 위한 static getter를 제공합니다:
+
+```dart
+// lib/features/profile/presentation/routes/profile_routes.dart
+
+class ProfileRoutes {
+  /// Route names for type-safe navigation
+  static String get profileEdit => ProfileEditPageWidget.routeName;
+  static String get settings => SettingsPageWidget.routeName;
+  static String get myPosts => UserPostsListWidget.routeName;
+  static String get onboardingFlow => OnboardingFlowWidget.routeName;
+  static String get profileDisplay => UserInfoDisplayScreen.routeName;
+  static String get profileInput => UserInfoInputWidget.routeName;
+
+  /// Route paths for reference
+  static String get profileEditPath => ProfileEditPageWidget.routePath;
+  static String get settingsPath => SettingsPageWidget.routePath;
+  static String get myPostsPath => UserPostsListWidget.routePath;
+  static String get onboardingFlowPath => OnboardingFlowWidget.routePath;
+  static String get profileDisplayPath => UserInfoDisplayScreen.routePath;
+  static String get profileInputPath => UserInfoInputWidget.routePath;
+}
+```
+
+**사용법**:
+```dart
+// ✅ 타입 안전 (컴파일 타임 체크)
+context.goNamed(ProfileRoutes.profileEdit);
+
+// ❌ 하드코딩 (오타 위험)
+context.goNamed('profileEditPage');
+```
+
+### 딥링크 지원
+
+Profile Feature는 외부 링크로 직접 접근 가능합니다 (PUBLIC 라우트만):
+
+```dart
+// 외부 링크로 프로필 조회 (PUBLIC)
+https://versus.app/profile/abc123def456
+
+// GoRouter가 자동으로 라우팅:
+// 1. /profile/abc123def456 경로 파싱
+// 2. UserInfoDisplayScreen.routePath 매칭 ('/profile/:userId')
+// 3. userId 파라미터 추출 (abc123def456)
+// 4. UserInfoDisplayScreen 렌더링 (3-Layer 캐싱 적용)
+```
+
+**지원 딥링크**:
+- `versus://profile/:userId` - 사용자 프로필 조회 (PUBLIC)
+- `versus://profileEdit` - 프로필 편집 (PRIVATE - AuthGuard 체크)
+- `versus://settings` - 설정 (PRIVATE)
+- `versus://myPosts` - 내 게시물 (PRIVATE, Phase 6.5)
+- `versus://onboarding` - 온보딩 (PRIVATE)
+- `versus://profileInput` - 프로필 입력 (PRIVATE)
+
+### 참조 문서
+
+- [profile_routes.dart 소스 코드](./presentation/routes/profile_routes.dart) (123줄)
+- [Phase 6.5: Feature 독립성](./PHASE_6_5_FEATURE_ISOLATION.md) - Post Feature 의존성 제거
+- [Phase 7: 3-Layer 캐싱](./PHASE_7_THREE_LAYER_CACHING.md) - 95% 성능 향상
+- [GoRouter 공식 문서](https://pub.dev/packages/go_router)
+- [AppRoute 패턴](/lib/app/router/README.md)
+- [Navigation 상세 가이드](/lib/app/router/navigation/README.md)
 
 ---
 
@@ -667,6 +1194,7 @@ final repository = GetIt.instance<IUserRepository>();
 | **Phase 6** | 2025-01-21 | 대규모 정리 (20→3 메서드) | 85% 메서드 축소, 1,329줄 삭제 |
 | **Phase 6.5** | 2025-01-07 | ⭐ Feature 독립성 확보 | Post 의존 제거, 75% 데이터 경량화 |
 | **Phase 7** | 2025-01-30 | 🔥 3-Layer 캐싱 통합 | 95% 성능 향상, 97% 비용 절감 |
+| **Phase B-2** | 2025-11-11 | ✅ UpdateLastActiveUseCase 생성 | Clean Architecture 준수, app.dart → UseCase 패턴 |
 
 ---
 

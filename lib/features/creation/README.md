@@ -83,6 +83,7 @@ flutter analyze
 - [전체 디렉토리 구조](#-전체-디렉토리-구조)
 - [아키텍처 개요](#-아키텍처-개요)
 - [핵심 기능](#-핵심-기능)
+- [BOUNDARIES - Clean Architecture 3-Layer 경계](#️-boundaries---clean-architecture-3-layer-경계)
 - [빠른 참조 가이드](#-빠른-참조-가이드)
 - [레이어별 README 안내](#-레이어별-readme-안내)
 - [주요 파일 위치](#-주요-파일-위치)
@@ -360,6 +361,258 @@ lib/features/creation/
 
 ---
 
+## 🏛️ BOUNDARIES - Clean Architecture 3-Layer 경계
+
+Creation Feature는 **Clean Architecture v4.0**의 3-Layer 구조를 따르며, 각 Layer 간 의존성 방향을 엄격히 준수합니다.
+
+### 3-Layer 의존성 규칙
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Presentation Layer                         │
+│  • 의존: Domain Layer (UseCase, Entity, Repository          │
+│          Interface)                                          │
+│  • 금지: Data Layer, 다른 Feature Presentation               │
+│  • 패턴: Riverpod Provider, ConsumerWidget, AsyncValue      │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ Repository Interface 의존
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Domain Layer                             │
+│  • 의존: 없음 (Pure Dart)                                    │
+│  • 금지: Presentation, Data, Flutter SDK, Firebase           │
+│  • 패턴: UseCase, Entity (Freezed Sealed), Repository       │
+│          Interface                                           │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ Repository Interface 구현
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      Data Layer                              │
+│  • 의존: Domain Layer (Entity, Repository Interface)         │
+│  • 금지: Presentation Layer                                   │
+│  • 패턴: Repository 구현, Extension (fromFirestore,          │
+│          toFirestore), Firebase SDK 직접 사용                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 실전 예시
+
+#### 1. ✅ Presentation → Domain (올바른 사용)
+
+```dart
+// presentation/providers/create_post_notifier.dart
+@riverpod
+class CreatePostNotifier extends _$CreatePostNotifier {
+  @override
+  PostCreation build() => PostCreation.initial();
+
+  Future<void> createPost() async {
+    final useCase = getIt<CreatePostUseCase>();
+    final result = await useCase.execute(state);
+
+    result.fold(
+      (failure) => throw Exception(failure.getUserMessage()),
+      (postId) {
+        state = PostCreation.initial();
+        // Navigate to post detail
+      },
+    );
+  }
+
+  Future<void> uploadMedia(List<File> files) async {
+    final useCase = getIt<UploadMediaUseCase>();
+
+    for (final file in files) {
+      final result = await useCase.execute(file);
+
+      result.fold(
+        (failure) => throw Exception(failure.getUserMessage()),
+        (mediaUrl) {
+          state = state.copyWith(
+            mediaUrls: [...state.mediaUrls, mediaUrl],
+          );
+        },
+      );
+    }
+  }
+}
+```
+
+#### 2. ✅ Domain → 독립성 (올바른 사용)
+
+```dart
+// domain/usecases/create_post_usecase.dart
+class CreatePostUseCase {
+  final IPostRepository _repository;
+  final IAIModerationService _aiService;
+
+  CreatePostUseCase(this._repository, this._aiService);
+
+  Future<Either<CreationFailure, String>> execute(
+    PostCreation creation,
+  ) async {
+    // AI 검열
+    final moderationResult = await _aiService.moderateContent(
+      title: creation.title,
+      description: creation.description,
+    );
+
+    if (moderationResult.isLeft()) {
+      return left(CreationFailure.inappropriateContent());
+    }
+
+    // 게시물 생성
+    return _repository.createPost(creation);
+  }
+}
+
+// domain/usecases/upload_media_usecase.dart
+class UploadMediaUseCase {
+  final IMediaRepository _repository;
+
+  UploadMediaUseCase(this._repository);
+
+  Future<Either<CreationFailure, String>> execute(File file) {
+    return _repository.uploadMedia(file);
+  }
+}
+
+// domain/entities/post_creation.dart (Freezed)
+@freezed
+class PostCreation with _$PostCreation {
+  const factory PostCreation({
+    required String title,
+    required String description,
+    required String optionAText,
+    required String optionBText,
+    required List<String> mediaUrls,
+    required TargetAudience targetAudience,
+  }) = _PostCreation;
+
+  factory PostCreation.initial() => PostCreation(
+    title: '',
+    description: '',
+    optionAText: '',
+    optionBText: '',
+    mediaUrls: [],
+    targetAudience: TargetAudience.all(),
+  );
+}
+```
+
+#### 3. ✅ Data → Domain (올바른 사용)
+
+```dart
+// data/repositories/post_repository_impl.dart
+class PostRepositoryImpl implements IPostRepository {
+  final FirebaseFirestore _firestore;
+  final UnifiedCacheService _cacheService;
+
+  @override
+  Future<Either<CreationFailure, String>> createPost(
+    PostCreation creation,
+  ) async {
+    try {
+      // ✅ Data Layer는 Firestore 직접 접근 허용
+      final docRef = await _firestore.collection('posts').add({
+        'title': creation.title,
+        'description': creation.description,
+        'optionAText': creation.optionAText,
+        'optionBText': creation.optionBText,
+        'mediaUrls': creation.mediaUrls,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      return right(docRef.id);
+    } catch (e) {
+      return left(CreationFailure.serverError(e.toString()));
+    }
+  }
+}
+
+// data/repositories/media_repository_impl.dart
+class MediaRepositoryImpl implements IMediaRepository {
+  final FirebaseStorage _storage;
+
+  @override
+  Future<Either<CreationFailure, String>> uploadMedia(File file) async {
+    try {
+      // ✅ Data Layer는 Firebase Storage 직접 접근 허용
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final ref = _storage.ref().child('media/$fileName');
+
+      final uploadTask = ref.putFile(file);
+      final snapshot = await uploadTask;
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+
+      return right(downloadUrl);
+    } catch (e) {
+      return left(CreationFailure.uploadError(e.toString()));
+    }
+  }
+}
+```
+
+#### 4. ❌ 잘못된 사용 패턴
+
+```dart
+// ❌ Presentation Layer에서 Firestore 직접 접근
+@riverpod
+class CreatePostNotifier extends _$CreatePostNotifier {
+  Future<void> createPost() async {
+    final docRef = await FirebaseFirestore.instance
+        .collection('posts')
+        .add({
+      'title': state.title,
+      'description': state.description,
+    });
+  }
+}
+
+// ❌ Domain Layer에서 Firebase 의존성
+class CreatePostUseCase {
+  Future<String> execute(PostCreation creation) async {
+    final docRef = await FirebaseFirestore.instance
+        .collection('posts')
+        .add(creation.toJson());
+    return docRef.id;
+  }
+}
+```
+
+### Boundary 검증
+
+#### 자동 검증 (Lint)
+
+```bash
+# Presentation → Data 위반 검사
+grep -r "import.*creation.*data" lib/features/creation/presentation/
+
+# Domain → Firebase 의존성 검사
+grep -r "import.*firebase" lib/features/creation/domain/
+
+# 기대 결과: 발견되지 않아야 함
+```
+
+#### 수동 검증 체크리스트
+
+- [ ] Presentation Layer는 UseCase만 호출하는가?
+- [ ] Domain Layer는 Pure Dart만 사용하는가? (Firebase/Flutter SDK 없음)
+- [ ] Data Layer는 Repository Interface를 구현하는가?
+- [ ] GetIt으로 UseCase/Repository를 DI하는가?
+- [ ] Either 패턴으로 에러를 반환하는가?
+- [ ] Freezed Sealed Class로 Failure 타입을 정의하는가?
+
+### 참고 문서
+
+- **전체 프로젝트 Boundaries**: `/CLAUDE.md` - "## 🏛 BOUNDARIES" 섹션
+- **App Layer Boundaries**: `/lib/app/README.md` - "### 🏛️ BOUNDARIES" 섹션
+- **Creation Domain Layer**: `domain/README.md` - UseCase, Entity, Failure
+- **Creation Data Layer**: `data/README.md` - Repository 구현, Extension
+- **Creation Presentation Layer**: `presentation/README.md` - Provider, Widget
+
+---
+
 ## 🎯 빠른 참조 가이드
 
 ### 찾고자 하는 것 → 참조할 README 섹션
@@ -383,6 +636,418 @@ lib/features/creation/
 | **Queue Upload** | `presentation/README.md` | MediaUpload 섹션 | `presentation/providers/media/media_upload_notifier.dart` |
 | **Korean Localization** | `presentation/README.md` | Delegates 섹션 | `presentation/delegates/korean_asset_picker_text_delegate.dart` |
 | **DI 설정** | `di/creation_di_module.dart` | - | `di/creation_di_module.dart` |
+
+---
+
+## 🧭 Navigation Patterns
+
+**파일**: [./presentation/routes/creation_routes.dart](./presentation/routes/creation_routes.dart)
+
+Creation Feature는 **Feature Routes 패턴**을 사용하여 2개의 라우트를 관리합니다.
+
+### 라우트 구성
+
+| Route | Path | requireAuth | 설명 |
+|-------|------|-------------|------|
+| **createPost** | `/create` | ✅ true | 게시물 생성 페이지 (3-Step Wizard) |
+| **targetAudience** | `/create/target` | ✅ true | AI 타겟팅 위자드 (Phase 1.1 완료) |
+
+**모든 라우트는 인증 필수** (`requireAuth: true`):
+- 게시물 생성은 로그인 필수 (악의적 사용 방지)
+- AuthGuard 자동 적용 (Phase 4 Redirect Location Management)
+- Guard Analytics 이벤트 자동 기록 (Phase 5)
+
+### Phase 1.1 마이그레이션 (2025-11-10)
+
+**Before (nav.dart 직접 정의)**:
+```dart
+GoRoute(
+  path: '/create',
+  name: 'createPost',
+  builder: (context, state) => CreatePostPage(),
+)
+```
+
+**After (Feature Routes + AppRoute 패턴)**:
+```dart
+AppRoute(
+  name: 'createPost',
+  path: '/create',
+  requireAuth: true,  // AuthGuard 자동 통합
+  builder: (context, params) => CreatePostPage(),
+).toRoute(ref)
+```
+
+**주요 개선**:
+- ✅ `requireAuth: true` → AuthGuard 자동 적용
+- ✅ AppRoute 패턴 → 즉시 전환 (0ms, NoTransitionPage)
+- ✅ WidgetRef 파라미터 → Riverpod 통합 지원
+- ✅ 타입 안전 네비게이션 → `CreationRoutes` 상수
+
+### 사용 예시
+
+#### 1. 기본 네비게이션
+
+```dart
+import '/features/creation/presentation/routes/creation_routes.dart';
+
+// 게시물 생성 페이지로 이동
+context.goNamed(CreationRoutes.createPost);
+
+// AI 타겟팅 위자드로 이동
+context.goNamed(CreationRoutes.targetAudience);
+```
+
+#### 2. 인증 체크 + 네비게이션
+
+```dart
+// mounted 체크 포함 (위젯이 마운트된 상태에서만 이동)
+context.goNamedAuth(
+  CreationRoutes.createPost,
+  mounted,
+);
+```
+
+#### 3. FAB (Floating Action Button) → 게시물 생성
+
+```dart
+// HomePageWidget의 FAB 클릭 시
+FloatingActionButton(
+  onPressed: () {
+    // 로그인 체크 후 생성 페이지로 이동
+    context.goNamedAuth(
+      CreationRoutes.createPost,
+      mounted,
+    );
+  },
+  child: Icon(Icons.add),
+)
+```
+
+#### 4. Draft 복구 → 게시물 생성 재개
+
+```dart
+// Draft가 있을 때 자동으로 복구
+@override
+void initState() {
+  super.initState();
+
+  // Draft 확인
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    final draftExists = await ref.read(
+      draftExistsProvider.future,
+    );
+
+    if (draftExists) {
+      // Draft 복구 다이얼로그 표시
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('작성 중인 게시물이 있습니다'),
+          content: Text('이어서 작성하시겠습니까?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                // Draft 삭제
+                ref.read(createPostNotifierProvider.notifier).clearDraft();
+              },
+              child: Text('새로 작성'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                // Draft 복구
+                ref.read(createPostNotifierProvider.notifier).loadDraft();
+                // 생성 페이지로 이동
+                context.goNamed(CreationRoutes.createPost);
+              },
+              child: Text('이어서 작성'),
+            ),
+          ],
+        ),
+      );
+    }
+  });
+}
+```
+
+### AuthGuard Integration
+
+모든 Creation 라우트는 **AuthGuard**로 보호됩니다:
+
+```dart
+// GoRouter의 redirect 콜백에서 자동 체크
+redirect: (context, state) {
+  final redirectPath = AuthGuard.checkAuth(
+    context: context,
+    currentPath: state.uri.path,
+  );
+
+  // 미인증 사용자:
+  // 1. NavigationNotifier.setRedirectLocation('/create') 저장
+  // 2. Guard Analytics 이벤트 기록 (result='blocked', reason='auth_required')
+  // 3. '/startPage'로 리다이렉션
+
+  // 로그인 성공 후:
+  // 1. Guard Analytics 이벤트 기록 (result='allowed', reason='authenticated')
+  // 2. '/create'로 자동 이동
+  // 3. redirectLocation 초기화
+
+  return redirectPath;
+}
+```
+
+**참조**:
+- [AuthGuard 전체 가이드](/lib/app/router/guards/README.md)
+- [Phase 4: Redirect Location Management](/lib/app/router/guards/README.md#redirect-location-management)
+- [Phase 5: Guard Analytics](/lib/app/router/guards/README.md#phase-5-guard-analytics)
+
+### 3-Step Wizard Navigation
+
+게시물 생성은 **3단계 위자드**로 구성됩니다:
+
+**Step 1: 연령/성별 선택** (`AgeGenderSelectionDialog`)
+```dart
+// Step 1 → Step 2 이동
+void _onAgeGenderNext() {
+  setState(() {
+    _currentStep = 2;  // InterestsSelectionDialog
+  });
+}
+```
+
+**Step 2: 관심사 선택** (`InterestsSelectionDialog`)
+```dart
+// Step 2 → Step 3 이동
+void _onInterestsNext() {
+  setState(() {
+    _currentStep = 3;  // AIRecommendationDialog
+  });
+}
+```
+
+**Step 3: AI 추천** (`AIRecommendationDialog`)
+```dart
+// AI 타겟팅 완료 → Firebase Functions 호출
+Future<void> _onAIRecommendationConfirm() async {
+  // 1. Gemini AI로 타겟 유저 선정
+  final targetUsers = await ref.read(
+    aiTargetingProvider(postContent).future,
+  );
+
+  // 2. Firebase Functions 호출 (sendNotificationsByAI)
+  await ref.read(createPostNotifierProvider.notifier).sendNotifications(
+    targetUsers: targetUsers,
+  );
+
+  // 3. 생성 완료 → 홈으로 이동
+  if (mounted) {
+    context.go('/home');
+  }
+}
+```
+
+### Draft 자동 저장 (500ms Debounce)
+
+게시물 생성 중 **자동으로 Draft 저장**:
+
+```dart
+class CreatePostNotifier extends _$CreatePostNotifier {
+  Timer? _autoSaveTimer;
+
+  // 제목 변경 시
+  void updateTitle(String title) {
+    state = state.copyWith(title: title);
+    _scheduleDraftSave();
+  }
+
+  // 설명 변경 시
+  void updateDescription(String description) {
+    state = state.copyWith(description: description);
+    _scheduleDraftSave();
+  }
+
+  // 500ms Debounce
+  void _scheduleDraftSave() {
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = Timer(Duration(milliseconds: 500), () {
+      _saveDraft();
+    });
+  }
+
+  // Draft 저장 (CreationCacheService)
+  Future<void> _saveDraft() async {
+    await _cacheService.set(
+      CreationCacheKeys.draft(_currentUserId),
+      state.toDraft(),
+      ttl: Duration(days: 7),  // 7일 보관
+    );
+  }
+}
+```
+
+**Draft 복구**:
+```dart
+// 앱 재실행 시 Draft 확인
+@riverpod
+Future<bool> draftExists(DraftExistsRef ref) async {
+  final cacheService = getIt<CreationCacheService>();
+  final userId = ref.watch(currentUserIdProvider);
+
+  final draft = await cacheService.get<DraftModel>(
+    CreationCacheKeys.draft(userId),
+  );
+
+  return draft != null;
+}
+```
+
+### Media Upload Integration
+
+미디어 업로드는 **큐 기반 병렬 처리**:
+
+```dart
+// MediaUploadNotifier
+class MediaUploadNotifier extends _$MediaUploadNotifier {
+  // 큐에 미디어 추가
+  void addToQueue(List<XFile> files) {
+    for (final file in files) {
+      _uploadQueue.add(file);
+    }
+    _processQueue();  // 병렬 업로드 시작
+  }
+
+  // 큐 처리 (최대 3개 동시 업로드)
+  Future<void> _processQueue() async {
+    while (_uploadQueue.isNotEmpty && _activeUploads.length < 3) {
+      final file = _uploadQueue.removeFirst();
+      _activeUploads.add(file);
+
+      // 병렬 업로드
+      unawaited(_uploadFile(file));
+    }
+  }
+
+  // 파일 업로드 (재시도 로직 포함)
+  Future<void> _uploadFile(XFile file) async {
+    try {
+      final downloadUrl = await _storageRepository.uploadMedia(
+        file: file,
+        userId: _currentUserId,
+      );
+
+      // 업로드 완료 → 상태 업데이트
+      state = state.copyWith(
+        uploadedUrls: [...state.uploadedUrls, downloadUrl],
+      );
+    } catch (e) {
+      // 재시도 (최대 3회)
+      if (_retryCount < 3) {
+        _retryCount++;
+        await Future.delayed(Duration(seconds: 2));
+        await _uploadFile(file);  // 재시도
+      } else {
+        // 실패 → 에러 상태
+        state = state.copyWith(
+          error: CreationFailure.uploadError(e.toString()),
+        );
+      }
+    } finally {
+      _activeUploads.remove(file);
+      _processQueue();  // 다음 파일 처리
+    }
+  }
+}
+```
+
+### AI Moderation Flow
+
+게시물 생성 시 **AI 컨텐츠 검열**:
+
+**Step 1: Perspective API (텍스트 욕설 감지)**
+```dart
+final perspectiveResult = await _perspectiveApi.analyzeComment(title + description);
+
+if (perspectiveResult.toxicity > 0.8) {
+  return left(CreationFailure.inappropriateContent(
+    'Inappropriate language detected',
+  ));
+}
+```
+
+**Step 2: Gemini AI (컨텍스트 기반 판단)**
+```dart
+final geminiResult = await _geminiAi.moderateText(title + description);
+
+if (!geminiResult.isAppropriate) {
+  return left(CreationFailure.inappropriateContent(
+    geminiResult.reason,
+  ));
+}
+```
+
+**Step 3: Cloud Vision API (이미지 안전성 확인)**
+```dart
+for (final imagePath in imagePaths) {
+  final visionResult = await _cloudVision.analyzeSafety(imagePath);
+
+  if (visionResult.hasViolations) {
+    return left(CreationFailure.inappropriateContent(
+      'Inappropriate image detected',
+    ));
+  }
+}
+```
+
+**검열 실패 시 네비게이션**:
+```dart
+// 검열 실패 → 에러 다이얼로그 → 생성 페이지 유지
+if (moderationFailed) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('부적절한 콘텐츠'),
+      content: Text('게시물 내용이 커뮤니티 가이드라인을 위반합니다.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('수정하기'),
+        ),
+      ],
+    ),
+  );
+
+  // 생성 페이지에 머무름 (네비게이션 없음)
+  return;
+}
+```
+
+### 애니메이션
+
+모든 Creation 라우트는 **즉시 전환** (Duration.zero):
+- 성능 최적화 우선
+- AppRoute 패턴 기본 동작: NoTransitionPage
+- 애니메이션 없이 즉시 화면 전환
+
+### nav.dart 통합
+
+```dart
+// /lib/app/router/navigation/nav.dart (line 128)
+GoRouter createRouter(WidgetRef ref) => GoRouter(
+  routes: [
+    ...CreationRoutes.routes(ref), // 2개 라우트 병합
+    // ... 다른 Feature Routes
+  ],
+);
+```
+
+### 참조 문서
+
+- **[creation_routes.dart](./presentation/routes/creation_routes.dart)** - 라우트 정의
+- **[Router 시스템 개요](/lib/app/router/README.md)** - 전체 Router 아키텍처
+- **[Navigation 상세 가이드](/lib/app/router/navigation/README.md)** - Feature Routes 패턴
+- **[AuthGuard 가이드](/lib/app/router/guards/README.md)** - 인증 가드 + Analytics
 
 ---
 

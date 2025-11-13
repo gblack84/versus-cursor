@@ -443,6 +443,54 @@ final class GetProfileInfoUseCaseProvider
 String _$getProfileInfoUseCaseHash() =>
     r'3426499b458778bb85f5365262df7aae83927dbf';
 
+@ProviderFor(updateLastActiveUseCase)
+const updateLastActiveUseCaseProvider = UpdateLastActiveUseCaseProvider._();
+
+final class UpdateLastActiveUseCaseProvider
+    extends
+        $FunctionalProvider<
+          UpdateLastActiveUseCase,
+          UpdateLastActiveUseCase,
+          UpdateLastActiveUseCase
+        >
+    with $Provider<UpdateLastActiveUseCase> {
+  const UpdateLastActiveUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'updateLastActiveUseCaseProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$updateLastActiveUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<UpdateLastActiveUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  UpdateLastActiveUseCase create(Ref ref) {
+    return updateLastActiveUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(UpdateLastActiveUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<UpdateLastActiveUseCase>(value),
+    );
+  }
+}
+
+String _$updateLastActiveUseCaseHash() =>
+    r'c7d35db65950e4947af062a05635cc2f29187215';
+
 @ProviderFor(getUserSettingsUseCase)
 const getUserSettingsUseCaseProvider = GetUserSettingsUseCaseProvider._();
 
@@ -686,3 +734,471 @@ final class UpdateUserInterestsUseCaseProvider
 
 String _$updateUserInterestsUseCaseHash() =>
     r'daa109b07a3fc34c25f3d5a2f5eeb6adeafb3a2e';
+
+@ProviderFor(selectMediaUseCase)
+const selectMediaUseCaseProvider = SelectMediaUseCaseProvider._();
+
+final class SelectMediaUseCaseProvider
+    extends
+        $FunctionalProvider<
+          SelectMediaUseCase,
+          SelectMediaUseCase,
+          SelectMediaUseCase
+        >
+    with $Provider<SelectMediaUseCase> {
+  const SelectMediaUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'selectMediaUseCaseProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$selectMediaUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<SelectMediaUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  SelectMediaUseCase create(Ref ref) {
+    return selectMediaUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SelectMediaUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SelectMediaUseCase>(value),
+    );
+  }
+}
+
+String _$selectMediaUseCaseHash() =>
+    r'517b056138598edfdd0308f942be22e1f90b5899';
+
+@ProviderFor(validateMediaUseCase)
+const validateMediaUseCaseProvider = ValidateMediaUseCaseProvider._();
+
+final class ValidateMediaUseCaseProvider
+    extends
+        $FunctionalProvider<
+          ValidateMediaUseCase,
+          ValidateMediaUseCase,
+          ValidateMediaUseCase
+        >
+    with $Provider<ValidateMediaUseCase> {
+  const ValidateMediaUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'validateMediaUseCaseProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$validateMediaUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<ValidateMediaUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  ValidateMediaUseCase create(Ref ref) {
+    return validateMediaUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ValidateMediaUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ValidateMediaUseCase>(value),
+    );
+  }
+}
+
+String _$validateMediaUseCaseHash() =>
+    r'9142253e70701c07e420d79b254063a14d4216a7';
+
+/// 사용자 역할 조회 Provider
+///
+/// **Phase C-1**: App Layer 아키텍처 정리
+/// - AuthGuard의 Firestore 직접 접근 제거
+/// - Extension 메서드 활용 (user_profile_business.dart)
+///
+/// **Usage**:
+/// ```dart
+/// final roleAsync = ref.watch(userRoleProvider(userId));
+///
+/// roleAsync.when(
+///   data: (role) => Text('Role: $role'),  // 'user', 'admin', 'tester'
+///   loading: () => CircularProgressIndicator(),
+///   error: (error, stack) => Text('Error: $error'),
+/// );
+/// ```
+///
+/// **특징**:
+/// - GetUserProfileUseCase 사용
+/// - UserRoleExtension.getRole() 호출
+/// - 기본값: 'user' (에러 시에도)
+
+@ProviderFor(userRole)
+const userRoleProvider = UserRoleFamily._();
+
+/// 사용자 역할 조회 Provider
+///
+/// **Phase C-1**: App Layer 아키텍처 정리
+/// - AuthGuard의 Firestore 직접 접근 제거
+/// - Extension 메서드 활용 (user_profile_business.dart)
+///
+/// **Usage**:
+/// ```dart
+/// final roleAsync = ref.watch(userRoleProvider(userId));
+///
+/// roleAsync.when(
+///   data: (role) => Text('Role: $role'),  // 'user', 'admin', 'tester'
+///   loading: () => CircularProgressIndicator(),
+///   error: (error, stack) => Text('Error: $error'),
+/// );
+/// ```
+///
+/// **특징**:
+/// - GetUserProfileUseCase 사용
+/// - UserRoleExtension.getRole() 호출
+/// - 기본값: 'user' (에러 시에도)
+
+final class UserRoleProvider
+    extends $FunctionalProvider<AsyncValue<String>, String, FutureOr<String>>
+    with $FutureModifier<String>, $FutureProvider<String> {
+  /// 사용자 역할 조회 Provider
+  ///
+  /// **Phase C-1**: App Layer 아키텍처 정리
+  /// - AuthGuard의 Firestore 직접 접근 제거
+  /// - Extension 메서드 활용 (user_profile_business.dart)
+  ///
+  /// **Usage**:
+  /// ```dart
+  /// final roleAsync = ref.watch(userRoleProvider(userId));
+  ///
+  /// roleAsync.when(
+  ///   data: (role) => Text('Role: $role'),  // 'user', 'admin', 'tester'
+  ///   loading: () => CircularProgressIndicator(),
+  ///   error: (error, stack) => Text('Error: $error'),
+  /// );
+  /// ```
+  ///
+  /// **특징**:
+  /// - GetUserProfileUseCase 사용
+  /// - UserRoleExtension.getRole() 호출
+  /// - 기본값: 'user' (에러 시에도)
+  const UserRoleProvider._({
+    required UserRoleFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'userRoleProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$userRoleHash();
+
+  @override
+  String toString() {
+    return r'userRoleProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<String> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<String> create(Ref ref) {
+    final argument = this.argument as String;
+    return userRole(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is UserRoleProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$userRoleHash() => r'72d63a3135b3b0584c2f4e1693f3233b66f1dd17';
+
+/// 사용자 역할 조회 Provider
+///
+/// **Phase C-1**: App Layer 아키텍처 정리
+/// - AuthGuard의 Firestore 직접 접근 제거
+/// - Extension 메서드 활용 (user_profile_business.dart)
+///
+/// **Usage**:
+/// ```dart
+/// final roleAsync = ref.watch(userRoleProvider(userId));
+///
+/// roleAsync.when(
+///   data: (role) => Text('Role: $role'),  // 'user', 'admin', 'tester'
+///   loading: () => CircularProgressIndicator(),
+///   error: (error, stack) => Text('Error: $error'),
+/// );
+/// ```
+///
+/// **특징**:
+/// - GetUserProfileUseCase 사용
+/// - UserRoleExtension.getRole() 호출
+/// - 기본값: 'user' (에러 시에도)
+
+final class UserRoleFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<String>, String> {
+  const UserRoleFamily._()
+    : super(
+        retry: null,
+        name: r'userRoleProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// 사용자 역할 조회 Provider
+  ///
+  /// **Phase C-1**: App Layer 아키텍처 정리
+  /// - AuthGuard의 Firestore 직접 접근 제거
+  /// - Extension 메서드 활용 (user_profile_business.dart)
+  ///
+  /// **Usage**:
+  /// ```dart
+  /// final roleAsync = ref.watch(userRoleProvider(userId));
+  ///
+  /// roleAsync.when(
+  ///   data: (role) => Text('Role: $role'),  // 'user', 'admin', 'tester'
+  ///   loading: () => CircularProgressIndicator(),
+  ///   error: (error, stack) => Text('Error: $error'),
+  /// );
+  /// ```
+  ///
+  /// **특징**:
+  /// - GetUserProfileUseCase 사용
+  /// - UserRoleExtension.getRole() 호출
+  /// - 기본값: 'user' (에러 시에도)
+
+  UserRoleProvider call(String userId) =>
+      UserRoleProvider._(argument: userId, from: this);
+
+  @override
+  String toString() => r'userRoleProvider';
+}
+
+/// 관리자 여부 확인 Provider
+///
+/// **Usage**:
+/// ```dart
+/// final isAdminAsync = ref.watch(isAdminUserProvider(userId));
+///
+/// if (isAdminAsync.value == true) {
+///   // 관리자 전용 UI 표시
+/// }
+/// ```
+
+@ProviderFor(isAdminUser)
+const isAdminUserProvider = IsAdminUserFamily._();
+
+/// 관리자 여부 확인 Provider
+///
+/// **Usage**:
+/// ```dart
+/// final isAdminAsync = ref.watch(isAdminUserProvider(userId));
+///
+/// if (isAdminAsync.value == true) {
+///   // 관리자 전용 UI 표시
+/// }
+/// ```
+
+final class IsAdminUserProvider
+    extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
+    with $FutureModifier<bool>, $FutureProvider<bool> {
+  /// 관리자 여부 확인 Provider
+  ///
+  /// **Usage**:
+  /// ```dart
+  /// final isAdminAsync = ref.watch(isAdminUserProvider(userId));
+  ///
+  /// if (isAdminAsync.value == true) {
+  ///   // 관리자 전용 UI 표시
+  /// }
+  /// ```
+  const IsAdminUserProvider._({
+    required IsAdminUserFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'isAdminUserProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$isAdminUserHash();
+
+  @override
+  String toString() {
+    return r'isAdminUserProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<bool> create(Ref ref) {
+    final argument = this.argument as String;
+    return isAdminUser(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is IsAdminUserProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$isAdminUserHash() => r'7948e4f51e5186ef4009565c23571ca735414b7c';
+
+/// 관리자 여부 확인 Provider
+///
+/// **Usage**:
+/// ```dart
+/// final isAdminAsync = ref.watch(isAdminUserProvider(userId));
+///
+/// if (isAdminAsync.value == true) {
+///   // 관리자 전용 UI 표시
+/// }
+/// ```
+
+final class IsAdminUserFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<bool>, String> {
+  const IsAdminUserFamily._()
+    : super(
+        retry: null,
+        name: r'isAdminUserProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// 관리자 여부 확인 Provider
+  ///
+  /// **Usage**:
+  /// ```dart
+  /// final isAdminAsync = ref.watch(isAdminUserProvider(userId));
+  ///
+  /// if (isAdminAsync.value == true) {
+  ///   // 관리자 전용 UI 표시
+  /// }
+  /// ```
+
+  IsAdminUserProvider call(String userId) =>
+      IsAdminUserProvider._(argument: userId, from: this);
+
+  @override
+  String toString() => r'isAdminUserProvider';
+}
+
+/// 현재 사용자 역할 조회 Provider (편의용)
+///
+/// **Usage**:
+/// ```dart
+/// final currentRoleAsync = ref.watch(currentUserRoleProvider);
+///
+/// currentRoleAsync.when(
+///   data: (role) => print('My role: $role'),
+///   loading: () => null,
+///   error: (error, stack) => null,
+/// );
+/// ```
+
+@ProviderFor(currentUserRole)
+const currentUserRoleProvider = CurrentUserRoleProvider._();
+
+/// 현재 사용자 역할 조회 Provider (편의용)
+///
+/// **Usage**:
+/// ```dart
+/// final currentRoleAsync = ref.watch(currentUserRoleProvider);
+///
+/// currentRoleAsync.when(
+///   data: (role) => print('My role: $role'),
+///   loading: () => null,
+///   error: (error, stack) => null,
+/// );
+/// ```
+
+final class CurrentUserRoleProvider
+    extends $FunctionalProvider<AsyncValue<String>, String, FutureOr<String>>
+    with $FutureModifier<String>, $FutureProvider<String> {
+  /// 현재 사용자 역할 조회 Provider (편의용)
+  ///
+  /// **Usage**:
+  /// ```dart
+  /// final currentRoleAsync = ref.watch(currentUserRoleProvider);
+  ///
+  /// currentRoleAsync.when(
+  ///   data: (role) => print('My role: $role'),
+  ///   loading: () => null,
+  ///   error: (error, stack) => null,
+  /// );
+  /// ```
+  const CurrentUserRoleProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'currentUserRoleProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$currentUserRoleHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<String> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<String> create(Ref ref) {
+    return currentUserRole(ref);
+  }
+}
+
+String _$currentUserRoleHash() => r'fcc50cfdeb83d4cdadabd98e7deeea70617db04d';

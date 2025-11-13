@@ -16,7 +16,7 @@ import 'package:get_it/get_it.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 // ===== Core Services =====
-import '/core/utils/idempotency_service.dart';
+import '/services/idempotency/idempotency_service.dart';
 
 // ===== PHASE 3: 3-Layer Caching =====
 // Note: UnifiedCacheService는 Repository에서 직접 사용 (싱글톤)
@@ -35,6 +35,12 @@ import '../domain/ports/i_ai_service.dart';
 
 // ===== Data Layer - Adapters =====
 import '../data/adapters/gemini_ai_service.dart';
+import '../data/adapters/box_calculator_adapter.dart';
+import '../data/adapters/responsive_breakpoints_adapter.dart';
+
+// ===== Domain Layer - Services =====
+import '../domain/services/i_box_calculator_service.dart';
+import '../domain/services/i_responsive_service.dart';
 
 // ===== Data Layer - Services =====
 import '../data/services/chat_message_lifecycle_service.dart';
@@ -119,6 +125,20 @@ void _registerServices(GetIt getIt) {
   // Singleton으로 등록하여 전체 앱에서 공유
   getIt.registerLazySingleton<ChatMessageLifecycleService>(
     () => ChatMessageLifecycleService(),
+  );
+
+  // BoxCalculatorService: Clean Architecture Adapter for UI Service
+  // Domain Interface → Data Adapter → Services (UnifiedBoxCalculator)
+  // Phase 1: Clean Architecture 위반 수정 (2025-11-10)
+  getIt.registerLazySingleton<IBoxCalculatorService>(
+    () => BoxCalculatorAdapter(),
+  );
+
+  // ResponsiveService: Clean Architecture Adapter for ResponsiveBreakpoints
+  // Domain Interface → Data Adapter → Services (ResponsiveBreakpoints)
+  // Phase 1: Clean Architecture 위반 수정 (2025-11-10)
+  getIt.registerLazySingleton<IResponsiveService>(
+    () => ResponsiveBreakpointsAdapter(),
   );
 }
 

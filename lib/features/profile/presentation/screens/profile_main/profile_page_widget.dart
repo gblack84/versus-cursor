@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // TODO Phase C-3: Auth Feature의 SignOutUseCase 사용
+import '/features/auth/presentation/providers/auth_providers.dart';
 import '/core_exports.dart';
 // Phase 3: Riverpod 3.x - profile_notifiers.dart (Freezed + Code Generation)
 import '/features/profile/presentation/providers/profile_notifiers.dart';
@@ -56,8 +57,8 @@ class _ProfilePageWidgetState extends ConsumerState<ProfilePageWidget> {
           IconButton(
             icon: Icon(Icons.settings, color: Colors.black),
             onPressed: () {
-              // Phase 3: Riverpod - FirebaseAuth로 userId 조회
-              final userId = FirebaseAuth.instance.currentUser?.uid;
+              // Phase C-2: currentUserIdProvider 사용
+              final userId = ref.read(currentUserIdProvider).value;
               if (userId != null) {
                 context.pushNamed(
                   SettingsScreen.routeName,
@@ -75,8 +76,8 @@ class _ProfilePageWidgetState extends ConsumerState<ProfilePageWidget> {
         // Phase 3: Riverpod - profileStreamProvider 사용
         child: Builder(
           builder: (context) {
-            // FirebaseAuth로 userId 조회
-            final userId = FirebaseAuth.instance.currentUser?.uid;
+            // Phase C-2: currentUserIdProvider 사용
+            final userId = ref.watch(currentUserIdProvider).value;
 
             if (userId == null) {
               return ProfileErrorMessage(

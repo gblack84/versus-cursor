@@ -5,12 +5,12 @@ import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/providers/usecase_providers.dart';
 import '/features/auth/presentation/screens/login/login_page/login_page_widget.dart';
 import '/core_exports.dart';
-import '/core/utils/error_handler.dart';
+import '/services/error/error_handler_service.dart';
 import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'forgot_password_model.dart';
-export 'forgot_password_model.dart';
+
+// Phase 10: ForgotPasswordModel 제거 (TextField-only 모델)
 
 class ForgotPasswordWidget extends ConsumerStatefulWidget {
   const ForgotPasswordWidget({super.key});
@@ -23,24 +23,28 @@ class ForgotPasswordWidget extends ConsumerStatefulWidget {
 }
 
 class _ForgotPasswordWidgetState extends ConsumerState<ForgotPasswordWidget> {
-  late ForgotPasswordModel _model;
+  // Phase 10: TextField controllers (moved from AppModel)
+  late final FocusNode _emailAddressFocusNode;
+  late final TextEditingController _emailAddressTextController;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
-    _model = createModel(context, () => ForgotPasswordModel());
 
-    _model.emailAddressTextController ??= TextEditingController();
-    _model.emailAddressFocusNode ??= FocusNode();
+    // Phase 10: TextField controllers initialization
+    _emailAddressTextController = TextEditingController();
+    _emailAddressFocusNode = FocusNode();
 
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
   void dispose() {
-    _model.dispose();
+    // Phase 10: TextField controllers disposal
+    _emailAddressFocusNode.dispose();
+    _emailAddressTextController.dispose();
 
     super.dispose();
   }
@@ -206,8 +210,8 @@ class _ForgotPasswordWidgetState extends ConsumerState<ForgotPasswordWidget> {
                 child: Container(
                   width: double.infinity,
                   child: TextFormField(
-                    controller: _model.emailAddressTextController,
-                    focusNode: _model.emailAddressFocusNode,
+                    controller: _emailAddressTextController,
+                    focusNode: _emailAddressFocusNode,
                     autofillHints: [AutofillHints.email],
                     obscureText: false,
                     decoration: InputDecoration(
@@ -292,8 +296,7 @@ class _ForgotPasswordWidgetState extends ConsumerState<ForgotPasswordWidget> {
                     maxLines: null,
                     keyboardType: TextInputType.emailAddress,
                     cursorColor: AppTheme.of(context).primary,
-                    validator: _model.emailAddressTextControllerValidator
-                        .asValidator(context),
+                    // Phase 10: validator 제거 (모델에서 초기화되지 않았음)
                   ),
                 ),
               ),
@@ -303,7 +306,7 @@ class _ForgotPasswordWidgetState extends ConsumerState<ForgotPasswordWidget> {
                   padding: EdgeInsetsDirectional.fromSTEB(0.0, 24.0, 0.0, 0.0),
                   child: AppButtonWidget(
                     onPressed: () async {
-                      if (_model.emailAddressTextController.text.isEmpty) {
+                      if (_emailAddressTextController.text.isEmpty) {
                         BotToast.showText(text: '이메일을 입력해주세요!');
                         return;
                       }
@@ -317,7 +320,7 @@ class _ForgotPasswordWidgetState extends ConsumerState<ForgotPasswordWidget> {
                       // 비밀번호 재설정 이메일 발송
                       final passwordManagementUseCase = ref.read(passwordManagementUseCaseProvider);
                       final result = await passwordManagementUseCase.sendPasswordResetEmail(
-                        email: _model.emailAddressTextController.text.trim(),
+                        email: _emailAddressTextController.text.trim(),
                         eventId: const Uuid().v4(),
                       );
 

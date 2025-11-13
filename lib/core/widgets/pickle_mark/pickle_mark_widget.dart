@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-export 'pickle_mark_model.dart';
+import 'package:versus_space/gen/assets.gen.dart';
+export 'pickle_mark_provider.dart';
 
 class PickleMarkWidget extends StatelessWidget {
   const PickleMarkWidget({super.key});
@@ -8,8 +9,7 @@ class PickleMarkWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(),
-      child: Image.asset(
-        'assets/images/pikle_icon.png',
+      child: Assets.images_pikle_icon.image(
         width: 100.0,
         height: 100.0,
         fit: BoxFit.contain,

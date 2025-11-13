@@ -1,19 +1,20 @@
-/// Dependency Injection Configuration
+/// Dependency Injection 설정
 ///
-/// This file configures dependency injection for the application
-/// following Clean Architecture principles
+/// Clean Architecture 원칙을 따르는 애플리케이션 의존성 주입 설정
 
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Core Services
-import '/core/utils/idempotency_service.dart';
-import '/core/utils/batch_service.dart';
+// 핵심 서비스
+import '/services/idempotency/idempotency_service.dart';
+import '/services/batch/batch_service.dart';
+import '/services/sharding/shard_utils.dart';
+import '/services/storage/file_size_utils.dart';
 
-// Service DI Modules
+// 서비스 DI 모듈
 import '/services/moderation/di/moderation_di_module.dart';
 
-// Feature DI Modules
+// Feature DI 모듈
 import '/features/post/di/post_di_module.dart';
 import '/features/voting/di/voting_di_module.dart';
 import '/features/profile/di/profile_di_module.dart';
@@ -41,55 +42,65 @@ import '/features/search/di/search_di_module.dart';
 
 final getIt = GetIt.instance;
 
-/// Initialize dependency injection
+/// Dependency Injection 초기화
 Future<void> setupDependencyInjection() async {
-  // ===== Core Dependencies =====
+  // ===== 핵심 의존성 =====
 
   // SharedPreferences 인스턴스 초기화
   final sharedPreferences = await SharedPreferences.getInstance();
   getIt.registerSingleton<SharedPreferences>(sharedPreferences);
 
-  // IdempotencyService (for Auth, Voting, etc.)
+  // IdempotencyService (Auth, Voting 등에서 사용)
   getIt.registerSingleton<IdempotencyService>(
     IdempotencyService(),
   );
 
-  // BatchService (for atomic Firestore operations across all features)
+  // BatchService (모든 Feature의 원자적 Firestore 작업용)
   getIt.registerSingleton<BatchService>(
     BatchService(),
   );
 
+  // ShardUtils (Voting, Post 등의 고빈도 카운터 샤딩용)
+  getIt.registerSingleton<ShardUtils>(
+    ShardUtils(),
+  );
+
+  // FileSizeUtils (Firebase Storage 파일 크기 계산)
+  getIt.registerSingleton<FileSizeUtils>(
+    FileSizeUtils(),
+  );
+
   // ===== Moderation Services DI =====
-  // Note: Registered early as global services used by multiple features (Creation, Post)
-  // Provides: PerspectiveApiService, GeminiModerationService, CloudImageModerationService, AIModerationService
+  // 참고: 여러 Feature에서 사용하는 전역 서비스이므로 먼저 등록 (Creation, Post)
+  // 제공: PerspectiveApiService, GeminiModerationService, CloudImageModerationService, AIModerationService
   registerModerationModule(getIt);
 
   // ===== Auth Feature DI =====
-  // Note: Auth registration moved to after Profile Feature registration
-  // because Auth uses IUserRepository (provided by Profile Feature)
+  // 참고: Profile Feature 이후에 등록
+  // 이유: Auth가 IUserRepository를 사용 (Profile Feature 제공)
 
   // ===== Creation Feature DI =====
-  // Note: Creation Feature repositories are registered internally by Creation Feature
+  // 참고: Creation Feature 내부에서 Repository 등록
   registerCreationModule(getIt);
 
-  // ===== Post Feature DI (MUST BE REGISTERED BEFORE Voting) =====
-  // Note: Post Feature provides VoteTimerService that Voting Feature uses
+  // ===== Post Feature DI (Voting보다 먼저 등록 필요) =====
+  // 참고: Voting Feature가 사용하는 VoteTimerService 제공
   registerPostModule(getIt);
 
   // ===== Voting Feature DI =====
-  // Note: Registered AFTER Post because uses VoteTimerService from Post Feature
+  // 참고: Post 이후에 등록 (VoteTimerService 사용)
   registerVotingModule(getIt);
 
   // ===== Notifications Feature DI =====
-  // Note: Registered AFTER Voting because depends on SubmitVoteUseCase
+  // 참고: Voting 이후에 등록 (SubmitVoteUseCase 의존)
   registerNotificationModule(getIt);
 
   // ===== Profile Feature DI =====
-  // Note: Registered before Auth because Auth uses IUserRepository (Profile Feature)
+  // 참고: Auth보다 먼저 등록 (IUserRepository 제공)
   registerProfileModule(getIt);
 
   // ===== Auth Feature DI =====
-  // Note: Registered after Profile because Auth uses IUserRepository (Profile Feature)
+  // 참고: Profile 이후에 등록 (IUserRepository 사용)
   registerAuthModule(getIt);
 
   // ===== Chat Feature DI =====
@@ -98,5 +109,5 @@ Future<void> setupDependencyInjection() async {
   // ===== Search Feature DI =====
   registerSearchModule(getIt);
 
-  // Add more dependency registrations here as needed
+  // 필요에 따라 추가 의존성 등록
 }

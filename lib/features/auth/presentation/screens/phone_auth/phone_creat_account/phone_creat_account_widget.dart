@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:uuid/uuid.dart';
-import '/core/utils/error_handler.dart';
+import 'package:versus_space/gen/assets.gen.dart';
+import '/services/error/error_handler_service.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/providers/usecase_providers.dart';
 import '/core_exports.dart';
@@ -10,8 +11,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '/features/profile/presentation/screens/user_info/selectors/country_selector_widget.dart';
-import 'phone_creat_account_model.dart';
-export 'phone_creat_account_model.dart';
+import 'phone_creat_account_provider.dart';
+
+// Phase 10: PhoneCreatAccountModel → Riverpod 3.x (Business state: country selection)
 
 class PhoneCreatAccountWidget extends ConsumerStatefulWidget {
   const PhoneCreatAccountWidget({
@@ -30,17 +32,19 @@ class PhoneCreatAccountWidget extends ConsumerStatefulWidget {
 }
 
 class _PhoneCreatAccountWidgetState extends ConsumerState<PhoneCreatAccountWidget> {
-  late PhoneCreatAccountModel _model;
+  // Phase 10: TextField controllers (moved from AppModel)
+  late final FocusNode _phoneNumberFocusNode;
+  late final TextEditingController _phoneNumberTextController;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
-    _model = createModel(context, () => PhoneCreatAccountModel());
 
-    _model.phoneNumberTextController ??= TextEditingController();
-    _model.phoneNumberFocusNode ??= FocusNode();
+    // Phase 10: TextField controllers initialization
+    _phoneNumberTextController = TextEditingController();
+    _phoneNumberFocusNode = FocusNode();
 
     // Phone Auth 상태 변경 처리는 Provider 내부에서 처리
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
@@ -48,7 +52,9 @@ class _PhoneCreatAccountWidgetState extends ConsumerState<PhoneCreatAccountWidge
 
   @override
   void dispose() {
-    _model.dispose();
+    // Phase 10: TextField controllers disposal
+    _phoneNumberFocusNode.dispose();
+    _phoneNumberTextController.dispose();
 
     super.dispose();
   }
@@ -101,8 +107,7 @@ class _PhoneCreatAccountWidgetState extends ConsumerState<PhoneCreatAccountWidge
             ),
             ClipRRect(
               borderRadius: BorderRadius.circular(8.0),
-              child: Image.asset(
-                'assets/images/20250402_1112_____remix_01jqt4bfgvebj8s1j9b2ywjy5z.png',
+              child: Assets.images_signup_header.image(
                 width: 50.0,
                 height: 50.0,
                 fit: BoxFit.cover,
@@ -184,12 +189,12 @@ class _PhoneCreatAccountWidgetState extends ConsumerState<PhoneCreatAccountWidge
                         child: Container(
                           width: 120.0,
                           child: CountrySelectorWidget(
-                            initialCountryCode: _model.selectedCountryCode,
+                            initialCountryCode: ref.watch(phoneCreatAccountProvider).selectedCountryCode,
                             onChanged: (country) {
-                              setState(() {
-                                _model.selectedCountryCode = country.dialCode;
-                                _model.selectedCountryName = country.name;
-                              });
+                              ref.read(phoneCreatAccountProvider.notifier).updateCountry(
+                                code: country.dialCode,
+                                name: country.name,
+                              );
                             },
                             backgroundColor: Colors.white,
                             borderColor: AppTheme.of(context).alternate,
@@ -213,8 +218,8 @@ class _PhoneCreatAccountWidgetState extends ConsumerState<PhoneCreatAccountWidge
                         child: Container(
                           width: double.infinity,
                           child: TextFormField(
-                            controller: _model.phoneNumberTextController,
-                            focusNode: _model.phoneNumberFocusNode,
+                            controller: _phoneNumberTextController,
+                            focusNode: _phoneNumberFocusNode,
                             textCapitalization: TextCapitalization.none,
                             obscureText: false,
                             decoration: InputDecoration(
@@ -314,8 +319,7 @@ class _PhoneCreatAccountWidgetState extends ConsumerState<PhoneCreatAccountWidge
                             maxLength: 12,
                             keyboardType: TextInputType.phone,
                             cursorColor: AppTheme.of(context).primary,
-                            validator: _model.phoneNumberTextControllerValidator
-                                .asValidator(context),
+                            // Phase 10: validator 제거 (모델에서 초기화되지 않았음)
                             inputFormatters: [
                               if (!isAndroid && !isiOS)
                                 TextInputFormatter.withFunction(
@@ -340,12 +344,13 @@ class _PhoneCreatAccountWidgetState extends ConsumerState<PhoneCreatAccountWidge
                 child: Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(0.0, 10.0, 0.0, 0.0),
                   child: AppButtonWidget(
-                    onPressed: ((_model.selectedCountryCode != null) &&
-                            (_model.phoneNumberTextController.text.isNotEmpty))
+                    onPressed: ((ref.watch(phoneCreatAccountProvider).selectedCountryCode != null) &&
+                            (_phoneNumberTextController.text.isNotEmpty))
                         ? null
                         : () async {
+                            final selectedCountryCode = ref.read(phoneCreatAccountProvider).selectedCountryCode;
                             final phoneNumberVal =
-                                '${_model.selectedCountryCode ?? ''}${_model.phoneNumberTextController.text}';
+                                '${selectedCountryCode ?? ''}${_phoneNumberTextController.text}';
                             if (phoneNumberVal.isEmpty ||
                                 !phoneNumberVal.startsWith('+')) {
                               BotToast.showText(text: '국가 코드와 전화번호를 입력해주세요.');
@@ -398,7 +403,7 @@ class _PhoneCreatAccountWidgetState extends ConsumerState<PhoneCreatAccountWidge
                                         ParamType.String,
                                       ),
                                     }.withoutNulls,
-                                    ignoreRedirect: true,
+                                    // Phase 1: ignoreRedirect 제거 (NavigationExtensions에서 파라미터 제거됨)
                                   );
                                 }
                               },

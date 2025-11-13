@@ -1,8 +1,9 @@
-// Phase 3: Riverpod
+// Phase 10: Riverpod 3.x Migration
+import 'package:versus_space/gen/assets.gen.dart';
+import 'package:versus_space/gen/fonts.gen.dart';
 import '/features/profile/domain/usecases/profile/update_user_profile_usecase.dart';
 import '/features/profile/presentation/constants/validation_rules.dart';
 import '/features/profile/presentation/constants/profile_constants.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_it/get_it.dart';
 import '/core_exports.dart';
 import '/features/profile/presentation/screens/user_info/character_detail/character_detail_page_widget.dart';
@@ -16,17 +17,21 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:webviewx_plus/webviewx_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/profile/presentation/providers/profile_notifiers.dart';
 import '/features/profile/domain/entities/user_profile.dart';
-import 'user_info_input_model.dart';
-export 'user_info_input_model.dart';
 
-/// 사용자 정보 입력 화면 (Riverpod)
+// Phase 10: Riverpod 3.x - userInfoInputProvider
+import 'user_info_input_provider.dart';
+export 'user_info_input_state.dart';
+
+/// 사용자 정보 입력 화면 (Riverpod 3.x)
 ///
-/// **Clean Architecture v4.0 + Riverpod**:
+/// **Clean Architecture v4.0 + Riverpod 3.x**:
 /// - ✅ ConsumerStatefulWidget으로 전환
 /// - ✅ profileStreamProvider 사용
 /// - ✅ UpdateUserProfileUseCase 유지
+/// - ✅ Phase 10: userInfoInputProvider (AppModel 제거)
 class UserInfoInputWidget extends ConsumerStatefulWidget {
   const UserInfoInputWidget({super.key});
 
@@ -38,15 +43,17 @@ class UserInfoInputWidget extends ConsumerStatefulWidget {
 }
 
 class _UserInfoInputWidgetState extends ConsumerState<UserInfoInputWidget> {
-  late UserInfoInputModel _model;
-  // Phase 3: ProfileProvider → profileStreamProvider로 전환
-
+  // Phase 10: Widget resources (from AppModel)
   final scaffoldKey = GlobalKey<ScaffoldState>();
+  final formKey = GlobalKey<FormState>();
+  late final FocusNode _displayNameFocusNode;
+  late final TextEditingController _displayNameTextController;
+  late final FormFieldController<List<String>> _choiceChipsValueController;
 
-  /// Phase 3: Riverpod - FirebaseAuth를 통한 userId 가져오기
-  /// Contract 패턴 폐기 (2025-11-09): Firebase 직접 접근
+  /// Phase C-2: Riverpod - currentUserIdProvider를 통한 userId 가져오기
+  /// Architecture Fix: FirebaseAuth 직접 접근 → Provider 사용
   String? get _userId {
-    return FirebaseAuth.instance.currentUser?.uid;
+    return ref.watch(currentUserIdProvider).value;
   }
 
   /// Phase 3: Riverpod - profileStreamProvider를 통한 프로필 가져오기
@@ -67,26 +74,28 @@ class _UserInfoInputWidgetState extends ConsumerState<UserInfoInputWidget> {
   @override
   void initState() {
     super.initState();
-    _model = createModel(context, () => UserInfoInputModel());
+
+    // Phase 10: Initialize Widget resources (moved from AppModel)
+    _displayNameTextController = TextEditingController();
+    _displayNameFocusNode = FocusNode();
+    _displayNameFocusNode.addListener(() => setState(() {}));
+    _choiceChipsValueController = FormFieldController<List<String>>([]);
 
     // On page load action.
     SchedulerBinding.instance.addPostFrameCallback((_) async {
-      // Phase 3: Riverpod - profileStreamProvider에서 프로필 로드
-      _model.userDocument = _currentProfile;
-
+      // Phase 10: Riverpod - profileStreamProvider에서 프로필 로드 → Provider에 저장
+      ref.read(userInfoInputProvider.notifier).updateUserDocument(_currentProfile);
       setState(() {});
     });
 
-    _model.displayNameTextController ??= TextEditingController();
-    _model.displayNameFocusNode ??= FocusNode();
-    _model.displayNameFocusNode!.addListener(() => setState(() {}));
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
   void dispose() {
-    _model.dispose();
-
+    // Phase 10: Dispose Widget resources (moved from AppModel)
+    _displayNameFocusNode.dispose();
+    _displayNameTextController.dispose();
     super.dispose();
   }
 
@@ -111,7 +120,7 @@ class _UserInfoInputWidgetState extends ConsumerState<UserInfoInputWidget> {
               ),
               textAlign: TextAlign.end,
               style: AppTheme.of(context).headlineSmall.override(
-                    fontFamily: 'SourGummy',
+                    fontFamily: FontFamily.sourGummy,
                     color: Colors.black,
                     letterSpacing: 0.0,
                   ),
@@ -120,8 +129,7 @@ class _UserInfoInputWidgetState extends ConsumerState<UserInfoInputWidget> {
           actions: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8.0),
-              child: Image.asset(
-                'assets/images/20250402_1112_____remix_01jqt4bfgvebj8s1j9b2ywjy5z.png',
+              child: Assets.images_signup_header.image(
                 width: 50.0,
                 height: 50.0,
                 fit: BoxFit.cover,
@@ -134,7 +142,7 @@ class _UserInfoInputWidgetState extends ConsumerState<UserInfoInputWidget> {
         body: SafeArea(
           top: true,
           child: Form(
-            key: _model.formKey,
+            key: formKey,  // Phase 10: Widget resource
             autovalidateMode: AutovalidateMode.disabled,
             child: Column(
               mainAxisSize: MainAxisSize.max,
@@ -240,8 +248,7 @@ class _UserInfoInputWidgetState extends ConsumerState<UserInfoInputWidget> {
                                                     errorBuilder: (context,
                                                             error,
                                                             stackTrace) =>
-                                                        Image.asset(
-                                                      'assets/images/error_image.png',
+                                                        Assets.images_error_image.image(
                                                       fit: BoxFit.cover,
                                                     ),
                                                   ),
@@ -416,8 +423,8 @@ class _UserInfoInputWidgetState extends ConsumerState<UserInfoInputWidget> {
                                     decoration: BoxDecoration(),
                                     child: TextFormField(
                                       controller:
-                                          _model.displayNameTextController,
-                                      focusNode: _model.displayNameFocusNode,
+                                          _displayNameTextController,  // Phase 10: Widget resource
+                                      focusNode: _displayNameFocusNode,  // Phase 10: Widget resource
                                       autofocus: true,
                                       textCapitalization:
                                           TextCapitalization.words,
@@ -521,9 +528,7 @@ class _UserInfoInputWidgetState extends ConsumerState<UserInfoInputWidget> {
                                               BorderRadius.circular(12.0),
                                         ),
                                         filled: true,
-                                        fillColor: (_model.displayNameFocusNode
-                                                    ?.hasFocus ??
-                                                false)
+                                        fillColor: _displayNameFocusNode.hasFocus  // Phase 10: Widget resource (non-null late field)
                                             ? AppTheme.of(context).accent1
                                             : AppTheme.of(context)
                                                 .secondaryBackground,
@@ -591,12 +596,14 @@ class _UserInfoInputWidgetState extends ConsumerState<UserInfoInputWidget> {
                                         ),
                                   ),
                                   CountrySelectorWidget(
-                                    initialCountryCode: _model.selectedCountryCode,
+                                    // Phase 10: userInfoInputProvider
+                                    initialCountryCode: ref.watch(userInfoInputProvider).selectedCountryCode,
                                     onChanged: (country) {
-                                      setState(() {
-                                        _model.selectedCountry = country.name;
-                                        _model.selectedCountryCode = country.code;
-                                      });
+                                      // Phase 10: Update Provider state
+                                      ref.read(userInfoInputProvider.notifier).updateCountry(
+                                        country: country.name,
+                                        countryCode: country.code,
+                                      );
                                     },
                                     backgroundColor: AppTheme.of(context).secondaryBackground,
                                     borderColor: const Color(0xFF262D34),
@@ -691,8 +698,10 @@ class _UserInfoInputWidgetState extends ConsumerState<UserInfoInputWidget> {
                                         'tmsnqk92' /* Other */,
                                       ))
                                     ],
-                                    onChanged: (val) => setState(() => _model
-                                        .choiceChipsValue = val?.firstOrNull),
+                                    onChanged: (val) {
+                                      // Phase 10: Update Provider state
+                                      ref.read(userInfoInputProvider.notifier).updateChoiceChipsValue(val?.firstOrNull);
+                                    },
                                     selectedChipStyle: ChipStyle(
                                       backgroundColor:
                                           AppTheme.of(context).accent2,
@@ -763,11 +772,8 @@ class _UserInfoInputWidgetState extends ConsumerState<UserInfoInputWidget> {
                                     rowSpacing: 12.0,
                                     multiselect: false,
                                     alignment: WrapAlignment.start,
-                                    controller:
-                                        _model.choiceChipsValueController ??=
-                                            FormFieldController<List<String>>(
-                                      [],
-                                    ),
+                                    // Phase 10: Widget resource
+                                    controller: _choiceChipsValueController,
                                     wrapped: true,
                                   ),
                                   Divider(
@@ -813,14 +819,13 @@ class _UserInfoInputWidgetState extends ConsumerState<UserInfoInputWidget> {
                                                         Color(0xFFFF0000),
                                                   ),
                                                   child: Checkbox(
-                                                    value:
-                                                        _model.checkboxValue ??=
-                                                            _model.agreed13old,
+                                                    // Phase 10: userInfoInputProvider
+                                                    value: ref.watch(userInfoInputProvider).checkboxValue ??
+                                                        ref.watch(userInfoInputProvider).agreed13old,
                                                     onChanged:
                                                         (newValue) async {
-                                                      setState(() =>
-                                                          _model.checkboxValue =
-                                                              newValue!);
+                                                      // Phase 10: Update Provider state
+                                                      ref.read(userInfoInputProvider.notifier).updateCheckboxValue(newValue!);
                                                     },
                                                     side: BorderSide(
                                                       width: 2,
@@ -1011,29 +1016,34 @@ class _UserInfoInputWidgetState extends ConsumerState<UserInfoInputWidget> {
                                     padding: EdgeInsetsDirectional.fromSTEB(
                                         16.0, 12.0, 16.0, 0.0),
                                     child: AppButtonWidget(
-                                      onPressed: !_model.agreed13old
+                                      // Phase 10: userInfoInputProvider
+                                      onPressed: !ref.watch(userInfoInputProvider).agreed13old
                                           ? null
                                           : () async {
-                                              if (_model.formKey.currentState ==
+                                              // Phase 10: Widget resource
+                                              if (formKey.currentState ==
                                                       null ||
-                                                  !_model.formKey.currentState!
+                                                  !formKey.currentState!
                                                       .validate()) {
                                                 return;
                                               }
 
+                                              // Phase 10: Get state from Provider
+                                              final state = ref.read(userInfoInputProvider);
+
                                               // Phase 1: UseCase를 통한 프로필 업데이트
-                                              if (_model.userDocument != null) {
+                                              if (state.userDocument != null) {
                                                 final updateProfileUseCase =
                                                     GetIt.instance<
                                                         UpdateUserProfileUseCase>();
 
                                                 // UserProfile은 immutable이므로 copyWith()로 변경
-                                                final updatedProfile = _model.userDocument!.copyWith(
-                                                  displayName: _model.displayNameTextController.text,
-                                                  gender: _model.choiceChipsValue,
+                                                final updatedProfile = state.userDocument!.copyWith(
+                                                  displayName: _displayNameTextController.text,  // Phase 10: Widget resource
+                                                  gender: _choiceChipsValueController.value?.firstOrNull,  // Phase 10: Widget resource
                                                   language: AppLocalizations.of(context).languageCode,
-                                                  country: _model.selectedCountry,
-                                                  countryCode: _model.selectedCountryCode,
+                                                  country: state.selectedCountry,
+                                                  countryCode: state.selectedCountryCode,
                                                 );
 
                                                 // UseCase 실행

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/notifications/presentation/providers/notification_providers.dart';
 import '/features/notifications/presentation/widgets/notification_badge.dart';
 
@@ -39,8 +39,8 @@ class NotificationAppBarAction extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // FirebaseAuth에서 현재 사용자 ID 가져오기
-    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    // Phase C-2: Auth Provider 사용
+    final userId = ref.watch(currentUserIdProvider).value ?? '';
 
     if (userId.isEmpty) {
       // 로그인하지 않은 경우 0개로 표시

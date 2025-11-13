@@ -36,10 +36,12 @@ import '/features/chat/presentation/adapters/flutter_chat_adapter.dart';
 import '/features/voting/domain/constants/voting_constants.dart';
 import '/features/voting/presentation/chat_vote_card/vote_card/vote_card_widget.dart';
 import '/core/types/layout_type.dart';
-import '/services/ui/unified_box_calculator.dart';
-import '/core/utils/media/aspect_ratio_analyzer.dart';
-import '/services/ui/responsive_breakpoints.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '/core/utils/ui/box_sizing/unified_box_calculator.dart';
+import '/core/utils/ui/box_sizing/aspect_ratio_analyzer.dart';
+import '/features/chat/domain/services/i_responsive_service.dart';
+import '/app/di.dart' as di;
+import '/features/auth/presentation/providers/auth_providers.dart';
+import 'package:versus_space/gen/fonts.gen.dart';
 import '/services/cache/unified_image_cache_service.dart';
 import 'ai_chat_controller.dart';
 import '../../providers/chat_providers.dart';
@@ -77,9 +79,9 @@ class _AIChatPageCleanState extends ConsumerState<AIChatPageClean>
   String? _lastMessageId;
   bool _hasMore = true;
 
-  // Firebase Auth helpers
-  String get currentUserUid => FirebaseAuth.instance.currentUser?.uid ?? '';
-  String? get currentUserDisplayName => FirebaseAuth.instance.currentUser?.displayName;
+  // Phase C-2: Auth Provider 헬퍼 메서드
+  String get currentUserUid => ref.watch(currentUserIdProvider).value ?? '';
+  String? get currentUserDisplayName => ref.watch(currentUserProvider).value?.displayName;
 
   // 현재 사용자 정보
   String get currentUserId => currentUserUid.isNotEmpty ? currentUserUid : 'anonymous';
@@ -271,7 +273,9 @@ class _AIChatPageCleanState extends ConsumerState<AIChatPageClean>
       );
 
       // Calculate box sizes for message card
-      final maxMessageWidth = ResponsiveBreakpoints.getMaxMessageWidth(context);
+      // Phase 1: Use Clean Architecture adapter for responsive (2025-11-10)
+      final responsiveService = di.getIt<IResponsiveService>();
+      final maxMessageWidth = responsiveService.getMaxMessageWidth(context);
       final boxSizes = UnifiedBoxCalculator.calculateForMessageCard(
         bubbleWidth: maxMessageWidth,
         layoutType: layoutType,
@@ -375,7 +379,7 @@ class _AIChatPageCleanState extends ConsumerState<AIChatPageClean>
         surfaceContainerHigh: VersusColors.backgroundSecondary,
       ),
       typography: core.ChatTypography.standard(
-        fontFamily: 'SourGummy',
+        fontFamily: FontFamily.sourGummy,
       ),
     );
   }

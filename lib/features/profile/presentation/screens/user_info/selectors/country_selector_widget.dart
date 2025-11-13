@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:country_code_picker/country_code_picker.dart';
-import '/core/localization/country_detection_service.dart';
+import '/services/geo_location/geo_location_service.dart';
 
 /// 국가 선택 위젯 (IP 자동 감지 + 수동 변경)
 ///

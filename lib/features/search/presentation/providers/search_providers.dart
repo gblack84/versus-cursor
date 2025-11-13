@@ -1,7 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../domain/models/ranking.dart';
-import '../../domain/models/search_history_model.dart';
+import '../../domain/models/search_history.dart';
 import '../../domain/repositories/i_search_repository.dart';
 import '../../domain/usecases/get_rankings_use_case.dart';
 import '../../domain/usecases/stream_rankings_use_case.dart';
@@ -209,7 +209,7 @@ Future<List<Map<String, dynamic>>> searchUsers(
 /// **Phase 2 (2025-11-07)**: Riverpod 3.x Migration
 /// - FutureProvider for search history
 @riverpod
-Future<List<SearchesModel>> userSearchHistory(
+Future<List<SearchHistory>> userSearchHistory(
   Ref ref,
   String userId, {
   int limit = 10,
@@ -232,7 +232,7 @@ Future<List<SearchesModel>> userSearchHistory(
 /// **Phase 2 (2025-11-07)**: Riverpod 3.x Migration
 /// - StreamProvider for real-time search history
 @riverpod
-Stream<List<SearchesModel>> searchHistoryStream(
+Stream<List<SearchHistory>> searchHistoryStream(
   Ref ref,
   String userId,
 ) async* {

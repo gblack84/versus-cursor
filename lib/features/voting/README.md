@@ -9,6 +9,7 @@
 
 - [전체 디렉토리 구조](#-전체-디렉토리-구조)
 - [아키텍처 개요](#-아키텍처-개요)
+- [BOUNDARIES - Clean Architecture 3-Layer 경계](#️-boundaries---clean-architecture-3-layer-경계)
 - [빠른 참조 가이드](#-빠른-참조-가이드)
 - [레이어별 README 안내](#-레이어별-readme-안내)
 - [주요 파일 위치](#-주요-파일-위치)
@@ -231,6 +232,258 @@ Entity 중심 설계 완성 (Firebase-Centric v2.0 진화)
 
 ---
 
+## 🏛️ BOUNDARIES - Clean Architecture 3-Layer 경계
+
+Voting Feature는 **Clean Architecture v4.0**의 3-Layer 구조를 따르며, 각 Layer 간 의존성 방향을 엄격히 준수합니다.
+
+### 3-Layer 의존성 규칙
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Presentation Layer                         │
+│  • 의존: Domain Layer (UseCase, Entity, Repository          │
+│          Interface)                                          │
+│  • 금지: Data Layer, 다른 Feature Presentation               │
+│  • 패턴: Riverpod Provider, ConsumerWidget, AsyncValue      │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ Repository Interface 의존
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Domain Layer                             │
+│  • 의존: 없음 (Pure Dart)                                    │
+│  • 금지: Presentation, Data, Flutter SDK, Firebase           │
+│  • 패턴: UseCase, Entity (Freezed), Repository Interface    │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ Repository Interface 구현
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      Data Layer                              │
+│  • 의존: Domain Layer (Entity, Repository Interface)         │
+│  • 금지: Presentation Layer                                   │
+│  • 패턴: Repository 구현, Extension (fromFirestore,          │
+│          toFirestore), Firebase SDK 직접 사용                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 실전 예시
+
+#### 1. ✅ Presentation → Domain (올바른 사용)
+
+```dart
+// presentation/providers/vote_state_providers.dart
+@riverpod
+Stream<Vote?> voteState(VoteStateRef ref, String postId) {
+  final useCase = getIt<GetVoteStateUseCase>();
+
+  return useCase.execute(postId: postId).map(
+    (either) => either.getOrElse((l) => null),
+  );
+}
+
+@riverpod
+FutureOr<void> submitVote(
+  SubmitVoteRef ref,
+  String postId,
+  VoteOption option,
+) async {
+  final useCase = getIt<SubmitVoteUseCase>();
+  final currentUserId = ref.watch(currentUserIdProvider);
+
+  final result = await useCase.execute(
+    postId: postId,
+    userId: currentUserId,
+    voteOption: option,
+  );
+
+  return result.fold(
+    (failure) => throw Exception(failure.getUserMessage()),
+    (_) => null,
+  );
+}
+```
+
+#### 2. ✅ Domain → 독립성 (올바른 사용)
+
+```dart
+// domain/usecases/get_vote_state_usecase.dart
+class GetVoteStateUseCase {
+  final IVotingRepository _repository;
+
+  GetVoteStateUseCase(this._repository);
+
+  Stream<Either<VotingFailure, Vote?>> execute({
+    required String postId,
+  }) {
+    return _repository.watchVoteState(postId);
+  }
+}
+
+// domain/usecases/submit_vote_usecase.dart
+class SubmitVoteUseCase {
+  final IVotingRepository _repository;
+
+  SubmitVoteUseCase(this._repository);
+
+  Future<Either<VotingFailure, void>> execute({
+    required String postId,
+    required String userId,
+    required VoteOption voteOption,
+  }) {
+    return _repository.submitVote(
+      postId: postId,
+      userId: userId,
+      voteOption: voteOption,
+    );
+  }
+}
+
+// domain/entities/vote.dart (Freezed)
+@freezed
+class Vote with _$Vote {
+  const factory Vote({
+    required String postId,
+    required int optionACount,
+    required int optionBCount,
+    required List<String> voters,
+    required DateTime? endTime,
+  }) = _Vote;
+
+  factory Vote.fromJson(Map<String, dynamic> json) =>
+      _$VoteFromJson(json);
+}
+```
+
+#### 3. ✅ Data → Domain (올바른 사용)
+
+```dart
+// data/repositories/voting_repository_impl.dart
+class VotingRepositoryImpl implements IVotingRepository {
+  final FirebaseFirestore _firestore;
+  final UnifiedCacheService _cacheService;
+
+  @override
+  Stream<Either<VotingFailure, Vote?>> watchVoteState(String postId) {
+    try {
+      // ✅ Data Layer는 Firestore Stream 직접 사용 허용
+      return _firestore
+          .collection('votes')
+          .doc(postId)
+          .snapshots()
+          .map((snapshot) {
+        if (!snapshot.exists) {
+          return right<VotingFailure, Vote?>(null);
+        }
+
+        final vote = Vote.fromFirestore(snapshot);
+        return right<VotingFailure, Vote?>(vote);
+      });
+    } catch (e) {
+      return Stream.value(left(VotingFailure.serverError(e.toString())));
+    }
+  }
+
+  @override
+  Future<Either<VotingFailure, void>> submitVote({
+    required String postId,
+    required String userId,
+    required VoteOption voteOption,
+  }) async {
+    try {
+      // ✅ Data Layer는 Firestore Transaction 직접 사용 허용
+      await _firestore.runTransaction((transaction) async {
+        final voteRef = _firestore.collection('votes').doc(postId);
+        final voteDoc = await transaction.get(voteRef);
+
+        if (!voteDoc.exists) {
+          throw VotingFailure.notFound();
+        }
+
+        final vote = Vote.fromFirestore(voteDoc);
+
+        // 이미 투표했는지 확인
+        if (vote.voters.contains(userId)) {
+          throw VotingFailure.alreadyVoted();
+        }
+
+        // 투표 집계 업데이트
+        final updatedVote = vote.copyWith(
+          optionACount: voteOption == VoteOption.optionA
+              ? vote.optionACount + 1
+              : vote.optionACount,
+          optionBCount: voteOption == VoteOption.optionB
+              ? vote.optionBCount + 1
+              : vote.optionBCount,
+          voters: [...vote.voters, userId],
+        );
+
+        transaction.update(voteRef, updatedVote.toFirestore());
+      });
+
+      return right(null);
+    } catch (e) {
+      return left(VotingFailure.serverError(e.toString()));
+    }
+  }
+}
+```
+
+#### 4. ❌ 잘못된 사용 패턴
+
+```dart
+// ❌ Presentation Layer에서 Firestore 직접 접근
+@riverpod
+Stream<Vote?> voteState(VoteStateRef ref, String postId) {
+  return FirebaseFirestore.instance
+      .collection('votes')
+      .doc(postId)
+      .snapshots()
+      .map((snapshot) => Vote.fromFirestore(snapshot));
+}
+
+// ❌ Domain Layer에서 Firebase 의존성
+class SubmitVoteUseCase {
+  Future<void> execute(String postId, String userId) async {
+    await FirebaseFirestore.instance
+        .collection('votes')
+        .doc(postId)
+        .update({'voters': FieldValue.arrayUnion([userId])});
+  }
+}
+```
+
+### Boundary 검증
+
+#### 자동 검증 (Lint)
+
+```bash
+# Presentation → Data 위반 검사
+grep -r "import.*voting.*data" lib/features/voting/presentation/
+
+# Domain → Firebase 의존성 검사
+grep -r "import.*firebase" lib/features/voting/domain/
+
+# 기대 결과: 발견되지 않아야 함
+```
+
+#### 수동 검증 체크리스트
+
+- [ ] Presentation Layer는 UseCase만 호출하는가?
+- [ ] Domain Layer는 Pure Dart만 사용하는가? (Firebase/Flutter SDK 없음)
+- [ ] Data Layer는 Repository Interface를 구현하는가?
+- [ ] GetIt으로 UseCase/Repository를 DI하는가?
+- [ ] Either 패턴으로 에러를 반환하는가?
+- [ ] Firestore Transaction으로 원자성을 보장하는가?
+
+### 참고 문서
+
+- **전체 프로젝트 Boundaries**: `/CLAUDE.md` - "## 🏛 BOUNDARIES" 섹션
+- **App Layer Boundaries**: `/lib/app/README.md` - "### 🏛️ BOUNDARIES" 섹션
+- **Voting Domain Layer**: `domain/README.md` - UseCase, Entity, Failure
+- **Voting Data Layer**: `data/README.md` - Repository 구현, Extension
+- **Voting Presentation Layer**: `presentation/README.md` - Provider, Widget
+
+---
+
 ## 🎯 빠른 참조 가이드
 
 ### 찾고자 하는 것 → 참조할 README 섹션
@@ -249,6 +502,258 @@ Entity 중심 설계 완성 (Firebase-Centric v2.0 진화)
 | **Riverpod Provider** | `presentation/README.md` | Provider 섹션 | `presentation/providers/vote_state_providers.dart` |
 | **투표 다이얼로그** | `presentation/README.md` | Dialog 섹션 | `presentation/dialogs/voting_dialog.dart` |
 | **DI 설정** | `di/voting_di_module.dart` | - | `di/voting_di_module.dart` |
+
+---
+
+## 🧭 Router 통합 (Navigation)
+
+### Voting Feature의 특별한 Navigation 전략
+
+Voting Feature는 **전용 Routes를 가지지 않습니다**. 다른 Feature들과 달리, Voting은 2가지 UI 패턴으로 다른 Feature들에 임베디드되어 동작합니다:
+
+1. **투표 다이얼로그** (`VotingDialog`): 오버레이 방식으로 표시
+2. **채팅 투표 카드** (`VoteCardWidget`): Chat Feature 메시지에 임베디드
+
+### 1. 투표 다이얼로그 (VotingDialog)
+
+**사용 위치**: Post Feature에서 투표 버튼 클릭 시
+
+**표시 방식**: `showDialog()` (Flutter 기본 다이얼로그)
+
+**파일**: `lib/features/voting/presentation/dialogs/voting_dialog.dart` (410줄)
+
+**구조**:
+```dart
+// Post Feature에서 호출
+void _showVotingDialog(BuildContext context, Vote vote) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,  // 뒤로가기 방지 (투표 진행 중)
+    builder: (context) => VotingDialog(
+      vote: vote,
+      onVoteSubmitted: (option) {
+        // 투표 제출 처리
+      },
+    ),
+  );
+}
+```
+
+**특징**:
+- **오버레이 UI**: 전체 화면을 덮는 다이얼로그
+- **No Route Required**: GoRouter 라우트 불필요
+- **Stateful Widget**: 내부 상태 관리 (VotingDialogState)
+- **25개 컴포넌트**: Header, Timer, Content, Actions 등 분리
+
+### 2. 채팅 투표 카드 (VoteCardWidget)
+
+**사용 위치**: Chat Feature 메시지 목록
+
+**표시 방식**: `flutter_chat_ui` 커스텀 메시지 타입
+
+**파일**: `lib/features/voting/presentation/chat_vote_card/vote_card/vote_card_widget.dart` (279줄)
+
+**구조**:
+```dart
+// Chat Feature에서 메시지 렌더링 시
+Widget _buildChatMessage(types.Message message) {
+  if (message is VoteMessage) {
+    return VoteCardWidget(
+      postVoting: message.postVoting,  // PostVoting 엔티티
+      onVotePressed: (option) {
+        // 투표 제출 → VotingDialog 표시
+      },
+    );
+  }
+  return TextMessageWidget(message: message);
+}
+```
+
+**특징**:
+- **임베디드 위젯**: Chat 메시지 스트림의 일부
+- **No Route Required**: 독립 페이지 아님
+- **Riverpod StreamProvider**: 실시간 투표 상태 동기화
+- **12개 컴포넌트**: Profile Header, Body, Footer 등 분리
+
+### 왜 Routes가 없나요?
+
+**설계 의도**:
+1. **Context-Aware**: 투표는 항상 특정 Post나 Chat 컨텍스트 안에서 발생
+2. **UX 최적화**: 다이얼로그/임베디드 위젯이 더 자연스러운 투표 경험 제공
+3. **State Management**: 부모 Feature의 상태와 긴밀하게 연결
+4. **Code Reusability**: 다이얼로그는 Post/Chat 모두에서 재사용 가능
+
+### Post Feature와의 관계
+
+**Post Feature가 Voting Dialog를 호출하는 방법**:
+
+```dart
+// lib/features/post/presentation/screens/detail/post_detail_page.dart
+ElevatedButton(
+  onPressed: () {
+    // 1. Vote 엔티티 준비 (Post Feature가 관리)
+    final vote = Vote.fromPost(postData);
+
+    // 2. VotingDialog 표시 (Voting Feature 컴포넌트)
+    showDialog(
+      context: context,
+      builder: (context) => VotingDialog(
+        vote: vote,
+        onVoteSubmitted: (option) async {
+          // 3. 투표 제출 (Voting Feature Provider 사용)
+          final provider = ref.read(voteProvidersProvider);
+          await provider.submitVote(
+            voteId: vote.voteId,
+            option: option,
+          );
+
+          // 4. Post 상태 갱신 (Post Feature가 관리)
+          ref.invalidate(postDetailProvider(postId));
+        },
+      ),
+    );
+  },
+  child: Text('투표하기'),
+)
+```
+
+### Chat Feature와의 관계
+
+**Chat Feature가 Vote Card를 표시하는 방법**:
+
+```dart
+// lib/features/chat/presentation/screens/chat_detail_widget_clean.dart
+Chat(
+  messages: messages,
+  customMessageBuilder: (types.Message message, {required int messageWidth}) {
+    if (message.metadata?['type'] == 'vote') {
+      // 1. PostVoting 엔티티 파싱 (Chat Feature가 관리)
+      final postVoting = PostVoting.fromJson(message.metadata!['data']);
+
+      // 2. VoteCardWidget 표시 (Voting Feature 컴포넌트)
+      return VoteCardWidget(
+        postVoting: postVoting,
+        onVotePressed: (option) {
+          // 3. VotingDialog 표시
+          showDialog(
+            context: context,
+            builder: (context) => VotingDialog(
+              vote: Vote.fromPostVoting(postVoting),
+              onVoteSubmitted: (option) async {
+                // 4. 투표 제출 (Voting Feature Provider)
+                final provider = ref.read(voteProvidersProvider);
+                await provider.submitVote(
+                  voteId: postVoting.voteId,
+                  option: option,
+                );
+              },
+            ),
+          );
+        },
+      );
+    }
+    return null;  // 다른 메시지 타입은 기본 렌더링
+  },
+)
+```
+
+### Provider 사용법
+
+Voting Feature는 독립적인 Routes는 없지만, **Riverpod Provider는 제공**합니다:
+
+**1. 투표 제출 Provider** (`vote_providers.dart`):
+```dart
+@riverpod
+class VoteProviders extends _$VoteProviders {
+  Future<void> submitVote({
+    required String voteId,
+    required VoteOption option,
+  }) async {
+    final useCase = GetIt.instance<SubmitVoteUseCase>();
+    final result = await useCase(voteId: voteId, option: option);
+
+    result.fold(
+      (failure) => throw Exception(failure.getUserMessage()),
+      (_) => print('투표 성공'),
+    );
+  }
+}
+```
+
+**2. 투표 상태 StreamProvider** (`vote_state_providers.dart`):
+```dart
+@riverpod
+Stream<VoteState> voteState(VoteStateRef ref, String postId) {
+  final useCase = GetIt.instance<WatchVoteStateUseCase>();
+  return useCase(postId).asyncMap(
+    (either) => either.fold(
+      (failure) => throw Exception(failure.getUserMessage()),
+      (state) => state,
+    ),
+  );
+}
+```
+
+### DI (Dependency Injection)
+
+**파일**: `lib/features/voting/di/voting_di_module.dart`
+
+**등록 방식** (GetIt):
+```dart
+void setupVotingDI(GetIt getIt) {
+  // Repository 등록
+  getIt.registerSingleton<IVotingDialogRepository>(
+    VotingDialogRepositoryImpl(),
+  );
+  getIt.registerSingleton<IVotingChatRepository>(
+    VotingChatRepositoryImpl(),
+  );
+
+  // UseCase 등록
+  getIt.registerFactory(() => SubmitVoteUseCase(getIt()));
+  getIt.registerFactory(() => WatchVoteStateUseCase(getIt()));
+}
+```
+
+**main.dart 호출**:
+```dart
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
+  // Voting DI 등록
+  setupVotingDI(getIt);
+
+  runApp(ProviderScope(child: MyApp()));
+}
+```
+
+### nav.dart 통합
+
+**Voting Feature는 nav.dart에 통합되지 않습니다**:
+- `lib/app/router/navigation/nav.dart`에 `VotingRoutes.routes(ref)` 호출 없음
+- 이유: 독립 페이지가 아닌 임베디드 UI 컴포넌트
+
+### 참조 문서
+
+- [voting/README.md](../README.md) - Voting Feature 전체 가이드 (528줄)
+- [voting/data/README.md](./data/README.md) - Data Layer 상세 (2089줄)
+- [voting/domain/README.md](./domain/README.md) - Domain Layer 상세 (1775줄)
+- [voting/presentation/README.md](./presentation/README.md) - Presentation Layer 상세 (~2000줄)
+- [/lib/app/router/README.md](/lib/app/router/README.md) - Router 시스템 개요
+
+### 요약
+
+| Feature | Routes | UI Pattern | 호출 방식 | 상태 관리 |
+|---------|--------|-----------|----------|----------|
+| **Voting** | ❌ 없음 | Dialog + 임베디드 위젯 | showDialog() + 커스텀 메시지 | Riverpod StreamProvider |
+| **Auth** | ✅ 6개 | 독립 페이지 | context.goNamed() | Riverpod Provider |
+| **Chat** | ✅ 2개 | 독립 페이지 | context.goNamed() | Riverpod StreamProvider |
+| **Post** | ✅ 3개 | 독립 페이지 | context.goNamed() | Riverpod StreamProvider |
+
+**Voting Feature의 Navigation 철학**:
+> "투표는 콘텐츠의 일부이지, 독립된 목적지가 아닙니다."
+> 따라서 Routes 대신 임베디드 UI 패턴을 사용하여 더 자연스러운 사용자 경험을 제공합니다.
 
 ---
 

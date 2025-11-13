@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '/core_exports.dart'; // Core utilities and types (includes cloud_firestore)
-// For FirestoreRecord, safeGet, RecordBuilder
 
 /// SERIALIZATION HELPERS
 
@@ -98,9 +97,6 @@ String? serializeParam(
         data = json.encode(param);
       case ParamType.DocumentReference:
         data = _serializeDocumentReference(param as DocumentReference);
-      case ParamType.Document:
-        final reference = (param as FirestoreRecord).reference;
-        data = _serializeDocumentReference(reference);
     }
     return data;
   } catch (e) {
@@ -136,7 +132,7 @@ LatLng? latLngFromString(String? latLngStr) {
 }
 
 AppUploadedFile uploadedFileFromString(String uploadedFileStr) =>
-    AppUploadedFile.deserialize(uploadedFileStr);
+    deserializeAppUploadedFile(uploadedFileStr);
 
 DocumentReference _deserializeDocumentReference(
   String refStr,
@@ -161,8 +157,6 @@ enum ParamType {
   Color,
   AppUploadedFile,
   JSON,
-
-  Document,
   DocumentReference,
 }
 
@@ -216,41 +210,9 @@ dynamic deserializeParam<T>(
         return json.decode(param);
       case ParamType.DocumentReference:
         return _deserializeDocumentReference(param, collectionNamePath ?? []);
-
-      default:
-        return null;
     }
   } catch (e) {
     print('Error deserializing parameter: $e');
     return null;
   }
-}
-
-Future<dynamic> Function(String) getDoc(
-  List<String> collectionNamePath,
-  RecordBuilder recordBuilder,
-) {
-  return (String ids) => _deserializeDocumentReference(ids, collectionNamePath)
-      .get()
-      .then((s) => recordBuilder(s));
-}
-
-Future<List<T>> Function(String) getDocList<T>(
-  List<String> collectionNamePath,
-  RecordBuilder<T> recordBuilder,
-) {
-  return (String idsList) {
-    List<String> docIds = [];
-    try {
-      final ids = json.decode(idsList) as Iterable;
-      docIds = ids.where((d) => d is String).map((d) => d as String).toList();
-    } catch (_) {}
-    return Future.wait(
-      docIds.map(
-        (ids) => _deserializeDocumentReference(ids, collectionNamePath)
-            .get()
-            .then((s) => recordBuilder(s)),
-      ),
-    ).then((docs) => docs.where((d) => d != null).map((d) => d!).toList());
-  };
 }

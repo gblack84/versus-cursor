@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,14 +8,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '/core_exports.dart';
 import '/features/notifications/domain/services/i_notification_service.dart';
 import '/features/notifications/presentation/providers/notification_overlay_provider.dart';
-import '/services/cache/preload_strategy.dart';
+import '/features/profile/presentation/providers/usecase_providers.dart';
+import '/services/initialization/initialization_providers.dart';
 import 'package:get_it/get_it.dart';
 
-class VersusApp extends StatefulWidget {
+class VersusApp extends ConsumerStatefulWidget {
   const VersusApp({super.key});
 
   @override
-  State<VersusApp> createState() => _VersusAppState();
+  ConsumerState<VersusApp> createState() => _VersusAppState();
 
   static _VersusAppState of(BuildContext context) =>
       context.findAncestorStateOfType<_VersusAppState>()!;
@@ -28,41 +30,40 @@ class VersusAppScrollBehavior extends MaterialScrollBehavior {
       };
 }
 
-class _VersusAppState extends State<VersusApp> {
+class _VersusAppState extends ConsumerState<VersusApp> {
   Locale? _locale;
   ThemeMode _themeMode = AppTheme.themeMode;
-  late AppStateNotifier _appStateNotifier;
-  late GoRouter _router;
+  GoRouter? _router;
   late Stream<User?> userStream;
 
-  // NotificationOverlayProvider for in-app notification dialogs
+  // NotificationOverlayProvider: 인앱 알림 다이얼로그용
   NotificationOverlayProvider? _overlayProvider;
 
   String getRoute([RouteMatchBase? routeMatch]) {
+    if (_router == null) return '/';
+
     final RouteMatchBase lastMatch =
-        routeMatch ?? _router.routerDelegate.currentConfiguration.last;
+        routeMatch ?? _router!.routerDelegate.currentConfiguration.last;
     final RouteMatchList matchList = lastMatch is ImperativeRouteMatch
         ? lastMatch.matches
-        : _router.routerDelegate.currentConfiguration;
+        : _router!.routerDelegate.currentConfiguration;
     return matchList.uri.toString();
   }
 
-  List<String> getRouteStack() =>
-      _router.routerDelegate.currentConfiguration.matches
-          .map((e) => getRoute(e))
-          .toList();
+  List<String> getRouteStack() {
+    if (_router == null) return ['/'];
+
+    return _router!.routerDelegate.currentConfiguration.matches
+        .map((e) => getRoute(e))
+        .toList();
+  }
 
   @override
   void initState() {
     super.initState();
 
-    _appStateNotifier = AppStateNotifier.instance;
-    _router = createRouter(_appStateNotifier);
-
     userStream = FirebaseAuth.instance.authStateChanges()
       ..listen((user) async {
-        _appStateNotifier.update(user);
-
         // INotificationService를 통한 통합 알림 시스템 초기화
         if (user != null && user.uid.isNotEmpty) {
           // 사용자가 로그인하면 알림 시스템 시작
@@ -74,33 +75,24 @@ class _VersusAppState extends State<VersusApp> {
           _overlayProvider!.startListening();
           debugPrint('[VersusApp] 알림 오버레이 프로바이더 시작');
 
-          // lastActive 필드 업데이트
-          try {
-            await FirebaseFirestore.instance
-                .collection('users')
-                .doc(user.uid)
-                .update({
-              'lastActive': FieldValue.serverTimestamp(),
-            });
-            debugPrint('[VersusApp] 알림 서비스 시작 및 lastActive 업데이트: ${user.uid}');
+          // ✅ Clean Architecture: UpdateLastActiveUseCase 사용
+          final updateLastActiveUseCase = ref.read(updateLastActiveUseCaseProvider);
+          final updateResult = await updateLastActiveUseCase(user.uid);
 
-            // Preload recent chats for better cache performance
-            // UI 렌더링이 완료된 후 시작하도록 지연시킴
-            Future.delayed(const Duration(milliseconds: 500), () async {
-              try {
-                // 프리로드를 순차적으로 수행하여 메인 스레드 부하 감소
-                await PreloadStrategy().preloadRecentChats(user.uid);
-                // 추가 지연을 주어 UI 반응성 유지
-                await Future.delayed(const Duration(milliseconds: 100));
-                await PreloadStrategy().preloadHomeFeedPosts();
-                debugPrint('[VersusApp] 프리로드 완료');
-              } catch (e) {
-                debugPrint('[VersusApp] 프리로드 실패: $e');
-              }
-            });
-          } catch (e) {
-            debugPrint('[VersusApp] lastActive 업데이트 실패: $e');
-          }
+          updateResult.fold(
+            (failure) {
+              debugPrint('[VersusApp] lastActive 업데이트 실패: $failure');
+              // 비중요 작업이므로 사용자에게 알리지 않음
+            },
+            (_) {
+              debugPrint('[VersusApp] 알림 서비스 시작 및 lastActive 업데이트: ${user.uid}');
+            },
+          );
+
+          // ✅ Service Layer: AppInitializationService 사용 (병렬 프리로드)
+          final initService = ref.read(appInitializationServiceProvider);
+          initService.initialize(user.uid);
+          // 비동기 실행, 결과 대기 불필요 (백그라운드 프리로드)
         } else {
           // 사용자가 로그아웃하면 알림 시스템 종료
           final notificationService = GetIt.instance<INotificationService>();
@@ -113,6 +105,14 @@ class _VersusAppState extends State<VersusApp> {
           debugPrint('[VersusApp] 알림 오버레이 프로바이더 중지');
         }
       });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Router 초기화 (ref 접근 가능, 한 번만 초기화)
+    _router ??= createRouter(ref);
   }
 
   @override
@@ -166,12 +166,12 @@ class _VersusAppState extends State<VersusApp> {
         useMaterial3: false,
       ),
       themeMode: _themeMode,
-      routerConfig: _router,
+      routerConfig: _router!,
     );
   }
 }
 
-// For backward compatibility
+// 하위 호환성 유지 (deprecated)
 @Deprecated('Use VersusApp instead')
 class MyApp extends VersusApp {
   const MyApp({super.key}) : super();

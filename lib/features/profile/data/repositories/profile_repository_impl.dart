@@ -78,6 +78,38 @@ class ProfileRepositoryImpl implements IProfileRepository {
   //   - getProfileInfoStream() → 스트림 미사용, Future 조회만 사용
   //   - updateProfileInfo() → UpdateUserProfileUseCase 생성 필요
 
+  // ============= 활동 시각 업데이트 =============
+
+  @override
+  Future<Either<ProfileFailure, void>> updateLastActive(String userId) async {
+    try {
+      debugPrint('[ProfileRepository] Updating last active for: $userId');
+
+      // 🔥 Firebase SDK 직접 사용 (lastActive 필드 업데이트)
+      await _firestore.collection('users').doc(userId).update({
+        'lastActive': FieldValue.serverTimestamp(),
+      });
+
+      // 🔥 캐시 무효화 (L1 Memory, L2 Hive만 - Firestore는 자동 동기화)
+      await _cacheService.clearProfileInfo(userId);
+
+      debugPrint('[ProfileRepository] Last active updated successfully');
+      return right(null);
+    } on FirebaseException catch (e) {
+      debugPrint('[ProfileRepository] Firebase error: ${e.code} - ${e.message}');
+
+      // 문서가 없으면 ProfileNotFound 반환
+      if (e.code == 'not-found') {
+        return left(ProfileFailure.profileNotFound(userId: userId));
+      }
+
+      return left(_mapFirebaseException(e));
+    } catch (e) {
+      debugPrint('[ProfileRepository] Unexpected error: $e');
+      return left(ProfileFailure.firestoreWrite('Failed to update last active: $e'));
+    }
+  }
+
   // ============= UserSettings 관리 =============
   // TODO: 2025-01-21 삭제됨 - IUserRepository 사용 또는 UseCase 생성
   //

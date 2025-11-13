@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '/features/auth/presentation/providers/auth_providers.dart';
 import '/core/design_system/design_system.dart';
 import '/features/voting/presentation/dialogs/voting_dialog.dart';
 import '/features/voting/domain/entities/chat/vote_state.dart';
-import '/services/ui/models/box_sizes.dart';
+import '/core/utils/ui/box_sizing/models/box_sizes.dart';
 import '/features/voting/presentation/providers/vote_state_providers.dart';
 import 'components/vote_card_profile_header.dart';
 import 'components/vote_card_header.dart';
@@ -79,7 +79,8 @@ class _VoteCardWidgetState extends ConsumerState<VoteCardWidget> {
   @override
   Widget build(BuildContext context) {
     // StreamProvider 사용 (Coordinator 대체)
-    final userId = FirebaseAuth.instance.currentUser?.uid;
+    // Phase C-2: Auth Provider 사용
+    final userId = ref.watch(currentUserIdProvider).value;
     final voteStateParams = VoteStateParams(
       postId: widget.postId,
       userId: userId,

@@ -12,7 +12,7 @@ import 'package:get_it/get_it.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 // ===== Core Services =====
-import '/core/utils/idempotency_service.dart';
+import '/services/idempotency/idempotency_service.dart';
 
 // ===== App Layer - Contracts =====
 // Contract 패턴 완전 폐기 (2025-11-09) - Firebase-Centric Architecture

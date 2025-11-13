@@ -13,6 +13,7 @@
 - [Migration History](#-migration-history)
 - [전체 디렉토리 구조](#-전체-디렉토리-구조)
 - [아키텍처 개요](#-아키텍처-개요)
+- [BOUNDARIES - 3-Layer 경계](#-boundaries---clean-architecture-3-layer-경계)
 - [빠른 참조 가이드](#-빠른-참조-가이드)
 - [Provider 상세 문서](#-provider-상세-문서)
 - [레이어별 README 안내](#-레이어별-readme-안내)
@@ -277,6 +278,171 @@ result.fold(
 | **에러 메시지 품질** | Generic | 한국어 맞춤형 | **100%** 개선 |
 
 **🎯 결론**: Either 패턴은 컴파일 타임에 모든 에러 케이스를 강제하여 **런타임 crash를 0%로 만듭니다**.
+
+---
+
+## 🏛️ BOUNDARIES - Clean Architecture 3-Layer 경계
+
+### Layer 의존성 규칙
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Presentation Layer                         │
+│  • 의존: Domain Layer (UseCase, Entity, Repository          │
+│          Interface)                                          │
+│  • 금지: Data Layer, 다른 Feature Presentation               │
+│  • 패턴: Riverpod Provider, ConsumerWidget, AsyncValue      │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ Repository Interface 의존
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Domain Layer                             │
+│  • 의존: 없음 (Pure Dart)                                    │
+│  • 금지: Presentation, Data, Flutter SDK, Firebase           │
+│  • 패턴: UseCase, Entity (Freezed), Repository Interface     │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ Repository Interface 구현
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      Data Layer                              │
+│  • 의존: Domain Layer (Entity, Repository Interface)         │
+│  • 금지: Presentation Layer                                   │
+│  • 패턴: Repository 구현, Extension (fromFirestore,          │
+│          toFirestore), Firebase SDK 직접 사용                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 실무 예시
+
+#### ✅ Presentation → Domain (올바른 사용)
+
+```dart
+// Provider에서 UseCase 사용
+@riverpod
+Future<void> signInWithEmail(
+  Ref ref,
+  String email,
+  String password,
+) async {
+  final useCase = getIt<SignInWithEmailUseCase>();  // GetIt DI
+  final result = await useCase.execute(
+    email: email,
+    password: password,
+  );
+
+  return result.fold(
+    (failure) => throw Exception(failure.getUserMessage()),
+    (_) => null,
+  );
+}
+```
+
+#### ✅ Domain → 독립성 (올바른 사용)
+
+```dart
+// Pure Dart (의존성 없음)
+class SignInWithEmailUseCase {
+  final IAuthRepository _repository;
+
+  SignInWithEmailUseCase(this._repository);
+
+  Future<Either<AuthFailure, void>> execute({
+    required String email,
+    required String password,
+  }) {
+    return _repository.signInWithEmail(email, password);
+  }
+}
+```
+
+#### ✅ Data → Domain (올바른 사용)
+
+```dart
+// Repository 구현 (Domain Interface 구현)
+class AuthRepositoryImpl implements IAuthRepository {
+  final FirebaseAuth _auth;
+
+  @override
+  Future<Either<AuthFailure, void>> signInWithEmail(
+    String email,
+    String password,
+  ) async {
+    try {
+      // ✅ Data Layer는 Firebase Auth 직접 접근 허용
+      await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      return right(null);
+    } on FirebaseAuthException catch (e) {
+      return left(_handleAuthException(e));
+    }
+  }
+}
+```
+
+#### ❌ 잘못된 사용
+
+```dart
+// ❌ Presentation → Data (Layer 건너뛰기)
+import '/features/auth/data/repositories/auth_repository_impl.dart';
+final repository = AuthRepositoryImpl();  // 직접 인스턴스화
+
+// ❌ Domain → Presentation (역방향 의존)
+import 'package:flutter_riverpod/flutter_riverpod.dart';  // Flutter SDK
+
+// ❌ Domain → Data (Layer 건너뛰기)
+import '/features/auth/data/repositories/auth_repository_impl.dart';
+
+// ❌ Presentation → Firebase (Layer 책임 위반)
+final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+  email: email,
+  password: password,
+);
+```
+
+### 경계 준수 검증
+
+#### 자동 검사
+
+```bash
+# Presentation → Data 위반 검사
+grep -r "import.*data.*repositories" lib/features/auth/presentation/
+
+# Domain → Flutter 위반 검사
+grep -r "import.*flutter" lib/features/auth/domain/
+
+# Domain → Firebase 위반 검사
+grep -r "import.*firebase" lib/features/auth/domain/
+
+# 기대 결과: 모두 발견되지 않아야 함
+```
+
+#### 수동 체크리스트
+
+**Presentation Layer**:
+- [x] Data Layer import 없음
+- [x] UseCase/Entity/Repository Interface만 의존
+- [x] Firebase SDK 사용 없음
+- [x] Riverpod Provider 패턴 사용
+
+**Domain Layer**:
+- [x] Flutter/Firebase import 없음
+- [x] Pure Dart 코드만 (외부 의존성 없음)
+- [x] Freezed, fpdart 등 Pure Dart 라이브러리만 허용
+- [x] Repository Interface 정의
+
+**Data Layer**:
+- [x] Presentation Layer import 없음
+- [x] Domain Layer (Entity, Repository Interface)만 의존
+- [x] Firebase SDK 사용 허용 (Auth)
+- [x] Repository 구현체
+
+### 참고 문서
+
+- **전체 아키텍처**: [CLAUDE.md - BOUNDARIES 섹션](../../../CLAUDE.md#boundaries)
+- **App Layer 경계**: [lib/app/README.md - BOUNDARIES](../../../lib/app/README.md#boundaries)
+- **Feature 내부 README**: [Presentation](presentation/README.md) | [Domain](domain/README.md) | [Data](data/README.md)
 
 ---
 
@@ -558,6 +724,302 @@ Auth Feature의 Provider 패턴은 다른 Feature들과 **100% 일관성**을 �
 | 10 | `getCurrentUserUseCaseProvider` | Provider | 현재 사용자 조회 |
 | 11 | `signOutUseCaseProvider` | Provider | 로그아웃 |
 | 12-15 | UI State Notifiers (4개) | StateNotifier | 로딩/에러 상태 관리 |
+
+---
+
+## 🗺 Router Integration
+
+Auth Feature는 GoRouter 기반 라우팅을 사용하며, **커스텀 애니메이션**을 제공하는 유일한 Feature입니다.
+
+### 라우트 구성
+
+**파일 위치**: `lib/features/auth/presentation/routes/auth_routes.dart` (167줄)
+
+Auth Feature는 **6개의 라우트**를 제공합니다:
+
+| # | 라우트 이름 | 경로 | requireAuth | 파라미터 | 애니메이션 | 목적 |
+|---|------------|------|-------------|---------|----------|------|
+| 1 | `LoginPageWidget.routeName` | `/login` | ❌ false (PUBLIC) | - | ✅ Fade+Slide (400ms) | 이메일/소셜 로그인 |
+| 2 | `CreateAccountWidget.routeName` | `/createAccount` | ❌ false (PUBLIC) | - | ❌ NoTransition | 이메일 회원가입 |
+| 3 | `ForgotPasswordWidget.routeName` | `/forgotPassword` | ❌ false (PUBLIC) | - | ❌ NoTransition | 비밀번호 재설정 |
+| 4 | `StartPageWidget.routeName` | `/startPage` | ❌ false (PUBLIC) | - | ✅ Fade+Slide (400ms) | 앱 시작 화면 |
+| 5 | `PhoneCreatAccountWidget.routeName` | `/phoneCreateAccount` | ❌ false (PUBLIC) | `phoneNumberParam` (String, 선택) | ❌ NoTransition | 전화번호 입력 |
+| 6 | `PhonelogeinpincodeWidget.routeName` | `/phoneLoginPincode` | ❌ false (PUBLIC) | `phoneNumberParam` (String, 선택) | ❌ NoTransition | 전화번호 PIN 인증 |
+
+**총 라우트**: 6개 (모두 PUBLIC - 로그인 전 접근 가능)
+
+### 커스텀 애니메이션 (Fade + Slide)
+
+Auth Feature는 프로젝트 내 **유일하게 커스텀 전환 애니메이션**을 사용하는 Feature입니다.
+
+**애니메이션 적용 라우트**:
+- **LoginPageWidget**: Fade + Slide (400ms, easeInOut)
+- **StartPageWidget**: Fade + Slide (400ms, easeInOut)
+
+**다른 4개 라우트**: NoTransitionPage (즉시 전환, 0ms)
+
+#### 커스텀 애니메이션 구현
+
+```dart
+// lib/features/auth/presentation/routes/auth_routes.dart
+
+// Login Page - Custom Transition
+GoRoute(
+  name: LoginPageWidget.routeName,
+  path: LoginPageWidget.routePath,
+  pageBuilder: (context, state) {
+    fixStatusBarOniOS16AndBelow(context);  // iOS 16 이하 상태바 수정
+    return CustomTransitionPage(
+      key: state.pageKey,
+      child: LoginPageWidget(),
+      transitionDuration: Duration(milliseconds: 400),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        // Fade + Slide transition (FlutterFlow 애니메이션 복제)
+        final curvedAnimation = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeInOut,
+        );
+        return FadeTransition(
+          opacity: curvedAnimation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: Offset(0.0, 0.15), // 화면 높이의 15% (60px) 아래에서 시작
+              end: Offset.zero,          // 원래 위치로
+            ).animate(curvedAnimation),
+            child: child,
+          ),
+        );
+      },
+    );
+  },
+),
+```
+
+**애니메이션 효과**:
+- **Fade**: 투명도 0 → 1 (부드러운 등장)
+- **Slide**: 화면 아래 15% → 원래 위치 (위로 슬라이드)
+- **Duration**: 400ms (0.4초)
+- **Curve**: easeInOut (자연스러운 가속/감속)
+
+#### 왜 Login과 StartPage만 애니메이션?
+
+| 라우트 | 애니메이션 | 이유 |
+|--------|----------|------|
+| **Login, StartPage** | ✅ Fade+Slide | 앱의 첫 화면 - 사용자 경험 강조 |
+| **CreateAccount** | ❌ NoTransition | Login에서 빠른 전환 필요 |
+| **ForgotPassword** | ❌ NoTransition | Login에서 빠른 전환 필요 |
+| **PhoneCreateAccount** | ❌ NoTransition | 빠른 입력 플로우 유지 |
+| **PhoneLoginPincode** | ❌ NoTransition | 빠른 인증 플로우 유지 |
+
+**Design Decision**: 첫 진입 화면(Login, StartPage)에만 애니메이션을 적용하여 **성능**과 **UX**를 균형 있게 유지합니다.
+
+### PUBLIC vs PRIVATE Routes
+
+Auth Feature의 **모든 라우트는 PUBLIC** (`requireAuth: false`)입니다.
+
+#### 왜 모두 PUBLIC인가?
+
+```dart
+// ✅ Auth Feature - 모든 라우트 PUBLIC
+AppRoute(
+  name: LoginPageWidget.routeName,
+  path: LoginPageWidget.routePath,
+  requireAuth: false,  // PUBLIC - 로그인 전 접근 가능
+  builder: (context, params) => LoginPageWidget(),
+).toRoute(ref),
+```
+
+**근거**:
+1. **인증 전 접근 필요**: 로그인하지 않은 사용자가 접근해야 하는 화면들
+2. **회원가입 플로우**: 계정이 없는 사용자도 접근 가능
+3. **비밀번호 재설정**: 로그인 없이 비밀번호 복구 가능
+4. **UX 최적화**: 인증 장벽 없이 앱 진입 가능
+
+**다른 Feature 비교**:
+- **Profile Feature**: 6개 라우트 중 5개 PRIVATE, 1개 PUBLIC (UserInfoDisplay)
+- **Notifications Feature**: 4개 라우트 모두 PRIVATE (로그인 필수)
+- **Chat Feature**: 2개 라우트 모두 PRIVATE (로그인 필수)
+- **Auth Feature**: 6개 라우트 모두 PUBLIC (인증 전 접근)
+
+### 사용 예시
+
+#### 1. 타입 안전 네비게이션 (권장)
+
+```dart
+// Login 화면으로 이동
+context.goNamed(AuthRoutes.login);
+
+// StartPage로 이동 (앱 시작)
+context.goNamed(AuthRoutes.startPage);
+
+// 회원가입 화면으로 이동
+context.goNamed(AuthRoutes.createAccount);
+
+// 비밀번호 찾기 화면으로 이동
+context.goNamed(AuthRoutes.forgotPassword);
+```
+
+#### 2. 전화번호 인증 플로우
+
+```dart
+// Step 1: 전화번호 입력 화면
+context.goNamed(
+  AuthRoutes.phoneCreateAccount,
+  queryParameters: {
+    'phoneNumberParam': '+821012345678',  // 선택적 사전 입력
+  },
+);
+
+// Step 2: PIN 코드 입력 화면
+context.goNamed(
+  AuthRoutes.phoneLoginPincode,
+  queryParameters: {
+    'phoneNumberParam': phoneNumber,  // 이전 화면에서 전달
+  },
+);
+```
+
+#### 3. Push 네비게이션 (스택에 추가)
+
+```dart
+// Login 화면을 스택에 추가 (뒤로가기 가능)
+context.pushNamed(AuthRoutes.login);
+
+// 회원가입 화면 Push
+context.pushNamed(AuthRoutes.createAccount);
+```
+
+#### 4. Replace 네비게이션 (스택 교체)
+
+```dart
+// 로그인 성공 후 홈 화면으로 교체 (뒤로가기 불가)
+context.goNamed('home');  // Login 화면을 스택에서 제거
+
+// StartPage → Login (교체)
+context.goNamed(AuthRoutes.login);
+```
+
+#### 5. 뒤로가기 처리
+
+```dart
+// 안전한 뒤로가기 (스택이 비면 기본 경로로)
+context.safePop();
+
+// 강제 뒤로가기
+if (context.canPop()) {
+  context.pop();
+} else {
+  context.goNamed(AuthRoutes.startPage);  // 스택 비면 StartPage로
+}
+```
+
+#### 6. 조건부 네비게이션
+
+```dart
+// 로그인 상태 확인 후 네비게이션
+final authState = ref.watch(authStateStreamProvider);
+
+authState.when(
+  data: (user) {
+    if (user == null) {
+      // 로그아웃 상태 → Login 화면
+      context.goNamed(AuthRoutes.login);
+    } else {
+      // 로그인 상태 → Home 화면
+      context.goNamed('home');
+    }
+  },
+  loading: () => showLoadingIndicator(),
+  error: (e, s) => showError(e),
+);
+```
+
+### nav.dart 통합
+
+Auth Feature의 6개 라우트는 `lib/app/router/navigation/nav.dart`에 통합되어 있습니다.
+
+```dart
+// /lib/app/router/navigation/nav.dart (line 136)
+routes: [
+  ...AuthRoutes.routes(ref), // 6개 라우트 병합
+  ...ProfileRoutes.routes(ref),
+  ...ChatRoutes.routes(ref),
+  // ... 다른 Feature Routes
+],
+```
+
+**병합 순서**:
+1. **AuthRoutes** (6개) - 최우선 (앱 진입점)
+2. ProfileRoutes (6개)
+3. ChatRoutes (2개)
+4. VotingRoutes (0개 - 다이얼로그만 사용)
+5. CreationRoutes (2개)
+6. NotificationRoutes (4개)
+7. PostRoutes (3개)
+8. SearchRoutes (0개 - Phase 4-5 대기)
+
+### Type-Safe Navigation 상수
+
+Auth Feature는 타입 안전 네비게이션을 위한 static getter를 제공합니다:
+
+```dart
+// lib/features/auth/presentation/routes/auth_routes.dart
+
+class AuthRoutes {
+  /// Route names for type-safe navigation
+  static String get login => LoginPageWidget.routeName;
+  static String get createAccount => CreateAccountWidget.routeName;
+  static String get forgotPassword => ForgotPasswordWidget.routeName;
+  static String get startPage => StartPageWidget.routeName;
+  static String get phoneCreateAccount => PhoneCreatAccountWidget.routeName;
+  static String get phoneLoginPincode => PhonelogeinpincodeWidget.routeName;
+
+  /// Route paths for reference
+  static String get loginPath => LoginPageWidget.routePath;
+  static String get createAccountPath => CreateAccountWidget.routePath;
+  static String get forgotPasswordPath => ForgotPasswordWidget.routePath;
+  static String get startPagePath => StartPageWidget.routePath;
+  static String get phoneCreateAccountPath => PhoneCreatAccountWidget.routePath;
+  static String get phoneLoginPincodePath => PhonelogeinpincodeWidget.routePath;
+}
+```
+
+**사용법**:
+```dart
+// ✅ 타입 안전 (컴파일 타임 체크)
+context.goNamed(AuthRoutes.login);
+
+// ❌ 하드코딩 (오타 위험)
+context.goNamed('loginPage');
+```
+
+### 딥링크 지원
+
+Auth Feature는 외부 링크로 직접 접근 가능합니다:
+
+```dart
+// 외부 링크로 Login 화면 접근
+https://versus.app/login
+
+// GoRouter가 자동으로 라우팅:
+// 1. /login 경로 파싱
+// 2. LoginPageWidget.routePath 매칭
+// 3. LoginPageWidget 렌더링 (Fade+Slide 애니메이션)
+```
+
+**지원 딥링크**:
+- `versus://login` - 로그인 화면
+- `versus://createAccount` - 회원가입 화면
+- `versus://forgotPassword` - 비밀번호 재설정
+- `versus://startPage` - 시작 화면
+- `versus://phoneCreateAccount?phoneNumberParam=+821012345678` - 전화번호 인증 (파라미터 포함)
+
+### 참조 문서
+
+- [auth_routes.dart 소스 코드](./presentation/routes/auth_routes.dart) (167줄)
+- [GoRouter 공식 문서](https://pub.dev/packages/go_router)
+- [AppRoute 패턴](/lib/app/router/README.md)
+- [Navigation 상세 가이드](/lib/app/router/navigation/README.md)
 
 ---
 

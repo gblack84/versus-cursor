@@ -10,7 +10,7 @@ import '../../domain/services/i_target_audience_service.dart';
 import '../../domain/services/i_image_processing_service.dart';
 import '../../domain/repositories/i_post_creation_repository_v2.dart';
 import '/services/cache/creation_cache_service.dart';
-import '/core/utils/idempotency_service.dart'; // ✅ Phase 4: Idempotency
+import '/services/idempotency/idempotency_service.dart'; // ✅ Phase 4: Idempotency
 
 // Use ValidationResult from ITargetAudienceService
 export '../../domain/services/i_target_audience_service.dart' show ValidationResult;

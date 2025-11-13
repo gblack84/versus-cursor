@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '/core/design_system/design_system.dart';
 import '/features/voting/domain/entities/chat/vote_state.dart';
-import '/services/ui/models/box_sizes.dart';
+import '/core/utils/ui/box_sizing/models/box_sizes.dart';
 import '../vote_options_widget.dart';
 import '../vote_results_widget.dart';
 import '../utils/vote_card_helpers.dart';

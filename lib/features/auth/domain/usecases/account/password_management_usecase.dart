@@ -3,7 +3,7 @@
 
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter/foundation.dart';
-import '/core/utils/idempotency_service.dart';
+import '/services/idempotency/idempotency_service.dart';
 import '../../repositories/i_auth_repository.dart';
 import '../../failures/auth_failure.dart';
 

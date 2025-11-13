@@ -54,6 +54,25 @@ abstract class IProfileRepository {
   /// - `Left(ProfileFailure)`: 조회 실패
   Future<Either<ProfileFailure, ProfileInfo>> getProfileInfo(String userId);
 
+  // ============= 활동 시각 업데이트 =============
+
+  /// 사용자 최근 활동 시각 업데이트
+  ///
+  /// **사용처**: UpdateLastActiveUseCase, app.dart 로그인 리스너
+  /// **Firebase**: `users/{userId}/lastActive` 필드 업데이트
+  /// **Idempotency**: 여러 번 호출해도 안전 (타임스탬프 항상 업데이트)
+  ///
+  /// **캐시 무효화**:
+  /// - L1 Memory Cache 무효화 (UserProfile, ProfileInfo)
+  /// - L2 Hive Cache 무효화
+  /// - L3 Firestore 자동 동기화
+  ///
+  /// **Returns**:
+  /// - `Right(void)`: 성공
+  /// - `Left(ProfileFailure.serverError)`: Firestore 업데이트 실패
+  /// - `Left(ProfileFailure.networkError)`: 네트워크 연결 실패
+  Future<Either<ProfileFailure, void>> updateLastActive(String userId);
+
   // ============= 삭제된 메서드 (2025-01-21) =============
   // TODO: 향후 재구현 가이드
   //

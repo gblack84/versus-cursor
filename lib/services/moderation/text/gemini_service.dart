@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:cloud_functions/cloud_functions.dart';
 import '/services/moderation/models/moderation_result.dart';
 import '../interfaces/i_gemini_moderation_service.dart';
-import '/core/utils/logger.dart';
+import '/services/logging/logger_service.dart';
 
 /// Gemini AI를 활용한 콘텐츠 검증 서비스 (Port-Adapter Pattern Adapter)
 ///

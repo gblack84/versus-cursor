@@ -1,27 +1,26 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 import '/core_exports.dart';
-
-import '/features/chat/domain/entities/chat.dart' as chat_entities;
 import '/app/widgets/index.dart';
 import '/app/widgets/navigation/main_navigation_shell.dart';
 
-// Non-Auth Feature imports from app/widgets/index.dart
-// (These are still needed until their respective features are migrated)
+// Auth Guard (Phase 3: 인증 로직 분리)
+import '/app/router/guards/auth_guard.dart';
 
-// Import Notification Feature routes
+// Feature Routes (Phase 2: 라우트 모듈화)
+// Auth, Profile, Creation, Chat, Notifications, Post, Search 라우트가 각 Feature로 모듈화됨
 import '/features/notifications/presentation/routes/notification_routes.dart';
-// Import Profile Feature screens
-import '/features/profile/presentation/screens/profile_edit/profile_edit_screen.dart';
-import '/features/profile/presentation/screens/settings/settings_screen.dart';
-import '/features/profile/presentation/screens/user_posts_list/user_posts_list_screen.dart';
-import '/features/profile/presentation/screens/onboarding/onboarding_flow_screen.dart';
-import '/features/profile/presentation/screens/user_info/user_info_display/user_info_display_screen.dart';
+import '/features/profile/presentation/routes/profile_routes.dart';
+import '/features/auth/presentation/routes/auth_routes.dart';
+import '/features/creation/presentation/routes/creation_routes.dart';
+import '/features/chat/presentation/routes/chat_routes.dart';
+import '/features/post/presentation/routes/post_routes.dart';
+import '/features/search/presentation/routes/search_routes.dart';
 
 export 'package:go_router/go_router.dart';
 export 'serialization_util.dart';
@@ -30,81 +29,28 @@ const kTransitionInfoKey = '__transition_info__';
 
 GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
-class AppStateNotifier extends ChangeNotifier {
-  AppStateNotifier._();
-
-  static AppStateNotifier? _instance;
-  static AppStateNotifier get instance => _instance ??= AppStateNotifier._();
-
-  User? initialUser;
-  User? user;
-  bool showSplashImage = true;
-  String? _redirectLocation;
-
-  /// Determines whether the app will refresh and build again when a sign
-  /// in or sign out happens. This is useful when the app is launched or
-  /// on an unexpected logout. However, this must be turned off when we
-  /// intend to sign in/out and then navigate or perform any actions after.
-  /// Otherwise, this will trigger a refresh and interrupt the action(s).
-  bool notifyOnAuthChange = true;
-
-  bool get loading => showSplashImage;
-  bool get loggedIn => user != null;
-  bool get initiallyLoggedIn => initialUser != null;
-  bool get shouldRedirect => loggedIn && _redirectLocation != null;
-
-  String getRedirectLocation() => _redirectLocation!;
-  bool hasRedirect() => _redirectLocation != null;
-  void setRedirectLocationIfUnset(String loc) => _redirectLocation ??= loc;
-  void clearRedirectLocation() => _redirectLocation = null;
-
-  /// Mark as not needing to notify on a sign in / out when we intend
-  /// to perform subsequent actions (such as navigation) afterwards.
-  void updateNotifyOnAuthChange(bool notify) => notifyOnAuthChange = notify;
-
-  void update(User? newUser) {
-    final shouldUpdate =
-        user?.uid == null || newUser?.uid == null || user?.uid != newUser?.uid;
-    initialUser ??= newUser;
-    user = newUser;
-    // Refresh the app on auth change unless explicitly marked otherwise.
-    // No need to update unless the user has changed.
-    if (notifyOnAuthChange && shouldUpdate) {
-      notifyListeners();
-    }
-    // Once again mark the notifier as needing to update on auth change
-    // (in order to catch sign in / out events).
-    updateNotifyOnAuthChange(true);
-  }
-
-  void stopShowingSplashImage() {
-    showSplashImage = false;
-    notifyListeners();
-  }
-}
-
-GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
+/// Router 생성 함수 (Riverpod 3.x)
+///
+/// **Phase 1 마이그레이션**: AppStateNotifier 제거, WidgetRef 사용
+/// - Firebase Auth 직접 사용으로 간소화
+/// - refreshListenable 제거 (Riverpod 자동 리프레시)
+/// - 향후 Phase 3에서 AuthGuard로 개선 예정
+GoRouter createRouter(WidgetRef ref) => GoRouter(
       initialLocation: '/',
       debugLogDiagnostics: true,
-      refreshListenable: appStateNotifier,
       navigatorKey: appNavigatorKey,
       errorBuilder: (context, state) => StartPageWidget(),
       routes: [
         GoRoute(
           path: '/',
-          redirect: (context, state) {
-            if (appStateNotifier.loggedIn) {
-              return '/home';
-            }
-            return null;
-          },
+          redirect: (context, state) => AuthGuard.redirectIfAuthenticated(),
           builder: (context, state) => StartPageWidget(),
         ),
-        // ShellRoute for bottom navigation
+        // ShellRoute: 하단 네비게이션용
         ShellRoute(
           builder: (context, state, child) => MainNavigationShell(child: child),
           routes: [
-            // Main navigation routes
+            // 메인 네비게이션 라우트
             GoRoute(
               name: HomePageWidget.routeName,
               path: HomePageWidget.routePath,
@@ -142,7 +88,7 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
                     (context, animation, secondaryAnimation, child) => child,
               ),
             ),
-            // Chat routes - Clean Architecture v4.0
+            // Chat 라우트 - Clean Architecture v4.0
             GoRoute(
               name: ChatListWidgetClean.routeName,
               path: ChatListWidgetClean.routePath,
@@ -163,230 +109,61 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
             ),
           ],
         ),
-        GoRoute(
-          name: LoginPageWidget.routeName,
-          path: LoginPageWidget.routePath,
-          pageBuilder: (context, state) {
-            fixStatusBarOniOS16AndBelow(context);
-            return CustomTransitionPage(
-              key: state.pageKey,
-              child: LoginPageWidget(),
-              transitionDuration: Duration(milliseconds: 400),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                // Fade + Slide transition (replicates FlutterFlow animation)
-                final curvedAnimation = CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeInOut,
-                );
-                return FadeTransition(
-                  opacity: curvedAnimation,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: Offset(0.0, 0.15), // 60px → 15% of screen height
-                      end: Offset.zero,
-                    ).animate(curvedAnimation),
-                    child: child,
-                  ),
-                );
-              },
-            );
-          },
-        ),
-        AppRoute(
-          name: CreateAccountWidget.routeName,
-          path: CreateAccountWidget.routePath,
-          builder: (context, params) => CreateAccountWidget(),
-        ).toRoute(appStateNotifier),
-        AppRoute(
-          name: ForgotPasswordWidget.routeName,
-          path: ForgotPasswordWidget.routePath,
-          builder: (context, params) => ForgotPasswordWidget(),
-        ).toRoute(appStateNotifier),
-        AppRoute(
-          name: UserInfoInputWidget.routeName,
-          path: UserInfoInputWidget.routePath,
-          requireAuth: true,
-          builder: (context, params) => UserInfoInputWidget(),
-        ).toRoute(appStateNotifier),
+        // Auth Feature 라우트 (Phase 2: 모듈화)
+        ...AuthRoutes.routes(ref),
+        // Profile Feature 라우트 (Phase 2: 모듈화)
+        ...ProfileRoutes.routes(ref),
+
+        // 개발 & 테스트 라우트 (Feature 외부)
         AppRoute(
           name: TestpageSelectWidget.routeName,
           path: TestpageSelectWidget.routePath,
           builder: (context, params) => TestpageSelectWidget(),
-        ).toRoute(appStateNotifier),
+        ).toRoute(ref),
         AppRoute(
           name: 'devPage',
           path: '/dev',
           builder: (context, params) => TestpageSelectWidget(),
-        ).toRoute(appStateNotifier),
-        AppRoute(
-          name: ExpertiseSelectWidget.routeName,
-          path: ExpertiseSelectWidget.routePath,
-          builder: (context, params) => ExpertiseSelectWidget(),
-        ).toRoute(appStateNotifier),
-        AppRoute(
-          name: HobbiesSelectWidget.routeName,
-          path: HobbiesSelectWidget.routePath,
-          builder: (context, params) => HobbiesSelectWidget(),
-        ).toRoute(appStateNotifier),
-        AppRoute(
-          name: AgrredSelectWidget.routeName,
-          path: AgrredSelectWidget.routePath,
-          builder: (context, params) => AgrredSelectWidget(),
-        ).toRoute(appStateNotifier),
-        AppRoute(
-          name: ProfileEditScreen.routeName,
-          path: ProfileEditScreen.routePath,
-          requireAuth: true,
-          builder: (context, params) => ProfileEditScreen(
-            userId: params.getParam('userId', ParamType.String) ?? '',
-          ),
-        ).toRoute(appStateNotifier),
-        AppRoute(
-          name: SettingsScreen.routeName,
-          path: SettingsScreen.routePath,
-          requireAuth: true,
-          builder: (context, params) => SettingsScreen(
-            userId: params.getParam('userId', ParamType.String) ?? '',
-          ),
-        ).toRoute(appStateNotifier),
-        AppRoute(
-          name: UserPostsListScreen.routeName,
-          path: UserPostsListScreen.routePath,
-          requireAuth: true,
-          builder: (context, params) => UserPostsListScreen(
-            userId: params.getParam('userId', ParamType.String) ?? '',
-          ),
-        ).toRoute(appStateNotifier),
-        // OnboardingFlowScreen route
-        AppRoute(
-          name: OnboardingFlowScreen.routeName,
-          path: OnboardingFlowScreen.routePath,
-          requireAuth: true,
-          builder: (context, params) => OnboardingFlowScreen(
-            userId: params.getParam('userId', ParamType.String) ?? '',
-          ),
-        ).toRoute(appStateNotifier),
-        // UserInfoDisplayScreen route
-        AppRoute(
-          name: UserInfoDisplayScreen.routeName,
-          path: UserInfoDisplayScreen.routePath,
-          requireAuth: false,
-          builder: (context, params) => UserInfoDisplayScreen(
-            userId: params.getParam('userId', ParamType.String) ?? '',
-          ),
-        ).toRoute(appStateNotifier),
+        ).toRoute(ref),
+        // Creation Feature 라우트 (Phase 2: 모듈화)
+        ...CreationRoutes.routes(ref),
+        // Chat Feature 라우트 (Phase 2: 모듈화)
+        ...ChatRoutes.routes(ref),
+
+        // Debug 라우트 (개발자 전용 - kDebugMode에서만 접근)
         GoRoute(
-          name: StartPageWidget.routeName,
-          path: StartPageWidget.routePath,
+          name: 'DebugLogs',
+          path: '/debug/logs',
           pageBuilder: (context, state) {
-            fixStatusBarOniOS16AndBelow(context);
-            return CustomTransitionPage(
-              key: state.pageKey,
-              child: StartPageWidget(),
-              transitionDuration: Duration(milliseconds: 400),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                // Fade + Slide transition (replicates FlutterFlow animation)
-                final curvedAnimation = CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeInOut,
-                );
-                return FadeTransition(
-                  opacity: curvedAnimation,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: Offset(0.0, 0.15), // 60px → 15% of screen height
-                      end: Offset.zero,
-                    ).animate(curvedAnimation),
-                    child: child,
+            // 개발 모드가 아니면 접근 차단
+            if (!kDebugMode) {
+              return MaterialPage(
+                key: state.pageKey,
+                child: Scaffold(
+                  appBar: AppBar(title: Text('Access Denied')),
+                  body: Center(
+                    child: Text(
+                      'Debug mode only',
+                      style: TextStyle(fontSize: 18, color: Colors.red),
+                    ),
                   ),
-                );
-              },
+                ),
+              );
+            }
+
+            return MaterialPage(
+              key: state.pageKey,
+              child: DebugLogPage(),
             );
           },
         ),
-        AppRoute(
-          name: PhoneCreatAccountWidget.routeName,
-          path: PhoneCreatAccountWidget.routePath,
-          builder: (context, params) => PhoneCreatAccountWidget(
-            phoneNumberParam: params.getParam(
-              'phoneNumberParam',
-              ParamType.String,
-            ),
-          ),
-        ).toRoute(appStateNotifier),
-        AppRoute(
-          name: PhonelogeinpincodeWidget.routeName,
-          path: PhonelogeinpincodeWidget.routePath,
-          builder: (context, params) => PhonelogeinpincodeWidget(
-            phoneNumberParam: params.getParam(
-              'phoneNumberParam',
-              ParamType.String,
-            ),
-          ),
-        ).toRoute(appStateNotifier),
-        AppRoute(
-          name: ProImageEditorPage.routeName,
-          path: ProImageEditorPage.routePath,
-          builder: (context, params) => ProImageEditorPage(
-            imagePath: params.getParam(
-              'imagePath',
-              ParamType.String,
-            ),
-            box: params.getParam(
-              'box',
-              ParamType.String,
-            ),
-          ),
-        ).toRoute(appStateNotifier),
-        AppRoute(
-          name: ImageViewerPage.routeName,
-          path: ImageViewerPage.routePath,
-          builder: (context, params) => ImageViewerPage(
-            imageUrls: params.getParam<String>('imageUrls', ParamType.String) !=
-                    null
-                ? (params.getParam<String>('imageUrls', ParamType.String) ?? '')
-                    .split(',')
-                : [],
-            imagePaths:
-                params.getParam<String>('imagePaths', ParamType.String) != null
-                    ? (params.getParam<String>(
-                                'imagePaths', ParamType.String) ??
-                            '')
-                        .split('|')
-                    : [],
-            initialIndex: params.getParam(
-                  'initialIndex',
-                  ParamType.int,
-                ) ??
-                0,
-            box: params.getParam(
-              'box',
-              ParamType.String,
-            ),
-          ),
-        ).toRoute(appStateNotifier),
-        AppRoute(
-          name: ChatDetailWidgetClean.routeName,
-          path: ChatDetailWidgetClean.routePath,
-          requireAuth: true,
-          builder: (context, params) => ChatDetailWidgetClean(
-            chatDocument: params.state.extra != null
-                ? (params.state.extra as Map<String, dynamic>)['chatDocument']
-                    as chat_entities.Chat?
-                : null,
-          ),
-        ).toRoute(appStateNotifier),
-        AppRoute(
-          name: AIChatPageClean.routeName,
-          path: AIChatPageClean.routePath,
-          requireAuth: true,
-          builder: (context, params) => AIChatPageClean(
-            aiChatId: params.getParam('aiChatId', ParamType.String),
-          ),
-        ).toRoute(appStateNotifier),
 
-        // Notification Feature routes
-        ...NotificationRoutes.routes,
+        // Notification Feature 라우트
+        ...NotificationRoutes.routes(ref),
+        // Post Feature 라우트
+        ...PostRoutes.routes(ref),
+        // Search Feature 라우트 (현재 빈 리스트 - 향후 구현 대비)
+        ...SearchRoutes.routes(ref),
       ],
       observers: [routeObserver, BotToastNavigatorObserver()],
     );
@@ -399,6 +176,12 @@ extension NavParamExtensions on Map<String, String?> {
       );
 }
 
+/// Navigation Extensions (Phase 1: 단순화)
+///
+/// **변경 사항**:
+/// - ignoreRedirect 파라미터 제거 (AppStateNotifier 제거로 불필요)
+/// - mounted 체크만 유지
+/// - Phase 3에서 AuthGuard와 통합 예정
 extension NavigationExtensions on BuildContext {
   void goNamedAuth(
     String name,
@@ -406,9 +189,8 @@ extension NavigationExtensions on BuildContext {
     Map<String, String> pathParameters = const <String, String>{},
     Map<String, String> queryParameters = const <String, String>{},
     Object? extra,
-    bool ignoreRedirect = false,
   }) =>
-      !mounted || GoRouter.of(this).shouldRedirect(ignoreRedirect)
+      !mounted
           ? null
           : goNamed(
               name,
@@ -423,9 +205,8 @@ extension NavigationExtensions on BuildContext {
     Map<String, String> pathParameters = const <String, String>{},
     Map<String, String> queryParameters = const <String, String>{},
     Object? extra,
-    bool ignoreRedirect = false,
   }) =>
-      !mounted || GoRouter.of(this).shouldRedirect(ignoreRedirect)
+      !mounted
           ? null
           : pushNamed(
               name,
@@ -435,8 +216,7 @@ extension NavigationExtensions on BuildContext {
             );
 
   void safePop() {
-    // If there is only one route on the stack, navigate to the initial
-    // page instead of popping.
+    // 스택에 라우트가 하나만 있으면 pop 대신 초기 페이지로 이동
     if (canPop()) {
       pop();
     } else {
@@ -445,17 +225,17 @@ extension NavigationExtensions on BuildContext {
   }
 }
 
+/// GoRouter Extensions (Phase 1: AppStateNotifier 제거)
+///
+/// **이전 기능**:
+/// - prepareAuthEvent(): Auth 변경 알림 제어 (제거됨)
+/// - shouldRedirect(): 리다이렉트 필요 여부 체크 (제거됨)
+/// - clearRedirectLocation(): 리다이렉트 위치 초기화 (제거됨)
+///
+/// **Phase 3**: AuthGuard 패턴으로 완전히 대체 예정
 extension GoRouterExtensions on GoRouter {
-  AppStateNotifier get appState => AppStateNotifier.instance;
-  void prepareAuthEvent([bool ignoreRedirect = false]) =>
-      appState.hasRedirect() && !ignoreRedirect
-          ? null
-          : appState.updateNotifyOnAuthChange(false);
-  bool shouldRedirect(bool ignoreRedirect) =>
-      !ignoreRedirect && appState.hasRedirect();
-  void clearRedirectLocation() => appState.clearRedirectLocation();
-  void setRedirectLocationIfUnset(String location) =>
-      appState.updateNotifyOnAuthChange(false);
+  // AppStateNotifier 관련 메서드 제거
+  // 향후 AuthGuard 패턴으로 대체
 }
 
 extension _GoRouterStateExtensions on GoRouterState {
@@ -478,8 +258,7 @@ class AppParameters {
 
   Map<String, dynamic> futureParamValues = {};
 
-  // Parameters are empty if the params map is empty or if the only parameter
-  // present is the special extra parameter reserved for the transition info.
+  // 파라미터가 비어있거나 transition info 전용 extra 파라미터만 있으면 isEmpty true
   bool get isEmpty =>
       state.allParams.isEmpty ||
       (state.allParams.length == 1 &&
@@ -514,11 +293,11 @@ class AppParameters {
       return null;
     }
     final param = state.allParams[paramName];
-    // Got parameter from `extras`, so just directly return it.
+    // extras에서 가져온 파라미터는 직접 반환
     if (param is! String) {
       return param;
     }
-    // Return serialized value.
+    // 직렬화된 값 역직렬화하여 반환
     return deserializeParam<T>(
       param,
       type,
@@ -545,22 +324,13 @@ class AppRoute {
   final Widget Function(BuildContext, AppParameters) builder;
   final List<GoRoute> routes;
 
-  GoRoute toRoute(AppStateNotifier appStateNotifier) => GoRoute(
+  GoRoute toRoute(WidgetRef ref) => GoRoute(
         name: name,
         path: path,
-        redirect: (context, state) {
-          if (appStateNotifier.shouldRedirect) {
-            final redirectLocation = appStateNotifier.getRedirectLocation();
-            appStateNotifier.clearRedirectLocation();
-            return redirectLocation;
-          }
-
-          if (requireAuth && !appStateNotifier.loggedIn) {
-            appStateNotifier.setRedirectLocationIfUnset(state.uri.toString());
-            return '/startPage';
-          }
-          return null;
-        },
+        redirect: (context, state) => AuthGuard.checkAuth(
+          requireAuth: requireAuth,
+          state: state,
+        ),
         pageBuilder: (context, state) {
           fixStatusBarOniOS16AndBelow(context);
           final ffParams = AppParameters(state, asyncParams);
@@ -606,26 +376,6 @@ class TransitionInfo {
   final Duration duration;
 
   static TransitionInfo appDefault() => TransitionInfo(hasTransition: false);
-}
-
-class RootPageContext {
-  const RootPageContext(this.isRootPage, [this.errorRoute]);
-  final bool isRootPage;
-  final String? errorRoute;
-
-  static bool isInactiveRootPage(BuildContext context) {
-    final rootPageContext = context.read<RootPageContext?>();
-    final isRootPage = rootPageContext?.isRootPage ?? false;
-    final location = GoRouterState.of(context).uri.toString();
-    return isRootPage &&
-        location != '/' &&
-        location != rootPageContext?.errorRoute;
-  }
-
-  static Widget wrap(Widget child, {String? errorRoute}) => Provider.value(
-        value: RootPageContext(true, errorRoute),
-        child: child,
-      );
 }
 
 extension GoRouterLocationExtension on GoRouter {

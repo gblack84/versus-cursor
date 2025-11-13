@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:versus_space/gen/assets.gen.dart';
 import '/core/design_system/design_system.dart';
 import '/core/constants/app_constants.dart';
 import '/features/voting/domain/constants/voting_constants.dart';
@@ -103,8 +104,7 @@ class VoteCardProfileHeader extends StatelessWidget {
         // Pikle 도착! 라인
         Row(
           children: [
-            Image.asset(
-              'assets/images/pikle_icon.png',
+            Assets.images_pikle_icon.image(
               width: 20,
               height: 20,
             ),

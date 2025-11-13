@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/create_post_notifier.dart';
-import '/core/utils/debounce.dart';
+import '/core/utils/helpers/debounce.dart';
 import '../components/input_field_builder.dart';
 import '/features/creation/presentation/constants/field_styles.dart';
 

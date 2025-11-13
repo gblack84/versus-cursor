@@ -193,6 +193,7 @@ dev_dependencies:
   fake_cloud_firestore: ^3.0.6
   mockito: ^5.4.4
   build_runner: ^2.4.12
+  flutter_gen_runner: ^5.7.0
   riverpod_generator: ^3.0.0
   freezed: ^3.2.3
   json_serializable: ^6.11.0
@@ -293,3 +294,24 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
 
+# FlutterGen configuration
+flutter_gen:
+  output: lib/gen/
+  line_length: 80
+
+  # Integrations (disable unused)
+  integrations:
+    flutter_svg: false
+    rive: false
+    lottie: false
+
+  # Assets configuration
+  assets:
+    outputs:
+      class_name: Assets
+      style: snake-case
+
+  # Fonts configuration
+  fonts:
+    outputs:
+      class_name: FontFamily

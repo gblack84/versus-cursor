@@ -6,8 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:webviewx_plus/webviewx_plus.dart';
-import 'alertempty_model.dart';
-export 'alertempty_model.dart';
 
 class AlertemptyWidget extends StatefulWidget {
   const AlertemptyWidget({super.key});
@@ -17,27 +15,10 @@ class AlertemptyWidget extends StatefulWidget {
 }
 
 class _AlertemptyWidgetState extends State<AlertemptyWidget> {
-  late AlertemptyModel _model;
-
-  @override
-  void setState(VoidCallback callback) {
-    super.setState(callback);
-    _model.onUpdate();
-  }
-
   @override
   void initState() {
     super.initState();
-    _model = createModel(context, () => AlertemptyModel());
-
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
-  }
-
-  @override
-  void dispose() {
-    _model.maybeDispose();
-
-    super.dispose();
   }
 
   @override
@@ -66,11 +47,7 @@ class _AlertemptyWidgetState extends State<AlertemptyWidget> {
                 decoration: BoxDecoration(
                   color: AppTheme.of(context).secondaryBackground,
                 ),
-                child: wrapWithModel(
-                  model: _model.pickleMarkModel,
-                  updateCallback: () => setState(() {}),
-                  child: PickleMarkWidget(),
-                ),
+                child: PickleMarkWidget(),
               ),
             ),
           ),

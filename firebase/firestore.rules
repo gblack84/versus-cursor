@@ -294,11 +294,41 @@ service cloud.firestore {
     match /notifications/{notificationId} {
       allow create: if true;
       allow read: if true;
-      allow update: if request.auth != null 
+      allow update: if request.auth != null
         && request.auth.uid == resource.data.userId
         && request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['read', 'readAt']);
       allow delete: if false;
+    }
+
+    // ============================================================================
+    // 🆕 Guard Analytics (Debug-Only, Phase 5)
+    // ============================================================================
+
+    // Guard Analytics 컬렉션
+    // Route Guard 실행 이벤트 추적 (개발/디버깅 용도)
+    // - DebugLogPage의 Guard Analytics 탭에서 실시간 조회
+    // - AuthGuard가 자동으로 이벤트 기록
+    match /guard_analytics/{eventId} {
+      // 읽기: 인증된 사용자만 (개발 환경에서 Debug Tools 접근 가능)
+      // Production에서는 kDebugMode 체크로 UI 자체가 차단됨
+      allow read: if request.auth != null;
+
+      // 쓰기: 인증된 사용자 (AuthGuard가 이벤트 기록)
+      // null userId도 허용 (비로그인 상태에서 Guard 실행 가능)
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasAll(['eventId', 'timestamp', 'attemptedPath', 'result', 'reason'])
+        && request.resource.data.keys().hasOnly(['eventId', 'timestamp', 'attemptedPath', 'redirectPath', 'result', 'userId', 'reason'])
+        && request.resource.data.result in ['blocked', 'allowed'];
+
+      // 업데이트 불가 (Append-Only 로그)
+      allow update: if false;
+
+      // 삭제: 본인 이벤트만 또는 관리자 (향후 role 기반 확장 가능)
+      // 현재는 GuardAnalyticsService.clearAllEvents()로만 삭제 (Cloud Function 또는 Admin SDK)
+      allow delete: if request.auth != null
+        && (request.auth.uid == resource.data.userId
+            || request.auth.uid in ['ADMIN_UID_1', 'ADMIN_UID_2']); // 실제 관리자 UID로 교체
     }
 
     match /interest/{document} {

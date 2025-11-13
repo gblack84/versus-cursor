@@ -11,6 +11,7 @@
 - [전체 디렉토리 구조](#-전체-디렉토리-구조)
 - [아키텍처 개요](#-아키텍처-개요)
 - [핵심 기능](#-핵심-기능)
+- [BOUNDARIES - Clean Architecture 3-Layer 경계](#️-boundaries---clean-architecture-3-layer-경계)
 - [빠른 참조 가이드](#-빠른-참조-가이드)
 - [레이어별 README 안내](#-레이어별-readme-안내)
 - [주요 파일 위치](#-주요-파일-위치)
@@ -222,6 +223,225 @@ lib/features/chat/
 
 ---
 
+## 🏛️ BOUNDARIES - Clean Architecture 3-Layer 경계
+
+Chat Feature는 **Clean Architecture v4.0**의 3-Layer 구조를 따르며, 각 Layer 간 의존성 방향을 엄격히 준수합니다.
+
+### 3-Layer 의존성 규칙
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Presentation Layer                         │
+│  • 의존: Domain Layer (UseCase, Entity, Repository          │
+│          Interface)                                          │
+│  • 금지: Data Layer, 다른 Feature Presentation               │
+│  • 패턴: Riverpod Provider, ConsumerWidget, AsyncValue      │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ Repository Interface 의존
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Domain Layer                             │
+│  • 의존: 없음 (Pure Dart)                                    │
+│  • 금지: Presentation, Data, Flutter SDK, Firebase           │
+│  • 패턴: UseCase, Entity (Freezed), Repository Interface     │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ Repository Interface 구현
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      Data Layer                              │
+│  • 의존: Domain Layer (Entity, Repository Interface)         │
+│  • 금지: Presentation Layer                                   │
+│  • 패턴: Repository 구현, Extension (fromFirestore,          │
+│          toFirestore), Firebase SDK 직접 사용                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 실전 예시
+
+#### 1. ✅ Presentation → Domain (올바른 사용)
+
+```dart
+// presentation/providers/chat_providers.dart
+@riverpod
+Stream<List<Chat>> chatList(ChatListRef ref, String userId) {
+  final useCase = getIt<GetChatListUseCase>();  // GetIt DI
+
+  return useCase.execute(userId: userId).map(
+    (either) => either.getOrElse((l) => []),
+  );
+}
+
+@riverpod
+FutureOr<void> sendMessage(
+  SendMessageRef ref,
+  String chatId,
+  String content,
+) async {
+  final useCase = getIt<SendMessageUseCase>();
+  final currentUserId = ref.watch(currentUserIdProvider);
+
+  final result = await useCase.execute(
+    chatId: chatId,
+    senderId: currentUserId,
+    content: content,
+  );
+
+  return result.fold(
+    (failure) => throw Exception(failure.getUserMessage()),
+    (_) => null,
+  );
+}
+```
+
+#### 2. ✅ Domain → 독립성 (올바른 사용)
+
+```dart
+// domain/usecases/send_message_usecase.dart
+class SendMessageUseCase {
+  final IChatRepository _repository;
+
+  SendMessageUseCase(this._repository);
+
+  Future<Either<ChatFailure, void>> execute({
+    required String chatId,
+    required String senderId,
+    required String content,
+  }) {
+    return _repository.sendMessage(
+      chatId: chatId,
+      senderId: senderId,
+      content: content,
+    );
+  }
+}
+
+// domain/usecases/get_chat_list_usecase.dart
+class GetChatListUseCase {
+  final IChatRepository _repository;
+
+  GetChatListUseCase(this._repository);
+
+  Stream<Either<ChatFailure, List<Chat>>> execute({
+    required String userId,
+  }) {
+    return _repository.watchChatList(userId);
+  }
+}
+```
+
+#### 3. ✅ Data → Domain (올바른 사용)
+
+```dart
+// data/repositories/chat_repository_impl.dart
+class ChatRepositoryImpl implements IChatRepository {
+  final FirebaseFirestore _firestore;
+  final UnifiedCacheService _cacheService;
+
+  @override
+  Future<Either<ChatFailure, void>> sendMessage({
+    required String chatId,
+    required String senderId,
+    required String content,
+  }) async {
+    try {
+      // ✅ Data Layer는 Firestore 직접 접근 허용
+      await _firestore
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .add({
+        'senderId': senderId,
+        'content': content,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      return right(null);
+    } catch (e) {
+      return left(ChatFailure.serverError(e.toString()));
+    }
+  }
+
+  @override
+  Stream<Either<ChatFailure, List<Chat>>> watchChatList(String userId) {
+    try {
+      // ✅ Data Layer는 Firestore Stream 직접 사용 허용
+      return _firestore
+          .collection('chats')
+          .where('participants', arrayContains: userId)
+          .orderBy('lastMessageTime', descending: true)
+          .snapshots()
+          .map((snapshot) {
+        final chats = snapshot.docs
+            .map((doc) => Chat.fromFirestore(doc))
+            .toList();
+        return right<ChatFailure, List<Chat>>(chats);
+      });
+    } catch (e) {
+      return Stream.value(left(ChatFailure.serverError(e.toString())));
+    }
+  }
+}
+```
+
+#### 4. ❌ 잘못된 사용 패턴
+
+```dart
+// ❌ Presentation Layer에서 Firestore 직접 접근
+@riverpod
+Stream<List<Chat>> chatList(ChatListRef ref, String userId) {
+  return FirebaseFirestore.instance
+      .collection('chats')
+      .where('participants', arrayContains: userId)
+      .snapshots()
+      .map((snapshot) => snapshot.docs
+          .map((doc) => Chat.fromFirestore(doc))
+          .toList());
+}
+
+// ❌ Domain Layer에서 Firebase 의존성
+class SendMessageUseCase {
+  Future<void> execute(String chatId, String content) async {
+    await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .add({'content': content});
+  }
+}
+```
+
+### Boundary 검증
+
+#### 자동 검증 (Lint)
+
+```bash
+# Presentation → Data 위반 검사
+grep -r "import.*chat.*data" lib/features/chat/presentation/
+
+# Domain → Firebase 의존성 검사
+grep -r "import.*firebase" lib/features/chat/domain/
+
+# 기대 결과: 발견되지 않아야 함
+```
+
+#### 수동 검증 체크리스트
+
+- [ ] Presentation Layer는 UseCase만 호출하는가?
+- [ ] Domain Layer는 Pure Dart만 사용하는가? (Firebase/Flutter SDK 없음)
+- [ ] Data Layer는 Repository Interface를 구현하는가?
+- [ ] GetIt으로 UseCase/Repository를 DI하는가?
+- [ ] Either 패턴으로 에러를 반환하는가?
+
+### 참고 문서
+
+- **전체 프로젝트 Boundaries**: `/CLAUDE.md` - "## 🏛 BOUNDARIES" 섹션
+- **App Layer Boundaries**: `/lib/app/README.md` - "### 🏛️ BOUNDARIES" 섹션
+- **Chat Domain Layer**: `domain/README.md` - UseCase, Entity, Failure
+- **Chat Data Layer**: `data/README.md` - Repository 구현, Extension
+- **Chat Presentation Layer**: `presentation/README.md` - Provider, Widget
+
+---
+
 ## 🎯 빠른 참조 가이드
 
 ### 찾고자 하는 것 → 참조할 README 섹션
@@ -241,6 +461,375 @@ lib/features/chat/
 | **Vote Card UI** | `presentation/README.md` | CustomMessage 섹션 | `presentation/screens/chat_detail/components/chat_message_builder.dart` |
 | **채팅방 화면** | `presentation/README.md` | Screens 섹션 | `presentation/screens/chat_detail/chat_detail_widget_clean.dart` |
 | **DI 설정** | `di/chat_di_module.dart` | - | `di/chat_di_module.dart` |
+
+---
+
+## 🗺 Router Integration
+
+Chat Feature는 GoRouter 기반 라우팅을 사용하며, **Domain Entity를 extra 파라미터로 전달**하는 패턴을 사용합니다.
+
+### 라우트 구성
+
+**파일 위치**: `lib/features/chat/presentation/routes/chat_routes.dart` (77줄)
+
+Chat Feature는 **2개의 라우트**를 제공합니다:
+
+| # | 라우트 이름 | 경로 | requireAuth | 파라미터 | 목적 |
+|---|------------|------|-------------|---------|------|
+| 1 | `ChatDetailWidgetClean.routeName` | `/chat/:chatId` | ✅ true (PRIVATE) | `chatId` (String, PathParameter)<br>`chatDocument` (Chat entity, extra) | 1:1 채팅방 (flutter_chat_ui v2) |
+| 2 | `AIChatWidget.routeName` | `/aiChat` | ✅ true (PRIVATE) | `aiChatId` (String, QueryParameter, 선택) | AI 채팅 (Gemini AI) |
+
+**총 라우트**: 2개 (모두 PRIVATE - 로그인 필수)
+
+### Domain Entity as Extra Parameter
+
+Chat Feature의 가장 큰 특징은 **Domain Entity를 GoRouter의 extra 파라미터로 전달**한다는 점입니다.
+
+#### 왜 extra 파라미터를 사용하나?
+
+```dart
+// ❌ 방법 1: chatId만 전달 → Firestore 재조회 (300-500ms)
+context.goNamed(
+  ChatRoutes.chatDetail,
+  pathParameters: {'chatId': chatId},
+);
+// ChatDetailWidget 내부에서 firestore.collection('chats').doc(chatId).get()
+// → 불필요한 네트워크 요청, 로딩 시간 증가
+
+// ✅ 방법 2: Chat entity를 extra로 전달 → 즉시 렌더링 (<10ms)
+context.goNamed(
+  ChatRoutes.chatDetail,
+  pathParameters: {'chatId': chatId},
+  extra: {
+    'chatDocument': chatEntity,  // 이미 가지고 있는 Chat 객체
+  },
+);
+// ChatDetailWidget가 즉시 chatEntity를 사용
+// → 네트워크 요청 없음, 로딩 시간 0
+```
+
+**장점**:
+1. **성능 향상**: Firestore 재조회 불필요 (300-500ms → <10ms)
+2. **오프라인 지원**: 네트워크 없이도 이미 로드된 데이터 사용
+3. **타입 안전**: Domain Entity 사용으로 타입 체크
+4. **UX 개선**: 로딩 화면 없이 즉시 채팅방 진입
+
+#### Extra Parameter 구현
+
+```dart
+// lib/features/chat/presentation/routes/chat_routes.dart
+
+AppRoute(
+  name: ChatDetailWidgetClean.routeName,
+  path: ChatDetailWidgetClean.routePath, // '/chat/:chatId'
+  requireAuth: true,  // 채팅은 로그인 필수
+  builder: (context, params) => ChatDetailWidgetClean(
+    // chatId는 PathParameter에서 가져오기
+    chatId: params.getParam('chatId', ParamType.String),
+
+    // chatDocument는 extra에서 가져오기 (선택적)
+    chatDocument: params.state.extra != null
+        ? (params.state.extra as Map<String, dynamic>)['chatDocument']
+            as chat_entities.Chat?
+        : null,
+  ),
+).toRoute(ref),
+```
+
+**핵심 포인트**:
+- `chatId`는 **필수** (PathParameter - URL에 포함)
+- `chatDocument`는 **선택적** (extra parameter - 있으면 사용, 없으면 Firestore 조회)
+
+### PRIVATE Routes (2개) - requireAuth: true
+
+Chat Feature의 **모든 라우트는 PRIVATE**입니다.
+
+```dart
+// ✅ PRIVATE - 로그인 필수
+AppRoute(
+  name: ChatDetailWidgetClean.routeName,
+  path: ChatDetailWidgetClean.routePath,
+  requireAuth: true,  // AuthGuard 자동 적용
+  builder: (context, params) => ChatDetailWidgetClean(...),
+).toRoute(ref),
+```
+
+**PRIVATE 라우트**:
+1. **ChatDetail** (`/chat/:chatId`) - 1:1 채팅방 (다른 사용자와 대화)
+2. **AIChat** (`/aiChat`) - AI 채팅 (Gemini AI와 대화)
+
+**왜 모두 PRIVATE?**
+| Route | 이유 |
+|-------|------|
+| **ChatDetail** | 개인 메시지 보호 (로그인한 사용자만 접근) |
+| **AIChat** | AI 채팅 기록 보호 (본인만 조회) |
+
+**근거**:
+- **개인정보 보호**: 메시지는 민감한 개인 정보
+- **보안**: 인증된 사용자만 채팅 가능
+- **무단 접근 방지**: 다른 사용자의 채팅방 접근 차단
+
+### flutter_chat_ui v2 Integration
+
+Chat Feature는 **flutter_chat_ui v2**를 사용하여 채팅 UI를 구현합니다.
+
+#### Adapter Pattern
+
+```dart
+// lib/features/chat/presentation/adapters/flutter_chat_adapter.dart
+
+class FlutterChatAdapter {
+  /// Domain Entity → flutter_chat_ui types.User
+  static types.User toChatUser(chat_entities.User domainUser) {
+    return types.User(
+      id: domainUser.uid,
+      firstName: domainUser.displayName.split(' ').first,
+      lastName: domainUser.displayName.split(' ').skip(1).join(' '),
+      imageUrl: domainUser.photoUrl,
+    );
+  }
+
+  /// Domain Entity → flutter_chat_ui types.Message
+  static types.Message toChatMessage(chat_entities.Message domainMessage) {
+    return types.TextMessage(
+      id: domainMessage.id,
+      author: toChatUser(domainMessage.sender),
+      text: domainMessage.content,
+      createdAt: domainMessage.timestamp.millisecondsSinceEpoch,
+      status: _mapStatus(domainMessage.status),
+    );
+  }
+}
+```
+
+**Adapter 역할**:
+- **Domain → UI**: Chat Feature의 Domain Entity를 flutter_chat_ui 타입으로 변환
+- **타입 안전**: Domain 레이어는 flutter_chat_ui에 의존하지 않음
+- **테스트 용이**: Adapter만 Mock 처리 가능
+
+#### ChatDetailWidget 구조
+
+```dart
+// lib/features/chat/presentation/screens/chat_detail/chat_detail_widget_clean.dart
+
+class ChatDetailWidgetClean extends ConsumerStatefulWidget {
+  final String? chatId;
+  final chat_entities.Chat? chatDocument;  // Extra parameter로 전달받은 Chat entity
+
+  @override
+  ConsumerState<ChatDetailWidgetClean> createState() => _State();
+}
+
+class _State extends ConsumerState<ChatDetailWidgetClean> {
+  @override
+  Widget build(BuildContext context) {
+    // extra로 전달받은 chatDocument가 있으면 즉시 사용
+    if (widget.chatDocument != null) {
+      return _buildChatUI(widget.chatDocument!);
+    }
+
+    // 없으면 chatId로 Firestore 조회
+    final chatAsync = ref.watch(chatProvider(widget.chatId!));
+    return chatAsync.when(
+      data: (chat) => _buildChatUI(chat),
+      loading: () => CircularProgressIndicator(),
+      error: (e, s) => ErrorWidget(error: e),
+    );
+  }
+
+  Widget _buildChatUI(chat_entities.Chat chat) {
+    final messagesAsync = ref.watch(chatMessagesProvider(chat.chatId));
+
+    return Chat(
+      messages: messagesAsync.when(
+        data: (messages) => messages.map(
+          (msg) => FlutterChatAdapter.toChatMessage(msg),
+        ).toList(),
+        loading: () => [],
+        error: (e, s) => [],
+      ),
+      user: FlutterChatAdapter.toChatUser(currentUser),
+      onSendPressed: (message) => _handleSendMessage(message),
+    );
+  }
+}
+```
+
+### 사용 예시
+
+#### 1. ChatDetail 네비게이션 (extra 파라미터 포함)
+
+```dart
+// 방법 1: Chat entity를 extra로 전달 (권장 - 빠름)
+context.goNamed(
+  ChatRoutes.chatDetail,
+  pathParameters: {
+    'chatId': chat.chatId,
+  },
+  extra: {
+    'chatDocument': chat,  // 이미 가지고 있는 Chat entity
+  },
+);
+
+// 방법 2: chatId만 전달 (Firestore 재조회)
+context.goNamed(
+  ChatRoutes.chatDetail,
+  pathParameters: {
+    'chatId': chatId,
+  },
+);
+// ChatDetailWidget 내부에서 Firestore 조회
+```
+
+#### 2. AIChat 네비게이션
+
+```dart
+// 새 AI 채팅 시작
+context.goNamed(ChatRoutes.aiChat);
+
+// 기존 AI 채팅 이어서 하기
+context.goNamed(
+  ChatRoutes.aiChat,
+  queryParameters: {
+    'aiChatId': existingAiChatId,
+  },
+);
+```
+
+#### 3. 채팅방 목록에서 네비게이션
+
+```dart
+// ChatList Widget에서 채팅방 클릭 시
+ListView.builder(
+  itemCount: chats.length,
+  itemBuilder: (context, index) {
+    final chat = chats[index];
+
+    return ListTile(
+      title: Text(chat.otherUserName),
+      subtitle: Text(chat.lastMessage),
+      onTap: () {
+        // Chat entity를 extra로 전달 (즉시 렌더링)
+        context.goNamed(
+          ChatRoutes.chatDetail,
+          pathParameters: {'chatId': chat.chatId},
+          extra: {'chatDocument': chat},  // 이미 로드된 데이터 전달
+        );
+      },
+    );
+  },
+);
+```
+
+#### 4. Push 네비게이션 (스택에 추가)
+
+```dart
+// 채팅방을 스택에 추가 (뒤로가기로 목록으로 복귀)
+context.pushNamed(
+  ChatRoutes.chatDetail,
+  pathParameters: {'chatId': chatId},
+  extra: {'chatDocument': chat},
+);
+```
+
+#### 5. 딥링크 처리
+
+```dart
+// 외부 링크로 채팅방 접근
+// versus://chat/abc123def456
+
+// GoRouter가 자동으로 라우팅:
+// 1. /chat/abc123def456 경로 파싱
+// 2. ChatDetailWidgetClean.routePath 매칭 ('/chat/:chatId')
+// 3. chatId 파라미터 추출 (abc123def456)
+// 4. extra가 없으므로 Firestore에서 Chat 조회
+// 5. ChatDetailWidgetClean 렌더링
+```
+
+### nav.dart 통합
+
+Chat Feature의 2개 라우트는 `lib/app/router/navigation/nav.dart`에 통합되어 있습니다.
+
+```dart
+// /lib/app/router/navigation/nav.dart (line 139)
+routes: [
+  ...AuthRoutes.routes(ref),        // 6개
+  ...ProfileRoutes.routes(ref),     // 6개
+  ...ChatRoutes.routes(ref),        // 2개 (ChatDetail, AIChat)
+  // ... 다른 Feature Routes
+],
+```
+
+**병합 순서**:
+1. AuthRoutes (6개)
+2. ProfileRoutes (6개)
+3. **ChatRoutes (2개)** - 1:1 채팅 + AI 채팅
+4. VotingRoutes (0개 - 다이얼로그)
+5. CreationRoutes (2개)
+6. NotificationRoutes (4개)
+7. PostRoutes (3개)
+8. SearchRoutes (0개 - Phase 4-5 대기)
+
+### Type-Safe Navigation 상수
+
+Chat Feature는 타입 안전 네비게이션을 위한 static getter를 제공합니다:
+
+```dart
+// lib/features/chat/presentation/routes/chat_routes.dart
+
+class ChatRoutes {
+  /// Route names for type-safe navigation
+  static String get chatDetail => ChatDetailWidgetClean.routeName;
+  static String get aiChat => AIChatWidget.routeName;
+
+  /// Route paths for reference
+  static String get chatDetailPath => ChatDetailWidgetClean.routePath;
+  static String get aiChatPath => AIChatWidget.routePath;
+}
+```
+
+**사용법**:
+```dart
+// ✅ 타입 안전 (컴파일 타임 체크)
+context.goNamed(ChatRoutes.chatDetail, pathParameters: {'chatId': id});
+
+// ❌ 하드코딩 (오타 위험)
+context.goNamed('chatDetail', pathParameters: {'chatId': id});
+```
+
+### Performance: extra vs Firestore 재조회
+
+| 방법 | 네트워크 | 응답 시간 | 오프라인 | 권장 |
+|------|---------|----------|---------|------|
+| **extra 파라미터** | ❌ 불필요 | <10ms | ✅ 지원 | ✅ 권장 |
+| **Firestore 재조회** | ✅ 필요 | 300-500ms | ❌ 실패 | ⚠️ 비권장 |
+
+**Best Practice**:
+```dart
+// ✅ 채팅방 목록에서 이동 시 - extra 사용
+// (이미 Chat entity를 가지고 있음)
+context.goNamed(
+  ChatRoutes.chatDetail,
+  pathParameters: {'chatId': chat.chatId},
+  extra: {'chatDocument': chat},
+);
+
+// ✅ 딥링크/알림으로 접근 시 - chatId만 사용
+// (Chat entity가 없으므로 Firestore 조회 필요)
+context.goNamed(
+  ChatRoutes.chatDetail,
+  pathParameters: {'chatId': chatId},
+);
+```
+
+### 참조 문서
+
+- [chat_routes.dart 소스 코드](./presentation/routes/chat_routes.dart) (77줄)
+- [flutter_chat_ui v2 공식 문서](https://pub.dev/packages/flutter_chat_ui)
+- [FlutterChatAdapter 구현](./presentation/adapters/flutter_chat_adapter.dart) - Domain ↔ UI 변환
+- [GoRouter 공식 문서 - Extra parameter](https://pub.dev/packages/go_router#extra-parameter)
+- [AppRoute 패턴](/lib/app/router/README.md)
+- [Navigation 상세 가이드](/lib/app/router/navigation/README.md)
 
 ---
 

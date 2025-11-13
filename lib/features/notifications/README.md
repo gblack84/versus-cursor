@@ -1,23 +1,25 @@
 # Notifications Feature - 통합 문서
 
-> 최종 업데이트: 2025-01-29 | 버전: 2.1.0 (Firebase-Centric v2.0 완료)
+> 최종 업데이트: 2025-11-10 | 버전: 2.2.0 (Router Integration 완료)
 
 ## 📋 목차
 
 1. [전체 디렉토리 구조](#-전체-디렉토리-구조)
 2. [아키텍처 개요](#-아키텍처-개요)
 3. [핵심 기능](#-핵심-기능)
-4. [빠른 참조 가이드](#-빠른-참조-가이드)
-5. [레이어별 README 안내](#-레이어별-readme-안내)
-6. [주요 파일 위치](#-주요-파일-위치)
-7. [DI (Dependency Injection)](#-di-dependency-injection)
-8. [통계](#-통계)
-9. [시작하기](#-시작하기)
-10. [자주 찾는 질문](#-자주-찾는-질문)
-11. [기여 가이드](#-기여-가이드)
-12. [학습 가이드](#-학습-가이드)
-13. [문의 및 지원](#-문의-및-지원)
-14. [관련 문서](#-관련-문서)
+4. [BOUNDARIES - Clean Architecture 3-Layer 경계](#️-boundaries---clean-architecture-3-layer-경계)
+5. [빠른 참조 가이드](#-빠른-참조-가이드)
+6. [Router Integration](#-router-integration) ✨ **NEW**
+7. [레이어별 README 안내](#-레이어별-readme-안내)
+8. [주요 파일 위치](#-주요-파일-위치)
+9. [DI (Dependency Injection)](#-di-dependency-injection)
+10. [통계](#-통계)
+11. [시작하기](#-시작하기)
+12. [자주 찾는 질문](#-자주-찾는-질문)
+13. [기여 가이드](#-기여-가이드)
+14. [학습 가이드](#-학습-가이드)
+15. [문의 및 지원](#-문의-및-지원)
+16. [관련 문서](#-관련-문서)
 
 ---
 
@@ -187,6 +189,250 @@ graph TB
 
 ---
 
+## 🏛️ BOUNDARIES - Clean Architecture 3-Layer 경계
+
+Notifications Feature는 **Clean Architecture v4.0**의 3-Layer 구조를 따르며, 각 Layer 간 의존성 방향을 엄격히 준수합니다.
+
+### 3-Layer 의존성 규칙
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Presentation Layer                         │
+│  • 의존: Domain Layer (UseCase, Entity, Repository          │
+│          Interface)                                          │
+│  • 금지: Data Layer, 다른 Feature Presentation               │
+│  • 패턴: Riverpod Provider, ConsumerWidget, AsyncValue      │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ Repository Interface 의존
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Domain Layer                             │
+│  • 의존: 없음 (Pure Dart)                                    │
+│  • 금지: Presentation, Data, Flutter SDK, Firebase           │
+│  • 패턴: UseCase, Entity (Freezed Sealed), Repository       │
+│          Interface                                           │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ Repository Interface 구현
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      Data Layer                              │
+│  • 의존: Domain Layer (Entity, Repository Interface)         │
+│  • 금지: Presentation Layer                                   │
+│  • 패턴: Repository 구현, Extension (fromFirestore,          │
+│          toFirestore), Firebase SDK 직접 사용                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 실전 예시
+
+#### 1. ✅ Presentation → Domain (올바른 사용)
+
+```dart
+// presentation/providers/notification_badge_provider.dart
+@riverpod
+Stream<int> unreadNotificationCount(UnreadNotificationCountRef ref) {
+  final useCase = getIt<GetUnreadNotificationCountUseCase>();
+  final userId = ref.watch(currentUserIdProvider);
+
+  return useCase.execute(userId: userId).map(
+    (either) => either.getOrElse((l) => 0),
+  );
+}
+
+@riverpod
+Stream<List<Notification>> notificationList(
+  NotificationListRef ref,
+  String userId,
+) {
+  final useCase = getIt<GetNotificationListUseCase>();
+
+  return useCase.execute(userId: userId).map(
+    (either) => either.getOrElse((l) => []),
+  );
+}
+
+@riverpod
+FutureOr<void> markAsRead(
+  MarkAsReadRef ref,
+  String notificationId,
+) async {
+  final useCase = getIt<MarkNotificationAsReadUseCase>();
+  final result = await useCase.execute(notificationId: notificationId);
+
+  return result.fold(
+    (failure) => throw Exception(failure.getUserMessage()),
+    (_) => null,
+  );
+}
+```
+
+#### 2. ✅ Domain → 독립성 (올바른 사용)
+
+```dart
+// domain/usecases/get_unread_notification_count_usecase.dart
+class GetUnreadNotificationCountUseCase {
+  final INotificationRepository _repository;
+
+  GetUnreadNotificationCountUseCase(this._repository);
+
+  Stream<Either<NotificationFailure, int>> execute({
+    required String userId,
+  }) {
+    return _repository.watchUnreadCount(userId);
+  }
+}
+
+// domain/usecases/mark_notification_as_read_usecase.dart
+class MarkNotificationAsReadUseCase {
+  final INotificationRepository _repository;
+
+  MarkNotificationAsReadUseCase(this._repository);
+
+  Future<Either<NotificationFailure, void>> execute({
+    required String notificationId,
+  }) {
+    return _repository.markAsRead(notificationId);
+  }
+}
+
+// domain/entities/notification.dart (Freezed Sealed Union)
+@freezed
+sealed class Notification with _$Notification {
+  const factory Notification.social({
+    required String id,
+    required String userId,
+    required String actorId,
+    required String actorName,
+    required String message,
+    required DateTime createdAt,
+    required bool isRead,
+  }) = SocialNotification;
+
+  const factory Notification.system({
+    required String id,
+    required String userId,
+    required String title,
+    required String message,
+    required DateTime createdAt,
+    required bool isRead,
+  }) = SystemNotification;
+
+  const factory Notification.voting({
+    required String id,
+    required String userId,
+    required String postId,
+    required String postTitle,
+    required DateTime createdAt,
+    required bool isRead,
+  }) = VotingNotification;
+}
+```
+
+#### 3. ✅ Data → Domain (올바른 사용)
+
+```dart
+// data/repositories/notification_repository_impl.dart
+class NotificationRepositoryImpl implements INotificationRepository {
+  final FirebaseFirestore _firestore;
+  final UnifiedCacheService _cacheService;
+
+  @override
+  Stream<Either<NotificationFailure, int>> watchUnreadCount(String userId) {
+    try {
+      // ✅ Data Layer는 Firestore Stream 직접 사용 허용
+      return _firestore
+          .collection('notifications')
+          .where('userId', isEqualTo: userId)
+          .where('isRead', isEqualTo: false)
+          .snapshots()
+          .map((snapshot) => right<NotificationFailure, int>(snapshot.size));
+    } catch (e) {
+      return Stream.value(left(NotificationFailure.serverError(e.toString())));
+    }
+  }
+
+  @override
+  Future<Either<NotificationFailure, void>> markAsRead(
+    String notificationId,
+  ) async {
+    try {
+      // ✅ Data Layer는 Firestore 직접 접근 허용
+      await _firestore
+          .collection('notifications')
+          .doc(notificationId)
+          .update({
+        'isRead': true,
+        'readAt': FieldValue.serverTimestamp(),
+      });
+
+      return right(null);
+    } catch (e) {
+      return left(NotificationFailure.serverError(e.toString()));
+    }
+  }
+}
+```
+
+#### 4. ❌ 잘못된 사용 패턴
+
+```dart
+// ❌ Presentation Layer에서 Firestore 직접 접근
+@riverpod
+Stream<int> unreadNotificationCount(UnreadNotificationCountRef ref) {
+  final userId = ref.watch(currentUserIdProvider);
+
+  return FirebaseFirestore.instance
+      .collection('notifications')
+      .where('userId', isEqualTo: userId)
+      .where('isRead', isEqualTo: false)
+      .snapshots()
+      .map((snapshot) => snapshot.size);
+}
+
+// ❌ Domain Layer에서 Firebase 의존성
+class MarkNotificationAsReadUseCase {
+  Future<void> execute(String notificationId) async {
+    await FirebaseFirestore.instance
+        .collection('notifications')
+        .doc(notificationId)
+        .update({'isRead': true});
+  }
+}
+```
+
+### Boundary 검증
+
+#### 자동 검증 (Lint)
+
+```bash
+# Presentation → Data 위반 검사
+grep -r "import.*notifications.*data" lib/features/notifications/presentation/
+
+# Domain → Firebase 의존성 검사
+grep -r "import.*firebase" lib/features/notifications/domain/
+
+# 기대 결과: 발견되지 않아야 함
+```
+
+#### 수동 검증 체크리스트
+
+- [ ] Presentation Layer는 UseCase만 호출하는가?
+- [ ] Domain Layer는 Pure Dart만 사용하는가? (Firebase/Flutter SDK 없음)
+- [ ] Data Layer는 Repository Interface를 구현하는가?
+- [ ] GetIt으로 UseCase/Repository를 DI하는가?
+- [ ] Either 패턴으로 에러를 반환하는가?
+- [ ] Freezed Sealed Union으로 알림 타입을 정의하는가?
+
+### 참고 문서
+
+- **전체 프로젝트 Boundaries**: `/CLAUDE.md` - "## 🏛 BOUNDARIES" 섹션
+- **App Layer Boundaries**: `/lib/app/README.md` - "### 🏛️ BOUNDARIES" 섹션
+- **Notifications Domain Layer**: `domain/README.md` - UseCase, Entity, Failure
+- **Notifications Data Layer**: `data/README.md` - Repository 구현, Extension
+- **Notifications Presentation Layer**: `presentation/README.md` - Provider, Widget
+
+---
+
 ## 🗺 빠른 참조 가이드
 
 | 찾고자 하는 내용 | 참조할 문서 | 섹션 |
@@ -203,6 +449,277 @@ graph TB
 | **Badge 위젯 사용** | [Presentation Layer README](./presentation/README.md) | Badge System |
 | **DI 설정** | 현재 문서 | [DI 섹션](#-di-dependency-injection) |
 | **새 기능 추가 방법** | 각 레이어 README | 새로운 기능 추가 가이드 |
+
+---
+
+## 🧭 Router Integration
+
+**파일**: [./presentation/routes/notification_routes.dart](./presentation/routes/notification_routes.dart)
+
+Notifications Feature는 **Feature Routes 패턴**을 사용하여 4개의 독립적인 라우트를 관리합니다.
+
+### 라우트 구성
+
+| Route | Path | requireAuth | 설명 |
+|-------|------|-------------|------|
+| **notificationsList** | `/notifications` | ✅ true | 전체 알림 목록 (3가지 타입 통합) |
+| **votingNotifications** | `/notifications/voting` | ✅ true | 투표 요청 알림만 필터링 |
+| **socialNotifications** | `/notifications/social` | ✅ true | 소셜 알림 (팔로우, 좋아요, 댓글) |
+| **systemNotifications** | `/notifications/system` | ✅ true | 시스템 공지 및 업데이트 |
+
+**모든 라우트는 인증 필수** (`requireAuth: true`):
+- 알림은 개인 정보 → 로그인한 사용자만 접근 가능
+- AuthGuard 자동 적용 (Phase 4 Redirect Location Management)
+- Guard Analytics 이벤트 자동 기록 (Phase 5)
+
+### Phase 1.2 마이그레이션 (2025-11-10)
+
+**Before (nav.dart 직접 정의)**:
+```dart
+GoRoute(
+  path: '/notifications',
+  name: 'notificationsList',
+  builder: (context, state) => NotificationsListWidget(),
+)
+```
+
+**After (Feature Routes + AppRoute 패턴)**:
+```dart
+AppRoute(
+  name: 'notificationsList',
+  path: '/notifications',
+  requireAuth: true,  // AuthGuard 자동 통합
+  builder: (context, params) => NotificationsListWidget(),
+).toRoute(ref)
+```
+
+**주요 개선**:
+- ✅ `requireAuth` → AuthGuard 자동 적용
+- ✅ AppRoute 패턴 → 즉시 전환 (0ms, NoTransitionPage)
+- ✅ WidgetRef 파라미터 → Riverpod 통합 지원
+- ✅ 타입 안전 네비게이션 → `NotificationRoutes` 상수
+
+### 사용 예시
+
+#### 1. 기본 네비게이션
+
+```dart
+import '/features/notifications/presentation/routes/notification_routes.dart';
+
+// 전체 알림 목록으로 이동
+context.goNamed(NotificationRoutes.notificationsList);
+
+// 투표 알림만 보기
+context.goNamed(NotificationRoutes.votingNotifications);
+
+// 소셜 알림만 보기
+context.goNamed(NotificationRoutes.socialNotifications);
+
+// 시스템 알림만 보기
+context.goNamed(NotificationRoutes.systemNotifications);
+```
+
+#### 2. 인증 체크 + 네비게이션
+
+```dart
+// mounted 체크 포함 (위젯이 마운트된 상태에서만 이동)
+context.goNamedAuth(
+  NotificationRoutes.notificationsList,
+  mounted,
+);
+```
+
+#### 3. Badge 클릭 → 알림 페이지 이동
+
+```dart
+// NotificationBadgeWidget에서 사용
+class NotificationBadgeWidget extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unreadCount = ref.watch(unreadNotificationCountProvider);
+
+    return GestureDetector(
+      onTap: () {
+        // Badge 클릭 시 알림 목록으로 이동
+        context.goNamed(NotificationRoutes.notificationsList);
+      },
+      child: Badge(
+        label: Text('$unreadCount'),
+        child: Icon(Icons.notifications),
+      ),
+    );
+  }
+}
+```
+
+#### 4. Firebase Functions → 알림 → 페이지 이동
+
+```dart
+// 푸시 알림 탭 시 해당 타입 페이지로 이동
+FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+  final notificationType = message.data['type'] as String?;
+
+  switch (notificationType) {
+    case 'voting':
+      context.goNamed(NotificationRoutes.votingNotifications);
+      break;
+    case 'social':
+      context.goNamed(NotificationRoutes.socialNotifications);
+      break;
+    case 'system':
+      context.goNamed(NotificationRoutes.systemNotifications);
+      break;
+    default:
+      context.goNamed(NotificationRoutes.notificationsList);
+  }
+});
+```
+
+### AuthGuard Integration
+
+모든 알림 라우트는 **AuthGuard**로 보호됩니다:
+
+```dart
+// GoRouter의 redirect 콜백에서 자동 체크
+redirect: (context, state) {
+  final redirectPath = AuthGuard.checkAuth(
+    context: context,
+    currentPath: state.uri.path,
+  );
+
+  // 미인증 사용자:
+  // 1. NavigationNotifier.setRedirectLocation('/notifications') 저장
+  // 2. Guard Analytics 이벤트 기록 (result='blocked', reason='auth_required')
+  // 3. '/startPage'로 리다이렉션
+
+  // 로그인 성공 후:
+  // 1. Guard Analytics 이벤트 기록 (result='allowed', reason='authenticated')
+  // 2. '/notifications'로 자동 이동
+  // 3. redirectLocation 초기화
+
+  return redirectPath;
+}
+```
+
+**참조**:
+- [AuthGuard 전체 가이드](/lib/app/router/guards/README.md)
+- [Phase 4: Redirect Location Management](/lib/app/router/guards/README.md#redirect-location-management)
+- [Phase 5: Guard Analytics](/lib/app/router/guards/README.md#phase-5-guard-analytics)
+
+### Badge System 연동
+
+알림 라우트는 **Badge System**과 긴밀하게 통합됩니다:
+
+```dart
+// 미독 알림 카운트 실시간 업데이트
+@riverpod
+Stream<int> unreadNotificationCount(UnreadNotificationCountRef ref) {
+  final useCase = getIt<WatchUnreadCountUseCase>();
+  final userId = ref.watch(currentUserIdProvider);
+
+  return useCase(userId).map(
+    (either) => either.fold(
+      (failure) => 0,  // 에러 시 0 표시
+      (count) => count,
+    ),
+  );
+}
+
+// Badge 위젯에서 사용
+Consumer(
+  builder: (context, ref, child) {
+    final unreadCountAsync = ref.watch(unreadNotificationCountProvider);
+
+    return unreadCountAsync.when(
+      data: (count) => Badge(
+        label: Text('$count'),
+        isLabelVisible: count > 0,
+        child: IconButton(
+          icon: Icon(Icons.notifications),
+          onPressed: () {
+            // 알림 페이지로 이동
+            context.goNamed(NotificationRoutes.notificationsList);
+          },
+        ),
+      ),
+      loading: () => CircularProgressIndicator(),
+      error: (_, __) => Icon(Icons.notifications_off),
+    );
+  },
+)
+```
+
+### Firebase Functions 통합
+
+투표 요청 알림은 **Firebase Functions**에서 자동으로 생성됩니다:
+
+**Cloud Functions 플로우** (`firebase/functions/ai/flows/targetAudienceFlow.js`):
+```javascript
+// 1. AI가 타겟 오디언스 선정 (targetAudienceFlow)
+const targetUsers = await selectTargetAudience(postContent, ageGender, interests);
+
+// 2. 선정된 사용자에게 알림 전송 (sendNotificationsByAI)
+for (const user of targetUsers) {
+  await admin.firestore().collection('notifications').add({
+    userId: user.uid,
+    type: 'voting',  // 투표 알림
+    postId: postId,
+    title: '새로운 투표 요청',
+    body: `${authorName}님이 회원님의 의견을 궁금해합니다`,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    isRead: false,
+  });
+}
+```
+
+**앱에서 실시간 수신**:
+```dart
+// Firestore Stream으로 실시간 알림 수신
+@riverpod
+Stream<List<Notification>> votingNotifications(VotingNotificationsRef ref) {
+  final repository = getIt<INotificationRepository>();
+  final userId = ref.watch(currentUserIdProvider);
+
+  return repository.watchNotificationsByType(userId, NotificationType.voting).map(
+    (either) => either.fold(
+      (failure) => [],
+      (notifications) => notifications,
+    ),
+  );
+}
+```
+
+**푸시 알림 → 페이지 이동**:
+```dart
+// 사용자가 푸시 알림을 탭하면 투표 알림 페이지로 이동
+context.goNamed(NotificationRoutes.votingNotifications);
+```
+
+### 애니메이션
+
+모든 알림 라우트는 **즉시 전환** (Duration.zero):
+- 성능 최적화 우선 (알림은 빈번한 이동)
+- AppRoute 패턴 기본 동작: NoTransitionPage
+- 애니메이션 없이 즉시 화면 전환
+
+### nav.dart 통합
+
+```dart
+// /lib/app/router/navigation/nav.dart (line 138)
+GoRouter createRouter(WidgetRef ref) => GoRouter(
+  routes: [
+    ...NotificationRoutes.routes(ref), // 4개 라우트 병합
+    // ... 다른 Feature Routes
+  ],
+);
+```
+
+### 참조 문서
+
+- **[notification_routes.dart](./presentation/routes/notification_routes.dart)** - 라우트 정의 (115줄 문서 포함)
+- **[Router 시스템 개요](/lib/app/router/README.md)** - 전체 Router 아키텍처
+- **[Navigation 상세 가이드](/lib/app/router/navigation/README.md)** - Feature Routes 패턴
+- **[AuthGuard 가이드](/lib/app/router/guards/README.md)** - 인증 가드 + Analytics
 
 ---
 

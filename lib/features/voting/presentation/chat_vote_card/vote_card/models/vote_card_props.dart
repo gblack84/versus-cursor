@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import '/services/ui/models/box_sizes.dart';
+import '/core/utils/ui/box_sizing/models/box_sizes.dart';
 
 /// 투표 카드 속성 모델
 /// 투표 카드 위젯에 전달되는 모든 속성을 관리합니다

@@ -2,32 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '/core_exports.dart';
+import '../../../widgets/timer/auth_timer_display.dart';
 
+/// OTP 타이머 디스플레이 컴포넌트
+///
+/// AppTimer 제거 (2025-11-11): stop_watch_timer 직접 사용 + AuthTimerDisplay
 class OtpTimerDisplay extends StatelessWidget {
-  final int initialTimeMs;
-  final AppTimerController timerController;
-  final Function(int value, String displayTime, bool shouldUpdate) onChanged;
+  final StopWatchTimer timer;
 
   const OtpTimerDisplay({
     super.key,
-    required this.initialTimeMs,
-    required this.timerController,
-    required this.onChanged,
+    required this.timer,
   });
 
   @override
   Widget build(BuildContext context) {
-    return AppTimer(
-      initialTime: initialTimeMs,
-      getDisplayTime: (value) => StopWatchTimer.getDisplayTime(
-        value,
-        hours: false,
-        milliSecond: false,
-      ),
-      controller: timerController,
-      updateStateInterval: Duration(milliseconds: 1000),
-      onChanged: onChanged,
-      textAlign: TextAlign.start,
+    return AuthTimerDisplay(
+      timer: timer,
       style: AppTheme.of(context).headlineSmall.override(
             font: GoogleFonts.plusJakartaSans(
               fontWeight: AppTheme.of(context).headlineSmall.fontWeight,
@@ -37,6 +28,7 @@ class OtpTimerDisplay extends StatelessWidget {
             fontWeight: AppTheme.of(context).headlineSmall.fontWeight,
             fontStyle: AppTheme.of(context).headlineSmall.fontStyle,
           ),
+      textAlign: TextAlign.start,
     );
   }
 }

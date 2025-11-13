@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import '/core_exports.dart';
-import '/core/utils/debug_helper.dart';
+import '/services/logging/debug_service.dart';
 import '/services/cache/unified_image_cache_service.dart';
 
 class MediaSelectionBoxMulti extends StatefulWidget {

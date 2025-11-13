@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/core_exports.dart';
@@ -31,6 +34,53 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  // 디버그 페이지 접근을 위한 탭 카운터
+  int _logoTapCount = 0;
+  Timer? _resetTimer;
+
+  @override
+  void dispose() {
+    _resetTimer?.cancel();
+    super.dispose();
+  }
+
+  /// 로고/타이틀 탭 핸들러 (5번 탭 시 디버그 페이지 이동)
+  void _onLogoTap() {
+    // 개발 모드에서만 동작
+    if (!kDebugMode) return;
+
+    setState(() {
+      _logoTapCount++;
+    });
+
+    // 5초 후 카운트 리셋
+    _resetTimer?.cancel();
+    _resetTimer = Timer(Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _logoTapCount = 0;
+        });
+      }
+    });
+
+    // 5번 탭하면 디버그 페이지 이동
+    if (_logoTapCount >= 5) {
+      _logoTapCount = 0;
+      _resetTimer?.cancel();
+
+      context.push('/debug/logs');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('🔧 Debug mode activated'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,11 +92,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         automaticallyImplyLeading: true,
-        title: Text(
-          '설정',
-          style: AppTheme.of(context).headlineSmall.override(
-                color: Colors.black,
-              ),
+        title: GestureDetector(
+          onTap: kDebugMode ? _onLogoTap : null,
+          child: Text(
+            '설정',
+            style: AppTheme.of(context).headlineSmall.override(
+                  color: Colors.black,
+                ),
+          ),
         ),
         centerTitle: true,
         elevation: 0.0,

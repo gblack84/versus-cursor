@@ -10,9 +10,9 @@ import '../extensions/firestore_error_extensions.dart';
 import '../../domain/entities/vote_expansion_request_extensions.dart';
 import '../../domain/entities/weight_extensions.dart';
 import '../../domain/entities/vote_extensions.dart';
-import '../../../../core/utils/idempotency_service.dart';
-import '../../../../core/utils/shard_utils.dart';
-import '../../../../services/cache/unified_cache_service.dart';
+import '/services/idempotency/idempotency_service.dart';
+import '/services/sharding/shard_utils.dart';
+import '/services/cache/unified_cache_service.dart';
 
 /// Implementation of Dialog voting repository
 ///

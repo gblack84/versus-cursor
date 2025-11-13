@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import 'package:intl/intl.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '/core/constants/app_constants.dart';
 import '/core/design_system/design_system.dart';
 import '/core/types/layout_type.dart';
@@ -10,12 +9,12 @@ import '/features/profile/domain/entities/user_profile.dart';
 import '/features/voting/domain/constants/voting_constants.dart';
 import '/features/voting/presentation/chat_vote_card/vote_card/vote_card_widget.dart';
 import '/features/chat/domain/enums/message_delivery_status.dart';
-import '/services/ui/unified_box_calculator.dart';
-import '/core/utils/media/aspect_ratio_analyzer.dart';
-import '/services/ui/responsive_breakpoints.dart';
+import '/core/utils/ui/box_sizing/aspect_ratio_analyzer.dart';
 import '/features/voting/domain/usecases/chat/submit_vote_use_case.dart';
 import '/app/di.dart';
-import '/core/utils/logger.dart';
+import '/services/logging/logger_service.dart';
+import '/features/chat/domain/services/i_responsive_service.dart';
+import '/core/utils/ui/box_sizing/unified_box_calculator.dart';
 
 /// 메시지 빌더 컴포넌트
 ///
@@ -54,7 +53,13 @@ class ChatMessageBuilder {
       );
 
       // Calculate box sizes for message card
-      final maxMessageWidth = ResponsiveBreakpoints.getMaxMessageWidth(context);
+      // Phase 1: Use Clean Architecture adapter for responsive (2025-11-10)
+      // Note: UnifiedBoxCalculator is used directly because VoteCardWidget
+      // already depends on BoxSizes (Services layer type).
+      // This will be refactored when VoteCardWidget is updated to use Domain types.
+      final responsiveService = getIt<IResponsiveService>();
+
+      final maxMessageWidth = responsiveService.getMaxMessageWidth(context);
       final boxSizes = UnifiedBoxCalculator.calculateForMessageCard(
         bubbleWidth: maxMessageWidth,
         layoutType: layoutType,
@@ -92,10 +97,10 @@ class ChatMessageBuilder {
           searchQuery: isSearching ? searchQuery : null,
           aspectRatioA: aspectRatioA,
           aspectRatioB: aspectRatioB,
-          // ✅ Phase 2: Submit vote using SubmitVoteUseCase (Clean Architecture v4.0)
+          // ✅ Phase 2: SubmitVoteUseCase를 통한 투표 제출 (Clean Architecture v4.0)
+          // Phase C-2: FirebaseAuth 대신 currentUserRecord 파라미터 사용
           onVote: (option) async {
-            final currentUser = FirebaseAuth.instance.currentUser;
-            if (currentUser == null) {
+            if (currentUserRecord == null) {
               Logger.warning('Cannot submit vote: User not authenticated',
                   tag: 'ChatMessageBuilder');
               return;
@@ -104,7 +109,7 @@ class ChatMessageBuilder {
             final submitVote = getIt<SubmitVoteUseCase>();
             final result = await submitVote(
               postId: metadata['postId'] ?? '',
-              userId: currentUser.uid,
+              userId: currentUserRecord.uid,
               voteOption: option,
             );
 

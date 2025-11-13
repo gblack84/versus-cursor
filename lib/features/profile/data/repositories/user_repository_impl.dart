@@ -3,7 +3,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '/core/utils/app_utils.dart';
-import '/core/utils/idempotency_service.dart';
+import '/services/idempotency/idempotency_service.dart';
 import '/services/cache/unified_cache_service.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/entities/user_profile_extensions.dart';

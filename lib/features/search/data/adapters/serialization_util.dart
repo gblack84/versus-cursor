@@ -1,6 +1,6 @@
 // Migrated from backend.dart
 import '/core/types/lat_lng.dart';
-import '/core/firebase/firestore_util.dart'; // For safeGet, toRef
+import '/services/firebase/firestore_utils.dart'; // For safeGet, toRef
 // For fromCssColor
 import '/app/router/navigation/serialization_util.dart'; // For ParamType
 import '../utils/algolia_converters.dart'; // For StructBuilder (exports from_css_color)

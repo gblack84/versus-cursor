@@ -123,6 +123,53 @@ async function sendFCMNotification(fcmToken, notificationData, postData) {
   }
 }
 
+/**
+ * FCM 메시지 전송 (재시도 로직 포함)
+ * Exponential backoff: 1s → 2s → 4s (최대 3회 시도)
+ *
+ * @param {string} fcmToken - 사용자 FCM 토큰
+ * @param {Object} notificationData - 알림 데이터
+ * @param {Object} postData - 게시물 데이터
+ * @param {number} maxRetries - 최대 재시도 횟수 (기본값: 3)
+ * @returns {Promise<Object>} { success: boolean, attempts: number, error?: string }
+ */
+async function sendFCMWithRetry(fcmToken, notificationData, postData, maxRetries = 3) {
+  const delays = [1000, 2000, 4000]; // 1s, 2s, 4s
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const success = await sendFCMNotification(fcmToken, notificationData, postData);
+
+      if (success) {
+        if (attempt > 1) {
+          console.log(`[FCM Retry] ✅ ${attempt}번째 시도에서 성공 (notificationId: ${notificationData.notificationId})`);
+        }
+        return { success: true, attempts: attempt };
+      }
+
+      // 토큰 무효화된 경우 재시도 중단
+      if (!success) {
+        console.log(`[FCM Retry] ⚠️ 토큰 무효화로 재시도 중단 (attempt: ${attempt})`);
+        return { success: false, attempts: attempt, error: 'invalid_token' };
+      }
+
+    } catch (error) {
+      console.error(`[FCM Retry] ❌ ${attempt}번째 시도 실패:`, error.message);
+
+      // 마지막 시도가 아니면 exponential backoff 대기
+      if (attempt < maxRetries) {
+        const delay = delays[attempt - 1] || 4000;
+        console.log(`[FCM Retry] ⏳ ${delay}ms 후 재시도... (${attempt}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  // 모든 재시도 실패
+  console.error(`[FCM Retry] ❌ 최종 실패 (${maxRetries}회 시도) - notificationId: ${notificationData.notificationId}`);
+  return { success: false, attempts: maxRetries, error: 'max_retries_exceeded' };
+}
+
 // 타겟 이유 메시지 생성
 function generateTargetReason(targetAudience, user) {
   const { type, interests, ageGroup, gender } = targetAudience;
@@ -306,30 +353,69 @@ async function createNotificationsForUsers(users, postId, postData) {
 
       const tasksWithTokens = await Promise.all(userTokenPromises);
 
-      // 2. FCM 메시지 전송 (병렬)
+      // 2. FCM 메시지 전송 (재시도 로직 포함, 병렬)
       const fcmPromises = tasksWithTokens.map(async (task) => {
         if (!task.fcmToken) {
           fcmStats.noToken++;
           return { success: false, userId: task.userId, reason: 'no_token' };
         }
 
-        const success = await sendFCMNotification(
+        // sendFCMWithRetry() 호출 (최대 3회 재시도)
+        const result = await sendFCMWithRetry(
           task.fcmToken,
           task.notificationData,
-          postData
+          postData,
+          3 // maxRetries
         );
 
-        if (success) {
+        if (result.success) {
           fcmStats.sent++;
-          return { success: true, userId: task.userId };
+          // Firestore 알림에 fcmStatus 기록
+          try {
+            await admin.firestore()
+              .collection('notifications')
+              .doc(task.notificationData.notificationId)
+              .update({
+                fcmStatus: 'sent',
+                fcmAttempts: result.attempts,
+                fcmSentAt: admin.firestore.Timestamp.now(),
+              });
+          } catch (error) {
+            console.error(`[FCM] fcmStatus 업데이트 실패 (notificationId: ${task.notificationData.notificationId}):`, error);
+          }
+          return { success: true, userId: task.userId, attempts: result.attempts };
         } else {
           fcmStats.failed++;
-          // 토큰 무효화된 사용자 기록
-          invalidTokenUsers.push({
+
+          // 토큰 무효화된 경우 기록
+          if (result.error === 'invalid_token') {
+            invalidTokenUsers.push({
+              userId: task.userId,
+              fcmToken: task.fcmToken,
+            });
+          }
+
+          // Firestore 알림에 실패 상태 기록
+          try {
+            await admin.firestore()
+              .collection('notifications')
+              .doc(task.notificationData.notificationId)
+              .update({
+                fcmStatus: 'failed',
+                fcmAttempts: result.attempts,
+                fcmError: result.error || 'unknown',
+                fcmFailedAt: admin.firestore.Timestamp.now(),
+              });
+          } catch (error) {
+            console.error(`[FCM] fcmStatus 업데이트 실패 (notificationId: ${task.notificationData.notificationId}):`, error);
+          }
+
+          return {
+            success: false,
             userId: task.userId,
-            fcmToken: task.fcmToken,
-          });
-          return { success: false, userId: task.userId, reason: 'send_failed' };
+            reason: result.error || 'send_failed',
+            attempts: result.attempts,
+          };
         }
       });
 

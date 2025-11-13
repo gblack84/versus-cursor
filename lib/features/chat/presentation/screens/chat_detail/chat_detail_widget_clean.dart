@@ -20,7 +20,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
 import 'package:intl/intl.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '/features/auth/presentation/providers/auth_providers.dart';
+import 'package:versus_space/gen/fonts.gen.dart';
 import 'dart:async';
 
 import '/core/design_system/design_system.dart';
@@ -68,8 +69,8 @@ class _ChatDetailWidgetCleanState extends ConsumerState<ChatDetailWidgetClean> w
   String? _lastMessageId;
   bool _hasMore = true;
 
-  // Firebase Auth helper
-  String get currentUserId => FirebaseAuth.instance.currentUser?.uid ?? '';
+  // Phase C-2: Auth Provider 사용
+  String get currentUserId => ref.watch(currentUserIdProvider).value ?? '';
 
   // AI 채팅 감지
   bool get isAiChat =>
@@ -447,7 +448,7 @@ class _ChatDetailWidgetCleanState extends ConsumerState<ChatDetailWidgetClean> w
         surfaceContainerHigh: VersusColors.backgroundSecondary,
       ),
       typography: core.ChatTypography.standard(
-        fontFamily: 'SourGummy',
+        fontFamily: FontFamily.sourGummy,
       ),
     );
   }

@@ -1,16 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:versus_space/gen/fonts.gen.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/auth/presentation/providers/usecase_providers.dart';
 import '/core/widgets/pickle_mark/pickle_mark_widget.dart';
 import '/core_exports.dart';
-import '/core/utils/error_handler.dart';
+import '/services/error/error_handler_service.dart';
 import '/app/widgets/index.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'start_page_model.dart';
-export 'start_page_model.dart';
+
+// Phase 10: StartPageModel 제거 (빈 모델, 상태 없음)
 
 class StartPageWidget extends ConsumerStatefulWidget {
   const StartPageWidget({super.key});
@@ -24,23 +25,14 @@ class StartPageWidget extends ConsumerStatefulWidget {
 
 class _StartPageWidgetState extends ConsumerState<StartPageWidget>
     with TickerProviderStateMixin {
-  late StartPageModel _model;
+  // Phase 10: AppModel 제거 - 상태 없음
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
-    _model = createModel(context, () => StartPageModel());
-
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
-  }
-
-  @override
-  void dispose() {
-    _model.dispose();
-
-    super.dispose();
   }
 
   @override
@@ -86,7 +78,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
                                   ),
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    fontFamily: 'SourGummy',
+                                    fontFamily: FontFamily.sourGummy,
                                     color: Color(0xFF14181B),
                                     fontWeight: FontWeight.normal,
                                     fontSize: 66.0,
@@ -113,11 +105,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
                       Padding(
                         padding:
                             EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 20.0, 0.0),
-                        child: wrapWithModel(
-                          model: _model.pickleMarkModel,
-                          updateCallback: () => setState(() {}),
-                          child: PickleMarkWidget(),
-                        ),
+                        child: PickleMarkWidget(),
                       ),
                       Align(
                         alignment: AlignmentDirectional(0.0, 0.0),
@@ -199,7 +187,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
                                             return;
                                           }
 
-                                          GoRouter.of(context).prepareAuthEvent();
+                                          // Phase 1: prepareAuthEvent() 제거 (AppStateNotifier 제거로 불필요)
 
                                           ref.read(authLoadingProvider.notifier).setLoading(true);
 
@@ -288,7 +276,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
                                       return;
                                     }
 
-                                    GoRouter.of(context).prepareAuthEvent();
+                                    // Phase 1: prepareAuthEvent() 제거 (AppStateNotifier 제거로 불필요)
 
                                     ref.read(authLoadingProvider.notifier).setLoading(true);
 
@@ -370,7 +358,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
                                       return;
                                     }
 
-                                    GoRouter.of(context).prepareAuthEvent();
+                                    // Phase 1: prepareAuthEvent() 제거 (AppStateNotifier 제거로 불필요)
 
                                     ref.read(authLoadingProvider.notifier).setLoading(true);
 
@@ -451,7 +439,7 @@ class _StartPageWidgetState extends ConsumerState<StartPageWidget>
                                   }
 
                                   // Instagram 로그인은 현재 Google로 대체 (추후 구현 예정)
-                                  GoRouter.of(context).prepareAuthEvent();
+                                  // Phase 1: prepareAuthEvent() 제거 (AppStateNotifier 제거로 불필요)
 
                                   ref.read(authLoadingProvider.notifier).setLoading(true);
 

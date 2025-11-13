@@ -41,7 +41,7 @@ import '../data/services/notification_service.dart';
 // ===== Services Layer (App-wide) =====
 import '/services/notification/notification_queue_service.dart';
 import '/services/notification/fcm_service.dart';
-import '/core/utils/idempotency_service.dart';
+import '/services/idempotency/idempotency_service.dart';
 
 // ===== Domain Layer - UseCases (5 total) =====
 import '../domain/usecases/get_user_notifications_usecase.dart';

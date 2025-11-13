@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/notifications/presentation/providers/notification_providers.dart';
 import '/features/notifications/presentation/helpers/notification_display_helper.dart';
 import '/core_exports.dart';
@@ -21,7 +21,8 @@ class NotificationsListWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scaffoldKey = GlobalKey<ScaffoldState>();
-    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    // Phase C-2: FirebaseAuth 직접 접근 → currentUserIdProvider 사용
+    final userId = ref.watch(currentUserIdProvider).value ?? '';
 
     // Riverpod Provider로 실시간 알림 감시
     final notificationsAsync = ref.watch(

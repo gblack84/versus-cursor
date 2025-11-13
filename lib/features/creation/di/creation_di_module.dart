@@ -17,7 +17,7 @@ import '/services/cache/unified_cache_service.dart';
 import '/services/cache/creation_cache_service.dart';
 
 // ===== Core Services - Idempotency (Phase 4) =====
-import '/core/utils/idempotency_service.dart';
+import '/services/idempotency/idempotency_service.dart';
 
 // ===== Moderation Services (Text + Image Moderation) =====
 import '/services/moderation/perspective_api_service.dart';
@@ -27,10 +27,14 @@ import '/services/moderation/image_moderation_service.dart'; // ✅ Image Modera
 // ❌ Phase 5: Removed firebase_post_creation_datasource.dart (Extension Pattern replaces DataSource)
 import '../data/datasources/firebase_storage_datasource.dart';
 
+// ===== Data Layer - Adapters (Clean Architecture) =====
+import '../data/adapters/box_calculator_adapter.dart';
+
 // ===== Domain Layer - Service Interfaces (Ports) =====
 import '../domain/services/i_image_processing_service.dart';
 import '../domain/services/i_image_moderation_service.dart'; // ✅ Image Moderation Port
 import '../domain/services/i_target_audience_service.dart';
+import '../domain/services/i_box_calculator_service.dart';
 
 // ===== Domain Layer - Repository Interfaces (Ports) =====
 import '../domain/repositories/specialized/i_moderation_repository.dart';
@@ -185,6 +189,13 @@ void _registerServices(GetIt getIt) {
   // Target Audience Service (Port → Adapter)
   getIt.registerLazySingleton<ITargetAudienceService>(
     () => TargetAudienceRepositoryImpl(),
+  );
+
+  // BoxCalculatorService: Clean Architecture Adapter for UI Service
+  // Domain Interface → Data Adapter → Services (UnifiedBoxCalculator)
+  // Phase 1: Clean Architecture 위반 수정 (2025-11-10)
+  getIt.registerLazySingleton<IBoxCalculatorService>(
+    () => BoxCalculatorAdapter(),
   );
 }
 

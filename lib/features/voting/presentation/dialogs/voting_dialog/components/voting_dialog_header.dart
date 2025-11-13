@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:versus_space/gen/assets.gen.dart';
 import '/core/design_system/design_system.dart';
 
 /// Header component for the voting dialog
@@ -61,8 +62,7 @@ class VotingDialogHeader extends StatelessWidget {
   Widget _buildPikleTitle() {
     return Row(
       children: [
-        Image.asset(
-          'assets/images/pikle_icon.png',
+        Assets.images_pikle_icon.image(
           width: 30,
           height: 30,
         ),

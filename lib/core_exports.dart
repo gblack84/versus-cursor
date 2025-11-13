@@ -36,7 +36,7 @@ export 'core/widgets/app_choice_chips.dart';
 export 'core/widgets/app_icon_button.dart';
 export 'core/widgets/app_media_display.dart';
 export 'core/widgets/app_toggle_icon.dart';
-export 'core/widgets/app_video_player.dart';
+export 'services/media/app_video_player.dart'; // MOVED 2025-11-12: core/widgets → services/media (external SDK)
 export 'core/widgets/app_web_view.dart';
 
 // Localization
@@ -44,26 +44,27 @@ export 'core/localization/app_localizations.dart';
 
 // Utilities
 export 'core/utils/app_utils.dart';
-export 'core/utils/app_timer.dart';
-export 'core/utils/batch_service.dart';
-export 'core/utils/custom_functions.dart';
+// export 'core/utils/app_timer.dart'; // DELETED 2025-11-11: AppTimer 제거 (stop_watch_timer 직접 사용)
+export 'services/batch/batch_service.dart'; // MOVED 2025-11-11: core/utils/services → services/batch
+export 'core/utils/helpers/custom_functions.dart';
 
-// Firebase utilities (Core - Generic)
-export 'core/firebase/firestore_util.dart';
-
-// Firebase utilities (Services - Legacy Pattern)
-// TODO: Remove after Extension Pattern migration complete
-export 'services/firebase/legacy_firestore_record.dart';
+// Firebase utilities (Services - External SDK)
+export 'services/firebase/firestore_utils.dart'; // MOVED 2025-11-12: core/firebase → services/firebase
 
 // Search Feature utilities (Algolia-specific)
 // Moved from Core to fix architecture violation (Core → Feature dependency)
 export 'features/search/data/utils/algolia_converters.dart';
 
-// Models
-export 'core/models/app_model.dart';
-export 'core/models/uploaded_file.dart';
-export 'core/models/upload_data.dart';
-export 'core/models/form_field_controller.dart';
+// Models (DEPRECATED: Moved to core/types/)
+// export 'core/models/app_model.dart'; // DELETED 2025-11-10: Phase 10 완료
+export 'core/types/uploaded_file.dart'; // MOVED 2025-11-10: core/models → core/types
+// export 'core/models/upload_data.dart'; // DELETED 2025-11-10: Moved to Profile Feature
+
+// Form Controllers (Utilities)
+export 'core/utils/helpers/form_field_controller.dart'; // MOVED 2025-11-10: core/models → core/utils → core/utils/helpers
+
+// File Size Utils (Service - MOVED 2025-11-11: core/utils/helpers → services/storage)
+export 'services/storage/file_size_utils.dart';
 
 // ===== FROM APP FEATURE =====
 

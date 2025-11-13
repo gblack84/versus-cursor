@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '/core/config/environment_config.dart';
-import '/core/utils/logger.dart';
+import '/services/logging/logger_service.dart';
 import 'constants/moderation_config.dart';
 
 /// Perspective API 분석 결과

@@ -3,6 +3,7 @@ import '/features/profile/domain/usecases/interests/update_user_interests_usecas
 import '/features/profile/presentation/constants/profile_constants.dart';
 import '/core_exports.dart';
 import '/app/widgets/index.dart';
+import 'package:versus_space/gen/assets.gen.dart';
 import 'package:easy_debounce/easy_debounce.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,12 +11,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:webviewx_plus/webviewx_plus.dart';
 import 'package:get_it/get_it.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '/features/auth/presentation/providers/auth_providers.dart';
 import '/features/profile/presentation/providers/profile_notifiers.dart';
 import '/features/profile/domain/entities/user_profile.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'interest_category.dart';
-import 'interest_selection_model.dart';
-export 'interest_selection_model.dart';
+// Phase 10: Removed interest_selection_model.dart import (migrated to Riverpod)
 export 'interest_category.dart';
 
 /// Generic interest selection widget for onboarding (Riverpod)
@@ -49,16 +49,19 @@ class InterestSelectionWidget extends ConsumerStatefulWidget {
 }
 
 class _InterestSelectionWidgetState extends ConsumerState<InterestSelectionWidget> {
-  late InterestSelectionModel _model;
   late final UpdateUserInterestsUseCase _updateInterestsUseCase;
   // Phase 3: ProfileProvider → profileStreamProvider로 전환
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
-  /// Phase 3: Riverpod - FirebaseAuth를 통한 userId 가져오기
-  /// Contract 패턴 폐기 (2025-11-09): Firebase 직접 접근
+  // Phase 10: TextField controllers (moved from AppModel)
+  late final FocusNode _inputFocusNode;
+  late final TextEditingController _inputTextController;
+
+  /// Phase C-2: Riverpod - currentUserIdProvider를 통한 userId 가져오기
+  /// Architecture Fix: FirebaseAuth 직접 접근 → Provider 사용
   String? get _userId {
-    return FirebaseAuth.instance.currentUser?.uid;
+    return ref.watch(currentUserIdProvider).value;
   }
 
   /// Phase 3: Riverpod - profileStreamProvider를 통한 프로필 가져오기
@@ -93,20 +96,22 @@ class _InterestSelectionWidgetState extends ConsumerState<InterestSelectionWidge
   @override
   void initState() {
     super.initState();
-    _model = createModel(context, () => InterestSelectionModel());
 
     // Phase 3: Riverpod - UseCase 초기화 (프로필은 profileStreamProvider가 자동 관리)
     _updateInterestsUseCase = GetIt.instance<UpdateUserInterestsUseCase>();
 
-    _model.inputTextController ??= TextEditingController();
-    _model.inputFocusNode ??= FocusNode();
-    _model.inputFocusNode!.addListener(() => setState(() {}));
+    // Phase 10: TextField controllers initialization (moved from AppModel)
+    _inputTextController = TextEditingController();
+    _inputFocusNode = FocusNode();
+    _inputFocusNode.addListener(() => setState(() {}));
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   @override
   void dispose() {
-    _model.dispose();
+    // Phase 10: Dispose TextField controllers (moved from AppModel)
+    _inputFocusNode.dispose();
+    _inputTextController.dispose();
     super.dispose();
   }
 
@@ -159,8 +164,7 @@ class _InterestSelectionWidgetState extends ConsumerState<InterestSelectionWidge
           actions: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8.0),
-              child: Image.asset(
-                'assets/images/versus-sign-black-white-symbol_679005-151@1x.png',
+              child: Assets.images_versus_logo.image(
                 width: 100.0,
                 height: double.infinity,
                 fit: BoxFit.cover,
@@ -322,14 +326,13 @@ we'll send you better questio... */
                           mainAxisSize: MainAxisSize.max,
                           children: [
                             TextFormField(
-                              controller: _model.inputTextController,
-                              focusNode: _model.inputFocusNode,
+                              controller: _inputTextController,
+                              focusNode: _inputFocusNode,
                               onChanged: (_) => EasyDebounce.debounce(
-                                '_model.inputTextController',
+                                '_inputTextController',
                                 Duration(milliseconds: 2000),
                                 () async {
-                                  _model.inputTag =
-                                      _model.inputTextController!.text;
+                                  // Phase 10: Removed inputTag field - use textController.text directly
                                   setState(() {});
                                 },
                               ),
@@ -426,7 +429,7 @@ we'll send you better questio... */
                                 ),
                                 filled: true,
                                 fillColor:
-                                    (_model.inputFocusNode?.hasFocus ?? false)
+                                    _inputFocusNode.hasFocus
                                         ? AppTheme.of(context).accent1
                                         : AppTheme.of(context)
                                             .secondaryBackground,
@@ -458,8 +461,8 @@ we'll send you better questio... */
                                       maxLength}) =>
                                   null,
                               cursorColor: AppTheme.of(context).primary,
-                              validator: _model.inputTextControllerValidator
-                                  .asValidator(context),
+                              // Phase 10: Removed validator (was null in original model)
+                              validator: null,
                               inputFormatters: [
                                 if (!isAndroid && !isiOS)
                                   TextInputFormatter.withFunction(
@@ -496,7 +499,8 @@ we'll send you better questio... */
                               padding: EdgeInsetsDirectional.fromSTEB(
                                   0.0, 10.0, 0.0, 0.0),
                               child: AppButtonWidget(
-                                onPressed: (_model.inputTag != '' ? false : true)
+                                // Phase 10: Use textController.text instead of inputTag
+                                onPressed: (_inputTextController.text.trim() != '' ? false : true)
                                     ? null
                                     : () async {
                                         // ✅ Fixed: Check correct field based on category
@@ -536,7 +540,7 @@ we'll send you better questio... */
                                               .addInterest(
                                             userId: currentUserId,
                                             interest:
-                                                _model.inputTextController!.text,
+                                                _inputTextController.text,
                                             category:
                                                 widget.category.firestoreField,
                                           );
@@ -554,8 +558,7 @@ we'll send you better questio... */
                                             (_) {
                                               // Handle success
                                               setState(() {
-                                                _model.inputTextController
-                                                    ?.clear();
+                                                _inputTextController.clear();
                                               });
                                               // AppState().update() 삭제 (이미 Riverpod으로 자동 업데이트)
                                             },

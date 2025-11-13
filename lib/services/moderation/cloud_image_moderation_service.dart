@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/core/utils/logger.dart';
+import '/services/logging/logger_service.dart';
 import 'models/image_moderation_model.dart';
 import 'interfaces/i_cloud_image_moderation_service.dart';
 
@@ -37,10 +37,7 @@ class CloudImageModerationService implements ICloudImageModerationService {
           .get();
 
       if (doc.exists) {
-        return ImageModerationModel.getDocumentFromData(
-          doc.data()!,
-          doc.reference,
-        );
+        return ImageModerationModel.fromFirestore(doc);
       }
       return null;
     } catch (e) {
@@ -67,10 +64,7 @@ class CloudImageModerationService implements ICloudImageModerationService {
             .get();
 
         if (doc.exists) {
-          final record = ImageModerationModel.getDocumentFromData(
-            doc.data()!,
-            doc.reference,
-          );
+          final record = ImageModerationModel.fromFirestore(doc);
 
           // 검열이 완료된 경우 (pending이 아닌 경우)
           if (record.moderationStatus != 'pending') {
@@ -100,7 +94,7 @@ class CloudImageModerationService implements ICloudImageModerationService {
         .snapshots()
         .map((snapshot) {
       if (snapshot.exists) {
-        return ImageModerationModel.fromSnapshot(snapshot);
+        return ImageModerationModel.fromFirestore(snapshot);
       }
       return null;
     });
@@ -159,6 +153,12 @@ class CloudImageModerationService implements ICloudImageModerationService {
   /// 거부 이유 가져오기
   String getRejectionReason(ImageModerationModel moderation) {
     final results = moderation.safeSearchResults;
+
+    // SafeSearchResults가 null인 경우 기본 메시지 반환
+    if (results == null) {
+      return '커뮤니티 가이드라인 위반';
+    }
+
     final reasons = <String>[];
 
     if (results.adult == 'LIKELY' || results.adult == 'VERY_LIKELY') {

@@ -12,8 +12,11 @@ import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'popup_timer_email_model.dart';
-export 'popup_timer_email_model.dart';
+import 'popup_timer_email_provider.dart';
+import '../../../widgets/timer/auth_timer_display.dart';
+
+// Phase 10: PopupTimerEmailModel → Riverpod 3.x (Timer + verification state)
+// AppTimer 제거 (2025-11-11): stop_watch_timer 직접 사용 + AuthTimerDisplay
 
 class PopupTimerEmailWidget extends ConsumerStatefulWidget {
   const PopupTimerEmailWidget({super.key});
@@ -23,23 +26,51 @@ class PopupTimerEmailWidget extends ConsumerStatefulWidget {
 }
 
 class _PopupTimerEmailWidgetState extends ConsumerState<PopupTimerEmailWidget> {
-  late PopupTimerEmailModel _model;
-
-  @override
-  void setState(VoidCallback callback) {
-    super.setState(callback);
-    _model.onUpdate();
-  }
+  // stop_watch_timer 직접 사용 (AppTimer 제거)
+  late final StopWatchTimer _timer;
 
   @override
   void initState() {
     super.initState();
-    _model = createModel(context, () => PopupTimerEmailModel());
+
+    // stop_watch_timer 직접 초기화
+    _timer = StopWatchTimer(
+      mode: StopWatchMode.countDown,
+      presetMillisecond: 180000, // 180초 (3분)
+    );
+
+    // 타이머 값 변경 리스너
+    _timer.rawTime.listen((value) {
+      final displayTime = StopWatchTimer.getDisplayTime(
+        value,
+        hours: false,
+        milliSecond: false,
+      );
+      ref.read(popupTimerEmailProvider.notifier).updateTimerValues(
+        milliseconds: value,
+        displayValue: displayTime,
+      );
+      if (mounted) setState(() {});
+    });
+
+    // 타이머 종료 리스너
+    _timer.fetchEnded.listen((_) async {
+      // 시간 초과 - 사용자 계정 삭제
+      final accountManagementUseCase = ref.read(accountManagementUseCaseProvider);
+      await accountManagementUseCase.deleteAccount(
+        eventId: const Uuid().v4(),
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+        context.pushNamed(StartPageWidget.routeName);
+      }
+    });
 
     // On component load action.
     SchedulerBinding.instance.addPostFrameCallback((_) async {
-      // TimerStart
-      _model.timerController.onStartTimer();
+      // 타이머 시작
+      _timer.onStartTimer();
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
@@ -47,8 +78,7 @@ class _PopupTimerEmailWidgetState extends ConsumerState<PopupTimerEmailWidget> {
 
   @override
   void dispose() {
-    _model.maybeDispose();
-
+    _timer.dispose();
     super.dispose();
   }
 
@@ -82,11 +112,7 @@ class _PopupTimerEmailWidgetState extends ConsumerState<PopupTimerEmailWidget> {
                 ),
                 child: Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(0.0, 10.0, 0.0, 0.0),
-                  child: wrapWithModel(
-                    model: _model.pickleMarkModel,
-                    updateCallback: () => setState(() {}),
-                    child: PickleMarkWidget(),
-                  ),
+                  child: PickleMarkWidget(),
                 ),
               ),
             ),
@@ -311,14 +337,13 @@ class _PopupTimerEmailWidgetState extends ConsumerState<PopupTimerEmailWidget> {
                       onPressed: currentUserEmailVerified
                           ? null
                           : () async {
-                              if (_model.resendCount < 3) {
-                                _model.resendCount = _model.resendCount + 1;
-                                setState(() {});
-                                _model.timerController.timer
-                                    .setPresetTime(mSec: 120000, add: false);
-                                _model.timerController.onResetTimer();
+                              if (ref.read(popupTimerEmailProvider).canResend) {
+                                ref.read(popupTimerEmailProvider.notifier).incrementResendCount();
 
-                                _model.timerController.onStartTimer();
+                                // 타이머 리셋 및 재시작
+                                _timer.setPresetTime(mSec: 180000, add: false);
+                                _timer.onResetTimer();
+                                _timer.onStartTimer();
 
                                 // 이메일 인증 재발송
                                 final userId = await ref.read(currentUserIdProvider.future);
@@ -388,31 +413,8 @@ class _PopupTimerEmailWidgetState extends ConsumerState<PopupTimerEmailWidget> {
             ),
             Padding(
               padding: EdgeInsetsDirectional.fromSTEB(0.0, 10.0, 0.0, 0.0),
-              child: AppTimer(
-                initialTime: _model.timerInitialTimeMs,
-                getDisplayTime: (value) => StopWatchTimer.getDisplayTime(
-                  value,
-                  hours: false,
-                  milliSecond: false,
-                ),
-                controller: _model.timerController,
-                updateStateInterval: Duration(milliseconds: 1000),
-                onChanged: (value, displayTime, shouldUpdate) {
-                  _model.timerMilliseconds = value;
-                  _model.timerValue = displayTime;
-                  if (shouldUpdate) setState(() {});
-                },
-                onEnded: () async {
-                  // 시간 초과 - 사용자 계정 삭제
-                  final accountManagementUseCase = ref.read(accountManagementUseCaseProvider);
-                  await accountManagementUseCase.deleteAccount(
-                    eventId: const Uuid().v4(),
-                  );
-
-                  Navigator.pop(context);
-                  context.pushNamed(StartPageWidget.routeName);
-                },
-                textAlign: TextAlign.start,
+              child: AuthTimerDisplay(
+                timer: _timer,
                 style: AppTheme.of(context).headlineSmall.override(
                       font: GoogleFonts.plusJakartaSans(
                         fontWeight:
@@ -424,6 +426,7 @@ class _PopupTimerEmailWidgetState extends ConsumerState<PopupTimerEmailWidget> {
                       fontWeight: AppTheme.of(context).headlineSmall.fontWeight,
                       fontStyle: AppTheme.of(context).headlineSmall.fontStyle,
                     ),
+                textAlign: TextAlign.start,
               ),
             ),
           ],

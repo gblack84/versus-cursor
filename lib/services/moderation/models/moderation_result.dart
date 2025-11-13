@@ -1,112 +1,98 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'moderation_result.freezed.dart';
+part 'moderation_result.g.dart';
+
 /// AI 검열 통합 결과 모델
-class AIModerationResult {
-  final bool isValid;
-  final String severity; // 'pass', 'warning', 'error'
-  final List<String> violations;
-  final TextModerationResult? textResult;
-  final ImageModerationResult? imageResult;
-  final GeminiModerationResult? geminiResult;
-  final String? errorMessage;
+@freezed
+sealed class AIModerationResult with _$AIModerationResult {
+  const AIModerationResult._();
 
-  AIModerationResult({
-    required this.isValid,
-    required this.severity,
-    required this.violations,
-    this.textResult,
-    this.imageResult,
-    this.geminiResult,
-    this.errorMessage,
-  });
+  const factory AIModerationResult({
+    required bool isValid,
+    required String severity, // 'pass', 'warning', 'error'
+    required List<String> violations,
+    TextModerationResult? textResult,
+    ImageModerationResult? imageResult,
+    GeminiModerationResult? geminiResult,
+    String? errorMessage,
+  }) = _AIModerationResult;
 
+  factory AIModerationResult.fromJson(Map<String, dynamic> json) =>
+      _$AIModerationResultFromJson(json);
+
+  // Computed properties
   bool get hasWarning => severity == 'warning';
   bool get hasError => severity == 'error';
   bool get hasPassed => severity == 'pass';
 }
 
 /// 텍스트 검열 결과 (Perspective API)
-class TextModerationResult {
-  final Map<String, double> scores;
-  final bool isToxic;
-  final String? detectedCategory;
-  final double confidence;
+@freezed
+sealed class TextModerationResult with _$TextModerationResult {
+  const factory TextModerationResult({
+    required Map<String, double> scores,
+    required bool isToxic,
+    String? detectedCategory,
+    required double confidence,
+  }) = _TextModerationResult;
 
-  TextModerationResult({
-    required this.scores,
-    required this.isToxic,
-    this.detectedCategory,
-    required this.confidence,
-  });
+  factory TextModerationResult.fromJson(Map<String, dynamic> json) =>
+      _$TextModerationResultFromJson(json);
 }
 
 /// 이미지 검열 결과 (Vision API)
-class ImageModerationResult {
-  final bool isAppropriate;
-  final String? reason;
-  final Map<String, String> safeSearchAnnotations;
-  final bool hasText;
-  final String? extractedText;
+@freezed
+sealed class ImageModerationResult with _$ImageModerationResult {
+  const factory ImageModerationResult({
+    required bool isAppropriate,
+    String? reason,
+    required Map<String, String> safeSearchAnnotations,
+    required bool hasText,
+    String? extractedText,
+  }) = _ImageModerationResult;
 
-  ImageModerationResult({
-    required this.isAppropriate,
-    this.reason,
-    required this.safeSearchAnnotations,
-    required this.hasText,
-    this.extractedText,
-  });
+  factory ImageModerationResult.fromJson(Map<String, dynamic> json) =>
+      _$ImageModerationResultFromJson(json);
 }
 
 /// Gemini AI 검증 결과
-class GeminiModerationResult {
-  final bool isValid;
-  final String reason;
-  final String severity;
-  final String suggestions;
-  final double confidence;
-  final String? documentId;
-  final double expectedRatioA;
-  final double expectedRatioB;
+@freezed
+sealed class GeminiModerationResult with _$GeminiModerationResult {
+  const factory GeminiModerationResult({
+    required bool isValid,
+    required String reason,
+    required String severity,
+    required String suggestions,
+    required double confidence,
+    String? documentId,
+    @Default(0.5) double expectedRatioA,
+    @Default(0.5) double expectedRatioB,
+  }) = _GeminiModerationResult;
 
-  GeminiModerationResult({
-    required this.isValid,
-    required this.reason,
-    required this.severity,
-    required this.suggestions,
-    required this.confidence,
-    this.documentId,
-    this.expectedRatioA = 0.5,
-    this.expectedRatioB = 0.5,
-  });
+  factory GeminiModerationResult.fromJson(Map<String, dynamic> json) =>
+      _$GeminiModerationResultFromJson(json);
 }
 
 /// 검열 요청 데이터
-class ModerationRequest {
-  final String? questionTitle;
-  final String? description;
-  final String? titleA;
-  final String? titleB;
-  final List<String>? imageUrlsA;
-  final List<String>? imageUrlsB;
-  final Map<String, dynamic>? visionDataA;
-  final Map<String, dynamic>? visionDataB;
-  final String userId;
-  final Map<String, dynamic>? metadata;
-  final String? sessionId;
-  final String? documentId;
-  final int? revisionCount;
+@freezed
+sealed class ModerationRequest with _$ModerationRequest {
+  const factory ModerationRequest({
+    String? questionTitle,
+    String? description,
+    String? titleA,
+    String? titleB,
+    List<String>? imageUrlsA,
+    List<String>? imageUrlsB,
+    Map<String, dynamic>? visionDataA,
+    Map<String, dynamic>? visionDataB,
+    required String userId,
+    Map<String, dynamic>? metadata,
+    String? sessionId,
+    String? documentId,
+    int? revisionCount,
+  }) = _ModerationRequest;
 
-  ModerationRequest({
-    this.questionTitle,
-    this.description,
-    this.titleA,
-    this.titleB,
-    this.imageUrlsA,
-    this.imageUrlsB,
-    this.visionDataA,
-    this.visionDataB,
-    required this.userId,
-    this.metadata,
-    this.sessionId,
-    this.documentId,
-    this.revisionCount,
-  });
+  factory ModerationRequest.fromJson(Map<String, dynamic> json) =>
+      _$ModerationRequestFromJson(json);
 }

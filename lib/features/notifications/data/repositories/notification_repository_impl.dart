@@ -12,7 +12,7 @@ import '../../domain/entities/social_notification_extensions.dart';
 import '../../domain/entities/system_notification_extensions.dart';
 import '../../domain/entities/voting_notification_extensions.dart';
 import '/services/cache/unified_cache_service.dart';
-import '/core/utils/idempotency_service.dart';
+import '/services/idempotency/idempotency_service.dart';
 
 /// Clean Architecture 준수 Repository 구현체
 ///

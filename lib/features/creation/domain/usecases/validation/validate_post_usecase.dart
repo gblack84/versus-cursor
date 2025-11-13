@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:fpdart/fpdart.dart';
 import 'package:versus_space/features/creation/domain/failures/creation_failure.dart';
-import '/core/utils/file_size_utils.dart';
+import '/services/storage/file_size_utils.dart';
+import '/app/di.dart';
 
 /// ValidatePostUseCase - 게시물 유효성 검증
 ///
@@ -43,7 +44,7 @@ class ValidatePostUseCase {
       }
 
       // 2. File size check (max 10MB)
-      final fileSizeUtils = FileSizeUtils();
+      final fileSizeUtils = getIt<FileSizeUtils>();
       final isValidSize = await fileSizeUtils.checkFileSize(
         imageFile,
         maxSizeInBytes: 10485760, // 10MB

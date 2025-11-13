@@ -3,7 +3,7 @@ import '../../domain/entities/notification.dart';
 import '../../domain/repositories/i_notification_repository.dart';
 import '../../domain/services/i_notification_service.dart';
 import '../../domain/value_objects/notification_filter.dart';
-import '/core/utils/logger.dart';
+import '/services/logging/logger_service.dart';
 
 /// Notification Service Implementation
 ///

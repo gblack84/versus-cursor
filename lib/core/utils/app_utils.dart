@@ -48,16 +48,7 @@ export 'ui/ui_utils.dart';
 /// Core logger for cross-feature logging (exports LogLevel enum)
 export '/services/logging/logger_service.dart';
 
-/// Debug logging with levels (dev/staging/prod)
-export '/services/logging/debug_service.dart';
-
-/// Migration tracking logger
-export '/services/logging/migration_tracking_service.dart';
-
 // 6. Helpers
-/// Simple helper functions (datetime13day)
-export 'helpers/custom_functions.dart';
-
 /// Input debouncing utility
 export 'helpers/debounce.dart';
 
@@ -65,8 +56,9 @@ export 'helpers/debounce.dart';
 export '/services/error/error_handler_service.dart';
 
 /// File size utilities (formatBytes, etc.)
-/// MOVED 2025-11-11: helpers/file_size_utils.dart → /services/storage/file_size_utils.dart
-/// Now exported from /lib/core_exports.dart
+/// MOVED 2025-11-11: core/utils/helpers/file_size_utils.dart → /services/storage/file_size_utils.dart
+/// Import from: import '/services/storage/file_size_utils.dart';
+/// Or use service exports: import '/services/storage/storage_exports.dart';
 
 /// Form state management controller
 export 'helpers/form_field_controller.dart';

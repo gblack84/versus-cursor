@@ -46,7 +46,6 @@ export 'core/localization/app_localizations.dart';
 export 'core/utils/app_utils.dart';
 // export 'core/utils/app_timer.dart'; // DELETED 2025-11-11: AppTimer 제거 (stop_watch_timer 직접 사용)
 export 'services/batch/batch_service.dart'; // MOVED 2025-11-11: core/utils/services → services/batch
-export 'core/utils/helpers/custom_functions.dart';
 
 // Firebase utilities (Services - External SDK)
 export 'services/firebase/firestore_utils.dart'; // MOVED 2025-11-12: core/firebase → services/firebase

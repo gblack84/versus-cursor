@@ -5,6 +5,8 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../failures/creation_failure.dart';
 import '../../repositories/i_media_repository.dart';
 import '../../services/i_image_processing_service.dart';
+import '/services/logging/logger_service.dart';
+import '/services/logging/dev_logger.dart';
 
 part 'upload_images_usecase.freezed.dart';
 
@@ -23,8 +25,8 @@ class UploadImagesUseCase {
   UploadImagesUseCase({
     required IMediaRepository mediaRepository,
     required IImageProcessingService imageProcessingService,
-  })  : _mediaRepository = mediaRepository,
-        _imageProcessingService = imageProcessingService;
+  }) : _mediaRepository = mediaRepository,
+       _imageProcessingService = imageProcessingService;
 
   /// Upload multiple images with processing and moderation
   ///
@@ -33,14 +35,35 @@ class UploadImagesUseCase {
   /// - [box]: 'A' or 'B' to identify which option
   /// - [userId]: User ID for file path generation
   /// - [onProgress]: Optional progress callback (0.0 to 1.0)
+  ///
+  /// **Phase 6: DevLogger Type B Integration**
+  /// - Entry: params() logging with image count and box
+  /// - 5 checkpoints tracking upload pipeline
+  /// - Validation logging for business rule failures
+  /// - Final result() with upload statistics
   Future<Either<CreationFailure, UploadResult>> execute({
     required List<File> images,
     required String box,
     required String userId,
     Function(double)? onProgress,
   }) async {
+    // ✅ Phase 6: DevLogger Type B (Idempotent) - Log input parameters
+    DevLogger.params({
+      'images_count': images.length,
+      'box': box,
+      'userId': userId,
+    }, tag: 'UploadImages');
+
     try {
+      // ✅ Phase 6: Checkpoint 1 - Validate inputs
+      DevLogger.checkpoint('Step 1: Validate inputs', tag: 'UploadImages');
+
       if (images.isEmpty) {
+        DevLogger.validation(
+          field: 'images',
+          reason: 'Empty images list',
+          tag: 'UploadImages',
+        );
         return left(
           CreationFailure.creationValidationFailed(
             fieldErrors: {'images': 'No images provided'},
@@ -50,6 +73,11 @@ class UploadImagesUseCase {
 
       // Validate box parameter (inline validation, moved from DTO)
       if (box != 'A' && box != 'B') {
+        DevLogger.validation(
+          field: 'box',
+          reason: 'Invalid box parameter: $box',
+          tag: 'UploadImages',
+        );
         return left(
           CreationFailure.creationValidationFailed(
             fieldErrors: {'box': 'Invalid box parameter: $box'},
@@ -57,77 +85,147 @@ class UploadImagesUseCase {
         );
       }
 
-      // Step 1: Process and moderate images
       onProgress?.call(0.2);
 
-      final processingEither = await _imageProcessingService.processMultipleImages(
-        files: images,
-        box: box,
-        onProgress: (progress) {
-          // Map processing progress to 20-60% of total
-          onProgress?.call(0.2 + (progress * 0.4));
-        },
-      );
+      // ✅ Phase 6: Checkpoint 2 - Process images
+      DevLogger.checkpoint('Step 2: Process images', tag: 'UploadImages');
 
-      return processingEither.fold(
-        (failure) => left(failure),
-        (processingResult) async {
-          if (processingResult.allRejected) {
-            return left(
-              CreationFailure.moderationFailed(
-                rejectedReasons: processingResult.rejectedReasons.keys.toList(),
-              ),
-            );
-          }
-
-          // Step 2: Upload approved images to storage
-          onProgress?.call(0.6);
-
-          final uploadEither = await _mediaRepository.uploadImages(
-            processingResult.approvedFiles,
-          );
-
-          return uploadEither.fold(
-            (failure) => left(failure),
-            (uploadedUrls) {
-              onProgress?.call(0.9);
-
-              // Step 3: Return results
-              final result = UploadResult(
-                uploadedUrls: uploadedUrls,
-                aspectRatios: processingResult.approvedRatios,
-                rejectedCount: processingResult.rejectedCount,
-                rejectedReasons: processingResult.rejectedReasons.map(
-                  (key, value) => MapEntry(key, value.join(', ')),
-                ),
-              );
-
-              onProgress?.call(1.0);
-
-              return right(result);
+      final processingEither = await _imageProcessingService
+          .processMultipleImages(
+            files: images,
+            box: box,
+            onProgress: (progress) {
+              // Map processing progress to 20-60% of total
+              onProgress?.call(0.2 + (progress * 0.4));
             },
           );
-        },
-      );
-    } catch (error, stackTrace) {
-      print('UploadImagesUseCase Error: $error');
-      print('StackTrace: $stackTrace');
 
-      return left(
-        CreationFailure.imageUploadFailed(),
+      // Early Return on failure
+      if (processingEither.isLeft()) {
+        DevLogger.error(
+          'Process images failed',
+          error: processingEither.fold((l) => l, (r) => null),
+          tag: 'UploadImages',
+        );
+        return left(processingEither.fold((l) => l, (r) => throw Exception('Unreachable')));
+      }
+
+      final processingResult = processingEither.getOrElse((l) => throw Exception('Unreachable'));
+
+      // ✅ Phase 6: Checkpoint 3 - Check rejections
+      DevLogger.checkpoint(
+        'Step 3: Check rejections - ${processingResult.rejectedCount} rejected',
+        tag: 'UploadImages',
       );
+
+      if (processingResult.allRejected) {
+        DevLogger.validation(
+          field: 'images',
+          reason: 'All images rejected: ${processingResult.rejectedReasons.keys.join(", ")}',
+          tag: 'UploadImages',
+        );
+        return left(
+          CreationFailure.moderationFailed(
+            rejectedReasons: processingResult.rejectedReasons.keys.toList(),
+          ),
+        );
+      }
+
+      onProgress?.call(0.6);
+
+      // ✅ Phase 6: Checkpoint 4 - Upload images
+      DevLogger.checkpoint(
+        'Step 4: Upload approved images - ${processingResult.approvedFiles.length} files',
+        tag: 'UploadImages',
+      );
+
+      final uploadEither = await _mediaRepository.uploadImages(
+        processingResult.approvedFiles,
+      );
+
+      // Early Return on failure
+      if (uploadEither.isLeft()) {
+        DevLogger.error(
+          'Upload images failed',
+          error: uploadEither.fold((l) => l, (r) => null),
+          tag: 'UploadImages',
+        );
+        return left(uploadEither.fold((l) => l, (r) => throw Exception('Unreachable')));
+      }
+
+      final uploadedUrls = uploadEither.getOrElse((l) => throw Exception('Unreachable'));
+      onProgress?.call(0.9);
+
+      // ✅ Phase 6: Checkpoint 5 - Create result
+      DevLogger.checkpoint('Step 5: Create upload result', tag: 'UploadImages');
+
+      final result = UploadResult(
+        uploadedUrls: uploadedUrls,
+        aspectRatios: processingResult.approvedRatios,
+        rejectedCount: processingResult.rejectedCount,
+        rejectedReasons: processingResult.rejectedReasons.map(
+          (key, value) => MapEntry(key, value.join(', ')),
+        ),
+      );
+
+      onProgress?.call(1.0);
+
+      // ✅ Phase 6: Final result
+      DevLogger.result(
+        isSuccess: true,
+        data: {
+          'uploadedUrls_count': uploadedUrls.length,
+          'rejectedCount': processingResult.rejectedCount,
+          'aspectRatios_count': processingResult.approvedRatios.length,
+        },
+        tag: 'UploadImages',
+      );
+
+      return right(result);
+    } catch (error, stackTrace) {
+      // ✅ Phase 6: Exception logging
+      DevLogger.error(
+        'Image upload failed - Exception caught',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'UploadImages',
+      );
+
+      Logger.error(
+        'UploadImagesUseCase: Image upload failed',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'UploadImagesUseCase',
+      );
+
+      return left(CreationFailure.imageUploadFailed());
     }
   }
 
   /// Process and upload a single edited image
+  ///
+  /// **Phase 6: DevLogger Type B Integration**
+  /// - Entry: params() logging with file path and assetId
+  /// - 4 checkpoints tracking edited image pipeline
+  /// - Validation logging for moderation failures
+  /// - Final result() with upload URL
   Future<Either<CreationFailure, SingleUploadResult>> uploadEditedImage({
     required File editedFile,
     required String box,
     String? assetId,
     Function(double)? onProgress,
   }) async {
+    // ✅ Phase 6: DevLogger Type B - Log input parameters
+    DevLogger.params({
+      'editedFile': editedFile.path,
+      'box': box,
+      'assetId': assetId ?? 'null',
+    }, tag: 'UploadEditedImage');
+
     try {
-      // Process with moderation
+      // ✅ Phase 6: Checkpoint 1 - Process edited image
+      DevLogger.checkpoint('Step 1: Process edited image', tag: 'UploadEditedImage');
+
       final processingEither = await _imageProcessingService.processEditedImage(
         editedFile: editedFile,
         box: box,
@@ -137,52 +235,105 @@ class UploadImagesUseCase {
         },
       );
 
-      return processingEither.fold(
-        (failure) => left(failure),
-        (processingResult) async {
-          if (!processingResult.success || processingResult.file == null) {
-            return left(
-              CreationFailure.moderationFailed(
-                rejectedReasons: [
-                  processingResult.rejectionReason ?? 'Unknown reason',
-                ],
-              ),
-            );
-          }
+      // Early Return on failure
+      if (processingEither.isLeft()) {
+        DevLogger.error(
+          'Process edited image failed',
+          error: processingEither.fold((l) => l, (r) => null),
+          tag: 'UploadEditedImage',
+        );
+        return left(processingEither.fold((l) => l, (r) => throw Exception('Unreachable')));
+      }
 
-          // Upload to storage
-          onProgress?.call(0.7);
+      final processingResult = processingEither.getOrElse((l) => throw Exception('Unreachable'));
 
-          final uploadEither = await _mediaRepository.uploadImages([processingResult.file!]);
+      // ✅ Phase 6: Checkpoint 2 - Check success
+      DevLogger.checkpoint('Step 2: Check moderation result', tag: 'UploadEditedImage');
 
-          return uploadEither.fold(
-            (failure) => left(failure),
-            (urls) {
-              if (urls.isEmpty) {
-                return left(
-                  CreationFailure.imageUploadFailed(),
-                );
-              }
+      if (!processingResult.success || processingResult.file == null) {
+        DevLogger.validation(
+          field: 'editedImage',
+          reason: processingResult.rejectionReason ?? 'Unknown moderation failure',
+          tag: 'UploadEditedImage',
+        );
+        return left(
+          CreationFailure.moderationFailed(
+            rejectedReasons: [
+              processingResult.rejectionReason ?? 'Unknown reason',
+            ],
+          ),
+        );
+      }
 
-              onProgress?.call(1.0);
+      onProgress?.call(0.7);
 
-              return right(
-                SingleUploadResult(
-                  uploadedUrl: urls.first,
-                  aspectRatio: processingResult.aspectRatio ?? 1.0,
-                  assetId: processingResult.assetId,
-                ),
-              );
-            },
-          );
+      // ✅ Phase 6: Checkpoint 3 - Upload to storage
+      DevLogger.checkpoint('Step 3: Upload to storage', tag: 'UploadEditedImage');
+
+      final uploadEither = await _mediaRepository.uploadImages([
+        processingResult.file!,
+      ]);
+
+      // Early Return on failure
+      if (uploadEither.isLeft()) {
+        DevLogger.error(
+          'Upload edited image failed',
+          error: uploadEither.fold((l) => l, (r) => null),
+          tag: 'UploadEditedImage',
+        );
+        return left(uploadEither.fold((l) => l, (r) => throw Exception('Unreachable')));
+      }
+
+      final urls = uploadEither.getOrElse((l) => throw Exception('Unreachable'));
+
+      // ✅ Phase 6: Checkpoint 4 - Validate upload result
+      DevLogger.checkpoint('Step 4: Validate upload result', tag: 'UploadEditedImage');
+
+      if (urls.isEmpty) {
+        DevLogger.validation(
+          field: 'uploadedUrls',
+          reason: 'Empty URLs after upload',
+          tag: 'UploadEditedImage',
+        );
+        return left(CreationFailure.imageUploadFailed());
+      }
+
+      onProgress?.call(1.0);
+
+      final result = SingleUploadResult(
+        uploadedUrl: urls.first,
+        aspectRatio: processingResult.aspectRatio ?? 1.0,
+        assetId: processingResult.assetId,
+      );
+
+      // ✅ Phase 6: Final result
+      DevLogger.result(
+        isSuccess: true,
+        data: {
+          'uploadedUrl': urls.first,
+          'aspectRatio': processingResult.aspectRatio ?? 1.0,
+          'assetId': processingResult.assetId ?? 'null',
         },
+        tag: 'UploadEditedImage',
       );
-    } catch (error) {
-      print('UploadEditedImageUseCase Error: $error');
 
-      return left(
-        CreationFailure.imageUploadFailed(),
+      return right(result);
+    } catch (error, stackTrace) {
+      // ✅ Phase 6: Exception logging
+      DevLogger.error(
+        'Edited image upload failed - Exception caught',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'UploadEditedImage',
       );
+
+      Logger.error(
+        'UploadEditedImageUseCase: Edited image upload failed',
+        error: error,
+        tag: 'UploadImagesUseCase',
+      );
+
+      return left(CreationFailure.imageUploadFailed());
     }
   }
 }

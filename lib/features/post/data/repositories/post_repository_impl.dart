@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:flutter/foundation.dart';
 import '/features/post/domain/models/post_display.dart';
 import '/features/post/domain/models/post_display_extensions.dart';
 import '/features/post/domain/repositories/i_post_display_repository_v2.dart';
@@ -10,6 +9,7 @@ import '/features/post/domain/failures/post_failure.dart';
 import '/features/post/domain/usecases/get_feed_usecase.dart';  // FeedSortBy enum
 import '/features/post/data/services/post_cache_service.dart';
 import '/services/idempotency/idempotency_service.dart';
+import '/services/logging/logger_service.dart';
 
 /// Post Repository Implementation - Firebase-Centric v2.0 + 3-Layer Caching
 ///
@@ -92,7 +92,10 @@ class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
     final cached = await _cacheService.getPost(postId);
     if (cached != null) {
       yield cached;
-      debugPrint('📦 [PostRepository] Cache HIT: Post $postId');
+      CacheLogger.cacheHit(
+        key: 'post_$postId',
+        layer: 'L1/L2',
+      );
     }
 
     // 2. Listen to Firestore for real-time updates
@@ -117,7 +120,10 @@ class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
     final cached = await _cacheService.getUserPosts(userId: userId, limit: limit);
     if (cached.isNotEmpty) {
       yield cached;
-      debugPrint('📦 [PostRepository] Cache HIT: User posts ($userId)');
+      CacheLogger.cacheHit(
+        key: 'user_posts_$userId',
+        layer: 'L1/L2',
+      );
     }
 
     // 2. Listen to Firestore for real-time updates
@@ -152,7 +158,10 @@ class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
     final cached = await _cacheService.getPopularPosts(limit: limit, timeWindow: window);
     if (cached.isNotEmpty) {
       yield cached;
-      debugPrint('📦 [PostRepository] Cache HIT: Popular posts');
+      CacheLogger.cacheHit(
+        key: 'popular_posts',
+        layer: 'L1/L2',
+      );
     }
 
     // 2. Listen to Firestore for real-time updates
@@ -180,7 +189,10 @@ class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
     final cached = await _cacheService.getTrendingPosts(limit: limit);
     if (cached.isNotEmpty) {
       yield cached;
-      debugPrint('📦 [PostRepository] Cache HIT: Trending posts');
+      CacheLogger.cacheHit(
+        key: 'trending_posts',
+        layer: 'L1/L2',
+      );
     }
 
     // 2. Calculate trending posts from recent 100 posts
@@ -335,14 +347,20 @@ class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
       // 1. Check cache first
       final cached = await _cacheService.getPost(postId);
       if (cached != null) {
-        debugPrint('📦 [PostRepository] Cache HIT: Post $postId');
+        CacheLogger.cacheHit(
+          key: 'post_$postId',
+          layer: 'L1/L2',
+        );
 
         // Return cached data immediately
         // Background revalidation happens via streamPost
         return right(cached);
       }
 
-      debugPrint('💾 [PostRepository] Cache MISS: Post $postId');
+      CacheLogger.cacheMiss(
+        key: 'post_$postId',
+        layer: 'L1/L2',
+      );
 
       // 2. Fetch from Firestore
       final doc = await _postsRef.doc(postId).get();
@@ -557,6 +575,12 @@ class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
               await _cacheService.invalidateFeed(sortBy: FeedSortBy.trending);
             });
 
+            // ✅ Logger 추가
+            PostLogger.postCreated(
+              postId: post.id,
+              authorId: post.userId,
+            );
+
             return right(unit);
           } catch (e) {
             return left(PostFailure.createFailed(
@@ -611,6 +635,9 @@ class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
               await _cacheService.invalidateFeed(sortBy: FeedSortBy.popular);
               await _cacheService.invalidateFeed(sortBy: FeedSortBy.trending);
             });
+
+            // ✅ Logger 추가
+            PostLogger.postUpdated(postId: postId);
 
             return right(unit);
           } catch (e) {
@@ -696,6 +723,9 @@ class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
               await _cacheService.invalidateFeed(sortBy: FeedSortBy.trending);
             });
 
+            // ✅ Logger 추가
+            PostLogger.postDeleted(postId: postId);
+
             return right(unit);
           } catch (e) {
             return left(PostFailure.deleteFailed(
@@ -716,7 +746,6 @@ class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
   @override
   Future<Either<PostFailure, Unit>> incrementViewCount({
     required String postId,
-    required String eventId,
   }) async {
     try {
       // Phase 4: Get current user ID from Firebase Auth (Firebase-Centric v2.0)
@@ -725,30 +754,23 @@ class PostRepositoryImpl implements IPostDisplayRepositoryV2 {
         return left(const PostFailure.unauthorized());
       }
 
-      return await _idempotencyService.executeIdempotent<Either<PostFailure, Unit>>(
-        entityType: 'post_view_increment',
-        entityId: postId,
-        userId: userId,
-        eventId: eventId,
-        operation: (transaction) async {
-          try {
-            final postRef = _postsRef.doc(postId);
+      // ✅ Option 1: Direct Firestore atomic increment (IdempotencyService 불필요)
+      //    FieldValue.increment()는 원자적 연산으로 멱등성 보장
+      //    조회수는 근사치 허용 (정확도 < 성능)
+      await _postsRef.doc(postId).update({
+        'viewCount': FieldValue.increment(1),
+      });
 
-            transaction.update(postRef, {
-              'viewCount': FieldValue.increment(1),
-            });
+      // Optional: Invalidate cache for view count
+      // (Usually view count doesn't need immediate cache invalidation)
 
-            // Optional: Invalidate cache for view count
-            // (Usually view count doesn't need immediate cache invalidation)
-
-            return right(unit);
-          } catch (e) {
-            return left(PostFailure.updateFailed(
-              reason: 'Failed to increment view count in transaction: ${e.toString()}',
-            ));
-          }
-        },
+      // ✅ Logger 추가
+      PostLogger.metricsUpdated(
+        operation: 'view_increment',
+        postId: postId,
       );
+
+      return right(unit);
     } on FirebaseException catch (e) {
       return left(_mapFirebaseException(e, postId: postId));
     } catch (e) {

@@ -190,7 +190,9 @@ abstract class IPostCreationRepositoryV2 {
   // This allows UseCase to avoid direct service dependency
 
   /// Validate target audience configuration
-  service.ValidationResult validateTargetAudience(TargetAudience targetAudience);
+  service.ValidationResult validateTargetAudience(
+    TargetAudience targetAudience,
+  );
 
   /// Process images with moderation
   Future<ImageProcessingResult> processImages({
@@ -208,7 +210,9 @@ abstract class IPostCreationRepositoryV2 {
   });
 
   /// Convert target audience to storage format
-  Map<String, dynamic> convertTargetAudienceToStorageFormat(TargetAudience targetAudience);
+  Map<String, dynamic> convertTargetAudienceToStorageFormat(
+    TargetAudience targetAudience,
+  );
 
   // ====== Additional Command Operations (from ICreationCommandRepository) ======
 
@@ -288,23 +292,25 @@ abstract class IPostCreationRepositoryV2 {
 
   /// Save Draft Post (Write-Through pattern)
   ///
-  /// **Phase 4 Idempotency**: Requires eventId for duplicate prevention
+  /// **Option 1**: IdempotencyService 제거 (고정 ID로 자연스러운 멱등성)
   ///
   /// **Flow**: Cache (L1, L2) immediately → Firestore async
   /// **Performance**: <10ms (non-blocking)
   ///
-  /// **Idempotency**: Same eventId will skip Firestore write (cache still updated)
+  /// **Idempotency**: 고정 ID('draft_$userId') + set() = 자연스러운 멱등성 보장
+  /// - 동일 사용자의 Draft는 항상 동일한 Document ID 사용
+  /// - Firestore set()은 멱등 연산 (동일 데이터로 여러 번 호출 가능)
+  /// - eventId 없이도 안전한 재시도 보장
   ///
   /// **Example**:
   /// ```dart
-  /// await repository.saveDraftPost('user123', draft, eventId: uuid.v4());
+  /// await repository.saveDraftPost('user123', draft);
   /// // Saved to cache instantly, Firestore updates in background
   /// ```
   Future<void> saveDraftPost(
     String userId,
-    PostCreation draft, {
-    required String eventId, // ✅ Phase 4: UUID for idempotency
-  });
+    PostCreation draft,
+  );
 
   /// Delete Draft Post (Cache invalidation + Firestore delete)
   ///

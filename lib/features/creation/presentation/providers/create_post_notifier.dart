@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:async'; // ✅ Phase 3: Timer for debounce
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:uuid/uuid.dart'; // ✅ Phase 4: UUID for idempotency
 import '../../domain/failures/creation_failure.dart';
 import '../../domain/failures/creation_failure_extensions.dart'; // Extension for getUserMessage()
 import '../../domain/entities/target_audience.dart' as domain;
@@ -12,6 +11,7 @@ import 'creation_providers.dart';
 import '/services/moderation/perspective_api_service.dart';
 import '../constants/field_styles.dart';
 import '/features/auth/presentation/providers/auth_providers.dart';
+import '/services/logging/logger_service.dart';
 
 part 'create_post_notifier.g.dart';
 
@@ -31,11 +31,9 @@ part 'create_post_notifier.g.dart';
 /// - MediaStateCoordinator → 개별 Media Notifier 직접 사용
 /// - ✅ Phase 3: Draft auto-load on app start (<10ms cache hit)
 /// - ✅ Phase 3: saveDraft() with 500ms debounce (no UI blocking)
-/// - ✅ Phase 4: UUID generation for idempotency
 @riverpod
 class CreatePost extends _$CreatePost {
   Timer? _debounceTimer; // ✅ Phase 3: Debounce timer for auto-save
-  final Uuid _uuid = const Uuid(); // ✅ Phase 4: UUID generator for idempotency
 
   @override
   CreatePostState build() {
@@ -93,11 +91,11 @@ class CreatePost extends _$CreatePost {
           ),
         );
 
-        print('✅ Draft restored from cache');
+        Logger.debug('Draft restored from cache', tag: 'CreatePostNotifier');
       }
     } catch (e) {
       // Draft load failed - keep empty state
-      print('⚠️ Draft load failed: $e');
+      Logger.warning('Draft load failed', tag: 'CreatePostNotifier');
     }
   }
 
@@ -142,16 +140,15 @@ class CreatePost extends _$CreatePost {
           createdAt: DateTime.now(),
         );
 
-        // ✅ Phase 4: Generate eventId for idempotency
-        final eventId = _uuid.v4();
-
+        // ✅ Option 1: Direct save without eventId (고정 ID로 자연스러운 멱등성)
         // Save to cache (L1, L2) + Firestore (async)
-        // Repository will handle Write-Through pattern
-        await repository.saveDraftPost(currentUserId, draft, eventId: eventId);
+        // Repository will handle Write-Through pattern (logs automatically)
+        await repository.saveDraftPost(currentUserId, draft);
 
-        print('✅ Draft auto-saved (debounced 500ms, eventId: $eventId)');
+        // ✅ Phase 3: Log successful draft save
+        StateLogger.draftSaved(userId: currentUserId);
       } catch (e) {
-        print('⚠️ Draft auto-save failed: $e');
+        // Repository logs save failures automatically
         // Don't block UI on save failure
       }
     });
@@ -259,7 +256,9 @@ class CreatePost extends _$CreatePost {
     final validateUseCase = ref.read(validatePostUseCaseProvider);
 
     // Title validation
-    final titleResult = await validateUseCase.validateText(state.formData.title);
+    final titleResult = await validateUseCase.validateText(
+      state.formData.title,
+    );
     titleResult.fold(
       (failure) {
         if (state.formData.title.isEmpty) {
@@ -272,7 +271,9 @@ class CreatePost extends _$CreatePost {
     );
 
     // Description validation
-    final descriptionResult = await validateUseCase.validateText(state.formData.description);
+    final descriptionResult = await validateUseCase.validateText(
+      state.formData.description,
+    );
     descriptionResult.fold(
       (failure) {
         if (state.formData.description.isEmpty) {
@@ -292,7 +293,7 @@ class CreatePost extends _$CreatePost {
       imageResult.fold(
         (failure) {
           invalidFields.add('imageA_$i');
-          print('[ValidateFormFields] Image A[$i] validation failed: ${failure.message}');
+          // ValidateUseCase logs validation failures automatically
         },
         (_) {}, // Success case - do nothing
       );
@@ -307,7 +308,7 @@ class CreatePost extends _$CreatePost {
         imageResult.fold(
           (failure) {
             invalidFields.add('imageB_$i');
-            print('[ValidateFormFields] Image B[$i] validation failed: ${failure.message}');
+            // ValidateUseCase logs validation failures automatically
           },
           (_) {}, // Success case - do nothing
         );
@@ -343,6 +344,12 @@ class CreatePost extends _$CreatePost {
 
   /// Validate and moderate content before submission
   Future<bool> validateAndModerate() async {
+    // ✅ Phase 3: Get userId for logging
+    final currentUserId = await ref.read(currentUserIdProvider.future);
+
+    // ✅ Phase 3: Log content validation start
+    StateLogger.contentValidationStarted(userId: currentUserId ?? 'unknown');
+
     // Use ValidatePostUseCase instead of internal validation
     final isValid = await validateFormFields();
     if (!isValid) {
@@ -359,7 +366,8 @@ class CreatePost extends _$CreatePost {
       final moderateUseCase = ref.read(moderateContentUseCaseProvider);
 
       // Moderate text content
-      final textToModerate = '${state.formData.title} ${state.formData.description} '
+      final textToModerate =
+          '${state.formData.title} ${state.formData.description} '
           '${state.formData.textA} ${state.formData.textB}';
 
       final textResult = await moderateUseCase.moderateText(
@@ -375,6 +383,12 @@ class CreatePost extends _$CreatePost {
               ? failure.getUserMessage()
               : failure.getUserMessage();
 
+          // ✅ Phase 3: Log content validation failure
+          StateLogger.contentValidationCompleted(
+            isValid: false,
+            reason: message,
+          );
+
           state = state.copyWith(
             moderationStatus: ModerationStatus.rejected,
             moderationMessage: message,
@@ -389,8 +403,17 @@ class CreatePost extends _$CreatePost {
               aiProvider: 'perspective',
               confidenceScore: textDecision.confidence,
               detectedCategories: [], // Will be populated by UseCase in future
-              rejectedReasons: textDecision.reason != null ? [textDecision.reason!] : [],
+              rejectedReasons: textDecision.reason != null
+                  ? [textDecision.reason!]
+                  : [],
             );
+
+            // ✅ Phase 3: Log content validation rejection
+            StateLogger.contentValidationCompleted(
+              isValid: false,
+              reason: failure.getUserMessage(),
+            );
+
             state = state.copyWith(
               moderationStatus: ModerationStatus.rejected,
               moderationMessage: failure.getUserMessage(),
@@ -410,46 +433,69 @@ class CreatePost extends _$CreatePost {
       final imagesB = state.formData.imagesB;
 
       if (imagesA.isNotEmpty) {
-        final resultA = await ref.read(mediaValidationProvider.notifier).validateImages(
-          images: imagesA,
-          box: 'A',
-          onProgress: (current, total) {
-            state = state.copyWith(
-              moderationMessage: 'A 박스 이미지 검토 중... ($current/$total)',
+        final resultA = await ref
+            .read(mediaValidationProvider.notifier)
+            .validateImages(
+              images: imagesA,
+              box: 'A',
+              onProgress: (current, total) {
+                state = state.copyWith(
+                  moderationMessage: 'A 박스 이미지 검토 중... ($current/$total)',
+                );
+              },
             );
-          },
-        );
 
         if (!resultA) {
           final validationState = ref.read(mediaValidationProvider);
+          final message = validationState.validationMessage ?? '이미지 검증 실패';
+
+          // ✅ Phase 3: Log image validation failure (Box A)
+          StateLogger.contentValidationCompleted(
+            isValid: false,
+            reason: message,
+          );
+
           state = state.copyWith(
             moderationStatus: ModerationStatus.rejected,
-            moderationMessage: validationState.validationMessage ?? '이미지 검증 실패',
+            moderationMessage: message,
           );
           return false;
         }
       }
 
       if (imagesB.isNotEmpty) {
-        final resultB = await ref.read(mediaValidationProvider.notifier).validateImages(
-          images: imagesB,
-          box: 'B',
-          onProgress: (current, total) {
-            state = state.copyWith(
-              moderationMessage: 'B 박스 이미지 검토 중... ($current/$total)',
+        final resultB = await ref
+            .read(mediaValidationProvider.notifier)
+            .validateImages(
+              images: imagesB,
+              box: 'B',
+              onProgress: (current, total) {
+                state = state.copyWith(
+                  moderationMessage: 'B 박스 이미지 검토 중... ($current/$total)',
+                );
+              },
             );
-          },
-        );
 
         if (!resultB) {
           final validationState = ref.read(mediaValidationProvider);
+          final message = validationState.validationMessage ?? '이미지 검증 실패';
+
+          // ✅ Phase 3: Log image validation failure (Box B)
+          StateLogger.contentValidationCompleted(
+            isValid: false,
+            reason: message,
+          );
+
           state = state.copyWith(
             moderationStatus: ModerationStatus.rejected,
-            moderationMessage: validationState.validationMessage ?? '이미지 검증 실패',
+            moderationMessage: message,
           );
           return false;
         }
       }
+
+      // ✅ Phase 3: Log successful validation
+      StateLogger.contentValidationCompleted(isValid: true);
 
       state = state.copyWith(
         moderationStatus: ModerationStatus.approved,
@@ -474,7 +520,9 @@ class CreatePost extends _$CreatePost {
       final validateUseCase = ref.read(validatePostUseCaseProvider);
       final result = await validateUseCase.validateText(text);
 
-      final newResults = Map<String, PerspectiveResult>.from(state.validationResults);
+      final newResults = Map<String, PerspectiveResult>.from(
+        state.validationResults,
+      );
 
       // Convert Either<Failure, Unit> to PerspectiveResult
       result.fold(
@@ -499,7 +547,9 @@ class CreatePost extends _$CreatePost {
       state = state.copyWith(validationResults: newResults);
     } catch (e) {
       // On error, clear validation result
-      final newResults = Map<String, PerspectiveResult>.from(state.validationResults);
+      final newResults = Map<String, PerspectiveResult>.from(
+        state.validationResults,
+      );
       newResults.remove(FieldStyles.questionTitle);
       state = state.copyWith(validationResults: newResults);
     }
@@ -514,7 +564,9 @@ class CreatePost extends _$CreatePost {
       final validateUseCase = ref.read(validatePostUseCaseProvider);
       final result = await validateUseCase.validateText(text);
 
-      final newResults = Map<String, PerspectiveResult>.from(state.validationResults);
+      final newResults = Map<String, PerspectiveResult>.from(
+        state.validationResults,
+      );
 
       result.fold(
         (failure) {
@@ -538,7 +590,9 @@ class CreatePost extends _$CreatePost {
       state = state.copyWith(validationResults: newResults);
     } catch (e) {
       // On error, clear validation result
-      final newResults = Map<String, PerspectiveResult>.from(state.validationResults);
+      final newResults = Map<String, PerspectiveResult>.from(
+        state.validationResults,
+      );
       newResults.remove(FieldStyles.description);
       state = state.copyWith(validationResults: newResults);
     }
@@ -546,7 +600,9 @@ class CreatePost extends _$CreatePost {
 
   /// Clear validation result for a specific field
   void clearValidationResult(String fieldName) {
-    final newResults = Map<String, PerspectiveResult>.from(state.validationResults);
+    final newResults = Map<String, PerspectiveResult>.from(
+      state.validationResults,
+    );
     newResults.remove(fieldName);
     state = state.copyWith(validationResults: newResults);
   }
@@ -562,6 +618,9 @@ class CreatePost extends _$CreatePost {
       _setError('양식을 올바르게 작성해주세요.');
       return;
     }
+
+    // ✅ Phase 3: Log post submission start
+    StateLogger.postSubmissionStarted(userId: userId);
 
     // targetAudience가 전달되면 formData에 업데이트
     if (targetAudience != null) {
@@ -614,9 +673,16 @@ class CreatePost extends _$CreatePost {
 
       result.fold(
         (failure) {
+          // ✅ Phase 3: Log post submission error
+          StateLogger.postSubmissionError(userId: userId, error: failure);
           _setError(_getFailureMessage(failure));
         },
         (post) {
+          // ✅ Phase 3: Log post submission completed
+          StateLogger.postSubmissionCompleted(
+            postId: post.id ?? 'unknown',
+            submissionTime: Duration.zero, // TODO: Track actual submission time
+          );
           state = state.copyWith(
             createdPost: post,
             loadingState: LoadingState.success,
@@ -625,6 +691,8 @@ class CreatePost extends _$CreatePost {
         },
       );
     } catch (e) {
+      // ✅ Phase 3: Log unexpected error
+      StateLogger.postSubmissionError(userId: userId, error: e);
       _setError('예상치 못한 오류가 발생했습니다: $e');
     }
   }
@@ -762,9 +830,7 @@ class CreatePost extends _$CreatePost {
       state = state.copyWith(moderationMessage: '완료!');
       return true;
     } catch (e) {
-      state = state.copyWith(
-        moderationMessage: '미디어 처리 중 오류가 발생했습니다: $e',
-      );
+      state = state.copyWith(moderationMessage: '미디어 처리 중 오류가 발생했습니다: $e');
       return false;
     }
   }

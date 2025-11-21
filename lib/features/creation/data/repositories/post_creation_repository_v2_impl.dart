@@ -11,9 +11,11 @@ import '../../domain/services/i_image_processing_service.dart';
 import '../../domain/repositories/i_post_creation_repository_v2.dart';
 import '/services/cache/creation_cache_service.dart';
 import '/services/idempotency/idempotency_service.dart'; // ✅ Phase 4: Idempotency
+import '/services/logging/logger_service.dart';
 
 // Use ValidationResult from ITargetAudienceService
-export '../../domain/services/i_target_audience_service.dart' show ValidationResult;
+export '../../domain/services/i_target_audience_service.dart'
+    show ValidationResult;
 
 /// Implementation of IPostCreationRepositoryV2
 ///
@@ -59,7 +61,9 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
        _imageProcessingService = imageProcessingService,
        _cacheService = cacheService,
        _idempotencyService = idempotencyService,
-       _postsCollection = (firestore ?? FirebaseFirestore.instance).collection('posts');
+       _postsCollection = (firestore ?? FirebaseFirestore.instance).collection(
+         'posts',
+       );
 
   // ====== Creation Operations ======
 
@@ -99,22 +103,28 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
       return right(postId);
     } on IdempotencyViolation catch (_) {
       // User attempted same operation with different eventId (real duplicate)
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'create',
-        // message:'Duplicate post creation attempt: ${e.message}',
-        // code:'idempotency_violation',
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'create',
+          // message:'Duplicate post creation attempt: ${e.message}',
+          // code:'idempotency_violation',
+        ),
+      );
     } on FirebaseException {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'create',
-        // message:'Failed to create post: ${e.message}',
-        // code:e.code,
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'create',
+          // message:'Failed to create post: ${e.message}',
+          // code:e.code,
+        ),
+      );
     } catch (_) {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'create',
-        // message:'Unexpected error during post creation: $e',
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'create',
+          // message:'Unexpected error during post creation: $e',
+        ),
+      );
     }
   }
 
@@ -186,35 +196,30 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   /// ```
   Future<void> saveDraftPost(
     String userId,
-    PostCreation draft, {
-    required String eventId, // ✅ Phase 4: UUID for idempotency
-  }) async {
+    PostCreation draft,
+  ) async {
     // 1. ✅ 캐시에 즉시 저장 (UI 반응성)
     await _cacheService.setDraftPost(userId, draft);
 
-    // 2. ✅ Firestore에 비동기 저장 (데이터 안전성) with Idempotency
+    // 2. ✅ Firestore에 비동기 저장 (데이터 안전성)
+    //    Option 1: 고정 ID로 자연스러운 멱등성 보장 (IdempotencyService 불필요)
     scheduleMicrotask(() async {
       try {
-        // ✅ Phase 4: Wrap Firestore write in Idempotency Service
-        await _idempotencyService.executeIdempotent<void>(
-          entityType: 'draft_save',
-          entityId: draft.id ?? 'draft_$userId',
-          userId: userId,
-          eventId: eventId,
-          operation: (transaction) async {
-            final draftId = draft.id ?? 'draft_$userId';
-            final docRef = _postsCollection.doc(draftId);
-            // ✅ Phase 5: Use Extension
-            transaction.set(docRef, draft.toFirestore());
-          },
+        final draftId = 'draft_$userId';  // ✅ 고정 ID per user
+        // ✅ Phase 5: Direct Firestore set() with Extension
+        await _postsCollection.doc(draftId).set(draft.toFirestore());
+
+        Logger.info(
+          'Draft saved successfully: $draftId',
+          tag: 'PostCreationRepository',
         );
-      } on IdempotencyViolation catch (e) {
-        // Same draft with different eventId - skip silently (cache already updated)
-        print('⚠️ Draft save idempotency violation (ignored): ${e.message}');
       } catch (e) {
         // 실패 시 재시도 로직 (Optional)
         // TODO: Implement retry with exponential backoff
-        print('❌ Draft save failed: $e');
+        Logger.warning(
+          'Draft save failed: $e',
+          tag: 'PostCreationRepository',
+        );
       }
     });
   }
@@ -310,25 +315,31 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
       );
       return right(unit);
     } on IdempotencyViolation catch (_) {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'update',
-        postId: postId,
-        // message:'Duplicate post update attempt: ${e.message}',
-        // code:'idempotency_violation',
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'update',
+          postId: postId,
+          // message:'Duplicate post update attempt: ${e.message}',
+          // code:'idempotency_violation',
+        ),
+      );
     } on FirebaseException {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'update',
-        postId: postId,
-        // message:'Failed to update post: ${e.message}',
-        // code:e.code,
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'update',
+          postId: postId,
+          // message:'Failed to update post: ${e.message}',
+          // code:e.code,
+        ),
+      );
     } catch (_) {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'update',
-        postId: postId,
-        // message:'Unexpected error during post update: $e',
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'update',
+          postId: postId,
+          // message:'Unexpected error during post update: $e',
+        ),
+      );
     }
   }
 
@@ -342,18 +353,22 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
       await _postsCollection.doc(postId).update(data);
       return right(unit);
     } on FirebaseException {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'update',
-        postId: postId,
-        // message:'Failed to update post partial: ${e.message}',
-        // code:e.code,
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'update',
+          postId: postId,
+          // message:'Failed to update post partial: ${e.message}',
+          // code:e.code,
+        ),
+      );
     } catch (_) {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'update',
-        postId: postId,
-        // message:'Unexpected error during partial update: $e',
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'update',
+          postId: postId,
+          // message:'Unexpected error during partial update: $e',
+        ),
+      );
     }
   }
 
@@ -374,7 +389,8 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
       await _idempotencyService.executeIdempotent<void>(
         entityType: 'post_delete',
         entityId: postId,
-        userId: '', // deletePost doesn't have userId directly, use postId as identifier
+        userId:
+            '', // deletePost doesn't have userId directly, use postId as identifier
         eventId: eventId,
         operation: (transaction) async {
           final docRef = _postsCollection.doc(postId);
@@ -386,25 +402,31 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
       );
       return right(unit);
     } on IdempotencyViolation catch (_) {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'delete',
-        postId: postId,
-        // message:'Duplicate post delete attempt: ${e.message}',
-        // code:'idempotency_violation',
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'delete',
+          postId: postId,
+          // message:'Duplicate post delete attempt: ${e.message}',
+          // code:'idempotency_violation',
+        ),
+      );
     } on FirebaseException {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'delete',
-        postId: postId,
-        // message:'Failed to delete post: ${e.message}',
-        // code:e.code,
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'delete',
+          postId: postId,
+          // message:'Failed to delete post: ${e.message}',
+          // code:e.code,
+        ),
+      );
     } catch (_) {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'delete',
-        postId: postId,
-        // message:'Unexpected error during post deletion: $e',
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'delete',
+          postId: postId,
+          // message:'Unexpected error during post deletion: $e',
+        ),
+      );
     }
   }
 
@@ -423,7 +445,8 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
       await _idempotencyService.executeIdempotent<void>(
         entityType: 'media_upload',
         entityId: postId,
-        userId: '', // Media upload doesn't have userId, use postId as identifier
+        userId:
+            '', // Media upload doesn't have userId, use postId as identifier
         eventId: eventId,
         operation: (transaction) async {
           final field = side != null ? 'option$side.images' : 'images';
@@ -435,32 +458,38 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
                 'url': mediaUrl,
                 'type': mediaType,
                 'uploadedAt': DateTime.now(),
-              }
+              },
             ]),
           });
         },
       );
       return right(unit);
     } on IdempotencyViolation catch (_) {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'uploadMedia',
-        postId: postId,
-        // message:'Duplicate media upload attempt: ${e.message}',
-        // code:'idempotency_violation',
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'uploadMedia',
+          postId: postId,
+          // message:'Duplicate media upload attempt: ${e.message}',
+          // code:'idempotency_violation',
+        ),
+      );
     } on FirebaseException {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'uploadMedia',
-        postId: postId,
-        // message:'Failed to upload media: ${e.message}',
-        // code:e.code,
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'uploadMedia',
+          postId: postId,
+          // message:'Failed to upload media: ${e.message}',
+          // code:e.code,
+        ),
+      );
     } catch (_) {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'uploadMedia',
-        postId: postId,
-        // message:'Unexpected error during media upload: $e',
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'uploadMedia',
+          postId: postId,
+          // message:'Unexpected error during media upload: $e',
+        ),
+      );
     }
   }
 
@@ -473,11 +502,13 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     try {
       final doc = await _postsCollection.doc(postId).get();
       if (!doc.exists) {
-        return left(CreationFailure.postCreationRepositoryFailed(
-          operation: 'deleteMedia',
-          postId: postId,
-          // message:'Post not found',
-        ));
+        return left(
+          CreationFailure.postCreationRepositoryFailed(
+            operation: 'deleteMedia',
+            postId: postId,
+            // message:'Post not found',
+          ),
+        );
       }
 
       final data = doc.data() as Map<String, dynamic>;
@@ -489,24 +520,26 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
             .where((img) => img['url'] != mediaUrl)
             .toList();
 
-        await _postsCollection.doc(postId).update({
-          '$field.images': images,
-        });
+        await _postsCollection.doc(postId).update({'$field.images': images});
       }
       return right(unit);
     } on FirebaseException {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'deleteMedia',
-        postId: postId,
-        // message:'Failed to delete media: ${e.message}',
-        // code:e.code,
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'deleteMedia',
+          postId: postId,
+          // message:'Failed to delete media: ${e.message}',
+          // code:e.code,
+        ),
+      );
     } catch (_) {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'deleteMedia',
-        postId: postId,
-        // message:'Unexpected error during media deletion: $e',
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'deleteMedia',
+          postId: postId,
+          // message:'Unexpected error during media deletion: $e',
+        ),
+      );
     }
   }
 
@@ -535,25 +568,31 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
       );
       return right(unit);
     } on IdempotencyViolation catch (_) {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'updateStatus',
-        postId: postId,
-        // message:'Duplicate status update attempt: ${e.message}',
-        // code:'idempotency_violation',
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'updateStatus',
+          postId: postId,
+          // message:'Duplicate status update attempt: ${e.message}',
+          // code:'idempotency_violation',
+        ),
+      );
     } on FirebaseException {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'updateStatus',
-        postId: postId,
-        // message:'Failed to update status: ${e.message}',
-        // code:e.code,
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'updateStatus',
+          postId: postId,
+          // message:'Failed to update status: ${e.message}',
+          // code:e.code,
+        ),
+      );
     } catch (_) {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'updateStatus',
-        postId: postId,
-        // message:'Unexpected error during status update: $e',
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'updateStatus',
+          postId: postId,
+          // message:'Unexpected error during status update: $e',
+        ),
+      );
     }
   }
 
@@ -580,25 +619,31 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
       );
       return right(unit);
     } on IdempotencyViolation catch (_) {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'markProcessed',
-        postId: postId,
-        // message:'Duplicate mark processed attempt: ${e.message}',
-        // code:'idempotency_violation',
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'markProcessed',
+          postId: postId,
+          // message:'Duplicate mark processed attempt: ${e.message}',
+          // code:'idempotency_violation',
+        ),
+      );
     } on FirebaseException {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'markProcessed',
-        postId: postId,
-        // message:'Failed to mark as processed: ${e.message}',
-        // code:e.code,
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'markProcessed',
+          postId: postId,
+          // message:'Failed to mark as processed: ${e.message}',
+          // code:e.code,
+        ),
+      );
     } catch (_) {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'markProcessed',
-        postId: postId,
-        // message:'Unexpected error marking as processed: $e',
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'markProcessed',
+          postId: postId,
+          // message:'Unexpected error marking as processed: $e',
+        ),
+      );
     }
   }
 
@@ -606,7 +651,9 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   // Note: getPostBundle removed - spans multiple features
 
   @override
-  Future<Either<CreationFailure, Option<PostCreation>>> getPost(String postId) async {
+  Future<Either<CreationFailure, Option<PostCreation>>> getPost(
+    String postId,
+  ) async {
     try {
       final doc = await _postsCollection.doc(postId).get();
       if (!doc.exists) {
@@ -617,18 +664,22 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
       final post = PostCreationFirestore.fromFirestore(doc);
       return right(some(post));
     } on FirebaseException {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'getPost',
-        postId: postId,
-        // message:'Failed to get post: ${e.message}',
-        // code:e.code,
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'getPost',
+          postId: postId,
+          // message:'Failed to get post: ${e.message}',
+          // code:e.code,
+        ),
+      );
     } catch (_) {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'getPost',
-        postId: postId,
-        // message:'Unexpected error while getting post: $e',
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'getPost',
+          postId: postId,
+          // message:'Unexpected error while getting post: $e',
+        ),
+      );
     }
   }
 
@@ -643,28 +694,34 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     return _postsCollection.doc(postId).snapshots().map((doc) {
       try {
         if (!doc.exists) {
-          return left(CreationFailure.postCreationRepositoryFailed(
-            operation: 'watchPost',
-            postId: postId,
-            // message:'Post not found',
-          ));
+          return left(
+            CreationFailure.postCreationRepositoryFailed(
+              operation: 'watchPost',
+              postId: postId,
+              // message:'Post not found',
+            ),
+          );
         }
         // ✅ Phase 5: Use Extension
         final post = PostCreationFirestore.fromFirestore(doc);
         return right(post);
       } on FirebaseException {
-        return left(CreationFailure.postCreationRepositoryFailed(
-          operation: 'watchPost',
-          postId: postId,
-          // message:'Failed to watch post: ${e.message}',
-          // code:e.code,
-        ));
+        return left(
+          CreationFailure.postCreationRepositoryFailed(
+            operation: 'watchPost',
+            postId: postId,
+            // message:'Failed to watch post: ${e.message}',
+            // code:e.code,
+          ),
+        );
       } catch (_) {
-        return left(CreationFailure.postCreationRepositoryFailed(
-          operation: 'watchPost',
-          postId: postId,
-          // message:'Unexpected error while watching post: $e',
-        ));
+        return left(
+          CreationFailure.postCreationRepositoryFailed(
+            operation: 'watchPost',
+            postId: postId,
+            // message:'Unexpected error while watching post: $e',
+          ),
+        );
       }
     });
   }
@@ -695,22 +752,28 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
             .toList();
         return right(posts);
       } on FirebaseException {
-        return left(CreationFailure.postCreationRepositoryFailed(
-          operation: 'getUserCreatedPosts',
-          // message:'Failed to get user posts: ${e.message}',
-          // code:e.code,
-        ));
+        return left(
+          CreationFailure.postCreationRepositoryFailed(
+            operation: 'getUserCreatedPosts',
+            // message:'Failed to get user posts: ${e.message}',
+            // code:e.code,
+          ),
+        );
       } catch (_) {
-        return left(CreationFailure.postCreationRepositoryFailed(
-          operation: 'getUserCreatedPosts',
-          // message:'Unexpected error while getting user posts: $e',
-        ));
+        return left(
+          CreationFailure.postCreationRepositoryFailed(
+            operation: 'getUserCreatedPosts',
+            // message:'Unexpected error while getting user posts: $e',
+          ),
+        );
       }
     });
   }
 
   @override
-  Future<Either<CreationFailure, int>> getUserCreatedPostsCount(String userId) async {
+  Future<Either<CreationFailure, int>> getUserCreatedPostsCount(
+    String userId,
+  ) async {
     try {
       final snapshot = await _postsCollection
           .where('userid', isEqualTo: userId)
@@ -718,16 +781,20 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
           .get();
       return right(snapshot.count ?? 0);
     } on FirebaseException {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'getUserCreatedPostsCount',
-        // message:'Failed to get user posts count: ${e.message}',
-        // code:e.code,
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'getUserCreatedPostsCount',
+          // message:'Failed to get user posts count: ${e.message}',
+          // code:e.code,
+        ),
+      );
     } catch (_) {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'getUserCreatedPostsCount',
-        // message:'Unexpected error while getting user posts count: $e',
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'getUserCreatedPostsCount',
+          // message:'Unexpected error while getting user posts count: $e',
+        ),
+      );
     }
   }
 
@@ -740,35 +807,45 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     try {
       // Basic validation
       if (post.title.isEmpty) {
-        return left(CreationFailure.creationValidationFailed(
-          fieldErrors: {'title': 'Title is required'},
-        ));
+        return left(
+          CreationFailure.creationValidationFailed(
+            fieldErrors: {'title': 'Title is required'},
+          ),
+        );
       }
       if (post.userId.isEmpty) {
-        return left(CreationFailure.creationValidationFailed(
-          fieldErrors: {'userId': 'User ID is required'},
-        ));
+        return left(
+          CreationFailure.creationValidationFailed(
+            fieldErrors: {'userId': 'User ID is required'},
+          ),
+        );
       }
 
       // Check content (at least one option must have content)
-      final hasOptionA = post.optionA.text?.isNotEmpty == true ||
-                         post.optionA.imageUrls.isNotEmpty ||
-                         (post.optionA.videoUrls?.isNotEmpty ?? false);
-      final hasOptionB = post.optionB.text?.isNotEmpty == true ||
-                         post.optionB.imageUrls.isNotEmpty ||
-                         (post.optionB.videoUrls?.isNotEmpty ?? false);
+      final hasOptionA =
+          post.optionA.text?.isNotEmpty == true ||
+          post.optionA.imageUrls.isNotEmpty ||
+          (post.optionA.videoUrls?.isNotEmpty ?? false);
+      final hasOptionB =
+          post.optionB.text?.isNotEmpty == true ||
+          post.optionB.imageUrls.isNotEmpty ||
+          (post.optionB.videoUrls?.isNotEmpty ?? false);
 
       if (!hasOptionA && !hasOptionB) {
-        return left(CreationFailure.creationValidationFailed(
-          fieldErrors: {'options': 'Both options are empty'},
-        ));
+        return left(
+          CreationFailure.creationValidationFailed(
+            fieldErrors: {'options': 'Both options are empty'},
+          ),
+        );
       }
 
       return right(unit);
     } catch (_) {
-      return left(CreationFailure.creationValidationFailed(
-        fieldErrors: {'unknown': 'Unexpected validation error'},
-      ));
+      return left(
+        CreationFailure.creationValidationFailed(
+          fieldErrors: {'unknown': 'Unexpected validation error'},
+        ),
+      );
     }
   }
 
@@ -787,24 +864,30 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
 
       final count = snapshot.count ?? 0;
       if (count >= 10) {
-        return left(CreationFailure.postCreationRepositoryFailed(
-          operation: 'canUserCreatePost',
-          // message:'User has reached daily post limit (10 posts per day)',
-        ));
+        return left(
+          CreationFailure.postCreationRepositoryFailed(
+            operation: 'canUserCreatePost',
+            // message:'User has reached daily post limit (10 posts per day)',
+          ),
+        );
       }
 
       return right(unit);
     } on FirebaseException {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'canUserCreatePost',
-        // message:'Failed to check user post limit: ${e.message}',
-        // code:e.code,
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'canUserCreatePost',
+          // message:'Failed to check user post limit: ${e.message}',
+          // code:e.code,
+        ),
+      );
     } catch (_) {
-      return left(CreationFailure.postCreationRepositoryFailed(
-        operation: 'canUserCreatePost',
-        // message:'Unexpected error while checking post limit: $e',
-      ));
+      return left(
+        CreationFailure.postCreationRepositoryFailed(
+          operation: 'canUserCreatePost',
+          // message:'Unexpected error while checking post limit: $e',
+        ),
+      );
     }
   }
 
@@ -836,7 +919,8 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
 
     // Unwrap Either - throw if failed (service operations should handle errors)
     return resultEither.fold(
-      (failure) => throw Exception('Image processing failed: ${failure.message}'),
+      (failure) =>
+          throw Exception('Image processing failed: ${failure.message}'),
       (result) => ImageProcessingResult(
         approvedFiles: result.approvedFiles,
         approvedRatios: result.approvedRatios,
@@ -866,7 +950,8 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
 
     // Unwrap Either - throw if failed (service operations should handle errors)
     return resultEither.fold(
-      (failure) => throw Exception('Image processing failed: ${failure.message}'),
+      (failure) =>
+          throw Exception('Image processing failed: ${failure.message}'),
       (result) => SingleImageResult(
         success: result.success,
         file: result.file,
@@ -878,7 +963,9 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
   }
 
   @override
-  Map<String, dynamic> convertTargetAudienceToStorageFormat(TargetAudience targetAudience) {
+  Map<String, dynamic> convertTargetAudienceToStorageFormat(
+    TargetAudience targetAudience,
+  ) {
     // Delegate to internal service if available
     final audienceService = _targetAudienceService;
     if (audienceService != null) {
@@ -930,7 +1017,11 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     String contentId, {
     required String eventId, // ✅ Phase 4: UUID for idempotency
   }) async {
-    return updatePostStatus(postId: contentId, status: 'published', eventId: eventId);
+    return updatePostStatus(
+      postId: contentId,
+      status: 'published',
+      eventId: eventId,
+    );
   }
 
   @override
@@ -940,10 +1031,18 @@ class PostCreationRepositoryV2Impl implements IPostCreationRepositoryV2 {
     required String eventId, // ✅ Phase 4: UUID for idempotency
   }) async {
     // Update post and set status to draft - need to chain Either operations
-    final updateResult = await updatePost(postId: contentId, post: post, eventId: eventId);
+    final updateResult = await updatePost(
+      postId: contentId,
+      post: post,
+      eventId: eventId,
+    );
     if (updateResult.isLeft()) return updateResult;
 
-    return updatePostStatus(postId: contentId, status: 'draft', eventId: eventId);
+    return updatePostStatus(
+      postId: contentId,
+      status: 'draft',
+      eventId: eventId,
+    );
   }
 
   // Note: _postOptionToMediaContent helper removed

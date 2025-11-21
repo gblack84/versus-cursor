@@ -7,6 +7,7 @@ import '../failures/creation_failure.dart';
 import '../repositories/i_post_creation_repository_v2.dart';
 import '../repositories/i_media_repository.dart';
 import '../services/i_image_processing_service.dart';
+import '/services/logging/logger_service.dart';
 
 /// UseCase for creating a new post
 /// 새로운 게시물을 생성하기 위한 UseCase
@@ -26,8 +27,8 @@ class CreatePostUseCase {
   CreatePostUseCase({
     required IPostCreationRepositoryV2 postRepository,
     required IMediaRepository mediaRepository,
-  })  : _postRepository = postRepository,
-        _mediaRepository = mediaRepository;
+  }) : _postRepository = postRepository,
+       _mediaRepository = mediaRepository;
 
   /// Execute the use case with individual parameters
   ///
@@ -78,105 +79,99 @@ class CreatePostUseCase {
         onProgress: (progress) => onProgress?.call(0.1 + progress * 0.3),
       );
 
-      return resultA.fold(
-        (failure) => left(failure),
-        (processedA) async {
-          onProgress?.call(0.4);
+      return resultA.fold((failure) => left(failure), (processedA) async {
+        onProgress?.call(0.4);
 
-          // 3. Process images for option B
-          final resultB = await _processImages(
-            images: imagesB,
-            box: 'B',
-            onProgress: (progress) => onProgress?.call(0.4 + progress * 0.3),
+        // 3. Process images for option B
+        final resultB = await _processImages(
+          images: imagesB,
+          box: 'B',
+          onProgress: (progress) => onProgress?.call(0.4 + progress * 0.3),
+        );
+
+        return resultB.fold((failure) => left(failure), (processedB) async {
+          onProgress?.call(0.7);
+
+          // 4. Upload processed images for option A
+          final uploadResultA = await _uploadImages(
+            processedImages: processedA.approvedFiles,
           );
 
-          return resultB.fold(
-            (failure) => left(failure),
-            (processedB) async {
-              onProgress?.call(0.7);
+          return uploadResultA.fold((failure) => left(failure), (urlsA) async {
+            // 5. Upload processed images for option B
+            final uploadResultB = await _uploadImages(
+              processedImages: processedB.approvedFiles,
+            );
 
-              // 4. Upload processed images for option A
-              final uploadResultA = await _uploadImages(
-                processedImages: processedA.approvedFiles,
+            return uploadResultB.fold((failure) => left(failure), (
+              urlsB,
+            ) async {
+              onProgress?.call(0.8);
+
+              // 6. Validate target audience if provided
+              if (targetAudience != null) {
+                final validation = _postRepository.validateTargetAudience(
+                  targetAudience,
+                );
+
+                if (!validation.isValid) {
+                  return left(
+                    CreationFailure.postCreationRepositoryFailed(
+                      operation: 'create_post',
+                      // message: validation.error ?? 'Invalid target audience',
+                      // code: 'validation-failed',
+                    ),
+                  );
+                }
+              }
+
+              // 7. Create post entity with uploaded media
+              final post = PostCreation(
+                userId: userId,
+                title: title,
+                description: description,
+                optionA: PostOption(
+                  imageUrls: urlsA,
+                  aspectRatios: processedA.approvedRatios,
+                ),
+                optionB: PostOption(
+                  imageUrls: urlsB,
+                  aspectRatios: processedB.approvedRatios,
+                ),
+                targetAudience: targetAudience,
+                createdAt: DateTime.now(),
+                status: PostStatus.published,
+                isAnonymous: isAnonymous,
               );
 
-              return uploadResultA.fold(
-                (failure) => left(failure),
-                (urlsA) async {
-                  // 5. Upload processed images for option B
-                  final uploadResultB = await _uploadImages(
-                    processedImages: processedB.approvedFiles,
-                  );
+              onProgress?.call(0.9);
 
-                  return uploadResultB.fold(
-                    (failure) => left(failure),
-                    (urlsB) async {
-                      onProgress?.call(0.8);
+              // ✅ Phase 4: Generate eventId for idempotency
+              final eventId = _uuid.v4();
 
-                      // 6. Validate target audience if provided
-                      if (targetAudience != null) {
-                        final validation = _postRepository.validateTargetAudience(
-                          targetAudience,
-                        );
-
-                        if (!validation.isValid) {
-                          return left(
-                            CreationFailure.postCreationRepositoryFailed(
-                              operation: 'create_post',
-                              // message: validation.error ?? 'Invalid target audience',
-                              // code: 'validation-failed',
-                            ),
-                          );
-                        }
-                      }
-
-                      // 7. Create post entity with uploaded media
-                      final post = PostCreation(
-                        userId: userId,
-                        title: title,
-                        description: description,
-                        optionA: PostOption(
-                          imageUrls: urlsA,
-                          aspectRatios: processedA.approvedRatios,
-                        ),
-                        optionB: PostOption(
-                          imageUrls: urlsB,
-                          aspectRatios: processedB.approvedRatios,
-                        ),
-                        targetAudience: targetAudience,
-                        createdAt: DateTime.now(),
-                        status: PostStatus.published,
-                        isAnonymous: isAnonymous,
-                      );
-
-                      onProgress?.call(0.9);
-
-                      // ✅ Phase 4: Generate eventId for idempotency
-                      final eventId = _uuid.v4();
-
-                      // 8. Save post using PostCreation aggregate with eventId
-                      final createResult = await _postRepository.createPost(
-                        post: post,
-                        eventId: eventId, // ✅ Phase 4: UUID for idempotency
-                      );
-
-                      return createResult.map((postId) {
-                        // Update the post with the generated ID
-                        final savedPost = post.copyWith(id: postId);
-                        onProgress?.call(1.0);
-                        return savedPost;
-                      });
-                    },
-                  );
-                },
+              // 8. Save post using PostCreation aggregate with eventId
+              final createResult = await _postRepository.createPost(
+                post: post,
+                eventId: eventId, // ✅ Phase 4: UUID for idempotency
               );
-            },
-          );
-        },
-      );
+
+              return createResult.map((postId) {
+                // Update the post with the generated ID
+                final savedPost = post.copyWith(id: postId);
+                onProgress?.call(1.0);
+                return savedPost;
+              });
+            });
+          });
+        });
+      });
     } catch (error, stackTrace) {
-      print('CreatePostUseCase Error: $error');
-      print('StackTrace: $stackTrace');
+      Logger.error(
+        'CreatePostUseCase: Post creation failed',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'CreatePostUseCase',
+      );
 
       // Handle specific error types without Firebase dependency
       if (error.toString().contains('permission-denied')) {
@@ -233,9 +228,7 @@ class CreatePostUseCase {
     }
 
     if (errors.isNotEmpty) {
-      return CreationFailure.creationValidationFailed(
-        fieldErrors: errors,
-      );
+      return CreationFailure.creationValidationFailed(fieldErrors: errors);
     }
 
     return null;
@@ -284,8 +277,8 @@ class CreatePostUseCase {
     final result = await _mediaRepository.uploadImages(processedImages);
 
     // Convert MediaRepositoryFailure to CreationFailure
-    return result.mapLeft((failure) =>
-      CreationFailure.postCreationRepositoryFailed(
+    return result.mapLeft(
+      (failure) => CreationFailure.postCreationRepositoryFailed(
         operation: 'upload_images',
         // message: 'Failed to upload images: ${failure.message}',
         // code: 'image-upload-failed',

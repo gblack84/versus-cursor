@@ -8,6 +8,7 @@ import '../repositories/i_post_creation_repository_v2.dart';
 import '../repositories/i_media_repository.dart';
 import '../services/i_image_processing_service.dart';
 import '/services/logging/logger_service.dart';
+import '/services/logging/dev_logger.dart';
 
 /// UseCase for creating a new post
 /// 새로운 게시물을 생성하기 위한 UseCase
@@ -51,8 +52,20 @@ class CreatePostUseCase {
     bool isAnonymous = false,
     Function(double)? onProgress,
   }) async {
+    // ✅ Phase 6: DevLogger Type B (Idempotent) - Log input parameters
+    DevLogger.params({
+      'userId': userId,
+      'title': title.length > 50 ? '${title.substring(0, 50)}...' : title,
+      'description': description.length > 50 ? '${description.substring(0, 50)}...' : description,
+      'imagesA_count': imagesA.length,
+      'imagesB_count': imagesB.length,
+      'hasTargetAudience': targetAudience != null,
+      'isAnonymous': isAnonymous,
+    }, tag: 'CreatePost');
+
     try {
-      // 1. Validate inputs
+      // ✅ Phase 6: Checkpoint 1 - Validate inputs
+      DevLogger.checkpoint('Step 1: Validate inputs', tag: 'CreatePost');
       final validationResult = _validateInputs(
         title: title,
         description: description,
@@ -61,6 +74,7 @@ class CreatePostUseCase {
       );
 
       if (validationResult != null) {
+        DevLogger.error('Validation failed', error: validationResult, tag: 'CreatePost');
         return left(
           CreationFailure.postCreationRepositoryFailed(
             operation: 'create_post',
@@ -71,8 +85,10 @@ class CreatePostUseCase {
       }
 
       onProgress?.call(0.1);
+      DevLogger.checkpoint('Progress: 10% - Validation complete', tag: 'CreatePost');
 
-      // 2. Process images for option A
+      // ✅ Phase 6: Checkpoint 2 - Process images A
+      DevLogger.checkpoint('Step 2: Process images for option A', tag: 'CreatePost');
       final resultA = await _processImages(
         images: imagesA,
         box: 'A',
@@ -81,13 +97,16 @@ class CreatePostUseCase {
 
       // Early Return on failure
       if (resultA.isLeft()) {
+        DevLogger.error('Process images A failed', error: resultA.fold((l) => l, (r) => null), tag: 'CreatePost');
         return left(resultA.fold((l) => l, (r) => throw Exception('Unreachable')));
       }
 
       final processedA = resultA.getOrElse((l) => throw Exception('Unreachable'));
       onProgress?.call(0.4);
+      DevLogger.checkpoint('Progress: 40% - Images A processed: ${processedA.approvedFiles.length} approved', tag: 'CreatePost');
 
-      // 3. Process images for option B
+      // ✅ Phase 6: Checkpoint 3 - Process images B
+      DevLogger.checkpoint('Step 3: Process images for option B', tag: 'CreatePost');
       final resultB = await _processImages(
         images: imagesB,
         box: 'B',
@@ -96,44 +115,58 @@ class CreatePostUseCase {
 
       // Early Return on failure
       if (resultB.isLeft()) {
+        DevLogger.error('Process images B failed', error: resultB.fold((l) => l, (r) => null), tag: 'CreatePost');
         return left(resultB.fold((l) => l, (r) => throw Exception('Unreachable')));
       }
 
       final processedB = resultB.getOrElse((l) => throw Exception('Unreachable'));
       onProgress?.call(0.7);
+      DevLogger.checkpoint('Progress: 70% - Images B processed: ${processedB.approvedFiles.length} approved', tag: 'CreatePost');
 
-      // 4. Upload processed images for option A
+      // ✅ Phase 6: Checkpoint 4 - Upload images A
+      DevLogger.checkpoint('Step 4: Upload images for option A', tag: 'CreatePost');
       final uploadResultA = await _uploadImages(
         processedImages: processedA.approvedFiles,
       );
 
       // Early Return on failure
       if (uploadResultA.isLeft()) {
+        DevLogger.error('Upload images A failed', error: uploadResultA.fold((l) => l, (r) => null), tag: 'CreatePost');
         return left(uploadResultA.fold((l) => l, (r) => throw Exception('Unreachable')));
       }
 
       final urlsA = uploadResultA.getOrElse((l) => throw Exception('Unreachable'));
+      DevLogger.checkpoint('Images A uploaded: ${urlsA.length} URLs', tag: 'CreatePost');
 
-      // 5. Upload processed images for option B
+      // ✅ Phase 6: Checkpoint 5 - Upload images B
+      DevLogger.checkpoint('Step 5: Upload images for option B', tag: 'CreatePost');
       final uploadResultB = await _uploadImages(
         processedImages: processedB.approvedFiles,
       );
 
       // Early Return on failure
       if (uploadResultB.isLeft()) {
+        DevLogger.error('Upload images B failed', error: uploadResultB.fold((l) => l, (r) => null), tag: 'CreatePost');
         return left(uploadResultB.fold((l) => l, (r) => throw Exception('Unreachable')));
       }
 
       final urlsB = uploadResultB.getOrElse((l) => throw Exception('Unreachable'));
       onProgress?.call(0.8);
+      DevLogger.checkpoint('Progress: 80% - Images B uploaded: ${urlsB.length} URLs', tag: 'CreatePost');
 
-      // 6. Validate target audience if provided
+      // ✅ Phase 6: Checkpoint 6 - Validate target audience
       if (targetAudience != null) {
+        DevLogger.checkpoint('Step 6: Validate target audience', tag: 'CreatePost');
         final validation = _postRepository.validateTargetAudience(
           targetAudience,
         );
 
         if (!validation.isValid) {
+          DevLogger.validation(
+            field: 'targetAudience',
+            reason: validation.error ?? 'Invalid target audience',
+            tag: 'CreatePost',
+          );
           return left(
             CreationFailure.postCreationRepositoryFailed(
               operation: 'create_post',
@@ -142,9 +175,11 @@ class CreatePostUseCase {
             ),
           );
         }
+        DevLogger.checkpoint('Target audience validated', tag: 'CreatePost');
       }
 
-      // 7. Create post entity with uploaded media
+      // ✅ Phase 6: Checkpoint 7 - Create post entity
+      DevLogger.checkpoint('Step 7: Create post entity', tag: 'CreatePost');
       final post = PostCreation(
         userId: userId,
         title: title,
@@ -164,11 +199,14 @@ class CreatePostUseCase {
       );
 
       onProgress?.call(0.9);
+      DevLogger.checkpoint('Progress: 90% - Post entity created', tag: 'CreatePost');
 
       // ✅ Phase 4: Generate eventId for idempotency
       final eventId = _uuid.v4();
+      DevLogger.checkpoint('Generated eventId for idempotency: $eventId', tag: 'CreatePost');
 
-      // 8. Save post using PostCreation aggregate with eventId
+      // ✅ Phase 6: Checkpoint 8 - Save post to Firestore
+      DevLogger.checkpoint('Step 8: Save post to Firestore', tag: 'CreatePost');
       final createResult = await _postRepository.createPost(
         post: post,
         eventId: eventId, // ✅ Phase 4: UUID for idempotency
@@ -176,6 +214,7 @@ class CreatePostUseCase {
 
       // Early Return on failure
       if (createResult.isLeft()) {
+        DevLogger.error('Save post failed', error: createResult.fold((l) => l, (r) => null), tag: 'CreatePost');
         return left(createResult.fold((l) => l, (r) => throw Exception('Unreachable')));
       }
 
@@ -184,8 +223,26 @@ class CreatePostUseCase {
       final savedPost = post.copyWith(id: postId);
       onProgress?.call(1.0);
 
+      DevLogger.result(
+        isSuccess: true,
+        data: {
+          'postId': postId,
+          'urlsA_count': urlsA.length,
+          'urlsB_count': urlsB.length,
+          'eventId': eventId,
+        },
+        tag: 'CreatePost',
+      );
+
       return right(savedPost);
     } catch (error, stackTrace) {
+      DevLogger.error(
+        'Post creation failed - Exception caught',
+        error: error,
+        stackTrace: stackTrace,
+        tag: 'CreatePost',
+      );
+
       Logger.error(
         'CreatePostUseCase: Post creation failed',
         error: error,

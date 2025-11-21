@@ -79,92 +79,112 @@ class CreatePostUseCase {
         onProgress: (progress) => onProgress?.call(0.1 + progress * 0.3),
       );
 
-      return resultA.fold((failure) => left(failure), (processedA) async {
-        onProgress?.call(0.4);
+      // Early Return on failure
+      if (resultA.isLeft()) {
+        return left(resultA.fold((l) => l, (r) => throw Exception('Unreachable')));
+      }
 
-        // 3. Process images for option B
-        final resultB = await _processImages(
-          images: imagesB,
-          box: 'B',
-          onProgress: (progress) => onProgress?.call(0.4 + progress * 0.3),
+      final processedA = resultA.getOrElse((l) => throw Exception('Unreachable'));
+      onProgress?.call(0.4);
+
+      // 3. Process images for option B
+      final resultB = await _processImages(
+        images: imagesB,
+        box: 'B',
+        onProgress: (progress) => onProgress?.call(0.4 + progress * 0.3),
+      );
+
+      // Early Return on failure
+      if (resultB.isLeft()) {
+        return left(resultB.fold((l) => l, (r) => throw Exception('Unreachable')));
+      }
+
+      final processedB = resultB.getOrElse((l) => throw Exception('Unreachable'));
+      onProgress?.call(0.7);
+
+      // 4. Upload processed images for option A
+      final uploadResultA = await _uploadImages(
+        processedImages: processedA.approvedFiles,
+      );
+
+      // Early Return on failure
+      if (uploadResultA.isLeft()) {
+        return left(uploadResultA.fold((l) => l, (r) => throw Exception('Unreachable')));
+      }
+
+      final urlsA = uploadResultA.getOrElse((l) => throw Exception('Unreachable'));
+
+      // 5. Upload processed images for option B
+      final uploadResultB = await _uploadImages(
+        processedImages: processedB.approvedFiles,
+      );
+
+      // Early Return on failure
+      if (uploadResultB.isLeft()) {
+        return left(uploadResultB.fold((l) => l, (r) => throw Exception('Unreachable')));
+      }
+
+      final urlsB = uploadResultB.getOrElse((l) => throw Exception('Unreachable'));
+      onProgress?.call(0.8);
+
+      // 6. Validate target audience if provided
+      if (targetAudience != null) {
+        final validation = _postRepository.validateTargetAudience(
+          targetAudience,
         );
 
-        return resultB.fold((failure) => left(failure), (processedB) async {
-          onProgress?.call(0.7);
-
-          // 4. Upload processed images for option A
-          final uploadResultA = await _uploadImages(
-            processedImages: processedA.approvedFiles,
+        if (!validation.isValid) {
+          return left(
+            CreationFailure.postCreationRepositoryFailed(
+              operation: 'create_post',
+              // message: validation.error ?? 'Invalid target audience',
+              // code: 'validation-failed',
+            ),
           );
+        }
+      }
 
-          return uploadResultA.fold((failure) => left(failure), (urlsA) async {
-            // 5. Upload processed images for option B
-            final uploadResultB = await _uploadImages(
-              processedImages: processedB.approvedFiles,
-            );
+      // 7. Create post entity with uploaded media
+      final post = PostCreation(
+        userId: userId,
+        title: title,
+        description: description,
+        optionA: PostOption(
+          imageUrls: urlsA,
+          aspectRatios: processedA.approvedRatios,
+        ),
+        optionB: PostOption(
+          imageUrls: urlsB,
+          aspectRatios: processedB.approvedRatios,
+        ),
+        targetAudience: targetAudience,
+        createdAt: DateTime.now(),
+        status: PostStatus.published,
+        isAnonymous: isAnonymous,
+      );
 
-            return uploadResultB.fold((failure) => left(failure), (
-              urlsB,
-            ) async {
-              onProgress?.call(0.8);
+      onProgress?.call(0.9);
 
-              // 6. Validate target audience if provided
-              if (targetAudience != null) {
-                final validation = _postRepository.validateTargetAudience(
-                  targetAudience,
-                );
+      // ✅ Phase 4: Generate eventId for idempotency
+      final eventId = _uuid.v4();
 
-                if (!validation.isValid) {
-                  return left(
-                    CreationFailure.postCreationRepositoryFailed(
-                      operation: 'create_post',
-                      // message: validation.error ?? 'Invalid target audience',
-                      // code: 'validation-failed',
-                    ),
-                  );
-                }
-              }
+      // 8. Save post using PostCreation aggregate with eventId
+      final createResult = await _postRepository.createPost(
+        post: post,
+        eventId: eventId, // ✅ Phase 4: UUID for idempotency
+      );
 
-              // 7. Create post entity with uploaded media
-              final post = PostCreation(
-                userId: userId,
-                title: title,
-                description: description,
-                optionA: PostOption(
-                  imageUrls: urlsA,
-                  aspectRatios: processedA.approvedRatios,
-                ),
-                optionB: PostOption(
-                  imageUrls: urlsB,
-                  aspectRatios: processedB.approvedRatios,
-                ),
-                targetAudience: targetAudience,
-                createdAt: DateTime.now(),
-                status: PostStatus.published,
-                isAnonymous: isAnonymous,
-              );
+      // Early Return on failure
+      if (createResult.isLeft()) {
+        return left(createResult.fold((l) => l, (r) => throw Exception('Unreachable')));
+      }
 
-              onProgress?.call(0.9);
+      // Update the post with the generated ID
+      final postId = createResult.getOrElse((l) => throw Exception('Unreachable'));
+      final savedPost = post.copyWith(id: postId);
+      onProgress?.call(1.0);
 
-              // ✅ Phase 4: Generate eventId for idempotency
-              final eventId = _uuid.v4();
-
-              // 8. Save post using PostCreation aggregate with eventId
-              final createResult = await _postRepository.createPost(
-                post: post,
-                eventId: eventId, // ✅ Phase 4: UUID for idempotency
-              );
-
-              return createResult.map((postId) {
-                // Update the post with the generated ID
-                final savedPost = post.copyWith(id: postId);
-                onProgress?.call(1.0);
-                return savedPost;
-              });
-            });
-          });
-        });
-      });
+      return right(savedPost);
     } catch (error, stackTrace) {
       Logger.error(
         'CreatePostUseCase: Post creation failed',
